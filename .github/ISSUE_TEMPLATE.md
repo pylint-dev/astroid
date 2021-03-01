@@ -10,4 +10,3 @@
 
 
 ### ``python -c "from astroid import __pkginfo__; print(__pkginfo__.version)"`` output
-

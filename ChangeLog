@@ -9,14 +9,34 @@ Release Date: TBA
 * Adds ``ImportAlias`` node type included as children of ``Import`` and
   ``ImportFrom`` nodes.
 
-What's New in astroid 2.5.1?
+
+What's New in astroid 2.5.2?
 ============================
 Release Date: TBA
 
-* The ``context.path`` is reverted to a set because otherwise it leds to false positives 
+
+What's New in astroid 2.5.1?
+============================
+Release Date: 2021-02-28
+
+* The ``context.path`` is reverted to a set because otherwise it leads to false positives
   for non `numpy` functions.
 
   Closes #895 #899
+
+* Don't transform dataclass ClassVars
+
+* Improve typing.TypedDict inference
+
+* Fix the `Duplicates found in MROs` false positive.
+
+  Closes #905
+  Closes PyCQA/pylint#2717
+  Closes PyCQA/pylint#3247
+  Closes PyCQA/pylint#4093
+  Closes PyCQA/pylint#4131
+  Closes PyCQA/pylint#4145
+
 
 What's New in astroid 2.5?
 ============================

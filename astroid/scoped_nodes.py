@@ -19,10 +19,12 @@
 # Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2019 Peter de Blanc <peter@standard.ai>
-# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2020 Tim Martin <tim@asymptotic.co.uk>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -150,7 +152,7 @@ def builtin_lookup(name):
 
 # TODO move this Mixin to mixins.py; problem: 'FunctionDef' in _scope_lookup
 class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
-    """ this class provides locals handling common to Module, FunctionDef
+    """this class provides locals handling common to Module, FunctionDef
     and ClassDef nodes, including a dict like interface for direct access
     to locals information
     """
@@ -1454,7 +1456,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     # pylint: disable=invalid-overridden-method
     @decorators_mod.cachedproperty
     def type(
-        self
+        self,
     ):  # pylint: disable=invalid-overridden-method,too-many-return-statements
         """The function type for this node.
 
@@ -1791,7 +1793,7 @@ def _rec_get_names(args, names=None):
 
 
 def _is_metaclass(klass, seen=None):
-    """ Return if the given class can be
+    """Return if the given class can be
     used as a metaclass.
     """
     if klass.name == "type":

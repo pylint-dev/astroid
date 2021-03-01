@@ -16,6 +16,8 @@
 # Copyright (c) 2018 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
 # Copyright (c) 2020 Leandro T. C. Melo <ltcmelo@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -166,7 +168,7 @@ nodes.Dict._infer = infer_map
 
 
 def _higher_function_scope(node):
-    """ Search for the first function which encloses the given
+    """Search for the first function which encloses the given
     scope. This can be used for looking up in that function's
     scope, in case looking up in a lower scope for a particular
     name fails.

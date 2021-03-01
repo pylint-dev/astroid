@@ -9,7 +9,7 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2019 Raphael Gaschignard <raphael@makeleaps.com>
-# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2020 Anubhav <35621759+anubh-v@users.noreply.github.com>
 # Copyright (c) 2020 Ashley Whetter <ashley@awhetter.co.uk>
