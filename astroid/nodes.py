@@ -21,7 +21,6 @@ All nodes inherit from :class:`~astroid.node_classes.NodeNG`.
 # pylint: disable=unused-import,redefined-builtin
 
 from astroid.node_classes import (
-    Alias,
     Arguments,
     AssignAttr,
     Assert,
@@ -56,6 +55,7 @@ from astroid.node_classes import (
     If,
     IfExp,
     Import,
+    ImportAlias,
     Index,
     Keyword,
     List,
