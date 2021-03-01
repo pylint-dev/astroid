@@ -7,9 +7,11 @@
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 import abc
 import collections
@@ -274,7 +276,7 @@ def _cached_set_diff(left, right):
 
 def _precache_zipimporters(path=None):
     """
-    For each path that has not been already cached 
+    For each path that has not been already cached
     in the sys.path_importer_cache, create a new zipimporter
     instance and add it into the cache.
     Return a dict associating all paths, stored in the cache, to corresponding

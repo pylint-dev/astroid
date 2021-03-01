@@ -6,6 +6,7 @@
 # Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
 # Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -80,8 +81,7 @@ class ImportFromMixin(FilterStmtsMixin):
         return name
 
     def do_import_module(self, modname=None):
-        """return the ast for a module whose name is <modname> imported by <self>
-        """
+        """return the ast for a module whose name is <modname> imported by <self>"""
         # handle special case where we are on a package node importing a module
         # using the same name as the package, which may end in an infinite loop
         # on relative imports

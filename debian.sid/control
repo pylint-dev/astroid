@@ -38,5 +38,3 @@ Description: rebuild a new abstract syntax tree from Python's ast
  the AST and building an extended ast. The new node
  classes have additional methods and attributes for different usages.
  Furthermore, astroid builds partial trees by inspecting living objects.
-
-

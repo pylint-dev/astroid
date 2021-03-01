@@ -3,7 +3,7 @@
 # Copyright (c) 2018 Peter Talley <peterctalley@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Peter Pentchev <roam@ringlet.net>
 # Copyright (c) 2021 Damien Baty <damien@damienbaty.com>
 

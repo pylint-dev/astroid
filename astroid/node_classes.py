@@ -13,7 +13,7 @@
 # Copyright (c) 2017-2020 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2017, 2019 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2017 rr- <rr-@sakuya.pl>
-# Copyright (c) 2018-2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2018-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
@@ -23,6 +23,8 @@
 # Copyright (c) 2019 kavins14 <kavinsingh@hotmail.com>
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -259,7 +261,7 @@ OP_PRECEDENCE = {
 
 
 class NodeNG:
-    """ A node of the new Abstract Syntax Tree (AST).
+    """A node of the new Abstract Syntax Tree (AST).
 
     This is the base class for all Astroid node classes.
     """

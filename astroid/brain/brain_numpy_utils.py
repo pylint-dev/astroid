@@ -1,4 +1,4 @@
-# Copyright (c) 2019-2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2019-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2019-2020 Claudiu Popa <pcmanticore@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html

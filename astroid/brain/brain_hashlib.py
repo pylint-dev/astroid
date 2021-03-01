@@ -2,8 +2,8 @@
 # Copyright (c) 2018 David Poirier <david-poirier-csn@users.noreply.github.com>
 # Copyright (c) 2018 wgehalo <wgehalo@gmail.com>
 # Copyright (c) 2018 Ioana Tagirta <ioana.tagirta@gmail.com>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER

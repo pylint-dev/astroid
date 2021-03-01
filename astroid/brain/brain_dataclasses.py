@@ -30,6 +30,18 @@ def dataclass_transform(node):
         if not isinstance(assign_node, (astroid.AnnAssign, astroid.Assign)):
             continue
 
+        if (
+            isinstance(assign_node, astroid.AnnAssign)
+            and isinstance(assign_node.annotation, astroid.Subscript)
+            and (
+                isinstance(assign_node.annotation.value, astroid.Name)
+                and assign_node.annotation.value.name == "ClassVar"
+                or isinstance(assign_node.annotation.value, astroid.Attribute)
+                and assign_node.annotation.value.attrname == "ClassVar"
+            )
+        ):
+            continue
+
         targets = (
             assign_node.targets
             if hasattr(assign_node, "targets")

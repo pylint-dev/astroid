@@ -7,8 +7,9 @@
 # Copyright (c) 2018 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -38,7 +39,7 @@ def cached(func, instance, args, kwargs):
 
 
 class cachedproperty:
-    """ Provides a cached property equivalent to the stacking of
+    """Provides a cached property equivalent to the stacking of
     @cached and @property, but more efficient.
 
     After first usage, the <property_name> becomes part of the object's
