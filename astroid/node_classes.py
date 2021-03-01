@@ -3328,11 +3328,18 @@ class ImportFrom(mixins.ImportFromMixin, Statement):
     """
     :type: list(ImportAlias) or None
     """
-    _other_fields = ("modname", "names", "level")
 
-    def __init__(
-        self, fromname, level=0, lineno=None, col_offset=None, parent=None
-    ):
+    _other_fields = ("modname", "names", "level")
+    names = None
+    """What is being imported from the module.
+
+    Each entry is a :class:`tuple` of the name being imported,
+    and the alias that the name is assigned to (if any).
+
+    :type: list(tuple(str, str or None))
+    """
+
+    def __init__(self, fromname, level=0, lineno=None, col_offset=None, parent=None):
         """
         :param fromname: The module that is being imported from.
         :type fromname: str or None
@@ -3378,21 +3385,10 @@ class ImportFrom(mixins.ImportFromMixin, Statement):
         :type aliases: list(ImportAlias) or None
         """
         self.aliases = aliases
-        """The names being imported.
-
-        :type: list(ImportAlias) or None
-        """
         self.names = [(a.name, a.asname) for a in aliases or []]
-        """What is being imported from the module.
-
-        Each entry is a :class:`tuple` of the name being imported,
-        and the alias that the name is assigned to (if any).
-
-        :type: list(tuple(str, str or None))
-        """
 
     def get_children(self):
-      yield from self.aliases or []
+        yield from self.aliases or []
 
 
 class Attribute(NodeNG):
@@ -3620,9 +3616,12 @@ class ImportAlias(mixins.NoChildrenMixin, NodeNG):
     >>> node.aliases[0]
     <alias l.2 at 0x7f23b2e4e5c0>
     """
+
     _other_fields = ("name", "asname")
 
-    def __init__(self, name=None, asname=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self, name=None, asname=None, lineno=None, col_offset=None, parent=None
+    ):
         """
         :param name: The name being imported.
         :type name: str or None
@@ -3668,6 +3667,14 @@ class Import(mixins.ImportFromMixin, Statement):
     :type: list(ImportAlias) or None
     """
     _other_fields = ("names",)
+    names = None
+    """The names being imported.
+
+    Each entry is a :class:`tuple` of the name being imported,
+    and the alias that the name is assigned to (if any).
+
+    :type: list(tuple(str, str or None)) or None
+    """
 
     def postinit(self, aliases=None):
         """Do some setup after initialisation.
@@ -3676,21 +3683,10 @@ class Import(mixins.ImportFromMixin, Statement):
         :type aliases: list(ImportAlias) or None
         """
         self.aliases = aliases
-        """The names being imported.
-
-        :type: list(ImportAlias) or None
-        """
         self.names = [(a.name, a.asname) for a in aliases or []]
-        """The names being imported.
-
-        Each entry is a :class:`tuple` of the name being imported,
-        and the alias that the name is assigned to (if any).
-
-        :type: list(tuple(str, str or None)) or None
-        """
 
     def get_children(self):
-      yield from self.aliases or []
+        yield from self.aliases or []
 
 
 class Index(NodeNG):

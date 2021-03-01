@@ -583,14 +583,18 @@ class TreeRebuilder:
             getattr(node, "col_offset", None),
             parent,
         )
-        newnode.postinit([
-            nodes.ImportAlias(
-                alias.name,
-                alias.asname,
-                getattr(alias, "lineno", None),
-                getattr(alias, "col_offset", None),
-                newnode)
-            for alias in node.names])
+        newnode.postinit(
+            [
+                nodes.ImportAlias(
+                    alias.name,
+                    alias.asname,
+                    getattr(alias, "lineno", None),
+                    getattr(alias, "col_offset", None),
+                    newnode,
+                )
+                for alias in node.names
+            ]
+        )
         # store From names to add them to locals after building
         self._import_from_nodes.append(newnode)
         return newnode
@@ -705,14 +709,18 @@ class TreeRebuilder:
             getattr(node, "col_offset", None),
             parent,
         )
-        newnode.postinit([
-            nodes.ImportAlias(
-                alias.name,
-                alias.asname,
-                getattr(alias, "lineno", None),
-                getattr(alias, "col_offset", None),
-                newnode)
-            for alias in node.names])
+        newnode.postinit(
+            [
+                nodes.ImportAlias(
+                    alias.name,
+                    alias.asname,
+                    getattr(alias, "lineno", None),
+                    getattr(alias, "col_offset", None),
+                    newnode,
+                )
+                for alias in node.names
+            ]
+        )
         # save import names in parent's locals:
         for (name, asname) in newnode.names:
             name = asname or name
