@@ -56,8 +56,8 @@ if platform.python_implementation() == 'CPython':
 
 else:
     from functools import partial
-    dump = partial(pickle.dump, protocol=PROTOCOL)
-    dumps = partial(pickle.dumps, protocol=PROTOCOL)
+    dump = ""
+    dumps = ""
     load = pickle.load
     loads = pickle.loads
 
