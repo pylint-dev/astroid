@@ -36,7 +36,7 @@ import platform
 import pytest
 
 import astroid
-from astroid import bases
+from astroid import bases, Uninferable
 from astroid import builder
 from astroid import context as contextmod
 from astroid import exceptions
@@ -510,25 +510,20 @@ from ..cave import wine\n\n"""
         module = resources.build_file("data/conditional_import/__init__.py")
         ctx = contextmod.InferenceContext()
 
-        ctx.lookupname = "some_function"
-        some = list(module["some_function"].infer(ctx))
-        assert len(some) == 1
-        ctx.lookupname = "another_one"
-        another = list(module["another_one"].infer(ctx))
-        assert len(another) == 1
+        for name in ("dump", "dumps", "load", "loads"):
+            ctx.lookupname = name
+            some = list(module[name].infer(ctx))
+            assert Uninferable not in some, name
+
 
     def test_conditional_import(self):
         module = resources.build_file("data/conditional.py")
         ctx = contextmod.InferenceContext()
 
-        ctx.lookupname = "some_function"
-        some = list(module["some_function"].infer(ctx))
-        assert len(some) == 1
-        ctx.lookupname = "another_one"
-        another = list(module["another_one"].infer(ctx))
-        assert len(another) == 1
-
-
+        for name in ("dump", "dumps", "load", "loads"):
+            ctx.lookupname = name
+            some = list(module[name].infer(ctx))
+            assert Uninferable not in some, name
 
 class CmpNodeTest(unittest.TestCase):
     def test_as_string(self):
