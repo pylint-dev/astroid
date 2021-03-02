@@ -567,12 +567,24 @@ from ..cave import wine\n\n"""
         self.assertIn("sys", module.locals)
 
     def test_conditional(self):
+        module = resources.build_file("data/conditional_import/__init__.py")
+        ctx = contextmod.InferenceContext()
+
+        ctx.lookupname = "some_function"
+        some = list(module["some_function"].infer(ctx))
+        assert len(some) == 1
+        ctx.lookupname = "another_one"
+        another = list(module["another_one"].infer(ctx))
+        assert len(another) == 1
+
+    def test_conditional_import(self):
         module = resources.build_file("data/conditional.py")
         ctx = contextmod.InferenceContext()
 
-        ctx.lookupname = "conditional"
+        ctx.lookupname = "some_function"
         some = list(module["some_function"].infer(ctx))
         assert len(some) == 1
+        ctx.lookupname = "another_one"
         another = list(module["another_one"].infer(ctx))
         assert len(another) == 1
 
