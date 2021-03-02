@@ -566,6 +566,17 @@ from ..cave import wine\n\n"""
         module = resources.build_file("data/module1abs/__init__.py", "data.module1abs")
         self.assertIn("sys", module.locals)
 
+    def test_conditional(self):
+        module = resources.build_file("data/conditional.py")
+        ctx = contextmod.InferenceContext()
+
+        ctx.lookupname = "conditional"
+        some = list(module["some_function"].infer(ctx))
+        assert len(some) == 1
+        another = list(module["another_one"].infer(ctx))
+        assert len(another) == 1
+
+
 
 class CmpNodeTest(unittest.TestCase):
     def test_as_string(self):
