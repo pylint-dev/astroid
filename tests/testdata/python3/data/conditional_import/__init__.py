@@ -1,5 +1,5 @@
 
-import pickle
+from pprint import pformat
 
 if False:
 
@@ -8,4 +8,4 @@ if False:
 
 else:
     from functools import partial
-    dump = partial(pickle.dump, protocol=0)
+    dump = partial(pformat, indent=0)
