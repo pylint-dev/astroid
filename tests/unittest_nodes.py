@@ -36,7 +36,7 @@ import unittest
 import pytest
 
 import astroid
-from astroid import bases, builder
+from astroid import bases, builder, Uninferable
 from astroid import context as contextmod
 from astroid import node_classes, nodes, parse, test_utils, transforms, util
 from astroid.const import BUILTINS, PY38_PLUS, PY310_PLUS, Context
@@ -570,25 +570,20 @@ from ..cave import wine\n\n"""
         module = resources.build_file("data/conditional_import/__init__.py")
         ctx = contextmod.InferenceContext()
 
-        ctx.lookupname = "some_function"
-        some = list(module["some_function"].infer(ctx))
-        assert len(some) == 1
-        ctx.lookupname = "another_one"
-        another = list(module["another_one"].infer(ctx))
-        assert len(another) == 1
+        for name in ("dump", "dumps", "load", "loads"):
+            ctx.lookupname = name
+            some = list(module[name].infer(ctx))
+            assert Uninferable not in some, name
+
 
     def test_conditional_import(self):
         module = resources.build_file("data/conditional.py")
         ctx = contextmod.InferenceContext()
 
-        ctx.lookupname = "some_function"
-        some = list(module["some_function"].infer(ctx))
-        assert len(some) == 1
-        ctx.lookupname = "another_one"
-        another = list(module["another_one"].infer(ctx))
-        assert len(another) == 1
-
-
+        for name in ("dump", "dumps", "load", "loads"):
+            ctx.lookupname = name
+            some = list(module[name].infer(ctx))
+            assert Uninferable not in some, name
 
 class CmpNodeTest(unittest.TestCase):
     def test_as_string(self):

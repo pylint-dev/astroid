@@ -1,1 +1,1 @@
-from data.conditional_import import some_function, another_one
+from data.conditional_import import dump, dumps, load, loads
