@@ -11,6 +11,10 @@ What's New in astroid 2.5.2?
 ============================
 Release Date: TBA
 
+* Detects `import numpy` as a valid `numpy` import.
+
+  Closes PyCQA/pylint#3974
+
 
 What's New in astroid 2.5.1?
 ============================
