@@ -93,7 +93,10 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
         """
         Test that calls to numpy functions are inferred as numpy.ndarray
         """
-        for infer_wrapper in (self._inferred_numpy_func_call, self._inferred_numpy_no_alias_func_call):
+        for infer_wrapper in (
+            self._inferred_numpy_func_call,
+            self._inferred_numpy_no_alias_func_call,
+        ):
             for func_ in self.numpy_functions_returning_array:
                 with self.subTest(typ=func_):
                     inferred_values = list(infer_wrapper(*func_))
@@ -114,7 +117,10 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
         """
         Test that calls to numpy functions are inferred as bool
         """
-        for infer_wrapper in (self._inferred_numpy_func_call, self._inferred_numpy_no_alias_func_call):
+        for infer_wrapper in (
+            self._inferred_numpy_func_call,
+            self._inferred_numpy_no_alias_func_call,
+        ):
             for func_ in self.numpy_functions_returning_bool:
                 with self.subTest(typ=func_):
                     inferred_values = list(infer_wrapper(*func_))
@@ -135,7 +141,10 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
         """
         Test that calls to numpy functions are inferred as numpy.dtype
         """
-        for infer_wrapper in (self._inferred_numpy_func_call, self._inferred_numpy_no_alias_func_call):
+        for infer_wrapper in (
+            self._inferred_numpy_func_call,
+            self._inferred_numpy_no_alias_func_call,
+        ):
             for func_ in self.numpy_functions_returning_dtype:
                 with self.subTest(typ=func_):
                     inferred_values = list(infer_wrapper(*func_))
@@ -156,7 +165,10 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
         """
         Test that calls to numpy functions are inferred as None
         """
-        for infer_wrapper in (self._inferred_numpy_func_call, self._inferred_numpy_no_alias_func_call):
+        for infer_wrapper in (
+            self._inferred_numpy_func_call,
+            self._inferred_numpy_no_alias_func_call,
+        ):
             for func_ in self.numpy_functions_returning_none:
                 with self.subTest(typ=func_):
                     inferred_values = list(infer_wrapper(*func_))
@@ -177,7 +189,10 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
         """
         Test that calls to numpy functions are inferred as tuple
         """
-        for infer_wrapper in (self._inferred_numpy_func_call, self._inferred_numpy_no_alias_func_call):
+        for infer_wrapper in (
+            self._inferred_numpy_func_call,
+            self._inferred_numpy_no_alias_func_call,
+        ):
             for func_ in self.numpy_functions_returning_tuple:
                 with self.subTest(typ=func_):
                     inferred_values = list(infer_wrapper(*func_))
