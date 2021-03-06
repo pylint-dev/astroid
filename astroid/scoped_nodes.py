@@ -1895,7 +1895,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     # by a raw factories
 
     # a dictionary of class instances attributes
-    _astroid_fields = ("decorators", "bases", "body")  # name
+    _astroid_fields = ("decorators", "bases", "keywords", "body")  # name
 
     decorators = None
     """The decorators that are applied to this class.
@@ -2920,6 +2920,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             yield self.decorators
 
         yield from self.bases
+        yield from self.keywords
         yield from self.body
 
     @decorators_mod.cached
