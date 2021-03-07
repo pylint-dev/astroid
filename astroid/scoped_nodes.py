@@ -2920,7 +2920,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             yield self.decorators
 
         yield from self.bases
-        yield from self.keywords
+        if self.keywords is not None:
+            yield from self.keywords
         yield from self.body
 
     @decorators_mod.cached
