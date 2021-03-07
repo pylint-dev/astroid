@@ -36,7 +36,6 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
         ("is_busday", "['2011-07-01', '2011-07-02', '2011-07-18']"),
         ("lexsort", "(('toto', 'tutu'), ('riri', 'fifi'))"),
         ("packbits", "np.array([1, 2])"),
-        # ("ravel_multi_index", "np.array([[1, 2], [2, 1]])", "(3, 4)"),
         ("unpackbits", "np.array([[1], [2], [3]], dtype=np.uint8)"),
         ("vdot", "[1, 2]", "[1, 2]"),
         ("where", "[True, False]", "[1, 2]", "[2, 1]"),
