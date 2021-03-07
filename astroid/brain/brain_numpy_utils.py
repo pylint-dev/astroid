@@ -33,7 +33,10 @@ def _is_a_numpy_module(node: astroid.node_classes.Name) -> bool:
         x for x in node.lookup(module_nickname)[1] if isinstance(x, astroid.Import)
     ]
     for target in potential_import_target:
-        if ("numpy", module_nickname) in target.names:
+        if ("numpy", module_nickname) in target.names or (
+            "numpy",
+            None,
+        ) in target.names:
             return True
     return False
 
