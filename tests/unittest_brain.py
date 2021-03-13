@@ -1211,25 +1211,18 @@ class TypingBrain(unittest.TestCase):
         assert len(typing_module.locals["TypedDict"]) == 1
         assert inferred_base == typing_module.locals["TypedDict"][0]
 
+    @staticmethod
+    def check_metaclass_is_abc(node: nodes.ClassDef):
+        meta = node.metaclass()
+        assert isinstance(meta, nodes.ClassDef)
+        assert meta.name == "ABCMeta"
+
     @test_utils.require_version("3.8")
     def test_typing_alias_type(self):
         """
         Test that the type aliased thanks to typing._alias function are
         correctly inferred.
         """
-
-        def check_metaclass(node: nodes.ClassDef):
-            meta = node.metaclass()
-            assert isinstance(meta, nodes.ClassDef)
-            assert meta.name == "ABCMeta_typing"
-            assert "ABCMeta" == meta.basenames[0]
-            assert meta.locals.get("__getitem__") is not None
-
-            abc_meta = next(meta.bases[0].infer())
-            assert isinstance(abc_meta, nodes.ClassDef)
-            assert abc_meta.name == "ABCMeta"
-            assert abc_meta.locals.get("__getitem__") is None
-
         node = builder.extract_node(
             """
         from typing import TypeVar, MutableSet
@@ -1242,7 +1235,7 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        check_metaclass(inferred)
+        self.check_metaclass_is_abc(inferred)
         assertEqualMro(
             inferred,
             [
