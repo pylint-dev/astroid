@@ -1240,7 +1240,6 @@ class TypingBrain(unittest.TestCase):
             inferred,
             [
                 "Derived1",
-                "MutableSet_typing",
                 "MutableSet",
                 "Set",
                 "Collection",
@@ -1264,7 +1263,6 @@ class TypingBrain(unittest.TestCase):
             inferred,
             [
                 "Derived2",
-                "OrderedDict_typing",
                 "OrderedDict",
                 "dict",
                 "object",
