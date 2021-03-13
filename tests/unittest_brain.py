@@ -1282,15 +1282,14 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        assert inferred.metaclass() is None  # Should this be ABCMeta?
+        self.check_metaclass_is_abc(inferred)
         assertEqualMro(
             inferred,
             [
                 "Derived",
-                # Should this be more?
-                # "Iterator_typing"?
-                # "Iterator",
-                # "object",
+                "Iterator",
+                "Iterable",
+                "object",
             ],
         )
 
