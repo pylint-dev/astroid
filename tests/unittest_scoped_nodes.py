@@ -1758,6 +1758,12 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         cls = astroid["TestKlass"]
         self.assertEqual(len(cls.keywords), 2)
         self.assertEqual([x.arg for x in cls.keywords], ["foo", "bar"])
+        children = list(cls.get_children())
+        assert len(children) == 4
+        assert isinstance(children[1], nodes.Keyword)
+        assert isinstance(children[2], nodes.Keyword)
+        assert children[1].arg == "foo"
+        assert children[2].arg == "bar"
 
     def test_kite_graph(self):
         data = """

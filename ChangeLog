@@ -15,6 +15,10 @@ Release Date: TBA
 
   Closes PyCQA/pylint#3974
 
+* Iterate over ``Keywords`` when using ``ClassDef.get_children``
+
+  Closes PyCQA/pylint#3202
+
 
 What's New in astroid 2.5.1?
 ============================
