@@ -1258,7 +1258,7 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        check_metaclass(inferred)
+        self.assertIsNone(inferred.metaclass())
         assertEqualMro(
             inferred,
             [
