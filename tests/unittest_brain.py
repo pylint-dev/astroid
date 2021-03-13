@@ -1269,24 +1269,6 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
-        node = builder.extract_node(
-            """
-        import typing
-        class Derived3(typing.Pattern[str]):
-            pass
-        """
-        )
-        inferred = next(node.infer())
-        check_metaclass(inferred)
-        assertEqualMro(
-            inferred,
-            [
-                "Derived3",
-                "Pattern",
-                "object",
-            ],
-        )
-
     @test_utils.require_version("3.8")
     def test_typing_alias_side_effects(self):
         """Test that typing._alias changes doesn't have unwanted consequences."""
