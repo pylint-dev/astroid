@@ -68,7 +68,7 @@ def _deque_mock():
     if PY39:
         base_deque_class += """
         @classmethod
-        def __class_getitem__(self, item): pass"""
+        def __class_getitem__(self, item): return cls"""
     return base_deque_class
 
 
@@ -77,6 +77,10 @@ def _ordered_dict_mock():
     class OrderedDict(dict):
         def __reversed__(self): return self[::-1]
         def move_to_end(self, key, last=False): pass"""
+    if PY39:
+        base_ordered_dict_class += """
+        @classmethod
+        def __class_getitem__(cls, item): return cls"""
     return base_ordered_dict_class
 
 
