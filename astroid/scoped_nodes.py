@@ -2617,7 +2617,13 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         try:
             methods = dunder_lookup.lookup(self, "__getitem__")
         except exceptions.AttributeInferenceError as exc:
-            raise exceptions.AstroidTypeError(node=self, context=context) from exc
+            if isinstance(self, ClassDef):
+                try:
+                    methods = self.getattr("__class_getitem__")
+                except exceptions.AttributeInferenceError:
+                    raise exceptions.AstroidTypeError(node=self, context=context) from exc
+            else:
+                raise exceptions.AstroidTypeError(node=self, context=context) from exc
 
         method = methods[0]
 
