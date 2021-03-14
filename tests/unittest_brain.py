@@ -1027,6 +1027,10 @@ class TypeBrain(unittest.TestCase):
             meth_inf = val_inf.getattr("__class_getitem__")[0]
 
 
+def check_metaclass_is_abc(node: nodes.ClassDef):
+    meta = node.metaclass()
+    assert isinstance(meta, nodes.ClassDef)
+    assert meta.name == "ABCMeta"
 @test_utils.require_version("3.6")
 class TypingBrain(unittest.TestCase):
     def test_namedtuple_base(self):
