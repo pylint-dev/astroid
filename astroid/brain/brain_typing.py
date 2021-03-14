@@ -122,31 +122,6 @@ def __getitem__(cls, value):
     return cls
 """
 
-ABC_METACLASS_TEMPLATE = """
-from abc import ABCMeta
-ABCMeta
-"""
-
-
-@lru_cache()
-def create_typing_metaclass():
-    #  Needs to mock the __getitem__ class method so that
-    #  MutableSet[T] is acceptable
-    func_to_add = extract_node(GET_ITEM_TEMPLATE)
-
-    abc_meta = next(extract_node(ABC_METACLASS_TEMPLATE).infer())
-    typing_meta = nodes.ClassDef(
-        name="ABCMeta_typing",
-        lineno=abc_meta.lineno,
-        col_offset=abc_meta.col_offset,
-        parent=abc_meta.parent,
-    )
-    typing_meta.postinit(
-        bases=[extract_node(ABC_METACLASS_TEMPLATE)], body=[], decorators=None
-    )
-    typing_meta.locals["__getitem__"] = [func_to_add]
-    return typing_meta
-
 
 def _looks_like_typing_alias(node: nodes.Call) -> bool:
     """
