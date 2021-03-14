@@ -84,7 +84,16 @@ def _ordered_dict_mock():
     return base_ordered_dict_class
 
 
-astroid.register_module_extender(astroid.MANAGER, "collections", _collections_transform)
+def _collections_module_properties(node, context=None):
+    """
+    Adds a path to a fictive file as the _collections module is a pure C lib.
+    """
+    node.file = "/tmp/unknown"
+    return node
+
+
+astroid.MANAGER.register_transform(astroid.Module, _collections_module_properties, lambda n: n.name == "_collections")
+astroid.register_module_extender(astroid.MANAGER, "_collections", _collections_transform)
 
 
 PY39 = sys.version_info >= (3, 9)
