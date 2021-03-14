@@ -85,3 +85,42 @@ def _ordered_dict_mock():
 
 
 astroid.register_module_extender(astroid.MANAGER, "collections", _collections_transform)
+
+
+PY39 = sys.version_info >= (3, 9)
+
+def _looks_like_subscriptable(node: astroid.nodes.ClassDef) -> bool:
+    """
+    Returns True if the node corresponds to a ClassDef of the Collections.abc module that
+    supports subscripting
+
+    :param node: ClassDef node
+    """
+    if node.qname().startswith('_collections_abc'):
+        try:
+            node.getattr('__class_getitem__')
+            return True
+        except:
+            pass
+    return False
+
+CLASS_GET_ITEM_TEMPLATE = """
+@classmethod
+def __class_getitem__(cls, item):
+    return cls
+"""
+
+def easy_class_getitem_inference(node, context=None):
+    # Here __class_getitem__ exists but is quite a mess to infer thus
+    # put instead an easy inference tip
+    func_to_add = astroid.extract_node(CLASS_GET_ITEM_TEMPLATE)
+    node.locals["__class_getitem__"] = [func_to_add]
+
+if PY39:
+    # Starting with Python39 some objects of the collection module are subscriptable
+    # thanks to the __class_getitem__ method but the way it is implemented in
+    # _collection_abc makes it difficult to infer. (We would have to handle AssignName inference in the 
+    # getitem method of the ClassDef class) Instead we put here a mock of the __class_getitem__ method
+    astroid.MANAGER.register_transform(
+        astroid.nodes.ClassDef, easy_class_getitem_inference, _looks_like_subscriptable
+    )
