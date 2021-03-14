@@ -1092,7 +1092,7 @@ class CollectionsBrain(unittest.TestCase):
                 "object"
             ]
         )
-        self.assertIsInstance(inferred.getattr('__class_getitem__')[0], FunctionDef)
+        self.assertIsInstance(inferred.getattr('__class_getitem__')[0], nodes.FunctionDef)
 
     @test_utils.require_version(maxver="3.9")
     def test_collections_object_not_yet_subscriptable(self):
@@ -1462,7 +1462,7 @@ class TypingBrain(unittest.TestCase):
                 "object"
             ]
         )
-        self.assertIsInstance(inferred.getattr('__class_getitem__')[0], FunctionDef)
+        self.assertIsInstance(inferred.getattr('__class_getitem__')[0], nodes.FunctionDef)
 
 class ReBrainTest(unittest.TestCase):
     def test_regex_flags(self):
