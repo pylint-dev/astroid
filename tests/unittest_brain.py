@@ -1035,7 +1035,11 @@ def check_metaclass_is_abc(node: nodes.ClassDef):
 
 class CollectionsBrain(unittest.TestCase):
     def test_collections_object_not_subscriptable(self):
-        """Test that unsubscriptable types are detected as so"""
+        """
+        Test that unsubscriptable types are detected
+
+        Hashable is not subscriptable even with python39
+        """
         wrong_node = builder.extract_node(
             """
         import collections.abc
@@ -1349,17 +1353,12 @@ class TypingBrain(unittest.TestCase):
         assert len(typing_module.locals["TypedDict"]) == 1
         assert inferred_base == typing_module.locals["TypedDict"][0]
 
-    @staticmethod
-    def check_metaclass_is_abc(node: nodes.ClassDef):
-        meta = node.metaclass()
-        assert isinstance(meta, nodes.ClassDef)
-        assert meta.name == "ABCMeta"
-
-    @test_utils.require_version("3.8")
+    @test_utils.require_version(minver="3.7")    
     def test_typing_alias_type(self):
         """
         Test that the type aliased thanks to typing._alias function are
         correctly inferred.
+        typing_alias function is introduced with python37
         """
         node = builder.extract_node(
             """
@@ -1373,7 +1372,7 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        self.check_metaclass_is_abc(inferred)
+        check_metaclass_is_abc(inferred)
         assertEqualMro(
             inferred,
             [
@@ -1396,6 +1395,8 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
+        # OrderedDict has no metaclass because it 
+        # inherits from dict which is C coded
         self.assertIsNone(inferred.metaclass())
         assertEqualMro(
             inferred,
@@ -1407,30 +1408,61 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
-    @test_utils.require_version("3.8")
-    def test_typing_alias_side_effects(self):
-        """Test that typing._alias changes doesn't have unwanted consequences."""
-        node = builder.extract_node(
+    def test_typing_object_not_subscriptable(self):
+        """Hashable is not subscriptable"""
+        wrong_node = builder.extract_node(
             """
         import typing
-        import collections.abc
 
-        class Derived(collections.abc.Iterator[int]):
-            pass
+        typing.Hashable[int]
         """
         )
-        inferred = next(node.infer())
-        self.check_metaclass_is_abc(inferred)
+        with self.assertRaises(astroid.exceptions.InferenceError):
+            next(wrong_node.infer())
+        right_node = builder.extract_node(
+            """
+        import typing
+
+        typing.Hashable
+        """
+        )
+        inferred = next(right_node.infer())
+        check_metaclass_is_abc(inferred)
         assertEqualMro(
             inferred,
             [
-                "Derived",
-                "Iterator",
-                "Iterable",
+                "Hashable",
                 "object",
             ],
         )
+        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+            inferred.getattr('__class_getitem__')
 
+    @test_utils.require_version(minver="3.7")    
+    def test_typing_object_subscriptable(self):
+        """Test that MutableSet is subscriptable"""
+        right_node = builder.extract_node(
+            """
+        import typing
+
+        typing.MutableSet[int]
+        """
+        )
+        inferred = next(right_node.infer())
+        check_metaclass_is_abc(inferred)
+        assertEqualMro(
+            inferred,
+            [
+                "MutableSet",
+                "Set",
+                "Collection",
+                "Sized",
+                "Iterable",
+                "Container",
+                "object"
+            ]
+        )
+        self.assertIsInstance(inferred.getattr('__class_getitem__')[0], FunctionDef)
 
 class ReBrainTest(unittest.TestCase):
     def test_regex_flags(self):
