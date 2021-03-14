@@ -110,7 +110,9 @@ def _looks_like_subscriptable(node: astroid.nodes.ClassDef) -> bool:
 
     :param node: ClassDef node
     """
-    if node.qname().startswith("_collections") or node.qname().startswith("collections"):
+    if node.qname().startswith("_collections") or node.qname().startswith(
+        "collections"
+    ):
         try:
             node.getattr("__class_getitem__")
             return True
