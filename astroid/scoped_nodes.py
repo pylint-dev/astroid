@@ -2618,8 +2618,15 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             methods = dunder_lookup.lookup(self, "__getitem__")
         except exceptions.AttributeInferenceError as exc:
             if isinstance(self, ClassDef):
+                # subscripting a class definition may be 
+                # achieved thanks to __class_getitem__ method
+                # which is a classmethod defined in the class 
+                # that supports subscript and not in the metaclass
                 try:
                     methods = self.getattr("__class_getitem__")
+                    # Here it is assumed that the __class_getitem__ node is
+                    # a FunctionDef. One possible improvment would be to deal
+                    # with more generic inference.
                 except exceptions.AttributeInferenceError:
                     raise exceptions.AstroidTypeError(node=self, context=context) from exc
             else:
