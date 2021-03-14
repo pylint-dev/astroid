@@ -1066,7 +1066,7 @@ class CollectionsBrain(unittest.TestCase):
             ],
         )
         with self.assertRaises(astroid.exceptions.AttributeInferenceError):
-            inferred.getattr('__class_getitem__')
+            inferred.getattr("__class_getitem__")
 
     @test_utils.require_version(minver="3.9")
     def test_collections_object_subscriptable(self):
@@ -1089,10 +1089,12 @@ class CollectionsBrain(unittest.TestCase):
                 "Sized",
                 "Iterable",
                 "Container",
-                "object"
-            ]
+                "object",
+            ],
         )
-        self.assertIsInstance(inferred.getattr('__class_getitem__')[0], nodes.FunctionDef)
+        self.assertIsInstance(
+            inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
+        )
 
     @test_utils.require_version(maxver="3.9")
     def test_collections_object_not_yet_subscriptable(self):
@@ -1127,11 +1129,11 @@ class CollectionsBrain(unittest.TestCase):
                 "Sized",
                 "Iterable",
                 "Container",
-                "object"
+                "object",
             ],
         )
         with self.assertRaises(astroid.exceptions.AttributeInferenceError):
-            inferred.getattr('__class_getitem__')
+            inferred.getattr("__class_getitem__")
 
     @test_utils.require_version(minver="3.9")
     def test_collections_object_subscriptable_2(self):
@@ -1168,6 +1170,7 @@ class CollectionsBrain(unittest.TestCase):
         )
         with self.assertRaises(astroid.exceptions.InferenceError):
             next(node.infer())
+
 
 @test_utils.require_version("3.6")
 class TypingBrain(unittest.TestCase):
@@ -1353,7 +1356,7 @@ class TypingBrain(unittest.TestCase):
         assert len(typing_module.locals["TypedDict"]) == 1
         assert inferred_base == typing_module.locals["TypedDict"][0]
 
-    @test_utils.require_version(minver="3.7")    
+    @test_utils.require_version(minver="3.7")
     def test_typing_alias_type(self):
         """
         Test that the type aliased thanks to typing._alias function are
@@ -1395,8 +1398,8 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        # OrderedDict has no metaclass because it 
-        # inherits from dict which is C coded
+        #  OrderedDict has no metaclass because it
+        #  inherits from dict which is C coded
         self.assertIsNone(inferred.metaclass())
         assertEqualMro(
             inferred,
@@ -1436,9 +1439,9 @@ class TypingBrain(unittest.TestCase):
             ],
         )
         with self.assertRaises(astroid.exceptions.AttributeInferenceError):
-            inferred.getattr('__class_getitem__')
+            inferred.getattr("__class_getitem__")
 
-    @test_utils.require_version(minver="3.7")    
+    @test_utils.require_version(minver="3.7")
     def test_typing_object_subscriptable(self):
         """Test that MutableSet is subscriptable"""
         right_node = builder.extract_node(
@@ -1459,10 +1462,13 @@ class TypingBrain(unittest.TestCase):
                 "Sized",
                 "Iterable",
                 "Container",
-                "object"
-            ]
+                "object",
+            ],
         )
-        self.assertIsInstance(inferred.getattr('__class_getitem__')[0], nodes.FunctionDef)
+        self.assertIsInstance(
+            inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
+        )
+
 
 class ReBrainTest(unittest.TestCase):
     def test_regex_flags(self):
