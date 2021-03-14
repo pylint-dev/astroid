@@ -155,21 +155,24 @@ def infer_typing_alias(
 
     if res != astroid.Uninferable and isinstance(res, nodes.ClassDef):
         if not PY39:
-            # Here the node is a typing object which is an alias toward
+            #  Here the node is a typing object which is an alias toward
             # the corresponding object of collection.abc module.
             # Before python3.9 there is no subscript allowed for any of the collections.abc objects.
             # The subscript ability is given through the typing._GenericAlias class
-            # which is the metaclass of the typing object but not the metaclass of the inferred
-            # collections.abc object.
+            #  which is the metaclass of the typing object but not the metaclass of the inferred
+            #  collections.abc object.
             # Thus we fake subscript ability of the collections.abc object
-            # by mocking the existence of a __class_getitem__ method. 
-            # We can not add `__getitem__` method in the metaclass of the object because
-            # the metaclass is shared by subscriptable and not subscriptable object
+            #  by mocking the existence of a __class_getitem__ method.
+            #  We can not add `__getitem__` method in the metaclass of the object because
+            #  the metaclass is shared by subscriptable and not subscriptable object
             maybe_type_var = node.args[1]
-            if not (isinstance(maybe_type_var, node_classes.Tuple) and not maybe_type_var.elts):
-                # The typing object is subscriptable if the second argument of the _alias function 
+            if not (
+                isinstance(maybe_type_var, node_classes.Tuple)
+                and not maybe_type_var.elts
+            ):
+                # The typing object is subscriptable if the second argument of the _alias function
                 # is a TypeVar or a tuple of TypeVar. We could check the type of the second argument but
-                # it appears that in the typing module the second argument is only TypeVar or a tuple of TypeVar or empty tuple.
+                #  it appears that in the typing module the second argument is only TypeVar or a tuple of TypeVar or empty tuple.
                 # This last value means the type is not Generic and thus cannot be subscriptable
                 func_to_add = astroid.extract_node(CLASS_GETITEM_TEMPLATE)
                 res.locals["__class_getitem__"] = [func_to_add]
