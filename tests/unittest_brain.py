@@ -1031,6 +1031,140 @@ def check_metaclass_is_abc(node: nodes.ClassDef):
     meta = node.metaclass()
     assert isinstance(meta, nodes.ClassDef)
     assert meta.name == "ABCMeta"
+
+
+class CollectionsBrain(unittest.TestCase):
+    def test_collections_object_not_subscriptable(self):
+        """Test that unsubscriptable types are detected as so"""
+        wrong_node = builder.extract_node(
+            """
+        import collections.abc
+
+        collections.abc.Hashable[int]
+        """
+        )
+        with self.assertRaises(astroid.exceptions.InferenceError):
+            next(wrong_node.infer())
+        right_node = builder.extract_node(
+            """
+        import collections.abc
+
+        collections.abc.Hashable
+        """
+        )
+        inferred = next(right_node.infer())
+        check_metaclass_is_abc(inferred)
+        assertEqualMro(
+            inferred,
+            [
+                "Hashable",
+                "object",
+            ],
+        )
+        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+            inferred.getattr('__class_getitem__')
+
+    @test_utils.require_version(minver="3.9")
+    def test_collections_object_subscriptable(self):
+        """Starting with python39 some object of collections module are subscriptable. Test one of them"""
+        right_node = builder.extract_node(
+            """
+        import collections.abc
+
+        collections.abc.MutableSet[int]
+        """
+        )
+        inferred = next(right_node.infer())
+        check_metaclass_is_abc(inferred)
+        assertEqualMro(
+            inferred,
+            [
+                "MutableSet",
+                "Set",
+                "Collection",
+                "Sized",
+                "Iterable",
+                "Container",
+                "object"
+            ]
+        )
+        self.assertIsInstance(inferred.getattr('__class_getitem__')[0], FunctionDef)
+
+    @test_utils.require_version(maxver="3.9")
+    def test_collections_object_not_yet_subscriptable(self):
+        """
+        Test that unsubscriptable types are detected as so.
+        Until python39 MutableSet of the collections module is not subscriptable.
+        """
+        wrong_node = builder.extract_node(
+            """
+        import collections.abc
+
+        collections.abc.MutableSet[int]
+        """
+        )
+        with self.assertRaises(astroid.exceptions.InferenceError):
+            next(wrong_node.infer())
+        right_node = builder.extract_node(
+            """
+        import collections.abc
+
+        collections.abc.MutableSet
+        """
+        )
+        inferred = next(right_node.infer())
+        check_metaclass_is_abc(inferred)
+        assertEqualMro(
+            inferred,
+            [
+                "MutableSet",
+                "Set",
+                "Collection",
+                "Sized",
+                "Iterable",
+                "Container",
+                "object"
+            ],
+        )
+        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+            inferred.getattr('__class_getitem__')
+
+    @test_utils.require_version(minver="3.9")
+    def test_collections_object_subscriptable_2(self):
+        """Starting with python39 Iterator in the collection.abc module is subscriptable"""
+        node = builder.extract_node(
+            """
+        import collections.abc
+
+        class Derived(collections.abc.Iterator[int]):
+            pass
+        """
+        )
+        inferred = next(node.infer())
+        check_metaclass_is_abc(inferred)
+        assertEqualMro(
+            inferred,
+            [
+                "Derived",
+                "Iterator",
+                "Iterable",
+                "object",
+            ],
+        )
+
+    @test_utils.require_version(maxver="3.8")
+    def test_collections_object_not_yet_subscriptable_2(self):
+        """Before python39 Iterator in the collection.abc module is not subscriptable"""
+        node = builder.extract_node(
+            """
+        import collections.abc
+
+        collections.abc.Iterator[int]
+        """
+        )
+        with self.assertRaises(astroid.exceptions.InferenceError):
+            next(node.infer())
+
 @test_utils.require_version("3.6")
 class TypingBrain(unittest.TestCase):
     def test_namedtuple_base(self):
