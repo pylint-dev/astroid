@@ -1167,7 +1167,7 @@ class CollectionsBrain(unittest.TestCase):
             ],
         )
 
-    @test_utils.require_version(maxver="3.8")
+    @test_utils.require_version(maxver="3.9")
     def test_collections_object_not_yet_subscriptable_2(self):
         """Before python39 Iterator in the collection.abc module is not subscriptable"""
         node = builder.extract_node(
@@ -1192,6 +1192,28 @@ class CollectionsBrain(unittest.TestCase):
         check_metaclass_is_abc(inferred)
         self.assertIsInstance(
             inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
+        )
+
+    @test_utils.require_version(minver="3.9")
+    def test_collections_object_subscriptable_4(self):
+        """Multiple inheritance with subscriptable collection class"""
+        node = builder.extract_node(
+            """
+        import collections.abc
+        class Derived(collections.abc.Hashable, collections.abc.Iterator[int]):
+            pass
+        """
+        )
+        inferred = next(node.infer())
+        assertEqualMro(
+            inferred,
+            [
+                "Derived",
+                "Hashable",
+                "Iterator",
+                "Iterable",
+                "object",
+            ],
         )
 
 
@@ -1395,11 +1417,11 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        check_metaclass_is_abc(inferred)
         assertEqualMro(
             inferred,
             [
                 "Derived1",
+                "MutableSet",
                 "MutableSet",
                 "Set",
                 "Collection",
@@ -1426,19 +1448,18 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        # OrderedDict has no metaclass because it
-        # inherits from dict which is C coded
-        self.assertIsNone(inferred.metaclass())
         assertEqualMro(
             inferred,
             [
                 "Derived2",
+                "OrderedDict",
                 "OrderedDict",
                 "dict",
                 "object",
             ],
         )
 
+    @test_utils.require_version(minver="3.7")
     def test_typing_object_not_subscriptable(self):
         """Hashable is not subscriptable"""
         wrong_node = builder.extract_node(
@@ -1456,10 +1477,10 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(right_node.infer())
-        check_metaclass_is_abc(inferred)
         assertEqualMro(
             inferred,
             [
+                "Hashable",
                 "Hashable",
                 "object",
             ],
@@ -1477,10 +1498,10 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(right_node.infer())
-        check_metaclass_is_abc(inferred)
         assertEqualMro(
             inferred,
             [
+                "MutableSet",
                 "MutableSet",
                 "Set",
                 "Collection",
@@ -1492,6 +1513,30 @@ class TypingBrain(unittest.TestCase):
         )
         self.assertIsInstance(
             inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
+        )
+
+    @test_utils.require_version(minver="3.7")
+    def test_typing_object_subscriptable_2(self):
+        """Multiple inheritance with subscriptable typing alias"""
+        node = builder.extract_node(
+            """
+        import typing
+        class Derived(typing.Hashable, typing.Iterator[int]):
+            pass
+        """
+        )
+        inferred = next(node.infer())
+        assertEqualMro(
+            inferred,
+            [
+                "Derived",
+                "Hashable",
+                "Hashable",
+                "Iterator",
+                "Iterator",
+                "Iterable",
+                "object",
+            ],
         )
 
     @test_utils.require_version(minver="3.7")
