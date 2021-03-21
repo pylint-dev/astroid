@@ -1171,6 +1171,22 @@ class CollectionsBrain(unittest.TestCase):
         with self.assertRaises(astroid.exceptions.InferenceError):
             next(node.infer())
 
+    @test_utils.require_version(minver="3.9")
+    def test_collections_object_subscriptable_3(self):
+        """With python39 ByteString class of the colletions module is subscritable (but not the same class from typing module)"""
+        right_node = builder.extract_node(
+            """
+        import collections.abc
+
+        collections.abc.ByteString[int]
+        """
+        )
+        inferred = next(right_node.infer())
+        check_metaclass_is_abc(inferred)
+        self.assertIsInstance(
+            inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
+        )
+
 
 @test_utils.require_version("3.6")
 class TypingBrain(unittest.TestCase):
@@ -1468,6 +1484,22 @@ class TypingBrain(unittest.TestCase):
         self.assertIsInstance(
             inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
         )
+
+    def test_typing_object_notsubscriptable_3(self):
+        """Until python39 ByteString class of the typing module is not subscritable (whereas it is in the collections module)"""
+        right_node = builder.extract_node(
+            """
+        import typing
+
+        typing.ByteString
+        """
+        )
+        inferred = next(right_node.infer())
+        check_metaclass_is_abc(inferred)
+        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+            self.assertIsInstance(
+                inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
+            )
 
 
 class ReBrainTest(unittest.TestCase):
