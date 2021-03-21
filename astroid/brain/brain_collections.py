@@ -88,7 +88,8 @@ def _collections_module_properties(node, context=None):
     """
     Adds a path to a fictive file as the _collections module is a pure C lib.
     """
-    node.file = "/tmp/unknown"
+    collections_mod = node.import_module('collections')
+    node.file = collections_mod.file
     return node
 
 
@@ -98,9 +99,6 @@ astroid.MANAGER.register_transform(
 astroid.register_module_extender(
     astroid.MANAGER, "_collections", _collections_transform
 )
-
-
-PY39 = sys.version_info >= (3, 9)
 
 
 def _looks_like_subscriptable(node: astroid.nodes.ClassDef) -> bool:
@@ -130,7 +128,7 @@ def __class_getitem__(cls, item):
 
 def easy_class_getitem_inference(node, context=None):
     #  Here __class_getitem__ exists but is quite a mess to infer thus
-    #  put instead an easy inference tip
+    #  put an easy inference tip
     func_to_add = astroid.extract_node(CLASS_GET_ITEM_TEMPLATE)
     node.locals["__class_getitem__"] = [func_to_add]
 

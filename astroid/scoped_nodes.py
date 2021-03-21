@@ -2625,7 +2625,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 try:
                     methods = self.getattr("__class_getitem__")
                     # Here it is assumed that the __class_getitem__ node is
-                    #  a FunctionDef. One possible improvment would be to deal
+                    #  a FunctionDef. One possible improvement would be to deal
                     # with more generic inference.
                 except exceptions.AttributeInferenceError:
                     raise exceptions.AstroidTypeError(
