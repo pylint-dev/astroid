@@ -1406,6 +1406,14 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
+    @test_utils.require_version(minver="3.7.2")
+    def test_typing_alias_type_2(self):
+        """
+        Test that the type aliased thanks to typing._alias function are
+        correctly inferred.
+        typing_alias function is introduced with python37.
+        OrderedDict in the typing module appears only with python 3.7.2
+        """
         node = builder.extract_node(
             """
         import typing
