@@ -19,7 +19,7 @@ from astroid import (
     nodes,
     context,
     InferenceError,
-    AttributeInferenceError
+    AttributeInferenceError,
 )
 import astroid
 
@@ -148,16 +148,17 @@ def _forbid_class_getitem_access(node: nodes.ClassDef) -> None:
     if not isinstance(node, nodes.ClassDef):
         raise TypeError("The parameter type should be ClassDef")
     try:
-        node.getattr('__class_getitem__')
-        # If we are here, then we are sure to modify object that do have __class_getitem__ method (which origin is one the 
+        node.getattr("__class_getitem__")
+        # If we are here, then we are sure to modify object that do have __class_getitem__ method (which origin is one the
         # protocol defined in collections module) whereas the typing module consider it should not
-        origin_func : node.getattr
-        # We do not want __class_getitem__ to be found in the classdef
+        origin_func: node.getattr
+        #  We do not want __class_getitem__ to be found in the classdef
         def raiser(attr):
-            if attr == '__class_getitem__':
+            if attr == "__class_getitem__":
                 raise AttributeInferenceError("__class_getitem__ access is not allowed")
             else:
                 return origin_func(attr)
+
         node.getattr = raiser
     except AttributeInferenceError:
         pass
@@ -199,20 +200,23 @@ def infer_typing_alias(
                 # This last value means the type is not Generic and thus cannot be subscriptable
                 func_to_add = astroid.extract_node(CLASS_GETITEM_TEMPLATE)
                 res.locals["__class_getitem__"] = [func_to_add]
-            elif isinstance(maybe_type_var, node_classes.Tuple) and not maybe_type_var.elts:
-                # If we are here, then we are sure to modify object that do have __class_getitem__ method (which origin is one the 
+            elif (
+                isinstance(maybe_type_var, node_classes.Tuple)
+                and not maybe_type_var.elts
+            ):
+                # If we are here, then we are sure to modify object that do have __class_getitem__ method (which origin is one the
                 # protocol defined in collections module) whereas the typing module consider it should not
-                # We do not want __class_getitem__ to be found in the classdef
+                #  We do not want __class_getitem__ to be found in the classdef
                 _forbid_class_getitem_access(res)
         else:
-            # Within python3.9 discrepencies exist between some collections.abc containers that are subscriptable whereas
-            # corresponding containers in the typing module are not! This is the case at least for ByteString.
-            # It is far more to complex and dangerous to try to remove __class_getitem__ method from all the ancestors of the
-            # current class. Instead we raise an AttributeInferenceError if we try to access it.
+            #  Within python3.9 discrepencies exist between some collections.abc containers that are subscriptable whereas
+            #  corresponding containers in the typing module are not! This is the case at least for ByteString.
+            #  It is far more to complex and dangerous to try to remove __class_getitem__ method from all the ancestors of the
+            #  current class. Instead we raise an AttributeInferenceError if we try to access it.
             maybe_type_var = node.args[1]
             if isinstance(maybe_type_var, nodes.Const) and maybe_type_var.value == 0:
-                # Starting with Python39 the _alias function is in fact instantiation of _SpecialGenericAlias class.
-                # Thus the type is not Generic if the second argument of the call is equal to zero
+                #  Starting with Python39 the _alias function is in fact instantiation of _SpecialGenericAlias class.
+                #  Thus the type is not Generic if the second argument of the call is equal to zero
                 _forbid_class_getitem_access(res)
         return res
     return None

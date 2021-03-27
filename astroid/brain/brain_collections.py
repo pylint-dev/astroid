@@ -88,7 +88,7 @@ def _collections_module_properties(node, context=None):
     """
     Adds a path to a fictive file as the _collections module is a pure C lib.
     """
-    collections_mod = node.import_module('collections')
+    collections_mod = node.import_module("collections")
     node.file = collections_mod.file
     return node
 
