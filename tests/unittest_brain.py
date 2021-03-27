@@ -1493,6 +1493,7 @@ class TypingBrain(unittest.TestCase):
             inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
         )
 
+    @test_utils.require_version(minver="3.7")
     def test_typing_object_notsubscriptable_3(self):
         """Until python39 ByteString class of the typing module is not subscritable (whereas it is in the collections module)"""
         right_node = builder.extract_node(
