@@ -41,14 +41,16 @@ import pprint
 import sys
 from functools import lru_cache, singledispatch as _singledispatch
 
+import cython
+
 from astroid import as_string
 from astroid import bases
-from astroid import context as contextmod
 from astroid import decorators
 from astroid import exceptions
 from astroid import manager
 from astroid import mixins
 from astroid import util
+from .context import InferenceContext
 
 
 BUILTINS = builtins_mod.__name__
@@ -338,6 +340,7 @@ class NodeNG:
         self.col_offset = col_offset
         self.parent = parent
 
+    @cython.locals(context=InferenceContext)
     def infer(self, context=None, **kwargs):
         """Get a generator of the inferred values.
 
@@ -513,7 +516,8 @@ class NodeNG:
         :returns: The first parent frame node.
         :rtype: Module or FunctionDef or ClassDef
         """
-        return self.parent.frame()
+        parent = self.parent
+        return parent.frame()
 
     def scope(self):
         """The first parent node defining a new scope.
@@ -521,8 +525,9 @@ class NodeNG:
         :returns: The first parent scope node.
         :rtype: Module or FunctionDef or ClassDef or Lambda or GenExpr
         """
-        if self.parent:
-            return self.parent.scope()
+        parent = self.parent
+        if parent:
+            return parent.scope()
         return None
 
     def root(self):
@@ -531,8 +536,9 @@ class NodeNG:
         :returns: The root node.
         :rtype: Module
         """
-        if self.parent:
-            return self.parent.root()
+        parent = self.parent
+        if parent:
+            return parent.root()
         return self
 
     def child_sequence(self, child):
@@ -604,7 +610,8 @@ class NodeNG:
         :returns: The previous sibling statement node.
         :rtype: NodeNG or None
         """
-        return self.parent.previous_sibling()
+        parent = self.parent
+        return parent.previous_sibling()
 
     # these are lazy because they're relatively expensive to compute for every
     # single node, and they rarely get looked at
@@ -968,7 +975,8 @@ class Statement(NodeNG):
         :returns: The next sibling statement node.
         :rtype: NodeNG or None
         """
-        stmts = self.parent.child_sequence(self)
+        parent = self.parent
+        stmts = parent.child_sequence(self)
         index = stmts.index(self)
         try:
             return stmts[index + 1]
@@ -981,7 +989,8 @@ class Statement(NodeNG):
         :returns: The previous sibling statement node.
         :rtype: NodeNG or None
         """
-        stmts = self.parent.child_sequence(self)
+        parent = self.parent
+        stmts = parent.child_sequence(self)
         index = stmts.index(self)
         if index >= 1:
             return stmts[index - 1]
@@ -1100,7 +1109,7 @@ class LookupMixIn:
         :rtype: iterable
         """
         frame, stmts = self.lookup(name)
-        context = contextmod.InferenceContext()
+        context = InferenceContext()
         return bases._infer_stmts(stmts, context, frame)
 
     def _get_filtered_node_statements(self, nodes):
@@ -1115,6 +1124,8 @@ class LookupMixIn:
             ]
         return statements
 
+    @cython.returns(list)
+    @cython.locals(stmts=list, frame=NodeNG, offset=int)
     def _filter_stmts(self, stmts, frame, offset):
         """Filter the given list of statements to remove ignorable statements.
 

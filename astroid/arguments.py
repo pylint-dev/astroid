@@ -8,12 +8,13 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
+import cython
 
 from astroid import bases
-from astroid import context as contextmod
 from astroid import exceptions
 from astroid import nodes
 from astroid import util
+from .context import InferenceContext, CallContext
 
 
 class CallSite:
@@ -33,6 +34,7 @@ class CallSite:
         An instance of :class:`astroid.context.Context`.
     """
 
+    @cython.locals(callcontext=CallContext, context=InferenceContext)
     def __init__(self, callcontext, argument_context_map=None, context=None):
         if argument_context_map is None:
             argument_context_map = {}
@@ -62,8 +64,8 @@ class CallSite:
         """
 
         # Determine the callcontext from the given `context` object if any.
-        context = context or contextmod.InferenceContext()
-        callcontext = contextmod.CallContext(call_node.args, call_node.keywords)
+        context = context or InferenceContext()
+        callcontext = CallContext(call_node.args, call_node.keywords)
         return cls(callcontext, context=context)
 
     def has_invalid_arguments(self):
@@ -88,7 +90,7 @@ class CallSite:
 
     def _unpack_keywords(self, keywords, context=None):
         values = {}
-        context = context or contextmod.InferenceContext()
+        context = context or InferenceContext()
         context.extra_context = self.argument_context_map
         for name, value in keywords:
             if name is None:
@@ -128,7 +130,7 @@ class CallSite:
 
     def _unpack_args(self, args, context=None):
         values = []
-        context = context or contextmod.InferenceContext()
+        context = context or InferenceContext()
         context.extra_context = self.argument_context_map
         for arg in args:
             if isinstance(arg, nodes.Starred):

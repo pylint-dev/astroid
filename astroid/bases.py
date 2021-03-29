@@ -25,9 +25,11 @@ inference utils.
 import builtins
 import collections
 
-from astroid import context as contextmod
+import cython
+
 from astroid import exceptions
 from astroid import util
+from .context import InferenceContext, bind_context_to_node, CallContext
 
 objectmodel = util.lazy_import("interpreter.objectmodel")
 helpers = util.lazy_import("helpers")
@@ -116,6 +118,7 @@ class Proxy:
         yield self
 
 
+@cython.locals(context=InferenceContext)
 def _infer_stmts(stmts, context, frame=None):
     """Return an iterator on statements inferred by each statement in *stmts*."""
     inferred = False
@@ -124,7 +127,7 @@ def _infer_stmts(stmts, context, frame=None):
         context = context.clone()
     else:
         name = None
-        context = contextmod.InferenceContext()
+        context = InferenceContext()
 
     for stmt in stmts:
         if stmt is util.Uninferable:
@@ -203,10 +206,11 @@ class BaseInstance(Proxy):
                 pass
         return values
 
+    @cython.locals(context=InferenceContext)
     def igetattr(self, name, context=None):
         """inferred getattr"""
         if not context:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
         try:
             # avoid recursively inferring the same attr on the same class
             if context.push((self._proxied, name)):
@@ -249,9 +253,10 @@ class BaseInstance(Proxy):
             else:
                 yield attr
 
+    @cython.locals(context=InferenceContext)
     def infer_call_result(self, caller, context=None):
         """infer what a class instance is returning when called"""
-        context = contextmod.bind_context_to_node(context, self)
+        context = bind_context_to_node(context, self)
         inferred = False
         for node in self._proxied.igetattr("__call__", context):
             if node is util.Uninferable or not node.callable():
@@ -290,6 +295,7 @@ class Instance(BaseInstance):
     def display_type(self):
         return "Instance of"
 
+    @cython.locals(context=InferenceContext)
     def bool_value(self, context=None):
         """Infer the truth value for an Instance
 
@@ -303,8 +309,8 @@ class Instance(BaseInstance):
              nonzero. If a class defines neither __len__() nor __bool__(),
              all its instances are considered true.
         """
-        context = context or contextmod.InferenceContext()
-        context.callcontext = contextmod.CallContext(args=[])
+        context = context or InferenceContext()
+        context.callcontext = CallContext(args=[])
         context.boundnode = self
 
         try:
@@ -350,6 +356,7 @@ class UnboundMethod(Proxy):
             return iter((self.special_attributes.lookup(name),))
         return self._proxied.igetattr(name, context)
 
+    @cython.locals(context=InferenceContext)
     def infer_call_result(self, caller, context):
         """
         The boundnode of the regular context with a function called
@@ -468,8 +475,9 @@ class BoundMethod(UnboundMethod):
         cls.locals = cls_locals
         return cls
 
+    @cython.locals(context=InferenceContext)
     def infer_call_result(self, caller, context=None):
-        context = contextmod.bind_context_to_node(context, self.bound)
+        context = bind_context_to_node(context, self.bound)
         if (
             self.bound.__class__.__name__ == "ClassDef"
             and self.bound.name == "type"

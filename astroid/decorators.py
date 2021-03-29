@@ -19,10 +19,11 @@
 import functools
 
 import wrapt
+import cython
 
-from astroid import context as contextmod
 from astroid import exceptions
 from astroid import util
+from .context import InferenceContext
 
 
 @wrapt.decorator
@@ -84,11 +85,12 @@ def path_wrapper(func):
     at for a given `InferenceContext` to prevent infinite recursion
     """
 
+    @cython.locals(context=InferenceContext)
     @functools.wraps(func)
     def wrapped(node, context=None, _func=func, **kwargs):
         """wrapper function handling context"""
         if context is None:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
         if context.push(node):
             return None
 

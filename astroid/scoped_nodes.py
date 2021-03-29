@@ -42,8 +42,9 @@ import io
 import itertools
 from typing import Optional, List
 
+import cython
+
 from astroid import bases
-from astroid import context as contextmod
 from astroid import exceptions
 from astroid import decorators as decorators_mod
 from astroid.interpreter import objectmodel
@@ -52,6 +53,7 @@ from astroid import manager
 from astroid import mixins
 from astroid import node_classes
 from astroid import util
+from .context import InferenceContext, copy_context, CallContext, bind_context_to_node
 
 
 BUILTINS = builtins.__name__
@@ -197,6 +199,8 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
         """
         return self
 
+    @cython.locals(name=str, offset=int, pscope=node_classes.NodeNG)
+    @cython.returns(tuple)
     def _scope_lookup(self, node, name, offset=0):
         """XXX method for interfacing the scope lookup"""
         try:
@@ -561,6 +565,7 @@ class Module(LocalsDictNodeNG):
             target=self, attribute=name, context=context
         )
 
+    @cython.locals(context=InferenceContext)
     def igetattr(self, name, context=None):
         """Infer the possible values of the given variable.
 
@@ -572,7 +577,7 @@ class Module(LocalsDictNodeNG):
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         context.lookupname = name
         try:
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
@@ -2036,7 +2041,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
     def _newstyle_impl(self, context=None):
         if context is None:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
         if self._newstyle is not None:
             return self._newstyle
         for base in self.ancestors(recurs=False, context=context):
@@ -2185,11 +2190,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         if dunder_call and dunder_call.qname() != "builtins.type.__call__":
             # Call type.__call__ if not set metaclass
             # (since type is the default metaclass)
-            context = contextmod.bind_context_to_node(context, self)
+            context = bind_context_to_node(context, self)
             yield from dunder_call.infer_call_result(caller, context)
         else:
             yield self.instantiate_class()
 
+    @cython.locals(base=node_classes.NodeNG)
     def scope_lookup(self, node, name, offset=0):
         """Lookup where the given name is assigned.
 
@@ -2251,6 +2257,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         return [bnode.as_string() for bnode in self.bases]
 
+    @cython.locals(context=InferenceContext)
     def ancestors(self, recurs=True, context=None):
         """Iterate over the base classes in prefixed depth first order.
 
@@ -2264,7 +2271,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # FIXME: inference make infinite loops possible here
         yielded = {self}
         if context is None:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
         if not self.bases and self.qname() != "builtins.object":
             yield builtin_lookup("object")[1][0]
             return
@@ -2473,7 +2480,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """Search the given name in the implicit and the explicit metaclass."""
         attrs = set()
         implicit_meta = self.implicit_metaclass()
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         metaclass = self.metaclass(context=context)
         for cls in {implicit_meta, metaclass}:
             if cls and cls != self and isinstance(cls, ClassDef):
@@ -2508,6 +2515,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             else:
                 yield bases.BoundMethod(attr, self)
 
+    @cython.locals(context=InferenceContext)
     def igetattr(self, name, context=None, class_context=True):
         """Infer the possible values of the given variable.
 
@@ -2519,7 +2527,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         context.lookupname = name
 
         metaclass = self.declared_metaclass(context=context)
@@ -2603,6 +2611,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 pass
         return False
 
+    @cython.locals(context=InferenceContext)
     def getitem(self, index, context=None):
         """Return the inference of a subscript.
 
@@ -2622,8 +2631,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         method = methods[0]
 
         # Create a new callcontext for providing index as an argument.
-        new_context = contextmod.bind_context_to_node(context, self)
-        new_context.callcontext = contextmod.CallContext(args=[index])
+        new_context = bind_context_to_node(context, self)
+        new_context.callcontext = CallContext(args=[index])
 
         try:
             return next(method.infer_call_result(self, new_context))
@@ -2839,6 +2848,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         return sorted(set(slots), key=lambda item: item.value)
 
+    @cython.locals(context=InferenceContext)
     def _inferred_bases(self, context=None):
         # Similar with .ancestors, but the difference is when one base is inferred,
         # only the first object is wanted. That's because
@@ -2854,7 +2864,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # only in SomeClass.
 
         if context is None:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
         if not self.bases and self.qname() != "builtins.object":
             yield builtin_lookup("object")[1][0]
             return

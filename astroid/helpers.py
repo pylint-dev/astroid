@@ -18,13 +18,13 @@ Various helper utilities.
 import builtins as builtins_mod
 
 from astroid import bases
-from astroid import context as contextmod
 from astroid import exceptions
 from astroid import manager
 from astroid import nodes
 from astroid import raw_building
 from astroid import scoped_nodes
 from astroid import util
+from .context import InferenceContext, CallContext
 
 
 BUILTINS = builtins_mod.__name__
@@ -52,7 +52,7 @@ def _function_type(function, builtins):
 def _object_type(node, context=None):
     astroid_manager = manager.AstroidManager()
     builtins = astroid_manager.builtins_module
-    context = context or contextmod.InferenceContext()
+    context = context or InferenceContext()
 
     for inferred in node.infer(context=context):
         if isinstance(inferred, scoped_nodes.ClassDef):
@@ -217,8 +217,8 @@ def class_instance_as_index(node):
     be used in some scenarios where an integer is expected,
     for instance when multiplying or subscripting a list.
     """
-    context = contextmod.InferenceContext()
-    context.callcontext = contextmod.CallContext(args=[node])
+    context = InferenceContext()
+    context.callcontext = CallContext(args=[node])
 
     try:
         for inferred in node.igetattr("__index__", context=context):

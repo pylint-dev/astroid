@@ -29,18 +29,19 @@ import functools
 import itertools
 import operator
 
+import cython
+
 import wrapt
 from astroid import bases
-from astroid import context as contextmod
 from astroid import exceptions
 from astroid import decorators
-from astroid import helpers
 from astroid import manager
 from astroid import nodes
 from astroid.interpreter import dunder_lookup
-from astroid import protocols
 from astroid import util
-
+from .context import InferenceContext, copy_context, CallContext, bind_context_to_node
+from .helpers import is_subtype, is_supertype, safe_infer, object_type, class_instance_as_index
+from .protocols import BIN_OP_IMPL, AUGMENTED_OP_METHOD, BIN_OP_METHOD, REFLECTED_BIN_OP_METHOD, UNARY_OP_METHOD, _arguments_infer_argname
 
 MANAGER = manager.AstroidManager()
 # Prevents circular imports
@@ -50,6 +51,7 @@ objects = util.lazy_import("objects")
 # .infer method ###############################################################
 
 
+@cython.locals(context=InferenceContext)
 def infer_end(self, context=None):
     """Inference's end for nodes that yield themselves on inference
 
@@ -72,14 +74,14 @@ def _infer_sequence_helper(node, context=None):
 
     for elt in node.elts:
         if isinstance(elt, nodes.Starred):
-            starred = helpers.safe_infer(elt.value, context)
+            starred = safe_infer(elt.value, context)
             if not starred:
                 raise exceptions.InferenceError(node=node, context=context)
             if not hasattr(starred, "elts"):
                 raise exceptions.InferenceError(node=node, context=context)
             values.extend(_infer_sequence_helper(starred))
         elif isinstance(elt, nodes.NamedExpr):
-            value = helpers.safe_infer(elt.value, context)
+            value = safe_infer(elt.value, context)
             if not value:
                 raise exceptions.InferenceError(node=node, context=context)
             values.append(value)
@@ -88,6 +90,7 @@ def _infer_sequence_helper(node, context=None):
     return values
 
 
+@cython.locals(context=InferenceContext)
 @decorators.raise_if_nothing_inferred
 def infer_sequence(self, context=None):
     has_starred_named_expr = any(
@@ -110,6 +113,7 @@ nodes.Tuple._infer = infer_sequence
 nodes.Set._infer = infer_sequence
 
 
+@cython.locals(context=InferenceContext)
 def infer_map(self, context=None):
     if not any(isinstance(k, nodes.DictUnpack) for k, _ in self.items):
         yield self
@@ -143,12 +147,13 @@ def _update_with_replacement(lhs_dict, rhs_dict):
     return dict(string_map.values())
 
 
+@cython.locals(context=InferenceContext)
 def _infer_map(node, context):
     """Infer all values based on Dict.items"""
     values = {}
     for name, value in node.items:
         if isinstance(name, nodes.DictUnpack):
-            double_starred = helpers.safe_infer(value, context)
+            double_starred = safe_infer(value, context)
             if not double_starred:
                 raise exceptions.InferenceError
             if not isinstance(double_starred, nodes.Dict):
@@ -156,8 +161,8 @@ def _infer_map(node, context):
             unpack_items = _infer_map(double_starred, context)
             values = _update_with_replacement(values, unpack_items)
         else:
-            key = helpers.safe_infer(name, context=context)
-            value = helpers.safe_infer(value, context=context)
+            key = safe_infer(name, context=context)
+            value = safe_infer(value, context=context)
             if any(not elem for elem in (key, value)):
                 raise exceptions.InferenceError(node=node, context=context)
             values = _update_with_replacement(values, {key: value})
@@ -187,6 +192,7 @@ def _higher_function_scope(node):
     return None
 
 
+@cython.locals(context=InferenceContext)
 def infer_name(self, context=None):
     """infer a Name: use name lookup rules"""
     frame, stmts = self.lookup(self.name)
@@ -201,7 +207,7 @@ def infer_name(self, context=None):
             raise exceptions.NameInferenceError(
                 name=self.name, scope=self.scope(), context=context
             )
-    context = contextmod.copy_context(context)
+    context = copy_context(context)
     context.lookupname = self.name
     return bases._infer_stmts(stmts, context, frame)
 
@@ -213,12 +219,13 @@ nodes.Name._infer = decorators.raise_if_nothing_inferred(
 nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper
 
 
+@cython.locals(context=InferenceContext)
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_call(self, context=None):
     """infer a Call node by trying to guess what the function returns"""
-    callcontext = contextmod.copy_context(context)
-    callcontext.callcontext = contextmod.CallContext(
+    callcontext = copy_context(context)
+    callcontext.callcontext = CallContext(
         args=self.args, keywords=self.keywords
     )
     callcontext.boundnode = None
@@ -240,9 +247,10 @@ def infer_call(self, context=None):
 nodes.Call._infer = infer_call
 
 
+@cython.locals(context=InferenceContext)
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_import(self, context=None, asname=True):
+def infer_import(self, context=None, asname:bool=True):
     """infer an Import node: return the imported module/object"""
     name = context.lookupname
     if name is None:
@@ -260,9 +268,10 @@ def infer_import(self, context=None, asname=True):
 nodes.Import._infer = infer_import
 
 
+@cython.locals(context=InferenceContext)
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_import_from(self, context=None, asname=True):
+def infer_import_from(self, context=None, asname:bool=True):
     """infer a ImportFrom node: return the imported module/object"""
     name = context.lookupname
     if name is None:
@@ -276,7 +285,7 @@ def infer_import_from(self, context=None, asname=True):
         raise exceptions.InferenceError(node=self, context=context) from exc
 
     try:
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         context.lookupname = name
         stmts = module.getattr(name, ignore_locals=module is self.root())
         return bases._infer_stmts(stmts, context)
@@ -289,6 +298,7 @@ def infer_import_from(self, context=None, asname=True):
 nodes.ImportFrom._infer = infer_import_from
 
 
+@cython.locals(context=InferenceContext)
 def infer_attribute(self, context=None):
     """infer an Attribute node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
@@ -304,16 +314,16 @@ def infer_attribute(self, context=None):
                 context.boundnode, bases.Instance
             ):
                 try:
-                    if helpers.is_subtype(
-                        helpers.object_type(context.boundnode),
-                        helpers.object_type(owner),
+                    if is_subtype(
+                        object_type(context.boundnode),
+                        object_type(owner),
                     ):
                         owner = context.boundnode
                 except exceptions._NonDeducibleTypeHierarchy:
                     # Can't determine anything useful.
                     pass
         elif not context:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
 
         try:
             context.boundnode = owner
@@ -336,6 +346,7 @@ nodes.Attribute._infer = decorators.raise_if_nothing_inferred(
 nodes.AssignAttr.infer_lhs = decorators.raise_if_nothing_inferred(infer_attribute)
 
 
+@cython.locals(context=InferenceContext)
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_global(self, context=None):
@@ -355,6 +366,7 @@ nodes.Global._infer = infer_global
 _SUBSCRIPT_SENTINEL = object()
 
 
+@cython.locals(context=InferenceContext)
 def infer_subscript(self, context=None):
     """Inference for subscripts
 
@@ -379,7 +391,7 @@ def infer_subscript(self, context=None):
             if value.__class__ == bases.Instance:
                 index_value = index
             elif index.__class__ == bases.Instance:
-                instance_as_index = helpers.class_instance_as_index(index)
+                instance_as_index = class_instance_as_index(index)
                 if instance_as_index:
                     index_value = instance_as_index
             else:
@@ -417,6 +429,7 @@ nodes.Subscript._infer = decorators.raise_if_nothing_inferred(
 nodes.Subscript.infer_lhs = decorators.raise_if_nothing_inferred(infer_subscript)
 
 
+@cython.locals(context=InferenceContext)
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def _infer_boolop(self, context=None):
@@ -476,6 +489,7 @@ nodes.BoolOp._infer = _infer_boolop
 # UnaryOp, BinOp and AugAssign inferences
 
 
+@cython.locals(context=InferenceContext)
 def _filter_operation_errors(self, infer_callable, context, error):
     for result in infer_callable(self, context):
         if isinstance(result, error):
@@ -487,6 +501,7 @@ def _filter_operation_errors(self, infer_callable, context, error):
             yield result
 
 
+@cython.locals(context=InferenceContext)
 def _infer_unaryop(self, context=None):
     """Infer what an UnaryOp should return when evaluated."""
     for operand in self.operand.infer(context):
@@ -496,7 +511,7 @@ def _infer_unaryop(self, context=None):
             # The operand doesn't support this operation.
             yield util.BadUnaryOperationMessage(operand, self.op, exc)
         except AttributeError as exc:
-            meth = protocols.UNARY_OP_METHOD[self.op]
+            meth = UNARY_OP_METHOD[self.op]
             if meth is None:
                 # `not node`. Determine node's boolean
                 # value and negate its result, unless it is
@@ -525,8 +540,8 @@ def _infer_unaryop(self, context=None):
                     if inferred is util.Uninferable or not inferred.callable():
                         continue
 
-                    context = contextmod.copy_context(context)
-                    context.callcontext = contextmod.CallContext(args=[operand])
+                    context = copy_context(context)
+                    context.callcontext = CallContext(args=[operand])
                     call_results = inferred.infer_call_result(self, context=context)
                     result = next(call_results, None)
                     if result is None:
@@ -541,6 +556,7 @@ def _infer_unaryop(self, context=None):
                     yield util.Uninferable
 
 
+@cython.locals(context=InferenceContext)
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_unaryop(self, context=None):
@@ -560,10 +576,11 @@ def _is_not_implemented(const):
     return isinstance(const, nodes.Const) and const.value is NotImplemented
 
 
+@cython.locals(context=InferenceContext)
 def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     """Invoke binary operation inference on the given instance."""
     methods = dunder_lookup.lookup(instance, method_name)
-    context = contextmod.bind_context_to_node(context, instance)
+    context = bind_context_to_node(context, instance)
     method = methods[0]
     inferred = next(method.infer(context=context))
     if inferred is util.Uninferable:
@@ -571,9 +588,10 @@ def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     return instance.infer_binary_op(opnode, op, other, context, inferred)
 
 
+@cython.locals(context=InferenceContext)
 def _aug_op(instance, opnode, op, other, context, reverse=False):
     """Get an inference callable for an augmented binary operation."""
-    method_name = protocols.AUGMENTED_OP_METHOD[op]
+    method_name = AUGMENTED_OP_METHOD[op]
     return functools.partial(
         _invoke_binop_inference,
         instance=instance,
@@ -591,9 +609,9 @@ def _bin_op(instance, opnode, op, other, context, reverse=False):
     If *reverse* is True, then the reflected method will be used instead.
     """
     if reverse:
-        method_name = protocols.REFLECTED_BIN_OP_METHOD[op]
+        method_name = REFLECTED_BIN_OP_METHOD[op]
     else:
-        method_name = protocols.BIN_OP_METHOD[op]
+        method_name = BIN_OP_METHOD[op]
     return functools.partial(
         _invoke_binop_inference,
         instance=instance,
@@ -605,6 +623,7 @@ def _bin_op(instance, opnode, op, other, context, reverse=False):
     )
 
 
+@cython.locals(context=InferenceContext)
 def _get_binop_contexts(context, left, right):
     """Get contexts for binary operations.
 
@@ -616,7 +635,7 @@ def _get_binop_contexts(context, left, right):
     # left.__op__(right).
     for arg in (right, left):
         new_context = context.clone()
-        new_context.callcontext = contextmod.CallContext(args=[arg])
+        new_context.callcontext = CallContext(args=[arg])
         new_context.boundnode = None
         yield new_context
 
@@ -646,9 +665,9 @@ def _get_binop_flow(
     op = binary_opnode.op
     if _same_type(left_type, right_type):
         methods = [_bin_op(left, binary_opnode, op, right, context)]
-    elif helpers.is_subtype(left_type, right_type):
+    elif is_subtype(left_type, right_type):
         methods = [_bin_op(left, binary_opnode, op, right, context)]
-    elif helpers.is_supertype(left_type, right_type):
+    elif is_supertype(left_type, right_type):
         methods = [
             _bin_op(right, binary_opnode, op, left, reverse_context, reverse=True),
             _bin_op(left, binary_opnode, op, right, context),
@@ -661,6 +680,7 @@ def _get_binop_flow(
     return methods
 
 
+@cython.locals(context=InferenceContext)
 def _get_aug_flow(
     left, left_type, aug_opnode, right, right_type, context, reverse_context
 ):
@@ -686,12 +706,12 @@ def _get_aug_flow(
             _aug_op(left, aug_opnode, aug_op, right, context),
             _bin_op(left, aug_opnode, bin_op, right, context),
         ]
-    elif helpers.is_subtype(left_type, right_type):
+    elif is_subtype(left_type, right_type):
         methods = [
             _aug_op(left, aug_opnode, aug_op, right, context),
             _bin_op(left, aug_opnode, bin_op, right, context),
         ]
-    elif helpers.is_supertype(left_type, right_type):
+    elif is_supertype(left_type, right_type):
         methods = [
             _aug_op(left, aug_opnode, aug_op, right, context),
             _bin_op(right, aug_opnode, bin_op, left, reverse_context, reverse=True),
@@ -706,6 +726,7 @@ def _get_aug_flow(
     return methods
 
 
+@cython.locals(context=InferenceContext)
 def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
     """Infer a binary operation between a left operand and a right operand
 
@@ -714,8 +735,8 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
     """
 
     context, reverse_context = _get_binop_contexts(context, left, right)
-    left_type = helpers.object_type(left)
-    right_type = helpers.object_type(right)
+    left_type = object_type(left)
+    right_type = object_type(right)
     methods = flow_factory(
         left, left_type, binary_opnode, right, right_type, context, reverse_context
     )
@@ -750,6 +771,7 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
     yield util.BadBinaryOperationMessage(left_type, binary_opnode.op, right_type)
 
 
+@cython.locals(context=InferenceContext)
 def _infer_binop(self, context):
     """Binary operation inference logic."""
     left = self.left
@@ -758,9 +780,9 @@ def _infer_binop(self, context):
     # we use two separate contexts for evaluating lhs and rhs because
     # 1. evaluating lhs may leave some undesired entries in context.path
     #    which may not let us infer right value of rhs
-    context = context or contextmod.InferenceContext()
-    lhs_context = contextmod.copy_context(context)
-    rhs_context = contextmod.copy_context(context)
+    context = context or InferenceContext()
+    lhs_context = copy_context(context)
+    rhs_context = copy_context(context)
     lhs_iter = left.infer(context=lhs_context)
     rhs_iter = right.infer(context=rhs_context)
     for lhs, rhs in itertools.product(lhs_iter, rhs_iter):
@@ -775,6 +797,7 @@ def _infer_binop(self, context):
             yield util.Uninferable
 
 
+@cython.locals(context=InferenceContext)
 @decorators.yes_if_nothing_inferred
 @decorators.path_wrapper
 def infer_binop(self, context=None):
@@ -787,10 +810,11 @@ nodes.BinOp._infer_binop = _infer_binop
 nodes.BinOp._infer = infer_binop
 
 
+@cython.locals(context=InferenceContext)
 def _infer_augassign(self, context=None):
     """Inference logic for augmented binary operations."""
     if context is None:
-        context = contextmod.InferenceContext()
+        context = InferenceContext()
 
     rhs_context = context.clone()
 
@@ -814,6 +838,7 @@ def _infer_augassign(self, context=None):
             yield util.Uninferable
 
 
+@cython.locals(context=InferenceContext)
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_augassign(self, context=None):
@@ -833,12 +858,13 @@ def infer_arguments(self, context=None):
     name = context.lookupname
     if name is None:
         raise exceptions.InferenceError(node=self, context=context)
-    return protocols._arguments_infer_argname(self, name, context)
+    return _arguments_infer_argname(self, name, context)
 
 
 nodes.Arguments._infer = infer_arguments
 
 
+@cython.locals(context=InferenceContext)
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_assign(self, context=None):
@@ -871,6 +897,7 @@ def infer_empty_node(self, context=None):
 nodes.EmptyNode._infer = infer_empty_node
 
 
+@cython.locals(context=InferenceContext)
 @decorators.raise_if_nothing_inferred
 def infer_index(self, context=None):
     return self.value.infer(context)
@@ -880,14 +907,15 @@ nodes.Index._infer = infer_index
 
 # TODO: move directly into bases.Instance when the dependency hell
 # will be solved.
+@cython.locals(context=InferenceContext)
 def instance_getitem(self, index, context=None):
     # Rewrap index to Const for this case
-    new_context = contextmod.bind_context_to_node(context, self)
+    new_context = bind_context_to_node(context, self)
     if not context:
         context = new_context
 
     # Create a new callcontext for providing index as an argument.
-    new_context.callcontext = contextmod.CallContext(args=[index])
+    new_context.callcontext = CallContext(args=[index])
 
     method = next(self.igetattr("__getitem__", context=context), None)
     if not isinstance(method, bases.BoundMethod):
@@ -901,6 +929,7 @@ def instance_getitem(self, index, context=None):
 bases.Instance.getitem = instance_getitem
 
 
+@cython.locals(context=InferenceContext)
 def _populate_context_lookup(call, context):
     # Allows context to be saved for later
     # for inference inside a function
@@ -918,6 +947,7 @@ def _populate_context_lookup(call, context):
     return context_lookup
 
 
+@cython.locals(context=InferenceContext)
 @decorators.raise_if_nothing_inferred
 def infer_ifexp(self, context=None):
     """Support IfExp inference
@@ -931,9 +961,9 @@ def infer_ifexp(self, context=None):
     # evaluating lhs may leave some undesired entries in context.path
     # which may not let us infer right value of rhs.
 
-    context = context or contextmod.InferenceContext()
-    lhs_context = contextmod.copy_context(context)
-    rhs_context = contextmod.copy_context(context)
+    context = context or InferenceContext()
+    lhs_context = copy_context(context)
+    rhs_context = copy_context(context)
     try:
         test = next(self.test.infer(context=context.clone()))
     except exceptions.InferenceError:
@@ -973,6 +1003,7 @@ def _cached_generator(func, instance, args, kwargs, _cache={}):
 # of the wrapping frame. This means that everytime we infer a property, the locals
 # are mutated with a new instance of the property. This is why we cache the result
 # of the function's inference.
+@cython.locals(context=InferenceContext)
 @_cached_generator
 def infer_functiondef(self, context=None):
     if not self.decorators or not bases._is_property(self):

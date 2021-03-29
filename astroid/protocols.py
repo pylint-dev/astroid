@@ -29,17 +29,18 @@ import collections
 import operator as operator_mod
 
 import itertools
+import cython
 
 from astroid import Store
 from astroid import arguments
 from astroid import bases
-from astroid import context as contextmod
 from astroid import exceptions
 from astroid import decorators
 from astroid import node_classes
 from astroid import helpers
 from astroid import nodes
 from astroid import util
+from .context import copy_context, InferenceContext
 
 raw_building = util.lazy_import("raw_building")
 objects = util.lazy_import("objects")
@@ -316,6 +317,7 @@ nodes.AssignName.assigned_stmts = assend_assigned_stmts
 nodes.AssignAttr.assigned_stmts = assend_assigned_stmts
 
 
+@cython.locals(context=InferenceContext)
 def _arguments_infer_argname(self, name, context):
     # arguments information may be missing, in which case we can't do anything
     # more
@@ -364,18 +366,19 @@ def _arguments_infer_argname(self, name, context):
     # if there is a default value, yield it. And then yield Uninferable to reflect
     # we can't guess given argument value
     try:
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         yield from self.default_value(name).infer(context)
         yield util.Uninferable
     except exceptions.NoDefault:
         yield util.Uninferable
 
 
+@cython.locals(context=InferenceContext)
 def arguments_assigned_stmts(self, node=None, context=None, assign_path=None):
     if context.callcontext:
         # reset call context/name
         callcontext = context.callcontext
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         context.callcontext = None
         args = arguments.CallSite(callcontext, context=context)
         return args.infer_argument(self.parent, node.name, context)
@@ -637,7 +640,7 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
         )
 
     if context is None:
-        context = contextmod.InferenceContext()
+        context = InferenceContext()
 
     if isinstance(stmt, nodes.Assign):
         value = stmt.value
