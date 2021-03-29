@@ -19,12 +19,13 @@
 """Astroid hooks for various builtins."""
 
 from functools import partial
-from textwrap import dedent
+import sys
 
 from astroid import (
     MANAGER,
     UseInferenceDefault,
     AttributeInferenceError,
+    extract_node,
     inference_tip,
     InferenceError,
     NameInferenceError,
@@ -38,6 +39,9 @@ from astroid import nodes
 from astroid import objects
 from astroid import scoped_nodes
 from astroid import util
+
+
+PY39 = sys.version_info[:2] >= (3, 9)
 
 
 OBJECT_DUNDER_NEW = "object.__new__"
@@ -882,6 +886,46 @@ def infer_dict_fromkeys(node, context=None):
     return _build_dict_with_elements([])
 
 
+def _looks_like_subscriptable_types(node):
+    """
+    Try to figure out if a Name node corresponds to a subscriptable builtin type
+
+    :param node: node to check
+    :type node: astroid.node_classes.NodeNG
+    :return: true if the node is a Name node corresponding to a subscriptable builtin type
+    :rtype: bool
+    """
+    if isinstance(node, nodes.Name) and node.name in ("tuple", "list", "dict", "set", "frozenset"):
+        return True
+    return False
+
+
+CLASS_GETITEM_TEMPLATE = """
+@classmethod
+def __class_getitem__(cls, item):
+    return cls
+"""
+
+
+def replace_class_getitem(node, context=None):
+    """
+    Starting with python39 some builtins types are subscriptalbe.
+    However the __class_getitem__ method is attached to an EmptyNode
+    which prevents any correct inference of subscript by the mean of
+    ClassDef.getitem method. Thus we replace this method with an inferable
+    one
+    """
+    cls_node = next(node.infer())
+    if cls_node is util.Uninferable:
+        return cls_node
+    if not '__class_getitem__' in cls_node.locals:
+        return cls_node
+    if isinstance(cls_node.locals['__class_getitem__'][0], nodes.EmptyNode):
+        func_to_add = extract_node(CLASS_GETITEM_TEMPLATE)
+        cls_node.locals["__class_getitem__"] = [func_to_add]
+        return cls_node
+
+
 # Builtins inference
 register_builtin_transform(infer_bool, "bool")
 register_builtin_transform(infer_super, "super")
@@ -910,3 +954,8 @@ MANAGER.register_transform(
     inference_tip(_infer_object__new__decorator),
     _infer_object__new__decorator_check,
 )
+
+if PY39:
+    MANAGER.register_transform(
+        nodes.Name, replace_class_getitem, _looks_like_subscriptable_types
+    )
