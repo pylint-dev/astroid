@@ -895,7 +895,13 @@ def _looks_like_subscriptable_types(node):
     :return: true if the node is a Name node corresponding to a subscriptable builtin type
     :rtype: bool
     """
-    if isinstance(node, nodes.Name) and node.name in ("tuple", "list", "dict", "set", "frozenset"):
+    if isinstance(node, nodes.Name) and node.name in (
+        "tuple",
+        "list",
+        "dict",
+        "set",
+        "frozenset",
+    ):
         return True
     return False
 
@@ -918,9 +924,9 @@ def replace_class_getitem(node, context=None):
     cls_node = next(node.infer())
     if cls_node is util.Uninferable:
         return cls_node
-    if not '__class_getitem__' in cls_node.locals:
+    if not "__class_getitem__" in cls_node.locals:
         return cls_node
-    if isinstance(cls_node.locals['__class_getitem__'][0], nodes.EmptyNode):
+    if isinstance(cls_node.locals["__class_getitem__"][0], nodes.EmptyNode):
         func_to_add = extract_node(CLASS_GETITEM_TEMPLATE)
         cls_node.locals["__class_getitem__"] = [func_to_add]
         return cls_node

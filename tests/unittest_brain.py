@@ -1035,11 +1035,13 @@ class TypeBrain(unittest.TestCase):
         for typename in ("tuple", "list", "dict", "set", "frozenset"):
             src = """
             {:s}[int]
-            """.format(typename)
+            """.format(
+                typename
+            )
             right_node = builder.extract_node(src)
             inferred = next(right_node.infer())
             self.assertIsInstance(inferred, ClassDef)
-            self.assertIsInstance(inferred.getattr('__iter__')[0], FunctionDef)
+            self.assertIsInstance(inferred.getattr("__iter__")[0], FunctionDef)
 
 
 def check_metaclass_is_abc(node: nodes.ClassDef):
@@ -1530,16 +1532,18 @@ class TypingBrain(unittest.TestCase):
         """
         Test that builtins alias, such as typing.List, are subscriptable
         """
-        # Do not test Tuple as it is inferred as _TupleType class (needs a brain?)
+        #  Do not test Tuple as it is inferred as _TupleType class (needs a brain?)
         for typename in ("List", "Dict", "Set", "FrozenSet"):
             src = """
             import typing
             typing.{:s}[int]
-            """.format(typename)
+            """.format(
+                typename
+            )
             right_node = builder.extract_node(src)
             inferred = next(right_node.infer())
             self.assertIsInstance(inferred, ClassDef)
-            self.assertIsInstance(inferred.getattr('__iter__')[0], FunctionDef)
+            self.assertIsInstance(inferred.getattr("__iter__")[0], FunctionDef)
 
 
 class ReBrainTest(unittest.TestCase):
