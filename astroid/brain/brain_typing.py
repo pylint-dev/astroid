@@ -223,11 +223,6 @@ def infer_typing_alias(
                 #  Starting with Python39 the _alias function is in fact instantiation of _SpecialGenericAlias class.
                 #  Thus the type is not Generic if the second argument of the call is equal to zero
                 _forbid_class_getitem_access(res)
-            elif '__class_getitem__' in res.locals and isinstance(res.locals['__class_getitem__'][0], nodes.EmptyNode):
-                #  if res is a builtin object such as list, or dict then it has a __class_getitem__ function which is 
-                #  not bound to the regular class instance but to an EmptyNode. Then we replace it.
-                func_to_add = astroid.extract_node(CLASS_GETITEM_TEMPLATE)
-                res.locals["__class_getitem__"] = [func_to_add]
         return res
     return None
 
