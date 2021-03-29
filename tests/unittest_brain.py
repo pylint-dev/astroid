@@ -32,6 +32,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 """Tests for basic functionality in astroid.brain."""
+from astroid.scoped_nodes import ClassDef, FunctionDef
 import io
 import queue
 import re
@@ -1026,6 +1027,20 @@ class TypeBrain(unittest.TestCase):
         with self.assertRaises(astroid.exceptions.AttributeInferenceError):
             meth_inf = val_inf.getattr("__class_getitem__")[0]
 
+    @test_utils.require_version(minver="3.9")
+    def test_builtin_subscriptable(self):
+        """
+        Starting with python3.9 builtin type such as list are subscriptable
+        """
+        for typename in ("tuple", "list", "dict", "set", "frozenset"):
+            src = """
+            {:s}[int]
+            """.format(typename)
+            right_node = builder.extract_node(src)
+            inferred = next(right_node.infer())
+            self.assertIsInstance(inferred, ClassDef)
+            self.assertIsInstance(inferred.getattr('__iter__')[0], FunctionDef)
+
 
 def check_metaclass_is_abc(node: nodes.ClassDef):
     meta = node.metaclass()
@@ -1509,6 +1524,22 @@ class TypingBrain(unittest.TestCase):
             self.assertIsInstance(
                 inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
             )
+
+    @test_utils.require_version(minver="3.9")
+    def test_typing_object_builtin_subscriptable(self):
+        """
+        Test that builtins alias, such as typing.List, are subscriptable
+        """
+        # Do not test Tuple as it is inferred as _TupleType class (needs a brain?)
+        for typename in ("List", "Dict", "Set", "FrozenSet"):
+            src = """
+            import typing
+            typing.{:s}[int]
+            """.format(typename)
+            right_node = builder.extract_node(src)
+            inferred = next(right_node.infer())
+            self.assertIsInstance(inferred, ClassDef)
+            self.assertIsInstance(inferred.getattr('__iter__')[0], FunctionDef)
 
 
 class ReBrainTest(unittest.TestCase):
