@@ -6032,5 +6032,37 @@ def test_infer_list_of_uninferables_does_not_crash():
     assert not inferred.elts
 
 
+# https://github.com/PyCQA/astroid/issues/926
+def test_issue926_infer_stmts_referencing_same_name_is_not_uninferable():
+    code = """
+    pair = [1, 2]
+    ex = pair[0]
+    if 1 + 1 == 2:
+        ex = pair[1]
+    ex
+    """
+    node = extract_node(code)
+    inferred = list(node.infer())
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 1
+    assert isinstance(inferred[1], nodes.Const)
+    assert inferred[1].value == 2
+
+
+# https://github.com/PyCQA/astroid/issues/926
+def test_issue926_binop_referencing_same_name_is_not_uninferable():
+    code = """
+    pair = [1, 2]
+    ex = pair[0] + pair[1]
+    ex
+    """
+    node = extract_node(code)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 3
+
+
 if __name__ == "__main__":
     unittest.main()
