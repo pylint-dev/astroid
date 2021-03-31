@@ -229,8 +229,8 @@ def infer_typing_alias(
                 #  Starting with Python39 the _alias function is in fact instantiation of _SpecialGenericAlias class.
                 #  Thus the type is not Generic if the second argument of the call is equal to zero
                 _forbid_class_getitem_access(res)
-        return res
-    return None
+        return iter([res])
+    return iter([astroid.Uninferable])
 
 
 MANAGER.register_transform(
@@ -248,4 +248,4 @@ if PY39:
     )
 
 if PY37:
-    MANAGER.register_transform(nodes.Call, infer_typing_alias, _looks_like_typing_alias)
+    MANAGER.register_transform(nodes.Call, inference_tip(infer_typing_alias), _looks_like_typing_alias)
