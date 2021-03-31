@@ -2,8 +2,8 @@
 # Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2017 David Euresti <github@euresti.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 """Astroid hooks for typing.py support."""
 import sys

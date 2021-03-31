@@ -28,7 +28,7 @@
 
 # For an official release, use dev_version = None
 numversion = (2, 6, 0)
-dev_version = 1
+dev_version = "0"
 
 version = ".".join(str(num) for num in numversion)
 if dev_version is not None:

@@ -7,7 +7,7 @@ What's New in astroid 2.6.0?
 Release Date: TBA
 
 
-What's New in astroid 2.5.2?
+What's New in astroid 2.5.3?
 ============================
 Release Date: TBA
 
@@ -17,6 +17,10 @@ Release Date: TBA
 
   Closes PyCQA/pylint#4206
 
+What's New in astroid 2.5.2?
+============================
+Release Date: 2021-03-28
+
 * Detects `import numpy` as a valid `numpy` import.
 
   Closes PyCQA/pylint#3974
@@ -24,7 +28,6 @@ Release Date: TBA
 * Iterate over ``Keywords`` when using ``ClassDef.get_children``
 
   Closes PyCQA/pylint#3202
-
 
 What's New in astroid 2.5.1?
 ============================
