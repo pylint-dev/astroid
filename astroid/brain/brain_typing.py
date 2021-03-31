@@ -8,7 +8,7 @@
 """Astroid hooks for typing.py support."""
 import sys
 import typing
-from functools import lru_cache
+from functools import lru_cache, partial
 
 from astroid import (
     MANAGER,
@@ -146,6 +146,18 @@ def _looks_like_typing_alias(node: nodes.Call) -> bool:
     )
 
 
+def full_raiser(origin_func, attr, *args, **kwargs):
+    """
+    Raises an AttributeInferenceError in case of access to __class_getitem__ method.
+    Otherwise just call origin_func.
+    """
+    if attr == "__class_getitem__":
+        raise AttributeInferenceError("__class_getitem__ access is not allowed")
+    else:
+        return origin_func(attr, *args, **kwargs)
+
+
+
 def _forbid_class_getitem_access(node: nodes.ClassDef) -> None:
     """
     Disable the access to __class_getitem__ method for the node in parameters
@@ -156,15 +168,9 @@ def _forbid_class_getitem_access(node: nodes.ClassDef) -> None:
         node.getattr("__class_getitem__")
         # If we are here, then we are sure to modify object that do have __class_getitem__ method (which origin is one the
         # protocol defined in collections module) whereas the typing module consider it should not
-        origin_func: node.getattr
         #  We do not want __class_getitem__ to be found in the classdef
-        def raiser(attr):
-            if attr == "__class_getitem__":
-                raise AttributeInferenceError("__class_getitem__ access is not allowed")
-            else:
-                return origin_func(attr)
-
-        node.getattr = raiser
+        partial_raiser = partial(full_raiser, node.getattr)
+        node.getattr = partial_raiser
     except AttributeInferenceError:
         pass
 
