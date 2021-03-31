@@ -54,6 +54,8 @@ from astroid import node_classes
 from astroid import util
 
 
+PY39 = sys.version_info[:2] >= (3, 9)
+
 BUILTINS = builtins.__name__
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
@@ -2642,6 +2644,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         try:
             return next(method.infer_call_result(self, new_context))
+        except AttributeError:
+            if isinstance(method, node_classes.EmptyNode) and self.name in ('list', 'dict', 'set', 'tuple', 'frozenset') and PY39:
+                return self
+            raise
         except exceptions.InferenceError:
             return util.Uninferable
 
