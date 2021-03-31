@@ -19,13 +19,11 @@
 """Astroid hooks for various builtins."""
 
 from functools import partial
-import sys
 
 from astroid import (
     MANAGER,
     UseInferenceDefault,
     AttributeInferenceError,
-    extract_node,
     inference_tip,
     InferenceError,
     NameInferenceError,
@@ -39,9 +37,6 @@ from astroid import nodes
 from astroid import objects
 from astroid import scoped_nodes
 from astroid import util
-
-
-PY39 = sys.version_info[:2] >= (3, 9)
 
 
 OBJECT_DUNDER_NEW = "object.__new__"
@@ -884,26 +879,6 @@ def infer_dict_fromkeys(node, context=None):
 
     # Fallback to an empty dictionary
     return _build_dict_with_elements([])
-
-
-def _looks_like_subscriptable_types(node):
-    """
-    Try to figure out if a Name node corresponds to a subscriptable builtin type
-
-    :param node: node to check
-    :type node: astroid.node_classes.NodeNG
-    :return: true if the node is a Name node corresponding to a subscriptable builtin type
-    :rtype: bool
-    """
-    if isinstance(node, nodes.Name) and node.name in (
-        "tuple",
-        "list",
-        "dict",
-        "set",
-        "frozenset",
-    ):
-        return True
-    return False
 
 
 # Builtins inference
