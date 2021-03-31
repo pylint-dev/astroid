@@ -2645,6 +2645,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         try:
             return next(method.infer_call_result(self, new_context))
         except AttributeError:
+            # Starting with python3.9, builtin types list, dict etc...
+            # are subscriptable thanks to __class_getitem___ classmethod.
+            #  However in such case the method is bound to an EmptyNode and
+            #  EmptyNode doesn't have infer_call_result method yielding to
+            #  AttributeError
             if (
                 isinstance(method, node_classes.EmptyNode)
                 and self.name in ("list", "dict", "set", "tuple", "frozenset")
