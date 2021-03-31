@@ -2645,7 +2645,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         try:
             return next(method.infer_call_result(self, new_context))
         except AttributeError:
-            if isinstance(method, node_classes.EmptyNode) and self.name in ('list', 'dict', 'set', 'tuple', 'frozenset') and PY39:
+            if (
+                isinstance(method, node_classes.EmptyNode)
+                and self.name in ("list", "dict", "set", "tuple", "frozenset")
+                and PY39
+            ):
                 return self
             raise
         except exceptions.InferenceError:

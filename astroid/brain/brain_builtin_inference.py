@@ -906,7 +906,6 @@ def _looks_like_subscriptable_types(node):
     return False
 
 
-
 # Builtins inference
 register_builtin_transform(infer_bool, "bool")
 register_builtin_transform(infer_super, "super")

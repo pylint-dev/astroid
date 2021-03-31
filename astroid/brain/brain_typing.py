@@ -157,7 +157,6 @@ def full_raiser(origin_func, attr, *args, **kwargs):
         return origin_func(attr, *args, **kwargs)
 
 
-
 def _forbid_class_getitem_access(node: nodes.ClassDef) -> None:
     """
     Disable the access to __class_getitem__ method for the node in parameters
@@ -248,4 +247,6 @@ if PY39:
     )
 
 if PY37:
-    MANAGER.register_transform(nodes.Call, inference_tip(infer_typing_alias), _looks_like_typing_alias)
+    MANAGER.register_transform(
+        nodes.Call, inference_tip(infer_typing_alias), _looks_like_typing_alias
+    )
