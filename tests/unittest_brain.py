@@ -1372,12 +1372,9 @@ class TypingBrain(unittest.TestCase):
             var: int
         """
         )
-        assert len(node.bases) == 1
         inferred_base = next(node.bases[0].infer())
-        self.assertIsInstance(inferred_base, nodes.ClassDef, node.as_string())
-        typing_module = inferred_base.root()
-        assert len(typing_module.locals["TypedDict"]) == 1
-        assert inferred_base == typing_module.locals["TypedDict"][0]
+        assert isinstance(inferred_base, nodes.ClassDef)
+        assert inferred_base.qname() == "typing.TypedDict"
 
     @test_utils.require_version(minver="3.7")
     def test_typing_alias_type(self):
