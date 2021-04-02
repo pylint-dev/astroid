@@ -32,7 +32,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 """Tests for basic functionality in astroid.brain."""
-from astroid.scoped_nodes import ClassDef, FunctionDef
 import io
 import queue
 import re
@@ -1040,8 +1039,8 @@ class TypeBrain(unittest.TestCase):
             )
             right_node = builder.extract_node(src)
             inferred = next(right_node.infer())
-            self.assertIsInstance(inferred, ClassDef)
-            self.assertIsInstance(inferred.getattr("__iter__")[0], FunctionDef)
+            self.assertIsInstance(inferred, nodes.ClassDef)
+            self.assertIsInstance(inferred.getattr("__iter__")[0], nodes.FunctionDef)
 
 
 def check_metaclass_is_abc(node: nodes.ClassDef):
@@ -1542,8 +1541,8 @@ class TypingBrain(unittest.TestCase):
             )
             right_node = builder.extract_node(src)
             inferred = next(right_node.infer())
-            self.assertIsInstance(inferred, ClassDef)
-            self.assertIsInstance(inferred.getattr("__iter__")[0], FunctionDef)
+            self.assertIsInstance(inferred, nodes.ClassDef)
+            self.assertIsInstance(inferred.getattr("__iter__")[0], nodes.FunctionDef)
 
 
 class ReBrainTest(unittest.TestCase):

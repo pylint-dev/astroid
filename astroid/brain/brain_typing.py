@@ -141,26 +141,25 @@ def _looks_like_typing_alias(node: nodes.Call) -> bool:
             #  _alias function works also for builtins object such as list and dict
             isinstance(node.args[0], nodes.Attribute)
             or isinstance(node.args[0], nodes.Name)
-            and node.args[0].name not in ("type",)
+            and node.args[0].name != "type"
         )
     )
-
-
-def full_raiser(origin_func, attr, *args, **kwargs):
-    """
-    Raises an AttributeInferenceError in case of access to __class_getitem__ method.
-    Otherwise just call origin_func.
-    """
-    if attr == "__class_getitem__":
-        raise AttributeInferenceError("__class_getitem__ access is not allowed")
-    else:
-        return origin_func(attr, *args, **kwargs)
 
 
 def _forbid_class_getitem_access(node: nodes.ClassDef) -> None:
     """
     Disable the access to __class_getitem__ method for the node in parameters
     """
+    def full_raiser(origin_func, attr, *args, **kwargs):
+        """
+        Raises an AttributeInferenceError in case of access to __class_getitem__ method.
+        Otherwise just call origin_func.
+        """
+        if attr == "__class_getitem__":
+            raise AttributeInferenceError("__class_getitem__ access is not allowed")
+        else:
+            return origin_func(attr, *args, **kwargs)
+
     if not isinstance(node, nodes.ClassDef):
         raise TypeError("The parameter type should be ClassDef")
     try:
@@ -183,8 +182,6 @@ def infer_typing_alias(
     :param node: call node
     :param context: inference context
     """
-    if not isinstance(node, nodes.Call):
-        return None
     res = next(node.args[0].infer(context=ctx))
 
     if res != astroid.Uninferable and isinstance(res, nodes.ClassDef):
@@ -210,10 +207,7 @@ def infer_typing_alias(
                 # This last value means the type is not Generic and thus cannot be subscriptable
                 func_to_add = astroid.extract_node(CLASS_GETITEM_TEMPLATE)
                 res.locals["__class_getitem__"] = [func_to_add]
-            elif (
-                isinstance(maybe_type_var, node_classes.Tuple)
-                and not maybe_type_var.elts
-            ):
+            else:
                 # If we are here, then we are sure to modify object that do have __class_getitem__ method (which origin is one the
                 # protocol defined in collections module) whereas the typing module consider it should not
                 #  We do not want __class_getitem__ to be found in the classdef
