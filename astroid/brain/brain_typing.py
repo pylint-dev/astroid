@@ -150,6 +150,7 @@ def _forbid_class_getitem_access(node: nodes.ClassDef) -> None:
     """
     Disable the access to __class_getitem__ method for the node in parameters
     """
+
     def full_raiser(origin_func, attr, *args, **kwargs):
         """
         Raises an AttributeInferenceError in case of access to __class_getitem__ method.
