@@ -1582,6 +1582,79 @@ class ReBrainTest(unittest.TestCase):
             self.assertIn(name, re_ast)
             self.assertEqual(next(re_ast[name].infer()).value, getattr(re, name))
 
+    @test_utils.require_version(minver="3.7", maxver="3.9")
+    def test_re_pattern_unsubscriptable(self):
+        """
+        re.Pattern and re.Match are unsubscriptable until PY39.
+        re.Pattern and re.Match were added in PY37.
+        """
+        right_node1 = builder.extract_node(
+            """
+        import re
+        re.Pattern
+        """
+        )
+        inferred1 = next(right_node1.infer())
+        assert isinstance(inferred1, nodes.ClassDef)
+        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+            assert isinstance(
+                inferred1.getattr("__class_getitem__")[0], nodes.FunctionDef
+            )
+
+        right_node2 = builder.extract_node(
+            """
+        import re
+        re.Pattern
+        """
+        )
+        inferred2 = next(right_node2.infer())
+        assert isinstance(inferred2, nodes.ClassDef)
+        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+            assert isinstance(
+                inferred2.getattr("__class_getitem__")[0], nodes.FunctionDef
+            )
+
+        wrong_node1 = builder.extract_node(
+            """
+        import re
+        re.Pattern[int]
+        """
+        )
+        with self.assertRaises(astroid.exceptions.InferenceError):
+            next(wrong_node1.infer())
+
+        wrong_node2 = builder.extract_node(
+            """
+        import re
+        re.Match[int]
+        """
+        )
+        with self.assertRaises(astroid.exceptions.InferenceError):
+            next(wrong_node2.infer())
+
+    @test_utils.require_version(minver="3.9")
+    def test_re_pattern_subscriptable(self):
+        """Test re.Pattern and re.Match are subscriptable in PY39+"""
+        node1 = builder.extract_node(
+            """
+        import re
+        re.Pattern[str]
+        """
+        )
+        inferred1 = next(node1.infer())
+        assert isinstance(inferred1, nodes.ClassDef)
+        assert isinstance(inferred1.getattr("__class_getitem__")[0], nodes.FunctionDef)
+
+        node2 = builder.extract_node(
+            """
+        import re
+        re.Match[str]
+        """
+        )
+        inferred2 = next(node2.infer())
+        assert isinstance(inferred2, nodes.ClassDef)
+        assert isinstance(inferred2.getattr("__class_getitem__")[0], nodes.FunctionDef)
+
 
 class BrainFStrings(unittest.TestCase):
     def test_no_crash_on_const_reconstruction(self):
