@@ -19,6 +19,7 @@
 """Astroid hooks for various builtins."""
 
 from functools import partial
+from textwrap import dedent
 
 from astroid import (
     MANAGER,

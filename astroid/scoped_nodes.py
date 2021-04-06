@@ -2621,13 +2621,13 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         except exceptions.AttributeInferenceError as exc:
             if isinstance(self, ClassDef):
                 # subscripting a class definition may be
-                #  achieved thanks to __class_getitem__ method
-                #  which is a classmethod defined in the class
-                #  that supports subscript and not in the metaclass
+                # achieved thanks to __class_getitem__ method
+                # which is a classmethod defined in the class
+                # that supports subscript and not in the metaclass
                 try:
                     methods = self.getattr("__class_getitem__")
                     # Here it is assumed that the __class_getitem__ node is
-                    #  a FunctionDef. One possible improvement would be to deal
+                    # a FunctionDef. One possible improvement would be to deal
                     # with more generic inference.
                 except exceptions.AttributeInferenceError:
                     raise exceptions.AstroidTypeError(
@@ -2647,9 +2647,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         except AttributeError:
             # Starting with python3.9, builtin types list, dict etc...
             # are subscriptable thanks to __class_getitem___ classmethod.
-            #  However in such case the method is bound to an EmptyNode and
-            #  EmptyNode doesn't have infer_call_result method yielding to
-            #  AttributeError
+            # However in such case the method is bound to an EmptyNode and
+            # EmptyNode doesn't have infer_call_result method yielding to
+            # AttributeError
             if (
                 isinstance(method, node_classes.EmptyNode)
                 and self.name in ("list", "dict", "set", "tuple", "frozenset")

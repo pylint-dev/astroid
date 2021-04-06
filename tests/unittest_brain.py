@@ -1053,13 +1053,11 @@ class CollectionsBrain(unittest.TestCase):
     def test_collections_object_not_subscriptable(self):
         """
         Test that unsubscriptable types are detected
-
         Hashable is not subscriptable even with python39
         """
         wrong_node = builder.extract_node(
             """
         import collections.abc
-
         collections.abc.Hashable[int]
         """
         )
@@ -1068,7 +1066,6 @@ class CollectionsBrain(unittest.TestCase):
         right_node = builder.extract_node(
             """
         import collections.abc
-
         collections.abc.Hashable
         """
         )
@@ -1090,7 +1087,6 @@ class CollectionsBrain(unittest.TestCase):
         right_node = builder.extract_node(
             """
         import collections.abc
-
         collections.abc.MutableSet[int]
         """
         )
@@ -1115,13 +1111,12 @@ class CollectionsBrain(unittest.TestCase):
     @test_utils.require_version(maxver="3.9")
     def test_collections_object_not_yet_subscriptable(self):
         """
-        Test that unsubscriptable types are detected as so.
+        Test that unsubscriptable types are detected as such.
         Until python39 MutableSet of the collections module is not subscriptable.
         """
         wrong_node = builder.extract_node(
             """
         import collections.abc
-
         collections.abc.MutableSet[int]
         """
         )
@@ -1130,7 +1125,6 @@ class CollectionsBrain(unittest.TestCase):
         right_node = builder.extract_node(
             """
         import collections.abc
-
         collections.abc.MutableSet
         """
         )
@@ -1157,7 +1151,6 @@ class CollectionsBrain(unittest.TestCase):
         node = builder.extract_node(
             """
         import collections.abc
-
         class Derived(collections.abc.Iterator[int]):
             pass
         """
@@ -1180,7 +1173,6 @@ class CollectionsBrain(unittest.TestCase):
         node = builder.extract_node(
             """
         import collections.abc
-
         collections.abc.Iterator[int]
         """
         )
@@ -1193,7 +1185,6 @@ class CollectionsBrain(unittest.TestCase):
         right_node = builder.extract_node(
             """
         import collections.abc
-
         collections.abc.ByteString[int]
         """
         )
@@ -1438,8 +1429,8 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        #  OrderedDict has no metaclass because it
-        #  inherits from dict which is C coded
+        # OrderedDict has no metaclass because it
+        # inherits from dict which is C coded
         self.assertIsNone(inferred.metaclass())
         assertEqualMro(
             inferred,
@@ -1456,7 +1447,6 @@ class TypingBrain(unittest.TestCase):
         wrong_node = builder.extract_node(
             """
         import typing
-
         typing.Hashable[int]
         """
         )
@@ -1465,7 +1455,6 @@ class TypingBrain(unittest.TestCase):
         right_node = builder.extract_node(
             """
         import typing
-
         typing.Hashable
         """
         )
@@ -1487,7 +1476,6 @@ class TypingBrain(unittest.TestCase):
         right_node = builder.extract_node(
             """
         import typing
-
         typing.MutableSet[int]
         """
         )
@@ -1515,7 +1503,6 @@ class TypingBrain(unittest.TestCase):
         right_node = builder.extract_node(
             """
         import typing
-
         typing.ByteString
         """
         )
@@ -1531,7 +1518,7 @@ class TypingBrain(unittest.TestCase):
         """
         Test that builtins alias, such as typing.List, are subscriptable
         """
-        #  Do not test Tuple as it is inferred as _TupleType class (needs a brain?)
+        # Do not test Tuple as it is inferred as _TupleType class (needs a brain?)
         for typename in ("List", "Dict", "Set", "FrozenSet"):
             src = """
             import typing
