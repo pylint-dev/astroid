@@ -54,6 +54,8 @@ from astroid import node_classes
 from astroid import util
 
 
+PY39 = sys.version_info[:2] >= (3, 9)
+
 BUILTINS = builtins.__name__
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
@@ -2617,7 +2619,22 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         try:
             methods = dunder_lookup.lookup(self, "__getitem__")
         except exceptions.AttributeInferenceError as exc:
-            raise exceptions.AstroidTypeError(node=self, context=context) from exc
+            if isinstance(self, ClassDef):
+                # subscripting a class definition may be
+                # achieved thanks to __class_getitem__ method
+                # which is a classmethod defined in the class
+                # that supports subscript and not in the metaclass
+                try:
+                    methods = self.getattr("__class_getitem__")
+                    # Here it is assumed that the __class_getitem__ node is
+                    # a FunctionDef. One possible improvement would be to deal
+                    # with more generic inference.
+                except exceptions.AttributeInferenceError:
+                    raise exceptions.AstroidTypeError(
+                        node=self, context=context
+                    ) from exc
+            else:
+                raise exceptions.AstroidTypeError(node=self, context=context) from exc
 
         method = methods[0]
 
@@ -2627,6 +2644,19 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         try:
             return next(method.infer_call_result(self, new_context))
+        except AttributeError:
+            # Starting with python3.9, builtin types list, dict etc...
+            # are subscriptable thanks to __class_getitem___ classmethod.
+            # However in such case the method is bound to an EmptyNode and
+            # EmptyNode doesn't have infer_call_result method yielding to
+            # AttributeError
+            if (
+                isinstance(method, node_classes.EmptyNode)
+                and self.name in ("list", "dict", "set", "tuple", "frozenset")
+                and PY39
+            ):
+                return self
+            raise
         except exceptions.InferenceError:
             return util.Uninferable
 

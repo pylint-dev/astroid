@@ -11,6 +11,11 @@ What's New in astroid 2.5.3?
 ============================
 Release Date: TBA
 
+* Takes into account the fact that subscript inferring for a ClassDef may involve __class_getitem__ method
+
+* Reworks the `collections` and `typing` brain so that `pylint`s acceptance tests are fine.
+
+  Closes PyCQA/pylint#4206
 
 What's New in astroid 2.5.2?
 ============================
