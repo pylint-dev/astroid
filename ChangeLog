@@ -10,6 +10,11 @@ Release Date: TBA
 
   Closes #932
 
+* Update `infer_named_tuple` brain to reject namedtuple definitions
+  that would raise ValueError
+
+  Closes #920
+
 * Do not set instance attributes on builtin object()
 
  Closes #945
