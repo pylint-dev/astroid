@@ -350,6 +350,99 @@ class NamedTupleTest(unittest.TestCase):
         assert "b" not in inferred.locals
         assert "c" not in inferred.locals
 
+    def test_no_rename_duplicates_does_not_crash_inference(self):
+        node = builder.extract_node(
+            """
+        from collections import namedtuple
+        Tuple = namedtuple("Tuple", "abc abc")
+        Tuple #@
+        """
+        )
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)  # would raise ValueError
+
+    def test_no_rename_keywords_does_not_crash_inference(self):
+        node = builder.extract_node(
+            """
+        from collections import namedtuple
+        Tuple = namedtuple("Tuple", "abc def")
+        Tuple #@
+        """
+        )
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)  # would raise ValueError
+
+    def test_no_rename_nonident_does_not_crash_inference(self):
+        node = builder.extract_node(
+            """
+        from collections import namedtuple
+        Tuple = namedtuple("Tuple", "123 456")
+        Tuple #@
+        """
+        )
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)  # would raise ValueError
+
+    def test_no_rename_underscore_does_not_crash_inference(self):
+        node = builder.extract_node(
+            """
+        from collections import namedtuple
+        Tuple = namedtuple("Tuple", "_1")
+        Tuple #@
+        """
+        )
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)  # would raise ValueError
+
+    def test_invalid_typename_does_not_crash_inference(self):
+        node = builder.extract_node(
+            """
+        from collections import namedtuple
+        Tuple = namedtuple("123", "abc")
+        Tuple #@
+        """
+        )
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)  # would raise ValueError
+
+    def test_keyword_typename_does_not_crash_inference(self):
+        node = builder.extract_node(
+            """
+        from collections import namedtuple
+        Tuple = namedtuple("while", "abc")
+        Tuple #@
+        """
+        )
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)  # would raise ValueError
+
+    def test_typeerror_does_not_crash_inference(self):
+        node = builder.extract_node(
+            """
+        from collections import namedtuple
+        Tuple = namedtuple("Tuple", [123, 456])
+        Tuple #@
+        """
+        )
+        inferred = next(node.infer())
+        # namedtuple converts all arguments to strings so these should be too
+        # and catch on the isidentifier() check
+        self.assertIs(util.Uninferable, inferred)
+
+    def test_pathological_str_does_not_crash_inference(self):
+        node = builder.extract_node(
+            """
+        from collections import namedtuple
+        class Invalid:
+            def __str__(self):
+                return 123  # will raise TypeError
+        Tuple = namedtuple("Tuple", [Invalid()])
+        Tuple #@
+        """
+        )
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)
+
 
 class DefaultDictTest(unittest.TestCase):
     def test_1(self):

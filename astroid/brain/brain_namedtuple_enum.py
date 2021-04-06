@@ -28,6 +28,8 @@ from textwrap import dedent
 
 from astroid import (
     MANAGER,
+    AstroidTypeError,
+    AstroidValueError,
     InferenceError,
     UseInferenceDefault,
     arguments,
@@ -130,6 +132,11 @@ def infer_func_form(node, base_type, context=None, enum=False):
     except (AttributeError, exceptions.InferenceError) as exc:
         raise UseInferenceDefault from exc
 
+    if not enum:
+        # namedtuple maps sys.intern(str()) over over field_names
+        attributes = [str(attr) for attr in attributes]
+        # XXX this should succeed *unless* __str__/__repr__ is incorrect or throws
+        # in which case we should not have inferred these values and raised earlier
     attributes = [attr for attr in attributes if " " not in attr]
 
     # If we can't infer the name of the class, don't crash, up to this point
@@ -185,8 +192,12 @@ def infer_named_tuple(node, context=None):
     except InferenceError:
         rename = False
 
-    if rename:
-        attributes = _get_renamed_namedtuple_attributes(attributes)
+    try:
+        attributes = _check_namedtuple_attributes(name, attributes, rename)
+    except AstroidTypeError as exc:
+        raise UseInferenceDefault("TypeError: " + str(exc)) from exc
+    except AstroidValueError as exc:
+        raise UseInferenceDefault("ValueError: " + str(exc)) from exc
 
     replace_args = ", ".join(f"{arg}=None" for arg in attributes)
     field_def = (
@@ -245,6 +256,39 @@ def _get_renamed_namedtuple_attributes(field_names):
             names[i] = "_%d" % i
         seen.add(name)
     return tuple(names)
+
+
+def _check_namedtuple_attributes(typename, attributes, rename=False):
+    attributes = tuple(attributes)
+    if rename:
+        attributes = _get_renamed_namedtuple_attributes(attributes)
+
+    # The following snippet is derived from the CPython Lib/collections/__init__.py sources
+    # <snippet>
+    for name in (typename,) + attributes:
+        if not isinstance(name, str):
+            raise AstroidTypeError("Type names and field names must be strings")
+        if not name.isidentifier():
+            raise AstroidValueError(
+                "Type names and field names must be valid" + f"identifiers: {name!r}"
+            )
+        if keyword.iskeyword(name):
+            raise AstroidValueError(
+                f"Type names and field names cannot be a keyword: {name!r}"
+            )
+
+    seen = set()
+    for name in attributes:
+        if name.startswith("_") and not rename:
+            raise AstroidValueError(
+                f"Field names cannot start with an underscore: {name!r}"
+            )
+        if name in seen:
+            raise AstroidValueError(f"Encountered duplicate field name: {name!r}")
+        seen.add(name)
+    # </snippet>
+
+    return attributes
 
 
 def infer_enum(node, context=None):
