@@ -309,6 +309,7 @@ def infer_attribute(self, context=None):
         elif not context:
             context = contextmod.InferenceContext()
 
+        old_boundnode = context.boundnode
         try:
             context.boundnode = owner
             yield from owner.igetattr(self.attrname, context)
@@ -319,7 +320,7 @@ def infer_attribute(self, context=None):
         ):
             pass
         finally:
-            context.boundnode = None
+            context.boundnode = old_boundnode
     return dict(node=self, context=context)
 
 

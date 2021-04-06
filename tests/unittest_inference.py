@@ -3894,6 +3894,65 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ).inferred()[0]
         assert isinstance(cls, nodes.ClassDef) and cls.name == "Clazz"
 
+    def test_infer_subclass_attr_outer_class(self):
+        node = extract_node(
+            """
+        class Outer:
+            data = 123
+
+        class Test(Outer):
+            pass
+        Test.data
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 123
+
+    def test_infer_subclass_attr_inner_class_works_indirectly(self):
+        node = extract_node(
+            """
+        class Outer:
+            class Inner:
+                data = 123
+        Inner = Outer.Inner
+
+        class Test(Inner):
+            pass
+        Test.data
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 123
+
+    def test_infer_subclass_attr_inner_class(self):
+        clsdef_node, attr_node = extract_node(
+            """
+        class Outer:
+            class Inner:
+                data = 123
+
+        class Test(Outer.Inner):
+            pass
+        Test  #@
+        Test.data  #@
+            """
+        )
+        clsdef = next(clsdef_node.infer())
+        assert isinstance(clsdef, nodes.ClassDef)
+        inferred = next(clsdef.igetattr("data"))
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 123
+        # Inferring the value of .data via igetattr() worked before the
+        # old_boundnode fixes in infer_subscript, so it should have been
+        # possible to infer the subscript directly. It is the difference
+        # between these two cases that led to the discovery of the cause of the
+        # bug in https://github.com/PyCQA/astroid/issues/904
+        inferred = next(attr_node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 123
+
     def test_delayed_attributes_without_slots(self):
         ast_node = extract_node(
             """
