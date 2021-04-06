@@ -101,7 +101,7 @@ import astroid.test_utils as test_utils
 
 def assertEqualMro(klass, expected_mro):
     """Check mro names."""
-    assert [member.name for member in klass.mro()] == expected_mro
+    assert [member.qname() for member in klass.mro()] == expected_mro
 
 
 class HashlibTest(unittest.TestCase):
@@ -1074,8 +1074,8 @@ class CollectionsBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "Hashable",
-                "object",
+                "_collections_abc.Hashable",
+                "builtins.object",
             ],
         )
         with self.assertRaises(astroid.exceptions.AttributeInferenceError):
@@ -1095,13 +1095,13 @@ class CollectionsBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "MutableSet",
-                "Set",
-                "Collection",
-                "Sized",
-                "Iterable",
-                "Container",
-                "object",
+                "_collections_abc.MutableSet",
+                "_collections_abc.Set",
+                "_collections_abc.Collection",
+                "_collections_abc.Sized",
+                "_collections_abc.Iterable",
+                "_collections_abc.Container",
+                "builtins.object",
             ],
         )
         self.assertIsInstance(
@@ -1133,13 +1133,13 @@ class CollectionsBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "MutableSet",
-                "Set",
-                "Collection",
-                "Sized",
-                "Iterable",
-                "Container",
-                "object",
+                "_collections_abc.MutableSet",
+                "_collections_abc.Set",
+                "_collections_abc.Collection",
+                "_collections_abc.Sized",
+                "_collections_abc.Iterable",
+                "_collections_abc.Container",
+                "builtins.object",
             ],
         )
         with self.assertRaises(astroid.exceptions.AttributeInferenceError):
@@ -1160,10 +1160,10 @@ class CollectionsBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "Derived",
-                "Iterator",
-                "Iterable",
-                "object",
+                ".Derived",
+                "_collections_abc.Iterator",
+                "_collections_abc.Iterable",
+                "builtins.object",
             ],
         )
 
@@ -1208,11 +1208,11 @@ class CollectionsBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "Derived",
-                "Hashable",
-                "Iterator",
-                "Iterable",
-                "object",
+                ".Derived",
+                "_collections_abc.Hashable",
+                "_collections_abc.Iterator",
+                "_collections_abc.Iterable",
+                "builtins.object",
             ],
         )
 
@@ -1420,15 +1420,15 @@ class TypingBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "Derived1",
-                "MutableSet",
-                "MutableSet",
-                "Set",
-                "Collection",
-                "Sized",
-                "Iterable",
-                "Container",
-                "object",
+                ".Derived1",
+                "typing.MutableSet",
+                "_collections_abc.MutableSet",
+                "_collections_abc.Set",
+                "_collections_abc.Collection",
+                "_collections_abc.Sized",
+                "_collections_abc.Iterable",
+                "_collections_abc.Container",
+                "builtins.object",
             ],
         )
 
@@ -1451,11 +1451,11 @@ class TypingBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "Derived2",
-                "OrderedDict",
-                "OrderedDict",
-                "dict",
-                "object",
+                ".Derived2",
+                "typing.OrderedDict",
+                "collections.OrderedDict",
+                "builtins.dict",
+                "builtins.object",
             ],
         )
 
@@ -1480,9 +1480,9 @@ class TypingBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "Hashable",
-                "Hashable",
-                "object",
+                "typing.Hashable",
+                "_collections_abc.Hashable",
+                "builtins.object",
             ],
         )
         with self.assertRaises(astroid.exceptions.AttributeInferenceError):
@@ -1501,14 +1501,14 @@ class TypingBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "MutableSet",
-                "MutableSet",
-                "Set",
-                "Collection",
-                "Sized",
-                "Iterable",
-                "Container",
-                "object",
+                "typing.MutableSet",
+                "_collections_abc.MutableSet",
+                "_collections_abc.Set",
+                "_collections_abc.Collection",
+                "_collections_abc.Sized",
+                "_collections_abc.Iterable",
+                "_collections_abc.Container",
+                "builtins.object",
             ],
         )
         self.assertIsInstance(
@@ -1529,13 +1529,13 @@ class TypingBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "Derived",
-                "Hashable",
-                "Hashable",
-                "Iterator",
-                "Iterator",
-                "Iterable",
-                "object",
+                ".Derived",
+                "typing.Hashable",
+                "_collections_abc.Hashable",
+                "typing.Iterator",
+                "_collections_abc.Iterator",
+                "_collections_abc.Iterable",
+                "builtins.object",
             ],
         )
 
