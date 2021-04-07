@@ -160,6 +160,16 @@ def infer_typing_attr(
         # infer the native methods, replace them for an easy inference tip
         func_to_add = astroid.extract_node(CLASS_GETITEM_TEMPLATE)
         value.locals["__class_getitem__"] = [func_to_add]
+        if (
+            isinstance(node.parent, nodes.ClassDef)
+            and node in node.parent.bases
+            and getattr(node.parent, "__cache", None)
+        ):
+            # node.parent.slots is evaluated and cached before the inference tip
+            # is first applied. Remove the last result to allow a recalculation of slots
+            cache = getattr(node.parent, "__cache")
+            if cache and cache.get(node.parent.slots) is not None:
+                del cache[node.parent.slots]
         return iter([value])
 
     node = extract_node(TYPING_TYPE_TEMPLATE.format(value.qname().split(".")[-1]))

@@ -1388,6 +1388,29 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(inferred, nodes.ClassDef)
         assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
 
+    @test_utils.require_version(minver="3.7")
+    def test_typing_generic_slots(self):
+        """Test cache reset for slots if Generic subscript is inferred."""
+        node = builder.extract_node(
+            """
+        from typing import Generic, TypeVar
+        T = TypeVar('T')
+        class A(Generic[T]):
+            __slots__ = ['value']
+            def __init__(self, value):
+                self.value = value
+        """
+        )
+        inferred = next(node.infer())
+        assert len(inferred.slots()) == 0
+        # Only after the subscript base is inferred and the inference tip applied,
+        # will slots contain the correct value
+        next(node.bases[0].infer())
+        slots = inferred.slots()
+        assert len(slots) == 1
+        assert isinstance(slots[0], nodes.Const)
+        assert slots[0].value == "value"
+
     def test_has_dunder_args(self):
         ast_node = builder.extract_node(
             """
