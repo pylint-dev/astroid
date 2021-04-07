@@ -1361,6 +1361,33 @@ class TypingBrain(unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
 
+    @test_utils.require_version(minver="3.7")
+    def test_typing_generic_subscriptable(self):
+        """Test typing.Generic is subscriptable with __class_getitem__ (added in PY37)"""
+        node = builder.extract_node(
+            """
+        from typing import Generic, TypeVar
+        T = TypeVar('T')
+        Generic[T]
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+        assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
+
+    @test_utils.require_version(minver="3.9")
+    def test_typing_annotated_subscriptable(self):
+        """Test typing.Annotated is subscriptable with __class_getitem__"""
+        node = builder.extract_node(
+            """
+        import typing
+        typing.Annotated[str, "data"]
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+        assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
+
     def test_has_dunder_args(self):
         ast_node = builder.extract_node(
             """

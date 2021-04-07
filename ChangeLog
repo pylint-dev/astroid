@@ -19,6 +19,10 @@ Release Date: TBA
 
 * Use ``inference_tip`` for ``typing.TypedDict`` brain.
 
+* Add inference tip for typing.Generic and typing.Annotated with ``__class_getitem__``
+
+  Closes PyCQA/pylint#2822
+
 
 What's New in astroid 2.5.2?
 ============================

@@ -88,6 +88,12 @@ TYPING_ALIAS = frozenset(
     )
 )
 
+CLASS_GETITEM_TEMPLATE = """
+@classmethod
+def __class_getitem__(cls, item):
+    return cls
+"""
+
 
 def looks_like_typing_typevar_or_newtype(node):
     func = node.func
@@ -126,7 +132,9 @@ def _looks_like_typing_subscript(node):
     return False
 
 
-def infer_typing_attr(node, context=None):
+def infer_typing_attr(
+    node: nodes.Subscript, ctx: context.InferenceContext = None
+) -> typing.Iterator[nodes.ClassDef]:
     """Infer a typing.X[...] subscript"""
     try:
         value = next(node.value.infer())
@@ -142,8 +150,20 @@ def infer_typing_attr(node, context=None):
         # (PY37+) handle it separately.
         raise UseInferenceDefault
 
+    if (
+        PY37
+        and isinstance(value, nodes.ClassDef)
+        and value.qname() in ("typing.Generic", "typing.Annotated")
+    ):
+        # With PY37+ typing.Generic and typing.Annotated (PY39) are subscriptable
+        # through __class_getitem__. Since astroid can't easily
+        # infer the native methods, replace them for an easy inference tip
+        func_to_add = astroid.extract_node(CLASS_GETITEM_TEMPLATE)
+        value.locals["__class_getitem__"] = [func_to_add]
+        return iter([value])
+
     node = extract_node(TYPING_TYPE_TEMPLATE.format(value.qname().split(".")[-1]))
-    return node.infer(context=context)
+    return node.infer(context=ctx)
 
 
 def _looks_like_typedDict(  # pylint: disable=invalid-name
@@ -164,13 +184,6 @@ def infer_typedDict(  # pylint: disable=invalid-name
         parent=node.parent,
     )
     return iter([class_def])
-
-
-CLASS_GETITEM_TEMPLATE = """
-@classmethod
-def __class_getitem__(cls, item):
-    return cls
-"""
 
 
 def _looks_like_typing_alias(node: nodes.Call) -> bool:
