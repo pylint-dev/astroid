@@ -19,7 +19,6 @@
 """Astroid hooks for various builtins."""
 
 from functools import partial
-from textwrap import dedent
 
 from astroid import (
     MANAGER,
@@ -153,6 +152,23 @@ _extend_builtins(
 
 
 def _builtin_filter_predicate(node, builtin_name):
+    if (
+        builtin_name == "type"
+        and node.root().name == "re"
+        and isinstance(node.func, nodes.Name)
+        and node.func.name == "type"
+        and isinstance(node.parent, nodes.Assign)
+        and len(node.parent.targets) == 1
+        and isinstance(node.parent.targets[0], nodes.AssignName)
+        and node.parent.targets[0].name in ("Pattern", "Match")
+    ):
+        # Handle re.Pattern and re.Match in brain_re
+        # Match these patterns from stdlib/re.py
+        # ```py
+        # Pattern = type(...)
+        # Match = type(...)
+        # ```
+        return False
     if isinstance(node.func, nodes.Name) and node.func.name == builtin_name:
         return True
     if isinstance(node.func, nodes.Attribute):

@@ -101,7 +101,7 @@ import astroid.test_utils as test_utils
 
 def assertEqualMro(klass, expected_mro):
     """Check mro names."""
-    assert [member.name for member in klass.mro()] == expected_mro
+    assert [member.qname() for member in klass.mro()] == expected_mro
 
 
 class HashlibTest(unittest.TestCase):
@@ -1074,8 +1074,8 @@ class CollectionsBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "Hashable",
-                "object",
+                "_collections_abc.Hashable",
+                "builtins.object",
             ],
         )
         with self.assertRaises(astroid.exceptions.AttributeInferenceError):
@@ -1095,13 +1095,13 @@ class CollectionsBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "MutableSet",
-                "Set",
-                "Collection",
-                "Sized",
-                "Iterable",
-                "Container",
-                "object",
+                "_collections_abc.MutableSet",
+                "_collections_abc.Set",
+                "_collections_abc.Collection",
+                "_collections_abc.Sized",
+                "_collections_abc.Iterable",
+                "_collections_abc.Container",
+                "builtins.object",
             ],
         )
         self.assertIsInstance(
@@ -1133,13 +1133,13 @@ class CollectionsBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "MutableSet",
-                "Set",
-                "Collection",
-                "Sized",
-                "Iterable",
-                "Container",
-                "object",
+                "_collections_abc.MutableSet",
+                "_collections_abc.Set",
+                "_collections_abc.Collection",
+                "_collections_abc.Sized",
+                "_collections_abc.Iterable",
+                "_collections_abc.Container",
+                "builtins.object",
             ],
         )
         with self.assertRaises(astroid.exceptions.AttributeInferenceError):
@@ -1160,14 +1160,14 @@ class CollectionsBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "Derived",
-                "Iterator",
-                "Iterable",
-                "object",
+                ".Derived",
+                "_collections_abc.Iterator",
+                "_collections_abc.Iterable",
+                "builtins.object",
             ],
         )
 
-    @test_utils.require_version(maxver="3.8")
+    @test_utils.require_version(maxver="3.9")
     def test_collections_object_not_yet_subscriptable_2(self):
         """Before python39 Iterator in the collection.abc module is not subscriptable"""
         node = builder.extract_node(
@@ -1192,6 +1192,28 @@ class CollectionsBrain(unittest.TestCase):
         check_metaclass_is_abc(inferred)
         self.assertIsInstance(
             inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
+        )
+
+    @test_utils.require_version(minver="3.9")
+    def test_collections_object_subscriptable_4(self):
+        """Multiple inheritance with subscriptable collection class"""
+        node = builder.extract_node(
+            """
+        import collections.abc
+        class Derived(collections.abc.Hashable, collections.abc.Iterator[int]):
+            pass
+        """
+        )
+        inferred = next(node.infer())
+        assertEqualMro(
+            inferred,
+            [
+                ".Derived",
+                "_collections_abc.Hashable",
+                "_collections_abc.Iterator",
+                "_collections_abc.Iterable",
+                "builtins.object",
+            ],
         )
 
 
@@ -1395,18 +1417,18 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        check_metaclass_is_abc(inferred)
         assertEqualMro(
             inferred,
             [
-                "Derived1",
-                "MutableSet",
-                "Set",
-                "Collection",
-                "Sized",
-                "Iterable",
-                "Container",
-                "object",
+                ".Derived1",
+                "typing.MutableSet",
+                "_collections_abc.MutableSet",
+                "_collections_abc.Set",
+                "_collections_abc.Collection",
+                "_collections_abc.Sized",
+                "_collections_abc.Iterable",
+                "_collections_abc.Container",
+                "builtins.object",
             ],
         )
 
@@ -1426,19 +1448,18 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        # OrderedDict has no metaclass because it
-        # inherits from dict which is C coded
-        self.assertIsNone(inferred.metaclass())
         assertEqualMro(
             inferred,
             [
-                "Derived2",
-                "OrderedDict",
-                "dict",
-                "object",
+                ".Derived2",
+                "typing.OrderedDict",
+                "collections.OrderedDict",
+                "builtins.dict",
+                "builtins.object",
             ],
         )
 
+    @test_utils.require_version(minver="3.7")
     def test_typing_object_not_subscriptable(self):
         """Hashable is not subscriptable"""
         wrong_node = builder.extract_node(
@@ -1456,12 +1477,12 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(right_node.infer())
-        check_metaclass_is_abc(inferred)
         assertEqualMro(
             inferred,
             [
-                "Hashable",
-                "object",
+                "typing.Hashable",
+                "_collections_abc.Hashable",
+                "builtins.object",
             ],
         )
         with self.assertRaises(astroid.exceptions.AttributeInferenceError):
@@ -1477,21 +1498,45 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(right_node.infer())
-        check_metaclass_is_abc(inferred)
         assertEqualMro(
             inferred,
             [
-                "MutableSet",
-                "Set",
-                "Collection",
-                "Sized",
-                "Iterable",
-                "Container",
-                "object",
+                "typing.MutableSet",
+                "_collections_abc.MutableSet",
+                "_collections_abc.Set",
+                "_collections_abc.Collection",
+                "_collections_abc.Sized",
+                "_collections_abc.Iterable",
+                "_collections_abc.Container",
+                "builtins.object",
             ],
         )
         self.assertIsInstance(
             inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
+        )
+
+    @test_utils.require_version(minver="3.7")
+    def test_typing_object_subscriptable_2(self):
+        """Multiple inheritance with subscriptable typing alias"""
+        node = builder.extract_node(
+            """
+        import typing
+        class Derived(typing.Hashable, typing.Iterator[int]):
+            pass
+        """
+        )
+        inferred = next(node.infer())
+        assertEqualMro(
+            inferred,
+            [
+                ".Derived",
+                "typing.Hashable",
+                "_collections_abc.Hashable",
+                "typing.Iterator",
+                "_collections_abc.Iterator",
+                "_collections_abc.Iterable",
+                "builtins.object",
+            ],
         )
 
     @test_utils.require_version(minver="3.7")
@@ -1536,6 +1581,79 @@ class ReBrainTest(unittest.TestCase):
         for name in names:
             self.assertIn(name, re_ast)
             self.assertEqual(next(re_ast[name].infer()).value, getattr(re, name))
+
+    @test_utils.require_version(minver="3.7", maxver="3.9")
+    def test_re_pattern_unsubscriptable(self):
+        """
+        re.Pattern and re.Match are unsubscriptable until PY39.
+        re.Pattern and re.Match were added in PY37.
+        """
+        right_node1 = builder.extract_node(
+            """
+        import re
+        re.Pattern
+        """
+        )
+        inferred1 = next(right_node1.infer())
+        assert isinstance(inferred1, nodes.ClassDef)
+        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+            assert isinstance(
+                inferred1.getattr("__class_getitem__")[0], nodes.FunctionDef
+            )
+
+        right_node2 = builder.extract_node(
+            """
+        import re
+        re.Pattern
+        """
+        )
+        inferred2 = next(right_node2.infer())
+        assert isinstance(inferred2, nodes.ClassDef)
+        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+            assert isinstance(
+                inferred2.getattr("__class_getitem__")[0], nodes.FunctionDef
+            )
+
+        wrong_node1 = builder.extract_node(
+            """
+        import re
+        re.Pattern[int]
+        """
+        )
+        with self.assertRaises(astroid.exceptions.InferenceError):
+            next(wrong_node1.infer())
+
+        wrong_node2 = builder.extract_node(
+            """
+        import re
+        re.Match[int]
+        """
+        )
+        with self.assertRaises(astroid.exceptions.InferenceError):
+            next(wrong_node2.infer())
+
+    @test_utils.require_version(minver="3.9")
+    def test_re_pattern_subscriptable(self):
+        """Test re.Pattern and re.Match are subscriptable in PY39+"""
+        node1 = builder.extract_node(
+            """
+        import re
+        re.Pattern[str]
+        """
+        )
+        inferred1 = next(node1.infer())
+        assert isinstance(inferred1, nodes.ClassDef)
+        assert isinstance(inferred1.getattr("__class_getitem__")[0], nodes.FunctionDef)
+
+        node2 = builder.extract_node(
+            """
+        import re
+        re.Match[str]
+        """
+        )
+        inferred2 = next(node2.infer())
+        assert isinstance(inferred2, nodes.ClassDef)
+        assert isinstance(inferred2.getattr("__class_getitem__")[0], nodes.FunctionDef)
 
 
 class BrainFStrings(unittest.TestCase):
