@@ -163,6 +163,11 @@ def _builtin_filter_predicate(node, builtin_name):
         and node.parent.targets[0].name in ("Pattern", "Match")
     ):
         # Handle re.Pattern and re.Match in brain_re
+        # Match these patterns from stdlib/re.py
+        # ```py
+        # Pattern = type(...)
+        # Match = type(...)
+        # ```
         return False
     if isinstance(node.func, nodes.Name) and node.func.name == builtin_name:
         return True

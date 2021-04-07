@@ -268,7 +268,7 @@ def infer_typing_alias(
     else:
         # If not, make sure that `__class_getitem__` access is forbidden.
         # This is an issue in cases where the aliased class implements it,
-        # but the typing alias isn't subscriptable. E.g. `typing.ByteString` for PY39+
+        # but the typing alias isn't subscriptable. E.g., `typing.ByteString` for PY39+
         _forbid_class_getitem_access(class_def)
     return iter([class_def])
 

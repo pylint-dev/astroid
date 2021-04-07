@@ -47,7 +47,14 @@ def __class_getitem__(cls, item):
 
 
 def _looks_like_pattern_or_match(node: nodes.Call) -> bool:
-    """Check for re.Pattern or re.Match call in stdlib."""
+    """Check for re.Pattern or re.Match call in stdlib.
+
+    Match these patterns from stdlib/re.py
+    ```py
+    Pattern = type(...)
+    Match = type(...)
+    ```
+    """
     return (
         node.root().name == "re"
         and isinstance(node.func, nodes.Name)
