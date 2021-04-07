@@ -103,6 +103,39 @@ def _c3_merge(sequences, cls, context):
     return None
 
 
+def clean_typing_generic_mro(sequences: List[List["ClassDef"]]) -> None:
+    """typing.Generic is allowed to appear multiple times in the initial mro.
+    The final one however, MUST only contain ONE.
+
+    This method will check if Generic is in inferred_bases, but also
+    part of bases_mro. If true, remove it from inferred_bases
+    as well as its entry the bases_mro.
+
+    Format sequences: [[self]] + bases_mro + [inferred_bases]
+    """
+    pos_generic_in_main_bases = -1
+    # Check if part of inferred_bases
+    for i, base in enumerate(sequences[-1]):
+        if base.qname() == "typing.Generic":
+            pos_generic_in_main_bases = i
+            break
+    else:
+        return
+    # Check if also part of bases_mro
+    # Ignore entry for typing.Generic
+    for i, seq in enumerate(sequences[1:-1]):
+        if i == pos_generic_in_main_bases:
+            continue
+        if any(base.qname() == "typing.Generic" for base in seq):
+            break
+    else:
+        return
+    # Found multiple Generics in mro, remove entry from inferred_bases
+    # and the corresponding one from bases_mro
+    sequences[-1].pop(pos_generic_in_main_bases)
+    sequences.pop(pos_generic_in_main_bases + 1)
+
+
 def clean_duplicates_mro(sequences, cls, context):
     for sequence in sequences:
         names = [
@@ -2924,6 +2957,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         unmerged_mro = [[self]] + bases_mro + [inferred_bases]
         unmerged_mro = list(clean_duplicates_mro(unmerged_mro, self, context))
+        clean_typing_generic_mro(unmerged_mro)
         return _c3_merge(unmerged_mro, self, context)
 
     def mro(self, context=None) -> List["ClassDef"]:
