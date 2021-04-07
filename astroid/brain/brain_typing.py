@@ -104,17 +104,15 @@ def _looks_like_typedDict(  # pylint: disable=invalid-name
 
 def infer_typedDict(  # pylint: disable=invalid-name
     node: nodes.FunctionDef, ctx: context.InferenceContext = None
-) -> None:
+) -> typing.Iterator[nodes.ClassDef]:
     """Replace TypedDict FunctionDef with ClassDef."""
     class_def = nodes.ClassDef(
         name="TypedDict",
-        doc=node.doc,
         lineno=node.lineno,
         col_offset=node.col_offset,
         parent=node.parent,
     )
-    class_def.postinit(bases=[], body=[], decorators=None)
-    node.root().locals["TypedDict"] = [class_def]
+    return iter([class_def])
 
 
 CLASS_GETITEM_TEMPLATE = """
@@ -238,7 +236,7 @@ MANAGER.register_transform(
 
 if PY39:
     MANAGER.register_transform(
-        nodes.FunctionDef, infer_typedDict, _looks_like_typedDict
+        nodes.FunctionDef, inference_tip(infer_typedDict), _looks_like_typedDict
     )
 
 if PY37:

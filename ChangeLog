@@ -17,6 +17,9 @@ Release Date: TBA
 
   Closes PyCQA/pylint#4206
 
+* Use ``inference_tip`` for ``typing.TypedDict`` brain.
+
+
 What's New in astroid 2.5.2?
 ============================
 Release Date: 2021-03-28
