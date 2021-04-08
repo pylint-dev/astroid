@@ -153,7 +153,8 @@ def infer_typing_attr(
     if (
         PY37
         and isinstance(value, nodes.ClassDef)
-        and value.qname() in ("typing.Generic", "typing.Annotated")
+        and value.qname()
+        in ("typing.Generic", "typing.Annotated", "typing_extensions.Annotated")
     ):
         # With PY37+ typing.Generic and typing.Annotated (PY39) are subscriptable
         # through __class_getitem__. Since astroid can't easily
