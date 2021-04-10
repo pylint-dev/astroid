@@ -6,7 +6,7 @@ So, you want to release the `X.Y.Z` version of astroid ?
 
 1. Preparation
    1. Check if the dependencies of the package are correct
-   2. Update `numversion` in `__pkginfo__`, `dev_version` should also be None when you
+   2. Update `__version__` in `__pkginfo__`, `dev_version` should also be None when you
       tag.
    3. Put the version numbers, and the release date into the changelog
    4. Generate the new copyright notices for this release:
@@ -69,5 +69,5 @@ at the examples from `doc/whatsnew`.
 
 ### Versions
 
-Update `numversion` to `X.Y+1.0` in `__pkginfo__` for `master` and to `X.Y.Z+1` for the
+Update `__version__` to `X.Y+1.0` in `__pkginfo__` for `master` and to `X.Y.Z+1` for the
 `X.Y` branch. `dev_version` should also be back to an integer after the tag.

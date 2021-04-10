@@ -34,7 +34,7 @@ with open(pkginfo, "rb") as fobj:
 def install():
     return setup(
         name="astroid",
-        version=version,
+        version=__version__,
         packages=find_packages(exclude=["tests"]) + ["astroid.brain"],
     )
 

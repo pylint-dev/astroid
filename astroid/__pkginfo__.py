@@ -26,10 +26,15 @@
 
 """astroid packaging information"""
 
-# For an official release, use dev_version = None
-numversion = (2, 5, 3)
-dev_version = None
+from typing import Optional
 
-version = ".".join(str(num) for num in numversion)
+__version__ = "2.6.0"
+# For an official release, use 'alpha_version = False' and 'dev_version = None'
+alpha_version: bool = False  # Release will be an alpha version if True (ex: '1.2.3a6')
+dev_version: Optional[int] = 1
+
 if dev_version is not None:
-    version += "-dev" + str(dev_version)
+    if alpha_version:
+        __version__ += f"a{dev_version}"
+    else:
+        __version__ += f".dev{dev_version}"
