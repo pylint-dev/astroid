@@ -108,7 +108,7 @@ class ImportlibFinder(Finder):
 
     def find_module(self, modname, module_parts, processed, submodule_path):
         if not isinstance(modname, str):
-            raise TypeError("'modname' must be a str, not {}".format(type(modname)))
+            raise TypeError(f"'modname' must be a str, not {type(modname)}")
         if submodule_path is not None:
             submodule_path = list(submodule_path)
         else:

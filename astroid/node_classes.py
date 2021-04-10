@@ -889,7 +889,7 @@ class NodeNG:
             depth += 1
             cur_indent += indent
             if ids:
-                result.append("{}<0x{:x}>(\n".format(type(node).__name__, id(node)))
+                result.append(f"{type(node).__name__}<0x{id(node):x}>(\n")
             else:
                 result.append("%s(" % type(node).__name__)
             fields = []
@@ -2617,7 +2617,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
 
         else:
             raise exceptions.AstroidTypeError(
-                "Could not use type {} as subscript index".format(type(index))
+                f"Could not use type {type(index)} as subscript index"
             )
 
         try:
@@ -2657,7 +2657,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
         """
         if isinstance(self.value, str):
             return [const_factory(elem) for elem in self.value]
-        raise TypeError("Cannot iterate over type {!r}".format(type(self.value)))
+        raise TypeError(f"Cannot iterate over type {type(self.value)!r}")
 
     def pytype(self):
         """Get the name of the type that this node represents.
