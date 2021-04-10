@@ -1,4 +1,4 @@
-version: '{branch}-{build}'
+version: "{branch}-{build}"
 build: off
 cache:
   - 'C:\\tmp'
@@ -18,13 +18,13 @@ init:
   - ps: ls C:\Python*
   - ps: mkdir C:\tmp
 install:
-  - 'powershell ./appveyor/install.ps1'
+  - "powershell ./appveyor/install.ps1"
   - "python -m pip install -U setuptools pip tox wheel virtualenv"
-  - 'python -m pip --version'
-  - 'python -m tox --version'
+  - "python -m pip --version"
+  - "python -m tox --version"
 
 test_script:
-  - 'python -m tox'
+  - "python -m tox"
 
 on_failure:
   - ps: dir "env:"
