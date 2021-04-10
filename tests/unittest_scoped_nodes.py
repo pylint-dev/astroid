@@ -1275,6 +1275,9 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def assertEqualMro(self, klass, expected_mro):
         self.assertEqual([member.name for member in klass.mro()], expected_mro)
 
+    def assertEqualMroQName(self, klass, expected_mro):
+        self.assertEqual([member.qname() for member in klass.mro()], expected_mro)
+
     @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_with_metaclass_mro(self):
         astroid = builder.parse(
@@ -1437,6 +1440,142 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """
         )
         self.assertEqualMro(cls, ["C", "A", "B", "object"])
+
+    @test_utils.require_version(minver="3.7")
+    def test_mro_generic_1(self):
+        cls = builder.extract_node(
+            """
+        import typing
+        T = typing.TypeVar('T')
+        class A(typing.Generic[T]): ...
+        class B: ...
+        class C(A[T], B): ...
+        """
+        )
+        self.assertEqualMroQName(
+            cls, [".C", ".A", "typing.Generic", ".B", "builtins.object"]
+        )
+
+    @test_utils.require_version(minver="3.7")
+    def test_mro_generic_2(self):
+        cls = builder.extract_node(
+            """
+        from typing import Generic, TypeVar
+        T = TypeVar('T')
+        class A: ...
+        class B(Generic[T]): ...
+        class C(Generic[T], A, B[T]): ...
+        """
+        )
+        self.assertEqualMroQName(
+            cls, [".C", ".A", ".B", "typing.Generic", "builtins.object"]
+        )
+
+    @test_utils.require_version(minver="3.7")
+    def test_mro_generic_3(self):
+        cls = builder.extract_node(
+            """
+        from typing import Generic, TypeVar
+        T = TypeVar('T')
+        class A: ...
+        class B(A, Generic[T]): ...
+        class C(Generic[T]): ...
+        class D(B[T], C[T], Generic[T]): ...
+        """
+        )
+        self.assertEqualMroQName(
+            cls, [".D", ".B", ".A", ".C", "typing.Generic", "builtins.object"]
+        )
+
+    @test_utils.require_version(minver="3.7")
+    def test_mro_generic_4(self):
+        cls = builder.extract_node(
+            """
+        from typing import Generic, TypeVar
+        T = TypeVar('T')
+        class A: ...
+        class B(Generic[T]): ...
+        class C(A, Generic[T], B[T]): ...
+        """
+        )
+        self.assertEqualMroQName(
+            cls, [".C", ".A", ".B", "typing.Generic", "builtins.object"]
+        )
+
+    @test_utils.require_version(minver="3.7")
+    def test_mro_generic_5(self):
+        cls = builder.extract_node(
+            """
+        from typing import Generic, TypeVar
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+        class A(Generic[T1]): ...
+        class B(Generic[T2]): ...
+        class C(A[T1], B[T2]): ...
+        """
+        )
+        self.assertEqualMroQName(
+            cls, [".C", ".A", ".B", "typing.Generic", "builtins.object"]
+        )
+
+    @test_utils.require_version(minver="3.7")
+    def test_mro_generic_6(self):
+        cls = builder.extract_node(
+            """
+        from typing import Generic as TGeneric, TypeVar
+        T = TypeVar('T')
+        class Generic: ...
+        class A(Generic): ...
+        class B(TGeneric[T]): ...
+        class C(A, B[T]): ...
+        """
+        )
+        self.assertEqualMroQName(
+            cls, [".C", ".A", ".Generic", ".B", "typing.Generic", "builtins.object"]
+        )
+
+    @test_utils.require_version(minver="3.7")
+    def test_mro_generic_7(self):
+        cls = builder.extract_node(
+            """
+        from typing import Generic, TypeVar
+        T = TypeVar('T')
+        class A(): ...
+        class B(Generic[T]): ...
+        class C(A, B[T]): ...
+        class D: ...
+        class E(C[str], D): ...
+        """
+        )
+        self.assertEqualMroQName(
+            cls, [".E", ".C", ".A", ".B", "typing.Generic", ".D", "builtins.object"]
+        )
+
+    @test_utils.require_version(minver="3.7")
+    def test_mro_generic_error_1(self):
+        cls = builder.extract_node(
+            """
+        from typing import Generic, TypeVar
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+        class A(Generic[T1], Generic[T2]): ...
+        """
+        )
+        with self.assertRaises(DuplicateBasesError) as ex:
+            cls.mro()
+
+    @test_utils.require_version(minver="3.7")
+    def test_mro_generic_error_2(self):
+        cls = builder.extract_node(
+            """
+        from typing import Generic, TypeVar
+        T = TypeVar('T')
+        class A(Generic[T]): ...
+        class B(A[T], A[T]): ...
+        """
+        )
+        with self.assertRaises(DuplicateBasesError) as ex:
+            cls.mro()
 
     def test_generator_from_infer_call_result_parent(self):
         func = builder.extract_node(
