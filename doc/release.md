@@ -8,7 +8,6 @@ So, you want to release the ``X.Y.Z`` version of astroid ?
    1. Check if the dependencies of the package are correct
    2. Update ``numversion`` in ``__pkginfo__``, ``dev_version`` should also be None when you tag.
    3. Put the version numbers, and the release date into the changelog
-   4. Put the release date into the ``What's new`` section.
    5. Generate the new copyright notices for this release:
 
 ```bash
