@@ -11,6 +11,8 @@ What's New in astroid 2.5.4?
 ============================
 Release Date: TBA
 
+* Debian packaging is now  (officially) done in https://salsa.debian.org/python-team/packages/astroid.
+
 * Added inference tip for ``typing.Tuple`` alias
 
 * Fix crash when evaluating ``typing.NamedTuple``
