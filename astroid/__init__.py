@@ -46,13 +46,14 @@ from pathlib import Path
 
 import wrapt
 
-from .__pkginfo__ import version as __version__
+from .__pkginfo__ import __version__
 
 _Context = enum.Enum("Context", "Load Store Del")
 Load = _Context.Load
 Store = _Context.Store
 Del = _Context.Del
 del _Context
+
 
 # WARNING: internal imports order matters !
 # pylint: disable=wrong-import-order,wrong-import-position,redefined-builtin

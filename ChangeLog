@@ -13,6 +13,9 @@ Release Date: TBA
 
 * Debian packaging is now  (officially) done in https://salsa.debian.org/python-team/packages/astroid.
 
+* ``__pkginfo__`` now  only contain ``__version__`` (also accessible with ``astroid.__version__``),
+  other meta-information are still accessible with ``import importlib;metadata.metadata('astroid')``.
+
 * Added inference tip for ``typing.Tuple`` alias
 
 * Fix crash when evaluating ``typing.NamedTuple``
