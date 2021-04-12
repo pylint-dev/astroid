@@ -2031,7 +2031,6 @@ def test_issue940_metaclass_derived_funcdef():
     assert [c.value for c in inferred_result.elts] == ["a", "func"]
 
 
-@pytest.mark.xfail(reason="attribute is Uninferable")
 def test_issue940_metaclass_funcdef_is_not_datadescriptor():
     node = builder.extract_node(
         """
@@ -2039,7 +2038,9 @@ def test_issue940_metaclass_funcdef_is_not_datadescriptor():
         def __members__(cls):
             return ['a', 'property']
     class Parent(metaclass=BaseMeta):
-        __members__ = property(BaseMeta.__members__)
+        @property
+        def __members__(cls):
+            return BaseMeta.__members__()
     class Derived(Parent):
         pass
     Derived.__members__
