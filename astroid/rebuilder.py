@@ -425,6 +425,7 @@ class TreeRebuilder:
             getattr(node, "lineno", None),
             getattr(node, "col_offset", None),
             parent,
+            getattr(node, "kind", None),
         )
 
     def visit_continue(self, node, parent):
@@ -814,6 +815,7 @@ class TreeRebuilder:
             getattr(node, "lineno", None),
             getattr(node, "col_offset", None),
             parent,
+            getattr(node, "kind", None),
         )
 
     # Not used in Python 3.8+.

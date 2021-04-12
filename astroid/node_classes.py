@@ -2557,7 +2557,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
 
     _other_fields = ("value",)
 
-    def __init__(self, value, lineno=None, col_offset=None, parent=None):
+    def __init__(self, value, lineno=None, col_offset=None, parent=None, kind=None):
         """
         :param value: The value that the constant represents.
         :type value: object
@@ -2571,12 +2571,12 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param kind: The string prefix. "u" for u-prefixed strings and ``None`` otherwise. Python 3.8+ only.
+        :type kind: str or None
         """
         self.value = value
-        """The value that the constant represents.
-
-        :type: object
-        """
+        self.kind = kind
 
         super().__init__(lineno, col_offset, parent)
 
