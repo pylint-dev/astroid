@@ -23,6 +23,15 @@ Release Date: TBA
 
   Closes #926
 
+* Fix property inference in class contexts for properties defined on the metaclass
+
+  Closes #940
+
+* Update enum brain to fix definition of __members__ for subclass-defined Enums
+
+  Closes PyCQA/pylint#3535
+  Closes PyCQA/pylint#4358
+
 
 What's New in astroid 2.5.6?
 ============================
