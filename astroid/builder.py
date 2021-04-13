@@ -67,7 +67,7 @@ def _can_assign_attr(node, attrname):
     else:
         if slots and attrname not in {slot.value for slot in slots}:
             return False
-    return True
+    return node.qname() != "builtins.object"
 
 
 class AstroidBuilder(raw_building.InspectBuilder):
