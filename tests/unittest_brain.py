@@ -1338,6 +1338,19 @@ class TypingBrain(unittest.TestCase):
             self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
 
     @test_utils.require_version(minver="3.7")
+    def test_tuple_type(self):
+        node = builder.extract_node(
+            """
+        from typing import Tuple
+        Tuple[int, int]
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+        assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
+        assert inferred.qname() == "typing.Tuple"
+
+    @test_utils.require_version(minver="3.7")
     def test_typing_generic_subscriptable(self):
         """Test typing.Generic is subscriptable with __class_getitem__ (added in PY37)"""
         node = builder.extract_node(

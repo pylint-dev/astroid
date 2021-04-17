@@ -7,6 +7,13 @@ What's New in astroid 2.6.0?
 Release Date: TBA
 
 
+What's New in astroid 2.5.4?
+============================
+Release Date: TBA
+
+* Added inference tip for ``typing.Tuple`` alias
+
+
 What's New in astroid 2.5.3?
 ============================
 Release Date: 2021-04-10
