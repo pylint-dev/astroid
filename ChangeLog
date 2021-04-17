@@ -22,6 +22,8 @@ Release Date: TBA
 * COPYING was removed in favor of COPYING.LESSER and the latter was renamed to LICENSE to make more apparent
   that the code is licensed under LGPLv2.
 
+* Moved from appveyor and travis to Github Actions for continuous integration.
+
 What's New in astroid 2.5.3?
 ============================
 Release Date: 2021-04-10
