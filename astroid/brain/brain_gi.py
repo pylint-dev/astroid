@@ -19,6 +19,8 @@
 Helps with understanding everything imported from 'gi.repository'
 """
 
+# pylint:disable=import-error,import-outside-toplevel
+
 import inspect
 import itertools
 import sys
@@ -188,11 +190,14 @@ def _import_gi_module(modname):
                         # Just inspecting the code can raise gi deprecation
                         # warnings, so ignore them.
                         try:
-                            from gi import PyGIDeprecationWarning, PyGIWarning
+                            from gi import (  # pylint:disable=import-error
+                                PyGIDeprecationWarning,
+                                PyGIWarning,
+                            )
 
                             warnings.simplefilter("ignore", PyGIDeprecationWarning)
                             warnings.simplefilter("ignore", PyGIWarning)
-                        except Exception:
+                        except Exception:  # pylint:disable=broad-except
                             pass
 
                         __import__(m)
@@ -242,7 +247,7 @@ def _register_require_version(node):
         import gi
 
         gi.require_version(node.args[0].value, node.args[1].value)
-    except Exception:
+    except Exception:  # pylint:disable=broad-except
         pass
 
     return node
