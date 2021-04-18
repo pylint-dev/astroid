@@ -52,7 +52,7 @@ class LruWrappedModel(objectmodel.FunctionModel):
         return BoundMethod(proxy=node, bound=self._instance.parent.scope())
 
 
-def _transform_lru_cache(node, context=None):
+def _transform_lru_cache(node, context=None) -> None:
     # TODO: this is not ideal, since the node should be immutable,
     # but due to https://github.com/PyCQA/astroid/issues/354,
     # there's not much we can do now.
@@ -60,7 +60,6 @@ def _transform_lru_cache(node, context=None):
     # in pylint, the old node would still be available, leading
     # to spurious false positives.
     node.special_attributes = LruWrappedModel()(node)
-    return
 
 
 def _functools_partial_inference(node, context=None):
