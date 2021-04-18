@@ -33,17 +33,19 @@
 :type BUILTIN_MODULES: dict
 :var BUILTIN_MODULES: dictionary with builtin module names has key
 """
+
+# We don't want distutils to be a requirement
+# pylint: disable=import-error, no-name-in-module,useless-suppression
+
 import importlib.util
 import itertools
 import os
 import platform
 import sys
-
-# pylint: disable=import-error, no-name-in-module
 from distutils.errors import DistutilsPlatformError
 from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
 
-from .interpreter._import import spec, util
+from astroid.interpreter._import import spec, util
 
 # distutils is replaced by virtualenv with a module that does
 # weird path manipulations in order to get to the
