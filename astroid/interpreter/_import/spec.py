@@ -297,13 +297,15 @@ def _precache_zipimporters(path=None):
     new_paths = _cached_set_diff(req_paths, cached_paths)
     for entry_path in new_paths:
         try:
-            pic[entry_path] = zipimport.zipimporter(entry_path)
-        except zipimport.ZipImportError:
+            pic[entry_path] = zipimport.zipimporter(  # pylint: disable=no-member
+                entry_path
+            )
+        except zipimport.ZipImportError:  # pylint: disable=no-member
             continue
     return {
         key: value
         for key, value in pic.items()
-        if isinstance(value, zipimport.zipimporter)
+        if isinstance(value, zipimport.zipimporter)  # pylint: disable=no-member
     }
 
 
