@@ -1,4 +1,15 @@
 repos:
+  - repo: https://github.com/myint/autoflake
+    rev: v1.4
+    hooks:
+      - id: autoflake
+        exclude: tests/testdata|astroid/__init__.py
+        args:
+          - --in-place
+          - --remove-all-unused-imports
+          - --expand-star-imports
+          - --remove-duplicate-keys
+          - --remove-unused-variables
   - repo: https://github.com/asottile/pyupgrade
     rev: v2.12.0
     hooks:

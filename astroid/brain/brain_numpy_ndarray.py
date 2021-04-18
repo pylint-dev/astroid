@@ -8,7 +8,6 @@
 
 """Astroid hooks for numpy ndarray class."""
 
-import functools
 import astroid
 
 
