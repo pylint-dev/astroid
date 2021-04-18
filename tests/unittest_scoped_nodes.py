@@ -1561,7 +1561,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class A(Generic[T1], Generic[T2]): ...
         """
         )
-        with self.assertRaises(DuplicateBasesError) as ex:
+        with self.assertRaises(DuplicateBasesError):
             cls.mro()
 
     @test_utils.require_version(minver="3.7")
@@ -1574,7 +1574,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class B(A[T], A[T]): ...
         """
         )
-        with self.assertRaises(DuplicateBasesError) as ex:
+        with self.assertRaises(DuplicateBasesError):
             cls.mro()
 
     def test_generator_from_infer_call_result_parent(self):
