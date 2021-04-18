@@ -83,7 +83,7 @@ def _gi_build_stub(parent):
 
         try:
             obj = getattr(parent, name)
-        except:
+        except AttributeError:
             continue
 
         if inspect.isclass(obj):
