@@ -39,17 +39,12 @@ import builtins as builtins_mod
 import itertools
 import pprint
 import sys
-from functools import lru_cache, singledispatch as _singledispatch
+from functools import lru_cache
+from functools import singledispatch as _singledispatch
 
-from astroid import as_string
-from astroid import bases
+from astroid import as_string, bases
 from astroid import context as contextmod
-from astroid import decorators
-from astroid import exceptions
-from astroid import manager
-from astroid import mixins
-from astroid import util
-
+from astroid import decorators, exceptions, manager, mixins, util
 
 BUILTINS = builtins_mod.__name__
 MANAGER = manager.AstroidManager()

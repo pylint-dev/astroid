@@ -23,13 +23,12 @@ Helps with understanding everything imported from 'gi.repository'
 
 import inspect
 import itertools
-import sys
 import re
+import sys
 import warnings
 
 from astroid import MANAGER, AstroidBuildingError, nodes
 from astroid.builder import AstroidBuilder
-
 
 _inspected_modules = {}
 

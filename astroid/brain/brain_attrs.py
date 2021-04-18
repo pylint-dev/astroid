@@ -10,7 +10,6 @@ for attrs classes
 import astroid
 from astroid import MANAGER
 
-
 ATTRIB_NAMES = frozenset(("attr.ib", "attrib", "attr.attrib"))
 ATTRS_NAMES = frozenset(("attr.s", "attrs", "attr.attrs", "attr.attributes"))
 

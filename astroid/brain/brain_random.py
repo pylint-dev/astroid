@@ -3,9 +3,7 @@
 import random
 
 import astroid
-from astroid import helpers
-from astroid import MANAGER
-
+from astroid import MANAGER, helpers
 
 ACCEPTED_ITERABLES_FOR_SAMPLE = (astroid.List, astroid.Set, astroid.Tuple)
 

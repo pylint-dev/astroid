@@ -37,25 +37,20 @@
 """
 # pylint: disable=too-many-lines
 import platform
+import sys
 import textwrap
-from functools import partial
 import unittest
+from functools import partial
 from unittest.mock import patch
 
 import pytest
-import sys
 
-from astroid import InferenceError, builder, nodes, Slice
-from astroid.builder import parse, extract_node
-from astroid.inference import infer_end as inference_infer_end
-from astroid.bases import Instance, BoundMethod, UnboundMethod, BUILTINS
-from astroid import arguments
+from astroid import InferenceError, Slice, arguments, builder
 from astroid import decorators as decoratorsmod
-from astroid import exceptions
-from astroid import helpers
-from astroid import objects
-from astroid import test_utils
-from astroid import util
+from astroid import exceptions, helpers, nodes, objects, test_utils, util
+from astroid.bases import BUILTINS, BoundMethod, Instance, UnboundMethod
+from astroid.builder import extract_node, parse
+from astroid.inference import infer_end as inference_infer_end
 from astroid.objects import ExceptionInstance
 
 from . import resources

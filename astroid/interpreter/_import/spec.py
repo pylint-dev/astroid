@@ -17,11 +17,10 @@ import abc
 import collections
 import distutils
 import enum
+import importlib.machinery
 import os
 import sys
 import zipimport
-
-import importlib.machinery
 
 try:
     from functools import lru_cache

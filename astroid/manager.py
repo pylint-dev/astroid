@@ -26,11 +26,8 @@ from various source and using a cache of built modules)
 import os
 import zipimport
 
-from astroid import exceptions
+from astroid import exceptions, modutils, transforms
 from astroid.interpreter._import import spec
-from astroid import modutils
-from astroid import transforms
-
 
 ZIP_IMPORT_EXTS = (".zip", ".egg", ".whl")
 

@@ -11,9 +11,7 @@
 
 from astroid import bases
 from astroid import context as contextmod
-from astroid import exceptions
-from astroid import nodes
-from astroid import util
+from astroid import exceptions, nodes, util
 
 
 class CallSite:

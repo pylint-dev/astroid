@@ -22,8 +22,7 @@ import functools
 import wrapt
 
 from astroid import context as contextmod
-from astroid import exceptions
-from astroid import util
+from astroid import exceptions, util
 
 
 @wrapt.decorator

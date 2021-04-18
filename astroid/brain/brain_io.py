@@ -9,7 +9,6 @@
 
 import astroid
 
-
 BUFFERED = {"BufferedWriter", "BufferedReader"}
 TextIOWrapper = "TextIOWrapper"
 FileIO = "FileIO"

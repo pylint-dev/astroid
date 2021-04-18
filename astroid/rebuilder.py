@@ -31,9 +31,8 @@ import sys
 from typing import Optional
 
 import astroid
-from astroid._ast import parse_function_type_comment, get_parser_module, ParserModule
 from astroid import nodes
-
+from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
 
 CONST_NAME_TRANSFORMS = {"None": None, "True": True, "False": False}
 

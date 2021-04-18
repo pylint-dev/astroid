@@ -8,8 +8,10 @@
 """Astroid hooks for numpy.core.multiarray module."""
 
 import functools
+
+from brain_numpy_utils import infer_numpy_member, looks_like_numpy_member
+
 import astroid
-from brain_numpy_utils import looks_like_numpy_member, infer_numpy_member
 
 
 def numpy_core_multiarray_transform():

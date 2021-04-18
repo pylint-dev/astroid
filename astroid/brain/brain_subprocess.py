@@ -16,7 +16,6 @@ import textwrap
 
 import astroid
 
-
 PY39 = sys.version_info >= (3, 9)
 PY37 = sys.version_info >= (3, 7)
 PY36 = sys.version_info >= (3, 6)

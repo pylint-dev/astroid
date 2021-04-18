@@ -16,16 +16,15 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 import sys
-import unittest
 import textwrap
+import unittest
 
-from astroid import MANAGER, Instance, nodes
+from astroid import MANAGER, Instance, exceptions, nodes, transforms
 from astroid.bases import BUILTINS
 from astroid.builder import AstroidBuilder, extract_node
-from astroid import exceptions
-from astroid.raw_building import build_module
 from astroid.manager import AstroidManager
-from astroid import transforms
+from astroid.raw_building import build_module
+
 from . import resources
 
 try:

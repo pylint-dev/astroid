@@ -37,22 +37,16 @@ Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
 
 import builtins
-import sys
 import io
 import itertools
-from typing import Optional, List
+import sys
+from typing import List, Optional
 
 from astroid import bases
 from astroid import context as contextmod
-from astroid import exceptions
 from astroid import decorators as decorators_mod
-from astroid.interpreter import objectmodel
-from astroid.interpreter import dunder_lookup
-from astroid import manager
-from astroid import mixins
-from astroid import node_classes
-from astroid import util
-
+from astroid import exceptions, manager, mixins, node_classes, util
+from astroid.interpreter import dunder_lookup, objectmodel
 
 PY39 = sys.version_info[:2] >= (3, 9)
 

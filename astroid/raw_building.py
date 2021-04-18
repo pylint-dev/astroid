@@ -30,11 +30,7 @@ import sys
 import types
 import warnings
 
-from astroid import bases
-from astroid import manager
-from astroid import node_classes
-from astroid import nodes
-
+from astroid import bases, manager, node_classes, nodes
 
 MANAGER = manager.AstroidManager()
 # the keys of CONST_CLS eg python builtin types

@@ -9,15 +9,10 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 
-import unittest
 import builtins
+import unittest
 
-from astroid import builder
-from astroid import exceptions
-from astroid import helpers
-from astroid import manager
-from astroid import raw_building
-from astroid import util
+from astroid import builder, exceptions, helpers, manager, raw_building, util
 
 
 class TestHelpers(unittest.TestCase):

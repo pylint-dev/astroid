@@ -8,8 +8,7 @@
 """Astroid hooks for the UUID module."""
 
 
-from astroid import MANAGER
-from astroid import nodes
+from astroid import MANAGER, nodes
 
 
 def _patch_uuid_class(node):

@@ -26,8 +26,7 @@ import builtins
 import collections
 
 from astroid import context as contextmod
-from astroid import exceptions
-from astroid import util
+from astroid import exceptions, util
 
 objectmodel = util.lazy_import("interpreter.objectmodel")
 helpers = util.lazy_import("helpers")

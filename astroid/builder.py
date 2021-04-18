@@ -23,15 +23,17 @@ import os
 import textwrap
 from tokenize import detect_encoding
 
+from astroid import (
+    bases,
+    exceptions,
+    manager,
+    modutils,
+    nodes,
+    raw_building,
+    rebuilder,
+    util,
+)
 from astroid._ast import get_parser_module
-from astroid import bases
-from astroid import exceptions
-from astroid import manager
-from astroid import modutils
-from astroid import raw_building
-from astroid import rebuilder
-from astroid import nodes
-from astroid import util
 
 objects = util.lazy_import("objects")
 

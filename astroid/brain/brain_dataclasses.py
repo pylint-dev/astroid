@@ -7,7 +7,6 @@ Astroid hook for the dataclasses library
 import astroid
 from astroid import MANAGER
 
-
 DATACLASSES_DECORATORS = frozenset(("dataclasses.dataclass", "dataclass"))
 
 

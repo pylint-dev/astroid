@@ -12,11 +12,7 @@
 
 import unittest
 
-from astroid import bases
-from astroid import builder
-from astroid import exceptions
-from astroid import nodes
-from astroid import objects
+from astroid import bases, builder, exceptions, nodes, objects
 
 
 class ObjectsTest(unittest.TestCase):

@@ -19,7 +19,6 @@ import sys
 
 from astroid import MANAGER, extract_node, inference_tip, nodes
 
-
 PY39 = sys.version_info >= (3, 9)
 
 

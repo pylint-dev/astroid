@@ -9,9 +9,10 @@
 """Astroid hooks for numpy.core.function_base module."""
 
 import functools
-import astroid
-from brain_numpy_utils import looks_like_numpy_member, infer_numpy_member
 
+from brain_numpy_utils import infer_numpy_member, looks_like_numpy_member
+
+import astroid
 
 METHODS_TO_BE_INFERRED = {
     "linspace": """def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None, axis=0):

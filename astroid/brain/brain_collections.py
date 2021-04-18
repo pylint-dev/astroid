@@ -12,7 +12,6 @@ import sys
 
 import astroid
 
-
 PY39 = sys.version_info >= (3, 9)
 
 

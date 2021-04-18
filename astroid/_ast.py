@@ -1,8 +1,8 @@
 import ast
+import sys
 from collections import namedtuple
 from functools import partial
 from typing import Optional
-import sys
 
 import astroid
 

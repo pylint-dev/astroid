@@ -16,12 +16,7 @@ import xml
 import pytest
 
 import astroid
-from astroid import builder, util
-from astroid import exceptions
-from astroid import MANAGER
-from astroid import test_utils
-from astroid import objects
-
+from astroid import MANAGER, builder, exceptions, objects, test_utils, util
 
 BUILTINS = MANAGER.astroid_cache[builtins.__name__]
 

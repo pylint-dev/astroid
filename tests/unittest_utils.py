@@ -12,10 +12,7 @@
 
 import unittest
 
-from astroid import builder
-from astroid import InferenceError
-from astroid import nodes
-from astroid import node_classes
+from astroid import InferenceError, builder, node_classes, nodes
 from astroid import util as astroid_util
 
 

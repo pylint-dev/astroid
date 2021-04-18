@@ -19,13 +19,7 @@ import builtins as builtins_mod
 
 from astroid import bases
 from astroid import context as contextmod
-from astroid import exceptions
-from astroid import manager
-from astroid import nodes
-from astroid import raw_building
-from astroid import scoped_nodes
-from astroid import util
-
+from astroid import exceptions, manager, nodes, raw_building, scoped_nodes, util
 
 BUILTINS = builtins_mod.__name__
 

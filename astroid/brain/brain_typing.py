@@ -11,18 +11,18 @@ import sys
 import typing
 from functools import partial
 
+import astroid
 from astroid import (
     MANAGER,
+    AttributeInferenceError,
+    InferenceError,
     UseInferenceDefault,
+    context,
     extract_node,
     inference_tip,
     node_classes,
     nodes,
-    context,
-    InferenceError,
-    AttributeInferenceError,
 )
-import astroid
 
 PY37 = sys.version_info[:2] >= (3, 7)
 PY39 = sys.version_info[:2] >= (3, 9)
