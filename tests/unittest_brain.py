@@ -1003,6 +1003,7 @@ class TypeBrain(unittest.TestCase):
         self.assertIsInstance(val_inf, astroid.ClassDef)
         self.assertEqual(val_inf.name, "str")
         with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+            # pylint: disable=expression-not-assigned
             val_inf.getattr("__class_getitem__")[0]
 
     @test_utils.require_version(minver="3.9")
