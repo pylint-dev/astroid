@@ -114,6 +114,8 @@ disable=fixme,
         # everything here is legacy not checked in astroid/brain
         duplicate-code,
 
+enable=
+    useless-suppression
 
 [BASIC]
 
