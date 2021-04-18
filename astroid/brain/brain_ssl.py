@@ -10,8 +10,6 @@
 """Astroid hooks for the ssl library."""
 
 from astroid import MANAGER, register_module_extender
-from astroid.builder import AstroidBuilder
-from astroid import nodes
 from astroid import parse
 
 

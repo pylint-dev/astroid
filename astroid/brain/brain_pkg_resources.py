@@ -5,9 +5,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 
-import astroid
 from astroid import parse
-from astroid import inference_tip
 from astroid import register_module_extender
 from astroid import MANAGER
 
