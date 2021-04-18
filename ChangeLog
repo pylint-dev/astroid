@@ -76,7 +76,7 @@ Release Date: 2021-02-15
   Fixes PyCQA/astroid#863
 
 * Enrich the ``brain_collection`` module so that ``__class_getitem__`` method is added to `deque` for
-  ``python`` version above 3.9.
+  ``python`` version above 3.9.
 
 * The ``context.path`` is now a ``dict`` and the ``context.push`` method
   returns ``True`` if the node has been visited a certain amount of times.
@@ -92,7 +92,7 @@ Release Date: 2021-02-15
   Fixes PyCQA/pylint#4034
 
 
-* Adds `degrees`, `radians`, which are `numpy ufunc` functions, in the `numpy` brain. Adds `random` function in the `numpy.random` brain.
+* Adds `degrees`, `radians`, which are `numpy ufunc` functions, in the `numpy` brain. Adds `random` function in the `numpy.random` brain.
 
   Fixes PyCQA/pylint#3856
 

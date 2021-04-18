@@ -27,7 +27,7 @@ def numpy_core_numerictypes_transform():
             self.dtype = None
             self.flags = None
             # Should be a numpy.flatiter instance but not available for now
-            # Putting an array instead so that iteration and indexing are authorized
+            # Putting an array instead so that iteration and indexing are authorized
             self.flat = np.ndarray([0, 0])
             self.imag = None
             self.itemsize = None

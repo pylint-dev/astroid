@@ -24,7 +24,7 @@ class NumpyBrainRandomMtrandTest(unittest.TestCase):
     Test of all the functions of numpy.random.mtrand module.
     """
 
-    #  Map between functions names and arguments names and default values
+    # Map between functions names and arguments names and default values
     all_mtrand = {
         "beta": (["a", "b", "size"], [None]),
         "binomial": (["n", "p", "size"], [None]),
