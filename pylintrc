@@ -81,9 +81,10 @@ confidence=
 
 disable=fixme, invalid-name, missing-docstring, too-few-public-methods,
         too-many-public-methods,
-        # We know about it and we're doing our best to remove it
-        # in 2.0
+        # We know about it and we're doing our best to remove it in 2.0 (oups)
         cyclic-import,
+        wrong-import-position,
+        wrong-import-order,
         # The check is faulty in most cases and it doesn't take in
         # account how the variable is being used. For instance,
         # using a variable that is a list or a generator in an
@@ -248,7 +249,7 @@ ignore-comments=yes
 ignore-docstrings=yes
 
 # Ignore imports when computing similarities.
-ignore-imports=no
+ignore-imports=yes
 
 
 [SPELLING]
