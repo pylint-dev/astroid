@@ -1003,7 +1003,7 @@ class TypeBrain(unittest.TestCase):
         self.assertIsInstance(val_inf, astroid.ClassDef)
         self.assertEqual(val_inf.name, "str")
         with self.assertRaises(astroid.exceptions.AttributeInferenceError):
-            meth_inf = val_inf.getattr("__class_getitem__")[0]
+            val_inf.getattr("__class_getitem__")[0]
 
     @test_utils.require_version(minver="3.9")
     def test_builtin_subscriptable(self):
