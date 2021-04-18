@@ -26,20 +26,12 @@ where it makes sense.
 """
 
 import collections
+import itertools
 import operator as operator_mod
 
-import itertools
-
-from astroid import Store
-from astroid import arguments
-from astroid import bases
+from astroid import Store, arguments, bases
 from astroid import context as contextmod
-from astroid import exceptions
-from astroid import decorators
-from astroid import node_classes
-from astroid import helpers
-from astroid import nodes
-from astroid import util
+from astroid import decorators, exceptions, helpers, node_classes, nodes, util
 
 raw_building = util.lazy_import("raw_building")
 objects = util.lazy_import("objects")

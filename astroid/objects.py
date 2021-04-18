@@ -20,14 +20,15 @@ leads to an inferred FrozenSet:
 
 import builtins
 
-from astroid import bases
-from astroid import decorators
-from astroid import exceptions
-from astroid import MANAGER
-from astroid import node_classes
-from astroid import scoped_nodes
-from astroid import util
-
+from astroid import (
+    MANAGER,
+    bases,
+    decorators,
+    exceptions,
+    node_classes,
+    scoped_nodes,
+    util,
+)
 
 BUILTINS = builtins.__name__
 objectmodel = util.lazy_import("interpreter.objectmodel")

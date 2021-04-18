@@ -11,10 +11,8 @@
 
 """Astroid hooks for the PyQT library."""
 
-from astroid import MANAGER, register_module_extender
+from astroid import MANAGER, nodes, parse, register_module_extender
 from astroid.builder import AstroidBuilder
-from astroid import nodes
-from astroid import parse
 
 
 def _looks_like_signal(node, signal_name="pyqtSignal"):

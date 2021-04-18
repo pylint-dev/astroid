@@ -26,28 +26,21 @@
 """tests for specific behaviour of astroid nodes
 """
 import builtins
+import copy
 import os
+import platform
 import sys
 import textwrap
 import unittest
-import copy
-import platform
 
 import pytest
 
 import astroid
-from astroid import bases
-from astroid import builder
+from astroid import bases, builder
 from astroid import context as contextmod
-from astroid import exceptions
-from astroid import node_classes
-from astroid import nodes
-from astroid import parse
-from astroid import util
-from astroid import test_utils
-from astroid import transforms
-from . import resources
+from astroid import exceptions, node_classes, nodes, parse, test_utils, transforms, util
 
+from . import resources
 
 abuilder = builder.AstroidBuilder()
 BUILTINS = builtins.__name__

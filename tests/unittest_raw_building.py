@@ -16,13 +16,14 @@ import platform
 import unittest
 
 import _io
+
 from astroid.builder import AstroidBuilder
 from astroid.raw_building import (
     attach_dummy_node,
-    build_module,
     build_class,
-    build_function,
     build_from_import,
+    build_function,
+    build_module,
 )
 
 

@@ -30,17 +30,15 @@ mechanism.
 """
 
 import itertools
-import pprint
 import os
+import pprint
 import types
 from functools import lru_cache
 from typing import Optional
 
 import astroid
 from astroid import context as contextmod
-from astroid import exceptions
-from astroid import node_classes
-from astroid import util
+from astroid import exceptions, node_classes, util
 
 # Prevents circular imports
 objects = util.lazy_import("objects")
@@ -473,8 +471,7 @@ class ClassModel(ObjectModel):
         thus it might miss a couple of them.
         """
         # pylint: disable=import-outside-toplevel; circular import
-        from astroid import bases
-        from astroid import scoped_nodes
+        from astroid import bases, scoped_nodes
 
         if not self._instance.newstyle:
             raise exceptions.AttributeInferenceError(

@@ -33,9 +33,9 @@
 
 """Tests for basic functionality in astroid.brain."""
 import io
+import os
 import queue
 import re
-import os
 
 try:
     import multiprocessing  # pylint: disable=unused-import
@@ -76,13 +76,9 @@ try:
 except ImportError:
     HAS_SIX = False
 
-from astroid import MANAGER
-from astroid import bases
-from astroid import builder
-from astroid import nodes
-from astroid import util
 import astroid
 import astroid.test_utils as test_utils
+from astroid import MANAGER, bases, builder, nodes, util
 
 
 def assertEqualMro(klass, expected_mro):

@@ -34,21 +34,21 @@
 :var BUILTIN_MODULES: dictionary with builtin module names has key
 """
 import importlib.util
+import itertools
 import os
 import platform
 import sys
-import itertools
-from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
 
 # pylint: disable=import-error, no-name-in-module
 from distutils.errors import DistutilsPlatformError
+from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
+
+from .interpreter._import import spec, util
 
 # distutils is replaced by virtualenv with a module that does
 # weird path manipulations in order to get to the
 # real distutils module.
 
-from .interpreter._import import spec
-from .interpreter._import import util
 
 if sys.platform.startswith("win"):
     PY_SOURCE_EXTS = ("py", "pyw")

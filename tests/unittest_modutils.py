@@ -23,17 +23,18 @@ unit tests for module modutils (module manipulation utilities)
 import distutils.version
 import email
 import os
+import shutil
 import sys
+import tempfile
 import unittest
 import xml
 from xml import etree
 from xml.etree import ElementTree
-import tempfile
-import shutil
 
 import astroid
-from astroid.interpreter._import import spec
 from astroid import modutils
+from astroid.interpreter._import import spec
+
 from . import resources
 
 

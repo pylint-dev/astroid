@@ -14,10 +14,7 @@ import contextlib
 import time
 import unittest
 
-from astroid import builder
-from astroid import nodes
-from astroid import parse
-from astroid import transforms
+from astroid import builder, nodes, parse, transforms
 
 
 @contextlib.contextmanager

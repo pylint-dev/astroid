@@ -25,13 +25,17 @@ import functools
 import keyword
 from textwrap import dedent
 
-from astroid import MANAGER, UseInferenceDefault, inference_tip, InferenceError
-from astroid import arguments
-from astroid import exceptions
-from astroid import nodes
+from astroid import (
+    MANAGER,
+    InferenceError,
+    UseInferenceDefault,
+    arguments,
+    exceptions,
+    inference_tip,
+    nodes,
+    util,
+)
 from astroid.builder import AstroidBuilder, extract_node
-from astroid import util
-
 
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
 ENUM_BASE_NAMES = {

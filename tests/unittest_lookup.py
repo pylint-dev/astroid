@@ -16,10 +16,8 @@
 import functools
 import unittest
 
-from astroid import builder
-from astroid import exceptions
-from astroid import nodes
-from astroid import scoped_nodes
+from astroid import builder, exceptions, nodes, scoped_nodes
+
 from . import resources
 
 

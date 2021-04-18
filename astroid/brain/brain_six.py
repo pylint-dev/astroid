@@ -14,15 +14,13 @@
 
 from textwrap import dedent
 
-from astroid import MANAGER, register_module_extender
+from astroid import MANAGER, nodes, register_module_extender
 from astroid.builder import AstroidBuilder
 from astroid.exceptions import (
     AstroidBuildingError,
-    InferenceError,
     AttributeInferenceError,
+    InferenceError,
 )
-from astroid import nodes
-
 
 SIX_ADD_METACLASS = "six.add_metaclass"
 SIX_WITH_METACLASS = "six.with_metaclass"

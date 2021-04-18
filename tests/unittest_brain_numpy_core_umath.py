@@ -14,9 +14,7 @@ try:
 except ImportError:
     HAS_NUMPY = False
 
-from astroid import builder
-from astroid import nodes, bases
-from astroid import util
+from astroid import bases, builder, nodes, util
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")

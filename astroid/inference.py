@@ -30,17 +30,11 @@ import itertools
 import operator
 
 import wrapt
+
 from astroid import bases
 from astroid import context as contextmod
-from astroid import exceptions
-from astroid import decorators
-from astroid import helpers
-from astroid import manager
-from astroid import nodes
+from astroid import decorators, exceptions, helpers, manager, nodes, protocols, util
 from astroid.interpreter import dunder_lookup
-from astroid import protocols
-from astroid import util
-
 
 MANAGER = manager.AstroidManager()
 # Prevents circular imports

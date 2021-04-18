@@ -33,27 +33,25 @@ import datetime
 import os
 import sys
 import textwrap
-from functools import partial
 import unittest
+from functools import partial
 
 import pytest
-from astroid import builder, objects
-from astroid import nodes
-from astroid import scoped_nodes
-from astroid import util
+
+from astroid import builder, nodes, objects, scoped_nodes, test_utils, util
+from astroid.bases import BUILTINS, BoundMethod, Generator, Instance, UnboundMethod
 from astroid.exceptions import (
-    InferenceError,
     AttributeInferenceError,
+    DuplicateBasesError,
+    InconsistentMroError,
+    InferenceError,
+    MroError,
+    NameInferenceError,
     NoDefault,
     ResolveError,
-    MroError,
-    InconsistentMroError,
-    DuplicateBasesError,
     TooManyLevelsError,
-    NameInferenceError,
 )
-from astroid.bases import BUILTINS, Instance, BoundMethod, UnboundMethod, Generator
-from astroid import test_utils
+
 from . import resources
 
 try:

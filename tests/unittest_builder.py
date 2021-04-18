@@ -27,12 +27,9 @@ import sys
 import unittest
 
 import pytest
-from astroid import builder
-from astroid import exceptions
-from astroid import manager
-from astroid import nodes
-from astroid import test_utils
-from astroid import util
+
+from astroid import builder, exceptions, manager, nodes, test_utils, util
+
 from . import resources
 
 MANAGER = manager.AstroidManager()

@@ -23,16 +23,15 @@ import os
 import platform
 import site
 import sys
+import time
 import unittest
 
 import pkg_resources
-import time
 
 import astroid
-from astroid import exceptions
-from astroid import manager
-from . import resources
+from astroid import exceptions, manager
 
+from . import resources
 
 BUILTINS = builtins.__name__
 

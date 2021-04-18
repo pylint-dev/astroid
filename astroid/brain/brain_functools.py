@@ -8,14 +8,8 @@ from functools import partial
 from itertools import chain
 
 import astroid
-from astroid import arguments
-from astroid import BoundMethod
-from astroid import extract_node
-from astroid import helpers
+from astroid import MANAGER, BoundMethod, arguments, extract_node, helpers, objects
 from astroid.interpreter import objectmodel
-from astroid import MANAGER
-from astroid import objects
-
 
 LRU_CACHE = "functools.lru_cache"
 

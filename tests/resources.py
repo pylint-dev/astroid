@@ -13,10 +13,8 @@
 import os
 import sys
 
-from astroid import builder
-from astroid import MANAGER
+from astroid import MANAGER, builder
 from astroid.bases import BUILTINS
-
 
 DATA_DIR = os.path.join("testdata", "python3")
 RESOURCE_PATH = os.path.join(os.path.dirname(__file__), DATA_DIR, "data")
