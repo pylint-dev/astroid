@@ -79,8 +79,14 @@ confidence=
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
 
-disable=fixme, invalid-name, missing-docstring, too-few-public-methods,
+disable=fixme,
+        invalid-name,
+        missing-docstring,
+        too-few-public-methods,
         too-many-public-methods,
+        too-many-boolean-expressions,
+        too-many-branches,
+        too-many-statements,
         # We know about it and we're doing our best to remove it in 2.0 (oups)
         cyclic-import,
         wrong-import-position,
