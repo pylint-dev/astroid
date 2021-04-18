@@ -39,3 +39,12 @@ repos:
     hooks:
       - id: prettier
         args: [--prose-wrap=always, --print-width=88]
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        args: ["-rn", "-sn", "--rcfile=pylintrc"]
+        exclude: tests/testdata|setup.py|conf.py
