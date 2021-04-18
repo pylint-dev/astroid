@@ -13,7 +13,7 @@ Release Date: 2021-04-10
 
 * Takes into account the fact that subscript inferring for a ClassDef may involve __class_getitem__ method
 
-* Reworks the `collections` and `typing` brain so that `pylint`s acceptance tests are fine.
+* Reworks the ``collections`` and ``typing`` brain so that pylint`s acceptance tests are fine.
 
   Closes PyCQA/pylint#4206
 
@@ -120,8 +120,8 @@ Release Date: 2021-02-15
 
   Fixes #815
 
-* Fixes a to-list cast bug in ``starred_assigned_stmts`` method,
-  in the ``protocols.py` module.
+* Fixes a to-list cast bug in ``starred_assigned_stmts`` method, in the
+  ``protocols.py`` module.
 
 * Added a brain for ``hypothesis.strategies.composite``
 
@@ -341,7 +341,7 @@ Release Date: 2020-04-27
 
 * All the ``numpy ufunc`` functions derived now from a common class that
   implements the specific ``reduce``, ``accumulate``, ``reduceat``,
-	``outer`` and ``at`` methods.
+  ``outer`` and ``at`` methods.
 
   Close PyCQA/pylint#2885
 
@@ -764,7 +764,7 @@ Release Date: 2018-07-15
 
    * Reworking of the numpy brain dealing with numerictypes
      (use of inspect module to determine the class hierarchy of
-      numpy.core.numerictypes module)
+     numpy.core.numerictypes module)
 
      Close PyCQA/pylint#2140
 
@@ -892,7 +892,7 @@ Release Date: 2018-07-15
      Close #533
 
    * Stop astroid from getting stuck in an infinite loop if a function shares
-   its name with its decorator
+     its name with its decorator
 
      Close #375
 
@@ -905,11 +905,11 @@ Release Date: 2018-07-15
      Close PyCQA/pylint#2159
 
    * Limit the maximum amount of interable result in an NodeNG.infer() call to
-    100 by default for performance issues with variables with large amounts of
-    possible values.
+     100 by default for performance issues with variables with large amounts of
+     possible values.
 
-    The max inferable value can be tuned by setting the `max_inferable_values` flag on
-    astroid.MANAGER.
+     The max inferable value can be tuned by setting the `max_inferable_values` flag on
+     astroid.MANAGER.
 
 
 What's New in astroid 1.6.0?
@@ -1001,13 +1001,13 @@ Release Date: 2017-06-03
 
 
     * enum34 dependency is forced to be at least version 1.1.3. Fixes spurious
-    bug related to enum classes being falsy in boolean context, which caused
-    _Inconsistent Hierarchy_ `RuntimeError` in `singledispatch` module.
+      bug related to enum classes being falsy in boolean context, which caused
+      ``_Inconsistent Hierarchy_`` ``RuntimeError`` in ``singledispatch`` module.
 
-    See links below for details:
-    - http://bugs.python.org/issue26748
-    - https://bitbucket.org/ambv/singledispatch/issues/8/inconsistent-hierarchy-with-enum
-    - https://bitbucket.org/stoneleaf/enum34/commits/da50803651ab644e6fce66ebc85562f1117c344b
+      See links below for details:
+        - http://bugs.python.org/issue26748
+        - https://bitbucket.org/ambv/singledispatch/issues/8/inconsistent-hierarchy-with-enum
+        - https://bitbucket.org/stoneleaf/enum34/commits/da50803651ab644e6fce66ebc85562f1117c344b
 
     * Do not raise an exception when uninferable value is unpacked in ``with`` statement.
 
@@ -1562,7 +1562,7 @@ Release Date: 2015-11-29
 
     * Add a new node, DictUnpack, which is used to represent the unpacking
       of a dictionary into another dictionary, using PEP 448 specific syntax
-      ({1:2, **{2:3})
+      ``({1:2, **{2:3})``
 
       This is a different approach than what the builtin ast module does,
       since it just uses None to represent this kind of operation,
@@ -1891,8 +1891,8 @@ Release Date: 2013-07-29
       as abstract.
 
     * Allow transformation functions on any node, providing a
-      `register_transform` function on the manager instead of the
-     `register_transformer` to make it more flexible wrt node selection
+      ``register_transform`` function on the manager instead of the
+      ``register_transformer`` to make it more flexible wrt node selection
 
     * Use the new transformation API to provide support for namedtuple
       (actually in pylint-brain, closes #8766)
@@ -2134,8 +2134,6 @@ Release Date: 2010-09-10
     * yield YES on multiplication of tuple/list with non valid operand
 
 
-
-
 What's New in astroid 0.20.1?
 =============================
 
@@ -2148,9 +2146,7 @@ Release Date: 2010-05-11
     * nodes redirection cleanup (possible since refactoring)
 
     * bug fix for python < 2.5: add Delete node on Subscript nodes if we are in a
-   del context
-
-
+      del context
 
 
 What's New in astroid 0.20.0?
