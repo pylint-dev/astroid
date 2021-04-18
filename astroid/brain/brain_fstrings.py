@@ -31,7 +31,7 @@ def _clone_node_with_lineno(node, parent, lineno):
     return new_node
 
 
-def _transform_formatted_value(node):
+def _transform_formatted_value(node):  # pylint: disable=inconsistent-return-statements
     if node.value and node.value.lineno == 1:
         if node.lineno != node.value.lineno:
             new_node = astroid.FormattedValue(
