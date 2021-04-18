@@ -172,7 +172,7 @@ def _looks_like_decorated_with_six_add_metaclass(node):
     return False
 
 
-def transform_six_add_metaclass(node):
+def transform_six_add_metaclass(node):  # pylint: disable=inconsistent-return-statements
     """Check if the given class node is decorated with *six.add_metaclass*
 
     If so, inject its argument as the metaclass of the underlying class.
@@ -192,6 +192,7 @@ def transform_six_add_metaclass(node):
             metaclass = decorator.args[0]
             node._metaclass = metaclass
             return node
+    return
 
 
 def _looks_like_nested_from_six_with_metaclass(node):
