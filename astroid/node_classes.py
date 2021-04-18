@@ -29,10 +29,7 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
-# pylint: disable=too-many-lines; https://github.com/PyCQA/astroid/issues/465
-
-"""Module for some node classes. More nodes in scoped_nodes.py
-"""
+"""Module for some node classes. More nodes in scoped_nodes.py"""
 
 import abc
 import builtins as builtins_mod
@@ -791,7 +788,7 @@ class NodeNG:
         indent="   ",
         max_depth=0,
         max_width=80,
-    ):
+    ) -> str:
         """Get a string representation of the AST from this node.
 
         :param ids: If true, includes the ids with the node type names.
@@ -820,7 +817,7 @@ class NodeNG:
         :returns: The string representation of the AST.
         :rtype: str
         """
-        # pylint: disable=too-many-statements
+
         @_singledispatch
         def _repr_tree(node, result, done, cur_indent="", depth=1):
             """Outputs a representation of a non-tuple/list, non-node that's
@@ -1629,8 +1626,6 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.type_comment_args = type_comment_args
         self.type_comment_kwonlyargs = type_comment_kwonlyargs
         self.type_comment_posonlyargs = type_comment_posonlyargs
-
-    # pylint: disable=too-many-arguments
 
     def _infer_name(self, frame, name):
         if self.parent is frame:

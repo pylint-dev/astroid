@@ -426,7 +426,6 @@ def _astroid_bootstrapping():
     builder = InspectBuilder()
     astroid_builtin = builder.inspect_build(builtins)
 
-    # pylint: disable=redefined-outer-name
     for cls, node_cls in node_classes.CONST_CLS.items():
         if cls is TYPE_NONE:
             proxy = build_class("NoneType")
@@ -455,7 +454,6 @@ def _astroid_bootstrapping():
     builder.object_build(bases.Generator._proxied, types.GeneratorType)
 
     if hasattr(types, "AsyncGeneratorType"):
-        # pylint: disable=no-member; AsyncGeneratorType
         _AsyncGeneratorType = nodes.ClassDef(
             types.AsyncGeneratorType.__name__, types.AsyncGeneratorType.__doc__
         )

@@ -33,9 +33,8 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
-"""tests for the astroid inference capabilities
-"""
-# pylint: disable=too-many-lines
+"""Tests for the astroid inference capabilities"""
+
 import platform
 import sys
 import textwrap

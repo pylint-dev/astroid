@@ -86,11 +86,10 @@ disable=fixme,
         too-many-public-methods,
         too-many-boolean-expressions,
         too-many-branches,
+        too-many-lines, # https://github.com/PyCQA/astroid/issues/465
         too-many-statements,
         # We know about it and we're doing our best to remove it in 2.0 (oups)
         cyclic-import,
-        wrong-import-position,
-        wrong-import-order,
         # The check is faulty in most cases and it doesn't take in
         # account how the variable is being used. For instance,
         # using a variable that is a list or a generator in an
@@ -114,8 +113,7 @@ disable=fixme,
         # everything here is legacy not checked in astroid/brain
         duplicate-code,
 
-enable=
-    useless-suppression
+enable=useless-suppression
 
 [BASIC]
 
