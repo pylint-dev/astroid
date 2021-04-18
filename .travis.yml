@@ -7,18 +7,16 @@ jobs:
     - stage: prechecks
       python: 3.6
       env: TOXENV=pylint
-    - python: 3.6
-      env: TOXENV=formatting
     - python: pypy3
       env: TOXENV=pypy
     - python: 3.6
-      env: TOXENV=py36,py36-six
+      env: TOXENV=py36-six
     - python: 3.7
-      env: TOXENV=py37,py37-six
+      env: TOXENV=py37-six
     - python: 3.8
-      env: TOXENV=py38,py38-six
+      env: TOXENV=py38-six
     - python: 3.9
-      env: TOXENV=py39,py39-six
+      env: TOXENV=py39-six
 before_install:
   - python --version
   - uname -a
