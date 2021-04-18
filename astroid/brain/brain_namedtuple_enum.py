@@ -51,15 +51,15 @@ def _infer_first(node, context):
         value = next(node.infer(context=context))
         if value is util.Uninferable:
             raise UseInferenceDefault()
-        else:
-            return value
+        return value
     except StopIteration as exc:
         raise InferenceError from exc
 
 
 def _find_func_form_arguments(node, context):
-    def _extract_namedtuple_arg_or_keyword(position, key_name=None):
-
+    def _extract_namedtuple_arg_or_keyword(  # pylint: disable=inconsistent-return-statements
+        position, key_name=None
+    ):
         if len(args) > position:
             return _infer_first(args[position], context)
         if key_name and key_name in found_keywords:
@@ -229,7 +229,7 @@ def _get_renamed_namedtuple_attributes(field_names):
     names = list(field_names)
     seen = set()
     for i, name in enumerate(field_names):
-        if (
+        if (  # pylint: disable=too-many-boolean-expressions
             not all(c.isalnum() or c == "_" for c in name)
             or keyword.iskeyword(name)
             or not name
