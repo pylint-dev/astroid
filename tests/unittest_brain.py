@@ -498,8 +498,7 @@ class SixBrainTest(unittest.TestCase):
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "B")
-        bases = inferred.bases
-        self.assertIsInstance(bases[0], nodes.Call)
+        self.assertIsInstance(inferred.bases[0], nodes.Call)
         ancestors = tuple(inferred.ancestors())
         self.assertIsInstance(ancestors[0], nodes.ClassDef)
         self.assertEqual(ancestors[0].name, "C")
