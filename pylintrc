@@ -104,7 +104,9 @@ disable=fixme, invalid-name, missing-docstring, too-few-public-methods,
         # black handles these
         format,
         # temporary until we fix the problems with InferenceContexts
-        no-member
+        no-member,
+        # everything here is legacy not checked in astroid/brain
+        duplicate-code,
 
 
 [BASIC]
