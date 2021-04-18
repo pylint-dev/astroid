@@ -153,7 +153,7 @@ _extend_builtins(
 
 
 def _builtin_filter_predicate(node, builtin_name):
-    if (
+    if (  # pylint: disable=too-many-boolean-expressions
         builtin_name == "type"
         and node.root().name == "re"
         and isinstance(node.func, nodes.Name)
@@ -232,10 +232,12 @@ def _container_generic_inference(node, context, node_type, transform):
     return transformed
 
 
-def _container_generic_transform(arg, context, klass, iterables, build_elts):
+def _container_generic_transform(  # pylint: disable=inconsistent-return-statements
+    arg, context, klass, iterables, build_elts
+):
     if isinstance(arg, klass):
         return arg
-    elif isinstance(arg, iterables):
+    if isinstance(arg, iterables):
         if all(isinstance(elt, nodes.Const) for elt in arg.elts):
             elts = [elt.value for elt in arg.elts]
         else:
@@ -371,7 +373,7 @@ def infer_dict(node, context=None):
     if not args and not kwargs:
         # dict()
         return nodes.Dict()
-    elif kwargs and not args:
+    if kwargs and not args:
         # dict(a=1, b=2, c=4)
         items = [(nodes.Const(key), value) for key, value in kwargs]
     elif len(args) == 1 and kwargs:
@@ -383,7 +385,6 @@ def infer_dict(node, context=None):
         items = _get_elts(args[0], context)
     else:
         raise UseInferenceDefault()
-
     value = nodes.Dict(
         col_offset=node.col_offset, lineno=node.lineno, parent=node.parent
     )
@@ -417,7 +418,7 @@ def infer_super(node, context=None):
         raise UseInferenceDefault
 
     cls = scoped_nodes.get_wrapping_class(scope)
-    if not len(node.args):
+    if not node.args:
         mro_pointer = cls
         # In we are in a classmethod, the interpreter will fill
         # automatically the class as the second argument, not an instance.
@@ -877,15 +878,14 @@ def infer_dict_fromkeys(node, context=None):
 
         elements_with_value = [(element, default) for element in elements]
         return _build_dict_with_elements(elements_with_value)
-
-    elif isinstance(inferred_values, nodes.Const) and isinstance(
+    if isinstance(inferred_values, nodes.Const) and isinstance(
         inferred_values.value, (str, bytes)
     ):
         elements = [
             (nodes.Const(element), default) for element in inferred_values.value
         ]
         return _build_dict_with_elements(elements)
-    elif isinstance(inferred_values, nodes.Dict):
+    if isinstance(inferred_values, nodes.Dict):
         keys = inferred_values.itered()
         for key in keys:
             if not isinstance(key, accepted_iterable_elements):
