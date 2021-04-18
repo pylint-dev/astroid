@@ -135,16 +135,17 @@ def _looks_like_lru_cache(node):
     return False
 
 
-def _looks_like_functools_member(node, member):
+def _looks_like_functools_member(node, member) -> bool:
     """Check if the given Call node is a functools.partial call"""
     if isinstance(node.func, astroid.Name):
         return node.func.name == member
-    elif isinstance(node.func, astroid.Attribute):
+    if isinstance(node.func, astroid.Attribute):
         return (
             node.func.attrname == member
             and isinstance(node.func.expr, astroid.Name)
             and node.func.expr.name == "functools"
         )
+    return False
 
 
 _looks_like_partial = partial(_looks_like_functools_member, member="partial")
