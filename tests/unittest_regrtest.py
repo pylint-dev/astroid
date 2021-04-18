@@ -352,7 +352,7 @@ def test_crash_in_dunder_inference_prevented():
             delitem #@
     """
     inferred = next(extract_node(code).infer())
-    assert "builtins.dict.__delitem__" == inferred.qname()
+    assert inferred.qname() == "builtins.dict.__delitem__"
 
 
 if __name__ == "__main__":
