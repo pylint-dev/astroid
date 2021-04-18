@@ -105,10 +105,10 @@ def looks_like_typing_typevar_or_newtype(node):
     return False
 
 
-def infer_typing_typevar_or_newtype(node, context=None):
+def infer_typing_typevar_or_newtype(node, context_itton=None):
     """Infer a typing.TypeVar(...) or typing.NewType(...) call"""
     try:
-        func = next(node.func.infer(context=context))
+        func = next(node.func.infer(context=context_itton))
     except InferenceError as exc:
         raise UseInferenceDefault from exc
 
@@ -119,16 +119,16 @@ def infer_typing_typevar_or_newtype(node, context=None):
 
     typename = node.args[0].as_string().strip("'")
     node = extract_node(TYPING_TYPE_TEMPLATE.format(typename))
-    return node.infer(context=context)
+    return node.infer(context=context_itton)
 
 
 def _looks_like_typing_subscript(node):
     """Try to figure out if a Subscript node *might* be a typing-related subscript"""
     if isinstance(node, nodes.Name):
         return node.name in TYPING_MEMBERS
-    elif isinstance(node, nodes.Attribute):
+    if isinstance(node, nodes.Attribute):
         return node.attrname in TYPING_MEMBERS
-    elif isinstance(node, nodes.Subscript):
+    if isinstance(node, nodes.Subscript):
         return _looks_like_typing_subscript(node.value)
     return False
 
@@ -232,8 +232,7 @@ def _forbid_class_getitem_access(node: nodes.ClassDef) -> None:
         """
         if attr == "__class_getitem__":
             raise AttributeInferenceError("__class_getitem__ access is not allowed")
-        else:
-            return origin_func(attr, *args, **kwargs)
+        return origin_func(attr, *args, **kwargs)
 
     try:
         node.getattr("__class_getitem__")
