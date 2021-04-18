@@ -1166,8 +1166,8 @@ def test_correct_function_type_comment_parent():
             # type: (A) -> A
             pass
     """
-    astroid = builder.parse(data)
-    f = astroid.body[0]
+    parsed_data = builder.parse(data)
+    f = parsed_data.body[0]
     assert f.type_comment_args[0].parent is f
     assert f.type_comment_returns.parent is f
 
