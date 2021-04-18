@@ -82,7 +82,6 @@ class BadUnaryOperationMessage(BadOperationMessage):
         return helpers.object_type
 
     def _object_type(self, obj):
-        # pylint: disable=not-callable; can't infer lazy_import
         objtype = self._object_type_helper(obj)
         if objtype is Uninferable:
             return None

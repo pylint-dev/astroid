@@ -45,6 +45,7 @@ import sys
 
 import wrapt
 
+from .__pkginfo__ import version as __version__
 
 _Context = enum.Enum("Context", "Load Store Del")
 Load = _Context.Load
@@ -52,13 +53,8 @@ Store = _Context.Store
 Del = _Context.Del
 del _Context
 
-
-# pylint: disable=wrong-import-order,wrong-import-position
-from .__pkginfo__ import version as __version__
-
 # WARNING: internal imports order matters !
-
-# pylint: disable=redefined-builtin
+# pylint: disable=wrong-import-order,wrong-import-position,redefined-builtin
 
 # make all exception classes accessible from astroid package
 from astroid.exceptions import *

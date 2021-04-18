@@ -152,7 +152,7 @@ _extend_builtins(
 
 
 def _builtin_filter_predicate(node, builtin_name):
-    if (  # pylint: disable=too-many-boolean-expressions
+    if (
         builtin_name == "type"
         and node.root().name == "re"
         and isinstance(node.func, nodes.Name)
