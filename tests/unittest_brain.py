@@ -36,6 +36,14 @@ import io
 import os
 import queue
 import re
+import sys
+import unittest
+
+import pytest
+
+import astroid
+import astroid.test_utils as test_utils
+from astroid import MANAGER, bases, builder, nodes, util
 
 try:
     import multiprocessing  # pylint: disable=unused-import
@@ -43,8 +51,7 @@ try:
     HAS_MULTIPROCESSING = True
 except ImportError:
     HAS_MULTIPROCESSING = False
-import sys
-import unittest
+
 
 try:
     import nose  # pylint: disable=unused-import
@@ -60,8 +67,6 @@ try:
 except ImportError:
     HAS_DATEUTIL = False
 
-import pytest
-
 try:
     import attr as attr_module  # pylint: disable=unused-import
 
@@ -75,10 +80,6 @@ try:
     HAS_SIX = True
 except ImportError:
     HAS_SIX = False
-
-import astroid
-import astroid.test_utils as test_utils
-from astroid import MANAGER, bases, builder, nodes, util
 
 
 def assertEqualMro(klass, expected_mro):
