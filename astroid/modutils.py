@@ -34,15 +34,15 @@
 :var BUILTIN_MODULES: dictionary with builtin module names has key
 """
 
-# We don't want distutils to be a requirement
-# pylint: disable=import-error, no-name-in-module,useless-suppression
+# We disable the import-error so pylint can work without distutils installed.
+# pylint: disable=no-name-in-module,useless-suppression
 
 import importlib.util
 import itertools
 import os
 import platform
 import sys
-from distutils.errors import DistutilsPlatformError
+from distutils.errors import DistutilsPlatformError  # pylint: disable=import-error
 from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
 
 from astroid.interpreter._import import spec, util
