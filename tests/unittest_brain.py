@@ -62,8 +62,6 @@ except ImportError:
 
 import pytest
 
-HAS_PYTEST = True
-
 try:
     import attr as attr_module  # pylint: disable=unused-import
 
@@ -904,7 +902,6 @@ class DateutilBrainTest(unittest.TestCase):
         self.assertEqual(d_type.qname(), "datetime.datetime")
 
 
-@unittest.skipUnless(HAS_PYTEST, "This test requires the pytest library.")
 class PytestBrainTest(unittest.TestCase):
     def test_pytest(self):
         ast_node = builder.extract_node(
