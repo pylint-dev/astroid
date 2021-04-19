@@ -47,18 +47,6 @@ import sys
 import unittest
 
 try:
-    import enum  # pylint: disable=unused-import
-
-    HAS_ENUM = True
-except ImportError:
-    try:
-        import enum34 as enum  # pylint: disable=unused-import
-
-        HAS_ENUM = True
-    except ImportError:
-        HAS_ENUM = False
-
-try:
     import nose  # pylint: disable=unused-import
 
     HAS_NOSE = True
@@ -654,12 +642,6 @@ class ThreadingBrainTest(unittest.TestCase):
             self.assertIsInstance(next(inferred.igetattr(method)), astroid.BoundMethod)
 
 
-@unittest.skipUnless(
-    HAS_ENUM,
-    "The enum module was only added in Python 3.4. Support for "
-    "older Python versions may be available through the enum34 "
-    "compatibility module.",
-)
 class EnumBrainTest(unittest.TestCase):
     def test_simple_enum(self):
         module = builder.parse(
