@@ -20,7 +20,8 @@ All nodes inherit from :class:`~astroid.node_classes.NodeNG`.
 """
 # pylint: disable=unused-import,redefined-builtin
 
-from astroid.node_classes import (  # Node not present in the builtin ast module.
+# Node not present in the builtin ast module:  DictUnpack, Unknown, and EvaluatedObject.
+from astroid.node_classes import (
     AnnAssign,
     Arguments,
     Assert,
@@ -120,6 +121,7 @@ ALL_NODE_CLASSES = (
     Compare,
     Comprehension,
     Const,
+    const_factory,
     Continue,
     Decorators,
     DelAttr,
@@ -131,6 +133,7 @@ ALL_NODE_CLASSES = (
     Expr,
     Ellipsis,
     EmptyNode,
+    EvaluatedObject,
     ExceptHandler,
     Exec,
     ExtSlice,
@@ -165,6 +168,7 @@ ALL_NODE_CLASSES = (
     TryFinally,
     Tuple,
     UnaryOp,
+    Unknown,
     While,
     With,
     Yield,
