@@ -155,8 +155,13 @@ def function(var):
         '''
 
         code_annotations = textwrap.dedent(code)
-        # pylint: disable=line-too-long
-        expected = 'def function(var: int):\n    nonlocal counter\n\n\nclass Language(metaclass=Natural):\n    """natural language"""'
+        expected = '''\
+def function(var: int):
+    nonlocal counter
+
+
+class Language(metaclass=Natural):
+    """natural language"""'''
         ast = abuilder.string_build(code_annotations)
         self.assertEqual(ast.as_string().strip(), expected)
 
