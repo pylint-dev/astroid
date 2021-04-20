@@ -473,7 +473,8 @@ MANAGER.register_transform(
 MANAGER.register_transform(
     nodes.FunctionDef,
     inference_tip(infer_typing_namedtuple_function),
-    lambda node: node.name == "NamedTuple" and node.parent.name == "typing",
+    lambda node: node.name == "NamedTuple"
+    and getattr(node.root(), "name", None) == "typing",
 )
 MANAGER.register_transform(
     nodes.Call, inference_tip(infer_typing_namedtuple), _looks_like_typing_namedtuple

@@ -13,6 +13,10 @@ Release Date: TBA
 
 * Added inference tip for ``typing.Tuple`` alias
 
+* Fix crash when evaluating ``typing.NamedTuple``
+
+  Closes PyCQA/pylint#4383
+
 
 What's New in astroid 2.5.3?
 ============================
