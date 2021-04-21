@@ -1321,6 +1321,32 @@ class TypingBrain(unittest.TestCase):
         const = next(class_attr.infer())
         self.assertEqual(const.value, "class_attr")
 
+    def test_namedtuple_inferred_as_class(self):
+        node = builder.extract_node(
+            """
+        from typing import NamedTuple
+        NamedTuple
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+        assert inferred.name == "NamedTuple"
+
+    def test_namedtuple_bug_pylint_4383(self):
+        """Inference of 'NamedTuple' function shouldn't cause InferenceError.
+
+        https://github.com/PyCQA/pylint/issues/4383
+        """
+        node = builder.extract_node(
+            """
+        if True:
+            def NamedTuple():
+                pass
+        NamedTuple
+        """
+        )
+        next(node.infer())
+
     def test_typing_types(self):
         ast_nodes = builder.extract_node(
             """
