@@ -297,6 +297,46 @@ def infer_typing_alias(
     return iter([class_def])
 
 
+def _looks_like_tuple_alias(node: nodes.Call) -> bool:
+    """Return True if call is for Tuple alias.
+
+    In PY37 and PY38 the call is to '_VariadicGenericAlias' with 'tuple' as
+    first argument. In PY39+ it is replaced by a call to '_TupleType'.
+
+    PY37: Tuple = _VariadicGenericAlias(tuple, (), inst=False, special=True)
+    PY39: Tuple = _TupleType(tuple, -1, inst=False, name='Tuple')
+    """
+    return (
+        isinstance(node, nodes.Call)
+        and isinstance(node.func, nodes.Name)
+        and (
+            not PY39
+            and node.func.name == "_VariadicGenericAlias"
+            and isinstance(node.args[0], nodes.Name)
+            and node.args[0].name == "tuple"
+            or PY39
+            and node.func.name == "_TupleType"
+            and isinstance(node.args[0], nodes.Name)
+            and node.args[0].name == "tuple"
+        )
+    )
+
+
+def infer_tuple_alias(
+    node: nodes.Call, ctx: context.InferenceContext = None
+) -> typing.Iterator[nodes.ClassDef]:
+    """Infer call to tuple alias as new subscriptable class typing.Tuple."""
+    res = next(node.args[0].infer(context=ctx))
+    class_def = nodes.ClassDef(
+        name="Tuple",
+        parent=node.parent,
+    )
+    class_def.postinit(bases=[res], body=[], decorators=None)
+    func_to_add = astroid.extract_node(CLASS_GETITEM_TEMPLATE)
+    class_def.locals["__class_getitem__"] = [func_to_add]
+    return iter([class_def])
+
+
 MANAGER.register_transform(
     nodes.Call,
     inference_tip(infer_typing_typevar_or_newtype),
@@ -314,4 +354,7 @@ if PY39:
 if PY37:
     MANAGER.register_transform(
         nodes.Call, inference_tip(infer_typing_alias), _looks_like_typing_alias
+    )
+    MANAGER.register_transform(
+        nodes.Call, inference_tip(infer_tuple_alias), _looks_like_tuple_alias
     )
