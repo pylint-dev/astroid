@@ -316,6 +316,8 @@ def _looks_like_tuple_alias(node: nodes.Call) -> bool:
             and node.args[0].name == "tuple"
             or PY39
             and node.func.name == "_TupleType"
+            and isinstance(node.args[0], nodes.Name)
+            and node.args[0].name == "tuple"
         )
     )
 
