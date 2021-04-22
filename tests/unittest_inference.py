@@ -4036,6 +4036,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         assert not isinstance(inferred, nodes.ClassDef)  # was inferred as builtins.type
         assert inferred is util.Uninferable
 
+    @test_utils.require_version(minver="3.9")
+    def test_infer_arg_called_type_defined_in_outer_scope_is_uninferable(self):
+        # https://github.com/PyCQA/astroid/pull/958
+        node = extract_node(
+            """
+        def outer(type):
+            def inner():
+                type[0] #@
+        """
+        )
+        inferred = next(node.infer())
+        assert not isinstance(inferred, nodes.ClassDef)  # was inferred as builtins.type
+        assert inferred is util.Uninferable
+
 
 class GetattrTest(unittest.TestCase):
     def test_yes_when_unknown(self):
