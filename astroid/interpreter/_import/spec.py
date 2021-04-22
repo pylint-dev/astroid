@@ -21,11 +21,7 @@ import importlib.machinery
 import os
 import sys
 import zipimport
-
-try:
-    from functools import lru_cache
-except ImportError:
-    from backports.functools_lru_cache import lru_cache
+from functools import lru_cache
 
 from . import util
 
