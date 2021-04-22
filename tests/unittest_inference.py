@@ -3986,6 +3986,56 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         with self.assertRaises(exceptions.AstroidTypeError):
             inferred.getitem(nodes.Const("4"))
 
+    def test_infer_arg_called_type_is_uninferable(self):
+        node = extract_node(
+            """
+        def func(type):
+            type #@
+        """
+        )
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
+
+    def test_infer_arg_called_object_when_used_as_index_is_uninferable(self):
+        node = extract_node(
+            """
+        def func(object):
+            ['list'][
+                object #@
+            ]
+        """
+        )
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
+
+    @test_utils.require_version(minver="3.9")
+    def test_infer_arg_called_type_when_used_as_index_is_uninferable(self):
+        # https://github.com/PyCQA/astroid/pull/958
+        node = extract_node(
+            """
+        def func(type):
+            ['list'][
+                type #@
+            ]
+        """
+        )
+        inferred = next(node.infer())
+        assert not isinstance(inferred, nodes.ClassDef)  # was inferred as builtins.type
+        assert inferred is util.Uninferable
+
+    @test_utils.require_version(minver="3.9")
+    def test_infer_arg_called_type_when_used_as_subscript_is_uninferable(self):
+        # https://github.com/PyCQA/astroid/pull/958
+        node = extract_node(
+            """
+        def func(type):
+            type[0] #@
+        """
+        )
+        inferred = next(node.infer())
+        assert not isinstance(inferred, nodes.ClassDef)  # was inferred as builtins.type
+        assert inferred is util.Uninferable
+
 
 class GetattrTest(unittest.TestCase):
     def test_yes_when_unknown(self):

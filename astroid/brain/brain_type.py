@@ -17,7 +17,7 @@ Thanks to Lukasz Langa for fruitful discussion.
 """
 import sys
 
-from astroid import MANAGER, extract_node, inference_tip, nodes
+from astroid import MANAGER, UseInferenceDefault, extract_node, inference_tip, nodes
 
 PY39 = sys.version_info >= (3, 9)
 
@@ -47,6 +47,8 @@ def infer_type_sub(node, context=None):
     :return: the inferred node
     :rtype: nodes.NodeNG
     """
+    if "type" in node.scope().locals:
+        raise UseInferenceDefault()
     class_src = """
     class type:
         def __class_getitem__(cls, key):
