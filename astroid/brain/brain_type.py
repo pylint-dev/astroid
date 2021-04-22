@@ -47,7 +47,8 @@ def infer_type_sub(node, context=None):
     :return: the inferred node
     :rtype: nodes.NodeNG
     """
-    if "type" in node.scope().locals:
+    node_scope, _ = node.scope().lookup("type")
+    if node_scope.qname() != "builtins":
         raise UseInferenceDefault()
     class_src = """
     class type:
