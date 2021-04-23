@@ -31,8 +31,8 @@ jobs:
         id: generate-python-key
         run: >-
           echo "::set-output name=key::base-venv-${{ env.CACHE_VERSION }}-${{
-            hashFiles('setup.cfg', 'requirements_test.txt', 'requirements_test_min.txt')
-          }}"
+            hashFiles('setup.cfg', 'requirements_test.txt', 'requirements_test_min.txt',
+          'requirements_test_brain.txt', 'requirements_test_pre_commit.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
         uses: actions/cache@v2.1.4
@@ -49,7 +49,7 @@ jobs:
           python -m venv venv
           . venv/bin/activate
           python -m pip install -U pip setuptools wheel
-          pip install -U -r requirements_test.txt
+          pip install -U -r requirements_test.txt -r requirements_test_brain.txt
       - name: Generate pre-commit restore key
         id: generate-pre-commit-key
         run: >-
@@ -132,8 +132,8 @@ jobs:
         id: generate-python-key
         run: >-
           echo "::set-output name=key::venv-${{ env.CACHE_VERSION }}-${{
-            hashFiles('setup.cfg', 'requirements_test.txt', 'requirements_test_min.txt')
-          }}"
+            hashFiles('setup.cfg', 'requirements_test.txt', 'requirements_test_min.txt',
+          'requirements_test_brain.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
         uses: actions/cache@v2.1.4
@@ -255,8 +255,8 @@ jobs:
         id: generate-python-key
         run: >-
           echo "::set-output name=key::venv-${{ env.CACHE_VERSION }}-${{
-            hashFiles('setup.cfg', 'requirements_test_min.txt')
-          }}"
+            hashFiles('setup.cfg', 'requirements_test_min.txt',
+          'requirements_test_brain.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
         uses: actions/cache@v2.1.4
@@ -273,7 +273,7 @@ jobs:
           python -m venv venv
           . venv\\Scripts\\activate
           python -m pip install -U pip setuptools wheel
-          pip install -U -r requirements_test_min.txt
+          pip install -U -r requirements_test_min.txt -r requirements_test_brain.txt
 
   pytest-windows:
     name: Run tests Python ${{ matrix.python-version }} (Windows)
@@ -333,8 +333,8 @@ jobs:
         id: generate-python-key
         run: >-
           echo "::set-output name=key::venv-${{ env.CACHE_VERSION }}-${{
-            hashFiles('setup.cfg', 'requirements_test_min.txt')
-          }}"
+            hashFiles('setup.cfg', 'requirements_test_min.txt',
+          'requirements_test_brain.txt', 'requirements_test_pre_commit.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
         uses: actions/cache@v2.1.4
