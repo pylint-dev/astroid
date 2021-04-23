@@ -11,6 +11,9 @@ What's New in astroid 2.5.4?
 ============================
 Release Date: TBA
 
+* The packaging is now done via setuptools exclusively. ``doc``, ``tests``, and ``Changelog`` are
+  not packaged anymore - reducing the size of the package greatly.
+
 * Debian packaging is now  (officially) done in https://salsa.debian.org/python-team/packages/astroid.
 
 * ``__pkginfo__`` now  only contain ``__version__`` (also accessible with ``astroid.__version__``),
@@ -23,7 +26,7 @@ Release Date: TBA
   Closes PyCQA/pylint#4383
 
 * COPYING was removed in favor of COPYING.LESSER and the latter was renamed to LICENSE to make more apparent
-  that the code is licensed under LGPLv2.
+  that the code is licensed under LGPLv2 or later.
 
 * Moved from appveyor and travis to Github Actions for continuous integration.
 
