@@ -19,6 +19,8 @@ Release Date: TBA
 
   Closes PyCQA/pylint#4383
 
+* COPYING was removed in favor of COPYING.LESSER and the latter was renamed to LICENSE to make more apparent
+  that the code is licensed under LGPLv2.
 
 What's New in astroid 2.5.3?
 ============================
