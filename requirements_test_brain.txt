@@ -1,3 +1,5 @@
+attrs
 nose
 numpy
-attrs
+python-dateutil
+six
