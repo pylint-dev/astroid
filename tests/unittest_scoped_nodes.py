@@ -466,6 +466,18 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(func_vals[0], nodes.Const)
         self.assertIsNone(func_vals[0].value)
 
+    def test_no_returns_is_implicitly_none(self):
+        code = """
+            def f():
+                print('non-empty, non-pass, no return statements')
+            value = f()
+            value
+        """
+        node = builder.extract_node(code)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value is None
+
     def test_func_instance_attr(self):
         """test instance attributes for functions"""
         data = """

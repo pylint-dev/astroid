@@ -1744,7 +1744,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         first_return = next(returns, None)
         if not first_return:
-            if self.body and isinstance(self.body[-1], node_classes.Assert):
+            if self.body:
                 yield node_classes.Const(None)
                 return
 
