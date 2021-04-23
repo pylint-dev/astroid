@@ -33,33 +33,3 @@ dev_version = None
 version = ".".join(str(num) for num in numversion)
 if dev_version is not None:
     version += "-dev" + str(dev_version)
-
-extras_require = {}
-install_requires = [
-    "lazy_object_proxy>=1.4.0",
-    "wrapt>=1.11,<1.13",
-    'typed-ast>=1.4.0,<1.5;implementation_name== "cpython" and python_version<"3.8"',
-]
-
-# pylint: disable=redefined-builtin; why license is a builtin anyway?
-license = "LGPL-2.1-or-later"
-
-author = "Python Code Quality Authority"
-author_email = "code-quality@python.org"
-mailinglist = "mailto://%s" % author_email
-web = "https://github.com/PyCQA/astroid"
-
-description = "An abstract syntax tree for Python with inference support."
-
-classifiers = [
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Software Development :: Quality Assurance",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: Implementation :: CPython",
-    "Programming Language :: Python :: Implementation :: PyPy",
-]
