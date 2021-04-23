@@ -19,10 +19,6 @@ repos:
     rev: 1.0.0
     hooks:
       - id: black-disable-checker
-  - repo: https://github.com/pierre-sassoulas/setup-cfg-fmt
-    rev: 7e3f370a888236fe516749432f2cf5daadf31f89
-    hooks:
-      - id: setup-cfg-fmt
   - repo: https://github.com/asottile/pyupgrade
     rev: v2.12.0
     hooks:
