@@ -15,17 +15,13 @@ before_install:
   - lsb_release -a
 install:
   - python -m pip install pip -U
-  - python -m pip install tox "coverage<5" coveralls
-  - python -m virtualenv --version
-  - python -m easy_install --version
+  - python -m pip install tox
   - python -m pip --version
   - python -m tox --version
 script:
   - python -m pip install .
-  - python -m pip install -U setuptools
-  - python -m tox -e coverage-erase,$TOXENV
-after_success:
-  - tox -e coveralls
+  - python -m pip install -U setuptools wheel
+  - python -m tox -e $TOXENV
 after_failure:
   - more .tox/log/* | cat
   - more .tox/*/log/* | cat
