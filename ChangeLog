@@ -8,8 +8,10 @@ Release Date: TBA
 
 What's New in astroid 2.5.5?
 ============================
-Release Date: TBA
+Release Date: 2021-04-24
 
+* Fixes the discord link in the project urls of the package.
+  Closes PyCQA/pylint#4393
 
 What's New in astroid 2.5.4?
 ============================
