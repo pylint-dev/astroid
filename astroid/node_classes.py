@@ -830,7 +830,7 @@ class NodeNG:
             result.extend([cur_indent + line for line in lines[1:]])
             return len(lines) != 1
 
-        # pylint: disable=unused-variable; doesn't understand singledispatch
+        # pylint: disable=unused-variable,useless-suppression; doesn't understand singledispatch
         @_repr_tree.register(tuple)
         @_repr_tree.register(list)
         def _repr_seq(node, result, done, cur_indent="", depth=1):
@@ -861,7 +861,7 @@ class NodeNG:
             result.append("]")
             return broken
 
-        # pylint: disable=unused-variable; doesn't understand singledispatch
+        # pylint: disable=unused-variable,useless-suppression; doesn't understand singledispatch
         @_repr_tree.register(NodeNG)
         def _repr_node(node, result, done, cur_indent="", depth=1):
             """Outputs a strings representation of an astroid node."""
