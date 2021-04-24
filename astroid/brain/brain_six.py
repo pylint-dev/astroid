@@ -26,7 +26,11 @@ SIX_ADD_METACLASS = "six.add_metaclass"
 SIX_WITH_METACLASS = "six.with_metaclass"
 
 
-def _indent(text, prefix, predicate=None):
+def default_predicate(line):
+    return line.strip()
+
+
+def _indent(text, prefix, predicate=default_predicate):
     """Adds 'prefix' to the beginning of selected lines in 'text'.
 
     If 'predicate' is provided, 'prefix' will only be added to the lines
@@ -34,8 +38,6 @@ def _indent(text, prefix, predicate=None):
     it will default to adding 'prefix' to all non-empty lines that do not
     consist solely of whitespace characters.
     """
-    if predicate is None:
-        predicate = lambda line: line.strip()
 
     def prefixed_lines():
         for line in text.splitlines(True):

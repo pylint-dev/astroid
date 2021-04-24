@@ -760,9 +760,9 @@ class Module(LocalsDictNodeNG):
         if not isinstance(explicit, (node_classes.Tuple, node_classes.List)):
             return default
 
-        str_const = lambda node: (
-            isinstance(node, node_classes.Const) and isinstance(node.value, str)
-        )
+        def str_const(node):
+            return isinstance(node, node_classes.Const) and isinstance(node.value, str)
+
         for node in explicit.elts:
             if str_const(node):
                 inferred.append(node.value)
