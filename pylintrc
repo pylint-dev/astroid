@@ -110,7 +110,11 @@ disable=fixme,
         format,
         # temporary until we fix the problems with InferenceContexts
         no-member,
-        # everything here is legacy not checked in astroid/brain
+        # We might want to disable new checkers from master that do not exists
+        # in latest published pylint
+        bad-option-value,
+        # Legacy warning not checked in astroid/brain before we
+        # transitioned to setuptools and added an init.py
         duplicate-code,
 
 enable=useless-suppression
