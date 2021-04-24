@@ -50,6 +50,7 @@ MANAGER = manager.AstroidManager()
 
 
 def open_source_file(filename):
+    # pylint: disable=consider-using-with
     with open(filename, "rb") as byte_stream:
         encoding = detect_encoding(byte_stream.readline)[0]
     stream = open(filename, newline=None, encoding=encoding)

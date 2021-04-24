@@ -503,6 +503,7 @@ class Module(LocalsDictNodeNG):
         if self.file_bytes is not None:
             return io.BytesIO(self.file_bytes)
         if self.file is not None:
+            # pylint: disable=consider-using-with
             stream = open(self.file, "rb")
             return stream
         return None
