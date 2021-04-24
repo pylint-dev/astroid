@@ -18,10 +18,10 @@
 The builder is not thread safe and can't be used to parse different sources
 at the same time.
 """
-
 import os
 import textwrap
 from tokenize import detect_encoding
+from typing import List, Union
 
 from astroid import (
     bases,
@@ -34,6 +34,7 @@ from astroid import (
     util,
 )
 from astroid._ast import get_parser_module
+from astroid.node_classes import NodeNG
 
 objects = util.lazy_import("objects")
 
@@ -357,7 +358,7 @@ def _find_statement_by_line(node, line):
     return None
 
 
-def extract_node(code, module_name=""):
+def extract_node(code: str, module_name: str = "") -> Union[NodeNG, List[NodeNG]]:
     """Parses some Python code as a module and extracts a designated AST node.
 
     Statements:
@@ -409,7 +410,6 @@ def extract_node(code, module_name=""):
     a module. Will be passed through textwrap.dedent first.
     :param str module_name: The name of the module.
     :returns: The designated node from the parse tree, or a list of nodes.
-    :rtype: astroid.bases.NodeNG, or a list of nodes.
     """
 
     def _extract(node):
