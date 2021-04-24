@@ -9,7 +9,7 @@ Release Date: TBA
 
 What's New in astroid 2.5.4?
 ============================
-Release Date: TBA
+Release Date: 2021-04-24
 
 * The packaging is now done via setuptools exclusively. ``doc``, ``tests``, and ``Changelog`` are
   not packaged anymore - reducing the size of the package greatly.
