@@ -220,7 +220,7 @@ class BaseInstance(Proxy):
             yield from _infer_stmts(
                 self._wrap_attr(get_attr, context), context, frame=self
             )
-        except exceptions.AttributeInferenceError as error:
+        except exceptions.AttributeInferenceError:
             try:
                 # fallback to class.igetattr since it has some logic to handle
                 # descriptors
