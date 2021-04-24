@@ -18,11 +18,11 @@ repos:
       - id: isort
         exclude: tests/testdata|astroid/__init__.py
   - repo: https://github.com/Pierre-Sassoulas/black-disable-checker/
-    rev: 1.0.0
+    rev: 1.0.1
     hooks:
       - id: black-disable-checker
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.12.0
+    rev: v2.13.0
     hooks:
       - id: pyupgrade
         exclude: tests/testdata
@@ -45,6 +45,12 @@ repos:
     hooks:
       - id: prettier
         args: [--prose-wrap=always, --print-width=88]
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.9.0
+    hooks:
+      - id: flake8
+        additional_dependencies: [flake8-bugbear]
+        exclude: tests/testdata|doc/conf.py|astroid/__init__.py|setup.py
   - repo: local
     hooks:
       - id: pylint
