@@ -10,9 +10,9 @@
 
 import functools
 
-from brain_numpy_utils import infer_numpy_member, looks_like_numpy_member
-
 import astroid
+
+from .brain_numpy_utils import infer_numpy_member, looks_like_numpy_member
 
 METHODS_TO_BE_INFERRED = {
     "linspace": """def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None, axis=0):
