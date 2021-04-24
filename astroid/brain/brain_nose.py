@@ -18,7 +18,10 @@ import astroid.builder
 _BUILDER = astroid.builder.AstroidBuilder(astroid.MANAGER)
 
 
-def _pep8(name, caps=re.compile("([A-Z])")):
+CAPITALS = re.compile("([A-Z])")
+
+
+def _pep8(name, caps=CAPITALS):
     return caps.sub(lambda m: "_" + m.groups()[0].lower(), name)
 
 
