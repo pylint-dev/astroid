@@ -169,7 +169,7 @@ def infer_typing_attr(
         ):
             # node.parent.slots is evaluated and cached before the inference tip
             # is first applied. Remove the last result to allow a recalculation of slots
-            cache = getattr(node.parent, "__cache")
+            cache = node.parent.__cache
             if cache.get(node.parent.slots) is not None:
                 del cache[node.parent.slots]
         return iter([value])
