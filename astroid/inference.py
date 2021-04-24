@@ -276,7 +276,7 @@ def infer_import_from(self, context=None, asname=True):
         return bases._infer_stmts(stmts, context)
     except exceptions.AttributeInferenceError as error:
         raise exceptions.InferenceError(
-            error.message, target=self, attribute=name, context=context
+            str(error), target=self, attribute=name, context=context
         ) from error
 
 
@@ -339,7 +339,7 @@ def infer_global(self, context=None):
         return bases._infer_stmts(self.root().getattr(context.lookupname), context)
     except exceptions.AttributeInferenceError as error:
         raise exceptions.InferenceError(
-            error.message, target=self, attribute=context.lookupname, context=context
+            str(error), target=self, attribute=context.lookupname, context=context
         ) from error
 
 
