@@ -611,7 +611,7 @@ class Module(LocalsDictNodeNG):
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
         except exceptions.AttributeInferenceError as error:
             raise exceptions.InferenceError(
-                error.message, target=self, attribute=name, context=context
+                str(error), target=self, attribute=name, context=context
             ) from error
 
     def fully_defined(self):
@@ -1617,7 +1617,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
         except exceptions.AttributeInferenceError as error:
             raise exceptions.InferenceError(
-                error.message, target=self, attribute=name, context=context
+                str(error), target=self, attribute=name, context=context
             ) from error
 
     def is_method(self):
@@ -2605,7 +2605,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 yield util.Uninferable
             else:
                 raise exceptions.InferenceError(
-                    error.message, target=self, attribute=name, context=context
+                    str(error), target=self, attribute=name, context=context
                 ) from error
 
     def has_dynamic_getattr(self, context=None):
