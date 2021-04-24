@@ -41,7 +41,8 @@ Main modules are:
 import enum
 import itertools
 import os
-import sys
+from importlib import import_module
+from pathlib import Path
 
 import wrapt
 
@@ -156,11 +157,7 @@ def register_module_extender(manager, module_name, get_extension_mod):
 
 
 # load brain plugins
-BRAIN_MODULES_DIR = os.path.join(os.path.dirname(__file__), "brain")
-if BRAIN_MODULES_DIR not in sys.path:
-    # add it to the end of the list so user path take precedence
-    sys.path.append(BRAIN_MODULES_DIR)
-# load modules in this directory
+BRAIN_MODULES_DIR = Path(__file__).with_name("brain")
 for module in os.listdir(BRAIN_MODULES_DIR):
     if module.endswith(".py"):
-        __import__(module[:-3])
+        import_module(f"astroid.brain.{module[:-3]}")
