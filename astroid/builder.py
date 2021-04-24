@@ -203,7 +203,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
         Resort the locals if coming from a delayed node
         """
-        _key_func = lambda node: node.fromlineno
+
+        def _key_func(node):
+            return node.fromlineno
 
         def sort_locals(my_list):
             my_list.sort(key=_key_func)
