@@ -316,9 +316,19 @@ class Instance(BaseInstance):
                 return True
         return result
 
-    # This is set in inference.py.
     def getitem(self, index, context=None):
-        pass
+        # TODO: Rewrap index to Const for this case
+        new_context = contextmod.bind_context_to_node(context, self)
+        if not context:
+            context = new_context
+        # Create a new CallContext for providing index as an argument.
+        new_context.callcontext = contextmod.CallContext(args=[index])
+        method = next(self.igetattr("__getitem__", context=context), None)
+        if not isinstance(method, BoundMethod):
+            raise exceptions.InferenceError(
+                "Could not find __getitem__ for {node!r}.", node=self, context=context
+            )
+        return next(method.infer_call_result(self, new_context))
 
 
 class UnboundMethod(Proxy):
