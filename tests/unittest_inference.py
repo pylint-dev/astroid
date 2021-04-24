@@ -54,6 +54,13 @@ from astroid.objects import ExceptionInstance
 
 from . import resources
 
+try:
+    import six  # pylint: disable=unused-import
+
+    HAS_SIX = True
+except ImportError:
+    HAS_SIX = False
+
 
 def get_node_of_class(start_from, klass):
     return next(start_from.nodes_of_class(klass))
@@ -2975,6 +2982,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 24)
 
+    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_with_metaclass__getitem__(self):
         ast_node = extract_node(
             """
@@ -3008,6 +3016,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 24)
 
+    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_bin_op_classes_with_metaclass(self):
         ast_node = extract_node(
             """
@@ -3362,6 +3371,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
 
+    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_unary_op_classes_with_metaclass(self):
         ast_node = extract_node(
             """
@@ -3768,6 +3778,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "B")
 
+    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_With_metaclass_subclasses_arguments_are_classes_not_instances(self):
         ast_node = extract_node(
             """
@@ -3785,6 +3796,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "B")
 
+    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_With_metaclass_with_partial_imported_name(self):
         ast_node = extract_node(
             """
