@@ -106,7 +106,7 @@ class Proxy:
 
     def __getattr__(self, name):
         if name == "_proxied":
-            return getattr(self.__class__, "_proxied")
+            return self.__class__._proxied
         if name in self.__dict__:
             return self.__dict__[name]
         return getattr(self._proxied, name)
