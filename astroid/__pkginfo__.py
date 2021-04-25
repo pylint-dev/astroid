@@ -28,7 +28,7 @@
 
 from typing import Optional
 
-__version__ = "2.5.5"
+__version__ = "2.5.6"
 # For an official release, use 'alpha_version = False' and 'dev_version = None'
 alpha_version: bool = False  # Release will be an alpha version if True (ex: '1.2.3a6')
 dev_version: Optional[int] = None
