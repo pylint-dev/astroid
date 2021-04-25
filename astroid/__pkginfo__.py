@@ -38,3 +38,5 @@ if dev_version is not None:
         __version__ += f"a{dev_version}"
     else:
         __version__ += f".dev{dev_version}"
+
+version = __version__

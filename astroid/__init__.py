@@ -47,7 +47,7 @@ from pathlib import Path
 
 import wrapt
 
-from .__pkginfo__ import __version__
+from .__pkginfo__ import __version__, version
 
 _Context = enum.Enum("Context", "Load Store Del")
 Load = _Context.Load
