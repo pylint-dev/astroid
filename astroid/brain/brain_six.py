@@ -225,6 +225,7 @@ def transform_six_with_metaclass(node):
     """
     call = node.bases[0]
     node._metaclass = call.args[0]
+    return node
 
 
 register_module_extender(MANAGER, "six", six_moves_transform)
