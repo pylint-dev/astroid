@@ -6,6 +6,10 @@ What's New in astroid 2.6.0?
 ============================
 Release Date: TBA
 
+What's New in astroid 2.5.7?
+============================
+Release Date: TBA
+
 * Fix detection of relative imports.
   Closes #930
   Closes PyCQA/pylint#4186
@@ -54,6 +58,9 @@ Release Date: TBA
 
   Closes #485
 
+* scm_setuptools has been added to the packaging.
+
+* Astroid's tags are now the standard form ``vX.Y.Z`` and not ``astroid-X.Y.Z`` anymore.
 
 What's New in astroid 2.5.6?
 ============================
