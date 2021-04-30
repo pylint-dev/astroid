@@ -18,6 +18,10 @@ Astroid
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/ambv/black
 
+.. image:: https://results.pre-commit.ci/badge/github/PyCQA/astroid/master.svg
+   :target: https://results.pre-commit.ci/latest/github/PyCQA/astroid/master
+   :alt: pre-commit.ci status
+
 .. |tideliftlogo| image:: https://raw.githubusercontent.com/PyCQA/astroid/master/doc/media/Tidelift_Logos_RGB_Tidelift_Shorthand_On-White.png
    :width: 75
    :height: 60
