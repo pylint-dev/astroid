@@ -6,6 +6,10 @@ What's New in astroid 2.6.0?
 ============================
 Release Date: TBA
 
+* Fix detection of relative imports.
+  Closes #930
+  Closes PyCQA/pylint#4186
+
 What's New in astroid 2.5.6?
 ============================
 Release Date: 2021-04-25
