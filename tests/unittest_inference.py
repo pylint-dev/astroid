@@ -5404,26 +5404,25 @@ def test_cannot_getattr_ann_assigns():
 def test_prevent_recursion_error_in_igetattr_and_context_manager_inference():
     code = """
     class DummyContext(object):
-        def method(self, msg): # pylint: disable=C0103
-            pass
         def __enter__(self):
-            pass
+            return self
         def __exit__(self, ex_type, ex_value, ex_tb):
             return True
 
-    class CallMeMaybe(object):
-        def __call__(self):
-            while False:
-                with DummyContext() as con:
-                    f_method = con.method
-                break
+    if False:
+        with DummyContext() as con:
+            pass
 
-            with DummyContext() as con:
-                con #@
-                f_method = con.method
+    with DummyContext() as con:
+        con.__enter__  #@
     """
     node = extract_node(code)
-    assert next(node.infer()) is util.Uninferable
+    # According to the original issue raised that introduced this test
+    # (https://github.com/PyCQA/astroid/663, see 55076ca), this test was a
+    # non-regression check for StopIteration leaking out of inference and
+    # causing a RuntimeError. Hence, here just consume the inferred value
+    # without checking it and rely on pytest to fail on raise
+    next(node.infer())
 
 
 def test_infer_context_manager_with_unknown_args():
