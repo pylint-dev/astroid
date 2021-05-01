@@ -706,14 +706,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         NoGetitem()[4] #@
         InvalidGetitem()[5] #@
         InvalidGetitem2()[10] #@
-        """
-        )
-        for node in ast_nodes[:3]:
-            self.assertRaises(InferenceError, next, node.infer())
-        for node in ast_nodes[3:]:
-            self.assertEqual(next(node.infer()), util.Uninferable)
-        ast_nodes = extract_node(
-            """
         [1, 2, 3][None] #@
         'lala'['bala'] #@
         """
