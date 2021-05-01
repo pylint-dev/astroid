@@ -301,6 +301,18 @@ class IsRelativeTest(unittest.TestCase):
     def test_knownValues_is_relative_3(self):
         self.assertFalse(modutils.is_relative("astroid", astroid.__path__[0]))
 
+    def test_knownValues_is_relative_4(self):
+        self.assertTrue(
+            modutils.is_relative("util", astroid.interpreter._import.spec.__file__)
+        )
+
+    def test_knownValues_is_relative_5(self):
+        self.assertFalse(
+            modutils.is_relative(
+                "objectmodel", astroid.interpreter._import.spec.__file__
+            )
+        )
+
     def test_deep_relative(self):
         self.assertTrue(modutils.is_relative("ElementTree", xml.etree.__path__[0]))
 

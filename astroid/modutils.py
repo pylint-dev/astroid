@@ -574,21 +574,12 @@ def is_relative(modname, from_file):
         from_file = os.path.dirname(from_file)
     if from_file in sys.path:
         return False
-    name = os.path.basename(from_file)
-    file_path = os.path.dirname(from_file)
-    parent_spec = importlib.util.find_spec(name, from_file)
-    while parent_spec is None and len(file_path) > 0:
-        name = os.path.basename(file_path) + "." + name
-        file_path = os.path.dirname(file_path)
-        parent_spec = importlib.util.find_spec(name, from_file)
-
-    if parent_spec is None:
-        return False
-
-    submodule_spec = importlib.util.find_spec(
-        name + "." + modname.split(".")[0], parent_spec.submodule_search_locations
+    spec = importlib.machinery.PathFinder().find_spec(
+        modname.split(".")[0], [from_file]
     )
-    return submodule_spec is not None
+    if spec:
+        return True
+    return False
 
 
 # internal only functions #####################################################
