@@ -574,10 +574,10 @@ def is_relative(modname, from_file):
         from_file = os.path.dirname(from_file)
     if from_file in sys.path:
         return False
-    spec = importlib.machinery.PathFinder().find_spec(
+    modspec = importlib.machinery.PathFinder().find_spec(
         modname.split(".")[0], [from_file]
     )
-    if spec:
+    if modspec:
         return True
     return False
 
