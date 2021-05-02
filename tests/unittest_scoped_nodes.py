@@ -478,6 +478,43 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         assert isinstance(inferred, nodes.Const)
         assert inferred.value is None
 
+    def test_only_raises_is_not_implicitly_none(self):
+        code = """
+            def f():
+                raise SystemExit()
+            f()
+        """
+        node = builder.extract_node(code)  # type: nodes.Call
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
+
+    def test_abstract_methods_are_not_implicitly_none(self):
+        code = """
+            from abc import ABCMeta, abstractmethod
+
+            class Abstract(metaclass=ABCMeta):
+                @abstractmethod
+                def foo(self):
+                    pass
+                def bar(self):
+                    print('non-empty, non-pass, no return statements')
+            Abstract().foo()  #@
+            Abstract().bar()  #@
+
+            class Concrete(Abstract):
+                def foo(self):
+                    return 123
+            Concrete().foo()  #@
+            Concrete().bar()  #@
+        """
+        afoo, abar, cfoo, cbar = builder.extract_node(code)
+
+        assert next(afoo.infer()) is util.Uninferable
+        for node, value in [(abar, None), (cfoo, 123), (cbar, None)]:
+            inferred = next(node.infer())
+            assert isinstance(inferred, nodes.Const)
+            assert inferred.value == value
+
     def test_func_instance_attr(self):
         """test instance attributes for functions"""
         data = """

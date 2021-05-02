@@ -1661,11 +1661,12 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
         return self.type == "classmethod"
 
-    def is_abstract(self, pass_is_abstract=True):
+    def is_abstract(self, pass_is_abstract=True, any_raise_is_abstract=False):
         """Check if the method is abstract.
 
         A method is considered abstract if any of the following is true:
         * The only statement is 'raise NotImplementedError'
+        * The only statement is 'raise <SomeException>' and any_raise_is_abstract is True
         * The only statement is 'pass' and pass_is_abstract is True
         * The method is annotated with abc.astractproperty/abc.abstractmethod
 
@@ -1686,6 +1687,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         for child_node in self.body:
             if isinstance(child_node, node_classes.Raise):
+                if any_raise_is_abstract:
+                    return True
                 if child_node.raises_not_implemented():
                     return True
             return pass_is_abstract and isinstance(child_node, node_classes.Pass)
@@ -1745,7 +1748,10 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         first_return = next(returns, None)
         if not first_return:
             if self.body:
-                yield node_classes.Const(None)
+                if self.is_abstract(pass_is_abstract=True, any_raise_is_abstract=True):
+                    yield util.Uninferable
+                else:
+                    yield node_classes.Const(None)
                 return
 
             raise exceptions.InferenceError(
