@@ -44,6 +44,12 @@ from astroid import as_string, bases
 from astroid import context as contextmod
 from astroid import decorators, exceptions, manager, mixins, util
 
+try:
+    from typing import Literal
+except ImportError:
+    # typing.Literal was added in Python 3.8
+    from typing_extensions import Literal
+
 BUILTINS = builtins_mod.__name__
 MANAGER = manager.AstroidManager()
 PY38 = sys.version_info[:2] >= (3, 8)
@@ -4881,7 +4887,7 @@ class MatchSingleton(NodeNG):
         col_offset: int,
         parent: NodeNG,
         *,
-        value: typing.Union[bool, None],
+        value: Literal[True, False, None],
     ) -> None:
         self.value = value
         super().__init__(lineno, col_offset, parent)
