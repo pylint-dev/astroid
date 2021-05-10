@@ -2796,7 +2796,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         return self._metaclass_hack
 
     def _islots(self):
-        """ Return an iterator with the inferred slots. """
+        """Return an iterator with the inferred slots."""
         if "__slots__" not in self.locals:
             return None
         for slots in self.igetattr("__slots__"):

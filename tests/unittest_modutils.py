@@ -76,7 +76,7 @@ class ModuleFileTest(unittest.TestCase):
 
 
 class LoadModuleFromNameTest(unittest.TestCase):
-    """ load a python module from it's name """
+    """load a python module from it's name"""
 
     def test_knownValues_load_module_from_name_1(self):
         self.assertEqual(modutils.load_module_from_name("sys"), sys)
@@ -126,7 +126,7 @@ class GetModulePartTest(unittest.TestCase):
 
 
 class ModPathFromFileTest(unittest.TestCase):
-    """ given an absolute file path return the python module's path as a list """
+    """given an absolute file path return the python module's path as a list"""
 
     def test_knownValues_modpath_from_file_1(self):
         self.assertEqual(
