@@ -580,7 +580,7 @@ class AsStringVisitor:
         return f"({expr})"
 
     def visit_yieldfrom(self, node):
-        """ Return an astroid.YieldFrom node as string. """
+        """Return an astroid.YieldFrom node as string."""
         yi_val = (" " + node.value.accept(self)) if node.value else ""
         expr = "yield from" + yi_val
         if node.parent.is_statement:

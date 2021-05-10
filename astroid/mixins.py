@@ -20,7 +20,7 @@ from astroid import decorators, exceptions
 
 
 class BlockRangeMixIn:
-    """override block range """
+    """override block range"""
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
