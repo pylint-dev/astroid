@@ -14,6 +14,11 @@ Release Date: TBA
  Closes PyCQA/pylint#3970
  Closes PyCQA/pylint#3595
 
+* Fix some spurious cycles detected in ``context.path`` leading to more cases
+  that can now be inferred
+
+  Closes #926
+
 
 What's New in astroid 2.5.6?
 ============================
