@@ -102,7 +102,7 @@ class InferenceContext:
         starts with the same context but diverge as each side is inferred
         so the InferenceContext will need be cloned"""
         # XXX copy lookupname/callcontext ?
-        clone = InferenceContext(self.path, inferred=self.inferred)
+        clone = InferenceContext(self.path.copy(), inferred=self.inferred.copy())
         clone.callcontext = self.callcontext
         clone.boundnode = self.boundnode
         clone.extra_context = self.extra_context
