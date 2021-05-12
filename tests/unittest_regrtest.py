@@ -99,7 +99,7 @@ multiply([1, 2], [3, 4])
         astroid = builder.string_build(data, __name__, __file__)
         callfunc = astroid.body[1].value.func
         inferred = callfunc.inferred()
-        self.assertEqual(len(inferred), 2)
+        self.assertEqual(len(inferred), 1)
 
     def test_nameconstant(self):
         # used to fail for Python 3.4
