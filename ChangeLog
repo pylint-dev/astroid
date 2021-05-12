@@ -6,6 +6,10 @@ What's New in astroid 2.6.0?
 ============================
 Release Date: TBA
 
+* Fix inference of instance attributes defined in base classes
+
+  Closes #932
+
 * Do not set instance attributes on builtin object()
 
  Closes #945

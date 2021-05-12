@@ -207,8 +207,9 @@ class BaseInstance(Proxy):
         if not context:
             context = contextmod.InferenceContext()
         try:
+            context.lookupname = name
             # avoid recursively inferring the same attr on the same class
-            if context.push((self._proxied, name)):
+            if context.push(self._proxied):
                 raise exceptions.InferenceError(
                     message="Cannot infer the same attribute again",
                     node=self,

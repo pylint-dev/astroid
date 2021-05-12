@@ -4051,6 +4051,42 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         assert not isinstance(inferred, nodes.ClassDef)  # was inferred as builtins.type
         assert inferred is util.Uninferable
 
+    def test_infer_subclass_attr_instance_attr_indirect(self):
+        node = extract_node(
+            """
+        class Parent:
+            def __init__(self):
+                self.data = 123
+
+        class Test(Parent):
+            pass
+        t = Test()
+        t
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, Instance)
+        const = next(inferred.igetattr("data"))
+        assert isinstance(const, nodes.Const)
+        assert const.value == 123
+
+    def test_infer_subclass_attr_instance_attr(self):
+        node = extract_node(
+            """
+        class Parent:
+            def __init__(self):
+                self.data = 123
+
+        class Test(Parent):
+            pass
+        t = Test()
+        t.data
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 123
+
 
 class GetattrTest(unittest.TestCase):
     def test_yes_when_unknown(self):
