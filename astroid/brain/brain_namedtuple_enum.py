@@ -315,6 +315,7 @@ def infer_enum_class(node):
         if node.root().name == "enum":
             # Skip if the class is directly from enum module.
             break
+        dunder_members = {}
         for local, values in node.locals.items():
             if any(not isinstance(value, nodes.AssignName) for value in values):
                 continue
@@ -372,7 +373,16 @@ def infer_enum_class(node):
                 for method in node.mymethods():
                     fake.locals[method.name] = [method]
                 new_targets.append(fake.instantiate_class())
+                dunder_members[local] = fake
             node.locals[local] = new_targets
+        members = nodes.Dict(parent=node)
+        members.postinit(
+            [
+                (nodes.Const(k, parent=members), nodes.Name(v.name, parent=members))
+                for k, v in dunder_members.items()
+            ]
+        )
+        node.locals["__members__"] = [members]
         break
     return node
 
