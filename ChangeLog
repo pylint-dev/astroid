@@ -22,7 +22,7 @@ Release Date: TBA
   that can now be inferred
 
   Closes #926
- 
+
 * Add ``kind`` field to ``Const`` nodes, matching the structure of the built-in ast Const.
   The kind field is "u" if the literal is a u-prefixed string, and ``None`` otherwise.
 
