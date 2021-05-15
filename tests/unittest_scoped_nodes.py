@@ -2154,5 +2154,31 @@ def test_posonlyargs_default_value():
     assert first_param.value == 1
 
 
+@test_utils.require_version(minver="3.7")
+def test_ancestor_with_generic():
+    # https://github.com/PyCQA/astroid/issues/942
+    tree = builder.parse(
+        """
+    from typing import TypeVar, Generic
+    T = TypeVar("T")
+    class A(Generic[T]):
+        def a_method(self):
+            print("hello")
+    class B(A[T]): pass
+    class C(B[str]): pass
+    """
+    )
+    inferred_b = next(tree["B"].infer())
+    assert [cdef.name for cdef in inferred_b.ancestors()] == ["A", "Generic", "object"]
+
+    inferred_c = next(tree["C"].infer())
+    assert [cdef.name for cdef in inferred_c.ancestors()] == [
+        "B",
+        "A",
+        "Generic",
+        "object",
+    ]
+
+
 if __name__ == "__main__":
     unittest.main()
