@@ -1858,6 +1858,18 @@ class RandomSampleTest(unittest.TestCase):
         elems = sorted(elem.value for elem in inferred.elts)
         self.assertEqual(elems, [1, 2])
 
+    def test_no_crash_on_evaluatedobject(self):
+        node = astroid.extract_node(
+            """
+        from random import sample
+        class A: pass
+        sample(list({1: A()}.values()), 1)"""
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, astroid.List)
+        assert len(inferred.elts) == 1
+        assert isinstance(inferred.elts[0], nodes.Call)
+
 
 class SubprocessTest(unittest.TestCase):
     """Test subprocess brain"""
