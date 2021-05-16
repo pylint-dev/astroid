@@ -1229,7 +1229,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(foo_class.instance_attrs["attr"]), 1)
         self.assertEqual(bar_class.instance_attrs, {"attr": [assattr]})
 
-    @pytest.mark.xfail(reason="Relying on path copy")
     def test_nonregr_multi_referential_addition(self):
         """Regression test for https://github.com/PyCQA/astroid/issues/483
         Make sure issue where referring to the same variable
@@ -1243,7 +1242,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         variable_a = extract_node(code)
         self.assertEqual(variable_a.inferred()[0].value, 2)
 
-    @pytest.mark.xfail(reason="Relying on path copy")
     def test_nonregr_layed_dictunpack(self):
         """Regression test for https://github.com/PyCQA/astroid/issues/483
         Make sure multiple dictunpack references are inferable
@@ -2329,7 +2327,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertRaises(InferenceError, next, module["other_decorators"].infer())
         self.assertRaises(InferenceError, next, module["no_yield"].infer())
 
-    @pytest.mark.xfail(reason="Relying on path copy")
     def test_nested_contextmanager(self):
         """Make sure contextmanager works with nested functions
 
@@ -4890,7 +4887,6 @@ class ObjectDunderNewTest(unittest.TestCase):
         self.assertIsInstance(inferred, Instance)
 
 
-@pytest.mark.xfail(reason="Relying on path copy")
 def test_augassign_recursion():
     """Make sure inference doesn't throw a RecursionError
 
