@@ -37,6 +37,10 @@ Release Date: TBA
   Closes PyCQA/pylint#3535
   Closes PyCQA/pylint#4358
 
+* Update random brain to fix a crash with inference of some sequence elements
+
+  Closes #922
+
 
 What's New in astroid 2.5.6?
 ============================
