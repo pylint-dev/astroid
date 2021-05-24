@@ -466,6 +466,55 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(func_vals[0], nodes.Const)
         self.assertIsNone(func_vals[0].value)
 
+    def test_no_returns_is_implicitly_none(self):
+        code = """
+            def f():
+                print('non-empty, non-pass, no return statements')
+            value = f()
+            value
+        """
+        node = builder.extract_node(code)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value is None
+
+    def test_only_raises_is_not_implicitly_none(self):
+        code = """
+            def f():
+                raise SystemExit()
+            f()
+        """
+        node = builder.extract_node(code)  # type: nodes.Call
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
+
+    def test_abstract_methods_are_not_implicitly_none(self):
+        code = """
+            from abc import ABCMeta, abstractmethod
+
+            class Abstract(metaclass=ABCMeta):
+                @abstractmethod
+                def foo(self):
+                    pass
+                def bar(self):
+                    print('non-empty, non-pass, no return statements')
+            Abstract().foo()  #@
+            Abstract().bar()  #@
+
+            class Concrete(Abstract):
+                def foo(self):
+                    return 123
+            Concrete().foo()  #@
+            Concrete().bar()  #@
+        """
+        afoo, abar, cfoo, cbar = builder.extract_node(code)
+
+        assert next(afoo.infer()) is util.Uninferable
+        for node, value in [(abar, None), (cfoo, 123), (cbar, None)]:
+            inferred = next(node.infer())
+            assert isinstance(inferred, nodes.Const)
+            assert inferred.value == value
+
     def test_func_instance_attr(self):
         """test instance attributes for functions"""
         data = """
@@ -1430,7 +1479,9 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             pass
         class B:
             pass
-        scope = object()
+        class Scope:
+            pass
+        scope = Scope()
         scope.A = A
         scope.B = B
         class C(scope.A, scope.B):
@@ -1921,6 +1972,153 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         builder.parse(data)
 
 
+def test_issue940_metaclass_subclass_property():
+    node = builder.extract_node(
+        """
+    class BaseMeta(type):
+        @property
+        def __members__(cls):
+            return ['a', 'property']
+    class Parent(metaclass=BaseMeta):
+        pass
+    class Derived(Parent):
+        pass
+    Derived.__members__
+    """
+    )
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert [c.value for c in inferred.elts] == ["a", "property"]
+
+
+def test_issue940_property_grandchild():
+    node = builder.extract_node(
+        """
+    class Grandparent:
+        @property
+        def __members__(self):
+            return ['a', 'property']
+    class Parent(Grandparent):
+        pass
+    class Child(Parent):
+        pass
+    Child().__members__
+    """
+    )
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert [c.value for c in inferred.elts] == ["a", "property"]
+
+
+def test_issue940_metaclass_property():
+    node = builder.extract_node(
+        """
+    class BaseMeta(type):
+        @property
+        def __members__(cls):
+            return ['a', 'property']
+    class Parent(metaclass=BaseMeta):
+        pass
+    Parent.__members__
+    """
+    )
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert [c.value for c in inferred.elts] == ["a", "property"]
+
+
+def test_issue940_with_metaclass_class_context_property():
+    node = builder.extract_node(
+        """
+    class BaseMeta(type):
+        pass
+    class Parent(metaclass=BaseMeta):
+        @property
+        def __members__(self):
+            return ['a', 'property']
+    class Derived(Parent):
+        pass
+    Derived.__members__
+    """
+    )
+    inferred = next(node.infer())
+    assert not isinstance(inferred, nodes.List)
+    assert isinstance(inferred, objects.Property)
+
+
+def test_issue940_metaclass_values_funcdef():
+    node = builder.extract_node(
+        """
+    class BaseMeta(type):
+        def __members__(cls):
+            return ['a', 'func']
+    class Parent(metaclass=BaseMeta):
+        pass
+    Parent.__members__()
+    """
+    )
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert [c.value for c in inferred.elts] == ["a", "func"]
+
+
+def test_issue940_metaclass_derived_funcdef():
+    node = builder.extract_node(
+        """
+    class BaseMeta(type):
+        def __members__(cls):
+            return ['a', 'func']
+    class Parent(metaclass=BaseMeta):
+        pass
+    class Derived(Parent):
+        pass
+    Derived.__members__()
+    """
+    )
+    inferred_result = next(node.infer())
+    assert isinstance(inferred_result, nodes.List)
+    assert [c.value for c in inferred_result.elts] == ["a", "func"]
+
+
+def test_issue940_metaclass_funcdef_is_not_datadescriptor():
+    node = builder.extract_node(
+        """
+    class BaseMeta(type):
+        def __members__(cls):
+            return ['a', 'property']
+    class Parent(metaclass=BaseMeta):
+        @property
+        def __members__(cls):
+            return BaseMeta.__members__()
+    class Derived(Parent):
+        pass
+    Derived.__members__
+    """
+    )
+    # Here the function is defined on the metaclass, but the property
+    # is defined on the base class. When loading the attribute in a
+    # class context, this should return the property object instead of
+    # resolving the data descriptor
+    inferred = next(node.infer())
+    assert isinstance(inferred, objects.Property)
+
+
+def test_issue940_enums_as_a_real_world_usecase():
+    node = builder.extract_node(
+        """
+    from enum import Enum
+    class Sounds(Enum):
+        bee = "buzz"
+        cat = "meow"
+    Sounds.__members__
+    """
+    )
+    inferred_result = next(node.infer())
+    assert isinstance(inferred_result, nodes.Dict)
+    actual = [k.value for k, _ in inferred_result.items]
+    assert sorted(actual) == ["bee", "cat"]
+
+
 def test_metaclass_cannot_infer_call_yields_an_instance():
     node = builder.extract_node(
         """
@@ -2003,6 +2201,32 @@ def test_posonlyargs_default_value():
     first_param = ast_node.args.default_value("b")
     assert isinstance(first_param, nodes.Const)
     assert first_param.value == 1
+
+
+@test_utils.require_version(minver="3.7")
+def test_ancestor_with_generic():
+    # https://github.com/PyCQA/astroid/issues/942
+    tree = builder.parse(
+        """
+    from typing import TypeVar, Generic
+    T = TypeVar("T")
+    class A(Generic[T]):
+        def a_method(self):
+            print("hello")
+    class B(A[T]): pass
+    class C(B[str]): pass
+    """
+    )
+    inferred_b = next(tree["B"].infer())
+    assert [cdef.name for cdef in inferred_b.ancestors()] == ["A", "Generic", "object"]
+
+    inferred_c = next(tree["C"].infer())
+    assert [cdef.name for cdef in inferred_c.ancestors()] == [
+        "B",
+        "A",
+        "Generic",
+        "object",
+    ]
 
 
 if __name__ == "__main__":

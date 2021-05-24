@@ -56,8 +56,7 @@ class Uninferable:
     __nonzero__ = __bool__
 
     def accept(self, visitor):
-        func = getattr(visitor, "visit_uninferable")
-        return func(self)
+        return visitor.visit_uninferable(self)
 
 
 class BadOperationMessage:

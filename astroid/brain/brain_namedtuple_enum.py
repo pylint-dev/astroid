@@ -85,7 +85,7 @@ def _find_func_form_arguments(node, context):
 
 
 def infer_func_form(node, base_type, context=None, enum=False):
-    """Specific inference function for namedtuple or Python 3 enum. """
+    """Specific inference function for namedtuple or Python 3 enum."""
     # node is a Call node, class name as first argument and generated class
     # attributes as second argument
 
@@ -248,7 +248,7 @@ def _get_renamed_namedtuple_attributes(field_names):
 
 
 def infer_enum(node, context=None):
-    """ Specific inference function for enum Call node. """
+    """Specific inference function for enum Call node."""
     enum_meta = extract_node(
         """
     class EnumMeta(object):
@@ -306,7 +306,7 @@ INT_FLAG_ADDITION_METHODS = """
 
 
 def infer_enum_class(node):
-    """ Specific inference for enums. """
+    """Specific inference for enums."""
     for basename in node.basenames:
         # TODO: doesn't handle subclasses yet. This implementation
         # is a hack to support enums.
@@ -315,6 +315,7 @@ def infer_enum_class(node):
         if node.root().name == "enum":
             # Skip if the class is directly from enum module.
             break
+        dunder_members = {}
         for local, values in node.locals.items():
             if any(not isinstance(value, nodes.AssignName) for value in values):
                 continue
@@ -372,7 +373,16 @@ def infer_enum_class(node):
                 for method in node.mymethods():
                     fake.locals[method.name] = [method]
                 new_targets.append(fake.instantiate_class())
+                dunder_members[local] = fake
             node.locals[local] = new_targets
+        members = nodes.Dict(parent=node)
+        members.postinit(
+            [
+                (nodes.Const(k, parent=members), nodes.Name(v.name, parent=members))
+                for k, v in dunder_members.items()
+            ]
+        )
+        node.locals["__members__"] = [members]
         break
     return node
 

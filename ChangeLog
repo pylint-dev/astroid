@@ -10,6 +10,50 @@ Release Date: TBA
   Closes #930
   Closes PyCQA/pylint#4186
 
+* Fix inference of instance attributes defined in base classes
+
+  Closes #932
+
+* Do not set instance attributes on builtin object()
+
+ Closes #945
+ Closes PyCQA/pylint#4232
+ Closes PyCQA/pylint#4221
+ Closes PyCQA/pylint#3970
+ Closes PyCQA/pylint#3595
+
+* Fix some spurious cycles detected in ``context.path`` leading to more cases
+  that can now be inferred
+
+  Closes #926
+
+* Add ``kind`` field to ``Const`` nodes, matching the structure of the built-in ast Const.
+  The kind field is "u" if the literal is a u-prefixed string, and ``None`` otherwise.
+
+  Closes #898
+
+* Fix property inference in class contexts for properties defined on the metaclass
+
+  Closes #940
+
+* Update enum brain to fix definition of __members__ for subclass-defined Enums
+
+  Closes PyCQA/pylint#3535
+  Closes PyCQA/pylint#4358
+
+* Update random brain to fix a crash with inference of some sequence elements
+
+  Closes #922
+
+* Fix inference of attributes defined in a base class that is an inner class
+
+  Closes #904
+
+* Allow inferring a return value of None for non-abstract empty functions and
+  functions with no return statements (implicitly returning None)
+
+  Closes #485
+
 What's New in astroid 2.5.6?
 ============================
 Release Date: 2021-04-25

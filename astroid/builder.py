@@ -67,7 +67,7 @@ def _can_assign_attr(node, attrname):
     else:
         if slots and attrname not in {slot.value for slot in slots}:
             return False
-    return True
+    return node.qname() != "builtins.object"
 
 
 class AstroidBuilder(raw_building.InspectBuilder):
@@ -203,7 +203,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
         Resort the locals if coming from a delayed node
         """
-        _key_func = lambda node: node.fromlineno
+
+        def _key_func(node):
+            return node.fromlineno
 
         def sort_locals(my_list):
             my_list.sort(key=_key_func)

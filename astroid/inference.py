@@ -276,7 +276,7 @@ def infer_import_from(self, context=None, asname=True):
         return bases._infer_stmts(stmts, context)
     except exceptions.AttributeInferenceError as error:
         raise exceptions.InferenceError(
-            error.message, target=self, attribute=name, context=context
+            str(error), target=self, attribute=name, context=context
         ) from error
 
 
@@ -309,6 +309,7 @@ def infer_attribute(self, context=None):
         elif not context:
             context = contextmod.InferenceContext()
 
+        old_boundnode = context.boundnode
         try:
             context.boundnode = owner
             yield from owner.igetattr(self.attrname, context)
@@ -319,7 +320,7 @@ def infer_attribute(self, context=None):
         ):
             pass
         finally:
-            context.boundnode = None
+            context.boundnode = old_boundnode
     return dict(node=self, context=context)
 
 
@@ -339,7 +340,7 @@ def infer_global(self, context=None):
         return bases._infer_stmts(self.root().getattr(context.lookupname), context)
     except exceptions.AttributeInferenceError as error:
         raise exceptions.InferenceError(
-            error.message, target=self, attribute=context.lookupname, context=context
+            str(error), target=self, attribute=context.lookupname, context=context
         ) from error
 
 
@@ -928,7 +929,7 @@ nodes.IfExp._infer = infer_ifexp
 
 # pylint: disable=dangerous-default-value
 @wrapt.decorator
-def _cached_generator(func, instance, args, kwargs, _cache={}):
+def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
     node = args[0]
     try:
         return iter(_cache[func, id(node)])

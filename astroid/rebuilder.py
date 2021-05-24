@@ -425,6 +425,7 @@ class TreeRebuilder:
             getattr(node, "lineno", None),
             getattr(node, "col_offset", None),
             parent,
+            getattr(node, "kind", None),
         )
 
     def visit_continue(self, node, parent):
@@ -550,7 +551,7 @@ class TreeRebuilder:
         )
         return newnode
 
-    # Not used in Python 3.8+.
+    # Not used in Python 3.9+.
     def visit_extslice(self, node, parent):
         """visit an ExtSlice node by returning a fresh instance of it"""
         newnode = nodes.ExtSlice(parent=parent)
@@ -727,7 +728,7 @@ class TreeRebuilder:
         )
         return newnode
 
-    # Not used in Python 3.8+.
+    # Not used in Python 3.9+.
     def visit_index(self, node, parent):
         """visit a Index node by returning a fresh instance of it"""
         newnode = nodes.Index(parent=parent)
@@ -814,6 +815,7 @@ class TreeRebuilder:
             getattr(node, "lineno", None),
             getattr(node, "col_offset", None),
             parent,
+            getattr(node, "kind", None),
         )
 
     # Not used in Python 3.8+.

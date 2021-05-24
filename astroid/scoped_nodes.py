@@ -611,7 +611,7 @@ class Module(LocalsDictNodeNG):
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
         except exceptions.AttributeInferenceError as error:
             raise exceptions.InferenceError(
-                error.message, target=self, attribute=name, context=context
+                str(error), target=self, attribute=name, context=context
             ) from error
 
     def fully_defined(self):
@@ -760,9 +760,9 @@ class Module(LocalsDictNodeNG):
         if not isinstance(explicit, (node_classes.Tuple, node_classes.List)):
             return default
 
-        str_const = lambda node: (
-            isinstance(node, node_classes.Const) and isinstance(node.value, str)
-        )
+        def str_const(node):
+            return isinstance(node, node_classes.Const) and isinstance(node.value, str)
+
         for node in explicit.elts:
             if str_const(node):
                 inferred.append(node.value)
@@ -1617,7 +1617,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
         except exceptions.AttributeInferenceError as error:
             raise exceptions.InferenceError(
-                error.message, target=self, attribute=name, context=context
+                str(error), target=self, attribute=name, context=context
             ) from error
 
     def is_method(self):
@@ -1661,11 +1661,12 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
         return self.type == "classmethod"
 
-    def is_abstract(self, pass_is_abstract=True):
+    def is_abstract(self, pass_is_abstract=True, any_raise_is_abstract=False):
         """Check if the method is abstract.
 
         A method is considered abstract if any of the following is true:
         * The only statement is 'raise NotImplementedError'
+        * The only statement is 'raise <SomeException>' and any_raise_is_abstract is True
         * The only statement is 'pass' and pass_is_abstract is True
         * The method is annotated with abc.astractproperty/abc.abstractmethod
 
@@ -1686,6 +1687,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         for child_node in self.body:
             if isinstance(child_node, node_classes.Raise):
+                if any_raise_is_abstract:
+                    return True
                 if child_node.raises_not_implemented():
                     return True
             return pass_is_abstract and isinstance(child_node, node_classes.Pass)
@@ -1744,8 +1747,11 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         first_return = next(returns, None)
         if not first_return:
-            if self.body and isinstance(self.body[-1], node_classes.Assert):
-                yield node_classes.Const(None)
+            if self.body:
+                if self.is_abstract(pass_is_abstract=True, any_raise_is_abstract=True):
+                    yield util.Uninferable
+                else:
+                    yield node_classes.Const(None)
                 return
 
             raise exceptions.InferenceError(
@@ -2554,7 +2560,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         context = contextmod.copy_context(context)
         context.lookupname = name
 
-        metaclass = self.declared_metaclass(context=context)
+        metaclass = self.metaclass(context=context)
         try:
             attributes = self.getattr(name, context, class_context=class_context)
             # If we have more than one attribute, make sure that those starting from
@@ -2587,9 +2593,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                         yield from function.infer_call_result(
                             caller=self, context=context
                         )
-                    # If we have a metaclass, we're accessing this attribute through
-                    # the class itself, which means we can solve the property
-                    elif metaclass:
+                    # If we're in a class context, we need to determine if the property
+                    # was defined in the metaclass (a derived class must be a subclass of
+                    # the metaclass of all its bases), in which case we can resolve the
+                    # property. If not, i.e. the property is defined in some base class
+                    # instead, then we return the property object
+                    elif metaclass and function.parent.scope() is metaclass:
                         # Resolve a property as long as it is not accessed through
                         # the class itself.
                         yield from function.infer_call_result(
@@ -2605,7 +2614,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 yield util.Uninferable
             else:
                 raise exceptions.InferenceError(
-                    error.message, target=self, attribute=name, context=context
+                    str(error), target=self, attribute=name, context=context
                 ) from error
 
     def has_dynamic_getattr(self, context=None):
@@ -2796,7 +2805,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         return self._metaclass_hack
 
     def _islots(self):
-        """ Return an iterator with the inferred slots. """
+        """Return an iterator with the inferred slots."""
         if "__slots__" not in self.locals:
             return None
         for slots in self.igetattr("__slots__"):

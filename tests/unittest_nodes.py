@@ -542,6 +542,19 @@ class ConstNodeTest(unittest.TestCase):
     def test_unicode(self):
         self._test("a")
 
+    @pytest.mark.skipif(
+        not PY38, reason="kind attribute for ast.Constant was added in 3.8"
+    )
+    def test_str_kind(self):
+        node = builder.extract_node(
+            """
+            const = u"foo"
+        """
+        )
+        assert isinstance(node.value, nodes.Const)
+        assert node.value.value == "foo"
+        assert node.value.kind, "u"
+
     def test_copy(self):
         """
         Make sure copying a Const object doesn't result in infinite recursion

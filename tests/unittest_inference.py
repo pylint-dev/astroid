@@ -706,14 +706,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         NoGetitem()[4] #@
         InvalidGetitem()[5] #@
         InvalidGetitem2()[10] #@
-        """
-        )
-        for node in ast_nodes[:3]:
-            self.assertRaises(InferenceError, next, node.infer())
-        for node in ast_nodes[3:]:
-            self.assertEqual(next(node.infer()), util.Uninferable)
-        ast_nodes = extract_node(
-            """
         [1, 2, 3][None] #@
         'lala'['bala'] #@
         """
@@ -1229,7 +1221,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(foo_class.instance_attrs["attr"]), 1)
         self.assertEqual(bar_class.instance_attrs, {"attr": [assattr]})
 
-    @pytest.mark.xfail(reason="Relying on path copy")
     def test_nonregr_multi_referential_addition(self):
         """Regression test for https://github.com/PyCQA/astroid/issues/483
         Make sure issue where referring to the same variable
@@ -1243,7 +1234,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         variable_a = extract_node(code)
         self.assertEqual(variable_a.inferred()[0].value, 2)
 
-    @pytest.mark.xfail(reason="Relying on path copy")
     def test_nonregr_layed_dictunpack(self):
         """Regression test for https://github.com/PyCQA/astroid/issues/483
         Make sure multiple dictunpack references are inferable
@@ -1704,7 +1694,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         ast = extract_node(code, __name__)
         expr = ast.func.expr
-        self.assertIs(next(expr.infer()), util.Uninferable)
+        with pytest.raises(exceptions.InferenceError):
+            next(expr.infer())
 
     def test_tuple_builtin_inference(self):
         code = """
@@ -2328,7 +2319,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertRaises(InferenceError, next, module["other_decorators"].infer())
         self.assertRaises(InferenceError, next, module["no_yield"].infer())
 
-    @pytest.mark.xfail(reason="Relying on path copy")
     def test_nested_contextmanager(self):
         """Make sure contextmanager works with nested functions
 
@@ -3896,6 +3886,65 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ).inferred()[0]
         assert isinstance(cls, nodes.ClassDef) and cls.name == "Clazz"
 
+    def test_infer_subclass_attr_outer_class(self):
+        node = extract_node(
+            """
+        class Outer:
+            data = 123
+
+        class Test(Outer):
+            pass
+        Test.data
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 123
+
+    def test_infer_subclass_attr_inner_class_works_indirectly(self):
+        node = extract_node(
+            """
+        class Outer:
+            class Inner:
+                data = 123
+        Inner = Outer.Inner
+
+        class Test(Inner):
+            pass
+        Test.data
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 123
+
+    def test_infer_subclass_attr_inner_class(self):
+        clsdef_node, attr_node = extract_node(
+            """
+        class Outer:
+            class Inner:
+                data = 123
+
+        class Test(Outer.Inner):
+            pass
+        Test  #@
+        Test.data  #@
+            """
+        )
+        clsdef = next(clsdef_node.infer())
+        assert isinstance(clsdef, nodes.ClassDef)
+        inferred = next(clsdef.igetattr("data"))
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 123
+        # Inferring the value of .data via igetattr() worked before the
+        # old_boundnode fixes in infer_subscript, so it should have been
+        # possible to infer the subscript directly. It is the difference
+        # between these two cases that led to the discovery of the cause of the
+        # bug in https://github.com/PyCQA/astroid/issues/904
+        inferred = next(attr_node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 123
+
     def test_delayed_attributes_without_slots(self):
         ast_node = extract_node(
             """
@@ -3985,6 +4034,106 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(node.infer())
         with self.assertRaises(exceptions.AstroidTypeError):
             inferred.getitem(nodes.Const("4"))
+
+    def test_infer_arg_called_type_is_uninferable(self):
+        node = extract_node(
+            """
+        def func(type):
+            type #@
+        """
+        )
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
+
+    def test_infer_arg_called_object_when_used_as_index_is_uninferable(self):
+        node = extract_node(
+            """
+        def func(object):
+            ['list'][
+                object #@
+            ]
+        """
+        )
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
+
+    @test_utils.require_version(minver="3.9")
+    def test_infer_arg_called_type_when_used_as_index_is_uninferable(self):
+        # https://github.com/PyCQA/astroid/pull/958
+        node = extract_node(
+            """
+        def func(type):
+            ['list'][
+                type #@
+            ]
+        """
+        )
+        inferred = next(node.infer())
+        assert not isinstance(inferred, nodes.ClassDef)  # was inferred as builtins.type
+        assert inferred is util.Uninferable
+
+    @test_utils.require_version(minver="3.9")
+    def test_infer_arg_called_type_when_used_as_subscript_is_uninferable(self):
+        # https://github.com/PyCQA/astroid/pull/958
+        node = extract_node(
+            """
+        def func(type):
+            type[0] #@
+        """
+        )
+        inferred = next(node.infer())
+        assert not isinstance(inferred, nodes.ClassDef)  # was inferred as builtins.type
+        assert inferred is util.Uninferable
+
+    @test_utils.require_version(minver="3.9")
+    def test_infer_arg_called_type_defined_in_outer_scope_is_uninferable(self):
+        # https://github.com/PyCQA/astroid/pull/958
+        node = extract_node(
+            """
+        def outer(type):
+            def inner():
+                type[0] #@
+        """
+        )
+        inferred = next(node.infer())
+        assert not isinstance(inferred, nodes.ClassDef)  # was inferred as builtins.type
+        assert inferred is util.Uninferable
+
+    def test_infer_subclass_attr_instance_attr_indirect(self):
+        node = extract_node(
+            """
+        class Parent:
+            def __init__(self):
+                self.data = 123
+
+        class Test(Parent):
+            pass
+        t = Test()
+        t
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, Instance)
+        const = next(inferred.igetattr("data"))
+        assert isinstance(const, nodes.Const)
+        assert const.value == 123
+
+    def test_infer_subclass_attr_instance_attr(self):
+        node = extract_node(
+            """
+        class Parent:
+            def __init__(self):
+                self.data = 123
+
+        class Test(Parent):
+            pass
+        t = Test()
+        t.data
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 123
 
 
 class GetattrTest(unittest.TestCase):
@@ -4789,7 +4938,6 @@ class ObjectDunderNewTest(unittest.TestCase):
         self.assertIsInstance(inferred, Instance)
 
 
-@pytest.mark.xfail(reason="Relying on path copy")
 def test_augassign_recursion():
     """Make sure inference doesn't throw a RecursionError
 
@@ -5248,26 +5396,25 @@ def test_cannot_getattr_ann_assigns():
 def test_prevent_recursion_error_in_igetattr_and_context_manager_inference():
     code = """
     class DummyContext(object):
-        def method(self, msg): # pylint: disable=C0103
-            pass
         def __enter__(self):
-            pass
+            return self
         def __exit__(self, ex_type, ex_value, ex_tb):
             return True
 
-    class CallMeMaybe(object):
-        def __call__(self):
-            while False:
-                with DummyContext() as con:
-                    f_method = con.method
-                break
+    if False:
+        with DummyContext() as con:
+            pass
 
-            with DummyContext() as con:
-                con #@
-                f_method = con.method
+    with DummyContext() as con:
+        con.__enter__  #@
     """
     node = extract_node(code)
-    assert next(node.infer()) is util.Uninferable
+    # According to the original issue raised that introduced this test
+    # (https://github.com/PyCQA/astroid/663, see 55076ca), this test was a
+    # non-regression check for StopIteration leaking out of inference and
+    # causing a RuntimeError. Hence, here just consume the inferred value
+    # without checking it and rely on pytest to fail on raise
+    next(node.infer())
 
 
 def test_infer_context_manager_with_unknown_args():
@@ -5966,6 +6113,38 @@ def test_infer_list_of_uninferables_does_not_crash():
     assert isinstance(inferred, nodes.Tuple)
     # Would not be able to infer the first element.
     assert not inferred.elts
+
+
+# https://github.com/PyCQA/astroid/issues/926
+def test_issue926_infer_stmts_referencing_same_name_is_not_uninferable():
+    code = """
+    pair = [1, 2]
+    ex = pair[0]
+    if 1 + 1 == 2:
+        ex = pair[1]
+    ex
+    """
+    node = extract_node(code)
+    inferred = list(node.infer())
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 1
+    assert isinstance(inferred[1], nodes.Const)
+    assert inferred[1].value == 2
+
+
+# https://github.com/PyCQA/astroid/issues/926
+def test_issue926_binop_referencing_same_name_is_not_uninferable():
+    code = """
+    pair = [1, 2]
+    ex = pair[0] + pair[1]
+    ex
+    """
+    node = extract_node(code)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 3
 
 
 if __name__ == "__main__":

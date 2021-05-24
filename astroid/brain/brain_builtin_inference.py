@@ -322,7 +322,9 @@ infer_frozenset = partial(
 
 
 def _get_elts(arg, context):
-    is_iterable = lambda n: isinstance(n, (nodes.List, nodes.Tuple, nodes.Set))
+    def is_iterable(n):
+        return isinstance(n, (nodes.List, nodes.Tuple, nodes.Set))
+
     try:
         inferred = next(arg.infer(context))
     except (InferenceError, NameInferenceError) as exc:

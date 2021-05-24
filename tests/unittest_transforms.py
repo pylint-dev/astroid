@@ -187,7 +187,10 @@ class TestTransforms(unittest.TestCase):
             return node
 
         manager = builder.MANAGER
-        predicate = lambda node: node.root().name == "time"
+
+        def predicate(node):
+            return node.root().name == "time"
+
         with add_transform(manager, nodes.FunctionDef, transform_function, predicate):
             builder_instance = builder.AstroidBuilder()
             module = builder_instance.module_build(time)

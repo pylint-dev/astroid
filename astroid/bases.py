@@ -106,7 +106,7 @@ class Proxy:
 
     def __getattr__(self, name):
         if name == "_proxied":
-            return getattr(self.__class__, "_proxied")
+            return self.__class__._proxied
         if name in self.__dict__:
             return self.__dict__[name]
         return getattr(self._proxied, name)
@@ -207,8 +207,9 @@ class BaseInstance(Proxy):
         if not context:
             context = contextmod.InferenceContext()
         try:
+            context.lookupname = name
             # avoid recursively inferring the same attr on the same class
-            if context.push((self._proxied, name)):
+            if context.push(self._proxied):
                 raise exceptions.InferenceError(
                     message="Cannot infer the same attribute again",
                     node=self,
@@ -220,7 +221,7 @@ class BaseInstance(Proxy):
             yield from _infer_stmts(
                 self._wrap_attr(get_attr, context), context, frame=self
             )
-        except exceptions.AttributeInferenceError as error:
+        except exceptions.AttributeInferenceError:
             try:
                 # fallback to class.igetattr since it has some logic to handle
                 # descriptors
@@ -327,6 +328,12 @@ class Instance(BaseInstance):
         if not isinstance(method, BoundMethod):
             raise exceptions.InferenceError(
                 "Could not find __getitem__ for {node!r}.", node=self, context=context
+            )
+        if len(method.args.arguments) != 2:  # (self, index)
+            raise exceptions.AstroidTypeError(
+                "__getitem__ for {node!r} does not have correct signature",
+                node=self,
+                context=context,
             )
         return next(method.infer_call_result(self, new_context))
 

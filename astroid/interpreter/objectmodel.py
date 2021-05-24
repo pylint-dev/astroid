@@ -558,7 +558,9 @@ class GeneratorModel(FunctionModel):
         generator = astroid.MANAGER.builtins_module["generator"]
         for name, values in generator.locals.items():
             method = values[0]
-            patched = lambda cls, meth=method: meth
+
+            def patched(cls, meth=method):
+                return meth
 
             setattr(type(ret), IMPL_PREFIX + name, property(patched))
 
@@ -589,7 +591,9 @@ class AsyncGeneratorModel(GeneratorModel):
 
         for name, values in generator.locals.items():
             method = values[0]
-            patched = lambda cls, meth=method: meth
+
+            def patched(cls, meth=method):
+                return meth
 
             setattr(type(ret), IMPL_PREFIX + name, property(patched))
 
