@@ -41,6 +41,10 @@ Release Date: TBA
 
   Closes #922
 
+* Fix inference of attributes defined in a base class that is an inner class
+
+  Closes #904
+
 
 What's New in astroid 2.5.6?
 ============================
