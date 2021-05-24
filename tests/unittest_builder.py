@@ -572,7 +572,7 @@ class BuilderTest(unittest.TestCase):
                 return 'None'
             """
         astroid = builder.parse(code)
-        none, nothing, chain = [ret.value for ret in astroid.body[0].body]
+        none, nothing, chain = (ret.value for ret in astroid.body[0].body)
         self.assertIsInstance(none, nodes.Const)
         self.assertIsNone(none.value)
         self.assertIsNone(nothing)

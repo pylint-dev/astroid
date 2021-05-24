@@ -184,10 +184,8 @@ class AsStringVisitor:
     def visit_compare(self, node):
         """return an astroid.Compare node as string"""
         rhs_str = " ".join(
-            [
-                f"{op} {self._precedence_parens(node, expr, is_left=False)}"
-                for op, expr in node.ops
-            ]
+            f"{op} {self._precedence_parens(node, expr, is_left=False)}"
+            for op, expr in node.ops
         )
         return f"{self._precedence_parens(node, node.left)} {rhs_str}"
 
