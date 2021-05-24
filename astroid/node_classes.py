@@ -4942,7 +4942,7 @@ class MatchClass(NodeNG):
     _astroid_fields = ("cls", "patterns", "kwd_attrs", "kwd_patterns")
     cls: typing.Optional[NodeNG] = None
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
-    kwd_attrs: typing.Optional[typing.List] = None
+    kwd_attrs: typing.Optional[typing.List[str]] = None
     kwd_patterns: typing.Optional[typing.List["PatternTypes"]] = None
 
     def postinit(
@@ -4950,7 +4950,7 @@ class MatchClass(NodeNG):
         *,
         cls: typing.Optional[NodeNG] = None,
         patterns: typing.Optional[typing.List["PatternTypes"]] = None,
-        kwd_attrs: typing.Optional[typing.List] = None,
+        kwd_attrs: typing.Optional[typing.List[str]] = None,
         kwd_patterns: typing.Optional[typing.List["PatternTypes"]] = None,
     ) -> None:
         self.cls = cls
@@ -4963,8 +4963,6 @@ class MatchClass(NodeNG):
             yield self.cls
         if self.patterns is not None:
             yield from self.patterns
-        if self.kwd_attrs is not None:
-            yield from self.kwd_attrs
         if self.kwd_patterns is not None:
             yield from self.kwd_patterns
 

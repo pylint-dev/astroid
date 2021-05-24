@@ -1076,7 +1076,7 @@ class TreeRebuilder:
         newnode.postinit(
             cls=self.visit(node.cls, newnode),
             patterns=[self.visit(pattern, newnode) for pattern in node.patterns],
-            kwd_attrs=[self.visit(child, newnode) for child in node.kwd_attrs],
+            kwd_attrs=node.kwd_attrs,
             kwd_patterns=[
                 self.visit(pattern, newnode) for pattern in node.kwd_patterns
             ],
