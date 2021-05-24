@@ -18,6 +18,7 @@
 # Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Andreas Finkler <andi.finkler@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
@@ -37,6 +38,8 @@
 # We disable the import-error so pylint can work without distutils installed.
 # pylint: disable=no-name-in-module,useless-suppression
 
+import importlib
+import importlib.machinery
 import importlib.util
 import itertools
 import os
@@ -574,21 +577,11 @@ def is_relative(modname, from_file):
         from_file = os.path.dirname(from_file)
     if from_file in sys.path:
         return False
-    name = os.path.basename(from_file)
-    file_path = os.path.dirname(from_file)
-    parent_spec = importlib.util.find_spec(name, from_file)
-    while parent_spec is None and len(file_path) > 0:
-        name = os.path.basename(file_path) + "." + name
-        file_path = os.path.dirname(file_path)
-        parent_spec = importlib.util.find_spec(name, from_file)
-
-    if parent_spec is None:
-        return False
-
-    submodule_spec = importlib.util.find_spec(
-        name + "." + modname.split(".")[0], parent_spec.submodule_search_locations
+    return bool(
+        importlib.machinery.PathFinder.find_spec(
+            modname.split(".", maxsplit=1)[0], [from_file]
+        )
     )
-    return submodule_spec is not None
 
 
 # internal only functions #####################################################
