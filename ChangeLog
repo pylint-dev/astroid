@@ -45,6 +45,11 @@ Release Date: TBA
 
   Closes #904
 
+* Allow inferring a return value of None for non-abstract empty functions and
+  functions with no return statements (implicitly returning None)
+
+  Closes #485
+
 
 What's New in astroid 2.5.6?
 ============================
