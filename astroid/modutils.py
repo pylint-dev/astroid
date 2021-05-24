@@ -18,6 +18,7 @@
 # Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Andreas Finkler <andi.finkler@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
@@ -37,6 +38,8 @@
 # We disable the import-error so pylint can work without distutils installed.
 # pylint: disable=no-name-in-module,useless-suppression
 
+import importlib
+import importlib.machinery
 import importlib.util
 import itertools
 import os
@@ -574,12 +577,9 @@ def is_relative(modname, from_file):
         from_file = os.path.dirname(from_file)
     if from_file in sys.path:
         return False
-    modspec = importlib.machinery.PathFinder().find_spec(
-        modname.split(".")[0], [from_file]
+    return bool(
+        importlib.machinery.PathFinder.find_spec(modname.split(".")[0], [from_file])
     )
-    if modspec:
-        return True
-    return False
 
 
 # internal only functions #####################################################
