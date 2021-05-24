@@ -329,6 +329,12 @@ class Instance(BaseInstance):
             raise exceptions.InferenceError(
                 "Could not find __getitem__ for {node!r}.", node=self, context=context
             )
+        if len(method.args.arguments) != 2:  # (self, index)
+            raise exceptions.AstroidTypeError(
+                "__getitem__ for {node!r} does not have correct signature",
+                node=self,
+                context=context,
+            )
         return next(method.infer_call_result(self, new_context))
 
 
