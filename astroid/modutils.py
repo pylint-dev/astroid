@@ -578,7 +578,9 @@ def is_relative(modname, from_file):
     if from_file in sys.path:
         return False
     return bool(
-        importlib.machinery.PathFinder.find_spec(modname.partition(".")[0], [from_file])
+        importlib.machinery.PathFinder.find_spec(
+            modname.split(".", maxsplit=1)[0], [from_file]
+        )
     )
 
 
