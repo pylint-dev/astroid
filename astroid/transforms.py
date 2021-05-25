@@ -10,6 +10,8 @@
 import collections
 from functools import lru_cache
 
+from astroid import context as contextmod
+
 
 class TransformVisitor:
     """A visitor for handling transforms.
@@ -42,6 +44,7 @@ class TransformVisitor:
                 # if the transformation function returns something, it's
                 # expected to be a replacement for the node
                 if ret is not None:
+                    contextmod._invalidate_cache()
                     node = ret
                 if ret.__class__ != cls:
                     # Can no longer apply the rest of the transforms.
