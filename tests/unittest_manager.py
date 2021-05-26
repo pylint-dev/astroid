@@ -25,6 +25,7 @@ import site
 import sys
 import time
 import unittest
+from contextlib import contextmanager
 
 import pkg_resources
 
@@ -184,41 +185,48 @@ class AstroidManagerTest(
             sys.modules.pop("foogle")
 
     def _test_ast_from_zip(self, archive):
-        origpath = sys.path[:]
         sys.modules.pop("mypypa", None)
         archive_path = resources.find(archive)
         sys.path.insert(0, archive_path)
-        try:
-            module = self.manager.ast_from_module_name("mypypa")
-            self.assertEqual(module.name, "mypypa")
-            end = os.path.join(archive, "mypypa")
-            self.assertTrue(
-                module.file.endswith(end), f"{module.file} doesn't endswith {end}"
-            )
-        finally:
-            # remove the module, else after importing egg, we don't get the zip
-            if "mypypa" in self.manager.astroid_cache:
-                del self.manager.astroid_cache["mypypa"]
-                del self.manager._mod_file_cache[("mypypa", None)]
-            if archive_path in sys.path_importer_cache:
-                del sys.path_importer_cache[archive_path]
-            sys.path = origpath
+        module = self.manager.ast_from_module_name("mypypa")
+        self.assertEqual(module.name, "mypypa")
+        end = os.path.join(archive, "mypypa")
+        self.assertTrue(
+            module.file.endswith(end), f"{module.file} doesn't endswith {end}"
+        )
+
+    @contextmanager
+    def _restore_package_cache(self):
+        orig_path = sys.path[:]
+        orig_pathcache = sys.path_importer_cache.copy()
+        orig_modcache = self.manager.astroid_cache.copy()
+        orig_modfilecache = self.manager._mod_file_cache.copy()
+        orig_importhooks = self.manager._failed_import_hooks[:]
+        yield
+        self.manager._failed_import_hooks = orig_importhooks
+        self.manager._mod_file_cache = orig_modfilecache
+        self.manager.astroid_cache = orig_modcache
+        sys.path_importer_cache = orig_pathcache
+        sys.path = orig_path
 
     def test_ast_from_module_name_egg(self):
-        self._test_ast_from_zip(
-            os.path.sep.join(["data", os.path.normcase("MyPyPa-0.1.0-py2.5.egg")])
-        )
+        with self._restore_package_cache():
+            self._test_ast_from_zip(
+                os.path.sep.join(["data", os.path.normcase("MyPyPa-0.1.0-py2.5.egg")])
+            )
 
     def test_ast_from_module_name_zip(self):
-        self._test_ast_from_zip(
-            os.path.sep.join(["data", os.path.normcase("MyPyPa-0.1.0-py2.5.zip")])
-        )
+        with self._restore_package_cache():
+            self._test_ast_from_zip(
+                os.path.sep.join(["data", os.path.normcase("MyPyPa-0.1.0-py2.5.zip")])
+            )
 
     def test_zip_import_data(self):
         """check if zip_import_data works"""
-        filepath = resources.find("data/MyPyPa-0.1.0-py2.5.zip/mypypa")
-        ast = self.manager.zip_import_data(filepath)
-        self.assertEqual(ast.name, "mypypa")
+        with self._restore_package_cache():
+            filepath = resources.find("data/MyPyPa-0.1.0-py2.5.zip/mypypa")
+            ast = self.manager.zip_import_data(filepath)
+            self.assertEqual(ast.name, "mypypa")
 
     def test_zip_import_data_without_zipimport(self):
         """check if zip_import_data return None without zipimport"""
@@ -288,11 +296,12 @@ class AstroidManagerTest(
 
         with self.assertRaises(AstroidBuildingError):
             self.manager.ast_from_module_name("foo.bar")
-        self.manager.register_failed_import_hook(hook)
-        self.assertEqual(unittest, self.manager.ast_from_module_name("foo.bar"))
-        with self.assertRaises(AstroidBuildingError):
-            self.manager.ast_from_module_name("foo.bar.baz")
-        del self.manager._failed_import_hooks[0]
+
+        with self._restore_package_cache():
+            self.manager.register_failed_import_hook(hook)
+            self.assertEqual(unittest, self.manager.ast_from_module_name("foo.bar"))
+            with self.assertRaises(AstroidBuildingError):
+                self.manager.ast_from_module_name("foo.bar.baz")
 
 
 class BorgAstroidManagerTC(unittest.TestCase):
