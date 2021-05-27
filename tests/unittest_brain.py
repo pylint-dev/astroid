@@ -495,7 +495,7 @@ class SixBrainTest(unittest.TestCase):
         self.assertIsInstance(ancestors[1], nodes.ClassDef)
         self.assertEqual(ancestors[1].name, "object")
 
-    def test_six_add_metaclass_with_additional_transform(self):
+    def test_six_with_metaclass_with_additional_transform(self):
         def transform_class(cls):
             if cls.name == "A":
                 setattr(cls, "_test_transform", 314)
