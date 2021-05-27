@@ -498,7 +498,7 @@ class SixBrainTest(unittest.TestCase):
     def test_six_with_metaclass_with_additional_transform(self):
         def transform_class(cls):
             if cls.name == "A":
-                setattr(cls, "_test_transform", 314)
+                cls._test_transform = 314
             return cls
 
         MANAGER.register_transform(nodes.ClassDef, transform_class)
