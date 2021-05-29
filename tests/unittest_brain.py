@@ -1029,9 +1029,6 @@ class PytestBrainTest(unittest.TestCase):
             "fixture",
             "yield_fixture",
         ]
-        if pytest.__version__.split(".")[0] == "3":
-            attrs += ["approx", "register_assert_rewrite"]
-
         for attr in attrs:
             self.assertIn(attr, module)
 
