@@ -28,6 +28,8 @@ commands:
 
 ```bash
 git clean -fdx && find . -name '*.pyc' -delete
+python3 -m venv venv
+source venv/bin/activate
 pip3 install twine wheel setuptools
 python setup.py sdist --formats=gztar bdist_wheel
 twine upload dist/*
