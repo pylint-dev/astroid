@@ -1374,7 +1374,7 @@ def test_is_generator_for_yield_in_aug_assign():
 @pytest.mark.skipif(
     sys.version_info < (3, 10), reason="pattern matching was added in PY310"
 )
-class TestMatch:
+class TestPatternMatching:
     @staticmethod
     def test_match_simple():
         node = builder.extract_node(
@@ -1392,17 +1392,17 @@ class TestMatch:
         )
         assert isinstance(node, nodes.Match)
         assert isinstance(node.subject, nodes.Name)
-        assert isinstance(node.cases, list) and len(node.cases) == 4
         assert node.subject.name == "status"
+        assert isinstance(node.cases, list) and len(node.cases) == 4
         case0, case1, case2, case3 = node.cases
 
         assert isinstance(case0.pattern, nodes.MatchValue)
-        assert case0.guard is None
-        assert isinstance(case0.body[0], astroid.Pass)
         assert (
             isinstance(case0.pattern.value, astroid.Const)
             and case0.pattern.value.value == 200
         )
+        assert case0.guard is None
+        assert isinstance(case0.body[0], astroid.Pass)
 
         assert isinstance(case1.pattern, nodes.MatchOr)
         assert (
