@@ -10,6 +10,8 @@ What's New in astroid 2.5.7?
 ============================
 Release Date: TBA
 
+* Fix six.with_metaclass transformation so it doesn't break user defined transformations.
+
 * Fix detection of relative imports.
   Closes #930
   Closes PyCQA/pylint#4186

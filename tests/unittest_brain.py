@@ -495,6 +495,28 @@ class SixBrainTest(unittest.TestCase):
         self.assertIsInstance(ancestors[1], nodes.ClassDef)
         self.assertEqual(ancestors[1].name, "object")
 
+    def test_six_with_metaclass_with_additional_transform(self):
+        def transform_class(cls):
+            if cls.name == "A":
+                cls._test_transform = 314
+            return cls
+
+        MANAGER.register_transform(nodes.ClassDef, transform_class)
+        try:
+            ast_node = builder.extract_node(
+                """
+                import six
+                class A(six.with_metaclass(type, object)):
+                    pass
+
+                A #@
+            """
+            )
+            inferred = next(ast_node.infer())
+            assert getattr(inferred, "_test_transform", None) == 314
+        finally:
+            MANAGER.unregister_transform(nodes.ClassDef, transform_class)
+
 
 @unittest.skipUnless(
     HAS_MULTIPROCESSING,
