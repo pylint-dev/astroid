@@ -1371,5 +1371,181 @@ def test_is_generator_for_yield_in_aug_assign():
     assert bool(node.is_generator())
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="pattern matching was added in PY310"
+)
+class TestPatternMatching:
+    @staticmethod
+    def test_match_simple():
+        node = builder.extract_node(
+            """
+        match status:
+            case 200:
+                pass
+            case 401 | 402 | 403:
+                pass
+            case None:
+                pass
+            case _:
+                pass
+        """
+        )
+        assert isinstance(node, nodes.Match)
+        assert isinstance(node.subject, nodes.Name)
+        assert node.subject.name == "status"
+        assert isinstance(node.cases, list) and len(node.cases) == 4
+        case0, case1, case2, case3 = node.cases
+
+        assert isinstance(case0.pattern, nodes.MatchValue)
+        assert (
+            isinstance(case0.pattern.value, astroid.Const)
+            and case0.pattern.value.value == 200
+        )
+        assert case0.guard is None
+        assert isinstance(case0.body[0], astroid.Pass)
+
+        assert isinstance(case1.pattern, nodes.MatchOr)
+        assert (
+            isinstance(case1.pattern.patterns, list)
+            and len(case1.pattern.patterns) == 3
+        )
+        for i in range(3):
+            match_value = case1.pattern.patterns[i]
+            assert isinstance(match_value, nodes.MatchValue)
+            assert isinstance(match_value.value, nodes.Const)
+            assert match_value.value.value == (401, 402, 403)[i]
+
+        assert isinstance(case2.pattern, nodes.MatchSingleton)
+        assert case2.pattern.value is None
+
+        assert isinstance(case3.pattern, nodes.MatchAs)
+        assert case3.pattern.name is None
+        assert case3.pattern.pattern is None
+
+    @staticmethod
+    def test_match_sequence():
+        node = builder.extract_node(
+            """
+        match status:
+            case [x, 2, *rest] as y if x > 2:
+                pass
+        """
+        )
+        assert isinstance(node, nodes.Match)
+        assert isinstance(node.cases, list) and len(node.cases) == 1
+        case = node.cases[0]
+
+        assert isinstance(case.pattern, nodes.MatchAs)
+        assert case.pattern.name == "y"
+        assert isinstance(case.guard, nodes.Compare)
+        assert isinstance(case.body[0], nodes.Pass)
+
+        pattern_as = case.pattern.pattern
+        assert isinstance(pattern_as, nodes.MatchSequence)
+        assert isinstance(pattern_as.patterns, list) and len(pattern_as.patterns) == 3
+        assert (
+            isinstance(pattern_as.patterns[0], nodes.MatchAs)
+            and pattern_as.patterns[0].name == "x"
+            and pattern_as.patterns[0].pattern is None
+        )
+        assert (
+            isinstance(pattern_as.patterns[1], nodes.MatchValue)
+            and isinstance(pattern_as.patterns[1].value, nodes.Const)
+            and pattern_as.patterns[1].value.value == 2
+        )
+        assert (
+            isinstance(pattern_as.patterns[2], nodes.MatchStar)
+            and pattern_as.patterns[2].name == "rest"
+        )
+
+    @staticmethod
+    def test_match_mapping():
+        node = builder.extract_node(
+            """
+        match status:
+            case {0: x, 1: _}:
+                pass
+            case {**rest}:
+                pass
+        """
+        )
+        assert isinstance(node, nodes.Match)
+        assert isinstance(node.cases, list) and len(node.cases) == 2
+        case0, case1 = node.cases
+
+        assert isinstance(case0.pattern, nodes.MatchMapping)
+        assert case0.pattern.rest is None
+        assert isinstance(case0.pattern.keys, list) and len(case0.pattern.keys) == 2
+        assert (
+            isinstance(case0.pattern.patterns, list)
+            and len(case0.pattern.patterns) == 2
+        )
+        for i in range(2):
+            key = case0.pattern.keys[i]
+            assert isinstance(key, nodes.Const)
+            assert key.value == i
+            pattern = case0.pattern.patterns[i]
+            assert isinstance(pattern, nodes.MatchAs)
+            assert pattern.name == ("x" if i == 0 else None)
+
+        assert isinstance(case1.pattern, nodes.MatchMapping)
+        assert case1.pattern.rest == "rest"
+        assert isinstance(case1.pattern.keys, list) and len(case1.pattern.keys) == 0
+        assert (
+            isinstance(case1.pattern.patterns, list)
+            and len(case1.pattern.patterns) == 0
+        )
+
+    @staticmethod
+    def test_match_class():
+        node = builder.extract_node(
+            """
+        match x:
+            case Point2D(0, 1):
+                pass
+            case Point3D(x=0, y=1, z=2):
+                pass
+        """
+        )
+        assert isinstance(node, nodes.Match)
+        assert isinstance(node.cases, list) and len(node.cases) == 2
+        case0, case1 = node.cases
+
+        assert isinstance(case0.pattern, nodes.MatchClass)
+        assert isinstance(case0.pattern.cls, nodes.Name)
+        assert case0.pattern.cls.name == "Point2D"
+        assert (
+            isinstance(case0.pattern.patterns, list)
+            and len(case0.pattern.patterns) == 2
+        )
+        for i in range(2):
+            match_value = case0.pattern.patterns[i]
+            assert isinstance(match_value, nodes.MatchValue)
+            assert isinstance(match_value.value, nodes.Const)
+            assert match_value.value.value == i
+
+        assert isinstance(case1.pattern, nodes.MatchClass)
+        assert isinstance(case1.pattern.cls, nodes.Name)
+        assert case1.pattern.cls.name == "Point3D"
+        assert (
+            isinstance(case1.pattern.patterns, list)
+            and len(case1.pattern.patterns) == 0
+        )
+        assert (
+            isinstance(case1.pattern.kwd_attrs, list)
+            and len(case1.pattern.kwd_attrs) == 3
+        )
+        assert (
+            isinstance(case1.pattern.kwd_patterns, list)
+            and len(case1.pattern.kwd_patterns) == 3
+        )
+        for i in range(3):
+            assert case1.pattern.kwd_attrs[i] == ("x", "y", "z")[i]
+            kwd_pattern = case1.pattern.kwd_patterns[i]
+            assert isinstance(kwd_pattern, nodes.MatchValue)
+            assert isinstance(kwd_pattern.value, nodes.Const)
+            assert kwd_pattern.value.value == i
+
+
 if __name__ == "__main__":
     unittest.main()

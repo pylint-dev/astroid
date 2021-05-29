@@ -60,6 +60,16 @@ Nodes
    Lambda
    List
    ListComp
+   Match
+   MatchAs
+   MatchCase
+   MatchClass
+   MatchMapping
+   MatchOr
+   MatchSequence
+   MatchSingleton
+   MatchStar
+   MatchValue
    Module
    Name
    Nonlocal
@@ -180,6 +190,26 @@ Nodes
 .. autoclass:: List
 
 .. autoclass:: ListComp
+
+.. autoclass:: Match
+
+.. autoclass:: MatchAs
+
+.. autoclass:: MatchCase
+
+.. autoclass:: MatchClass
+
+.. autoclass:: MatchMapping
+
+.. autoclass:: MatchOr
+
+.. autoclass:: MatchSequence
+
+.. autoclass:: MatchSingleton
+
+.. autoclass:: MatchStar
+
+.. autoclass:: MatchValue
 
 .. autoclass:: Module
 

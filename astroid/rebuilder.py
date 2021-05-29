@@ -28,11 +28,15 @@ order to get a single Astroid representation
 """
 
 import sys
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import astroid
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
+from astroid.node_classes import NodeNG
+
+if TYPE_CHECKING:
+    import ast
 
 CONST_NAME_TRANSFORMS = {"None": None, "True": True, "False": False}
 
@@ -43,6 +47,7 @@ REDIRECT = {
     "GenExprFor": "Comprehension",
     "excepthandler": "ExceptHandler",
     "keyword": "Keyword",
+    "match_case": "MatchCase",
 }
 PY37 = sys.version_info >= (3, 7)
 PY38 = sys.version_info >= (3, 8)
@@ -1009,4 +1014,89 @@ class TreeRebuilder:
         newnode = nodes.YieldFrom(node.lineno, node.col_offset, parent)
         if node.value is not None:
             newnode.postinit(self.visit(node.value, newnode))
+        return newnode
+
+    def visit_match(self, node: "ast.Match", parent: NodeNG) -> nodes.Match:
+        newnode = nodes.Match(node.lineno, node.col_offset, parent)
+        newnode.postinit(
+            subject=self.visit(node.subject, newnode),
+            cases=[self.visit(case, newnode) for case in node.cases],
+        )
+        return newnode
+
+    def visit_matchcase(
+        self, node: "ast.match_case", parent: NodeNG
+    ) -> nodes.MatchCase:
+        newnode = nodes.MatchCase(parent=parent)
+        newnode.postinit(
+            pattern=self.visit(node.pattern, newnode),
+            guard=_visit_or_none(node, "guard", self, newnode),
+            body=[self.visit(child, newnode) for child in node.body],
+        )
+        return newnode
+
+    def visit_matchvalue(
+        self, node: "ast.MatchValue", parent: NodeNG
+    ) -> nodes.MatchValue:
+        newnode = nodes.MatchValue(node.lineno, node.col_offset, parent)
+        newnode.postinit(value=self.visit(node.value, newnode))
+        return newnode
+
+    def visit_matchsingleton(
+        self, node: "ast.MatchSingleton", parent: NodeNG
+    ) -> nodes.MatchSingleton:
+        return nodes.MatchSingleton(
+            node.lineno, node.col_offset, parent, value=node.value
+        )
+
+    def visit_matchsequence(
+        self, node: "ast.MatchSequence", parent: NodeNG
+    ) -> nodes.MatchSequence:
+        newnode = nodes.MatchSequence(node.lineno, node.col_offset, parent)
+        newnode.postinit(
+            patterns=[self.visit(pattern, newnode) for pattern in node.patterns]
+        )
+        return newnode
+
+    def visit_matchmapping(
+        self, node: "ast.MatchMapping", parent: NodeNG
+    ) -> nodes.MatchMapping:
+        newnode = nodes.MatchMapping(node.lineno, node.col_offset, parent)
+        newnode.postinit(
+            keys=[self.visit(child, newnode) for child in node.keys],
+            patterns=[self.visit(pattern, newnode) for pattern in node.patterns],
+            rest=node.rest,
+        )
+        return newnode
+
+    def visit_matchclass(
+        self, node: "ast.MatchClass", parent: NodeNG
+    ) -> nodes.MatchClass:
+        newnode = nodes.MatchClass(node.lineno, node.col_offset, parent)
+        newnode.postinit(
+            cls=self.visit(node.cls, newnode),
+            patterns=[self.visit(pattern, newnode) for pattern in node.patterns],
+            kwd_attrs=node.kwd_attrs,
+            kwd_patterns=[
+                self.visit(pattern, newnode) for pattern in node.kwd_patterns
+            ],
+        )
+        return newnode
+
+    def visit_matchstar(self, node: "ast.MatchStar", parent: NodeNG) -> nodes.MatchStar:
+        return nodes.MatchStar(node.lineno, node.col_offset, parent, name=node.name)
+
+    def visit_matchas(self, node: "ast.MatchAs", parent: NodeNG) -> nodes.MatchAs:
+        newnode = nodes.MatchAs(None, None, parent)
+        newnode.postinit(
+            pattern=_visit_or_none(node, "pattern", self, newnode),
+            name=node.name,
+        )
+        return newnode
+
+    def visit_matchor(self, node: "ast.MatchOr", parent: NodeNG) -> nodes.MatchOr:
+        newnode = nodes.MatchOr(None, None, parent)
+        newnode.postinit(
+            patterns=[self.visit(pattern, newnode) for pattern in node.patterns]
+        )
         return newnode
