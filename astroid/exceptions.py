@@ -214,6 +214,10 @@ class AstroidTypeError(AstroidError):
     """Raised when a TypeError would be expected in Python code."""
 
 
+class AstroidValueError(AstroidError):
+    """Raised when a ValueError would be expected in Python code."""
+
+
 class InferenceOverwriteError(AstroidError):
     """Raised when an inference tip is overwritten
 
