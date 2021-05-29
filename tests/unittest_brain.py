@@ -41,8 +41,7 @@ import unittest
 import pytest
 
 import astroid
-import astroid.test_utils as test_utils
-from astroid import MANAGER, bases, builder, nodes, util
+from astroid import MANAGER, bases, builder, nodes, test_utils, util
 
 try:
     import multiprocessing  # pylint: disable=unused-import
