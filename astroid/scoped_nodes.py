@@ -318,6 +318,9 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
         :returns: The nodes that define locals.
         :rtype: list(NodeNG)
         """
+        # pylint: disable=consider-using-dict-items
+        # It look like this class override items/keys/values,
+        # probably not worth the headache
         return [self[key] for key in self.keys()]
 
     def items(self):
