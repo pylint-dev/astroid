@@ -71,5 +71,12 @@
     ],
     "authoritative_mail": "ville.skytta@iki.fi",
     "name": "Ville Skyttä"
+  },
+  {
+    "mails": [
+      "66853113+pre-commit-ci[bot]@users.noreply.github.com"
+    ],
+    "authoritative_mail": "bot@noreply.github.com",
+    "name": "pre-commit-ci[bot]"
   }
 ]
