@@ -4812,7 +4812,7 @@ class EvaluatedObject(NodeNG):
 # Pattern matching #######################################################
 
 
-class Match(NodeNG):
+class Match(Statement):
     """Class representing a :class:`ast.Match` node."""
 
     _astroid_fields = ("subject", "cases")
@@ -4910,21 +4910,20 @@ class MatchSequence(NodeNG):
             yield from self.patterns
 
 
-class MatchMapping(NodeNG):
+class MatchMapping(mixins.AssignTypeMixin, NodeNG):
     """Class representing a :class:`ast.MatchMapping` node."""
 
-    _astroid_fields = ("keys", "patterns")
-    _other_fields = ("rest",)
+    _astroid_fields = ("keys", "patterns", "rest")
     keys: typing.Optional[typing.List[NodeNG]] = None
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
-    rest: typing.Optional[str] = None
+    rest: typing.Optional[AssignName] = None
 
     def postinit(
         self,
         *,
         keys=None,
         patterns: typing.Optional[typing.List["PatternTypes"]] = None,
-        rest: typing.Optional[str] = None,
+        rest: typing.Optional[AssignName] = None,
     ) -> None:
         self.keys = keys
         self.patterns = patterns
@@ -4935,6 +4934,8 @@ class MatchMapping(NodeNG):
             yield from self.keys
         if self.patterns is not None:
             yield from self.patterns
+        if self.rest is not None:
+            yield self.rest
 
 
 class MatchClass(NodeNG):
@@ -4968,44 +4969,43 @@ class MatchClass(NodeNG):
             yield from self.kwd_patterns
 
 
-class MatchStar(NodeNG):
+class MatchStar(mixins.AssignTypeMixin, NodeNG):
     """Class representing a :class:`ast.MatchStar` node."""
 
-    _other_fields = ("name",)
-    name: typing.Optional[str] = None
+    _astroid_fields = ("name",)
+    name: typing.Optional[AssignName] = None
 
-    def __init__(
-        self,
-        lineno: int,
-        col_offset: int,
-        parent: NodeNG,
-        *,
-        name: typing.Optional[str],
-    ) -> None:
+    def postinit(self, *, name: typing.Optional[AssignName] = None) -> None:
         self.name = name
-        super().__init__(lineno, col_offset, parent)
+
+    def get_children(self) -> typing.Generator[AssignName, None, None]:
+        if self.name is not None:
+            yield self.name
 
 
-class MatchAs(NodeNG):
+class MatchAs(mixins.AssignTypeMixin, NodeNG):
     """Class representing a :class:`ast.MatchAs` node."""
 
-    _astroid_fields = ("pattern",)
-    _other_fields = ("name",)
+    _astroid_fields = ("pattern", "name")
     pattern: typing.Optional["PatternTypes"] = None
-    name: typing.Optional[str] = None
+    name: typing.Optional[AssignName] = None
 
     def postinit(
         self,
         *,
         pattern: typing.Optional["PatternTypes"] = None,
-        name: typing.Optional[str] = None,
+        name: typing.Optional[AssignName] = None,
     ) -> None:
         self.pattern = pattern
         self.name = name
 
-    def get_children(self) -> typing.Generator["PatternTypes", None, None]:
+    def get_children(
+        self,
+    ) -> typing.Generator[typing.Union[AssignName, "PatternTypes"], None, None]:
         if self.pattern is not None:
             yield self.pattern
+        if self.name is not None:
+            yield self.name
 
 
 class MatchOr(NodeNG):

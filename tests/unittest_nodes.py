@@ -1428,7 +1428,7 @@ class TestPatternMatching:
         node = builder.extract_node(
             """
         match status:
-            case [x, 2, *rest] as y if x > 2:
+            case [x, 2, _, *rest] as y if x > 2:
                 pass
         """
         )
@@ -1437,16 +1437,18 @@ class TestPatternMatching:
         case = node.cases[0]
 
         assert isinstance(case.pattern, nodes.MatchAs)
-        assert case.pattern.name == "y"
+        assert isinstance(case.pattern.name, nodes.AssignName)
+        assert case.pattern.name.name == "y"
         assert isinstance(case.guard, nodes.Compare)
         assert isinstance(case.body[0], nodes.Pass)
 
         pattern_as = case.pattern.pattern
         assert isinstance(pattern_as, nodes.MatchSequence)
-        assert isinstance(pattern_as.patterns, list) and len(pattern_as.patterns) == 3
+        assert isinstance(pattern_as.patterns, list) and len(pattern_as.patterns) == 4
         assert (
             isinstance(pattern_as.patterns[0], nodes.MatchAs)
-            and pattern_as.patterns[0].name == "x"
+            and isinstance(pattern_as.patterns[0].name, nodes.AssignName)
+            and pattern_as.patterns[0].name.name == "x"
             and pattern_as.patterns[0].pattern is None
         )
         assert (
@@ -1455,8 +1457,13 @@ class TestPatternMatching:
             and pattern_as.patterns[1].value.value == 2
         )
         assert (
-            isinstance(pattern_as.patterns[2], nodes.MatchStar)
-            and pattern_as.patterns[2].name == "rest"
+            isinstance(pattern_as.patterns[2], nodes.MatchAs)
+            and pattern_as.patterns[2].name is None
+        )
+        assert (
+            isinstance(pattern_as.patterns[3], nodes.MatchStar)
+            and isinstance(pattern_as.patterns[3].name, nodes.AssignName)
+            and pattern_as.patterns[3].name.name == "rest"
         )
 
     @staticmethod
@@ -1487,10 +1494,15 @@ class TestPatternMatching:
             assert key.value == i
             pattern = case0.pattern.patterns[i]
             assert isinstance(pattern, nodes.MatchAs)
-            assert pattern.name == ("x" if i == 0 else None)
+            if i == 0:
+                assert isinstance(pattern.name, nodes.AssignName)
+                assert pattern.name.name == "x"
+            elif i == 1:
+                assert pattern.name is None
 
         assert isinstance(case1.pattern, nodes.MatchMapping)
-        assert case1.pattern.rest == "rest"
+        assert isinstance(case1.pattern.rest, nodes.AssignName)
+        assert case1.pattern.rest.name == "rest"
         assert isinstance(case1.pattern.keys, list) and len(case1.pattern.keys) == 0
         assert (
             isinstance(case1.pattern.patterns, list)
