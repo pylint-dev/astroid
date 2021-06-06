@@ -1378,7 +1378,7 @@ def test_is_generator_for_yield_in_aug_assign():
 class TestPatternMatching:
     @staticmethod
     def test_match_simple():
-        node = builder.extract_node(
+        code = textwrap.dedent(
             """
         match status:
             case 200:
@@ -1390,7 +1390,9 @@ class TestPatternMatching:
             case _:
                 pass
         """
-        )
+        ).strip()
+        node = builder.extract_node(code)
+        assert node.as_string() == code
         assert isinstance(node, nodes.Match)
         assert isinstance(node.subject, nodes.Name)
         assert node.subject.name == "status"
@@ -1425,13 +1427,15 @@ class TestPatternMatching:
 
     @staticmethod
     def test_match_sequence():
-        node = builder.extract_node(
+        code = textwrap.dedent(
             """
         match status:
             case [x, 2, _, *rest] as y if x > 2:
                 pass
         """
-        )
+        ).strip()
+        node = builder.extract_node(code)
+        assert node.as_string() == code
         assert isinstance(node, nodes.Match)
         assert isinstance(node.cases, list) and len(node.cases) == 1
         case = node.cases[0]
@@ -1468,7 +1472,7 @@ class TestPatternMatching:
 
     @staticmethod
     def test_match_mapping():
-        node = builder.extract_node(
+        code = textwrap.dedent(
             """
         match status:
             case {0: x, 1: _}:
@@ -1476,7 +1480,9 @@ class TestPatternMatching:
             case {**rest}:
                 pass
         """
-        )
+        ).strip()
+        node = builder.extract_node(code)
+        assert node.as_string() == code
         assert isinstance(node, nodes.Match)
         assert isinstance(node.cases, list) and len(node.cases) == 2
         case0, case1 = node.cases
@@ -1511,15 +1517,17 @@ class TestPatternMatching:
 
     @staticmethod
     def test_match_class():
-        node = builder.extract_node(
+        code = textwrap.dedent(
             """
         match x:
-            case Point2D(0, 1):
+            case Point2D(0, a):
                 pass
-            case Point3D(x=0, y=1, z=2):
+            case Point3D(x=0, y=1, z=b):
                 pass
         """
-        )
+        ).strip()
+        node = builder.extract_node(code)
+        assert node.as_string() == code
         assert isinstance(node, nodes.Match)
         assert isinstance(node.cases, list) and len(node.cases) == 2
         case0, case1 = node.cases
@@ -1531,11 +1539,19 @@ class TestPatternMatching:
             isinstance(case0.pattern.patterns, list)
             and len(case0.pattern.patterns) == 2
         )
-        for i in range(2):
-            match_value = case0.pattern.patterns[i]
-            assert isinstance(match_value, nodes.MatchValue)
-            assert isinstance(match_value.value, nodes.Const)
-            assert match_value.value.value == i
+        match_value = case0.pattern.patterns[0]
+        assert (
+            isinstance(match_value, nodes.MatchValue)
+            and isinstance(match_value.value, nodes.Const)
+            and match_value.value.value == 0
+        )
+        match_as = case0.pattern.patterns[1]
+        assert (
+            isinstance(match_as, nodes.MatchAs)
+            and match_as.pattern is None
+            and isinstance(match_as.name, nodes.AssignName)
+            and match_as.name.name == "a"
+        )
 
         assert isinstance(case1.pattern, nodes.MatchClass)
         assert isinstance(case1.pattern.cls, nodes.Name)
@@ -1552,12 +1568,20 @@ class TestPatternMatching:
             isinstance(case1.pattern.kwd_patterns, list)
             and len(case1.pattern.kwd_patterns) == 3
         )
-        for i in range(3):
-            assert case1.pattern.kwd_attrs[i] == ("x", "y", "z")[i]
+        for i in range(2):
+            assert case1.pattern.kwd_attrs[i] == ("x", "y")[i]
             kwd_pattern = case1.pattern.kwd_patterns[i]
             assert isinstance(kwd_pattern, nodes.MatchValue)
             assert isinstance(kwd_pattern.value, nodes.Const)
             assert kwd_pattern.value.value == i
+        assert case1.pattern.kwd_attrs[2] == "z"
+        kwd_pattern = case1.pattern.kwd_patterns[2]
+        assert (
+            isinstance(kwd_pattern, nodes.MatchAs)
+            and kwd_pattern.pattern is None
+            and isinstance(kwd_pattern.name, nodes.AssignName)
+            and kwd_pattern.name.name == "b"
+        )
 
 
 if __name__ == "__main__":
