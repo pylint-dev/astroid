@@ -4877,7 +4877,7 @@ class MatchValue(NodeNG):
             yield self.value
 
 
-class MatchSingleton(NodeNG):
+class MatchSingleton(mixins.NoChildrenMixin, NodeNG):
     """Class representing a :class:`ast.MatchSingleton` node."""
 
     _other_fields = ("value",)
