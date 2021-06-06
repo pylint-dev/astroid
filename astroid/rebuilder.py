@@ -1107,7 +1107,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_matchas(self, node: "ast.MatchAs", parent: NodeNG) -> nodes.MatchAs:
-        newnode = nodes.MatchAs(None, None, parent)
+        newnode = nodes.MatchAs(node.lineno, node.col_offset, parent)
         name_node: Optional[nodes.AssignName] = None
         if node.name is not None:
             # Add AssignName node for 'node.name'
@@ -1123,7 +1123,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_matchor(self, node: "ast.MatchOr", parent: NodeNG) -> nodes.MatchOr:
-        newnode = nodes.MatchOr(None, None, parent)
+        newnode = nodes.MatchOr(node.lineno, node.col_offset, parent)
         newnode.postinit(
             patterns=[self.visit(pattern, newnode) for pattern in node.patterns]
         )
