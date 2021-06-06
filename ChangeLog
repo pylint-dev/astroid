@@ -12,6 +12,7 @@ What's New in astroid 2.5.8?
 ============================
 Release Date: TBA
 
+* Add lineno and col_offset for ``Keyword`` nodes and Python 3.9+
 
 
 What's New in astroid 2.5.7?
