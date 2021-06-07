@@ -23,9 +23,10 @@
 # Copyright (c) 2019 kavins14 <kavinsingh@hotmail.com>
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Federico Bond <federicobond@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Federico Bond <federicobond@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE

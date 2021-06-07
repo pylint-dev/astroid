@@ -13,8 +13,8 @@
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Daniel Colascione <dancol@dancol.org>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
