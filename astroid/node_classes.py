@@ -357,12 +357,16 @@ class NodeNG:
             # explicit_inference is not bound, give it self explicitly
             try:
                 # pylint: disable=not-callable
-                yield from self._explicit_inference(self, context, **kwargs)
+                results = tuple(self._explicit_inference(self, context, **kwargs))
+                if context is not None:
+                    context.nodes_inferred += len(results)
+                yield from results
                 return
             except exceptions.UseInferenceDefault:
                 pass
 
         if not context:
+            # nodes_inferred?
             yield from self._infer(context, **kwargs)
             return
 
@@ -378,11 +382,12 @@ class NodeNG:
         # exponentially exploding possible results.
         limit = MANAGER.max_inferable_values
         for i, result in enumerate(generator):
-            if i >= limit:
+            if i >= limit or (context.nodes_inferred > context.max_inferred):
                 yield util.Uninferable
                 break
             results.append(result)
             yield result
+            context.nodes_inferred += 1
 
         # Cache generated results for subsequent inferences of the
         # same node using the same context

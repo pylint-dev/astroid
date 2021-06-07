@@ -13,7 +13,17 @@
 """Various context related utilities, including inference and call contexts."""
 import contextlib
 import pprint
-from typing import Optional
+from typing import TYPE_CHECKING, MutableMapping, Optional, Sequence, Tuple
+
+if TYPE_CHECKING:
+    from astroid.node_classes import NodeNG
+
+
+_INFERENCE_CACHE = {}
+
+
+def _invalidate_cache():
+    _INFERENCE_CACHE.clear()
 
 
 class InferenceContext:
@@ -28,11 +38,17 @@ class InferenceContext:
         "lookupname",
         "callcontext",
         "boundnode",
-        "inferred",
         "extra_context",
+        "_nodes_inferred",
     )
 
-    def __init__(self, path=None, inferred=None):
+    max_inferred = 100
+
+    def __init__(self, path=None, nodes_inferred=None):
+        if nodes_inferred is None:
+            self._nodes_inferred = [0]
+        else:
+            self._nodes_inferred = nodes_inferred
         self.path = path or set()
         """
         :type: set(tuple(NodeNG, optional(str)))
@@ -65,14 +81,6 @@ class InferenceContext:
 
         e.g. the bound node of object.__new__(cls) is the object node
         """
-        self.inferred = inferred or {}
-        """
-        :type: dict(seq, seq)
-
-        Inferred node contexts to their mapped results
-        Currently the key is ``(node, lookupname, callcontext, boundnode)``
-        and the value is tuple of the inferred results
-        """
         self.extra_context = {}
         """
         :type: dict(NodeNG, Context)
@@ -80,6 +88,34 @@ class InferenceContext:
         Context that needs to be passed down through call stacks
         for call arguments
         """
+
+    @property
+    def nodes_inferred(self):
+        """
+        Number of nodes inferred in this context and all its clones/decendents
+
+        Wrap inner value in a mutable cell to allow for mutating a class
+        variable in the presence of __slots__
+        """
+        return self._nodes_inferred[0]
+
+    @nodes_inferred.setter
+    def nodes_inferred(self, value):
+        self._nodes_inferred[0] = value
+
+    @property
+    def inferred(
+        self,
+    ) -> MutableMapping[
+        Tuple["NodeNG", Optional[str], Optional[str], Optional[str]], Sequence["NodeNG"]
+    ]:
+        """
+        Inferred node contexts to their mapped results
+
+        Currently the key is ``(node, lookupname, callcontext, boundnode)``
+        and the value is tuple of the inferred results
+        """
+        return _INFERENCE_CACHE
 
     def push(self, node):
         """Push node into inference path
@@ -103,7 +139,7 @@ class InferenceContext:
         starts with the same context but diverge as each side is inferred
         so the InferenceContext will need be cloned"""
         # XXX copy lookupname/callcontext ?
-        clone = InferenceContext(self.path.copy(), inferred=self.inferred.copy())
+        clone = InferenceContext(self.path.copy(), nodes_inferred=self._nodes_inferred)
         clone.callcontext = self.callcontext
         clone.boundnode = self.boundnode
         clone.extra_context = self.extra_context
