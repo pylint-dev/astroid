@@ -4812,8 +4812,19 @@ class EvaluatedObject(NodeNG):
 # Pattern matching #######################################################
 
 
-class Match(NodeNG):
-    """Class representing a :class:`ast.Match` node."""
+class Match(Statement):
+    """Class representing a :class:`ast.Match` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case 200:
+            ...
+        case _:
+            ...
+    ''')
+    >>> node
+    <Match l.2 at 0x10c24e170>
+    """
 
     _astroid_fields = ("subject", "cases")
     subject: typing.Optional[NodeNG] = None
@@ -4836,7 +4847,16 @@ class Match(NodeNG):
 
 
 class MatchCase(NodeNG):
-    """Class representing a :class:`ast.match_case` node."""
+    """Class representing a :class:`ast.match_case` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case 200:
+            ...
+    ''')
+    >>> node.cases[0]
+    <MatchCase l.3 at 0x10c24e590>
+    """
 
     _astroid_fields = ("pattern", "guard", "body")
     pattern: typing.Optional["PatternTypes"] = None
@@ -4864,7 +4884,16 @@ class MatchCase(NodeNG):
 
 
 class MatchValue(NodeNG):
-    """Class representing a :class:`ast.MatchValue` node."""
+    """Class representing a :class:`ast.MatchValue` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case 200:
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchValue l.3 at 0x10c24e200>
+    """
 
     _astroid_fields = ("value",)
     value: typing.Optional[NodeNG] = None
@@ -4877,8 +4906,25 @@ class MatchValue(NodeNG):
             yield self.value
 
 
-class MatchSingleton(NodeNG):
-    """Class representing a :class:`ast.MatchSingleton` node."""
+class MatchSingleton(mixins.NoChildrenMixin, NodeNG):
+    """Class representing a :class:`ast.MatchSingleton` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case True:
+            ...
+        case False:
+            ...
+        case None:
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchSingleton l.3 at 0x10c2282e0>
+    >>> node.cases[1].pattern
+    <MatchSingleton l.5 at 0x10c228af0>
+    >>> node.cases[2].pattern
+    <MatchSingleton l.7 at 0x10c229f90>
+    """
 
     _other_fields = ("value",)
 
@@ -4895,7 +4941,20 @@ class MatchSingleton(NodeNG):
 
 
 class MatchSequence(NodeNG):
-    """Class representing a :class:`ast.MatchSequence` node."""
+    """Class representing a :class:`ast.MatchSequence` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case [1, 2]:
+            ...
+        case (1, 2, *_):
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchSequence l.3 at 0x10ca80d00>
+    >>> node.cases[1].pattern
+    <MatchSequence l.5 at 0x10ca80b20>
+    """
 
     _astroid_fields = ("patterns",)
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
@@ -4910,21 +4969,29 @@ class MatchSequence(NodeNG):
             yield from self.patterns
 
 
-class MatchMapping(NodeNG):
-    """Class representing a :class:`ast.MatchMapping` node."""
+class MatchMapping(mixins.AssignTypeMixin, NodeNG):
+    """Class representing a :class:`ast.MatchMapping` node.
 
-    _astroid_fields = ("keys", "patterns")
-    _other_fields = ("rest",)
+    >>> node = astroid.extract_node('''
+    match x:
+        case {1: "Hello", 2: "World", 3: _, **rest}:
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchMapping l.3 at 0x10c8a8850>
+    """
+
+    _astroid_fields = ("keys", "patterns", "rest")
     keys: typing.Optional[typing.List[NodeNG]] = None
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
-    rest: typing.Optional[str] = None
+    rest: typing.Optional[AssignName] = None
 
     def postinit(
         self,
         *,
         keys=None,
         patterns: typing.Optional[typing.List["PatternTypes"]] = None,
-        rest: typing.Optional[str] = None,
+        rest: typing.Optional[AssignName] = None,
     ) -> None:
         self.keys = keys
         self.patterns = patterns
@@ -4935,10 +5002,25 @@ class MatchMapping(NodeNG):
             yield from self.keys
         if self.patterns is not None:
             yield from self.patterns
+        if self.rest is not None:
+            yield self.rest
 
 
 class MatchClass(NodeNG):
-    """Class representing a :class:`ast.MatchClass` node."""
+    """Class representing a :class:`ast.MatchClass` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case Point2D(0, 0):
+            ...
+        case Point3D(x=0, y=0, z=0):
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchClass l.3 at 0x10ca83940>
+    >>> node.cases[1].pattern
+    <MatchClass l.5 at 0x10ca80880>
+    """
 
     _astroid_fields = ("cls", "patterns", "kwd_attrs", "kwd_patterns")
     cls: typing.Optional[NodeNG] = None
@@ -4968,48 +5050,86 @@ class MatchClass(NodeNG):
             yield from self.kwd_patterns
 
 
-class MatchStar(NodeNG):
-    """Class representing a :class:`ast.MatchStar` node."""
+class MatchStar(mixins.AssignTypeMixin, NodeNG):
+    """Class representing a :class:`ast.MatchStar` node.
 
-    _other_fields = ("name",)
-    name: typing.Optional[str] = None
+    >>> node = astroid.extract_node('''
+    match x:
+        case [1, *_]:
+            ...
+    ''')
+    >>> node.cases[0].pattern.patterns[1]
+    <MatchStar l.3 at 0x10ca809a0>
+    """
 
-    def __init__(
-        self,
-        lineno: int,
-        col_offset: int,
-        parent: NodeNG,
-        *,
-        name: typing.Optional[str],
-    ) -> None:
+    _astroid_fields = ("name",)
+    name: typing.Optional[AssignName] = None
+
+    def postinit(self, *, name: typing.Optional[AssignName] = None) -> None:
         self.name = name
-        super().__init__(lineno, col_offset, parent)
+
+    def get_children(self) -> typing.Generator[AssignName, None, None]:
+        if self.name is not None:
+            yield self.name
 
 
-class MatchAs(NodeNG):
-    """Class representing a :class:`ast.MatchAs` node."""
+class MatchAs(mixins.AssignTypeMixin, NodeNG):
+    """Class representing a :class:`ast.MatchAs` node.
 
-    _astroid_fields = ("pattern",)
-    _other_fields = ("name",)
+    >>> node = astroid.extract_node('''
+    match x:
+        case [1, a]:
+            ...
+        case {'key': b}:
+            ...
+        case Point2D(0, 0) as c:
+            ...
+        case d:
+            ...
+    ''')
+    >>> node.cases[0].pattern.patterns[1]
+    <MatchAs l.3 at 0x10d0b2da0>
+    >>> node.cases[1].pattern.patterns[0]
+    <MatchAs l.5 at 0x10d0b2920>
+    >>> node.cases[2].pattern
+    <MatchAs l.7 at 0x10d0b06a0>
+    >>> node.cases[3].pattern
+    <MatchAs l.9 at 0x10d09b880>
+    """
+
+    _astroid_fields = ("pattern", "name")
     pattern: typing.Optional["PatternTypes"] = None
-    name: typing.Optional[str] = None
+    name: typing.Optional[AssignName] = None
 
     def postinit(
         self,
         *,
         pattern: typing.Optional["PatternTypes"] = None,
-        name: typing.Optional[str] = None,
+        name: typing.Optional[AssignName] = None,
     ) -> None:
         self.pattern = pattern
         self.name = name
 
-    def get_children(self) -> typing.Generator["PatternTypes", None, None]:
+    def get_children(
+        self,
+    ) -> typing.Generator[typing.Union[AssignName, "PatternTypes"], None, None]:
         if self.pattern is not None:
             yield self.pattern
+        if self.name is not None:
+            yield self.name
 
 
 class MatchOr(NodeNG):
-    """Class representing a :class:`ast.MatchOr` node."""
+    """Class representing a :class:`ast.MatchOr` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case 400 | 401 | 402:
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchOr l.3 at 0x10d0b0b50>
+    """
 
     _astroid_fields = ("patterns",)
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
