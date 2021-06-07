@@ -3,8 +3,8 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
-# Copyright (c) 2021 Artsiom Kaval <lezeroq@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Artsiom Kaval <lezeroq@gmail.com>
 # Copyright (c) 2021 Francis Charette Migneault <francis.charette.migneault@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
