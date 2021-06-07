@@ -150,7 +150,7 @@ def safe_infer(node, context=None):
     try:
         inferit = node.infer(context=context)
         value = next(inferit)
-    except exceptions.InferenceError:
+    except (exceptions.InferenceError, StopIteration):
         return None
     try:
         next(inferit)
