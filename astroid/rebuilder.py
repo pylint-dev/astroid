@@ -1064,10 +1064,18 @@ class TreeRebuilder:
         self, node: "ast.MatchMapping", parent: NodeNG
     ) -> nodes.MatchMapping:
         newnode = nodes.MatchMapping(node.lineno, node.col_offset, parent)
+        name_node: Optional[nodes.AssignName] = None
+        if node.rest is not None:
+            # Add AssignName node for 'node.rest'
+            # https://bugs.python.org/issue43994
+            name_node = nodes.AssignName(
+                node.rest, node.lineno, node.col_offset, newnode
+            )
+            self._save_assignment(name_node)
         newnode.postinit(
             keys=[self.visit(child, newnode) for child in node.keys],
             patterns=[self.visit(pattern, newnode) for pattern in node.patterns],
-            rest=node.rest,
+            rest=name_node,
         )
         return newnode
 
@@ -1086,18 +1094,36 @@ class TreeRebuilder:
         return newnode
 
     def visit_matchstar(self, node: "ast.MatchStar", parent: NodeNG) -> nodes.MatchStar:
-        return nodes.MatchStar(node.lineno, node.col_offset, parent, name=node.name)
+        newnode = nodes.MatchStar(node.lineno, node.col_offset, parent)
+        name_node: Optional[nodes.AssignName] = None
+        if node.name is not None:
+            # Add AssignName node for 'node.name'
+            # https://bugs.python.org/issue43994
+            name_node = nodes.AssignName(
+                node.name, node.lineno, node.col_offset, newnode
+            )
+            self._save_assignment(name_node)
+        newnode.postinit(name=name_node)
+        return newnode
 
     def visit_matchas(self, node: "ast.MatchAs", parent: NodeNG) -> nodes.MatchAs:
-        newnode = nodes.MatchAs(None, None, parent)
+        newnode = nodes.MatchAs(node.lineno, node.col_offset, parent)
+        name_node: Optional[nodes.AssignName] = None
+        if node.name is not None:
+            # Add AssignName node for 'node.name'
+            # https://bugs.python.org/issue43994
+            name_node = nodes.AssignName(
+                node.name, node.lineno, node.col_offset, newnode
+            )
+            self._save_assignment(name_node)
         newnode.postinit(
             pattern=_visit_or_none(node, "pattern", self, newnode),
-            name=node.name,
+            name=name_node,
         )
         return newnode
 
     def visit_matchor(self, node: "ast.MatchOr", parent: NodeNG) -> nodes.MatchOr:
-        newnode = nodes.MatchOr(None, None, parent)
+        newnode = nodes.MatchOr(node.lineno, node.col_offset, parent)
         newnode.postinit(
             patterns=[self.visit(pattern, newnode) for pattern in node.patterns]
         )
