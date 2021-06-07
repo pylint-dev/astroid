@@ -14,6 +14,8 @@ Release Date: TBA
 
 * Improve support for Pattern Matching
 
+* Add lineno and col_offset for ``Keyword`` nodes and Python 3.9+
+
 * Add global inference cache to speed up inference of long statement blocks
 
 * Add a limit to the total number of nodes inferred indirectly as a result

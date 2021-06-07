@@ -53,6 +53,7 @@ REDIRECT = {
 }
 PY37 = sys.version_info >= (3, 7)
 PY38 = sys.version_info >= (3, 8)
+PY39 = sys.version_info >= (3, 9)
 
 
 def _visit_or_none(node, attr, visitor, parent, visit="visit", **kws):
@@ -742,9 +743,14 @@ class TreeRebuilder:
         newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
-    def visit_keyword(self, node, parent):
+    def visit_keyword(self, node: "ast.keyword", parent: NodeNG) -> nodes.Keyword:
         """visit a Keyword node by returning a fresh instance of it"""
-        newnode = nodes.Keyword(node.arg, parent=parent)
+        if PY39:
+            newnode = nodes.Keyword(
+                node.arg, node.lineno, node.col_offset, parent=parent
+            )
+        else:
+            newnode = nodes.Keyword(node.arg, parent=parent)
         newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
