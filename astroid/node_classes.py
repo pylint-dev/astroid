@@ -4813,7 +4813,18 @@ class EvaluatedObject(NodeNG):
 
 
 class Match(Statement):
-    """Class representing a :class:`ast.Match` node."""
+    """Class representing a :class:`ast.Match` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case 200:
+            ...
+        case _:
+            ...
+    ''')
+    >>> node
+    <Match l.2 at 0x10c24e170>
+    """
 
     _astroid_fields = ("subject", "cases")
     subject: typing.Optional[NodeNG] = None
@@ -4836,7 +4847,16 @@ class Match(Statement):
 
 
 class MatchCase(NodeNG):
-    """Class representing a :class:`ast.match_case` node."""
+    """Class representing a :class:`ast.match_case` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case 200:
+            ...
+    ''')
+    >>> node.cases[0]
+    <MatchCase l.3 at 0x10c24e590>
+    """
 
     _astroid_fields = ("pattern", "guard", "body")
     pattern: typing.Optional["PatternTypes"] = None
@@ -4864,7 +4884,16 @@ class MatchCase(NodeNG):
 
 
 class MatchValue(NodeNG):
-    """Class representing a :class:`ast.MatchValue` node."""
+    """Class representing a :class:`ast.MatchValue` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case 200:
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchValue l.3 at 0x10c24e200>
+    """
 
     _astroid_fields = ("value",)
     value: typing.Optional[NodeNG] = None
@@ -4878,7 +4907,24 @@ class MatchValue(NodeNG):
 
 
 class MatchSingleton(mixins.NoChildrenMixin, NodeNG):
-    """Class representing a :class:`ast.MatchSingleton` node."""
+    """Class representing a :class:`ast.MatchSingleton` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case True:
+            ...
+        case False:
+            ...
+        case None:
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchSingleton l.3 at 0x10c2282e0>
+    >>> node.cases[1].pattern
+    <MatchSingleton l.5 at 0x10c228af0>
+    >>> node.cases[2].pattern
+    <MatchSingleton l.7 at 0x10c229f90>
+    """
 
     _other_fields = ("value",)
 
@@ -4895,7 +4941,20 @@ class MatchSingleton(mixins.NoChildrenMixin, NodeNG):
 
 
 class MatchSequence(NodeNG):
-    """Class representing a :class:`ast.MatchSequence` node."""
+    """Class representing a :class:`ast.MatchSequence` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case [1, 2]:
+            ...
+        case (1, 2, *_):
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchSequence l.3 at 0x10ca80d00>
+    >>> node.cases[1].pattern
+    <MatchSequence l.5 at 0x10ca80b20>
+    """
 
     _astroid_fields = ("patterns",)
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
@@ -4911,7 +4970,16 @@ class MatchSequence(NodeNG):
 
 
 class MatchMapping(mixins.AssignTypeMixin, NodeNG):
-    """Class representing a :class:`ast.MatchMapping` node."""
+    """Class representing a :class:`ast.MatchMapping` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case {1: "Hello", 2: "World", 3: _, **rest}:
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchMapping l.3 at 0x10c8a8850>
+    """
 
     _astroid_fields = ("keys", "patterns", "rest")
     keys: typing.Optional[typing.List[NodeNG]] = None
@@ -4939,7 +5007,20 @@ class MatchMapping(mixins.AssignTypeMixin, NodeNG):
 
 
 class MatchClass(NodeNG):
-    """Class representing a :class:`ast.MatchClass` node."""
+    """Class representing a :class:`ast.MatchClass` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case Point2D(0, 0):
+            ...
+        case Point3D(x=0, y=0, z=0):
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchClass l.3 at 0x10ca83940>
+    >>> node.cases[1].pattern
+    <MatchClass l.5 at 0x10ca80880>
+    """
 
     _astroid_fields = ("cls", "patterns", "kwd_attrs", "kwd_patterns")
     cls: typing.Optional[NodeNG] = None
@@ -4970,7 +5051,16 @@ class MatchClass(NodeNG):
 
 
 class MatchStar(mixins.AssignTypeMixin, NodeNG):
-    """Class representing a :class:`ast.MatchStar` node."""
+    """Class representing a :class:`ast.MatchStar` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case [1, *_]:
+            ...
+    ''')
+    >>> node.cases[0].pattern.patterns[1]
+    <MatchStar l.3 at 0x10ca809a0>
+    """
 
     _astroid_fields = ("name",)
     name: typing.Optional[AssignName] = None
@@ -4984,7 +5074,28 @@ class MatchStar(mixins.AssignTypeMixin, NodeNG):
 
 
 class MatchAs(mixins.AssignTypeMixin, NodeNG):
-    """Class representing a :class:`ast.MatchAs` node."""
+    """Class representing a :class:`ast.MatchAs` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case [1, a]:
+            ...
+        case {'key': b}:
+            ...
+        case Point2D(0, 0) as c:
+            ...
+        case d:
+            ...
+    ''')
+    >>> node.cases[0].pattern.patterns[1]
+    <MatchAs l.3 at 0x10d0b2da0>
+    >>> node.cases[1].pattern.patterns[0]
+    <MatchAs l.5 at 0x10d0b2920>
+    >>> node.cases[2].pattern
+    <MatchAs l.7 at 0x10d0b06a0>
+    >>> node.cases[3].pattern
+    <MatchAs l.9 at 0x10d09b880>
+    """
 
     _astroid_fields = ("pattern", "name")
     pattern: typing.Optional["PatternTypes"] = None
@@ -5009,7 +5120,16 @@ class MatchAs(mixins.AssignTypeMixin, NodeNG):
 
 
 class MatchOr(NodeNG):
-    """Class representing a :class:`ast.MatchOr` node."""
+    """Class representing a :class:`ast.MatchOr` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case 400 | 401 | 402:
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchOr l.3 at 0x10d0b0b50>
+    """
 
     _astroid_fields = ("patterns",)
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
