@@ -6,7 +6,10 @@ What's New in astroid 2.6.0?
 ============================
 Release Date: TBA
 
+- A dependency to ``importlib-metadata`` was added for python 3.6 and 3.7.
+  This is due to the fact that the version is calculated based on tag since 2.5.4.
 
+  Closes #1016
 
 What's New in astroid 2.5.8?
 ============================

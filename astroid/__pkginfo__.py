@@ -26,11 +26,11 @@
 
 """astroid packaging information"""
 
-from pkg_resources import DistributionNotFound, get_distribution
+from importlib_metadata import PackageNotFoundError, version
 
 try:
-    __version__ = get_distribution("astroid").version
-except DistributionNotFound:
-    __version__ = "2.5.7+"
+    __version__ = version("astroid")
+except PackageNotFoundError:
+    __version__ = "2.6.0+"
 
 version = __version__
