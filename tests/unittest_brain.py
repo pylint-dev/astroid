@@ -43,7 +43,7 @@ import unittest
 import pytest
 
 import astroid
-from astroid import MANAGER, bases, builder, nodes, test_utils, util
+from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 
 try:
     import multiprocessing  # pylint: disable=unused-import
@@ -992,6 +992,60 @@ class EnumBrainTest(unittest.TestCase):
         """
         node = astroid.extract_node(code)
         next(node.infer())
+
+    def test_enum_name_is_str_on_self(self):
+        code = """
+        from enum import Enum
+        class TestEnum(Enum):
+            def func(self):
+                self.name #@
+                self.value #@
+        TestEnum.name #@
+        TestEnum.value #@
+        """
+        i_name, i_value, c_name, c_value = astroid.extract_node(code)
+
+        # <instance>.name should be a string, <class>.name should be a property (that
+        # forwards the lookup to __getattr__)
+        inferred = next(i_name.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.pytype() == "builtins.str"
+        inferred = next(c_name.infer())
+        assert isinstance(inferred, objects.Property)
+
+        # Inferring .value should not raise InferenceError. It is probably Uninferable
+        # but we don't particularly care
+        next(i_value.infer())
+        next(c_value.infer())
+
+    def test_enum_name_and_value_members_override_dynamicclassattr(self):
+        code = """
+        from enum import Enum
+        class TrickyEnum(Enum):
+            name = 1
+            value = 2
+
+            def func(self):
+                self.name #@
+                self.value #@
+        TrickyEnum.name #@
+        TrickyEnum.value #@
+        """
+        i_name, i_value, c_name, c_value = astroid.extract_node(code)
+
+        # All of these cases should be inferred as enum members
+        inferred = next(i_name.infer())
+        assert isinstance(inferred, bases.Instance)
+        assert inferred.pytype() == ".TrickyEnum.name"
+        inferred = next(c_name.infer())
+        assert isinstance(inferred, bases.Instance)
+        assert inferred.pytype() == ".TrickyEnum.name"
+        inferred = next(i_value.infer())
+        assert isinstance(inferred, bases.Instance)
+        assert inferred.pytype() == ".TrickyEnum.value"
+        inferred = next(c_value.infer())
+        assert isinstance(inferred, bases.Instance)
+        assert inferred.pytype() == ".TrickyEnum.value"
 
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")

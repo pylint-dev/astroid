@@ -362,6 +362,7 @@ def infer_enum_class(node):
             # Skip if the class is directly from enum module.
             break
         dunder_members = {}
+        target_names = set()
         for local, values in node.locals.items():
             if any(not isinstance(value, nodes.AssignName) for value in values):
                 continue
@@ -391,6 +392,7 @@ def infer_enum_class(node):
             for target in targets:
                 if isinstance(target, nodes.Starred):
                     continue
+                target_names.add(target.name)
                 # Replace all the assignments with our mocked class.
                 classdef = dedent(
                     """
@@ -429,6 +431,27 @@ def infer_enum_class(node):
             ]
         )
         node.locals["__members__"] = [members]
+        # The enum.Enum class itself defines two @DynamicClassAttribute data-descriptors
+        # "name" and "value" (which we override in the mocked class for each enum member
+        # above). When dealing with inference of an arbitrary instance of the enum
+        # class, e.g. in a method defined in the class body like:
+        #     class SomeEnum(enum.Enum):
+        #         def method(self):
+        #             self.name  # <- here
+        # In the absence of an enum member called "name" or "value", these attributes
+        # should resolve to the descriptor on that particular instance, i.e. enum member.
+        # For "value", we have no idea what that should be, but for "name", we at least
+        # know that it should be a string, so infer that as a guess.
+        if "name" not in target_names:
+            code = dedent(
+                """
+            @property
+            def name(self):
+                return ''
+            """
+            )
+            name_dynamicclassattr = AstroidBuilder(MANAGER).string_build(code)["name"]
+            node.locals["name"] = [name_dynamicclassattr]
         break
     return node
 
