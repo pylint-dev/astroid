@@ -6,6 +6,11 @@ What's New in astroid 2.6.0?
 ============================
 Release Date: TBA
 
+* Update enum brain to improve inference of .name and .value dynamic class
+  attributes
+
+  Closes PyCQA/pylint#1932
+  Closes PyCQA/pylint#2062
 
 
 What's New in astroid 2.5.8?
