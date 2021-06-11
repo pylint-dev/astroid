@@ -4872,7 +4872,7 @@ class MatchCase(NodeNG):
     def postinit(
         self,
         *,
-        pattern=None,
+        pattern: typing.Optional["PatternTypes"] = None,
         guard: typing.Optional[NodeNG] = None,
         body: typing.Optional[typing.List[NodeNG]] = None,
     ) -> None:
@@ -4995,7 +4995,7 @@ class MatchMapping(mixins.AssignTypeMixin, NodeNG):
     def postinit(
         self,
         *,
-        keys=None,
+        keys: typing.Optional[typing.List[NodeNG]] = None,
         patterns: typing.Optional[typing.List["PatternTypes"]] = None,
         rest: typing.Optional[AssignName] = None,
     ) -> None:
