@@ -6,6 +6,8 @@ What's New in astroid 2.6.0?
 ============================
 Release Date: TBA
 
+* Removed ``Repr``, ``Exec``, and ``Print`` nodes as the ``ast`` nodes
+  they represented have been removed with the change to Python 3
 
 
 What's New in astroid 2.5.8?

@@ -2138,33 +2138,6 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
         yield from super()._get_yield_nodes_skip_lambdas()
 
 
-class Repr(NodeNG):
-    """Class representing an :class:`ast.Repr` node.
-
-    A :class:`Repr` node represents the backtick syntax,
-    which is a deprecated alias for :func:`repr` removed in Python 3.
-
-    >>> node = astroid.extract_node('`variable`')
-    >>> node
-    <Repr l.1 at 0x7fa0951d75d0>
-    """
-
-    _astroid_fields = ("value",)
-    value = None
-    """What is having :func:`repr` called on it.
-
-    :type: NodeNG or None
-    """
-
-    def postinit(self, value=None):
-        """Do some setup after initialisation.
-
-        :param value: What is having :func:`repr` called on it.
-        :type value: NodeNG or None
-        """
-        self.value = value
-
-
 class BinOp(NodeNG):
     """Class representing an :class:`ast.BinOp` node.
 
@@ -3104,49 +3077,6 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
         return False
 
 
-class Exec(Statement):
-    """Class representing the ``exec`` statement.
-
-    >>> node = astroid.extract_node('exec "True"')
-    >>> node
-    <Exec l.1 at 0x7f0e8106c6d0>
-    """
-
-    _astroid_fields = ("expr", "globals", "locals")
-    expr = None
-    """The expression to be executed.
-
-    :type: NodeNG or None
-    """
-    globals = None
-    """The globals dictionary to execute with.
-
-    :type: NodeNG or None
-    """
-    locals = None
-    """The locals dictionary to execute with.
-
-    :type: NodeNG or None
-    """
-
-    # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
-    def postinit(self, expr=None, globals=None, locals=None):
-        """Do some setup after initialisation.
-
-        :param expr: The expression to be executed.
-        :type expr: NodeNG or None
-
-        :param globals:The globals dictionary to execute with.
-        :type globals: NodeNG or None
-
-        :param locals: The locals dictionary to execute with.
-        :type locals: NodeNG or None
-        """
-        self.expr = expr
-        self.globals = globals
-        self.locals = locals
-
-
 class ExtSlice(NodeNG):
     """Class representing an :class:`ast.ExtSlice` node.
 
@@ -3817,62 +3747,6 @@ class Pass(mixins.NoChildrenMixin, Statement):
     >>> node
     <Pass l.1 at 0x7f23b2e9e748>
     """
-
-
-class Print(Statement):
-    """Class representing an :class:`ast.Print` node.
-
-    >>> node = astroid.extract_node('print "A message"')
-    >>> node
-    <Print l.1 at 0x7f0e8101d290>
-    """
-
-    _astroid_fields = ("dest", "values")
-    dest = None
-    """Where to print to.
-
-    :type: NodeNG or None
-    """
-    values = None
-    """What to print.
-
-    :type: list(NodeNG) or None
-    """
-
-    def __init__(self, nl=None, lineno=None, col_offset=None, parent=None):
-        """
-        :param nl: Whether to print a new line.
-        :type nl: bool or None
-
-        :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-        :type col_offset: int or None
-
-        :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
-        """
-        self.nl = nl
-        """Whether to print a new line.
-
-        :type: bool or None
-        """
-
-        super().__init__(lineno, col_offset, parent)
-
-    def postinit(self, dest=None, values=None):
-        """Do some setup after initialisation.
-
-        :param dest: Where to print to.
-        :type dest: NodeNG or None
-
-        :param values: What to print.
-        :type values: list(NodeNG) or None
-        """
-        self.dest = dest
-        self.values = values
 
 
 class Raise(Statement):
