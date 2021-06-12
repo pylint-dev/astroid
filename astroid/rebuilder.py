@@ -776,16 +776,6 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_const(self, node: "ast.Constant", parent: NodeNG) -> nodes.Const:
-        """visit a Const node by returning a fresh instance of it"""
-        return nodes.Const(
-            node.value,
-            node.lineno,
-            node.col_offset,
-            parent,
-            node.kind,
-        )
-
     def visit_continue(self, node: "ast.Continue", parent: NodeNG) -> nodes.Continue:
         """visit a Continue node by returning a fresh instance of it"""
         return nodes.Continue(node.lineno, node.col_offset, parent)
@@ -891,10 +881,6 @@ class TreeRebuilder:
             col_offset=node.col_offset,
             parent=parent,
         )
-
-    def visit_emptynode(self, node: "ast.AST", parent: NodeNG) -> nodes.EmptyNode:
-        """visit an EmptyNode node by returning a fresh instance of it"""
-        return nodes.EmptyNode(node.lineno, node.col_offset, parent)
 
     def visit_excepthandler(
         self, node: "ast.ExceptHandler", parent: NodeNG
