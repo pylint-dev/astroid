@@ -40,8 +40,6 @@ from astroid.node_classes import NodeNG
 if TYPE_CHECKING:
     import ast
 
-CONST_NAME_TRANSFORMS = {"None": None, "True": True, "False": False}
-
 REDIRECT = {
     "arguments": "Arguments",
     "comprehension": "Comprehension",
@@ -328,12 +326,6 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_repr(self, node, parent):
-        """visit a Backquote node by returning a fresh instance of it"""
-        newnode = nodes.Repr(node.lineno, node.col_offset, parent)
-        newnode.postinit(self.visit(node.value, newnode))
-        return newnode
-
     def visit_binop(self, node, parent):
         """visit a BinOp node by returning a fresh instance of it"""
         newnode = nodes.BinOp(
@@ -367,34 +359,12 @@ class TreeRebuilder:
     def visit_call(self, node, parent):
         """visit a CallFunc node by returning a fresh instance of it"""
         newnode = nodes.Call(node.lineno, node.col_offset, parent)
-        starargs = _visit_or_none(node, "starargs", self, newnode)
-        kwargs = _visit_or_none(node, "kwargs", self, newnode)
         args = [self.visit(child, newnode) for child in node.args]
 
         if node.keywords:
             keywords = [self.visit(child, newnode) for child in node.keywords]
         else:
             keywords = None
-        if starargs:
-            new_starargs = nodes.Starred(
-                col_offset=starargs.col_offset,
-                lineno=starargs.lineno,
-                parent=starargs.parent,
-            )
-            new_starargs.postinit(value=starargs)
-            args.append(new_starargs)
-        if kwargs:
-            new_kwargs = nodes.Keyword(
-                arg=None,
-                col_offset=kwargs.col_offset,
-                lineno=kwargs.lineno,
-                parent=kwargs.parent,
-            )
-            new_kwargs.postinit(value=kwargs)
-            if keywords:
-                keywords.append(new_kwargs)
-            else:
-                keywords = [new_kwargs]
 
         newnode.postinit(self.visit(node.func, newnode), args, keywords)
         return newnode
@@ -491,7 +461,7 @@ class TreeRebuilder:
         for key, value in zip(node.keys, node.values):
             rebuilt_value = self.visit(value, newnode)
             if not key:
-                # Python 3.5 and extended unpacking
+                # Extended unpacking
                 rebuilt_key = nodes.DictUnpack(
                     rebuilt_value.lineno, rebuilt_value.col_offset, parent
                 )
@@ -546,16 +516,6 @@ class TreeRebuilder:
             _visit_or_none(node, "type", self, newnode),
             name,
             [self.visit(child, newnode) for child in node.body],
-        )
-        return newnode
-
-    def visit_exec(self, node, parent):
-        """visit an Exec node by returning a fresh instance of it"""
-        newnode = nodes.Exec(node.lineno, node.col_offset, parent)
-        newnode.postinit(
-            self.visit(node.body, newnode),
-            _visit_or_none(node, "globals", self, newnode),
-            _visit_or_none(node, "locals", self, newnode),
         )
         return newnode
 
@@ -781,20 +741,10 @@ class TreeRebuilder:
     def visit_name(self, node, parent):
         """visit a Name node by returning a fresh instance of it"""
         context = self._get_context(node)
-        # True and False can be assigned to something in py2x, so we have to
-        # check first the context.
         if context == astroid.Del:
             newnode = nodes.DelName(node.id, node.lineno, node.col_offset, parent)
         elif context == astroid.Store:
             newnode = nodes.AssignName(node.id, node.lineno, node.col_offset, parent)
-        elif node.id in CONST_NAME_TRANSFORMS:
-            newnode = nodes.Const(
-                CONST_NAME_TRANSFORMS[node.id],
-                getattr(node, "lineno", None),
-                getattr(node, "col_offset", None),
-                parent,
-            )
-            return newnode
         else:
             newnode = nodes.Name(node.id, node.lineno, node.col_offset, parent)
         # XXX REMOVE me :
@@ -804,7 +754,7 @@ class TreeRebuilder:
 
     # Not used in Python 3.8+.
     def visit_nameconstant(self, node, parent):
-        # in Python 3.4 we have NameConstant for True / False / None
+        # For singleton values True / False / None
         return nodes.Const(
             node.value,
             getattr(node, "lineno", None),
@@ -856,15 +806,6 @@ class TreeRebuilder:
     def visit_pass(self, node, parent):
         """visit a Pass node by returning a fresh instance of it"""
         return nodes.Pass(node.lineno, node.col_offset, parent)
-
-    def visit_print(self, node, parent):
-        """visit a Print node by returning a fresh instance of it"""
-        newnode = nodes.Print(node.nl, node.lineno, node.col_offset, parent)
-        newnode.postinit(
-            _visit_or_none(node, "dest", self, newnode),
-            [self.visit(child, newnode) for child in node.values],
-        )
-        return newnode
 
     def visit_raise(self, node, parent):
         """visit a Raise node by returning a fresh instance of it"""

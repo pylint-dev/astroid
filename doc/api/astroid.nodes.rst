@@ -42,7 +42,6 @@ Nodes
    Ellipsis
    EmptyNode
    ExceptHandler
-   Exec
    Expr
    ExtSlice
    For
@@ -74,9 +73,7 @@ Nodes
    Name
    Nonlocal
    Pass
-   Print
    Raise
-   Repr
    Return
    Set
    SetComp
@@ -155,8 +152,6 @@ Nodes
 
 .. autoclass:: ExceptHandler
 
-.. autoclass:: Exec
-
 .. autoclass:: Expr
 
 .. autoclass:: ExtSlice
@@ -219,11 +214,7 @@ Nodes
 
 .. autoclass:: Pass
 
-.. autoclass:: Print
-
 .. autoclass:: Raise
-
-.. autoclass:: Repr
 
 .. autoclass:: Return
 
