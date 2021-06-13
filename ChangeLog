@@ -6,11 +6,16 @@ What's New in astroid 2.6.0?
 ============================
 Release Date: TBA
 
+
 * Update enum brain to improve inference of .name and .value dynamic class
   attributes
 
   Closes PyCQA/pylint#1932
   Closes PyCQA/pylint#2062
+
+* Removed ``Repr``, ``Exec``, and ``Print`` nodes as the ``ast`` nodes
+  they represented have been removed with the change to Python 3
+
 
 
 What's New in astroid 2.5.8?
