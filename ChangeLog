@@ -10,8 +10,8 @@ Release Date: TBA
   they represented have been removed with the change to Python 3
 
 * Deprecate ``Ellipsis`` node. It will be removed with the next minor release.
-  Checker that already support Python 3.8+ work without issues. It's only
-  necessary to remove all references to the astroid ``Ellipsis`` node.
+  Checkers that already support Python 3.8+ work without issues. It's only
+  necessary to remove all references to the ``astroid.Ellipsis`` node.
   This changes will make development of checkers easier as the resulting tree for Ellipsis
   will no longer depend on the python version. **Background**: With Python 3.8 the
   ``ast.Ellipsis`` node, along with ``ast.Str``, ``ast.Bytes``, ``ast.Num``,
