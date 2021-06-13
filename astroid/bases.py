@@ -59,6 +59,7 @@ POSSIBLE_PROPERTIES = {
     "LazyProperty",
     "lazy",
     "cache_readonly",
+    "DynamicClassAttribute",
 }
 
 
