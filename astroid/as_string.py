@@ -302,10 +302,6 @@ class AsStringVisitor:
             )
         return "exec %s" % node.expr.accept(self)
 
-    def visit_extslice(self, node):
-        """return an astroid.ExtSlice node as string"""
-        return ", ".join(dim.accept(self) for dim in node.dims)
-
     def visit_for(self, node):
         """return an astroid.For node as string"""
         fors = "for {} in {}:\n{}".format(
@@ -498,10 +494,6 @@ class AsStringVisitor:
             return "return %s" % node.value.accept(self)
 
         return "return"
-
-    def visit_index(self, node):
-        """return an astroid.Index node as string"""
-        return node.value.accept(self)
 
     def visit_set(self, node):
         """return an astroid.Set node as string"""
