@@ -1120,11 +1120,8 @@ def test_type_comments_arguments():
     ]
     for node, expected_args in zip(module.body, expected_annotations):
         assert len(node.type_comment_args) == 1
-        if PY38:
-            assert isinstance(node.type_comment_args[0], astroid.Const)
-            assert node.type_comment_args[0].value == Ellipsis
-        else:
-            assert isinstance(node.type_comment_args[0], astroid.Ellipsis)
+        assert isinstance(node.type_comment_args[0], astroid.Const)
+        assert node.type_comment_args[0].value == Ellipsis
         assert len(node.args.type_comment_args) == len(expected_args)
         for expected_arg, actual_arg in zip(expected_args, node.args.type_comment_args):
             assert actual_arg.as_string() == expected_arg
@@ -1155,11 +1152,8 @@ def test_type_comments_posonly_arguments():
     ]
     for node, expected_types in zip(module.body, expected_annotations):
         assert len(node.type_comment_args) == 1
-        if PY38:
-            assert isinstance(node.type_comment_args[0], astroid.Const)
-            assert node.type_comment_args[0].value == Ellipsis
-        else:
-            assert isinstance(node.type_comment_args[0], astroid.Ellipsis)
+        assert isinstance(node.type_comment_args[0], astroid.Const)
+        assert node.type_comment_args[0].value == Ellipsis
         type_comments = [
             node.args.type_comment_posonlyargs,
             node.args.type_comment_args,
