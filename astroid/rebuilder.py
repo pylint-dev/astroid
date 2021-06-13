@@ -54,7 +54,7 @@ from astroid import node_classes, nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
 from astroid.const import PY37, PY38, PY39, Context
 from astroid.manager import AstroidManager
-from astroid.node_classes import ExceptHandler, NodeNG
+from astroid.node_classes import NodeNG
 
 if TYPE_CHECKING:
     import ast
@@ -510,19 +510,15 @@ class TreeRebuilder:
         )
         args = [self.visit(child, newnode) for child in node.args]
         defaults = [self.visit(child, newnode) for child in node.defaults]
-        varargannotation = None
-        kwargannotation = None
-        posonlyargs = []
-        # change added in 82732 (7c5c678e4164), vararg and kwarg
-        # are instances of `_ast.arg`, not strings
+        varargannotation: Optional[NodeNG] = None
+        kwargannotation: Optional[NodeNG] = None
+        posonlyargs: List[nodes.AssignName] = []
         if node.vararg:
-            if node.vararg.annotation:
-                varargannotation = self.visit(node.vararg.annotation, newnode)
             vararg = node.vararg.arg
+            varargannotation = self.visit(node.vararg.annotation, newnode)
         if node.kwarg:
-            if node.kwarg.annotation:
-                kwargannotation = self.visit(node.kwarg.annotation, newnode)
             kwarg = node.kwarg.arg
+            kwargannotation = self.visit(node.kwarg.annotation, newnode)
         kwonlyargs = [self.visit(child, newnode) for child in node.kwonlyargs]
         kw_defaults = [self.visit(child, newnode) for child in node.kw_defaults]
         annotations = [self.visit(arg.annotation, newnode) for arg in node.args]
@@ -530,7 +526,7 @@ class TreeRebuilder:
             self.visit(arg.annotation, newnode) for arg in node.kwonlyargs
         ]
 
-        posonlyargs_annotations = []
+        posonlyargs_annotations: List[Optional[NodeNG]] = []
         if PY38:
             posonlyargs = [self.visit(child, newnode) for child in node.posonlyargs]
             posonlyargs_annotations = [
@@ -542,7 +538,7 @@ class TreeRebuilder:
         type_comment_kwonlyargs = [
             self.check_type_comment(child, parent=newnode) for child in node.kwonlyargs
         ]
-        type_comment_posonlyargs = []
+        type_comment_posonlyargs: List[Optional[NodeNG]] = []
         if PY38:
             type_comment_posonlyargs = [
                 self.check_type_comment(child, parent=newnode)
@@ -629,7 +625,7 @@ class TreeRebuilder:
             return None
 
         returns: Optional[NodeNG] = None
-        argtypes = [
+        argtypes: List[NodeNG] = [
             self.visit(elem, parent) for elem in (type_comment_ast.argtypes or [])
         ]
         if type_comment_ast.returns:
@@ -1032,6 +1028,7 @@ class TreeRebuilder:
     ) -> Union[nodes.Attribute, nodes.AssignAttr, nodes.DelAttr]:
         """visit an Attribute node by returning a fresh instance of it"""
         context = self._get_context(node)
+        newnode: Union[nodes.Attribute, nodes.AssignAttr, nodes.DelAttr]
         if context == Context.Del:
             # FIXME : maybe we should reintroduce and visit_delattr ?
             # for instance, deactivating assign_ctx
@@ -1039,7 +1036,7 @@ class TreeRebuilder:
         elif context == Context.Store:
             newnode = nodes.AssignAttr(node.attr, node.lineno, node.col_offset, parent)
             # Prohibit a local save if we are in an ExceptHandler.
-            if not isinstance(parent, ExceptHandler):
+            if not isinstance(parent, nodes.ExceptHandler):
                 self._delayed_assattr.append(newnode)
         else:
             newnode = nodes.Attribute(node.attr, node.lineno, node.col_offset, parent)
@@ -1160,6 +1157,7 @@ class TreeRebuilder:
     ) -> Union[nodes.Name, nodes.Const, nodes.AssignName, nodes.DelName]:
         """visit a Name node by returning a fresh instance of it"""
         context = self._get_context(node)
+        newnode: Union[nodes.Name, nodes.AssignName, nodes.DelName]
         if context == Context.Del:
             newnode = nodes.DelName(node.id, node.lineno, node.col_offset, parent)
         elif context == Context.Store:
@@ -1204,7 +1202,9 @@ class TreeRebuilder:
         )
 
     # Not used in Python 3.8+.
-    def visit_str(self, node: "ast.Str", parent: NodeNG) -> nodes.Const:
+    def visit_str(
+        self, node: Union["ast.Str", "ast.Bytes"], parent: NodeNG
+    ) -> nodes.Const:
         """visit a String/Bytes node by returning a fresh instance of Const"""
         return nodes.Const(
             node.s,
@@ -1309,7 +1309,7 @@ class TreeRebuilder:
         # TryFinally/TryExcept nodes
         if node.finalbody:
             newnode = nodes.TryFinally(node.lineno, node.col_offset, parent)
-            body: List[NodeNG]
+            body: Union[List[nodes.TryExcept], List[NodeNG]]
             if node.handlers:
                 body = [self.visit_tryexcept(node, newnode)]
             else:
