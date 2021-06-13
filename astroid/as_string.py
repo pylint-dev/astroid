@@ -150,10 +150,6 @@ class AsStringVisitor:
             return f"{target}: {annotation}"
         return f"{target}: {annotation} = {node.value.accept(self)}"
 
-    def visit_repr(self, node):
-        """return an astroid.Repr node as string"""
-        return "`%s`" % node.value.accept(self)
-
     def visit_binop(self, node):
         """return an astroid.BinOp node as string"""
         left = self._precedence_parens(node, node.left)
@@ -287,20 +283,6 @@ class AsStringVisitor:
     def visit_empty(self, node):
         """return an Empty node as string"""
         return ""
-
-    def visit_exec(self, node):
-        """return an astroid.Exec node as string"""
-        if node.locals:
-            return "exec {} in {}, {}".format(
-                node.expr.accept(self),
-                node.locals.accept(self),
-                node.globals.accept(self),
-            )
-        if node.globals:
-            return "exec {} in {}".format(
-                node.expr.accept(self), node.globals.accept(self)
-            )
-        return "exec %s" % node.expr.accept(self)
 
     def visit_for(self, node):
         """return an astroid.For node as string"""
@@ -464,15 +446,6 @@ class AsStringVisitor:
     def visit_pass(self, node):
         """return an astroid.Pass node as string"""
         return "pass"
-
-    def visit_print(self, node):
-        """return an astroid.Print node as string"""
-        nodes = ", ".join(n.accept(self) for n in node.values)
-        if not node.nl:
-            nodes = "%s," % nodes
-        if node.dest:
-            return f"print >> {node.dest.accept(self)}, {nodes}"
-        return "print %s" % nodes
 
     def visit_raise(self, node):
         """return an astroid.Raise node as string"""
