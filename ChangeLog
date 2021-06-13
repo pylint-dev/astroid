@@ -24,6 +24,15 @@ Release Date: TBA
   ``ast.Ellipsis`` node, along with ``ast.Str``, ``ast.Bytes``, ``ast.Num``,
   and ``ast.NamedConstant`` were merged into ``ast.Constant``.
 
+* Deprecated ``Index`` and ``ExtSlice`` nodes. They will be removed with the
+  next minor release. Both are now part of the ``Subscript`` node.
+  Checkers that already support Python 3.9+ work without issues.
+  It's only necessary to remove all references to the ``astroid.Index`` and
+  ``astroid.ExtSlice`` nodes. This change will make development of checkers
+  easier as the resulting tree for ``ast.Subscript`` nodes will no longer
+  depend on the python version. **Background**: With Python 3.9 ``ast.Index``
+  and ``ast.ExtSlice`` were merged into the ``ast.Subscript`` node.
+
 
 
 What's New in astroid 2.5.8?

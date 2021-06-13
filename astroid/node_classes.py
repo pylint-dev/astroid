@@ -3070,27 +3070,9 @@ class ExtSlice(NodeNG):
 
     An :class:`ExtSlice` is a complex slice expression.
 
-    >>> node = astroid.extract_node('l[1:3, 5]')
-    >>> node
-    <Subscript l.1 at 0x7f23b2e9e550>
-    >>> node.slice
-    <ExtSlice l.1 at 0x7f23b7b05ef0>
+    Deprecated since v2.6.0 - Now part of the :class:`Subscript` node.
+    Will be removed with the release of v2.7.0
     """
-
-    _astroid_fields = ("dims",)
-    dims = None
-    """The simple dimensions that form the complete slice.
-
-    :type: list(NodeNG) or None
-    """
-
-    def postinit(self, dims=None):
-        """Do some setup after initialisation.
-
-        :param dims: The simple dimensions that form the complete slice.
-        :type dims: list(NodeNG) or None
-        """
-        self.dims = dims
 
 
 class For(
@@ -3557,30 +3539,9 @@ class Index(NodeNG):
 
     An :class:`Index` is a simple subscript.
 
-    >>> node = astroid.extract_node('things[1]')
-    >>> node
-    <Subscript l.1 at 0x7f23b2e9e2b0>
-    >>> node.slice
-    <Index l.1 at 0x7f23b2e9e6a0>
+    Deprecated since v2.6.0 - Now part of the :class:`Subscript` node.
+    Will be removed with the release of v2.7.0
     """
-
-    _astroid_fields = ("value",)
-    value = None
-    """The value to subscript with.
-
-    :type: NodeNG or None
-    """
-
-    def postinit(self, value=None):
-        """Do some setup after initialisation.
-
-        :param value: The value to subscript with.
-        :type value: NodeNG or None
-        """
-        self.value = value
-
-    def get_children(self):
-        yield self.value
 
 
 class Keyword(NodeNG):

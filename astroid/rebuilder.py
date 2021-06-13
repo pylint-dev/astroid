@@ -258,7 +258,7 @@ class TreeRebuilder:
 
     # Not used in Python 3.9+
     @overload
-    def visit(self, node: "ast.ExtSlice", parent: NodeNG) -> nodes.ExtSlice:
+    def visit(self, node: "ast.ExtSlice", parent: nodes.Subscript) -> nodes.Tuple:
         ...
 
     @overload
@@ -311,7 +311,7 @@ class TreeRebuilder:
 
     # Not used in Python 3.9+
     @overload
-    def visit(self, node: "ast.Index", parent: NodeNG) -> nodes.Index:
+    def visit(self, node: "ast.Index", parent: nodes.Subscript) -> NodeNG:
         ...
 
     @overload
@@ -385,7 +385,7 @@ class TreeRebuilder:
         ...
 
     @overload
-    def visit(self, node: "ast.Slice", parent: NodeNG) -> nodes.Slice:
+    def visit(self, node: "ast.Slice", parent: nodes.Subscript) -> nodes.Slice:
         ...
 
     @overload
@@ -913,9 +913,11 @@ class TreeRebuilder:
         return newnode
 
     # Not used in Python 3.9+.
-    def visit_extslice(self, node: "ast.ExtSlice", parent: NodeNG) -> nodes.ExtSlice:
-        """visit an ExtSlice node by returning a fresh instance of it"""
-        newnode = nodes.ExtSlice(parent=parent)
+    def visit_extslice(
+        self, node: "ast.ExtSlice", parent: nodes.Subscript
+    ) -> nodes.Tuple:
+        """visit an ExtSlice node by returning a fresh instance of Tuple"""
+        newnode = nodes.Tuple(ctx=astroid.Load, parent=parent)
         newnode.postinit([self.visit(dim, newnode) for dim in node.dims])  # type: ignore
         return newnode
 
@@ -1135,11 +1137,9 @@ class TreeRebuilder:
         return newnode
 
     # Not used in Python 3.9+.
-    def visit_index(self, node: "ast.Index", parent: NodeNG) -> nodes.Index:
-        """visit a Index node by returning a fresh instance of it"""
-        newnode = nodes.Index(parent=parent)
-        newnode.postinit(self.visit(node.value, newnode))  # type: ignore
-        return newnode
+    def visit_index(self, node: "ast.Index", parent: nodes.Subscript) -> NodeNG:
+        """visit a Index node by returning a fresh instance of NodeNG"""
+        return self.visit(node.value, parent)  # type: ignore
 
     def visit_keyword(self, node: "ast.keyword", parent: NodeNG) -> nodes.Keyword:
         """visit a Keyword node by returning a fresh instance of it"""
@@ -1281,7 +1281,7 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_slice(self, node: "ast.Slice", parent: NodeNG) -> nodes.Slice:
+    def visit_slice(self, node: "ast.Slice", parent: nodes.Subscript) -> nodes.Slice:
         """visit a Slice node by returning a fresh instance of it"""
         newnode = nodes.Slice(parent=parent)
         newnode.postinit(
