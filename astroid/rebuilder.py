@@ -249,7 +249,7 @@ class TreeRebuilder:
 
     # Not used in Python 3.8+
     @overload
-    def visit(self, node: "ast.Ellipsis", parent: NodeNG) -> nodes.Ellipsis:
+    def visit(self, node: "ast.Ellipsis", parent: NodeNG) -> nodes.Const:
         ...
 
     @overload
@@ -883,9 +883,14 @@ class TreeRebuilder:
         return newnode
 
     # Not used in Python 3.8+.
-    def visit_ellipsis(self, node: "ast.Ellipsis", parent: NodeNG) -> nodes.Ellipsis:
-        """visit an Ellipsis node by returning a fresh instance of it"""
-        return nodes.Ellipsis(node.lineno, node.col_offset, parent)
+    def visit_ellipsis(self, node: "ast.Ellipsis", parent: NodeNG) -> nodes.Const:
+        """visit an Ellipsis node by returning a fresh instance of Const"""
+        return nodes.Const(
+            value=Ellipsis,
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            parent=parent,
+        )
 
     def visit_emptynode(self, node: "ast.AST", parent: NodeNG) -> nodes.EmptyNode:
         """visit an EmptyNode node by returning a fresh instance of it"""

@@ -37,7 +37,6 @@ import abc
 import builtins as builtins_mod
 import itertools
 import pprint
-import sys
 import typing
 from functools import lru_cache
 from functools import singledispatch as _singledispatch
@@ -54,7 +53,6 @@ except ImportError:
 
 BUILTINS = builtins_mod.__name__
 MANAGER = manager.AstroidManager()
-PY38 = sys.version_info[:2] >= (3, 8)
 
 
 def _is_const(value):
@@ -2967,19 +2965,9 @@ class Ellipsis(mixins.NoChildrenMixin, NodeNG):  # pylint: disable=redefined-bui
 
     An :class:`Ellipsis` is the ``...`` syntax.
 
-    >>> node = astroid.extract_node('...')
-    >>> node
-    <Ellipsis l.1 at 0x7f23b2e35160>
+    Deprecated since v2.6.0 - Use :class:`Const` instead.
+    Will be removed with the release v2.7.0
     """
-
-    def bool_value(self, context=None):
-        """Determine the boolean value of this node.
-
-        :returns: The boolean value of this node.
-            For an :class:`Ellipsis` this is always ``True``.
-        :rtype: bool
-        """
-        return True
 
 
 class EmptyNode(mixins.NoChildrenMixin, NodeNG):
@@ -5045,9 +5033,8 @@ CONST_CLS = {
     set: Set,
     type(None): Const,
     type(NotImplemented): Const,
+    type(...): Const,
 }
-if PY38:
-    CONST_CLS[type(...)] = Const
 
 
 def _update_const_classes():

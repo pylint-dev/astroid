@@ -284,10 +284,6 @@ class AsStringVisitor:
             excs = "except"
         return f"{excs}:\n{self._stmt_list(node.body)}"
 
-    def visit_ellipsis(self, node):
-        """return an astroid.Ellipsis node as string"""
-        return "..."
-
     def visit_empty(self, node):
         """return an Empty node as string"""
         return ""
