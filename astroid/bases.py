@@ -25,6 +25,7 @@ inference utils.
 
 import builtins
 import collections
+import sys
 
 from astroid import context as contextmod
 from astroid import exceptions, util
@@ -35,11 +36,16 @@ BUILTINS = builtins.__name__
 manager = util.lazy_import("manager")
 MANAGER = manager.AstroidManager()
 
+PY310 = sys.version_info >= (3, 10)
+
 # TODO: check if needs special treatment
 BUILTINS = "builtins"
 BOOL_SPECIAL_METHOD = "__bool__"
 
 PROPERTIES = {BUILTINS + ".property", "abc.abstractproperty"}
+if PY310:
+    PROPERTIES.add("enum.property")
+
 # List of possible property names. We use this list in order
 # to see if a method is a property or not. This should be
 # pretty reliable and fast, the alternative being to check each
