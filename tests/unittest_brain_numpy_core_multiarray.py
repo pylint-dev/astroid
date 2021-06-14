@@ -4,7 +4,7 @@
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 import unittest
 
 try:
@@ -36,7 +36,6 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
         ("is_busday", "['2011-07-01', '2011-07-02', '2011-07-18']"),
         ("lexsort", "(('toto', 'tutu'), ('riri', 'fifi'))"),
         ("packbits", "np.array([1, 2])"),
-        ("ravel_multi_index", "np.array([[1, 2], [2, 1]])", "(3, 4)"),
         ("unpackbits", "np.array([[1], [2], [3]], dtype=np.uint8)"),
         ("vdot", "[1, 2]", "[1, 2]"),
         ("where", "[True, False]", "[1, 2]", "[2, 1]"),
@@ -77,105 +76,137 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
         )
         return node.infer()
 
+    def _inferred_numpy_no_alias_func_call(self, func_name, *func_args):
+        node = builder.extract_node(
+            """
+        import numpy
+        func = numpy.{:s}
+        func({:s})
+        """.format(
+                func_name, ",".join(func_args)
+            )
+        )
+        return node.infer()
+
     def test_numpy_function_calls_inferred_as_ndarray(self):
         """
         Test that calls to numpy functions are inferred as numpy.ndarray
         """
-        for func_ in self.numpy_functions_returning_array:
-            with self.subTest(typ=func_):
-                inferred_values = list(self._inferred_numpy_func_call(*func_))
-                self.assertTrue(
-                    len(inferred_values) == 1,
-                    msg="Too much inferred values ({}) for {:s}".format(
-                        inferred_values, func_[0]
-                    ),
-                )
-                self.assertTrue(
-                    inferred_values[-1].pytype() == ".ndarray",
-                    msg="Illicit type for {:s} ({})".format(
-                        func_[0], inferred_values[-1].pytype()
-                    ),
-                )
+        for infer_wrapper in (
+            self._inferred_numpy_func_call,
+            self._inferred_numpy_no_alias_func_call,
+        ):
+            for func_ in self.numpy_functions_returning_array:
+                with self.subTest(typ=func_):
+                    inferred_values = list(infer_wrapper(*func_))
+                    self.assertTrue(
+                        len(inferred_values) == 1,
+                        msg="Too much inferred values ({}) for {:s}".format(
+                            inferred_values, func_[0]
+                        ),
+                    )
+                    self.assertTrue(
+                        inferred_values[-1].pytype() == ".ndarray",
+                        msg="Illicit type for {:s} ({})".format(
+                            func_[0], inferred_values[-1].pytype()
+                        ),
+                    )
 
     def test_numpy_function_calls_inferred_as_bool(self):
         """
         Test that calls to numpy functions are inferred as bool
         """
-        for func_ in self.numpy_functions_returning_bool:
-            with self.subTest(typ=func_):
-                inferred_values = list(self._inferred_numpy_func_call(*func_))
-                self.assertTrue(
-                    len(inferred_values) == 1,
-                    msg="Too much inferred values ({}) for {:s}".format(
-                        inferred_values, func_[0]
-                    ),
-                )
-                self.assertTrue(
-                    inferred_values[-1].pytype() == "builtins.bool",
-                    msg="Illicit type for {:s} ({})".format(
-                        func_[0], inferred_values[-1].pytype()
-                    ),
-                )
+        for infer_wrapper in (
+            self._inferred_numpy_func_call,
+            self._inferred_numpy_no_alias_func_call,
+        ):
+            for func_ in self.numpy_functions_returning_bool:
+                with self.subTest(typ=func_):
+                    inferred_values = list(infer_wrapper(*func_))
+                    self.assertTrue(
+                        len(inferred_values) == 1,
+                        msg="Too much inferred values ({}) for {:s}".format(
+                            inferred_values, func_[0]
+                        ),
+                    )
+                    self.assertTrue(
+                        inferred_values[-1].pytype() == "builtins.bool",
+                        msg="Illicit type for {:s} ({})".format(
+                            func_[0], inferred_values[-1].pytype()
+                        ),
+                    )
 
     def test_numpy_function_calls_inferred_as_dtype(self):
         """
         Test that calls to numpy functions are inferred as numpy.dtype
         """
-        for func_ in self.numpy_functions_returning_dtype:
-            with self.subTest(typ=func_):
-                inferred_values = list(self._inferred_numpy_func_call(*func_))
-                self.assertTrue(
-                    len(inferred_values) == 1,
-                    msg="Too much inferred values ({}) for {:s}".format(
-                        inferred_values, func_[0]
-                    ),
-                )
-                self.assertTrue(
-                    inferred_values[-1].pytype() == "numpy.dtype",
-                    msg="Illicit type for {:s} ({})".format(
-                        func_[0], inferred_values[-1].pytype()
-                    ),
-                )
+        for infer_wrapper in (
+            self._inferred_numpy_func_call,
+            self._inferred_numpy_no_alias_func_call,
+        ):
+            for func_ in self.numpy_functions_returning_dtype:
+                with self.subTest(typ=func_):
+                    inferred_values = list(infer_wrapper(*func_))
+                    self.assertTrue(
+                        len(inferred_values) == 1,
+                        msg="Too much inferred values ({}) for {:s}".format(
+                            inferred_values, func_[0]
+                        ),
+                    )
+                    self.assertTrue(
+                        inferred_values[-1].pytype() == "numpy.dtype",
+                        msg="Illicit type for {:s} ({})".format(
+                            func_[0], inferred_values[-1].pytype()
+                        ),
+                    )
 
     def test_numpy_function_calls_inferred_as_none(self):
         """
         Test that calls to numpy functions are inferred as None
         """
-        for func_ in self.numpy_functions_returning_none:
-            with self.subTest(typ=func_):
-                inferred_values = list(self._inferred_numpy_func_call(*func_))
-                self.assertTrue(
-                    len(inferred_values) == 1,
-                    msg="Too much inferred values ({}) for {:s}".format(
-                        inferred_values, func_[0]
-                    ),
-                )
-                self.assertTrue(
-                    inferred_values[-1].pytype() == "builtins.NoneType",
-                    msg="Illicit type for {:s} ({})".format(
-                        func_[0], inferred_values[-1].pytype()
-                    ),
-                )
+        for infer_wrapper in (
+            self._inferred_numpy_func_call,
+            self._inferred_numpy_no_alias_func_call,
+        ):
+            for func_ in self.numpy_functions_returning_none:
+                with self.subTest(typ=func_):
+                    inferred_values = list(infer_wrapper(*func_))
+                    self.assertTrue(
+                        len(inferred_values) == 1,
+                        msg="Too much inferred values ({}) for {:s}".format(
+                            inferred_values, func_[0]
+                        ),
+                    )
+                    self.assertTrue(
+                        inferred_values[-1].pytype() == "builtins.NoneType",
+                        msg="Illicit type for {:s} ({})".format(
+                            func_[0], inferred_values[-1].pytype()
+                        ),
+                    )
 
     def test_numpy_function_calls_inferred_as_tuple(self):
         """
         Test that calls to numpy functions are inferred as tuple
         """
-        for func_ in self.numpy_functions_returning_tuple:
-            with self.subTest(typ=func_):
-                inferred_values = list(self._inferred_numpy_func_call(*func_))
-                self.assertTrue(
-                    len(inferred_values) == 1,
-                    msg="Too much inferred values ({}) for {:s}".format(
-                        inferred_values, func_[0]
-                    ),
-                )
-                self.assertTrue(
-                    inferred_values[-1].pytype() == "builtins.tuple",
-                    msg="Illicit type for {:s} ({})".format(
-                        func_[0], inferred_values[-1].pytype()
-                    ),
-                )
+        for infer_wrapper in (
+            self._inferred_numpy_func_call,
+            self._inferred_numpy_no_alias_func_call,
+        ):
+            for func_ in self.numpy_functions_returning_tuple:
+                with self.subTest(typ=func_):
+                    inferred_values = list(infer_wrapper(*func_))
+                    self.assertTrue(
+                        len(inferred_values) == 1,
+                        msg="Too much inferred values ({}) for {:s}".format(
+                            inferred_values, func_[0]
+                        ),
+                    )
+                    self.assertTrue(
+                        inferred_values[-1].pytype() == "builtins.tuple",
+                        msg="Illicit type for {:s} ({})".format(
+                            func_[0], inferred_values[-1].pytype()
+                        ),
+                    )
 
 
 if __name__ == "__main__":

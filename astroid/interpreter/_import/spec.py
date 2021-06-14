@@ -11,22 +11,18 @@
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 import abc
 import collections
 import distutils
 import enum
+import importlib.machinery
 import os
 import sys
 import zipimport
-
-import importlib.machinery
-
-try:
-    from functools import lru_cache
-except ImportError:
-    from backports.functools_lru_cache import lru_cache
+from functools import lru_cache
 
 from . import util
 
@@ -108,7 +104,7 @@ class ImportlibFinder(Finder):
 
     def find_module(self, modname, module_parts, processed, submodule_path):
         if not isinstance(modname, str):
-            raise TypeError("'modname' must be a str, not {}".format(type(modname)))
+            raise TypeError(f"'modname' must be a str, not {type(modname)}")
         if submodule_path is not None:
             submodule_path = list(submodule_path)
         else:

@@ -4,31 +4,34 @@
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Artsiom Kaval <lezeroq@gmail.com>
 # Copyright (c) 2021 Francis Charette Migneault <francis.charette.migneault@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 
 """Astroid hooks for six module."""
 
 from textwrap import dedent
 
-from astroid import MANAGER, register_module_extender
+from astroid import MANAGER, nodes, register_module_extender
 from astroid.builder import AstroidBuilder
 from astroid.exceptions import (
     AstroidBuildingError,
-    InferenceError,
     AttributeInferenceError,
+    InferenceError,
 )
-from astroid import nodes
-
 
 SIX_ADD_METACLASS = "six.add_metaclass"
 SIX_WITH_METACLASS = "six.with_metaclass"
 
 
-def _indent(text, prefix, predicate=None):
+def default_predicate(line):
+    return line.strip()
+
+
+def _indent(text, prefix, predicate=default_predicate):
     """Adds 'prefix' to the beginning of selected lines in 'text'.
 
     If 'predicate' is provided, 'prefix' will only be added to the lines
@@ -36,8 +39,6 @@ def _indent(text, prefix, predicate=None):
     it will default to adding 'prefix' to all non-empty lines that do not
     consist solely of whitespace characters.
     """
-    if predicate is None:
-        predicate = lambda line: line.strip()
 
     def prefixed_lines():
         for line in text.splitlines(True):
@@ -172,7 +173,7 @@ def _looks_like_decorated_with_six_add_metaclass(node):
     return False
 
 
-def transform_six_add_metaclass(node):
+def transform_six_add_metaclass(node):  # pylint: disable=inconsistent-return-statements
     """Check if the given class node is decorated with *six.add_metaclass*
 
     If so, inject its argument as the metaclass of the underlying class.
@@ -192,6 +193,7 @@ def transform_six_add_metaclass(node):
             metaclass = decorator.args[0]
             node._metaclass = metaclass
             return node
+    return
 
 
 def _looks_like_nested_from_six_with_metaclass(node):
@@ -224,6 +226,7 @@ def transform_six_with_metaclass(node):
     """
     call = node.bases[0]
     node._metaclass = call.args[0]
+    return node
 
 
 register_module_extender(MANAGER, "six", six_moves_transform)

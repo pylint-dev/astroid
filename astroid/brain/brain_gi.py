@@ -12,22 +12,23 @@
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """Astroid hooks for the Python 2 GObject introspection bindings.
 
 Helps with understanding everything imported from 'gi.repository'
 """
 
+# pylint:disable=import-error,import-outside-toplevel
+
 import inspect
 import itertools
-import sys
 import re
+import sys
 import warnings
 
 from astroid import MANAGER, AstroidBuildingError, nodes
 from astroid.builder import AstroidBuilder
-
 
 _inspected_modules = {}
 
@@ -83,7 +84,7 @@ def _gi_build_stub(parent):
 
         try:
             obj = getattr(parent, name)
-        except:
+        except AttributeError:
             continue
 
         if inspect.isclass(obj):
@@ -188,11 +189,14 @@ def _import_gi_module(modname):
                         # Just inspecting the code can raise gi deprecation
                         # warnings, so ignore them.
                         try:
-                            from gi import PyGIDeprecationWarning, PyGIWarning
+                            from gi import (  # pylint:disable=import-error
+                                PyGIDeprecationWarning,
+                                PyGIWarning,
+                            )
 
                             warnings.simplefilter("ignore", PyGIDeprecationWarning)
                             warnings.simplefilter("ignore", PyGIWarning)
-                        except Exception:
+                        except Exception:  # pylint:disable=broad-except
                             pass
 
                         __import__(m)
@@ -242,7 +246,7 @@ def _register_require_version(node):
         import gi
 
         gi.require_version(node.args[0].value, node.args[1].value)
-    except Exception:
+    except Exception:  # pylint:disable=broad-except
         pass
 
     return node

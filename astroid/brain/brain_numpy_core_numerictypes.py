@@ -1,8 +1,9 @@
 # Copyright (c) 2019-2020 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 # TODO(hippo91) : correct the methods signature.
 
@@ -27,7 +28,7 @@ def numpy_core_numerictypes_transform():
             self.dtype = None
             self.flags = None
             # Should be a numpy.flatiter instance but not available for now
-            # Putting an array instead so that iteration and indexing are authorized
+            # Putting an array instead so that iteration and indexing are authorized
             self.flat = np.ndarray([0, 0])
             self.imag = None
             self.itemsize = None

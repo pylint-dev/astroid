@@ -13,9 +13,12 @@
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2020 Anubhav <35621759+anubh-v@users.noreply.github.com>
 # Copyright (c) 2020 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
+# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """astroid manager: avoid multiple astroid build of a same module when
 possible by providing a class responsible to get astroid representation
@@ -25,11 +28,8 @@ from various source and using a cache of built modules)
 import os
 import zipimport
 
-from astroid import exceptions
+from astroid import exceptions, modutils, transforms
 from astroid.interpreter._import import spec
-from astroid import modutils
-from astroid import transforms
-
 
 ZIP_IMPORT_EXTS = (".zip", ".egg", ".whl")
 
@@ -105,7 +105,7 @@ class AstroidManager:
         )
 
     def ast_from_string(self, data, modname="", filepath=None):
-        """ Given some source code as a string, return its corresponding astroid object"""
+        """Given some source code as a string, return its corresponding astroid object"""
         # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import AstroidBuilder
 
@@ -136,6 +136,7 @@ class AstroidManager:
 
     def ast_from_module_name(self, modname, context_file=None):
         """given a module name, return the astroid object"""
+        # pylint: disable=no-member
         if modname in self.astroid_cache:
             return self.astroid_cache[modname]
         if modname == "__main__":

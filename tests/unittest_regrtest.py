@@ -11,21 +11,21 @@
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 import sys
-import unittest
 import textwrap
+import unittest
 
-from astroid import MANAGER, Instance, nodes
+from astroid import MANAGER, Instance, exceptions, nodes, transforms
 from astroid.bases import BUILTINS
 from astroid.builder import AstroidBuilder, extract_node
-from astroid import exceptions
-from astroid.raw_building import build_module
 from astroid.manager import AstroidManager
-from astroid import transforms
+from astroid.raw_building import build_module
+
 from . import resources
 
 try:
@@ -100,7 +100,7 @@ multiply([1, 2], [3, 4])
         astroid = builder.string_build(data, __name__, __file__)
         callfunc = astroid.body[1].value.func
         inferred = callfunc.inferred()
-        self.assertEqual(len(inferred), 2)
+        self.assertEqual(len(inferred), 1)
 
     def test_nameconstant(self):
         # used to fail for Python 3.4
@@ -352,7 +352,7 @@ def test_crash_in_dunder_inference_prevented():
             delitem #@
     """
     inferred = next(extract_node(code).infer())
-    assert "builtins.dict.__delitem__" == inferred.qname()
+    assert inferred.qname() == "builtins.dict.__delitem__"
 
 
 if __name__ == "__main__":

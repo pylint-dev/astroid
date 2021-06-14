@@ -9,29 +9,33 @@
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """The AstroidBuilder makes astroid from living object and / or from _ast
 
 The builder is not thread safe and can't be used to parse different sources
 at the same time.
 """
-
 import os
 import textwrap
 from tokenize import detect_encoding
+from typing import List, Union
 
+from astroid import (
+    bases,
+    exceptions,
+    manager,
+    modutils,
+    nodes,
+    raw_building,
+    rebuilder,
+    util,
+)
 from astroid._ast import get_parser_module
-from astroid import bases
-from astroid import exceptions
-from astroid import manager
-from astroid import modutils
-from astroid import raw_building
-from astroid import rebuilder
-from astroid import nodes
-from astroid import util
+from astroid.node_classes import NodeNG
 
 objects = util.lazy_import("objects")
 
@@ -48,6 +52,7 @@ MANAGER = manager.AstroidManager()
 
 
 def open_source_file(filename):
+    # pylint: disable=consider-using-with
     with open(filename, "rb") as byte_stream:
         encoding = detect_encoding(byte_stream.readline)[0]
     stream = open(filename, newline=None, encoding=encoding)
@@ -63,7 +68,7 @@ def _can_assign_attr(node, attrname):
     else:
         if slots and attrname not in {slot.value for slot in slots}:
             return False
-    return True
+    return node.qname() != "builtins.object"
 
 
 class AstroidBuilder(raw_building.InspectBuilder):
@@ -199,7 +204,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
         Resort the locals if coming from a delayed node
         """
-        _key_func = lambda node: node.fromlineno
+
+        def _key_func(node):
+            return node.fromlineno
 
         def sort_locals(my_list):
             my_list.sort(key=_key_func)
@@ -354,7 +361,7 @@ def _find_statement_by_line(node, line):
     return None
 
 
-def extract_node(code, module_name=""):
+def extract_node(code: str, module_name: str = "") -> Union[NodeNG, List[NodeNG]]:
     """Parses some Python code as a module and extracts a designated AST node.
 
     Statements:
@@ -406,7 +413,6 @@ def extract_node(code, module_name=""):
     a module. Will be passed through textwrap.dedent first.
     :param str module_name: The name of the module.
     :returns: The designated node from the parse tree, or a list of nodes.
-    :rtype: astroid.bases.NodeNG, or a list of nodes.
     """
 
     def _extract(node):

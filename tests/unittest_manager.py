@@ -16,23 +16,22 @@
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 import builtins
 import os
 import platform
 import site
 import sys
+import time
 import unittest
 
 import pkg_resources
-import time
 
 import astroid
-from astroid import exceptions
-from astroid import manager
-from . import resources
+from astroid import exceptions, manager
 
+from . import resources
 
 BUILTINS = builtins.__name__
 
@@ -228,7 +227,9 @@ class AstroidManagerTest(
         """check if the unittest filepath is equals to the result of the method"""
         self.assertEqual(
             _get_file_from_object(unittest),
-            self.manager.file_from_module_name("unittest", None).location,
+            self.manager.file_from_module_name(  # pylint: disable=no-member
+                "unittest", None
+            ).location,
         )
 
     def test_file_from_module_name_astro_building_exception(self):

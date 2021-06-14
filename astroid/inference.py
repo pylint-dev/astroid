@@ -17,10 +17,11 @@
 # Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
 # Copyright (c) 2020 Leandro T. C. Melo <ltcmelo@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """this module contains a set of functions to handle inference on astroid trees
 """
@@ -30,17 +31,11 @@ import itertools
 import operator
 
 import wrapt
+
 from astroid import bases
 from astroid import context as contextmod
-from astroid import exceptions
-from astroid import decorators
-from astroid import helpers
-from astroid import manager
-from astroid import nodes
+from astroid import decorators, exceptions, helpers, manager, nodes, protocols, util
 from astroid.interpreter import dunder_lookup
-from astroid import protocols
-from astroid import util
-
 
 MANAGER = manager.AstroidManager()
 # Prevents circular imports
@@ -282,7 +277,7 @@ def infer_import_from(self, context=None, asname=True):
         return bases._infer_stmts(stmts, context)
     except exceptions.AttributeInferenceError as error:
         raise exceptions.InferenceError(
-            error.message, target=self, attribute=name, context=context
+            str(error), target=self, attribute=name, context=context
         ) from error
 
 
@@ -315,6 +310,7 @@ def infer_attribute(self, context=None):
         elif not context:
             context = contextmod.InferenceContext()
 
+        old_boundnode = context.boundnode
         try:
             context.boundnode = owner
             yield from owner.igetattr(self.attrname, context)
@@ -325,7 +321,7 @@ def infer_attribute(self, context=None):
         ):
             pass
         finally:
-            context.boundnode = None
+            context.boundnode = old_boundnode
     return dict(node=self, context=context)
 
 
@@ -345,7 +341,7 @@ def infer_global(self, context=None):
         return bases._infer_stmts(self.root().getattr(context.lookupname), context)
     except exceptions.AttributeInferenceError as error:
         raise exceptions.InferenceError(
-            error.message, target=self, attribute=context.lookupname, context=context
+            str(error), target=self, attribute=context.lookupname, context=context
         ) from error
 
 
@@ -878,28 +874,6 @@ def infer_index(self, context=None):
 
 nodes.Index._infer = infer_index
 
-# TODO: move directly into bases.Instance when the dependency hell
-# will be solved.
-def instance_getitem(self, index, context=None):
-    # Rewrap index to Const for this case
-    new_context = contextmod.bind_context_to_node(context, self)
-    if not context:
-        context = new_context
-
-    # Create a new callcontext for providing index as an argument.
-    new_context.callcontext = contextmod.CallContext(args=[index])
-
-    method = next(self.igetattr("__getitem__", context=context), None)
-    if not isinstance(method, bases.BoundMethod):
-        raise exceptions.InferenceError(
-            "Could not find __getitem__ for {node!r}.", node=self, context=context
-        )
-
-    return next(method.infer_call_result(self, new_context))
-
-
-bases.Instance.getitem = instance_getitem
-
 
 def _populate_context_lookup(call, context):
     # Allows context to be saved for later
@@ -956,7 +930,7 @@ nodes.IfExp._infer = infer_ifexp
 
 # pylint: disable=dangerous-default-value
 @wrapt.decorator
-def _cached_generator(func, instance, args, kwargs, _cache={}):
+def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
     node = args[0]
     try:
         return iter(_cache[func, id(node)])

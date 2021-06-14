@@ -1,16 +1,16 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 import random
 
 import astroid
-from astroid import helpers
-from astroid import MANAGER
-
+from astroid import MANAGER, helpers
 
 ACCEPTED_ITERABLES_FOR_SAMPLE = (astroid.List, astroid.Set, astroid.Tuple)
 
 
 def _clone_node_with_lineno(node, parent, lineno):
+    if isinstance(node, astroid.EvaluatedObject):
+        node = node.original
     cls = node.__class__
     other_fields = node._other_fields
     _astroid_fields = node._astroid_fields

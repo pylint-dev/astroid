@@ -16,38 +16,32 @@
 # Copyright (c) 2019 Alex Hall <alex.mojaki@gmail.com>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Federico Bond <federicobond@gmail.com>
 # Copyright (c) 2021 hippo91 <guillaume.peillex@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """tests for specific behaviour of astroid nodes
 """
 import builtins
+import copy
 import os
+import platform
 import sys
 import textwrap
 import unittest
-import copy
-import platform
 
 import pytest
 
 import astroid
-from astroid import bases, Uninferable
-from astroid import builder
+from astroid import bases, builder, Uninferable
 from astroid import context as contextmod
-from astroid import exceptions
-from astroid import node_classes
-from astroid import nodes
-from astroid import parse
-from astroid import util
-from astroid import test_utils
-from astroid import transforms
-from . import resources
+from astroid import exceptions, node_classes, nodes, parse, test_utils, transforms, util
 
+from . import resources
 
 abuilder = builder.AstroidBuilder()
 BUILTINS = builtins.__name__
@@ -162,8 +156,13 @@ def function(var):
         '''
 
         code_annotations = textwrap.dedent(code)
-        # pylint: disable=line-too-long
-        expected = 'def function(var: int):\n    nonlocal counter\n\n\nclass Language(metaclass=Natural):\n    """natural language"""'
+        expected = '''\
+def function(var: int):
+    nonlocal counter
+
+
+class Language(metaclass=Natural):
+    """natural language"""'''
         ast = abuilder.string_build(code_annotations)
         self.assertEqual(ast.as_string().strip(), expected)
 
@@ -563,6 +562,19 @@ class ConstNodeTest(unittest.TestCase):
 
     def test_unicode(self):
         self._test("a")
+
+    @pytest.mark.skipif(
+        not PY38, reason="kind attribute for ast.Constant was added in 3.8"
+    )
+    def test_str_kind(self):
+        node = builder.extract_node(
+            """
+            const = u"foo"
+        """
+        )
+        assert isinstance(node.value, nodes.Const)
+        assert node.value.value == "foo"
+        assert node.value.kind, "u"
 
     def test_copy(self):
         """
@@ -1128,11 +1140,8 @@ def test_type_comments_arguments():
     ]
     for node, expected_args in zip(module.body, expected_annotations):
         assert len(node.type_comment_args) == 1
-        if PY38:
-            assert isinstance(node.type_comment_args[0], astroid.Const)
-            assert node.type_comment_args[0].value == Ellipsis
-        else:
-            assert isinstance(node.type_comment_args[0], astroid.Ellipsis)
+        assert isinstance(node.type_comment_args[0], astroid.Const)
+        assert node.type_comment_args[0].value == Ellipsis
         assert len(node.args.type_comment_args) == len(expected_args)
         for expected_arg, actual_arg in zip(expected_args, node.args.type_comment_args):
             assert actual_arg.as_string() == expected_arg
@@ -1163,11 +1172,8 @@ def test_type_comments_posonly_arguments():
     ]
     for node, expected_types in zip(module.body, expected_annotations):
         assert len(node.type_comment_args) == 1
-        if PY38:
-            assert isinstance(node.type_comment_args[0], astroid.Const)
-            assert node.type_comment_args[0].value == Ellipsis
-        else:
-            assert isinstance(node.type_comment_args[0], astroid.Ellipsis)
+        assert isinstance(node.type_comment_args[0], astroid.Const)
+        assert node.type_comment_args[0].value == Ellipsis
         type_comments = [
             node.args.type_comment_posonlyargs,
             node.args.type_comment_args,
@@ -1186,8 +1192,8 @@ def test_correct_function_type_comment_parent():
             # type: (A) -> A
             pass
     """
-    astroid = builder.parse(data)
-    f = astroid.body[0]
+    parsed_data = builder.parse(data)
+    f = parsed_data.body[0]
     assert f.type_comment_args[0].parent is f
     assert f.type_comment_returns.parent is f
 
@@ -1378,6 +1384,218 @@ def test_is_generator_for_yield_in_aug_assign():
     """
     node = astroid.extract_node(code)
     assert bool(node.is_generator())
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="pattern matching was added in PY310"
+)
+class TestPatternMatching:
+    @staticmethod
+    def test_match_simple():
+        code = textwrap.dedent(
+            """
+        match status:
+            case 200:
+                pass
+            case 401 | 402 | 403:
+                pass
+            case None:
+                pass
+            case _:
+                pass
+        """
+        ).strip()
+        node = builder.extract_node(code)
+        assert node.as_string() == code
+        assert isinstance(node, nodes.Match)
+        assert isinstance(node.subject, nodes.Name)
+        assert node.subject.name == "status"
+        assert isinstance(node.cases, list) and len(node.cases) == 4
+        case0, case1, case2, case3 = node.cases
+
+        assert isinstance(case0.pattern, nodes.MatchValue)
+        assert (
+            isinstance(case0.pattern.value, astroid.Const)
+            and case0.pattern.value.value == 200
+        )
+        assert case0.guard is None
+        assert isinstance(case0.body[0], astroid.Pass)
+
+        assert isinstance(case1.pattern, nodes.MatchOr)
+        assert (
+            isinstance(case1.pattern.patterns, list)
+            and len(case1.pattern.patterns) == 3
+        )
+        for i in range(3):
+            match_value = case1.pattern.patterns[i]
+            assert isinstance(match_value, nodes.MatchValue)
+            assert isinstance(match_value.value, nodes.Const)
+            assert match_value.value.value == (401, 402, 403)[i]
+
+        assert isinstance(case2.pattern, nodes.MatchSingleton)
+        assert case2.pattern.value is None
+
+        assert isinstance(case3.pattern, nodes.MatchAs)
+        assert case3.pattern.name is None
+        assert case3.pattern.pattern is None
+
+    @staticmethod
+    def test_match_sequence():
+        code = textwrap.dedent(
+            """
+        match status:
+            case [x, 2, _, *rest] as y if x > 2:
+                pass
+        """
+        ).strip()
+        node = builder.extract_node(code)
+        assert node.as_string() == code
+        assert isinstance(node, nodes.Match)
+        assert isinstance(node.cases, list) and len(node.cases) == 1
+        case = node.cases[0]
+
+        assert isinstance(case.pattern, nodes.MatchAs)
+        assert isinstance(case.pattern.name, nodes.AssignName)
+        assert case.pattern.name.name == "y"
+        assert isinstance(case.guard, nodes.Compare)
+        assert isinstance(case.body[0], nodes.Pass)
+
+        pattern_as = case.pattern.pattern
+        assert isinstance(pattern_as, nodes.MatchSequence)
+        assert isinstance(pattern_as.patterns, list) and len(pattern_as.patterns) == 4
+        assert (
+            isinstance(pattern_as.patterns[0], nodes.MatchAs)
+            and isinstance(pattern_as.patterns[0].name, nodes.AssignName)
+            and pattern_as.patterns[0].name.name == "x"
+            and pattern_as.patterns[0].pattern is None
+        )
+        assert (
+            isinstance(pattern_as.patterns[1], nodes.MatchValue)
+            and isinstance(pattern_as.patterns[1].value, nodes.Const)
+            and pattern_as.patterns[1].value.value == 2
+        )
+        assert (
+            isinstance(pattern_as.patterns[2], nodes.MatchAs)
+            and pattern_as.patterns[2].name is None
+        )
+        assert (
+            isinstance(pattern_as.patterns[3], nodes.MatchStar)
+            and isinstance(pattern_as.patterns[3].name, nodes.AssignName)
+            and pattern_as.patterns[3].name.name == "rest"
+        )
+
+    @staticmethod
+    def test_match_mapping():
+        code = textwrap.dedent(
+            """
+        match status:
+            case {0: x, 1: _}:
+                pass
+            case {**rest}:
+                pass
+        """
+        ).strip()
+        node = builder.extract_node(code)
+        assert node.as_string() == code
+        assert isinstance(node, nodes.Match)
+        assert isinstance(node.cases, list) and len(node.cases) == 2
+        case0, case1 = node.cases
+
+        assert isinstance(case0.pattern, nodes.MatchMapping)
+        assert case0.pattern.rest is None
+        assert isinstance(case0.pattern.keys, list) and len(case0.pattern.keys) == 2
+        assert (
+            isinstance(case0.pattern.patterns, list)
+            and len(case0.pattern.patterns) == 2
+        )
+        for i in range(2):
+            key = case0.pattern.keys[i]
+            assert isinstance(key, nodes.Const)
+            assert key.value == i
+            pattern = case0.pattern.patterns[i]
+            assert isinstance(pattern, nodes.MatchAs)
+            if i == 0:
+                assert isinstance(pattern.name, nodes.AssignName)
+                assert pattern.name.name == "x"
+            elif i == 1:
+                assert pattern.name is None
+
+        assert isinstance(case1.pattern, nodes.MatchMapping)
+        assert isinstance(case1.pattern.rest, nodes.AssignName)
+        assert case1.pattern.rest.name == "rest"
+        assert isinstance(case1.pattern.keys, list) and len(case1.pattern.keys) == 0
+        assert (
+            isinstance(case1.pattern.patterns, list)
+            and len(case1.pattern.patterns) == 0
+        )
+
+    @staticmethod
+    def test_match_class():
+        code = textwrap.dedent(
+            """
+        match x:
+            case Point2D(0, a):
+                pass
+            case Point3D(x=0, y=1, z=b):
+                pass
+        """
+        ).strip()
+        node = builder.extract_node(code)
+        assert node.as_string() == code
+        assert isinstance(node, nodes.Match)
+        assert isinstance(node.cases, list) and len(node.cases) == 2
+        case0, case1 = node.cases
+
+        assert isinstance(case0.pattern, nodes.MatchClass)
+        assert isinstance(case0.pattern.cls, nodes.Name)
+        assert case0.pattern.cls.name == "Point2D"
+        assert (
+            isinstance(case0.pattern.patterns, list)
+            and len(case0.pattern.patterns) == 2
+        )
+        match_value = case0.pattern.patterns[0]
+        assert (
+            isinstance(match_value, nodes.MatchValue)
+            and isinstance(match_value.value, nodes.Const)
+            and match_value.value.value == 0
+        )
+        match_as = case0.pattern.patterns[1]
+        assert (
+            isinstance(match_as, nodes.MatchAs)
+            and match_as.pattern is None
+            and isinstance(match_as.name, nodes.AssignName)
+            and match_as.name.name == "a"
+        )
+
+        assert isinstance(case1.pattern, nodes.MatchClass)
+        assert isinstance(case1.pattern.cls, nodes.Name)
+        assert case1.pattern.cls.name == "Point3D"
+        assert (
+            isinstance(case1.pattern.patterns, list)
+            and len(case1.pattern.patterns) == 0
+        )
+        assert (
+            isinstance(case1.pattern.kwd_attrs, list)
+            and len(case1.pattern.kwd_attrs) == 3
+        )
+        assert (
+            isinstance(case1.pattern.kwd_patterns, list)
+            and len(case1.pattern.kwd_patterns) == 3
+        )
+        for i in range(2):
+            assert case1.pattern.kwd_attrs[i] == ("x", "y")[i]
+            kwd_pattern = case1.pattern.kwd_patterns[i]
+            assert isinstance(kwd_pattern, nodes.MatchValue)
+            assert isinstance(kwd_pattern.value, nodes.Const)
+            assert kwd_pattern.value.value == i
+        assert case1.pattern.kwd_attrs[2] == "z"
+        kwd_pattern = case1.pattern.kwd_patterns[2]
+        assert (
+            isinstance(kwd_pattern, nodes.MatchAs)
+            and kwd_pattern.pattern is None
+            and isinstance(kwd_pattern.name, nodes.AssignName)
+            and kwd_pattern.name.name == "b"
+        )
 
 
 if __name__ == "__main__":

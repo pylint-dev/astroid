@@ -9,7 +9,7 @@
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 """
 Data object model, as per https://docs.python.org/3/reference/datamodel.html.
 
@@ -30,17 +30,15 @@ mechanism.
 """
 
 import itertools
-import pprint
 import os
+import pprint
 import types
 from functools import lru_cache
 from typing import Optional
 
 import astroid
 from astroid import context as contextmod
-from astroid import exceptions
-from astroid import node_classes
-from astroid import util
+from astroid import exceptions, node_classes, util
 
 # Prevents circular imports
 objects = util.lazy_import("objects")
@@ -473,8 +471,7 @@ class ClassModel(ObjectModel):
         thus it might miss a couple of them.
         """
         # pylint: disable=import-outside-toplevel; circular import
-        from astroid import bases
-        from astroid import scoped_nodes
+        from astroid import bases, scoped_nodes
 
         if not self._instance.newstyle:
             raise exceptions.AttributeInferenceError(
@@ -561,7 +558,9 @@ class GeneratorModel(FunctionModel):
         generator = astroid.MANAGER.builtins_module["generator"]
         for name, values in generator.locals.items():
             method = values[0]
-            patched = lambda cls, meth=method: meth
+
+            def patched(cls, meth=method):
+                return meth
 
             setattr(type(ret), IMPL_PREFIX + name, property(patched))
 
@@ -592,7 +591,9 @@ class AsyncGeneratorModel(GeneratorModel):
 
         for name, values in generator.locals.items():
             method = values[0]
-            patched = lambda cls, meth=method: meth
+
+            def patched(cls, meth=method):
+                return meth
 
             setattr(type(ret), IMPL_PREFIX + name, property(patched))
 

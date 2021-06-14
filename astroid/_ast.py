@@ -1,16 +1,15 @@
 import ast
+import sys
 from collections import namedtuple
 from functools import partial
 from typing import Optional
-import sys
 
 import astroid
 
-_ast_py3 = None
 try:
     import typed_ast.ast3 as _ast_py3
 except ImportError:
-    pass
+    _ast_py3 = None
 
 
 PY38 = sys.version_info[:2] >= (3, 8)

@@ -23,37 +23,36 @@
 # Copyright (c) 2019 kavins14 <kavinsingh@hotmail.com>
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Federico Bond <federicobond@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
-# pylint: disable=too-many-lines; https://github.com/PyCQA/astroid/issues/465
-
-"""Module for some node classes. More nodes in scoped_nodes.py
-"""
+"""Module for some node classes. More nodes in scoped_nodes.py"""
 
 import abc
 import builtins as builtins_mod
 import itertools
 import pprint
-import sys
-from functools import lru_cache, singledispatch as _singledispatch
+import typing
+from functools import lru_cache
+from functools import singledispatch as _singledispatch
 
-from astroid import as_string
-from astroid import bases
+from astroid import as_string, bases
 from astroid import context as contextmod
-from astroid import decorators
-from astroid import exceptions
-from astroid import manager
-from astroid import mixins
-from astroid import util
+from astroid import decorators, exceptions, manager, mixins, util
 
+try:
+    from typing import Literal
+except ImportError:
+    # typing.Literal was added in Python 3.8
+    from typing_extensions import Literal
 
 BUILTINS = builtins_mod.__name__
 MANAGER = manager.AstroidManager()
-PY38 = sys.version_info[:2] >= (3, 8)
 
 
 def _is_const(value):
@@ -357,12 +356,16 @@ class NodeNG:
             # explicit_inference is not bound, give it self explicitly
             try:
                 # pylint: disable=not-callable
-                yield from self._explicit_inference(self, context, **kwargs)
+                results = tuple(self._explicit_inference(self, context, **kwargs))
+                if context is not None:
+                    context.nodes_inferred += len(results)
+                yield from results
                 return
             except exceptions.UseInferenceDefault:
                 pass
 
         if not context:
+            # nodes_inferred?
             yield from self._infer(context, **kwargs)
             return
 
@@ -378,11 +381,12 @@ class NodeNG:
         # exponentially exploding possible results.
         limit = MANAGER.max_inferable_values
         for i, result in enumerate(generator):
-            if i >= limit:
+            if i >= limit or (context.nodes_inferred > context.max_inferred):
                 yield util.Uninferable
                 break
             results.append(result)
             yield result
+            context.nodes_inferred += 1
 
         # Cache generated results for subsequent inferences of the
         # same node using the same context
@@ -796,7 +800,7 @@ class NodeNG:
         indent="   ",
         max_depth=0,
         max_width=80,
-    ):
+    ) -> str:
         """Get a string representation of the AST from this node.
 
         :param ids: If true, includes the ids with the node type names.
@@ -825,7 +829,7 @@ class NodeNG:
         :returns: The string representation of the AST.
         :rtype: str
         """
-        # pylint: disable=too-many-statements
+
         @_singledispatch
         def _repr_tree(node, result, done, cur_indent="", depth=1):
             """Outputs a representation of a non-tuple/list, non-node that's
@@ -838,7 +842,7 @@ class NodeNG:
             result.extend([cur_indent + line for line in lines[1:]])
             return len(lines) != 1
 
-        # pylint: disable=unused-variable; doesn't understand singledispatch
+        # pylint: disable=unused-variable,useless-suppression; doesn't understand singledispatch
         @_repr_tree.register(tuple)
         @_repr_tree.register(list)
         def _repr_seq(node, result, done, cur_indent="", depth=1):
@@ -869,7 +873,7 @@ class NodeNG:
             result.append("]")
             return broken
 
-        # pylint: disable=unused-variable; doesn't understand singledispatch
+        # pylint: disable=unused-variable,useless-suppression; doesn't understand singledispatch
         @_repr_tree.register(NodeNG)
         def _repr_node(node, result, done, cur_indent="", depth=1):
             """Outputs a strings representation of an astroid node."""
@@ -889,7 +893,7 @@ class NodeNG:
             depth += 1
             cur_indent += indent
             if ids:
-                result.append("{}<0x{:x}>(\n".format(type(node).__name__, id(node)))
+                result.append(f"{type(node).__name__}<0x{id(node):x}>(\n")
             else:
                 result.append("%s(" % type(node).__name__)
             fields = []
@@ -1635,8 +1639,6 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.type_comment_kwonlyargs = type_comment_kwonlyargs
         self.type_comment_posonlyargs = type_comment_posonlyargs
 
-    # pylint: disable=too-many-arguments
-
     def _infer_name(self, frame, name):
         if self.parent is frame:
             return name
@@ -2134,33 +2136,6 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
         yield from super()._get_yield_nodes_skip_lambdas()
 
 
-class Repr(NodeNG):
-    """Class representing an :class:`ast.Repr` node.
-
-    A :class:`Repr` node represents the backtick syntax,
-    which is a deprecated alias for :func:`repr` removed in Python 3.
-
-    >>> node = astroid.extract_node('`variable`')
-    >>> node
-    <Repr l.1 at 0x7fa0951d75d0>
-    """
-
-    _astroid_fields = ("value",)
-    value = None
-    """What is having :func:`repr` called on it.
-
-    :type: NodeNG or None
-    """
-
-    def postinit(self, value=None):
-        """Do some setup after initialisation.
-
-        :param value: What is having :func:`repr` called on it.
-        :type value: NodeNG or None
-        """
-        self.value = value
-
-
 class BinOp(NodeNG):
     """Class representing an :class:`ast.BinOp` node.
 
@@ -2567,7 +2542,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
 
     _other_fields = ("value",)
 
-    def __init__(self, value, lineno=None, col_offset=None, parent=None):
+    def __init__(self, value, lineno=None, col_offset=None, parent=None, kind=None):
         """
         :param value: The value that the constant represents.
         :type value: object
@@ -2581,12 +2556,12 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param kind: The string prefix. "u" for u-prefixed strings and ``None`` otherwise. Python 3.8+ only.
+        :type kind: str or None
         """
         self.value = value
-        """The value that the constant represents.
-
-        :type: object
-        """
+        self.kind = kind
 
         super().__init__(lineno, col_offset, parent)
 
@@ -2617,7 +2592,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
 
         else:
             raise exceptions.AstroidTypeError(
-                "Could not use type {} as subscript index".format(type(index))
+                f"Could not use type {type(index)} as subscript index"
             )
 
         try:
@@ -2657,7 +2632,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
         """
         if isinstance(self.value, str):
             return [const_factory(elem) for elem in self.value]
-        raise TypeError("Cannot iterate over type {!r}".format(type(self.value)))
+        raise TypeError(f"Cannot iterate over type {type(self.value)!r}")
 
     def pytype(self):
         """Get the name of the type that this node represents.
@@ -2990,19 +2965,9 @@ class Ellipsis(mixins.NoChildrenMixin, NodeNG):  # pylint: disable=redefined-bui
 
     An :class:`Ellipsis` is the ``...`` syntax.
 
-    >>> node = astroid.extract_node('...')
-    >>> node
-    <Ellipsis l.1 at 0x7f23b2e35160>
+    Deprecated since v2.6.0 - Use :class:`Const` instead.
+    Will be removed with the release v2.7.0
     """
-
-    def bool_value(self, context=None):
-        """Determine the boolean value of this node.
-
-        :returns: The boolean value of this node.
-            For an :class:`Ellipsis` this is always ``True``.
-        :rtype: bool
-        """
-        return True
 
 
 class EmptyNode(mixins.NoChildrenMixin, NodeNG):
@@ -3100,75 +3065,14 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
         return False
 
 
-class Exec(Statement):
-    """Class representing the ``exec`` statement.
-
-    >>> node = astroid.extract_node('exec "True"')
-    >>> node
-    <Exec l.1 at 0x7f0e8106c6d0>
-    """
-
-    _astroid_fields = ("expr", "globals", "locals")
-    expr = None
-    """The expression to be executed.
-
-    :type: NodeNG or None
-    """
-    globals = None
-    """The globals dictionary to execute with.
-
-    :type: NodeNG or None
-    """
-    locals = None
-    """The locals dictionary to execute with.
-
-    :type: NodeNG or None
-    """
-
-    # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
-    def postinit(self, expr=None, globals=None, locals=None):
-        """Do some setup after initialisation.
-
-        :param expr: The expression to be executed.
-        :type expr: NodeNG or None
-
-        :param globals:The globals dictionary to execute with.
-        :type globals: NodeNG or None
-
-        :param locals: The locals dictionary to execute with.
-        :type locals: NodeNG or None
-        """
-        self.expr = expr
-        self.globals = globals
-        self.locals = locals
-
-
 class ExtSlice(NodeNG):
     """Class representing an :class:`ast.ExtSlice` node.
 
     An :class:`ExtSlice` is a complex slice expression.
 
-    >>> node = astroid.extract_node('l[1:3, 5]')
-    >>> node
-    <Subscript l.1 at 0x7f23b2e9e550>
-    >>> node.slice
-    <ExtSlice l.1 at 0x7f23b7b05ef0>
+    Deprecated since v2.6.0 - Now part of the :class:`Subscript` node.
+    Will be removed with the release of v2.7.0
     """
-
-    _astroid_fields = ("dims",)
-    dims = None
-    """The simple dimensions that form the complete slice.
-
-    :type: list(NodeNG) or None
-    """
-
-    def postinit(self, dims=None):
-        """Do some setup after initialisation.
-
-        :param dims: The simple dimensions that form the complete slice.
-        :type dims: list(NodeNG) or None
-        """
-        self.dims = dims
 
 
 class For(
@@ -3635,30 +3539,9 @@ class Index(NodeNG):
 
     An :class:`Index` is a simple subscript.
 
-    >>> node = astroid.extract_node('things[1]')
-    >>> node
-    <Subscript l.1 at 0x7f23b2e9e2b0>
-    >>> node.slice
-    <Index l.1 at 0x7f23b2e9e6a0>
+    Deprecated since v2.6.0 - Now part of the :class:`Subscript` node.
+    Will be removed with the release of v2.7.0
     """
-
-    _astroid_fields = ("value",)
-    value = None
-    """The value to subscript with.
-
-    :type: NodeNG or None
-    """
-
-    def postinit(self, value=None):
-        """Do some setup after initialisation.
-
-        :param value: The value to subscript with.
-        :type value: NodeNG or None
-        """
-        self.value = value
-
-    def get_children(self):
-        yield self.value
 
 
 class Keyword(NodeNG):
@@ -3813,62 +3696,6 @@ class Pass(mixins.NoChildrenMixin, Statement):
     >>> node
     <Pass l.1 at 0x7f23b2e9e748>
     """
-
-
-class Print(Statement):
-    """Class representing an :class:`ast.Print` node.
-
-    >>> node = astroid.extract_node('print "A message"')
-    >>> node
-    <Print l.1 at 0x7f0e8101d290>
-    """
-
-    _astroid_fields = ("dest", "values")
-    dest = None
-    """Where to print to.
-
-    :type: NodeNG or None
-    """
-    values = None
-    """What to print.
-
-    :type: list(NodeNG) or None
-    """
-
-    def __init__(self, nl=None, lineno=None, col_offset=None, parent=None):
-        """
-        :param nl: Whether to print a new line.
-        :type nl: bool or None
-
-        :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-        :type col_offset: int or None
-
-        :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
-        """
-        self.nl = nl
-        """Whether to print a new line.
-
-        :type: bool or None
-        """
-
-        super().__init__(lineno, col_offset, parent)
-
-    def postinit(self, dest=None, values=None):
-        """Do some setup after initialisation.
-
-        :param dest: Where to print to.
-        :type dest: NodeNG or None
-
-        :param values: What to print.
-        :type values: list(NodeNG) or None
-        """
-        self.dest = dest
-        self.values = values
 
 
 class Raise(Statement):
@@ -4811,6 +4638,353 @@ class EvaluatedObject(NodeNG):
         yield self.value
 
 
+# Pattern matching #######################################################
+
+
+class Match(Statement):
+    """Class representing a :class:`ast.Match` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case 200:
+            ...
+        case _:
+            ...
+    ''')
+    >>> node
+    <Match l.2 at 0x10c24e170>
+    """
+
+    _astroid_fields = ("subject", "cases")
+    subject: typing.Optional[NodeNG] = None
+    cases: typing.Optional[typing.List["MatchCase"]] = None
+
+    def postinit(
+        self,
+        *,
+        subject: typing.Optional[NodeNG] = None,
+        cases: typing.Optional[typing.List["MatchCase"]] = None,
+    ) -> None:
+        self.subject = subject
+        self.cases = cases
+
+    def get_children(self) -> typing.Generator[NodeNG, None, None]:
+        if self.subject is not None:
+            yield self.subject
+        if self.cases is not None:
+            yield from self.cases
+
+
+class MatchCase(NodeNG):
+    """Class representing a :class:`ast.match_case` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case 200:
+            ...
+    ''')
+    >>> node.cases[0]
+    <MatchCase l.3 at 0x10c24e590>
+    """
+
+    _astroid_fields = ("pattern", "guard", "body")
+    pattern: typing.Optional["PatternTypes"] = None
+    guard: typing.Optional[NodeNG] = None  # can actually be None
+    body: typing.Optional[typing.List[NodeNG]] = None
+
+    def postinit(
+        self,
+        *,
+        pattern: typing.Optional["PatternTypes"] = None,
+        guard: typing.Optional[NodeNG] = None,
+        body: typing.Optional[typing.List[NodeNG]] = None,
+    ) -> None:
+        self.pattern = pattern
+        self.guard = guard
+        self.body = body
+
+    def get_children(self) -> typing.Generator[NodeNG, None, None]:
+        if self.pattern is not None:
+            yield self.pattern
+        if self.guard is not None:
+            yield self.guard
+        if self.body is not None:
+            yield from self.body
+
+
+class MatchValue(NodeNG):
+    """Class representing a :class:`ast.MatchValue` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case 200:
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchValue l.3 at 0x10c24e200>
+    """
+
+    _astroid_fields = ("value",)
+    value: typing.Optional[NodeNG] = None
+
+    def postinit(self, *, value: NodeNG) -> None:
+        self.value = value
+
+    def get_children(self) -> typing.Generator[NodeNG, None, None]:
+        if self.value is not None:
+            yield self.value
+
+
+class MatchSingleton(mixins.NoChildrenMixin, NodeNG):
+    """Class representing a :class:`ast.MatchSingleton` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case True:
+            ...
+        case False:
+            ...
+        case None:
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchSingleton l.3 at 0x10c2282e0>
+    >>> node.cases[1].pattern
+    <MatchSingleton l.5 at 0x10c228af0>
+    >>> node.cases[2].pattern
+    <MatchSingleton l.7 at 0x10c229f90>
+    """
+
+    _other_fields = ("value",)
+
+    def __init__(
+        self,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
+        *,
+        value: Literal[True, False, None],
+    ) -> None:
+        self.value = value
+        super().__init__(lineno, col_offset, parent)
+
+
+class MatchSequence(NodeNG):
+    """Class representing a :class:`ast.MatchSequence` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case [1, 2]:
+            ...
+        case (1, 2, *_):
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchSequence l.3 at 0x10ca80d00>
+    >>> node.cases[1].pattern
+    <MatchSequence l.5 at 0x10ca80b20>
+    """
+
+    _astroid_fields = ("patterns",)
+    patterns: typing.Optional[typing.List["PatternTypes"]] = None
+
+    def postinit(
+        self, *, patterns: typing.Optional[typing.List["PatternTypes"]]
+    ) -> None:
+        self.patterns = patterns
+
+    def get_children(self) -> typing.Generator["PatternTypes", None, None]:
+        if self.patterns is not None:
+            yield from self.patterns
+
+
+class MatchMapping(mixins.AssignTypeMixin, NodeNG):
+    """Class representing a :class:`ast.MatchMapping` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case {1: "Hello", 2: "World", 3: _, **rest}:
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchMapping l.3 at 0x10c8a8850>
+    """
+
+    _astroid_fields = ("keys", "patterns", "rest")
+    keys: typing.Optional[typing.List[NodeNG]] = None
+    patterns: typing.Optional[typing.List["PatternTypes"]] = None
+    rest: typing.Optional[AssignName] = None
+
+    def postinit(
+        self,
+        *,
+        keys: typing.Optional[typing.List[NodeNG]] = None,
+        patterns: typing.Optional[typing.List["PatternTypes"]] = None,
+        rest: typing.Optional[AssignName] = None,
+    ) -> None:
+        self.keys = keys
+        self.patterns = patterns
+        self.rest = rest
+
+    def get_children(self) -> typing.Generator[NodeNG, None, None]:
+        if self.keys is not None:
+            yield from self.keys
+        if self.patterns is not None:
+            yield from self.patterns
+        if self.rest is not None:
+            yield self.rest
+
+
+class MatchClass(NodeNG):
+    """Class representing a :class:`ast.MatchClass` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case Point2D(0, 0):
+            ...
+        case Point3D(x=0, y=0, z=0):
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchClass l.3 at 0x10ca83940>
+    >>> node.cases[1].pattern
+    <MatchClass l.5 at 0x10ca80880>
+    """
+
+    _astroid_fields = ("cls", "patterns", "kwd_attrs", "kwd_patterns")
+    cls: typing.Optional[NodeNG] = None
+    patterns: typing.Optional[typing.List["PatternTypes"]] = None
+    kwd_attrs: typing.Optional[typing.List[str]] = None
+    kwd_patterns: typing.Optional[typing.List["PatternTypes"]] = None
+
+    def postinit(
+        self,
+        *,
+        cls: typing.Optional[NodeNG] = None,
+        patterns: typing.Optional[typing.List["PatternTypes"]] = None,
+        kwd_attrs: typing.Optional[typing.List[str]] = None,
+        kwd_patterns: typing.Optional[typing.List["PatternTypes"]] = None,
+    ) -> None:
+        self.cls = cls
+        self.patterns = patterns
+        self.kwd_attrs = kwd_attrs
+        self.kwd_patterns = kwd_patterns
+
+    def get_children(self) -> typing.Generator[NodeNG, None, None]:
+        if self.cls is not None:
+            yield self.cls
+        if self.patterns is not None:
+            yield from self.patterns
+        if self.kwd_patterns is not None:
+            yield from self.kwd_patterns
+
+
+class MatchStar(mixins.AssignTypeMixin, NodeNG):
+    """Class representing a :class:`ast.MatchStar` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case [1, *_]:
+            ...
+    ''')
+    >>> node.cases[0].pattern.patterns[1]
+    <MatchStar l.3 at 0x10ca809a0>
+    """
+
+    _astroid_fields = ("name",)
+    name: typing.Optional[AssignName] = None
+
+    def postinit(self, *, name: typing.Optional[AssignName] = None) -> None:
+        self.name = name
+
+    def get_children(self) -> typing.Generator[AssignName, None, None]:
+        if self.name is not None:
+            yield self.name
+
+
+class MatchAs(mixins.AssignTypeMixin, NodeNG):
+    """Class representing a :class:`ast.MatchAs` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case [1, a]:
+            ...
+        case {'key': b}:
+            ...
+        case Point2D(0, 0) as c:
+            ...
+        case d:
+            ...
+    ''')
+    >>> node.cases[0].pattern.patterns[1]
+    <MatchAs l.3 at 0x10d0b2da0>
+    >>> node.cases[1].pattern.patterns[0]
+    <MatchAs l.5 at 0x10d0b2920>
+    >>> node.cases[2].pattern
+    <MatchAs l.7 at 0x10d0b06a0>
+    >>> node.cases[3].pattern
+    <MatchAs l.9 at 0x10d09b880>
+    """
+
+    _astroid_fields = ("pattern", "name")
+    pattern: typing.Optional["PatternTypes"] = None
+    name: typing.Optional[AssignName] = None
+
+    def postinit(
+        self,
+        *,
+        pattern: typing.Optional["PatternTypes"] = None,
+        name: typing.Optional[AssignName] = None,
+    ) -> None:
+        self.pattern = pattern
+        self.name = name
+
+    def get_children(
+        self,
+    ) -> typing.Generator[typing.Union[AssignName, "PatternTypes"], None, None]:
+        if self.pattern is not None:
+            yield self.pattern
+        if self.name is not None:
+            yield self.name
+
+
+class MatchOr(NodeNG):
+    """Class representing a :class:`ast.MatchOr` node.
+
+    >>> node = astroid.extract_node('''
+    match x:
+        case 400 | 401 | 402:
+            ...
+    ''')
+    >>> node.cases[0].pattern
+    <MatchOr l.3 at 0x10d0b0b50>
+    """
+
+    _astroid_fields = ("patterns",)
+    patterns: typing.Optional[typing.List["PatternTypes"]] = None
+
+    def postinit(
+        self, *, patterns: typing.Optional[typing.List["PatternTypes"]]
+    ) -> None:
+        self.patterns = patterns
+
+    def get_children(self) -> typing.Generator["PatternTypes", None, None]:
+        if self.patterns is not None:
+            yield from self.patterns
+
+
+PatternTypes = typing.Union[
+    MatchValue,
+    MatchSingleton,
+    MatchSequence,
+    MatchMapping,
+    MatchClass,
+    MatchStar,
+    MatchAs,
+    MatchOr,
+]
+
+
 # constants ##############################################################
 
 CONST_CLS = {
@@ -4820,9 +4994,8 @@ CONST_CLS = {
     set: Set,
     type(None): Const,
     type(NotImplemented): Const,
+    type(...): Const,
 }
-if PY38:
-    CONST_CLS[type(...)] = Const
 
 
 def _update_const_classes():

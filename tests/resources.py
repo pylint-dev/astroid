@@ -5,17 +5,16 @@
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 David Cain <davidjosephcain@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 import os
 import sys
 
-from astroid import builder
-from astroid import MANAGER
+from astroid import MANAGER, builder
 from astroid.bases import BUILTINS
-
 
 DATA_DIR = os.path.join("testdata", "python3")
 RESOURCE_PATH = os.path.join(os.path.dirname(__file__), DATA_DIR, "data")

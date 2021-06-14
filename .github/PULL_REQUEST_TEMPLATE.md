@@ -13,15 +13,16 @@ To ease our work reviewing your PR, do make sure to mark the complete the follow
 
 ## Description
 
-
 ## Type of Changes
+
 <!-- Leave the corresponding lines for the applicable type of change: -->
-|   | Type |
-| ------------- | ------------- |
-| ✓  | :bug: Bug fix  |
-| ✓  | :sparkles: New feature |
-| ✓  | :hammer: Refactoring  |
-| ✓  | :scroll: Docs |
+
+|     | Type                   |
+| --- | ---------------------- |
+| ✓   | :bug: Bug fix          |
+| ✓   | :sparkles: New feature |
+| ✓   | :hammer: Refactoring   |
+| ✓   | :scroll: Docs          |
 
 ## Related Issue
 

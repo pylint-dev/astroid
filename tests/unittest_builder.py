@@ -13,9 +13,11 @@
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """tests for the astroid builder and rebuilder module"""
 
@@ -27,12 +29,9 @@ import sys
 import unittest
 
 import pytest
-from astroid import builder
-from astroid import exceptions
-from astroid import manager
-from astroid import nodes
-from astroid import test_utils
-from astroid import util
+
+from astroid import Instance, builder, exceptions, manager, nodes, test_utils, util
+
 from . import resources
 
 MANAGER = manager.AstroidManager()
@@ -479,6 +478,53 @@ class BuilderTest(unittest.TestCase):
         self.assertIn("assign_type", lclass.locals)
         self.assertIn("type", lclass.locals)
 
+    def test_infer_can_assign_regular_object(self):
+        mod = builder.parse(
+            """
+            class A:
+                pass
+            a = A()
+            a.value = "is set"
+            a.other = "is set"
+        """
+        )
+        obj = list(mod.igetattr("a"))
+        self.assertEqual(len(obj), 1)
+        obj = obj[0]
+        self.assertIsInstance(obj, Instance)
+        self.assertIn("value", obj.instance_attrs)
+        self.assertIn("other", obj.instance_attrs)
+
+    def test_infer_can_assign_has_slots(self):
+        mod = builder.parse(
+            """
+            class A:
+                __slots__ = ('value',)
+            a = A()
+            a.value = "is set"
+            a.other = "not set"
+        """
+        )
+        obj = list(mod.igetattr("a"))
+        self.assertEqual(len(obj), 1)
+        obj = obj[0]
+        self.assertIsInstance(obj, Instance)
+        self.assertIn("value", obj.instance_attrs)
+        self.assertNotIn("other", obj.instance_attrs)
+
+    def test_infer_can_assign_no_classdict(self):
+        mod = builder.parse(
+            """
+            a = object()
+            a.value = "not set"
+        """
+        )
+        obj = list(mod.igetattr("a"))
+        self.assertEqual(len(obj), 1)
+        obj = obj[0]
+        self.assertIsInstance(obj, Instance)
+        self.assertNotIn("value", obj.instance_attrs)
+
     def test_augassign_attr(self):
         builder.parse(
             """
@@ -528,7 +574,7 @@ class BuilderTest(unittest.TestCase):
                 return 'None'
             """
         astroid = builder.parse(code)
-        none, nothing, chain = [ret.value for ret in astroid.body[0].body]
+        none, nothing, chain = (ret.value for ret in astroid.body[0].body)
         self.assertIsInstance(none, nodes.Const)
         self.assertIsNone(none.value)
         self.assertIsNone(nothing)

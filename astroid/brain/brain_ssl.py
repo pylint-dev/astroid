@@ -2,16 +2,14 @@
 # Copyright (c) 2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2019 Benjamin Elven <25181435+S3ntinelX@users.noreply.github.com>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """Astroid hooks for the ssl library."""
 
-from astroid import MANAGER, register_module_extender
-from astroid.builder import AstroidBuilder
-from astroid import nodes
-from astroid import parse
+from astroid import MANAGER, parse, register_module_extender
 
 
 def ssl_transform():

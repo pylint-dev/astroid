@@ -5,10 +5,11 @@
 # Copyright (c) 2020 Simon Hewitt <si@sjhewitt.co.uk>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 
 """
@@ -19,13 +20,7 @@ import builtins as builtins_mod
 
 from astroid import bases
 from astroid import context as contextmod
-from astroid import exceptions
-from astroid import manager
-from astroid import nodes
-from astroid import raw_building
-from astroid import scoped_nodes
-from astroid import util
-
+from astroid import exceptions, manager, nodes, raw_building, scoped_nodes, util
 
 BUILTINS = builtins_mod.__name__
 
@@ -156,7 +151,7 @@ def safe_infer(node, context=None):
     try:
         inferit = node.infer(context=context)
         value = next(inferit)
-    except exceptions.InferenceError:
+    except (exceptions.InferenceError, StopIteration):
         return None
     try:
         next(inferit)

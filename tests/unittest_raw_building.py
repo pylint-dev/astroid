@@ -7,21 +7,23 @@
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 import platform
 import unittest
 
 import _io
+
 from astroid.builder import AstroidBuilder
 from astroid.raw_building import (
     attach_dummy_node,
-    build_module,
     build_class,
-    build_function,
     build_from_import,
+    build_function,
+    build_module,
 )
 
 
@@ -50,6 +52,7 @@ class RawBuildingTC(unittest.TestCase):
 
     def test_build_function_args(self):
         args = ["myArgs1", "myArgs2"]
+        # pylint: disable=no-member
         node = build_function("MyFunction", args)
         self.assertEqual("myArgs1", node.args.args[0].name)
         self.assertEqual("myArgs2", node.args.args[1].name)
@@ -57,12 +60,13 @@ class RawBuildingTC(unittest.TestCase):
 
     def test_build_function_defaults(self):
         defaults = ["defaults1", "defaults2"]
+        # pylint: disable=no-member
         node = build_function(name="MyFunction", args=None, defaults=defaults)
         self.assertEqual(2, len(node.args.defaults))
 
     def test_build_function_posonlyargs(self):
         node = build_function(name="MyFunction", posonlyargs=["a", "b"])
-        self.assertEqual(2, len(node.args.posonlyargs))
+        self.assertEqual(2, len(node.args.posonlyargs))  # pylint: disable=no-member
 
     def test_build_from_import(self):
         names = ["exceptions, inference, inspector"]

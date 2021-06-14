@@ -4,9 +4,10 @@
 # Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2018 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 
 """
@@ -20,14 +21,15 @@ leads to an inferred FrozenSet:
 
 import builtins
 
-from astroid import bases
-from astroid import decorators
-from astroid import exceptions
-from astroid import MANAGER
-from astroid import node_classes
-from astroid import scoped_nodes
-from astroid import util
-
+from astroid import (
+    MANAGER,
+    bases,
+    decorators,
+    exceptions,
+    node_classes,
+    scoped_nodes,
+    util,
+)
 
 BUILTINS = builtins.__name__
 objectmodel = util.lazy_import("interpreter.objectmodel")

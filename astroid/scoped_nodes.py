@@ -24,10 +24,12 @@
 # Copyright (c) 2020 Tim Martin <tim@asymptotic.co.uk>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
+# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 
 """
@@ -37,22 +39,18 @@ Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
 
 import builtins
-import sys
 import io
 import itertools
-from typing import Optional, List
+import sys
+from typing import List, Optional
 
 from astroid import bases
 from astroid import context as contextmod
-from astroid import exceptions
 from astroid import decorators as decorators_mod
-from astroid.interpreter import objectmodel
-from astroid.interpreter import dunder_lookup
-from astroid import manager
-from astroid import mixins
-from astroid import node_classes
-from astroid import util
+from astroid import exceptions, manager, mixins, node_classes, util
+from astroid.interpreter import dunder_lookup, objectmodel
 
+PY39 = sys.version_info[:2] >= (3, 9)
 
 BUILTINS = builtins.__name__
 ITER_METHODS = ("__iter__", "__getitem__")
@@ -99,6 +97,42 @@ def _c3_merge(sequences, cls, context):
             if seq[0] == candidate:
                 del seq[0]
     return None
+
+
+def clean_typing_generic_mro(sequences: List[List["ClassDef"]]) -> None:
+    """A class can inherit from typing.Generic directly, as base,
+    and as base of bases. The merged MRO must however only contain the last entry.
+    To prepare for _c3_merge, remove some typing.Generic entries from
+    sequences if multiple are present.
+
+    This method will check if Generic is in inferred_bases and also
+    part of bases_mro. If true, remove it from inferred_bases
+    as well as its entry the bases_mro.
+
+    Format sequences: [[self]] + bases_mro + [inferred_bases]
+    """
+    bases_mro = sequences[1:-1]
+    inferred_bases = sequences[-1]
+    # Check if Generic is part of inferred_bases
+    for i, base in enumerate(inferred_bases):
+        if base.qname() == "typing.Generic":
+            position_in_inferred_bases = i
+            break
+    else:
+        return
+    # Check if also part of bases_mro
+    # Ignore entry for typing.Generic
+    for i, seq in enumerate(bases_mro):
+        if i == position_in_inferred_bases:
+            continue
+        if any(base.qname() == "typing.Generic" for base in seq):
+            break
+    else:
+        return
+    # Found multiple Generics in mro, remove entry from inferred_bases
+    # and the corresponding one from bases_mro
+    inferred_bases.pop(position_in_inferred_bases)
+    bases_mro.pop(position_in_inferred_bases)
 
 
 def clean_duplicates_mro(sequences, cls, context):
@@ -286,6 +320,9 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
         :returns: The nodes that define locals.
         :rtype: list(NodeNG)
         """
+        # pylint: disable=consider-using-dict-items
+        # It look like this class override items/keys/values,
+        # probably not worth the headache
         return [self[key] for key in self.keys()]
 
     def items(self):
@@ -471,6 +508,7 @@ class Module(LocalsDictNodeNG):
         if self.file_bytes is not None:
             return io.BytesIO(self.file_bytes)
         if self.file is not None:
+            # pylint: disable=consider-using-with
             stream = open(self.file, "rb")
             return stream
         return None
@@ -578,7 +616,7 @@ class Module(LocalsDictNodeNG):
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
         except exceptions.AttributeInferenceError as error:
             raise exceptions.InferenceError(
-                error.message, target=self, attribute=name, context=context
+                str(error), target=self, attribute=name, context=context
             ) from error
 
     def fully_defined(self):
@@ -727,9 +765,9 @@ class Module(LocalsDictNodeNG):
         if not isinstance(explicit, (node_classes.Tuple, node_classes.List)):
             return default
 
-        str_const = lambda node: (
-            isinstance(node, node_classes.Const) and isinstance(node.value, str)
-        )
+        def str_const(node):
+            return isinstance(node, node_classes.Const) and isinstance(node.value, str)
+
         for node in explicit.elts:
             if str_const(node):
                 inferred.append(node.value)
@@ -1453,7 +1491,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                             decorators.append(assign.value)
         return decorators
 
-    # pylint: disable=invalid-overridden-method
     @decorators_mod.cachedproperty
     def type(
         self,
@@ -1585,7 +1622,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
         except exceptions.AttributeInferenceError as error:
             raise exceptions.InferenceError(
-                error.message, target=self, attribute=name, context=context
+                str(error), target=self, attribute=name, context=context
             ) from error
 
     def is_method(self):
@@ -1629,11 +1666,12 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
         return self.type == "classmethod"
 
-    def is_abstract(self, pass_is_abstract=True):
+    def is_abstract(self, pass_is_abstract=True, any_raise_is_abstract=False):
         """Check if the method is abstract.
 
         A method is considered abstract if any of the following is true:
         * The only statement is 'raise NotImplementedError'
+        * The only statement is 'raise <SomeException>' and any_raise_is_abstract is True
         * The only statement is 'pass' and pass_is_abstract is True
         * The method is annotated with abc.astractproperty/abc.abstractmethod
 
@@ -1654,6 +1692,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         for child_node in self.body:
             if isinstance(child_node, node_classes.Raise):
+                if any_raise_is_abstract:
+                    return True
                 if child_node.raises_not_implemented():
                     return True
             return pass_is_abstract and isinstance(child_node, node_classes.Pass)
@@ -1712,8 +1752,11 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         first_return = next(returns, None)
         if not first_return:
-            if self.body and isinstance(self.body[-1], node_classes.Assert):
-                yield node_classes.Const(None)
+            if self.body:
+                if self.is_abstract(pass_is_abstract=True, any_raise_is_abstract=True):
+                    yield util.Uninferable
+                else:
+                    yield node_classes.Const(None)
                 return
 
             raise exceptions.InferenceError(
@@ -1895,7 +1938,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     # by a raw factories
 
     # a dictionary of class instances attributes
-    _astroid_fields = ("decorators", "bases", "body")  # name
+    _astroid_fields = ("decorators", "bases", "keywords", "body")  # name
 
     decorators = None
     """The decorators that are applied to this class.
@@ -2522,7 +2565,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         context = contextmod.copy_context(context)
         context.lookupname = name
 
-        metaclass = self.declared_metaclass(context=context)
+        metaclass = self.metaclass(context=context)
         try:
             attributes = self.getattr(name, context, class_context=class_context)
             # If we have more than one attribute, make sure that those starting from
@@ -2555,9 +2598,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                         yield from function.infer_call_result(
                             caller=self, context=context
                         )
-                    # If we have a metaclass, we're accessing this attribute through
-                    # the class itself, which means we can solve the property
-                    elif metaclass:
+                    # If we're in a class context, we need to determine if the property
+                    # was defined in the metaclass (a derived class must be a subclass of
+                    # the metaclass of all its bases), in which case we can resolve the
+                    # property. If not, i.e. the property is defined in some base class
+                    # instead, then we return the property object
+                    elif metaclass and function.parent.scope() is metaclass:
                         # Resolve a property as long as it is not accessed through
                         # the class itself.
                         yield from function.infer_call_result(
@@ -2573,7 +2619,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 yield util.Uninferable
             else:
                 raise exceptions.InferenceError(
-                    error.message, target=self, attribute=name, context=context
+                    str(error), target=self, attribute=name, context=context
                 ) from error
 
     def has_dynamic_getattr(self, context=None):
@@ -2617,7 +2663,22 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         try:
             methods = dunder_lookup.lookup(self, "__getitem__")
         except exceptions.AttributeInferenceError as exc:
-            raise exceptions.AstroidTypeError(node=self, context=context) from exc
+            if isinstance(self, ClassDef):
+                # subscripting a class definition may be
+                # achieved thanks to __class_getitem__ method
+                # which is a classmethod defined in the class
+                # that supports subscript and not in the metaclass
+                try:
+                    methods = self.getattr("__class_getitem__")
+                    # Here it is assumed that the __class_getitem__ node is
+                    # a FunctionDef. One possible improvement would be to deal
+                    # with more generic inference.
+                except exceptions.AttributeInferenceError:
+                    raise exceptions.AstroidTypeError(
+                        node=self, context=context
+                    ) from exc
+            else:
+                raise exceptions.AstroidTypeError(node=self, context=context) from exc
 
         method = methods[0]
 
@@ -2627,6 +2688,19 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         try:
             return next(method.infer_call_result(self, new_context))
+        except AttributeError:
+            # Starting with python3.9, builtin types list, dict etc...
+            # are subscriptable thanks to __class_getitem___ classmethod.
+            # However in such case the method is bound to an EmptyNode and
+            # EmptyNode doesn't have infer_call_result method yielding to
+            # AttributeError
+            if (
+                isinstance(method, node_classes.EmptyNode)
+                and self.name in ("list", "dict", "set", "tuple", "frozenset")
+                and PY39
+            ):
+                return self
+            raise
         except exceptions.InferenceError:
             return util.Uninferable
 
@@ -2736,7 +2810,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         return self._metaclass_hack
 
     def _islots(self):
-        """ Return an iterator with the inferred slots. """
+        """Return an iterator with the inferred slots."""
         if "__slots__" not in self.locals:
             return None
         for slots in self.igetattr("__slots__"):
@@ -2894,6 +2968,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         unmerged_mro = [[self]] + bases_mro + [inferred_bases]
         unmerged_mro = list(clean_duplicates_mro(unmerged_mro, self, context))
+        clean_typing_generic_mro(unmerged_mro)
         return _c3_merge(unmerged_mro, self, context)
 
     def mro(self, context=None) -> List["ClassDef"]:
@@ -2920,6 +2995,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             yield self.decorators
 
         yield from self.bases
+        if self.keywords is not None:
+            yield from self.keywords
         yield from self.body
 
     @decorators_mod.cached
