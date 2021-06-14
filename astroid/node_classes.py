@@ -4655,7 +4655,7 @@ class Match(Statement):
     <Match l.2 at 0x10c24e170>
     """
 
-    _astroid_fields = ("subject", "cases")
+    _astroid_fields: typing.Tuple[str, ...] = ("subject", "cases")
     subject: typing.Optional[NodeNG] = None
     cases: typing.Optional[typing.List["MatchCase"]] = None
 
@@ -4687,7 +4687,7 @@ class MatchCase(NodeNG):
     <MatchCase l.3 at 0x10c24e590>
     """
 
-    _astroid_fields = ("pattern", "guard", "body")
+    _astroid_fields: typing.Tuple[str, ...] = ("pattern", "guard", "body")
     pattern: typing.Optional["PatternTypes"] = None
     guard: typing.Optional[NodeNG] = None  # can actually be None
     body: typing.Optional[typing.List[NodeNG]] = None
@@ -4724,7 +4724,7 @@ class MatchValue(NodeNG):
     <MatchValue l.3 at 0x10c24e200>
     """
 
-    _astroid_fields = ("value",)
+    _astroid_fields: typing.Tuple[str, ...] = ("value",)
     value: typing.Optional[NodeNG] = None
 
     def postinit(self, *, value: NodeNG) -> None:
@@ -4755,7 +4755,7 @@ class MatchSingleton(mixins.NoChildrenMixin, NodeNG):
     <MatchSingleton l.7 at 0x10c229f90>
     """
 
-    _other_fields = ("value",)
+    _other_fields: typing.Tuple[str, ...] = ("value",)
 
     def __init__(
         self,
@@ -4785,7 +4785,7 @@ class MatchSequence(NodeNG):
     <MatchSequence l.5 at 0x10ca80b20>
     """
 
-    _astroid_fields = ("patterns",)
+    _astroid_fields: typing.Tuple[str, ...] = ("patterns",)
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
 
     def postinit(
@@ -4810,7 +4810,7 @@ class MatchMapping(mixins.AssignTypeMixin, NodeNG):
     <MatchMapping l.3 at 0x10c8a8850>
     """
 
-    _astroid_fields = ("keys", "patterns", "rest")
+    _astroid_fields: typing.Tuple[str, ...] = ("keys", "patterns", "rest")
     keys: typing.Optional[typing.List[NodeNG]] = None
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
     rest: typing.Optional[AssignName] = None
@@ -4851,8 +4851,8 @@ class MatchClass(NodeNG):
     <MatchClass l.5 at 0x10ca80880>
     """
 
-    _astroid_fields = ("cls", "patterns", "kwd_patterns")
-    _other_fields = ("kwd_attrs",)
+    _astroid_fields: typing.Tuple[str, ...] = ("cls", "patterns", "kwd_patterns")
+    _other_fields: typing.Tuple[str, ...] = ("kwd_attrs",)
     cls: typing.Optional[NodeNG] = None
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
     kwd_attrs: typing.Optional[typing.List[str]] = None
@@ -4892,7 +4892,7 @@ class MatchStar(mixins.AssignTypeMixin, NodeNG):
     <MatchStar l.3 at 0x10ca809a0>
     """
 
-    _astroid_fields = ("name",)
+    _astroid_fields: typing.Tuple[str, ...] = ("name",)
     name: typing.Optional[AssignName] = None
 
     def postinit(self, *, name: typing.Optional[AssignName] = None) -> None:
@@ -4927,7 +4927,7 @@ class MatchAs(mixins.AssignTypeMixin, NodeNG):
     <MatchAs l.9 at 0x10d09b880>
     """
 
-    _astroid_fields = ("pattern", "name")
+    _astroid_fields: typing.Tuple[str, ...] = ("pattern", "name")
     pattern: typing.Optional["PatternTypes"] = None
     name: typing.Optional[AssignName] = None
 
@@ -4961,7 +4961,7 @@ class MatchOr(NodeNG):
     <MatchOr l.3 at 0x10d0b0b50>
     """
 
-    _astroid_fields = ("patterns",)
+    _astroid_fields: typing.Tuple[str, ...] = ("patterns",)
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
 
     def postinit(
