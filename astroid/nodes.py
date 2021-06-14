@@ -61,7 +61,6 @@ from astroid.node_classes import (
     If,
     IfExp,
     Import,
-    ImportAlias,
     ImportFrom,
     Index,
     JoinedStr,
