@@ -12,6 +12,7 @@ Release Date: TBA
 
   Closes PyCQA/pylint#1932
   Closes PyCQA/pylint#2062
+  Closes PyCQA/pylint#2306
 
 * Removed ``Repr``, ``Exec``, and ``Print`` nodes as the ``ast`` nodes
   they represented have been removed with the change to Python 3
