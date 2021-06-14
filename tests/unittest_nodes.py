@@ -37,7 +37,7 @@ import unittest
 import pytest
 
 import astroid
-from astroid import bases, builder, Uninferable
+from astroid import Uninferable, bases, builder
 from astroid import context as contextmod
 from astroid import exceptions, node_classes, nodes, parse, test_utils, transforms, util
 
@@ -505,7 +505,7 @@ from ..cave import wine\n\n"""
         module = resources.build_file("data/module1abs/__init__.py", "data.module1abs")
         self.assertIn("sys", module.locals)
 
-    _pickle_names = ("dump",)# "dumps", "load", "loads")
+    _pickle_names = ("dump",)  # "dumps", "load", "loads")
 
     def test_conditional(self):
         module = resources.build_file("data/conditional_import/__init__.py")
@@ -516,7 +516,6 @@ from ..cave import wine\n\n"""
             some = list(module[name].infer(ctx))
             assert Uninferable not in some, name
 
-
     def test_conditional_import(self):
         module = resources.build_file("data/conditional.py")
         ctx = contextmod.InferenceContext()
@@ -525,6 +524,7 @@ from ..cave import wine\n\n"""
             ctx.lookupname = name
             some = list(module[name].infer(ctx))
             assert Uninferable not in some, name
+
 
 class CmpNodeTest(unittest.TestCase):
     def test_as_string(self):
