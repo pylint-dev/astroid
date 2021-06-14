@@ -464,6 +464,7 @@ class NodeNG:
                 yield from attr
             else:
                 yield attr
+        yield from ()
 
     def last_child(self):
         """An optimized version of list(get_children())[-1]
@@ -4668,12 +4669,6 @@ class Match(Statement):
         self.subject = subject
         self.cases = cases
 
-    def get_children(self) -> typing.Generator[NodeNG, None, None]:
-        if self.subject is not None:
-            yield self.subject
-        if self.cases is not None:
-            yield from self.cases
-
 
 class MatchCase(NodeNG):
     """Class representing a :class:`ast.match_case` node.
@@ -4703,14 +4698,6 @@ class MatchCase(NodeNG):
         self.guard = guard
         self.body = body
 
-    def get_children(self) -> typing.Generator[NodeNG, None, None]:
-        if self.pattern is not None:
-            yield self.pattern
-        if self.guard is not None:
-            yield self.guard
-        if self.body is not None:
-            yield from self.body
-
 
 class MatchValue(NodeNG):
     """Class representing a :class:`ast.MatchValue` node.
@@ -4730,12 +4717,8 @@ class MatchValue(NodeNG):
     def postinit(self, *, value: NodeNG) -> None:
         self.value = value
 
-    def get_children(self) -> typing.Generator[NodeNG, None, None]:
-        if self.value is not None:
-            yield self.value
 
-
-class MatchSingleton(mixins.NoChildrenMixin, NodeNG):
+class MatchSingleton(NodeNG):
     """Class representing a :class:`ast.MatchSingleton` node.
 
     >>> node = astroid.extract_node('''
@@ -4793,10 +4776,6 @@ class MatchSequence(NodeNG):
     ) -> None:
         self.patterns = patterns
 
-    def get_children(self) -> typing.Generator["PatternTypes", None, None]:
-        if self.patterns is not None:
-            yield from self.patterns
-
 
 class MatchMapping(mixins.AssignTypeMixin, NodeNG):
     """Class representing a :class:`ast.MatchMapping` node.
@@ -4825,14 +4804,6 @@ class MatchMapping(mixins.AssignTypeMixin, NodeNG):
         self.keys = keys
         self.patterns = patterns
         self.rest = rest
-
-    def get_children(self) -> typing.Generator[NodeNG, None, None]:
-        if self.keys is not None:
-            yield from self.keys
-        if self.patterns is not None:
-            yield from self.patterns
-        if self.rest is not None:
-            yield self.rest
 
 
 class MatchClass(NodeNG):
@@ -4871,14 +4842,6 @@ class MatchClass(NodeNG):
         self.kwd_attrs = kwd_attrs
         self.kwd_patterns = kwd_patterns
 
-    def get_children(self) -> typing.Generator[NodeNG, None, None]:
-        if self.cls is not None:
-            yield self.cls
-        if self.patterns is not None:
-            yield from self.patterns
-        if self.kwd_patterns is not None:
-            yield from self.kwd_patterns
-
 
 class MatchStar(mixins.AssignTypeMixin, NodeNG):
     """Class representing a :class:`ast.MatchStar` node.
@@ -4897,10 +4860,6 @@ class MatchStar(mixins.AssignTypeMixin, NodeNG):
 
     def postinit(self, *, name: typing.Optional[AssignName] = None) -> None:
         self.name = name
-
-    def get_children(self) -> typing.Generator[AssignName, None, None]:
-        if self.name is not None:
-            yield self.name
 
 
 class MatchAs(mixins.AssignTypeMixin, NodeNG):
@@ -4940,14 +4899,6 @@ class MatchAs(mixins.AssignTypeMixin, NodeNG):
         self.pattern = pattern
         self.name = name
 
-    def get_children(
-        self,
-    ) -> typing.Generator[typing.Union[AssignName, "PatternTypes"], None, None]:
-        if self.pattern is not None:
-            yield self.pattern
-        if self.name is not None:
-            yield self.name
-
 
 class MatchOr(NodeNG):
     """Class representing a :class:`ast.MatchOr` node.
@@ -4968,10 +4919,6 @@ class MatchOr(NodeNG):
         self, *, patterns: typing.Optional[typing.List["PatternTypes"]]
     ) -> None:
         self.patterns = patterns
-
-    def get_children(self) -> typing.Generator["PatternTypes", None, None]:
-        if self.patterns is not None:
-            yield from self.patterns
 
 
 PatternTypes = typing.Union[
