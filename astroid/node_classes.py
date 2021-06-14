@@ -4851,7 +4851,8 @@ class MatchClass(NodeNG):
     <MatchClass l.5 at 0x10ca80880>
     """
 
-    _astroid_fields = ("cls", "patterns", "kwd_attrs", "kwd_patterns")
+    _astroid_fields = ("cls", "patterns", "kwd_patterns")
+    _other_fields = ("kwd_attrs",)
     cls: typing.Optional[NodeNG] = None
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
     kwd_attrs: typing.Optional[typing.List[str]] = None
