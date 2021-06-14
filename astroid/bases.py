@@ -14,9 +14,10 @@
 # Copyright (c) 2018 Daniel Colascione <dancol@dancol.org>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """This module contains base classes and functions for the nodes and some
 inference utils.
@@ -24,10 +25,10 @@ inference utils.
 
 import builtins
 import collections
+import sys
 
 from astroid import context as contextmod
-from astroid import exceptions
-from astroid import util
+from astroid import exceptions, util
 
 objectmodel = util.lazy_import("interpreter.objectmodel")
 helpers = util.lazy_import("helpers")
@@ -35,11 +36,16 @@ BUILTINS = builtins.__name__
 manager = util.lazy_import("manager")
 MANAGER = manager.AstroidManager()
 
+PY310 = sys.version_info >= (3, 10)
+
 # TODO: check if needs special treatment
 BUILTINS = "builtins"
 BOOL_SPECIAL_METHOD = "__bool__"
 
 PROPERTIES = {BUILTINS + ".property", "abc.abstractproperty"}
+if PY310:
+    PROPERTIES.add("enum.property")
+
 # List of possible property names. We use this list in order
 # to see if a method is a property or not. This should be
 # pretty reliable and fast, the alternative being to check each
@@ -59,6 +65,7 @@ POSSIBLE_PROPERTIES = {
     "LazyProperty",
     "lazy",
     "cache_readonly",
+    "DynamicClassAttribute",
 }
 
 
@@ -107,7 +114,7 @@ class Proxy:
 
     def __getattr__(self, name):
         if name == "_proxied":
-            return getattr(self.__class__, "_proxied")
+            return self.__class__._proxied
         if name in self.__dict__:
             return self.__dict__[name]
         return getattr(self._proxied, name)
@@ -208,8 +215,9 @@ class BaseInstance(Proxy):
         if not context:
             context = contextmod.InferenceContext()
         try:
+            context.lookupname = name
             # avoid recursively inferring the same attr on the same class
-            if context.push((self._proxied, name)):
+            if context.push(self._proxied):
                 raise exceptions.InferenceError(
                     message="Cannot infer the same attribute again",
                     node=self,
@@ -221,7 +229,7 @@ class BaseInstance(Proxy):
             yield from _infer_stmts(
                 self._wrap_attr(get_attr, context), context, frame=self
             )
-        except exceptions.AttributeInferenceError as error:
+        except exceptions.AttributeInferenceError:
             try:
                 # fallback to class.igetattr since it has some logic to handle
                 # descriptors
@@ -317,9 +325,25 @@ class Instance(BaseInstance):
                 return True
         return result
 
-    # This is set in inference.py.
     def getitem(self, index, context=None):
-        pass
+        # TODO: Rewrap index to Const for this case
+        new_context = contextmod.bind_context_to_node(context, self)
+        if not context:
+            context = new_context
+        # Create a new CallContext for providing index as an argument.
+        new_context.callcontext = contextmod.CallContext(args=[index])
+        method = next(self.igetattr("__getitem__", context=context), None)
+        if not isinstance(method, BoundMethod):
+            raise exceptions.InferenceError(
+                "Could not find __getitem__ for {node!r}.", node=self, context=context
+            )
+        if len(method.args.arguments) != 2:  # (self, index)
+            raise exceptions.AstroidTypeError(
+                "__getitem__ for {node!r} does not have correct signature",
+                node=self,
+                context=context,
+            )
+        return next(method.infer_call_result(self, new_context))
 
 
 class UnboundMethod(Proxy):

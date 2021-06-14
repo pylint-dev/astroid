@@ -7,11 +7,10 @@
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 import sys
 
 import astroid
-
 
 PY39 = sys.version_info >= (3, 9)
 
@@ -68,7 +67,7 @@ def _deque_mock():
     if PY39:
         base_deque_class += """
         @classmethod
-        def __class_getitem__(self, item): pass"""
+        def __class_getitem__(self, item): return cls"""
     return base_deque_class
 
 
@@ -77,7 +76,53 @@ def _ordered_dict_mock():
     class OrderedDict(dict):
         def __reversed__(self): return self[::-1]
         def move_to_end(self, key, last=False): pass"""
+    if PY39:
+        base_ordered_dict_class += """
+        @classmethod
+        def __class_getitem__(cls, item): return cls"""
     return base_ordered_dict_class
 
 
 astroid.register_module_extender(astroid.MANAGER, "collections", _collections_transform)
+
+
+def _looks_like_subscriptable(node: astroid.nodes.ClassDef) -> bool:
+    """
+    Returns True if the node corresponds to a ClassDef of the Collections.abc module that
+    supports subscripting
+
+    :param node: ClassDef node
+    """
+    if node.qname().startswith("_collections") or node.qname().startswith(
+        "collections"
+    ):
+        try:
+            node.getattr("__class_getitem__")
+            return True
+        except astroid.AttributeInferenceError:
+            pass
+    return False
+
+
+CLASS_GET_ITEM_TEMPLATE = """
+@classmethod
+def __class_getitem__(cls, item):
+    return cls
+"""
+
+
+def easy_class_getitem_inference(node, context=None):
+    # Here __class_getitem__ exists but is quite a mess to infer thus
+    # put an easy inference tip
+    func_to_add = astroid.extract_node(CLASS_GET_ITEM_TEMPLATE)
+    node.locals["__class_getitem__"] = [func_to_add]
+
+
+if PY39:
+    # Starting with Python39 some objects of the collection module are subscriptable
+    # thanks to the __class_getitem__ method but the way it is implemented in
+    # _collection_abc makes it difficult to infer. (We would have to handle AssignName inference in the
+    # getitem method of the ClassDef class) Instead we put here a mock of the __class_getitem__ method
+    astroid.MANAGER.register_transform(
+        astroid.nodes.ClassDef, easy_class_getitem_inference, _looks_like_subscriptable
+    )

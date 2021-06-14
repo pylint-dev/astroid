@@ -5,7 +5,7 @@
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 import unittest
 
 try:
@@ -15,8 +15,7 @@ try:
 except ImportError:
     HAS_NUMPY = False
 
-from astroid import builder
-from astroid import nodes
+from astroid import builder, nodes
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")

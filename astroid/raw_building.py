@@ -17,7 +17,7 @@
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """this module contains a set of functions to create astroid trees from scratch
 (build_* functions) or from living object (object_build_* functions)
@@ -30,11 +30,7 @@ import sys
 import types
 import warnings
 
-from astroid import bases
-from astroid import manager
-from astroid import node_classes
-from astroid import nodes
-
+from astroid import bases, manager, node_classes, nodes
 
 MANAGER = manager.AstroidManager()
 # the keys of CONST_CLS eg python builtin types
@@ -421,8 +417,9 @@ class InspectBuilder:
 
 _CONST_PROXY = {}
 
-# TODO : find a nicer way to handle this situation;
+
 def _set_proxied(const):
+    # TODO : find a nicer way to handle this situation;
     return _CONST_PROXY[const.value.__class__]
 
 
@@ -433,7 +430,6 @@ def _astroid_bootstrapping():
     builder = InspectBuilder()
     astroid_builtin = builder.inspect_build(builtins)
 
-    # pylint: disable=redefined-outer-name
     for cls, node_cls in node_classes.CONST_CLS.items():
         if cls is TYPE_NONE:
             proxy = build_class("NoneType")
@@ -462,7 +458,6 @@ def _astroid_bootstrapping():
     builder.object_build(bases.Generator._proxied, types.GeneratorType)
 
     if hasattr(types, "AsyncGeneratorType"):
-        # pylint: disable=no-member; AsyncGeneratorType
         _AsyncGeneratorType = nodes.ClassDef(
             types.AsyncGeneratorType.__name__, types.AsyncGeneratorType.__doc__
         )

@@ -1,5 +1,5 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 """
 Astroid hook for the attrs library
 
@@ -9,7 +9,6 @@ for attrs classes
 
 import astroid
 from astroid import MANAGER
-
 
 ATTRIB_NAMES = frozenset(("attr.ib", "attrib", "attr.attrib"))
 ATTRS_NAMES = frozenset(("attr.s", "attrs", "attr.attrs", "attr.attributes"))

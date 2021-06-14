@@ -12,33 +12,32 @@
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """Astroid hooks for various builtins."""
 
 from functools import partial
-from textwrap import dedent
 
 from astroid import (
     MANAGER,
-    UseInferenceDefault,
-    AttributeInferenceError,
-    inference_tip,
-    InferenceError,
-    NameInferenceError,
     AstroidTypeError,
+    AttributeInferenceError,
+    InferenceError,
     MroError,
+    NameInferenceError,
+    UseInferenceDefault,
+    arguments,
+    helpers,
+    inference_tip,
+    nodes,
+    objects,
+    scoped_nodes,
+    util,
 )
-from astroid import arguments
 from astroid.builder import AstroidBuilder
-from astroid import helpers
-from astroid import nodes
-from astroid import objects
-from astroid import scoped_nodes
-from astroid import util
-
 
 OBJECT_DUNDER_NEW = "object.__new__"
 
@@ -153,6 +152,23 @@ _extend_builtins(
 
 
 def _builtin_filter_predicate(node, builtin_name):
+    if (
+        builtin_name == "type"
+        and node.root().name == "re"
+        and isinstance(node.func, nodes.Name)
+        and node.func.name == "type"
+        and isinstance(node.parent, nodes.Assign)
+        and len(node.parent.targets) == 1
+        and isinstance(node.parent.targets[0], nodes.AssignName)
+        and node.parent.targets[0].name in ("Pattern", "Match")
+    ):
+        # Handle re.Pattern and re.Match in brain_re
+        # Match these patterns from stdlib/re.py
+        # ```py
+        # Pattern = type(...)
+        # Match = type(...)
+        # ```
+        return False
     if isinstance(node.func, nodes.Name) and node.func.name == builtin_name:
         return True
     if isinstance(node.func, nodes.Attribute):
@@ -215,10 +231,12 @@ def _container_generic_inference(node, context, node_type, transform):
     return transformed
 
 
-def _container_generic_transform(arg, context, klass, iterables, build_elts):
+def _container_generic_transform(  # pylint: disable=inconsistent-return-statements
+    arg, context, klass, iterables, build_elts
+):
     if isinstance(arg, klass):
         return arg
-    elif isinstance(arg, iterables):
+    if isinstance(arg, iterables):
         if all(isinstance(elt, nodes.Const) for elt in arg.elts):
             elts = [elt.value for elt in arg.elts]
         else:
@@ -304,7 +322,9 @@ infer_frozenset = partial(
 
 
 def _get_elts(arg, context):
-    is_iterable = lambda n: isinstance(n, (nodes.List, nodes.Tuple, nodes.Set))
+    def is_iterable(n):
+        return isinstance(n, (nodes.List, nodes.Tuple, nodes.Set))
+
     try:
         inferred = next(arg.infer(context))
     except (InferenceError, NameInferenceError) as exc:
@@ -354,7 +374,7 @@ def infer_dict(node, context=None):
     if not args and not kwargs:
         # dict()
         return nodes.Dict()
-    elif kwargs and not args:
+    if kwargs and not args:
         # dict(a=1, b=2, c=4)
         items = [(nodes.Const(key), value) for key, value in kwargs]
     elif len(args) == 1 and kwargs:
@@ -366,7 +386,6 @@ def infer_dict(node, context=None):
         items = _get_elts(args[0], context)
     else:
         raise UseInferenceDefault()
-
     value = nodes.Dict(
         col_offset=node.col_offset, lineno=node.lineno, parent=node.parent
     )
@@ -400,7 +419,7 @@ def infer_super(node, context=None):
         raise UseInferenceDefault
 
     cls = scoped_nodes.get_wrapping_class(scope)
-    if not len(node.args):
+    if not node.args:
         mro_pointer = cls
         # In we are in a classmethod, the interpreter will fill
         # automatically the class as the second argument, not an instance.
@@ -860,15 +879,14 @@ def infer_dict_fromkeys(node, context=None):
 
         elements_with_value = [(element, default) for element in elements]
         return _build_dict_with_elements(elements_with_value)
-
-    elif isinstance(inferred_values, nodes.Const) and isinstance(
+    if isinstance(inferred_values, nodes.Const) and isinstance(
         inferred_values.value, (str, bytes)
     ):
         elements = [
             (nodes.Const(element), default) for element in inferred_values.value
         ]
         return _build_dict_with_elements(elements)
-    elif isinstance(inferred_values, nodes.Dict):
+    if isinstance(inferred_values, nodes.Dict):
         keys = inferred_values.itered()
         for key in keys:
             if not isinstance(key, accepted_iterable_elements):

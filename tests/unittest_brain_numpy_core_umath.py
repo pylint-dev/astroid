@@ -2,9 +2,10 @@
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 import unittest
 
 try:
@@ -14,9 +15,7 @@ try:
 except ImportError:
     HAS_NUMPY = False
 
-from astroid import builder
-from astroid import nodes, bases
-from astroid import util
+from astroid import bases, builder, nodes
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
@@ -222,9 +221,7 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
             with self.subTest(typ=func_):
                 inferred_values = list(self._inferred_numpy_func_call(func_))
                 self.assertTrue(
-                    len(inferred_values) == 1
-                    or len(inferred_values) == 2
-                    and inferred_values[-1].pytype() is util.Uninferable,
+                    len(inferred_values) == 1,
                     msg="Too much inferred values ({}) for {:s}".format(
                         inferred_values[-1].pytype(), func_
                     ),

@@ -19,27 +19,19 @@
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """this module contains a set of functions to handle python protocols for nodes
 where it makes sense.
 """
 
 import collections
+import itertools
 import operator as operator_mod
 
-import itertools
-
-from astroid import Store
-from astroid import arguments
-from astroid import bases
+from astroid import Store, arguments, bases
 from astroid import context as contextmod
-from astroid import exceptions
-from astroid import decorators
-from astroid import node_classes
-from astroid import helpers
-from astroid import nodes
-from astroid import util
+from astroid import decorators, exceptions, helpers, node_classes, nodes, util
 
 raw_building = util.lazy_import("raw_building")
 objects = util.lazy_import("objects")
@@ -611,7 +603,7 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
             A list of indices, where each index specifies what item to fetch from
             the inference results.
     """
-    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    # pylint: disable=too-many-locals,too-many-statements
     def _determine_starred_iteration_lookups(starred, target, lookups):
         # Determine the lookups for the rhs of the iteration
         itered = target.itered()

@@ -5,9 +5,11 @@
 # Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """this module contains exceptions used in the astroid library
 """
@@ -211,6 +213,10 @@ class AstroidIndexError(AstroidError):
 
 class AstroidTypeError(AstroidError):
     """Raised when a TypeError would be expected in Python code."""
+
+
+class AstroidValueError(AstroidError):
+    """Raised when a ValueError would be expected in Python code."""
 
 
 class InferenceOverwriteError(AstroidError):

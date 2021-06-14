@@ -4,13 +4,14 @@
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
-
-import warnings
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 import importlib
+import warnings
+
 import lazy_object_proxy
 
 
@@ -55,8 +56,7 @@ class Uninferable:
     __nonzero__ = __bool__
 
     def accept(self, visitor):
-        func = getattr(visitor, "visit_uninferable")
-        return func(self)
+        return visitor.visit_uninferable(self)
 
 
 class BadOperationMessage:
@@ -81,7 +81,6 @@ class BadUnaryOperationMessage(BadOperationMessage):
         return helpers.object_type
 
     def _object_type(self, obj):
-        # pylint: disable=not-callable; can't infer lazy_import
         objtype = self._object_type_helper(obj)
         if objtype is Uninferable:
             return None

@@ -5,9 +5,10 @@
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 hippo91 <guillaume.peillex@gmail.com>
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 import builtins
 import unittest
@@ -16,12 +17,7 @@ import xml
 import pytest
 
 import astroid
-from astroid import builder, util
-from astroid import exceptions
-from astroid import MANAGER
-from astroid import test_utils
-from astroid import objects
-
+from astroid import MANAGER, builder, exceptions, objects, test_utils, util
 
 BUILTINS = MANAGER.astroid_cache[builtins.__name__]
 
@@ -363,7 +359,6 @@ class FunctionModelTest(unittest.TestCase):
             with self.assertRaises(exceptions.InferenceError):
                 next(node.infer())
 
-    @pytest.mark.xfail(reason="Relying on path copy")
     def test_descriptor_error_regression(self):
         """Make sure the following code does
         node cause an exception"""

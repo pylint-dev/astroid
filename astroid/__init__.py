@@ -8,9 +8,11 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2019 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """Python Abstract Syntax Tree New Generation
 
@@ -40,10 +42,12 @@ Main modules are:
 import enum
 import itertools
 import os
-import sys
+from importlib import import_module
+from pathlib import Path
 
 import wrapt
 
+from .__pkginfo__ import __version__, version
 
 _Context = enum.Enum("Context", "Load Store Del")
 Load = _Context.Load
@@ -52,12 +56,8 @@ Del = _Context.Del
 del _Context
 
 
-# pylint: disable=wrong-import-order,wrong-import-position
-from .__pkginfo__ import version as __version__
-
 # WARNING: internal imports order matters !
-
-# pylint: disable=redefined-builtin
+# pylint: disable=wrong-import-order,wrong-import-position,redefined-builtin
 
 # make all exception classes accessible from astroid package
 from astroid.exceptions import *
@@ -159,11 +159,7 @@ def register_module_extender(manager, module_name, get_extension_mod):
 
 
 # load brain plugins
-BRAIN_MODULES_DIR = os.path.join(os.path.dirname(__file__), "brain")
-if BRAIN_MODULES_DIR not in sys.path:
-    # add it to the end of the list so user path take precedence
-    sys.path.append(BRAIN_MODULES_DIR)
-# load modules in this directory
+BRAIN_MODULES_DIR = Path(__file__).with_name("brain")
 for module in os.listdir(BRAIN_MODULES_DIR):
     if module.endswith(".py"):
-        __import__(module[:-3])
+        import_module(f"astroid.brain.{module[:-3]}")

@@ -12,14 +12,14 @@
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
-from textwrap import dedent
 import unittest
+from textwrap import dedent
 
 from astroid import nodes
-from astroid.node_classes import Assign, Expr, YieldFrom, Name, Const
 from astroid.builder import AstroidBuilder, extract_node
+from astroid.node_classes import Assign, Const, Expr, Name, YieldFrom
 from astroid.scoped_nodes import ClassDef, FunctionDef
 from astroid.test_utils import require_version
 

@@ -9,17 +9,15 @@
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """tests for the astroid variable lookup capabilities
 """
 import functools
 import unittest
 
-from astroid import builder
-from astroid import exceptions
-from astroid import nodes
-from astroid import scoped_nodes
+from astroid import builder, exceptions, nodes, scoped_nodes
+
 from . import resources
 
 

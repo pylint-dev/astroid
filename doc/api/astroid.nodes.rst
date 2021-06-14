@@ -42,7 +42,6 @@ Nodes
    Ellipsis
    EmptyNode
    ExceptHandler
-   Exec
    Expr
    ExtSlice
    For
@@ -60,13 +59,21 @@ Nodes
    Lambda
    List
    ListComp
+   Match
+   MatchAs
+   MatchCase
+   MatchClass
+   MatchMapping
+   MatchOr
+   MatchSequence
+   MatchSingleton
+   MatchStar
+   MatchValue
    Module
    Name
    Nonlocal
    Pass
-   Print
    Raise
-   Repr
    Return
    Set
    SetComp
@@ -145,8 +152,6 @@ Nodes
 
 .. autoclass:: ExceptHandler
 
-.. autoclass:: Exec
-
 .. autoclass:: Expr
 
 .. autoclass:: ExtSlice
@@ -181,6 +186,26 @@ Nodes
 
 .. autoclass:: ListComp
 
+.. autoclass:: Match
+
+.. autoclass:: MatchAs
+
+.. autoclass:: MatchCase
+
+.. autoclass:: MatchClass
+
+.. autoclass:: MatchMapping
+
+.. autoclass:: MatchOr
+
+.. autoclass:: MatchSequence
+
+.. autoclass:: MatchSingleton
+
+.. autoclass:: MatchStar
+
+.. autoclass:: MatchValue
+
 .. autoclass:: Module
 
 .. autoclass:: Name
@@ -189,11 +214,7 @@ Nodes
 
 .. autoclass:: Pass
 
-.. autoclass:: Print
-
 .. autoclass:: Raise
-
-.. autoclass:: Repr
 
 .. autoclass:: Return
 
