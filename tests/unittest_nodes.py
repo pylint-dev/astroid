@@ -1440,28 +1440,28 @@ class TestPatternMatching:
         assert isinstance(case.guard, nodes.Compare)
         assert isinstance(case.body[0], nodes.Pass)
 
-        pattern_as = case.pattern.pattern
-        assert isinstance(pattern_as, nodes.MatchSequence)
-        assert isinstance(pattern_as.patterns, list) and len(pattern_as.patterns) == 4
+        pattern_seq = case.pattern.pattern
+        assert isinstance(pattern_seq, nodes.MatchSequence)
+        assert isinstance(pattern_seq.patterns, list) and len(pattern_seq.patterns) == 4
         assert (
-            isinstance(pattern_as.patterns[0], nodes.MatchAs)
-            and isinstance(pattern_as.patterns[0].name, nodes.AssignName)
-            and pattern_as.patterns[0].name.name == "x"
-            and pattern_as.patterns[0].pattern is None
+            isinstance(pattern_seq.patterns[0], nodes.MatchAs)
+            and isinstance(pattern_seq.patterns[0].name, nodes.AssignName)
+            and pattern_seq.patterns[0].name.name == "x"
+            and pattern_seq.patterns[0].pattern is None
         )
         assert (
-            isinstance(pattern_as.patterns[1], nodes.MatchValue)
-            and isinstance(pattern_as.patterns[1].value, nodes.Const)
-            and pattern_as.patterns[1].value.value == 2
+            isinstance(pattern_seq.patterns[1], nodes.MatchValue)
+            and isinstance(pattern_seq.patterns[1].value, nodes.Const)
+            and pattern_seq.patterns[1].value.value == 2
         )
         assert (
-            isinstance(pattern_as.patterns[2], nodes.MatchAs)
-            and pattern_as.patterns[2].name is None
+            isinstance(pattern_seq.patterns[2], nodes.MatchAs)
+            and pattern_seq.patterns[2].name is None
         )
         assert (
-            isinstance(pattern_as.patterns[3], nodes.MatchStar)
-            and isinstance(pattern_as.patterns[3].name, nodes.AssignName)
-            and pattern_as.patterns[3].name.name == "rest"
+            isinstance(pattern_seq.patterns[3], nodes.MatchStar)
+            and isinstance(pattern_seq.patterns[3].name, nodes.AssignName)
+            and pattern_seq.patterns[3].name.name == "rest"
         )
 
     @staticmethod
