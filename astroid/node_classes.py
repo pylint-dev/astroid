@@ -40,6 +40,7 @@ import pprint
 import typing
 from functools import lru_cache
 from functools import singledispatch as _singledispatch
+from typing import Optional
 
 from astroid import as_string, bases
 from astroid import context as contextmod
@@ -4657,14 +4658,22 @@ class Match(Statement):
     """
 
     _astroid_fields: typing.Tuple[str, ...] = ("subject", "cases")
-    subject: typing.Optional[NodeNG] = None
-    cases: typing.Optional[typing.List["MatchCase"]] = None
+
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        self.subject: Optional[NodeNG] = None
+        self.cases: typing.List["MatchCase"] = []
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
         self,
         *,
-        subject: typing.Optional[NodeNG] = None,
-        cases: typing.Optional[typing.List["MatchCase"]] = None,
+        subject: NodeNG,
+        cases: typing.List["MatchCase"],
     ) -> None:
         self.subject = subject
         self.cases = cases
@@ -4683,16 +4692,19 @@ class MatchCase(NodeNG):
     """
 
     _astroid_fields: typing.Tuple[str, ...] = ("pattern", "guard", "body")
-    pattern: typing.Optional["PatternTypes"] = None
-    guard: typing.Optional[NodeNG] = None  # can actually be None
-    body: typing.Optional[typing.List[NodeNG]] = None
+
+    def __init__(self, *, parent: Optional[NodeNG] = None) -> None:
+        self.pattern: Optional["PatternTypes"] = None
+        self.guard: Optional[NodeNG] = None  # can actually be None
+        self.body: typing.List[NodeNG] = []
+        super().__init__(parent=parent)
 
     def postinit(
         self,
         *,
-        pattern: typing.Optional["PatternTypes"] = None,
-        guard: typing.Optional[NodeNG] = None,
-        body: typing.Optional[typing.List[NodeNG]] = None,
+        pattern: "PatternTypes",
+        guard: Optional[NodeNG],
+        body: typing.List[NodeNG],
     ) -> None:
         self.pattern = pattern
         self.guard = guard
@@ -4712,7 +4724,15 @@ class MatchValue(NodeNG):
     """
 
     _astroid_fields: typing.Tuple[str, ...] = ("value",)
-    value: typing.Optional[NodeNG] = None
+
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        self.value: Optional[NodeNG] = None
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(self, *, value: NodeNG) -> None:
         self.value = value
@@ -4742,14 +4762,14 @@ class MatchSingleton(NodeNG):
 
     def __init__(
         self,
-        lineno: int,
-        col_offset: int,
-        parent: NodeNG,
         *,
         value: Literal[True, False, None],
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
     ) -> None:
         self.value = value
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
 
 class MatchSequence(NodeNG):
@@ -4769,11 +4789,17 @@ class MatchSequence(NodeNG):
     """
 
     _astroid_fields: typing.Tuple[str, ...] = ("patterns",)
-    patterns: typing.Optional[typing.List["PatternTypes"]] = None
 
-    def postinit(
-        self, *, patterns: typing.Optional[typing.List["PatternTypes"]]
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
     ) -> None:
+        self.patterns: typing.List["PatternTypes"] = []
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(self, *, patterns: typing.List["PatternTypes"]) -> None:
         self.patterns = patterns
 
 
@@ -4790,16 +4816,24 @@ class MatchMapping(mixins.AssignTypeMixin, NodeNG):
     """
 
     _astroid_fields: typing.Tuple[str, ...] = ("keys", "patterns", "rest")
-    keys: typing.Optional[typing.List[NodeNG]] = None
-    patterns: typing.Optional[typing.List["PatternTypes"]] = None
-    rest: typing.Optional[AssignName] = None
+
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        self.keys: typing.List[NodeNG] = []
+        self.patterns: typing.List["PatternTypes"] = []
+        self.rest: Optional[AssignName] = None  # can actually be None
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
         self,
         *,
-        keys: typing.Optional[typing.List[NodeNG]] = None,
-        patterns: typing.Optional[typing.List["PatternTypes"]] = None,
-        rest: typing.Optional[AssignName] = None,
+        keys: typing.List[NodeNG],
+        patterns: typing.List["PatternTypes"],
+        rest: Optional[AssignName],
     ) -> None:
         self.keys = keys
         self.patterns = patterns
@@ -4824,18 +4858,26 @@ class MatchClass(NodeNG):
 
     _astroid_fields: typing.Tuple[str, ...] = ("cls", "patterns", "kwd_patterns")
     _other_fields: typing.Tuple[str, ...] = ("kwd_attrs",)
-    cls: typing.Optional[NodeNG] = None
-    patterns: typing.Optional[typing.List["PatternTypes"]] = None
-    kwd_attrs: typing.Optional[typing.List[str]] = None
-    kwd_patterns: typing.Optional[typing.List["PatternTypes"]] = None
+
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        self.cls: Optional[NodeNG] = None
+        self.patterns: typing.List["PatternTypes"] = []
+        self.kwd_attrs: typing.List[str] = []
+        self.kwd_patterns: typing.List["PatternTypes"] = []
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
         self,
         *,
-        cls: typing.Optional[NodeNG] = None,
-        patterns: typing.Optional[typing.List["PatternTypes"]] = None,
-        kwd_attrs: typing.Optional[typing.List[str]] = None,
-        kwd_patterns: typing.Optional[typing.List["PatternTypes"]] = None,
+        cls: NodeNG,
+        patterns: typing.List["PatternTypes"],
+        kwd_attrs: typing.List[str],
+        kwd_patterns: typing.List["PatternTypes"],
     ) -> None:
         self.cls = cls
         self.patterns = patterns
@@ -4856,9 +4898,17 @@ class MatchStar(mixins.AssignTypeMixin, NodeNG):
     """
 
     _astroid_fields: typing.Tuple[str, ...] = ("name",)
-    name: typing.Optional[AssignName] = None
 
-    def postinit(self, *, name: typing.Optional[AssignName] = None) -> None:
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        self.name: Optional[AssignName] = None  # can actually be None
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(self, *, name: Optional[AssignName]) -> None:
         self.name = name
 
 
@@ -4887,14 +4937,22 @@ class MatchAs(mixins.AssignTypeMixin, NodeNG):
     """
 
     _astroid_fields: typing.Tuple[str, ...] = ("pattern", "name")
-    pattern: typing.Optional["PatternTypes"] = None
-    name: typing.Optional[AssignName] = None
+
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        self.pattern: Optional["PatternTypes"] = None  # can actually be None
+        self.name: Optional[AssignName] = None  # can actually be None
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
         self,
         *,
-        pattern: typing.Optional["PatternTypes"] = None,
-        name: typing.Optional[AssignName] = None,
+        pattern: Optional["PatternTypes"],
+        name: Optional[AssignName],
     ) -> None:
         self.pattern = pattern
         self.name = name
@@ -4913,11 +4971,17 @@ class MatchOr(NodeNG):
     """
 
     _astroid_fields: typing.Tuple[str, ...] = ("patterns",)
-    patterns: typing.Optional[typing.List["PatternTypes"]] = None
 
-    def postinit(
-        self, *, patterns: typing.Optional[typing.List["PatternTypes"]]
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
     ) -> None:
+        self.patterns: typing.List["PatternTypes"] = []
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(self, *, patterns: typing.List["PatternTypes"]) -> None:
         self.patterns = patterns
 
 
