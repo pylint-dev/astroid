@@ -5,7 +5,7 @@ So, you want to release the `X.Y.Z` version of astroid ?
 ## Process
 
 1. Check if the dependencies of the package are correct
-2. Install the release dependencies `pip3 install pre-commit copyrite tbump`
+2. Install the release dependencies `pip3 install pre-commit tbump`
 3. Bump the version and release by using `tbump X.Y.Z --no-push`. During the commit
    pre-commit and pyupgrade should remove the `encode utf8` automatically
 4. Check the result and then push the tag.
