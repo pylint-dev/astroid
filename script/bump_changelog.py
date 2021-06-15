@@ -32,7 +32,12 @@ def main() -> None:
 
 def get_next_version(version: str) -> str:
     new_version = version.split(".")
-    new_version[2] = str(int(new_version[2]) + 1)
+    patch = new_version[2]
+    reminder = None
+    if "-" in patch:
+        patch, reminder = patch.split("-")
+    patch = str(int(patch) + 1)
+    new_version[2] = patch if reminder is None else f"{patch}-{reminder}"
     return ".".join(new_version)
 
 
