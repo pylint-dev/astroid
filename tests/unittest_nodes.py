@@ -1392,14 +1392,17 @@ class TestPatternMatching:
         assert node.subject.name == "status"
         assert isinstance(node.cases, list) and len(node.cases) == 4
         case0, case1, case2, case3 = node.cases
+        assert list(node.get_children()) == [node.subject, *node.cases]
 
         assert isinstance(case0.pattern, nodes.MatchValue)
         assert (
             isinstance(case0.pattern.value, astroid.Const)
             and case0.pattern.value.value == 200
         )
+        assert list(case0.pattern.get_children()) == [case0.pattern.value]
         assert case0.guard is None
         assert isinstance(case0.body[0], astroid.Pass)
+        assert list(case0.get_children()) == [case0.pattern, case0.body[0]]
 
         assert isinstance(case1.pattern, nodes.MatchOr)
         assert (
@@ -1411,13 +1414,16 @@ class TestPatternMatching:
             assert isinstance(match_value, nodes.MatchValue)
             assert isinstance(match_value.value, nodes.Const)
             assert match_value.value.value == (401, 402, 403)[i]
+        assert list(case1.pattern.get_children()) == case1.pattern.patterns
 
         assert isinstance(case2.pattern, nodes.MatchSingleton)
         assert case2.pattern.value is None
+        assert list(case2.pattern.get_children()) == []
 
         assert isinstance(case3.pattern, nodes.MatchAs)
         assert case3.pattern.name is None
         assert case3.pattern.pattern is None
+        assert list(case3.pattern.get_children()) == []
 
     @staticmethod
     def test_match_sequence():
@@ -1437,32 +1443,41 @@ class TestPatternMatching:
         assert isinstance(case.pattern, nodes.MatchAs)
         assert isinstance(case.pattern.name, nodes.AssignName)
         assert case.pattern.name.name == "y"
+        assert list(case.pattern.get_children()) == [
+            case.pattern.pattern,
+            case.pattern.name,
+        ]
         assert isinstance(case.guard, nodes.Compare)
         assert isinstance(case.body[0], nodes.Pass)
+        assert list(case.get_children()) == [case.pattern, case.guard, case.body[0]]
 
-        pattern_as = case.pattern.pattern
-        assert isinstance(pattern_as, nodes.MatchSequence)
-        assert isinstance(pattern_as.patterns, list) and len(pattern_as.patterns) == 4
+        pattern_seq = case.pattern.pattern
+        assert isinstance(pattern_seq, nodes.MatchSequence)
+        assert isinstance(pattern_seq.patterns, list) and len(pattern_seq.patterns) == 4
         assert (
-            isinstance(pattern_as.patterns[0], nodes.MatchAs)
-            and isinstance(pattern_as.patterns[0].name, nodes.AssignName)
-            and pattern_as.patterns[0].name.name == "x"
-            and pattern_as.patterns[0].pattern is None
+            isinstance(pattern_seq.patterns[0], nodes.MatchAs)
+            and isinstance(pattern_seq.patterns[0].name, nodes.AssignName)
+            and pattern_seq.patterns[0].name.name == "x"
+            and pattern_seq.patterns[0].pattern is None
         )
         assert (
-            isinstance(pattern_as.patterns[1], nodes.MatchValue)
-            and isinstance(pattern_as.patterns[1].value, nodes.Const)
-            and pattern_as.patterns[1].value.value == 2
+            isinstance(pattern_seq.patterns[1], nodes.MatchValue)
+            and isinstance(pattern_seq.patterns[1].value, nodes.Const)
+            and pattern_seq.patterns[1].value.value == 2
         )
         assert (
-            isinstance(pattern_as.patterns[2], nodes.MatchAs)
-            and pattern_as.patterns[2].name is None
+            isinstance(pattern_seq.patterns[2], nodes.MatchAs)
+            and pattern_seq.patterns[2].name is None
         )
         assert (
-            isinstance(pattern_as.patterns[3], nodes.MatchStar)
-            and isinstance(pattern_as.patterns[3].name, nodes.AssignName)
-            and pattern_as.patterns[3].name.name == "rest"
+            isinstance(pattern_seq.patterns[3], nodes.MatchStar)
+            and isinstance(pattern_seq.patterns[3].name, nodes.AssignName)
+            and pattern_seq.patterns[3].name.name == "rest"
         )
+        assert list(pattern_seq.patterns[3].get_children()) == [
+            pattern_seq.patterns[3].name
+        ]
+        assert list(pattern_seq.get_children()) == pattern_seq.patterns
 
     @staticmethod
     def test_match_mapping():
@@ -1499,6 +1514,10 @@ class TestPatternMatching:
                 assert pattern.name.name == "x"
             elif i == 1:
                 assert pattern.name is None
+        assert list(case0.pattern.get_children()) == [
+            *case0.pattern.keys,
+            *case0.pattern.patterns,
+        ]
 
         assert isinstance(case1.pattern, nodes.MatchMapping)
         assert isinstance(case1.pattern.rest, nodes.AssignName)
@@ -1508,6 +1527,7 @@ class TestPatternMatching:
             isinstance(case1.pattern.patterns, list)
             and len(case1.pattern.patterns) == 0
         )
+        assert list(case1.pattern.get_children()) == [case1.pattern.rest]
 
     @staticmethod
     def test_match_class():
@@ -1546,6 +1566,10 @@ class TestPatternMatching:
             and isinstance(match_as.name, nodes.AssignName)
             and match_as.name.name == "a"
         )
+        assert list(case0.pattern.get_children()) == [
+            case0.pattern.cls,
+            *case0.pattern.patterns,
+        ]
 
         assert isinstance(case1.pattern, nodes.MatchClass)
         assert isinstance(case1.pattern.cls, nodes.Name)
@@ -1576,6 +1600,10 @@ class TestPatternMatching:
             and isinstance(kwd_pattern.name, nodes.AssignName)
             and kwd_pattern.name.name == "b"
         )
+        assert list(case1.pattern.get_children()) == [
+            case1.pattern.cls,
+            *case1.pattern.kwd_patterns,
+        ]
 
 
 if __name__ == "__main__":

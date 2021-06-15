@@ -464,6 +464,7 @@ class NodeNG:
                 yield from attr
             else:
                 yield attr
+        yield from ()
 
     def last_child(self):
         """An optimized version of list(get_children())[-1]
@@ -4655,7 +4656,7 @@ class Match(Statement):
     <Match l.2 at 0x10c24e170>
     """
 
-    _astroid_fields = ("subject", "cases")
+    _astroid_fields: typing.Tuple[str, ...] = ("subject", "cases")
     subject: typing.Optional[NodeNG] = None
     cases: typing.Optional[typing.List["MatchCase"]] = None
 
@@ -4667,12 +4668,6 @@ class Match(Statement):
     ) -> None:
         self.subject = subject
         self.cases = cases
-
-    def get_children(self) -> typing.Generator[NodeNG, None, None]:
-        if self.subject is not None:
-            yield self.subject
-        if self.cases is not None:
-            yield from self.cases
 
 
 class MatchCase(NodeNG):
@@ -4687,7 +4682,7 @@ class MatchCase(NodeNG):
     <MatchCase l.3 at 0x10c24e590>
     """
 
-    _astroid_fields = ("pattern", "guard", "body")
+    _astroid_fields: typing.Tuple[str, ...] = ("pattern", "guard", "body")
     pattern: typing.Optional["PatternTypes"] = None
     guard: typing.Optional[NodeNG] = None  # can actually be None
     body: typing.Optional[typing.List[NodeNG]] = None
@@ -4703,14 +4698,6 @@ class MatchCase(NodeNG):
         self.guard = guard
         self.body = body
 
-    def get_children(self) -> typing.Generator[NodeNG, None, None]:
-        if self.pattern is not None:
-            yield self.pattern
-        if self.guard is not None:
-            yield self.guard
-        if self.body is not None:
-            yield from self.body
-
 
 class MatchValue(NodeNG):
     """Class representing a :class:`ast.MatchValue` node.
@@ -4724,18 +4711,14 @@ class MatchValue(NodeNG):
     <MatchValue l.3 at 0x10c24e200>
     """
 
-    _astroid_fields = ("value",)
+    _astroid_fields: typing.Tuple[str, ...] = ("value",)
     value: typing.Optional[NodeNG] = None
 
     def postinit(self, *, value: NodeNG) -> None:
         self.value = value
 
-    def get_children(self) -> typing.Generator[NodeNG, None, None]:
-        if self.value is not None:
-            yield self.value
 
-
-class MatchSingleton(mixins.NoChildrenMixin, NodeNG):
+class MatchSingleton(NodeNG):
     """Class representing a :class:`ast.MatchSingleton` node.
 
     >>> node = astroid.extract_node('''
@@ -4755,7 +4738,7 @@ class MatchSingleton(mixins.NoChildrenMixin, NodeNG):
     <MatchSingleton l.7 at 0x10c229f90>
     """
 
-    _other_fields = ("value",)
+    _other_fields: typing.Tuple[str, ...] = ("value",)
 
     def __init__(
         self,
@@ -4785,17 +4768,13 @@ class MatchSequence(NodeNG):
     <MatchSequence l.5 at 0x10ca80b20>
     """
 
-    _astroid_fields = ("patterns",)
+    _astroid_fields: typing.Tuple[str, ...] = ("patterns",)
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
 
     def postinit(
         self, *, patterns: typing.Optional[typing.List["PatternTypes"]]
     ) -> None:
         self.patterns = patterns
-
-    def get_children(self) -> typing.Generator["PatternTypes", None, None]:
-        if self.patterns is not None:
-            yield from self.patterns
 
 
 class MatchMapping(mixins.AssignTypeMixin, NodeNG):
@@ -4810,7 +4789,7 @@ class MatchMapping(mixins.AssignTypeMixin, NodeNG):
     <MatchMapping l.3 at 0x10c8a8850>
     """
 
-    _astroid_fields = ("keys", "patterns", "rest")
+    _astroid_fields: typing.Tuple[str, ...] = ("keys", "patterns", "rest")
     keys: typing.Optional[typing.List[NodeNG]] = None
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
     rest: typing.Optional[AssignName] = None
@@ -4825,14 +4804,6 @@ class MatchMapping(mixins.AssignTypeMixin, NodeNG):
         self.keys = keys
         self.patterns = patterns
         self.rest = rest
-
-    def get_children(self) -> typing.Generator[NodeNG, None, None]:
-        if self.keys is not None:
-            yield from self.keys
-        if self.patterns is not None:
-            yield from self.patterns
-        if self.rest is not None:
-            yield self.rest
 
 
 class MatchClass(NodeNG):
@@ -4851,7 +4822,8 @@ class MatchClass(NodeNG):
     <MatchClass l.5 at 0x10ca80880>
     """
 
-    _astroid_fields = ("cls", "patterns", "kwd_attrs", "kwd_patterns")
+    _astroid_fields: typing.Tuple[str, ...] = ("cls", "patterns", "kwd_patterns")
+    _other_fields: typing.Tuple[str, ...] = ("kwd_attrs",)
     cls: typing.Optional[NodeNG] = None
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
     kwd_attrs: typing.Optional[typing.List[str]] = None
@@ -4870,14 +4842,6 @@ class MatchClass(NodeNG):
         self.kwd_attrs = kwd_attrs
         self.kwd_patterns = kwd_patterns
 
-    def get_children(self) -> typing.Generator[NodeNG, None, None]:
-        if self.cls is not None:
-            yield self.cls
-        if self.patterns is not None:
-            yield from self.patterns
-        if self.kwd_patterns is not None:
-            yield from self.kwd_patterns
-
 
 class MatchStar(mixins.AssignTypeMixin, NodeNG):
     """Class representing a :class:`ast.MatchStar` node.
@@ -4891,15 +4855,11 @@ class MatchStar(mixins.AssignTypeMixin, NodeNG):
     <MatchStar l.3 at 0x10ca809a0>
     """
 
-    _astroid_fields = ("name",)
+    _astroid_fields: typing.Tuple[str, ...] = ("name",)
     name: typing.Optional[AssignName] = None
 
     def postinit(self, *, name: typing.Optional[AssignName] = None) -> None:
         self.name = name
-
-    def get_children(self) -> typing.Generator[AssignName, None, None]:
-        if self.name is not None:
-            yield self.name
 
 
 class MatchAs(mixins.AssignTypeMixin, NodeNG):
@@ -4926,7 +4886,7 @@ class MatchAs(mixins.AssignTypeMixin, NodeNG):
     <MatchAs l.9 at 0x10d09b880>
     """
 
-    _astroid_fields = ("pattern", "name")
+    _astroid_fields: typing.Tuple[str, ...] = ("pattern", "name")
     pattern: typing.Optional["PatternTypes"] = None
     name: typing.Optional[AssignName] = None
 
@@ -4938,14 +4898,6 @@ class MatchAs(mixins.AssignTypeMixin, NodeNG):
     ) -> None:
         self.pattern = pattern
         self.name = name
-
-    def get_children(
-        self,
-    ) -> typing.Generator[typing.Union[AssignName, "PatternTypes"], None, None]:
-        if self.pattern is not None:
-            yield self.pattern
-        if self.name is not None:
-            yield self.name
 
 
 class MatchOr(NodeNG):
@@ -4960,17 +4912,13 @@ class MatchOr(NodeNG):
     <MatchOr l.3 at 0x10d0b0b50>
     """
 
-    _astroid_fields = ("patterns",)
+    _astroid_fields: typing.Tuple[str, ...] = ("patterns",)
     patterns: typing.Optional[typing.List["PatternTypes"]] = None
 
     def postinit(
         self, *, patterns: typing.Optional[typing.List["PatternTypes"]]
     ) -> None:
         self.patterns = patterns
-
-    def get_children(self) -> typing.Generator["PatternTypes", None, None]:
-        if self.patterns is not None:
-            yield from self.patterns
 
 
 PatternTypes = typing.Union[
