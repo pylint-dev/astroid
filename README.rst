@@ -1,13 +1,6 @@
 Astroid
 =======
 
-.. image:: https://travis-ci.org/PyCQA/astroid.svg?branch=master
-    :target: https://travis-ci.org/PyCQA/astroid
-
-.. image:: https://ci.appveyor.com/api/projects/status/co3u42kunguhbh6l/branch/master?svg=true
-    :alt: AppVeyor Build Status
-    :target: https://ci.appveyor.com/project/PCManticore/astroid
-
 .. image:: https://coveralls.io/repos/github/PyCQA/astroid/badge.svg?branch=master
     :target: https://coveralls.io/github/PyCQA/astroid?branch=master
 

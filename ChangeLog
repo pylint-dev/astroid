@@ -6,6 +6,7 @@ What's New in astroid 2.6.0?
 ============================
 Release Date: TBA
 
+* Appveyor and travis are no longer used in the continuous integration
 
 * Update enum brain to improve inference of .name and .value dynamic class
   attributes
