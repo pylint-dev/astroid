@@ -290,7 +290,8 @@ class InspectBuilder:
     FunctionDef and ClassDef nodes and some others as guessed.
     """
 
-    def __init__(self):
+    def __init__(self, manager_instance=None):
+        self._manager = manager_instance or MANAGER
         self._done = {}
         self._module = None
 
@@ -309,7 +310,7 @@ class InspectBuilder:
             node = build_module(modname)
         node.file = node.path = os.path.abspath(path) if path else path
         node.name = modname
-        MANAGER.cache_module(node)
+        self._manager.cache_module(node)
         node.package = hasattr(module, "__path__")
         self._done = {}
         self.object_build(node, module)
