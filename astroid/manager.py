@@ -28,7 +28,8 @@ from various source and using a cache of built modules)
 import os
 import zipimport
 
-from astroid import exceptions, modutils, transforms
+from astroid import modutils, transforms
+from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec
 
 ZIP_IMPORT_EXTS = (".zip", ".egg", ".whl")
@@ -100,9 +101,7 @@ class AstroidManager:
             return AstroidBuilder(self).file_build(filepath, modname)
         if fallback and modname:
             return self.ast_from_module_name(modname)
-        raise exceptions.AstroidBuildingError(
-            "Unable to build an AST for {path}.", path=filepath
-        )
+        raise AstroidBuildingError("Unable to build an AST for {path}.", path=filepath)
 
     def ast_from_string(self, data, modname="", filepath=None):
         """Given some source code as a string, return its corresponding astroid object"""
@@ -163,7 +162,7 @@ class AstroidManager:
                 try:
                     module = modutils.load_module_from_name(modname)
                 except Exception as ex:
-                    raise exceptions.AstroidImportError(
+                    raise AstroidImportError(
                         "Loading {modname} failed with:\n{error}",
                         modname=modname,
                         path=found_spec.location,
@@ -171,7 +170,7 @@ class AstroidManager:
                 return self.ast_from_module(module, modname)
 
             elif found_spec.type == spec.ModuleType.PY_COMPILED:
-                raise exceptions.AstroidImportError(
+                raise AstroidImportError(
                     "Unable to load compiled module {modname}.",
                     modname=modname,
                     path=found_spec.location,
@@ -185,16 +184,16 @@ class AstroidManager:
                 return self._build_stub_module(modname)
 
             if found_spec.location is None:
-                raise exceptions.AstroidImportError(
+                raise AstroidImportError(
                     "Can't find a file for module {modname}.", modname=modname
                 )
 
             return self.ast_from_file(found_spec.location, modname, fallback=False)
-        except exceptions.AstroidBuildingError as e:
+        except AstroidBuildingError as e:
             for hook in self._failed_import_hooks:
                 try:
                     return hook(modname)
-                except exceptions.AstroidBuildingError:
+                except AstroidBuildingError:
                     pass
             raise e
         finally:
@@ -236,14 +235,14 @@ class AstroidManager:
                     modname.split("."), context_file=contextfile
                 )
             except ImportError as ex:
-                value = exceptions.AstroidImportError(
+                value = AstroidImportError(
                     "Failed to import module {modname} with error:\n{error}.",
                     modname=modname,
                     # we remove the traceback here to save on memory usage (since these exceptions are cached)
                     error=ex.with_traceback(None),
                 )
             self._mod_file_cache[(modname, contextfile)] = value
-        if isinstance(value, exceptions.AstroidBuildingError):
+        if isinstance(value, AstroidBuildingError):
             # we remove the traceback here to save on memory usage (since these exceptions are cached)
             raise value.with_traceback(None)
         return value
@@ -272,7 +271,7 @@ class AstroidManager:
             try:
                 modname = klass.__module__
             except AttributeError as exc:
-                raise exceptions.AstroidBuildingError(
+                raise AstroidBuildingError(
                     "Unable to get module for class {class_name}.",
                     cls=klass,
                     class_repr=safe_repr(klass),
@@ -290,13 +289,13 @@ class AstroidManager:
         try:
             modname = klass.__module__
         except AttributeError as exc:
-            raise exceptions.AstroidBuildingError(
+            raise AstroidBuildingError(
                 "Unable to get module for {class_repr}.",
                 cls=klass,
                 class_repr=safe_repr(klass),
             ) from exc
         except Exception as exc:
-            raise exceptions.AstroidImportError(
+            raise AstroidImportError(
                 "Unexpected error while retrieving module for {class_repr}:\n"
                 "{error}",
                 cls=klass,
@@ -305,13 +304,13 @@ class AstroidManager:
         try:
             name = klass.__name__
         except AttributeError as exc:
-            raise exceptions.AstroidBuildingError(
+            raise AstroidBuildingError(
                 "Unable to get name for {class_repr}:\n",
                 cls=klass,
                 class_repr=safe_repr(klass),
             ) from exc
         except Exception as exc:
-            raise exceptions.AstroidImportError(
+            raise AstroidImportError(
                 "Unexpected error while retrieving name for {class_repr}:\n" "{error}",
                 cls=klass,
                 class_repr=safe_repr(klass),

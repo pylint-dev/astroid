@@ -17,7 +17,8 @@ import xml
 import pytest
 
 import astroid
-from astroid import MANAGER, builder, exceptions, objects, test_utils, util
+from astroid import MANAGER, builder, objects, test_utils, util
+from astroid.exceptions import InferenceError
 
 BUILTINS = MANAGER.astroid_cache[builtins.__name__]
 
@@ -239,7 +240,7 @@ class ModuleModelTest(unittest.TestCase):
         sys.__path__ #@
         """
         )
-        with self.assertRaises(exceptions.InferenceError):
+        with self.assertRaises(InferenceError):
             next(ast_node.infer())
 
     def test_module_model(self):
@@ -356,7 +357,7 @@ class FunctionModelTest(unittest.TestCase):
         """
         )
         for node in ast_nodes:
-            with self.assertRaises(exceptions.InferenceError):
+            with self.assertRaises(InferenceError):
                 next(node.infer())
 
     def test_descriptor_error_regression(self):
@@ -548,7 +549,7 @@ class ExceptionModelTest(unittest.TestCase):
         self.assertIsInstance(tb, astroid.Instance)
         self.assertEqual(tb.name, "traceback")
 
-        with self.assertRaises(exceptions.InferenceError):
+        with self.assertRaises(InferenceError):
             next(ast_nodes[2].infer())
 
     def test_syntax_error(self):

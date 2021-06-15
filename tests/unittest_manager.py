@@ -29,7 +29,8 @@ import unittest
 import pkg_resources
 
 import astroid
-from astroid import exceptions, manager
+from astroid import manager
+from astroid.exceptions import AstroidBuildingError, AstroidImportError
 
 from . import resources
 
@@ -70,7 +71,7 @@ class AstroidManagerTest(
 
     def test_ast_from_file_name_astro_builder_exception(self):
         self.assertRaises(
-            exceptions.AstroidBuildingError, self.manager.ast_from_file, "unhandledName"
+            AstroidBuildingError, self.manager.ast_from_file, "unhandledName"
         )
 
     def test_ast_from_string(self):
@@ -102,7 +103,7 @@ class AstroidManagerTest(
 
     def test_ast_from_module_name_astro_builder_exception(self):
         self.assertRaises(
-            exceptions.AstroidBuildingError,
+            AstroidBuildingError,
             self.manager.ast_from_module_name,
             "unhandledModule",
         )
@@ -151,7 +152,7 @@ class AstroidManagerTest(
             submodule = next(module.igetattr("a"))
             value = next(submodule.igetattr("x"))
             self.assertIsInstance(value, astroid.Const)
-            with self.assertRaises(exceptions.AstroidImportError):
+            with self.assertRaises(AstroidImportError):
                 self.manager.ast_from_module_name("foogle.moogle")
         finally:
             del pkg_resources._namespace_packages["foogle"]
@@ -176,7 +177,7 @@ class AstroidManagerTest(
         site.addpackage(resources.RESOURCE_PATH, pth, [])
         pkg_resources._namespace_packages["foogle"] = []
         try:
-            with self.assertRaises(exceptions.AstroidImportError):
+            with self.assertRaises(AstroidImportError):
                 self.manager.ast_from_module_name("unittest.foogle.fax")
         finally:
             del pkg_resources._namespace_packages["foogle"]
@@ -235,7 +236,7 @@ class AstroidManagerTest(
     def test_file_from_module_name_astro_building_exception(self):
         """check if the method raises an exception with a wrong module name"""
         self.assertRaises(
-            exceptions.AstroidBuildingError,
+            AstroidBuildingError,
             self.manager.file_from_module_name,
             "unhandledModule",
             None,
@@ -276,22 +277,20 @@ class AstroidManagerTest(
 
     def test_ast_from_class_attr_error(self):
         """give a wrong class at the ast_from_class method"""
-        self.assertRaises(
-            exceptions.AstroidBuildingError, self.manager.ast_from_class, None
-        )
+        self.assertRaises(AstroidBuildingError, self.manager.ast_from_class, None)
 
     def testFailedImportHooks(self):
         def hook(modname):
             if modname == "foo.bar":
                 return unittest
 
-            raise exceptions.AstroidBuildingError()
+            raise AstroidBuildingError()
 
-        with self.assertRaises(exceptions.AstroidBuildingError):
+        with self.assertRaises(AstroidBuildingError):
             self.manager.ast_from_module_name("foo.bar")
         self.manager.register_failed_import_hook(hook)
         self.assertEqual(unittest, self.manager.ast_from_module_name("foo.bar"))
-        with self.assertRaises(exceptions.AstroidBuildingError):
+        with self.assertRaises(AstroidBuildingError):
             self.manager.ast_from_module_name("foo.bar.baz")
         del self.manager._failed_import_hooks[0]
 

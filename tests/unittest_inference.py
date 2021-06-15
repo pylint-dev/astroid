@@ -45,11 +45,17 @@ from unittest.mock import patch
 
 import pytest
 
-from astroid import InferenceError, Slice, arguments, builder
+from astroid import Slice, arguments, builder
 from astroid import decorators as decoratorsmod
-from astroid import exceptions, helpers, nodes, objects, test_utils, util
+from astroid import helpers, nodes, objects, test_utils, util
 from astroid.bases import BUILTINS, BoundMethod, Instance, UnboundMethod
 from astroid.builder import extract_node, parse
+from astroid.exceptions import (
+    AstroidTypeError,
+    AttributeInferenceError,
+    InferenceError,
+    NotFoundError,
+)
 from astroid.inference import infer_end as inference_infer_end
 from astroid.objects import ExceptionInstance
 
@@ -1695,7 +1701,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         ast = extract_node(code, __name__)
         expr = ast.func.expr
-        with pytest.raises(exceptions.InferenceError):
+        with pytest.raises(InferenceError):
             next(expr.infer())
 
     def test_tuple_builtin_inference(self):
@@ -3958,7 +3964,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         )
         inferred = next(ast_node.infer())
-        with self.assertRaises(exceptions.NotFoundError):
+        with self.assertRaises(NotFoundError):
             inferred.getattr("teta")
         inferred.getattr("a")
 
@@ -4033,7 +4039,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        with self.assertRaises(exceptions.AstroidTypeError):
+        with self.assertRaises(AstroidTypeError):
             inferred.getitem(nodes.Const("4"))
 
     def test_infer_arg_called_type_is_uninferable(self):
@@ -5379,7 +5385,7 @@ def test_cannot_getattr_ann_assigns():
     """
     )
     inferred = next(node.infer())
-    with pytest.raises(exceptions.AttributeInferenceError):
+    with pytest.raises(AttributeInferenceError):
         inferred.getattr("ann")
 
     # But if it had a value, then it would be okay.
@@ -5972,10 +5978,10 @@ def test_getattr_fails_on_empty_values():
     """
     node = extract_node(code)
     inferred = next(node.infer())
-    with pytest.raises(exceptions.InferenceError):
+    with pytest.raises(InferenceError):
         next(inferred.igetattr(""))
 
-    with pytest.raises(exceptions.AttributeInferenceError):
+    with pytest.raises(AttributeInferenceError):
         inferred.getattr("")
 
 

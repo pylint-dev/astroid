@@ -44,7 +44,15 @@ from typing import ClassVar, Optional
 
 from astroid import as_string, bases
 from astroid import context as contextmod
-from astroid import decorators, exceptions, manager, mixins, util
+from astroid import decorators, manager, mixins, util
+from astroid.exceptions import (
+    AstroidError,
+    AstroidIndexError,
+    AstroidTypeError,
+    InferenceError,
+    NoDefault,
+    UseInferenceDefault,
+)
 
 try:
     from typing import Literal
@@ -181,7 +189,7 @@ def _slice_value(index, context=None):
         # we'll stop at the first possible value.
         try:
             inferred = next(index.infer(context=context))
-        except exceptions.InferenceError:
+        except InferenceError:
             pass
         else:
             if isinstance(inferred, Const):
@@ -201,7 +209,7 @@ def _infer_slice(node, context=None):
     if all(elem is not _SLICE_SENTINEL for elem in (lower, upper, step)):
         return slice(lower, upper, step)
 
-    raise exceptions.AstroidTypeError(
+    raise AstroidTypeError(
         message="Could not infer slice used in subscript",
         node=node,
         index=node.parent,
@@ -221,18 +229,18 @@ def _container_getitem(instance, elts, index, context=None):
         if isinstance(index, Const):
             return elts[index.value]
     except IndexError as exc:
-        raise exceptions.AstroidIndexError(
+        raise AstroidIndexError(
             message="Index {index!s} out of range",
             node=instance,
             index=index,
             context=context,
         ) from exc
     except TypeError as exc:
-        raise exceptions.AstroidTypeError(
+        raise AstroidTypeError(
             message="Type error {error!r}", node=instance, index=index, context=context
         ) from exc
 
-    raise exceptions.AstroidTypeError("Could not use %s as subscript index" % index)
+    raise AstroidTypeError("Could not use %s as subscript index" % index)
 
 
 OP_PRECEDENCE = {
@@ -362,7 +370,7 @@ class NodeNG:
                     context.nodes_inferred += len(results)
                 yield from results
                 return
-            except exceptions.UseInferenceDefault:
+            except UseInferenceDefault:
                 pass
 
         if not context:
@@ -565,7 +573,7 @@ class NodeNG:
                 return node_or_sequence
 
         msg = "Could not find %s in %s's children"
-        raise exceptions.AstroidError(msg % (repr(child), repr(self)))
+        raise AstroidError(msg % (repr(child), repr(self)))
 
     def locate_child(self, child):
         """Find the field of this node that contains the given child.
@@ -591,7 +599,7 @@ class NodeNG:
             ):
                 return field, node_or_sequence
         msg = "Could not find %s in %s's children"
-        raise exceptions.AstroidError(msg % (repr(child), repr(self)))
+        raise AstroidError(msg % (repr(child), repr(self)))
 
     # FIXME : should we merge child_sequence and locate_child ? locate_child
     # is only used in are_exclusive, child_sequence one time in pylint.
@@ -739,7 +747,7 @@ class NodeNG:
     def _infer(self, context=None):
         """we don't know how to resolve a statement by default"""
         # this method is overridden by most concrete classes
-        raise exceptions.InferenceError(
+        raise InferenceError(
             "No inference function for {node!r}.", node=self, context=context
         )
 
@@ -1723,7 +1731,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         index = _find_arg(argname, self.kwonlyargs)[0]
         if index is not None and self.kw_defaults[index] is not None:
             return self.kw_defaults[index]
-        raise exceptions.NoDefault(func=self.parent, name=argname)
+        raise NoDefault(func=self.parent, name=argname)
 
     def is_argument(self, name):
         """Check if the given name is defined in the arguments.
@@ -2125,7 +2133,7 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
                 for result in results
                 if isinstance(result, util.BadBinaryOperationMessage)
             ]
-        except exceptions.InferenceError:
+        except InferenceError:
             return []
 
     def get_children(self):
@@ -2216,7 +2224,7 @@ class BinOp(NodeNG):
                 for result in results
                 if isinstance(result, util.BadBinaryOperationMessage)
             ]
-        except exceptions.InferenceError:
+        except InferenceError:
             return []
 
     def get_children(self):
@@ -2593,7 +2601,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
             index_value = _infer_slice(index, context=context)
 
         else:
-            raise exceptions.AstroidTypeError(
+            raise AstroidTypeError(
                 f"Could not use type {type(index)} as subscript index"
             )
 
@@ -2601,18 +2609,18 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
             if isinstance(self.value, (str, bytes)):
                 return Const(self.value[index_value])
         except IndexError as exc:
-            raise exceptions.AstroidIndexError(
+            raise AstroidIndexError(
                 message="Index {index!r} out of range",
                 node=self,
                 index=index,
                 context=context,
             ) from exc
         except TypeError as exc:
-            raise exceptions.AstroidTypeError(
+            raise AstroidTypeError(
                 message="Type error {error!r}", node=self, index=index, context=context
             ) from exc
 
-        raise exceptions.AstroidTypeError(f"{self!r} (value={self.value})")
+        raise AstroidTypeError(f"{self!r} (value={self.value})")
 
     def has_dynamic_getattr(self):
         """Check if the node has a custom __getattr__ or __getattribute__.
@@ -2906,7 +2914,7 @@ class Dict(NodeNG, bases.Instance):
             if isinstance(key, DictUnpack):
                 try:
                     return value.getitem(index, context)
-                except (exceptions.AstroidTypeError, exceptions.AstroidIndexError):
+                except (AstroidTypeError, AstroidIndexError):
                     continue
             for inferredkey in key.infer(context):
                 if inferredkey is util.Uninferable:
@@ -2915,7 +2923,7 @@ class Dict(NodeNG, bases.Instance):
                     if inferredkey.value == index.value:
                         return value
 
-        raise exceptions.AstroidIndexError(index)
+        raise AstroidIndexError(index)
 
     def bool_value(self, context=None):
         """Determine the boolean value of this node.
@@ -3052,7 +3060,7 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
         return self.lineno
 
     def catch(self, exceptions):  # pylint: disable=redefined-outer-name
-        """Check if this node handles any of the given exceptions.
+        """Check if this node handles any of the given
 
         If ``exceptions`` is empty, this will default to ``True``.
 
@@ -4273,7 +4281,7 @@ class UnaryOp(NodeNG):
                 for result in results
                 if isinstance(result, util.BadUnaryOperationMessage)
             ]
-        except exceptions.InferenceError:
+        except InferenceError:
             return []
 
     def get_children(self):

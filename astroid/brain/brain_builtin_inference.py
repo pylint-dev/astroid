@@ -23,12 +23,6 @@ from functools import partial
 
 from astroid import (
     MANAGER,
-    AstroidTypeError,
-    AttributeInferenceError,
-    InferenceError,
-    MroError,
-    NameInferenceError,
-    UseInferenceDefault,
     arguments,
     helpers,
     inference_tip,
@@ -38,6 +32,14 @@ from astroid import (
     util,
 )
 from astroid.builder import AstroidBuilder
+from astroid.exceptions import (
+    AstroidTypeError,
+    AttributeInferenceError,
+    InferenceError,
+    MroError,
+    NameInferenceError,
+    UseInferenceDefault,
+)
 
 OBJECT_DUNDER_NEW = "object.__new__"
 

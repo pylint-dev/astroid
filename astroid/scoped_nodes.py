@@ -47,7 +47,17 @@ from typing import List, Optional
 from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators as decorators_mod
-from astroid import exceptions, manager, mixins, node_classes, util
+from astroid import manager, mixins, node_classes, util
+from astroid.exceptions import (
+    AstroidBuildingError,
+    AstroidTypeError,
+    AttributeInferenceError,
+    DuplicateBasesError,
+    InconsistentMroError,
+    InferenceError,
+    MroError,
+    TooManyLevelsError,
+)
 from astroid.interpreter import dunder_lookup, objectmodel
 
 PY39 = sys.version_info[:2] >= (3, 9)
@@ -83,7 +93,7 @@ def _c3_merge(sequences, cls, context):
         if not candidate:
             # Show all the remaining bases, which were considered as
             # candidates for the next mro sequence.
-            raise exceptions.InconsistentMroError(
+            raise InconsistentMroError(
                 message="Cannot create a consistent method resolution order "
                 "for MROs {mros} of class {cls!r}.",
                 mros=sequences,
@@ -142,7 +152,7 @@ def clean_duplicates_mro(sequences, cls, context):
         ]
         last_index = dict(map(reversed, enumerate(names)))
         if names and names[0] is not None and last_index[names[0]] != 0:
-            raise exceptions.DuplicateBasesError(
+            raise DuplicateBasesError(
                 message="Duplicates found in MROs {mros} for {cls!r}.",
                 mros=sequences,
                 cls=cls,
@@ -552,7 +562,7 @@ class Module(LocalsDictNodeNG):
         if name in self.scope_attrs and name not in self.locals:
             try:
                 return self, self.getattr(name)
-            except exceptions.AttributeInferenceError:
+            except AttributeInferenceError:
                 return self, ()
         return self._scope_lookup(node, name, offset)
 
@@ -574,9 +584,7 @@ class Module(LocalsDictNodeNG):
 
     def getattr(self, name, context=None, ignore_locals=False):
         if not name:
-            raise exceptions.AttributeInferenceError(
-                target=self, attribute=name, context=context
-            )
+            raise AttributeInferenceError(target=self, attribute=name, context=context)
 
         result = []
         name_in_locals = name in self.locals
@@ -588,16 +596,14 @@ class Module(LocalsDictNodeNG):
         elif self.package:
             try:
                 result = [self.import_module(name, relative_only=True)]
-            except (exceptions.AstroidBuildingError, SyntaxError) as exc:
-                raise exceptions.AttributeInferenceError(
+            except (AstroidBuildingError, SyntaxError) as exc:
+                raise AttributeInferenceError(
                     target=self, attribute=name, context=context
                 ) from exc
         result = [n for n in result if not isinstance(n, node_classes.DelName)]
         if result:
             return result
-        raise exceptions.AttributeInferenceError(
-            target=self, attribute=name, context=context
-        )
+        raise AttributeInferenceError(target=self, attribute=name, context=context)
 
     def igetattr(self, name, context=None):
         """Infer the possible values of the given variable.
@@ -614,8 +620,8 @@ class Module(LocalsDictNodeNG):
         context.lookupname = name
         try:
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
-        except exceptions.AttributeInferenceError as error:
-            raise exceptions.InferenceError(
+        except AttributeInferenceError as error:
+            raise InferenceError(
                 str(error), target=self, attribute=name, context=context
             ) from error
 
@@ -683,7 +689,7 @@ class Module(LocalsDictNodeNG):
 
         try:
             return MANAGER.ast_from_module_name(absmodname)
-        except exceptions.AstroidBuildingError:
+        except AstroidBuildingError:
             # we only want to import a sub module or package of this module,
             # skip here
             if relative_only:
@@ -716,7 +722,7 @@ class Module(LocalsDictNodeNG):
             if self.package:
                 level = level - 1
             if level and self.name.count(".") < level:
-                raise exceptions.TooManyLevelsError(level=level, name=self.name)
+                raise TooManyLevelsError(level=level, name=self.name)
 
             package_name = self.name.rsplit(".", level)[0]
         elif self.package:
@@ -749,7 +755,7 @@ class Module(LocalsDictNodeNG):
 
         try:
             explicit = next(all_values.assigned_stmts())
-        except exceptions.InferenceError:
+        except InferenceError:
             return default
         except AttributeError:
             # not an assignment node
@@ -760,7 +766,7 @@ class Module(LocalsDictNodeNG):
         inferred = []
         try:
             explicit = next(explicit.infer())
-        except exceptions.InferenceError:
+        except InferenceError:
             return default
         if not isinstance(explicit, (node_classes.Tuple, node_classes.List)):
             return default
@@ -774,7 +780,7 @@ class Module(LocalsDictNodeNG):
             else:
                 try:
                     inferred_node = next(node.infer())
-                except exceptions.InferenceError:
+                except InferenceError:
                     continue
                 if str_const(inferred_node):
                     inferred.append(inferred_node.value)
@@ -1118,7 +1124,7 @@ def _infer_decorator_callchain(node):
         return None
     try:
         result = next(node.infer_call_result(node.parent))
-    except exceptions.InferenceError:
+    except InferenceError:
         return None
     if isinstance(result, bases.Instance):
         result = result._proxied
@@ -1537,7 +1543,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 #
                 try:
                     current = next(node.func.infer())
-                except exceptions.InferenceError:
+                except InferenceError:
                     continue
                 _type = _infer_decorator_callchain(current)
                 if _type is not None:
@@ -1559,7 +1565,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                             return "classmethod"
                         if ancestor.is_subtype_of("%s.staticmethod" % BUILTINS):
                             return "staticmethod"
-            except exceptions.InferenceError:
+            except InferenceError:
                 pass
         return type_name
 
@@ -1603,9 +1609,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         done by an Instance proxy at inference time.
         """
         if not name:
-            raise exceptions.AttributeInferenceError(
-                target=self, attribute=name, context=context
-            )
+            raise AttributeInferenceError(target=self, attribute=name, context=context)
 
         found_attrs = []
         if name in self.instance_attrs:
@@ -1614,14 +1618,14 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             found_attrs.append(self.special_attributes.lookup(name))
         if found_attrs:
             return found_attrs
-        raise exceptions.AttributeInferenceError(target=self, attribute=name)
+        raise AttributeInferenceError(target=self, attribute=name)
 
     def igetattr(self, name, context=None):
         """Inferred getattr, which returns an iterator of inferred statements."""
         try:
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
-        except exceptions.AttributeInferenceError as error:
-            raise exceptions.InferenceError(
+        except AttributeInferenceError as error:
+            raise InferenceError(
                 str(error), target=self, attribute=name, context=context
             ) from error
 
@@ -1653,7 +1657,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             try:
                 for infnode in decnode.infer(context=context):
                     result.add(infnode.qname())
-            except exceptions.InferenceError:
+            except InferenceError:
                 continue
         return result
 
@@ -1682,7 +1686,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             for node in self.decorators.nodes:
                 try:
                     inferred = next(node.infer())
-                except exceptions.InferenceError:
+                except InferenceError:
                     continue
                 if inferred and inferred.qname() in (
                     "abc.abstractproperty",
@@ -1759,9 +1763,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                     yield node_classes.Const(None)
                 return
 
-            raise exceptions.InferenceError(
-                "The function does not have any return statements"
-            )
+            raise InferenceError("The function does not have any return statements")
 
         for returnnode in itertools.chain((first_return,), returns):
             if returnnode.value is None:
@@ -1769,7 +1771,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             else:
                 try:
                     yield from returnnode.value.infer(context)
-                except exceptions.InferenceError:
+                except InferenceError:
                     yield util.Uninferable
 
     def bool_value(self, context=None):
@@ -1864,7 +1866,7 @@ def _is_metaclass(klass, seen=None):
                     return True
                 if _is_metaclass(baseobj, seen):
                     return True
-        except exceptions.InferenceError:
+        except InferenceError:
             continue
     return False
 
@@ -2199,7 +2201,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # Get the members of the class
         try:
             members = next(caller.args[2].infer(context))
-        except exceptions.InferenceError:
+        except InferenceError:
             members = None
 
         if members and isinstance(members, node_classes.Dict):
@@ -2222,7 +2224,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             metaclass = self.metaclass(context=context)
             if metaclass is not None:
                 dunder_call = next(metaclass.igetattr("__call__", context))
-        except exceptions.AttributeInferenceError:
+        except AttributeInferenceError:
             pass
 
         if dunder_call and dunder_call.qname() != "builtins.type.__call__":
@@ -2336,7 +2338,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                                 continue
                             yielded.add(grandpa)
                             yield grandpa
-                except exceptions.InferenceError:
+                except InferenceError:
                     continue
 
     def local_attr_ancestors(self, name, context=None):
@@ -2352,7 +2354,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # attribute being looked up just as Python does it.
         try:
             ancestors = self.mro(context)[1:]
-        except exceptions.MroError:
+        except MroError:
             # Fallback to use ancestors, we can't determine
             # a sane MRO.
             ancestors = self.ancestors(context=context)
@@ -2406,9 +2408,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         result = [n for n in result if not isinstance(n, node_classes.DelAttr)]
         if result:
             return result
-        raise exceptions.AttributeInferenceError(
-            target=self, attribute=name, context=context
-        )
+        raise AttributeInferenceError(target=self, attribute=name, context=context)
 
     def instance_attr(self, name, context=None):
         """Get the list of nodes associated to the given attribute name.
@@ -2430,9 +2430,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         values = [n for n in values if not isinstance(n, node_classes.DelAttr)]
         if values:
             return values
-        raise exceptions.AttributeInferenceError(
-            target=self, attribute=name, context=context
-        )
+        raise AttributeInferenceError(target=self, attribute=name, context=context)
 
     def instantiate_class(self):
         """Get an :class:`Instance` of the :class:`ClassDef` node.
@@ -2445,7 +2443,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             if any(cls.name in EXCEPTION_BASE_CLASSES for cls in self.mro()):
                 # Subclasses of exceptions can be exception instances
                 return objects.ExceptionInstance(self)
-        except exceptions.MroError:
+        except MroError:
             pass
         return bases.Instance(self)
 
@@ -2476,9 +2474,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :raises AttributeInferenceError: If the attribute cannot be inferred.
         """
         if not name:
-            raise exceptions.AttributeInferenceError(
-                target=self, attribute=name, context=context
-            )
+            raise AttributeInferenceError(target=self, attribute=name, context=context)
 
         values = self.locals.get(name, [])
         if name in self.special_attributes and class_context and not values:
@@ -2498,16 +2494,14 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             values += self._metaclass_lookup_attribute(name, context)
 
         if not values:
-            raise exceptions.AttributeInferenceError(
-                target=self, attribute=name, context=context
-            )
+            raise AttributeInferenceError(target=self, attribute=name, context=context)
 
         # Look for AnnAssigns, which are not attributes in the purest sense.
         for value in values:
             if isinstance(value, node_classes.AssignName):
                 stmt = value.statement()
                 if isinstance(stmt, node_classes.AnnAssign) and stmt.value is None:
-                    raise exceptions.AttributeInferenceError(
+                    raise AttributeInferenceError(
                         target=self, attribute=name, context=context
                     )
         return values
@@ -2527,7 +2521,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     def _get_attribute_from_metaclass(self, cls, name, context):
         try:
             attrs = cls.getattr(name, context=context, class_context=True)
-        except exceptions.AttributeInferenceError:
+        except AttributeInferenceError:
             return
 
         for attr in bases._infer_stmts(attrs, context, frame=cls):
@@ -2587,7 +2581,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 ):
                     try:
                         inferred._proxied.getattr("__get__", context)
-                    except exceptions.AttributeInferenceError:
+                    except AttributeInferenceError:
                         yield inferred
                     else:
                         yield util.Uninferable
@@ -2613,12 +2607,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                         yield inferred
                 else:
                     yield function_to_method(inferred, self)
-        except exceptions.AttributeInferenceError as error:
+        except AttributeInferenceError as error:
             if not name.startswith("__") and self.has_dynamic_getattr(context):
                 # class handle some dynamic attributes, return a Uninferable object
                 yield util.Uninferable
             else:
-                raise exceptions.InferenceError(
+                raise InferenceError(
                     str(error), target=self, attribute=name, context=context
                 ) from error
 
@@ -2640,12 +2634,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         try:
             return _valid_getattr(self.getattr("__getattr__", context)[0])
-        except exceptions.AttributeInferenceError:
+        except AttributeInferenceError:
             # if self.newstyle: XXX cause an infinite recursion error
             try:
                 getattribute = self.getattr("__getattribute__", context)[0]
                 return _valid_getattr(getattribute)
-            except exceptions.AttributeInferenceError:
+            except AttributeInferenceError:
                 pass
         return False
 
@@ -2662,7 +2656,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         try:
             methods = dunder_lookup.lookup(self, "__getitem__")
-        except exceptions.AttributeInferenceError as exc:
+        except AttributeInferenceError as exc:
             if isinstance(self, ClassDef):
                 # subscripting a class definition may be
                 # achieved thanks to __class_getitem__ method
@@ -2673,12 +2667,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                     # Here it is assumed that the __class_getitem__ node is
                     # a FunctionDef. One possible improvement would be to deal
                     # with more generic inference.
-                except exceptions.AttributeInferenceError:
-                    raise exceptions.AstroidTypeError(
-                        node=self, context=context
-                    ) from exc
+                except AttributeInferenceError:
+                    raise AstroidTypeError(node=self, context=context) from exc
             else:
-                raise exceptions.AstroidTypeError(node=self, context=context) from exc
+                raise AstroidTypeError(node=self, context=context) from exc
 
         method = methods[0]
 
@@ -2701,7 +2693,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             ):
                 return self
             raise
-        except exceptions.InferenceError:
+        except InferenceError:
             return util.Uninferable
 
     def methods(self):
@@ -2764,7 +2756,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                         self._metaclass = baseobj._metaclass
                         self._metaclass_hack = True
                         break
-            except exceptions.InferenceError:
+            except InferenceError:
                 pass
 
         if self._metaclass:
@@ -2775,7 +2767,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                     for node in self._metaclass.infer(context=context)
                     if node is not util.Uninferable
                 )
-            except (exceptions.InferenceError, StopIteration):
+            except (InferenceError, StopIteration):
                 return None
 
         return None
@@ -2819,7 +2811,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 try:
                     slots.getattr(meth)
                     break
-                except exceptions.AttributeInferenceError:
+                except AttributeInferenceError:
                     continue
             else:
                 continue
@@ -2857,7 +2849,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                         if not inferred.value:
                             continue
                         yield inferred
-                except exceptions.InferenceError:
+                except InferenceError:
                     continue
 
         return None
@@ -2936,7 +2928,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         for stmt in self.bases:
             try:
                 baseobj = next(stmt.infer(context=context.clone()))
-            except exceptions.InferenceError:
+            except InferenceError:
                 continue
             if isinstance(baseobj, bases.Instance):
                 baseobj = baseobj._proxied

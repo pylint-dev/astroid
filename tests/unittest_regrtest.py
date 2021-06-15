@@ -20,9 +20,10 @@ import sys
 import textwrap
 import unittest
 
-from astroid import MANAGER, Instance, exceptions, nodes, transforms
+from astroid import MANAGER, Instance, nodes, transforms
 from astroid.bases import BUILTINS
 from astroid.builder import AstroidBuilder, extract_node
+from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
 from astroid.raw_building import build_module
 
@@ -222,7 +223,7 @@ def test():
         next(GEN)
         """
         )
-        self.assertRaises(exceptions.InferenceError, next, node.infer())
+        self.assertRaises(InferenceError, next, node.infer())
 
     def test_unicode_in_docstring(self):
         # Crashed for astroid==1.4.1

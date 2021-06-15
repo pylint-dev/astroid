@@ -24,17 +24,9 @@ import textwrap
 from tokenize import detect_encoding
 from typing import List, Union
 
-from astroid import (
-    bases,
-    exceptions,
-    manager,
-    modutils,
-    nodes,
-    raw_building,
-    rebuilder,
-    util,
-)
+from astroid import bases, manager, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import get_parser_module
+from astroid.exceptions import AstroidBuildingError, AstroidSyntaxError, InferenceError
 from astroid.node_classes import NodeNG
 
 objects = util.lazy_import("objects")
@@ -113,14 +105,14 @@ class AstroidBuilder(raw_building.InspectBuilder):
         try:
             stream, encoding, data = open_source_file(path)
         except OSError as exc:
-            raise exceptions.AstroidBuildingError(
+            raise AstroidBuildingError(
                 "Unable to load file {path}:\n{error}",
                 modname=modname,
                 path=path,
                 error=exc,
             ) from exc
         except (SyntaxError, LookupError) as exc:
-            raise exceptions.AstroidSyntaxError(
+            raise AstroidSyntaxError(
                 "Python 3 encoding specification error or unknown encoding:\n"
                 "{error}",
                 modname=modname,
@@ -129,7 +121,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             ) from exc
         except UnicodeError as exc:  # wrong encoding
             # detect_encoding returns utf-8 if no encoding specified
-            raise exceptions.AstroidBuildingError(
+            raise AstroidBuildingError(
                 "Wrong or no encoding specified for {filename}.", filename=path
             ) from exc
         with stream:
@@ -173,7 +165,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         try:
             node, parser_module = _parse_string(data, type_comments=True)
         except (TypeError, ValueError, SyntaxError) as exc:
-            raise exceptions.AstroidSyntaxError(
+            raise AstroidSyntaxError(
                 "Parsing Python code failed:\n{error}",
                 source=data,
                 modname=modname,
@@ -215,7 +207,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             if name == "*":
                 try:
                     imported = node.do_import_module()
-                except exceptions.AstroidBuildingError:
+                except AstroidBuildingError:
                     continue
                 for name in imported.public_names():
                     node.parent.set_local(name, node)
@@ -264,7 +256,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                     values.insert(0, node)
                 else:
                     values.append(node)
-        except exceptions.InferenceError:
+        except InferenceError:
             pass
 
 

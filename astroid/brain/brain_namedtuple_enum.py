@@ -28,19 +28,14 @@ import functools
 import keyword
 from textwrap import dedent
 
-from astroid import (
-    MANAGER,
+from astroid import MANAGER, arguments, inference_tip, nodes, util
+from astroid.builder import AstroidBuilder, extract_node
+from astroid.exceptions import (
     AstroidTypeError,
     AstroidValueError,
     InferenceError,
     UseInferenceDefault,
-    arguments,
-    exceptions,
-    inference_tip,
-    nodes,
-    util,
 )
-from astroid.builder import AstroidBuilder, extract_node
 
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
 ENUM_BASE_NAMES = {
@@ -131,7 +126,7 @@ def infer_func_form(node, base_type, context=None, enum=False):
                     raise AttributeError from exc
                 if not attributes:
                     raise AttributeError from exc
-    except (AttributeError, exceptions.InferenceError) as exc:
+    except (AttributeError, InferenceError) as exc:
         raise UseInferenceDefault from exc
 
     if not enum:

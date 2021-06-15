@@ -20,7 +20,14 @@ import builtins as builtins_mod
 
 from astroid import bases
 from astroid import context as contextmod
-from astroid import exceptions, manager, nodes, raw_building, scoped_nodes, util
+from astroid import manager, nodes, raw_building, scoped_nodes, util
+from astroid.exceptions import (
+    AstroidTypeError,
+    AttributeInferenceError,
+    InferenceError,
+    MroError,
+    _NonDeducibleTypeHierarchy,
+)
 
 BUILTINS = builtins_mod.__name__
 
@@ -77,7 +84,7 @@ def object_type(node, context=None):
 
     try:
         types = set(_object_type(node, context))
-    except exceptions.InferenceError:
+    except InferenceError:
         return util.Uninferable
     if len(types) > 1 or not types:
         return util.Uninferable
@@ -103,7 +110,7 @@ def _object_type_is_subclass(obj_type, class_or_seq, context=None):
     # issubclass(object, (1, type)) raises TypeError
     for klass in class_seq:
         if klass is util.Uninferable:
-            raise exceptions.AstroidTypeError("arg 2 must be a type or tuple of types")
+            raise AstroidTypeError("arg 2 must be a type or tuple of types")
 
         for obj_subclass in obj_type.mro():
             if obj_subclass == klass:
@@ -151,12 +158,12 @@ def safe_infer(node, context=None):
     try:
         inferit = node.infer(context=context)
         value = next(inferit)
-    except (exceptions.InferenceError, StopIteration):
+    except (InferenceError, StopIteration):
         return None
     try:
         next(inferit)
         return None  # None if there is ambiguity on the inferred node
-    except exceptions.InferenceError:
+    except InferenceError:
         return None  # there is some kind of ambiguity
     except StopIteration:
         return value
@@ -184,15 +191,15 @@ def has_known_bases(klass, context=None):
 
 def _type_check(type1, type2):
     if not all(map(has_known_bases, (type1, type2))):
-        raise exceptions._NonDeducibleTypeHierarchy
+        raise _NonDeducibleTypeHierarchy
 
     if not all([type1.newstyle, type2.newstyle]):
         return False
     try:
         return type1 in type2.mro()[:-1]
-    except exceptions.MroError as e:
+    except MroError as e:
         # The MRO is invalid.
-        raise exceptions._NonDeducibleTypeHierarchy from e
+        raise _NonDeducibleTypeHierarchy from e
 
 
 def is_subtype(type1, type2):
@@ -223,7 +230,7 @@ def class_instance_as_index(node):
             for result in inferred.infer_call_result(node, context=context):
                 if isinstance(result, nodes.Const) and isinstance(result.value, int):
                     return result
-    except exceptions.InferenceError:
+    except InferenceError:
         pass
     return None
 
@@ -261,10 +268,10 @@ def object_len(node, context=None):
                 node.lineno, node.root().file
             )
         )
-        raise exceptions.InferenceError(message)
+        raise InferenceError(message)
 
     if inferred_node is None or inferred_node is util.Uninferable:
-        raise exceptions.InferenceError(node=node)
+        raise InferenceError(node=node)
     if isinstance(inferred_node, nodes.Const) and isinstance(
         inferred_node.value, (bytes, str)
     ):
@@ -276,12 +283,12 @@ def object_len(node, context=None):
 
     node_type = object_type(inferred_node, context=context)
     if not node_type:
-        raise exceptions.InferenceError(node=node)
+        raise InferenceError(node=node)
 
     try:
         len_call = next(node_type.igetattr("__len__", context=context))
-    except exceptions.AttributeInferenceError as e:
-        raise exceptions.AstroidTypeError(
+    except AttributeInferenceError as e:
+        raise AstroidTypeError(
             f"object of type '{node_type.pytype()}' has no len()"
         ) from e
 
@@ -296,6 +303,6 @@ def object_len(node, context=None):
     ):
         # Fake a result as we don't know the arguments of the instance call.
         return 0
-    raise exceptions.AstroidTypeError(
+    raise AstroidTypeError(
         f"'{result_of_len}' object cannot be interpreted as an integer"
     )

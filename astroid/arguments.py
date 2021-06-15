@@ -12,7 +12,8 @@
 
 from astroid import bases
 from astroid import context as contextmod
-from astroid import exceptions, nodes, util
+from astroid import nodes, util
+from astroid.exceptions import InferenceError, NoDefault
 
 
 class CallSite:
@@ -94,7 +95,7 @@ class CallSite:
                 # Then it's an unpacking operation (**)
                 try:
                     inferred = next(value.infer(context=context))
-                except exceptions.InferenceError:
+                except InferenceError:
                     values[name] = util.Uninferable
                     continue
 
@@ -106,7 +107,7 @@ class CallSite:
                 for dict_key, dict_value in inferred.items:
                     try:
                         dict_key = next(dict_key.infer(context=context))
-                    except exceptions.InferenceError:
+                    except InferenceError:
                         values[name] = util.Uninferable
                         continue
                     if not isinstance(dict_key, nodes.Const):
@@ -133,7 +134,7 @@ class CallSite:
             if isinstance(arg, nodes.Starred):
                 try:
                     inferred = next(arg.value.infer(context=context))
-                except exceptions.InferenceError:
+                except InferenceError:
                     values.append(util.Uninferable)
                     continue
 
@@ -157,7 +158,7 @@ class CallSite:
             context: Inference context object
         """
         if name in self.duplicated_keywords:
-            raise exceptions.InferenceError(
+            raise InferenceError(
                 "The arguments passed to {func!r} " " have duplicate keywords.",
                 call_site=self,
                 func=funcnode,
@@ -174,7 +175,7 @@ class CallSite:
         # Too many arguments given and no variable arguments.
         if len(self.positional_arguments) > len(funcnode.args.args):
             if not funcnode.args.vararg and not funcnode.args.posonlyargs:
-                raise exceptions.InferenceError(
+                raise InferenceError(
                     "Too many positional arguments "
                     "passed to {func!r} that does "
                     "not have *args.",
@@ -243,7 +244,7 @@ class CallSite:
             # It wants all the keywords that were passed into
             # the call site.
             if self.has_invalid_keywords():
-                raise exceptions.InferenceError(
+                raise InferenceError(
                     "Inference failed to find values for all keyword arguments "
                     "to {func!r}: {unpacked_kwargs!r} doesn't correspond to "
                     "{keyword_arguments!r}.",
@@ -267,7 +268,7 @@ class CallSite:
             # It wants all the args that were passed into
             # the call site.
             if self.has_invalid_arguments():
-                raise exceptions.InferenceError(
+                raise InferenceError(
                     "Inference failed to find values for all positional "
                     "arguments to {func!r}: {unpacked_args!r} doesn't "
                     "correspond to {positional_arguments!r}.",
@@ -289,9 +290,9 @@ class CallSite:
         # Check if it's a default parameter.
         try:
             return funcnode.args.default_value(name).infer(context)
-        except exceptions.NoDefault:
+        except NoDefault:
             pass
-        raise exceptions.InferenceError(
+        raise InferenceError(
             "No value found for argument {arg} to {func!r}",
             call_site=self,
             func=funcnode,

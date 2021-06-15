@@ -15,16 +15,11 @@ import typing
 from functools import partial
 
 import astroid
-from astroid import (
-    MANAGER,
+from astroid import MANAGER, context, extract_node, inference_tip, node_classes, nodes
+from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
     UseInferenceDefault,
-    context,
-    extract_node,
-    inference_tip,
-    node_classes,
-    nodes,
 )
 
 PY37 = sys.version_info[:2] >= (3, 7)

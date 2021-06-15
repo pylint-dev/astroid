@@ -21,14 +21,12 @@ leads to an inferred FrozenSet:
 
 import builtins
 
-from astroid import (
-    MANAGER,
-    bases,
-    decorators,
-    exceptions,
-    node_classes,
-    scoped_nodes,
-    util,
+from astroid import MANAGER, bases, decorators, node_classes, scoped_nodes, util
+from astroid.exceptions import (
+    AttributeInferenceError,
+    InferenceError,
+    MroError,
+    SuperError,
 )
 
 BUILTINS = builtins.__name__
@@ -80,7 +78,7 @@ class Super(node_classes.NodeNG):
     def super_mro(self):
         """Get the MRO which will be used to lookup attributes in this super."""
         if not isinstance(self.mro_pointer, scoped_nodes.ClassDef):
-            raise exceptions.SuperError(
+            raise SuperError(
                 "The first argument to super must be a subtype of "
                 "type, not {mro_pointer}.",
                 super_=self,
@@ -93,20 +91,18 @@ class Super(node_classes.NodeNG):
         else:
             mro_type = getattr(self.type, "_proxied", None)
             if not isinstance(mro_type, (bases.Instance, scoped_nodes.ClassDef)):
-                raise exceptions.SuperError(
+                raise SuperError(
                     "The second argument to super must be an "
                     "instance or subtype of type, not {type}.",
                     super_=self,
                 )
 
         if not mro_type.newstyle:
-            raise exceptions.SuperError(
-                "Unable to call super on old-style classes.", super_=self
-            )
+            raise SuperError("Unable to call super on old-style classes.", super_=self)
 
         mro = mro_type.mro()
         if self.mro_pointer not in mro:
-            raise exceptions.SuperError(
+            raise SuperError(
                 "The second argument to super must be an "
                 "instance or subtype of type, not {type}.",
                 super_=self,
@@ -145,8 +141,8 @@ class Super(node_classes.NodeNG):
             mro = self.super_mro()
         # Don't let invalid MROs or invalid super calls
         # leak out as is from this function.
-        except exceptions.SuperError as exc:
-            raise exceptions.AttributeInferenceError(
+        except SuperError as exc:
+            raise AttributeInferenceError(
                 (
                     "Lookup for {name} on {target!r} because super call {super!r} "
                     "is invalid."
@@ -156,8 +152,8 @@ class Super(node_classes.NodeNG):
                 context=context,
                 super_=exc.super_,
             ) from exc
-        except exceptions.MroError as exc:
-            raise exceptions.AttributeInferenceError(
+        except MroError as exc:
+            raise AttributeInferenceError(
                 (
                     "Lookup for {name} on {target!r} failed because {cls!r} has an "
                     "invalid MRO."
@@ -193,21 +189,19 @@ class Super(node_classes.NodeNG):
                         yield from function.infer_call_result(
                             caller=self, context=context
                         )
-                    except exceptions.InferenceError:
+                    except InferenceError:
                         yield util.Uninferable
                 elif bases._is_property(inferred):
                     # TODO: support other descriptors as well.
                     try:
                         yield from inferred.infer_call_result(self, context)
-                    except exceptions.InferenceError:
+                    except InferenceError:
                         yield util.Uninferable
                 else:
                     yield bases.BoundMethod(inferred, cls)
 
         if not found:
-            raise exceptions.AttributeInferenceError(
-                target=self, attribute=name, context=context
-            )
+            raise AttributeInferenceError(target=self, attribute=name, context=context)
 
     def getattr(self, name, context=None):
         return list(self.igetattr(name, context=context))
@@ -310,7 +304,7 @@ class Property(scoped_nodes.FunctionDef):
         return "%s.property" % BUILTINS
 
     def infer_call_result(self, caller=None, context=None):
-        raise exceptions.InferenceError("Properties are not callable")
+        raise InferenceError("Properties are not callable")
 
     def infer(self, context=None, **kwargs):
         return iter((self,))

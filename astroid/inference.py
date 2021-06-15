@@ -34,7 +34,17 @@ import wrapt
 
 from astroid import bases
 from astroid import context as contextmod
-from astroid import decorators, exceptions, helpers, manager, nodes, protocols, util
+from astroid import decorators, helpers, manager, nodes, protocols, util
+from astroid.exceptions import (
+    AstroidBuildingError,
+    AstroidError,
+    AstroidIndexError,
+    AstroidTypeError,
+    AttributeInferenceError,
+    InferenceError,
+    NameInferenceError,
+    _NonDeducibleTypeHierarchy,
+)
 from astroid.interpreter import dunder_lookup
 
 MANAGER = manager.AstroidManager()
@@ -69,14 +79,14 @@ def _infer_sequence_helper(node, context=None):
         if isinstance(elt, nodes.Starred):
             starred = helpers.safe_infer(elt.value, context)
             if not starred:
-                raise exceptions.InferenceError(node=node, context=context)
+                raise InferenceError(node=node, context=context)
             if not hasattr(starred, "elts"):
-                raise exceptions.InferenceError(node=node, context=context)
+                raise InferenceError(node=node, context=context)
             values.extend(_infer_sequence_helper(starred))
         elif isinstance(elt, nodes.NamedExpr):
             value = helpers.safe_infer(elt.value, context)
             if not value:
-                raise exceptions.InferenceError(node=node, context=context)
+                raise InferenceError(node=node, context=context)
             values.append(value)
         else:
             values.append(elt)
@@ -145,16 +155,16 @@ def _infer_map(node, context):
         if isinstance(name, nodes.DictUnpack):
             double_starred = helpers.safe_infer(value, context)
             if not double_starred:
-                raise exceptions.InferenceError
+                raise InferenceError
             if not isinstance(double_starred, nodes.Dict):
-                raise exceptions.InferenceError(node=node, context=context)
+                raise InferenceError(node=node, context=context)
             unpack_items = _infer_map(double_starred, context)
             values = _update_with_replacement(values, unpack_items)
         else:
             key = helpers.safe_infer(name, context=context)
             value = helpers.safe_infer(value, context=context)
             if any(not elem for elem in (key, value)):
-                raise exceptions.InferenceError(node=node, context=context)
+                raise InferenceError(node=node, context=context)
             values = _update_with_replacement(values, {key: value})
     return values
 
@@ -193,7 +203,7 @@ def infer_name(self, context=None):
             _, stmts = parent_function.lookup(self.name)
 
         if not stmts:
-            raise exceptions.NameInferenceError(
+            raise NameInferenceError(
                 name=self.name, scope=self.scope(), context=context
             )
     context = contextmod.copy_context(context)
@@ -227,7 +237,7 @@ def infer_call(self, context=None):
         try:
             if hasattr(callee, "infer_call_result"):
                 yield from callee.infer_call_result(caller=self, context=callcontext)
-        except exceptions.InferenceError:
+        except InferenceError:
             continue
     return dict(node=self, context=context)
 
@@ -241,15 +251,15 @@ def infer_import(self, context=None, asname=True):
     """infer an Import node: return the imported module/object"""
     name = context.lookupname
     if name is None:
-        raise exceptions.InferenceError(node=self, context=context)
+        raise InferenceError(node=self, context=context)
 
     try:
         if asname:
             yield self.do_import_module(self.real_name(name))
         else:
             yield self.do_import_module(name)
-    except exceptions.AstroidBuildingError as exc:
-        raise exceptions.InferenceError(node=self, context=context) from exc
+    except AstroidBuildingError as exc:
+        raise InferenceError(node=self, context=context) from exc
 
 
 nodes.Import._infer = infer_import
@@ -261,22 +271,22 @@ def infer_import_from(self, context=None, asname=True):
     """infer a ImportFrom node: return the imported module/object"""
     name = context.lookupname
     if name is None:
-        raise exceptions.InferenceError(node=self, context=context)
+        raise InferenceError(node=self, context=context)
     if asname:
         name = self.real_name(name)
 
     try:
         module = self.do_import_module()
-    except exceptions.AstroidBuildingError as exc:
-        raise exceptions.InferenceError(node=self, context=context) from exc
+    except AstroidBuildingError as exc:
+        raise InferenceError(node=self, context=context) from exc
 
     try:
         context = contextmod.copy_context(context)
         context.lookupname = name
         stmts = module.getattr(name, ignore_locals=module is self.root())
         return bases._infer_stmts(stmts, context)
-    except exceptions.AttributeInferenceError as error:
-        raise exceptions.InferenceError(
+    except AttributeInferenceError as error:
+        raise InferenceError(
             str(error), target=self, attribute=name, context=context
         ) from error
 
@@ -304,7 +314,7 @@ def infer_attribute(self, context=None):
                         helpers.object_type(owner),
                     ):
                         owner = context.boundnode
-                except exceptions._NonDeducibleTypeHierarchy:
+                except _NonDeducibleTypeHierarchy:
                     # Can't determine anything useful.
                     pass
         elif not context:
@@ -315,8 +325,8 @@ def infer_attribute(self, context=None):
             context.boundnode = owner
             yield from owner.igetattr(self.attrname, context)
         except (
-            exceptions.AttributeInferenceError,
-            exceptions.InferenceError,
+            AttributeInferenceError,
+            InferenceError,
             AttributeError,
         ):
             pass
@@ -336,11 +346,11 @@ nodes.AssignAttr.infer_lhs = decorators.raise_if_nothing_inferred(infer_attribut
 @decorators.path_wrapper
 def infer_global(self, context=None):
     if context.lookupname is None:
-        raise exceptions.InferenceError(node=self, context=context)
+        raise InferenceError(node=self, context=context)
     try:
         return bases._infer_stmts(self.root().getattr(context.lookupname), context)
-    except exceptions.AttributeInferenceError as error:
-        raise exceptions.InferenceError(
+    except AttributeInferenceError as error:
+        raise InferenceError(
             str(error), target=self, attribute=context.lookupname, context=context
         ) from error
 
@@ -382,17 +392,17 @@ def infer_subscript(self, context=None):
                 index_value = index
 
             if index_value is _SUBSCRIPT_SENTINEL:
-                raise exceptions.InferenceError(node=self, context=context)
+                raise InferenceError(node=self, context=context)
 
             try:
                 assigned = value.getitem(index_value, context)
             except (
-                exceptions.AstroidTypeError,
-                exceptions.AstroidIndexError,
-                exceptions.AttributeInferenceError,
+                AstroidTypeError,
+                AstroidIndexError,
+                AttributeInferenceError,
                 AttributeError,
             ) as exc:
-                raise exceptions.InferenceError(node=self, context=context) from exc
+                raise InferenceError(node=self, context=context) from exc
 
             # Prevent inferring if the inferred subscript
             # is the same as the original subscripted object.
@@ -430,7 +440,7 @@ def _infer_boolop(self, context=None):
 
     try:
         values = [value.infer(context=context) for value in values]
-    except exceptions.InferenceError:
+    except InferenceError:
         yield util.Uninferable
         return None
 
@@ -512,7 +522,7 @@ def _infer_unaryop(self, context=None):
                 try:
                     try:
                         methods = dunder_lookup.lookup(operand, meth)
-                    except exceptions.AttributeInferenceError:
+                    except AttributeInferenceError:
                         yield util.BadUnaryOperationMessage(operand, self.op, exc)
                         continue
 
@@ -530,10 +540,10 @@ def _infer_unaryop(self, context=None):
                         yield operand
                     else:
                         yield result
-                except exceptions.AttributeInferenceError as exc:
+                except AttributeInferenceError as exc:
                     # The unary operation special method was not found.
                     yield util.BadUnaryOperationMessage(operand, self.op, exc)
-                except exceptions.InferenceError:
+                except InferenceError:
                     yield util.Uninferable
 
 
@@ -563,7 +573,7 @@ def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     method = methods[0]
     inferred = next(method.infer(context=context))
     if inferred is util.Uninferable:
-        raise exceptions.InferenceError
+        raise InferenceError
     return instance.infer_binary_op(opnode, op, other, context, inferred)
 
 
@@ -720,9 +730,9 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
             results = list(method())
         except AttributeError:
             continue
-        except exceptions.AttributeInferenceError:
+        except AttributeInferenceError:
             continue
-        except exceptions.InferenceError:
+        except InferenceError:
             yield util.Uninferable
             return
         else:
@@ -767,7 +777,7 @@ def _infer_binop(self, context):
 
         try:
             yield from _infer_binary_operation(lhs, rhs, self, context, _get_binop_flow)
-        except exceptions._NonDeducibleTypeHierarchy:
+        except _NonDeducibleTypeHierarchy:
             yield util.Uninferable
 
 
@@ -806,7 +816,7 @@ def _infer_augassign(self, context=None):
                 context=context,
                 flow_factory=_get_aug_flow,
             )
-        except exceptions._NonDeducibleTypeHierarchy:
+        except _NonDeducibleTypeHierarchy:
             yield util.Uninferable
 
 
@@ -828,7 +838,7 @@ nodes.AugAssign._infer = infer_augassign
 def infer_arguments(self, context=None):
     name = context.lookupname
     if name is None:
-        raise exceptions.InferenceError(node=self, context=context)
+        raise InferenceError(node=self, context=context)
     return protocols._arguments_infer_argname(self, name, context)
 
 
@@ -860,7 +870,7 @@ def infer_empty_node(self, context=None):
     else:
         try:
             yield from MANAGER.infer_ast_from_something(self.object, context=context)
-        except exceptions.AstroidError:
+        except AstroidError:
             yield util.Uninferable
 
 
@@ -910,7 +920,7 @@ def infer_ifexp(self, context=None):
     rhs_context = contextmod.copy_context(context)
     try:
         test = next(self.test.infer(context=context.clone()))
-    except exceptions.InferenceError:
+    except InferenceError:
         both_branches = True
     else:
         if test is not util.Uninferable:

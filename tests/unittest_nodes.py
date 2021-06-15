@@ -39,7 +39,12 @@ import pytest
 import astroid
 from astroid import bases, builder
 from astroid import context as contextmod
-from astroid import exceptions, node_classes, nodes, parse, test_utils, transforms, util
+from astroid import node_classes, nodes, parse, test_utils, transforms, util
+from astroid.exceptions import (
+    AstroidBuildingError,
+    AstroidSyntaxError,
+    AttributeInferenceError,
+)
 
 from . import resources
 
@@ -435,13 +440,13 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(from_.real_name("NameNode"), "Name")
         imp_ = self.module["os"]
         self.assertEqual(imp_.real_name("os"), "os")
-        self.assertRaises(exceptions.AttributeInferenceError, imp_.real_name, "os.path")
+        self.assertRaises(AttributeInferenceError, imp_.real_name, "os.path")
         imp_ = self.module["NameNode"]
         self.assertEqual(imp_.real_name("NameNode"), "Name")
-        self.assertRaises(exceptions.AttributeInferenceError, imp_.real_name, "Name")
+        self.assertRaises(AttributeInferenceError, imp_.real_name, "Name")
         imp_ = self.module2["YO"]
         self.assertEqual(imp_.real_name("YO"), "YO")
-        self.assertRaises(exceptions.AttributeInferenceError, imp_.real_name, "data")
+        self.assertRaises(AttributeInferenceError, imp_.real_name, "data")
 
     def test_as_string(self):
         ast = self.module["modutils"]
@@ -573,7 +578,7 @@ class NameNodeTest(unittest.TestCase):
                 pass
             del True
         """
-        with self.assertRaises(exceptions.AstroidBuildingError):
+        with self.assertRaises(AstroidBuildingError):
             builder.parse(code)
 
 
@@ -689,7 +694,7 @@ class UnboundMethodNodeTest(unittest.TestCase):
         """
         )
         node = next(ast["meth"].infer())
-        with self.assertRaises(exceptions.AttributeInferenceError):
+        with self.assertRaises(AttributeInferenceError):
             node.getattr("__missssing__")
         name = node.getattr("__name__")[0]
         self.assertIsInstance(name, nodes.Const)
@@ -943,7 +948,7 @@ class ContextTest(unittest.TestCase):
         self.assertIs(node.targets[0].ctx, astroid.Del)
 
     def test_list_store(self):
-        with self.assertRaises(exceptions.AstroidSyntaxError):
+        with self.assertRaises(AstroidSyntaxError):
             builder.extract_node("[0] = 2")
 
     def test_tuple_load(self):
@@ -951,7 +956,7 @@ class ContextTest(unittest.TestCase):
         self.assertIs(node.ctx, astroid.Load)
 
     def test_tuple_store(self):
-        with self.assertRaises(exceptions.AstroidSyntaxError):
+        with self.assertRaises(AstroidSyntaxError):
             builder.extract_node("(1, ) = 3")
 
     def test_starred_load(self):

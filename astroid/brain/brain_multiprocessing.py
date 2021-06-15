@@ -9,7 +9,7 @@
 
 
 import astroid
-from astroid import exceptions
+from astroid.exceptions import InferenceError
 
 
 def _multiprocessing_transform():
@@ -33,7 +33,7 @@ def _multiprocessing_transform():
     try:
         context = next(node["default"].infer())
         base = next(node["base"].infer())
-    except exceptions.InferenceError:
+    except InferenceError:
         return module
 
     for node in (context, base):

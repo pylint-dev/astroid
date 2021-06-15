@@ -22,7 +22,8 @@ import functools
 import wrapt
 
 from astroid import context as contextmod
-from astroid import exceptions, util
+from astroid import util
+from astroid.exceptions import InferenceError
 
 
 @wrapt.decorator
@@ -137,8 +138,8 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
         # generator is empty
         if error.args:
             # pylint: disable=not-a-mapping
-            raise exceptions.InferenceError(**error.args[0]) from error
-        raise exceptions.InferenceError(
+            raise InferenceError(**error.args[0]) from error
+        raise InferenceError(
             "StopIteration raised without any error information."
         ) from error
 
