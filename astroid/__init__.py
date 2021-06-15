@@ -40,12 +40,11 @@ Main modules are:
 """
 
 import enum
-import itertools
+
 import os
 from importlib import import_module
 from pathlib import Path
 
-import wrapt
 
 from .__pkginfo__ import __version__, version
 
@@ -70,6 +69,7 @@ from astroid import inference
 
 # more stuff available
 from astroid import raw_building
+from astroid.inference_tip import _inference_tip_cached, inference_tip
 from astroid.bases import BaseInstance, Instance, BoundMethod, UnboundMethod
 from astroid.node_classes import are_exclusive, unpack_infer
 from astroid.scoped_nodes import builtin_lookup
@@ -81,69 +81,6 @@ from astroid.manager import AstroidManager
 
 MANAGER = AstroidManager()
 del AstroidManager
-
-# transform utilities (filters and decorator)
-
-
-# pylint: disable=dangerous-default-value
-@wrapt.decorator
-def _inference_tip_cached(func, instance, args, kwargs, _cache={}):
-    """Cache decorator used for inference tips"""
-    node = args[0]
-    try:
-        return iter(_cache[func, node])
-    except KeyError:
-        result = func(*args, **kwargs)
-        # Need to keep an iterator around
-        original, copy = itertools.tee(result)
-        _cache[func, node] = list(copy)
-        return original
-
-
-# pylint: enable=dangerous-default-value
-
-
-def inference_tip(infer_function, raise_on_overwrite=False):
-    """Given an instance specific inference function, return a function to be
-    given to MANAGER.register_transform to set this inference function.
-
-    :param bool raise_on_overwrite: Raise an `InferenceOverwriteError`
-        if the inference tip will overwrite another. Used for debugging
-
-    Typical usage
-
-    .. sourcecode:: python
-
-       MANAGER.register_transform(Call, inference_tip(infer_named_tuple),
-                                  predicate)
-
-    .. Note::
-
-        Using an inference tip will override
-        any previously set inference tip for the given
-        node. Use a predicate in the transform to prevent
-        excess overwrites.
-    """
-
-    def transform(node, infer_function=infer_function):
-        if (
-            raise_on_overwrite
-            and node._explicit_inference is not None
-            and node._explicit_inference is not infer_function
-        ):
-            raise InferenceOverwriteError(
-                "Inference already set to {existing_inference}. "
-                "Trying to overwrite with {new_inference} for {node}".format(
-                    existing_inference=infer_function,
-                    new_inference=node._explicit_inference,
-                    node=node,
-                )
-            )
-        # pylint: disable=no-value-for-parameter
-        node._explicit_inference = _inference_tip_cached(infer_function)
-        return node
-
-    return transform
 
 
 def register_module_extender(manager, module_name, get_extension_mod):
