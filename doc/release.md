@@ -42,13 +42,15 @@ issue labelled as blocker.
 
 #### Changelog
 
-- Create a new section, with the name of the release `X.Y.Z+1` or `X.Y+1.0` on the
-  master branch.
+If it was a minor release add a `X.Y+1.0` title following the template:
 
-You need to add the estimated date when it is going to be published. If no date can be
-known at that time, we should use `Undefined`.
+```text
+What's New in astroid x.y.z?
+============================
+Release Date: TBA
+```
 
 #### Whatsnew
 
-If it's a major release, create a new `What's new in Astroid X.Y+1` document. Take a
+If it was a minor release, create a new `What's new in Astroid X.Y+1` document. Take a
 look at the examples from `doc/whatsnew`.
