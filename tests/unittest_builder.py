@@ -30,7 +30,7 @@ import unittest
 
 import pytest
 
-from astroid import Instance, builder, manager, nodes, test_utils, util
+from astroid import Instance, builder, nodes, test_utils, util
 from astroid.constants import PY38
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -41,7 +41,6 @@ from astroid.exceptions import (
 
 from . import resources
 
-MANAGER = manager.AstroidManager()
 BUILTINS = builtins.__name__
 
 
@@ -269,7 +268,8 @@ class FromToLineNoTest(unittest.TestCase):
 
 class BuilderTest(unittest.TestCase):
     def setUp(self):
-        self.builder = builder.AstroidBuilder()
+        self.manager = test_utils.brainless_manager()
+        self.builder = builder.AstroidBuilder(self.manager)
 
     def test_data_build_null_bytes(self):
         with self.assertRaises(AstroidSyntaxError):
@@ -289,7 +289,7 @@ class BuilderTest(unittest.TestCase):
 
     def test_inspect_build0(self):
         """test astroid tree build from a living object"""
-        builtin_ast = MANAGER.ast_from_module_name(BUILTINS)
+        builtin_ast = self.manager.ast_from_module_name(BUILTINS)
         # just check type and object are there
         builtin_ast.getattr("type")
         objectastroid = builtin_ast.getattr("object")[0]
@@ -308,7 +308,7 @@ class BuilderTest(unittest.TestCase):
         self.assertIsInstance(builtin_ast["NotImplementedError"], nodes.ClassDef)
 
     def test_inspect_build1(self):
-        time_ast = MANAGER.ast_from_module_name("time")
+        time_ast = self.manager.ast_from_module_name("time")
         self.assertTrue(time_ast)
         self.assertEqual(time_ast["time"].args.defaults, [])
 
@@ -316,7 +316,7 @@ class BuilderTest(unittest.TestCase):
         self.builder.inspect_build(unittest)
 
     def test_inspect_build_type_object(self):
-        builtin_ast = MANAGER.ast_from_module_name(BUILTINS)
+        builtin_ast = self.manager.ast_from_module_name(BUILTINS)
 
         inferred = list(builtin_ast.igetattr("object"))
         self.assertEqual(len(inferred), 1)
@@ -332,19 +332,19 @@ class BuilderTest(unittest.TestCase):
 
     def test_inspect_transform_module(self):
         # ensure no cached version of the time module
-        MANAGER._mod_file_cache.pop(("time", None), None)
-        MANAGER.astroid_cache.pop("time", None)
+        self.manager._mod_file_cache.pop(("time", None), None)
+        self.manager.astroid_cache.pop("time", None)
 
         def transform_time(node):
             if node.name == "time":
                 node.transformed = True
 
-        MANAGER.register_transform(nodes.Module, transform_time)
+        self.manager.register_transform(nodes.Module, transform_time)
         try:
-            time_ast = MANAGER.ast_from_module_name("time")
+            time_ast = self.manager.ast_from_module_name("time")
             self.assertTrue(getattr(time_ast, "transformed", False))
         finally:
-            MANAGER.unregister_transform(nodes.Module, transform_time)
+            self.manager.unregister_transform(nodes.Module, transform_time)
 
     def test_package_name(self):
         """test base properties and method of an astroid module"""
