@@ -59,34 +59,7 @@ del _Context
 # pylint: disable=wrong-import-order,wrong-import-position,redefined-builtin
 
 # make all exception classes accessible from astroid package
-from astroid.exceptions import (
-    AstroidBuildingError,
-    AstroidBuildingException,
-    AstroidError,
-    AstroidImportError,
-    AstroidIndexError,
-    AstroidSyntaxError,
-    AstroidTypeError,
-    AstroidValueError,
-    AttributeInferenceError,
-    BinaryOperationError,
-    DuplicateBasesError,
-    InconsistentMroError,
-    InferenceError,
-    InferenceOverwriteError,
-    MroError,
-    NameInferenceError,
-    NoDefault,
-    NotFoundError,
-    OperationError,
-    ResolveError,
-    SuperArgumentTypeError,
-    SuperError,
-    TooManyLevelsError,
-    UnaryOperationError,
-    UnresolvableName,
-    UseInferenceDefault,
-)
+from astroid.exceptions import *
 
 # make all node classes accessible from astroid package
 from astroid.nodes import *
