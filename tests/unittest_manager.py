@@ -30,7 +30,7 @@ from contextlib import contextmanager
 import pkg_resources
 
 import astroid
-from astroid import manager
+from astroid import manager, test_utils
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 
 from . import resources
@@ -49,7 +49,7 @@ class AstroidManagerTest(
 ):
     def setUp(self):
         super().setUp()
-        self.manager = manager.AstroidManager()
+        self.manager = test_utils.brainless_manager()
 
     def test_ast_from_file(self):
         filepath = unittest.__file__

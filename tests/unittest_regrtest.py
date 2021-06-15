@@ -20,11 +20,10 @@ import sys
 import textwrap
 import unittest
 
-from astroid import MANAGER, Instance, nodes, transforms
+from astroid import MANAGER, Instance, nodes, test_utils
 from astroid.bases import BUILTINS
 from astroid.builder import AstroidBuilder, extract_node
 from astroid.exceptions import InferenceError
-from astroid.manager import AstroidManager
 from astroid.raw_building import build_module
 
 from . import resources
@@ -47,19 +46,8 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
         sys.path.pop(0)
         sys.path_importer_cache.pop(resources.find("data"), None)
 
-    def brainless_manager(self):
-        manager = AstroidManager()
-        # avoid caching into the AstroidManager borg since we get problems
-        # with other tests :
-        manager.__dict__ = {}
-        manager._failed_import_hooks = []
-        manager.astroid_cache = {}
-        manager._mod_file_cache = {}
-        manager._transform = transforms.TransformVisitor()
-        return manager
-
     def test_module_path(self):
-        man = self.brainless_manager()
+        man = test_utils.brainless_manager()
         mod = man.ast_from_module_name("package.import_package_subpackage_module")
         package = next(mod.igetattr("package"))
         self.assertEqual(package.name, "package")
@@ -71,7 +59,7 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
         self.assertEqual(module.name, "package.subpackage.module")
 
     def test_package_sidepackage(self):
-        manager = self.brainless_manager()
+        manager = test_utils.brainless_manager()
         assert "package.sidepackage" not in MANAGER.astroid_cache
         package = manager.ast_from_module_name("absimp")
         self.assertIsInstance(package, nodes.Module)
