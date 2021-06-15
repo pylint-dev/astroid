@@ -6,11 +6,9 @@ So, you want to release the `X.Y.Z` version of astroid ?
 
 1. Check if the dependencies of the package are correct
 2. Install the release dependencies `pip3 install pre-commit tbump`
-3. Bump the version and release by using `tbump X.Y.Z --no-push`. During the commit
-   pre-commit and pyupgrade should remove the `encode utf8` automatically
-4. Check the result and then push the tag.
-
-Until the release is done via GitHub actions on tag, run the following commands:
+3. Bump the version and release by using `tbump X.Y.Z --no-push`.
+4. Check the result.
+5. Until the release is done via GitHub actions on tag, run the following commands:
 
 ```bash
 git clean -fdx && find . -name '*.pyc' -delete
@@ -20,6 +18,8 @@ pip3 install twine wheel setuptools
 python setup.py sdist --formats=gztar bdist_wheel
 twine upload dist/*
 ```
+
+6. Push the tag.
 
 ## Post release
 
