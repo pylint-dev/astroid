@@ -1457,7 +1457,10 @@ class TreeRebuilder:
         self, node: "ast.MatchSingleton", parent: NodeNG
     ) -> nodes.MatchSingleton:
         return nodes.MatchSingleton(
-            node.lineno, node.col_offset, parent, value=node.value
+            value=node.value,
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            parent=parent,
         )
 
     def visit_matchsequence(

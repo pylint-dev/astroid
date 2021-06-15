@@ -35,6 +35,7 @@ Release Date: TBA
   depend on the python version. **Background**: With Python 3.9 ``ast.Index``
   and ``ast.ExtSlice`` were merged into the ``ast.Subscript`` node.
 
+* Updated all Match nodes to be internally consistent.
 
 
 What's New in astroid 2.5.8?
