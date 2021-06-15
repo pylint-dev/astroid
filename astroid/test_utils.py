@@ -20,7 +20,7 @@ from typing import Callable, Tuple
 
 import pytest
 
-from astroid import nodes
+from astroid import manager, nodes, transforms
 
 
 def require_version(minver: str = "0.0.0", maxver: str = "4.0.0") -> Callable:
@@ -70,3 +70,15 @@ def enable_warning(warning):
         # Reset it to default value, so it will take
         # into account the values from the -W flag.
         warnings.simplefilter("default", warning)
+
+
+def brainless_manager():
+    m = manager.AstroidManager()
+    # avoid caching into the AstroidManager borg since we get problems
+    # with other tests :
+    m.__dict__ = {}
+    m._failed_import_hooks = []
+    m.astroid_cache = {}
+    m._mod_file_cache = {}
+    m._transform = transforms.TransformVisitor()
+    return m

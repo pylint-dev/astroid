@@ -64,10 +64,16 @@ class AstroidManager:
             self.extension_package_whitelist = set()
             self._transform = transforms.TransformVisitor()
 
-            # Export these APIs for convenience
-            self.register_transform = self._transform.register_transform
-            self.unregister_transform = self._transform.unregister_transform
             self.max_inferable_values = 100
+
+    @property
+    def register_transform(self):
+        # This and unregister_transform below are exported for convenience
+        return self._transform.register_transform
+
+    @property
+    def unregister_transform(self):
+        return self._transform.unregister_transform
 
     @property
     def builtins_module(self):
