@@ -40,7 +40,7 @@ import pprint
 import typing
 from functools import lru_cache
 from functools import singledispatch as _singledispatch
-from typing import Optional
+from typing import ClassVar, Optional
 
 from astroid import as_string, bases
 from astroid import context as contextmod
@@ -4657,7 +4657,7 @@ class Match(Statement):
     <Match l.2 at 0x10c24e170>
     """
 
-    _astroid_fields: typing.Tuple[str, ...] = ("subject", "cases")
+    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("subject", "cases")
 
     def __init__(
         self,
@@ -4691,7 +4691,7 @@ class MatchCase(NodeNG):
     <MatchCase l.3 at 0x10c24e590>
     """
 
-    _astroid_fields: typing.Tuple[str, ...] = ("pattern", "guard", "body")
+    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("pattern", "guard", "body")
 
     def __init__(self, *, parent: Optional[NodeNG] = None) -> None:
         self.pattern: Optional["PatternTypes"] = None
@@ -4723,7 +4723,7 @@ class MatchValue(NodeNG):
     <MatchValue l.3 at 0x10c24e200>
     """
 
-    _astroid_fields: typing.Tuple[str, ...] = ("value",)
+    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("value",)
 
     def __init__(
         self,
@@ -4758,7 +4758,7 @@ class MatchSingleton(NodeNG):
     <MatchSingleton l.7 at 0x10c229f90>
     """
 
-    _other_fields: typing.Tuple[str, ...] = ("value",)
+    _other_fields: ClassVar[typing.Tuple[str, ...]] = ("value",)
 
     def __init__(
         self,
@@ -4788,7 +4788,7 @@ class MatchSequence(NodeNG):
     <MatchSequence l.5 at 0x10ca80b20>
     """
 
-    _astroid_fields: typing.Tuple[str, ...] = ("patterns",)
+    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("patterns",)
 
     def __init__(
         self,
@@ -4815,7 +4815,7 @@ class MatchMapping(mixins.AssignTypeMixin, NodeNG):
     <MatchMapping l.3 at 0x10c8a8850>
     """
 
-    _astroid_fields: typing.Tuple[str, ...] = ("keys", "patterns", "rest")
+    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("keys", "patterns", "rest")
 
     def __init__(
         self,
@@ -4856,8 +4856,12 @@ class MatchClass(NodeNG):
     <MatchClass l.5 at 0x10ca80880>
     """
 
-    _astroid_fields: typing.Tuple[str, ...] = ("cls", "patterns", "kwd_patterns")
-    _other_fields: typing.Tuple[str, ...] = ("kwd_attrs",)
+    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = (
+        "cls",
+        "patterns",
+        "kwd_patterns",
+    )
+    _other_fields: ClassVar[typing.Tuple[str, ...]] = ("kwd_attrs",)
 
     def __init__(
         self,
@@ -4897,7 +4901,7 @@ class MatchStar(mixins.AssignTypeMixin, NodeNG):
     <MatchStar l.3 at 0x10ca809a0>
     """
 
-    _astroid_fields: typing.Tuple[str, ...] = ("name",)
+    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("name",)
 
     def __init__(
         self,
@@ -4936,7 +4940,7 @@ class MatchAs(mixins.AssignTypeMixin, NodeNG):
     <MatchAs l.9 at 0x10d09b880>
     """
 
-    _astroid_fields: typing.Tuple[str, ...] = ("pattern", "name")
+    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("pattern", "name")
 
     def __init__(
         self,
@@ -4970,7 +4974,7 @@ class MatchOr(NodeNG):
     <MatchOr l.3 at 0x10d0b0b50>
     """
 
-    _astroid_fields: typing.Tuple[str, ...] = ("patterns",)
+    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("patterns",)
 
     def __init__(
         self,
