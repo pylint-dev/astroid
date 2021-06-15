@@ -257,8 +257,8 @@ class D(metaclass=abc.ABCMeta):
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string().strip(), code.strip())
 
-    # This test is disabled on PyPy because we cannot get a proper release on TravisCI that has
-    # proper support for f-strings (we need 7.2 at least)
+    # This test is disabled on PyPy because we cannot get a release that has proper
+    # support for f-strings (we need 7.2 at least)
     @pytest.mark.skipif(
         sys.version_info[:2] < (3, 6) or platform.python_implementation() == "PyPy",
         reason="Needs f-string support.",

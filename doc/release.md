@@ -17,14 +17,12 @@ git --aliases=.copyrite_aliases . --jobs=8
 # automatically
 ```
 
-4. Submit your changes in a merge request and make sure the tests are passing on
-   Travis/GithubActions: https://travis-ci.org/PyCQA/astroid/
+4. Submit your changes in a merge request and make sure the tests are passing.
 
 5. Do the actual release by tagging the master with `vX.Y.Z` (ie `v1.6.12` or `v3.0.0a0`
    for example).
 
-Until the release is done via Travis or GitHub actions on tag, run the following
-commands:
+Until the release is done via GitHub actions on tag, run the following commands:
 
 ```bash
 git clean -fdx && find . -name '*.pyc' -delete

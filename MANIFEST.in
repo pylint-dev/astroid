@@ -2,7 +2,6 @@ prune .github
 prune doc
 prune tests
 exclude .*
-exclude appveyor.yml
 exclude ChangeLog
 exclude pylintrc
 exclude README.rst
