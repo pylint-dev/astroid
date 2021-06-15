@@ -8,6 +8,9 @@ Release Date: TBA
 
 * Appveyor and travis are no longer used in the continuous integration
 
+* ``setuptools_scm`` has been removed and replaced by ``tbump`` in order to not
+  have hidden runtime dependencies to setuptools
+
 * Update enum brain to improve inference of .name and .value dynamic class
   attributes
 
