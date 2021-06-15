@@ -21,15 +21,13 @@ NEW_RELEASE_DATE_MESSAGE = "Release Date: {}".format(TODAY.strftime("%Y-%m-%d"))
 
 
 def main() -> None:
-    args = parse_args()
-    if "dev" not in args.version:
-        run(args.version)
-
-
-def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(add_help=__doc__)
     parser.add_argument("version", help="The version we want to release")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if "dev" not in args.version:
+        version = args.version
+        next_version = get_next_version(version)
+        run(version, next_version)
 
 
 def get_next_version(version: str) -> str:
@@ -38,10 +36,9 @@ def get_next_version(version: str) -> str:
     return ".".join(new_version)
 
 
-def run(version: str) -> None:
+def run(version: str, next_version: str) -> None:
     with open(DEFAULT_CHANGELOG_PATH) as f:
         content = f.read()
-    next_version = get_next_version(version)
     content = transform_content(content, version, next_version)
     with open(DEFAULT_CHANGELOG_PATH, "w") as f:
         f.write(content)
