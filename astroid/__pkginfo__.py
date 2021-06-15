@@ -24,13 +24,5 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
-"""astroid packaging information"""
-
-from pkg_resources import DistributionNotFound, get_distribution
-
-try:
-    __version__ = get_distribution("astroid").version
-except DistributionNotFound:
-    __version__ = "2.5.7+"
-
+__version__ = "2.5.9-dev0"
 version = __version__
