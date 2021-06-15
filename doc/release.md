@@ -4,23 +4,11 @@ So, you want to release the `X.Y.Z` version of astroid ?
 
 ## Process
 
-1. Preparation
-   1. Check if the dependencies of the package are correct
-   2. Put the version numbers, and the release date into the changelog
-   3. Generate the new copyright notices for this release:
-
-```bash
-pip3 install copyrite
-copyrite --contribution-threshold 1 --change-threshold 3 --backend-type \
-git --aliases=.copyrite_aliases . --jobs=8
-# During the commit pre-commit and pyupgrade will remove the encode utf8
-# automatically
-```
-
-4. Submit your changes in a merge request and make sure the tests are passing.
-
-5. Do the actual release by tagging the master with `vX.Y.Z` (ie `v1.6.12` or `v3.0.0a0`
-   for example).
+1. Check if the dependencies of the package are correct
+2. Install the release dependencies `pip3 install pre-commit copyrite tbump`
+3. Bump the version and release by using `tbump X.Y.Z --no-push`. During the commit
+   pre-commit and pyupgrade should remove the `encode utf8` automatically
+4. Check the result and then push the tag.
 
 Until the release is done via GitHub actions on tag, run the following commands:
 
@@ -31,10 +19,19 @@ source venv/bin/activate
 pip3 install twine wheel setuptools
 python setup.py sdist --formats=gztar bdist_wheel
 twine upload dist/*
-# don't forget to tag it as well
 ```
 
 ## Post release
+
+### Back to a dev version
+
+Move back to a dev version with `tbump`:
+
+```bash
+tbump X.Y.Z-dev0 --no-tag --no-push
+```
+
+Check the result and then upgrade the master branch
 
 ### Milestone handling
 
