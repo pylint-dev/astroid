@@ -581,7 +581,7 @@ Release Date: 2020-04-27
 
 What's New in astroid 2.3.2?
 ============================
-Release Date: TBA
+Release Date: 2019-10-18
 
 * All type comments have as parent the corresponding `astroid` node
 
