@@ -17,7 +17,8 @@ Thanks to Lukasz Langa for fruitful discussion.
 """
 import sys
 
-from astroid import MANAGER, UseInferenceDefault, extract_node, inference_tip, nodes
+from astroid import MANAGER, extract_node, inference_tip, nodes
+from astroid.exceptions import UseInferenceDefault
 
 PY39 = sys.version_info >= (3, 9)
 

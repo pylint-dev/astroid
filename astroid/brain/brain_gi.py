@@ -27,8 +27,9 @@ import re
 import sys
 import warnings
 
-from astroid import MANAGER, AstroidBuildingError, nodes
+from astroid import MANAGER, nodes
 from astroid.builder import AstroidBuilder
+from astroid.exceptions import AstroidBuildingError
 
 _inspected_modules = {}
 

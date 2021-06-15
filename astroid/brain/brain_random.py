@@ -4,6 +4,7 @@ import random
 
 import astroid
 from astroid import MANAGER, helpers
+from astroid.exceptions import UseInferenceDefault
 
 ACCEPTED_ITERABLES_FOR_SAMPLE = (astroid.List, astroid.Set, astroid.Tuple)
 
@@ -26,29 +27,29 @@ def _clone_node_with_lineno(node, parent, lineno):
 
 def infer_random_sample(node, context=None):
     if len(node.args) != 2:
-        raise astroid.UseInferenceDefault
+        raise UseInferenceDefault
 
     length = node.args[1]
     if not isinstance(length, astroid.Const):
-        raise astroid.UseInferenceDefault
+        raise UseInferenceDefault
     if not isinstance(length.value, int):
-        raise astroid.UseInferenceDefault
+        raise UseInferenceDefault
 
     inferred_sequence = helpers.safe_infer(node.args[0], context=context)
     if not inferred_sequence:
-        raise astroid.UseInferenceDefault
+        raise UseInferenceDefault
 
     if not isinstance(inferred_sequence, ACCEPTED_ITERABLES_FOR_SAMPLE):
-        raise astroid.UseInferenceDefault
+        raise UseInferenceDefault
 
     if length.value > len(inferred_sequence.elts):
         # In this case, this will raise a ValueError
-        raise astroid.UseInferenceDefault
+        raise UseInferenceDefault
 
     try:
         elts = random.sample(inferred_sequence.elts, length.value)
     except ValueError as exc:
-        raise astroid.UseInferenceDefault from exc
+        raise UseInferenceDefault from exc
 
     new_node = astroid.List(
         lineno=node.lineno, col_offset=node.col_offset, parent=node.scope()

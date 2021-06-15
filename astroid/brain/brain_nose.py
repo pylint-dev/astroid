@@ -14,6 +14,7 @@ import textwrap
 
 import astroid
 import astroid.builder
+from astroid.exceptions import InferenceError
 
 _BUILDER = astroid.builder.AstroidBuilder(astroid.MANAGER)
 
@@ -40,7 +41,7 @@ def _nose_tools_functions():
     )
     try:
         case = next(module["a"].infer())
-    except astroid.InferenceError:
+    except InferenceError:
         return
     for method in case.methods():
         if method.name.startswith("assert") and "_" not in method.name:

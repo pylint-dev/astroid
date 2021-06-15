@@ -19,7 +19,8 @@ import unittest
 import pytest
 
 import astroid
-from astroid import InferenceError, extract_node, nodes, util
+from astroid import extract_node, nodes, util
+from astroid.exceptions import InferenceError
 from astroid.node_classes import AssignName, Const, Name, Starred
 
 

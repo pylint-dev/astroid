@@ -16,7 +16,12 @@
 import functools
 import unittest
 
-from astroid import builder, exceptions, nodes, scoped_nodes
+from astroid import builder, nodes, scoped_nodes
+from astroid.exceptions import (
+    AttributeInferenceError,
+    InferenceError,
+    NameInferenceError,
+)
 
 from . import resources
 
@@ -67,7 +72,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(obj, nodes.ClassDef)
         self.assertEqual(obj.name, "object")
         self.assertRaises(
-            exceptions.InferenceError, functools.partial(next, astroid.ilookup("YOAA"))
+            InferenceError, functools.partial(next, astroid.ilookup("YOAA"))
         )
 
         # XXX
@@ -95,7 +100,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         none = next(method.ilookup("None"))
         self.assertIsNone(none.value)
         self.assertRaises(
-            exceptions.InferenceError, functools.partial(next, method.ilookup("YOAA"))
+            InferenceError, functools.partial(next, method.ilookup("YOAA"))
         )
 
     def test_function_argument_with_default(self):
@@ -115,7 +120,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(obj, nodes.ClassDef)
         self.assertEqual(obj.name, "object")
         self.assertRaises(
-            exceptions.InferenceError, functools.partial(next, klass.ilookup("YOAA"))
+            InferenceError, functools.partial(next, klass.ilookup("YOAA"))
         )
 
     def test_inner_classes(self):
@@ -167,7 +172,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         """
         )
         var = astroid.body[1].value
-        self.assertRaises(exceptions.NameInferenceError, var.inferred)
+        self.assertRaises(NameInferenceError, var.inferred)
 
     def test_dict_comps(self):
         astroid = builder.parse(
@@ -211,7 +216,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         """
         )
         var = astroid.body[1].value
-        self.assertRaises(exceptions.NameInferenceError, var.inferred)
+        self.assertRaises(NameInferenceError, var.inferred)
 
     def test_generator_attributes(self):
         tree = builder.parse(
@@ -250,7 +255,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertTrue(p2.getattr("__name__"))
         self.assertTrue(astroid["NoName"].getattr("__name__"))
         p3 = next(astroid["p3"].infer())
-        self.assertRaises(exceptions.AttributeInferenceError, p3.getattr, "__name__")
+        self.assertRaises(AttributeInferenceError, p3.getattr, "__name__")
 
     def test_function_module_special(self):
         astroid = builder.parse(

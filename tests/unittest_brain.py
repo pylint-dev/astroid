@@ -44,6 +44,7 @@ import pytest
 
 import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
+from astroid.exceptions import AttributeInferenceError, InferenceError
 
 try:
     import multiprocessing  # pylint: disable=unused-import
@@ -141,7 +142,7 @@ class CollectionsDequeTests(unittest.TestCase):
     @test_utils.require_version(maxver="3.8")
     def test_deque_not_py39methods(self):
         inferred = self._inferred_queue_instance()
-        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+        with self.assertRaises(AttributeInferenceError):
             inferred.getattr("__class_getitem__")
 
     @test_utils.require_version(minver="3.9")
@@ -220,7 +221,7 @@ class NamedTupleTest(unittest.TestCase):
         instance = next(result.infer())
         self.assertGreaterEqual(len(instance.getattr("scheme")), 1)
         self.assertGreaterEqual(len(instance.getattr("port")), 1)
-        with self.assertRaises(astroid.AttributeInferenceError):
+        with self.assertRaises(AttributeInferenceError):
             instance.getattr("foo")
         self.assertGreaterEqual(len(instance.getattr("geturl")), 1)
         self.assertEqual(instance.name, "ParseResult")
@@ -1158,7 +1159,7 @@ class TypeBrain(unittest.TestCase):
         val_inf = src.annotation.value.inferred()[0]
         self.assertIsInstance(val_inf, astroid.ClassDef)
         self.assertEqual(val_inf.name, "str")
-        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+        with self.assertRaises(AttributeInferenceError):
             # pylint: disable=expression-not-assigned
             val_inf.getattr("__class_getitem__")[0]
 
@@ -1197,7 +1198,7 @@ class CollectionsBrain(unittest.TestCase):
         collections.abc.Hashable[int]
         """
         )
-        with self.assertRaises(astroid.exceptions.InferenceError):
+        with self.assertRaises(InferenceError):
             next(wrong_node.infer())
         right_node = builder.extract_node(
             """
@@ -1214,7 +1215,7 @@ class CollectionsBrain(unittest.TestCase):
                 "builtins.object",
             ],
         )
-        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+        with self.assertRaises(AttributeInferenceError):
             inferred.getattr("__class_getitem__")
 
     @test_utils.require_version(minver="3.9")
@@ -1256,7 +1257,7 @@ class CollectionsBrain(unittest.TestCase):
         collections.abc.MutableSet[int]
         """
         )
-        with self.assertRaises(astroid.exceptions.InferenceError):
+        with self.assertRaises(InferenceError):
             next(wrong_node.infer())
         right_node = builder.extract_node(
             """
@@ -1278,7 +1279,7 @@ class CollectionsBrain(unittest.TestCase):
                 "builtins.object",
             ],
         )
-        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+        with self.assertRaises(AttributeInferenceError):
             inferred.getattr("__class_getitem__")
 
     @test_utils.require_version(minver="3.9")
@@ -1312,7 +1313,7 @@ class CollectionsBrain(unittest.TestCase):
         collections.abc.Iterator[int]
         """
         )
-        with self.assertRaises(astroid.exceptions.InferenceError):
+        with self.assertRaises(InferenceError):
             next(node.infer())
 
     @test_utils.require_version(minver="3.9")
@@ -1693,7 +1694,7 @@ class TypingBrain(unittest.TestCase):
         typing.Hashable[int]
         """
         )
-        with self.assertRaises(astroid.exceptions.InferenceError):
+        with self.assertRaises(InferenceError):
             next(wrong_node.infer())
         right_node = builder.extract_node(
             """
@@ -1710,7 +1711,7 @@ class TypingBrain(unittest.TestCase):
                 "builtins.object",
             ],
         )
-        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+        with self.assertRaises(AttributeInferenceError):
             inferred.getattr("__class_getitem__")
 
     @test_utils.require_version(minver="3.7")
@@ -1775,7 +1776,7 @@ class TypingBrain(unittest.TestCase):
         )
         inferred = next(right_node.infer())
         check_metaclass_is_abc(inferred)
-        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+        with self.assertRaises(AttributeInferenceError):
             self.assertIsInstance(
                 inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
             )
@@ -1821,7 +1822,7 @@ class ReBrainTest(unittest.TestCase):
         )
         inferred1 = next(right_node1.infer())
         assert isinstance(inferred1, nodes.ClassDef)
-        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+        with self.assertRaises(AttributeInferenceError):
             assert isinstance(
                 inferred1.getattr("__class_getitem__")[0], nodes.FunctionDef
             )
@@ -1834,7 +1835,7 @@ class ReBrainTest(unittest.TestCase):
         )
         inferred2 = next(right_node2.infer())
         assert isinstance(inferred2, nodes.ClassDef)
-        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+        with self.assertRaises(AttributeInferenceError):
             assert isinstance(
                 inferred2.getattr("__class_getitem__")[0], nodes.FunctionDef
             )
@@ -1845,7 +1846,7 @@ class ReBrainTest(unittest.TestCase):
         re.Pattern[int]
         """
         )
-        with self.assertRaises(astroid.exceptions.InferenceError):
+        with self.assertRaises(InferenceError):
             next(wrong_node1.infer())
 
         wrong_node2 = builder.extract_node(
@@ -1854,7 +1855,7 @@ class ReBrainTest(unittest.TestCase):
         re.Match[int]
         """
         )
-        with self.assertRaises(astroid.exceptions.InferenceError):
+        with self.assertRaises(InferenceError):
             next(wrong_node2.infer())
 
     @test_utils.require_version(minver="3.9")
@@ -2197,21 +2198,21 @@ class TestIsinstanceInference:
 
     def test_uninferable_bad_type(self):
         """The second argument must be a class or a tuple of classes"""
-        with pytest.raises(astroid.InferenceError):
+        with pytest.raises(InferenceError):
             _get_result_node("isinstance(int, 1)")
 
     def test_uninferable_keywords(self):
         """isinstance does not allow keywords"""
-        with pytest.raises(astroid.InferenceError):
+        with pytest.raises(InferenceError):
             _get_result_node("isinstance(1, class_or_tuple=int)")
 
     def test_too_many_args(self):
         """isinstance must have two arguments"""
-        with pytest.raises(astroid.InferenceError):
+        with pytest.raises(InferenceError):
             _get_result_node("isinstance(1, int, str)")
 
     def test_first_param_is_uninferable(self):
-        with pytest.raises(astroid.InferenceError):
+        with pytest.raises(InferenceError):
             _get_result_node("isinstance(something, int)")
 
 
@@ -2306,17 +2307,17 @@ class TestIssubclassBrain:
     def test_uninferable_bad_type(self):
         """The second argument must be a class or a tuple of classes"""
         # Should I subclass
-        with pytest.raises(astroid.InferenceError):
+        with pytest.raises(InferenceError):
             _get_result_node("issubclass(int, 1)")
 
     def test_uninferable_keywords(self):
         """issubclass does not allow keywords"""
-        with pytest.raises(astroid.InferenceError):
+        with pytest.raises(InferenceError):
             _get_result_node("issubclass(int, class_or_tuple=int)")
 
     def test_too_many_args(self):
         """issubclass must have two arguments"""
-        with pytest.raises(astroid.InferenceError):
+        with pytest.raises(InferenceError):
             _get_result_node("issubclass(int, int, str)")
 
 
@@ -2423,7 +2424,7 @@ class TestLenBuiltinInference:
         len(F)
         """
         )
-        with pytest.raises(astroid.InferenceError):
+        with pytest.raises(InferenceError):
             next(node.infer())
 
     def test_len_string(self):
@@ -2443,7 +2444,7 @@ class TestLenBuiltinInference:
         len(gen())
         """
         )
-        with pytest.raises(astroid.InferenceError):
+        with pytest.raises(InferenceError):
             next(node.infer())
 
     def test_len_failure_missing_variable(self):
@@ -2452,7 +2453,7 @@ class TestLenBuiltinInference:
         len(a)
         """
         )
-        with pytest.raises(astroid.InferenceError):
+        with pytest.raises(InferenceError):
             next(node.infer())
 
     def test_len_bytes(self):
@@ -2505,7 +2506,7 @@ class TestLenBuiltinInference:
         code = 'len(str("F"))'
         try:
             next(astroid.extract_node(code).infer())
-        except astroid.InferenceError:
+        except InferenceError:
             pass
 
     def test_len_builtin_inference_recursion_error_self_referential_attribute(self):
@@ -2586,7 +2587,7 @@ def test_infer_dict_from_keys():
     """
     )
     for node in bad_nodes:
-        with pytest.raises(astroid.InferenceError):
+        with pytest.raises(InferenceError):
             next(node.infer())
 
     # Test uninferable values
@@ -2846,7 +2847,7 @@ def test_no_recursionerror_on_self_referential_length_check():
     """
     Regression test for https://github.com/PyCQA/astroid/issues/777
     """
-    with pytest.raises(astroid.InferenceError):
+    with pytest.raises(InferenceError):
         node = astroid.extract_node(
             """
         class Crash:

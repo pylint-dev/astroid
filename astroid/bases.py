@@ -28,7 +28,13 @@ import collections
 import sys
 
 from astroid import context as contextmod
-from astroid import exceptions, util
+from astroid import util
+from astroid.exceptions import (
+    AstroidTypeError,
+    AttributeInferenceError,
+    InferenceError,
+    NameInferenceError,
+)
 
 objectmodel = util.lazy_import("interpreter.objectmodel")
 helpers = util.lazy_import("helpers")
@@ -143,13 +149,13 @@ def _infer_stmts(stmts, context, frame=None):
             for inferred in stmt.infer(context=context):
                 yield inferred
                 inferred = True
-        except exceptions.NameInferenceError:
+        except NameInferenceError:
             continue
-        except exceptions.InferenceError:
+        except InferenceError:
             yield util.Uninferable
             inferred = True
     if not inferred:
-        raise exceptions.InferenceError(
+        raise InferenceError(
             "Inference failed for all members of {stmts!r}.",
             stmts=stmts,
             frame=frame,
@@ -171,7 +177,7 @@ def _infer_method_result_truth(instance, method_name, context):
 
                 inferred = next(value.infer(context=context))
                 return inferred.bool_value()
-        except exceptions.InferenceError:
+        except InferenceError:
             pass
     return util.Uninferable
 
@@ -187,7 +193,7 @@ class BaseInstance(Proxy):
     def getattr(self, name, context=None, lookupclass=True):
         try:
             values = self._proxied.instance_attr(name, context)
-        except exceptions.AttributeInferenceError as exc:
+        except AttributeInferenceError as exc:
             if self.special_attributes and name in self.special_attributes:
                 return [self.special_attributes.lookup(name)]
 
@@ -196,7 +202,7 @@ class BaseInstance(Proxy):
                 # unless they are explicitly defined.
                 return self._proxied.getattr(name, context, class_context=False)
 
-            raise exceptions.AttributeInferenceError(
+            raise AttributeInferenceError(
                 target=self, attribute=name, context=context
             ) from exc
         # since we've no context information, return matching class members as
@@ -206,7 +212,7 @@ class BaseInstance(Proxy):
                 return values + self._proxied.getattr(
                     name, context, class_context=False
                 )
-            except exceptions.AttributeInferenceError:
+            except AttributeInferenceError:
                 pass
         return values
 
@@ -218,7 +224,7 @@ class BaseInstance(Proxy):
             context.lookupname = name
             # avoid recursively inferring the same attr on the same class
             if context.push(self._proxied):
-                raise exceptions.InferenceError(
+                raise InferenceError(
                     message="Cannot infer the same attribute again",
                     node=self,
                     context=context,
@@ -229,7 +235,7 @@ class BaseInstance(Proxy):
             yield from _infer_stmts(
                 self._wrap_attr(get_attr, context), context, frame=self
             )
-        except exceptions.AttributeInferenceError:
+        except AttributeInferenceError:
             try:
                 # fallback to class.igetattr since it has some logic to handle
                 # descriptors
@@ -238,8 +244,8 @@ class BaseInstance(Proxy):
                     raise
                 attrs = self._proxied.igetattr(name, context, class_context=False)
                 yield from self._wrap_attr(attrs, context)
-            except exceptions.AttributeInferenceError as error:
-                raise exceptions.InferenceError(**vars(error)) from error
+            except AttributeInferenceError as error:
+                raise InferenceError(**vars(error)) from error
 
     def _wrap_attr(self, attrs, context=None):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
@@ -268,7 +274,7 @@ class BaseInstance(Proxy):
                 inferred = True
                 yield res
         if not inferred:
-            raise exceptions.InferenceError(node=self, caller=caller, context=context)
+            raise InferenceError(node=self, caller=caller, context=context)
 
 
 class Instance(BaseInstance):
@@ -289,7 +295,7 @@ class Instance(BaseInstance):
         try:
             self._proxied.getattr("__call__", class_context=False)
             return True
-        except exceptions.AttributeInferenceError:
+        except AttributeInferenceError:
             return False
 
     def pytype(self):
@@ -317,11 +323,11 @@ class Instance(BaseInstance):
 
         try:
             result = _infer_method_result_truth(self, BOOL_SPECIAL_METHOD, context)
-        except (exceptions.InferenceError, exceptions.AttributeInferenceError):
+        except (InferenceError, AttributeInferenceError):
             # Fallback to __len__.
             try:
                 result = _infer_method_result_truth(self, "__len__", context)
-            except (exceptions.AttributeInferenceError, exceptions.InferenceError):
+            except (AttributeInferenceError, InferenceError):
                 return True
         return result
 
@@ -334,11 +340,11 @@ class Instance(BaseInstance):
         new_context.callcontext = contextmod.CallContext(args=[index])
         method = next(self.igetattr("__getitem__", context=context), None)
         if not isinstance(method, BoundMethod):
-            raise exceptions.InferenceError(
+            raise InferenceError(
                 "Could not find __getitem__ for {node!r}.", node=self, context=context
             )
         if len(method.args.arguments) != 2:  # (self, index)
-            raise exceptions.AstroidTypeError(
+            raise AstroidTypeError(
                 "__getitem__ for {node!r} does not have correct signature",
                 node=self,
                 context=context,

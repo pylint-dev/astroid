@@ -17,7 +17,8 @@
 """
 import itertools
 
-from astroid import decorators, exceptions
+from astroid import decorators
+from astroid.exceptions import AttributeInferenceError
 
 
 class BlockRangeMixIn:
@@ -111,7 +112,7 @@ class ImportFromMixin(FilterStmtsMixin):
                 _asname = name
             if asname == _asname:
                 return name
-        raise exceptions.AttributeInferenceError(
+        raise AttributeInferenceError(
             "Could not find original name for {attribute} in {target!r}",
             target=self,
             attribute=asname,

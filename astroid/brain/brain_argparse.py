@@ -1,4 +1,5 @@
-from astroid import MANAGER, UseInferenceDefault, arguments, inference_tip, nodes
+from astroid import MANAGER, arguments, inference_tip, nodes
+from astroid.exceptions import UseInferenceDefault
 
 
 def infer_namespace(node, context=None):

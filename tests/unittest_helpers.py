@@ -12,7 +12,8 @@
 import builtins
 import unittest
 
-from astroid import builder, exceptions, helpers, manager, raw_building, util
+from astroid import builder, helpers, manager, raw_building, util
+from astroid.exceptions import _NonDeducibleTypeHierarchy
 
 
 class TestHelpers(unittest.TestCase):
@@ -202,7 +203,7 @@ class TestHelpers(unittest.TestCase):
         self.assertFalse(helpers.is_subtype(cls_e, cls_f))
 
         self.assertFalse(helpers.is_subtype(cls_e, cls_f))
-        with self.assertRaises(exceptions._NonDeducibleTypeHierarchy):
+        with self.assertRaises(_NonDeducibleTypeHierarchy):
             helpers.is_subtype(cls_f, cls_e)
         self.assertFalse(helpers.is_supertype(cls_f, cls_e))
 
@@ -214,9 +215,9 @@ class TestHelpers(unittest.TestCase):
         class B(A): pass #@
         """
         )
-        with self.assertRaises(exceptions._NonDeducibleTypeHierarchy):
+        with self.assertRaises(_NonDeducibleTypeHierarchy):
             helpers.is_subtype(cls_a, cls_b)
-        with self.assertRaises(exceptions._NonDeducibleTypeHierarchy):
+        with self.assertRaises(_NonDeducibleTypeHierarchy):
             helpers.is_supertype(cls_a, cls_b)
 
     def test_is_subtype_supertype_unrelated_classes(self):

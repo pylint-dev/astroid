@@ -30,7 +30,13 @@ import unittest
 
 import pytest
 
-from astroid import Instance, builder, exceptions, manager, nodes, test_utils, util
+from astroid import Instance, builder, manager, nodes, test_utils, util
+from astroid.exceptions import (
+    AstroidBuildingError,
+    AstroidSyntaxError,
+    AttributeInferenceError,
+    InferenceError,
+)
 
 from . import resources
 
@@ -266,11 +272,11 @@ class BuilderTest(unittest.TestCase):
         self.builder = builder.AstroidBuilder()
 
     def test_data_build_null_bytes(self):
-        with self.assertRaises(exceptions.AstroidSyntaxError):
+        with self.assertRaises(AstroidSyntaxError):
             self.builder.string_build("\x00")
 
     def test_data_build_invalid_x_escape(self):
-        with self.assertRaises(exceptions.AstroidSyntaxError):
+        with self.assertRaises(AstroidSyntaxError):
             self.builder.string_build('"\\x1"')
 
     def test_missing_newline(self):
@@ -278,7 +284,7 @@ class BuilderTest(unittest.TestCase):
         resources.build_file("data/noendingnewline.py")
 
     def test_missing_file(self):
-        with self.assertRaises(exceptions.AstroidBuildingError):
+        with self.assertRaises(AstroidBuildingError):
             resources.build_file("data/inexistant.py")
 
     def test_inspect_build0(self):
@@ -419,9 +425,9 @@ class BuilderTest(unittest.TestCase):
         self.assertIsInstance(astroid.getattr("CSTE")[0], nodes.AssignName)
         self.assertEqual(astroid.getattr("CSTE")[0].fromlineno, 2)
         self.assertEqual(astroid.getattr("CSTE")[1].fromlineno, 6)
-        with self.assertRaises(exceptions.AttributeInferenceError):
+        with self.assertRaises(AttributeInferenceError):
             astroid.getattr("CSTE2")
-        with self.assertRaises(exceptions.InferenceError):
+        with self.assertRaises(InferenceError):
             next(astroid["global_no_effect"].ilookup("CSTE2"))
 
     def test_socket_build(self):
@@ -733,7 +739,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(keys, ["autre", "local", "self"])
 
     def test_unknown_encoding(self):
-        with self.assertRaises(exceptions.AstroidSyntaxError):
+        with self.assertRaises(AstroidSyntaxError):
             resources.build_file("data/invalid_encoding.py")
 
 

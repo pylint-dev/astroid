@@ -38,9 +38,9 @@ from typing import Optional
 
 import astroid
 from astroid import context as contextmod
-from astroid import exceptions, node_classes, util
+from astroid import node_classes, util
+from astroid.exceptions import AttributeInferenceError, InferenceError, NoDefault
 
-# Prevents circular imports
 objects = util.lazy_import("objects")
 
 
@@ -120,7 +120,7 @@ class ObjectModel:
 
         if name in self.attributes():
             return getattr(self, IMPL_PREFIX + name)
-        raise exceptions.AttributeInferenceError(target=self._instance, attribute=name)
+        raise AttributeInferenceError(target=self._instance, attribute=name)
 
 
 class ModuleModel(ObjectModel):
@@ -135,9 +135,7 @@ class ModuleModel(ObjectModel):
     @property
     def attr___path__(self):
         if not self._instance.package:
-            raise exceptions.AttributeInferenceError(
-                target=self._instance, attribute="__path__"
-            )
+            raise AttributeInferenceError(target=self._instance, attribute="__path__")
 
         path_objs = [
             node_classes.Const(
@@ -268,7 +266,7 @@ class FunctionModel(ObjectModel):
             for arg in args.kwonlyargs:
                 try:
                     default = args.default_value(arg.name)
-                except exceptions.NoDefault:
+                except NoDefault:
                     continue
 
                 name = node_classes.Const(arg.name, parent=parent)
@@ -302,7 +300,7 @@ class FunctionModel(ObjectModel):
 
             def infer_call_result(self, caller, context=None):
                 if len(caller.args) > 2 or len(caller.args) < 1:
-                    raise exceptions.InferenceError(
+                    raise InferenceError(
                         "Invalid arguments for descriptor binding",
                         target=self,
                         context=context,
@@ -312,7 +310,7 @@ class FunctionModel(ObjectModel):
                 cls = next(caller.args[0].infer(context=context))
 
                 if cls is astroid.Uninferable:
-                    raise exceptions.InferenceError(
+                    raise InferenceError(
                         "Invalid class inferred", target=self, context=context
                     )
 
@@ -417,9 +415,7 @@ class ClassModel(ObjectModel):
     @property
     def attr___mro__(self):
         if not self._instance.newstyle:
-            raise exceptions.AttributeInferenceError(
-                target=self._instance, attribute="__mro__"
-            )
+            raise AttributeInferenceError(target=self._instance, attribute="__mro__")
 
         mro = self._instance.mro()
         obj = node_classes.Tuple(parent=self._instance)
@@ -429,9 +425,7 @@ class ClassModel(ObjectModel):
     @property
     def attr_mro(self):
         if not self._instance.newstyle:
-            raise exceptions.AttributeInferenceError(
-                target=self._instance, attribute="mro"
-            )
+            raise AttributeInferenceError(target=self._instance, attribute="mro")
 
         # pylint: disable=import-outside-toplevel; circular import
         from astroid import bases
@@ -474,7 +468,7 @@ class ClassModel(ObjectModel):
         from astroid import bases, scoped_nodes
 
         if not self._instance.newstyle:
-            raise exceptions.AttributeInferenceError(
+            raise AttributeInferenceError(
                 target=self._instance, attribute="__subclasses__"
             )
 
@@ -781,7 +775,7 @@ class PropertyModel(ObjectModel):
             def infer_call_result(self, caller=None, context=None):
                 nonlocal func
                 if caller and len(caller.args) != 1:
-                    raise exceptions.InferenceError(
+                    raise InferenceError(
                         "fget() needs a single argument", target=self, context=context
                     )
 
@@ -816,7 +810,7 @@ class PropertyModel(ObjectModel):
 
         func_setter = find_setter(func)
         if not func_setter:
-            raise exceptions.InferenceError(
+            raise InferenceError(
                 f"Unable to find the setter of property {func.function.name}"
             )
 
@@ -824,7 +818,7 @@ class PropertyModel(ObjectModel):
             def infer_call_result(self, caller=None, context=None):
                 nonlocal func_setter
                 if caller and len(caller.args) != 2:
-                    raise exceptions.InferenceError(
+                    raise InferenceError(
                         "fset() needs two arguments", target=self, context=context
                     )
                 yield from func_setter.infer_call_result(caller=caller, context=context)

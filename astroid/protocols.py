@@ -31,7 +31,14 @@ import operator as operator_mod
 
 from astroid import Store, arguments, bases
 from astroid import context as contextmod
-from astroid import decorators, exceptions, helpers, node_classes, nodes, util
+from astroid import decorators, helpers, node_classes, nodes, util
+from astroid.exceptions import (
+    AstroidIndexError,
+    AstroidTypeError,
+    AttributeInferenceError,
+    InferenceError,
+    NoDefault,
+)
 
 raw_building = util.lazy_import("raw_building")
 objects = util.lazy_import("objects")
@@ -236,11 +243,7 @@ def _resolve_looppart(parts, assign_path, context):
             index_node = nodes.Const(index)
             try:
                 assigned = stmt.getitem(index_node, context)
-            except (
-                AttributeError,
-                exceptions.AstroidTypeError,
-                exceptions.AstroidIndexError,
-            ):
+            except (AttributeError, AstroidTypeError, AstroidIndexError):
                 continue
             if not assign_path:
                 # we achieved to resolved the assignment path,
@@ -255,7 +258,7 @@ def _resolve_looppart(parts, assign_path, context):
                     yield from _resolve_looppart(
                         assigned.infer(context), assign_path, context
                     )
-                except exceptions.InferenceError:
+                except InferenceError:
                     break
 
 
@@ -283,7 +286,7 @@ def sequence_assigned_stmts(self, node=None, context=None, assign_path=None):
     try:
         index = self.elts.index(node)
     except ValueError as exc:
-        raise exceptions.InferenceError(
+        raise InferenceError(
             "Tried to retrieve a node {node!r} which does not exist",
             node=self,
             assign_path=assign_path,
@@ -359,7 +362,7 @@ def _arguments_infer_argname(self, name, context):
         context = contextmod.copy_context(context)
         yield from self.default_value(name).infer(context)
         yield util.Uninferable
-    except exceptions.NoDefault:
+    except NoDefault:
         yield util.Uninferable
 
 
@@ -419,7 +422,7 @@ def _resolve_assignment_parts(parts, assign_path, context):
             index_node = nodes.Const(index)
             try:
                 assigned = part.getitem(index_node, context)
-            except (exceptions.AstroidTypeError, exceptions.AstroidIndexError):
+            except (AstroidTypeError, AstroidIndexError):
                 return
 
         if not assigned:
@@ -438,7 +441,7 @@ def _resolve_assignment_parts(parts, assign_path, context):
                 yield from _resolve_assignment_parts(
                     assigned.infer(context), assign_path, context
                 )
-            except exceptions.InferenceError:
+            except InferenceError:
                 return
 
 
@@ -461,7 +464,7 @@ def _infer_context_manager(self, mgr, context):
         # Check if it is decorated with contextlib.contextmanager.
         func = inferred.parent
         if not func.decorators:
-            raise exceptions.InferenceError(
+            raise InferenceError(
                 "No decorators found on inferred generator %s", node=func
             )
 
@@ -472,7 +475,7 @@ def _infer_context_manager(self, mgr, context):
                     break
         else:
             # It doesn't interest us.
-            raise exceptions.InferenceError(node=func)
+            raise InferenceError(node=func)
 
         # Get the first yield point. If it has multiple yields,
         # then a RuntimeError will be raised.
@@ -493,13 +496,13 @@ def _infer_context_manager(self, mgr, context):
     elif isinstance(inferred, bases.Instance):
         try:
             enter = next(inferred.igetattr("__enter__", context=context))
-        except (exceptions.InferenceError, exceptions.AttributeInferenceError) as exc:
-            raise exceptions.InferenceError(node=inferred) from exc
+        except (InferenceError, AttributeInferenceError) as exc:
+            raise InferenceError(node=inferred) from exc
         if not isinstance(enter, bases.BoundMethod):
-            raise exceptions.InferenceError(node=enter)
+            raise InferenceError(node=enter)
         yield from enter.infer_call_result(self, context)
     else:
-        raise exceptions.InferenceError(node=mgr)
+        raise InferenceError(node=mgr)
 
 
 @decorators.raise_if_nothing_inferred
@@ -542,7 +545,7 @@ def with_assigned_stmts(self, node=None, context=None, assign_path=None):
             obj = result
             for index in assign_path:
                 if not hasattr(obj, "elts"):
-                    raise exceptions.InferenceError(
+                    raise InferenceError(
                         "Wrong type ({targets!r}) for {node!r} assignment",
                         node=self,
                         targets=node,
@@ -552,7 +555,7 @@ def with_assigned_stmts(self, node=None, context=None, assign_path=None):
                 try:
                     obj = obj.elts[index]
                 except IndexError as exc:
-                    raise exceptions.InferenceError(
+                    raise InferenceError(
                         "Tried to infer a nonexistent target with index {index} "
                         "in {node!r}.",
                         node=self,
@@ -561,7 +564,7 @@ def with_assigned_stmts(self, node=None, context=None, assign_path=None):
                         context=context,
                     ) from exc
                 except TypeError as exc:
-                    raise exceptions.InferenceError(
+                    raise InferenceError(
                         "Tried to unpack a non-iterable value " "in {node!r}.",
                         node=self,
                         targets=node,
@@ -581,7 +584,7 @@ def named_expr_assigned_stmts(self, node, context=None, assign_path=None):
     if self.target == node:
         yield from self.value.infer(context=context)
     else:
-        raise exceptions.InferenceError(
+        raise InferenceError(
             "Cannot infer NamedExpr node {node!r}",
             node=self,
             assign_path=assign_path,
@@ -620,7 +623,7 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
 
     stmt = self.statement()
     if not isinstance(stmt, (nodes.Assign, nodes.For)):
-        raise exceptions.InferenceError(
+        raise InferenceError(
             "Statement {stmt!r} enclosing {node!r} " "must be an Assign or For node.",
             node=self,
             stmt=stmt,
@@ -636,7 +639,7 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
         lhs = stmt.targets[0]
 
         if sum(1 for _ in lhs.nodes_of_class(nodes.Starred)) > 1:
-            raise exceptions.InferenceError(
+            raise InferenceError(
                 "Too many starred arguments in the " " assignment targets {lhs!r}.",
                 node=self,
                 targets=lhs,
@@ -646,7 +649,7 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
 
         try:
             rhs = next(value.infer(context))
-        except exceptions.InferenceError:
+        except InferenceError:
             yield util.Uninferable
             return
         if rhs is util.Uninferable or not hasattr(rhs, "itered"):
@@ -691,7 +694,7 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
     if isinstance(stmt, nodes.For):
         try:
             inferred_iterable = next(stmt.iter.infer(context=context))
-        except exceptions.InferenceError:
+        except InferenceError:
             yield util.Uninferable
             return
         if inferred_iterable is util.Uninferable or not hasattr(
@@ -708,7 +711,7 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
         target = stmt.target
 
         if not isinstance(target, nodes.Tuple):
-            raise exceptions.InferenceError(
+            raise InferenceError(
                 "Could not make sense of this, the target must be a tuple",
                 context=context,
             )
@@ -716,7 +719,7 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
         lookups = []
         _determine_starred_iteration_lookups(self, target, lookups)
         if not lookups:
-            raise exceptions.InferenceError(
+            raise InferenceError(
                 "Could not make sense of this, needs at least a lookup", context=context
             )
 

@@ -9,6 +9,7 @@ from itertools import chain
 
 import astroid
 from astroid import MANAGER, BoundMethod, arguments, extract_node, helpers, objects
+from astroid.exceptions import InferenceError, UseInferenceDefault
 from astroid.interpreter import objectmodel
 
 LRU_CACHE = "functools.lru_cache"
@@ -60,23 +61,21 @@ def _functools_partial_inference(node, context=None):
     call = arguments.CallSite.from_call(node, context=context)
     number_of_positional = len(call.positional_arguments)
     if number_of_positional < 1:
-        raise astroid.UseInferenceDefault(
-            "functools.partial takes at least one argument"
-        )
+        raise UseInferenceDefault("functools.partial takes at least one argument")
     if number_of_positional == 1 and not call.keyword_arguments:
-        raise astroid.UseInferenceDefault(
+        raise UseInferenceDefault(
             "functools.partial needs at least to have some filled arguments"
         )
 
     partial_function = call.positional_arguments[0]
     try:
         inferred_wrapped_function = next(partial_function.infer(context=context))
-    except astroid.InferenceError as exc:
-        raise astroid.UseInferenceDefault from exc
+    except InferenceError as exc:
+        raise UseInferenceDefault from exc
     if inferred_wrapped_function is astroid.Uninferable:
-        raise astroid.UseInferenceDefault("Cannot infer the wrapped function")
+        raise UseInferenceDefault("Cannot infer the wrapped function")
     if not isinstance(inferred_wrapped_function, astroid.FunctionDef):
-        raise astroid.UseInferenceDefault("The wrapped function is not a function")
+        raise UseInferenceDefault("The wrapped function is not a function")
 
     # Determine if the passed keywords into the callsite are supported
     # by the wrapped function.
@@ -94,9 +93,7 @@ def _functools_partial_inference(node, context=None):
         if isinstance(param, astroid.AssignName)
     }
     if set(call.keyword_arguments) - parameter_names:
-        raise astroid.UseInferenceDefault(
-            "wrapped function received unknown parameters"
-        )
+        raise UseInferenceDefault("wrapped function received unknown parameters")
 
     partial_function = objects.PartialFunction(
         call,
