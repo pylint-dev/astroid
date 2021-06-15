@@ -8,18 +8,7 @@ So, you want to release the `X.Y.Z` version of astroid ?
 2. Install the release dependencies `pip3 install pre-commit tbump`
 3. Bump the version and release by using `tbump X.Y.Z --no-push`.
 4. Check the result.
-5. Until the release is done via GitHub actions on tag, run the following commands:
-
-```bash
-git clean -fdx && find . -name '*.pyc' -delete
-python3 -m venv venv
-source venv/bin/activate
-pip3 install twine wheel setuptools
-python setup.py sdist --formats=gztar bdist_wheel
-twine upload dist/*
-```
-
-6. Push the tag.
+5. Push the tag.
 
 ## Post release
 
@@ -28,7 +17,7 @@ twine upload dist/*
 Move back to a dev version with `tbump`:
 
 ```bash
-tbump X.Y.Z-dev0 --no-tag --no-push
+tbump X.Y.Z-dev0 --no-tag --no-push # You can interrupt during copyrite
 ```
 
 Check the result and then upgrade the master branch
