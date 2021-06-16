@@ -17,6 +17,7 @@ These are abstract node classes that :ref:`other nodes <nodes>` inherit from.
    astroid.node_classes.NodeNG
    astroid.mixins.ParentAssignTypeMixin
    astroid.node_classes.Statement
+   astroid.node_classes.Pattern
 
 
 .. autoclass:: astroid.mixins.AssignTypeMixin
@@ -42,3 +43,5 @@ These are abstract node classes that :ref:`other nodes <nodes>` inherit from.
 .. autoclass:: astroid.mixins.ParentAssignTypeMixin
 
 .. autoclass:: astroid.node_classes.Statement
+
+.. autoclass:: astroid.node_classes.Pattern

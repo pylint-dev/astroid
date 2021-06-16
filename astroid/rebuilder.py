@@ -467,7 +467,7 @@ class TreeRebuilder:
         ...
 
     @overload
-    def visit(self, node: "ast.pattern", parent: NodeNG) -> node_classes.PatternTypes:
+    def visit(self, node: "ast.pattern", parent: NodeNG) -> node_classes.Pattern:
         ...
 
     @overload
