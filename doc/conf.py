@@ -231,7 +231,13 @@ man_pages = [
      ['Logilab, PyCQA and contributors'], 1)
 ]
 
-autodoc_default_flags = ['members', 'undoc-members', 'show-inheritance']
+autodoc_default_options = {
+    'members': True,
+    'undoc-members': True,
+    'show-inheritance': True,
+}
+autodoc_member_order = "groupwise"
+autodoc_typehints = 'description'
 intersphinx_mapping = {
     'green_tree_snakes':
         ('http://greentreesnakes.readthedocs.io/en/latest/', 'ast_objects.inv'),
