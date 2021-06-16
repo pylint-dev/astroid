@@ -4687,7 +4687,7 @@ class Match(Statement):
         self.cases = cases
 
 
-class MatchCase(NodeNG):
+class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
     """Class representing a :class:`ast.match_case` node.
 
     >>> node = astroid.extract_node('''
@@ -4700,6 +4700,7 @@ class MatchCase(NodeNG):
     """
 
     _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("pattern", "guard", "body")
+    _multi_line_block_fields: ClassVar[typing.Tuple[str, ...]] = ("body",)
 
     def __init__(self, *, parent: Optional[NodeNG] = None) -> None:
         self.pattern: Optional["PatternTypes"] = None
