@@ -4687,6 +4687,10 @@ class Match(Statement):
         self.cases = cases
 
 
+class Pattern(NodeNG):
+    """Base class for all Pattern nodes."""
+
+
 class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
     """Class representing a :class:`ast.match_case` node.
 
@@ -4703,7 +4707,7 @@ class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
     _multi_line_block_fields: ClassVar[typing.Tuple[str, ...]] = ("body",)
 
     def __init__(self, *, parent: Optional[NodeNG] = None) -> None:
-        self.pattern: Optional["PatternTypes"] = None
+        self.pattern: Optional[Pattern] = None
         self.guard: Optional[NodeNG] = None  # can actually be None
         self.body: typing.List[NodeNG] = []
         super().__init__(parent=parent)
@@ -4711,7 +4715,7 @@ class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
     def postinit(
         self,
         *,
-        pattern: "PatternTypes",
+        pattern: Pattern,
         guard: Optional[NodeNG],
         body: typing.List[NodeNG],
     ) -> None:
@@ -4720,7 +4724,7 @@ class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
         self.body = body
 
 
-class MatchValue(NodeNG):
+class MatchValue(Pattern):
     """Class representing a :class:`ast.MatchValue` node.
 
     >>> node = astroid.extract_node('''
@@ -4747,7 +4751,7 @@ class MatchValue(NodeNG):
         self.value = value
 
 
-class MatchSingleton(NodeNG):
+class MatchSingleton(Pattern):
     """Class representing a :class:`ast.MatchSingleton` node.
 
     >>> node = astroid.extract_node('''
@@ -4781,7 +4785,7 @@ class MatchSingleton(NodeNG):
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
 
-class MatchSequence(NodeNG):
+class MatchSequence(Pattern):
     """Class representing a :class:`ast.MatchSequence` node.
 
     >>> node = astroid.extract_node('''
@@ -4805,14 +4809,14 @@ class MatchSequence(NodeNG):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.patterns: typing.List["PatternTypes"] = []
+        self.patterns: typing.List[Pattern] = []
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
-    def postinit(self, *, patterns: typing.List["PatternTypes"]) -> None:
+    def postinit(self, *, patterns: typing.List[Pattern]) -> None:
         self.patterns = patterns
 
 
-class MatchMapping(mixins.AssignTypeMixin, NodeNG):
+class MatchMapping(mixins.AssignTypeMixin, Pattern):
     """Class representing a :class:`ast.MatchMapping` node.
 
     >>> node = astroid.extract_node('''
@@ -4833,7 +4837,7 @@ class MatchMapping(mixins.AssignTypeMixin, NodeNG):
         parent: Optional[NodeNG] = None,
     ) -> None:
         self.keys: typing.List[NodeNG] = []
-        self.patterns: typing.List["PatternTypes"] = []
+        self.patterns: typing.List[Pattern] = []
         self.rest: Optional[AssignName] = None  # can actually be None
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -4841,7 +4845,7 @@ class MatchMapping(mixins.AssignTypeMixin, NodeNG):
         self,
         *,
         keys: typing.List[NodeNG],
-        patterns: typing.List["PatternTypes"],
+        patterns: typing.List[Pattern],
         rest: Optional[AssignName],
     ) -> None:
         self.keys = keys
@@ -4849,7 +4853,7 @@ class MatchMapping(mixins.AssignTypeMixin, NodeNG):
         self.rest = rest
 
 
-class MatchClass(NodeNG):
+class MatchClass(Pattern):
     """Class representing a :class:`ast.MatchClass` node.
 
     >>> node = astroid.extract_node('''
@@ -4879,18 +4883,18 @@ class MatchClass(NodeNG):
         parent: Optional[NodeNG] = None,
     ) -> None:
         self.cls: Optional[NodeNG] = None
-        self.patterns: typing.List["PatternTypes"] = []
+        self.patterns: typing.List[Pattern] = []
         self.kwd_attrs: typing.List[str] = []
-        self.kwd_patterns: typing.List["PatternTypes"] = []
+        self.kwd_patterns: typing.List[Pattern] = []
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
         self,
         *,
         cls: NodeNG,
-        patterns: typing.List["PatternTypes"],
+        patterns: typing.List[Pattern],
         kwd_attrs: typing.List[str],
-        kwd_patterns: typing.List["PatternTypes"],
+        kwd_patterns: typing.List[Pattern],
     ) -> None:
         self.cls = cls
         self.patterns = patterns
@@ -4898,7 +4902,7 @@ class MatchClass(NodeNG):
         self.kwd_patterns = kwd_patterns
 
 
-class MatchStar(mixins.AssignTypeMixin, NodeNG):
+class MatchStar(mixins.AssignTypeMixin, Pattern):
     """Class representing a :class:`ast.MatchStar` node.
 
     >>> node = astroid.extract_node('''
@@ -4925,7 +4929,7 @@ class MatchStar(mixins.AssignTypeMixin, NodeNG):
         self.name = name
 
 
-class MatchAs(mixins.AssignTypeMixin, NodeNG):
+class MatchAs(mixins.AssignTypeMixin, Pattern):
     """Class representing a :class:`ast.MatchAs` node.
 
     >>> node = astroid.extract_node('''
@@ -4957,21 +4961,21 @@ class MatchAs(mixins.AssignTypeMixin, NodeNG):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.pattern: Optional["PatternTypes"] = None  # can actually be None
+        self.pattern: Optional[Pattern] = None  # can actually be None
         self.name: Optional[AssignName] = None  # can actually be None
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
         self,
         *,
-        pattern: Optional["PatternTypes"],
+        pattern: Optional[Pattern],
         name: Optional[AssignName],
     ) -> None:
         self.pattern = pattern
         self.name = name
 
 
-class MatchOr(NodeNG):
+class MatchOr(Pattern):
     """Class representing a :class:`ast.MatchOr` node.
 
     >>> node = astroid.extract_node('''
@@ -4991,23 +4995,11 @@ class MatchOr(NodeNG):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.patterns: typing.List["PatternTypes"] = []
+        self.patterns: typing.List[Pattern] = []
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
-    def postinit(self, *, patterns: typing.List["PatternTypes"]) -> None:
+    def postinit(self, *, patterns: typing.List[Pattern]) -> None:
         self.patterns = patterns
-
-
-PatternTypes = typing.Union[
-    MatchValue,
-    MatchSingleton,
-    MatchSequence,
-    MatchMapping,
-    MatchClass,
-    MatchStar,
-    MatchAs,
-    MatchOr,
-]
 
 
 # constants ##############################################################

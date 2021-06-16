@@ -40,6 +40,8 @@ Release Date: TBA
 
 * Updated all Match nodes to be internally consistent.
 
+* Add ``Pattern`` base class.
+
 
 What's New in astroid 2.5.8?
 ============================
