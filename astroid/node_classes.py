@@ -1002,7 +1002,7 @@ class _BaseContainer(
         self.elts: typing.List[NodeNG] = []
         """The elements in the node."""
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(self, elts: typing.List[NodeNG]) -> None:
         """Do some setup after initialisation.
