@@ -236,6 +236,7 @@ autodoc_default_options = {
     'undoc-members': True,
     'show-inheritance': True,
 }
+autoclass_content = "both"
 autodoc_member_order = "groupwise"
 autodoc_typehints = 'description'
 intersphinx_mapping = {
