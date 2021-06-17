@@ -40,6 +40,7 @@ import astroid
 from astroid import bases, builder
 from astroid import context as contextmod
 from astroid import node_classes, nodes, parse, test_utils, transforms, util
+from astroid.constants import PY38, PY310
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -50,7 +51,6 @@ from . import resources
 
 abuilder = builder.AstroidBuilder()
 BUILTINS = builtins.__name__
-PY38 = sys.version_info[:2] >= (3, 8)
 try:
     import typed_ast  # pylint: disable=unused-import
 
@@ -265,7 +265,7 @@ class D(metaclass=abc.ABCMeta):
     # This test is disabled on PyPy because we cannot get a release that has proper
     # support for f-strings (we need 7.2 at least)
     @pytest.mark.skipif(
-        sys.version_info[:2] < (3, 6) or platform.python_implementation() == "PyPy",
+        platform.python_implementation() == "PyPy",
         reason="Needs f-string support.",
     )
     def test_f_strings(self):
@@ -1237,7 +1237,6 @@ class AsyncGeneratorTest:
         assert inferred.display_type() == "Generator"
 
 
-@pytest.mark.skipif(sys.version_info[:2] < (3, 6), reason="needs f-string support")
 def test_f_string_correct_line_numbering():
     """Test that we generate correct line numbers for f-strings"""
     node = astroid.extract_node(
@@ -1253,9 +1252,7 @@ def test_f_string_correct_line_numbering():
     assert node.last_child().last_child().lineno == 5
 
 
-@pytest.mark.skipif(
-    sys.version_info[:2] < (3, 8), reason="needs assignment expressions"
-)
+@pytest.mark.skipif(not PY38, reason="needs assignment expressions")
 def test_assignment_expression():
     code = """
     if __(a := 1):
@@ -1371,9 +1368,7 @@ def test_is_generator_for_yield_in_aug_assign():
     assert bool(node.is_generator())
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 10), reason="pattern matching was added in PY310"
-)
+@pytest.mark.skipif(not PY310, reason="pattern matching was added in PY310")
 class TestPatternMatching:
     @staticmethod
     def test_match_simple():

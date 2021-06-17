@@ -1,13 +1,9 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
-import sys
 
 import astroid
 from astroid import MANAGER, context, inference_tip, nodes
-
-PY36 = sys.version_info >= (3, 6)
-PY37 = sys.version_info[:2] >= (3, 7)
-PY39 = sys.version_info[:2] >= (3, 9)
+from astroid.constants import PY36, PY37, PY39
 
 if PY36:
     # Since Python 3.6 there is the RegexFlag enum

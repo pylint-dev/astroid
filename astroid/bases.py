@@ -25,10 +25,10 @@ inference utils.
 
 import builtins
 import collections
-import sys
 
 from astroid import context as contextmod
 from astroid import util
+from astroid.constants import PY310
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
@@ -42,7 +42,6 @@ BUILTINS = builtins.__name__
 manager = util.lazy_import("manager")
 MANAGER = manager.AstroidManager()
 
-PY310 = sys.version_info >= (3, 10)
 
 # TODO: check if needs special treatment
 BUILTINS = "builtins"

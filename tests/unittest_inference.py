@@ -37,7 +37,6 @@
 """Tests for the astroid inference capabilities"""
 
 import platform
-import sys
 import textwrap
 import unittest
 from functools import partial
@@ -50,6 +49,7 @@ from astroid import decorators as decoratorsmod
 from astroid import helpers, nodes, objects, test_utils, util
 from astroid.bases import BUILTINS, BoundMethod, Instance, UnboundMethod
 from astroid.builder import extract_node, parse
+from astroid.constants import PY38, PY39
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
@@ -932,7 +932,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual("module.D", should_be_D[0].qname())
 
     @pytest.mark.skipif(
-        sys.version_info >= (3, 8),
+        PY38,
         reason="pathlib.Path cannot be inferred on Python 3.8",
     )
     def test_factory_methods_inside_binary_operation(self):
@@ -2495,7 +2495,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ]
 
         # PEP-584 supports | for dictionary union
-        if sys.version_info < (3, 9):
+        if not PY39:
             ast_nodes.append(extract_node("{} | {} #@"))
             expected.append(msg.format(op="|", lhs="dict", rhs="dict"))
 
@@ -5882,9 +5882,9 @@ def test_custom_decorators_for_classmethod_and_staticmethods(code, obj, obj_type
     assert inferred.type == obj_type
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="Needs dataclasses available")
+@pytest.mark.skipif(not PY38, reason="Needs dataclasses available")
 @pytest.mark.skipif(
-    sys.version_info >= (3, 9),
+    PY39,
     reason="Exact inference with dataclasses (replace function) in python3.9",
 )
 def test_dataclasses_subscript_inference_recursion_error():
@@ -5908,7 +5908,7 @@ def test_dataclasses_subscript_inference_recursion_error():
 
 
 @pytest.mark.skipif(
-    sys.version_info < (3, 9),
+    not PY39,
     reason="Exact inference with dataclasses (replace function) in python3.9",
 )
 def test_dataclasses_subscript_inference_recursion_error_39():
