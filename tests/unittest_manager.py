@@ -236,9 +236,7 @@ class AstroidManagerTest(
         """check if the unittest filepath is equals to the result of the method"""
         self.assertEqual(
             _get_file_from_object(unittest),
-            self.manager.file_from_module_name(  # pylint: disable=no-member
-                "unittest", None
-            ).location,
+            self.manager.file_from_module_name("unittest", None).location,
         )
 
     def test_file_from_module_name_astro_building_exception(self):
