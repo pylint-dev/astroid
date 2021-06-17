@@ -738,13 +738,11 @@ class TreeRebuilder:
     def visit_call(self, node: "ast.Call", parent: NodeNG) -> nodes.Call:
         """visit a CallFunc node by returning a fresh instance of it"""
         newnode = nodes.Call(node.lineno, node.col_offset, parent)
-        args = [self.visit(child, newnode) for child in node.args]
-
-        keywords: Optional[List[nodes.Keyword]] = None
-        if node.keywords:
-            keywords = [self.visit(child, newnode) for child in node.keywords]
-
-        newnode.postinit(self.visit(node.func, newnode), args, keywords)
+        newnode.postinit(
+            func=self.visit(node.func, newnode),
+            args=[self.visit(child, newnode) for child in node.args],
+            keywords=[self.visit(child, newnode) for child in node.keywords],
+        )
         return newnode
 
     def visit_classdef(

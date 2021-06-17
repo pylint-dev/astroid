@@ -2164,48 +2164,43 @@ class BinOp(NodeNG):
 
     _astroid_fields = ("left", "right")
     _other_fields = ("op",)
-    left = None
-    """What is being applied to the operator on the left side.
 
-    :type: NodeNG or None
-    """
-    right = None
-    """What is being applied to the operator on the right side.
-
-    :type: NodeNG or None
-    """
-
-    def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        op: Optional[str] = None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param op: The operator.
-        :type: str or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.op = op
-        """The operator.
+        self.left: Optional[NodeNG] = None
+        """What is being applied to the operator on the left side."""
 
-        :type: str or None
-        """
+        self.op: Optional[str] = op
+        """The operator."""
 
-        super().__init__(lineno, col_offset, parent)
+        self.right: Optional[NodeNG] = None
+        """What is being applied to the operator on the right side."""
 
-    def postinit(self, left=None, right=None):
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self, left: Optional[NodeNG] = None, right: Optional[NodeNG] = None
+    ) -> None:
         """Do some setup after initialisation.
 
         :param left: What is being applied to the operator on the left side.
-        :type left: NodeNG or None
 
         :param right: What is being applied to the operator on the right side.
-        :type right: NodeNG or None
         """
         self.left = left
         self.right = right
@@ -2257,42 +2252,39 @@ class BoolOp(NodeNG):
 
     _astroid_fields = ("values",)
     _other_fields = ("op",)
-    values = None
-    """The values being applied to the operator.
 
-    :type: list(NodeNG) or None
-    """
-
-    def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        op: Optional[str] = None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param op: The operator.
-        :type: str or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.op = op
-        """The operator.
+        self.op: Optional[str] = op
+        """The operator."""
 
-        :type: str or None
-        """
+        self.values: typing.List[NodeNG] = []
+        """The values being applied to the operator."""
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
-    def postinit(self, values=None):
+    def postinit(self, values: Optional[typing.List[NodeNG]] = None) -> None:
         """Do some setup after initialisation.
 
         :param values: The values being applied to the operator.
-        :type values: list(NodeNG) or None
         """
-        self.values = values
+        if values is not None:
+            self.values = values
 
     def get_children(self):
         yield from self.values
@@ -2321,62 +2313,68 @@ class Call(NodeNG):
     """
 
     _astroid_fields = ("func", "args", "keywords")
-    func = None
-    """What is being called.
 
-    :type: NodeNG or None
-    """
-    args = None
-    """The positional arguments being given to the call.
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    :type: list(NodeNG) or None
-    """
-    keywords = None
-    """The keyword arguments being given to the call.
+        :param col_offset: The column that this node appears on in the
+            source code.
 
-    :type: list(NodeNG) or None
-    """
+        :param parent: The parent node in the syntax tree.
+        """
+        self.func: Optional[NodeNG] = None
+        """What is being called."""
 
-    def postinit(self, func=None, args=None, keywords=None):
+        self.args: typing.List[NodeNG] = []
+        """The positional arguments being given to the call."""
+
+        self.keywords: typing.List["Keyword"] = []
+        """The keyword arguments being given to the call."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self,
+        func: Optional[NodeNG] = None,
+        args: Optional[typing.List[NodeNG]] = None,
+        keywords: Optional[typing.List["Keyword"]] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param func: What is being called.
-        :type func: NodeNG or None
 
         :param args: The positional arguments being given to the call.
-        :type args: list(NodeNG) or None
 
         :param keywords: The keyword arguments being given to the call.
-        :type keywords: list(NodeNG) or None
         """
         self.func = func
-        self.args = args
-        self.keywords = keywords
+        if args is not None:
+            self.args = args
+        if keywords is not None:
+            self.keywords = keywords
 
     @property
-    def starargs(self):
-        """The positional arguments that unpack something.
-
-        :type: list(Starred)
-        """
-        args = self.args or []
-        return [arg for arg in args if isinstance(arg, Starred)]
+    def starargs(self) -> typing.List["Starred"]:
+        """The positional arguments that unpack something."""
+        return [arg for arg in self.args if isinstance(arg, Starred)]
 
     @property
-    def kwargs(self):
-        """The keyword arguments that unpack something.
-
-        :type: list(Keyword)
-        """
-        keywords = self.keywords or []
-        return [keyword for keyword in keywords if keyword.arg is None]
+    def kwargs(self) -> typing.List["Keyword"]:
+        """The keyword arguments that unpack something."""
+        return [keyword for keyword in self.keywords if keyword.arg is None]
 
     def get_children(self):
         yield self.func
 
         yield from self.args
 
-        yield from self.keywords or ()
+        yield from self.keywords
 
 
 class Compare(NodeNG):
@@ -2392,30 +2390,45 @@ class Compare(NodeNG):
     """
 
     _astroid_fields = ("left", "ops")
-    left = None
-    """The value at the left being applied to a comparison operator.
 
-    :type: NodeNG or None
-    """
-    ops = None
-    """The remainder of the operators and their relevant right hand value.
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    :type: list(tuple(str, NodeNG)) or None
-    """
+        :param col_offset: The column that this node appears on in the
+            source code.
 
-    def postinit(self, left=None, ops=None):
+        :param parent: The parent node in the syntax tree.
+        """
+        self.left: Optional[NodeNG] = None
+        """The value at the left being applied to a comparison operator."""
+
+        self.ops: typing.List[typing.Tuple[str, NodeNG]] = []
+        """The remainder of the operators and their relevant right hand value."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self,
+        left: Optional[NodeNG] = None,
+        ops: Optional[typing.List[typing.Tuple[str, NodeNG]]] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param left: The value at the left being applied to a comparison
             operator.
-        :type left: NodeNG or None
 
         :param ops: The remainder of the operators
             and their relevant right hand value.
-        :type ops: list(tuple(str, NodeNG)) or None
         """
         self.left = left
-        self.ops = ops
+        if ops is not None:
+            self.ops = ops
 
     def get_children(self):
         """Get the child nodes below this node.
