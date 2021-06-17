@@ -14,6 +14,7 @@
 import textwrap
 
 import astroid
+from astroid.brain.helpers import register_module_extender
 from astroid.const import PY37, PY39
 
 
@@ -137,4 +138,4 @@ def _subprocess_transform():
     return astroid.parse(code)
 
 
-astroid.register_module_extender(astroid.MANAGER, "subprocess", _subprocess_transform)
+register_module_extender(astroid.MANAGER, "subprocess", _subprocess_transform)

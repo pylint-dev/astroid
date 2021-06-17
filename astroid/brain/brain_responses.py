@@ -8,6 +8,7 @@ See: https://github.com/getsentry/responses/blob/master/responses.py
 
 """
 import astroid
+from astroid.brain.helpers import register_module_extender
 
 
 def responses_funcs():
@@ -70,4 +71,4 @@ def responses_funcs():
     )
 
 
-astroid.register_module_extender(astroid.MANAGER, "responses", responses_funcs)
+register_module_extender(astroid.MANAGER, "responses", responses_funcs)

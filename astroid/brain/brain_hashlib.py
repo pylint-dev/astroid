@@ -10,6 +10,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 import astroid
+from astroid.brain.helpers import register_module_extender
 
 
 def _hashlib_transform():
@@ -58,4 +59,4 @@ def _hashlib_transform():
     return astroid.parse(classes)
 
 
-astroid.register_module_extender(astroid.MANAGER, "hashlib", _hashlib_transform)
+register_module_extender(astroid.MANAGER, "hashlib", _hashlib_transform)

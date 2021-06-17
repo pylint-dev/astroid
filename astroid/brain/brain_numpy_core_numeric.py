@@ -12,8 +12,8 @@
 import functools
 
 import astroid
-
-from .brain_numpy_utils import infer_numpy_member, looks_like_numpy_member
+from astroid.brain.brain_numpy_utils import infer_numpy_member, looks_like_numpy_member
+from astroid.brain.helpers import register_module_extender
 
 
 def numpy_core_numeric_transform():
@@ -28,7 +28,7 @@ def numpy_core_numeric_transform():
     )
 
 
-astroid.register_module_extender(
+register_module_extender(
     astroid.MANAGER, "numpy.core.numeric", numpy_core_numeric_transform
 )
 

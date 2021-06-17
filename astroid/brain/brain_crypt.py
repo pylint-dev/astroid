@@ -2,6 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 import astroid
+from astroid.brain.helpers import register_module_extender
 from astroid.const import PY37
 
 if PY37:
@@ -22,4 +23,4 @@ if PY37:
         """
         )
 
-    astroid.register_module_extender(astroid.MANAGER, "crypt", _re_transform)
+    register_module_extender(astroid.MANAGER, "crypt", _re_transform)

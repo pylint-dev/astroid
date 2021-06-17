@@ -6,7 +6,8 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 
-from astroid import MANAGER, parse, register_module_extender
+from astroid import MANAGER, parse
+from astroid.brain.helpers import register_module_extender
 
 
 def pkg_resources_transform():

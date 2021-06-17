@@ -15,7 +15,8 @@
 
 from textwrap import dedent
 
-from astroid import MANAGER, nodes, register_module_extender
+from astroid import MANAGER, nodes
+from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
 from astroid.exceptions import (
     AstroidBuildingError,

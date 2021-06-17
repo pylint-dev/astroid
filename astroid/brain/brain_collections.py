@@ -10,6 +10,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 import astroid
+from astroid.brain.helpers import register_module_extender
 from astroid.const import PY39
 
 
@@ -81,7 +82,7 @@ def _ordered_dict_mock():
     return base_ordered_dict_class
 
 
-astroid.register_module_extender(astroid.MANAGER, "collections", _collections_transform)
+register_module_extender(astroid.MANAGER, "collections", _collections_transform)
 
 
 def _looks_like_subscriptable(node: astroid.nodes.ClassDef) -> bool:
