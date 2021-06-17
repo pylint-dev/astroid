@@ -64,13 +64,13 @@ class Super(node_classes.NodeNG):
     # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.SuperModel())
 
-    # pylint: disable=super-init-not-called
     def __init__(self, mro_pointer, mro_type, self_class, scope):
         self.type = mro_type
         self.mro_pointer = mro_pointer
         self._class_based = False
         self._self_class = self_class
         self._scope = scope
+        super().__init__()
 
     def _infer(self, context=None):
         yield self
