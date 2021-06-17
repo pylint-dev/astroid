@@ -802,7 +802,7 @@ class TreeRebuilder:
             self.visit(node.target, newnode),
             self.visit(node.iter, newnode),
             [self.visit(child, newnode) for child in node.ifs],
-            node.is_async,
+            bool(node.is_async),
         )
         return newnode
 
