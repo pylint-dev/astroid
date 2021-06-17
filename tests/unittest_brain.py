@@ -1355,7 +1355,6 @@ class CollectionsBrain(unittest.TestCase):
         )
 
 
-@test_utils.require_version("3.6")
 class TypingBrain(unittest.TestCase):
     def test_namedtuple_base(self):
         klass = builder.extract_node(
