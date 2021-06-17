@@ -2469,62 +2469,51 @@ class Comprehension(NodeNG):
 
     _astroid_fields = ("target", "iter", "ifs")
     _other_fields = ("is_async",)
-    target = None
-    """What is assigned to by the comprehension.
 
-    :type: NodeNG or None
-    """
-    iter = None
-    """What is iterated over by the comprehension.
+    optional_assign = True
 
-    :type: NodeNG or None
-    """
-    ifs = None
-    """The contents of any if statements that filter the comprehension.
-
-    :type: list(NodeNG) or None
-    """
-    is_async = None
-    """Whether this is an asynchronous comprehension or not.
-
-    :type: bool or None
-    """
-
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[NodeNG] = None) -> None:
         """
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        super().__init__()
-        self.parent = parent
+        self.target: Optional[NodeNG] = None
+        """What is assigned to by the comprehension."""
+
+        self.iter: Optional[NodeNG] = None
+        """What is iterated over by the comprehension."""
+
+        self.ifs: typing.List[NodeNG] = []
+        """The contents of any if statements that filter the comprehension."""
+
+        self.is_async: Optional[bool] = None
+        """Whether this is an asynchronous comprehension or not."""
+
+        super().__init__(parent=parent)
 
     # pylint: disable=redefined-builtin; same name as builtin ast module.
-    def postinit(self, target=None, iter=None, ifs=None, is_async=None):
+    def postinit(
+        self,
+        target: Optional[NodeNG] = None,
+        iter: Optional[NodeNG] = None,
+        ifs: Optional[typing.List[NodeNG]] = None,
+        is_async: Optional[bool] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param target: What is assigned to by the comprehension.
-        :type target: NodeNG or None
 
         :param iter: What is iterated over by the comprehension.
-        :type iter: NodeNG or None
 
         :param ifs: The contents of any if statements that filter
             the comprehension.
-        :type ifs: list(NodeNG) or None
 
         :param is_async: Whether this is an asynchronous comprehension or not.
-        :type: bool or None
         """
         self.target = target
         self.iter = iter
-        self.ifs = ifs
+        if ifs is not None:
+            self.ifs = ifs
         self.is_async = is_async
-
-    optional_assign = True
-    """Whether this node optionally assigns a variable.
-
-    :type: bool
-    """
 
     def assign_type(self):
         """The type of assignment that this node performs.
@@ -2571,28 +2560,33 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
 
     _other_fields = ("value",)
 
-    def __init__(self, value, lineno=None, col_offset=None, parent=None, kind=None):
+    def __init__(
+        self,
+        value: typing.Any,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+        kind: Optional[str] = None,
+    ) -> None:
         """
         :param value: The value that the constant represents.
-        :type value: object
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
 
         :param kind: The string prefix. "u" for u-prefixed strings and ``None`` otherwise. Python 3.8+ only.
-        :type kind: str or None
         """
-        self.value = value
-        self.kind = kind
+        self.value: typing.Any = value
+        """The value that the constant represents."""
 
-        super().__init__(lineno, col_offset, parent)
+        self.kind: Optional[str] = kind  # can be None
+        """"The string prefix. "u" for u-prefixed strings and ``None`` otherwise. Python 3.8+ only."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def __getattr__(self, name):
         # This is needed because of Proxy's __getattr__ method.
@@ -2798,19 +2792,33 @@ class Delete(mixins.AssignTypeMixin, Statement):
     """
 
     _astroid_fields = ("targets",)
-    targets = None
-    """What is being deleted.
 
-    :type: list(NodeNG) or None
-    """
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    def postinit(self, targets=None):
+        :param col_offset: The column that this node appears on in the
+            source code.
+
+        :param parent: The parent node in the syntax tree.
+        """
+        self.targets: typing.List[NodeNG] = []
+        """What is being deleted."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(self, targets: Optional[typing.List[NodeNG]] = None) -> None:
         """Do some setup after initialisation.
 
         :param targets: What is being deleted.
-        :type targets: list(NodeNG) or None
         """
-        self.targets = targets
+        if targets is not None:
+            self.targets = targets
 
     def get_children(self):
         yield from self.targets
@@ -2828,31 +2836,29 @@ class Dict(NodeNG, bases.Instance):
 
     _astroid_fields = ("items",)
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.items = []
-        """The key-value pairs contained in the dictionary.
+        self.items: typing.List[typing.Tuple[NodeNG, NodeNG]] = []
+        """The key-value pairs contained in the dictionary."""
 
-        :type: list(tuple(NodeNG, NodeNG))
-        """
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
-        super().__init__(lineno, col_offset, parent)
-
-    def postinit(self, items):
+    def postinit(self, items: typing.List[typing.Tuple[NodeNG, NodeNG]]) -> None:
         """Do some setup after initialisation.
 
         :param items: The key-value pairs contained in the dictionary.
-        :type items: list(tuple(NodeNG, NodeNG))
         """
         self.items = items
 
@@ -2967,17 +2973,30 @@ class Expr(Statement):
     """
 
     _astroid_fields = ("value",)
-    value = None
-    """What the expression does.
 
-    :type: NodeNG or None
-    """
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    def postinit(self, value=None):
+        :param col_offset: The column that this node appears on in the
+            source code.
+
+        :param parent: The parent node in the syntax tree.
+        """
+        self.value: Optional[NodeNG] = None
+        """What the expression does."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
 
         :param value: What the expression does.
-        :type value: NodeNG or None
         """
         self.value = value
 
