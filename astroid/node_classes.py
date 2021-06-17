@@ -1879,25 +1879,37 @@ class Assert(Statement):
     """
 
     _astroid_fields = ("test", "fail")
-    test = None
-    """The test that passes or fails the assertion.
 
-    :type: NodeNG or None
-    """
-    fail = None
-    """The message shown when the assertion fails.
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    :type: NodeNG or None
-    """
+        :param col_offset: The column that this node appears on in the
+            source code.
 
-    def postinit(self, test=None, fail=None):
+        :param parent: The parent node in the syntax tree.
+        """
+        self.test: Optional[NodeNG] = None
+        """The test that passes or fails the assertion."""
+
+        self.fail: Optional[NodeNG] = None  # can be None
+        """The message shown when the assertion fails."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self, test: Optional[NodeNG] = None, fail: Optional[NodeNG] = None
+    ) -> None:
         """Do some setup after initialisation.
 
         :param test: The test that passes or fails the assertion.
-        :type test: NodeNG or None
 
         :param fail: The message shown when the assertion fails.
-        :type fail: NodeNG or None
         """
         self.fail = fail
         self.test = test
@@ -1922,32 +1934,46 @@ class Assign(mixins.AssignTypeMixin, Statement):
 
     _astroid_fields = ("targets", "value")
     _other_other_fields = ("type_annotation",)
-    targets = None
-    """What is being assigned to.
 
-    :type: list(NodeNG) or None
-    """
-    value = None
-    """The value being assigned to the variables.
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    :type: NodeNG or None
-    """
-    type_annotation = None
-    """If present, this will contain the type annotation passed by a type comment
+        :param col_offset: The column that this node appears on in the
+            source code.
 
-    :type: NodeNG or None
-    """
+        :param parent: The parent node in the syntax tree.
+        """
+        self.targets: typing.List[NodeNG] = []
+        """What is being assigned to."""
 
-    def postinit(self, targets=None, value=None, type_annotation=None):
+        self.value: Optional[NodeNG] = None
+        """The value being assigned to the variables."""
+
+        self.type_annotation: Optional[NodeNG] = None
+        """If present, this will contain the type annotation passed by a type comment"""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self,
+        targets: Optional[typing.List[NodeNG]] = None,
+        value: Optional[NodeNG] = None,
+        type_annotation: Optional[NodeNG] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param targets: What is being assigned to.
-        :type targets: list(NodeNG) or None
 
         :param value: The value being assigned to the variables.
-        :type: NodeNG or None
         """
-        self.targets = targets
+        if targets is not None:
+            self.targets = targets
         self.value = value
         self.type_annotation = type_annotation
 
@@ -1976,42 +2002,52 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
 
     _astroid_fields = ("target", "annotation", "value")
     _other_fields = ("simple",)
-    target = None
-    """What is being assigned to.
 
-    :type: NodeNG or None
-    """
-    annotation = None
-    """The type annotation of what is being assigned to.
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    :type: NodeNG
-    """
-    value = None
-    """The value being assigned to the variables.
+        :param col_offset: The column that this node appears on in the
+            source code.
 
-    :type: NodeNG or None
-    """
-    simple = None
-    """Whether :attr:`target` is a pure name or a complex statement.
+        :param parent: The parent node in the syntax tree.
+        """
+        self.target: Optional[NodeNG] = None
+        """What is being assigned to."""
 
-    :type: int
-    """
+        self.annotation: Optional[NodeNG] = None
+        """The type annotation of what is being assigned to."""
 
-    def postinit(self, target, annotation, simple, value=None):
+        self.value: Optional[NodeNG] = None  # can be None
+        """The value being assigned to the variables."""
+
+        self.simple: Optional[int] = None
+        """Whether :attr:`target` is a pure name or a complex statement."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self,
+        target: NodeNG,
+        annotation: NodeNG,
+        simple: int,
+        value: Optional[NodeNG] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param target: What is being assigned to.
-        :type target: NodeNG
 
         :param annotation: The type annotation of what is being assigned to.
-        :type: NodeNG
 
         :param simple: Whether :attr:`target` is a pure name
             or a complex statement.
-        :type simple: int
 
         :param value: The value being assigned to the variables.
-        :type: NodeNG or None
         """
         self.target = target
         self.annotation = annotation
@@ -2038,51 +2074,47 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
 
     _astroid_fields = ("target", "value")
     _other_fields = ("op",)
-    target = None
-    """What is being assigned to.
 
-    :type: NodeNG or None
-    """
-    value = None
-    """The value being assigned to the variable.
-
-    :type: NodeNG or None
-    """
-
-    def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        op: Optional[str] = None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param op: The operator that is being combined with the assignment.
             This includes the equals sign.
-        :type op: str or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.op = op
+        self.target: Optional[NodeNG] = None
+        """What is being assigned to."""
+
+        self.op: Optional[str] = op
         """The operator that is being combined with the assignment.
 
         This includes the equals sign.
-
-        :type: str or None
         """
 
-        super().__init__(lineno, col_offset, parent)
+        self.value: Optional[NodeNG] = None
+        """The value being assigned to the variable."""
 
-    def postinit(self, target=None, value=None):
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self, target: Optional[NodeNG] = None, value: Optional[NodeNG] = None
+    ) -> None:
         """Do some setup after initialisation.
 
         :param target: What is being assigned to.
-        :type target: NodeNG or None
 
         :param value: The value being assigned to the variable.
-        :type: NodeNG or None
         """
         self.target = target
         self.value = value
