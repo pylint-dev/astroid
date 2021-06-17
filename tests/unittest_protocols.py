@@ -13,13 +13,13 @@
 
 
 import contextlib
-import sys
 import unittest
 
 import pytest
 
 import astroid
 from astroid import extract_node, nodes, util
+from astroid.constants import PY38
 from astroid.exceptions import InferenceError
 from astroid.node_classes import AssignName, Const, Name, Starred
 
@@ -211,9 +211,7 @@ class ProtocolTests(unittest.TestCase):
         parsed.accept(Visitor())
 
 
-@pytest.mark.skipif(
-    sys.version_info[:2] < (3, 8), reason="needs assignment expressions"
-)
+@pytest.mark.skipif(not PY38, reason="needs assignment expressions")
 def test_named_expr_inference():
     code = """
     if (a := 2) == 2:

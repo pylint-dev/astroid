@@ -44,6 +44,7 @@ import pytest
 
 import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
+from astroid.constants import PY37
 from astroid.exceptions import AttributeInferenceError, InferenceError
 
 try:
@@ -2730,7 +2731,7 @@ def test_http_client_brain():
     assert isinstance(inferred, astroid.Instance)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="Needs 3.7+")
+@pytest.mark.skipif(not PY37, reason="Needs 3.7+")
 def test_http_status_brain():
     node = astroid.extract_node(
         """
@@ -2767,9 +2768,7 @@ def test_oserror_model():
     assert strerror.value == ""
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 7), reason="Dynamic module attributes since Python 3.7"
-)
+@pytest.mark.skipif(not PY37, reason="Dynamic module attributes since Python 3.7")
 def test_crypt_brain():
     module = MANAGER.ast_from_module_name("crypt")
     dynamic_attrs = [
@@ -2783,7 +2782,7 @@ def test_crypt_brain():
         assert attr in module
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="Dataclasses were added in 3.7")
+@pytest.mark.skipif(not PY37, reason="Dataclasses were added in 3.7")
 def test_dataclasses():
     code = """
     import dataclasses

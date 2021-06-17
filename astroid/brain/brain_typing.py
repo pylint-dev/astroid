@@ -10,20 +10,17 @@
 # Copyright (c) 2021 hippo91 <guillaume.peillex@gmail.com>
 
 """Astroid hooks for typing.py support."""
-import sys
 import typing
 from functools import partial
 
 import astroid
 from astroid import MANAGER, context, extract_node, inference_tip, node_classes, nodes
+from astroid.constants import PY37, PY39
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
     UseInferenceDefault,
 )
-
-PY37 = sys.version_info[:2] >= (3, 7)
-PY39 = sys.version_info[:2] >= (3, 9)
 
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
 TYPING_TYPEVARS = {"TypeVar", "NewType"}

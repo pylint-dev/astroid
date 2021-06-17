@@ -41,13 +41,13 @@ Lambda, GeneratorExp, DictComp and SetComp to some extent).
 import builtins
 import io
 import itertools
-import sys
 from typing import List, Optional
 
 from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators as decorators_mod
 from astroid import manager, mixins, node_classes, util
+from astroid.constants import PY36, PY39
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidTypeError,
@@ -59,8 +59,6 @@ from astroid.exceptions import (
     TooManyLevelsError,
 )
 from astroid.interpreter import dunder_lookup, objectmodel
-
-PY39 = sys.version_info[:2] >= (3, 9)
 
 BUILTINS = builtins.__name__
 ITER_METHODS = ("__iter__", "__getitem__")
@@ -1516,7 +1514,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         if isinstance(frame, ClassDef):
             if self.name == "__new__":
                 return "classmethod"
-            if sys.version_info >= (3, 6) and self.name == "__init_subclass__":
+            if PY36 and self.name == "__init_subclass__":
                 return "classmethod"
 
             type_name = "method"

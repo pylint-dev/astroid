@@ -6,9 +6,9 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 import collections.abc
-import sys
 
 import astroid
+from astroid.constants import PY36
 
 
 def _clone_node_with_lineno(node, parent, lineno):
@@ -44,7 +44,7 @@ def _transform_formatted_value(node):  # pylint: disable=inconsistent-return-sta
             return new_node
 
 
-if sys.version_info[:2] >= (3, 6):
+if PY36:
     # TODO: this fix tries to *patch* http://bugs.python.org/issue29051
     # The problem is that FormattedValue.value, which is a Name node,
     # has wrong line numbers, usually 1. This creates problems for pylint,

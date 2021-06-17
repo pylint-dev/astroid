@@ -29,7 +29,6 @@
 order to get a single Astroid representation
 """
 
-import sys
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -44,6 +43,8 @@ from typing import (
     cast,
     overload,
 )
+
+from astroid.constants import PY37, PY38, PY39
 
 try:
     from typing import Final
@@ -70,9 +71,7 @@ REDIRECT: Final[Dict[str, str]] = {
     "keyword": "Keyword",
     "match_case": "MatchCase",
 }
-PY37 = sys.version_info >= (3, 7)
-PY38 = sys.version_info >= (3, 8)
-PY39 = sys.version_info >= (3, 9)
+
 
 T_Doc = TypeVar(
     "T_Doc",

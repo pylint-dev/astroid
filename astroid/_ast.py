@@ -5,6 +5,7 @@ from functools import partial
 from typing import Optional
 
 import astroid
+from astroid.constants import PY38
 
 try:
     import typed_ast.ast3 as _ast_py3
@@ -12,7 +13,6 @@ except ImportError:
     _ast_py3 = None
 
 
-PY38 = sys.version_info[:2] >= (3, 8)
 if PY38:
     # On Python 3.8, typed_ast was merged back into `ast`
     _ast_py3 = ast

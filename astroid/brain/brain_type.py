@@ -15,12 +15,10 @@ Doing this type[int] is allowed whereas str[int] is not.
 
 Thanks to Lukasz Langa for fruitful discussion.
 """
-import sys
 
 from astroid import MANAGER, extract_node, inference_tip, nodes
+from astroid.constants import PY39
 from astroid.exceptions import UseInferenceDefault
-
-PY39 = sys.version_info >= (3, 9)
 
 
 def _looks_like_type_subscript(node):

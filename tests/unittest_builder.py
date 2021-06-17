@@ -31,6 +31,7 @@ import unittest
 import pytest
 
 from astroid import Instance, builder, manager, nodes, test_utils, util
+from astroid.constants import PY38
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -42,7 +43,6 @@ from . import resources
 
 MANAGER = manager.AstroidManager()
 BUILTINS = builtins.__name__
-PY38 = sys.version_info[:2] >= (3, 8)
 
 
 class FromToLineNoTest(unittest.TestCase):
@@ -750,7 +750,7 @@ def test_module_build_dunder_file():
 
 
 @pytest.mark.skipif(
-    sys.version_info[:2] >= (3, 8),
+    PY38,
     reason=(
         "The builtin ast module does not fail with a specific error "
         "for syntax error caused by invalid type comments."

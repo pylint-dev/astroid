@@ -39,7 +39,7 @@ def require_version(minver=None, maxver=None):
             ) from exc
 
     def check_require_version(f):
-        current = sys.version_info[:3]
+        current = sys.version_info[:3]  # TODO
         if parse(minver, "0") < current <= parse(maxver, "4"):
             return f
 
