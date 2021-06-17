@@ -29,9 +29,10 @@ import collections
 import itertools
 import operator as operator_mod
 
-from astroid import Store, arguments, bases
+from astroid import arguments, bases
 from astroid import context as contextmod
 from astroid import decorators, helpers, node_classes, nodes, util
+from astroid.constants import Store
 from astroid.exceptions import (
     AstroidIndexError,
     AstroidTypeError,

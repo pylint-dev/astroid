@@ -40,7 +40,7 @@ import astroid
 from astroid import bases, builder
 from astroid import context as contextmod
 from astroid import node_classes, nodes, parse, test_utils, transforms, util
-from astroid.constants import PY38, PY310
+from astroid.constants import PY38, PY310, Del, Load, Store
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -928,24 +928,24 @@ class Python35AsyncTest(unittest.TestCase):
 class ContextTest(unittest.TestCase):
     def test_subscript_load(self):
         node = builder.extract_node("f[1]")
-        self.assertIs(node.ctx, astroid.Load)
+        self.assertIs(node.ctx, Load)
 
     def test_subscript_del(self):
         node = builder.extract_node("del f[1]")
-        self.assertIs(node.targets[0].ctx, astroid.Del)
+        self.assertIs(node.targets[0].ctx, Del)
 
     def test_subscript_store(self):
         node = builder.extract_node("f[1] = 2")
         subscript = node.targets[0]
-        self.assertIs(subscript.ctx, astroid.Store)
+        self.assertIs(subscript.ctx, Store)
 
     def test_list_load(self):
         node = builder.extract_node("[]")
-        self.assertIs(node.ctx, astroid.Load)
+        self.assertIs(node.ctx, Load)
 
     def test_list_del(self):
         node = builder.extract_node("del []")
-        self.assertIs(node.targets[0].ctx, astroid.Del)
+        self.assertIs(node.targets[0].ctx, Del)
 
     def test_list_store(self):
         with self.assertRaises(AstroidSyntaxError):
@@ -953,7 +953,7 @@ class ContextTest(unittest.TestCase):
 
     def test_tuple_load(self):
         node = builder.extract_node("(1, )")
-        self.assertIs(node.ctx, astroid.Load)
+        self.assertIs(node.ctx, Load)
 
     def test_tuple_store(self):
         with self.assertRaises(AstroidSyntaxError):
@@ -962,12 +962,12 @@ class ContextTest(unittest.TestCase):
     def test_starred_load(self):
         node = builder.extract_node("a = *b")
         starred = node.value
-        self.assertIs(starred.ctx, astroid.Load)
+        self.assertIs(starred.ctx, Load)
 
     def test_starred_store(self):
         node = builder.extract_node("a, *b = 1, 2")
         starred = node.targets[0].elts[1]
-        self.assertIs(starred.ctx, astroid.Store)
+        self.assertIs(starred.ctx, Store)
 
 
 def test_unknown():

@@ -2,10 +2,9 @@ import ast
 import sys
 from collections import namedtuple
 from functools import partial
-from typing import Optional
+from typing import Dict, Optional
 
-import astroid
-from astroid.constants import PY38
+from astroid.constants import PY38, Context
 
 try:
     import typed_ast.ast3 as _ast_py3
@@ -121,10 +120,10 @@ def _compare_operators_from_module(module):
     }
 
 
-def _contexts_from_module(module):
+def _contexts_from_module(module) -> Context:
     return {
-        module.Load: astroid.Load,
-        module.Store: astroid.Store,
-        module.Del: astroid.Del,
-        module.Param: astroid.Store,
+        module.Load: Context.Load,
+        module.Store: Context.Store,
+        module.Del: Context.Del,
+        module.Param: Context.Store,
     }
