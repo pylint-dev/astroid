@@ -39,7 +39,6 @@ Main modules are:
 * builder contains the class responsible to build astroid trees
 """
 
-import enum
 
 import os
 from importlib import import_module
@@ -47,12 +46,6 @@ from pathlib import Path
 
 
 from .__pkginfo__ import __version__, version
-
-_Context = enum.Enum("Context", "Load Store Del")
-Load = _Context.Load
-Store = _Context.Store
-Del = _Context.Del
-del _Context
 
 
 # WARNING: internal imports order matters !
@@ -69,6 +62,8 @@ from astroid import inference
 
 # more stuff available
 from astroid import raw_building
+
+from astroid.constants import Load, Del, Store
 from astroid.inference_tip import _inference_tip_cached, inference_tip
 from astroid.bases import BaseInstance, Instance, BoundMethod, UnboundMethod
 from astroid.node_classes import are_exclusive, unpack_infer
