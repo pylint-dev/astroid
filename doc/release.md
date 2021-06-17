@@ -9,7 +9,7 @@ So, you want to release the `X.Y.Z` version of astroid ?
 3. Bump the version and release by using `tbump X.Y.Z --no-push`.
 4. Check the result.
 5. Push the tag.
-6. Release the version on Github with the same name as the tag and copy and paste the
+6. Release the version on GitHub with the same name as the tag and copy and paste the
    appropriate changelog in the description. This trigger the pypi release.
 
 ## Post release
