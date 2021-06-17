@@ -3,6 +3,7 @@
 
 import astroid
 from astroid import MANAGER, context, inference_tip, nodes
+from astroid.brain.helpers import register_module_extender
 from astroid.const import PY37, PY39
 
 
@@ -33,7 +34,7 @@ def _re_transform():
     )
 
 
-astroid.register_module_extender(astroid.MANAGER, "re", _re_transform)
+register_module_extender(astroid.MANAGER, "re", _re_transform)
 
 
 CLASS_GETITEM_TEMPLATE = """

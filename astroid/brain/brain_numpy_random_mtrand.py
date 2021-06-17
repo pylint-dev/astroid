@@ -9,6 +9,7 @@
 """Astroid hooks for numpy.random.mtrand module."""
 
 import astroid
+from astroid.brain.helpers import register_module_extender
 
 
 def numpy_random_mtrand_transform():
@@ -68,6 +69,6 @@ def numpy_random_mtrand_transform():
     )
 
 
-astroid.register_module_extender(
+register_module_extender(
     astroid.MANAGER, "numpy.random.mtrand", numpy_random_mtrand_transform
 )

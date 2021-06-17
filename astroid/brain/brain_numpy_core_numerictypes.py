@@ -10,6 +10,7 @@
 """Astroid hooks for numpy.core.numerictypes module."""
 
 import astroid
+from astroid.brain.helpers import register_module_extender
 
 
 def numpy_core_numerictypes_transform():
@@ -253,6 +254,6 @@ def numpy_core_numerictypes_transform():
     )
 
 
-astroid.register_module_extender(
+register_module_extender(
     astroid.MANAGER, "numpy.core.numerictypes", numpy_core_numerictypes_transform
 )

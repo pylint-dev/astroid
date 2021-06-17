@@ -10,6 +10,7 @@
 """Astroid hooks for scipy.signal module."""
 
 import astroid
+from astroid.brain.helpers import register_module_extender
 
 
 def scipy_signal():
@@ -89,4 +90,4 @@ def scipy_signal():
     )
 
 
-astroid.register_module_extender(astroid.MANAGER, "scipy.signal", scipy_signal)
+register_module_extender(astroid.MANAGER, "scipy.signal", scipy_signal)

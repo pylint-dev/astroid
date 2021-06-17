@@ -9,6 +9,7 @@
 import textwrap
 
 import astroid
+from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
 
 
@@ -209,5 +210,5 @@ def _http_client_transform():
     )
 
 
-astroid.register_module_extender(astroid.MANAGER, "http", _http_transform)
-astroid.register_module_extender(astroid.MANAGER, "http.client", _http_client_transform)
+register_module_extender(astroid.MANAGER, "http", _http_transform)
+register_module_extender(astroid.MANAGER, "http.client", _http_client_transform)

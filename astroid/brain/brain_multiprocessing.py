@@ -9,6 +9,7 @@
 
 
 import astroid
+from astroid.brain.helpers import register_module_extender
 from astroid.exceptions import InferenceError
 
 
@@ -100,9 +101,7 @@ def _multiprocessing_managers_transform():
     )
 
 
-astroid.register_module_extender(
+register_module_extender(
     astroid.MANAGER, "multiprocessing.managers", _multiprocessing_managers_transform
 )
-astroid.register_module_extender(
-    astroid.MANAGER, "multiprocessing", _multiprocessing_transform
-)
+register_module_extender(astroid.MANAGER, "multiprocessing", _multiprocessing_transform)

@@ -14,6 +14,7 @@ import textwrap
 
 import astroid
 import astroid.builder
+from astroid.brain.helpers import register_module_extender
 from astroid.exceptions import InferenceError
 
 _BUILDER = astroid.builder.AstroidBuilder(astroid.MANAGER)
@@ -75,7 +76,7 @@ def _nose_tools_trivial_transform():
     return stub
 
 
-astroid.register_module_extender(
+register_module_extender(
     astroid.MANAGER, "nose.tools.trivial", _nose_tools_trivial_transform
 )
 astroid.MANAGER.register_transform(

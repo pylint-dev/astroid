@@ -11,7 +11,8 @@
 
 import textwrap
 
-from astroid import MANAGER, register_module_extender
+from astroid import MANAGER
+from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
 
 
