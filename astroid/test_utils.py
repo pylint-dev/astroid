@@ -16,45 +16,41 @@ import contextlib
 import functools
 import sys
 import warnings
+from typing import Callable, Tuple
 
 import pytest
 
 from astroid import nodes
 
 
-def require_version(minver=None, maxver=None):
-    """Compare version of python interpreter to the given one. Skip the test
-    if older.
+def require_version(minver: str = "0.0.0", maxver: str = "4.0.0") -> Callable:
+    """Compare version of python interpreter to the given one.
+    Skip the test if older.
     """
 
-    def parse(string, default=None):
-        string = string or default
+    def parse(python_version: str) -> Tuple[int]:
         try:
-            return tuple(int(v) for v in string.split("."))
-        except ValueError as exc:
-            raise ValueError(
-                "{string} is not a correct version : should be X.Y[.Z].".format(
-                    string=string
-                )
-            ) from exc
+            return tuple(int(v) for v in python_version.split("."))
+        except ValueError as e:
+            msg = f"{python_version} is not a correct version : should be X.Y[.Z]."
+            raise ValueError(msg) from e
+
+    min_version = parse(minver)
+    max_version = parse(maxver)
 
     def check_require_version(f):
-        current = sys.version_info[:3]  # TODO
-        if parse(minver, "0") < current <= parse(maxver, "4"):
+        current: Tuple[int, int, int] = sys.version_info[:3]
+        if min_version < current <= max_version:
             return f
 
-        str_version = ".".join(str(v) for v in sys.version_info)
+        version: str = ".".join(str(v) for v in sys.version_info)
 
         @functools.wraps(f)
         def new_f(*args, **kwargs):
-            if minver is not None:
-                pytest.skip(
-                    f"Needs Python > {minver}. Current version is {str_version}."
-                )
-            elif maxver is not None:
-                pytest.skip(
-                    f"Needs Python <= {maxver}. Current version is {str_version}."
-                )
+            if minver != "0.0.0":
+                pytest.skip(f"Needs Python > {minver}. Current version is {version}.")
+            elif maxver != "4.0.0":
+                pytest.skip(f"Needs Python <= {maxver}. Current version is {version}.")
 
         return new_f
 
