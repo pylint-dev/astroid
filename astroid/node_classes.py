@@ -274,77 +274,56 @@ class NodeNG:
     This is the base class for all Astroid node classes.
     """
 
-    is_statement = False
-    """Whether this node indicates a statement.
-
-    :type: bool
-    """
-    optional_assign = False  # True for For (and for Comprehension if py <3.0)
+    is_statement: ClassVar[bool] = False
+    """Whether this node indicates a statement."""
+    optional_assign: ClassVar[
+        bool
+    ] = False  # True for For (and for Comprehension if py <3.0)
     """Whether this node optionally assigns a variable.
 
     This is for loop assignments because loop won't necessarily perform an
     assignment if the loop has no iterations.
     This is also the case from comprehensions in Python 2.
-
-    :type: bool
     """
-    is_function = False  # True for FunctionDef nodes
-    """Whether this node indicates a function.
+    is_function: ClassVar[bool] = False  # True for FunctionDef nodes
+    """Whether this node indicates a function."""
+    is_lambda: ClassVar[bool] = False
 
-    :type: bool
-    """
-    is_lambda = False
     # Attributes below are set by the builder module or by raw factories
-    lineno = None
-    """The line that this node appears on in the source code.
-
-    :type: int or None
-    """
-    col_offset = None
-    """The column that this node appears on in the source code.
-
-    :type: int or None
-    """
-    parent = None
-    """The parent node in the syntax tree.
-
-    :type: NodeNG or None
-    """
-    _astroid_fields = ()
+    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ()
     """Node attributes that contain child nodes.
 
     This is redefined in most concrete classes.
-
-    :type: tuple(str)
     """
-    _other_fields = ()
-    """Node attributes that do not contain child nodes.
-
-    :type: tuple(str)
-    """
-    _other_other_fields = ()
-    """Attributes that contain AST-dependent fields.
-
-    :type: tuple(str)
-    """
+    _other_fields: ClassVar[typing.Tuple[str, ...]] = ()
+    """Node attributes that do not contain child nodes."""
+    _other_other_fields: ClassVar[typing.Tuple[str, ...]] = ()
+    """Attributes that contain AST-dependent fields."""
     # instance specific inference function infer(node, context)
     _explicit_inference = None
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional["NodeNG"] = None,
+    ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.lineno = lineno
-        self.col_offset = col_offset
-        self.parent = parent
+        self.lineno: Optional[int] = lineno
+        """The line that this node appears on in the source code."""
+
+        self.col_offset: Optional[int] = col_offset
+        """The column that this node appears on in the source code."""
+
+        self.parent: Optional["NodeNG"] = parent
+        """The parent node in the syntax tree."""
 
     def infer(self, context=None, **kwargs):
         """Get a generator of the inferred values.
@@ -971,10 +950,7 @@ class Statement(NodeNG):
     """Statement node adding a few attributes"""
 
     is_statement = True
-    """Whether this node indicates a statement.
-
-    :type: bool
-    """
+    """Whether this node indicates a statement."""
 
     def next_sibling(self):
         """The next sibling statement node.
@@ -1009,31 +985,29 @@ class _BaseContainer(
 
     _astroid_fields = ("elts",)
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.elts = []
-        """The elements in the node.
-
-        :type: list(NodeNG)
-        """
+        self.elts: typing.List[NodeNG] = []
+        """The elements in the node."""
 
         super().__init__(lineno, col_offset, parent)
 
-    def postinit(self, elts):
+    def postinit(self, elts: typing.List[NodeNG]) -> None:
         """Do some setup after initialisation.
 
         :param elts: The list of elements the that node contains.
-        :type elts: list(NodeNG)
         """
         self.elts = elts
 
