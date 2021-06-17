@@ -8,7 +8,6 @@
 import collections.abc
 
 import astroid
-from astroid.constants import PY36
 
 
 def _clone_node_with_lineno(node, parent, lineno):
@@ -44,11 +43,8 @@ def _transform_formatted_value(node):  # pylint: disable=inconsistent-return-sta
             return new_node
 
 
-if PY36:
-    # TODO: this fix tries to *patch* http://bugs.python.org/issue29051
-    # The problem is that FormattedValue.value, which is a Name node,
-    # has wrong line numbers, usually 1. This creates problems for pylint,
-    # which expects correct line numbers for things such as message control.
-    astroid.MANAGER.register_transform(
-        astroid.FormattedValue, _transform_formatted_value
-    )
+# TODO: this fix tries to *patch* http://bugs.python.org/issue29051
+# The problem is that FormattedValue.value, which is a Name node,
+# has wrong line numbers, usually 1. This creates problems for pylint,
+# which expects correct line numbers for things such as message control.
+astroid.MANAGER.register_transform(astroid.FormattedValue, _transform_formatted_value)

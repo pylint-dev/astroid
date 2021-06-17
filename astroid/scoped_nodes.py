@@ -47,7 +47,7 @@ from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators as decorators_mod
 from astroid import manager, mixins, node_classes, util
-from astroid.constants import PY36, PY39
+from astroid.constants import PY39
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidTypeError,
@@ -1514,7 +1514,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         if isinstance(frame, ClassDef):
             if self.name == "__new__":
                 return "classmethod"
-            if PY36 and self.name == "__init_subclass__":
+            if self.name == "__init_subclass__":
                 return "classmethod"
 
             type_name = "method"
