@@ -95,9 +95,7 @@ def unpack_infer(stmt, context=None):
     return dict(node=stmt, context=context)
 
 
-def are_exclusive(
-    stmt1, stmt2, exceptions=None
-):  # pylint: disable=redefined-outer-name
+def are_exclusive(stmt1, stmt2, exceptions: Optional[typing.List[str]] = None) -> bool:
     """return true if the two given statements are mutually exclusive
 
     `exceptions` may be a list of exception names. If specified, discard If
@@ -3115,13 +3113,10 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
             return self.type.tolineno
         return self.lineno
 
-    def catch(self, exceptions):  # pylint: disable=redefined-outer-name
+    def catch(self, exceptions: Optional[typing.List[str]]) -> bool:
         """Check if this node handles any of the given
 
-        If ``exceptions`` is empty, this will default to ``True``.
-
-        :param exceptions: The name of the exceptions to check for.
-        :type exceptions: list(str)
+        :param exceptions: The names of the exceptions to check for.
         """
         if self.type is None or exceptions is None:
             return True
