@@ -120,7 +120,7 @@ def _compare_operators_from_module(module):
     }
 
 
-def _contexts_from_module(module) -> Context:
+def _contexts_from_module(module) -> Dict[ast.expr_context, Context]:
     return {
         module.Load: Context.Load,
         module.Store: Context.Store,
