@@ -44,7 +44,7 @@ from typing import (
     overload,
 )
 
-from astroid.const import PY37, PY38, PY39, Del, Load, Store
+from astroid.const import PY37, PY38, PY39, Context
 
 try:
     from typing import Final
@@ -135,7 +135,7 @@ class TreeRebuilder:
             "ast.Tuple",
         ],
     ):  # TODO return type needs change to _Context enum
-        return self._parser_module.context_classes.get(type(node.ctx), Load)
+        return self._parser_module.context_classes.get(type(node.ctx), Context.Load)
 
     def visit_module(
         self, node: "ast.Module", modname: str, modpath: str, package: bool
@@ -900,7 +900,7 @@ class TreeRebuilder:
         self, node: "ast.ExtSlice", parent: nodes.Subscript
     ) -> nodes.Tuple:
         """visit an ExtSlice node by returning a fresh instance of Tuple"""
-        newnode = nodes.Tuple(ctx=Load, parent=parent)
+        newnode = nodes.Tuple(ctx=Context.Load, parent=parent)
         newnode.postinit([self.visit(dim, newnode) for dim in node.dims])  # type: ignore
         return newnode
 
@@ -1034,11 +1034,11 @@ class TreeRebuilder:
     ) -> Union[nodes.Attribute, nodes.AssignAttr, nodes.DelAttr]:
         """visit an Attribute node by returning a fresh instance of it"""
         context = self._get_context(node)
-        if context == Del:
+        if context == Context.Del:
             # FIXME : maybe we should reintroduce and visit_delattr ?
             # for instance, deactivating assign_ctx
             newnode = nodes.DelAttr(node.attr, node.lineno, node.col_offset, parent)
-        elif context == Store:
+        elif context == Context.Store:
             newnode = nodes.AssignAttr(node.attr, node.lineno, node.col_offset, parent)
             # Prohibit a local save if we are in an ExceptHandler.
             if not isinstance(parent, astroid.ExceptHandler):
@@ -1162,14 +1162,14 @@ class TreeRebuilder:
     ) -> Union[nodes.Name, nodes.Const, nodes.AssignName, nodes.DelName]:
         """visit a Name node by returning a fresh instance of it"""
         context = self._get_context(node)
-        if context == Del:
+        if context == Context.Del:
             newnode = nodes.DelName(node.id, node.lineno, node.col_offset, parent)
-        elif context == Store:
+        elif context == Context.Store:
             newnode = nodes.AssignName(node.id, node.lineno, node.col_offset, parent)
         else:
             newnode = nodes.Name(node.id, node.lineno, node.col_offset, parent)
         # XXX REMOVE me :
-        if context in (Del, Store):  # 'Aug' ??
+        if context in (Context.Del, Context.Store):  # 'Aug' ??
             newnode = cast(Union[nodes.AssignName, nodes.DelName], newnode)
             self._save_assignment(newnode)
         return newnode

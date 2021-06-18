@@ -32,7 +32,7 @@ import operator as operator_mod
 from astroid import arguments, bases
 from astroid import context as contextmod
 from astroid import decorators, helpers, node_classes, nodes, util
-from astroid.const import Store
+from astroid.const import Context
 from astroid.exceptions import (
     AstroidIndexError,
     AstroidTypeError,
@@ -686,7 +686,10 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
 
                 # We're done unpacking.
                 packed = nodes.List(
-                    ctx=Store, parent=self, lineno=lhs.lineno, col_offset=lhs.col_offset
+                    ctx=Context.Store,
+                    parent=self,
+                    lineno=lhs.lineno,
+                    col_offset=lhs.col_offset,
                 )
                 packed.postinit(elts=list(elts))
                 yield packed
@@ -766,7 +769,10 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
                     found_element = element
 
             unpacked = nodes.List(
-                ctx=Store, parent=self, lineno=self.lineno, col_offset=self.col_offset
+                ctx=Context.Store,
+                parent=self,
+                lineno=self.lineno,
+                col_offset=self.col_offset,
             )
             unpacked.postinit(elts=found_element or [])
             yield unpacked

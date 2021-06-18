@@ -63,7 +63,7 @@ from astroid import inference
 # more stuff available
 from astroid import raw_building
 
-from astroid.const import Load, Del, Store
+from astroid.const import Context, Load, Store, Del
 from astroid.inference_tip import _inference_tip_cached, inference_tip
 from astroid.bases import BaseInstance, Instance, BoundMethod, UnboundMethod
 from astroid.node_classes import are_exclusive, unpack_infer
