@@ -13,6 +13,7 @@
 from astroid import bases
 from astroid import context as contextmod
 from astroid import nodes, util
+from astroid.context import CallContext
 from astroid.exceptions import InferenceError, NoDefault
 
 
@@ -33,7 +34,9 @@ class CallSite:
         An instance of :class:`astroid.context.Context`.
     """
 
-    def __init__(self, callcontext, argument_context_map=None, context=None):
+    def __init__(
+        self, callcontext: CallContext, argument_context_map=None, context=None
+    ):
         if argument_context_map is None:
             argument_context_map = {}
         self.argument_context_map = argument_context_map
