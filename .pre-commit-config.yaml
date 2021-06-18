@@ -30,7 +30,7 @@ repos:
     rev: 5.8.0
     hooks:
       - id: isort
-        exclude: tests/testdata|astroid/__init__.py
+        exclude: tests/testdata
   - repo: https://github.com/Pierre-Sassoulas/black-disable-checker/
     rev: 1.0.1
     hooks:

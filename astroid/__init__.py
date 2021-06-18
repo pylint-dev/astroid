@@ -39,46 +39,28 @@ Main modules are:
 * builder contains the class responsible to build astroid trees
 """
 
-
 import os
 from importlib import import_module
 from pathlib import Path
 
+from astroid import inference, raw_building
+from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
+from astroid.brain.helpers import register_module_extender
+from astroid.builder import extract_node, parse
+from astroid.const import Context, Del, Load, Store
+from astroid.context import *
+from astroid.exceptions import *
+from astroid.inference_tip import _inference_tip_cached, inference_tip
+from astroid.manager import AstroidManager
+from astroid.node_classes import are_exclusive, unpack_infer
+from astroid.nodes import *  # pylint: disable=redefined-builtin (Ellipsis)
+from astroid.scoped_nodes import builtin_lookup
+from astroid.util import Uninferable
 
 from .__pkginfo__ import __version__, version
 
-
-# WARNING: internal imports order matters !
-# pylint: disable=wrong-import-order,wrong-import-position,redefined-builtin
-
-# make all exception classes accessible from astroid package
-from astroid.exceptions import *
-
-# make all node classes accessible from astroid package
-from astroid.nodes import *
-
-# trigger extra monkey-patching
-from astroid import inference
-
-# more stuff available
-from astroid import raw_building
-
-from astroid.const import Context, Load, Store, Del
-from astroid.inference_tip import _inference_tip_cached, inference_tip
-from astroid.bases import BaseInstance, Instance, BoundMethod, UnboundMethod
-from astroid.node_classes import are_exclusive, unpack_infer
-from astroid.scoped_nodes import builtin_lookup
-from astroid.builder import parse, extract_node
-from astroid.util import Uninferable
-
-from astroid.brain.helpers import register_module_extender
-
-# make a manager instance (borg) accessible from astroid package
-from astroid.manager import AstroidManager
-
 MANAGER = AstroidManager()
 del AstroidManager
-
 
 # load brain plugins
 BRAIN_MODULES_DIR = Path(__file__).with_name("brain")
