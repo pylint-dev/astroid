@@ -28,9 +28,18 @@ from various source and using a cache of built modules)
 import os
 import zipimport
 
-from astroid import modutils, transforms
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec
+from astroid.modutils import (
+    NoSourceFile,
+    file_info_from_modpath,
+    get_source_file,
+    is_python_source,
+    is_standard_module,
+    load_module_from_name,
+    modpath_from_file,
+)
+from astroid.transforms import TransformVisitor
 
 ZIP_IMPORT_EXTS = (".zip", ".egg", ".whl")
 
@@ -62,7 +71,7 @@ class AstroidManager:
             self.always_load_extensions = False
             self.optimize_ast = False
             self.extension_package_whitelist = set()
-            self._transform = transforms.TransformVisitor()
+            self._transform = TransformVisitor()
 
             self.max_inferable_values = 100
 
@@ -86,13 +95,13 @@ class AstroidManager:
     def ast_from_file(self, filepath, modname=None, fallback=True, source=False):
         """given a module name, return the astroid object"""
         try:
-            filepath = modutils.get_source_file(filepath, include_no_ext=True)
+            filepath = get_source_file(filepath, include_no_ext=True)
             source = True
-        except modutils.NoSourceFile:
+        except NoSourceFile:
             pass
         if modname is None:
             try:
-                modname = ".".join(modutils.modpath_from_file(filepath))
+                modname = ".".join(modpath_from_file(filepath))
             except ImportError:
                 modname = filepath
         if (
@@ -131,7 +140,7 @@ class AstroidManager:
     def _can_load_extension(self, modname):
         if self.always_load_extensions:
             return True
-        if modutils.is_standard_module(modname):
+        if is_standard_module(modname):
             return True
         parts = modname.split(".")
         return any(
@@ -165,7 +174,7 @@ class AstroidManager:
                 ):
                     return self._build_stub_module(modname)
                 try:
-                    module = modutils.load_module_from_name(modname)
+                    module = load_module_from_name(modname)
                 except Exception as ex:
                     raise AstroidImportError(
                         "Loading {modname} failed with:\n{error}",
@@ -238,7 +247,7 @@ class AstroidManager:
             value = self._mod_file_cache[(modname, contextfile)]
         except KeyError:
             try:
-                value = modutils.file_info_from_modpath(
+                value = file_info_from_modpath(
                     modname.split("."), context_file=contextfile
                 )
             except ImportError as ex:
@@ -262,7 +271,7 @@ class AstroidManager:
         try:
             # some builtin modules don't have __file__ attribute
             filepath = module.__file__
-            if modutils.is_python_source(filepath):
+            if is_python_source(filepath):
                 return self.ast_from_file(filepath, modname)
         except AttributeError:
             pass
