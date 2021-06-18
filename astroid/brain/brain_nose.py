@@ -12,7 +12,6 @@
 import re
 import textwrap
 
-import astroid
 import astroid.builder
 from astroid.brain.helpers import register_module_extender
 from astroid.exceptions import InferenceError

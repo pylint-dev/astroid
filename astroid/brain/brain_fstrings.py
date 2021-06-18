@@ -7,7 +7,8 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 import collections.abc
 
-import astroid
+from astroid import MANAGER
+from astroid.node_classes import FormattedValue
 
 
 def _clone_node_with_lineno(node, parent, lineno):
@@ -33,7 +34,7 @@ def _clone_node_with_lineno(node, parent, lineno):
 def _transform_formatted_value(node):  # pylint: disable=inconsistent-return-statements
     if node.value and node.value.lineno == 1:
         if node.lineno != node.value.lineno:
-            new_node = astroid.FormattedValue(
+            new_node = FormattedValue(
                 lineno=node.lineno, col_offset=node.col_offset, parent=node.parent
             )
             new_value = _clone_node_with_lineno(
@@ -47,4 +48,4 @@ def _transform_formatted_value(node):  # pylint: disable=inconsistent-return-sta
 # The problem is that FormattedValue.value, which is a Name node,
 # has wrong line numbers, usually 1. This creates problems for pylint,
 # which expects correct line numbers for things such as message control.
-astroid.MANAGER.register_transform(astroid.FormattedValue, _transform_formatted_value)
+MANAGER.register_transform(FormattedValue, _transform_formatted_value)

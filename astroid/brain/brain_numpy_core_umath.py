@@ -10,9 +10,9 @@
 # typecheck in `_emit_no_member` function)
 
 """Astroid hooks for numpy.core.umath module."""
-
-import astroid
+from astroid import MANAGER
 from astroid.brain.helpers import register_module_extender
+from astroid.builder import parse
 
 
 def numpy_core_umath_transform():
@@ -20,7 +20,7 @@ def numpy_core_umath_transform():
         """out=None, where=True, casting='same_kind', order='K', """
         """dtype=None, subok=True"""
     )
-    return astroid.parse(
+    return parse(
         """
     class FakeUfunc:
         def __init__(self):
@@ -152,6 +152,4 @@ def numpy_core_umath_transform():
     )
 
 
-register_module_extender(
-    astroid.MANAGER, "numpy.core.umath", numpy_core_umath_transform
-)
+register_module_extender(MANAGER, "numpy.core.umath", numpy_core_umath_transform)

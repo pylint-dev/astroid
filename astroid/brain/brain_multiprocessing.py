@@ -7,14 +7,16 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
-
-import astroid
+from astroid import MANAGER
+from astroid.bases import BoundMethod
 from astroid.brain.helpers import register_module_extender
+from astroid.builder import parse
 from astroid.exceptions import InferenceError
+from astroid.scoped_nodes import FunctionDef
 
 
 def _multiprocessing_transform():
-    module = astroid.parse(
+    module = parse(
         """
     from multiprocessing.managers import SyncManager
     def Manager():
@@ -24,7 +26,7 @@ def _multiprocessing_transform():
     # Multiprocessing uses a getattr lookup inside contexts,
     # in order to get the attributes they need. Since it's extremely
     # dynamic, we use this approach to fake it.
-    node = astroid.parse(
+    node = parse(
         """
     from multiprocessing.context import DefaultContext, BaseContext
     default = DefaultContext()
@@ -43,16 +45,16 @@ def _multiprocessing_transform():
                 continue
 
             value = value[0]
-            if isinstance(value, astroid.FunctionDef):
+            if isinstance(value, FunctionDef):
                 # We need to rebound this, since otherwise
                 # it will have an extra argument (self).
-                value = astroid.BoundMethod(value, node)
+                value = BoundMethod(value, node)
             module[key] = value
     return module
 
 
 def _multiprocessing_managers_transform():
-    return astroid.parse(
+    return parse(
         """
     import array
     import threading
@@ -102,6 +104,6 @@ def _multiprocessing_managers_transform():
 
 
 register_module_extender(
-    astroid.MANAGER, "multiprocessing.managers", _multiprocessing_managers_transform
+    MANAGER, "multiprocessing.managers", _multiprocessing_managers_transform
 )
-register_module_extender(astroid.MANAGER, "multiprocessing", _multiprocessing_transform)
+register_module_extender(MANAGER, "multiprocessing", _multiprocessing_transform)

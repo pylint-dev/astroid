@@ -8,9 +8,9 @@
 # TODO(hippo91) : correct the methods signature.
 
 """Astroid hooks for numpy.core.numerictypes module."""
-
-import astroid
+from astroid import MANAGER
 from astroid.brain.helpers import register_module_extender
+from astroid.builder import parse
 
 
 def numpy_core_numerictypes_transform():
@@ -18,7 +18,7 @@ def numpy_core_numerictypes_transform():
     #       According to numpy doc the generic object should expose
     #       the same API than ndarray. This has been done here partially
     #       through the astype method.
-    return astroid.parse(
+    return parse(
         """
     # different types defined in numerictypes.py
     class generic(object):
@@ -255,5 +255,5 @@ def numpy_core_numerictypes_transform():
 
 
 register_module_extender(
-    astroid.MANAGER, "numpy.core.numerictypes", numpy_core_numerictypes_transform
+    MANAGER, "numpy.core.numerictypes", numpy_core_numerictypes_transform
 )

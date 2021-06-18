@@ -8,7 +8,7 @@
 """Astroid brain hints for some of the `http` module."""
 import textwrap
 
-import astroid
+from astroid import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
 
@@ -139,11 +139,11 @@ def _http_transform():
             'The client needs to authenticate to gain network access')
     """
     )
-    return AstroidBuilder(astroid.MANAGER).string_build(code)
+    return AstroidBuilder(MANAGER).string_build(code)
 
 
 def _http_client_transform():
-    return AstroidBuilder(astroid.MANAGER).string_build(
+    return AstroidBuilder(MANAGER).string_build(
         textwrap.dedent(
             """
     from http import HTTPStatus
@@ -210,5 +210,5 @@ def _http_client_transform():
     )
 
 
-register_module_extender(astroid.MANAGER, "http", _http_transform)
-register_module_extender(astroid.MANAGER, "http.client", _http_client_transform)
+register_module_extender(MANAGER, "http", _http_transform)
+register_module_extender(MANAGER, "http.client", _http_client_transform)

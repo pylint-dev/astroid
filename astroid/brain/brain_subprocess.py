@@ -13,8 +13,9 @@
 
 import textwrap
 
-import astroid
+from astroid import MANAGER
 from astroid.brain.helpers import register_module_extender
+from astroid.builder import parse
 from astroid.const import PY37, PY39
 
 
@@ -135,7 +136,7 @@ def _subprocess_transform():
     init_lines = textwrap.dedent(init).splitlines()
     indented_init = "\n".join(" " * 4 + line for line in init_lines)
     code += indented_init
-    return astroid.parse(code)
+    return parse(code)
 
 
-register_module_extender(astroid.MANAGER, "subprocess", _subprocess_transform)
+register_module_extender(MANAGER, "subprocess", _subprocess_transform)

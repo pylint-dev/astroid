@@ -1,16 +1,15 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
-
-import astroid
 from astroid import MANAGER, context, inference_tip, nodes
 from astroid.brain.helpers import register_module_extender
+from astroid.builder import extract_node, parse
 from astroid.const import PY37, PY39
 
 
 def _re_transform():
     # Since Python 3.6 there is the RegexFlag enum
     # where every entry will be exposed via updating globals()
-    return astroid.parse(
+    return parse(
         """
     import sre_compile
     ASCII = sre_compile.SRE_FLAG_ASCII
@@ -34,7 +33,7 @@ def _re_transform():
     )
 
 
-register_module_extender(astroid.MANAGER, "re", _re_transform)
+register_module_extender(MANAGER, "re", _re_transform)
 
 
 CLASS_GETITEM_TEMPLATE = """
@@ -73,7 +72,7 @@ def infer_pattern_match(node: nodes.Call, ctx: context.InferenceContext = None):
         parent=node.parent,
     )
     if PY39:
-        func_to_add = astroid.extract_node(CLASS_GETITEM_TEMPLATE)
+        func_to_add = extract_node(CLASS_GETITEM_TEMPLATE)
         class_def.locals["__class_getitem__"] = [func_to_add]
     return iter([class_def])
 
