@@ -44,6 +44,7 @@ from importlib import import_module
 from pathlib import Path
 
 from astroid import inference, raw_building
+from astroid.__pkginfo__ import __version__, version
 from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
@@ -55,8 +56,6 @@ from astroid.node_classes import are_exclusive, unpack_infer
 from astroid.nodes import *  # pylint: disable=redefined-builtin (Ellipsis)
 from astroid.scoped_nodes import builtin_lookup
 from astroid.util import Uninferable
-
-from .__pkginfo__ import __version__, version
 
 MANAGER = AstroidManager()
 del AstroidManager
