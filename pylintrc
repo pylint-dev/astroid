@@ -108,8 +108,6 @@ disable=fixme,
         stop-iteration-return,
         # black handles these
         format,
-        # temporary until we fix the problems with InferenceContexts
-        no-member,
         # We might want to disable new checkers from master that do not exists
         # in latest published pylint
         bad-option-value,
