@@ -18,7 +18,6 @@ from typing import TYPE_CHECKING, MutableMapping, Optional, Sequence, Tuple
 if TYPE_CHECKING:
     from astroid.node_classes import NodeNG
 
-
 _INFERENCE_CACHE = {}
 
 
@@ -30,7 +29,7 @@ class InferenceContext:
     """Provide context for inference
 
     Store already inferred nodes to save time
-    Account for already visited nodes to infinite stop infinite recursion
+    Account for already visited nodes to stop infinite recursion
     """
 
     __slots__ = (

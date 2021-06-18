@@ -48,7 +48,6 @@ from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
 from astroid.const import Context, Del, Load, Store
-from astroid.context import *
 from astroid.exceptions import *
 from astroid.inference_tip import _inference_tip_cached, inference_tip
 from astroid.manager import AstroidManager
