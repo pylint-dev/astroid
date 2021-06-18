@@ -452,19 +452,14 @@ class NodeNG:
                 yield attr
         yield from ()
 
-    def last_child(self):
-        """An optimized version of list(get_children())[-1]
-
-        :returns: The last child, or None if no children exist.
-        :rtype: NodeNG or None
-        """
+    def last_child(self):  # -> Optional["NodeNG"]
+        """An optimized version of list(get_children())[-1]"""
         for field in self._astroid_fields[::-1]:
             attr = getattr(self, field)
             if not attr:  # None or empty listy / tuple
                 continue
             if isinstance(attr, (list, tuple)):
                 return attr[-1]
-
             return attr
         return None
 
@@ -601,40 +596,29 @@ class NodeNG:
     # single node, and they rarely get looked at
 
     @decorators.cachedproperty
-    def fromlineno(self):
-        """The first line that this node appears on in the source code.
-
-        :type: int or None
-        """
+    def fromlineno(self) -> Optional[int]:
+        """The first line that this node appears on in the source code."""
         if self.lineno is None:
             return self._fixed_source_line()
-
         return self.lineno
 
     @decorators.cachedproperty
-    def tolineno(self):
-        """The last line that this node appears on in the source code.
-
-        :type: int or None
-        """
+    def tolineno(self) -> Optional[int]:
+        """The last line that this node appears on in the source code."""
         if not self._astroid_fields:
             # can't have children
-            lastchild = None
+            last_child = None
         else:
-            lastchild = self.last_child()
-        if lastchild is None:
+            last_child = self.last_child()
+        if last_child is None:
             return self.fromlineno
 
-        return lastchild.tolineno
+        return last_child.tolineno  # pylint: disable=no-member
 
-    def _fixed_source_line(self):
+    def _fixed_source_line(self) -> Optional[int]:
         """Attempt to find the line that this node appears on.
 
         We need this method since not all nodes have :attr:`lineno` set.
-
-        :returns: The line number of this node,
-            or None if this could not be determined.
-        :rtype: int or None
         """
         line = self.lineno
         _node = self
