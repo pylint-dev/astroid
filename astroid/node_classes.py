@@ -3767,28 +3767,27 @@ class Nonlocal(mixins.NoChildrenMixin, Statement):
 
     _other_fields = ("names",)
 
-    def __init__(self, names, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        names: typing.List[str],
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param names: The names being declared as not local.
-        :type names: list(str)
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.names = names
-        """The names being declared as not local.
+        self.names: typing.List[str] = names
+        """The names being declared as not local."""
 
-        :type: list(str)
-        """
-
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def _infer_name(self, frame, name):
         return name
@@ -3811,26 +3810,40 @@ class Raise(Statement):
     <Raise l.1 at 0x7f23b2e9e828>
     """
 
-    exc = None
-    """What is being raised.
-
-    :type: NodeNG or None
-    """
     _astroid_fields = ("exc", "cause")
-    cause = None
-    """The exception being used to raise this one.
 
-    :type: NodeNG or None
-    """
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    def postinit(self, exc=None, cause=None):
+        :param col_offset: The column that this node appears on in the
+            source code.
+
+        :param parent: The parent node in the syntax tree.
+        """
+        self.exc: Optional[NodeNG] = None  # can be None
+        """What is being raised."""
+
+        self.cause: Optional[NodeNG] = None  # can be None
+        """The exception being used to raise this one."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self,
+        exc: Optional[NodeNG] = None,
+        cause: Optional[NodeNG] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param exc: What is being raised.
-        :type exc: NodeNG or None
 
         :param cause: The exception being used to raise this one.
-        :type cause: NodeNG or None
         """
         self.exc = exc
         self.cause = cause
@@ -3866,17 +3879,30 @@ class Return(Statement):
     """
 
     _astroid_fields = ("value",)
-    value = None
-    """The value being returned.
 
-    :type: NodeNG or None
-    """
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    def postinit(self, value=None):
+        :param col_offset: The column that this node appears on in the
+            source code.
+
+        :param parent: The parent node in the syntax tree.
+        """
+        self.value: Optional[NodeNG] = None  # can be None
+        """The value being returned."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
 
         :param value: The value being returned.
-        :type value: NodeNG or None
         """
         self.value = value
 
@@ -3919,33 +3945,45 @@ class Slice(NodeNG):
     """
 
     _astroid_fields = ("lower", "upper", "step")
-    lower = None
-    """The lower index in the slice.
 
-    :type: NodeNG or None
-    """
-    upper = None
-    """The upper index in the slice.
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    :type: NodeNG or None
-    """
-    step = None
-    """The step to take between indexes.
+        :param col_offset: The column that this node appears on in the
+            source code.
 
-    :type: NodeNG or None
-    """
+        :param parent: The parent node in the syntax tree.
+        """
+        self.lower: Optional[NodeNG] = None  # can be None
+        """The lower index in the slice."""
 
-    def postinit(self, lower=None, upper=None, step=None):
+        self.upper: Optional[NodeNG] = None  # can be None
+        """The upper index in the slice."""
+
+        self.step: Optional[NodeNG] = None  # can be None
+        """The step to take between indexes."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self,
+        lower: Optional[NodeNG] = None,
+        upper: Optional[NodeNG] = None,
+        step: Optional[NodeNG] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param lower: The lower index in the slice.
-        :value lower: NodeNG or None
 
         :param upper: The upper index in the slice.
-        :value upper: NodeNG or None
 
         :param step: The step to take between index.
-        :param step: NodeNG or None
         """
         self.lower = lower
         self.upper = upper
@@ -4014,27 +4052,28 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
 
     _astroid_fields = ("value",)
     _other_fields = ("ctx",)
-    value = None
-    """What is being unpacked.
 
-    :type: NodeNG or None
-    """
-
-    def __init__(self, ctx=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        ctx=None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param ctx: Whether the list is assigned to or loaded from.
         :type ctx: Context or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
+        self.value: Optional[NodeNG] = None
+        """What is being unpacked."""
+
         self.ctx = ctx
         """Whether the starred item is assigned to or loaded from.
 
@@ -4043,11 +4082,10 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
-    def postinit(self, value=None):
+    def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
 
         :param value: What is being unpacked.
-        :type value: NodeNG or None
         """
         self.value = value
 
@@ -4065,32 +4103,31 @@ class Subscript(NodeNG):
 
     _astroid_fields = ("value", "slice")
     _other_fields = ("ctx",)
-    value = None
-    """What is being indexed.
 
-    :type: NodeNG or None
-    """
-    slice = None
-    """The slice being used to lookup.
-
-    :type: NodeNG or None
-    """
-
-    def __init__(self, ctx=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        ctx=None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param ctx: Whether the subscripted item is assigned to or loaded from.
         :type ctx: Context or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
+        self.value: Optional[NodeNG] = None
+        """What is being indexed."""
+
+        self.slice: Optional[NodeNG] = None
+        """The slice being used to lookup."""
+
         self.ctx = ctx
         """Whether the subscripted item is assigned to or loaded from.
 
@@ -4100,14 +4137,14 @@ class Subscript(NodeNG):
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
-    def postinit(self, value=None, slice=None):
+    def postinit(
+        self, value: Optional[NodeNG] = None, slice: Optional[NodeNG] = None
+    ) -> None:
         """Do some setup after initialisation.
 
         :param value: What is being indexed.
-        :type value: NodeNG or None
 
         :param slice: The slice being used to lookup.
-        :type slice: NodeNG or None
         """
         self.value = value
         self.slice = slice
