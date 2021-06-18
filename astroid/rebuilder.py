@@ -671,13 +671,27 @@ class TreeRebuilder:
         )
         return newnode
 
+    @overload
     def visit_assignname(
-        self, node: "ast.AST", parent: NodeNG, node_name: Optional[str] = None
+        self, node: "ast.AST", parent: NodeNG, node_name: str
     ) -> nodes.AssignName:
+        ...
+
+    @overload
+    def visit_assignname(
+        self, node: "ast.AST", parent: NodeNG, node_name: None
+    ) -> None:
+        ...
+
+    def visit_assignname(
+        self, node: "ast.AST", parent: NodeNG, node_name: Optional[str]
+    ) -> Optional[nodes.AssignName]:
         """visit a node and return a AssignName node
 
         Note: Method not called by 'visit'
         """
+        if node_name is None:
+            return None
         newnode = nodes.AssignName(
             node_name,
             node.lineno,
@@ -749,10 +763,7 @@ class TreeRebuilder:
             if keyword.arg == "metaclass":
                 metaclass = self.visit(keyword, newnode).value
                 break
-        if node.decorator_list:
-            decorators = self.visit_decorators(node, newnode)
-        else:
-            decorators = None
+        decorators = self.visit_decorators(node, newnode)
         newnode.postinit(
             [self.visit(child, newnode) for child in node.bases],
             [self.visit(child, newnode) for child in node.body],
@@ -803,11 +814,13 @@ class TreeRebuilder:
         self,
         node: Union["ast.ClassDef", "ast.FunctionDef", "ast.AsyncFunctionDef"],
         parent: NodeNG,
-    ) -> nodes.Decorators:
+    ) -> Optional[nodes.Decorators]:
         """visit a Decorators node by returning a fresh instance of it
 
         Note: Method not called by 'visit'
         """
+        if not node.decorator_list:
+            return None
         # /!\ node is actually an _ast.FunctionDef node while
         # parent is an astroid.nodes.FunctionDef node
         if PY38:
@@ -878,13 +891,9 @@ class TreeRebuilder:
     ) -> nodes.ExceptHandler:
         """visit an ExceptHandler node by returning a fresh instance of it"""
         newnode = nodes.ExceptHandler(node.lineno, node.col_offset, parent)
-        if node.name:
-            name = self.visit_assignname(node, newnode, node.name)
-        else:
-            name = None
         newnode.postinit(
             self.visit(node.type, newnode),
-            name,
+            self.visit_assignname(node, newnode, node.name),
             [self.visit(child, newnode) for child in node.body],
         )
         return newnode
@@ -982,10 +991,7 @@ class TreeRebuilder:
             lineno = node.decorator_list[0].lineno
 
         newnode = cls(node.name, doc, lineno, node.col_offset, parent)
-        if node.decorator_list:
-            decorators = self.visit_decorators(node, newnode)
-        else:
-            decorators = None
+        decorators = self.visit_decorators(node, newnode)
         returns: Optional[NodeNG]
         if node.returns:
             returns = self.visit(node.returns, newnode)
@@ -1154,7 +1160,7 @@ class TreeRebuilder:
 
     def visit_name(
         self, node: "ast.Name", parent: NodeNG
-    ) -> Union[nodes.Name, nodes.Const, nodes.AssignName, nodes.DelName]:
+    ) -> Union[nodes.Name, nodes.AssignName, nodes.DelName]:
         """visit a Name node by returning a fresh instance of it"""
         context = self._get_context(node)
         newnode: Union[nodes.Name, nodes.AssignName, nodes.DelName]
@@ -1457,18 +1463,12 @@ class TreeRebuilder:
         self, node: "ast.MatchMapping", parent: NodeNG
     ) -> nodes.MatchMapping:
         newnode = nodes.MatchMapping(node.lineno, node.col_offset, parent)
-        name_node: Optional[nodes.AssignName] = None
-        if node.rest is not None:
-            # Add AssignName node for 'node.rest'
-            # https://bugs.python.org/issue43994
-            name_node = nodes.AssignName(
-                node.rest, node.lineno, node.col_offset, newnode
-            )
-            self._save_assignment(name_node)
+        # Add AssignName node for 'node.name'
+        # https://bugs.python.org/issue43994
         newnode.postinit(
             keys=[self.visit(child, newnode) for child in node.keys],
             patterns=[self.visit(pattern, newnode) for pattern in node.patterns],
-            rest=name_node,
+            rest=self.visit_assignname(node, newnode, node.rest),
         )
         return newnode
 
@@ -1488,30 +1488,18 @@ class TreeRebuilder:
 
     def visit_matchstar(self, node: "ast.MatchStar", parent: NodeNG) -> nodes.MatchStar:
         newnode = nodes.MatchStar(node.lineno, node.col_offset, parent)
-        name_node: Optional[nodes.AssignName] = None
-        if node.name is not None:
-            # Add AssignName node for 'node.name'
-            # https://bugs.python.org/issue43994
-            name_node = nodes.AssignName(
-                node.name, node.lineno, node.col_offset, newnode
-            )
-            self._save_assignment(name_node)
-        newnode.postinit(name=name_node)
+        # Add AssignName node for 'node.name'
+        # https://bugs.python.org/issue43994
+        newnode.postinit(name=self.visit_assignname(node, newnode, node.name))
         return newnode
 
     def visit_matchas(self, node: "ast.MatchAs", parent: NodeNG) -> nodes.MatchAs:
         newnode = nodes.MatchAs(node.lineno, node.col_offset, parent)
-        name_node: Optional[nodes.AssignName] = None
-        if node.name is not None:
-            # Add AssignName node for 'node.name'
-            # https://bugs.python.org/issue43994
-            name_node = nodes.AssignName(
-                node.name, node.lineno, node.col_offset, newnode
-            )
-            self._save_assignment(name_node)
+        # Add AssignName node for 'node.name'
+        # https://bugs.python.org/issue43994
         newnode.postinit(
             pattern=self.visit(node.pattern, newnode),
-            name=name_node,
+            name=self.visit_assignname(node, newnode, node.name),
         )
         return newnode
 
