@@ -2471,6 +2471,7 @@ class Comprehension(NodeNG):
     _other_fields = ("is_async",)
 
     optional_assign = True
+    """Whether this node optionally assigns a variable."""
 
     def __init__(self, parent: Optional[NodeNG] = None) -> None:
         """
@@ -3043,21 +3044,34 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
 
     _astroid_fields = ("type", "name", "body")
     _multi_line_block_fields = ("body",)
-    type = None
-    """The types that the block handles.
 
-    :type: Tuple or NodeNG or None
-    """
-    name = None
-    """The name that the caught exception is assigned to.
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    :type: AssignName or None
-    """
-    body = None
-    """The contents of the block.
+        :param col_offset: The column that this node appears on in the
+            source code.
 
-    :type: list(NodeNG) or None
-    """
+        :param parent: The parent node in the syntax tree.
+        """
+        self.type: Optional[NodeNG] = None  # can be None
+        """The types that the block handles.
+
+        :type: Tuple or NodeNG or None
+        """
+
+        self.name: Optional[AssignName] = None  # can be None
+        """The name that the caught exception is assigned to."""
+
+        self.body: typing.List[NodeNG] = []
+        """The contents of the block."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def get_children(self):
         if self.type is not None:
@@ -3069,21 +3083,25 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
         yield from self.body
 
     # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
-    def postinit(self, type=None, name=None, body=None):
+    def postinit(
+        self,
+        type: Optional[NodeNG] = None,
+        name: Optional[AssignName] = None,
+        body: Optional[typing.List[NodeNG]] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param type: The types that the block handles.
         :type type: Tuple or NodeNG or None
 
         :param name: The name that the caught exception is assigned to.
-        :type name: AssignName or None
 
         :param body:The contents of the block.
-        :type body: list(NodeNG) or None
         """
         self.type = type
         self.name = name
-        self.body = body
+        if body is not None:
+            self.body = body
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -3139,63 +3157,70 @@ class For(
     _astroid_fields = ("target", "iter", "body", "orelse")
     _other_other_fields = ("type_annotation",)
     _multi_line_block_fields = ("body", "orelse")
-    target = None
-    """What the loop assigns to.
-
-    :type: NodeNG or None
-    """
-    iter = None
-    """What the loop iterates over.
-
-    :type: NodeNG or None
-    """
-    body = None
-    """The contents of the body of the loop.
-
-    :type: list(NodeNG) or None
-    """
-    orelse = None
-    """The contents of the ``else`` block of the loop.
-
-    :type: list(NodeNG) or None
-    """
-    type_annotation = None
-    """If present, this will contain the type annotation passed by a type comment
-
-    :type: NodeNG or None
-    """
-
-    # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
-    def postinit(
-        self, target=None, iter=None, body=None, orelse=None, type_annotation=None
-    ):
-        """Do some setup after initialisation.
-
-        :param target: What the loop assigns to.
-        :type target: NodeNG or None
-
-        :param iter: What the loop iterates over.
-        :type iter: NodeNG or None
-
-        :param body: The contents of the body of the loop.
-        :type body: list(NodeNG) or None
-
-        :param orelse: The contents of the ``else`` block of the loop.
-        :type orelse: list(NodeNG) or None
-        """
-        self.target = target
-        self.iter = iter
-        self.body = body
-        self.orelse = orelse
-        self.type_annotation = type_annotation
 
     optional_assign = True
     """Whether this node optionally assigns a variable.
 
     This is always ``True`` for :class:`For` nodes.
-
-    :type: bool
     """
+
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
+
+        :param col_offset: The column that this node appears on in the
+            source code.
+
+        :param parent: The parent node in the syntax tree.
+        """
+        self.target: Optional[NodeNG] = None
+        """What the loop assigns to."""
+
+        self.iter: Optional[NodeNG] = None
+        """What the loop iterates over."""
+
+        self.body: typing.List[NodeNG] = []
+        """The contents of the body of the loop."""
+
+        self.orelse: typing.List[NodeNG] = []
+        """The contents of the ``else`` block of the loop."""
+
+        self.type_annotation: Optional[NodeNG] = None  # can be None
+        """If present, this will contain the type annotation passed by a type comment"""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
+    def postinit(
+        self,
+        target: Optional[NodeNG] = None,
+        iter: Optional[NodeNG] = None,
+        body: Optional[typing.List[NodeNG]] = None,
+        orelse: Optional[typing.List[NodeNG]] = None,
+        type_annotation: Optional[NodeNG] = None,
+    ) -> None:
+        """Do some setup after initialisation.
+
+        :param target: What the loop assigns to.
+
+        :param iter: What the loop iterates over.
+
+        :param body: The contents of the body of the loop.
+
+        :param orelse: The contents of the ``else`` block of the loop.
+        """
+        self.target = target
+        self.iter = iter
+        if body is not None:
+            self.body = body
+        if orelse is not None:
+            self.orelse = orelse
+        self.type_annotation = type_annotation
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -3249,17 +3274,30 @@ class Await(NodeNG):
     """
 
     _astroid_fields = ("value",)
-    value = None
-    """What to wait for.
 
-    :type: NodeNG or None
-    """
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    def postinit(self, value=None):
+        :param col_offset: The column that this node appears on in the
+            source code.
+
+        :param parent: The parent node in the syntax tree.
+        """
+        self.value: Optional[NodeNG] = None
+        """What to wait for."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
 
         :param value: What to wait for.
-        :type value: NodeNG or None
         """
         self.value = value
 
@@ -3334,36 +3372,36 @@ class Attribute(NodeNG):
 
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
-    expr = None
-    """The name that this node represents.
 
-    :type: Name or None
-    """
-
-    def __init__(self, attrname=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        attrname: Optional[str] = None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param attrname: The name of the attribute.
-        :type attrname: str or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.attrname = attrname
-        """The name of the attribute.
+        self.expr: Optional[NodeNG] = None
+        """The name that this node represents.
 
-        :type: str or None
+        :type: Name or None
         """
 
-        super().__init__(lineno, col_offset, parent)
+        self.attrname: Optional[str] = attrname
+        """The name of the attribute."""
 
-    def postinit(self, expr=None):
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(self, expr: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
 
         :param expr: The name that this node represents.
@@ -3385,28 +3423,27 @@ class Global(mixins.NoChildrenMixin, Statement):
 
     _other_fields = ("names",)
 
-    def __init__(self, names, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        names: typing.List[str],
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param names: The names being declared as global.
-        :type names: list(str)
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.names = names
-        """The names being declared as global.
+        self.names: typing.List[str] = names
+        """The names being declared as global."""
 
-        :type: list(str)
-        """
-
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def _infer_name(self, frame, name):
         return name
