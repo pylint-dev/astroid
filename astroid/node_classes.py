@@ -4805,7 +4805,7 @@ class Match(Statement):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.subject: Optional[NodeNG] = None
+        self.subject: NodeNG
         self.cases: typing.List["MatchCase"] = []
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -4839,8 +4839,8 @@ class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
     _multi_line_block_fields: ClassVar[typing.Tuple[str, ...]] = ("body",)
 
     def __init__(self, *, parent: Optional[NodeNG] = None) -> None:
-        self.pattern: Optional[Pattern] = None
-        self.guard: Optional[NodeNG] = None  # can actually be None
+        self.pattern: Pattern
+        self.guard: Optional[NodeNG] = None
         self.body: typing.List[NodeNG] = []
         super().__init__(parent=parent)
 
@@ -4876,7 +4876,7 @@ class MatchValue(Pattern):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.value: Optional[NodeNG] = None
+        self.value: NodeNG
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(self, *, value: NodeNG) -> None:
@@ -4913,7 +4913,7 @@ class MatchSingleton(Pattern):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.value = value
+        self.value: Literal[True, False, None] = value
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
 
@@ -4970,7 +4970,7 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
     ) -> None:
         self.keys: typing.List[NodeNG] = []
         self.patterns: typing.List[Pattern] = []
-        self.rest: Optional[AssignName] = None  # can actually be None
+        self.rest: Optional[AssignName] = None
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
@@ -5014,7 +5014,7 @@ class MatchClass(Pattern):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.cls: Optional[NodeNG] = None
+        self.cls: NodeNG
         self.patterns: typing.List[Pattern] = []
         self.kwd_attrs: typing.List[str] = []
         self.kwd_patterns: typing.List[Pattern] = []
@@ -5054,7 +5054,7 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.name: Optional[AssignName] = None  # can actually be None
+        self.name: Optional[AssignName] = None
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(self, *, name: Optional[AssignName]) -> None:
@@ -5093,8 +5093,8 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.pattern: Optional[Pattern] = None  # can actually be None
-        self.name: Optional[AssignName] = None  # can actually be None
+        self.pattern: Optional[Pattern] = None
+        self.name: Optional[AssignName] = None
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
