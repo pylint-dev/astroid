@@ -3316,55 +3316,50 @@ class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
     _other_fields = ("modname", "names", "level")
 
     def __init__(
-        self, fromname, names, level=0, lineno=None, col_offset=None, parent=None
-    ):
+        self,
+        fromname: Optional[str],
+        names: typing.List[typing.Tuple[str, Optional[str]]],
+        level: Optional[int] = 0,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param fromname: The module that is being imported from.
-        :type fromname: str or None
 
         :param names: What is being imported from the module.
-        :type names: list(tuple(str, str or None))
 
         :param level: The level of relative import.
-        :type level: int
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.modname = fromname
+        self.modname: Optional[str] = fromname  # can be None
         """The module that is being imported from.
 
         This is ``None`` for relative imports.
-
-        :type: str or None
         """
 
-        self.names = names
+        self.names: typing.List[typing.Tuple[str, Optional[str]]] = names
         """What is being imported from the module.
 
         Each entry is a :class:`tuple` of the name being imported,
         and the alias that the name is assigned to (if any).
-
-        :type: list(tuple(str, str or None))
         """
 
-        self.level = level
+        # TODO When is 'level' None?
+        self.level: Optional[int] = level  # can be None
         """The level of relative import.
 
         Essentially this is the number of dots in the import.
         This is always 0 for absolute imports.
-
-        :type: int
         """
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
 
 class Attribute(NodeNG):
@@ -3459,37 +3454,51 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
 
     _astroid_fields = ("test", "body", "orelse")
     _multi_line_block_fields = ("body", "orelse")
-    test = None
-    """The condition that the statement tests.
 
-    :type: NodeNG or None
-    """
-    body = None
-    """The contents of the block.
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    :type: list(NodeNG) or None
-    """
-    orelse = None
-    """The contents of the ``else`` block.
+        :param col_offset: The column that this node appears on in the
+            source code.
 
-    :type: list(NodeNG) or None
-    """
+        :param parent: The parent node in the syntax tree.
+        """
+        self.test: Optional[NodeNG] = None
+        """The condition that the statement tests."""
 
-    def postinit(self, test=None, body=None, orelse=None):
+        self.body: typing.List[NodeNG] = []
+        """The contents of the block."""
+
+        self.orelse: typing.List[NodeNG] = []
+        """The contents of the ``else`` block."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self,
+        test: Optional[NodeNG] = None,
+        body: Optional[typing.List[NodeNG]] = None,
+        orelse: Optional[typing.List[NodeNG]] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param test: The condition that the statement tests.
-        :type test: NodeNG or None
 
         :param body: The contents of the block.
-        :type body: list(NodeNG) or None
 
         :param orelse: The contents of the ``else`` block.
-        :type orelse: list(NodeNG) or None
         """
         self.test = test
-        self.body = body
-        self.orelse = orelse
+        if body is not None:
+            self.body = body
+        if orelse is not None:
+            self.orelse = orelse
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -3539,33 +3548,45 @@ class IfExp(NodeNG):
     """
 
     _astroid_fields = ("test", "body", "orelse")
-    test = None
-    """The condition that the statement tests.
 
-    :type: NodeNG or None
-    """
-    body = None
-    """The contents of the block.
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    :type: list(NodeNG) or None
-    """
-    orelse = None
-    """The contents of the ``else`` block.
+        :param col_offset: The column that this node appears on in the
+            source code.
 
-    :type: list(NodeNG) or None
-    """
+        :param parent: The parent node in the syntax tree.
+        """
+        self.test: Optional[NodeNG] = None
+        """The condition that the statement tests."""
 
-    def postinit(self, test=None, body=None, orelse=None):
+        self.body: Optional[NodeNG] = None
+        """The contents of the block."""
+
+        self.orelse: Optional[NodeNG] = None
+        """The contents of the ``else`` block."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self,
+        test: Optional[NodeNG] = None,
+        body: Optional[NodeNG] = None,
+        orelse: Optional[NodeNG] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param test: The condition that the statement tests.
-        :type test: NodeNG or None
 
         :param body: The contents of the block.
-        :type body: list(NodeNG) or None
 
         :param orelse: The contents of the ``else`` block.
-        :type orelse: list(NodeNG) or None
         """
         self.test = test
         self.body = body
@@ -3592,31 +3613,31 @@ class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
 
     _other_fields = ("names",)
 
-    def __init__(self, names=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        names: Optional[typing.List[typing.Tuple[str, Optional[str]]]] = None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param names: The names being imported.
-        :type names: list(tuple(str, str or None)) or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.names = names
+        self.names: typing.List[typing.Tuple[str, Optional[str]]] = names or []
         """The names being imported.
 
         Each entry is a :class:`tuple` of the name being imported,
         and the alias that the name is assigned to (if any).
-
-        :type: list(tuple(str, str or None)) or None
         """
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
 
 class Index(NodeNG):
@@ -3641,40 +3662,36 @@ class Keyword(NodeNG):
 
     _astroid_fields = ("value",)
     _other_fields = ("arg",)
-    value = None
-    """The value being assigned to the keyword argument.
 
-    :type: NodeNG or None
-    """
-
-    def __init__(self, arg=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        arg: Optional[str] = None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param arg: The argument being assigned to.
-        :type arg: Name or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.arg = arg
-        """The argument being assigned to.
+        self.arg: Optional[str] = arg  # can be None
+        """The argument being assigned to."""
 
-        :type: Name or None
-        """
+        self.value: Optional[NodeNG] = None
+        """The value being assigned to the keyword argument."""
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
-    def postinit(self, value=None):
+    def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
 
         :param value: The value being assigned to the ketword argument.
-        :type value: NodeNG or None
         """
         self.value = value
 
@@ -3692,20 +3709,23 @@ class List(_BaseContainer):
 
     _other_fields = ("ctx",)
 
-    def __init__(self, ctx=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        ctx=None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param ctx: Whether the list is assigned to or loaded from.
         :type ctx: Context or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
         self.ctx = ctx
         """Whether the list is assigned to or loaded from.
@@ -3713,7 +3733,7 @@ class List(_BaseContainer):
         :type: Context or None
         """
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def pytype(self):
         """Get the name of the type that this node represents.
