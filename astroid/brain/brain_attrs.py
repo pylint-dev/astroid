@@ -6,9 +6,9 @@ Astroid hook for the attrs library
 Without this hook pylint reports unsupported-assignment-operation
 for attrs classes
 """
-
-import astroid
 from astroid import MANAGER
+from astroid.node_classes import AnnAssign, Assign, Call, Unknown
+from astroid.scoped_nodes import ClassDef
 
 ATTRIB_NAMES = frozenset(("attr.ib", "attrib", "attr.attrib"))
 ATTRS_NAMES = frozenset(("attr.s", "attrs", "attr.attrs", "attr.attributes"))
@@ -20,7 +20,7 @@ def is_decorated_with_attrs(node, decorator_names=ATTRS_NAMES):
     if not node.decorators:
         return False
     for decorator_attribute in node.decorators.nodes:
-        if isinstance(decorator_attribute, astroid.Call):  # decorator with arguments
+        if isinstance(decorator_attribute, Call):  # decorator with arguments
             decorator_attribute = decorator_attribute.func
         if decorator_attribute.as_string() in decorator_names:
             return True
@@ -33,12 +33,12 @@ def attr_attributes_transform(node):
     """
     # Astroid can't infer this attribute properly
     # Prevents https://github.com/PyCQA/pylint/issues/1884
-    node.locals["__attrs_attrs__"] = [astroid.Unknown(parent=node)]
+    node.locals["__attrs_attrs__"] = [Unknown(parent=node)]
 
     for cdefbodynode in node.body:
-        if not isinstance(cdefbodynode, (astroid.Assign, astroid.AnnAssign)):
+        if not isinstance(cdefbodynode, (Assign, AnnAssign)):
             continue
-        if isinstance(cdefbodynode.value, astroid.Call):
+        if isinstance(cdefbodynode.value, Call):
             if cdefbodynode.value.func.as_string() not in ATTRIB_NAMES:
                 continue
         else:
@@ -50,7 +50,7 @@ def attr_attributes_transform(node):
         )
         for target in targets:
 
-            rhs_node = astroid.Unknown(
+            rhs_node = Unknown(
                 lineno=cdefbodynode.lineno,
                 col_offset=cdefbodynode.col_offset,
                 parent=cdefbodynode,
@@ -59,6 +59,4 @@ def attr_attributes_transform(node):
             node.instance_attrs[target.name] = [rhs_node]
 
 
-MANAGER.register_transform(
-    astroid.ClassDef, attr_attributes_transform, is_decorated_with_attrs
-)
+MANAGER.register_transform(ClassDef, attr_attributes_transform, is_decorated_with_attrs)

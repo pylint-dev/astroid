@@ -1,8 +1,8 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
-
-import astroid
+from astroid import MANAGER
 from astroid.brain.helpers import register_module_extender
+from astroid.builder import parse
 from astroid.const import PY37
 
 if PY37:
@@ -10,7 +10,7 @@ if PY37:
     # dynamically to globals()
 
     def _re_transform():
-        return astroid.parse(
+        return parse(
             """
         from collections import namedtuple
         _Method = namedtuple('_Method', 'name ident salt_chars total_size')
@@ -23,4 +23,4 @@ if PY37:
         """
         )
 
-    register_module_extender(astroid.MANAGER, "crypt", _re_transform)
+    register_module_extender(MANAGER, "crypt", _re_transform)

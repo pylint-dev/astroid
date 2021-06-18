@@ -9,13 +9,16 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
-import astroid
+from astroid import MANAGER
 from astroid.brain.helpers import register_module_extender
+from astroid.builder import extract_node, parse
 from astroid.const import PY39
+from astroid.exceptions import AttributeInferenceError
+from astroid.scoped_nodes import ClassDef
 
 
 def _collections_transform():
-    return astroid.parse(
+    return parse(
         """
     class defaultdict(dict):
         default_factory = None
@@ -82,10 +85,10 @@ def _ordered_dict_mock():
     return base_ordered_dict_class
 
 
-register_module_extender(astroid.MANAGER, "collections", _collections_transform)
+register_module_extender(MANAGER, "collections", _collections_transform)
 
 
-def _looks_like_subscriptable(node: astroid.nodes.ClassDef) -> bool:
+def _looks_like_subscriptable(node: ClassDef) -> bool:
     """
     Returns True if the node corresponds to a ClassDef of the Collections.abc module that
     supports subscripting
@@ -98,7 +101,7 @@ def _looks_like_subscriptable(node: astroid.nodes.ClassDef) -> bool:
         try:
             node.getattr("__class_getitem__")
             return True
-        except astroid.AttributeInferenceError:
+        except AttributeInferenceError:
             pass
     return False
 
@@ -113,7 +116,7 @@ def __class_getitem__(cls, item):
 def easy_class_getitem_inference(node, context=None):
     # Here __class_getitem__ exists but is quite a mess to infer thus
     # put an easy inference tip
-    func_to_add = astroid.extract_node(CLASS_GET_ITEM_TEMPLATE)
+    func_to_add = extract_node(CLASS_GET_ITEM_TEMPLATE)
     node.locals["__class_getitem__"] = [func_to_add]
 
 
@@ -122,6 +125,6 @@ if PY39:
     # thanks to the __class_getitem__ method but the way it is implemented in
     # _collection_abc makes it difficult to infer. (We would have to handle AssignName inference in the
     # getitem method of the ClassDef class) Instead we put here a mock of the __class_getitem__ method
-    astroid.MANAGER.register_transform(
-        astroid.nodes.ClassDef, easy_class_getitem_inference, _looks_like_subscriptable
+    MANAGER.register_transform(
+        ClassDef, easy_class_getitem_inference, _looks_like_subscriptable
     )

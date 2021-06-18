@@ -8,8 +8,10 @@
 
 
 """Astroid hooks for numpy ndarray class."""
-
-import astroid
+from astroid import MANAGER
+from astroid.builder import extract_node
+from astroid.inference_tip import inference_tip
+from astroid.node_classes import Attribute
 
 
 def infer_numpy_ndarray(node, context=None):
@@ -140,16 +142,16 @@ def infer_numpy_ndarray(node, context=None):
         def var(self, axis=None, dtype=None, out=None, ddof=0, keepdims=False): return np.ndarray([0, 0])
         def view(self, dtype=None, type=None): return np.ndarray([0, 0])
     """
-    node = astroid.extract_node(ndarray)
+    node = extract_node(ndarray)
     return node.infer(context=context)
 
 
 def _looks_like_numpy_ndarray(node):
-    return isinstance(node, astroid.Attribute) and node.attrname == "ndarray"
+    return isinstance(node, Attribute) and node.attrname == "ndarray"
 
 
-astroid.MANAGER.register_transform(
-    astroid.Attribute,
-    astroid.inference_tip(infer_numpy_ndarray),
+MANAGER.register_transform(
+    Attribute,
+    inference_tip(infer_numpy_ndarray),
     _looks_like_numpy_ndarray,
 )

@@ -8,9 +8,9 @@
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
-
-import astroid
+from astroid import MANAGER
 from astroid.brain.helpers import register_module_extender
+from astroid.builder import parse
 
 
 def _hashlib_transform():
@@ -56,7 +56,7 @@ def _hashlib_transform():
         template % {"name": hashfunc, "digest": 'b""', "signature": signature}
         for hashfunc, signature in algorithms_with_signature.items()
     )
-    return astroid.parse(classes)
+    return parse(classes)
 
 
-register_module_extender(astroid.MANAGER, "hashlib", _hashlib_transform)
+register_module_extender(MANAGER, "hashlib", _hashlib_transform)

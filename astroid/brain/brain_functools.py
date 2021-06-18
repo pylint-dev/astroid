@@ -7,10 +7,13 @@
 from functools import partial
 from itertools import chain
 
-import astroid
 from astroid import MANAGER, BoundMethod, arguments, extract_node, helpers, objects
 from astroid.exceptions import InferenceError, UseInferenceDefault
+from astroid.inference_tip import inference_tip
 from astroid.interpreter import objectmodel
+from astroid.node_classes import AssignName, Attribute, Call, Name
+from astroid.scoped_nodes import FunctionDef
+from astroid.util import Uninferable
 
 LRU_CACHE = "functools.lru_cache"
 
@@ -72,9 +75,9 @@ def _functools_partial_inference(node, context=None):
         inferred_wrapped_function = next(partial_function.infer(context=context))
     except InferenceError as exc:
         raise UseInferenceDefault from exc
-    if inferred_wrapped_function is astroid.Uninferable:
+    if inferred_wrapped_function is Uninferable:
         raise UseInferenceDefault("Cannot infer the wrapped function")
-    if not isinstance(inferred_wrapped_function, astroid.FunctionDef):
+    if not isinstance(inferred_wrapped_function, FunctionDef):
         raise UseInferenceDefault("The wrapped function is not a function")
 
     # Determine if the passed keywords into the callsite are supported
@@ -88,9 +91,7 @@ def _functools_partial_inference(node, context=None):
             inferred_wrapped_function.args.kwonlyargs or (),
         )
     parameter_names = {
-        param.name
-        for param in function_parameters
-        if isinstance(param, astroid.AssignName)
+        param.name for param in function_parameters if isinstance(param, AssignName)
     }
     if set(call.keyword_arguments) - parameter_names:
         raise UseInferenceDefault("wrapped function received unknown parameters")
@@ -119,7 +120,7 @@ def _looks_like_lru_cache(node):
     if not node.decorators:
         return False
     for decorator in node.decorators.nodes:
-        if not isinstance(decorator, astroid.Call):
+        if not isinstance(decorator, Call):
             continue
         if _looks_like_functools_member(decorator, "lru_cache"):
             return True
@@ -128,12 +129,12 @@ def _looks_like_lru_cache(node):
 
 def _looks_like_functools_member(node, member) -> bool:
     """Check if the given Call node is a functools.partial call"""
-    if isinstance(node.func, astroid.Name):
+    if isinstance(node.func, Name):
         return node.func.name == member
-    if isinstance(node.func, astroid.Attribute):
+    if isinstance(node.func, Attribute):
         return (
             node.func.attrname == member
-            and isinstance(node.func.expr, astroid.Name)
+            and isinstance(node.func.expr, Name)
             and node.func.expr.name == "functools"
         )
     return False
@@ -142,13 +143,11 @@ def _looks_like_functools_member(node, member) -> bool:
 _looks_like_partial = partial(_looks_like_functools_member, member="partial")
 
 
-MANAGER.register_transform(
-    astroid.FunctionDef, _transform_lru_cache, _looks_like_lru_cache
-)
+MANAGER.register_transform(FunctionDef, _transform_lru_cache, _looks_like_lru_cache)
 
 
 MANAGER.register_transform(
-    astroid.Call,
-    astroid.inference_tip(_functools_partial_inference),
+    Call,
+    inference_tip(_functools_partial_inference),
     _looks_like_partial,
 )
