@@ -19,7 +19,7 @@ import pytest
 
 import astroid
 from astroid import extract_node, nodes, util
-from astroid.constants import PY38
+from astroid.const import PY38
 from astroid.exceptions import InferenceError
 from astroid.node_classes import AssignName, Const, Name, Starred
 

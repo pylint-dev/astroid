@@ -44,7 +44,7 @@ from typing import (
     overload,
 )
 
-from astroid.constants import PY37, PY38, PY39, Del, Load, Store
+from astroid.const import PY37, PY38, PY39, Del, Load, Store
 
 try:
     from typing import Final

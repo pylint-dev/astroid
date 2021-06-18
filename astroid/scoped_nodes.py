@@ -47,7 +47,7 @@ from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators as decorators_mod
 from astroid import manager, mixins, node_classes, util
-from astroid.constants import PY39
+from astroid.const import PY39
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidTypeError,

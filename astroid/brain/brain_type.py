@@ -17,7 +17,7 @@ Thanks to Lukasz Langa for fruitful discussion.
 """
 
 from astroid import MANAGER, extract_node, inference_tip, nodes
-from astroid.constants import PY39
+from astroid.const import PY39
 from astroid.exceptions import UseInferenceDefault
 
 

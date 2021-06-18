@@ -31,7 +31,7 @@ import unittest
 import pytest
 
 from astroid import Instance, builder, nodes, test_utils, util
-from astroid.constants import PY38
+from astroid.const import PY38
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,

@@ -44,7 +44,7 @@ import pytest
 
 import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
-from astroid.constants import PY37
+from astroid.const import PY37
 from astroid.exceptions import AttributeInferenceError, InferenceError
 
 try:

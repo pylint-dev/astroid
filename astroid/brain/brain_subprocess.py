@@ -14,7 +14,7 @@
 import textwrap
 
 import astroid
-from astroid.constants import PY37, PY39
+from astroid.const import PY37, PY39
 
 
 def _subprocess_transform():

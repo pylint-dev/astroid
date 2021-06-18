@@ -10,7 +10,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 import astroid
-from astroid.constants import PY39
+from astroid.const import PY39
 
 
 def _collections_transform():

@@ -4,7 +4,7 @@ from collections import namedtuple
 from functools import partial
 from typing import Dict, Optional
 
-from astroid.constants import PY38, Context
+from astroid.const import PY38, Context
 
 try:
     import typed_ast.ast3 as _ast_py3

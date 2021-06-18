@@ -28,7 +28,7 @@ import collections
 
 from astroid import context as contextmod
 from astroid import util
-from astroid.constants import PY310
+from astroid.const import PY310
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
