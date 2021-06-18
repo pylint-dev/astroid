@@ -20,7 +20,6 @@
 
 All nodes inherit from :class:`~astroid.node_classes.NodeNG`.
 """
-# pylint: disable=redefined-builtin
 
 # Nodes not present in the builtin ast module:  DictUnpack, Unknown, and EvaluatedObject.
 
@@ -108,7 +107,7 @@ __all__ = (
     "JoinedStr",
 )
 
-from astroid.node_classes import (
+from astroid.node_classes import (  # pylint: disable=redefined-builtin
     AnnAssign,
     Arguments,
     Assert,
