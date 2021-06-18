@@ -42,8 +42,15 @@ Main modules are:
 from importlib import import_module
 from pathlib import Path
 
-from astroid import inference, raw_building
+# isort: off
+# We have an isort: off on '__version__' because the packaging need to access
+# the version before the dependencies are installed (in particular 'wrapt'
+# that is imported in astroid.inference)
 from astroid.__pkginfo__ import __version__, version
+
+# isort: on
+
+from astroid import inference, raw_building
 from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
