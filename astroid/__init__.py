@@ -39,7 +39,6 @@ Main modules are:
 * builder contains the class responsible to build astroid trees
 """
 
-import os
 from importlib import import_module
 from pathlib import Path
 
@@ -61,7 +60,8 @@ MANAGER = AstroidManager()
 del AstroidManager
 
 # load brain plugins
-BRAIN_MODULES_DIR = Path(__file__).with_name("brain")
-for module in os.listdir(BRAIN_MODULES_DIR):
-    if module.endswith(".py"):
-        import_module(f"astroid.brain.{module[:-3]}")
+ASTROID_INSTALL_DIRECTORY = Path(__file__).parent
+BRAIN_MODULES_DIRECTORY = ASTROID_INSTALL_DIRECTORY / "brain"
+for module in BRAIN_MODULES_DIRECTORY.iterdir():
+    if module.suffix == ".py":
+        import_module(f"astroid.brain.{module.stem}")
