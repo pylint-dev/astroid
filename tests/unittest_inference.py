@@ -49,7 +49,7 @@ from astroid import decorators as decoratorsmod
 from astroid import helpers, nodes, objects, test_utils, util
 from astroid.bases import BUILTINS, BoundMethod, Instance, UnboundMethod
 from astroid.builder import extract_node, parse
-from astroid.constants import PY38, PY39
+from astroid.const import PY38, PY39
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,

@@ -2,7 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 import astroid
-from astroid.constants import PY37
+from astroid.const import PY37
 
 if PY37:
     # Since Python 3.7 Hashing Methods are added

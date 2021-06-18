@@ -15,7 +15,7 @@ from functools import partial
 
 import astroid
 from astroid import MANAGER, context, extract_node, inference_tip, node_classes, nodes
-from astroid.constants import PY37, PY39
+from astroid.const import PY37, PY39
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,

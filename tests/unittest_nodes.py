@@ -40,7 +40,7 @@ import astroid
 from astroid import bases, builder
 from astroid import context as contextmod
 from astroid import node_classes, nodes, parse, test_utils, transforms, util
-from astroid.constants import PY38, PY310, Del, Load, Store
+from astroid.const import PY38, PY310, Del, Load, Store
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,

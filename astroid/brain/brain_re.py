@@ -3,7 +3,7 @@
 
 import astroid
 from astroid import MANAGER, context, inference_tip, nodes
-from astroid.constants import PY37, PY39
+from astroid.const import PY37, PY39
 
 
 def _re_transform():
