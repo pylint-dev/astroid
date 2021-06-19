@@ -27,7 +27,8 @@ import re
 import sys
 import warnings
 
-from astroid import MANAGER, nodes
+from astroid import nodes
+from astroid.astroid_manager import MANAGER
 from astroid.builder import AstroidBuilder
 from astroid.exceptions import AstroidBuildingError
 

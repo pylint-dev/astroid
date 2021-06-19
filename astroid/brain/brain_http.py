@@ -8,7 +8,7 @@
 """Astroid brain hints for some of the `http` module."""
 import textwrap
 
-from astroid import MANAGER
+from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
 

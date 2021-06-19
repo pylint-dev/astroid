@@ -7,7 +7,8 @@
 from functools import partial
 from itertools import chain
 
-from astroid import MANAGER, BoundMethod, arguments, extract_node, helpers, objects
+from astroid import BoundMethod, arguments, extract_node, helpers, objects
+from astroid.astroid_manager import MANAGER
 from astroid.exceptions import InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.interpreter import objectmodel

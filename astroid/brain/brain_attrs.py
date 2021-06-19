@@ -6,7 +6,7 @@ Astroid hook for the attrs library
 Without this hook pylint reports unsupported-assignment-operation
 for attrs classes
 """
-from astroid import MANAGER
+from astroid.astroid_manager import MANAGER
 from astroid.node_classes import AnnAssign, Assign, Call, Unknown
 from astroid.scoped_nodes import ClassDef
 

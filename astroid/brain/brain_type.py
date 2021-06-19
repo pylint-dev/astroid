@@ -16,7 +16,8 @@ Doing this type[int] is allowed whereas str[int] is not.
 Thanks to Lukasz Langa for fruitful discussion.
 """
 
-from astroid import MANAGER, extract_node, inference_tip, nodes
+from astroid import extract_node, inference_tip, nodes
+from astroid.astroid_manager import MANAGER
 from astroid.const import PY39
 from astroid.exceptions import UseInferenceDefault
 

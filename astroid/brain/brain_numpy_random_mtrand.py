@@ -7,7 +7,7 @@
 
 # TODO(hippo91) : correct the functions return types
 """Astroid hooks for numpy.random.mtrand module."""
-from astroid import MANAGER
+from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 

@@ -21,7 +21,8 @@ leads to an inferred FrozenSet:
 
 import builtins
 
-from astroid import MANAGER, bases, decorators, node_classes, scoped_nodes, util
+from astroid import bases, decorators, node_classes, scoped_nodes, util
+from astroid.astroid_manager import MANAGER
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,

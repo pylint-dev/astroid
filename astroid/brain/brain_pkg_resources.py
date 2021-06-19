@@ -6,7 +6,8 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 
-from astroid import MANAGER, parse
+from astroid import parse
+from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 
 

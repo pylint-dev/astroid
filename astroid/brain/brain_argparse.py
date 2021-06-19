@@ -1,4 +1,5 @@
-from astroid import MANAGER, arguments, inference_tip, nodes
+from astroid import arguments, inference_tip, nodes
+from astroid.astroid_manager import MANAGER
 from astroid.exceptions import UseInferenceDefault
 
 
