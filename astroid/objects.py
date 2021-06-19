@@ -22,13 +22,13 @@ leads to an inferred FrozenSet:
 import builtins
 
 from astroid import bases, decorators, node_classes, scoped_nodes, util
-from astroid.astroid_manager import MANAGER
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
     MroError,
     SuperError,
 )
+from astroid.manager import AstroidManager
 
 BUILTINS = builtins.__name__
 objectmodel = util.lazy_import("interpreter.objectmodel")
@@ -45,7 +45,7 @@ class FrozenSet(node_classes._BaseContainer):
 
     @decorators.cachedproperty
     def _proxied(self):  # pylint: disable=method-hidden
-        ast_builtins = MANAGER.builtins_module
+        ast_builtins = AstroidManager().builtins_module
         return ast_builtins.getattr("frozenset")[0]
 
 
@@ -114,7 +114,7 @@ class Super(node_classes.NodeNG):
 
     @decorators.cachedproperty
     def _proxied(self):
-        ast_builtins = MANAGER.builtins_module
+        ast_builtins = AstroidManager().builtins_module
         return ast_builtins.getattr("super")[0]
 
     def pytype(self):

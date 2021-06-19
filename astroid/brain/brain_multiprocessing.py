@@ -7,11 +7,11 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
-from astroid.astroid_manager import MANAGER
 from astroid.bases import BoundMethod
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.exceptions import InferenceError
+from astroid.manager import AstroidManager
 from astroid.scoped_nodes import FunctionDef
 
 
@@ -104,6 +104,8 @@ def _multiprocessing_managers_transform():
 
 
 register_module_extender(
-    MANAGER, "multiprocessing.managers", _multiprocessing_managers_transform
+    AstroidManager(), "multiprocessing.managers", _multiprocessing_managers_transform
 )
-register_module_extender(MANAGER, "multiprocessing", _multiprocessing_transform)
+register_module_extender(
+    AstroidManager(), "multiprocessing", _multiprocessing_transform
+)

@@ -29,7 +29,6 @@ import keyword
 from textwrap import dedent
 
 from astroid import arguments, inference_tip, nodes, util
-from astroid.astroid_manager import MANAGER
 from astroid.builder import AstroidBuilder, extract_node
 from astroid.exceptions import (
     AstroidTypeError,
@@ -37,6 +36,7 @@ from astroid.exceptions import (
     InferenceError,
     UseInferenceDefault,
 )
+from astroid.manager import AstroidManager
 
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
 ENUM_BASE_NAMES = {
@@ -206,7 +206,7 @@ def infer_named_tuple(node, context=None):
         field_def.format(name=name, index=index)
         for index, name in enumerate(attributes)
     )
-    fake = AstroidBuilder(MANAGER).string_build(
+    fake = AstroidBuilder(AstroidManager()).string_build(
         """
 class %(name)s(tuple):
     __slots__ = ()
@@ -412,7 +412,9 @@ def infer_enum_class(node):
                     # should result in some nice symbolic execution
                     classdef += INT_FLAG_ADDITION_METHODS.format(name=target.name)
 
-                fake = AstroidBuilder(MANAGER).string_build(classdef)[target.name]
+                fake = AstroidBuilder(AstroidManager()).string_build(classdef)[
+                    target.name
+                ]
                 fake.parent = target.parent
                 for method in node.mymethods():
                     fake.locals[method.name] = [method]
@@ -446,7 +448,9 @@ def infer_enum_class(node):
                 return ''
             """
             )
-            name_dynamicclassattr = AstroidBuilder(MANAGER).string_build(code)["name"]
+            name_dynamicclassattr = AstroidBuilder(AstroidManager()).string_build(code)[
+                "name"
+            ]
             node.locals["name"] = [name_dynamicclassattr]
         break
     return node
@@ -532,26 +536,28 @@ def infer_typing_namedtuple(node, context=None):
     return infer_named_tuple(node, context)
 
 
-MANAGER.register_transform(
+AstroidManager().register_transform(
     nodes.Call, inference_tip(infer_named_tuple), _looks_like_namedtuple
 )
-MANAGER.register_transform(nodes.Call, inference_tip(infer_enum), _looks_like_enum)
-MANAGER.register_transform(
+AstroidManager().register_transform(
+    nodes.Call, inference_tip(infer_enum), _looks_like_enum
+)
+AstroidManager().register_transform(
     nodes.ClassDef,
     infer_enum_class,
     predicate=lambda cls: any(
         basename for basename in cls.basenames if basename in ENUM_BASE_NAMES
     ),
 )
-MANAGER.register_transform(
+AstroidManager().register_transform(
     nodes.ClassDef, inference_tip(infer_typing_namedtuple_class), _has_namedtuple_base
 )
-MANAGER.register_transform(
+AstroidManager().register_transform(
     nodes.FunctionDef,
     inference_tip(infer_typing_namedtuple_function),
     lambda node: node.name == "NamedTuple"
     and getattr(node.root(), "name", None) == "typing",
 )
-MANAGER.register_transform(
+AstroidManager().register_transform(
     nodes.Call, inference_tip(infer_typing_namedtuple), _looks_like_typing_namedtuple
 )

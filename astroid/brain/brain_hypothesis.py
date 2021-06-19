@@ -15,7 +15,7 @@ defined using the `@hypothesis.strategies.composite` decorator.  For example:
     a_strategy()
 
 """
-from astroid.astroid_manager import MANAGER
+from astroid.manager import AstroidManager
 from astroid.scoped_nodes import FunctionDef
 
 COMPOSITE_NAMES = (
@@ -46,7 +46,7 @@ def remove_draw_parameter_from_composite_strategy(node):
     return node
 
 
-MANAGER.register_transform(
+AstroidManager().register_transform(
     node_class=FunctionDef,
     transform=remove_draw_parameter_from_composite_strategy,
     predicate=is_decorated_with_st_composite,

@@ -16,7 +16,6 @@
 from textwrap import dedent
 
 from astroid import nodes
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
 from astroid.exceptions import (
@@ -24,6 +23,7 @@ from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
 )
+from astroid.manager import AstroidManager
 
 SIX_ADD_METACLASS = "six.add_metaclass"
 SIX_WITH_METACLASS = "six.with_metaclass"
@@ -123,7 +123,7 @@ def six_moves_transform():
     moves = Moves()
     """
     ).format(_indent(_IMPORTS, "    "))
-    module = AstroidBuilder(MANAGER).string_build(code)
+    module = AstroidBuilder(AstroidManager()).string_build(code)
     module.name = "six.moves"
     return module
 
@@ -145,7 +145,7 @@ def _six_fail_hook(modname):
     attribute_of = modname != "six.moves" and modname.startswith("six.moves")
     if modname != "six.moves" and not attribute_of:
         raise AstroidBuildingError(modname=modname)
-    module = AstroidBuilder(MANAGER).string_build(_IMPORTS)
+    module = AstroidBuilder(AstroidManager()).string_build(_IMPORTS)
     module.name = "six.moves"
     if attribute_of:
         # Facilitate import of submodules in Moves
@@ -156,7 +156,7 @@ def _six_fail_hook(modname):
         except AttributeInferenceError as exc:
             raise AstroidBuildingError(modname=modname) from exc
         if isinstance(import_attr, nodes.Import):
-            submodule = MANAGER.ast_from_module_name(import_attr.names[0][0])
+            submodule = AstroidManager().ast_from_module_name(import_attr.names[0][0])
             return submodule
     # Let dummy submodule imports pass through
     # This will cause an Uninferable result, which is okay
@@ -231,17 +231,17 @@ def transform_six_with_metaclass(node):
     return node
 
 
-register_module_extender(MANAGER, "six", six_moves_transform)
+register_module_extender(AstroidManager(), "six", six_moves_transform)
 register_module_extender(
-    MANAGER, "requests.packages.urllib3.packages.six", six_moves_transform
+    AstroidManager(), "requests.packages.urllib3.packages.six", six_moves_transform
 )
-MANAGER.register_failed_import_hook(_six_fail_hook)
-MANAGER.register_transform(
+AstroidManager().register_failed_import_hook(_six_fail_hook)
+AstroidManager().register_transform(
     nodes.ClassDef,
     transform_six_add_metaclass,
     _looks_like_decorated_with_six_add_metaclass,
 )
-MANAGER.register_transform(
+AstroidManager().register_transform(
     nodes.ClassDef,
     transform_six_with_metaclass,
     _looks_like_nested_from_six_with_metaclass,

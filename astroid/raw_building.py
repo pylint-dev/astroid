@@ -30,11 +30,10 @@ import sys
 import types
 import warnings
 
-from astroid import bases, manager, node_classes, nodes
+from astroid import bases, node_classes, nodes
+from astroid.manager import AstroidManager
 
-MANAGER = manager.AstroidManager()
 # the keys of CONST_CLS eg python builtin types
-
 _CONSTANTS = tuple(node_classes.CONST_CLS)
 _BUILTINS = vars(builtins)
 TYPE_NONE = type(None)
@@ -291,7 +290,7 @@ class InspectBuilder:
     """
 
     def __init__(self, manager_instance=None):
-        self._manager = manager_instance or MANAGER
+        self._manager = manager_instance or AstroidManager()
         self._done = {}
         self._module = None
 

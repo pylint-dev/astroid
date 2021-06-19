@@ -1,10 +1,10 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 from astroid import context, inference_tip, nodes
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
 from astroid.const import PY37, PY39
+from astroid.manager import AstroidManager
 
 
 def _re_transform():
@@ -34,7 +34,7 @@ def _re_transform():
     )
 
 
-register_module_extender(MANAGER, "re", _re_transform)
+register_module_extender(AstroidManager(), "re", _re_transform)
 
 
 CLASS_GETITEM_TEMPLATE = """
@@ -79,6 +79,6 @@ def infer_pattern_match(node: nodes.Call, ctx: context.InferenceContext = None):
 
 
 if PY37:
-    MANAGER.register_transform(
+    AstroidManager().register_transform(
         nodes.Call, inference_tip(infer_pattern_match), _looks_like_pattern_or_match
     )

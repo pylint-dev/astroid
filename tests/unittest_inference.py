@@ -5218,7 +5218,7 @@ def test_limit_inference_result_amount():
     """
     result = extract_node(code).inferred()
     assert len(result) == 16
-    with patch("astroid.node_classes.MANAGER.max_inferable_values", 4):
+    with patch("astroid.manager.AstroidManager.max_inferable_values", 4):
         result_limited = extract_node(code).inferred()
     # Can't guarantee exact size
     assert len(result_limited) < 16

@@ -8,9 +8,9 @@
 # TODO(hippo91) : correct the methods signature.
 
 """Astroid hooks for numpy.core.numerictypes module."""
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
+from astroid.manager import AstroidManager
 
 
 def numpy_core_numerictypes_transform():
@@ -255,5 +255,5 @@ def numpy_core_numerictypes_transform():
 
 
 register_module_extender(
-    MANAGER, "numpy.core.numerictypes", numpy_core_numerictypes_transform
+    AstroidManager(), "numpy.core.numerictypes", numpy_core_numerictypes_transform
 )

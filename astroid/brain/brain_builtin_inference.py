@@ -22,7 +22,6 @@
 from functools import partial
 
 from astroid import (
-    MANAGER,
     arguments,
     helpers,
     inference_tip,
@@ -40,6 +39,7 @@ from astroid.exceptions import (
     NameInferenceError,
     UseInferenceDefault,
 )
+from astroid.manager import AstroidManager
 
 OBJECT_DUNDER_NEW = "object.__new__"
 
@@ -128,7 +128,7 @@ class whatever(object):
 def _extend_string_class(class_node, code, rvalue):
     """function to extend builtin str/unicode class"""
     code = code.format(rvalue=rvalue)
-    fake = AstroidBuilder(MANAGER).string_build(code)["whatever"]
+    fake = AstroidBuilder(AstroidManager()).string_build(code)["whatever"]
     for method in fake.mymethods():
         method.parent = class_node
         method.lineno = None
@@ -140,7 +140,7 @@ def _extend_string_class(class_node, code, rvalue):
 
 
 def _extend_builtins(class_transforms):
-    builtin_ast = MANAGER.builtins_module
+    builtin_ast = AstroidManager().builtins_module
     for class_name, transform in class_transforms.items():
         transform(builtin_ast[class_name])
 
@@ -204,7 +204,7 @@ def register_builtin_transform(transform, builtin_name):
                 result.col_offset = node.col_offset
         return iter([result])
 
-    MANAGER.register_transform(
+    AstroidManager().register_transform(
         nodes.Call,
         inference_tip(_transform_wrapper),
         partial(_builtin_filter_predicate, builtin_name=builtin_name),
@@ -925,7 +925,7 @@ register_builtin_transform(infer_dict_fromkeys, "dict.fromkeys")
 
 
 # Infer object.__new__ calls
-MANAGER.register_transform(
+AstroidManager().register_transform(
     nodes.ClassDef,
     inference_tip(_infer_object__new__decorator),
     _infer_object__new__decorator_check,

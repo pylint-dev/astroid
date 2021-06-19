@@ -44,7 +44,7 @@ from typing import ClassVar, Optional
 
 from astroid import as_string, bases
 from astroid import context as contextmod
-from astroid import decorators, manager, mixins, util
+from astroid import decorators, mixins, util
 from astroid.const import Context
 from astroid.exceptions import (
     AstroidError,
@@ -54,6 +54,7 @@ from astroid.exceptions import (
     NoDefault,
     UseInferenceDefault,
 )
+from astroid.manager import AstroidManager
 
 try:
     from typing import Literal
@@ -62,7 +63,6 @@ except ImportError:
     from typing_extensions import Literal
 
 BUILTINS = builtins_mod.__name__
-MANAGER = manager.AstroidManager()
 
 
 def _is_const(value):
@@ -366,7 +366,7 @@ class NodeNG:
 
         # Limit inference amount to help with performance issues with
         # exponentially exploding possible results.
-        limit = MANAGER.max_inferable_values
+        limit = AstroidManager().max_inferable_values
         for i, result in enumerate(generator):
             if i >= limit or (context.nodes_inferred > context.max_inferred):
                 yield util.Uninferable
@@ -3972,7 +3972,7 @@ class Slice(NodeNG):
 
     @decorators.cachedproperty
     def _proxied(self):
-        builtins = MANAGER.builtins_module
+        builtins = AstroidManager().builtins_module
         return builtins.getattr("slice")[0]
 
     def pytype(self):

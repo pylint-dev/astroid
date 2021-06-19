@@ -46,7 +46,7 @@ from typing import List, Optional
 from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators as decorators_mod
-from astroid import manager, mixins, node_classes, util
+from astroid import mixins, node_classes, util
 from astroid.const import PY39
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -60,6 +60,7 @@ from astroid.exceptions import (
 )
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
+from astroid.manager import AstroidManager
 
 BUILTINS = builtins.__name__
 ITER_METHODS = ("__iter__", "__getitem__")
@@ -175,15 +176,12 @@ def function_to_method(n, klass):
     return n
 
 
-MANAGER = manager.AstroidManager()
-
-
 def builtin_lookup(name):
     """lookup a name into the builtin module
     return the list of matching statements and the astroid for the builtin
     module
     """
-    builtin_astroid = MANAGER.ast_from_module(builtins)
+    builtin_astroid = AstroidManager().ast_from_module(builtins)
     if name == "__dict__":
         return builtin_astroid, ()
     try:
@@ -687,13 +685,13 @@ class Module(LocalsDictNodeNG):
         absmodname = self.relative_to_absolute_name(modname, level)
 
         try:
-            return MANAGER.ast_from_module_name(absmodname)
+            return AstroidManager().ast_from_module_name(absmodname)
         except AstroidBuildingError:
             # we only want to import a sub module or package of this module,
             # skip here
             if relative_only:
                 raise
-        return MANAGER.ast_from_module_name(modname)
+        return AstroidManager().ast_from_module_name(modname)
 
     def relative_to_absolute_name(self, modname, level):
         """Get the absolute module name for a relative import.
@@ -2258,7 +2256,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # inside this class.
         lookup_upper_frame = (
             isinstance(node.parent, node_classes.Decorators)
-            and name in MANAGER.builtins_module
+            and name in AstroidManager().builtins_module
         )
         if (
             any(node == base or base.parent_of(node) for base in self.bases)

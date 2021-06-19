@@ -28,9 +28,9 @@ import sys
 import warnings
 
 from astroid import nodes
-from astroid.astroid_manager import MANAGER
 from astroid.builder import AstroidBuilder
 from astroid.exceptions import AstroidBuildingError
+from astroid.manager import AstroidManager
 
 _inspected_modules = {}
 
@@ -209,7 +209,7 @@ def _import_gi_module(modname):
         except ImportError:
             astng = _inspected_modules[modname] = None
         else:
-            astng = AstroidBuilder(MANAGER).string_build(modcode, modname)
+            astng = AstroidBuilder(AstroidManager()).string_build(modcode, modname)
             _inspected_modules[modname] = astng
     else:
         astng = _inspected_modules[modname]
@@ -254,7 +254,7 @@ def _register_require_version(node):
     return node
 
 
-MANAGER.register_failed_import_hook(_import_gi_module)
-MANAGER.register_transform(
+AstroidManager().register_failed_import_hook(_import_gi_module)
+AstroidManager().register_transform(
     nodes.Call, _register_require_version, _looks_like_require_version
 )

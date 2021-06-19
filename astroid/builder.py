@@ -24,9 +24,10 @@ import textwrap
 from tokenize import detect_encoding
 from typing import List, Union
 
-from astroid import bases, manager, modutils, nodes, raw_building, rebuilder, util
+from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import get_parser_module
 from astroid.exceptions import AstroidBuildingError, AstroidSyntaxError, InferenceError
+from astroid.manager import AstroidManager
 from astroid.node_classes import NodeNG
 
 objects = util.lazy_import("objects")
@@ -40,7 +41,6 @@ _TRANSIENT_FUNCTION = "__"
 # when calling extract_node.
 _STATEMENT_SELECTOR = "#@"
 MISPLACED_TYPE_ANNOTATION_ERROR = "misplaced type annotation"
-MANAGER = manager.AstroidManager()
 
 
 def open_source_file(filename):
@@ -274,7 +274,9 @@ def parse(code, module_name="", path=None, apply_transforms=True):
         don't want the default transforms to be applied.
     """
     code = textwrap.dedent(code)
-    builder = AstroidBuilder(manager=MANAGER, apply_transforms=apply_transforms)
+    builder = AstroidBuilder(
+        manager=AstroidManager(), apply_transforms=apply_transforms
+    )
     return builder.string_build(code, modname=module_name, path=path)
 
 

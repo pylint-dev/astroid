@@ -1,9 +1,9 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.const import PY37
+from astroid.manager import AstroidManager
 
 if PY37:
     # Since Python 3.7 Hashing Methods are added
@@ -23,4 +23,4 @@ if PY37:
         """
         )
 
-    register_module_extender(MANAGER, "crypt", _re_transform)
+    register_module_extender(AstroidManager(), "crypt", _re_transform)

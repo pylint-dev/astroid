@@ -11,13 +11,13 @@
 
 import textwrap
 
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
+from astroid.manager import AstroidManager
 
 
 def dateutil_transform():
-    return AstroidBuilder(MANAGER).string_build(
+    return AstroidBuilder(AstroidManager()).string_build(
         textwrap.dedent(
             """
     import datetime
@@ -28,4 +28,4 @@ def dateutil_transform():
     )
 
 
-register_module_extender(MANAGER, "dateutil.parser", dateutil_transform)
+register_module_extender(AstroidManager(), "dateutil.parser", dateutil_transform)

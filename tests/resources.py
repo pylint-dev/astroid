@@ -13,8 +13,9 @@
 import os
 import sys
 
-from astroid import MANAGER, builder
+from astroid import builder
 from astroid.bases import BUILTINS
+from astroid.manager import AstroidManager
 
 DATA_DIR = os.path.join("testdata", "python3")
 RESOURCE_PATH = os.path.join(os.path.dirname(__file__), DATA_DIR, "data")
@@ -56,9 +57,9 @@ class AstroidCacheSetupMixin:
 
     @classmethod
     def setup_class(cls):
-        cls._builtins = MANAGER.astroid_cache.get(BUILTINS)
+        cls._builtins = AstroidManager().astroid_cache.get(BUILTINS)
 
     @classmethod
     def teardown_class(cls):
         if cls._builtins:
-            MANAGER.astroid_cache[BUILTINS] = cls._builtins
+            AstroidManager().astroid_cache[BUILTINS] = cls._builtins

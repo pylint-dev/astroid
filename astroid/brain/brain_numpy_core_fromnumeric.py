@@ -7,9 +7,9 @@
 
 
 """Astroid hooks for numpy.core.fromnumeric module."""
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
+from astroid.manager import AstroidManager
 
 
 def numpy_core_fromnumeric_transform():
@@ -22,5 +22,5 @@ def numpy_core_fromnumeric_transform():
 
 
 register_module_extender(
-    MANAGER, "numpy.core.fromnumeric", numpy_core_fromnumeric_transform
+    AstroidManager(), "numpy.core.fromnumeric", numpy_core_fromnumeric_transform
 )

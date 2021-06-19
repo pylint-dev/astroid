@@ -7,9 +7,9 @@
 
 # TODO(hippo91) : correct the functions return types
 """Astroid hooks for numpy.random.mtrand module."""
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
+from astroid.manager import AstroidManager
 
 
 def numpy_random_mtrand_transform():
@@ -69,4 +69,6 @@ def numpy_random_mtrand_transform():
     )
 
 
-register_module_extender(MANAGER, "numpy.random.mtrand", numpy_random_mtrand_transform)
+register_module_extender(
+    AstroidManager(), "numpy.random.mtrand", numpy_random_mtrand_transform
+)

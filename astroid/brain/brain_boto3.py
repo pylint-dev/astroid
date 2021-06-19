@@ -3,7 +3,7 @@
 
 """Astroid hooks for understanding boto3.ServiceRequest()"""
 from astroid import extract_node
-from astroid.astroid_manager import MANAGER
+from astroid.manager import AstroidManager
 from astroid.scoped_nodes import ClassDef
 
 BOTO_SERVICE_FACTORY_QUALIFIED_NAME = "boto3.resources.base.ServiceResource"
@@ -24,6 +24,6 @@ def _looks_like_boto3_service_request(node):
     return node.qname() == BOTO_SERVICE_FACTORY_QUALIFIED_NAME
 
 
-MANAGER.register_transform(
+AstroidManager().register_transform(
     ClassDef, service_request_transform, _looks_like_boto3_service_request
 )

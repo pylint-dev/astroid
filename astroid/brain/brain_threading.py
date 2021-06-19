@@ -6,9 +6,9 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
+from astroid.manager import AstroidManager
 
 
 def _thread_transform():
@@ -32,4 +32,4 @@ def _thread_transform():
     )
 
 
-register_module_extender(MANAGER, "threading", _thread_transform)
+register_module_extender(AstroidManager(), "threading", _thread_transform)

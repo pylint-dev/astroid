@@ -10,8 +10,8 @@
 """Astroid hooks for the ssl library."""
 
 from astroid import parse
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
+from astroid.manager import AstroidManager
 
 
 def ssl_transform():
@@ -73,4 +73,4 @@ def ssl_transform():
     )
 
 
-register_module_extender(MANAGER, "ssl", ssl_transform)
+register_module_extender(AstroidManager(), "ssl", ssl_transform)

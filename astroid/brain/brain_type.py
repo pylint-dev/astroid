@@ -17,9 +17,9 @@ Thanks to Lukasz Langa for fruitful discussion.
 """
 
 from astroid import extract_node, inference_tip, nodes
-from astroid.astroid_manager import MANAGER
 from astroid.const import PY39
 from astroid.exceptions import UseInferenceDefault
+from astroid.manager import AstroidManager
 
 
 def _looks_like_type_subscript(node):
@@ -60,6 +60,6 @@ def infer_type_sub(node, context=None):
 
 
 if PY39:
-    MANAGER.register_transform(
+    AstroidManager().register_transform(
         nodes.Name, inference_tip(infer_type_sub), _looks_like_type_subscript
     )

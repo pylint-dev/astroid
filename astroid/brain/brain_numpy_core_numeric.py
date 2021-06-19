@@ -11,11 +11,11 @@
 
 import functools
 
-from astroid.astroid_manager import MANAGER
 from astroid.brain.brain_numpy_utils import infer_numpy_member, looks_like_numpy_member
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.inference_tip import inference_tip
+from astroid.manager import AstroidManager
 from astroid.node_classes import Attribute
 
 
@@ -31,7 +31,9 @@ def numpy_core_numeric_transform():
     )
 
 
-register_module_extender(MANAGER, "numpy.core.numeric", numpy_core_numeric_transform)
+register_module_extender(
+    AstroidManager(), "numpy.core.numeric", numpy_core_numeric_transform
+)
 
 
 METHODS_TO_BE_INFERRED = {
@@ -42,7 +44,7 @@ METHODS_TO_BE_INFERRED = {
 
 for method_name, function_src in METHODS_TO_BE_INFERRED.items():
     inference_function = functools.partial(infer_numpy_member, function_src)
-    MANAGER.register_transform(
+    AstroidManager().register_transform(
         Attribute,
         inference_tip(inference_function),
         functools.partial(looks_like_numpy_member, method_name),

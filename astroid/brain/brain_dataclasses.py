@@ -3,7 +3,7 @@
 """
 Astroid hook for the dataclasses library
 """
-from astroid.astroid_manager import MANAGER
+from astroid.manager import AstroidManager
 from astroid.node_classes import (
     AnnAssign,
     Assign,
@@ -64,4 +64,6 @@ def dataclass_transform(node):
             node.locals[target.name] = [rhs_node]
 
 
-MANAGER.register_transform(ClassDef, dataclass_transform, is_decorated_with_dataclass)
+AstroidManager().register_transform(
+    ClassDef, dataclass_transform, is_decorated_with_dataclass
+)

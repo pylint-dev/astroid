@@ -6,7 +6,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """Astroid hooks for the UUID module."""
-from astroid.astroid_manager import MANAGER
+from astroid.manager import AstroidManager
 from astroid.node_classes import Const
 from astroid.scoped_nodes import ClassDef
 
@@ -16,6 +16,6 @@ def _patch_uuid_class(node):
     node.locals["int"] = [Const(0, parent=node)]
 
 
-MANAGER.register_transform(
+AstroidManager().register_transform(
     ClassDef, _patch_uuid_class, lambda node: node.qname() == "uuid.UUID"
 )

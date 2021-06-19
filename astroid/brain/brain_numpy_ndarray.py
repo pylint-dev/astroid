@@ -8,9 +8,9 @@
 
 
 """Astroid hooks for numpy ndarray class."""
-from astroid.astroid_manager import MANAGER
 from astroid.builder import extract_node
 from astroid.inference_tip import inference_tip
+from astroid.manager import AstroidManager
 from astroid.node_classes import Attribute
 
 
@@ -150,7 +150,7 @@ def _looks_like_numpy_ndarray(node):
     return isinstance(node, Attribute) and node.attrname == "ndarray"
 
 
-MANAGER.register_transform(
+AstroidManager().register_transform(
     Attribute,
     inference_tip(infer_numpy_ndarray),
     _looks_like_numpy_ndarray,

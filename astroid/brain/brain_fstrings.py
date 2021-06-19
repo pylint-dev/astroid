@@ -7,7 +7,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 import collections.abc
 
-from astroid.astroid_manager import MANAGER
+from astroid.manager import AstroidManager
 from astroid.node_classes import FormattedValue
 
 
@@ -48,4 +48,4 @@ def _transform_formatted_value(node):  # pylint: disable=inconsistent-return-sta
 # The problem is that FormattedValue.value, which is a Name node,
 # has wrong line numbers, usually 1. This creates problems for pylint,
 # which expects correct line numbers for things such as message control.
-MANAGER.register_transform(FormattedValue, _transform_formatted_value)
+AstroidManager().register_transform(FormattedValue, _transform_formatted_value)
