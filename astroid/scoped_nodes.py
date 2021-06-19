@@ -58,7 +58,8 @@ from astroid.exceptions import (
     MroError,
     TooManyLevelsError,
 )
-from astroid.interpreter import dunder_lookup, objectmodel
+from astroid.interpreter.dunder_lookup import lookup
+from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 
 BUILTINS = builtins.__name__
 ITER_METHODS = ("__iter__", "__getitem__")
@@ -427,7 +428,7 @@ class Module(LocalsDictNodeNG):
 
     :type: set(str) or None
     """
-    special_attributes = objectmodel.ModuleModel()
+    special_attributes = ModuleModel()
     """The names of special attributes that this module has.
 
     :type: objectmodel.ModuleModel
@@ -1349,7 +1350,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
     :type: Decorators or None
     """
-    special_attributes = objectmodel.FunctionModel()
+    special_attributes = FunctionModel()
     """The names of special attributes that this function has.
 
     :type: objectmodel.FunctionModel
@@ -1945,7 +1946,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
     :type: Decorators or None
     """
-    special_attributes = objectmodel.ClassModel()
+    special_attributes = ClassModel()
     """The names of special attributes that this class has.
 
     :type: objectmodel.ClassModel
@@ -2653,7 +2654,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             ``__getitem__`` method.
         """
         try:
-            methods = dunder_lookup.lookup(self, "__getitem__")
+            methods = lookup(self, "__getitem__")
         except AttributeInferenceError as exc:
             if isinstance(self, ClassDef):
                 # subscripting a class definition may be
