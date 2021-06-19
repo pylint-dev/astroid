@@ -2,7 +2,7 @@
 
 import warnings
 
-from astroid.nodes.scoped_nodes import (
+from astroid.nodes import (
     AsyncFunctionDef,
     ClassDef,
     ComprehensionScope,

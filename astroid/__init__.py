@@ -68,7 +68,6 @@ from astroid.inference_tip import _inference_tip_cached, inference_tip
 # importing with a wildcard would clash with astroid/nodes/scoped_nodes
 # and astroid/nodes/node_classes.
 from astroid.nodes import (  # pylint: disable=redefined-builtin (Ellipsis)
-    CONST_CLS,
     AnnAssign,
     Arguments,
     Assert,

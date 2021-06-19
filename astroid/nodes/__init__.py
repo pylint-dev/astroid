@@ -27,7 +27,6 @@ from astroid.nodes.node_classes import (  # pylint: disable=redefined-builtin (E
     CONST_CLS,
     AnnAssign,
     Arguments,
-    Assert,
     Assign,
     AssignAttr,
     AssignName,
@@ -54,7 +53,6 @@ from astroid.nodes.node_classes import (  # pylint: disable=redefined-builtin (E
     EmptyNode,
     EvaluatedObject,
     ExceptHandler,
-    Expr,
     ExtSlice,
     For,
     FormattedValue,
@@ -83,7 +81,6 @@ from astroid.nodes.node_classes import (  # pylint: disable=redefined-builtin (E
     Nonlocal,
     Pass,
     Pattern,
-    Raise,
     Return,
     Set,
     Slice,
@@ -98,6 +95,7 @@ from astroid.nodes.node_classes import (  # pylint: disable=redefined-builtin (E
     With,
     Yield,
     YieldFrom,
+    _BaseContainer,
     are_exclusive,
     const_factory,
     unpack_infer,
@@ -111,11 +109,15 @@ from astroid.nodes.scoped_nodes import (
     GeneratorExp,
     Lambda,
     ListComp,
+    LocalsDictNodeNG,
     Module,
     SetComp,
+    _is_metaclass,
     builtin_lookup,
     function_to_method,
+    get_wrapping_class,
 )
+from astroid.nodes.statement import Assert, Expr, Raise
 
 ALL_NODE_CLASSES = (
     AnnAssign,
@@ -169,6 +171,7 @@ ALL_NODE_CLASSES = (
     Lambda,
     List,
     ListComp,
+    LocalsDictNodeNG,
     Match,
     MatchAs,
     MatchCase,
@@ -291,4 +294,6 @@ __all__ = (
     "With",
     "Yield",
     "YieldFrom",
+    "_is_metaclass",
+    "get_wrapping_class",
 )

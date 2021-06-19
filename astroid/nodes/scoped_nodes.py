@@ -64,6 +64,7 @@ from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
 from astroid.nodes import Const, node_classes
+from astroid.nodes.statement import Raise
 
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
@@ -1697,7 +1698,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                     return True
 
         for child_node in self.body:
-            if isinstance(child_node, node_classes.Raise):
+            if isinstance(child_node, Raise):
                 if any_raise_is_abstract:
                     return True
                 if child_node.raises_not_implemented():
