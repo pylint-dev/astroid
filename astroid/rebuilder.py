@@ -44,23 +44,21 @@ from typing import (
     overload,
 )
 
-from astroid.const import PY37, PY38, PY39, Context
-
 try:
     from typing import Final
 except ImportError:
     # typing.Final was added in Python 3.8
     from typing_extensions import Final
 
-import astroid
 from astroid import node_classes, nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.node_classes import NodeNG
+from astroid.const import PY37, PY38, PY39, Context
+from astroid.manager import AstroidManager
+from astroid.node_classes import ExceptHandler, NodeNG
 
 if TYPE_CHECKING:
     import ast
 
-    from astroid.manager import AstroidManager
 
 REDIRECT: Final[Dict[str, str]] = {
     "arguments": "Arguments",
@@ -88,7 +86,7 @@ class TreeRebuilder:
     """Rebuilds the _ast tree to become an Astroid tree"""
 
     def __init__(
-        self, manager: "AstroidManager", parser_module: Optional[ParserModule] = None
+        self, manager: AstroidManager, parser_module: Optional[ParserModule] = None
     ):
         self._manager = manager
         self._global_names: List[Dict[str, List[nodes.Global]]] = []
@@ -1041,7 +1039,7 @@ class TreeRebuilder:
         elif context == Context.Store:
             newnode = nodes.AssignAttr(node.attr, node.lineno, node.col_offset, parent)
             # Prohibit a local save if we are in an ExceptHandler.
-            if not isinstance(parent, astroid.ExceptHandler):
+            if not isinstance(parent, ExceptHandler):
                 self._delayed_assattr.append(newnode)
         else:
             newnode = nodes.Attribute(node.attr, node.lineno, node.col_offset, parent)
