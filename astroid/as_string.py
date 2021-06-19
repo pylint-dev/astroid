@@ -99,7 +99,7 @@ class AsStringVisitor:
 
         return False
 
-    ## visit_<node> methods ###########################################
+    # visit_<node> methods ###########################################
 
     def visit_await(self, node):
         return "await %s" % node.value.accept(self)
