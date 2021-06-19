@@ -1,3 +1,4 @@
+import builtins
 import enum
 import sys
 
@@ -17,3 +18,5 @@ class Context(enum.Enum):
 Load = Context.Load  # pylint: disable=invalid-name
 Store = Context.Store  # pylint: disable=invalid-name
 Del = Context.Del  # pylint: disable=invalid-name
+
+BUILTINS = builtins.__name__  # Could be just 'builtins' ?

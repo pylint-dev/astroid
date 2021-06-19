@@ -20,9 +20,9 @@ leads to an inferred FrozenSet:
     Call(func=Name('frozenset'), args=Tuple(...))
 """
 
-import builtins
 
 from astroid import bases, decorators, node_classes, scoped_nodes, util
+from astroid.const import BUILTINS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -31,7 +31,6 @@ from astroid.exceptions import (
 )
 from astroid.manager import AstroidManager
 
-BUILTINS = builtins.__name__
 objectmodel = util.lazy_import("interpreter.objectmodel")
 
 
