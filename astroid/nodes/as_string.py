@@ -20,13 +20,7 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
-"""This module renders Astroid nodes as string:
-
-* :func:`to_code` function return equivalent (hopefully valid) python string
-
-* :func:`dump` function return an internal representation of nodes found
-  in the tree, useful for debugging or understanding the tree structure
-"""
+"""This module renders Astroid nodes as string"""
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -48,6 +42,8 @@ if TYPE_CHECKING:
 DOC_NEWLINE = "\0"
 
 
+# Visitor pattern require argument all the time and is not better with staticmethod
+# noinspection PyUnusedLocal,PyMethodMayBeStatic
 class AsStringVisitor:
     """Visitor to render an Astroid node as a valid python code string"""
 
