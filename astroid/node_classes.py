@@ -45,6 +45,7 @@ from typing import ClassVar, Optional
 from astroid import as_string, bases
 from astroid import context as contextmod
 from astroid import decorators, manager, mixins, util
+from astroid.const import Context
 from astroid.exceptions import (
     AstroidError,
     AstroidIndexError,
@@ -3690,14 +3691,13 @@ class List(_BaseContainer):
 
     def __init__(
         self,
-        ctx=None,
+        ctx: Optional[Context] = None,
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
         """
         :param ctx: Whether the list is assigned to or loaded from.
-        :type ctx: Context or None
 
         :param lineno: The line that this node appears on in the source code.
 
@@ -3706,11 +3706,8 @@ class List(_BaseContainer):
 
         :param parent: The parent node in the syntax tree.
         """
-        self.ctx = ctx
-        """Whether the list is assigned to or loaded from.
-
-        :type: Context or None
-        """
+        self.ctx: Optional[Context] = ctx
+        """Whether the list is assigned to or loaded from."""
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -4034,14 +4031,13 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
 
     def __init__(
         self,
-        ctx=None,
+        ctx: Optional[Context] = None,
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
         """
         :param ctx: Whether the list is assigned to or loaded from.
-        :type ctx: Context or None
 
         :param lineno: The line that this node appears on in the source code.
 
@@ -4053,11 +4049,8 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
         self.value: Optional[NodeNG] = None
         """What is being unpacked."""
 
-        self.ctx = ctx
-        """Whether the starred item is assigned to or loaded from.
-
-        :type: Context or None
-        """
+        self.ctx: Optional[Context] = ctx
+        """Whether the starred item is assigned to or loaded from."""
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -4085,14 +4078,13 @@ class Subscript(NodeNG):
 
     def __init__(
         self,
-        ctx=None,
+        ctx: Optional[Context] = None,
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
         """
         :param ctx: Whether the subscripted item is assigned to or loaded from.
-        :type ctx: Context or None
 
         :param lineno: The line that this node appears on in the source code.
 
@@ -4107,11 +4099,8 @@ class Subscript(NodeNG):
         self.slice: Optional[NodeNG] = None
         """The slice being used to lookup."""
 
-        self.ctx = ctx
-        """Whether the subscripted item is assigned to or loaded from.
-
-        :type: Context or None
-        """
+        self.ctx: Optional[Context] = ctx
+        """Whether the subscripted item is assigned to or loaded from."""
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
