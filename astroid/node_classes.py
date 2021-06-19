@@ -4847,7 +4847,7 @@ class Match(Statement):
     <Match l.2 at 0x10c24e170>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("subject", "cases")
+    _astroid_fields = ("subject", "cases")
 
     def __init__(
         self,
@@ -4885,8 +4885,8 @@ class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
     <MatchCase l.3 at 0x10c24e590>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("pattern", "guard", "body")
-    _multi_line_block_fields: ClassVar[typing.Tuple[str, ...]] = ("body",)
+    _astroid_fields = ("pattern", "guard", "body")
+    _multi_line_block_fields = ("body",)
 
     def __init__(self, *, parent: Optional[NodeNG] = None) -> None:
         self.pattern: Pattern
@@ -4918,7 +4918,7 @@ class MatchValue(Pattern):
     <MatchValue l.3 at 0x10c24e200>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("value",)
+    _astroid_fields = ("value",)
 
     def __init__(
         self,
@@ -4953,7 +4953,7 @@ class MatchSingleton(Pattern):
     <MatchSingleton l.7 at 0x10c229f90>
     """
 
-    _other_fields: ClassVar[typing.Tuple[str, ...]] = ("value",)
+    _other_fields = ("value",)
 
     def __init__(
         self,
@@ -4983,7 +4983,7 @@ class MatchSequence(Pattern):
     <MatchSequence l.5 at 0x10ca80b20>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("patterns",)
+    _astroid_fields = ("patterns",)
 
     def __init__(
         self,
@@ -5010,7 +5010,7 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
     <MatchMapping l.3 at 0x10c8a8850>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("keys", "patterns", "rest")
+    _astroid_fields = ("keys", "patterns", "rest")
 
     def __init__(
         self,
@@ -5051,12 +5051,8 @@ class MatchClass(Pattern):
     <MatchClass l.5 at 0x10ca80880>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = (
-        "cls",
-        "patterns",
-        "kwd_patterns",
-    )
-    _other_fields: ClassVar[typing.Tuple[str, ...]] = ("kwd_attrs",)
+    _astroid_fields = ("cls", "patterns", "kwd_patterns")
+    _other_fields = ("kwd_attrs",)
 
     def __init__(
         self,
@@ -5096,7 +5092,7 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
     <MatchStar l.3 at 0x10ca809a0>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("name",)
+    _astroid_fields = ("name",)
 
     def __init__(
         self,
@@ -5135,7 +5131,7 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
     <MatchAs l.9 at 0x10d09b880>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("pattern", "name")
+    _astroid_fields = ("pattern", "name")
 
     def __init__(
         self,
@@ -5169,7 +5165,7 @@ class MatchOr(Pattern):
     <MatchOr l.3 at 0x10d0b0b50>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("patterns",)
+    _astroid_fields = ("patterns",)
 
     def __init__(
         self,
