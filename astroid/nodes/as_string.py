@@ -536,8 +536,8 @@ class AsStringVisitor:
     def visit_with(self, node):  # 'with' without 'as' is possible
         """return an astroid.With node as string"""
         items = ", ".join(
-            ("%s" % expr.accept(self)) + (vars and " as %s" % (vars.accept(self)) or "")
-            for expr, vars in node.items
+            ("%s" % expr.accept(self)) + (v and " as %s" % (v.accept(self)) or "")
+            for expr, v in node.items
         )
         return f"with {items}:\n{self._stmt_list(node.body)}"
 
