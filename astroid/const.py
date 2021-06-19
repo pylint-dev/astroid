@@ -13,6 +13,6 @@ class Context(enum.Enum):
     Del = 3
 
 
-Load: Context = Context.Load
-Store: Context = Context.Store
-Del: Context = Context.Del
+Load = Context.Load
+Store = Context.Store
+Del = Context.Del
