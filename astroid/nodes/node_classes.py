@@ -55,6 +55,7 @@ from astroid.exceptions import (
 from astroid.manager import AstroidManager
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
+from astroid.nodes.statement import Statement
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -237,38 +238,6 @@ def _container_getitem(instance, elts, index, context=None):
         ) from exc
 
     raise AstroidTypeError("Could not use %s as subscript index" % index)
-
-
-class Statement(NodeNG):
-    """Statement node adding a few attributes"""
-
-    is_statement = True
-    """Whether this node indicates a statement."""
-
-    def next_sibling(self):
-        """The next sibling statement node.
-
-        :returns: The next sibling statement node.
-        :rtype: NodeNG or None
-        """
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        try:
-            return stmts[index + 1]
-        except IndexError:
-            return None
-
-    def previous_sibling(self):
-        """The previous sibling statement.
-
-        :returns: The previous sibling statement node.
-        :rtype: NodeNG or None
-        """
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        if index >= 1:
-            return stmts[index - 1]
-        return None
 
 
 class _BaseContainer(
