@@ -388,9 +388,8 @@ class NodeNG:
         :returns: The nice name.
         :rtype: str
         """
-        names = {"name", "attrname"}
-        if all(name not in self._astroid_fields for name in names):
-            return getattr(self, "name", getattr(self, "attrname", ""))
+        if all(name not in self._astroid_fields for name in ("name", "attrname")):
+            return getattr(self, "name", "") or getattr(self, "attrname", "")
         return ""
 
     def __str__(self):
@@ -2700,17 +2699,13 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
     ) -> None:
         """
         :param attrname: The name of the attribute that is being deleted.
-        :type attrname: str or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
         self.expr: Optional[NodeNG] = None
         """The name that this node represents.
