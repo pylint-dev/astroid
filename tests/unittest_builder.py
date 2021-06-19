@@ -21,7 +21,6 @@
 
 """tests for the astroid builder and rebuilder module"""
 
-import builtins
 import collections
 import os
 import socket
@@ -31,7 +30,7 @@ import unittest
 import pytest
 
 from astroid import Instance, builder, nodes, test_utils, util
-from astroid.const import PY38_PLUS
+from astroid.const import BUILTINS, PY38_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -40,8 +39,6 @@ from astroid.exceptions import (
 )
 
 from . import resources
-
-BUILTINS = builtins.__name__
 
 
 class FromToLineNoTest(unittest.TestCase):

@@ -26,7 +26,6 @@
 
 """tests for specific behaviour of astroid nodes
 """
-import builtins
 import copy
 import os
 import platform
@@ -40,7 +39,7 @@ import astroid
 from astroid import bases, builder
 from astroid import context as contextmod
 from astroid import node_classes, nodes, parse, test_utils, transforms, util
-from astroid.const import PY38_PLUS, PY310_PLUS, Context
+from astroid.const import BUILTINS, PY38_PLUS, PY310_PLUS, Context
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -50,7 +49,6 @@ from astroid.exceptions import (
 from . import resources
 
 abuilder = builder.AstroidBuilder()
-BUILTINS = builtins.__name__
 try:
     import typed_ast  # pylint: disable=unused-import
 

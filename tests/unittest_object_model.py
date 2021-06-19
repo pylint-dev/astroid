@@ -10,17 +10,14 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
-import builtins
 import unittest
 import xml
 
 import pytest
 
 import astroid
-from astroid import MANAGER, builder, objects, test_utils, util
+from astroid import builder, objects, test_utils, util
 from astroid.exceptions import InferenceError
-
-BUILTINS = MANAGER.astroid_cache[builtins.__name__]
 
 
 class InstanceModelTest(unittest.TestCase):

@@ -23,12 +23,11 @@
 inference utils.
 """
 
-import builtins
 import collections
 
 from astroid import context as contextmod
 from astroid import util
-from astroid.const import PY310_PLUS
+from astroid.const import BUILTINS, PY310_PLUS
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
@@ -38,12 +37,10 @@ from astroid.exceptions import (
 
 objectmodel = util.lazy_import("interpreter.objectmodel")
 helpers = util.lazy_import("helpers")
-BUILTINS = builtins.__name__
 manager = util.lazy_import("manager")
 
 
 # TODO: check if needs special treatment
-BUILTINS = "builtins"
 BOOL_SPECIAL_METHOD = "__bool__"
 
 PROPERTIES = {BUILTINS + ".property", "abc.abstractproperty"}

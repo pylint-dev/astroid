@@ -19,7 +19,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
-import builtins
 import os
 import platform
 import site
@@ -32,11 +31,10 @@ import pkg_resources
 
 import astroid
 from astroid import manager, test_utils
+from astroid.const import BUILTINS
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 
 from . import resources
-
-BUILTINS = builtins.__name__
 
 
 def _get_file_from_object(obj):

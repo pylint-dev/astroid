@@ -34,7 +34,6 @@
 """Module for some node classes. More nodes in scoped_nodes.py"""
 
 import abc
-import builtins as builtins_mod
 import itertools
 import pprint
 import typing
@@ -45,7 +44,7 @@ from typing import ClassVar, Optional
 from astroid import as_string, bases
 from astroid import context as contextmod
 from astroid import decorators, mixins, util
-from astroid.const import Context
+from astroid.const import BUILTINS, Context
 from astroid.exceptions import (
     AstroidError,
     AstroidIndexError,
@@ -61,8 +60,6 @@ try:
 except ImportError:
     # typing.Literal was added in Python 3.8
     from typing_extensions import Literal
-
-BUILTINS = builtins_mod.__name__
 
 
 def _is_const(value):

@@ -16,11 +16,11 @@
 Various helper utilities.
 """
 
-import builtins as builtins_mod
 
 from astroid import bases
 from astroid import context as contextmod
 from astroid import manager, nodes, raw_building, scoped_nodes, util
+from astroid.const import BUILTINS
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
@@ -28,8 +28,6 @@ from astroid.exceptions import (
     MroError,
     _NonDeducibleTypeHierarchy,
 )
-
-BUILTINS = builtins_mod.__name__
 
 
 def _build_proxy_class(cls_name, builtins):

@@ -37,7 +37,6 @@ This module contains the classes for "scoped" node, i.e. which are opening a
 new local scope in the language definition : Module, ClassDef, FunctionDef (and
 Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
-
 import builtins
 import io
 import itertools
@@ -47,7 +46,7 @@ from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators as decorators_mod
 from astroid import mixins, node_classes, util
-from astroid.const import PY39_PLUS
+from astroid.const import BUILTINS, PY39_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidTypeError,
@@ -62,7 +61,6 @@ from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
 
-BUILTINS = builtins.__name__
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
 objects = util.lazy_import("objects")
