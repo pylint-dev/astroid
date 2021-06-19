@@ -6,7 +6,7 @@ from typing import ClassVar, Optional
 from astroid import decorators, util
 from astroid.exceptions import AstroidError, InferenceError, UseInferenceDefault
 from astroid.manager import AstroidManager
-from astroid.nodes.as_string import to_code
+from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 
 
@@ -499,7 +499,7 @@ class NodeNG:
 
     def as_string(self) -> str:
         """Get the source code that this node represents."""
-        return to_code(self)
+        return AsStringVisitor("    ")(self)
 
     def repr_tree(
         self,
