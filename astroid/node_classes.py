@@ -1258,28 +1258,27 @@ class AssignName(
 
     _other_fields = ("name",)
 
-    def __init__(self, name=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param name: The name that is assigned to.
-        :type name: str or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.name = name
-        """The name that is assigned to.
+        self.name: Optional[str] = name
+        """The name that is assigned to."""
 
-        :type: str or None
-        """
-
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
 
 class DelName(
@@ -1298,28 +1297,27 @@ class DelName(
 
     _other_fields = ("name",)
 
-    def __init__(self, name=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param name: The name that is being deleted.
-        :type name: str or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.name = name
-        """The name that is being deleted.
+        self.name: Optional[str] = name
+        """The name that is being deleted."""
 
-        :type: str or None
-        """
-
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
 
 class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
@@ -1339,28 +1337,27 @@ class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
 
     _other_fields = ("name",)
 
-    def __init__(self, name=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param name: The name that this node refers to.
-        :type name: str or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.name = name
-        """The name that this node refers to.
+        self.name: Optional[str] = name
+        """The name that this node refers to."""
 
-        :type: str or None
-        """
-
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def _get_name_nodes(self):
         yield self
@@ -1810,40 +1807,36 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
 
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
-    expr = None
-    """What has the attribute that is being assigned to.
 
-    :type: NodeNG or None
-    """
-
-    def __init__(self, attrname=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        attrname: Optional[str] = None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param attrname: The name of the attribute being assigned to.
-        :type attrname: str or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.attrname = attrname
-        """The name of the attribute being assigned to.
+        self.expr: Optional[NodeNG] = None
+        """What has the attribute that is being assigned to."""
 
-        :type: str or None
-        """
+        self.attrname: Optional[str] = attrname
+        """The name of the attribute being assigned to."""
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
-    def postinit(self, expr=None):
+    def postinit(self, expr: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
 
         :param expr: What has the attribute that is being assigned to.
-        :type expr: NodeNG or None
         """
         self.expr = expr
 
@@ -2724,13 +2717,14 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
 
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
-    expr = None
-    """The name that this node represents.
 
-    :type: Name or None
-    """
-
-    def __init__(self, attrname=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        attrname: Optional[str] = None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param attrname: The name of the attribute that is being deleted.
         :type attrname: str or None
@@ -2745,15 +2739,18 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
         """
-        self.attrname = attrname
-        """The name of the attribute that is being deleted.
+        self.expr: Optional[NodeNG] = None
+        """The name that this node represents.
 
-        :type: str or None
+        :type: Name or None
         """
 
-        super().__init__(lineno, col_offset, parent)
+        self.attrname: Optional[str] = attrname
+        """The name of the attribute that is being deleted."""
 
-    def postinit(self, expr=None):
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(self, expr: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
 
         :param expr: The name that this node represents.
