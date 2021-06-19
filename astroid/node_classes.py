@@ -2678,13 +2678,30 @@ class Decorators(NodeNG):
     """
 
     _astroid_fields = ("nodes",)
-    nodes = None
-    """The decorators that this node contains.
 
-    :type: list(Name or Call) or None
-    """
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    def postinit(self, nodes):
+        :param col_offset: The column that this node appears on in the
+            source code.
+
+        :param parent: The parent node in the syntax tree.
+        """
+        self.nodes: typing.List[NodeNG]
+        """The decorators that this node contains.
+
+        :type: list(Name or Call) or None
+        """
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(self, nodes: typing.List[NodeNG]) -> None:
         """Do some setup after initialisation.
 
         :param nodes: The decorators that this node contains.
@@ -4134,37 +4151,52 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
 
     _astroid_fields = ("body", "handlers", "orelse")
     _multi_line_block_fields = ("body", "handlers", "orelse")
-    body = None
-    """The contents of the block to catch exceptions from.
 
-    :type: list(NodeNG) or None
-    """
-    handlers = None
-    """The exception handlers.
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    :type: list(ExceptHandler) or None
-    """
-    orelse = None
-    """The contents of the ``else`` block.
+        :param col_offset: The column that this node appears on in the
+            source code.
 
-    :type: list(NodeNG) or None
-    """
+        :param parent: The parent node in the syntax tree.
+        """
+        self.body: typing.List[NodeNG] = []
+        """The contents of the block to catch exceptions from."""
 
-    def postinit(self, body=None, handlers=None, orelse=None):
+        self.handlers: typing.List[ExceptHandler] = []
+        """The exception handlers."""
+
+        self.orelse: typing.List[NodeNG] = []
+        """The contents of the ``else`` block."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self,
+        body: Optional[typing.List[NodeNG]] = None,
+        handlers: Optional[typing.List[ExceptHandler]] = None,
+        orelse: Optional[typing.List[NodeNG]] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param body: The contents of the block to catch exceptions from.
-        :type body: list(NodeNG) or None
 
         :param handlers: The exception handlers.
-        :type handlers: list(ExceptHandler) or None
 
         :param orelse: The contents of the ``else`` block.
-        :type orelse: list(NodeNG) or None
         """
-        self.body = body
-        self.handlers = handlers
-        self.orelse = orelse
+        if body is not None:
+            self.body = body
+        if handlers is not None:
+            self.handlers = handlers
+        if orelse is not None:
+            self.orelse = orelse
 
     def _infer_name(self, frame, name):
         return name
@@ -4213,28 +4245,44 @@ class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
 
     _astroid_fields = ("body", "finalbody")
     _multi_line_block_fields = ("body", "finalbody")
-    body = None
-    """The try-except that the finally is attached to.
 
-    :type: list(TryExcept) or None
-    """
-    finalbody = None
-    """The contents of the ``finally`` block.
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    :type: list(NodeNG) or None
-    """
+        :param col_offset: The column that this node appears on in the
+            source code.
 
-    def postinit(self, body=None, finalbody=None):
+        :param parent: The parent node in the syntax tree.
+        """
+        self.body: typing.Union[typing.List[TryExcept], typing.List[NodeNG]] = []
+        """The try-except that the finally is attached to."""
+
+        self.finalbody: typing.List[NodeNG] = []
+        """The contents of the ``finally`` block."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self,
+        body: typing.Union[typing.List[TryExcept], typing.List[NodeNG], None] = None,
+        finalbody: Optional[typing.List[NodeNG]] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param body: The try-except that the finally is attached to.
-        :type body: list(TryExcept) or None
 
         :param finalbody: The contents of the ``finally`` block.
-        :type finalbody: list(NodeNG) or None
         """
-        self.body = body
-        self.finalbody = finalbody
+        if body is not None:
+            self.body = body
+        if finalbody is not None:
+            self.finalbody = finalbody
 
     def block_range(self, lineno):
         """Get a range from the given line number to where this node ends.
@@ -4748,18 +4796,33 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
     """
 
     _astroid_fields = ("target", "value")
-    target = None
-    """The assignment target
 
-    :type: Name
-    """
-    value = None
-    """The value that gets assigned in the expression
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    :type: NodeNG
-    """
+        :param col_offset: The column that this node appears on in the
+            source code.
 
-    def postinit(self, target, value):
+        :param parent: The parent node in the syntax tree.
+        """
+        self.target: NodeNG
+        """The assignment target
+
+        :type: Name
+        """
+
+        self.value: NodeNG
+        """The value that gets assigned in the expression"""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(self, target: NodeNG, value: NodeNG) -> None:
         self.target = target
         self.value = value
 
@@ -4792,21 +4855,15 @@ class EvaluatedObject(NodeNG):
     _astroid_fields = ("original",)
     _other_fields = ("value",)
 
-    original = None
-    """The original node that has already been evaluated
+    def __init__(
+        self, original: NodeNG, value: typing.Union[NodeNG, util.Uninferable]
+    ) -> None:
+        self.original: NodeNG = original
+        """The original node that has already been evaluated"""
 
-    :type: NodeNG
-    """
+        self.value: typing.Union[NodeNG, util.Uninferable] = value
+        """The inferred value"""
 
-    value = None
-    """The inferred value
-
-    :type: Union[Uninferable, NodeNG]
-    """
-
-    def __init__(self, original, value):
-        self.original = original
-        self.value = value
         super().__init__(
             lineno=self.original.lineno,
             col_offset=self.original.col_offset,
@@ -4843,7 +4900,7 @@ class Match(Statement):
         parent: Optional[NodeNG] = None,
     ) -> None:
         self.subject: NodeNG
-        self.cases: typing.List["MatchCase"] = []
+        self.cases: typing.List["MatchCase"]
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
@@ -4877,8 +4934,8 @@ class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
 
     def __init__(self, *, parent: Optional[NodeNG] = None) -> None:
         self.pattern: Pattern
-        self.guard: Optional[NodeNG] = None
-        self.body: typing.List[NodeNG] = []
+        self.guard: Optional[NodeNG]
+        self.body: typing.List[NodeNG]
         super().__init__(parent=parent)
 
     def postinit(
@@ -4978,7 +5035,7 @@ class MatchSequence(Pattern):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.patterns: typing.List[Pattern] = []
+        self.patterns: typing.List[Pattern]
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(self, *, patterns: typing.List[Pattern]) -> None:
@@ -5005,9 +5062,9 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.keys: typing.List[NodeNG] = []
-        self.patterns: typing.List[Pattern] = []
-        self.rest: Optional[AssignName] = None
+        self.keys: typing.List[NodeNG]
+        self.patterns: typing.List[Pattern]
+        self.rest: Optional[AssignName]
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
@@ -5052,9 +5109,9 @@ class MatchClass(Pattern):
         parent: Optional[NodeNG] = None,
     ) -> None:
         self.cls: NodeNG
-        self.patterns: typing.List[Pattern] = []
-        self.kwd_attrs: typing.List[str] = []
-        self.kwd_patterns: typing.List[Pattern] = []
+        self.patterns: typing.List[Pattern]
+        self.kwd_attrs: typing.List[str]
+        self.kwd_patterns: typing.List[Pattern]
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
@@ -5091,7 +5148,7 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.name: Optional[AssignName] = None
+        self.name: Optional[AssignName]
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(self, *, name: Optional[AssignName]) -> None:
@@ -5130,8 +5187,8 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.pattern: Optional[Pattern] = None
-        self.name: Optional[AssignName] = None
+        self.pattern: Optional[Pattern]
+        self.name: Optional[AssignName]
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
@@ -5164,7 +5221,7 @@ class MatchOr(Pattern):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.patterns: typing.List[Pattern] = []
+        self.patterns: typing.List[Pattern]
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(self, *, patterns: typing.List[Pattern]) -> None:
