@@ -2979,6 +2979,10 @@ class Pass(mixins.NoChildrenMixin, Statement):
 
 
 class Return(Statement):
+
+    # TODO Move this in 'astroid.nodes.statement' when importing Tuple
+    # does not create a circular import.
+
     """Class representing an :class:`ast.Return` node.
 
     >>> node = astroid.extract_node('return True')
