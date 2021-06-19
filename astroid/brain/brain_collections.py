@@ -9,11 +9,11 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
 from astroid.const import PY39
 from astroid.exceptions import AttributeInferenceError
+from astroid.manager import AstroidManager
 from astroid.scoped_nodes import ClassDef
 
 
@@ -85,7 +85,7 @@ def _ordered_dict_mock():
     return base_ordered_dict_class
 
 
-register_module_extender(MANAGER, "collections", _collections_transform)
+register_module_extender(AstroidManager(), "collections", _collections_transform)
 
 
 def _looks_like_subscriptable(node: ClassDef) -> bool:
@@ -125,6 +125,6 @@ if PY39:
     # thanks to the __class_getitem__ method but the way it is implemented in
     # _collection_abc makes it difficult to infer. (We would have to handle AssignName inference in the
     # getitem method of the ClassDef class) Instead we put here a mock of the __class_getitem__ method
-    MANAGER.register_transform(
+    AstroidManager().register_transform(
         ClassDef, easy_class_getitem_inference, _looks_like_subscriptable
     )

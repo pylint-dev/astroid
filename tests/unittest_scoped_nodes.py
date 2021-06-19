@@ -39,7 +39,7 @@ from functools import partial
 
 import pytest
 
-from astroid import builder, nodes, objects, scoped_nodes, test_utils, util
+from astroid import MANAGER, builder, nodes, objects, scoped_nodes, test_utils, util
 from astroid.bases import BUILTINS, BoundMethod, Generator, Instance, UnboundMethod
 from astroid.exceptions import (
     AttributeInferenceError,
@@ -1389,7 +1389,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         A1 = astroid.getattr("A1")[0]
         B1 = astroid.getattr("B1")[0]
         C1 = astroid.getattr("C1")[0]
-        object_ = builder.MANAGER.astroid_cache[BUILTINS].getattr("object")[0]
+        object_ = MANAGER.astroid_cache[BUILTINS].getattr("object")[0]
         self.assertEqual(
             cm.exception.mros, [[B1, C1, A1, object_], [C1, B1, A1, object_]]
         )

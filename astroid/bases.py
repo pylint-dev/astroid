@@ -40,7 +40,6 @@ objectmodel = util.lazy_import("interpreter.objectmodel")
 helpers = util.lazy_import("helpers")
 BUILTINS = builtins.__name__
 manager = util.lazy_import("manager")
-MANAGER = manager.AstroidManager()
 
 
 # TODO: check if needs special treatment

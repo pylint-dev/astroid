@@ -8,9 +8,9 @@
 
 
 """Astroid hooks for scipy.signal module."""
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
+from astroid.manager import AstroidManager
 
 
 def scipy_signal():
@@ -90,4 +90,4 @@ def scipy_signal():
     )
 
 
-register_module_extender(MANAGER, "scipy.signal", scipy_signal)
+register_module_extender(AstroidManager(), "scipy.signal", scipy_signal)

@@ -30,7 +30,7 @@ def _inference_tip_cached(func, instance, args, kwargs, _cache={}):  # noqa:B006
 
 def inference_tip(infer_function, raise_on_overwrite=False):
     """Given an instance specific inference function, return a function to be
-    given to MANAGER.register_transform to set this inference function.
+    given to AstroidManager().register_transform to set this inference function.
 
     :param bool raise_on_overwrite: Raise an `InferenceOverwriteError`
         if the inference tip will overwrite another. Used for debugging
@@ -39,7 +39,7 @@ def inference_tip(infer_function, raise_on_overwrite=False):
 
     .. sourcecode:: python
 
-       MANAGER.register_transform(Call, inference_tip(infer_named_tuple),
+       AstroidManager().register_transform(Call, inference_tip(infer_named_tuple),
                                   predicate)
 
     .. Note::

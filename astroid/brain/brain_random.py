@@ -3,9 +3,9 @@
 import random
 
 from astroid import helpers
-from astroid.astroid_manager import MANAGER
 from astroid.exceptions import UseInferenceDefault
 from astroid.inference_tip import inference_tip
+from astroid.manager import AstroidManager
 from astroid.node_classes import (
     Attribute,
     Call,
@@ -80,6 +80,6 @@ def _looks_like_random_sample(node):
     return False
 
 
-MANAGER.register_transform(
+AstroidManager().register_transform(
     Call, inference_tip(infer_random_sample), _looks_like_random_sample
 )

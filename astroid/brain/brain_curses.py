@@ -1,8 +1,8 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
+from astroid.manager import AstroidManager
 
 
 def _curses_transform():
@@ -178,4 +178,4 @@ def _curses_transform():
     )
 
 
-register_module_extender(MANAGER, "curses", _curses_transform)
+register_module_extender(AstroidManager(), "curses", _curses_transform)

@@ -8,9 +8,10 @@
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
-from astroid.astroid_manager import MANAGER
+
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
+from astroid.manager import AstroidManager
 
 
 def _hashlib_transform():
@@ -59,4 +60,4 @@ def _hashlib_transform():
     return parse(classes)
 
 
-register_module_extender(MANAGER, "hashlib", _hashlib_transform)
+register_module_extender(AstroidManager(), "hashlib", _hashlib_transform)

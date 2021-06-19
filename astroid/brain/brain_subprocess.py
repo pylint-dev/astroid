@@ -13,10 +13,10 @@
 
 import textwrap
 
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.const import PY37, PY39
+from astroid.manager import AstroidManager
 
 
 def _subprocess_transform():
@@ -139,4 +139,4 @@ def _subprocess_transform():
     return parse(code)
 
 
-register_module_extender(MANAGER, "subprocess", _subprocess_transform)
+register_module_extender(AstroidManager(), "subprocess", _subprocess_transform)

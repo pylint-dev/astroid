@@ -6,7 +6,7 @@ Astroid hook for the attrs library
 Without this hook pylint reports unsupported-assignment-operation
 for attrs classes
 """
-from astroid.astroid_manager import MANAGER
+from astroid.manager import AstroidManager
 from astroid.node_classes import AnnAssign, Assign, Call, Unknown
 from astroid.scoped_nodes import ClassDef
 
@@ -59,4 +59,6 @@ def attr_attributes_transform(node):
             node.instance_attrs[target.name] = [rhs_node]
 
 
-MANAGER.register_transform(ClassDef, attr_attributes_transform, is_decorated_with_attrs)
+AstroidManager().register_transform(
+    ClassDef, attr_attributes_transform, is_decorated_with_attrs
+)

@@ -34,7 +34,7 @@ import wrapt
 
 from astroid import bases
 from astroid import context as contextmod
-from astroid import decorators, helpers, manager, nodes, protocols, util
+from astroid import decorators, helpers, nodes, protocols, util
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidError,
@@ -46,8 +46,8 @@ from astroid.exceptions import (
     _NonDeducibleTypeHierarchy,
 )
 from astroid.interpreter import dunder_lookup
+from astroid.manager import AstroidManager
 
-MANAGER = manager.AstroidManager()
 # Prevents circular imports
 objects = util.lazy_import("objects")
 
@@ -869,7 +869,9 @@ def infer_empty_node(self, context=None):
         yield util.Uninferable
     else:
         try:
-            yield from MANAGER.infer_ast_from_something(self.object, context=context)
+            yield from AstroidManager().infer_ast_from_something(
+                self.object, context=context
+            )
         except AstroidError:
             yield util.Uninferable
 

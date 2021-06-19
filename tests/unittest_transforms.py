@@ -14,7 +14,7 @@ import contextlib
 import time
 import unittest
 
-from astroid import builder, nodes, parse, transforms
+from astroid import MANAGER, builder, nodes, parse, transforms
 
 
 @contextlib.contextmanager
@@ -152,7 +152,7 @@ class TestTransforms(unittest.TestCase):
                         return next(node.infer_call_result())
             return None
 
-        manager = builder.MANAGER
+        manager = MANAGER
         with add_transform(manager, nodes.FunctionDef, transform_function):
             module = builder.parse(
                 """
@@ -186,7 +186,7 @@ class TestTransforms(unittest.TestCase):
             node.args.args = [name]
             return node
 
-        manager = builder.MANAGER
+        manager = MANAGER
 
         def predicate(node):
             return node.root().name == "time"
@@ -204,7 +204,7 @@ class TestTransforms(unittest.TestCase):
         def transform_function(node):
             return nodes.const_factory(42)
 
-        manager = builder.MANAGER
+        manager = MANAGER
         with add_transform(manager, nodes.FunctionDef, transform_function):
             astroid_builder = builder.AstroidBuilder(apply_transforms=False)
             module = astroid_builder.string_build("""def test(): pass""")

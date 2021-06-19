@@ -40,6 +40,7 @@ import astroid
 from astroid import context as contextmod
 from astroid import node_classes, util
 from astroid.exceptions import AttributeInferenceError, InferenceError, NoDefault
+from astroid.manager import AstroidManager
 
 objects = util.lazy_import("objects")
 
@@ -125,7 +126,7 @@ class ObjectModel:
 
 class ModuleModel(ObjectModel):
     def _builtins(self):
-        builtins_ast_module = astroid.MANAGER.builtins_module
+        builtins_ast_module = AstroidManager().builtins_module
         return builtins_ast_module.special_attributes.lookup("__dict__")
 
     @property
@@ -549,7 +550,7 @@ class GeneratorModel(FunctionModel):
     def __new__(cls, *args, **kwargs):
         # Append the values from the GeneratorType unto this object.
         ret = super().__new__(cls, *args, **kwargs)
-        generator = astroid.MANAGER.builtins_module["generator"]
+        generator = AstroidManager().builtins_module["generator"]
         for name, values in generator.locals.items():
             method = values[0]
 
@@ -577,7 +578,7 @@ class AsyncGeneratorModel(GeneratorModel):
     def __new__(cls, *args, **kwargs):
         # Append the values from the AGeneratorType unto this object.
         ret = super().__new__(cls, *args, **kwargs)
-        astroid_builtins = astroid.MANAGER.builtins_module
+        astroid_builtins = AstroidManager().builtins_module
         generator = astroid_builtins.get("async_generator")
         if generator is None:
             # Make it backward compatible.
@@ -625,7 +626,7 @@ class ExceptionInstanceModel(InstanceModel):
 
     @property
     def attr___traceback__(self):
-        builtins_ast_module = astroid.MANAGER.builtins_module
+        builtins_ast_module = AstroidManager().builtins_module
         traceback_type = builtins_ast_module[types.TracebackType.__name__]
         return traceback_type.instantiate_class()
 

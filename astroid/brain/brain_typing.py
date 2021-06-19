@@ -14,13 +14,13 @@ import typing
 from functools import partial
 
 from astroid import context, extract_node, inference_tip, node_classes
-from astroid.astroid_manager import MANAGER
 from astroid.const import PY37, PY39
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
     UseInferenceDefault,
 )
+from astroid.manager import AstroidManager
 from astroid.node_classes import (
     Assign,
     AssignName,
@@ -343,24 +343,24 @@ def infer_tuple_alias(
     return iter([class_def])
 
 
-MANAGER.register_transform(
+AstroidManager().register_transform(
     Call,
     inference_tip(infer_typing_typevar_or_newtype),
     looks_like_typing_typevar_or_newtype,
 )
-MANAGER.register_transform(
+AstroidManager().register_transform(
     Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript
 )
 
 if PY39:
-    MANAGER.register_transform(
+    AstroidManager().register_transform(
         FunctionDef, inference_tip(infer_typedDict), _looks_like_typedDict
     )
 
 if PY37:
-    MANAGER.register_transform(
+    AstroidManager().register_transform(
         Call, inference_tip(infer_typing_alias), _looks_like_typing_alias
     )
-    MANAGER.register_transform(
+    AstroidManager().register_transform(
         Call, inference_tip(infer_tuple_alias), _looks_like_tuple_alias
     )

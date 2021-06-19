@@ -9,13 +9,13 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
+from astroid.manager import AstroidManager
 
 
 def mechanize_transform():
-    return AstroidBuilder(MANAGER).string_build(
+    return AstroidBuilder(AstroidManager()).string_build(
         """
 
 class Browser(object):
@@ -87,4 +87,4 @@ class Browser(object):
     )
 
 
-register_module_extender(MANAGER, "mechanize", mechanize_transform)
+register_module_extender(AstroidManager(), "mechanize", mechanize_transform)

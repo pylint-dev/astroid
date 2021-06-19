@@ -7,8 +7,8 @@
 
 
 from astroid import parse
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
+from astroid.manager import AstroidManager
 
 
 def pkg_resources_transform():
@@ -71,4 +71,4 @@ _namespace_packages = {}
     )
 
 
-register_module_extender(MANAGER, "pkg_resources", pkg_resources_transform)
+register_module_extender(AstroidManager(), "pkg_resources", pkg_resources_transform)

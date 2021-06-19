@@ -10,13 +10,13 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """Astroid hooks for pytest."""
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
+from astroid.manager import AstroidManager
 
 
 def pytest_transform():
-    return AstroidBuilder(MANAGER).string_build(
+    return AstroidBuilder(AstroidManager()).string_build(
         """
 
 try:
@@ -86,5 +86,5 @@ except ImportError:
     )
 
 
-register_module_extender(MANAGER, "pytest", pytest_transform)
-register_module_extender(MANAGER, "py.test", pytest_transform)
+register_module_extender(AstroidManager(), "pytest", pytest_transform)
+register_module_extender(AstroidManager(), "py.test", pytest_transform)

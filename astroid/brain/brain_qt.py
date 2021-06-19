@@ -12,9 +12,9 @@
 """Astroid hooks for the PyQT library."""
 
 from astroid import nodes, parse
-from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
+from astroid.manager import AstroidManager
 
 
 def _looks_like_signal(node, signal_name="pyqtSignal"):
@@ -65,7 +65,7 @@ def transform_pyside_signal(node):
 
 
 def pyqt4_qtcore_transform():
-    return AstroidBuilder(MANAGER).string_build(
+    return AstroidBuilder(AstroidManager()).string_build(
         """
 
 def SIGNAL(signal_name): pass
@@ -76,9 +76,11 @@ class QObject(object):
     )
 
 
-register_module_extender(MANAGER, "PyQt4.QtCore", pyqt4_qtcore_transform)
-MANAGER.register_transform(nodes.FunctionDef, transform_pyqt_signal, _looks_like_signal)
-MANAGER.register_transform(
+register_module_extender(AstroidManager(), "PyQt4.QtCore", pyqt4_qtcore_transform)
+AstroidManager().register_transform(
+    nodes.FunctionDef, transform_pyqt_signal, _looks_like_signal
+)
+AstroidManager().register_transform(
     nodes.ClassDef,
     transform_pyside_signal,
     lambda node: node.qname() in ("PySide.QtCore.Signal", "PySide2.QtCore.Signal"),

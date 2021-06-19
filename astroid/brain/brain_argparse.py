@@ -1,6 +1,6 @@
 from astroid import arguments, inference_tip, nodes
-from astroid.astroid_manager import MANAGER
 from astroid.exceptions import UseInferenceDefault
+from astroid.manager import AstroidManager
 
 
 def infer_namespace(node, context=None):
@@ -30,6 +30,6 @@ def _looks_like_namespace(node):
     return False
 
 
-MANAGER.register_transform(
+AstroidManager().register_transform(
     nodes.Call, inference_tip(infer_namespace), _looks_like_namespace
 )

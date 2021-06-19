@@ -27,6 +27,7 @@ from various source and using a cache of built modules)
 
 import os
 import zipimport
+from typing import ClassVar
 
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec
@@ -52,14 +53,14 @@ def safe_repr(obj):
 
 
 class AstroidManager:
-    """the astroid manager, responsible to build astroid from files
-     or modules.
+    """Responsible to build astroid from files or modules.
 
-    Use the Borg pattern.
+    Use the Borg (singleton) pattern.
     """
 
     name = "astroid loader"
     brain = {}
+    max_inferable_values: ClassVar[int] = 100
 
     def __init__(self):
         self.__dict__ = AstroidManager.brain
@@ -72,8 +73,6 @@ class AstroidManager:
             self.optimize_ast = False
             self.extension_package_whitelist = set()
             self._transform = TransformVisitor()
-
-            self.max_inferable_values = 100
 
     @property
     def register_transform(self):

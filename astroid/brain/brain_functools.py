@@ -8,10 +8,10 @@ from functools import partial
 from itertools import chain
 
 from astroid import BoundMethod, arguments, extract_node, helpers, objects
-from astroid.astroid_manager import MANAGER
 from astroid.exceptions import InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.interpreter import objectmodel
+from astroid.manager import AstroidManager
 from astroid.node_classes import AssignName, Attribute, Call, Name
 from astroid.scoped_nodes import FunctionDef
 from astroid.util import Uninferable
@@ -144,10 +144,12 @@ def _looks_like_functools_member(node, member) -> bool:
 _looks_like_partial = partial(_looks_like_functools_member, member="partial")
 
 
-MANAGER.register_transform(FunctionDef, _transform_lru_cache, _looks_like_lru_cache)
+AstroidManager().register_transform(
+    FunctionDef, _transform_lru_cache, _looks_like_lru_cache
+)
 
 
-MANAGER.register_transform(
+AstroidManager().register_transform(
     Call,
     inference_tip(_functools_partial_inference),
     _looks_like_partial,
