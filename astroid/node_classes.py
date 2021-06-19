@@ -4274,28 +4274,27 @@ class Tuple(_BaseContainer):
 
     _other_fields = ("ctx",)
 
-    def __init__(self, ctx=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        ctx: Optional[Context] = None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param ctx: Whether the tuple is assigned to or loaded from.
-        :type ctx: Context or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.ctx = ctx
-        """Whether the tuple is assigned to or loaded from.
+        self.ctx: Optional[Context] = ctx
+        """Whether the tuple is assigned to or loaded from."""
 
-        :type: Context or None
-        """
-
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def pytype(self):
         """Get the name of the type that this node represents.
@@ -4324,40 +4323,36 @@ class UnaryOp(NodeNG):
 
     _astroid_fields = ("operand",)
     _other_fields = ("op",)
-    operand = None
-    """What the unary operator is applied to.
 
-    :type: NodeNG or None
-    """
-
-    def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        op: Optional[str] = None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param op: The operator.
-        :type: str or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
-        self.op = op
-        """The operator.
+        self.op: Optional[str] = op
+        """The operator."""
 
-        :type: str or None
-        """
+        self.operand: Optional[NodeNG] = None
+        """What the unary operator is applied to."""
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
-    def postinit(self, operand=None):
+    def postinit(self, operand: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
 
         :param operand: What the unary operator is applied to.
-        :type operand: NodeNG or None
         """
         self.operand = operand
 
@@ -4407,37 +4402,51 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
 
     _astroid_fields = ("test", "body", "orelse")
     _multi_line_block_fields = ("body", "orelse")
-    test = None
-    """The condition that the loop tests.
 
-    :type: NodeNG or None
-    """
-    body = None
-    """The contents of the loop.
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    :type: list(NodeNG) or None
-    """
-    orelse = None
-    """The contents of the ``else`` block.
+        :param col_offset: The column that this node appears on in the
+            source code.
 
-    :type: list(NodeNG) or None
-    """
+        :param parent: The parent node in the syntax tree.
+        """
+        self.test: Optional[NodeNG] = None
+        """The condition that the loop tests."""
 
-    def postinit(self, test=None, body=None, orelse=None):
+        self.body: typing.List[NodeNG] = []
+        """The contents of the loop."""
+
+        self.orelse: typing.List[NodeNG] = []
+        """The contents of the ``else`` block."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self,
+        test: Optional[NodeNG] = None,
+        body: Optional[typing.List[NodeNG]] = None,
+        orelse: Optional[typing.List[NodeNG]] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param test: The condition that the loop tests.
-        :type test: NodeNG or None
 
         :param body: The contents of the loop.
-        :type body: list(NodeNG) or None
 
         :param orelse: The contents of the ``else`` block.
-        :type orelse: list(NodeNG) or None
         """
         self.test = test
-        self.body = body
-        self.orelse = orelse
+        if body is not None:
+            self.body = body
+        if orelse is not None:
+            self.orelse = orelse
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -4490,34 +4499,49 @@ class With(
     _astroid_fields = ("items", "body")
     _other_other_fields = ("type_annotation",)
     _multi_line_block_fields = ("body",)
-    items = None
-    """The pairs of context managers and the names they are assigned to.
 
-    :type: list(tuple(NodeNG, AssignName or None)) or None
-    """
-    body = None
-    """The contents of the ``with`` block.
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    :type: list(NodeNG) or None
-    """
-    type_annotation = None
-    """If present, this will contain the type annotation passed by a type comment
+        :param col_offset: The column that this node appears on in the
+            source code.
 
-    :type: NodeNG or None
-    """
+        :param parent: The parent node in the syntax tree.
+        """
+        self.items: typing.List[typing.Tuple[NodeNG, Optional[NodeNG]]] = []
+        """The pairs of context managers and the names they are assigned to."""
 
-    def postinit(self, items=None, body=None, type_annotation=None):
+        self.body: typing.List[NodeNG] = []
+        """The contents of the ``with`` block."""
+
+        self.type_annotation: Optional[NodeNG] = None  # can be None
+        """If present, this will contain the type annotation passed by a type comment"""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self,
+        items: Optional[typing.List[typing.Tuple[NodeNG, Optional[NodeNG]]]] = None,
+        body: Optional[typing.List[NodeNG]] = None,
+        type_annotation: Optional[NodeNG] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param items: The pairs of context managers and the names
             they are assigned to.
-        :type items: list(tuple(NodeNG, AssignName or None)) or None
 
         :param body: The contents of the ``with`` block.
-        :type body: list(NodeNG) or None
         """
-        self.items = items
-        self.body = body
+        if items is not None:
+            self.items = items
+        if body is not None:
+            self.body = body
         self.type_annotation = type_annotation
 
     @decorators.cachedproperty
@@ -4554,17 +4578,30 @@ class Yield(NodeNG):
     """
 
     _astroid_fields = ("value",)
-    value = None
-    """The value to yield.
 
-    :type: NodeNG or None
-    """
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    def postinit(self, value=None):
+        :param col_offset: The column that this node appears on in the
+            source code.
+
+        :param parent: The parent node in the syntax tree.
+        """
+        self.value: Optional[NodeNG] = None  # can be None
+        """The value to yield."""
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
 
         :param value: The value to yield.
-        :type value: NodeNG or None
         """
         self.value = value
 
@@ -4576,7 +4613,7 @@ class Yield(NodeNG):
         yield self
 
 
-class YieldFrom(Yield):
+class YieldFrom(Yield):  # TODO value is required, not optional
     """Class representing an :class:`ast.YieldFrom` node."""
 
 
@@ -4597,36 +4634,53 @@ class FormattedValue(NodeNG):
     """
 
     _astroid_fields = ("value", "format_spec")
-    value = None
-    """The value to be formatted into the string.
 
-    :type: NodeNG or None
-    """
-    conversion = None
-    """The type of formatting to be applied to the value.
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    .. seealso::
-        :class:`ast.FormattedValue`
+        :param col_offset: The column that this node appears on in the
+            source code.
 
-    :type: int or None
-    """
-    format_spec = None
-    """The formatting to be applied to the value.
+        :param parent: The parent node in the syntax tree.
+        """
+        self.value: NodeNG
+        """The value to be formatted into the string."""
 
-    .. seealso::
-        :class:`ast.FormattedValue`
+        self.conversion: Optional[int] = None  # can be None
+        """The type of formatting to be applied to the value.
 
-    :type: JoinedStr or None
-    """
+        .. seealso::
+            :class:`ast.FormattedValue`
+        """
 
-    def postinit(self, value, conversion=None, format_spec=None):
+        self.format_spec: Optional[NodeNG] = None  # can be None
+        """The formatting to be applied to the value.
+
+        .. seealso::
+            :class:`ast.FormattedValue`
+
+        :type: JoinedStr or None
+        """
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(
+        self,
+        value: NodeNG,
+        conversion: Optional[int] = None,
+        format_spec: Optional[NodeNG] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param value: The value to be formatted into the string.
-        :type value: NodeNG
 
         :param conversion: The type of formatting to be applied to the value.
-        :type conversion: int or None
 
         :param format_spec: The formatting to be applied to the value.
         :type format_spec: JoinedStr or None
@@ -4651,20 +4705,38 @@ class JoinedStr(NodeNG):
     """
 
     _astroid_fields = ("values",)
-    values = None
-    """The string expressions to be joined.
 
-    :type: list(FormattedValue or Const) or None
-    """
+    def __init__(
+        self,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
+        """
+        :param lineno: The line that this node appears on in the source code.
 
-    def postinit(self, values=None):
+        :param col_offset: The column that this node appears on in the
+            source code.
+
+        :param parent: The parent node in the syntax tree.
+        """
+        self.values: typing.List[NodeNG] = []
+        """The string expressions to be joined.
+
+        :type: list(FormattedValue or Const)
+        """
+
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+
+    def postinit(self, values: Optional[typing.List[NodeNG]] = None) -> None:
         """Do some setup after initialisation.
 
         :param value: The string expressions to be joined.
 
-        :type: list(FormattedValue or Const) or None
+        :type: list(FormattedValue or Const)
         """
-        self.values = values
+        if values is not None:
+            self.values = values
 
     def get_children(self):
         yield from self.values
