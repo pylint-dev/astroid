@@ -10,7 +10,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """Astroid hooks for pytest."""
-from astroid import MANAGER
+from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
 

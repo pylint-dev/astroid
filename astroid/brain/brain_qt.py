@@ -11,7 +11,8 @@
 
 """Astroid hooks for the PyQT library."""
 
-from astroid import MANAGER, nodes, parse
+from astroid import nodes, parse
+from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
 

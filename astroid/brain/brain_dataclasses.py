@@ -3,7 +3,7 @@
 """
 Astroid hook for the dataclasses library
 """
-from astroid import MANAGER
+from astroid.astroid_manager import MANAGER
 from astroid.node_classes import (
     AnnAssign,
     Assign,

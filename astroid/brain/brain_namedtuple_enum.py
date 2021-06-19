@@ -28,7 +28,8 @@ import functools
 import keyword
 from textwrap import dedent
 
-from astroid import MANAGER, arguments, inference_tip, nodes, util
+from astroid import arguments, inference_tip, nodes, util
+from astroid.astroid_manager import MANAGER
 from astroid.builder import AstroidBuilder, extract_node
 from astroid.exceptions import (
     AstroidTypeError,

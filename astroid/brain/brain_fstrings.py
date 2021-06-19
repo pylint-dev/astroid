@@ -7,7 +7,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 import collections.abc
 
-from astroid import MANAGER
+from astroid.astroid_manager import MANAGER
 from astroid.node_classes import FormattedValue
 
 

@@ -15,7 +15,7 @@ defined using the `@hypothesis.strategies.composite` decorator.  For example:
     a_strategy()
 
 """
-from astroid import MANAGER
+from astroid.astroid_manager import MANAGER
 from astroid.scoped_nodes import FunctionDef
 
 COMPOSITE_NAMES = (

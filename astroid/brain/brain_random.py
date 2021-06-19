@@ -2,7 +2,8 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 import random
 
-from astroid import MANAGER, helpers
+from astroid import helpers
+from astroid.astroid_manager import MANAGER
 from astroid.exceptions import UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.node_classes import (

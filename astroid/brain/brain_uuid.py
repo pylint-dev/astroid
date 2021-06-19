@@ -6,7 +6,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """Astroid hooks for the UUID module."""
-from astroid import MANAGER
+from astroid.astroid_manager import MANAGER
 from astroid.node_classes import Const
 from astroid.scoped_nodes import ClassDef
 

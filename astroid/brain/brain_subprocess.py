@@ -13,7 +13,7 @@
 
 import textwrap
 
-from astroid import MANAGER
+from astroid.astroid_manager import MANAGER
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.const import PY37, PY39

@@ -13,7 +13,8 @@
 import typing
 from functools import partial
 
-from astroid import MANAGER, context, extract_node, inference_tip, node_classes
+from astroid import context, extract_node, inference_tip, node_classes
+from astroid.astroid_manager import MANAGER
 from astroid.const import PY37, PY39
 from astroid.exceptions import (
     AttributeInferenceError,

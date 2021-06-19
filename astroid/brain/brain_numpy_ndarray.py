@@ -8,7 +8,7 @@
 
 
 """Astroid hooks for numpy ndarray class."""
-from astroid import MANAGER
+from astroid.astroid_manager import MANAGER
 from astroid.builder import extract_node
 from astroid.inference_tip import inference_tip
 from astroid.node_classes import Attribute

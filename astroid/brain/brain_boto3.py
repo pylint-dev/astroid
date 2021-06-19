@@ -2,7 +2,8 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
 """Astroid hooks for understanding boto3.ServiceRequest()"""
-from astroid import MANAGER, extract_node
+from astroid import extract_node
+from astroid.astroid_manager import MANAGER
 from astroid.scoped_nodes import ClassDef
 
 BOTO_SERVICE_FACTORY_QUALIFIED_NAME = "boto3.resources.base.ServiceResource"
