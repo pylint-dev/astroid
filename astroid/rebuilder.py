@@ -134,7 +134,7 @@ class TreeRebuilder:
             "ast.Starred",
             "ast.Tuple",
         ],
-    ):  # TODO return type needs change to _Context enum
+    ) -> Context:
         return self._parser_module.context_classes.get(type(node.ctx), Context.Load)
 
     def visit_module(
