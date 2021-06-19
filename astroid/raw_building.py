@@ -419,7 +419,7 @@ class InspectBuilder:
         return False
 
 
-### astroid bootstrapping ######################################################
+# astroid bootstrapping ######################################################
 
 _CONST_PROXY = {}
 
