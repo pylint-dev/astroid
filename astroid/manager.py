@@ -174,12 +174,12 @@ class AstroidManager:
                     return self._build_stub_module(modname)
                 try:
                     module = load_module_from_name(modname)
-                except Exception as ex:
+                except Exception as e:
                     raise AstroidImportError(
                         "Loading {modname} failed with:\n{error}",
                         modname=modname,
                         path=found_spec.location,
-                    ) from ex
+                    ) from e
                 return self.ast_from_module(module, modname)
 
             elif found_spec.type == spec.ModuleType.PY_COMPILED:
@@ -249,12 +249,12 @@ class AstroidManager:
                 value = file_info_from_modpath(
                     modname.split("."), context_file=contextfile
                 )
-            except ImportError as ex:
+            except ImportError as e:
                 value = AstroidImportError(
                     "Failed to import module {modname} with error:\n{error}.",
                     modname=modname,
                     # we remove the traceback here to save on memory usage (since these exceptions are cached)
-                    error=ex.with_traceback(None),
+                    error=e.with_traceback(None),
                 )
             self._mod_file_cache[(modname, contextfile)] = value
         if isinstance(value, AstroidBuildingError):
