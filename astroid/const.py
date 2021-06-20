@@ -13,6 +13,7 @@ class Context(enum.Enum):
     Del = 3
 
 
-Load = Context.Load
-Store = Context.Store
-Del = Context.Del
+# TODO Remove in 3.0 in favor of Context
+Load = Context.Load  # pylint: disable=invalid-name
+Store = Context.Store  # pylint: disable=invalid-name
+Del = Context.Del  # pylint: disable=invalid-name
