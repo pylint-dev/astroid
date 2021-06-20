@@ -285,7 +285,7 @@ class AstroidManagerTest(
         """give a wrong class at the ast_from_class method"""
         self.assertRaises(AstroidBuildingError, self.manager.ast_from_class, None)
 
-    def testFailedImportHooks(self):
+    def test_failed_import_hooks(self):
         def hook(modname):
             if modname == "foo.bar":
                 return unittest
