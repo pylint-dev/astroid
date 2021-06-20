@@ -66,6 +66,10 @@ class RawBuildingTC(unittest.TestCase):
         node = build_function(name="MyFunction", posonlyargs=["a", "b"])
         self.assertEqual(2, len(node.args.posonlyargs))
 
+    def test_build_function_kwonlyargs(self):
+        node = build_function(name="MyFunction", kwonlyargs=["a", "b"])
+        assert len(node.args.kwonlyargs) == 2
+
     def test_build_from_import(self):
         names = ["exceptions, inference, inspector"]
         node = build_from_import("astroid", names)

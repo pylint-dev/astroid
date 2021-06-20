@@ -29,6 +29,7 @@ import os
 import sys
 import types
 import warnings
+from typing import List, Optional
 
 from astroid import bases, node_classes, nodes
 from astroid.manager import AstroidManager
@@ -122,29 +123,33 @@ def build_class(name, basenames=(), doc=None):
     return node
 
 
-def build_function(name, args=None, posonlyargs=None, defaults=None, doc=None):
+def build_function(
+    name,
+    args: Optional[List[str]] = None,
+    posonlyargs: Optional[List[str]] = None,
+    defaults=None,
+    doc=None,
+    kwonlyargs: Optional[List[str]] = None,
+) -> nodes.FunctionDef:
     """create and initialize an astroid FunctionDef node"""
-    args, defaults, posonlyargs = args or [], defaults or [], posonlyargs or []
     # first argument is now a list of decorators
     func = nodes.FunctionDef(name, doc)
-    func.args = argsnode = nodes.Arguments()
-    argsnode.args = []
-    argsnode.posonlyargs = []
-    for arg in args:
-        argsnode.args.append(nodes.Name())
-        argsnode.args[-1].name = arg
-        argsnode.args[-1].parent = argsnode
-    for arg in posonlyargs:
-        argsnode.posonlyargs.append(nodes.Name())
-        argsnode.posonlyargs[-1].name = arg
-        argsnode.posonlyargs[-1].parent = argsnode
-    argsnode.defaults = []
-    for default in defaults:
+    func.args = argsnode = nodes.Arguments(parent=func)
+    argsnode.postinit(
+        args=[nodes.AssignName(name=arg, parent=argsnode) for arg in args or ()],
+        defaults=[],
+        kwonlyargs=[
+            nodes.AssignName(name=arg, parent=argsnode) for arg in kwonlyargs or ()
+        ],
+        kw_defaults=[],
+        annotations=[],
+        posonlyargs=[
+            nodes.AssignName(name=arg, parent=argsnode) for arg in posonlyargs or ()
+        ],
+    )
+    for default in defaults or ():
         argsnode.defaults.append(nodes.const_factory(default))
         argsnode.defaults[-1].parent = argsnode
-    argsnode.kwarg = None
-    argsnode.vararg = None
-    argsnode.parent = func
     if args:
         register_arguments(func)
     return func
@@ -168,7 +173,7 @@ def register_arguments(func, args=None):
         if func.args.kwarg:
             func.set_local(func.args.kwarg, func.args)
     for arg in args:
-        if isinstance(arg, nodes.Name):
+        if isinstance(arg, nodes.AssignName):
             func.set_local(arg.name, arg)
         else:
             register_arguments(func, arg.elts)
@@ -186,6 +191,7 @@ def object_build_function(node, member, localname):
     args = []
     defaults = []
     posonlyargs = []
+    kwonlyargs = []
     for param_name, param in signature.parameters.items():
         if param.kind == inspect.Parameter.POSITIONAL_ONLY:
             posonlyargs.append(param_name)
@@ -195,6 +201,8 @@ def object_build_function(node, member, localname):
             args.append(param_name)
         elif param.kind == inspect.Parameter.VAR_KEYWORD:
             args.append(param_name)
+        elif param.kind == inspect.Parameter.KEYWORD_ONLY:
+            kwonlyargs.append(param_name)
         if param.default is not inspect._empty:
             defaults.append(param.default)
     func = build_function(
