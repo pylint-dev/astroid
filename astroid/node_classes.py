@@ -388,9 +388,8 @@ class NodeNG:
         :returns: The nice name.
         :rtype: str
         """
-        names = {"name", "attrname"}
-        if all(name not in self._astroid_fields for name in names):
-            return getattr(self, "name", getattr(self, "attrname", ""))
+        if all(name not in self._astroid_fields for name in ("name", "attrname")):
+            return getattr(self, "name", "") or getattr(self, "attrname", "")
         return ""
 
     def __str__(self):
@@ -1405,203 +1404,159 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         "type_comment_kwonlyargs",
         "type_comment_posonlyargs",
     )
-    varargannotation = None
-    """The type annotation for the variable length arguments.
-
-    :type: NodeNG
-    """
-    kwargannotation = None
-    """The type annotation for the variable length keyword arguments.
-
-    :type: NodeNG
-    """
 
     _other_fields = ("vararg", "kwarg")
 
-    def __init__(self, vararg=None, kwarg=None, parent=None):
+    def __init__(
+        self,
+        vararg: Optional[str] = None,
+        kwarg: Optional[str] = None,
+        parent: Optional[NodeNG] = None,
+    ) -> None:
         """
         :param vararg: The name of the variable length arguments.
-        :type vararg: str or None
 
         :param kwarg: The name of the variable length keyword arguments.
-        :type kwarg: str or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
         super().__init__(parent=parent)
-        self.vararg = vararg
-        """The name of the variable length arguments.
 
-        :type: str or None
-        """
+        self.vararg: Optional[str] = vararg  # can be None
+        """The name of the variable length arguments."""
 
-        self.kwarg = kwarg
-        """The name of the variable length keyword arguments.
+        self.kwarg: Optional[str] = kwarg  # can be None
+        """The name of the variable length keyword arguments."""
 
-        :type: str or None
-        """
+        self.args: typing.List[AssignName] = []
+        """The names of the required arguments."""
 
-        self.args = []
-        """The names of the required arguments.
+        self.defaults: typing.List[NodeNG] = []
+        """The default values for arguments that can be passed positionally."""
 
-        :type: list(AssignName)
-        """
+        self.kwonlyargs: typing.List[AssignName] = []
+        """The keyword arguments that cannot be passed positionally."""
 
-        self.defaults = []
-        """The default values for arguments that can be passed positionally.
+        self.posonlyargs: typing.List[AssignName] = []
+        """The arguments that can only be passed positionally."""
 
-        :type: list(NodeNG)
-        """
+        self.kw_defaults: typing.List[Optional[NodeNG]] = []
+        """The default values for keyword arguments that cannot be passed positionally."""
 
-        self.kwonlyargs = []
-        """The keyword arguments that cannot be passed positionally.
+        self.annotations: typing.List[Optional[NodeNG]] = []
+        """The type annotations of arguments that can be passed positionally."""
 
-        :type: list(AssignName)
-        """
+        self.posonlyargs_annotations: typing.List[Optional[NodeNG]] = []
+        """The type annotations of arguments that can only be passed positionally."""
 
-        self.posonlyargs = []
-        """The arguments that can only be passed positionally.
+        self.kwonlyargs_annotations: typing.List[Optional[NodeNG]] = []
+        """The type annotations of arguments that cannot be passed positionally."""
 
-        :type: list(AssignName)
-        """
-
-        self.kw_defaults = []
-        """The default values for keyword arguments that cannot be passed positionally.
-
-        :type: list(NodeNG)
-        """
-
-        self.annotations = []
-        """The type annotations of arguments that can be passed positionally.
-
-        :type: list(NodeNG)
-        """
-
-        self.posonlyargs_annotations = []
-        """The type annotations of arguments that can only be passed positionally.
-
-        :type: list(NodeNG)
-        """
-
-        self.kwonlyargs_annotations = []
-        """The type annotations of arguments that cannot be passed positionally.
-
-        :type: list(NodeNG)
-        """
-
-        self.type_comment_args = []
+        self.type_comment_args: typing.List[Optional[NodeNG]] = []
         """The type annotation, passed by a type comment, of each argument.
 
         If an argument does not have a type comment,
         the value for that argument will be None.
-
-        :type: list(NodeNG or None)
         """
 
-        self.type_comment_kwonlyargs = []
+        self.type_comment_kwonlyargs: typing.List[Optional[NodeNG]] = []
         """The type annotation, passed by a type comment, of each keyword only argument.
 
         If an argument does not have a type comment,
         the value for that argument will be None.
-
-        :type: list(NodeNG or None)
         """
 
-        self.type_comment_posonlyargs = []
+        self.type_comment_posonlyargs: typing.List[Optional[NodeNG]] = []
         """The type annotation, passed by a type comment, of each positional argument.
 
         If an argument does not have a type comment,
         the value for that argument will be None.
-
-        :type: list(NodeNG or None)
         """
+
+        self.varargannotation: Optional[NodeNG] = None  # can be None
+        """The type annotation for the variable length arguments."""
+
+        self.kwargannotation: Optional[NodeNG] = None  # can be None
+        """The type annotation for the variable length keyword arguments."""
 
     # pylint: disable=too-many-arguments
     def postinit(
         self,
-        args,
-        defaults,
-        kwonlyargs,
-        kw_defaults,
-        annotations,
-        posonlyargs=None,
-        kwonlyargs_annotations=None,
-        posonlyargs_annotations=None,
-        varargannotation=None,
-        kwargannotation=None,
-        type_comment_args=None,
-        type_comment_kwonlyargs=None,
-        type_comment_posonlyargs=None,
-    ):
+        args: typing.List[AssignName],
+        defaults: typing.List[NodeNG],
+        kwonlyargs: typing.List[AssignName],
+        kw_defaults: typing.List[Optional[NodeNG]],
+        annotations: typing.List[Optional[NodeNG]],
+        posonlyargs: Optional[typing.List[AssignName]] = None,
+        kwonlyargs_annotations: Optional[typing.List[Optional[NodeNG]]] = None,
+        posonlyargs_annotations: Optional[typing.List[Optional[NodeNG]]] = None,
+        varargannotation: Optional[NodeNG] = None,
+        kwargannotation: Optional[NodeNG] = None,
+        type_comment_args: Optional[typing.List[Optional[NodeNG]]] = None,
+        type_comment_kwonlyargs: Optional[typing.List[Optional[NodeNG]]] = None,
+        type_comment_posonlyargs: Optional[typing.List[Optional[NodeNG]]] = None,
+    ) -> None:
         """Do some setup after initialisation.
 
         :param args: The names of the required arguments.
-        :type args: list(AssignName)
 
         :param defaults: The default values for arguments that can be passed
             positionally.
-        :type defaults: list(NodeNG)
 
         :param kwonlyargs: The keyword arguments that cannot be passed
             positionally.
-        :type kwonlyargs: list(AssignName)
 
         :param posonlyargs: The arguments that can only be passed
             positionally.
-        :type kwonlyargs: list(AssignName)
 
         :param kw_defaults: The default values for keyword arguments that
             cannot be passed positionally.
-        :type kw_defaults: list(NodeNG)
 
         :param annotations: The type annotations of arguments that can be
             passed positionally.
-        :type annotations: list(NodeNG)
 
         :param kwonlyargs_annotations: The type annotations of arguments that
             cannot be passed positionally. This should always be passed in
             Python 3.
-        :type kwonlyargs_annotations: list(NodeNG)
 
         :param posonlyargs_annotations: The type annotations of arguments that
             can only be passed positionally. This should always be passed in
             Python 3.
-        :type posonlyargs_annotations: list(NodeNG)
 
         :param varargannotation: The type annotation for the variable length
             arguments.
-        :type varargannotation: NodeNG
 
         :param kwargannotation: The type annotation for the variable length
             keyword arguments.
-        :type kwargannotation: NodeNG
 
         :param type_comment_args: The type annotation,
             passed by a type comment, of each argument.
-        :type type_comment_args: list(NodeNG or None)
 
         :param type_comment_args: The type annotation,
             passed by a type comment, of each keyword only argument.
-        :type type_comment_args: list(NodeNG or None)
 
         :param type_comment_args: The type annotation,
             passed by a type comment, of each positional argument.
-        :type type_comment_args: list(NodeNG or None)
         """
         self.args = args
         self.defaults = defaults
         self.kwonlyargs = kwonlyargs
-        self.posonlyargs = posonlyargs
+        if posonlyargs is not None:
+            self.posonlyargs = posonlyargs
         self.kw_defaults = kw_defaults
         self.annotations = annotations
-        self.kwonlyargs_annotations = kwonlyargs_annotations
-        self.posonlyargs_annotations = posonlyargs_annotations
+        if kwonlyargs_annotations is not None:
+            self.kwonlyargs_annotations = kwonlyargs_annotations
+        if posonlyargs_annotations is not None:
+            self.posonlyargs_annotations = posonlyargs_annotations
         self.varargannotation = varargannotation
         self.kwargannotation = kwargannotation
-        self.type_comment_args = type_comment_args
-        self.type_comment_kwonlyargs = type_comment_kwonlyargs
-        self.type_comment_posonlyargs = type_comment_posonlyargs
+        if type_comment_args is not None:
+            self.type_comment_args = type_comment_args
+        if type_comment_kwonlyargs is not None:
+            self.type_comment_kwonlyargs = type_comment_kwonlyargs
+        if type_comment_posonlyargs is not None:
+            self.type_comment_posonlyargs = type_comment_posonlyargs
 
     def _infer_name(self, frame, name):
         if self.parent is frame:
@@ -2744,17 +2699,13 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
     ) -> None:
         """
         :param attrname: The name of the attribute that is being deleted.
-        :type attrname: str or None
 
         :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
 
         :param col_offset: The column that this node appears on in the
             source code.
-        :type col_offset: int or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
         """
         self.expr: Optional[NodeNG] = None
         """The name that this node represents.
@@ -4891,7 +4842,7 @@ class Match(Statement):
     <Match l.2 at 0x10c24e170>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("subject", "cases")
+    _astroid_fields = ("subject", "cases")
 
     def __init__(
         self,
@@ -4929,8 +4880,8 @@ class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
     <MatchCase l.3 at 0x10c24e590>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("pattern", "guard", "body")
-    _multi_line_block_fields: ClassVar[typing.Tuple[str, ...]] = ("body",)
+    _astroid_fields = ("pattern", "guard", "body")
+    _multi_line_block_fields = ("body",)
 
     def __init__(self, *, parent: Optional[NodeNG] = None) -> None:
         self.pattern: Pattern
@@ -4962,7 +4913,7 @@ class MatchValue(Pattern):
     <MatchValue l.3 at 0x10c24e200>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("value",)
+    _astroid_fields = ("value",)
 
     def __init__(
         self,
@@ -4997,7 +4948,7 @@ class MatchSingleton(Pattern):
     <MatchSingleton l.7 at 0x10c229f90>
     """
 
-    _other_fields: ClassVar[typing.Tuple[str, ...]] = ("value",)
+    _other_fields = ("value",)
 
     def __init__(
         self,
@@ -5027,7 +4978,7 @@ class MatchSequence(Pattern):
     <MatchSequence l.5 at 0x10ca80b20>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("patterns",)
+    _astroid_fields = ("patterns",)
 
     def __init__(
         self,
@@ -5054,7 +5005,7 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
     <MatchMapping l.3 at 0x10c8a8850>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("keys", "patterns", "rest")
+    _astroid_fields = ("keys", "patterns", "rest")
 
     def __init__(
         self,
@@ -5095,12 +5046,8 @@ class MatchClass(Pattern):
     <MatchClass l.5 at 0x10ca80880>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = (
-        "cls",
-        "patterns",
-        "kwd_patterns",
-    )
-    _other_fields: ClassVar[typing.Tuple[str, ...]] = ("kwd_attrs",)
+    _astroid_fields = ("cls", "patterns", "kwd_patterns")
+    _other_fields = ("kwd_attrs",)
 
     def __init__(
         self,
@@ -5140,7 +5087,7 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
     <MatchStar l.3 at 0x10ca809a0>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("name",)
+    _astroid_fields = ("name",)
 
     def __init__(
         self,
@@ -5179,7 +5126,7 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
     <MatchAs l.9 at 0x10d09b880>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("pattern", "name")
+    _astroid_fields = ("pattern", "name")
 
     def __init__(
         self,
@@ -5213,7 +5160,7 @@ class MatchOr(Pattern):
     <MatchOr l.3 at 0x10d0b0b50>
     """
 
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ("patterns",)
+    _astroid_fields = ("patterns",)
 
     def __init__(
         self,
