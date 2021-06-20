@@ -462,7 +462,7 @@ class DefaultDictTest(unittest.TestCase):
 
 
 class ModuleExtenderTest(unittest.TestCase):
-    def testExtensionModules(self):
+    def test_extension_modules(self):
         transformer = MANAGER._transform
         for extender, _ in transformer.transforms[nodes.Module]:
             n = nodes.Module("__main__", None)
@@ -1612,7 +1612,7 @@ class TypingBrain(unittest.TestCase):
         self.assertIsInstance(inferred, astroid.Instance)
 
     @test_utils.require_version("3.8")
-    def test_typedDict(self):
+    def test_typed_dict(self):
         node = builder.extract_node(
             """
         from typing import TypedDict

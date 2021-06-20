@@ -901,12 +901,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """,
             "module",
         )
-        should_be_C = list(ast[0].infer())
-        should_be_D = list(ast[1].infer())
-        self.assertEqual(1, len(should_be_C))
-        self.assertEqual(1, len(should_be_D))
-        self.assertEqual("module.C", should_be_C[0].qname())
-        self.assertEqual("module.D", should_be_D[0].qname())
+        should_be_c = list(ast[0].infer())
+        should_be_d = list(ast[1].infer())
+        self.assertEqual(1, len(should_be_c))
+        self.assertEqual(1, len(should_be_d))
+        self.assertEqual("module.C", should_be_c[0].qname())
+        self.assertEqual("module.D", should_be_d[0].qname())
 
     def test_factory_methods_object_new_call(self):
         ast = extract_node(
@@ -924,12 +924,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """,
             "module",
         )
-        should_be_C = list(ast[0].infer())
-        should_be_D = list(ast[1].infer())
-        self.assertEqual(1, len(should_be_C))
-        self.assertEqual(1, len(should_be_D))
-        self.assertEqual("module.C", should_be_C[0].qname())
-        self.assertEqual("module.D", should_be_D[0].qname())
+        should_be_c = list(ast[0].infer())
+        should_be_d = list(ast[1].infer())
+        self.assertEqual(1, len(should_be_c))
+        self.assertEqual(1, len(should_be_d))
+        self.assertEqual("module.C", should_be_c[0].qname())
+        self.assertEqual("module.D", should_be_d[0].qname())
 
     @pytest.mark.skipif(
         PY38,
@@ -3776,7 +3776,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.name, "B")
 
     @unittest.skipUnless(HAS_SIX, "These tests require the six library")
-    def test_With_metaclass_subclasses_arguments_are_classes_not_instances(self):
+    def test_with_metaclass_subclasses_arguments_are_classes_not_instances(self):
         ast_node = extract_node(
             """
         class A(type):
@@ -3794,7 +3794,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.name, "B")
 
     @unittest.skipUnless(HAS_SIX, "These tests require the six library")
-    def test_With_metaclass_with_partial_imported_name(self):
+    def test_with_metaclass_with_partial_imported_name(self):
         ast_node = extract_node(
             """
         class A(type):

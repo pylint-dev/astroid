@@ -80,10 +80,10 @@ class ModuleFileTest(unittest.TestCase):
 class LoadModuleFromNameTest(unittest.TestCase):
     """load a python module from it's name"""
 
-    def test_knownValues_load_module_from_name_1(self):
+    def test_known_values_load_module_from_name_1(self):
         self.assertEqual(modutils.load_module_from_name("sys"), sys)
 
-    def test_knownValues_load_module_from_name_2(self):
+    def test_known_values_load_module_from_name_2(self):
         self.assertEqual(modutils.load_module_from_name("os.path"), os.path)
 
     def test_raise_load_module_from_name_1(self):
@@ -95,29 +95,29 @@ class LoadModuleFromNameTest(unittest.TestCase):
 class GetModulePartTest(unittest.TestCase):
     """given a dotted name return the module part of the name"""
 
-    def test_knownValues_get_module_part_1(self):
+    def test_known_values_get_module_part_1(self):
         self.assertEqual(
             modutils.get_module_part("astroid.modutils"), "astroid.modutils"
         )
 
-    def test_knownValues_get_module_part_2(self):
+    def test_known_values_get_module_part_2(self):
         self.assertEqual(
             modutils.get_module_part("astroid.modutils.get_module_part"),
             "astroid.modutils",
         )
 
-    def test_knownValues_get_module_part_3(self):
+    def test_known_values_get_module_part_3(self):
         """relative import from given file"""
         self.assertEqual(
             modutils.get_module_part("node_classes.AssName", modutils.__file__),
             "node_classes",
         )
 
-    def test_knownValues_get_compiled_module_part(self):
+    def test_known_values_get_compiled_module_part(self):
         self.assertEqual(modutils.get_module_part("math.log10"), "math")
         self.assertEqual(modutils.get_module_part("math.log10", __file__), "math")
 
-    def test_knownValues_get_builtin_module_part(self):
+    def test_known_values_get_builtin_module_part(self):
         self.assertEqual(modutils.get_module_part("sys.path"), "sys")
         self.assertEqual(modutils.get_module_part("sys.path", "__file__"), "sys")
 
@@ -130,13 +130,13 @@ class GetModulePartTest(unittest.TestCase):
 class ModPathFromFileTest(unittest.TestCase):
     """given an absolute file path return the python module's path as a list"""
 
-    def test_knownValues_modpath_from_file_1(self):
+    def test_known_values_modpath_from_file_1(self):
         self.assertEqual(
             modutils.modpath_from_file(ElementTree.__file__),
             ["xml", "etree", "ElementTree"],
         )
 
-    def test_raise_modpath_from_file_Exception(self):
+    def test_raise_modpath_from_file_exception(self):
         self.assertRaises(Exception, modutils.modpath_from_file, "/turlututu")
 
     def test_import_symlink_with_source_outside_of_path(self):
@@ -297,18 +297,18 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
 
 
 class IsRelativeTest(unittest.TestCase):
-    def test_knownValues_is_relative_1(self):
+    def test_known_values_is_relative_1(self):
         self.assertTrue(modutils.is_relative("utils", email.__path__[0]))
 
-    def test_knownValues_is_relative_3(self):
+    def test_known_values_is_relative_3(self):
         self.assertFalse(modutils.is_relative("astroid", astroid.__path__[0]))
 
-    def test_knownValues_is_relative_4(self):
+    def test_known_values_is_relative_4(self):
         self.assertTrue(
             modutils.is_relative("util", astroid.interpreter._import.spec.__file__)
         )
 
-    def test_knownValues_is_relative_5(self):
+    def test_known_values_is_relative_5(self):
         self.assertFalse(
             modutils.is_relative(
                 "objectmodel", astroid.interpreter._import.spec.__file__
