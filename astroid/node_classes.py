@@ -1428,22 +1428,22 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.kwarg: Optional[str] = kwarg  # can be None
         """The name of the variable length keyword arguments."""
 
-        self.args: typing.List[AssignName] = []
+        self.args: typing.List[AssignName]
         """The names of the required arguments."""
 
-        self.defaults: typing.List[NodeNG] = []
+        self.defaults: typing.List[NodeNG]
         """The default values for arguments that can be passed positionally."""
 
-        self.kwonlyargs: typing.List[AssignName] = []
+        self.kwonlyargs: typing.List[AssignName]
         """The keyword arguments that cannot be passed positionally."""
 
         self.posonlyargs: typing.List[AssignName] = []
         """The arguments that can only be passed positionally."""
 
-        self.kw_defaults: typing.List[Optional[NodeNG]] = []
+        self.kw_defaults: typing.List[Optional[NodeNG]]
         """The default values for keyword arguments that cannot be passed positionally."""
 
-        self.annotations: typing.List[Optional[NodeNG]] = []
+        self.annotations: typing.List[Optional[NodeNG]]
         """The type annotations of arguments that can be passed positionally."""
 
         self.posonlyargs_annotations: typing.List[Optional[NodeNG]] = []
