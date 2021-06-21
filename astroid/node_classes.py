@@ -61,6 +61,7 @@ from astroid.nodes.node_classes import (  # pylint: disable=redefined-builtin (E
     NodeNG,
     Nonlocal,
     Pass,
+    Pattern,
     Raise,
     Return,
     Set,
