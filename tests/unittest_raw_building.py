@@ -69,6 +69,8 @@ class RawBuildingTC(unittest.TestCase):
     def test_build_function_kwonlyargs(self):
         node = build_function(name="MyFunction", kwonlyargs=["a", "b"])
         assert len(node.args.kwonlyargs) == 2
+        assert node.args.kwonlyargs[0].name == "a"
+        assert node.args.kwonlyargs[1].name == "b"
 
     def test_build_from_import(self):
         names = ["exceptions, inference, inspector"]
