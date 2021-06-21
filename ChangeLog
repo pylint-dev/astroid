@@ -2,9 +2,21 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.6.0?
+What's New in astroid 2.7.0?
 ============================
 Release Date: TBA
+
+
+
+What's New in astroid 2.6.1?
+============================
+Release Date: TBA
+
+
+
+What's New in astroid 2.6.0?
+============================
+Release Date: 2021-06-22
 
 * Appveyor and travis are no longer used in the continuous integration
 
