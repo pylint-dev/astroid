@@ -49,7 +49,7 @@ from astroid import decorators as decoratorsmod
 from astroid import helpers, nodes, objects, test_utils, util
 from astroid.bases import BUILTINS, BoundMethod, Instance, UnboundMethod
 from astroid.builder import extract_node, parse
-from astroid.const import PY38, PY39
+from astroid.const import PY38_PLUS, PY39_PLUS
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
@@ -932,7 +932,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual("module.D", should_be_d[0].qname())
 
     @pytest.mark.skipif(
-        PY38,
+        PY38_PLUS,
         reason="pathlib.Path cannot be inferred on Python 3.8",
     )
     def test_factory_methods_inside_binary_operation(self):
@@ -2495,7 +2495,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ]
 
         # PEP-584 supports | for dictionary union
-        if not PY39:
+        if not PY39_PLUS:
             ast_nodes.append(extract_node("{} | {} #@"))
             expected.append(msg.format(op="|", lhs="dict", rhs="dict"))
 
@@ -5882,9 +5882,9 @@ def test_custom_decorators_for_classmethod_and_staticmethods(code, obj, obj_type
     assert inferred.type == obj_type
 
 
-@pytest.mark.skipif(not PY38, reason="Needs dataclasses available")
+@pytest.mark.skipif(not PY38_PLUS, reason="Needs dataclasses available")
 @pytest.mark.skipif(
-    PY39,
+    PY39_PLUS,
     reason="Exact inference with dataclasses (replace function) in python3.9",
 )
 def test_dataclasses_subscript_inference_recursion_error():
@@ -5908,7 +5908,7 @@ def test_dataclasses_subscript_inference_recursion_error():
 
 
 @pytest.mark.skipif(
-    not PY39,
+    not PY39_PLUS,
     reason="Exact inference with dataclasses (replace function) in python3.9",
 )
 def test_dataclasses_subscript_inference_recursion_error_39():

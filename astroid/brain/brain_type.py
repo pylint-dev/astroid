@@ -17,7 +17,7 @@ Thanks to Lukasz Langa for fruitful discussion.
 """
 
 from astroid import extract_node, inference_tip, nodes
-from astroid.const import PY39
+from astroid.const import PY39_PLUS
 from astroid.exceptions import UseInferenceDefault
 from astroid.manager import AstroidManager
 
@@ -59,7 +59,7 @@ def infer_type_sub(node, context=None):
     return node.infer(context=context)
 
 
-if PY39:
+if PY39_PLUS:
     AstroidManager().register_transform(
         nodes.Name, inference_tip(infer_type_sub), _looks_like_type_subscript
     )

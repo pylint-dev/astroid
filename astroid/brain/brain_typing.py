@@ -14,7 +14,7 @@ import typing
 from functools import partial
 
 from astroid import context, extract_node, inference_tip, node_classes
-from astroid.const import PY37, PY39
+from astroid.const import PY37_PLUS, PY39_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -150,7 +150,7 @@ def infer_typing_attr(
 
     if (
         not value.qname().startswith("typing.")
-        or PY37
+        or PY37_PLUS
         and value.qname() in TYPING_ALIAS
     ):
         # If typing subscript belongs to an alias
@@ -158,7 +158,7 @@ def infer_typing_attr(
         raise UseInferenceDefault
 
     if (
-        PY37
+        PY37_PLUS
         and isinstance(value, ClassDef)
         and value.qname()
         in ("typing.Generic", "typing.Annotated", "typing_extensions.Annotated")
@@ -284,11 +284,11 @@ def infer_typing_alias(
 
     maybe_type_var = node.args[1]
     if (
-        not PY39
+        not PY39_PLUS
         and not (
             isinstance(maybe_type_var, node_classes.Tuple) and not maybe_type_var.elts
         )
-        or PY39
+        or PY39_PLUS
         and isinstance(maybe_type_var, Const)
         and maybe_type_var.value > 0
     ):
@@ -316,11 +316,11 @@ def _looks_like_tuple_alias(node: Call) -> bool:
         isinstance(node, Call)
         and isinstance(node.func, Name)
         and (
-            not PY39
+            not PY39_PLUS
             and node.func.name == "_VariadicGenericAlias"
             and isinstance(node.args[0], Name)
             and node.args[0].name == "tuple"
-            or PY39
+            or PY39_PLUS
             and node.func.name == "_TupleType"
             and isinstance(node.args[0], Name)
             and node.args[0].name == "tuple"
@@ -352,12 +352,12 @@ AstroidManager().register_transform(
     Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript
 )
 
-if PY39:
+if PY39_PLUS:
     AstroidManager().register_transform(
         FunctionDef, inference_tip(infer_typedDict), _looks_like_typedDict
     )
 
-if PY37:
+if PY37_PLUS:
     AstroidManager().register_transform(
         Call, inference_tip(infer_typing_alias), _looks_like_typing_alias
     )

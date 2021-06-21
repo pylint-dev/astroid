@@ -28,7 +28,7 @@ import collections
 
 from astroid import context as contextmod
 from astroid import util
-from astroid.const import PY310
+from astroid.const import PY310_PLUS
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
@@ -47,7 +47,7 @@ BUILTINS = "builtins"
 BOOL_SPECIAL_METHOD = "__bool__"
 
 PROPERTIES = {BUILTINS + ".property", "abc.abstractproperty"}
-if PY310:
+if PY310_PLUS:
     PROPERTIES.add("enum.property")
 
 # List of possible property names. We use this list in order

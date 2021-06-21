@@ -11,7 +11,7 @@
 
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
-from astroid.const import PY39
+from astroid.const import PY39_PLUS
 from astroid.exceptions import AttributeInferenceError
 from astroid.manager import AstroidManager
 from astroid.scoped_nodes import ClassDef
@@ -66,7 +66,7 @@ def _deque_mock():
         def __mul__(self, other): pass
         def __imul__(self, other): pass
         def __rmul__(self, other): pass"""
-    if PY39:
+    if PY39_PLUS:
         base_deque_class += """
         @classmethod
         def __class_getitem__(self, item): return cls"""
@@ -78,7 +78,7 @@ def _ordered_dict_mock():
     class OrderedDict(dict):
         def __reversed__(self): return self[::-1]
         def move_to_end(self, key, last=False): pass"""
-    if PY39:
+    if PY39_PLUS:
         base_ordered_dict_class += """
         @classmethod
         def __class_getitem__(cls, item): return cls"""
@@ -120,7 +120,7 @@ def easy_class_getitem_inference(node, context=None):
     node.locals["__class_getitem__"] = [func_to_add]
 
 
-if PY39:
+if PY39_PLUS:
     # Starting with Python39 some objects of the collection module are subscriptable
     # thanks to the __class_getitem__ method but the way it is implemented in
     # _collection_abc makes it difficult to infer. (We would have to handle AssignName inference in the

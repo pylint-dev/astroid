@@ -53,7 +53,7 @@ except ImportError:
 
 from astroid import node_classes, nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import PY37, PY38, PY39, Context
+from astroid.const import PY37_PLUS, PY38_PLUS, PY39_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.node_classes import NodeNG
 
@@ -107,18 +107,18 @@ class TreeRebuilder:
 
     def _get_doc(self, node: T_Doc) -> Tuple[T_Doc, Optional[str]]:
         try:
-            if PY37 and hasattr(node, "docstring"):
+            if PY37_PLUS and hasattr(node, "docstring"):
                 doc = node.docstring
                 return node, doc
             if node.body and isinstance(node.body[0], self._module.Expr):
 
                 first_value = node.body[0].value
                 if isinstance(first_value, self._module.Str) or (
-                    PY38
+                    PY38_PLUS
                     and isinstance(first_value, self._module.Constant)
                     and isinstance(first_value.value, str)
                 ):
-                    doc = first_value.value if PY38 else first_value.s
+                    doc = first_value.value if PY38_PLUS else first_value.s
                     node.body = node.body[1:]
                     return node, doc
         except IndexError:
@@ -840,7 +840,7 @@ class TreeRebuilder:
         ]
 
         posonlyargs_annotations: List[Optional[NodeNG]] = []
-        if PY38:
+        if PY38_PLUS:
             posonlyargs = [self.visit(child, newnode) for child in node.posonlyargs]
             posonlyargs_annotations = [
                 self.visit(arg.annotation, newnode) for arg in node.posonlyargs
@@ -852,7 +852,7 @@ class TreeRebuilder:
             self.check_type_comment(child, parent=newnode) for child in node.kwonlyargs
         ]
         type_comment_posonlyargs: List[Optional[NodeNG]] = []
-        if PY38:
+        if PY38_PLUS:
             type_comment_posonlyargs = [
                 self.check_type_comment(child, parent=newnode)
                 for child in node.posonlyargs
@@ -1136,7 +1136,7 @@ class TreeRebuilder:
             return None
         # /!\ node is actually an _ast.FunctionDef node while
         # parent is an astroid.nodes.FunctionDef node
-        if PY38:
+        if PY38_PLUS:
             # Set the line number of the first decorator for Python 3.8+.
             lineno = node.decorator_list[0].lineno
         else:
@@ -1293,7 +1293,7 @@ class TreeRebuilder:
         node, doc = self._get_doc(node)
 
         lineno = node.lineno
-        if PY38 and node.decorator_list:
+        if PY38_PLUS and node.decorator_list:
             # Python 3.8 sets the line number of a decorated function
             # to be the actual line number of the function, but the
             # previous versions expected the decorator's line number instead.
@@ -1440,7 +1440,7 @@ class TreeRebuilder:
 
     def visit_keyword(self, node: "ast.keyword", parent: NodeNG) -> nodes.Keyword:
         """visit a Keyword node by returning a fresh instance of it"""
-        if PY39:
+        if PY39_PLUS:
             newnode = nodes.Keyword(node.arg, node.lineno, node.col_offset, parent)
         else:
             newnode = nodes.Keyword(node.arg, parent=parent)

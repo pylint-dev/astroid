@@ -1,10 +1,10 @@
 import enum
 import sys
 
-PY37 = sys.version_info >= (3, 7)
-PY38 = sys.version_info >= (3, 8)
-PY39 = sys.version_info >= (3, 9)
-PY310 = sys.version_info >= (3, 10)
+PY37_PLUS = sys.version_info >= (3, 7)
+PY38_PLUS = sys.version_info >= (3, 8)
+PY39_PLUS = sys.version_info >= (3, 9)
+PY310_PLUS = sys.version_info >= (3, 10)
 
 
 class Context(enum.Enum):

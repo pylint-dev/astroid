@@ -40,7 +40,7 @@ import astroid
 from astroid import bases, builder
 from astroid import context as contextmod
 from astroid import node_classes, nodes, parse, test_utils, transforms, util
-from astroid.const import PY38, PY310, Context
+from astroid.const import PY38_PLUS, PY310_PLUS, Context
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -57,7 +57,7 @@ try:
     HAS_TYPED_AST = True
 except ImportError:
     # typed_ast merged in `ast` in Python 3.8
-    HAS_TYPED_AST = PY38
+    HAS_TYPED_AST = PY38_PLUS
 
 
 class AsStringTest(resources.SysPathSetup, unittest.TestCase):
@@ -549,7 +549,7 @@ class ConstNodeTest(unittest.TestCase):
         self._test("a")
 
     @pytest.mark.skipif(
-        not PY38, reason="kind attribute for ast.Constant was added in 3.8"
+        not PY38_PLUS, reason="kind attribute for ast.Constant was added in 3.8"
     )
     def test_str_kind(self):
         node = builder.extract_node(
@@ -1133,7 +1133,7 @@ def test_type_comments_arguments():
 
 
 @pytest.mark.skipif(
-    not PY38, reason="needs to be able to parse positional only arguments"
+    not PY38_PLUS, reason="needs to be able to parse positional only arguments"
 )
 def test_type_comments_posonly_arguments():
     module = builder.parse(
@@ -1252,7 +1252,7 @@ def test_f_string_correct_line_numbering():
     assert node.last_child().last_child().lineno == 5
 
 
-@pytest.mark.skipif(not PY38, reason="needs assignment expressions")
+@pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
 def test_assignment_expression():
     code = """
     if __(a := 1):
@@ -1368,7 +1368,7 @@ def test_is_generator_for_yield_in_aug_assign():
     assert bool(node.is_generator())
 
 
-@pytest.mark.skipif(not PY310, reason="pattern matching was added in PY310")
+@pytest.mark.skipif(not PY310_PLUS, reason="pattern matching was added in PY310")
 class TestPatternMatching:
     @staticmethod
     def test_match_simple():

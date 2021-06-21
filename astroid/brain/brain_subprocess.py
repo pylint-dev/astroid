@@ -15,7 +15,7 @@ import textwrap
 
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
-from astroid.const import PY37, PY39
+from astroid.const import PY37_PLUS, PY39_PLUS
 from astroid.manager import AstroidManager
 
 
@@ -27,7 +27,7 @@ def _subprocess_transform():
         preexec_fn=None, close_fds=False, shell=False, cwd=None, env=None,
         universal_newlines=False, startupinfo=None, creationflags=0, restore_signals=True,
         start_new_session=False, pass_fds=(), *, encoding=None, errors=None"""
-    if PY37:
+    if PY37_PLUS:
         args += ", text=None"
     init = f"""
         def __init__({args}):
@@ -39,7 +39,7 @@ def _subprocess_transform():
     """
     py3_args = "args = []"
 
-    if PY37:
+    if PY37_PLUS:
         check_output_signature = """
         check_output(
             args, *,
@@ -126,7 +126,7 @@ def _subprocess_transform():
             "py3_args": py3_args,
         }
     )
-    if PY39:
+    if PY39_PLUS:
         code += """
     @classmethod
     def __class_getitem__(cls, item):
