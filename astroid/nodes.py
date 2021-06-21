@@ -194,3 +194,6 @@ ALL_NODE_CLASSES = (
     Yield,
     YieldFrom,
 )
+
+# Can't create a proper __all__ with string because of a cyclic import for ClassDef
+__all__ = [c.__name__ for c in ALL_NODE_CLASSES]
