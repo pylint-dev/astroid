@@ -11,6 +11,9 @@ Release Date: TBA
 * ``setuptools_scm`` has been removed and replaced by ``tbump`` in order to not
   have hidden runtime dependencies to setuptools
 
+* ``NodeNg``, the base node class, is now accessible from ``astroid`` or
+  ``astroid.nodes`` as it can be used for typing.
+
 * Update enum brain to improve inference of .name and .value dynamic class
   attributes
 
