@@ -31,7 +31,7 @@ import unittest
 import pytest
 
 from astroid import Instance, builder, nodes, test_utils, util
-from astroid.const import PY38
+from astroid.const import PY38_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -70,7 +70,7 @@ class FromToLineNoTest(unittest.TestCase):
         if hasattr(sys, "pypy_version_info"):
             lineno = 4
         else:
-            lineno = 5 if not PY38 else 4
+            lineno = 5 if not PY38_PLUS else 4
         self.assertEqual(strarg.fromlineno, lineno)
         self.assertEqual(strarg.tolineno, lineno)
         namearg = callfunc.args[1]
@@ -750,7 +750,7 @@ def test_module_build_dunder_file():
 
 
 @pytest.mark.skipif(
-    PY38,
+    PY38_PLUS,
     reason=(
         "The builtin ast module does not fail with a specific error "
         "for syntax error caused by invalid type comments."

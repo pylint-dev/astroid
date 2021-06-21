@@ -4,7 +4,7 @@ from collections import namedtuple
 from functools import partial
 from typing import Dict, Optional
 
-from astroid.const import PY38, Context
+from astroid.const import PY38_PLUS, Context
 
 try:
     import typed_ast.ast3 as _ast_py3
@@ -12,7 +12,7 @@ except ImportError:
     _ast_py3 = None
 
 
-if PY38:
+if PY38_PLUS:
     # On Python 3.8, typed_ast was merged back into `ast`
     _ast_py3 = ast
 
@@ -35,7 +35,7 @@ class ParserModule(
 ):
     def parse(self, string: str, type_comments=True):
         if self.module is _ast_py3:
-            if PY38:
+            if PY38_PLUS:
                 parse_func = partial(self.module.parse, type_comments=type_comments)
             else:
                 parse_func = partial(

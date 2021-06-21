@@ -47,7 +47,7 @@ from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators as decorators_mod
 from astroid import mixins, node_classes, util
-from astroid.const import PY39
+from astroid.const import PY39_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidTypeError,
@@ -2686,7 +2686,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             if (
                 isinstance(method, node_classes.EmptyNode)
                 and self.name in ("list", "dict", "set", "tuple", "frozenset")
-                and PY39
+                and PY39_PLUS
             ):
                 return self
             raise
