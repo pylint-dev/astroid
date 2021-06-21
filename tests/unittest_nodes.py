@@ -38,7 +38,7 @@ import pytest
 import astroid
 from astroid import bases, builder
 from astroid import context as contextmod
-from astroid import node_classes, nodes, parse, test_utils, transforms, util
+from astroid import nodes, parse, test_utils, transforms, util
 from astroid.const import BUILTINS, PY38_PLUS, PY310_PLUS, Context
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -485,7 +485,7 @@ from ..cave import wine\n\n"""
         module = builder.parse(code)
         handler_type = module.body[1].handlers[0].type
 
-        excs = list(node_classes.unpack_infer(handler_type))
+        excs = list(nodes.unpack_infer(handler_type))
         # The number of returned object can differ on Python 2
         # and Python 3. In one version, an additional item will
         # be returned, from the _pickle module, which is not
