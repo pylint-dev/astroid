@@ -570,8 +570,8 @@ class ConstNodeTest(unittest.TestCase):
 
 
 class NameNodeTest(unittest.TestCase):
-    def test_assign_to_rrue(self):
-        """test that True and False assignments don't crash"""
+    def test_assign_to_true(self):
+        """Test that True and False assignments don't crash"""
         code = """
             True = False
             def hello(False):
