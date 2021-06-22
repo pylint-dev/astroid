@@ -1,7 +1,7 @@
 github_url = "https://github.com/PyCQA/astroid"
 
 [version]
-current = "2.6.0"
+current = "2.7.0-dev0"
 regex = '''
 ^(?P<major>0|[1-9]\d*)
 \.
