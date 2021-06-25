@@ -377,11 +377,6 @@ class TreeRebuilder:
     def visit(self, node: "ast.Expr", parent: NodeNG) -> nodes.Expr:
         ...
 
-    # Not used in Python 3.8+
-    @overload
-    def visit(self, node: "ast.Ellipsis", parent: NodeNG) -> nodes.Const:
-        ...
-
     @overload
     def visit(self, node: "ast.ExceptHandler", parent: NodeNG) -> nodes.ExceptHandler:
         ...
@@ -466,29 +461,31 @@ class TreeRebuilder:
     ) -> Union[nodes.Name, nodes.Const, nodes.AssignName, nodes.DelName]:
         ...
 
-    # Not used in Python 3.8+
-    @overload
-    def visit(self, node: "ast.NameConstant", parent: NodeNG) -> nodes.Const:
-        ...
-
     @overload
     def visit(self, node: "ast.Nonlocal", parent: NodeNG) -> nodes.Nonlocal:
         ...
 
-    # Not used in Python 3.8+
-    @overload
-    def visit(self, node: "ast.Str", parent: NodeNG) -> nodes.Const:
-        ...
+    if sys.version_info < (3, 8):
+        # Not used in Python 3.8+
+        @overload
+        def visit(self, node: "ast.Ellipsis", parent: NodeNG) -> nodes.Const:
+            ...
 
-    # Not used in Python 3.8+
-    @overload
-    def visit(self, node: "ast.Bytes", parent: NodeNG) -> nodes.Const:
-        ...
+        @overload
+        def visit(self, node: "ast.NameConstant", parent: NodeNG) -> nodes.Const:
+            ...
 
-    # Not used in Python 3.8+
-    @overload
-    def visit(self, node: "ast.Num", parent: NodeNG) -> nodes.Const:
-        ...
+        @overload
+        def visit(self, node: "ast.Str", parent: NodeNG) -> nodes.Const:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Bytes", parent: NodeNG) -> nodes.Const:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Num", parent: NodeNG) -> nodes.Const:
+            ...
 
     @overload
     def visit(self, node: "ast.Constant", parent: NodeNG) -> nodes.Const:
@@ -1151,16 +1148,6 @@ class TreeRebuilder:
         newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
-    # Not used in Python 3.8+.
-    def visit_ellipsis(self, node: "ast.Ellipsis", parent: NodeNG) -> nodes.Const:
-        """visit an Ellipsis node by returning a fresh instance of Const"""
-        return nodes.Const(
-            value=Ellipsis,
-            lineno=node.lineno,
-            col_offset=node.col_offset,
-            parent=parent,
-        )
-
     def visit_excepthandler(
         self, node: "ast.ExceptHandler", parent: NodeNG
     ) -> nodes.ExceptHandler:
@@ -1605,18 +1592,6 @@ class TreeRebuilder:
             self._save_assignment(newnode)
         return newnode
 
-    # Not used in Python 3.8+.
-    def visit_nameconstant(
-        self, node: "ast.NameConstant", parent: NodeNG
-    ) -> nodes.Const:
-        # For singleton values True / False / None
-        return nodes.Const(
-            node.value,
-            node.lineno,
-            node.col_offset,
-            parent,
-        )
-
     def visit_nonlocal(self, node: "ast.Nonlocal", parent: NodeNG) -> nodes.Nonlocal:
         """visit a Nonlocal node and return a new instance of it"""
         return nodes.Nonlocal(
@@ -1642,30 +1617,49 @@ class TreeRebuilder:
             parent=parent,
         )
 
-    # Not used in Python 3.8+.
-    def visit_str(
-        self, node: Union["ast.Str", "ast.Bytes"], parent: NodeNG
-    ) -> nodes.Const:
-        """visit a String/Bytes node by returning a fresh instance of Const"""
-        return nodes.Const(
-            node.s,
-            node.lineno,
-            node.col_offset,
-            parent,
-        )
+    if sys.version_info < (3, 8):
+        # Not used in Python 3.8+.
+        def visit_ellipsis(self, node: "ast.Ellipsis", parent: NodeNG) -> nodes.Const:
+            """visit an Ellipsis node by returning a fresh instance of Const"""
+            return nodes.Const(
+                value=Ellipsis,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                parent=parent,
+            )
 
-    # Not used in Python 3.8+
-    visit_bytes = visit_str
+        def visit_nameconstant(
+            self, node: "ast.NameConstant", parent: NodeNG
+        ) -> nodes.Const:
+            # For singleton values True / False / None
+            return nodes.Const(
+                node.value,
+                node.lineno,
+                node.col_offset,
+                parent,
+            )
 
-    # Not used in Python 3.8+.
-    def visit_num(self, node: "ast.Num", parent: NodeNG) -> nodes.Const:
-        """visit a Num node by returning a fresh instance of Const"""
-        return nodes.Const(
-            node.n,
-            node.lineno,
-            node.col_offset,
-            parent,
-        )
+        def visit_str(
+            self, node: Union["ast.Str", "ast.Bytes"], parent: NodeNG
+        ) -> nodes.Const:
+            """visit a String/Bytes node by returning a fresh instance of Const"""
+            return nodes.Const(
+                node.s,
+                node.lineno,
+                node.col_offset,
+                parent,
+            )
+
+        visit_bytes = visit_str
+
+        def visit_num(self, node: "ast.Num", parent: NodeNG) -> nodes.Const:
+            """visit a Num node by returning a fresh instance of Const"""
+            return nodes.Const(
+                node.n,
+                node.lineno,
+                node.col_offset,
+                parent,
+            )
 
     def visit_pass(self, node: "ast.Pass", parent: NodeNG) -> nodes.Pass:
         """visit a Pass node by returning a fresh instance of it"""
