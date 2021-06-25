@@ -12,6 +12,9 @@ What's New in astroid 2.6.1?
 ============================
 Release Date: TBA
 
+* Fix issue with ``TypedDict`` for Python 3.9+
+
+  Closes PyCQA/pylint#4610
 
 
 What's New in astroid 2.6.0?

@@ -1623,6 +1623,8 @@ class TypingBrain(unittest.TestCase):
         inferred_base = next(node.bases[0].infer())
         assert isinstance(inferred_base, nodes.ClassDef)
         assert inferred_base.qname() == "typing.TypedDict"
+        typedDict_base = next(inferred_base.bases[0].infer())
+        assert typedDict_base.qname() == "builtins.dict"
 
     @test_utils.require_version(minver="3.7")
     def test_typing_alias_type(self):

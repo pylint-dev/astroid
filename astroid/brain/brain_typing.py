@@ -201,6 +201,7 @@ def infer_typedDict(  # pylint: disable=invalid-name
         col_offset=node.col_offset,
         parent=node.parent,
     )
+    class_def.postinit(bases=[extract_node("dict")], body=[], decorators=None)
     return iter([class_def])
 
 
