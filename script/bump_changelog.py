@@ -2,6 +2,7 @@
 This script permits to upgrade the changelog in astroid or pylint when releasing a version.
 """
 import argparse
+import enum
 from datetime import datetime
 from pathlib import Path
 
@@ -33,19 +34,29 @@ def main() -> None:
         f.write(content)
 
 
-def get_next_version(version: str) -> str:
+class VersionType(enum.Enum):
+    MAJOR = 0
+    MINOR = 1
+    PATCH = 2
+
+
+def get_next_patch_version(
+    version: str, version_type: VersionType = VersionType.PATCH
+) -> str:
     new_version = version.split(".")
-    patch = new_version[2]
+    part_to_increase = new_version[version_type.value]
     reminder = None
-    if "-" in patch:
-        patch, reminder = patch.split("-")
-    patch = str(int(patch) + 1)
-    new_version[2] = patch if reminder is None else f"{patch}-{reminder}"
+    if "-" in part_to_increase:
+        part_to_increase, reminder = part_to_increase.split("-")
+    part_to_increase = str(int(part_to_increase) + 1)
+    new_version[version_type.value] = (
+        part_to_increase if reminder is None else f"{part_to_increase}-{reminder}"
+    )
     return ".".join(new_version)
 
 
 def transform_content(content: str, version: str) -> str:
-    next_version = get_next_version(version)
+    next_version = get_next_patch_version(version)
     wn_next_version = FULL_WHATS_NEW_TEXT.format(version=next_version)
     # There is only one field where the release date is TBA
     assert content.count(RELEASE_DATE_TEXT) == 1, TBA_ERROR_MSG
