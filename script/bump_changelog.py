@@ -1,8 +1,10 @@
 """
 This script permits to upgrade the changelog in astroid or pylint when releasing a version.
 """
+# pylint: disable=logging-fstring-interpolation
 import argparse
 import enum
+import logging
 from datetime import datetime
 from pathlib import Path
 
@@ -23,7 +25,13 @@ NEW_RELEASE_DATE_MESSAGE = "Release Date: {}".format(TODAY.strftime("%Y-%m-%d"))
 def main() -> None:
     parser = argparse.ArgumentParser(add_help=__doc__)
     parser.add_argument("version", help="The version we want to release")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", default=False, help="Logging or not"
+    )
     args = parser.parse_args()
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    logging.debug(f"Launching bump_changelog with args: {args}")
     if "dev" in args.version:
         return
     with open(DEFAULT_CHANGELOG_PATH) as f:
@@ -83,13 +91,20 @@ def transform_content(content: str, version: str) -> str:
         version=next_version
     )
     index = content.find(WHATS_NEW_TEXT)
+    logging.debug(f"Replacing '{RELEASE_DATE_TEXT}' by '{NEW_RELEASE_DATE_MESSAGE}'")
     content = content.replace(RELEASE_DATE_TEXT, NEW_RELEASE_DATE_MESSAGE)
     end_content = content[index:]
     content = content[:index]
-    content += wn_next_version + "\n"
-    content += "=" * len(wn_next_version) + "\n"
-    content += RELEASE_DATE_TEXT + "\n" * 4
-    content += end_content
+    to_add = (
+        wn_next_version
+        + "\n"
+        + "=" * len(wn_next_version)
+        + "\n"
+        + RELEASE_DATE_TEXT
+        + "\n" * 4
+    )
+    logging.debug(f"Adding:'{to_add}'")
+    content += to_add + end_content
     return content
 
 
