@@ -8,7 +8,6 @@ from pathlib import Path
 
 DEFAULT_CHANGELOG_PATH = Path("ChangeLog")
 err = "in the changelog, fix that first!"
-TBA_ERROR_MSG = "More than one release date 'TBA' %s" % err
 NEW_VERSION_ERROR_MSG = "The text for this version '{version}' did not exists %s" % err
 NEXT_VERSION_ERROR_MSG = (
     "The text for the next version '{version}' already exists %s" % err
@@ -40,9 +39,7 @@ class VersionType(enum.Enum):
     PATCH = 2
 
 
-def generic_get_next_version(
-    version: str, version_type: VersionType = VersionType.PATCH
-) -> str:
+def get_next_version(version: str, version_type: VersionType) -> str:
     new_version = version.split(".")
     part_to_increase = new_version[version_type.value]
     if "-" in part_to_increase:
@@ -53,22 +50,30 @@ def generic_get_next_version(
     return ".".join(new_version)
 
 
-def get_next_version(version: str) -> str:
+def get_version_type(version: str) -> VersionType:
     if version.endswith("0.0"):
         version_type = VersionType.MAJOR
     elif version.endswith("0"):
         version_type = VersionType.MINOR
     else:
         version_type = VersionType.PATCH
-    next_version = generic_get_next_version(version, version_type)
-    return next_version
+    return version_type
 
 
 def transform_content(content: str, version: str) -> str:
-    next_version = get_next_version(version)
+    version_type = get_version_type(version)
+    next_version = get_next_version(version, version_type)
     wn_next_version = FULL_WHATS_NEW_TEXT.format(version=next_version)
     # There is only one field where the release date is TBA
-    assert content.count(RELEASE_DATE_TEXT) == 1, TBA_ERROR_MSG
+    if version_type in [VersionType.MAJOR, VersionType.MINOR]:
+        assert (
+            content.count(RELEASE_DATE_TEXT) <= 1
+        ), f"There should be only one release date 'TBA' ({version}) {err}"
+    else:
+        next_minor_version = get_next_version(version, VersionType.MINOR)
+        assert (
+            content.count(RELEASE_DATE_TEXT) <= 2
+        ), f"There should be only two release dates 'TBA' ({version} and {next_minor_version}) {err}"
     # There is already a release note for the version we want to release
     assert (
         content.count(FULL_WHATS_NEW_TEXT.format(version=version)) == 1
