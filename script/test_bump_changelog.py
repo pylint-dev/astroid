@@ -51,7 +51,7 @@ Release Date: 2012-02-05
 )
 def test_update_content_error(old_content, expected_error):
     with pytest.raises(AssertionError, match=expected_error):
-        transform_content(old_content, "2.6.1", "2.6.2")
+        transform_content(old_content, "2.6.1")
 
 
 def test_update_content():
@@ -79,5 +79,5 @@ What's New in astroid 2.6.1?
 ============================
 Release Date: 20"""
 
-    new_content = transform_content(old_content, "2.6.1", "2.6.2")
+    new_content = transform_content(old_content, "2.6.1")
     assert new_content.startswith(expected_beginning)
