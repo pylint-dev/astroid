@@ -13,7 +13,7 @@ repos:
     rev: v1.4
     hooks:
       - id: autoflake
-        exclude: tests/testdata|astroid/__init__.py
+        exclude: tests/testdata|astroid/__init__.py|astroid/scoped_nodes.py|astroid/node_classes.py
         args:
           - --in-place
           - --remove-all-unused-imports
