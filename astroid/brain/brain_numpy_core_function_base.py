@@ -14,7 +14,7 @@ import functools
 from astroid.brain.brain_numpy_utils import infer_numpy_member, looks_like_numpy_member
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
-from astroid.node_classes import Attribute
+from astroid.nodes.node_classes import Attribute
 
 METHODS_TO_BE_INFERRED = {
     "linspace": """def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None, axis=0):

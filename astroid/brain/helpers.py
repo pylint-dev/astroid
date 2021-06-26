@@ -1,4 +1,4 @@
-from astroid.scoped_nodes import Module
+from astroid.nodes.scoped_nodes import Module
 
 
 def register_module_extender(manager, module_name, get_extension_mod):
