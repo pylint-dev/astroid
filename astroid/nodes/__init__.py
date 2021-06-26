@@ -118,6 +118,7 @@ from astroid.nodes.scoped_nodes import (
 )
 
 ALL_NODE_CLASSES = (
+    _BaseContainer,
     AnnAssign,
     Arguments,
     Assert,
