@@ -8,7 +8,7 @@
 
 """Different utilities for the numpy brains"""
 from astroid.builder import extract_node
-from astroid.node_classes import Attribute, Import, Name, NodeNG
+from astroid.nodes.node_classes import Attribute, Import, Name, NodeNG
 
 
 def infer_numpy_member(src, node, context=None):

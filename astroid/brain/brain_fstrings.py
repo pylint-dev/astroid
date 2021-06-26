@@ -8,7 +8,7 @@
 import collections.abc
 
 from astroid.manager import AstroidManager
-from astroid.node_classes import FormattedValue
+from astroid.nodes.node_classes import FormattedValue
 
 
 def _clone_node_with_lineno(node, parent, lineno):

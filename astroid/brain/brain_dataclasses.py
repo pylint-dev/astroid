@@ -4,7 +4,7 @@
 Astroid hook for the dataclasses library
 """
 from astroid.manager import AstroidManager
-from astroid.node_classes import (
+from astroid.nodes.node_classes import (
     AnnAssign,
     Assign,
     Attribute,
@@ -13,7 +13,7 @@ from astroid.node_classes import (
     Subscript,
     Unknown,
 )
-from astroid.scoped_nodes import ClassDef
+from astroid.nodes.scoped_nodes import ClassDef
 
 DATACLASSES_DECORATORS = frozenset(("dataclasses.dataclass", "dataclass"))
 

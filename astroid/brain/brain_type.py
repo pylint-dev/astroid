@@ -27,7 +27,7 @@ def _looks_like_type_subscript(node):
     Try to figure out if a Name node is used inside a type related subscript
 
     :param node: node to check
-    :type node: astroid.node_classes.NodeNG
+    :type node: astroid.nodes.node_classes.NodeNG
     :return: true if the node is a Name node inside a type related subscript
     :rtype: bool
     """
@@ -41,7 +41,7 @@ def infer_type_sub(node, context=None):
     Infer a type[...] subscript
 
     :param node: node to infer
-    :type node: astroid.node_classes.NodeNG
+    :type node: astroid.nodes.node_classes.NodeNG
     :param context: inference context
     :type context: astroid.context.InferenceContext
     :return: the inferred node

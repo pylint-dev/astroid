@@ -32,8 +32,9 @@ import types
 import warnings
 from typing import List, Optional
 
-from astroid import bases, node_classes, nodes
+from astroid import bases, nodes
 from astroid.manager import AstroidManager
+from astroid.nodes import node_classes
 
 # the keys of CONST_CLS eg python builtin types
 _CONSTANTS = tuple(node_classes.CONST_CLS)

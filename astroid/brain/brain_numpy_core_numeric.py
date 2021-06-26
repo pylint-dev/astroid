@@ -16,7 +16,7 @@ from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
-from astroid.node_classes import Attribute
+from astroid.nodes.node_classes import Attribute
 
 
 def numpy_core_numeric_transform():

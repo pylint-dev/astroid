@@ -14,7 +14,7 @@ from astroid.builder import extract_node, parse
 from astroid.const import PY39_PLUS
 from astroid.exceptions import AttributeInferenceError
 from astroid.manager import AstroidManager
-from astroid.scoped_nodes import ClassDef
+from astroid.nodes.scoped_nodes import ClassDef
 
 
 def _collections_transform():

@@ -28,7 +28,7 @@ from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import get_parser_module
 from astroid.exceptions import AstroidBuildingError, AstroidSyntaxError, InferenceError
 from astroid.manager import AstroidManager
-from astroid.node_classes import NodeNG
+from astroid.nodes.node_classes import NodeNG
 
 objects = util.lazy_import("objects")
 

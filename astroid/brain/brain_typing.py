@@ -13,7 +13,7 @@
 import typing
 from functools import partial
 
-from astroid import context, extract_node, inference_tip, node_classes
+from astroid import context, extract_node, inference_tip
 from astroid.const import PY37_PLUS, PY39_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
@@ -21,7 +21,7 @@ from astroid.exceptions import (
     UseInferenceDefault,
 )
 from astroid.manager import AstroidManager
-from astroid.node_classes import (
+from astroid.nodes.node_classes import (
     Assign,
     AssignName,
     Attribute,
@@ -29,8 +29,9 @@ from astroid.node_classes import (
     Const,
     Name,
     Subscript,
+    Tuple,
 )
-from astroid.scoped_nodes import ClassDef, FunctionDef
+from astroid.nodes.scoped_nodes import ClassDef, FunctionDef
 from astroid.util import Uninferable
 
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
@@ -286,9 +287,7 @@ def infer_typing_alias(
     maybe_type_var = node.args[1]
     if (
         not PY39_PLUS
-        and not (
-            isinstance(maybe_type_var, node_classes.Tuple) and not maybe_type_var.elts
-        )
+        and not (isinstance(maybe_type_var, Tuple) and not maybe_type_var.elts)
         or PY39_PLUS
         and isinstance(maybe_type_var, Const)
         and maybe_type_var.value > 0

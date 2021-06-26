@@ -31,7 +31,7 @@ import operator as operator_mod
 
 from astroid import arguments, bases
 from astroid import context as contextmod
-from astroid import decorators, helpers, node_classes, nodes, util
+from astroid import decorators, helpers, nodes, util
 from astroid.const import Context
 from astroid.exceptions import (
     AstroidIndexError,
@@ -40,6 +40,7 @@ from astroid.exceptions import (
     InferenceError,
     NoDefault,
 )
+from astroid.nodes import node_classes
 
 raw_building = util.lazy_import("raw_building")
 objects = util.lazy_import("objects")

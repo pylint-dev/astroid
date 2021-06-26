@@ -11,7 +11,7 @@
 from astroid.builder import extract_node
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
-from astroid.node_classes import Attribute
+from astroid.nodes.node_classes import Attribute
 
 
 def infer_numpy_ndarray(node, context=None):

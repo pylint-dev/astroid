@@ -431,7 +431,7 @@ class BoundMethod(UnboundMethod):
         needs to be a tuple of classes
         """
         # pylint: disable=import-outside-toplevel; circular import
-        from astroid import node_classes
+        from astroid.nodes import node_classes
 
         # Verify the metaclass
         mcs = next(caller.args[0].infer(context=context))

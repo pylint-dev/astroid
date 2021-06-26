@@ -19,7 +19,7 @@ Various helper utilities.
 
 from astroid import bases
 from astroid import context as contextmod
-from astroid import manager, nodes, raw_building, scoped_nodes, util
+from astroid import manager, nodes, raw_building, util
 from astroid.const import BUILTINS
 from astroid.exceptions import (
     AstroidTypeError,
@@ -28,6 +28,7 @@ from astroid.exceptions import (
     MroError,
     _NonDeducibleTypeHierarchy,
 )
+from astroid.nodes import scoped_nodes
 
 
 def _build_proxy_class(cls_name, builtins):

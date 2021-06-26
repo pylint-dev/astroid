@@ -12,9 +12,10 @@
 
 import unittest
 
-from astroid import builder, node_classes, nodes
+from astroid import builder, nodes
 from astroid import util as astroid_util
 from astroid.exceptions import InferenceError
+from astroid.nodes import node_classes
 
 
 class InferenceUtil(unittest.TestCase):

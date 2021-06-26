@@ -109,8 +109,8 @@ class GetModulePartTest(unittest.TestCase):
     def test_known_values_get_module_part_3(self):
         """relative import from given file"""
         self.assertEqual(
-            modutils.get_module_part("node_classes.AssName", modutils.__file__),
-            "node_classes",
+            modutils.get_module_part("nodes.node_classes.AssName", modutils.__file__),
+            "nodes.node_classes",
         )
 
     def test_known_values_get_compiled_module_part(self):

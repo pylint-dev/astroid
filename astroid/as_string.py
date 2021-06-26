@@ -30,7 +30,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .node_classes import (
+    from astroid.nodes.node_classes import (
         Match,
         MatchAs,
         MatchCase,
@@ -626,7 +626,7 @@ class AsStringVisitor:
         """Return an astroid.MatchAs node as string."""
         # pylint: disable=import-outside-toplevel
         # Prevent circular dependency
-        from astroid.node_classes import MatchClass, MatchMapping, MatchSequence
+        from astroid.nodes.node_classes import MatchClass, MatchMapping, MatchSequence
 
         if isinstance(node.parent, (MatchSequence, MatchMapping, MatchClass)):
             return node.name.accept(self) if node.name else "_"

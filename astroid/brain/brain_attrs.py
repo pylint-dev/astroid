@@ -7,8 +7,8 @@ Without this hook pylint reports unsupported-assignment-operation
 for attrs classes
 """
 from astroid.manager import AstroidManager
-from astroid.node_classes import AnnAssign, Assign, Call, Unknown
-from astroid.scoped_nodes import ClassDef
+from astroid.nodes.node_classes import AnnAssign, Assign, Call, Unknown
+from astroid.nodes.scoped_nodes import ClassDef
 
 ATTRIB_NAMES = frozenset(("attr.ib", "attrib", "attr.attrib"))
 ATTRS_NAMES = frozenset(("attr.s", "attrs", "attr.attrs", "attr.attributes"))

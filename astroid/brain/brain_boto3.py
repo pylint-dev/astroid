@@ -4,7 +4,7 @@
 """Astroid hooks for understanding boto3.ServiceRequest()"""
 from astroid import extract_node
 from astroid.manager import AstroidManager
-from astroid.scoped_nodes import ClassDef
+from astroid.nodes.scoped_nodes import ClassDef
 
 BOTO_SERVICE_FACTORY_QUALIFIED_NAME = "boto3.resources.base.ServiceResource"
 

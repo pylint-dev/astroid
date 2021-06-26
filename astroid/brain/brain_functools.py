@@ -12,8 +12,8 @@ from astroid.exceptions import InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.interpreter import objectmodel
 from astroid.manager import AstroidManager
-from astroid.node_classes import AssignName, Attribute, Call, Name
-from astroid.scoped_nodes import FunctionDef
+from astroid.nodes.node_classes import AssignName, Attribute, Call, Name
+from astroid.nodes.scoped_nodes import FunctionDef
 from astroid.util import Uninferable
 
 LRU_CACHE = "functools.lru_cache"

@@ -21,15 +21,7 @@
 
 from functools import partial
 
-from astroid import (
-    arguments,
-    helpers,
-    inference_tip,
-    nodes,
-    objects,
-    scoped_nodes,
-    util,
-)
+from astroid import arguments, helpers, inference_tip, nodes, objects, util
 from astroid.builder import AstroidBuilder
 from astroid.exceptions import (
     AstroidTypeError,
@@ -40,6 +32,7 @@ from astroid.exceptions import (
     UseInferenceDefault,
 )
 from astroid.manager import AstroidManager
+from astroid.nodes import scoped_nodes
 
 OBJECT_DUNDER_NEW = "object.__new__"
 

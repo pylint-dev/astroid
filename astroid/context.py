@@ -16,7 +16,7 @@ import pprint
 from typing import TYPE_CHECKING, MutableMapping, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
-    from astroid.node_classes import NodeNG
+    from astroid.nodes.node_classes import NodeNG
 
 
 _INFERENCE_CACHE = {}

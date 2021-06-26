@@ -38,9 +38,10 @@ from typing import Optional
 
 import astroid
 from astroid import context as contextmod
-from astroid import node_classes, util
+from astroid import util
 from astroid.exceptions import AttributeInferenceError, InferenceError, NoDefault
 from astroid.manager import AstroidManager
+from astroid.nodes import node_classes
 
 objects = util.lazy_import("objects")
 
@@ -466,7 +467,8 @@ class ClassModel(ObjectModel):
         thus it might miss a couple of them.
         """
         # pylint: disable=import-outside-toplevel; circular import
-        from astroid import bases, scoped_nodes
+        from astroid import bases
+        from astroid.nodes import scoped_nodes
 
         if not self._instance.newstyle:
             raise AttributeInferenceError(
@@ -746,8 +748,8 @@ class PropertyModel(ObjectModel):
 
     # pylint: disable=import-outside-toplevel
     def _init_function(self, name):
-        from astroid.node_classes import Arguments
-        from astroid.scoped_nodes import FunctionDef
+        from astroid.nodes.node_classes import Arguments
+        from astroid.nodes.scoped_nodes import FunctionDef
 
         args = Arguments()
         args.postinit(
@@ -768,7 +770,7 @@ class PropertyModel(ObjectModel):
 
     @property
     def attr_fget(self):
-        from astroid.scoped_nodes import FunctionDef
+        from astroid.nodes.scoped_nodes import FunctionDef
 
         func = self._instance
 
@@ -790,7 +792,7 @@ class PropertyModel(ObjectModel):
 
     @property
     def attr_fset(self):
-        from astroid.scoped_nodes import FunctionDef
+        from astroid.nodes.scoped_nodes import FunctionDef
 
         func = self._instance
 

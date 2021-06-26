@@ -19,8 +19,8 @@ from textwrap import dedent
 
 from astroid import nodes
 from astroid.builder import AstroidBuilder, extract_node
-from astroid.node_classes import Assign, Const, Expr, Name, YieldFrom
-from astroid.scoped_nodes import ClassDef, FunctionDef
+from astroid.nodes.node_classes import Assign, Const, Expr, Name, YieldFrom
+from astroid.nodes.scoped_nodes import ClassDef, FunctionDef
 from astroid.test_utils import require_version
 
 

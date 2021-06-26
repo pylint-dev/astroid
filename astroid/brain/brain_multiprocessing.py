@@ -12,7 +12,7 @@ from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
-from astroid.scoped_nodes import FunctionDef
+from astroid.nodes.scoped_nodes import FunctionDef
 
 
 def _multiprocessing_transform():
