@@ -1,12 +1,26 @@
 import pytest
-from bump_changelog import get_next_patch_version, transform_content
+from bump_changelog import VersionType, generic_get_next_version, transform_content
 
 
 @pytest.mark.parametrize(
-    "version,expected", [["2.6.1", "2.6.2"], ["2.6.1-dev0", "2.6.2-dev0"]]
+    "version,version_type,expected",
+    [
+        ["2.6.1", VersionType.PATCH, "2.6.2"],
+        ["2.6.1", VersionType.MINOR, "2.7.0"],
+        ["2.6.1", VersionType.MAJOR, "3.0.0"],
+        ["2.6.1-dev0", VersionType.PATCH, "2.6.2"],
+        ["2.6.1-dev0", VersionType.MINOR, "2.7.0"],
+        ["2.6.1-dev0", VersionType.MAJOR, "3.0.0"],
+        ["2.7.0", VersionType.PATCH, "2.7.1"],
+        ["2.7.0", VersionType.MINOR, "2.8.0"],
+        ["2.7.0", VersionType.MAJOR, "3.0.0"],
+        ["2.0.0", VersionType.PATCH, "2.0.1"],
+        ["2.0.0", VersionType.MINOR, "2.1.0"],
+        ["2.0.0", VersionType.MAJOR, "3.0.0"],
+    ],
 )
-def test_get_next_version(version, expected):
-    assert get_next_patch_version(version) == expected
+def test_generic_get_next_version(version, version_type, expected):
+    assert generic_get_next_version(version, version_type) == expected
 
 
 @pytest.mark.parametrize(
