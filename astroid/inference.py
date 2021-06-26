@@ -181,7 +181,7 @@ def _higher_function_scope(node):
     :param node: A scope node.
     :returns:
         ``None``, if no parent function scope was found,
-        otherwise an instance of :class:`astroid.scoped_nodes.Function`,
+        otherwise an instance of :class:`astroid.nodes.scoped_nodes.Function`,
         which encloses the given node.
     """
     current = node

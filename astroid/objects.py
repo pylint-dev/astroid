@@ -22,7 +22,7 @@ leads to an inferred FrozenSet:
 """
 
 
-from astroid import bases, decorators, node_classes, scoped_nodes, util
+from astroid import bases, decorators, util
 from astroid.const import BUILTINS
 from astroid.exceptions import (
     AttributeInferenceError,
@@ -31,6 +31,7 @@ from astroid.exceptions import (
     SuperError,
 )
 from astroid.manager import AstroidManager
+from astroid.nodes import node_classes, scoped_nodes
 
 objectmodel = util.lazy_import("interpreter.objectmodel")
 

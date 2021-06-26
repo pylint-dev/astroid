@@ -158,6 +158,7 @@ from astroid.nodes import (  # pylint: disable=redefined-builtin (Ellipsis)
 )
 
 # isort: on
+
 from astroid.util import Uninferable
 
 # load brain plugins

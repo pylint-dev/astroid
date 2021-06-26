@@ -22,7 +22,7 @@ import astroid
 from astroid import extract_node, nodes, util
 from astroid.const import PY38_PLUS, PY310_PLUS
 from astroid.exceptions import InferenceError
-from astroid.node_classes import AssignName, Const, Name, Starred
+from astroid.nodes.node_classes import AssignName, Const, Name, Starred
 
 
 @contextlib.contextmanager
