@@ -40,23 +40,32 @@ class VersionType(enum.Enum):
     PATCH = 2
 
 
-def get_next_patch_version(
+def generic_get_next_version(
     version: str, version_type: VersionType = VersionType.PATCH
 ) -> str:
     new_version = version.split(".")
     part_to_increase = new_version[version_type.value]
-    reminder = None
     if "-" in part_to_increase:
-        part_to_increase, reminder = part_to_increase.split("-")
-    part_to_increase = str(int(part_to_increase) + 1)
-    new_version[version_type.value] = (
-        part_to_increase if reminder is None else f"{part_to_increase}-{reminder}"
-    )
+        part_to_increase = int(part_to_increase.split("-")[0])
+    for i in range(version_type.value, 3):
+        new_version[i] = "0"
+    new_version[version_type.value] = str(int(part_to_increase) + 1)
     return ".".join(new_version)
 
 
+def get_next_version(version: str) -> str:
+    if version.endswith("0.0"):
+        version_type = VersionType.MAJOR
+    elif version.endswith("0"):
+        version_type = VersionType.MINOR
+    else:
+        version_type = VersionType.PATCH
+    next_version = generic_get_next_version(version, version_type)
+    return next_version
+
+
 def transform_content(content: str, version: str) -> str:
-    next_version = get_next_patch_version(version)
+    next_version = get_next_version(version)
     wn_next_version = FULL_WHATS_NEW_TEXT.format(version=next_version)
     # There is only one field where the release date is TBA
     assert content.count(RELEASE_DATE_TEXT) == 1, TBA_ERROR_MSG
