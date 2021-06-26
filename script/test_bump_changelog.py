@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 from bump_changelog import VersionType, get_next_version, transform_content
 
@@ -101,7 +103,8 @@ def test_update_content_error(old_content, version, expected_error):
         transform_content(old_content, version)
 
 
-def test_update_content():
+def test_update_content(caplog):
+    caplog.set_level(logging.DEBUG)
     old_content = """
 ===================
 astroid's ChangeLog
@@ -127,4 +130,6 @@ What's New in astroid 2.6.1?
 Release Date: 20"""
 
     new_content = transform_content(old_content, "2.6.1")
-    assert new_content.startswith(expected_beginning)
+    assert new_content.startswith(
+        expected_beginning
+    ), f"Wrong start for:'{new_content[len(expected_beginning):]}'"
