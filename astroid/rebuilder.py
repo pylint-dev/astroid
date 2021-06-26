@@ -49,7 +49,7 @@ from astroid import node_classes, nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
 from astroid.const import PY37_PLUS, PY38_PLUS, PY39_PLUS, Context
 from astroid.manager import AstroidManager
-from astroid.node_classes import NodeNG
+from astroid.nodes import NodeNG
 
 if sys.version_info >= (3, 8):
     from typing import Final
