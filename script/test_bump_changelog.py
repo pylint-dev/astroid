@@ -1,5 +1,5 @@
 import pytest
-from bump_changelog import VersionType, generic_get_next_version, transform_content
+from bump_changelog import VersionType, get_next_version, transform_content
 
 
 @pytest.mark.parametrize(
@@ -19,8 +19,8 @@ from bump_changelog import VersionType, generic_get_next_version, transform_cont
         ["2.0.0", VersionType.MAJOR, "3.0.0"],
     ],
 )
-def test_generic_get_next_version(version, version_type, expected):
-    assert generic_get_next_version(version, version_type) == expected
+def test_get_next_version(version, version_type, expected):
+    assert get_next_version(version, version_type) == expected
 
 
 @pytest.mark.parametrize(
@@ -41,7 +41,7 @@ What's New in astroid 2.6.0?
 Release Date: TBA
 """,
             "2.6.1",
-            "More than one release date 'TBA'",
+            r"There should be only two release dates 'TBA' \(2.6.1 and 2.7.0\)",
         ],
         [
             """===================
@@ -67,6 +67,32 @@ Release Date: 2012-02-05
 """,
             "2.6.1",
             "the next version '2.6.2' already exists",
+        ],
+        [
+            """
+What's New in astroid 3.0.0?
+============================
+Release Date: TBA
+
+What's New in astroid 2.6.10?
+============================
+Release Date: TBA
+""",
+            "3.0.0",
+            r"There should be only one release date 'TBA' \(3.0.0\)",
+        ],
+        [
+            """
+What's New in astroid 2.7.0?
+============================
+Release Date: TBA
+
+What's New in astroid 2.6.10?
+============================
+Release Date: TBA
+""",
+            "2.7.0",
+            r"There should be only one release date 'TBA' \(2.7.0\)",
         ],
     ],
 )
