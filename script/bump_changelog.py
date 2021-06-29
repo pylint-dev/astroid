@@ -55,20 +55,19 @@ def get_next_version(version: str, version_type: VersionType) -> str:
 
 
 def get_next_versions(version: str, version_type: VersionType) -> List[str]:
+
     if version_type == VersionType.PATCH:
         # "2.6.1" => ["2.6.2"]
         return [get_next_version(version, VersionType.PATCH)]
     if version_type == VersionType.MINOR:
-        assert version.endswith(".0"), f"{version} does not look like a minor version"
         # "2.6.0" => ["2.7.0", "2.6.1"]
-        next_minor_version = get_next_version(version, VersionType.MINOR)
-        next_patch_version = get_next_version(version, VersionType.PATCH)
-        return [next_minor_version, next_patch_version]
-    assert version.endswith(".0.0"), f"{version} does not look like a major version"
-    next_major_version = get_next_version(version, VersionType.MAJOR)
-    next_minor_version = get_next_version(next_major_version, VersionType.MINOR)
-    next_patch_version = get_next_version(next_major_version, VersionType.PATCH)
-    # "3.0.0" => ["3.1.0", "3.0.1"]
+        assert version.endswith(".0"), f"{version} does not look like a minor version"
+    else:
+        # "3.0.0" => ["3.1.0", "3.0.1"]
+        assert version.endswith(".0.0"), f"{version} does not look like a major version"
+    next_minor_version = get_next_version(version, VersionType.MINOR)
+    next_patch_version = get_next_version(version, VersionType.PATCH)
+    logging.debug(f"Getting the new version for {version} - {version_type.name}")
     return [next_minor_version, next_patch_version]
 
 
@@ -99,12 +98,19 @@ def get_whats_new(
     return "\n".join(result)
 
 
+def get_all_whats_new(version: str, version_type: VersionType) -> str:
+    result = ""
+    for version_ in get_next_versions(version, version_type=version_type):
+        result += get_whats_new(version_, add_date=True) + "\n" * 4
+    return result
+
+
 def transform_content(content: str, version: str) -> str:
     version_type = get_version_type(version)
     next_version = get_next_version(version, version_type)
     old_date = get_whats_new(version, add_date=True)
     new_date = get_whats_new(version, add_date=True, change_date=True)
-    next_version_with_date = get_whats_new(next_version, add_date=True)
+    next_version_with_date = get_all_whats_new(version, version_type)
     do_checks(content, next_version, old_date, version, version_type)
     index = content.find(old_date)
     logging.debug(f"Replacing\n'{old_date}'\nby\n'{new_date}'\n")
@@ -112,7 +118,7 @@ def transform_content(content: str, version: str) -> str:
     end_content = content[index:]
     content = content[:index]
     logging.debug(f"Adding:\n'{next_version_with_date}'\n")
-    content += next_version_with_date + "\n" * 4 + end_content
+    content += next_version_with_date + end_content
     return content
 
 
