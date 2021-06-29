@@ -1,28 +1,55 @@
 import logging
 
 import pytest
-from bump_changelog import VersionType, get_next_version, transform_content
+from bump_changelog import (
+    VersionType,
+    get_next_version,
+    get_next_versions,
+    transform_content,
+)
 
 
 @pytest.mark.parametrize(
-    "version,version_type,expected",
+    "version,version_type,expected_version,expected_versions",
     [
-        ["2.6.1", VersionType.PATCH, "2.6.2"],
-        ["2.6.1", VersionType.MINOR, "2.7.0"],
-        ["2.6.1", VersionType.MAJOR, "3.0.0"],
-        ["2.6.1-dev0", VersionType.PATCH, "2.6.2"],
-        ["2.6.1-dev0", VersionType.MINOR, "2.7.0"],
-        ["2.6.1-dev0", VersionType.MAJOR, "3.0.0"],
-        ["2.7.0", VersionType.PATCH, "2.7.1"],
-        ["2.7.0", VersionType.MINOR, "2.8.0"],
-        ["2.7.0", VersionType.MAJOR, "3.0.0"],
-        ["2.0.0", VersionType.PATCH, "2.0.1"],
-        ["2.0.0", VersionType.MINOR, "2.1.0"],
-        ["2.0.0", VersionType.MAJOR, "3.0.0"],
+        ["2.6.1", VersionType.PATCH, "2.6.2", ["2.6.2"]],
+        [
+            "2.6.0",
+            VersionType.MINOR,
+            "2.7.0",
+            [
+                "2.7.0",
+                "2.6.1",
+            ],
+        ],
+        ["2.6.1", VersionType.MAJOR, "3.0.0", ["3.1.0", "3.0.1"]],
+        ["2.6.1-dev0", VersionType.PATCH, "2.6.2", ["2.6.2"]],
+        [
+            "2.6.1-dev0",
+            VersionType.MINOR,
+            "2.7.0",
+            [
+                "2.7.1",
+                "2.7.0",
+            ],
+        ],
+        ["2.6.1-dev0", VersionType.MAJOR, "3.0.0", ["3.1.0", "3.0.1"]],
+        ["2.7.0", VersionType.PATCH, "2.7.1", ["2.7.1"]],
+        ["2.7.0", VersionType.MINOR, "2.8.0", ["2.8.0", "2.7.1"]],
+        ["2.7.0", VersionType.MAJOR, "3.0.0", ["3.1.0", "3.0.1"]],
+        ["2.0.0", VersionType.PATCH, "2.0.1", ["2.0.1"]],
+        ["2.0.0", VersionType.MINOR, "2.1.0", ["2.1.0", "2.0.1"]],
+        ["2.0.0", VersionType.MAJOR, "3.0.0", ["3.1.0", "3.0.1"]],
     ],
 )
-def test_get_next_version(version, version_type, expected):
-    assert get_next_version(version, version_type) == expected
+def test_get_next_version(version, version_type, expected_version, expected_versions):
+    assert get_next_version(version, version_type) == expected_version
+    if (
+        version_type == VersionType.PATCH
+        or version_type == VersionType.MINOR
+        and version.endswith(".0")
+    ):
+        assert get_next_versions(version, version_type) == expected_versions
 
 
 @pytest.mark.parametrize(
