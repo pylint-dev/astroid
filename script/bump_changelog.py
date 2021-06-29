@@ -19,7 +19,7 @@ NEW_RELEASE_DATE_MESSAGE = "Release Date: {}".format(TODAY.strftime("%Y-%m-%d"))
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(add_help=__doc__)
+    parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("version", help="The version we want to release")
     parser.add_argument(
         "-v", "--verbose", action="store_true", default=False, help="Logging or not"
@@ -47,7 +47,7 @@ def get_next_version(version: str, version_type: VersionType) -> str:
     new_version = version.split(".")
     part_to_increase = new_version[version_type.value]
     if "-" in part_to_increase:
-        part_to_increase = int(part_to_increase.split("-")[0])
+        part_to_increase = part_to_increase.split("-")[0]
     for i in range(version_type.value, 3):
         new_version[i] = "0"
     new_version[version_type.value] = str(int(part_to_increase) + 1)
@@ -111,7 +111,7 @@ def transform_content(content: str, version: str) -> str:
     old_date = get_whats_new(version, add_date=True)
     new_date = get_whats_new(version, add_date=True, change_date=True)
     next_version_with_date = get_all_whats_new(version, version_type)
-    do_checks(content, next_version, old_date, version, version_type)
+    do_checks(content, next_version, version, version_type)
     index = content.find(old_date)
     logging.debug(f"Replacing\n'{old_date}'\nby\n'{new_date}'\n")
     content = content.replace(old_date, new_date)
@@ -122,7 +122,7 @@ def transform_content(content: str, version: str) -> str:
     return content
 
 
-def do_checks(content, next_version, old_date, version, version_type):
+def do_checks(content, next_version, version, version_type):
     err = "in the changelog, fix that first!"
     NEW_VERSION_ERROR_MSG = (
         "The text for this version '{version}' did not exists %s" % err
