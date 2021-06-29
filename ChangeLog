@@ -4,19 +4,19 @@ astroid's ChangeLog
 
 What's New in astroid 2.7.0?
 ============================
-Release Date: TBA
+Release date: TBA
 
 
 
 What's New in astroid 2.6.2?
 ============================
-Release Date: TBA
+Release date: TBA
 
 
 
 What's New in astroid 2.6.1?
 ============================
-Release Date: 2021-06-29
+Release date: 2021-06-29
 
 * Fix issue with ``TypedDict`` for Python 3.9+
 
@@ -25,7 +25,7 @@ Release Date: 2021-06-29
 
 What's New in astroid 2.6.0?
 ============================
-Release Date: 2021-06-22
+Release date: 2021-06-22
 
 * Appveyor and travis are no longer used in the continuous integration
 
@@ -69,7 +69,7 @@ Release Date: 2021-06-22
 
 What's New in astroid 2.5.8?
 ============================
-Release Date: 2021-06-07
+Release date: 2021-06-07
 
 * Improve support for Pattern Matching
 
@@ -83,7 +83,7 @@ Release Date: 2021-06-07
 
 What's New in astroid 2.5.7?
 ============================
-Release Date: 2021-05-09
+Release date: 2021-05-09
 
 * Fix six.with_metaclass transformation so it doesn't break user defined transformations.
 
@@ -148,21 +148,21 @@ Release Date: 2021-05-09
 
 What's New in astroid 2.5.6?
 ============================
-Release Date: 2021-04-25
+Release date: 2021-04-25
 
 * Fix retro-compatibility issues with old version of pylint
   Closes PyCQA/pylint#4402
 
 What's New in astroid 2.5.5?
 ============================
-Release Date: 2021-04-24
+Release date: 2021-04-24
 
 * Fixes the discord link in the project urls of the package.
   Closes PyCQA/pylint#4393
 
 What's New in astroid 2.5.4?
 ============================
-Release Date: 2021-04-24
+Release date: 2021-04-24
 
 * The packaging is now done via setuptools exclusively. ``doc``, ``tests``, and ``Changelog`` are
   not packaged anymore - reducing the size of the package greatly.
@@ -185,7 +185,7 @@ Release Date: 2021-04-24
 
 What's New in astroid 2.5.3?
 ============================
-Release Date: 2021-04-10
+Release date: 2021-04-10
 
 * Takes into account the fact that subscript inferring for a ClassDef may involve __class_getitem__ method
 
@@ -204,7 +204,7 @@ Release Date: 2021-04-10
 
 What's New in astroid 2.5.2?
 ============================
-Release Date: 2021-03-28
+Release date: 2021-03-28
 
 * Detects `import numpy` as a valid `numpy` import.
 
@@ -216,7 +216,7 @@ Release Date: 2021-03-28
 
 What's New in astroid 2.5.1?
 ============================
-Release Date: 2021-02-28
+Release date: 2021-02-28
 
 * The ``context.path`` is reverted to a set because otherwise it leads to false positives
   for non `numpy` functions.
@@ -239,7 +239,7 @@ Release Date: 2021-02-28
 
 What's New in astroid 2.5?
 ============================
-Release Date: 2021-02-15
+Release date: 2021-02-15
 
 * Adds `attr_fset` in the `PropertyModel` class.
 
@@ -379,7 +379,7 @@ Release Date: 2021-02-15
 
 What's New in astroid 2.4.2?
 ============================
-Release Date: 2020-06-08
+Release date: 2020-06-08
 
 * `FunctionDef.is_generator` properly handles `yield` nodes in `While` tests
 
@@ -392,7 +392,7 @@ Release Date: 2020-06-08
 
 What's New in astroid 2.4.1?
 ============================
-Release Date: 2020-05-05
+Release date: 2020-05-05
 
 * Handle the case where the raw builder fails to retrieve the ``__all__`` attribute
 
@@ -418,7 +418,7 @@ Release Date: 2020-05-05
 
 What's New in astroid 2.4.0?
 ============================
-Release Date: 2020-04-27
+Release date: 2020-04-27
 
 * Expose a ast_from_string method in AstroidManager, which will accept
   source code as a string and return the corresponding astroid object
@@ -610,7 +610,7 @@ Release Date: 2020-04-27
 
 What's New in astroid 2.3.2?
 ============================
-Release Date: 2019-10-18
+Release date: 2019-10-18
 
 * All type comments have as parent the corresponding `astroid` node
 
@@ -632,7 +632,7 @@ Release Date: 2019-10-18
 
 What's New in astroid 2.3.1?
 ============================
-Release Date: 2019-09-30
+Release date: 2019-09-30
 
 * A transform for the builtin `dataclasses` module was added.
 
@@ -651,7 +651,7 @@ Release Date: 2019-09-30
 
 What's New in astroid 2.3.0?
 ============================
-Release Date: 2019-09-24
+Release date: 2019-09-24
 
 * Add a brain tip for ``subprocess.check_output``
 
@@ -765,7 +765,7 @@ Release Date: 2019-09-24
 
 What's New in astroid 2.2.0?
 ============================
-Release Date: 2019-02-27
+Release date: 2019-02-27
 
 
 * Fix a bug concerning inference of calls to numpy function that should not return Tuple or List instances.
@@ -844,7 +844,7 @@ Release Date: 2019-02-27
 
 What's New in astroid 2.1.0?
 ============================
-Release Date: 2018-11-25
+Release date: 2018-11-25
 
    * ``threading.Lock.acquire`` has the ``timeout`` parameter now.
 
@@ -883,7 +883,7 @@ Release Date: 2018-11-25
 
 What's New in astroid 2.0.4?
 ============================
-Release Date: 2018-08-10
+Release date: 2018-08-10
 
    * Make sure that assign nodes can find ``yield`` statements in their values
 
@@ -892,14 +892,14 @@ Release Date: 2018-08-10
 What's New in astroid 2.0.3?
 ============================
 
-Release Date: 2018-08-08
+Release date: 2018-08-08
 
    * The environment markers for PyPy were invalid.
 
 What's New in astroid 2.0.2?
 ============================
 
-Release Date: 2018-08-01
+Release date: 2018-08-01
 
    * Stop repeat inference attempt causing a RuntimeError in Python3.7
 
@@ -920,7 +920,7 @@ Release Date: 2018-08-01
 What's New in astroid 2.0.1?
 ============================
 
-Release Date: 2018-07-19
+Release date: 2018-07-19
 
    * Released to clear an old wheel package on PyPI
 
@@ -928,7 +928,7 @@ Release Date: 2018-07-19
 What's New in astroid 2.0?
 ==========================
 
-Release Date: 2018-07-15
+Release date: 2018-07-15
 
    * String representation of nodes takes in account precedence and associativity rules of operators.
 
@@ -1091,7 +1091,7 @@ Release Date: 2018-07-15
 What's New in astroid 1.6.0?
 ============================
 
-Release Date: 2017-12-15
+Release date: 2017-12-15
 
 
    * When verifying duplicates classes in MRO, ignore on-the-fly generated classes
@@ -1173,7 +1173,7 @@ Release Date: 2017-12-15
 What's New in astroid 1.5.3?
 ============================
 
-Release Date: 2017-06-03
+Release date: 2017-06-03
 
 
     * enum34 dependency is forced to be at least version 1.1.3. Fixes spurious
@@ -1194,7 +1194,7 @@ Release Date: 2017-06-03
 What's New in astroid 1.5.2?
 ============================
 
-Release Date: 2017-04-17
+Release date: 2017-04-17
 
 
    * Basic support for the class form of typing.NamedTuple
@@ -1206,7 +1206,7 @@ Release Date: 2017-04-17
 What's New in astroid 1.5.0?
 ============================
 
-Release Date: 2017-04-13
+Release date: 2017-04-13
 
 
     * Arguments node gained a new attribute, ``kwonlyargs_annotations``
@@ -1399,7 +1399,7 @@ Release Date: 2017-04-13
 What's New in astroid 1.4.1?
 ============================
 
-Release Date: 2015-11-29
+Release date: 2015-11-29
 
 
     * Add support for handling Uninferable nodes when calling as_string
@@ -1417,7 +1417,7 @@ Release Date: 2015-11-29
 What's New in astroid 1.4.0?
 ============================
 
-Release Date: 2015-11-29
+Release date: 2015-11-29
 
 
     * Class.getattr('__mro__') returns the actual MRO. Closes issue #128.
@@ -1751,7 +1751,7 @@ Release Date: 2015-11-29
 What's New in astroid 1.3.6?
 ============================
 
-Release Date: 2015-03-14
+Release date: 2015-03-14
 
 
     * Class.slots raises NotImplementedError for old style classes.
@@ -1768,7 +1768,7 @@ Release Date: 2015-03-14
 What's New in astroid 1.3.5?
 ============================
 
-Release Date: 2015-03-11
+Release date: 2015-03-11
 
 
     * Add the ability to optimize small ast subtrees,
@@ -1802,7 +1802,7 @@ Release Date: 2015-03-11
 What's New in astroid 1.3.4?
 ============================
 
-Release Date: 2015-01-17
+Release date: 2015-01-17
 
 
     * Get the first element from the method list when obtaining
@@ -1812,7 +1812,7 @@ Release Date: 2015-01-17
 What's New in astroid 1.3.3?
 ============================
 
-Release Date: 2015-01-16
+Release date: 2015-01-16
 
 
     * Restore file_stream to a property, but deprecate it in favour of
@@ -1851,7 +1851,7 @@ Release Date: 2015-01-16
 What's New in astroid 1.3.2?
 ============================
 
-Release Date: 2014-11-22
+Release date: 2014-11-22
 
 
     * Fixed a crash with invalid subscript index.
@@ -1866,7 +1866,7 @@ Release Date: 2014-11-22
 What's New in astroid 1.3.1?
 ============================
 
-Release Date: 2014-11-21
+Release date: 2014-11-21
 
 
     * Fixed a crash issue with the pytest brain module.
@@ -1875,7 +1875,7 @@ Release Date: 2014-11-21
 What's New in astroid 1.3.0?
 ============================
 
-Release Date: 2014-11-20
+Release date: 2014-11-20
 
 
     * Fix a maximum recursion error occurred during the inference,
@@ -1927,7 +1927,7 @@ Release Date: 2014-11-20
 What's New in astroid 1.2.1?
 ============================
 
-Release Date: 2014-08-24
+Release date: 2014-08-24
 
 
     * Fix a crash occurred when inferring decorator call chain.
@@ -1961,7 +1961,7 @@ Release Date: 2014-08-24
 What's New in astroid 1.2.0?
 ============================
 
-Release Date: 2014-07-25
+Release date: 2014-07-25
 
 
     * Function nodes can detect decorator call chain and see if they are
@@ -1999,7 +1999,7 @@ Release Date: 2014-07-25
 What's New in astroid 1.1.1?
 ============================
 
-Release Date: 2014-04-30
+Release date: 2014-04-30
 
     * `Class.metaclass()` looks in ancestors when the current class
       does not define explicitly a metaclass.
@@ -2012,7 +2012,7 @@ Release Date: 2014-04-30
 What's New in astroid 1.1.0?
 ============================
 
-Release Date: 2014-04-18
+Release date: 2014-04-18
 
     * All class nodes are marked as new style classes for Py3k.
 
@@ -2041,7 +2041,7 @@ Release Date: 2014-04-18
 What's New in astroid 1.0.1?
 ============================
 
-Release Date: 2013-10-18
+Release date: 2013-10-18
 
     * fix py3k/windows installation issue (issue #4)
 
@@ -2058,7 +2058,7 @@ Release Date: 2013-10-18
 What's New in astroid 1.0.0?
 =============================
 
-Release Date: 2013-07-29
+Release date: 2013-07-29
 
     * Fix some omissions in py2stdlib's version of hashlib and
       add a small test for it.
@@ -2086,7 +2086,7 @@ Release Date: 2013-07-29
 What's New in astroid 0.24.3?
 =============================
 
-Release Date: 2013-04-16
+Release date: 2013-04-16
 
     * #124360 [py3.3]: Don't crash on 'yield from' nodes
 
@@ -2111,7 +2111,7 @@ Release Date: 2013-04-16
 What's New in astroid 0.24.2?
 =============================
 
-Release Date: 2013-02-27
+Release date: 2013-02-27
 
     * pylint-brain: more subprocess.Popen faking (see #46273)
 
@@ -2127,7 +2127,7 @@ Release Date: 2013-02-27
 What's New in astroid 0.24.1?
 =============================
 
-Release Date: 2012-10-05
+Release date: 2012-10-05
 
     * #106191: fix __future__ absolute import w/ From node
 
@@ -2148,7 +2148,7 @@ Release Date: 2012-10-05
 What's New in astroid 0.24.0?
 =============================
 
-Release Date: 2012-07-18
+Release date: 2012-07-18
 
     * include pylint brain extension, describing some stuff not properly understood until then.
       (#100013, #53049, #23986, #72355)
@@ -2163,7 +2163,7 @@ Release Date: 2012-07-18
 What's New in astroid 0.23.1?
 =============================
 
-Release Date: 2011-12-08
+Release date: 2011-12-08
 
     * #62295: avoid "OSError: Too many open files" by moving
       .file_stream as a Module property opening the file only when needed
@@ -2178,7 +2178,7 @@ Release Date: 2011-12-08
 What's New in astroid 0.23.0?
 =============================
 
-Release Date: 2011-10-07
+Release date: 2011-10-07
 
     * #77187: ancestor() only returns the first class when inheriting
       from two classes coming from the same module
@@ -2205,7 +2205,7 @@ Release Date: 2011-10-07
 What's New in astroid 0.22.0?
 =============================
 
-Release Date: 2011-07-18
+Release date: 2011-07-18
 
     * added column offset information on nodes (patch by fawce)
 
@@ -2226,7 +2226,7 @@ Release Date: 2011-07-18
 What's New in astroid 0.21.1?
 =============================
 
-Release Date: 2011-01-11
+Release date: 2011-01-11
 
     * python3: handle file encoding; fix a lot of tests
 
@@ -2250,7 +2250,7 @@ Release Date: 2011-01-11
 What's New in astroid 0.21.0?
 =============================
 
-Release Date: 2010-11-15
+Release date: 2010-11-15
 
     * python3.x: first python3.x release
 
@@ -2264,7 +2264,7 @@ Release Date: 2010-11-15
 What's New in astroid 0.20.4?
 =============================
 
-Release Date: 2010-10-27
+Release date: 2010-10-27
 
     * fix #37868 #37665 #33638 #37909: import problems with absolute_import_activated
 
@@ -2282,7 +2282,7 @@ Release Date: 2010-10-27
 What's New in astroid 0.20.3?
 =============================
 
-Release Date: 2010-09-28
+Release date: 2010-09-28
 
     * restored python 2.3 compatibility
 
@@ -2296,7 +2296,7 @@ Release Date: 2010-09-28
 What's New in astroid 0.20.2?
 =============================
 
-Release Date: 2010-09-10
+Release date: 2010-09-10
 
     * fix astng building bug: we've to set module.package flag at the node
       creation time otherwise we'll miss this information when inferring relative
@@ -2313,7 +2313,7 @@ Release Date: 2010-09-10
 What's New in astroid 0.20.1?
 =============================
 
-Release Date: 2010-05-11
+Release date: 2010-05-11
 
     * fix licensing to LGPL
 
@@ -2328,7 +2328,7 @@ Release Date: 2010-05-11
 What's New in astroid 0.20.0?
 =============================
 
-Release Date: 2010-03-22
+Release date: 2010-03-22
 
     * fix #20464: raises ?TypeError: '_Yes' object is not iterable? on list inference
 
@@ -2363,7 +2363,7 @@ Release Date: 2010-03-22
 What's New in astroid 0.19.3?
 =============================
 
-Release Date: 2009-12-18
+Release date: 2009-12-18
 
     * fix name error making 0.19.2 almost useless
 
@@ -2373,7 +2373,7 @@ Release Date: 2009-12-18
 What's New in astroid 0.19.2?
 =============================
 
-Release Date: 2009-12-18
+Release date: 2009-12-18
 
     * fix #18773: inference bug on class member (due to bad handling of instance
       / class nodes "bounded" to method calls)
@@ -2395,7 +2395,7 @@ Release Date: 2009-12-18
 What's New in astroid 0.19.1?
 =============================
 
-Release Date: 2009-08-27
+Release date: 2009-08-27
 
     * fix #8771: crash on yield expression
 
@@ -2413,7 +2413,7 @@ Release Date: 2009-08-27
 What's New in astroid 0.19.0?
 =============================
 
-Release Date: 2009-03-25
+Release date: 2009-03-25
 
     * fixed python 2.6 issue (tests ok w/ 2.4, 2.5, 2.6. Anyone using 2.2 / 2.3
       to tell us if it works?)
@@ -2428,7 +2428,7 @@ Release Date: 2009-03-25
 What's New in astroid 0.18.0?
 =============================
 
-Release Date: 2009-03-19
+Release date: 2009-03-19
 
     * major api / tree structure changes to make it works with compiler *and*
       python >= 2.5 _ast module
@@ -2441,7 +2441,7 @@ Release Date: 2009-03-19
 What's New in astroid 0.17.4?
 =============================
 
-Release Date: 2008-11-19
+Release date: 2008-11-19
 
     * fix #6015: filter statements bug triggering W0631 false positive in pylint
 
@@ -2456,7 +2456,7 @@ Release Date: 2008-11-19
 What's New in astroid 0.17.3?
 =============================
 
-Release Date: 2008-09-10
+Release date: 2008-09-10
 
     * fix #5889: astng crash on certain pyreverse projects
 
@@ -2471,7 +2471,7 @@ Release Date: 2008-09-10
 What's New in astroid 0.17.2?
 =============================
 
-Release Date: 2008-01-14
+Release date: 2008-01-14
 
     * "with" statement support, patch provided by Brian Hawthorne
 
@@ -2487,7 +2487,7 @@ Release Date: 2008-01-14
 What's New in astroid 0.17.1?
 =============================
 
-Release Date: 2007-06-07
+Release date: 2007-06-07
 
     * fix #3651: crash when callable as default arg
 
@@ -2512,7 +2512,7 @@ Release Date: 2007-06-07
 What's New in astroid 0.17.0?
 =============================
 
-Release Date: 2007-02-22
+Release date: 2007-02-22
 
     * api change to be able to infer using a context (used to infer function call
       result only for now)
@@ -2538,7 +2538,7 @@ Release Date: 2007-02-22
 What's New in astroid 0.16.3?
 =============================
 
-Release Date: 2006-11-23
+Release date: 2006-11-23
 
     * enhance inference for the subscription notation (motivated by a patch from Amaury)
       and for unary sub/add
@@ -2549,7 +2549,7 @@ Release Date: 2006-11-23
 What's New in astroid 0.16.2?
 =============================
 
-Release Date: 2006-11-15
+Release date: 2006-11-15
 
     * grrr, fixed python 2.3 incompatibility introduced by generator expression
       scope handling
@@ -2565,7 +2565,7 @@ Release Date: 2006-11-15
 What's New in astroid 0.16.1?
 =============================
 
-Release Date: 2006-09-25
+Release date: 2006-09-25
 
     * python 2.5 support, patch provided by Marien Zwart
 
@@ -2587,7 +2587,7 @@ Release Date: 2006-09-25
 What's New in astroid 0.16.0?
 =============================
 
-Release Date: 2006-04-19
+Release date: 2006-04-19
 
     * fix living object building to consider classes such as property as
       a class instead of a data descriptor
@@ -2603,7 +2603,7 @@ Release Date: 2006-04-19
 What's New in astroid 0.15.1?
 =============================
 
-Release Date: 2006-03-10
+Release date: 2006-03-10
 
     * fix avoiding to load everything from living objects... Thanks Amaury!
 
@@ -2615,7 +2615,7 @@ Release Date: 2006-03-10
 What's New in astroid 0.15.0?
 =============================
 
-Release Date: 2006-03-06
+Release date: 2006-03-06
 
     * fix possible infinite recursion on global statements (close #10342)
       and in various other cases...
@@ -2649,7 +2649,7 @@ Release Date: 2006-03-06
 What's New in astroid 0.14.0?
 =============================
 
-Release Date: 2006-01-10
+Release date: 2006-01-10
 
     * some major inference improvements and refactoring ! The drawback is
       the introduction of some non backward compatible change in the API
@@ -2689,7 +2689,7 @@ Release Date: 2006-01-10
 What's New in astroid 0.13.1?
 =============================
 
-Release Date: 2005-11-07
+Release date: 2005-11-07
 
     * fix bug on building from living module the same object in
       encountered more than once time (e.g. builtins.object) (close #10069)
@@ -2719,7 +2719,7 @@ Release Date: 2005-11-07
 What's New in astroid 0.13.0?
 =============================
 
-Release Date: 2005-10-21
+Release date: 2005-10-21
 
     * .locals  and .globals on scoped node handle now a list of references
        to each assignment statements instead of a single reference to the

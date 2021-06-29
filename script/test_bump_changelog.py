@@ -59,15 +59,15 @@ def test_get_next_version(version, version_type, expected_version, expected_vers
             """
 What's New in astroid 2.7.0?
 ============================
-Release Date: TBA
+Release date: TBA
 
 What's New in astroid 2.6.1?
 ============================
-Release Date: TBA
+Release date: TBA
 
 What's New in astroid 2.6.0?
 ============================
-Release Date: TBA
+Release date: TBA
 """,
             "2.6.1",
             r"There should be only two release dates 'TBA' \(2.6.1 and 2.7.0\)",
@@ -79,7 +79,7 @@ astroid's ChangeLog
 
 What's New in astroid 2.6.0?
 ============================
-Release Date: TBA
+Release date: TBA
 """,
             "2.6.1",
             "text for this version '2.6.1' did not exists",
@@ -88,11 +88,11 @@ Release Date: TBA
             """
 What's New in astroid 2.6.2?
 ============================
-Release Date: TBA
+Release date: TBA
 
 What's New in astroid 2.6.1?
 ============================
-Release Date: TBA
+Release date: TBA
 """,
             "2.6.1",
             "The text for the next version '2.6.2' already exists",
@@ -101,11 +101,11 @@ Release Date: TBA
             """
 What's New in astroid 3.0.0?
 ============================
-Release Date: TBA
+Release date: TBA
 
 What's New in astroid 2.6.10?
 ============================
-Release Date: TBA
+Release date: TBA
 """,
             "3.0.0",
             r"There should be only one release date 'TBA' \(3.0.0\)",
@@ -114,11 +114,11 @@ Release Date: TBA
             """
 What's New in astroid 2.7.0?
 ============================
-Release Date: TBA
+Release date: TBA
 
 What's New in astroid 2.6.10?
 ============================
-Release Date: TBA
+Release date: TBA
 """,
             "2.7.0",
             r"There should be only one release date 'TBA' \(2.7.0\)",
@@ -140,7 +140,7 @@ astroid's ChangeLog
 
 What's New in astroid 2.6.1?
 ============================
-Release Date: TBA
+Release date: TBA
 """
     expected_beginning = """
 ===================
@@ -149,13 +149,13 @@ astroid's ChangeLog
 
 What's New in astroid 2.6.2?
 ============================
-Release Date: TBA
+Release date: TBA
 
 
 
 What's New in astroid 2.6.1?
 ============================
-Release Date: 20"""
+Release date: 20"""
 
     new_content = transform_content(old_content, "2.6.1")
     assert new_content[: len(expected_beginning)] == expected_beginning
@@ -169,7 +169,7 @@ astroid's ChangeLog
 
 What's New in astroid 2.7.0?
 ============================
-Release Date: TBA
+Release date: TBA
 """
     expected_beginning = """
 ===================
@@ -178,19 +178,19 @@ astroid's ChangeLog
 
 What's New in astroid 2.8.0?
 ============================
-Release Date: TBA
+Release date: TBA
 
 
 
 What's New in astroid 2.7.1?
 ============================
-Release Date: TBA
+Release date: TBA
 
 
 
 What's New in astroid 2.7.0?
 ============================
-Release Date: 20"""
+Release date: 20"""
 
     new_content = transform_content(old_content, "2.7.0")
     assert new_content[: len(expected_beginning)] == expected_beginning
@@ -205,15 +205,15 @@ astroid's ChangeLog
 
 What's New in astroid 3.0.0?
 ============================
-Release Date: TBA
+Release date: TBA
 
 What's New in astroid 2.7.1?
 ============================
-Release Date: 2020-04-03
+Release date: 2020-04-03
 
 What's New in astroid 2.7.0?
 ============================
-Release Date: 2020-04-01
+Release date: 2020-04-01
 """
     expected_beginning = """
 ===================
@@ -222,18 +222,18 @@ astroid's ChangeLog
 
 What's New in astroid 3.1.0?
 ============================
-Release Date: TBA
+Release date: TBA
 
 
 
 What's New in astroid 3.0.1?
 ============================
-Release Date: TBA
+Release date: TBA
 
 
 
 What's New in astroid 3.0.0?
 ============================
-Release Date: 20"""
+Release date: 20"""
     new_content = transform_content(old_content, "3.0.0")
     assert new_content[: len(expected_beginning)] == expected_beginning
