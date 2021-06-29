@@ -8,9 +8,15 @@ Release Date: TBA
 
 
 
-What's New in astroid 2.6.1?
+What's New in astroid 2.6.2?
 ============================
 Release Date: TBA
+
+
+
+What's New in astroid 2.6.1?
+============================
+Release Date: 2021-06-29
 
 * Fix issue with ``TypedDict`` for Python 3.9+
 
