@@ -19,8 +19,8 @@ So, you want to release the `X.Y.Z` version of astroid ?
 Move back to a dev version with `tbump`:
 
 ```bash
-tbump X.Y+1.Z-dev0 --no-tag --no-push # You can interrupt during copyrite
-git commit -am "Upgrade the version to x.y+1.z-dev0 following x.y.z release"
+tbump X.Y.Z+1-dev0 --no-tag --no-push # You can interrupt during copyrite
+git commit -am "Upgrade the version to x.y.z+1-dev0 following x.y.z release"
 ```
 
 Check the result and then upgrade the master branch
