@@ -158,6 +158,82 @@ What's New in astroid 2.6.1?
 Release Date: 20"""
 
     new_content = transform_content(old_content, "2.6.1")
-    assert new_content.startswith(
-        expected_beginning
-    ), f"Wrong start for:'{new_content[:len(expected_beginning)]}'"
+    assert new_content[: len(expected_beginning)] == expected_beginning
+
+
+def test_update_content_minor():
+    old_content = """
+===================
+astroid's ChangeLog
+===================
+
+What's New in astroid 2.7.0?
+============================
+Release Date: TBA
+"""
+    expected_beginning = """
+===================
+astroid's ChangeLog
+===================
+
+What's New in astroid 2.8.0?
+============================
+Release Date: TBA
+
+
+
+What's New in astroid 2.7.1?
+============================
+Release Date: TBA
+
+
+
+What's New in astroid 2.7.0?
+============================
+Release Date: 20"""
+
+    new_content = transform_content(old_content, "2.7.0")
+    assert new_content[: len(expected_beginning)] == expected_beginning
+
+
+def test_update_content_major(caplog):
+    caplog.set_level(logging.DEBUG)
+    old_content = """
+===================
+astroid's ChangeLog
+===================
+
+What's New in astroid 3.0.0?
+============================
+Release Date: TBA
+
+What's New in astroid 2.7.1?
+============================
+Release Date: 2020-04-03
+
+What's New in astroid 2.7.0?
+============================
+Release Date: 2020-04-01
+"""
+    expected_beginning = """
+===================
+astroid's ChangeLog
+===================
+
+What's New in astroid 3.1.0?
+============================
+Release Date: TBA
+
+
+
+What's New in astroid 3.0.1?
+============================
+Release Date: TBA
+
+
+
+What's New in astroid 3.0.0?
+============================
+Release Date: 20"""
+    new_content = transform_content(old_content, "3.0.0")
+    assert new_content[: len(expected_beginning)] == expected_beginning
