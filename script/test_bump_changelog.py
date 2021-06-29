@@ -65,10 +65,10 @@ Release Date: TBA
 
 What's New in astroid 2.6.1?
 ============================
-Release Date: 2012-02-05
+Release Date: TBA
 """,
             "2.6.1",
-            "the next version '2.6.2' already exists",
+            "The text for the next version '2.6.2' already exists",
         ],
         [
             """
@@ -98,7 +98,8 @@ Release Date: TBA
         ],
     ],
 )
-def test_update_content_error(old_content, version, expected_error):
+def test_update_content_error(old_content, version, expected_error, caplog):
+    caplog.set_level(logging.DEBUG)
     with pytest.raises(AssertionError, match=expected_error):
         transform_content(old_content, version)
 
@@ -132,4 +133,4 @@ Release Date: 20"""
     new_content = transform_content(old_content, "2.6.1")
     assert new_content.startswith(
         expected_beginning
-    ), f"Wrong start for:'{new_content[len(expected_beginning):]}'"
+    ), f"Wrong start for:'{new_content[:len(expected_beginning)]}'"

@@ -9,16 +9,11 @@ from datetime import datetime
 from pathlib import Path
 
 DEFAULT_CHANGELOG_PATH = Path("ChangeLog")
-err = "in the changelog, fix that first!"
-NEW_VERSION_ERROR_MSG = "The text for this version '{version}' did not exists %s" % err
-NEXT_VERSION_ERROR_MSG = (
-    "The text for the next version '{version}' already exists %s" % err
-)
 
-TODAY = datetime.now()
-WHATS_NEW_TEXT = "What's New in astroid"
-FULL_WHATS_NEW_TEXT = WHATS_NEW_TEXT + " {version}?"
 RELEASE_DATE_TEXT = "Release Date: TBA"
+WHATS_NEW_TEXT = "What's New in astroid"
+TODAY = datetime.now()
+FULL_WHATS_NEW_TEXT = WHATS_NEW_TEXT + " {version}?"
 NEW_RELEASE_DATE_MESSAGE = "Release Date: {}".format(TODAY.strftime("%Y-%m-%d"))
 
 
@@ -68,10 +63,50 @@ def get_version_type(version: str) -> VersionType:
     return version_type
 
 
+def get_whats_new(
+    version: str, add_date: bool = False, change_date: bool = False
+) -> str:
+    whats_new_text = FULL_WHATS_NEW_TEXT.format(version=version)
+    result = [whats_new_text, "=" * len(whats_new_text)]
+    if add_date and change_date:
+        result += [NEW_RELEASE_DATE_MESSAGE]
+    elif add_date:
+        result += [RELEASE_DATE_TEXT]
+    elif change_date:
+        raise ValueError("Can't use change_date=True with add_date=False")
+    logging.debug(
+        f"version='{version}', add_date='{add_date}', change_date='{change_date}': {result}"
+    )
+    return "\n".join(result)
+
+
 def transform_content(content: str, version: str) -> str:
     version_type = get_version_type(version)
     next_version = get_next_version(version, version_type)
-    wn_next_version = FULL_WHATS_NEW_TEXT.format(version=next_version)
+    old_date = get_whats_new(version, add_date=True)
+    new_date = get_whats_new(version, add_date=True, change_date=True)
+    next_version_with_date = get_whats_new(next_version, add_date=True)
+    do_checks(content, next_version, old_date, version, version_type)
+    index = content.find(old_date)
+    logging.debug(f"Replacing\n'{old_date}'\nby\n'{new_date}'\n")
+    content = content.replace(old_date, new_date)
+    end_content = content[index:]
+    content = content[:index]
+    logging.debug(f"Adding:\n'{next_version_with_date}'\n")
+    content += next_version_with_date + "\n" * 4 + end_content
+    return content
+
+
+def do_checks(content, next_version, old_date, version, version_type):
+    err = "in the changelog, fix that first!"
+    NEW_VERSION_ERROR_MSG = (
+        "The text for this version '{version}' did not exists %s" % err
+    )
+    NEXT_VERSION_ERROR_MSG = (
+        "The text for the next version '{version}' already exists %s" % err
+    )
+    wn_next_version = get_whats_new(next_version)
+    wn_this_version = get_whats_new(version)
     # There is only one field where the release date is TBA
     if version_type in [VersionType.MAJOR, VersionType.MINOR]:
         assert (
@@ -83,29 +118,13 @@ def transform_content(content: str, version: str) -> str:
             content.count(RELEASE_DATE_TEXT) <= 2
         ), f"There should be only two release dates 'TBA' ({version} and {next_minor_version}) {err}"
     # There is already a release note for the version we want to release
-    assert (
-        content.count(FULL_WHATS_NEW_TEXT.format(version=version)) == 1
-    ), NEW_VERSION_ERROR_MSG.format(version=version)
+    assert content.count(wn_this_version) == 1, NEW_VERSION_ERROR_MSG.format(
+        version=version
+    )
     # There is no release notes for the next version
     assert content.count(wn_next_version) == 0, NEXT_VERSION_ERROR_MSG.format(
         version=next_version
     )
-    index = content.find(WHATS_NEW_TEXT)
-    logging.debug(f"Replacing '{RELEASE_DATE_TEXT}' by '{NEW_RELEASE_DATE_MESSAGE}'")
-    content = content.replace(RELEASE_DATE_TEXT, NEW_RELEASE_DATE_MESSAGE)
-    end_content = content[index:]
-    content = content[:index]
-    to_add = (
-        wn_next_version
-        + "\n"
-        + "=" * len(wn_next_version)
-        + "\n"
-        + RELEASE_DATE_TEXT
-        + "\n" * 4
-    )
-    logging.debug(f"Adding:'{to_add}'")
-    content += to_add + end_content
-    return content
 
 
 if __name__ == "__main__":
