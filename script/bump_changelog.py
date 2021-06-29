@@ -7,6 +7,7 @@ import enum
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import List
 
 DEFAULT_CHANGELOG_PATH = Path("ChangeLog")
 
@@ -51,6 +52,24 @@ def get_next_version(version: str, version_type: VersionType) -> str:
         new_version[i] = "0"
     new_version[version_type.value] = str(int(part_to_increase) + 1)
     return ".".join(new_version)
+
+
+def get_next_versions(version: str, version_type: VersionType) -> List[str]:
+    if version_type == VersionType.PATCH:
+        # "2.6.1" => ["2.6.2"]
+        return [get_next_version(version, VersionType.PATCH)]
+    if version_type == VersionType.MINOR:
+        assert version.endswith(".0"), f"{version} does not look like a minor version"
+        # "2.6.0" => ["2.7.0", "2.6.1"]
+        next_minor_version = get_next_version(version, VersionType.MINOR)
+        next_patch_version = get_next_version(version, VersionType.PATCH)
+        return [next_minor_version, next_patch_version]
+    assert version.endswith(".0.0"), f"{version} does not look like a major version"
+    next_major_version = get_next_version(version, VersionType.MAJOR)
+    next_minor_version = get_next_version(next_major_version, VersionType.MINOR)
+    next_patch_version = get_next_version(next_major_version, VersionType.PATCH)
+    # "3.0.0" => ["3.1.0", "3.0.1"]
+    return [next_minor_version, next_patch_version]
 
 
 def get_version_type(version: str) -> VersionType:
