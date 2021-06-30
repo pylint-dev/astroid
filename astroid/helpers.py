@@ -290,14 +290,19 @@ def object_len(node, context=None):
             f"object of type '{node_type.pytype()}' has no len()"
         ) from e
 
-    result_of_len = next(len_call.infer_call_result(node, context))
+    inferred = len_call.infer_call_result(node, context)
+    if inferred is util.Uninferable:
+        raise InferenceError(node=node, context=context)
+    result_of_len = next(inferred, None)
     if (
         isinstance(result_of_len, nodes.Const)
         and result_of_len.pytype() == "builtins.int"
     ):
         return result_of_len.value
-    if isinstance(result_of_len, bases.Instance) and result_of_len.is_subtype_of(
-        "builtins.int"
+    if (
+        result_of_len is None
+        or isinstance(result_of_len, bases.Instance)
+        and result_of_len.is_subtype_of("builtins.int")
     ):
         # Fake a result as we don't know the arguments of the instance call.
         return 0
