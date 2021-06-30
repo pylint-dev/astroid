@@ -24,5 +24,5 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
 
-__version__ = "2.6.2-dev0"
+__version__ = "2.6.2"
 version = __version__

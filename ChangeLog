@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.6.2?
+What's New in astroid 2.6.3?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 2.6.2?
+============================
+Release date: 2021-06-30
 
 * Fix a crash when the inference of the length of a node failed
 
