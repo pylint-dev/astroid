@@ -79,7 +79,7 @@ def unpack_infer(stmt, context=None):
             yield from unpack_infer(elt, context)
         return dict(node=stmt, context=context)
     # if inferred is a final node, return it and stop
-    inferred = next(stmt.infer(context))
+    inferred = next(stmt.infer(context), util.Uninferable)
     if inferred is stmt:
         yield inferred
         return dict(node=stmt, context=context)
@@ -185,7 +185,7 @@ def _slice_value(index, context=None):
         # we'll stop at the first possible value.
         try:
             inferred = next(index.infer(context=context))
-        except InferenceError:
+        except (InferenceError, StopIteration):
             pass
         else:
             if isinstance(inferred, Const):

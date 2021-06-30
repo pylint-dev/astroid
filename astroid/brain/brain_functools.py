@@ -74,7 +74,7 @@ def _functools_partial_inference(node, context=None):
     partial_function = call.positional_arguments[0]
     try:
         inferred_wrapped_function = next(partial_function.infer(context=context))
-    except InferenceError as exc:
+    except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
     if inferred_wrapped_function is Uninferable:
         raise UseInferenceDefault("Cannot infer the wrapped function")

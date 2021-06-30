@@ -460,7 +460,10 @@ nodes.ExceptHandler.assigned_stmts = excepthandler_assigned_stmts
 
 
 def _infer_context_manager(self, mgr, context):
-    inferred = next(mgr.infer(context=context))
+    try:
+        inferred = next(mgr.infer(context=context))
+    except StopIteration as e:
+        raise InferenceError(node=mgr) from e
     if isinstance(inferred, bases.Generator):
         # Check if it is decorated with contextlib.contextmanager.
         func = inferred.parent
@@ -470,7 +473,7 @@ def _infer_context_manager(self, mgr, context):
             )
 
         for decorator_node in func.decorators.nodes:
-            decorator = next(decorator_node.infer(context=context))
+            decorator = next(decorator_node.infer(context=context), None)
             if isinstance(decorator, nodes.FunctionDef):
                 if decorator.qname() == _CONTEXTLIB_MGR:
                     break
@@ -497,7 +500,7 @@ def _infer_context_manager(self, mgr, context):
     elif isinstance(inferred, bases.Instance):
         try:
             enter = next(inferred.igetattr("__enter__", context=context))
-        except (InferenceError, AttributeInferenceError) as exc:
+        except (InferenceError, AttributeInferenceError, StopIteration) as exc:
             raise InferenceError(node=inferred) from exc
         if not isinstance(enter, bases.BoundMethod):
             raise InferenceError(node=enter)
@@ -650,7 +653,7 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
 
         try:
             rhs = next(value.infer(context))
-        except InferenceError:
+        except (InferenceError, StopIteration):
             yield util.Uninferable
             return
         if rhs is util.Uninferable or not hasattr(rhs, "itered"):
@@ -698,7 +701,7 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
     if isinstance(stmt, nodes.For):
         try:
             inferred_iterable = next(stmt.iter.infer(context=context))
-        except InferenceError:
+        except (InferenceError, StopIteration):
             yield util.Uninferable
             return
         if inferred_iterable is util.Uninferable or not hasattr(

@@ -329,7 +329,7 @@ def _get_elts(arg, context):
 
     try:
         inferred = next(arg.infer(context))
-    except (InferenceError, NameInferenceError) as exc:
+    except (InferenceError, NameInferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
     if isinstance(inferred, nodes.Dict):
         items = inferred.items
@@ -432,11 +432,11 @@ def infer_super(node, context=None):
     else:
         try:
             mro_pointer = next(node.args[0].infer(context=context))
-        except InferenceError as exc:
+        except (InferenceError, StopIteration) as exc:
             raise UseInferenceDefault from exc
         try:
             mro_type = next(node.args[1].infer(context=context))
-        except InferenceError as exc:
+        except (InferenceError, StopIteration) as exc:
             raise UseInferenceDefault from exc
 
     if mro_pointer is util.Uninferable or mro_type is util.Uninferable:
@@ -458,7 +458,7 @@ def _infer_getattr_args(node, context):
     try:
         obj = next(node.args[0].infer(context=context))
         attr = next(node.args[1].infer(context=context))
-    except InferenceError as exc:
+    except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
     if obj is util.Uninferable or attr is util.Uninferable:
@@ -496,7 +496,7 @@ def infer_getattr(node, context=None):
             # Try to infer the default and return it instead.
             try:
                 return next(node.args[2].infer(context=context))
-            except InferenceError as exc:
+            except (StopIteration, InferenceError) as exc:
                 raise UseInferenceDefault from exc
 
     raise UseInferenceDefault
@@ -544,7 +544,7 @@ def infer_callable(node, context=None):
     argument = node.args[0]
     try:
         inferred = next(argument.infer(context=context))
-    except InferenceError:
+    except (InferenceError, StopIteration):
         return util.Uninferable
     if inferred is util.Uninferable:
         return util.Uninferable
@@ -564,7 +564,7 @@ def infer_property(node, context=None):
     getter = node.args[0]
     try:
         inferred = next(getter.infer(context=context))
-    except InferenceError as exc:
+    except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
     if not isinstance(inferred, (nodes.FunctionDef, nodes.Lambda)):
@@ -592,7 +592,7 @@ def infer_bool(node, context=None):
     argument = node.args[0]
     try:
         inferred = next(argument.infer(context=context))
-    except InferenceError:
+    except (InferenceError, StopIteration):
         return util.Uninferable
     if inferred is util.Uninferable:
         return util.Uninferable
@@ -682,7 +682,7 @@ def infer_issubclass(callnode, context=None):
 
     try:
         obj_type = next(obj_node.infer(context=context))
-    except InferenceError as exc:
+    except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
     if not isinstance(obj_type, nodes.ClassDef):
         raise UseInferenceDefault("TypeError: arg 1 must be class")
@@ -749,13 +749,19 @@ def _class_or_tuple_to_container(node, context=None):
     # Move inferences results into container
     # to simplify later logic
     # raises InferenceError if any of the inferences fall through
-    node_infer = next(node.infer(context=context))
+    try:
+        node_infer = next(node.infer(context=context))
+    except StopIteration as e:
+        raise InferenceError(node=node, context=context) from e
     # arg2 MUST be a type or a TUPLE of types
     # for isinstance
     if isinstance(node_infer, nodes.Tuple):
-        class_container = [
-            next(node.infer(context=context)) for node in node_infer.elts
-        ]
+        try:
+            class_container = [
+                next(node.infer(context=context)) for node in node_infer.elts
+            ]
+        except StopIteration as e:
+            raise InferenceError(node=node, context=context) from e
         class_container = [
             klass_node for klass_node in class_container if klass_node is not None
         ]
@@ -865,7 +871,7 @@ def infer_dict_fromkeys(node, context=None):
     values = call.positional_arguments[0]
     try:
         inferred_values = next(values.infer(context=context))
-    except InferenceError:
+    except (InferenceError, StopIteration):
         return _build_dict_with_elements([])
     if inferred_values is util.Uninferable:
         return _build_dict_with_elements([])

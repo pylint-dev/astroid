@@ -115,7 +115,7 @@ def infer_typing_typevar_or_newtype(node, context_itton=None):
     """Infer a typing.TypeVar(...) or typing.NewType(...) call"""
     try:
         func = next(node.func.infer(context=context_itton))
-    except InferenceError as exc:
+    except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
     if func.qname() not in TYPING_TYPEVARS_QUALIFIED:
@@ -145,7 +145,7 @@ def infer_typing_attr(
     """Infer a typing.X[...] subscript"""
     try:
         value = next(node.value.infer())
-    except InferenceError as exc:
+    except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
     if (
@@ -269,7 +269,11 @@ def infer_typing_alias(
         or not isinstance(node.parent.targets[0], AssignName)
     ):
         return None
-    res = next(node.args[0].infer(context=ctx))
+    try:
+        res = next(node.args[0].infer(context=ctx))
+    except StopIteration as e:
+        raise InferenceError(node=node.args[0], context=context) from e
+
     assign_name = node.parent.targets[0]
 
     class_def = ClassDef(
@@ -333,7 +337,10 @@ def infer_tuple_alias(
     node: Call, ctx: context.InferenceContext = None
 ) -> typing.Iterator[ClassDef]:
     """Infer call to tuple alias as new subscriptable class typing.Tuple."""
-    res = next(node.args[0].infer(context=ctx))
+    try:
+        res = next(node.args[0].infer(context=ctx))
+    except StopIteration as e:
+        raise InferenceError(node=node.args[0], context=context) from e
     class_def = ClassDef(
         name="Tuple",
         parent=node.parent,

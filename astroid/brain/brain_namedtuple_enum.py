@@ -54,11 +54,11 @@ def _infer_first(node, context):
         raise UseInferenceDefault
     try:
         value = next(node.infer(context=context))
-        if value is util.Uninferable:
-            raise UseInferenceDefault()
-        return value
     except StopIteration as exc:
         raise InferenceError from exc
+    if value is util.Uninferable:
+        raise UseInferenceDefault()
+    return value
 
 
 def _find_func_form_arguments(node, context):
@@ -184,10 +184,15 @@ def infer_named_tuple(node, context=None):
         node, tuple_base_name, context=context
     )
     call_site = arguments.CallSite.from_call(node, context=context)
-    func = next(extract_node("import collections; collections.namedtuple").infer())
+    node = extract_node("import collections; collections.namedtuple")
+    try:
+
+        func = next(node.infer())
+    except StopIteration as e:
+        raise InferenceError(node=node) from e
     try:
         rename = next(call_site.infer_argument(func, "rename", context)).bool_value()
-    except InferenceError:
+    except (InferenceError, StopIteration):
         rename = False
 
     try:
@@ -471,7 +476,10 @@ def infer_typing_namedtuple_class(class_node, context=None):
     """
     ).format(typename=class_node.name, fields=",".join(annassigns_fields))
     node = extract_node(code)
-    generated_class_node = next(infer_named_tuple(node, context))
+    try:
+        generated_class_node = next(infer_named_tuple(node, context))
+    except StopIteration as e:
+        raise InferenceError(node=node, context=context) from e
     for method in class_node.mymethods():
         generated_class_node.locals[method.name] = [method]
 
@@ -507,7 +515,7 @@ def infer_typing_namedtuple(node, context=None):
     # so we extract the args and infer a named tuple.
     try:
         func = next(node.func.infer())
-    except InferenceError as exc:
+    except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
     if func.qname() != "typing.NamedTuple":

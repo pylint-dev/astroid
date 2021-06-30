@@ -101,6 +101,8 @@ class CallSite:
                 except InferenceError:
                     values[name] = util.Uninferable
                     continue
+                except StopIteration:
+                    continue
 
                 if not isinstance(inferred, nodes.Dict):
                     # Not something we can work with.
@@ -112,6 +114,8 @@ class CallSite:
                         dict_key = next(dict_key.infer(context=context))
                     except InferenceError:
                         values[name] = util.Uninferable
+                        continue
+                    except StopIteration:
                         continue
                     if not isinstance(dict_key, nodes.Const):
                         values[name] = util.Uninferable
@@ -139,6 +143,8 @@ class CallSite:
                     inferred = next(arg.value.infer(context=context))
                 except InferenceError:
                     values.append(util.Uninferable)
+                    continue
+                except StopIteration:
                     continue
 
                 if inferred is util.Uninferable:

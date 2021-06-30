@@ -527,7 +527,7 @@ def _infer_unaryop(self, context=None):
                         continue
 
                     meth = methods[0]
-                    inferred = next(meth.infer(context=context))
+                    inferred = next(meth.infer(context=context), None)
                     if inferred is util.Uninferable or not inferred.callable():
                         continue
 
@@ -571,7 +571,10 @@ def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     methods = dunder_lookup.lookup(instance, method_name)
     context = contextmod.bind_context_to_node(context, instance)
     method = methods[0]
-    inferred = next(method.infer(context=context))
+    try:
+        inferred = next(method.infer(context=context))
+    except StopIteration as e:
+        raise InferenceError(node=method, context=context) from e
     if inferred is util.Uninferable:
         raise InferenceError
     return instance.infer_binary_op(opnode, op, other, context, inferred)
@@ -922,7 +925,7 @@ def infer_ifexp(self, context=None):
     rhs_context = contextmod.copy_context(context)
     try:
         test = next(self.test.infer(context=context.clone()))
-    except InferenceError:
+    except (InferenceError, StopIteration):
         both_branches = True
     else:
         if test is not util.Uninferable:

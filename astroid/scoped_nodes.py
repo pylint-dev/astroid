@@ -750,7 +750,7 @@ class Module(LocalsDictNodeNG):
 
         try:
             explicit = next(all_values.assigned_stmts())
-        except InferenceError:
+        except (InferenceError, StopIteration):
             return default
         except AttributeError:
             # not an assignment node
@@ -761,7 +761,7 @@ class Module(LocalsDictNodeNG):
         inferred = []
         try:
             explicit = next(explicit.infer())
-        except InferenceError:
+        except (InferenceError, StopIteration):
             return default
         if not isinstance(explicit, (node_classes.Tuple, node_classes.List)):
             return default
@@ -775,7 +775,7 @@ class Module(LocalsDictNodeNG):
             else:
                 try:
                     inferred_node = next(node.infer())
-                except InferenceError:
+                except (InferenceError, StopIteration):
                     continue
                 if str_const(inferred_node):
                     inferred.append(inferred_node.value)
@@ -1118,7 +1118,7 @@ def _infer_decorator_callchain(node):
     if not node.parent:
         return None
     try:
-        result = next(node.infer_call_result(node.parent))
+        result = next(node.infer_call_result(node.parent), None)
     except InferenceError:
         return None
     if isinstance(result, bases.Instance):
@@ -1538,7 +1538,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 #
                 try:
                     current = next(node.func.infer())
-                except InferenceError:
+                except (InferenceError, StopIteration):
                     continue
                 _type = _infer_decorator_callchain(current)
                 if _type is not None:
@@ -1681,7 +1681,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             for node in self.decorators.nodes:
                 try:
                     inferred = next(node.infer())
-                except InferenceError:
+                except (InferenceError, StopIteration):
                     continue
                 if inferred and inferred.qname() in (
                     "abc.abstractproperty",
@@ -1733,9 +1733,12 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             and len(self.args.args) == 1
             and self.args.vararg is not None
         ):
-            metaclass = next(caller.args[0].infer(context))
+            metaclass = next(caller.args[0].infer(context), None)
             if isinstance(metaclass, ClassDef):
-                class_bases = [next(arg.infer(context)) for arg in caller.args[1:]]
+                try:
+                    class_bases = [next(arg.infer(context)) for arg in caller.args[1:]]
+                except StopIteration as e:
+                    raise InferenceError(node=caller.args[1:], context=context) from e
                 new_class = ClassDef(name="temporary_class")
                 new_class.hide = True
                 new_class.parent = self
@@ -2166,7 +2169,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         return False
 
     def _infer_type_call(self, caller, context):
-        name_node = next(caller.args[0].infer(context))
+        try:
+            name_node = next(caller.args[0].infer(context))
+        except StopIteration as e:
+            raise InferenceError(node=caller.args[0], context=context) from e
         if isinstance(name_node, node_classes.Const) and isinstance(
             name_node.value, str
         ):
@@ -2177,11 +2183,14 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         result = ClassDef(name, None)
 
         # Get the bases of the class.
-        class_bases = next(caller.args[1].infer(context))
+        try:
+            class_bases = next(caller.args[1].infer(context))
+        except StopIteration as e:
+            raise InferenceError(node=caller.args[1], context=context) from e
         if isinstance(class_bases, (node_classes.Tuple, node_classes.List)):
             bases = []
             for base in class_bases.itered():
-                inferred = next(base.infer(context=context))
+                inferred = next(base.infer(context=context), None)
                 if inferred:
                     bases.append(
                         node_classes.EvaluatedObject(original=base, value=inferred)
@@ -2196,7 +2205,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # Get the members of the class
         try:
             members = next(caller.args[2].infer(context))
-        except InferenceError:
+        except (InferenceError, StopIteration):
             members = None
 
         if members and isinstance(members, node_classes.Dict):
@@ -2219,7 +2228,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             metaclass = self.metaclass(context=context)
             if metaclass is not None:
                 dunder_call = next(metaclass.igetattr("__call__", context))
-        except AttributeInferenceError:
+        except (AttributeInferenceError, StopIteration):
             pass
 
         if dunder_call and dunder_call.qname() != "builtins.type.__call__":
@@ -2674,7 +2683,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         new_context.callcontext = contextmod.CallContext(args=[index])
 
         try:
-            return next(method.infer_call_result(self, new_context))
+            return next(method.infer_call_result(self, new_context), util.Uninferable)
         except AttributeError:
             # Starting with python3.9, builtin types list, dict etc...
             # are subscriptable thanks to __class_getitem___ classmethod.
@@ -2923,7 +2932,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         for stmt in self.bases:
             try:
                 baseobj = next(stmt.infer(context=context.clone()))
-            except InferenceError:
+            except (InferenceError, StopIteration):
                 continue
             if isinstance(baseobj, bases.Instance):
                 baseobj = baseobj._proxied
