@@ -285,6 +285,8 @@ def object_len(node, context=None):
 
     try:
         len_call = next(node_type.igetattr("__len__", context=context))
+    except StopIteration as e:
+        raise AstroidTypeError(str(e)) from e
     except AttributeInferenceError as e:
         raise AstroidTypeError(
             f"object of type '{node_type.pytype()}' has no len()"

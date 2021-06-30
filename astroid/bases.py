@@ -169,8 +169,10 @@ def _infer_method_result_truth(instance, method_name, context):
             for value in meth.infer_call_result(instance, context=context):
                 if value is util.Uninferable:
                     return value
-
-                inferred = next(value.infer(context=context))
+                try:
+                    inferred = next(value.infer(context=context))
+                except StopIteration as e:
+                    raise InferenceError(context=context) from e
                 return inferred.bool_value()
         except InferenceError:
             pass
@@ -344,7 +346,7 @@ class Instance(BaseInstance):
                 node=self,
                 context=context,
             )
-        return next(method.infer_call_result(self, new_context))
+        return next(method.infer_call_result(self, new_context), None)
 
 
 class UnboundMethod(Proxy):
@@ -434,7 +436,10 @@ class BoundMethod(UnboundMethod):
         from astroid import node_classes
 
         # Verify the metaclass
-        mcs = next(caller.args[0].infer(context=context))
+        try:
+            mcs = next(caller.args[0].infer(context=context))
+        except StopIteration as e:
+            raise InferenceError(context=context) from e
         if mcs.__class__.__name__ != "ClassDef":
             # Not a valid first argument.
             return None
@@ -443,7 +448,10 @@ class BoundMethod(UnboundMethod):
             return None
 
         # Verify the name
-        name = next(caller.args[1].infer(context=context))
+        try:
+            name = next(caller.args[1].infer(context=context))
+        except StopIteration as e:
+            raise InferenceError(context=context) from e
         if name.__class__.__name__ != "Const":
             # Not a valid name, needs to be a const.
             return None
@@ -452,24 +460,39 @@ class BoundMethod(UnboundMethod):
             return None
 
         # Verify the bases
-        bases = next(caller.args[2].infer(context=context))
+        try:
+            bases = next(caller.args[2].infer(context=context))
+        except StopIteration as e:
+            raise InferenceError(context=context) from e
         if bases.__class__.__name__ != "Tuple":
             # Needs to be a tuple.
             return None
-        inferred_bases = [next(elt.infer(context=context)) for elt in bases.elts]
+        try:
+            inferred_bases = [next(elt.infer(context=context)) for elt in bases.elts]
+        except StopIteration as e:
+            raise InferenceError(context=context) from e
         if any(base.__class__.__name__ != "ClassDef" for base in inferred_bases):
             # All the bases needs to be Classes
             return None
 
         # Verify the attributes.
-        attrs = next(caller.args[3].infer(context=context))
+        try:
+            attrs = next(caller.args[3].infer(context=context))
+        except StopIteration as e:
+            raise InferenceError(context=context) from e
         if attrs.__class__.__name__ != "Dict":
             # Needs to be a dictionary.
             return None
         cls_locals = collections.defaultdict(list)
         for key, value in attrs.items:
-            key = next(key.infer(context=context))
-            value = next(value.infer(context=context))
+            try:
+                key = next(key.infer(context=context))
+            except StopIteration as e:
+                raise InferenceError(context=context) from e
+            try:
+                value = next(value.infer(context=context))
+            except StopIteration as e:
+                raise InferenceError(context=context) from e
             # Ignore non string keys
             if key.__class__.__name__ == "Const" and isinstance(key.value, str):
                 cls_locals[key.value].append(value)

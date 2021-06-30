@@ -16,6 +16,12 @@ Release date: TBA
 
   Closes PyCQA/pylint#4633
 
+* Fix unhandled StopIteration during inference, following the implementation
+  of PEP479 in python 3.7+
+
+  Closes PyCQA/pylint#4631
+  Closes #1080
+
 What's New in astroid 2.6.1?
 ============================
 Release date: 2021-06-29

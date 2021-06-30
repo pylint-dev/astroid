@@ -42,7 +42,7 @@ def _nose_tools_functions():
     )
     try:
         case = next(module["a"].infer())
-    except InferenceError:
+    except (InferenceError, StopIteration):
         return
     for method in case.methods():
         if method.name.startswith("assert") and "_" not in method.name:

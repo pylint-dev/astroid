@@ -308,7 +308,10 @@ class FunctionModel(ObjectModel):
                     )
 
                 context = contextmod.copy_context(context)
-                cls = next(caller.args[0].infer(context=context))
+                try:
+                    cls = next(caller.args[0].infer(context=context))
+                except StopIteration as e:
+                    raise InferenceError(context=context, node=caller.args[0]) from e
 
                 if cls is astroid.Uninferable:
                     raise InferenceError(
@@ -705,7 +708,7 @@ class DictModel(ObjectModel):
             def infer_call_result(self, caller, context=None):
                 yield obj
 
-        meth = next(self._instance._proxied.igetattr(name))
+        meth = next(self._instance._proxied.igetattr(name), None)
         return DictMethodBoundMethod(proxy=meth, bound=self._instance)
 
     @property

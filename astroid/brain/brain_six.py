@@ -189,7 +189,7 @@ def transform_six_add_metaclass(node):  # pylint: disable=inconsistent-return-st
 
         try:
             func = next(decorator.func.infer())
-        except InferenceError:
+        except (InferenceError, StopIteration):
             continue
         if func.qname() == SIX_ADD_METACLASS and decorator.args:
             metaclass = decorator.args[0]

@@ -36,7 +36,7 @@ def _multiprocessing_transform():
     try:
         context = next(node["default"].infer())
         base = next(node["base"].infer())
-    except InferenceError:
+    except (InferenceError, StopIteration):
         return module
 
     for node in (context, base):
