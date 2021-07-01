@@ -6,7 +6,7 @@ However it was not possible to simply add this method inside type's body, otherw
 all types would also have this method. In this case it would have been possible
 to write str[int].
 Guido Van Rossum proposed a hack to handle this in the interpreter:
-https://github.com/python/cpython/blob/master/Objects/abstract.c#L186-L189
+https://github.com/python/cpython/blob/67e394562d67cbcd0ac8114e5439494e7645b8f5/Objects/abstract.c#L181-L184
 
 This brain follows the same logic. It is no wise to add permanently the __class_getitem__ method
 to the type object. Instead we choose to add it only in the case of a subscript node
