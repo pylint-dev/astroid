@@ -18,7 +18,7 @@
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """this module contains a set of functions to create astroid trees from scratch
 (build_* functions) or from living object (object_build_* functions)

@@ -17,7 +17,7 @@
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """This module contains base classes and functions for the nodes and some
 inference utils.

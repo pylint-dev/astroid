@@ -1,5 +1,5 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/LICENSE
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 # Copyright (c) 2017-2018 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
