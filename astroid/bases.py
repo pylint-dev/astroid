@@ -566,7 +566,7 @@ class Generator(BaseInstance):
         )
 
     def __str__(self):
-        return "Generator(%s)" % (self._proxied.name)
+        return "Generator(%s)" % self._proxied.name
 
 
 class AsyncGenerator(Generator):
@@ -584,4 +584,4 @@ class AsyncGenerator(Generator):
         )
 
     def __str__(self):
-        return "AsyncGenerator(%s)" % (self._proxied.name)
+        return "AsyncGenerator(%s)" % self._proxied.name
