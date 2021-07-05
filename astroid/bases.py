@@ -544,8 +544,8 @@ class Generator(BaseInstance):
     # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.GeneratorModel())
 
-    # pylint: disable=super-init-not-called
     def __init__(self, parent=None):
+        super().__init__()
         self.parent = parent
 
     def callable(self):
