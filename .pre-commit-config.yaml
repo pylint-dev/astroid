@@ -40,7 +40,7 @@ repos:
     hooks:
       - id: black
         args: [--safe, --quiet]
-        exclude: tests/testdata|doc/
+        exclude: tests/testdata
   - repo: https://github.com/PyCQA/flake8
     rev: 3.9.2
     hooks:
