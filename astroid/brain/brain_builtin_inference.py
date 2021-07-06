@@ -663,7 +663,7 @@ def infer_issubclass(callnode, context=None):
     """Infer issubclass() calls
 
     :param nodes.Call callnode: an `issubclass` call
-    :param InferenceContext: the context for the inference
+    :param InferenceContext context: the context for the inference
     :rtype nodes.Const: Boolean Const value of the `issubclass` call
     :raises UseInferenceDefault: If the node cannot be inferred
     """
@@ -708,7 +708,7 @@ def infer_isinstance(callnode, context=None):
     """Infer isinstance calls
 
     :param nodes.Call callnode: an isinstance call
-    :param InferenceContext: context for call
+    :param InferenceContext context: context for call
         (currently unused but is a common interface for inference)
     :rtype nodes.Const: Boolean Const value of isinstance call
 
@@ -845,7 +845,7 @@ def infer_dict_fromkeys(node, context=None):
     """Infer dict.fromkeys
 
     :param nodes.Call node: dict.fromkeys() call to infer
-    :param context.InferenceContext: node context
+    :param context.InferenceContext context: node context
     :rtype nodes.Dict:
         a Dictionary containing the values that astroid was able to infer.
         In case the inference failed for any reason, an empty dictionary
