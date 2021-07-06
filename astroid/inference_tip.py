@@ -4,11 +4,13 @@
 """Transform utilities (filters and decorator)"""
 
 import itertools
+import typing
 
 import wrapt
 
 # pylint: disable=dangerous-default-value
 from astroid.exceptions import InferenceOverwriteError
+from astroid.nodes import NodeNG
 
 
 @wrapt.decorator
@@ -28,7 +30,9 @@ def _inference_tip_cached(func, instance, args, kwargs, _cache={}):  # noqa:B006
 # pylint: enable=dangerous-default-value
 
 
-def inference_tip(infer_function, raise_on_overwrite=False):
+def inference_tip(
+    infer_function: typing.Callable, raise_on_overwrite: bool = False
+) -> typing.Callable:
     """Given an instance specific inference function, return a function to be
     given to AstroidManager().register_transform to set this inference function.
 
@@ -50,7 +54,9 @@ def inference_tip(infer_function, raise_on_overwrite=False):
         excess overwrites.
     """
 
-    def transform(node, infer_function=infer_function):
+    def transform(
+        node: NodeNG, infer_function: typing.Callable = infer_function
+    ) -> NodeNG:
         if (
             raise_on_overwrite
             and node._explicit_inference is not None
