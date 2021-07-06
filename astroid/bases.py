@@ -541,8 +541,7 @@ class Generator(BaseInstance):
     Proxied class is set once for all in raw_building.
     """
 
-    # pylint: disable=unnecessary-lambda
-    special_attributes = util.lazy_descriptor(lambda: objectmodel.GeneratorModel())
+    special_attributes = util.lazy_descriptor(objectmodel.GeneratorModel)
 
     def __init__(self, parent=None):
         super().__init__()
