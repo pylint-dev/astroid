@@ -2888,7 +2888,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         def grouped_slots(mro):
             # Not interested in object, since it can't have slots.
-            for cls in self.mro()[:-1]:
+            for cls in mro[:-1]:
                 try:
                     cls_slots = cls._slots()
                 except NotImplementedError:
