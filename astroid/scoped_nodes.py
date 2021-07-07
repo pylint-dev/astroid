@@ -2905,8 +2905,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         try:
             mro = self.mro()
-        except MroError:
-            raise NotImplementedError("Cannot get slots while parsing mro fails.")
+        except MroError as e:
+            raise NotImplementedError("Cannot get slots while parsing mro fails.") from e
 
         slots = list(grouped_slots(mro))
         if not all(slot is not None for slot in slots):
