@@ -2902,13 +2902,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             raise NotImplementedError(
                 "The concept of slots is undefined for old-style classes."
             )
-        
+
         try:
             mro = self.mro()
         except MroError:
-            raise NotImplementedError(
-                "Cannot get slots while parsing mro fails."
-            )
+            raise NotImplementedError("Cannot get slots while parsing mro fails.")
 
         slots = list(grouped_slots(mro))
         if not all(slot is not None for slot in slots):
