@@ -200,7 +200,9 @@ def register_builtin_transform(transform, builtin_name):
 
             if result.lineno is None:
                 result.lineno = node.lineno
-            if result.col_offset is None:
+            # Can be a 'Module' see https://github.com/PyCQA/pylint/issues/4671
+            # We don't have a regression test on this one: tread carefully
+            if hasattr(result, "col_offset") and result.col_offset is None:
                 result.col_offset = node.col_offset
         return iter([result])
 
