@@ -2910,7 +2910,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 "Cannot get slots while parsing mro fails."
             ) from e
 
-        if not all(slot is not None for slot in grouped_slots(mro)):
+        slots = list(grouped_slots(mro))
+        if not all(slot is not None for slot in slots):
             return None
 
         return sorted(set(slots), key=lambda item: item.value)
