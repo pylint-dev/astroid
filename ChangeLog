@@ -16,7 +16,7 @@ Release date: TBA
 * Fix handling of classes with duplicated bases with the same name
 
   Closes PyCQA/astroid#1088
-  
+
 * Fix a crash when the node is a 'Module' in the brain builtin inference
 
   Closes PyCQA/pylint#4671
