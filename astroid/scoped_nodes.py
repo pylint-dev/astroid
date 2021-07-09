@@ -1714,12 +1714,13 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :returns: What the function returns.
         :rtype: iterable(NodeNG or Uninferable) or None
         """
+        import astroid.nodes
         if self.is_generator():
             if isinstance(self, AsyncFunctionDef):
                 generator_cls = bases.AsyncGenerator
             else:
                 generator_cls = bases.Generator
-            result = generator_cls(self)
+            result = generator_cls(self, generator_initial_context=context)
             yield result
             return
         # This is really a gigantic hack to work around metaclass generators

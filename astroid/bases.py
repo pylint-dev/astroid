@@ -543,9 +543,18 @@ class Generator(BaseInstance):
 
     special_attributes = util.lazy_descriptor(objectmodel.GeneratorModel)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, generator_initial_context=None):
         super().__init__()
         self.parent = parent
+        self._call_context = contextmod.copy_context(generator_initial_context)
+
+    def infer_yield_types(self):
+        import astroid.nodes
+        for yield_ in self.parent.nodes_of_class(astroid.nodes.Yield):
+            if yield_.value is None:
+                yield astroid.nodes.Const(None)
+            elif yield_.scope() == self.parent:
+                yield from yield_.value.infer(context=self._call_context)
 
     def callable(self):
         return False
