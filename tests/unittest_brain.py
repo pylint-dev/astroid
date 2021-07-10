@@ -105,16 +105,16 @@ class HashlibTest(unittest.TestCase):
     def test_hashlib(self):
         """Tests that brain extensions for hashlib work."""
         hashlib_module = MANAGER.ast_from_module_name("hashlib")
-        for class_name in ["md5", "sha1"]:
+        for class_name in ("md5", "sha1"):
             class_obj = hashlib_module[class_name]
             self._assert_hashlib_class(class_obj)
 
     def test_hashlib_py36(self):
         hashlib_module = MANAGER.ast_from_module_name("hashlib")
-        for class_name in ["sha3_224", "sha3_512", "shake_128"]:
+        for class_name in ("sha3_224", "sha3_512", "shake_128"):
             class_obj = hashlib_module[class_name]
             self._assert_hashlib_class(class_obj)
-        for class_name in ["blake2b", "blake2s"]:
+        for class_name in ("blake2b", "blake2s"):
             class_obj = hashlib_module[class_name]
             self.assertEqual(len(class_obj["__init__"].args.args), 2)
 
@@ -743,7 +743,7 @@ class ThreadingBrainTest(unittest.TestCase):
     def assert_is_valid_lock(self, inferred):
         self.assertIsInstance(inferred, astroid.Instance)
         self.assertEqual(inferred.root().name, "threading")
-        for method in {"acquire", "release", "__enter__", "__exit__"}:
+        for method in ("acquire", "release", "__enter__", "__exit__"):
             self.assertIsInstance(next(inferred.igetattr(method)), astroid.BoundMethod)
 
 
@@ -1112,7 +1112,7 @@ class IOBrainTest(unittest.TestCase):
         "use pytest -s for this test to work",
     )
     def test_sys_streams(self):
-        for name in {"stdout", "stderr", "stdin"}:
+        for name in ("stdout", "stderr", "stdin"):
             node = astroid.extract_node(
                 f"""
             import sys

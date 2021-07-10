@@ -85,7 +85,6 @@ T_With = TypeVar("T_With", nodes.With, nodes.AsyncWith)
 
 # noinspection PyMethodMayBeStatic
 class TreeRebuilder:
-    # pylint: disable=no-self-use
     """Rebuilds the _ast tree to become an Astroid tree"""
 
     def __init__(

@@ -511,7 +511,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         afoo, abar, cfoo, cbar = builder.extract_node(code)
 
         assert next(afoo.infer()) is util.Uninferable
-        for node, value in [(abar, None), (cfoo, 123), (cbar, None)]:
+        for node, value in ((abar, None), (cfoo, 123), (cbar, None)):
             inferred = next(node.infer())
             assert isinstance(inferred, nodes.Const)
             assert inferred.value == value
