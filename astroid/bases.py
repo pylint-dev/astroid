@@ -26,8 +26,7 @@ inference utils.
 import collections
 
 from astroid import context as contextmod
-from astroid import decorators
-from astroid import util
+from astroid import decorators, util
 from astroid.const import BUILTINS, PY310_PLUS
 from astroid.exceptions import (
     AstroidTypeError,
@@ -554,6 +553,7 @@ class Generator(BaseInstance):
         # pylint: disable=import-outside-toplevel; circular import
 
         from astroid import node_classes
+
         for yield_ in self.parent.nodes_of_class(node_classes.Yield):
             if yield_.value is None:
                 const = node_classes.Const(None)

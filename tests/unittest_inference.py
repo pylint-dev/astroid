@@ -6155,7 +6155,7 @@ def test_issue926_binop_referencing_same_name_is_not_uninferable():
 
 
 def test_issue_1090_infer_yield_type_base_class():
-    code = '''
+    code = """
 import contextlib
 
 class A:
@@ -6170,9 +6170,9 @@ class B(A):
 with B().get() as b:
     b
 b
-    '''
+    """
     node = extract_node(code)
-    assert next(node.infer()).pytype() == '.B'
+    assert next(node.infer()).pytype() == ".B"
 
 
 if __name__ == "__main__":
