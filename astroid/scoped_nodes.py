@@ -2889,7 +2889,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         def grouped_slots(
             mro: List["ClassDef"],
-        ) -> typing.Iterator[Optional[nodes.NodeNG]]:
+        ) -> typing.Iterator[Optional[node_classes.NodeNG]]:
             # Not interested in object, since it can't have slots.
             for cls in mro[:-1]:
                 try:
