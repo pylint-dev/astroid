@@ -26,6 +26,7 @@ inference utils.
 import collections
 
 from astroid import context as contextmod
+from astroid import decorators
 from astroid import util
 from astroid.const import BUILTINS, PY310_PLUS
 from astroid.exceptions import (
@@ -548,6 +549,7 @@ class Generator(BaseInstance):
         self.parent = parent
         self._call_context = contextmod.copy_context(generator_initial_context)
 
+    @decorators.cached
     def infer_yield_types(self):
         # pylint: disable=import-outside-toplevel; circular import
 
