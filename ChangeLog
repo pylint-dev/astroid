@@ -12,7 +12,9 @@ What's New in astroid 2.6.3?
 ============================
 Release date: TBA
 
+* Fix a bad inferenece type for yield values inside of a derived class.
 
+  Closes PyCQA/astroid#1090
 
 What's New in astroid 2.6.2?
 ============================
