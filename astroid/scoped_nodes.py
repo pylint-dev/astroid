@@ -40,6 +40,7 @@ Lambda, GeneratorExp, DictComp and SetComp to some extent).
 import builtins
 import io
 import itertools
+import typing
 from typing import List, Optional
 
 from astroid import bases
@@ -2886,7 +2887,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :rtype: list(str) or None
         """
 
-        def grouped_slots(mro: List["ClassDef"]):
+        def grouped_slots(mro: List["ClassDef"]) -> typing.Iterator[Optional["NodeNG"]]:
             # Not interested in object, since it can't have slots.
             for cls in mro[:-1]:
                 try:
