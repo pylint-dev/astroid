@@ -13,14 +13,13 @@
 
 
 import contextlib
-import sys
 import unittest
 
 import pytest
 
 import astroid
 from astroid import extract_node, nodes, util
-from astroid.const import PY38_PLUS
+from astroid.const import PY38_PLUS, PY310_PLUS
 from astroid.exceptions import InferenceError
 from astroid.node_classes import AssignName, Const, Name, Starred
 
@@ -267,7 +266,7 @@ def test_named_expr_inference():
     assert node.value == 1
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason="Match requires python 3.10")
+@pytest.mark.skipif(not PY310_PLUS, reason="Match requires python 3.10")
 def test_assigned_stmts_match_mapping():
     """Assigned_stmts for MatchMapping not yet implemented.
 
@@ -287,7 +286,7 @@ def test_assigned_stmts_match_mapping():
     assert assigned == util.Uninferable
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason="Match requires python 3.10")
+@pytest.mark.skipif(not PY310_PLUS, reason="Match requires python 3.10")
 def test_assigned_stmts_match_star():
     """Assigned_stmts for MatchStar not yet implemented.
 
@@ -308,7 +307,7 @@ def test_assigned_stmts_match_star():
     assert assigned == util.Uninferable
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason="Match requires python 3.10")
+@pytest.mark.skipif(not PY310_PLUS, reason="Match requires python 3.10")
 def test_assigned_stmts_match_as():
     """Assigned_stmts for MatchAs only implemented for the most basic case (y)."""
     assign_stmts = extract_node(
