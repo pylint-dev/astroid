@@ -481,9 +481,6 @@ def _infer_context_manager(self, mgr, context):
             # It doesn't interest us.
             raise InferenceError(node=func)
 
-        # Get the first yield point. If it has multiple yields,
-        # then a RuntimeError will be raised.
-
         yield next(inferred.infer_yield_types())
 
     elif isinstance(inferred, bases.Instance):
