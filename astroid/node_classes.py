@@ -57,6 +57,7 @@ from astroid.exceptions import (
 from astroid.manager import AstroidManager
 
 if sys.version_info >= (3, 8):
+    # pylint: disable=no-name-in-module
     from typing import Literal
 else:
     from typing_extensions import Literal

@@ -52,6 +52,7 @@ from astroid.manager import AstroidManager
 from astroid.node_classes import NodeNG
 
 if sys.version_info >= (3, 8):
+    # pylint: disable=no-name-in-module
     from typing import Final
 else:
     from typing_extensions import Final
