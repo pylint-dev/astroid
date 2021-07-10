@@ -549,10 +549,12 @@ class Generator(BaseInstance):
         self._call_context = contextmod.copy_context(generator_initial_context)
 
     def infer_yield_types(self):
-        import astroid.nodes
-        for yield_ in self.parent.nodes_of_class(astroid.nodes.Yield):
+        # pylint: disable=import-outside-toplevel; circular import
+
+        from astroid import node_classes
+        for yield_ in self.parent.nodes_of_class(node_classes.Yield):
             if yield_.value is None:
-                yield astroid.nodes.Const(None)
+                yield node_classes.Const(None)
             elif yield_.scope() == self.parent:
                 yield from yield_.value.infer(context=self._call_context)
 

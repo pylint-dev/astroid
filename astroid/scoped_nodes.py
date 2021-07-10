@@ -1714,7 +1714,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :returns: What the function returns.
         :rtype: iterable(NodeNG or Uninferable) or None
         """
-        import astroid.nodes
         if self.is_generator():
             if isinstance(self, AsyncFunctionDef):
                 generator_cls = bases.AsyncGenerator
