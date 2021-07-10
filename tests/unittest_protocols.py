@@ -13,6 +13,7 @@
 
 
 import contextlib
+import sys
 import unittest
 
 import pytest
@@ -264,6 +265,74 @@ def test_named_expr_inference():
     node = next(ast_nodes[5].infer())
     assert isinstance(node, nodes.Const)
     assert node.value == 1
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Match requires python 3.10")
+def test_assigned_stmts_match_mapping():
+    """Assigned_stmts for MatchMapping not yet implemented.
+
+    Test the result is 'Uninferable' and no exception is raised.
+    """
+    assign_stmts = extract_node(
+        """
+    var = {1: "Hello", 2: "World"}
+    match var:
+        case {**rest}:  #@
+            pass
+    """
+    )
+    match_mapping: nodes.MatchMapping = assign_stmts.pattern  # type: ignore
+    assert match_mapping.rest
+    assigned = next(match_mapping.rest.assigned_stmts())
+    assert assigned == util.Uninferable
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Match requires python 3.10")
+def test_assigned_stmts_match_star():
+    """Assigned_stmts for MatchStar not yet implemented.
+
+    Test the result is 'Uninferable' and no exception is raised.
+    """
+    assign_stmts = extract_node(
+        """
+    var = (0, 1, 2)
+    match var:
+        case (0, 1, *rest):  #@
+            pass
+    """
+    )
+    match_sequence: nodes.MatchSequence = assign_stmts.pattern  # type: ignore
+    match_star = match_sequence.patterns[2]
+    assert isinstance(match_star, nodes.MatchStar) and match_star.name
+    assigned = next(match_star.name.assigned_stmts())
+    assert assigned == util.Uninferable
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Match requires python 3.10")
+def test_assigned_stmts_match_as():
+    """Assigned_stmts for MatchAs only implemented for the most basic case (y)."""
+    assign_stmts = extract_node(
+        """
+    var = 42
+    match var:  #@
+        case 2 | x:  #@
+            pass
+        case y:  #@
+            pass
+    """
+    )
+    subject: nodes.Const = assign_stmts[0].subject  # type: ignore
+    match_or: nodes.MatchOr = assign_stmts[1].pattern  # type: ignore
+    match_as: nodes.MatchAs = assign_stmts[2].pattern  # type: ignore
+
+    assert match_as.name
+    assigned_match_as = next(match_as.name.assigned_stmts())
+    assert assigned_match_as == subject
+
+    match_or_1 = match_or.patterns[1]
+    assert isinstance(match_or_1, nodes.MatchAs) and match_or_1.name
+    assigned_match_or_1 = next(match_or_1.name.assigned_stmts())
+    assert assigned_match_or_1 == util.Uninferable
 
 
 if __name__ == "__main__":
