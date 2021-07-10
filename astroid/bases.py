@@ -556,7 +556,10 @@ class Generator(BaseInstance):
         from astroid import node_classes
         for yield_ in self.parent.nodes_of_class(node_classes.Yield):
             if yield_.value is None:
-                yield node_classes.Const(None)
+                const = node_classes.Const(None)
+                const.parent = yield_
+                const.lineno = yield_.lineno
+                yield const
             elif yield_.scope() == self.parent:
                 yield from yield_.value.infer(context=self._call_context)
 
