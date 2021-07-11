@@ -21,6 +21,10 @@ Release date: TBA
 
   Closes PyCQA/pylint#4671
 
+* Fix issues when inferring match variables
+
+  Closes PyCQA/pylint#4685
+
 
 What's New in astroid 2.6.2?
 ============================
@@ -35,6 +39,7 @@ Release date: 2021-06-30
 
   Closes PyCQA/pylint#4631
   Closes #1080
+
 
 What's New in astroid 2.6.1?
 ============================
