@@ -15,8 +15,8 @@ class Context(enum.Enum):
 
 
 # TODO Remove in 3.0 in favor of Context
-Load = Context.Load  # pylint: disable=invalid-name
-Store = Context.Store  # pylint: disable=invalid-name
-Del = Context.Del  # pylint: disable=invalid-name
+Load = Context.Load
+Store = Context.Store
+Del = Context.Del
 
 BUILTINS = builtins.__name__  # Could be just 'builtins' ?
