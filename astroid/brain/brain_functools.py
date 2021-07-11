@@ -103,7 +103,7 @@ def _functools_partial_inference(node, context=None):
         doc=inferred_wrapped_function.doc,
         lineno=inferred_wrapped_function.lineno,
         col_offset=inferred_wrapped_function.col_offset,
-        parent=inferred_wrapped_function.parent,
+        parent=node.parent,
     )
     partial_function.postinit(
         args=inferred_wrapped_function.args,
