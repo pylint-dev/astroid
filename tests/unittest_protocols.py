@@ -316,22 +316,29 @@ class TestPatternMatching:
         match var:  #@
             case 2 | x:  #@
                 pass
-            case y:  #@
+            case (1, 2) as y:  #@
+                pass
+            case z:  #@
                 pass
         """
         )
         subject: nodes.Const = assign_stmts[0].subject  # type: ignore
         match_or: nodes.MatchOr = assign_stmts[1].pattern  # type: ignore
-        match_as: nodes.MatchAs = assign_stmts[2].pattern  # type: ignore
-
-        assert match_as.name
-        assigned_match_as = next(match_as.name.assigned_stmts())
-        assert assigned_match_as == subject
+        match_as_with_pattern: nodes.MatchAs = assign_stmts[2].pattern  # type: ignore
+        match_as: nodes.MatchAs = assign_stmts[3].pattern  # type: ignore
 
         match_or_1 = match_or.patterns[1]
         assert isinstance(match_or_1, nodes.MatchAs) and match_or_1.name
         assigned_match_or_1 = next(match_or_1.name.assigned_stmts())
         assert assigned_match_or_1 == util.Uninferable
+
+        assert match_as_with_pattern.name and match_as_with_pattern.pattern
+        assigned_match_as_pattern = next(match_as_with_pattern.name.assigned_stmts())
+        assert assigned_match_as_pattern == util.Uninferable
+
+        assert match_as.name
+        assigned_match_as = next(match_as.name.assigned_stmts())
+        assert assigned_match_as == subject
 
 
 if __name__ == "__main__":
