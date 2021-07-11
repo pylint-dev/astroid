@@ -2720,6 +2720,28 @@ class TestFunctoolsPartial:
             assert isinstance(inferred, astroid.Const)
             assert inferred.value == expected_value
 
+    def test_partial_assignment(self):
+        """Make sure partials are not assigned to original scope."""
+        ast_nodes = astroid.extract_node(
+            """
+        from functools import partial
+        def test(a, b): #@
+            return a + b
+        test2 = partial(test, 1)
+        test2 #@
+        def test3_scope(a):
+            test3 = partial(test, a)
+            test3 #@
+        """
+        )
+        func1, func2, func3 = ast_nodes
+        assert func1.parent.scope() == func2.parent.scope()
+        assert func1.parent.scope() != func3.parent.scope()
+        partial_func3 = next(func3.infer())
+        # use scope of parent, so that it doesn't just refer to self
+        scope = partial_func3.parent.scope()
+        assert scope.name == "test3_scope", "parented by closure"
+
 
 def test_http_client_brain():
     node = astroid.extract_node(
