@@ -550,18 +550,7 @@ class Generator(BaseInstance):
 
     @decorators.cached
     def infer_yield_types(self):
-        # pylint: disable=import-outside-toplevel; circular import
-
-        from astroid import node_classes
-
-        for yield_ in self.parent.nodes_of_class(node_classes.Yield):
-            if yield_.value is None:
-                const = node_classes.Const(None)
-                const.parent = yield_
-                const.lineno = yield_.lineno
-                yield const
-            elif yield_.scope() == self.parent:
-                yield from yield_.value.infer(context=self._call_context)
+        yield from self.parent.infer_yield_result(self._call_context)
 
     def callable(self):
         return False

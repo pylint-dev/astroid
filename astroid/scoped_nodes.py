@@ -1708,6 +1708,21 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
         return bool(next(self._get_yield_nodes_skip_lambdas(), False))
 
+    def infer_yield_result(self, context=None):
+        """Infer what the function yields when called
+
+        :returns: What the function yields
+        :rtype: iterable(NodeNG or Uninferable) or None
+        """
+        for yield_ in self.nodes_of_class(node_classes.Yield):
+            if yield_.value is None:
+                const = node_classes.Const(None)
+                const.parent = yield_
+                const.lineno = yield_.lineno
+                yield const
+            elif yield_.scope() == self.parent:
+                yield from yield_.value.infer(context=self._call_context)
+
     def infer_call_result(self, caller=None, context=None):
         """Infer what the function returns when called.
 
