@@ -317,7 +317,7 @@ class AsStringVisitor:
         # Try to find surrounding quotes that don't appear at all in the string.
         # Because the formatted values inside {} can't contain backslash (\)
         # using a triple quote is sometimes necessary
-        for quote in ["'", '"', '"""', "'''"]:
+        for quote in ("'", '"', '"""', "'''"):
             if quote not in string:
                 break
 

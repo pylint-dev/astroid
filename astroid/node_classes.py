@@ -36,10 +36,11 @@
 import abc
 import itertools
 import pprint
+import sys
 import typing
 from functools import lru_cache
 from functools import singledispatch as _singledispatch
-from typing import ClassVar, Optional
+from typing import Callable, ClassVar, Generator, Optional
 
 from astroid import as_string, bases
 from astroid import context as contextmod
@@ -55,10 +56,10 @@ from astroid.exceptions import (
 )
 from astroid.manager import AstroidManager
 
-try:
+if sys.version_info >= (3, 8):
+    # pylint: disable=no-name-in-module
     from typing import Literal
-except ImportError:
-    # typing.Literal was added in Python 3.8
+else:
     from typing_extensions import Literal
 
 
@@ -1385,7 +1386,6 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
     #  - we expose 'annotation', a list with annotations for
     #    for each normal argument. If an argument doesn't have an
     #    annotation, its value will be None.
-    # pylint: disable=too-many-instance-attributes
     _astroid_fields = (
         "args",
         "defaults",
@@ -5026,6 +5026,16 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
         self.patterns = patterns
         self.rest = rest
 
+    assigned_stmts: Callable[
+        [
+            "MatchMapping",
+            AssignName,
+            Optional[contextmod.InferenceContext],
+            Literal[None],
+        ],
+        Generator[NodeNG, None, None],
+    ]
+
 
 class MatchClass(Pattern):
     """Class representing a :class:`ast.MatchClass` node.
@@ -5098,6 +5108,16 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
     def postinit(self, *, name: Optional[AssignName]) -> None:
         self.name = name
 
+    assigned_stmts: Callable[
+        [
+            "MatchStar",
+            AssignName,
+            Optional[contextmod.InferenceContext],
+            Literal[None],
+        ],
+        Generator[NodeNG, None, None],
+    ]
+
 
 class MatchAs(mixins.AssignTypeMixin, Pattern):
     """Class representing a :class:`ast.MatchAs` node.
@@ -5143,6 +5163,16 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
     ) -> None:
         self.pattern = pattern
         self.name = name
+
+    assigned_stmts: Callable[
+        [
+            "MatchAs",
+            AssignName,
+            Optional[contextmod.InferenceContext],
+            Literal[None],
+        ],
+        Generator[NodeNG, None, None],
+    ]
 
 
 class MatchOr(Pattern):

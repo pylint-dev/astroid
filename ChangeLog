@@ -17,9 +17,18 @@ Release date: TBA
 
   Closes PyCQA/astroid#1088
 
+* Fix a bad inferenece type for yield values inside of a derived class.
+
+  Closes PyCQA/astroid#1090
+
 * Fix a crash when the node is a 'Module' in the brain builtin inference
 
   Closes PyCQA/pylint#4671
+
+* Fix issues when inferring match variables
+
+  Closes PyCQA/pylint#4685
+
 
 What's New in astroid 2.6.2?
 ============================
@@ -34,6 +43,7 @@ Release date: 2021-06-30
 
   Closes PyCQA/pylint#4631
   Closes #1080
+
 
 What's New in astroid 2.6.1?
 ============================

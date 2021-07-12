@@ -28,6 +28,8 @@ where it makes sense.
 import collections
 import itertools
 import operator as operator_mod
+import sys
+from typing import Generator, Optional
 
 from astroid import arguments, bases
 from astroid import context as contextmod
@@ -40,6 +42,12 @@ from astroid.exceptions import (
     InferenceError,
     NoDefault,
 )
+
+if sys.version_info >= (3, 8):
+    # pylint: disable=no-name-in-module
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 raw_building = util.lazy_import("raw_building")
 objects = util.lazy_import("objects")
@@ -481,22 +489,8 @@ def _infer_context_manager(self, mgr, context):
             # It doesn't interest us.
             raise InferenceError(node=func)
 
-        # Get the first yield point. If it has multiple yields,
-        # then a RuntimeError will be raised.
+        yield next(inferred.infer_yield_types())
 
-        possible_yield_points = func.nodes_of_class(nodes.Yield)
-        # Ignore yields in nested functions
-        yield_point = next(
-            (node for node in possible_yield_points if node.scope() == func), None
-        )
-        if yield_point:
-            if not yield_point.value:
-                const = nodes.Const(None)
-                const.parent = yield_point
-                const.lineno = yield_point.lineno
-                yield const
-            else:
-                yield from yield_point.value.infer(context=context)
     elif isinstance(inferred, bases.Instance):
         try:
             enter = next(inferred.igetattr("__enter__", context=context))
@@ -785,3 +779,58 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
 
 
 nodes.Starred.assigned_stmts = starred_assigned_stmts
+
+
+@decorators.yes_if_nothing_inferred
+def match_mapping_assigned_stmts(
+    self: nodes.MatchMapping,
+    node: nodes.AssignName,
+    context: Optional[contextmod.InferenceContext] = None,
+    assign_path: Literal[None] = None,
+) -> Generator[nodes.NodeNG, None, None]:
+    """Return empty generator (return -> raises StopIteration) so inferred value
+    is Uninferable.
+    """
+    return
+    yield  # pylint: disable=unreachable
+
+
+nodes.MatchMapping.assigned_stmts = match_mapping_assigned_stmts
+
+
+@decorators.yes_if_nothing_inferred
+def match_star_assigned_stmts(
+    self: nodes.MatchStar,
+    node: nodes.AssignName,
+    context: Optional[contextmod.InferenceContext] = None,
+    assign_path: Literal[None] = None,
+) -> Generator[nodes.NodeNG, None, None]:
+    """Return empty generator (return -> raises StopIteration) so inferred value
+    is Uninferable.
+    """
+    return
+    yield  # pylint: disable=unreachable
+
+
+nodes.MatchStar.assigned_stmts = match_star_assigned_stmts
+
+
+@decorators.yes_if_nothing_inferred
+def match_as_assigned_stmts(
+    self: nodes.MatchAs,
+    node: nodes.AssignName,
+    context: Optional[contextmod.InferenceContext] = None,
+    assign_path: Literal[None] = None,
+) -> Generator[nodes.NodeNG, None, None]:
+    """Infer MatchAs as the Match subject if it's the only MatchCase pattern
+    else raise StopIteration to yield Uninferable.
+    """
+    if (
+        isinstance(self.parent, nodes.MatchCase)
+        and isinstance(self.parent.parent, nodes.Match)
+        and self.pattern is None
+    ):
+        yield self.parent.parent.subject
+
+
+nodes.MatchAs.assigned_stmts = match_as_assigned_stmts

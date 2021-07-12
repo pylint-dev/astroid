@@ -45,17 +45,17 @@ from typing import (
     overload,
 )
 
-try:
-    from typing import Final
-except ImportError:
-    # typing.Final was added in Python 3.8
-    from typing_extensions import Final
-
 from astroid import node_classes, nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
 from astroid.const import PY37_PLUS, PY38_PLUS, PY39_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.node_classes import NodeNG
+
+if sys.version_info >= (3, 8):
+    # pylint: disable=no-name-in-module
+    from typing import Final
+else:
+    from typing_extensions import Final
 
 if TYPE_CHECKING:
     import ast
@@ -85,7 +85,6 @@ T_With = TypeVar("T_With", nodes.With, nodes.AsyncWith)
 
 # noinspection PyMethodMayBeStatic
 class TreeRebuilder:
-    # pylint: disable=no-self-use
     """Rebuilds the _ast tree to become an Astroid tree"""
 
     def __init__(

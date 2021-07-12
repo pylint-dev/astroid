@@ -26,7 +26,7 @@ inference utils.
 import collections
 
 from astroid import context as contextmod
-from astroid import util
+from astroid import decorators, util
 from astroid.const import BUILTINS, PY310_PLUS
 from astroid.exceptions import (
     AstroidTypeError,
@@ -543,9 +543,14 @@ class Generator(BaseInstance):
 
     special_attributes = util.lazy_descriptor(objectmodel.GeneratorModel)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, generator_initial_context=None):
         super().__init__()
         self.parent = parent
+        self._call_context = contextmod.copy_context(generator_initial_context)
+
+    @decorators.cached
+    def infer_yield_types(self):
+        yield from self.parent.infer_yield_result(self._call_context)
 
     def callable(self):
         return False
