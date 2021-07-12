@@ -1720,8 +1720,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 const.parent = yield_
                 const.lineno = yield_.lineno
                 yield const
-            elif yield_.scope() == self.parent:
-                yield from yield_.value.infer(context=self._call_context)
+            elif yield_.scope() == self:
+                yield from yield_.value.infer(context=context)
 
     def infer_call_result(self, caller=None, context=None):
         """Infer what the function returns when called.
