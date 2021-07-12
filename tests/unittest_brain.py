@@ -2742,6 +2742,24 @@ class TestFunctoolsPartial:
         scope = partial_func3.parent.scope()
         assert scope.name == "test3_scope", "parented by closure"
 
+    def test_partial_does_not_affect_scope(self):
+        """Make sure partials are not automatically assigned."""
+        ast_nodes = astroid.extract_node(
+            """
+        from functools import partial
+        def test(a, b):
+            return a + b
+        def scope():
+            test2 = partial(test, 1)
+            test2 #@
+        """
+        )
+        test2 = next(ast_nodes.infer())
+        mod_scope = test2.root()
+        scope = test2.parent.scope()
+        assert set(mod_scope) == {"test", "scope", "partial"}
+        assert set(scope) == {"test2"}
+
 
 def test_http_client_brain():
     node = astroid.extract_node(
