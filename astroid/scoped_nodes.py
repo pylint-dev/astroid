@@ -2531,7 +2531,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         implicit_meta = self.implicit_metaclass()
         context = contextmod.copy_context(context)
         metaclass = self.metaclass(context=context)
-        for cls in {implicit_meta, metaclass}:
+        for cls in (implicit_meta, metaclass):
             if cls and cls != self and isinstance(cls, ClassDef):
                 cls_attributes = self._get_attribute_from_metaclass(cls, name, context)
                 attrs.update(set(cls_attributes))

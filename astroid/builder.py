@@ -334,7 +334,7 @@ def _find_statement_by_line(node, line):
       can be found.
     :rtype:  astroid.bases.NodeNG or None
     """
-    if isinstance(node, (nodes.ClassDef, nodes.FunctionDef)):
+    if isinstance(node, (nodes.ClassDef, nodes.FunctionDef, nodes.MatchCase)):
         # This is an inaccuracy in the AST: the nodes that can be
         # decorated do not carry explicit information on which line
         # the actual definition (class/def), but .fromline seems to
