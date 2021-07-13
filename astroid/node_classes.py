@@ -3480,6 +3480,43 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         yield from self.test._get_yield_nodes_skip_lambdas()
         yield from super()._get_yield_nodes_skip_lambdas()
 
+    def is_sys_guard(self) -> bool:
+        """Return True if IF stmt is a sys.version_info guard.
+
+        >>> node = astroid.extract_node('''
+        import sys
+        if sys.version_info > (3, 8):
+            from typing import Literal
+        else:
+            from typing_extensions import Literal
+        ''')
+        >>> node.is_sys_guard()
+        True
+        """
+        if isinstance(self.test, Compare):
+            value = self.test.left
+            if isinstance(value, Subscript):
+                value = value.value
+            if isinstance(value, Attribute) and value.as_string() == "sys.version_info":
+                return True
+
+        return False
+
+    def is_typing_guard(self) -> bool:
+        """Return True if IF stmt is a typing guard.
+
+        >>> node = astroid.extract_node('''
+        from typing import TYPE_CHECKING
+        if TYPE_CHECKING:
+            from xyz import a
+        ''')
+        >>> node.is_typing_guard()
+        True
+        """
+        return isinstance(
+            self.test, (Name, Attribute)
+        ) and self.test.as_string().endswith("TYPE_CHECKING")
+
 
 class IfExp(NodeNG):
     """Class representing an :class:`ast.IfExp` node.

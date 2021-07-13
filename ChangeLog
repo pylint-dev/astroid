@@ -6,12 +6,12 @@ What's New in astroid 2.7.0?
 ============================
 Release date: TBA
 
+* Added ``If.is_sys_guard`` and ``If.is_typing_guard`` helper methods
 
 
 What's New in astroid 2.6.3?
 ============================
 Release date: TBA
-
 
 * Fix a bad inferenece type for yield values inside of a derived class.
 
