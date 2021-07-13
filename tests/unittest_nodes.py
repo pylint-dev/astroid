@@ -342,6 +342,64 @@ class IfNodeTest(_NodeTest):
         self.assertEqual(self.astroid.body[1].orelse[0].block_range(7), (7, 8))
         self.assertEqual(self.astroid.body[1].orelse[0].block_range(8), (8, 8))
 
+    @staticmethod
+    def test_if_sys_guard():
+        code = builder.extract_node(
+            """
+        import sys
+        if sys.version_info > (3, 8):  #@
+            pass
+
+        if sys.version_info[:2] > (3, 8):  #@
+            pass
+
+        if sys.some_other_function > (3, 8):  #@
+            pass
+        """
+        )
+        assert isinstance(code, list) and len(code) == 3
+
+        assert isinstance(code[0], nodes.If)
+        assert code[0].is_sys_guard() is True
+        assert isinstance(code[1], nodes.If)
+        assert code[1].is_sys_guard() is True
+
+        assert isinstance(code[2], nodes.If)
+        assert code[2].is_sys_guard() is False
+
+    @staticmethod
+    def test_if_typing_guard():
+        code = builder.extract_node(
+            """
+        import typing
+        import typing as t
+        from typing import TYPE_CHECKING
+
+        if typing.TYPE_CHECKING:  #@
+            pass
+
+        if t.TYPE_CHECKING:  #@
+            pass
+
+        if TYPE_CHECKING:  #@
+            pass
+
+        if typing.SOME_OTHER_CONST:  #@
+            pass
+        """
+        )
+        assert isinstance(code, list) and len(code) == 4
+
+        assert isinstance(code[0], nodes.If)
+        assert code[0].is_typing_guard() is True
+        assert isinstance(code[1], nodes.If)
+        assert code[1].is_typing_guard() is True
+        assert isinstance(code[2], nodes.If)
+        assert code[2].is_typing_guard() is True
+
+        assert isinstance(code[3], nodes.If)
+        assert code[3].is_typing_guard() is False
+
 
 class TryExceptNodeTest(_NodeTest):
     CODE = """
