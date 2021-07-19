@@ -11,7 +11,10 @@ What's New in astroid 2.6.4?
 ============================
 Release date: TBA
 
+* Fix a crash when a StopIteration was raised when inferring
+  a faulty function in a context manager.
 
+  Closes PyCQA/pylint#4723
 
 What's New in astroid 2.6.3?
 ============================
