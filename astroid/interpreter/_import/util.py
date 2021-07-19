@@ -1,4 +1,5 @@
 # Copyright (c) 2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Neil Girdhar <mistersheik@gmail.com>
 
 try:
