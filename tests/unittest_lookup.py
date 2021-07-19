@@ -218,6 +218,120 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         var = astroid.body[1].value
         self.assertRaises(NameInferenceError, var.inferred)
 
+    def test_list_comp_nested(self):
+        astroid = builder.parse(
+            """
+            x = [[i + j for j in range(20)]
+                 for i in range(10)]
+        """,
+            __name__,
+        )
+        xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "i"]
+        self.assertEqual(len(xnames[0].lookup("i")[1]), 1)
+        self.assertEqual(xnames[0].lookup("i")[1][0].lineno, 3)
+
+    def test_dict_comp_nested(self):
+        astroid = builder.parse(
+            """
+            x = {i: {i: j for j in range(20)}
+                 for i in range(10)}
+            x3 = [{i + j for j in range(20)}  # Can't do nested sets
+                  for i in range(10)]
+        """,
+            __name__,
+        )
+        xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "i"]
+        self.assertEqual(len(xnames[0].lookup("i")[1]), 1)
+        self.assertEqual(xnames[0].lookup("i")[1][0].lineno, 3)
+        self.assertEqual(len(xnames[1].lookup("i")[1]), 1)
+        self.assertEqual(xnames[1].lookup("i")[1][0].lineno, 3)
+
+    def test_set_comp_nested(self):
+        astroid = builder.parse(
+            """
+            x = [{i + j for j in range(20)}  # Can't do nested sets
+                 for i in range(10)]
+        """,
+            __name__,
+        )
+        xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "i"]
+        self.assertEqual(len(xnames[0].lookup("i")[1]), 1)
+        self.assertEqual(xnames[0].lookup("i")[1][0].lineno, 3)
+
+    def test_lambda_nested(self):
+        astroid = builder.parse(
+            """
+            f = lambda x: (
+                    lambda y: x + y)
+        """
+        )
+        xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "x"]
+        self.assertEqual(len(xnames[0].lookup("x")[1]), 1)
+        self.assertEqual(xnames[0].lookup("x")[1][0].lineno, 2)
+
+    def test_function_nested(self):
+        astroid = builder.parse(
+            """
+            def f1(x):
+                def f2(y):
+                    return x + y
+
+                return f2
+        """
+        )
+        xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "x"]
+        self.assertEqual(len(xnames[0].lookup("x")[1]), 1)
+        self.assertEqual(xnames[0].lookup("x")[1][0].lineno, 2)
+
+    def test_class_variables(self):
+        # Class variables are NOT available within nested scopes.
+        astroid = builder.parse(
+            """
+            class A:
+                a = 10
+
+                def f1(self):
+                    return a  # a is not defined
+
+                f2 = lambda: a  # a is not defined
+
+                b = [a for _ in range(10)]  # a is not defined
+
+                class _Inner:
+                    inner_a = a + 1
+            """
+        )
+        names = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "a"]
+        self.assertEqual(len(names), 4)
+        for name in names:
+            self.assertRaises(NameInferenceError, name.inferred)
+
+    def test_class_in_function(self):
+        # Function variables are available within classes, including methods
+        astroid = builder.parse(
+            """
+            def f():
+                x = 10
+                class A:
+                    a = x
+
+                    def f1(self):
+                        return x
+
+                    f2 = lambda: x
+
+                    b = [x for _ in range(10)]
+
+                    class _Inner:
+                        inner_a = x + 1
+        """
+        )
+        names = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "x"]
+        self.assertEqual(len(names), 5)
+        for name in names:
+            self.assertEqual(len(name.lookup("x")[1]), 1, repr(name))
+            self.assertEqual(name.lookup("x")[1][0].lineno, 3, repr(name))
+
     def test_generator_attributes(self):
         tree = builder.parse(
             """

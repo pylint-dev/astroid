@@ -244,14 +244,17 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
             stmts = ()
         if stmts:
             return self, stmts
-        if self.parent:  # i.e. not Module
-            # nested scope: if parent scope is a function, that's fine
-            # else jump to the module
-            pscope = self.parent.scope()
-            if not pscope.is_function:
-                pscope = pscope.root()
-            return pscope.scope_lookup(node, name)
-        return builtin_lookup(name)  # Module
+
+        # Handle nested scopes: since class names do not extend to nested
+        # scopes (e.g., methods), we find the next enclosing non-class scope
+        pscope = self.parent and self.parent.scope()
+        while pscope is not None:
+            if not isinstance(pscope, ClassDef):
+                return pscope.scope_lookup(node, name)
+            pscope = pscope.parent and pscope.parent.scope()
+
+        # self is at the top level of a module, or is enclosed only by ClassDefs
+        return builtin_lookup(name)
 
     def set_local(self, name, stmt):
         """Define that the given name is declared in the given statement node.

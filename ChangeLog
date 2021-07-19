@@ -25,6 +25,7 @@ Release date: TBA
 
   Closes PyCQA/pylint#4685
 
+* Fix lookup for nested non-function scopes
 
 What's New in astroid 2.6.2?
 ============================
