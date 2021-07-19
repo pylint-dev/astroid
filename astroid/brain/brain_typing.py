@@ -215,8 +215,7 @@ def _looks_like_typing_alias(node: Call) -> bool:
     :param node: call node
     """
     return (
-        isinstance(node, Call)
-        and isinstance(node.func, Name)
+        isinstance(node.func, Name)
         and node.func.name == "_alias"
         and (
             # _alias function works also for builtins object such as list and dict
@@ -317,19 +316,15 @@ def _looks_like_tuple_alias(node: Call) -> bool:
     PY37: Tuple = _VariadicGenericAlias(tuple, (), inst=False, special=True)
     PY39: Tuple = _TupleType(tuple, -1, inst=False, name='Tuple')
     """
-    return (
-        isinstance(node, Call)
-        and isinstance(node.func, Name)
-        and (
-            not PY39_PLUS
-            and node.func.name == "_VariadicGenericAlias"
-            and isinstance(node.args[0], Name)
-            and node.args[0].name == "tuple"
-            or PY39_PLUS
-            and node.func.name == "_TupleType"
-            and isinstance(node.args[0], Name)
-            and node.args[0].name == "tuple"
-        )
+    return isinstance(node.func, Name) and (
+        not PY39_PLUS
+        and node.func.name == "_VariadicGenericAlias"
+        and isinstance(node.args[0], Name)
+        and node.args[0].name == "tuple"
+        or PY39_PLUS
+        and node.func.name == "_TupleType"
+        and isinstance(node.args[0], Name)
+        and node.args[0].name == "tuple"
     )
 
 
