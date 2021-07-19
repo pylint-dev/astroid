@@ -5,6 +5,7 @@
 # Copyright (c) 2020 Simon Hewitt <si@sjhewitt.co.uk>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 

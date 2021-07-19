@@ -7,9 +7,15 @@ What's New in astroid 2.7.0?
 Release date: TBA
 
 
-What's New in astroid 2.6.3?
+What's New in astroid 2.6.4?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 2.6.3?
+============================
+Release date: 2021-07-19
 
 * Added ``If.is_sys_guard`` and ``If.is_typing_guard`` helper methods
 
