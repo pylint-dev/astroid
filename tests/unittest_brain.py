@@ -1613,18 +1613,27 @@ class TypingBrain(unittest.TestCase):
 
     @test_utils.require_version("3.8")
     def test_typed_dict(self):
-        node = builder.extract_node(
+        code = builder.extract_node(
             """
         from typing import TypedDict
-        class CustomTD(TypedDict):
+        class CustomTD(TypedDict):  #@
             var: int
+        CustomTD(var=1)  #@
         """
         )
-        inferred_base = next(node.bases[0].infer())
+        inferred_base = next(code[0].bases[0].infer())
         assert isinstance(inferred_base, nodes.ClassDef)
         assert inferred_base.qname() == "typing.TypedDict"
         typedDict_base = next(inferred_base.bases[0].infer())
         assert typedDict_base.qname() == "builtins.dict"
+
+        # Test TypedDict has `__call__` method
+        local_call = inferred_base.locals.get("__call__", None)
+        assert local_call and len(local_call) == 1
+        assert isinstance(local_call[0], nodes.Name) and local_call[0].name == "dict"
+
+        # Test TypedDict instance is callable
+        assert next(code[1].infer()).callable() is True
 
     @test_utils.require_version(minver="3.7")
     def test_typing_alias_type(self):

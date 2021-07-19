@@ -25,6 +25,10 @@ Release date: TBA
 
   Closes PyCQA/pylint#4685
 
+* Fix issue that ``TypedDict`` instance wasn't callable.
+
+  Closes PyCQA/pylint#4715
+
 
 What's New in astroid 2.6.2?
 ============================
