@@ -14,7 +14,7 @@ import typing
 from functools import partial
 
 from astroid import context, extract_node, inference_tip, node_classes
-from astroid.const import PY37_PLUS, PY39_PLUS
+from astroid.const import PY37_PLUS, PY38_PLUS, PY39_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -185,10 +185,18 @@ def infer_typing_attr(
 
 
 def _looks_like_typedDict(  # pylint: disable=invalid-name
-    node: FunctionDef,
+    node: typing.Union[FunctionDef, ClassDef],
 ) -> bool:
     """Check if node is TypedDict FunctionDef."""
-    return isinstance(node, FunctionDef) and node.name == "TypedDict"
+    return node.qname() in ("typing.TypedDict", "typing_extensions.TypedDict")
+
+
+def infer_old_typedDict(  # pylint: disable=invalid-name
+    node: ClassDef, ctx: context.InferenceContext = None
+) -> typing.Iterator[ClassDef]:
+    func_to_add = extract_node("dict")
+    node.locals["__call__"] = [func_to_add]
+    return iter([node])
 
 
 def infer_typedDict(  # pylint: disable=invalid-name
@@ -202,6 +210,8 @@ def infer_typedDict(  # pylint: disable=invalid-name
         parent=node.parent,
     )
     class_def.postinit(bases=[extract_node("dict")], body=[], decorators=None)
+    func_to_add = extract_node("dict")
+    class_def.locals["__call__"] = [func_to_add]
     return iter([class_def])
 
 
@@ -363,6 +373,10 @@ AstroidManager().register_transform(
 if PY39_PLUS:
     AstroidManager().register_transform(
         FunctionDef, inference_tip(infer_typedDict), _looks_like_typedDict
+    )
+elif PY38_PLUS:
+    AstroidManager().register_transform(
+        ClassDef, inference_tip(infer_old_typedDict), _looks_like_typedDict
     )
 
 if PY37_PLUS:

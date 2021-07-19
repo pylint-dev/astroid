@@ -27,6 +27,11 @@ Release date: TBA
 
 * Fix lookup for nested non-function scopes
 
+* Fix issue that ``TypedDict`` instance wasn't callable.
+
+  Closes PyCQA/pylint#4715
+
+
 What's New in astroid 2.6.2?
 ============================
 Release date: 2021-06-30
