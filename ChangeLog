@@ -29,6 +29,8 @@ Release date: TBA
 
   Closes PyCQA/pylint#4715
 
+* Add dependency on setuptools and a guard to prevent related exceptions.
+
 
 What's New in astroid 2.6.2?
 ============================
