@@ -490,8 +490,10 @@ def _infer_context_manager(self, mgr, context):
         else:
             # It doesn't interest us.
             raise InferenceError(node=func)
-
-        yield next(inferred.infer_yield_types())
+        try:
+            yield next(inferred.infer_yield_types())
+        except StopIteration as e:
+            raise InferenceError(node=func) from e
 
     elif isinstance(inferred, bases.Instance):
         try:
