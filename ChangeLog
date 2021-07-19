@@ -25,6 +25,8 @@ Release date: TBA
 
   Closes PyCQA/pylint#4685
 
+* Fix lookup for nested non-function scopes
+
 * Fix issue that ``TypedDict`` instance wasn't callable.
 
   Closes PyCQA/pylint#4715
