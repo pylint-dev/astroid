@@ -7,4 +7,8 @@ except ImportError:
 
 
 def is_namespace(modname):
-    return pkg_resources is not None and modname in pkg_resources._namespace_packages
+    return (
+        pkg_resources is not None
+        and hasattr(pkg_resources, "_namespace_packages")
+        and modname in pkg_resources._namespace_packages
+    )
