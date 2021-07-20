@@ -27,7 +27,7 @@ def is_decorated_with_attrs(node, decorator_names=ATTRS_NAMES):
     return False
 
 
-def attr_attributes_transform(node):
+def attr_attributes_transform(node: ClassDef) -> None:
     """Given that the ClassNode has an attr decorator,
     rewrite class attributes as instance attributes
     """
