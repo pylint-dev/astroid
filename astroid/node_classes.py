@@ -1220,7 +1220,18 @@ class LookupMixIn:
             #   1. node's statement always assigns
             #   2. node and self are in the same block (i.e., has the same parent as self)
             if isinstance(node, AssignName):
-                if not optional_assign and stmt.parent is mystmt.parent:
+                if isinstance(stmt, ExceptHandler):
+                    # If node's statement is an ExceptHandler, then it is the variable
+                    # bound to the caught exception. If self is not contained within
+                    # the exception handler block, node should override previous assignments;
+                    # otherwise, node should be ignored, as an exception variable
+                    # is local to the handler block.
+                    if stmt.parent_of(self):
+                        _stmts = []
+                        _stmt_parents = []
+                    else:
+                        continue
+                elif not optional_assign and stmt.parent is mystmt.parent:
                     _stmts = []
                     _stmt_parents = []
             elif isinstance(node, DelName):
