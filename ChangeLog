@@ -11,6 +11,10 @@ What's New in astroid 2.6.5?
 ============================
 Release date: TBA
 
+* Fix a crash when there would be a 'TypeError object does not support
+  item assignment' in the code we parse.
+
+  Closes PyCQA/pylint#4439
 
 
 What's New in astroid 2.6.4?
