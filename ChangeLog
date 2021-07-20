@@ -13,6 +13,10 @@ Release date: TBA
 
 * Added support to infer return type of ``typing.cast()``
 
+* Fix variable lookup's handling of exclusive statements
+
+  Closes PyCQA/pylint#3711
+
 
 What's New in astroid 2.6.5?
 ============================

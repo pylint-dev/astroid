@@ -1211,17 +1211,26 @@ class LookupMixIn:
                 if not (optional_assign or are_exclusive(_stmts[pindex], node)):
                     del _stmt_parents[pindex]
                     del _stmts[pindex]
+
+            # If self and node are exclusive, then we can ignore node
+            if are_exclusive(self, node):
+                continue
+
             if isinstance(node, AssignName):
+                # Remove all previously stored assignments if:
+                #   1. node's statement always assigns
+                #   2. node has the same parent as self (i.e., they're in the same block)
                 if not optional_assign and stmt.parent is mystmt.parent:
                     _stmts = []
                     _stmt_parents = []
             elif isinstance(node, DelName):
+                # Remove all previously stored assignments
                 _stmts = []
                 _stmt_parents = []
                 continue
-            if not are_exclusive(self, node):
-                _stmts.append(node)
-                _stmt_parents.append(stmt.parent)
+            # Add the new assignment
+            _stmts.append(node)
+            _stmt_parents.append(stmt.parent)
         return _stmts
 
 
