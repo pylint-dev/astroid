@@ -1216,10 +1216,10 @@ class LookupMixIn:
             if are_exclusive(self, node):
                 continue
 
+            # An AssignName node overrides previous assignments if:
+            #   1. node's statement always assigns
+            #   2. node and self are in the same block (i.e., has the same parent as self)
             if isinstance(node, AssignName):
-                # Remove all previously stored assignments if:
-                #   1. node's statement always assigns
-                #   2. node has the same parent as self (i.e., they're in the same block)
                 if not optional_assign and stmt.parent is mystmt.parent:
                     _stmts = []
                     _stmt_parents = []
@@ -1230,7 +1230,16 @@ class LookupMixIn:
                 continue
             # Add the new assignment
             _stmts.append(node)
-            _stmt_parents.append(stmt.parent)
+            if isinstance(node, Arguments) or isinstance(node.parent, Arguments):
+                # Special case for _stmt_parents when node is a function parameter;
+                # in this case, stmt is the enclosing FunctionDef, which is what we
+                # want to add to _stmt_parents, not stmt.parent. This case occurs when
+                # node is an Arguments node (representing varargs or kwargs parameter),
+                # and when node.parent is an Arguments node (other parameters).
+                # See issue #180.
+                _stmt_parents.append(stmt)
+            else:
+                _stmt_parents.append(stmt.parent)
         return _stmts
 
 

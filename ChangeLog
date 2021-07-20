@@ -17,6 +17,10 @@ Release date: TBA
 
   Closes PyCQA/pylint#3711
 
+* Fix variable lookup's handling of function parameters
+
+  Closes PyCQA/astroid#180
+
 
 What's New in astroid 2.6.5?
 ============================
