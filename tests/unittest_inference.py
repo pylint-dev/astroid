@@ -6155,6 +6155,20 @@ def test_issue926_binop_referencing_same_name_is_not_uninferable():
     assert inferred[0].value == 3
 
 
+def test_pylint_issue_4692_attribute_inference_error_in_infer_import_from():
+    """https://github.com/PyCQA/pylint/issues/4692"""
+    code = """
+import click
+
+
+for name, item in click.__dict__.items():
+    _ = isinstance(item, click.Command) and item != 'foo'
+    """
+    node = extract_node(code)
+    with pytest.raises(InferenceError):
+        list(node.infer())
+
+
 def test_issue_1090_infer_yield_type_base_class():
     code = """
 import contextlib
