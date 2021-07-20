@@ -35,24 +35,24 @@ def attr_attributes_transform(node):
     # Prevents https://github.com/PyCQA/pylint/issues/1884
     node.locals["__attrs_attrs__"] = [Unknown(parent=node)]
 
-    for cdefbodynode in node.body:
-        if not isinstance(cdefbodynode, (Assign, AnnAssign)):
+    for cdef_body_node in node.body:
+        if not isinstance(cdef_body_node, (Assign, AnnAssign)):
             continue
-        if isinstance(cdefbodynode.value, Call):
-            if cdefbodynode.value.func.as_string() not in ATTRIB_NAMES:
+        if isinstance(cdef_body_node.value, Call):
+            if cdef_body_node.value.func.as_string() not in ATTRIB_NAMES:
                 continue
         else:
             continue
         targets = (
-            cdefbodynode.targets
-            if hasattr(cdefbodynode, "targets")
-            else [cdefbodynode.target]
+            cdef_body_node.targets
+            if hasattr(cdef_body_node, "targets")
+            else [cdef_body_node.target]
         )
         for target in targets:
             rhs_node = Unknown(
-                lineno=cdefbodynode.lineno,
-                col_offset=cdefbodynode.col_offset,
-                parent=cdefbodynode,
+                lineno=cdef_body_node.lineno,
+                col_offset=cdef_body_node.col_offset,
+                parent=cdef_body_node,
             )
             if isinstance(target, AssignName):
                 # Could be a subscript if the code analysed is
