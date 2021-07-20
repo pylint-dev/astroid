@@ -18,7 +18,7 @@
 import functools
 import unittest
 
-from astroid import builder, nodes, scoped_nodes
+from astroid import builder, nodes, scoped_nodes, test_utils
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -742,6 +742,112 @@ class LookupControlFlowTest(unittest.TestCase):
         _, stmts = x_name.lookup("x")
         self.assertEqual(len(stmts), 1)
         self.assertEqual(stmts[0].lineno, 3)
+
+    def test_assign_after_param(self):
+        """When an assignment statement overwrites a function parameter, only the
+        assignment is returned, even when the variable and assignment do not have
+        the same parent.
+        """
+        code = """
+            def f1(x):
+                x = 100
+                print(x)
+
+            def f2(x):
+                x = 100
+                if True:
+                    print(x)
+        """
+        astroid = builder.parse(code)
+        x_name1, x_name2 = (
+            n for n in astroid.nodes_of_class(nodes.Name) if n.name == "x"
+        )
+        _, stmts1 = x_name1.lookup("x")
+        self.assertEqual(len(stmts1), 1)
+        self.assertEqual(stmts1[0].lineno, 3)
+
+        _, stmts2 = x_name2.lookup("x")
+        self.assertEqual(len(stmts2), 1)
+        self.assertEqual(stmts2[0].lineno, 7)
+
+    def test_assign_after_kwonly_param(self):
+        """When an assignment statement overwrites a function keyword-only parameter,
+        only the assignment is returned, even when the variable and assignment do
+        not have the same parent.
+        """
+        code = """
+            def f1(*, x):
+                x = 100
+                print(x)
+
+            def f2(*, x):
+                x = 100
+                if True:
+                    print(x)
+        """
+        astroid = builder.parse(code)
+        x_name1, x_name2 = (
+            n for n in astroid.nodes_of_class(nodes.Name) if n.name == "x"
+        )
+        _, stmts1 = x_name1.lookup("x")
+        self.assertEqual(len(stmts1), 1)
+        self.assertEqual(stmts1[0].lineno, 3)
+
+        _, stmts2 = x_name2.lookup("x")
+        self.assertEqual(len(stmts2), 1)
+        self.assertEqual(stmts2[0].lineno, 7)
+
+    @test_utils.require_version(minver="3.8")
+    def test_assign_after_posonly_param(self):
+        """When an assignment statement overwrites a function positional-only parameter,
+        only the assignment is returned, even when the variable and assignment do
+        not have the same parent.
+        """
+        code = """
+            def f1(x, /):
+                x = 100
+                print(x)
+
+            def f2(x, /):
+                x = 100
+                if True:
+                    print(x)
+        """
+        astroid = builder.parse(code)
+        x_name1, x_name2 = (
+            n for n in astroid.nodes_of_class(nodes.Name) if n.name == "x"
+        )
+        _, stmts1 = x_name1.lookup("x")
+        self.assertEqual(len(stmts1), 1)
+        self.assertEqual(stmts1[0].lineno, 3)
+
+        _, stmts2 = x_name2.lookup("x")
+        self.assertEqual(len(stmts2), 1)
+        self.assertEqual(stmts2[0].lineno, 7)
+
+    def test_assign_after_args_param(self):
+        """When an assignment statement overwrites a function parameter, only the
+        assignment is returned.
+        """
+        code = """
+            def f(*args, **kwargs):
+                args = [100]
+                kwargs = {}
+                if True:
+                    print(args, kwargs)
+        """
+        astroid = builder.parse(code)
+        x_name = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "args"][0]
+        _, stmts1 = x_name.lookup("args")
+        self.assertEqual(len(stmts1), 1)
+        self.assertEqual(stmts1[0].lineno, 3)
+
+        x_name = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "kwargs"][
+            0
+        ]
+        _, stmts2 = x_name.lookup("kwargs")
+        self.assertEqual(len(stmts2), 1)
+        self.assertEqual(stmts2[0].lineno, 4)
 
 
 if __name__ == "__main__":

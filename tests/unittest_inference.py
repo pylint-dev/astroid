@@ -4805,6 +4805,24 @@ class ArgumentsTest(unittest.TestCase):
             inferred = next(node.infer())
             self.assertEqual(inferred, util.Uninferable)
 
+    def test_args_overwritten(self):
+        # https://github.com/PyCQA/astroid/issues/180
+        node = extract_node(
+            """
+        next = 42
+        def wrapper(next=next):
+             next = 24
+             def test():
+                 return next
+             return test
+        wrapper()() #@
+        """
+        )
+        inferred = node.inferred()
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.Const, inferred[0])
+        self.assertEqual(inferred[0].value, 24)
+
 
 class SliceTest(unittest.TestCase):
     def test_slice(self):
