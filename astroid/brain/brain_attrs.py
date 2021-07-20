@@ -7,7 +7,7 @@ Without this hook pylint reports unsupported-assignment-operation
 for attrs classes
 """
 from astroid.manager import AstroidManager
-from astroid.node_classes import AnnAssign, Assign, Call, Unknown
+from astroid.node_classes import AnnAssign, Assign, AssignName, Call, Unknown
 from astroid.scoped_nodes import ClassDef
 
 ATTRIB_NAMES = frozenset(("attr.ib", "attrib", "attr.attrib"))
@@ -49,14 +49,17 @@ def attr_attributes_transform(node):
             else [cdefbodynode.target]
         )
         for target in targets:
-
             rhs_node = Unknown(
                 lineno=cdefbodynode.lineno,
                 col_offset=cdefbodynode.col_offset,
                 parent=cdefbodynode,
             )
-            node.locals[target.name] = [rhs_node]
-            node.instance_attrs[target.name] = [rhs_node]
+            if isinstance(target, AssignName):
+                # Could be a subscript if the code analysed is
+                # i = Optional[str] = ""
+                # See https://github.com/PyCQA/pylint/issues/4439
+                node.locals[target.name] = [rhs_node]
+                node.instance_attrs[target.name] = [rhs_node]
 
 
 AstroidManager().register_transform(
