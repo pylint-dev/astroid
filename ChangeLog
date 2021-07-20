@@ -16,6 +16,11 @@ Release date: TBA
 
   Closes PyCQA/pylint#4439
 
+* Fix a crash when a AttributeInferenceError was raised when
+ failing to find the real name in infer_import_from.
+
+  Closes PyCQA/pylint#4692
+
 
 What's New in astroid 2.6.4?
 ============================

@@ -273,8 +273,11 @@ def infer_import_from(self, context=None, asname=True):
     if name is None:
         raise InferenceError(node=self, context=context)
     if asname:
-        name = self.real_name(name)
-
+        try:
+            name = self.real_name(name)
+        except AttributeInferenceError as exc:
+            # See https://github.com/PyCQA/pylint/issues/4692
+            raise InferenceError(node=self, context=context) from exc
     try:
         module = self.do_import_module()
     except AstroidBuildingError as exc:
