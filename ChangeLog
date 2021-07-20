@@ -7,11 +7,20 @@ What's New in astroid 2.7.0?
 Release date: TBA
 
 
-What's New in astroid 2.6.4?
+What's New in astroid 2.6.5?
 ============================
 Release date: TBA
 
 
+
+What's New in astroid 2.6.4?
+============================
+Release date: 2021-07-19
+
+* Fix a crash when a StopIteration was raised when inferring
+  a faulty function in a context manager.
+
+  Closes PyCQA/pylint#4723
 
 What's New in astroid 2.6.3?
 ============================
