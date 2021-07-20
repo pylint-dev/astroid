@@ -21,6 +21,8 @@ Release date: TBA
 
   Closes PyCQA/astroid#180
 
+* Fix variable lookup's handling of except clause variables
+
 
 What's New in astroid 2.6.5?
 ============================

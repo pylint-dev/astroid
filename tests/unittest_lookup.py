@@ -849,6 +849,174 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts2), 1)
         self.assertEqual(stmts2[0].lineno, 4)
 
+    def test_except_var_in_block(self):
+        """When the variable bound to an exception in an except clause, it is returned
+        when that variable is used inside the except block.
+        """
+        code = """
+            try:
+                1 / 0
+            except ZeroDivisionError as e:
+                print(e)
+        """
+        astroid = builder.parse(code)
+        x_name = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "e"][0]
+        _, stmts = x_name.lookup("e")
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].lineno, 4)
+
+    def test_except_var_in_block_overwrites(self):
+        """When the variable bound to an exception in an except clause, it is returned
+        when that variable is used inside the except block, and replaces any previous
+        assignments.
+        """
+        code = """
+            e = 0
+            try:
+                1 / 0
+            except ZeroDivisionError as e:
+                print(e)
+        """
+        astroid = builder.parse(code)
+        x_name = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "e"][0]
+        _, stmts = x_name.lookup("e")
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].lineno, 5)
+
+    def test_except_var_in_multiple_blocks(self):
+        """When multiple variables with the same name are bound to an exception
+        in an except clause, and the variable is used inside the except block,
+        only the assignment from the corresponding except clause is returned.
+        """
+        code = """
+            e = 0
+            try:
+                1 / 0
+            except ZeroDivisionError as e:
+                print(e)
+            except NameError as e:
+                print(e)
+        """
+        astroid = builder.parse(code)
+        x_names = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "e"]
+
+        _, stmts1 = x_names[0].lookup("e")
+        self.assertEqual(len(stmts1), 1)
+        self.assertEqual(stmts1[0].lineno, 5)
+
+        _, stmts2 = x_names[1].lookup("e")
+        self.assertEqual(len(stmts2), 1)
+        self.assertEqual(stmts2[0].lineno, 7)
+
+    def test_except_var_after_block_single(self):
+        """When the variable bound to an exception in an except clause, it is NOT returned
+        when that variable is used after the except block.
+        """
+        code = """
+            try:
+                1 / 0
+            except NameError as e:
+                pass
+            print(e)
+        """
+        astroid = builder.parse(code)
+        x_name = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "e"][0]
+        _, stmts = x_name.lookup("e")
+        self.assertEqual(len(stmts), 0)
+
+    def test_except_var_after_block_multiple(self):
+        """When the variable bound to an exception in multiple except clauses, it is NOT returned
+        when that variable is used after the except blocks.
+        """
+        code = """
+            try:
+                1 / 0
+            except NameError as e:
+                pass
+            except ZeroDivisionError as e:
+                pass
+            print(e)
+        """
+        astroid = builder.parse(code)
+        x_name = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "e"][0]
+        _, stmts = x_name.lookup("e")
+        self.assertEqual(len(stmts), 0)
+
+    def test_except_assign_in_block(self):
+        """When a variable is assigned in an except block, it is returned
+        when that variable is used in the except block.
+        """
+        code = """
+            try:
+                1 / 0
+            except ZeroDivisionError as e:
+                x = 10
+                print(x)
+        """
+        astroid = builder.parse(code)
+        x_name = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "x"][0]
+        _, stmts = x_name.lookup("x")
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].lineno, 5)
+
+    def test_except_assign_in_block_multiple(self):
+        """When a variable is assigned in multiple except blocks, and the variable is
+        used in one of the blocks, only the assignments in that block are returned.
+        """
+        code = """
+            try:
+                1 / 0
+            except ZeroDivisionError:
+                x = 10
+            except NameError:
+                x = 100
+                print(x)
+        """
+        astroid = builder.parse(code)
+        x_name = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "x"][0]
+        _, stmts = x_name.lookup("x")
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].lineno, 7)
+
+    def test_except_assign_after_block(self):
+        """When a variable is assigned in an except clause, it is returned
+        when that variable is used after the except block.
+        """
+        code = """
+            try:
+                1 / 0
+            except ZeroDivisionError:
+                x = 10
+            except NameError:
+                x = 100
+            print(x)
+        """
+        astroid = builder.parse(code)
+        x_name = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "x"][0]
+        _, stmts = x_name.lookup("x")
+        self.assertEqual(len(stmts), 2)
+        self.assertCountEqual([stmt.lineno for stmt in stmts], [5, 7])
+
+    def test_except_assign_after_block_overwritten(self):
+        """When a variable is assigned in an except clause, it is not returned
+        when it is reassigned and used after the except block.
+        """
+        code = """
+            try:
+                1 / 0
+            except ZeroDivisionError:
+                x = 10
+            except NameError:
+                x = 100
+            x = 1000
+            print(x)
+        """
+        astroid = builder.parse(code)
+        x_name = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "x"][0]
+        _, stmts = x_name.lookup("x")
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].lineno, 8)
+
 
 if __name__ == "__main__":
     unittest.main()
