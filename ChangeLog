@@ -7,9 +7,15 @@ What's New in astroid 2.7.0?
 Release date: TBA
 
 
-What's New in astroid 2.6.5?
+What's New in astroid 2.6.6?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 2.6.5?
+============================
+Release date: 2021-07-21
 
 * Fix a crash when there would be a 'TypeError object does not support
   item assignment' in the code we parse.
