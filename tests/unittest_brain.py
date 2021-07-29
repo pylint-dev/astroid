@@ -1817,14 +1817,14 @@ class TypingBrain(unittest.TestCase):
         class A:
             pass
 
-        b = list()
+        b = 42
         a = cast(A, b)
         a
         """
         )
         inferred = next(node.infer())
-        assert isinstance(inferred, bases.Instance)
-        assert inferred.name == "list"
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 42
 
     def test_typing_cast_attribute(self):
         node = builder.extract_node(
@@ -1833,14 +1833,14 @@ class TypingBrain(unittest.TestCase):
         class A:
             pass
 
-        b = list()
+        b = 42
         a = typing.cast(A, b)
         a
         """
         )
         inferred = next(node.infer())
-        assert isinstance(inferred, bases.Instance)
-        assert inferred.name == "list"
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 42
 
 
 class ReBrainTest(unittest.TestCase):

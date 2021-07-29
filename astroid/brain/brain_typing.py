@@ -370,11 +370,18 @@ def infer_typing_cast(
     node: Call, ctx: context.InferenceContext = None
 ) -> typing.Iterator[NodeNG]:
     """Infer call to cast() returning same type as casted-from var"""
+    if not isinstance(node.func, (Name, Attribute)):
+        raise UseInferenceDefault
+
     try:
         func = next(node.func.infer(context=ctx))
     except InferenceError as exc:
         raise UseInferenceDefault from exc
-    if func.qname() != "typing.cast" or len(node.args) != 2:
+    if (
+        not isinstance(func, FunctionDef)
+        or func.qname() != "typing.cast"
+        or len(node.args) != 2
+    ):
         raise UseInferenceDefault
 
     return node.args[1].infer(context=ctx)
