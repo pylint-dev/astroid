@@ -1810,6 +1810,38 @@ class TypingBrain(unittest.TestCase):
             self.assertIsInstance(inferred, nodes.ClassDef)
             self.assertIsInstance(inferred.getattr("__iter__")[0], nodes.FunctionDef)
 
+    def test_typing_cast(self):
+        node = builder.extract_node(
+            """
+        from typing import cast
+        class A:
+            pass
+
+        b = 42
+        a = cast(A, b)
+        a
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 42
+
+    def test_typing_cast_attribute(self):
+        node = builder.extract_node(
+            """
+        import typing
+        class A:
+            pass
+
+        b = 42
+        a = typing.cast(A, b)
+        a
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 42
+
 
 class ReBrainTest(unittest.TestCase):
     def test_regex_flags(self):

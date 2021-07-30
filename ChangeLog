@@ -11,6 +11,7 @@ What's New in astroid 2.6.6?
 ============================
 Release date: TBA
 
+* Added support to infer return type of ``typing.cast()``
 
 
 What's New in astroid 2.6.5?
