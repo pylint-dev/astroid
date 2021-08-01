@@ -260,7 +260,10 @@ class PartialFunction(scoped_nodes.FunctionDef):
     def __init__(
         self, call, name=None, doc=None, lineno=None, col_offset=None, parent=None
     ):
-        super().__init__(name, doc, lineno, col_offset, parent)
+        super().__init__(name, doc, lineno, col_offset, parent=None)
+        # A typical FunctionDef automatically adds its name to the parent scope,
+        # but a partial should not, so defer setting parent until after init
+        self.parent = parent
         self.filled_positionals = len(call.positional_arguments[1:])
         self.filled_args = call.positional_arguments[1:]
         self.filled_keywords = call.keyword_arguments
