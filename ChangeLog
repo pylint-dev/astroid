@@ -44,6 +44,10 @@ Release date: 2021-07-19
 
 * Added ``If.is_sys_guard`` and ``If.is_typing_guard`` helper methods
 
+* Fix handling of classes with duplicated bases with the same name
+
+  Closes PyCQA/astroid#1088
+
 * Fix a bad inferenece type for yield values inside of a derived class.
 
   Closes PyCQA/astroid#1090

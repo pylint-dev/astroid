@@ -2230,5 +2230,16 @@ def test_ancestor_with_generic():
     ]
 
 
+def test_slots_duplicate_bases_issue_1089():
+    astroid = builder.parse(
+        """
+            class First(object, object): #@
+                pass
+        """
+    )
+    with pytest.raises(NotImplementedError):
+        astroid["First"].slots()
+
+
 if __name__ == "__main__":
     unittest.main()

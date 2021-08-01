@@ -42,6 +42,7 @@ Lambda, GeneratorExp, DictComp and SetComp to some extent).
 import builtins
 import io
 import itertools
+import typing
 from typing import List, Optional
 
 from astroid import bases
@@ -2906,9 +2907,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :rtype: list(str) or None
         """
 
-        def grouped_slots():
+        def grouped_slots(
+            mro: List["ClassDef"],
+        ) -> typing.Iterator[Optional[node_classes.NodeNG]]:
             # Not interested in object, since it can't have slots.
-            for cls in self.mro()[:-1]:
+            for cls in mro[:-1]:
                 try:
                     cls_slots = cls._slots()
                 except NotImplementedError:
@@ -2923,7 +2926,14 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 "The concept of slots is undefined for old-style classes."
             )
 
-        slots = list(grouped_slots())
+        try:
+            mro = self.mro()
+        except MroError as e:
+            raise NotImplementedError(
+                "Cannot get slots while parsing mro fails."
+            ) from e
+
+        slots = list(grouped_slots(mro))
         if not all(slot is not None for slot in slots):
             return None
 
