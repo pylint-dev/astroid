@@ -57,7 +57,6 @@ from astroid.exceptions import (
 from astroid.manager import AstroidManager
 
 if sys.version_info >= (3, 8):
-    # pylint: disable=no-name-in-module
     from typing import Literal
 else:
     from typing_extensions import Literal
@@ -611,7 +610,7 @@ class NodeNG:
         if last_child is None:
             return self.fromlineno
 
-        return last_child.tolineno  # pylint: disable=no-member
+        return last_child.tolineno
 
     def _fixed_source_line(self) -> Optional[int]:
         """Attempt to find the line that this node appears on.

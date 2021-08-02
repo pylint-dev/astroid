@@ -46,7 +46,6 @@ from astroid.exceptions import (
 )
 
 if sys.version_info >= (3, 8):
-    # pylint: disable=no-name-in-module
     from typing import Literal
 else:
     from typing_extensions import Literal
@@ -796,7 +795,7 @@ def match_mapping_assigned_stmts(
     is Uninferable.
     """
     return
-    yield  # pylint: disable=unreachable
+    yield
 
 
 nodes.MatchMapping.assigned_stmts = match_mapping_assigned_stmts
@@ -813,7 +812,7 @@ def match_star_assigned_stmts(
     is Uninferable.
     """
     return
-    yield  # pylint: disable=unreachable
+    yield
 
 
 nodes.MatchStar.assigned_stmts = match_star_assigned_stmts

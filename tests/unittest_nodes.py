@@ -117,13 +117,13 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
     def test_module_as_string(self):
         """check as_string on a whole module prepared to be returned identically"""
         module = resources.build_file("data/module.py", "data.module")
-        with open(resources.find("data/module.py")) as fobj:
+        with open(resources.find("data/module.py"), encoding="utf-8") as fobj:
             self.assertMultiLineEqual(module.as_string(), fobj.read())
 
     def test_module2_as_string(self):
         """check as_string on a whole module prepared to be returned identically"""
         module2 = resources.build_file("data/module2.py", "data.module2")
-        with open(resources.find("data/module2.py")) as fobj:
+        with open(resources.find("data/module2.py"), encoding="utf-8") as fobj:
             self.assertMultiLineEqual(module2.as_string(), fobj.read())
 
     def test_as_string(self):
@@ -215,7 +215,7 @@ y = (3).imag
         self.assertEqual(ast.as_string().strip(), code.strip())
 
     def test_operator_precedence(self):
-        with open(resources.find("data/operator_precedence.py")) as f:
+        with open(resources.find("data/operator_precedence.py"), encoding="utf-8") as f:
             for code in f:
                 self.check_as_string_ast_equality(code)
 

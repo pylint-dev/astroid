@@ -181,7 +181,7 @@ class ModPathFromFileTest(unittest.TestCase):
             self.addCleanup(os.remove, path_to_include)
         except OSError:
             pass
-        with open(real_secret_path, "w"):
+        with open(real_secret_path, "w", encoding="utf-8"):
             pass
         os.symlink(real_secret_path, symlink_secret_path)
         self.addCleanup(os.remove, real_secret_path)
