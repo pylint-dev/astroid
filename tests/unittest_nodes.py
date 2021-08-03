@@ -16,8 +16,8 @@
 # Copyright (c) 2019 Alex Hall <alex.mojaki@gmail.com>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Federico Bond <federicobond@gmail.com>
 # Copyright (c) 2021 hippo91 <guillaume.peillex@gmail.com>
 

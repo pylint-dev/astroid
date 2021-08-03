@@ -17,9 +17,9 @@
 # Copyright (c) 2018 Daniel Martin <daniel.martin@crowdstrike.com>
 # Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
+# Copyright (c) 2019, 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2019-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2019 Stanislav Levin <slev@altlinux.org>
-# Copyright (c) 2019 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
