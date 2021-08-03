@@ -7,9 +7,15 @@ What's New in astroid 2.7.0?
 Release date: TBA
 
 
-What's New in astroid 2.6.6?
+What's New in astroid 2.6.7?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 2.6.6?
+============================
+Release date: 2021-08-03
 
 * Added support to infer return type of ``typing.cast()``
 
@@ -23,6 +29,9 @@ Release date: TBA
 
 * Fix variable lookup's handling of except clause variables
 
+* Fix handling of classes with duplicated bases with the same name
+
+  Closes PyCQA/astroid#1088
 
 What's New in astroid 2.6.5?
 ============================
@@ -53,10 +62,6 @@ What's New in astroid 2.6.3?
 Release date: 2021-07-19
 
 * Added ``If.is_sys_guard`` and ``If.is_typing_guard`` helper methods
-
-* Fix handling of classes with duplicated bases with the same name
-
-  Closes PyCQA/astroid#1088
 
 * Fix a bad inferenece type for yield values inside of a derived class.
 
