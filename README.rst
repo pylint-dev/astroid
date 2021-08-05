@@ -3,6 +3,7 @@ Astroid
 
 .. image:: https://coveralls.io/repos/github/PyCQA/astroid/badge.svg?branch=main
     :target: https://coveralls.io/github/PyCQA/astroid?branch=main
+    :alt: Coverage badge from coveralls.io
 
 .. image:: https://readthedocs.org/projects/astroid/badge/?version=latest
     :target: http://astroid.readthedocs.io/en/latest/?badge=latest
