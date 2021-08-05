@@ -28,12 +28,14 @@ import functools
 import keyword
 from textwrap import dedent
 
+import astroid
 from astroid import arguments, inference_tip, nodes, util
 from astroid.builder import AstroidBuilder, extract_node
 from astroid.exceptions import (
     AstroidTypeError,
     AstroidValueError,
     InferenceError,
+    MroError,
     UseInferenceDefault,
 )
 from astroid.manager import AstroidManager
@@ -354,9 +356,7 @@ INT_FLAG_ADDITION_METHODS = """
 
 def infer_enum_class(node):
     """Specific inference for enums."""
-    for basename in node.basenames:
-        # TODO: doesn't handle subclasses yet. This implementation
-        # is a hack to support enums.
+    for basename in (b for cls in node.mro() for b in cls.basenames):
         if basename not in ENUM_BASE_NAMES:
             continue
         if node.root().name == "enum":
@@ -417,7 +417,7 @@ def infer_enum_class(node):
                     # should result in some nice symbolic execution
                     classdef += INT_FLAG_ADDITION_METHODS.format(name=target.name)
 
-                fake = AstroidBuilder(AstroidManager()).string_build(classdef)[
+                fake = AstroidBuilder(AstroidManager(), apply_transforms=False).string_build(classdef)[
                     target.name
                 ]
                 fake.parent = target.parent
@@ -544,6 +544,39 @@ def infer_typing_namedtuple(node, context=None):
     return infer_named_tuple(node, context)
 
 
+def _is_enum_subclass(cls: astroid.ClassDef) -> bool:
+    """Return whether cls is a subclass of an Enum.
+
+    Warning: For efficiency purposes, this function immediately returns False if enum hasn't
+    been imported in the module of the ClassDef. This means it fails to detect an Enum
+    subclass that is imported from a new module and subclassed, e.g.
+
+        # a.py
+        import enum
+
+        class A(enum.Enum):
+            pass
+
+        # b.py
+        from a import A
+
+        class B(A):  # is_enum_subclass returns False
+            attr = 1
+    """
+    mod_locals = cls.root().locals
+    if ('enum' not in mod_locals and
+            all(base not in mod_locals for base in ENUM_BASE_NAMES)):
+        return False
+
+    try:
+        return any(
+            klass.name in ENUM_BASE_NAMES and getattr(klass.root(), "name", None) == "enum"
+            for klass in cls.mro()
+        )
+    except MroError:
+        return False
+
+
 AstroidManager().register_transform(
     nodes.Call, inference_tip(infer_named_tuple), _looks_like_namedtuple
 )
@@ -553,9 +586,7 @@ AstroidManager().register_transform(
 AstroidManager().register_transform(
     nodes.ClassDef,
     infer_enum_class,
-    predicate=lambda cls: any(
-        basename for basename in cls.basenames if basename in ENUM_BASE_NAMES
-    ),
+    predicate=_is_enum_subclass
 )
 AstroidManager().register_transform(
     nodes.ClassDef, inference_tip(infer_typing_namedtuple_class), _has_namedtuple_base
