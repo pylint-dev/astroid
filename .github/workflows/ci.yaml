@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - 2.*
+      - conditional_test_pickle*
   pull_request: ~
 
 env:
