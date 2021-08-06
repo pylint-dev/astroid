@@ -16,7 +16,7 @@ Astroid
    :target: https://results.pre-commit.ci/latest/github/PyCQA/astroid/main
    :alt: pre-commit.ci status
 
-.. |tideliftlogo| image:: https://raw.githubusercontent.com/PyCQA/astroid/main/doc/media/Tidelift_Logos_RGB_Tidelift_Shorthand_On-White.png
+.. |tidelift_logo| image:: https://raw.githubusercontent.com/PyCQA/astroid/main/doc/media/Tidelift_Logos_RGB_Tidelift_Shorthand_On-White.png
    :width: 75
    :height: 60
    :alt: Tidelift
@@ -24,9 +24,9 @@ Astroid
 .. list-table::
    :widths: 10 100
 
-   * - |tideliftlogo|
-     - Professional support for astroid is available as part of the `Tidelift
-       Subscription`_.  Tidelift gives software development teams a single source for
+   * - |tidelift_logo|
+     - Professional support for astroid is available as part of the
+       `Tidelift Subscription`_.  Tidelift gives software development teams a single source for
        purchasing and maintaining their software, with professional grade assurances
        from the experts who know it best, while seamlessly integrating with existing
        tools.
