@@ -55,7 +55,7 @@ Installation
 
 Extract the tarball, jump into the created directory and run::
 
-	pip install .
+    pip install .
 
 
 If you want to do an editable installation, you can run::
@@ -86,5 +86,5 @@ Test
 Tests are in the 'test' subdirectory. To launch the whole tests suite, you can use
 either `tox` or `pytest`::
 
-  tox
-  pytest astroid
+    tox
+    pytest astroid
