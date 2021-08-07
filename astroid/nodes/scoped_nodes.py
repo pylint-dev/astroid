@@ -43,7 +43,7 @@ import builtins
 import io
 import itertools
 import typing
-from collections import OrderedDict
+from collections import defaultdict, OrderedDict
 from typing import List, Optional
 
 from astroid import bases
@@ -1963,8 +1963,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     # a dictionary of class instances attributes
     _astroid_fields = ("decorators", "bases", "keywords", "body")  # name
 
-    all_ancestors = None
-    direct_ancestors = None
+    all_ancestors = {}
+    direct_ancestors = {}
 
     decorators = None
     """The decorators that are applied to this class.
@@ -2335,10 +2335,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :returns: The base classes
         :rtype: iterable(NodeNG)
         """
-        if recurs and self.all_ancestors is not None:
-            yield from self.all_ancestors.keys()
-        elif not recurs and self.direct_ancestors is not None:
-            yield from self.direct_ancestors.keys()
+        if recurs and context in self.all_ancestors:
+            yield from self.all_ancestors[context].keys()
+        elif not recurs and context in self.direct_ancestors:
+            yield from self.direct_ancestors[context].keys()
 
         # FIXME: should be possible to choose the resolution order
         # FIXME: inference make infinite loops possible here
@@ -2351,9 +2351,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             yielded[result] = None
             del yielded[self]
             if recurs:
-                self.all_ancestors = yielded
+                self.all_ancestors[context] = yielded
             else:
-                self.direct_ancestors = yielded
+                self.direct_ancestors[context] = yielded
             yield result
             return
 
@@ -2386,9 +2386,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         del yielded[self]
         if recurs:
-            self.all_ancestors = yielded
+            self.all_ancestors[context] = yielded
         else:
-            self.direct_ancestors = yielded
+            self.direct_ancestors[context] = yielded
 
     def local_attr_ancestors(self, name, context=None):
         """Iterate over the parents that define the given name.
