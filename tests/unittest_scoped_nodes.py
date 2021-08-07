@@ -1040,7 +1040,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         astroid = builder.parse(data)
         past = astroid["Past"]
         attr = past.getattr("attr")
-        self.assertEqual(len(attr), 1)
+        self.assertEqual(len(attr), 1, attr)
         attr1 = attr[0]
         self.assertIsInstance(attr1, nodes.AssignName)
         self.assertEqual(attr1.name, "attr")
