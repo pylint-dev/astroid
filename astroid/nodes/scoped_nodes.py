@@ -43,7 +43,7 @@ import builtins
 import io
 import itertools
 import typing
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict
 from typing import List, Optional
 
 from astroid import bases
