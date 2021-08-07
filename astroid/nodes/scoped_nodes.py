@@ -43,6 +43,7 @@ import builtins
 import io
 import itertools
 import typing
+from collections import OrderedDict
 from typing import List, Optional
 
 from astroid import bases
@@ -2335,23 +2336,26 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :rtype: iterable(NodeNG)
         """
         if recurs and self.all_ancestors is not None:
-            for ancestor in self.all_ancestors:
+            for ancestor in self.all_ancestors.keys():
                 yield ancestor
         elif not recurs and self.direct_ancestors is not None:
-            for ancestor in self.direct_ancestors:
+            for ancestor in self.direct_ancestors.keys():
                 yield ancestor
 
         # FIXME: should be possible to choose the resolution order
         # FIXME: inference make infinite loops possible here
-        yielded = {self}
+        yielded = OrderedDict()
+        yielded[self] = None
         if context is None:
             context = contextmod.InferenceContext()
         if not self.bases and self.qname() != "builtins.object":
             result = builtin_lookup("object")[1][0]
+            yielded[result] = None
+            del yielded[self]
             if recurs:
-                self.all_ancestors = {result}
+                self.all_ancestors = yielded
             else:
-                self.direct_ancestors = {result}
+                self.direct_ancestors = yielded
             yield result
             return
 
@@ -2367,7 +2371,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                         if not baseobj.hide:
                             if baseobj in yielded:
                                 continue
-                            yielded.add(baseobj)
+                            yielded[baseobj] = None
                             yield baseobj
                         if not recurs:
                             continue
@@ -2377,11 +2381,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                                 break
                             if grandpa in yielded:
                                 continue
-                            yielded.add(grandpa)
+                            yielded[grandpa] = None
                             yield grandpa
                 except InferenceError:
                     continue
 
+        del yielded[self]
         if recurs:
             self.all_ancestors = yielded
         else:
