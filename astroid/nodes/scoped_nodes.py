@@ -2336,11 +2336,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :rtype: iterable(NodeNG)
         """
         if recurs and self.all_ancestors is not None:
-            for ancestor in self.all_ancestors.keys():
-                yield ancestor
+            yield from self.all_ancestors.keys()
         elif not recurs and self.direct_ancestors is not None:
-            for ancestor in self.direct_ancestors.keys():
-                yield ancestor
+            yield from self.direct_ancestors.keys()
 
         # FIXME: should be possible to choose the resolution order
         # FIXME: inference make infinite loops possible here
@@ -2391,7 +2389,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             self.all_ancestors = yielded
         else:
             self.direct_ancestors = yielded
-
 
     def local_attr_ancestors(self, name, context=None):
         """Iterate over the parents that define the given name.
