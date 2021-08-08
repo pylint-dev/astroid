@@ -417,9 +417,9 @@ def infer_enum_class(node):
                     # should result in some nice symbolic execution
                     classdef += INT_FLAG_ADDITION_METHODS.format(name=target.name)
 
-                fake = AstroidBuilder(AstroidManager(), apply_transforms=False).string_build(classdef)[
-                    target.name
-                ]
+                fake = AstroidBuilder(
+                    AstroidManager(), apply_transforms=False
+                ).string_build(classdef)[target.name]
                 fake.parent = target.parent
                 for method in node.mymethods():
                     fake.locals[method.name] = [method]
@@ -564,13 +564,15 @@ def _is_enum_subclass(cls: astroid.ClassDef) -> bool:
             attr = 1
     """
     mod_locals = cls.root().locals
-    if ('enum' not in mod_locals and
-            all(base not in mod_locals for base in ENUM_BASE_NAMES)):
+    if "enum" not in mod_locals and all(
+        base not in mod_locals for base in ENUM_BASE_NAMES
+    ):
         return False
 
     try:
         return any(
-            klass.name in ENUM_BASE_NAMES and getattr(klass.root(), "name", None) == "enum"
+            klass.name in ENUM_BASE_NAMES
+            and getattr(klass.root(), "name", None) == "enum"
             for klass in cls.mro()
         )
     except MroError:
@@ -584,9 +586,7 @@ AstroidManager().register_transform(
     nodes.Call, inference_tip(infer_enum), _looks_like_enum
 )
 AstroidManager().register_transform(
-    nodes.ClassDef,
-    infer_enum_class,
-    predicate=_is_enum_subclass
+    nodes.ClassDef, infer_enum_class, predicate=_is_enum_subclass
 )
 AstroidManager().register_transform(
     nodes.ClassDef, inference_tip(infer_typing_namedtuple_class), _has_namedtuple_base
