@@ -2963,8 +2963,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         for stmt in self.bases:
             try:
                 # Find the first non-None inferred base value
-                baseobj = next(b for b in stmt.infer(context=context.clone())
-                               if not (isinstance(b, Const) and b.value is None))
+                baseobj = next(
+                    b
+                    for b in stmt.infer(context=context.clone())
+                    if not (isinstance(b, Const) and b.value is None)
+                )
             except (InferenceError, StopIteration):
                 continue
             if isinstance(baseobj, bases.Instance):
