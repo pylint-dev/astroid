@@ -545,30 +545,7 @@ def infer_typing_namedtuple(node, context=None):
 
 
 def _is_enum_subclass(cls: astroid.ClassDef) -> bool:
-    """Return whether cls is a subclass of an Enum.
-
-    Warning: For efficiency purposes, this function immediately returns False if enum hasn't
-    been imported in the module of the ClassDef. This means it fails to detect an Enum
-    subclass that is imported from a new module and subclassed, e.g.
-
-        # a.py
-        import enum
-
-        class A(enum.Enum):
-            pass
-
-        # b.py
-        from a import A
-
-        class B(A):  # is_enum_subclass returns False
-            attr = 1
-    """
-    mod_locals = cls.root().locals
-    if "enum" not in mod_locals and all(
-        base not in mod_locals for base in ENUM_BASE_NAMES
-    ):
-        return False
-
+    """Return whether cls is a subclass of an Enum."""
     try:
         return any(
             klass.name in ENUM_BASE_NAMES

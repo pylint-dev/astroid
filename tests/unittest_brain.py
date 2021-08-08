@@ -1128,6 +1128,32 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(inferred[0], astroid.Const)
         self.assertEqual(inferred[0].value, "red")
 
+    def test_enum_subclass_different_modules(self):
+        # See Pylint issue #2626
+        astroid.extract_node(
+            """
+        from enum import Enum
+
+        class EnumSubclass(Enum):
+            pass
+        """,
+            "a"
+        )
+        ast_node = astroid.extract_node(
+            """
+        from a import EnumSubclass
+
+        class Color(EnumSubclass):
+            red = 1
+
+        Color.red.value #@
+        """
+        )
+        inferred = ast_node.inferred()
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], astroid.Const)
+        self.assertEqual(inferred[0].value, 1)
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
@@ -1645,7 +1671,7 @@ class TypingBrain(unittest.TestCase):
 
     @test_utils.require_version(minver="3.7")
     def test_typing_generic_slots(self):
-        """Test cache reset for slots if Generic subscript is inferred."""
+        """Test slots for Generic subclass."""
         node = builder.extract_node(
             """
         from typing import Generic, TypeVar
@@ -1657,10 +1683,6 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        assert len(inferred.slots()) == 0
-        # Only after the subscript base is inferred and the inference tip applied,
-        # will slots contain the correct value
-        next(node.bases[0].infer())
         slots = inferred.slots()
         assert len(slots) == 1
         assert isinstance(slots[0], nodes.Const)
