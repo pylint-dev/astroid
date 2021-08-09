@@ -1137,7 +1137,7 @@ class EnumBrainTest(unittest.TestCase):
         class EnumSubclass(Enum):
             pass
         """,
-            "a"
+            "a",
         )
         ast_node = astroid.extract_node(
             """
