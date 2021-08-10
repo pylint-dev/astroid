@@ -7,8 +7,8 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """Astroid brain hints for some of the _io C objects."""
-from astroid import ClassDef
 from astroid.manager import AstroidManager
+from astroid.nodes import ClassDef
 
 BUFFERED = {"BufferedWriter", "BufferedReader"}
 TextIOWrapper = "TextIOWrapper"
