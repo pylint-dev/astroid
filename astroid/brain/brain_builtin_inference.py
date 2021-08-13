@@ -28,7 +28,6 @@ from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
     MroError,
-    NameInferenceError,
     UseInferenceDefault,
 )
 from astroid.manager import AstroidManager
@@ -324,7 +323,7 @@ def _get_elts(arg, context):
 
     try:
         inferred = next(arg.infer(context))
-    except (InferenceError, NameInferenceError, StopIteration) as exc:
+    except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
     if isinstance(inferred, nodes.Dict):
         items = inferred.items
