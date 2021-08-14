@@ -15,6 +15,13 @@ Release date: TBA
   Closes PyCQA/pylint#2224
   Closes PyCQA/pylint#2626
 
+* Add inference tips for dataclass attributes, including dataclasses.field calls.
+  Also add support for InitVar.
+
+  Closes PyCQA/pylint#2600
+  Closes PyCQA/pylint#2698
+  Closes PyCQA/pylint#3405
+  Closes PyCQA/pylint#3794
 
 What's New in astroid 2.6.7?
 ============================
