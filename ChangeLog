@@ -15,6 +15,9 @@ Release date: TBA
   Closes PyCQA/pylint#2224
   Closes PyCQA/pylint#2626
 
+* Adds a brain that deals with dynamic import of `IsolatedAsyncioTestCase` class of the `unittest` module.
+
+  Closes PyCQA/pylint#4060
 
 What's New in astroid 2.6.7?
 ============================

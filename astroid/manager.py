@@ -229,7 +229,6 @@ class AstroidManager:
             except ValueError:
                 continue
             try:
-                # pylint: disable=no-member
                 importer = zipimport.zipimporter(eggpath + ext)
                 # pylint: enable=no-member
                 zmodname = resource.replace(os.path.sep, ".")
