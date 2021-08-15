@@ -791,6 +791,24 @@ class EnumBrainTest(unittest.TestCase):
         test = next(enumeration.igetattr("test"))
         self.assertEqual(test.value, 42)
 
+    def test_user_enum_false_positive(self):
+        # Test that a user-defined class named Enum is not considered a builtin enum.
+        ast_node = astroid.extract_node(
+            """
+        class Enum:
+            pass
+
+        class Color(Enum):
+            red = 1
+
+        Color.red #@
+        """
+        )
+        inferred = ast_node.inferred()
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], astroid.Const)
+        self.assertEqual(inferred[0].value, 1)
+
     def test_ignores_with_nodes_from_body_of_enum(self):
         code = """
         import enum
@@ -1050,6 +1068,91 @@ class EnumBrainTest(unittest.TestCase):
         inferred = next(c_value.infer())
         assert isinstance(inferred, bases.Instance)
         assert inferred.pytype() == ".TrickyEnum.value"
+
+    def test_enum_subclass_member_name(self):
+        ast_node = astroid.extract_node(
+            """
+        from enum import Enum
+
+        class EnumSubclass(Enum):
+            pass
+
+        class Color(EnumSubclass):
+            red = 1
+
+        Color.red.name #@
+        """
+        )
+        inferred = ast_node.inferred()
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], astroid.Const)
+        self.assertEqual(inferred[0].value, "red")
+
+    def test_enum_subclass_member_value(self):
+        ast_node = astroid.extract_node(
+            """
+        from enum import Enum
+
+        class EnumSubclass(Enum):
+            pass
+
+        class Color(EnumSubclass):
+            red = 1
+
+        Color.red.value #@
+        """
+        )
+        inferred = ast_node.inferred()
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], astroid.Const)
+        self.assertEqual(inferred[0].value, 1)
+
+    def test_enum_subclass_member_method(self):
+        # See Pylint issue #2626
+        ast_node = astroid.extract_node(
+            """
+        from enum import Enum
+
+        class EnumSubclass(Enum):
+            def hello_pylint(self) -> str:
+                return self.name
+
+        class Color(EnumSubclass):
+            red = 1
+
+        Color.red.hello_pylint()  #@
+        """
+        )
+        inferred = ast_node.inferred()
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], astroid.Const)
+        self.assertEqual(inferred[0].value, "red")
+
+    def test_enum_subclass_different_modules(self):
+        # See Pylint issue #2626
+        astroid.extract_node(
+            """
+        from enum import Enum
+
+        class EnumSubclass(Enum):
+            pass
+        """,
+            "a",
+        )
+        ast_node = astroid.extract_node(
+            """
+        from a import EnumSubclass
+
+        class Color(EnumSubclass):
+            red = 1
+
+        Color.red.value #@
+        """
+        )
+        inferred = ast_node.inferred()
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], astroid.Const)
+        self.assertEqual(inferred[0].value, 1)
 
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
@@ -1568,7 +1671,7 @@ class TypingBrain(unittest.TestCase):
 
     @test_utils.require_version(minver="3.7")
     def test_typing_generic_slots(self):
-        """Test cache reset for slots if Generic subscript is inferred."""
+        """Test slots for Generic subclass."""
         node = builder.extract_node(
             """
         from typing import Generic, TypeVar
@@ -1580,10 +1683,6 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        assert len(inferred.slots()) == 0
-        # Only after the subscript base is inferred and the inference tip applied,
-        # will slots contain the correct value
-        next(node.bases[0].infer())
         slots = inferred.slots()
         assert len(slots) == 1
         assert isinstance(slots[0], nodes.Const)

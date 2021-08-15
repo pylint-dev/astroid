@@ -63,7 +63,7 @@ from astroid.exceptions import (
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
-from astroid.nodes import node_classes
+from astroid.nodes import Const, node_classes
 
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
@@ -2962,7 +2962,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         for stmt in self.bases:
             try:
-                baseobj = next(stmt.infer(context=context.clone()))
+                # Find the first non-None inferred base value
+                baseobj = next(
+                    b
+                    for b in stmt.infer(context=context.clone())
+                    if not (isinstance(b, Const) and b.value is None)
+                )
             except (InferenceError, StopIteration):
                 continue
             if isinstance(baseobj, bases.Instance):

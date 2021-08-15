@@ -40,7 +40,7 @@ from functools import partial
 
 import pytest
 
-from astroid import MANAGER, builder, nodes, objects, scoped_nodes, test_utils, util
+from astroid import MANAGER, builder, nodes, objects, test_utils, util
 from astroid.bases import BUILTINS, BoundMethod, Generator, Instance, UnboundMethod
 from astroid.exceptions import (
     AttributeInferenceError,
@@ -53,6 +53,7 @@ from astroid.exceptions import (
     ResolveError,
     TooManyLevelsError,
 )
+from astroid.nodes import scoped_nodes
 
 from . import resources
 

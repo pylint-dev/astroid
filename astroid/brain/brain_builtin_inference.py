@@ -21,25 +21,17 @@
 
 from functools import partial
 
-from astroid import (
-    arguments,
-    helpers,
-    inference_tip,
-    nodes,
-    objects,
-    scoped_nodes,
-    util,
-)
+from astroid import arguments, helpers, inference_tip, nodes, objects, util
 from astroid.builder import AstroidBuilder
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
     InferenceError,
     MroError,
-    NameInferenceError,
     UseInferenceDefault,
 )
 from astroid.manager import AstroidManager
+from astroid.nodes import scoped_nodes
 
 OBJECT_DUNDER_NEW = "object.__new__"
 
@@ -331,7 +323,7 @@ def _get_elts(arg, context):
 
     try:
         inferred = next(arg.infer(context))
-    except (InferenceError, NameInferenceError, StopIteration) as exc:
+    except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
     if isinstance(inferred, nodes.Dict):
         items = inferred.items

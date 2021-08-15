@@ -6,7 +6,7 @@ from astroid import helpers
 from astroid.exceptions import UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
-from astroid.node_classes import (
+from astroid.nodes.node_classes import (
     Attribute,
     Call,
     Const,

@@ -18,12 +18,13 @@
 import functools
 import unittest
 
-from astroid import builder, nodes, scoped_nodes, test_utils
+from astroid import builder, nodes, test_utils
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
     NameInferenceError,
 )
+from astroid.nodes.scoped_nodes import builtin_lookup
 
 from . import resources
 
@@ -388,8 +389,8 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(path.lookup("__path__")[1]), 1)
 
     def test_builtin_lookup(self):
-        self.assertEqual(scoped_nodes.builtin_lookup("__dict__")[1], ())
-        intstmts = scoped_nodes.builtin_lookup("int")[1]
+        self.assertEqual(builtin_lookup("__dict__")[1], ())
+        intstmts = builtin_lookup("int")[1]
         self.assertEqual(len(intstmts), 1)
         self.assertIsInstance(intstmts[0], nodes.ClassDef)
         self.assertEqual(intstmts[0].name, "int")

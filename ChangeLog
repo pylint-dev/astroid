@@ -8,6 +8,12 @@ Release date: TBA
 
 * Import from ``astroid.node_classes`` and ``astroid.scoped_nodes`` has been deprecated in favor of
   ``astroid.nodes``. Only the imports from ``astroid.nodes`` will work in astroid 3.0.0.
+  
+* Add support for arbitrary Enum subclass hierachies
+
+  Closes PyCQA/pylint#533
+  Closes PyCQA/pylint#2224
+  Closes PyCQA/pylint#2626
 
 * Adds a brain that deals with dynamic import of `IsolatedAsyncioTestCase` class of the `unittest` module.
 
