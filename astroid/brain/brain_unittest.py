@@ -14,10 +14,14 @@ def IsolatedAsyncioTestCaseImport():
 
     (see https://github.com/PyCQA/pylint/issues/4060)
     """
-    return parse("""
+    return parse(
+        """
     from .async_case import IsolatedAsyncioTestCase
-    """)
+    """
+    )
 
 
 if PY38_PLUS:
-    register_module_extender(AstroidManager(), "unittest", IsolatedAsyncioTestCaseImport)
+    register_module_extender(
+        AstroidManager(), "unittest", IsolatedAsyncioTestCaseImport
+    )
