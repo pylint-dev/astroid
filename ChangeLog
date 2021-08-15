@@ -2,9 +2,21 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.7.0?
+What's New in astroid 2.8.0?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 2.7.1?
+============================
+Release date: TBA
+
+
+
+What's New in astroid 2.7.0?
+============================
+Release date: 2021-08-15
 
 * Import from ``astroid.node_classes`` and ``astroid.scoped_nodes`` has been deprecated in favor of
   ``astroid.nodes``. Only the imports from ``astroid.nodes`` will work in astroid 3.0.0.
@@ -26,12 +38,6 @@ Release date: TBA
 * Adds a brain that deals with dynamic import of `IsolatedAsyncioTestCase` class of the `unittest` module.
 
   Closes PyCQA/pylint#4060
-
-
-What's New in astroid 2.6.7?
-============================
-Release date: TBA
-
 
 
 What's New in astroid 2.6.6?
