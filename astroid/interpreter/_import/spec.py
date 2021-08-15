@@ -291,7 +291,6 @@ def _precache_zipimporters(path=None):
     req_paths = tuple(path or sys.path)
     cached_paths = tuple(pic)
     new_paths = _cached_set_diff(req_paths, cached_paths)
-    # pylint: disable=no-member
     for entry_path in new_paths:
         try:
             pic[entry_path] = zipimport.zipimporter(entry_path)
