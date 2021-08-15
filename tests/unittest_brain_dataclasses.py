@@ -171,7 +171,7 @@ def test_inference_no_annotation():
     assert inferred.instance_attrs == {}
 
     # Both the class and instance can still access the attribute
-    for node in [klass, instance]:
+    for node in (klass, instance):
         inferred = node.inferred()
         assert len(inferred) == 1
         assert isinstance(inferred[0], nodes.Const)
@@ -201,7 +201,7 @@ def test_inference_class_var():
     assert inferred.instance_attrs == {}
 
     # Both the class and instance can still access the attribute
-    for node in [klass, instance]:
+    for node in (klass, instance):
         inferred = node.inferred()
         assert len(inferred) == 1
         assert isinstance(inferred[0], nodes.Const)
@@ -230,7 +230,7 @@ def test_inference_init_var():
     assert inferred.instance_attrs == {}
 
     # Both the class and instance can still access the attribute
-    for node in [klass, instance]:
+    for node in (klass, instance):
         inferred = node.inferred()
         assert len(inferred) == 1
         assert isinstance(inferred[0], nodes.Const)

@@ -186,7 +186,8 @@ def _get_field_default(field_call: Call) -> Union[Tuple[str, NodeNG], None]:
 
     if default is not None and default_factory is None:
         return "default", default
-    elif default is None and default_factory is not None:
+
+    if default is None and default_factory is not None:
         new_call = Call(
             lineno=field_call.lineno,
             col_offset=field_call.col_offset,
@@ -194,8 +195,8 @@ def _get_field_default(field_call: Call) -> Union[Tuple[str, NodeNG], None]:
         )
         new_call.postinit(func=default_factory)
         return "default_factory", new_call
-    else:
-        return None
+
+    return None
 
 
 def _is_class_var(node: NodeNG) -> bool:
@@ -207,15 +208,15 @@ def _is_class_var(node: NodeNG) -> bool:
             return False
 
         return getattr(inferred, "name", "") == "ClassVar"
-    else:
-        # Before Python 3.9, inference returns typing._SpecialForm instead of ClassVar.
-        # Our backup is to inspect the node's structure.
-        return isinstance(node, Subscript) and (
-            isinstance(node.value, Name)
-            and node.value.name == "ClassVar"
-            or isinstance(node.value, Attribute)
-            and node.value.attrname == "ClassVar"
-        )
+
+    # Before Python 3.9, inference returns typing._SpecialForm instead of ClassVar.
+    # Our backup is to inspect the node's structure.
+    return isinstance(node, Subscript) and (
+        isinstance(node.value, Name)
+        and node.value.name == "ClassVar"
+        or isinstance(node.value, Attribute)
+        and node.value.attrname == "ClassVar"
+    )
 
 
 def _is_init_var(node: NodeNG) -> bool:
