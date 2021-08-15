@@ -206,7 +206,7 @@ def _is_class_var(node: NodeNG) -> bool:
         except (InferenceError, StopIteration):
             return False
 
-        return getattr(inferred, "name") == "ClassVar"
+        return getattr(inferred, "name", "") == "ClassVar"
     else:
         # Before Python 3.9, inference returns typing._SpecialForm instead of ClassVar.
         # Our backup is to inspect the node's structure.
@@ -225,7 +225,7 @@ def _is_init_var(node: NodeNG) -> bool:
     except (InferenceError, StopIteration):
         return False
 
-    return getattr(inferred, "name") == "InitVar"
+    return getattr(inferred, "name", "") == "InitVar"
 
 
 if PY37_PLUS:
