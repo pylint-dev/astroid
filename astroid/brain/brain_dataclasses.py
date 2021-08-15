@@ -7,9 +7,19 @@ from typing import Generator, Tuple, Union
 
 from astroid import context, inference_tip
 from astroid.builder import parse
+from astroid.const import PY37_PLUS, PY39_PLUS
 from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
-from astroid.nodes.node_classes import AnnAssign, AssignName, Call, NodeNG, Unknown
+from astroid.nodes.node_classes import (
+    AnnAssign,
+    AssignName,
+    Attribute,
+    Call,
+    Name,
+    NodeNG,
+    Subscript,
+    Unknown,
+)
 from astroid.nodes.scoped_nodes import ClassDef, FunctionDef
 from astroid.util import Uninferable
 
@@ -190,12 +200,22 @@ def _get_field_default(field_call: Call) -> Union[Tuple[str, NodeNG], None]:
 
 def _is_class_var(node: NodeNG) -> bool:
     """Return True if node is a ClassVar, with or without subscripting."""
-    try:
-        inferred = next(node.infer())
-    except (InferenceError, StopIteration):
-        return False
+    if PY39_PLUS:
+        try:
+            inferred = next(node.infer())
+        except (InferenceError, StopIteration):
+            return False
 
-    return getattr(inferred, "name") == "ClassVar"
+        return getattr(inferred, "name") == "ClassVar"
+    else:
+        # Before Python 3.9, inference returns typing._SpecialForm instead of ClassVar.
+        # Our backup is to inspect the node's structure.
+        return isinstance(node, Subscript) and (
+            isinstance(node.value, Name)
+            and node.value.name == "ClassVar"
+            or isinstance(node.value, Attribute)
+            and node.value.attrname == "ClassVar"
+        )
 
 
 def _is_init_var(node: NodeNG) -> bool:
@@ -208,18 +228,19 @@ def _is_init_var(node: NodeNG) -> bool:
     return getattr(inferred, "name") == "InitVar"
 
 
-AstroidManager().register_transform(
-    ClassDef, dataclass_transform, is_decorated_with_dataclass
-)
+if PY37_PLUS:
+    AstroidManager().register_transform(
+        ClassDef, dataclass_transform, is_decorated_with_dataclass
+    )
 
-AstroidManager().register_transform(
-    Call,
-    inference_tip(infer_dataclass_field_call, raise_on_overwrite=True),
-    _looks_like_dataclass_field_call,
-)
+    AstroidManager().register_transform(
+        Call,
+        inference_tip(infer_dataclass_field_call, raise_on_overwrite=True),
+        _looks_like_dataclass_field_call,
+    )
 
-AstroidManager().register_transform(
-    Unknown,
-    inference_tip(infer_dataclass_attribute, raise_on_overwrite=True),
-    _looks_like_dataclass_attribute,
-)
+    AstroidManager().register_transform(
+        Unknown,
+        inference_tip(infer_dataclass_attribute, raise_on_overwrite=True),
+        _looks_like_dataclass_attribute,
+    )

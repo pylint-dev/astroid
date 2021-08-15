@@ -6,7 +6,7 @@ from astroid.const import PY37_PLUS
 from astroid.exceptions import InferenceError
 
 if not PY37_PLUS:
-    pytest.mark.skip("Dataclasses were added in 3.7", allow_module_level=True)
+    pytest.skip("Dataclasses were added in 3.7", allow_module_level=True)
 
 
 def test_inference_attribute_no_default():
@@ -158,9 +158,10 @@ def test_inference_no_annotation():
     from dataclasses import dataclass
 
     @dataclass
-    class A:  #@
+    class A:
         name = 'hi'
 
+    A  #@
     A.name  #@
     A().name #@
     """
@@ -187,9 +188,10 @@ def test_inference_class_var():
     from typing import ClassVar
 
     @dataclass
-    class A:  #@
+    class A:
         name: ClassVar[str] = 'hi'
 
+    A #@
     A.name  #@
     A().name #@
     """
@@ -215,9 +217,10 @@ def test_inference_init_var():
     from dataclasses import dataclass, InitVar
 
     @dataclass
-    class A:  #@
+    class A:
         name: InitVar[str] = 'hi'
 
+    A  #@
     A.name  #@
     A().name #@
     """
