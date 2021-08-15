@@ -9,16 +9,9 @@ from astroid import context, inference_tip
 from astroid.builder import parse
 from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
-from astroid.nodes.node_classes import (
-    AnnAssign,
-    AssignName,
-    Call,
-    NodeNG,
-    Unknown,
-)
+from astroid.nodes.node_classes import AnnAssign, AssignName, Call, NodeNG, Unknown
 from astroid.nodes.scoped_nodes import ClassDef, FunctionDef
 from astroid.util import Uninferable
-
 
 DATACLASSES_DECORATORS = frozenset(("dataclass",))
 FIELD_NAME = "field"

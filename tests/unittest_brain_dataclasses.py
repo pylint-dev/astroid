@@ -1,10 +1,9 @@
+import pytest
+
 import astroid
 from astroid import bases, nodes
 from astroid.const import PY37_PLUS
 from astroid.exceptions import InferenceError
-
-import pytest
-
 
 if not PY37_PLUS:
     pytest.mark.skip("Dataclasses were added in 3.7", allow_module_level=True)
