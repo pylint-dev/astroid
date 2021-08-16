@@ -499,7 +499,7 @@ class NodeNG:
 
     def as_string(self) -> str:
         """Get the source code that this node represents."""
-        return AsStringVisitor("    ")(self)
+        return AsStringVisitor()(self)
 
     def repr_tree(
         self,
