@@ -436,7 +436,7 @@ class BoundMethod(UnboundMethod):
         needs to be a tuple of classes
         """
         # pylint: disable=import-outside-toplevel; circular import
-        from astroid.nodes import node_classes
+        from astroid.nodes.node_classes import Pass
 
         # Verify the metaclass
         try:
@@ -507,7 +507,7 @@ class BoundMethod(UnboundMethod):
             col_offset=caller.col_offset,
             parent=caller,
         )
-        empty = node_classes.Pass()
+        empty = Pass()
         cls.postinit(
             bases=bases.elts,
             body=[empty],
