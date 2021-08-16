@@ -97,16 +97,7 @@ def infer_dataclass_attribute(
     if value is not None:
         yield from value.infer(context=ctx)
     if annotation is not None:
-        klass = None
-        try:
-            klass = next(annotation.infer())
-        except (InferenceError, StopIteration):
-            yield Uninferable
-
-        if not isinstance(klass, ClassDef):
-            yield Uninferable
-        else:
-            yield klass.instantiate_class()
+        yield from _infer_instance_from_annotation(annotation, ctx=ctx)
     else:
         yield Uninferable
 
@@ -227,6 +218,44 @@ def _is_init_var(node: NodeNG) -> bool:
         return False
 
     return getattr(inferred, "name", "") == "InitVar"
+
+
+# Allowed typing classes for which we support inferring instances
+_INFERABLE_TYPING_TYPES = frozenset(
+    (
+        "Dict",
+        "FrozenSet",
+        "List",
+        "Set",
+        "Tuple",
+    )
+)
+
+
+def _infer_instance_from_annotation(
+    node: NodeNG, ctx: context.InferenceContext = None
+) -> Generator:
+    """Infer an instance corresponding to the type annotation represented by node.
+
+    Currently has limited support for the typing module.
+    """
+    klass = None
+    try:
+        klass = next(node.infer(context=ctx))
+    except (InferenceError, StopIteration):
+        yield Uninferable
+    if not isinstance(klass, ClassDef):
+        yield Uninferable
+    elif klass.root().name in (
+        "typing",
+        "",
+    ):  # "" because of synthetic nodes in brain_typing.py
+        if klass.name in _INFERABLE_TYPING_TYPES:
+            yield klass.instantiate_class()
+        else:
+            yield Uninferable
+    else:
+        yield klass.instantiate_class()
 
 
 if PY37_PLUS:

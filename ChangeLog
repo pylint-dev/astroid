@@ -12,8 +12,13 @@ What's New in astroid 2.7.1?
 ============================
 Release date: TBA
 
+* When processing dataclass attributes, only do typing inference on collection types.
+  Support for instantiating other typing types is left for the future, if desired.
+
+
 * Fixed LookupMixIn missing from ``astroid.node_classes``.
 
+  Closes #1129
 
 
 What's New in astroid 2.7.0?

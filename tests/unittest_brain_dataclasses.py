@@ -4,6 +4,7 @@ import astroid
 from astroid import bases, nodes
 from astroid.const import PY37_PLUS
 from astroid.exceptions import InferenceError
+from astroid.util import Uninferable
 
 if not PY37_PLUS:
     pytest.skip("Dataclasses were added in 3.7", allow_module_level=True)
@@ -235,3 +236,62 @@ def test_inference_init_var():
         assert len(inferred) == 1
         assert isinstance(inferred[0], nodes.Const)
         assert inferred[0].value == "hi"
+
+
+def test_inference_generic_collection_attribute():
+    """Test that an attribute with a generic collection type from the
+    typing module is inferred correctly.
+    """
+    attr_nodes = astroid.extract_node(
+        """
+    from dataclasses import dataclass, field
+    import typing
+
+    @dataclass
+    class A:
+        dict_prop: typing.Dict[str, str]
+        frozenset_prop: typing.FrozenSet[str]
+        list_prop: typing.List[str]
+        set_prop: typing.Set[str]
+        tuple_prop: typing.Tuple[int, str]
+
+    a = A({}, frozenset(), [], set(), (1, 'hi'))
+    a.dict_prop       #@
+    a.frozenset_prop  #@
+    a.list_prop       #@
+    a.set_prop        #@
+    a.tuple_prop      #@
+    """
+    )
+    names = (
+        "Dict",
+        "FrozenSet",
+        "List",
+        "Set",
+        "Tuple",
+    )
+    for node, name in zip(attr_nodes, names):
+        inferred = next(node.infer())
+        assert isinstance(inferred, bases.Instance)
+        assert inferred.name == name
+
+
+def test_inference_callable_attribute():
+    """Test that an attribute with a Callable annotation is inferred as Uninferable.
+
+    See issue#1129.
+    """
+    instance = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+    from typing import Any, Callable
+
+    @dataclass
+    class A:
+        enabled: Callable[[Any], bool]
+
+    A(lambda x: x == 42).enabled  #@
+    """
+    )
+    inferred = next(instance.infer())
+    assert inferred is Uninferable
