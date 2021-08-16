@@ -361,6 +361,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
 class Module(LocalsDictNodeNG):
     """Class representing an :class:`ast.Module` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('import astroid')
     >>> node
     <Import l.1 at 0x7f23b2e4e5c0>
@@ -829,6 +830,7 @@ class ComprehensionScope(LocalsDictNodeNG):
 class GeneratorExp(ComprehensionScope):
     """Class representing an :class:`ast.GeneratorExp` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('(thing for thing in things if thing)')
     >>> node
     <GeneratorExp l.1 at 0x7f23b2e4e400>
@@ -900,6 +902,7 @@ class GeneratorExp(ComprehensionScope):
 class DictComp(ComprehensionScope):
     """Class representing an :class:`ast.DictComp` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('{k:v for k, v in things if k > v}')
     >>> node
     <DictComp l.1 at 0x7f23b2e41d68>
@@ -981,6 +984,7 @@ class DictComp(ComprehensionScope):
 class SetComp(ComprehensionScope):
     """Class representing an :class:`ast.SetComp` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('{thing for thing in things if thing}')
     >>> node
     <SetComp l.1 at 0x7f23b2e41898>
@@ -1052,6 +1056,7 @@ class SetComp(ComprehensionScope):
 class _ListComp(node_classes.NodeNG):
     """Class representing an :class:`ast.ListComp` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('[thing for thing in things if thing]')
     >>> node
     <ListComp l.1 at 0x7f23b2e418d0>
@@ -1099,6 +1104,7 @@ class _ListComp(node_classes.NodeNG):
 class ListComp(_ListComp, ComprehensionScope):
     """Class representing an :class:`ast.ListComp` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('[thing for thing in things if thing]')
     >>> node
     <ListComp l.1 at 0x7f23b2e418d0>
@@ -1156,6 +1162,7 @@ def _infer_decorator_callchain(node):
 class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     """Class representing an :class:`ast.Lambda` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('lambda arg: arg + 1')
     >>> node
     <Lambda.<lambda> l.1 at 0x7f23b2e41518>
@@ -1337,6 +1344,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     """Class representing an :class:`ast.FunctionDef`.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     ... def my_func(arg):
     ...     return arg + 1
@@ -1833,6 +1841,7 @@ class AsyncFunctionDef(FunctionDef):
     A :class:`AsyncFunctionDef` is an asynchronous function
     created with the `async` keyword.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     async def func(things):
         async for thing in things:
@@ -1947,6 +1956,7 @@ def get_wrapping_class(node):
 class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement):
     """Class representing an :class:`ast.ClassDef` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     class Thing:
         def my_meth(self, arg):
