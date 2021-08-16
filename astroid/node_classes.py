@@ -46,6 +46,7 @@ from astroid.nodes.node_classes import (  # pylint: disable=redefined-builtin (E
     JoinedStr,
     Keyword,
     List,
+    LookupMixIn,
     Match,
     MatchAs,
     MatchCase,
