@@ -2340,7 +2340,7 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
         ''')
     >>> node
     <TryExcept l.2 at 0x7f23b2e9d908>
-    >>> >>> node.handlers
+    >>> node.handlers
     [<ExceptHandler l.4 at 0x7f23b2e9e860>]
     """
 
