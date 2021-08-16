@@ -36,7 +36,7 @@ from astroid.nodes import node_classes, scoped_nodes
 objectmodel = util.lazy_import("interpreter.objectmodel")
 
 
-class FrozenSet(node_classes._BaseContainer):
+class FrozenSet(node_classes.BaseContainer):
     """class representing a FrozenSet composite node"""
 
     def pytype(self):
