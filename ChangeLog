@@ -12,6 +12,7 @@ What's New in astroid 2.7.1?
 ============================
 Release date: TBA
 
+* ``BaseContainer`` is now public, and will replace ``_BaseContainer`` completely in astroid 3.0.
 
 
 What's New in astroid 2.7.0?

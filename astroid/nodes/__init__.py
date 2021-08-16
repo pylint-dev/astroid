@@ -36,6 +36,7 @@ from astroid.nodes.node_classes import (  # pylint: disable=redefined-builtin (E
     Attribute,
     AugAssign,
     Await,
+    BaseContainer,
     BinOp,
     BoolOp,
     Break,
@@ -117,8 +118,11 @@ from astroid.nodes.scoped_nodes import (
     function_to_method,
 )
 
+_BaseContainer = BaseContainer  # TODO Remove for astroid 3.0
+
 ALL_NODE_CLASSES = (
     _BaseContainer,
+    BaseContainer,
     AnnAssign,
     Arguments,
     Assert,

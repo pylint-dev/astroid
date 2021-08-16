@@ -271,7 +271,7 @@ class Statement(NodeNG):
         return None
 
 
-class _BaseContainer(
+class BaseContainer(
     mixins.ParentAssignTypeMixin, NodeNG, bases.Instance, metaclass=abc.ABCMeta
 ):
     """Base class for Set, FrozenSet, Tuple and List."""
@@ -3012,7 +3012,7 @@ class Keyword(NodeNG):
         yield self.value
 
 
-class List(_BaseContainer):
+class List(BaseContainer):
     """Class representing an :class:`ast.List` node.
 
     >>> node = astroid.extract_node('[1, 2, 3]')
@@ -3226,7 +3226,7 @@ class Return(Statement):
         yield self
 
 
-class Set(_BaseContainer):
+class Set(BaseContainer):
     """Class representing an :class:`ast.Set` node.
 
     >>> node = astroid.extract_node('{1, 2, 3}')
@@ -3628,7 +3628,7 @@ class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         yield from self.finalbody
 
 
-class Tuple(_BaseContainer):
+class Tuple(BaseContainer):
     """Class representing an :class:`ast.Tuple` node.
 
     >>> node = astroid.extract_node('(1, 2, 3)')
