@@ -42,9 +42,9 @@ import typing
 from functools import lru_cache
 from typing import Callable, Generator, Optional
 
-from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators, mixins, util
+from astroid.bases import Instance, _infer_stmts
 from astroid.const import Context
 from astroid.exceptions import (
     AstroidIndexError,
@@ -272,7 +272,7 @@ class Statement(NodeNG):
 
 
 class BaseContainer(
-    mixins.ParentAssignTypeMixin, NodeNG, bases.Instance, metaclass=abc.ABCMeta
+    mixins.ParentAssignTypeMixin, NodeNG, Instance, metaclass=abc.ABCMeta
 ):
     """Base class for Set, FrozenSet, Tuple and List."""
 
@@ -382,7 +382,7 @@ class LookupMixIn:
         """
         frame, stmts = self.lookup(name)
         context = contextmod.InferenceContext()
-        return bases._infer_stmts(stmts, context, frame)
+        return _infer_stmts(stmts, context, frame)
 
     def _get_filtered_node_statements(self, nodes):
         statements = [(node, node.statement()) for node in nodes]
@@ -1822,7 +1822,7 @@ class Comprehension(NodeNG):
         yield from self.ifs
 
 
-class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
+class Const(mixins.NoChildrenMixin, NodeNG, Instance):
     """Class representing any constant including num, str, bool, None, bytes.
 
     >>> import astroid
@@ -2124,7 +2124,7 @@ class Delete(mixins.AssignTypeMixin, Statement):
         yield from self.targets
 
 
-class Dict(NodeNG, bases.Instance):
+class Dict(NodeNG, Instance):
     """Class representing an :class:`ast.Dict` node.
 
     A :class:`Dict` is a dictionary that is created with ``{}`` syntax.
