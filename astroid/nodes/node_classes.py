@@ -578,6 +578,7 @@ class AssignName(
     An :class:`AssignName` is the name of something that is assigned to.
     This includes variables defined in a function signature or in a loop.
 
+    >>> import astroid
     >>> node = astroid.extract_node('variable = range(10)')
     >>> node
     <Assign l.1 at 0x7effe1db8550>
@@ -619,6 +620,7 @@ class DelName(
 
     A :class:`DelName` is the name of something that is deleted.
 
+    >>> import astroid
     >>> node = astroid.extract_node("del variable #@")
     >>> list(node.get_children())
     [<DelName.variable l.1 at 0x7effe1da4d30>]
@@ -657,6 +659,7 @@ class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
     A :class:`Name` node is something that is named, but not covered by
     :class:`AssignName` or :class:`DelName`.
 
+    >>> import astroid
     >>> node = astroid.extract_node('range(10)')
     >>> node
     <Call l.1 at 0x7effe1db8710>
@@ -703,6 +706,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
     An :class:`Arguments` node represents that arguments in a
     function definition.
 
+    >>> import astroid
     >>> node = astroid.extract_node('def foo(bar): pass')
     >>> node
     <FunctionDef.foo l.1 at 0x7effe1db8198>
@@ -1082,6 +1086,7 @@ def _format_args(args, defaults=None, annotations=None):
 class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
     """Variation of :class:`ast.Assign` representing assignment to an attribute.
 
+    >>> import astroid
     >>> node = astroid.extract_node('self.attribute = range(10)')
     >>> node
     <Assign l.1 at 0x7effe1d521d0>
@@ -1135,6 +1140,7 @@ class Assert(Statement):
 
     An :class:`Assert` node represents an assert statement.
 
+    >>> import astroid
     >>> node = astroid.extract_node('assert len(things) == 10, "Not enough things"')
     >>> node
     <Assert l.1 at 0x7effe1d527b8>
@@ -1189,6 +1195,7 @@ class Assign(mixins.AssignTypeMixin, Statement):
     An :class:`Assign` is a statement where something is explicitly
     asssigned to.
 
+    >>> import astroid
     >>> node = astroid.extract_node('variable = range(10)')
     >>> node
     <Assign l.1 at 0x7effe1db8550>
@@ -1231,8 +1238,8 @@ class Assign(mixins.AssignTypeMixin, Statement):
         """Do some setup after initialisation.
 
         :param targets: What is being assigned to.
-
         :param value: The value being assigned to the variables.
+        :param type_annotation:
         """
         if targets is not None:
             self.targets = targets
@@ -1257,6 +1264,7 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
 
     An :class:`AnnAssign` is an assignment with a type annotation.
 
+    >>> import astroid
     >>> node = astroid.extract_node('variable: List[int] = range(10)')
     >>> node
     <AnnAssign l.1 at 0x7effe1d4c630>
@@ -1329,6 +1337,7 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
 
     An :class:`AugAssign` is an assignment paired with an operator.
 
+    >>> import astroid
     >>> node = astroid.extract_node('variable += 1')
     >>> node
     <AugAssign l.1 at 0x7effe1db4d68>
@@ -1419,6 +1428,7 @@ class BinOp(NodeNG):
 
     A :class:`BinOp` node is an application of a binary operator.
 
+    >>> import astroid
     >>> node = astroid.extract_node('a + b')
     >>> node
     <BinOp l.1 at 0x7f23b2e8cfd0>
@@ -1507,6 +1517,7 @@ class BoolOp(NodeNG):
 
     A :class:`BoolOp` is an application of a boolean operator.
 
+    >>> import astroid
     >>> node = astroid.extract_node('a and b')
     >>> node
     <BinOp l.1 at 0x7f23b2e71c50>
@@ -1558,6 +1569,7 @@ class BoolOp(NodeNG):
 class Break(mixins.NoChildrenMixin, Statement):
     """Class representing an :class:`ast.Break` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('break')
     >>> node
     <Break l.1 at 0x7f23b2e9e5c0>
@@ -1569,6 +1581,7 @@ class Call(NodeNG):
 
     A :class:`Call` node is a call to a function, method, etc.
 
+    >>> import astroid
     >>> node = astroid.extract_node('function()')
     >>> node
     <Call l.1 at 0x7f23b2e71eb8>
@@ -1644,6 +1657,7 @@ class Compare(NodeNG):
 
     A :class:`Compare` node indicates a comparison.
 
+    >>> import astroid
     >>> node = astroid.extract_node('a <= b <= c')
     >>> node
     <Compare l.1 at 0x7f23b2e9e6d8>
@@ -1722,6 +1736,7 @@ class Comprehension(NodeNG):
     A :class:`Comprehension` indicates the loop inside any type of
     comprehension including generator expressions.
 
+    >>> import astroid
     >>> node = astroid.extract_node('[x for x in some_values]')
     >>> list(node.get_children())
     [<Name.x l.1 at 0x7f23b2e352b0>, <Comprehension l.1 at 0x7f23b2e35320>]
@@ -1810,6 +1825,7 @@ class Comprehension(NodeNG):
 class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
     """Class representing any constant including num, str, bool, None, bytes.
 
+    >>> import astroid
     >>> node = astroid.extract_node('(5, "This is a string.", True, None, b"bytes")')
     >>> node
     <Tuple.tuple l.1 at 0x7f23b2e358d0>
@@ -1940,6 +1956,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
 class Continue(mixins.NoChildrenMixin, Statement):
     """Class representing an :class:`ast.Continue` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('continue')
     >>> node
     <Continue l.1 at 0x7f23b2e35588>
@@ -1952,6 +1969,7 @@ class Decorators(NodeNG):
     A :class:`Decorators` is the decorators that are applied to
     a method or function.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     @property
     def my_property(self):
@@ -2011,6 +2029,7 @@ class Decorators(NodeNG):
 class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
     """Variation of :class:`ast.Delete` representing deletion of an attribute.
 
+    >>> import astroid
     >>> node = astroid.extract_node('del self.attr')
     >>> node
     <Delete l.1 at 0x7f23b2e35f60>
@@ -2066,6 +2085,7 @@ class Delete(mixins.AssignTypeMixin, Statement):
 
     A :class:`Delete` is a ``del`` statement this is deleting something.
 
+    >>> import astroid
     >>> node = astroid.extract_node('del self.attr')
     >>> node
     <Delete l.1 at 0x7f23b2e35f60>
@@ -2109,6 +2129,7 @@ class Dict(NodeNG, bases.Instance):
 
     A :class:`Dict` is a dictionary that is created with ``{}`` syntax.
 
+    >>> import astroid
     >>> node = astroid.extract_node('{1: "1"}')
     >>> node
     <Dict.dict l.1 at 0x7f23b2e35cc0>
@@ -2245,6 +2266,7 @@ class Expr(Statement):
     An :class:`Expr` is any expression that does not have its value used or
     stored.
 
+    >>> import astroid
     >>> node = astroid.extract_node('method()')
     >>> node
     <Call l.1 at 0x7f23b2e352b0>
@@ -2309,6 +2331,7 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
 
     An :class:`ExceptHandler` is an ``except`` block on a try-except.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
         try:
             do_something()
@@ -2425,6 +2448,7 @@ class For(
 ):
     """Class representing an :class:`ast.For` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('for thing in things: print(thing)')
     >>> node
     <For l.1 at 0x7f23b2e8cf28>
@@ -2520,6 +2544,7 @@ class AsyncFor(For):
     An :class:`AsyncFor` is an asynchronous :class:`For` built with
     the ``async`` keyword.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     async def func(things):
         async for thing in things:
@@ -2537,6 +2562,7 @@ class Await(NodeNG):
 
     An :class:`Await` is the ``await`` keyword.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     async def func(things):
         await other_func()
@@ -2584,6 +2610,7 @@ class Await(NodeNG):
 class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
     """Class representing an :class:`ast.ImportFrom` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('from my_package import my_module')
     >>> node
     <ImportFrom l.1 at 0x7f23b2e415c0>
@@ -2687,6 +2714,7 @@ class Attribute(NodeNG):
 class Global(mixins.NoChildrenMixin, Statement):
     """Class representing an :class:`ast.Global` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('global a_global')
     >>> node
     <Global l.1 at 0x7f23b2e9de10>
@@ -2723,6 +2751,7 @@ class Global(mixins.NoChildrenMixin, Statement):
 class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     """Class representing an :class:`ast.If` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('if condition: print(True)')
     >>> node
     <If l.1 at 0x7f23b2e9dd30>
@@ -2817,6 +2846,7 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     def is_sys_guard(self) -> bool:
         """Return True if IF stmt is a sys.version_info guard.
 
+        >>> import astroid
         >>> node = astroid.extract_node('''
         import sys
         if sys.version_info > (3, 8):
@@ -2839,6 +2869,7 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     def is_typing_guard(self) -> bool:
         """Return True if IF stmt is a typing guard.
 
+        >>> import astroid
         >>> node = astroid.extract_node('''
         from typing import TYPE_CHECKING
         if TYPE_CHECKING:
@@ -2854,7 +2885,7 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
 
 class IfExp(NodeNG):
     """Class representing an :class:`ast.IfExp` node.
-
+    >>> import astroid
     >>> node = astroid.extract_node('value if condition else other')
     >>> node
     <IfExp l.1 at 0x7f23b2e9dbe0>
@@ -2918,7 +2949,7 @@ class IfExp(NodeNG):
 
 class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
     """Class representing an :class:`ast.Import` node.
-
+    >>> import astroid
     >>> node = astroid.extract_node('import astroid')
     >>> node
     <Import l.1 at 0x7f23b2e4e5c0>
@@ -2966,6 +2997,7 @@ class Index(NodeNG):
 class Keyword(NodeNG):
     """Class representing an :class:`ast.keyword` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('function(a_kwarg=True)')
     >>> node
     <Call l.1 at 0x7f23b2e9e320>
@@ -3015,6 +3047,7 @@ class Keyword(NodeNG):
 class List(_BaseContainer):
     """Class representing an :class:`ast.List` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('[1, 2, 3]')
     >>> node
     <List.list l.1 at 0x7f23b2e9e128>
@@ -3064,6 +3097,7 @@ class List(_BaseContainer):
 class Nonlocal(mixins.NoChildrenMixin, Statement):
     """Class representing an :class:`ast.Nonlocal` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     def function():
         nonlocal var
@@ -3105,6 +3139,7 @@ class Nonlocal(mixins.NoChildrenMixin, Statement):
 class Pass(mixins.NoChildrenMixin, Statement):
     """Class representing an :class:`ast.Pass` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('pass')
     >>> node
     <Pass l.1 at 0x7f23b2e9e748>
@@ -3114,6 +3149,7 @@ class Pass(mixins.NoChildrenMixin, Statement):
 class Raise(Statement):
     """Class representing an :class:`ast.Raise` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('raise RuntimeError("Something bad happened!")')
     >>> node
     <Raise l.1 at 0x7f23b2e9e828>
@@ -3182,6 +3218,7 @@ class Raise(Statement):
 class Return(Statement):
     """Class representing an :class:`ast.Return` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('return True')
     >>> node
     <Return l.1 at 0x7f23b8211908>
@@ -3229,6 +3266,7 @@ class Return(Statement):
 class Set(_BaseContainer):
     """Class representing an :class:`ast.Set` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('{1, 2, 3}')
     >>> node
     <Set.set l.1 at 0x7f23b2e71d68>
@@ -3246,6 +3284,7 @@ class Set(_BaseContainer):
 class Slice(NodeNG):
     """Class representing an :class:`ast.Slice` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('things[1:3]')
     >>> node
     <Subscript l.1 at 0x7f23b2e71f60>
@@ -3354,6 +3393,7 @@ class Slice(NodeNG):
 class Starred(mixins.ParentAssignTypeMixin, NodeNG):
     """Class representing an :class:`ast.Starred` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('*args')
     >>> node
     <Starred l.1 at 0x7f23b2e41978>
@@ -3401,6 +3441,7 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
 class Subscript(NodeNG):
     """Class representing an :class:`ast.Subscript` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('things[1:3]')
     >>> node
     <Subscript l.1 at 0x7f23b2e71f60>
@@ -3458,6 +3499,7 @@ class Subscript(NodeNG):
 class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     """Class representing an :class:`ast.TryExcept` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
         try:
             do_something()
@@ -3550,6 +3592,7 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
 class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     """Class representing an :class:`ast.TryFinally` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     try:
         do_something()
@@ -3631,6 +3674,7 @@ class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
 class Tuple(_BaseContainer):
     """Class representing an :class:`ast.Tuple` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('(1, 2, 3)')
     >>> node
     <Tuple.tuple l.1 at 0x7f23b2e41780>
@@ -3680,6 +3724,7 @@ class Tuple(_BaseContainer):
 class UnaryOp(NodeNG):
     """Class representing an :class:`ast.UnaryOp` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('-5')
     >>> node
     <UnaryOp l.1 at 0x7f23b2e4e198>
@@ -3756,6 +3801,7 @@ class UnaryOp(NodeNG):
 class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     """Class representing an :class:`ast.While` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     while condition():
         print("True")
@@ -3852,6 +3898,7 @@ class With(
 ):
     """Class representing an :class:`ast.With` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     with open(file_path) as file_:
         print(file_.read())
@@ -3936,6 +3983,7 @@ class AsyncWith(With):
 class Yield(NodeNG):
     """Class representing an :class:`ast.Yield` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('yield True')
     >>> node
     <Yield l.1 at 0x7f23b2e4e5f8>
@@ -3990,6 +4038,7 @@ class FormattedValue(NodeNG):
 
     Represents a :pep:`498` format string.
 
+    >>> import astroid
     >>> node = astroid.extract_node('f"Format {type_}"')
     >>> node
     <JoinedStr l.1 at 0x7f23b2e4ed30>
@@ -4063,6 +4112,7 @@ class FormattedValue(NodeNG):
 class JoinedStr(NodeNG):
     """Represents a list of string expressions to be joined.
 
+    >>> import astroid
     >>> node = astroid.extract_node('f"Format {type_}"')
     >>> node
     <JoinedStr l.1 at 0x7f23b2e4ed30>
@@ -4109,6 +4159,7 @@ class JoinedStr(NodeNG):
 class NamedExpr(mixins.AssignTypeMixin, NodeNG):
     """Represents the assignment from the assignment expression
 
+    >>> import astroid
     >>> module = astroid.parse('if a := 1: pass')
     >>> module.body[0].test
     <NamedExpr l.1 at 0x7f23b2e4ed30>
@@ -4199,6 +4250,7 @@ class EvaluatedObject(NodeNG):
 class Match(Statement):
     """Class representing a :class:`ast.Match` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     match x:
         case 200:
@@ -4239,6 +4291,7 @@ class Pattern(NodeNG):
 class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
     """Class representing a :class:`ast.match_case` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     match x:
         case 200:
@@ -4272,6 +4325,7 @@ class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
 class MatchValue(Pattern):
     """Class representing a :class:`ast.MatchValue` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     match x:
         case 200:
@@ -4299,6 +4353,7 @@ class MatchValue(Pattern):
 class MatchSingleton(Pattern):
     """Class representing a :class:`ast.MatchSingleton` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     match x:
         case True:
@@ -4333,6 +4388,7 @@ class MatchSingleton(Pattern):
 class MatchSequence(Pattern):
     """Class representing a :class:`ast.MatchSequence` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     match x:
         case [1, 2]:
@@ -4364,6 +4420,7 @@ class MatchSequence(Pattern):
 class MatchMapping(mixins.AssignTypeMixin, Pattern):
     """Class representing a :class:`ast.MatchMapping` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     match x:
         case {1: "Hello", 2: "World", 3: _, **rest}:
@@ -4411,6 +4468,7 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
 class MatchClass(Pattern):
     """Class representing a :class:`ast.MatchClass` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     match x:
         case Point2D(0, 0):
@@ -4456,6 +4514,7 @@ class MatchClass(Pattern):
 class MatchStar(mixins.AssignTypeMixin, Pattern):
     """Class representing a :class:`ast.MatchStar` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     match x:
         case [1, *_]:
@@ -4493,6 +4552,7 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
 class MatchAs(mixins.AssignTypeMixin, Pattern):
     """Class representing a :class:`ast.MatchAs` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     match x:
         case [1, a]:
@@ -4549,6 +4609,7 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
 class MatchOr(Pattern):
     """Class representing a :class:`ast.MatchOr` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     match x:
         case 400 | 401 | 402:
