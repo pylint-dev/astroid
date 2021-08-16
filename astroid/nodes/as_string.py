@@ -47,7 +47,7 @@ DOC_NEWLINE = "\0"
 class AsStringVisitor:
     """Visitor to render an Astroid node as a valid python code string"""
 
-    def __init__(self, indent):
+    def __init__(self, indent="    "):
         self.indent = indent
 
     def __call__(self, node):
