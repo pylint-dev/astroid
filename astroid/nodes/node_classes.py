@@ -4158,7 +4158,7 @@ class Unknown(mixins.AssignTypeMixin, NodeNG):
     def qname(self):
         return "Unknown"
 
-    def infer(self, context=None, **kwargs):
+    def _infer(self, context=None, **kwargs):
         """Inference on an Unknown node immediately terminates."""
         yield util.Uninferable
 

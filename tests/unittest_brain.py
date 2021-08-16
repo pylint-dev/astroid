@@ -2965,51 +2965,6 @@ def test_crypt_brain():
         assert attr in module
 
 
-@pytest.mark.skipif(not PY37_PLUS, reason="Dataclasses were added in 3.7")
-def test_dataclasses():
-    code = """
-    import dataclasses
-    from dataclasses import dataclass
-    import typing
-    from typing import ClassVar
-
-    @dataclass
-    class InventoryItem:
-        name: str
-        quantity_on_hand: int = 0
-
-    @dataclasses.dataclass
-    class Other:
-        name: str
-        CONST_1: ClassVar[int] = 42
-        CONST_2: typing.ClassVar[int] = 42
-    """
-
-    module = astroid.parse(code)
-    first = module["InventoryItem"]
-    second = module["Other"]
-
-    name = first.getattr("name")
-    assert len(name) == 1
-    assert isinstance(name[0], astroid.Unknown)
-
-    quantity_on_hand = first.getattr("quantity_on_hand")
-    assert len(quantity_on_hand) == 1
-    assert isinstance(quantity_on_hand[0], astroid.Unknown)
-
-    name = second.getattr("name")
-    assert len(name) == 1
-    assert isinstance(name[0], astroid.Unknown)
-
-    const_1 = second.getattr("CONST_1")
-    assert len(const_1) == 1
-    assert isinstance(const_1[0], astroid.AssignName)
-
-    const_2 = second.getattr("CONST_2")
-    assert len(const_2) == 1
-    assert isinstance(const_2[0], astroid.AssignName)
-
-
 @pytest.mark.parametrize(
     "code,expected_class,expected_value",
     [
