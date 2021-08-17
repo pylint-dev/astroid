@@ -45,11 +45,11 @@ from unittest.mock import patch
 
 import pytest
 
-from astroid import Slice, arguments, builder
+from astroid import Slice, arguments
 from astroid import decorators as decoratorsmod
 from astroid import helpers, nodes, objects, test_utils, util
 from astroid.bases import BUILTINS, BoundMethod, Instance, UnboundMethod
-from astroid.builder import extract_node, parse
+from astroid.builder import AstroidBuilder, extract_node, parse
 from astroid.const import PY38_PLUS, PY39_PLUS
 from astroid.exceptions import (
     AstroidTypeError,
@@ -74,7 +74,7 @@ def get_node_of_class(start_from, klass):
     return next(start_from.nodes_of_class(klass))
 
 
-builder = builder.AstroidBuilder()
+builder = AstroidBuilder()
 
 EXC_MODULE = BUILTINS
 BOOL_SPECIAL_METHOD = "__bool__"
