@@ -29,7 +29,7 @@ def require_version(minver: str = "0.0.0", maxver: str = "4.0.0") -> Callable:
     Skip the test if older.
     """
 
-    def parse(python_version: str) -> Tuple[int]:
+    def parse(python_version: str) -> Tuple[int, ...]:
         try:
             return tuple(int(v) for v in python_version.split("."))
         except ValueError as e:
