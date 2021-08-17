@@ -285,7 +285,7 @@ everything = f""" " \' \r \t \\ {{ }} {'x' + x!r:a} {["'"]!s:{a}}"""
 class _NodeTest(unittest.TestCase):
     """test transformation of If Node"""
 
-    CODE = None
+    CODE = ""
 
     @property
     def astroid(self):
