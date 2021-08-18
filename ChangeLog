@@ -6,7 +6,8 @@ What's New in astroid 2.8.0?
 ============================
 Release date: TBA
 
-
+* ``astroid.const.BUILTINS`` and ``astroid.bases.BUILTINS`` have been removed,
+  simply replace this by the string 'builtins' for better performances.
 
 What's New in astroid 2.7.2?
 ============================

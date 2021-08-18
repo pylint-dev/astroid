@@ -27,7 +27,7 @@ class ObjectsTest(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIsInstance(inferred, objects.FrozenSet)
 
-        self.assertEqual(inferred.pytype(), "%s.frozenset" % bases.BUILTINS)
+        self.assertEqual(inferred.pytype(), "builtins.frozenset")
 
         itered = inferred.itered()
         self.assertEqual(len(itered), 2)
@@ -35,7 +35,7 @@ class ObjectsTest(unittest.TestCase):
         self.assertEqual([const.value for const in itered], [1, 2])
 
         proxied = inferred._proxied
-        self.assertEqual(inferred.qname(), "%s.frozenset" % bases.BUILTINS)
+        self.assertEqual(inferred.qname(), "builtins.frozenset")
         self.assertIsInstance(proxied, nodes.ClassDef)
 
 
@@ -58,15 +58,15 @@ class SuperTests(unittest.TestCase):
         )
         in_static = next(ast_nodes[0].value.infer())
         self.assertIsInstance(in_static, bases.Instance)
-        self.assertEqual(in_static.qname(), "%s.super" % bases.BUILTINS)
+        self.assertEqual(in_static.qname(), "builtins.super")
 
         module_level = next(ast_nodes[1].infer())
         self.assertIsInstance(module_level, bases.Instance)
-        self.assertEqual(in_static.qname(), "%s.super" % bases.BUILTINS)
+        self.assertEqual(in_static.qname(), "builtins.super")
 
         no_arguments = next(ast_nodes[2].infer())
         self.assertIsInstance(no_arguments, bases.Instance)
-        self.assertEqual(no_arguments.qname(), "%s.super" % bases.BUILTINS)
+        self.assertEqual(no_arguments.qname(), "builtins.super")
 
     def test_inferring_unbound_super_doesnt_work(self):
         node = builder.extract_node(
@@ -78,7 +78,7 @@ class SuperTests(unittest.TestCase):
         )
         unbounded = next(node.infer())
         self.assertIsInstance(unbounded, bases.Instance)
-        self.assertEqual(unbounded.qname(), "%s.super" % bases.BUILTINS)
+        self.assertEqual(unbounded.qname(), "builtins.super")
 
     def test_use_default_inference_on_not_inferring_args(self):
         ast_nodes = builder.extract_node(
@@ -91,11 +91,11 @@ class SuperTests(unittest.TestCase):
         )
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, bases.Instance)
-        self.assertEqual(first.qname(), "%s.super" % bases.BUILTINS)
+        self.assertEqual(first.qname(), "builtins.super")
 
         second = next(ast_nodes[1].infer())
         self.assertIsInstance(second, bases.Instance)
-        self.assertEqual(second.qname(), "%s.super" % bases.BUILTINS)
+        self.assertEqual(second.qname(), "builtins.super")
 
     def test_no_arguments_super(self):
         ast_nodes = builder.extract_node(
@@ -239,7 +239,7 @@ class SuperTests(unittest.TestCase):
         )
         inferred = next(node.infer())
         proxied = inferred._proxied
-        self.assertEqual(proxied.qname(), "%s.super" % bases.BUILTINS)
+        self.assertEqual(proxied.qname(), "builtins.super")
         self.assertIsInstance(proxied, nodes.ClassDef)
 
     def test_super_bound_model(self):

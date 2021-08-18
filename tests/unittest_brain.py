@@ -695,7 +695,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
 
         for attr in ("list", "dict"):
             obj = next(module[attr].infer())
-            self.assertEqual(obj.qname(), f"{bases.BUILTINS}.{attr}")
+            self.assertEqual(obj.qname(), f"builtins.{attr}")
 
         # pypy's implementation of array.__spec__ return None. This causes problems for this inference.
         if not hasattr(sys, "pypy_version_info"):
@@ -771,10 +771,9 @@ class EnumBrainTest(unittest.TestCase):
         one = enumeration["one"]
         self.assertEqual(one.pytype(), ".MyEnum.one")
 
-        property_type = f"{bases.BUILTINS}.property"
         for propname in ("name", "value"):
             prop = next(iter(one.getattr(propname)))
-            self.assertIn(property_type, prop.decoratornames())
+            self.assertIn("builtins.property", prop.decoratornames())
 
         meth = one.getattr("mymethod")[0]
         self.assertIsInstance(meth, astroid.FunctionDef)
@@ -861,9 +860,8 @@ class EnumBrainTest(unittest.TestCase):
         one = enumeration["one"]
 
         clazz = one.getattr("__class__")[0]
-        int_type = f"{bases.BUILTINS}.int"
         self.assertTrue(
-            clazz.is_subtype_of(int_type),
+            clazz.is_subtype_of("builtins.int"),
             "IntEnum based enums should be a subtype of int",
         )
 

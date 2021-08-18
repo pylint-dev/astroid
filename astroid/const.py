@@ -1,4 +1,3 @@
-import builtins
 import enum
 import sys
 
@@ -18,5 +17,3 @@ class Context(enum.Enum):
 Load = Context.Load
 Store = Context.Store
 Del = Context.Del
-
-BUILTINS = builtins.__name__  # Could be just 'builtins' ?

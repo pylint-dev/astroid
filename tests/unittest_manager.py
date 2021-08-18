@@ -32,7 +32,6 @@ import pkg_resources
 
 import astroid
 from astroid import manager, test_utils
-from astroid.const import BUILTINS
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 
 from . import resources
@@ -263,22 +262,22 @@ class AstroidManagerTest(
     def test_ast_from_class(self):
         ast = self.manager.ast_from_class(int)
         self.assertEqual(ast.name, "int")
-        self.assertEqual(ast.parent.frame().name, BUILTINS)
+        self.assertEqual(ast.parent.frame().name, "builtins")
 
         ast = self.manager.ast_from_class(object)
         self.assertEqual(ast.name, "object")
-        self.assertEqual(ast.parent.frame().name, BUILTINS)
+        self.assertEqual(ast.parent.frame().name, "builtins")
         self.assertIn("__setattr__", ast)
 
     def test_ast_from_class_with_module(self):
         """check if the method works with the module name"""
         ast = self.manager.ast_from_class(int, int.__module__)
         self.assertEqual(ast.name, "int")
-        self.assertEqual(ast.parent.frame().name, BUILTINS)
+        self.assertEqual(ast.parent.frame().name, "builtins")
 
         ast = self.manager.ast_from_class(object, object.__module__)
         self.assertEqual(ast.name, "object")
-        self.assertEqual(ast.parent.frame().name, BUILTINS)
+        self.assertEqual(ast.parent.frame().name, "builtins")
         self.assertIn("__setattr__", ast)
 
     def test_ast_from_class_attr_error(self):
@@ -307,10 +306,10 @@ class BorgAstroidManagerTC(unittest.TestCase):
         """test that the AstroidManager is really a borg, i.e. that two different
         instances has same cache"""
         first_manager = manager.AstroidManager()
-        built = first_manager.ast_from_module_name(BUILTINS)
+        built = first_manager.ast_from_module_name("builtins")
 
         second_manager = manager.AstroidManager()
-        second_built = second_manager.ast_from_module_name(BUILTINS)
+        second_built = second_manager.ast_from_module_name("builtins")
         self.assertIs(built, second_built)
 
 
