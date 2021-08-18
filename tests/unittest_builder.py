@@ -31,7 +31,7 @@ import unittest
 import pytest
 
 from astroid import Instance, builder, nodes, test_utils, util
-from astroid.const import BUILTINS, PY38_PLUS
+from astroid.const import PY38_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -287,7 +287,7 @@ class BuilderTest(unittest.TestCase):
 
     def test_inspect_build0(self):
         """test astroid tree build from a living object"""
-        builtin_ast = self.manager.ast_from_module_name(BUILTINS)
+        builtin_ast = self.manager.ast_from_module_name("builtins")
         # just check type and object are there
         builtin_ast.getattr("type")
         objectastroid = builtin_ast.getattr("object")[0]
@@ -314,7 +314,7 @@ class BuilderTest(unittest.TestCase):
         self.builder.inspect_build(unittest)
 
     def test_inspect_build_type_object(self):
-        builtin_ast = self.manager.ast_from_module_name(BUILTINS)
+        builtin_ast = self.manager.ast_from_module_name("builtins")
 
         inferred = list(builtin_ast.igetattr("object"))
         self.assertEqual(len(inferred), 1)

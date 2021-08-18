@@ -49,7 +49,7 @@ from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators as decorators_mod
 from astroid import mixins, util
-from astroid.const import BUILTINS, PY39_PLUS
+from astroid.const import PY39_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidTypeError,
@@ -575,7 +575,7 @@ class Module(LocalsDictNodeNG):
         :returns: The name of the type.
         :rtype: str
         """
-        return "%s.module" % BUILTINS
+        return "builtins.module"
 
     def display_type(self):
         """A human readable type of this node.
@@ -1137,9 +1137,9 @@ def _infer_decorator_callchain(node):
     if isinstance(result, bases.Instance):
         result = result._proxied
     if isinstance(result, ClassDef):
-        if result.is_subtype_of("%s.classmethod" % BUILTINS):
+        if result.is_subtype_of("builtins.classmethod"):
             return "classmethod"
-        if result.is_subtype_of("%s.staticmethod" % BUILTINS):
+        if result.is_subtype_of("builtins.staticmethod"):
             return "staticmethod"
     if isinstance(result, FunctionDef):
         if not result.decorators:
@@ -1152,7 +1152,7 @@ def _infer_decorator_callchain(node):
             if (
                 isinstance(decorator, node_classes.Attribute)
                 and isinstance(decorator.expr, node_classes.Name)
-                and decorator.expr.name == BUILTINS
+                and decorator.expr.name == "builtins"
                 and decorator.attrname in BUILTIN_DESCRIPTORS
             ):
                 return decorator.attrname
@@ -1241,8 +1241,8 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :rtype: str
         """
         if "method" in self.type:
-            return "%s.instancemethod" % BUILTINS
-        return "%s.function" % BUILTINS
+            return "builtins.instancemethod"
+        return "builtins.function"
 
     def display_type(self):
         """A human readable type of this node.
@@ -1541,7 +1541,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             if (
                 isinstance(node, node_classes.Attribute)
                 and isinstance(node.expr, node_classes.Name)
-                and node.expr.name == BUILTINS
+                and node.expr.name == "builtins"
                 and node.attrname in BUILTIN_DESCRIPTORS
             ):
                 return node.attrname
@@ -1571,9 +1571,9 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                     for ancestor in inferred.ancestors():
                         if not isinstance(ancestor, ClassDef):
                             continue
-                        if ancestor.is_subtype_of("%s.classmethod" % BUILTINS):
+                        if ancestor.is_subtype_of("builtins.classmethod"):
                             return "classmethod"
-                        if ancestor.is_subtype_of("%s.staticmethod" % BUILTINS):
+                        if ancestor.is_subtype_of("builtins.staticmethod"):
                             return "staticmethod"
             except InferenceError:
                 pass
@@ -2162,8 +2162,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :rtype: str
         """
         if self.newstyle:
-            return "%s.type" % BUILTINS
-        return "%s.classobj" % BUILTINS
+            return "builtins.type"
+        return "builtins.classobj"
 
     def display_type(self):
         """A human readable type of this node.
@@ -2250,7 +2250,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
     def infer_call_result(self, caller, context=None):
         """infer what a class is returning when called"""
-        if self.is_subtype_of(f"{BUILTINS}.type", context) and len(caller.args) == 3:
+        if self.is_subtype_of("builtins.type", context) and len(caller.args) == 3:
             result = self._infer_type_call(caller, context)
             yield result
             return
@@ -2666,7 +2666,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         def _valid_getattr(node):
             root = node.root()
-            return root.name != BUILTINS and getattr(root, "pure_python", None)
+            return root.name != "builtins" and getattr(root, "pure_python", None)
 
         try:
             return _valid_getattr(self.getattr("__getattr__", context)[0])

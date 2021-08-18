@@ -45,7 +45,7 @@ from typing import Callable, Generator, Optional
 from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators, mixins, util
-from astroid.const import BUILTINS, Context
+from astroid.const import Context
 from astroid.exceptions import (
     AstroidIndexError,
     AstroidTypeError,
@@ -2191,7 +2191,7 @@ class Dict(NodeNG, bases.Instance):
         :returns: The name of the type.
         :rtype: str
         """
-        return "%s.dict" % BUILTINS
+        return "builtins.dict"
 
     def get_children(self):
         """Get the key and value nodes below this node.
@@ -3083,7 +3083,7 @@ class List(BaseContainer):
         :returns: The name of the type.
         :rtype: str
         """
-        return "%s.list" % BUILTINS
+        return "builtins.list"
 
     def getitem(self, index, context=None):
         """Get an item from this node.
@@ -3278,7 +3278,7 @@ class Set(BaseContainer):
         :returns: The name of the type.
         :rtype: str
         """
-        return "%s.set" % BUILTINS
+        return "builtins.set"
 
 
 class Slice(NodeNG):
@@ -3356,7 +3356,7 @@ class Slice(NodeNG):
         :returns: The name of the type.
         :rtype: str
         """
-        return "%s.slice" % BUILTINS
+        return "builtins.slice"
 
     def igetattr(self, attrname, context=None):
         """Infer the possible values of the given attribute on the slice.
@@ -3710,7 +3710,7 @@ class Tuple(BaseContainer):
         :returns: The name of the type.
         :rtype: str
         """
-        return "%s.tuple" % BUILTINS
+        return "builtins.tuple"
 
     def getitem(self, index, context=None):
         """Get an item from this node.

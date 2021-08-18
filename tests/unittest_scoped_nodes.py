@@ -41,7 +41,7 @@ from functools import partial
 import pytest
 
 from astroid import MANAGER, builder, nodes, objects, test_utils, util
-from astroid.bases import BUILTINS, BoundMethod, Generator, Instance, UnboundMethod
+from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
 from astroid.exceptions import (
     AttributeInferenceError,
     DuplicateBasesError,
@@ -368,7 +368,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         method = self.module2["AbstractClass"]["to_override"]
         self.assertTrue(method.is_abstract(pass_is_abstract=False))
         self.assertEqual(method.qname(), "data.module2.AbstractClass.to_override")
-        self.assertEqual(method.pytype(), "%s.instancemethod" % BUILTINS)
+        self.assertEqual(method.pytype(), "builtins.instancemethod")
         method = self.module2["AbstractClass"]["return_something"]
         self.assertFalse(method.is_abstract(pass_is_abstract=False))
         # non regression : test raise "string" doesn't cause an exception in is_abstract
@@ -417,7 +417,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         """
         astroid = builder.parse(data)
         g = list(astroid["f"].ilookup("g"))[0]
-        self.assertEqual(g.pytype(), "%s.function" % BUILTINS)
+        self.assertEqual(g.pytype(), "builtins.function")
 
     def test_lambda_qname(self):
         astroid = builder.parse("lmbd = lambda: None", __name__)
@@ -1391,7 +1391,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         A1 = astroid.getattr("A1")[0]
         B1 = astroid.getattr("B1")[0]
         C1 = astroid.getattr("C1")[0]
-        object_ = MANAGER.astroid_cache[BUILTINS].getattr("object")[0]
+        object_ = MANAGER.astroid_cache["builtins"].getattr("object")[0]
         self.assertEqual(
             cm.exception.mros, [[B1, C1, A1, object_], [C1, B1, A1, object_]]
         )

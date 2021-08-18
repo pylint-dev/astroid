@@ -21,7 +21,6 @@ Various helper utilities.
 from astroid import bases
 from astroid import context as contextmod
 from astroid import manager, nodes, raw_building, util
-from astroid.const import BUILTINS
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
@@ -40,7 +39,7 @@ def _build_proxy_class(cls_name, builtins):
 
 def _function_type(function, builtins):
     if isinstance(function, scoped_nodes.Lambda):
-        if function.root().name == BUILTINS:
+        if function.root().name == "builtins":
             cls_name = "builtin_function_or_method"
         else:
             cls_name = "function"
