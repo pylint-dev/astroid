@@ -1,10 +1,7 @@
 attrs
 types-attrs
 nose
-# Don't test numpy with py310
-# Until a wheel is uploaded to pypi, this would require
-# additional dependencies to build it from source
-numpy; python_version < "3.10"
+numpy
 python-dateutil
 types-python-dateutil
 six
