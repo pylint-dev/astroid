@@ -27,19 +27,25 @@ inference utils.
 
 import collections
 
-from astroid import context as contextmod
-from astroid import decorators, util
+from astroid import decorators
 from astroid.const import PY310_PLUS
+from astroid.context import (
+    CallContext,
+    InferenceContext,
+    bind_context_to_node,
+    copy_context,
+)
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
     InferenceError,
     NameInferenceError,
 )
+from astroid.util import Uninferable, lazy_descriptor, lazy_import
 
-objectmodel = util.lazy_import("interpreter.objectmodel")
-helpers = util.lazy_import("helpers")
-manager = util.lazy_import("manager")
+objectmodel = lazy_import("interpreter.objectmodel")
+helpers = lazy_import("helpers")
+manager = lazy_import("manager")
 
 
 # TODO: check if needs special treatment
@@ -78,7 +84,7 @@ def _is_property(meth, context=None):
     if PROPERTIES.intersection(decoratornames):
         return True
     stripped = {
-        name.split(".")[-1] for name in decoratornames if name is not util.Uninferable
+        name.split(".")[-1] for name in decoratornames if name is not Uninferable
     }
     if any(name in stripped for name in POSSIBLE_PROPERTIES):
         return True
@@ -88,7 +94,7 @@ def _is_property(meth, context=None):
         return False
     for decorator in meth.decorators.nodes or ():
         inferred = helpers.safe_infer(decorator, context=context)
-        if inferred is None or inferred is util.Uninferable:
+        if inferred is None or inferred is Uninferable:
             continue
         if inferred.__class__.__name__ == "ClassDef":
             for base_class in inferred.bases:
@@ -135,10 +141,10 @@ def _infer_stmts(stmts, context, frame=None):
         context = context.clone()
     else:
         name = None
-        context = contextmod.InferenceContext()
+        context = InferenceContext()
 
     for stmt in stmts:
-        if stmt is util.Uninferable:
+        if stmt is Uninferable:
             yield stmt
             inferred = True
             continue
@@ -150,7 +156,7 @@ def _infer_stmts(stmts, context, frame=None):
         except NameInferenceError:
             continue
         except InferenceError:
-            yield util.Uninferable
+            yield Uninferable
             inferred = True
     if not inferred:
         raise InferenceError(
@@ -167,11 +173,11 @@ def _infer_method_result_truth(instance, method_name, context):
     meth = next(instance.igetattr(method_name, context=context), None)
     if meth and hasattr(meth, "infer_call_result"):
         if not meth.callable():
-            return util.Uninferable
+            return Uninferable
         try:
-            context.callcontext = contextmod.CallContext(args=[], callee=meth)
+            context.callcontext = CallContext(args=[], callee=meth)
             for value in meth.infer_call_result(instance, context=context):
-                if value is util.Uninferable:
+                if value is Uninferable:
                     return value
                 try:
                     inferred = next(value.infer(context=context))
@@ -180,7 +186,7 @@ def _infer_method_result_truth(instance, method_name, context):
                 return inferred.bool_value()
         except InferenceError:
             pass
-    return util.Uninferable
+    return Uninferable
 
 
 class BaseInstance(Proxy):
@@ -220,7 +226,7 @@ class BaseInstance(Proxy):
     def igetattr(self, name, context=None):
         """inferred getattr"""
         if not context:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
         try:
             context.lookupname = name
             # avoid recursively inferring the same attr on the same class
@@ -266,10 +272,10 @@ class BaseInstance(Proxy):
 
     def infer_call_result(self, caller, context=None):
         """infer what a class instance is returning when called"""
-        context = contextmod.bind_context_to_node(context, self)
+        context = bind_context_to_node(context, self)
         inferred = False
         for node in self._proxied.igetattr("__call__", context):
-            if node is util.Uninferable or not node.callable():
+            if node is Uninferable or not node.callable():
                 continue
             for res in node.infer_call_result(caller, context):
                 inferred = True
@@ -282,7 +288,7 @@ class Instance(BaseInstance):
     """A special node representing a class instance."""
 
     # pylint: disable=unnecessary-lambda
-    special_attributes = util.lazy_descriptor(lambda: objectmodel.InstanceModel())
+    special_attributes = lazy_descriptor(lambda: objectmodel.InstanceModel())
 
     def __repr__(self):
         return "<Instance of {}.{} at 0x{}>".format(
@@ -318,7 +324,7 @@ class Instance(BaseInstance):
              nonzero. If a class defines neither __len__() nor __bool__(),
              all its instances are considered true.
         """
-        context = context or contextmod.InferenceContext()
+        context = context or InferenceContext()
         context.boundnode = self
 
         try:
@@ -333,12 +339,12 @@ class Instance(BaseInstance):
 
     def getitem(self, index, context=None):
         # TODO: Rewrap index to Const for this case
-        new_context = contextmod.bind_context_to_node(context, self)
+        new_context = bind_context_to_node(context, self)
         if not context:
             context = new_context
         method = next(self.igetattr("__getitem__", context=context), None)
         # Create a new CallContext for providing index as an argument.
-        new_context.callcontext = contextmod.CallContext(args=[index], callee=method)
+        new_context.callcontext = CallContext(args=[index], callee=method)
         if not isinstance(method, BoundMethod):
             raise InferenceError(
                 "Could not find __getitem__ for {node!r}.", node=self, context=context
@@ -356,7 +362,7 @@ class UnboundMethod(Proxy):
     """a special node representing a method not bound to an instance"""
 
     # pylint: disable=unnecessary-lambda
-    special_attributes = util.lazy_descriptor(lambda: objectmodel.UnboundMethodModel())
+    special_attributes = lazy_descriptor(lambda: objectmodel.UnboundMethodModel())
 
     def __repr__(self):
         frame = self._proxied.parent.frame()
@@ -402,7 +408,7 @@ class UnboundMethod(Proxy):
                 infer = caller.args[0].infer(context=node_context)
             else:
                 infer = []
-            return (Instance(x) if x is not util.Uninferable else x for x in infer)
+            return (Instance(x) if x is not Uninferable else x for x in infer)
         return self._proxied.infer_call_result(caller, context)
 
     def bool_value(self, context=None):
@@ -413,7 +419,7 @@ class BoundMethod(UnboundMethod):
     """a special node representing a method bound to an instance"""
 
     # pylint: disable=unnecessary-lambda
-    special_attributes = util.lazy_descriptor(lambda: objectmodel.BoundMethodModel())
+    special_attributes = lazy_descriptor(lambda: objectmodel.BoundMethodModel())
 
     def __init__(self, proxy, bound):
         UnboundMethod.__init__(self, proxy)
@@ -520,7 +526,7 @@ class BoundMethod(UnboundMethod):
         return cls
 
     def infer_call_result(self, caller, context=None):
-        context = contextmod.bind_context_to_node(context, self.bound)
+        context = bind_context_to_node(context, self.bound)
         if (
             self.bound.__class__.__name__ == "ClassDef"
             and self.bound.name == "type"
@@ -544,12 +550,12 @@ class Generator(BaseInstance):
     Proxied class is set once for all in raw_building.
     """
 
-    special_attributes = util.lazy_descriptor(objectmodel.GeneratorModel)
+    special_attributes = lazy_descriptor(objectmodel.GeneratorModel)
 
     def __init__(self, parent=None, generator_initial_context=None):
         super().__init__()
         self.parent = parent
-        self._call_context = contextmod.copy_context(generator_initial_context)
+        self._call_context = copy_context(generator_initial_context)
 
     @decorators.cached
     def infer_yield_types(self):
