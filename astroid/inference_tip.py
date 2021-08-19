@@ -8,13 +8,21 @@ import typing
 
 import wrapt
 
-# pylint: disable=dangerous-default-value
 from astroid.exceptions import InferenceOverwriteError
 from astroid.nodes import NodeNG
 
+InferFn = typing.Callable[..., typing.Any]
+
+_cache: typing.Dict[typing.Tuple[InferFn, NodeNG], typing.Any] = {}
+
+
+def clear_inference_tip_cache():
+    """Clear the inference tips cache."""
+    _cache.clear()
+
 
 @wrapt.decorator
-def _inference_tip_cached(func, instance, args, kwargs, _cache={}):  # noqa:B006
+def _inference_tip_cached(func, instance, args, kwargs):
     """Cache decorator used for inference tips"""
     node = args[0]
     try:
@@ -27,12 +35,10 @@ def _inference_tip_cached(func, instance, args, kwargs, _cache={}):  # noqa:B006
         return original
 
 
-# pylint: enable=dangerous-default-value
-
 
 def inference_tip(
-    infer_function: typing.Callable, raise_on_overwrite: bool = False
-) -> typing.Callable:
+    infer_function: InferFn, raise_on_overwrite: bool = False
+) -> InferFn:
     """Given an instance specific inference function, return a function to be
     given to AstroidManager().register_transform to set this inference function.
 
@@ -55,7 +61,7 @@ def inference_tip(
     """
 
     def transform(
-        node: NodeNG, infer_function: typing.Callable = infer_function
+        node: NodeNG, infer_function: InferFn = infer_function
     ) -> NodeNG:
         if (
             raise_on_overwrite

@@ -13,6 +13,8 @@ What's New in astroid 2.7.2?
 Release date: TBA
 
 * ``BaseContainer`` is now public, and will replace ``_BaseContainer`` completely in astroid 3.0.
+* The call cache used by inference functions produced by ``inference_tip``
+  can now be cleared via ``clear_inference_tip_cache``.
 
 
 What's New in astroid 2.7.1?
