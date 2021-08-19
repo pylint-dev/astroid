@@ -15,6 +15,9 @@ Release date: TBA
 
 * ``BaseContainer`` is now public, and will replace ``_BaseContainer`` completely in astroid 3.0.
 
+* Add inference for dataclass initializer method.
+
+    Closes PyCQA/pylint#3201
 
 What's New in astroid 2.7.1?
 ============================

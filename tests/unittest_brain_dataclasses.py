@@ -295,3 +295,281 @@ def test_inference_callable_attribute():
     )
     inferred = next(instance.infer())
     assert inferred is Uninferable
+
+
+def test_inference_inherited():
+    """Test that an attribute is inherited from a superclass dataclass."""
+    klass1, instance1, klass2, instance2 = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+
+    @dataclass
+    class A:
+        value: int
+        name: str = "hi"
+
+    @dataclass
+    class B(A):
+        new_attr: bool = True
+
+    B.value  #@
+    B(1).value  #@
+    B.name  #@
+    B(1).name  #@
+    """
+    )
+    with pytest.raises(InferenceError):  # B.value is not defined
+        klass1.inferred()
+
+    inferred = instance1.inferred()
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].name == "int"
+
+    inferred = klass2.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == "hi"
+
+    inferred = instance2.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == "hi"
+    assert isinstance(inferred[1], bases.Instance)
+    assert inferred[1].name == "str"
+
+
+def test_init_empty():
+    """Test init for a dataclass with no attributes"""
+    node = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+
+    @dataclass
+    class A:
+        pass
+
+    A.__init__  #@
+    """
+    )
+    init = next(node.infer())
+    assert [a.name for a in init.args.args] == ["self"]
+
+
+def test_init_no_defaults():
+    """Test init for a dataclass with attributes and no defaults"""
+    node = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+    from typing import List
+
+    @dataclass
+    class A:
+        x: int
+        y: str
+        z: List[bool]
+
+    A.__init__  #@
+    """
+    )
+    init = next(node.infer())
+    assert [a.name for a in init.args.args] == ["self", "x", "y", "z"]
+    assert [a.as_string() if a else None for a in init.args.annotations] == [
+        None,
+        "int",
+        "str",
+        "List[bool]",
+    ]
+
+
+def test_init_defaults():
+    """Test init for a dataclass with attributes and some defaults"""
+    node = astroid.extract_node(
+        """
+    from dataclasses import dataclass, field
+    from typing import List
+
+    @dataclass
+    class A:
+        w: int
+        x: int = 10
+        y: str = field(default="hi")
+        z: List[bool] = field(default_factory=list)
+
+    A.__init__  #@
+    """
+    )
+    init = next(node.infer())
+    assert [a.name for a in init.args.args] == ["self", "w", "x", "y", "z"]
+    assert [a.as_string() if a else None for a in init.args.annotations] == [
+        None,
+        "int",
+        "int",
+        "str",
+        "List[bool]",
+    ]
+    assert [a.as_string() if a else None for a in init.args.defaults] == [
+        "10",
+        "'hi'",
+        "_HAS_DEFAULT_FACTORY",
+    ]
+
+
+def test_init_initvar():
+    """Test init for a dataclass with attributes and an InitVar"""
+    node = astroid.extract_node(
+        """
+    from dataclasses import dataclass, InitVar
+    from typing import List
+
+    @dataclass
+    class A:
+        x: int
+        y: str
+        init_var: InitVar[int]
+        z: List[bool]
+
+    A.__init__  #@
+    """
+    )
+    init = next(node.infer())
+    assert [a.name for a in init.args.args] == ["self", "x", "y", "init_var", "z"]
+    assert [a.as_string() if a else None for a in init.args.annotations] == [
+        None,
+        "int",
+        "str",
+        "int",
+        "List[bool]",
+    ]
+
+
+def test_init_decorator_init_false():
+    """Test that no init is generated when init=False is passed to
+    dataclass decorator.
+    """
+    node = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+    from typing import List
+
+    @dataclass(init=False)
+    class A:
+        x: int
+        y: str
+        z: List[bool]
+
+    A.__init__ #@
+    """
+    )
+    init = next(node.infer())
+    assert init._proxied.parent.name == "object"
+
+
+def test_init_field_init_false():
+    """Test init for a dataclass with attributes with a field value where init=False
+    (these attributes should not be included in the initializer).
+    """
+    node = astroid.extract_node(
+        """
+    from dataclasses import dataclass, field
+    from typing import List
+
+    @dataclass
+    class A:
+        x: int
+        y: str
+        z: List[bool] = field(init=False)
+
+    A.__init__  #@
+    """
+    )
+    init = next(node.infer())
+    assert [a.name for a in init.args.args] == ["self", "x", "y"]
+    assert [a.as_string() if a else None for a in init.args.annotations] == [
+        None,
+        "int",
+        "str",
+    ]
+
+
+def test_init_override():
+    """Test init for a dataclass overrides a superclass initializer.
+
+    Based on https://github.com/PyCQA/pylint/issues/3201
+    """
+    node = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+    from typing import List
+
+    class A:
+        arg0: str = None
+
+        def __init__(self, arg0):
+            raise NotImplementedError
+
+    @dataclass
+    class B(A):
+        arg1: int = None
+        arg2: str = None
+
+    B.__init__  #@
+    """
+    )
+    init = next(node.infer())
+    assert [a.name for a in init.args.args] == ["self", "arg1", "arg2"]
+    assert [a.as_string() if a else None for a in init.args.annotations] == [
+        None,
+        "int",
+        "str",
+    ]
+
+
+def test_init_attributes_from_superclasses():
+    """Test init for a dataclass that inherits and overrides attributes from superclasses.
+
+    Based on https://github.com/PyCQA/pylint/issues/3201
+    """
+    node = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+    from typing import List
+
+    @dataclass
+    class A:
+        arg0: float
+        arg2: str
+
+    @dataclass
+    class B(A):
+        arg1: int
+        arg2: list  # Overrides arg2 from A
+
+    B.__init__  #@
+    """
+    )
+    init = next(node.infer())
+    assert [a.name for a in init.args.args] == ["self", "arg0", "arg2", "arg1"]
+    assert [a.as_string() if a else None for a in init.args.annotations] == [
+        None,
+        "float",
+        "list",  # not str
+        "int",
+    ]
+
+
+def test_invalid_init():
+    """Test that astroid doesn't generate an initializer when attribute order is invalid."""
+    node = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+
+    @dataclass
+    class A:
+        arg1: float = 0.0
+        arg2: str
+
+    A.__init__  #@
+    """
+    )
+    init = next(node.infer())
+    assert init._proxied.parent.name == "object"
