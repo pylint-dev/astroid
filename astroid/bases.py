@@ -44,6 +44,7 @@ manager = util.lazy_import("manager")
 
 # TODO: check if needs special treatment
 BOOL_SPECIAL_METHOD = "__bool__"
+BUILTINS = "builtins"  # TODO Remove in 2.8
 
 PROPERTIES = {"builtins.property", "abc.abstractproperty"}
 if PY310_PLUS:
