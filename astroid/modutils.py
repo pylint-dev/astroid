@@ -46,6 +46,7 @@ import itertools
 import os
 import platform
 import sys
+import types
 from distutils.errors import DistutilsPlatformError  # pylint: disable=import-error
 from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
 
@@ -197,7 +198,7 @@ def _cache_normalize_path(path):
         return result
 
 
-def load_module_from_name(dotted_name):
+def load_module_from_name(dotted_name: str) -> types.ModuleType:
     """Load a Python module from its name.
 
     :type dotted_name: str

@@ -28,6 +28,7 @@ from various source and using a cache of built modules)
 """
 
 import os
+import types
 import zipimport
 from typing import ClassVar
 
@@ -138,7 +139,7 @@ class AstroidManager:
 
         return build_namespace_package_module(modname, path)
 
-    def _can_load_extension(self, modname):
+    def _can_load_extension(self, modname: str) -> bool:
         if self.always_load_extensions:
             return True
         if is_standard_module(modname):
@@ -264,7 +265,7 @@ class AstroidManager:
             raise value.with_traceback(None)
         return value
 
-    def ast_from_module(self, module, modname=None):
+    def ast_from_module(self, module: types.ModuleType, modname: str=None):
         """given an imported module, return the astroid object"""
         modname = modname or module.__name__
         if modname in self.astroid_cache:
