@@ -34,7 +34,7 @@ import os
 import pprint
 import types
 from functools import lru_cache
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import astroid
 from astroid import util
@@ -45,6 +45,8 @@ from astroid.nodes import node_classes
 
 objects = util.lazy_import("objects")
 
+if TYPE_CHECKING:
+    from astroid.objects import Property
 
 IMPL_PREFIX = "attr_"
 
@@ -799,7 +801,7 @@ class PropertyModel(ObjectModel):
 
         func = self._instance
 
-        def find_setter(func: objects.Property) -> Optional[astroid.FunctionDef]:
+        def find_setter(func: "Property") -> Optional[astroid.FunctionDef]:
             """
             Given a property, find the corresponding setter function and returns it.
 
