@@ -355,7 +355,7 @@ class NodeNG:
             last_child = self.last_child()
         if last_child is None:
             return self.fromlineno
-        return last_child.tolineno  # pylint: disable=no-member
+        return last_child.tolineno
 
     def _fixed_source_line(self) -> Optional[int]:
         """Attempt to find the line that this node appears on.

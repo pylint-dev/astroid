@@ -33,7 +33,7 @@ def main() -> None:
     with open(DEFAULT_CHANGELOG_PATH, encoding="utf-8") as f:
         content = f.read()
     content = transform_content(content, args.version)
-    with open(DEFAULT_CHANGELOG_PATH, "w") as f:
+    with open(DEFAULT_CHANGELOG_PATH, "w", encoding="utf8") as f:
         f.write(content)
 
 
