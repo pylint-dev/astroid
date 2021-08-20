@@ -7,10 +7,10 @@
 # Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
 # Copyright (c) 2016-2017 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2017 Calen Pennington <calen.pennington@gmail.com>
+# Copyright (c) 2018-2019 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018-2019 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Daniel Colascione <dancol@dancol.org>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>

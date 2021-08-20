@@ -6,14 +6,23 @@ What's New in astroid 2.8.0?
 ============================
 Release date: TBA
 
-* ``astroid.const.BUILTINS`` and ``astroid.bases.BUILTINS`` have been removed,
-  simply replace this by the string 'builtins' for better performances.
 
-What's New in astroid 2.7.2?
+
+What's New in astroid 2.7.3?
 ============================
 Release date: TBA
 
+
+
+What's New in astroid 2.7.2?
+============================
+Release date: 2021-08-20
+
 * ``BaseContainer`` is now public, and will replace ``_BaseContainer`` completely in astroid 3.0.
+
+* ``astroid.const.BUILTINS`` and ``astroid.bases.BUILTINS`` are not used internally anymore
+  and will be removed in astroid 3.0. Simply replace this by the string 'builtins' for better
+  performances and clarity.
 
 * Add inference for dataclass initializer method.
 
