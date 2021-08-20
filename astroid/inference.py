@@ -32,9 +32,13 @@ import operator
 
 import wrapt
 
-from astroid import bases
-from astroid import context as contextmod
-from astroid import decorators, helpers, nodes, protocols, util
+from astroid import bases, decorators, helpers, nodes, protocols, util
+from astroid.context import (
+    CallContext,
+    InferenceContext,
+    bind_context_to_node,
+    copy_context,
+)
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidError,
@@ -206,7 +210,7 @@ def infer_name(self, context=None):
             raise NameInferenceError(
                 name=self.name, scope=self.scope(), context=context
             )
-    context = contextmod.copy_context(context)
+    context = copy_context(context)
     context.lookupname = self.name
     return bases._infer_stmts(stmts, context, frame)
 
@@ -222,7 +226,7 @@ nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper
 @decorators.path_wrapper
 def infer_call(self, context=None):
     """infer a Call node by trying to guess what the function returns"""
-    callcontext = contextmod.copy_context(context)
+    callcontext = copy_context(context)
     callcontext.boundnode = None
     if context is not None:
         callcontext.extra_context = _populate_context_lookup(self, context.clone())
@@ -233,7 +237,7 @@ def infer_call(self, context=None):
             continue
         try:
             if hasattr(callee, "infer_call_result"):
-                callcontext.callcontext = contextmod.CallContext(
+                callcontext.callcontext = CallContext(
                     args=self.args, keywords=self.keywords, callee=callee
                 )
                 yield from callee.infer_call_result(caller=self, context=callcontext)
@@ -284,7 +288,7 @@ def infer_import_from(self, context=None, asname=True):
         raise InferenceError(node=self, context=context) from exc
 
     try:
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         context.lookupname = name
         stmts = module.getattr(name, ignore_locals=module is self.root())
         return bases._infer_stmts(stmts, context)
@@ -305,7 +309,7 @@ def infer_attribute(self, context=None):
             continue
 
         if not context:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
 
         old_boundnode = context.boundnode
         try:
@@ -518,11 +522,10 @@ def _infer_unaryop(self, context=None):
                     if inferred is util.Uninferable or not inferred.callable():
                         continue
 
-                    context = contextmod.copy_context(context)
+                    context = copy_context(context)
                     context.boundnode = operand
-                    context.callcontext = contextmod.CallContext(
-                        args=[], callee=inferred
-                    )
+                    context.callcontext = CallContext(args=[], callee=inferred)
+
                     call_results = inferred.infer_call_result(self, context=context)
                     result = next(call_results, None)
                     if result is None:
@@ -559,7 +562,7 @@ def _is_not_implemented(const):
 def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     """Invoke binary operation inference on the given instance."""
     methods = dunder_lookup.lookup(instance, method_name)
-    context = contextmod.bind_context_to_node(context, instance)
+    context = bind_context_to_node(context, instance)
     method = methods[0]
     context.callcontext.callee = method
     try:
@@ -616,7 +619,7 @@ def _get_binop_contexts(context, left, right):
     # left.__op__(right).
     for arg in (right, left):
         new_context = context.clone()
-        new_context.callcontext = contextmod.CallContext(args=[arg])
+        new_context.callcontext = CallContext(args=[arg])
         new_context.boundnode = None
         yield new_context
 
@@ -758,9 +761,9 @@ def _infer_binop(self, context):
     # we use two separate contexts for evaluating lhs and rhs because
     # 1. evaluating lhs may leave some undesired entries in context.path
     #    which may not let us infer right value of rhs
-    context = context or contextmod.InferenceContext()
-    lhs_context = contextmod.copy_context(context)
-    rhs_context = contextmod.copy_context(context)
+    context = context or InferenceContext()
+    lhs_context = copy_context(context)
+    rhs_context = copy_context(context)
     lhs_iter = left.infer(context=lhs_context)
     rhs_iter = right.infer(context=rhs_context)
     for lhs, rhs in itertools.product(lhs_iter, rhs_iter):
@@ -790,7 +793,7 @@ nodes.BinOp._infer = infer_binop
 def _infer_augassign(self, context=None):
     """Inference logic for augmented binary operations."""
     if context is None:
-        context = contextmod.InferenceContext()
+        context = InferenceContext()
 
     rhs_context = context.clone()
 
@@ -911,9 +914,9 @@ def infer_ifexp(self, context=None):
     # evaluating lhs may leave some undesired entries in context.path
     # which may not let us infer right value of rhs.
 
-    context = context or contextmod.InferenceContext()
-    lhs_context = contextmod.copy_context(context)
-    rhs_context = contextmod.copy_context(context)
+    context = context or InferenceContext()
+    lhs_context = copy_context(context)
+    rhs_context = copy_context(context)
     try:
         test = next(self.test.infer(context=context.clone()))
     except (InferenceError, StopIteration):
