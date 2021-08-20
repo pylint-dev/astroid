@@ -46,10 +46,15 @@ import typing
 from typing import List, Optional
 
 from astroid import bases
-from astroid import context as contextmod
 from astroid import decorators as decorators_mod
 from astroid import mixins, util
 from astroid.const import PY39_PLUS
+from astroid.context import (
+    CallContext,
+    InferenceContext,
+    bind_context_to_node,
+    copy_context,
+)
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidTypeError,
@@ -619,7 +624,7 @@ class Module(LocalsDictNodeNG):
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         context.lookupname = name
         try:
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
@@ -2111,7 +2116,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
     def _newstyle_impl(self, context=None):
         if context is None:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
         if self._newstyle is not None:
             return self._newstyle
         for base in self.ancestors(recurs=False, context=context):
@@ -2266,7 +2271,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         if dunder_call and dunder_call.qname() != "builtins.type.__call__":
             # Call type.__call__ if not set metaclass
             # (since type is the default metaclass)
-            context = contextmod.bind_context_to_node(context, self)
+            context = bind_context_to_node(context, self)
             context.callcontext.callee = dunder_call
             yield from dunder_call.infer_call_result(caller, context)
         else:
@@ -2346,7 +2351,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # FIXME: inference make infinite loops possible here
         yielded = {self}
         if context is None:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
         if not self.bases and self.qname() != "builtins.object":
             yield builtin_lookup("object")[1][0]
             return
@@ -2547,7 +2552,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """Search the given name in the implicit and the explicit metaclass."""
         attrs = set()
         implicit_meta = self.implicit_metaclass()
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         metaclass = self.metaclass(context=context)
         for cls in (implicit_meta, metaclass):
             if cls and cls != self and isinstance(cls, ClassDef):
@@ -2593,7 +2598,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         context.lookupname = name
 
         metaclass = self.metaclass(context=context)
@@ -2712,8 +2717,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         method = methods[0]
 
         # Create a new callcontext for providing index as an argument.
-        new_context = contextmod.bind_context_to_node(context, self)
-        new_context.callcontext = contextmod.CallContext(args=[index], callee=method)
+        new_context = bind_context_to_node(context, self)
+        new_context.callcontext = CallContext(args=[index], callee=method)
 
         try:
             return next(method.infer_call_result(self, new_context), util.Uninferable)
@@ -2966,7 +2971,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # only in SomeClass.
 
         if context is None:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
         if not self.bases and self.qname() != "builtins.object":
             yield builtin_lookup("object")[1][0]
             return

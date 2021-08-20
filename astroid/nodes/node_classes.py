@@ -42,10 +42,10 @@ import typing
 from functools import lru_cache
 from typing import Callable, Generator, Optional
 
-from astroid import context as contextmod
 from astroid import decorators, mixins, util
 from astroid.bases import Instance, _infer_stmts
 from astroid.const import Context
+from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidIndexError,
     AstroidTypeError,
@@ -381,7 +381,7 @@ class LookupMixIn:
         :rtype: iterable
         """
         frame, stmts = self.lookup(name)
-        context = contextmod.InferenceContext()
+        context = InferenceContext()
         return _infer_stmts(stmts, context, frame)
 
     def _get_filtered_node_statements(self, nodes):
@@ -4458,7 +4458,7 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
         [
             "MatchMapping",
             AssignName,
-            Optional[contextmod.InferenceContext],
+            Optional[InferenceContext],
             Literal[None],
         ],
         Generator[NodeNG, None, None],
@@ -4542,7 +4542,7 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
         [
             "MatchStar",
             AssignName,
-            Optional[contextmod.InferenceContext],
+            Optional[InferenceContext],
             Literal[None],
         ],
         Generator[NodeNG, None, None],
@@ -4599,7 +4599,7 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
         [
             "MatchAs",
             AssignName,
-            Optional[contextmod.InferenceContext],
+            Optional[InferenceContext],
             Literal[None],
         ],
         Generator[NodeNG, None, None],

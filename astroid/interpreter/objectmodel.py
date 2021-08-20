@@ -37,8 +37,8 @@ from functools import lru_cache
 from typing import Optional
 
 import astroid
-from astroid import context as contextmod
 from astroid import util
+from astroid.context import InferenceContext, copy_context
 from astroid.exceptions import AttributeInferenceError, InferenceError, NoDefault
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
@@ -308,7 +308,7 @@ class FunctionModel(ObjectModel):
                         context=context,
                     )
 
-                context = contextmod.copy_context(context)
+                context = copy_context(context)
                 try:
                     cls = next(caller.args[0].infer(context=context))
                 except StopIteration as e:
@@ -450,7 +450,7 @@ class ClassModel(ObjectModel):
     @property
     def attr___bases__(self):
         obj = node_classes.Tuple()
-        context = contextmod.InferenceContext()
+        context = InferenceContext()
         elts = list(self._instance._inferred_bases(context))
         obj.postinit(elts=elts)
         return obj

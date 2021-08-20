@@ -21,8 +21,8 @@ import functools
 
 import wrapt
 
-from astroid import context as contextmod
 from astroid import util
+from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
 
 
@@ -89,7 +89,7 @@ def path_wrapper(func):
     def wrapped(node, context=None, _func=func, **kwargs):
         """wrapper function handling context"""
         if context is None:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
         if context.push(node):
             return
 

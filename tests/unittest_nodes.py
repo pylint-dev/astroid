@@ -37,10 +37,18 @@ import unittest
 import pytest
 
 import astroid
-from astroid import Uninferable, bases, builder
-from astroid import context as contextmod
-from astroid import nodes, parse, test_utils, transforms, util
+from astroid import (
+    Uninferable,
+    bases,
+    builder,
+    nodes,
+    parse,
+    test_utils,
+    transforms,
+    util,
+)
 from astroid.const import PY38_PLUS, PY310_PLUS, Context
+from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -555,7 +563,7 @@ from ..cave import wine\n\n"""
 
     def test_absolute_import(self):
         module = resources.build_file("data/absimport.py")
-        ctx = contextmod.InferenceContext()
+        ctx = InferenceContext()
         # will fail if absolute import failed
         ctx.lookupname = "message"
         next(module["message"].infer(ctx))
@@ -571,7 +579,7 @@ from ..cave import wine\n\n"""
 
     def test_conditional(self):
         module = resources.build_file("data/conditional_import/__init__.py")
-        ctx = contextmod.InferenceContext()
+        ctx = InferenceContext()
 
         for name in self._pickle_names:
             ctx.lookupname = name
@@ -580,7 +588,7 @@ from ..cave import wine\n\n"""
 
     def test_conditional_import(self):
         module = resources.build_file("data/conditional.py")
-        ctx = contextmod.InferenceContext()
+        ctx = InferenceContext()
 
         for name in self._pickle_names:
             ctx.lookupname = name

@@ -18,9 +18,8 @@ Various helper utilities.
 """
 
 
-from astroid import bases
-from astroid import context as contextmod
-from astroid import manager, nodes, raw_building, util
+from astroid import bases, manager, nodes, raw_building, util
+from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
@@ -53,7 +52,7 @@ def _function_type(function, builtins):
 def _object_type(node, context=None):
     astroid_manager = manager.AstroidManager()
     builtins = astroid_manager.builtins_module
-    context = context or contextmod.InferenceContext()
+    context = context or InferenceContext()
 
     for inferred in node.infer(context=context):
         if isinstance(inferred, scoped_nodes.ClassDef):
@@ -218,15 +217,14 @@ def class_instance_as_index(node):
     be used in some scenarios where an integer is expected,
     for instance when multiplying or subscripting a list.
     """
-    context = contextmod.InferenceContext()
-
+    context = InferenceContext()
     try:
         for inferred in node.igetattr("__index__", context=context):
             if not isinstance(inferred, bases.BoundMethod):
                 continue
 
             context.boundnode = node
-            context.callcontext = contextmod.CallContext(args=[], callee=inferred)
+            context.callcontext = CallContext(args=[], callee=inferred)
             for result in inferred.infer_call_result(node, context=context):
                 if isinstance(result, nodes.Const) and isinstance(result.value, int):
                     return result
