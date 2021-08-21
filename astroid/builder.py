@@ -158,6 +158,8 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
         # Visit the transforms
         if self._apply_transforms:
+            if modutils.is_module_name_part_of_extension_package_whitelist(module.name, self._manager.extension_package_whitelist):
+                return module
             module = self._manager.visit_transforms(module)
         return module
 
