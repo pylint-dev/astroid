@@ -38,6 +38,7 @@ from astroid.modutils import (
     NoSourceFile,
     file_info_from_modpath,
     get_source_file,
+    is_module_name_part_of_extension_package_whitelist,
     is_python_source,
     is_standard_module,
     load_module_from_name,
@@ -144,11 +145,7 @@ class AstroidManager:
             return True
         if is_standard_module(modname):
             return True
-        parts = modname.split(".")
-        return any(
-            ".".join(parts[:x]) in self.extension_package_whitelist
-            for x in range(1, len(parts) + 1)
-        )
+        return is_module_name_part_of_extension_package_whitelist(modname, self.extension_package_whitelist)
 
     def ast_from_module_name(self, modname, context_file=None):
         """given a module name, return the astroid object"""
