@@ -82,4 +82,5 @@ def brainless_manager():
     m.astroid_cache = {}
     m._mod_file_cache = {}
     m._transform = transforms.TransformVisitor()
+    m.extension_package_whitelist = {}
     return m
