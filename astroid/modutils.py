@@ -652,15 +652,16 @@ def is_directory(specobj):
     return specobj.type == spec.ModuleType.PKG_DIRECTORY
 
 
-def is_module_name_part_of_extension_package_whitelist(module_name: str, package_whitelist: Set[str]) -> bool:
+def is_module_name_part_of_extension_package_whitelist(
+    module_name: str, package_whitelist: Set[str]
+) -> bool:
     """
     Returns True if one part of the module name is in the package whitelist
 
     >>> is_module_name_part_of_extension_package_whitelist('numpy.core.umath', {'numpy'})
     True
     """
-    parts = module_name.split('.')
+    parts = module_name.split(".")
     return any(
-        ".".join(parts[:x]) in package_whitelist
-        for x in range(1, len(parts) + 1)
+        ".".join(parts[:x]) in package_whitelist for x in range(1, len(parts) + 1)
     )

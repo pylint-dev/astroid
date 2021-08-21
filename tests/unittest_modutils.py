@@ -364,15 +364,39 @@ class GetModuleFilesTest(unittest.TestCase):
 class ExtensionPackageWhitelistTest(unittest.TestCase):
     def test_is_module_name_part_of_extension_package_whitelist_true(self):
         """Test that the is_module_name_part_of_extension_package_whitelist function returns True when needed"""
-        self.assertTrue(modutils.is_module_name_part_of_extension_package_whitelist('numpy', {'numpy'}))
-        self.assertTrue(modutils.is_module_name_part_of_extension_package_whitelist('numpy.core', {'numpy'}))
-        self.assertTrue(modutils.is_module_name_part_of_extension_package_whitelist('numpy.core.umath', {'numpy'}))
+        self.assertTrue(
+            modutils.is_module_name_part_of_extension_package_whitelist(
+                "numpy", {"numpy"}
+            )
+        )
+        self.assertTrue(
+            modutils.is_module_name_part_of_extension_package_whitelist(
+                "numpy.core", {"numpy"}
+            )
+        )
+        self.assertTrue(
+            modutils.is_module_name_part_of_extension_package_whitelist(
+                "numpy.core.umath", {"numpy"}
+            )
+        )
 
     def test_is_module_name_part_of_extension_package_whitelist_success(self):
         """Test that the is_module_name_part_of_extension_package_whitelist function returns False when needed"""
-        self.assertFalse(modutils.is_module_name_part_of_extension_package_whitelist('numpy', {'numpy.core'}))
-        self.assertFalse(modutils.is_module_name_part_of_extension_package_whitelist('numpy.core', {'numpy.core.umath'}))
-        self.assertFalse(modutils.is_module_name_part_of_extension_package_whitelist('core.umath', {'numpy'}))
+        self.assertFalse(
+            modutils.is_module_name_part_of_extension_package_whitelist(
+                "numpy", {"numpy.core"}
+            )
+        )
+        self.assertFalse(
+            modutils.is_module_name_part_of_extension_package_whitelist(
+                "numpy.core", {"numpy.core.umath"}
+            )
+        )
+        self.assertFalse(
+            modutils.is_module_name_part_of_extension_package_whitelist(
+                "core.umath", {"numpy"}
+            )
+        )
 
 
 if __name__ == "__main__":

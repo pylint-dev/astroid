@@ -80,7 +80,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
         super().__init__(manager)
         self._apply_transforms = apply_transforms
 
-    def module_build(self, module: types.ModuleType, modname: str=None) -> nodes.Module:
+    def module_build(
+        self, module: types.ModuleType, modname: str = None
+    ) -> nodes.Module:
         """Build an astroid from a living module instance."""
         node = None
         path = getattr(module, "__file__", None)
@@ -158,7 +160,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
         # Visit the transforms
         if self._apply_transforms:
-            if modutils.is_module_name_part_of_extension_package_whitelist(module.name, self._manager.extension_package_whitelist):
+            if modutils.is_module_name_part_of_extension_package_whitelist(
+                module.name, self._manager.extension_package_whitelist
+            ):
                 return module
             module = self._manager.visit_transforms(module)
         return module

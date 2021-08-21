@@ -145,7 +145,9 @@ class AstroidManager:
             return True
         if is_standard_module(modname):
             return True
-        return is_module_name_part_of_extension_package_whitelist(modname, self.extension_package_whitelist)
+        return is_module_name_part_of_extension_package_whitelist(
+            modname, self.extension_package_whitelist
+        )
 
     def ast_from_module_name(self, modname, context_file=None):
         """given a module name, return the astroid object"""
@@ -262,7 +264,7 @@ class AstroidManager:
             raise value.with_traceback(None)
         return value
 
-    def ast_from_module(self, module: types.ModuleType, modname: str=None):
+    def ast_from_module(self, module: types.ModuleType, modname: str = None):
         """given an imported module, return the astroid object"""
         modname = modname or module.__name__
         if modname in self.astroid_cache:
