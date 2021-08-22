@@ -276,15 +276,16 @@ def test_inference_generic_collection_attribute():
         assert inferred.name == name
 
 
-def test_inference_callable_attribute():
+@pytest.mark.parametrize(("module",), [("typing",), ("collections.abc",)])
+def test_inference_callable_attribute(module: str):
     """Test that an attribute with a Callable annotation is inferred as Uninferable.
 
-    See issue#1129.
+    See issue #1129 and PyCQA/pylint#4895
     """
     instance = astroid.extract_node(
-        """
+        f"""
     from dataclasses import dataclass
-    from typing import Any, Callable
+    from {module} import Any, Callable
 
     @dataclass
     class A:

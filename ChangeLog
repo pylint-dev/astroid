@@ -12,6 +12,10 @@ What's New in astroid 2.7.3?
 ============================
 Release date: TBA
 
+* When processing dataclass attributes, exclude the same type hints from abc.collections
+  as from typing.
+
+  Closes PyCQA/pylint#4895
 
 
 What's New in astroid 2.7.2?

@@ -399,6 +399,7 @@ def _infer_instance_from_annotation(
         yield Uninferable
     elif klass.root().name in (
         "typing",
+        "_collections_abc",
         "",
     ):  # "" because of synthetic nodes in brain_typing.py
         if klass.name in _INFERABLE_TYPING_TYPES:
