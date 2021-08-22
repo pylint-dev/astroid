@@ -26,14 +26,10 @@ def _inference_tip_cached(func, instance, args, kwargs):
     """Cache decorator used for inference tips"""
     node = args[0]
     try:
-        return iter(_cache[func, node])
+        result = _cache[func, node]
     except KeyError:
-        result = func(*args, **kwargs)
-        # Need to keep an iterator around
-        original, copy = itertools.tee(result)
-        _cache[func, node] = list(copy)
-        return original
-
+        result = _cache[func, node] = list(func(*args, **kwargs))
+    return iter(result)
 
 
 def inference_tip(
