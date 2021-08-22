@@ -3,7 +3,6 @@
 
 """Transform utilities (filters and decorator)"""
 
-import itertools
 import typing
 
 import wrapt
@@ -32,9 +31,7 @@ def _inference_tip_cached(func, instance, args, kwargs):
     return iter(result)
 
 
-def inference_tip(
-    infer_function: InferFn, raise_on_overwrite: bool = False
-) -> InferFn:
+def inference_tip(infer_function: InferFn, raise_on_overwrite: bool = False) -> InferFn:
     """Given an instance specific inference function, return a function to be
     given to AstroidManager().register_transform to set this inference function.
 
@@ -56,9 +53,7 @@ def inference_tip(
         excess overwrites.
     """
 
-    def transform(
-        node: NodeNG, infer_function: InferFn = infer_function
-    ) -> NodeNG:
+    def transform(node: NodeNG, infer_function: InferFn = infer_function) -> NodeNG:
         if (
             raise_on_overwrite
             and node._explicit_inference is not None
