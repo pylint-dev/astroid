@@ -6,6 +6,9 @@ What's New in astroid 2.8.0?
 ============================
 Release date: TBA
 
+* Fixed bug in attribute inference from inside method calls.
+
+    Closes PyCQA/pylint#400
 
 
 What's New in astroid 2.7.3?

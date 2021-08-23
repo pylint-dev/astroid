@@ -2384,14 +2384,27 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             __neg__ = lambda self: self.lala + 1
             @property
             def lala(self): return 24
+        class InstanceWithAttr(object):
+            def __init__(self):
+                self.x = 42
+            def __pos__(self):
+                return self.x
+            def __neg__(self):
+                return +self - 41
+            def __invert__(self):
+                return self.x + 1
         instance = GoodInstance()
         lambda_instance = LambdaInstance()
+        instance_with_attr = InstanceWithAttr()
         +instance #@
         -instance #@
         ~instance #@
         --instance #@
         +lambda_instance #@
         -lambda_instance #@
+        +instance_with_attr #@
+        -instance_with_attr #@
+        ~instance_with_attr #@
 
         bad_instance = BadInstance()
         +bad_instance #@
@@ -2405,13 +2418,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         +BadInstance #@
         """
         )
-        expected = [42, 1, 42, -1, 24, 25]
-        for node, value in zip(ast_nodes[:6], expected):
+        expected = [42, 1, 42, -1, 24, 25, 42, 1, 43]
+        for node, value in zip(ast_nodes[:9], expected):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.Const)
             self.assertEqual(inferred.value, value)
 
-        for bad_node in ast_nodes[6:]:
+        for bad_node in ast_nodes[9:]:
             inferred = next(bad_node.infer())
             self.assertEqual(inferred, util.Uninferable)
 
