@@ -2267,6 +2267,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             # Call type.__call__ if not set metaclass
             # (since type is the default metaclass)
             context = contextmod.bind_context_to_node(context, self)
+            context.callcontext.callee = dunder_call
             yield from dunder_call.infer_call_result(caller, context)
         else:
             yield self.instantiate_class()
@@ -2712,7 +2713,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         # Create a new callcontext for providing index as an argument.
         new_context = contextmod.bind_context_to_node(context, self)
-        new_context.callcontext = contextmod.CallContext(args=[index])
+        new_context.callcontext = contextmod.CallContext(args=[index], callee=method)
 
         try:
             return next(method.infer_call_result(self, new_context), util.Uninferable)

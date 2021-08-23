@@ -219,13 +219,14 @@ def class_instance_as_index(node):
     for instance when multiplying or subscripting a list.
     """
     context = contextmod.InferenceContext()
-    context.callcontext = contextmod.CallContext(args=[node])
 
     try:
         for inferred in node.igetattr("__index__", context=context):
             if not isinstance(inferred, bases.BoundMethod):
                 continue
 
+            context.boundnode = node
+            context.callcontext = contextmod.CallContext(args=[], callee=inferred)
             for result in inferred.infer_call_result(node, context=context):
                 if isinstance(result, nodes.Const) and isinstance(result.value, int):
                     return result
