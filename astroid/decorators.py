@@ -91,26 +91,19 @@ def path_wrapper(func):
         if context is None:
             context = contextmod.InferenceContext()
         if context.push(node):
-            return None
+            return
 
         yielded = set()
-        generator = _func(node, context, **kwargs)
 
-        try:
-            for res in generator:
-                # unproxy only true instance, not const, tuple, dict...
-                if res.__class__.__name__ == "Instance":
-                    ares = res._proxied
-                else:
-                    ares = res
-                if ares not in yielded:
-                    yield res
-                    yielded.add(ares)
-        except StopIteration as error:
-            if error.args:
-                return error.args[0]
-
-        return None
+        for res in _func(node, context, **kwargs):
+            # unproxy only true instance, not const, tuple, dict...
+            if res.__class__.__name__ == "Instance":
+                ares = res._proxied
+            else:
+                ares = res
+            if ares not in yielded:
+                yield res
+                yielded.add(ares)
 
     return wrapped
 
