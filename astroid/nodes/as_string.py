@@ -20,13 +20,7 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
-"""This module renders Astroid nodes as string:
-
-* :func:`to_code` function return equivalent (hopefully valid) python string
-
-* :func:`dump` function return an internal representation of nodes found
-  in the tree, useful for debugging or understanding the tree structure
-"""
+"""This module renders Astroid nodes as string"""
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -48,10 +42,12 @@ if TYPE_CHECKING:
 DOC_NEWLINE = "\0"
 
 
+# Visitor pattern require argument all the time and is not better with staticmethod
+# noinspection PyUnusedLocal,PyMethodMayBeStatic
 class AsStringVisitor:
     """Visitor to render an Astroid node as a valid python code string"""
 
-    def __init__(self, indent):
+    def __init__(self, indent="    "):
         self.indent = indent
 
     def __call__(self, node):
@@ -540,8 +536,8 @@ class AsStringVisitor:
     def visit_with(self, node):  # 'with' without 'as' is possible
         """return an astroid.With node as string"""
         items = ", ".join(
-            ("%s" % expr.accept(self)) + (vars and " as %s" % (vars.accept(self)) or "")
-            for expr, vars in node.items
+            ("%s" % expr.accept(self)) + (v and " as %s" % (v.accept(self)) or "")
+            for expr, v in node.items
         )
         return f"with {items}:\n{self._stmt_list(node.body)}"
 

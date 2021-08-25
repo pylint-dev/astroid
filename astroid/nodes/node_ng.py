@@ -3,9 +3,10 @@ import typing
 from functools import singledispatch as _singledispatch
 from typing import ClassVar, Optional
 
-from astroid import as_string, decorators, util
+from astroid import decorators, util
 from astroid.exceptions import AstroidError, InferenceError, UseInferenceDefault
 from astroid.manager import AstroidManager
+from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 
 
@@ -354,7 +355,7 @@ class NodeNG:
             last_child = self.last_child()
         if last_child is None:
             return self.fromlineno
-        return last_child.tolineno  # pylint: disable=no-member
+        return last_child.tolineno
 
     def _fixed_source_line(self) -> Optional[int]:
         """Attempt to find the line that this node appears on.
@@ -496,13 +497,9 @@ class NodeNG:
     def eq(self, value):
         return False
 
-    def as_string(self):
-        """Get the source code that this node represents.
-
-        :returns: The source code.
-        :rtype: str
-        """
-        return as_string.to_code(self)
+    def as_string(self) -> str:
+        """Get the source code that this node represents."""
+        return AsStringVisitor()(self)
 
     def repr_tree(
         self,

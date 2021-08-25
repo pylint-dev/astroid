@@ -4,8 +4,8 @@
 # Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2018 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
@@ -23,7 +23,6 @@ leads to an inferred FrozenSet:
 
 
 from astroid import bases, decorators, util
-from astroid.const import BUILTINS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -36,11 +35,11 @@ from astroid.nodes import node_classes, scoped_nodes
 objectmodel = util.lazy_import("interpreter.objectmodel")
 
 
-class FrozenSet(node_classes._BaseContainer):
+class FrozenSet(node_classes.BaseContainer):
     """class representing a FrozenSet composite node"""
 
     def pytype(self):
-        return "%s.frozenset" % BUILTINS
+        return "builtins.frozenset"
 
     def _infer(self, context=None):
         yield self
@@ -120,7 +119,7 @@ class Super(node_classes.NodeNG):
         return ast_builtins.getattr("super")[0]
 
     def pytype(self):
-        return "%s.super" % BUILTINS
+        return "builtins.super"
 
     def display_type(self):
         return "Super of"
@@ -307,7 +306,7 @@ class Property(scoped_nodes.FunctionDef):
     type = "property"
 
     def pytype(self):
-        return "%s.property" % BUILTINS
+        return "builtins.property"
 
     def infer_call_result(self, caller=None, context=None):
         raise InferenceError("Properties are not callable")

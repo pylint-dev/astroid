@@ -23,12 +23,12 @@
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2020 Tim Martin <tim@asymptotic.co.uk>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
-# Copyright (c) 2021 doranid <ddandd@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
+# Copyright (c) 2021 doranid <ddandd@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
@@ -49,7 +49,7 @@ from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators as decorators_mod
 from astroid import mixins, util
-from astroid.const import BUILTINS, PY39_PLUS
+from astroid.const import PY39_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidTypeError,
@@ -361,6 +361,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
 class Module(LocalsDictNodeNG):
     """Class representing an :class:`ast.Module` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('import astroid')
     >>> node
     <Import l.1 at 0x7f23b2e4e5c0>
@@ -574,7 +575,7 @@ class Module(LocalsDictNodeNG):
         :returns: The name of the type.
         :rtype: str
         """
-        return "%s.module" % BUILTINS
+        return "builtins.module"
 
     def display_type(self):
         """A human readable type of this node.
@@ -829,6 +830,7 @@ class ComprehensionScope(LocalsDictNodeNG):
 class GeneratorExp(ComprehensionScope):
     """Class representing an :class:`ast.GeneratorExp` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('(thing for thing in things if thing)')
     >>> node
     <GeneratorExp l.1 at 0x7f23b2e4e400>
@@ -900,6 +902,7 @@ class GeneratorExp(ComprehensionScope):
 class DictComp(ComprehensionScope):
     """Class representing an :class:`ast.DictComp` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('{k:v for k, v in things if k > v}')
     >>> node
     <DictComp l.1 at 0x7f23b2e41d68>
@@ -981,6 +984,7 @@ class DictComp(ComprehensionScope):
 class SetComp(ComprehensionScope):
     """Class representing an :class:`ast.SetComp` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('{thing for thing in things if thing}')
     >>> node
     <SetComp l.1 at 0x7f23b2e41898>
@@ -1052,6 +1056,7 @@ class SetComp(ComprehensionScope):
 class _ListComp(node_classes.NodeNG):
     """Class representing an :class:`ast.ListComp` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('[thing for thing in things if thing]')
     >>> node
     <ListComp l.1 at 0x7f23b2e418d0>
@@ -1099,6 +1104,7 @@ class _ListComp(node_classes.NodeNG):
 class ListComp(_ListComp, ComprehensionScope):
     """Class representing an :class:`ast.ListComp` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('[thing for thing in things if thing]')
     >>> node
     <ListComp l.1 at 0x7f23b2e418d0>
@@ -1131,9 +1137,9 @@ def _infer_decorator_callchain(node):
     if isinstance(result, bases.Instance):
         result = result._proxied
     if isinstance(result, ClassDef):
-        if result.is_subtype_of("%s.classmethod" % BUILTINS):
+        if result.is_subtype_of("builtins.classmethod"):
             return "classmethod"
-        if result.is_subtype_of("%s.staticmethod" % BUILTINS):
+        if result.is_subtype_of("builtins.staticmethod"):
             return "staticmethod"
     if isinstance(result, FunctionDef):
         if not result.decorators:
@@ -1146,7 +1152,7 @@ def _infer_decorator_callchain(node):
             if (
                 isinstance(decorator, node_classes.Attribute)
                 and isinstance(decorator.expr, node_classes.Name)
-                and decorator.expr.name == BUILTINS
+                and decorator.expr.name == "builtins"
                 and decorator.attrname in BUILTIN_DESCRIPTORS
             ):
                 return decorator.attrname
@@ -1156,6 +1162,7 @@ def _infer_decorator_callchain(node):
 class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     """Class representing an :class:`ast.Lambda` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('lambda arg: arg + 1')
     >>> node
     <Lambda.<lambda> l.1 at 0x7f23b2e41518>
@@ -1234,8 +1241,8 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :rtype: str
         """
         if "method" in self.type:
-            return "%s.instancemethod" % BUILTINS
-        return "%s.function" % BUILTINS
+            return "builtins.instancemethod"
+        return "builtins.function"
 
     def display_type(self):
         """A human readable type of this node.
@@ -1337,6 +1344,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     """Class representing an :class:`ast.FunctionDef`.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     ... def my_func(arg):
     ...     return arg + 1
@@ -1533,7 +1541,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             if (
                 isinstance(node, node_classes.Attribute)
                 and isinstance(node.expr, node_classes.Name)
-                and node.expr.name == BUILTINS
+                and node.expr.name == "builtins"
                 and node.attrname in BUILTIN_DESCRIPTORS
             ):
                 return node.attrname
@@ -1563,9 +1571,9 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                     for ancestor in inferred.ancestors():
                         if not isinstance(ancestor, ClassDef):
                             continue
-                        if ancestor.is_subtype_of("%s.classmethod" % BUILTINS):
+                        if ancestor.is_subtype_of("builtins.classmethod"):
                             return "classmethod"
-                        if ancestor.is_subtype_of("%s.staticmethod" % BUILTINS):
+                        if ancestor.is_subtype_of("builtins.staticmethod"):
                             return "staticmethod"
             except InferenceError:
                 pass
@@ -1833,6 +1841,7 @@ class AsyncFunctionDef(FunctionDef):
     A :class:`AsyncFunctionDef` is an asynchronous function
     created with the `async` keyword.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     async def func(things):
         async for thing in things:
@@ -1947,6 +1956,7 @@ def get_wrapping_class(node):
 class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement):
     """Class representing an :class:`ast.ClassDef` node.
 
+    >>> import astroid
     >>> node = astroid.extract_node('''
     class Thing:
         def my_meth(self, arg):
@@ -2152,8 +2162,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :rtype: str
         """
         if self.newstyle:
-            return "%s.type" % BUILTINS
-        return "%s.classobj" % BUILTINS
+            return "builtins.type"
+        return "builtins.classobj"
 
     def display_type(self):
         """A human readable type of this node.
@@ -2240,7 +2250,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
     def infer_call_result(self, caller, context=None):
         """infer what a class is returning when called"""
-        if self.is_subtype_of(f"{BUILTINS}.type", context) and len(caller.args) == 3:
+        if self.is_subtype_of("builtins.type", context) and len(caller.args) == 3:
             result = self._infer_type_call(caller, context)
             yield result
             return
@@ -2656,7 +2666,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         def _valid_getattr(node):
             root = node.root()
-            return root.name != BUILTINS and getattr(root, "pure_python", None)
+            return root.name != "builtins" and getattr(root, "pure_python", None)
 
         try:
             return _valid_getattr(self.getattr("__getattr__", context)[0])

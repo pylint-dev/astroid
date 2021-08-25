@@ -22,7 +22,6 @@ import textwrap
 import unittest
 
 from astroid import MANAGER, Instance, nodes, test_utils
-from astroid.bases import BUILTINS
 from astroid.builder import AstroidBuilder, extract_node
 from astroid.exceptions import InferenceError
 from astroid.raw_building import build_module
@@ -201,7 +200,7 @@ def test():
         )
         ancestors = list(node.ancestors())
         self.assertEqual(len(ancestors), 1)
-        self.assertEqual(ancestors[0].qname(), f"{BUILTINS}.object")
+        self.assertEqual(ancestors[0].qname(), "builtins.object")
 
     def test_ancestors_missing_from_function(self):
         # Test for https://www.logilab.org/ticket/122793
@@ -312,7 +311,7 @@ def test():
 
 
 class Whatever:
-    a = property(lambda x: x, lambda x: x)
+    a = property(lambda x: x, lambda x: x)  # type: ignore
 
 
 def test_ancestor_looking_up_redefined_function():

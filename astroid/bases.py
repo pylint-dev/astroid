@@ -7,10 +7,10 @@
 # Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
 # Copyright (c) 2016-2017 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2017 Calen Pennington <calen.pennington@gmail.com>
+# Copyright (c) 2018-2019 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018-2019 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Daniel Colascione <dancol@dancol.org>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
@@ -29,7 +29,7 @@ import collections
 
 from astroid import context as contextmod
 from astroid import decorators, util
-from astroid.const import BUILTINS, PY310_PLUS
+from astroid.const import PY310_PLUS
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
@@ -44,8 +44,9 @@ manager = util.lazy_import("manager")
 
 # TODO: check if needs special treatment
 BOOL_SPECIAL_METHOD = "__bool__"
+BUILTINS = "builtins"  # TODO Remove in 2.8
 
-PROPERTIES = {BUILTINS + ".property", "abc.abstractproperty"}
+PROPERTIES = {"builtins.property", "abc.abstractproperty"}
 if PY310_PLUS:
     PROPERTIES.add("enum.property")
 
@@ -94,7 +95,7 @@ def _is_property(meth, context=None):
                 if base_class.__class__.__name__ != "Name":
                     continue
                 module, _ = base_class.lookup(base_class.name)
-                if module.name == BUILTINS and base_class.name == "property":
+                if module.name == "builtins" and base_class.name == "property":
                     return True
 
     return False
@@ -143,8 +144,8 @@ def _infer_stmts(stmts, context, frame=None):
             continue
         context.lookupname = stmt._infer_name(frame, name)
         try:
-            for inferred in stmt.infer(context=context):
-                yield inferred
+            for inf in stmt.infer(context=context):
+                yield inf
                 inferred = True
         except NameInferenceError:
             continue
@@ -394,7 +395,7 @@ class UnboundMethod(Proxy):
         # instance of the class given as first argument.
         if (
             self._proxied.name == "__new__"
-            and self._proxied.parent.frame().qname() == "%s.object" % BUILTINS
+            and self._proxied.parent.frame().qname() == "builtins.object"
         ):
             if caller.args:
                 node_context = context.extra_context.get(caller.args[0])
@@ -445,7 +446,7 @@ class BoundMethod(UnboundMethod):
         if mcs.__class__.__name__ != "ClassDef":
             # Not a valid first argument.
             return None
-        if not mcs.is_subtype_of("%s.type" % BUILTINS):
+        if not mcs.is_subtype_of("builtins.type"):
             # Not a valid metaclass.
             return None
 
@@ -558,7 +559,7 @@ class Generator(BaseInstance):
         return False
 
     def pytype(self):
-        return "%s.generator" % BUILTINS
+        return "builtins.generator"
 
     def display_type(self):
         return "Generator"
@@ -579,7 +580,7 @@ class AsyncGenerator(Generator):
     """Special node representing an async generator"""
 
     def pytype(self):
-        return "%s.async_generator" % BUILTINS
+        return "builtins.async_generator"
 
     def display_type(self):
         return "AsyncGenerator"

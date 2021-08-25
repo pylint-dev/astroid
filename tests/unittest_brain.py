@@ -24,9 +24,11 @@
 # Copyright (c) 2019 Grygorii Iermolenko <gyermolenko@gmail.com>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
+# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
 # Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
 # Copyright (c) 2021 Tim Martin <tim@asymptotic.co.uk>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 Artsiom Kaval <lezeroq@gmail.com>
@@ -693,7 +695,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
 
         for attr in ("list", "dict"):
             obj = next(module[attr].infer())
-            self.assertEqual(obj.qname(), f"{bases.BUILTINS}.{attr}")
+            self.assertEqual(obj.qname(), f"builtins.{attr}")
 
         # pypy's implementation of array.__spec__ return None. This causes problems for this inference.
         if not hasattr(sys, "pypy_version_info"):
@@ -769,10 +771,9 @@ class EnumBrainTest(unittest.TestCase):
         one = enumeration["one"]
         self.assertEqual(one.pytype(), ".MyEnum.one")
 
-        property_type = f"{bases.BUILTINS}.property"
         for propname in ("name", "value"):
             prop = next(iter(one.getattr(propname)))
-            self.assertIn(property_type, prop.decoratornames())
+            self.assertIn("builtins.property", prop.decoratornames())
 
         meth = one.getattr("mymethod")[0]
         self.assertIsInstance(meth, astroid.FunctionDef)
@@ -859,9 +860,8 @@ class EnumBrainTest(unittest.TestCase):
         one = enumeration["one"]
 
         clazz = one.getattr("__class__")[0]
-        int_type = f"{bases.BUILTINS}.int"
         self.assertTrue(
-            clazz.is_subtype_of(int_type),
+            clazz.is_subtype_of("builtins.int"),
             "IntEnum based enums should be a subtype of int",
         )
 
@@ -2963,51 +2963,6 @@ def test_crypt_brain():
     ]
     for attr in dynamic_attrs:
         assert attr in module
-
-
-@pytest.mark.skipif(not PY37_PLUS, reason="Dataclasses were added in 3.7")
-def test_dataclasses():
-    code = """
-    import dataclasses
-    from dataclasses import dataclass
-    import typing
-    from typing import ClassVar
-
-    @dataclass
-    class InventoryItem:
-        name: str
-        quantity_on_hand: int = 0
-
-    @dataclasses.dataclass
-    class Other:
-        name: str
-        CONST_1: ClassVar[int] = 42
-        CONST_2: typing.ClassVar[int] = 42
-    """
-
-    module = astroid.parse(code)
-    first = module["InventoryItem"]
-    second = module["Other"]
-
-    name = first.getattr("name")
-    assert len(name) == 1
-    assert isinstance(name[0], astroid.Unknown)
-
-    quantity_on_hand = first.getattr("quantity_on_hand")
-    assert len(quantity_on_hand) == 1
-    assert isinstance(quantity_on_hand[0], astroid.Unknown)
-
-    name = second.getattr("name")
-    assert len(name) == 1
-    assert isinstance(name[0], astroid.Unknown)
-
-    const_1 = second.getattr("CONST_1")
-    assert len(const_1) == 1
-    assert isinstance(const_1[0], astroid.AssignName)
-
-    const_2 = second.getattr("CONST_2")
-    assert len(const_2) == 1
-    assert isinstance(const_2[0], astroid.AssignName)
 
 
 @pytest.mark.parametrize(

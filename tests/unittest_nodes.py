@@ -16,8 +16,9 @@
 # Copyright (c) 2019 Alex Hall <alex.mojaki@gmail.com>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 René Fritze <47802+renefritze@users.noreply.github.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Federico Bond <federicobond@gmail.com>
 # Copyright (c) 2021 hippo91 <guillaume.peillex@gmail.com>
 
@@ -39,7 +40,7 @@ import astroid
 from astroid import Uninferable, bases, builder
 from astroid import context as contextmod
 from astroid import nodes, parse, test_utils, transforms, util
-from astroid.const import BUILTINS, PY38_PLUS, PY310_PLUS, Context
+from astroid.const import PY38_PLUS, PY310_PLUS, Context
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -284,7 +285,7 @@ everything = f""" " \' \r \t \\ {{ }} {'x' + x!r:a} {["'"]!s:{a}}"""
 class _NodeTest(unittest.TestCase):
     """test transformation of If Node"""
 
-    CODE = None
+    CODE = ""
 
     @property
     def astroid(self):
@@ -472,18 +473,18 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         self.assertTrue(isinstance(myos, nodes.Module), myos)
         self.assertEqual(myos.name, "os")
         self.assertEqual(myos.qname(), "os")
-        self.assertEqual(myos.pytype(), "%s.module" % BUILTINS)
+        self.assertEqual(myos.pytype(), "builtins.module")
 
     def test_from_self_resolve(self):
         namenode = next(self.module.igetattr("NameNode"))
         self.assertTrue(isinstance(namenode, nodes.ClassDef), namenode)
         self.assertEqual(namenode.root().name, "astroid.nodes.node_classes")
         self.assertEqual(namenode.qname(), "astroid.nodes.node_classes.Name")
-        self.assertEqual(namenode.pytype(), "%s.type" % BUILTINS)
+        self.assertEqual(namenode.pytype(), "builtins.type")
         abspath = next(self.module2.igetattr("abspath"))
         self.assertTrue(isinstance(abspath, nodes.FunctionDef), abspath)
         self.assertEqual(abspath.root().name, "os.path")
-        self.assertEqual(abspath.pytype(), "%s.function" % BUILTINS)
+        self.assertEqual(abspath.pytype(), "builtins.function")
         if sys.platform != "win32":
             # Not sure what is causing this check to fail on Windows.
             # For some reason the abspath() inference returns a different

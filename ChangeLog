@@ -2,7 +2,7 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.7.0?
+What's New in astroid 2.8.0?
 ============================
 Release date: TBA
 
@@ -11,6 +11,47 @@ Release date: TBA
 
   Closes PyCQA/pylint#3342
   Closes PyCQA/pylint#4326
+
+
+What's New in astroid 2.7.3?
+============================
+Release date: TBA
+
+* When processing dataclass attributes, exclude the same type hints from abc.collections
+  as from typing.
+
+  Closes PyCQA/pylint#4895
+
+
+What's New in astroid 2.7.2?
+============================
+Release date: 2021-08-20
+
+* ``BaseContainer`` is now public, and will replace ``_BaseContainer`` completely in astroid 3.0.
+
+* ``astroid.const.BUILTINS`` and ``astroid.bases.BUILTINS`` are not used internally anymore
+  and will be removed in astroid 3.0. Simply replace this by the string 'builtins' for better
+  performances and clarity.
+
+* Add inference for dataclass initializer method.
+
+    Closes PyCQA/pylint#3201
+
+What's New in astroid 2.7.1?
+============================
+Release date: 2021-08-16
+
+* When processing dataclass attributes, only do typing inference on collection types.
+  Support for instantiating other typing types is left for the future, if desired.
+
+  Closes #1129
+
+* Fixed LookupMixIn missing from ``astroid.node_classes``.
+
+
+What's New in astroid 2.7.0?
+============================
+Release date: 2021-08-15
 
 * Import from ``astroid.node_classes`` and ``astroid.scoped_nodes`` has been deprecated in favor of
   ``astroid.nodes``. Only the imports from ``astroid.nodes`` will work in astroid 3.0.0.
@@ -21,11 +62,17 @@ Release date: TBA
   Closes PyCQA/pylint#2224
   Closes PyCQA/pylint#2626
 
+* Add inference tips for dataclass attributes, including dataclasses.field calls.
+  Also add support for InitVar.
 
-What's New in astroid 2.6.7?
-============================
-Release date: TBA
+  Closes PyCQA/pylint#2600
+  Closes PyCQA/pylint#2698
+  Closes PyCQA/pylint#3405
+  Closes PyCQA/pylint#3794
 
+* Adds a brain that deals with dynamic import of `IsolatedAsyncioTestCase` class of the `unittest` module.
+
+  Closes PyCQA/pylint#4060
 
 
 What's New in astroid 2.6.6?

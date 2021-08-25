@@ -45,11 +45,11 @@ from unittest.mock import patch
 
 import pytest
 
-from astroid import Slice, arguments, builder
+from astroid import Slice, arguments
 from astroid import decorators as decoratorsmod
 from astroid import helpers, nodes, objects, test_utils, util
-from astroid.bases import BUILTINS, BoundMethod, Instance, UnboundMethod
-from astroid.builder import extract_node, parse
+from astroid.bases import BoundMethod, Instance, UnboundMethod
+from astroid.builder import AstroidBuilder, extract_node, parse
 from astroid.const import PY38_PLUS, PY39_PLUS
 from astroid.exceptions import (
     AstroidTypeError,
@@ -74,9 +74,9 @@ def get_node_of_class(start_from, klass):
     return next(start_from.nodes_of_class(klass))
 
 
-builder = builder.AstroidBuilder()
+builder = AstroidBuilder()
 
-EXC_MODULE = BUILTINS
+EXC_MODULE = "builtins"
 BOOL_SPECIAL_METHOD = "__bool__"
 
 
@@ -202,7 +202,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = self.ast["C"]["meth1"]["var"].infer()
         var = next(inferred)
         self.assertEqual(var.name, "object")
-        self.assertEqual(var.root().name, BUILTINS)
+        self.assertEqual(var.root().name, "builtins")
         self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_tupleassign_name_inference(self):
@@ -249,7 +249,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = self.ast["h"].infer()
         var = next(inferred)
         self.assertEqual(var.name, "object")
-        self.assertEqual(var.root().name, BUILTINS)
+        self.assertEqual(var.root().name, "builtins")
         self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_advanced_tupleassign_name_inference2(self):
@@ -266,7 +266,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = self.ast["k"].infer()
         var = next(inferred)
         self.assertEqual(var.name, "object")
-        self.assertEqual(var.root().name, BUILTINS)
+        self.assertEqual(var.root().name, "builtins")
         self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_swap_assign_inference(self):
@@ -316,7 +316,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         meth1 = next(inferred)
         self.assertIsInstance(meth1, Instance)
         self.assertEqual(meth1.name, "object")
-        self.assertEqual(meth1.root().name, BUILTINS)
+        self.assertEqual(meth1.root().name, "builtins")
         self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_unbound_method_inference(self):
@@ -554,7 +554,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(ancestor.root().name, EXC_MODULE)
         ancestor = next(ancestors)
         self.assertEqual(ancestor.name, "object")
-        self.assertEqual(ancestor.root().name, BUILTINS)
+        self.assertEqual(ancestor.root().name, "builtins")
         self.assertRaises(StopIteration, partial(next, ancestors))
 
     def test_method_argument(self):
@@ -1336,7 +1336,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             my_smtp = SendMailController().smtp
             my_me = SendMailController().me
             """
-        decorators = {"%s.property" % BUILTINS}
+        decorators = {"builtins.property"}
         ast = parse(code, __name__)
         self.assertEqual(ast["SendMailController"]["smtp"].decoratornames(), decorators)
         propinferred = list(ast.body[2].value.infer())
@@ -1735,7 +1735,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast[8:]:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, Instance)
-            self.assertEqual(inferred.qname(), f"{BUILTINS}.tuple")
+            self.assertEqual(inferred.qname(), "builtins.tuple")
 
     def test_starred_in_tuple_literal(self):
         code = """
@@ -1888,7 +1888,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast[7:]:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, Instance)
-            self.assertEqual(inferred.qname(), f"{BUILTINS}.frozenset")
+            self.assertEqual(inferred.qname(), "builtins.frozenset")
 
     def test_set_builtin_inference(self):
         code = """
@@ -1919,7 +1919,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast[7:]:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, Instance)
-            self.assertEqual(inferred.qname(), f"{BUILTINS}.set")
+            self.assertEqual(inferred.qname(), "builtins.set")
 
     def test_list_builtin_inference(self):
         code = """
@@ -1949,7 +1949,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast[7:]:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, Instance)
-            self.assertEqual(inferred.qname(), f"{BUILTINS}.list")
+            self.assertEqual(inferred.qname(), "builtins.list")
 
     def test_conversion_of_dict_methods(self):
         ast_nodes = extract_node(
@@ -2020,7 +2020,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast[10:]:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, Instance)
-            self.assertEqual(inferred.qname(), f"{BUILTINS}.dict")
+            self.assertEqual(inferred.qname(), "builtins.dict")
 
     def test_dict_inference_kwargs(self):
         ast_node = extract_node("""dict(a=1, b=2, **{'c': 3})""")
@@ -2060,7 +2060,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             ast_node = extract_node(invalid)
             inferred = next(ast_node.infer())
             self.assertIsInstance(inferred, Instance)
-            self.assertEqual(inferred.qname(), f"{BUILTINS}.dict")
+            self.assertEqual(inferred.qname(), "builtins.dict")
 
     def test_str_methods(self):
         code = """
@@ -4204,7 +4204,7 @@ class GetattrTest(unittest.TestCase):
 
         second = next(ast_nodes[1].infer())
         self.assertIsInstance(second, nodes.ClassDef)
-        self.assertEqual(second.qname(), "%s.int" % BUILTINS)
+        self.assertEqual(second.qname(), "builtins.int")
 
         third = next(ast_nodes[2].infer())
         self.assertIsInstance(third, nodes.Const)
@@ -4878,7 +4878,7 @@ class SliceTest(unittest.TestCase):
             step_value = next(inferred.igetattr("step"))
             self.assertIsInstance(step_value, nodes.Const)
             self.assertEqual(step_value.value, step)
-            self.assertEqual(inferred.pytype(), "%s.slice" % BUILTINS)
+            self.assertEqual(inferred.pytype(), "builtins.slice")
 
     def test_slice_type(self):
         ast_node = extract_node("type(slice(None, None, None))")
