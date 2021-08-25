@@ -6,6 +6,12 @@ What's New in astroid 2.7.0?
 ============================
 Release date: TBA
 
+* The transforms related to a module are applied only if this module has not been explicitly authorized to be imported 
+  (i.e is not in AstroidManager.extension_package_whitelist)
+
+  Closes PyCQA/pylint#3342
+  Closes PyCQA/pylint#4326
+
 * Import from ``astroid.node_classes`` and ``astroid.scoped_nodes`` has been deprecated in favor of
   ``astroid.nodes``. Only the imports from ``astroid.nodes`` will work in astroid 3.0.0.
 
