@@ -6,7 +6,7 @@ What's New in astroid 2.8.0?
 ============================
 Release date: TBA
 
-* The transforms related to a module are applied only if this module has not been explicitly authorized to be imported 
+* The transforms related to a module are applied only if this module has not been explicitly authorized to be imported
   (i.e is not in AstroidManager.extension_package_whitelist). Solves the following issues if numpy is authorized to be imported
   through the `extension-pkg-allow-list` option.
 
