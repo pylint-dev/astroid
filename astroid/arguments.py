@@ -216,11 +216,15 @@ class CallSite:
                     positional.append(arg)
 
         if argindex is not None:
+            boundnode = getattr(context, "boundnode", None)
             # 2. first argument of instance/class method
             if argindex == 0 and funcnode.type in ("method", "classmethod"):
-                if context.boundnode is not None:
-                    boundnode = context.boundnode
-                else:
+                # context.boundnode is None when an instance method is called with
+                # the class, e.g. MyClass.method(obj, ...). In this case, self
+                # is the first argument.
+                if boundnode is None and funcnode.type == "method" and positional:
+                    return positional[0].infer(context=context)
+                if boundnode is None:
                     # XXX can do better ?
                     boundnode = funcnode.parent.frame()
 
@@ -242,7 +246,7 @@ class CallSite:
             # if we have a method, extract one position
             # from the index, so we'll take in account
             # the extra parameter represented by `self` or `cls`
-            if funcnode.type in ("method", "classmethod"):
+            if funcnode.type in ("method", "classmethod") and boundnode:
                 argindex -= 1
             # 2. search arg index
             try:
