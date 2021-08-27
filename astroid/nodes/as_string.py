@@ -23,6 +23,8 @@
 """This module renders Astroid nodes as string"""
 from typing import TYPE_CHECKING
 
+import astroid.nodes.node_classes
+
 if TYPE_CHECKING:
     from astroid.nodes.node_classes import (
         Match,
@@ -620,11 +622,14 @@ class AsStringVisitor:
 
     def visit_matchas(self, node: "MatchAs") -> str:
         """Return an astroid.MatchAs node as string."""
-        # pylint: disable=import-outside-toplevel
-        # Prevent circular dependency
-        from astroid.nodes.node_classes import MatchClass, MatchMapping, MatchSequence
-
-        if isinstance(node.parent, (MatchSequence, MatchMapping, MatchClass)):
+        if isinstance(
+            node.parent,
+            (
+                astroid.nodes.node_classes.MatchSequence,
+                astroid.nodes.node_classes.MatchMapping,
+                astroid.nodes.node_classes.MatchClass,
+            ),
+        ):
             return node.name.accept(self) if node.name else "_"
         return (
             f"{node.pattern.accept(self) if node.pattern else '_'}"
