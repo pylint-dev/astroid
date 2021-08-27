@@ -16,6 +16,11 @@ Release date: TBA
     Closes #1008
     Closes PyCQA/pylint#4377
 
+* Fixed bug in inference of chained attributes where a subclass
+  had an attribute that was an instance of its superclass.
+
+    Closes PyCQA/pylint#4220
+
 
 What's New in astroid 2.7.3?
 ============================
