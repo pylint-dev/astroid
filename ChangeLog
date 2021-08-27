@@ -10,6 +10,12 @@ Release date: TBA
 
     Closes PyCQA/pylint#400
 
+* Fixed bug in inference for superclass instance methods called
+  from the class rather than an instance.
+
+    Closes #1008
+    Closes PyCQA/pylint#4377
+
 
 What's New in astroid 2.7.3?
 ============================

@@ -1,6 +1,6 @@
 """Tests for function call inference"""
 
-from astroid import builder, nodes
+from astroid import bases, builder, nodes
 from astroid.util import Uninferable
 
 
@@ -409,3 +409,128 @@ def test_dunder_getitem():
     inferred = node.inferred()
     assert len(inferred) == 1
     assert inferred[0] is Uninferable
+
+
+def test_instance_method():
+    """Tests for instance method, both bound and unbound."""
+    nodes_ = builder.extract_node(
+        """
+    class A:
+        def method(self, x):
+            return x
+
+    A().method(42)  #@
+
+    # In this case, the 1 argument is bound to self, which is ignored in the method
+    A.method(1, 42)  #@
+    """
+    )
+
+    for node in nodes_:
+        inferred = node.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], nodes.Const)
+        assert inferred[0].value == 42
+
+
+def test_class_method():
+    """Tests for class method calls, both instance and with the class."""
+    nodes_ = builder.extract_node(
+        """
+    class A:
+        @classmethod
+        def method(cls, x):
+            return x
+
+    A.method(42)  #@
+    A().method(42)  #@
+
+    """
+    )
+
+    for node in nodes_:
+        inferred = node.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], nodes.Const), node
+        assert inferred[0].value == 42
+
+
+def test_static_method():
+    """Tests for static method calls, both instance and with the class."""
+    nodes_ = builder.extract_node(
+        """
+    class A:
+        @staticmethod
+        def method(x):
+            return x
+
+    A.method(42)  #@
+    A().method(42)  #@
+    """
+    )
+
+    for node in nodes_:
+        inferred = node.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], nodes.Const), node
+        assert inferred[0].value == 42
+
+
+def test_instance_method_inherited():
+    """Tests for instance methods that are inherited from a superclass.
+
+    Based on https://github.com/PyCQA/astroid/issues/1008.
+    """
+    nodes_ = builder.extract_node(
+        """
+    class A:
+        def method(self):
+            return self
+
+    class B(A):
+        pass
+
+    A().method()  #@
+    A.method(A())  #@
+
+    B().method()  #@
+    B.method(B())  #@
+    A.method(B())  #@
+    """
+    )
+    expected = ["A", "A", "B", "B", "B"]
+    for node, expected in zip(nodes_, expected):
+        inferred = node.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], bases.Instance)
+        assert inferred[0].name == expected
+
+
+def test_class_method_inherited():
+    """Tests for class methods that are inherited from a superclass.
+
+    Based on https://github.com/PyCQA/astroid/issues/1008.
+    """
+    nodes_ = builder.extract_node(
+        """
+    class A:
+        @classmethod
+        def method(cls):
+            return cls
+
+    class B(A):
+        pass
+
+    A().method()  #@
+    A.method()  #@
+
+    B().method()  #@
+    B.method()  #@
+    """
+    )
+    expected = ["A", "A", "B", "B"]
+    for node, expected in zip(nodes_, expected):
+        inferred = node.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], nodes.ClassDef)
+        assert inferred[0].name == expected
