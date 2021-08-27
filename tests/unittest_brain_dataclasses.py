@@ -10,14 +10,20 @@ if not PY37_PLUS:
     pytest.skip("Dataclasses were added in 3.7", allow_module_level=True)
 
 
-def test_inference_attribute_no_default():
+parametrize_module = pytest.mark.parametrize(
+    ("module",), (["dataclasses"], ["pydantic.dataclasses"])
+)
+
+
+@parametrize_module
+def test_inference_attribute_no_default(module: str):
     """Test inference of dataclass attribute with no default.
 
     Note that the argument to the constructor is ignored by the inference.
     """
     klass, instance = astroid.extract_node(
-        """
-    from dataclasses import dataclass
+        f"""
+    from {module} import dataclass
 
     @dataclass
     class A:
@@ -36,11 +42,12 @@ def test_inference_attribute_no_default():
     assert inferred[0].name == "str"
 
 
-def test_inference_non_field_default():
+@parametrize_module
+def test_inference_non_field_default(module: str):
     """Test inference of dataclass attribute with a non-field default."""
     klass, instance = astroid.extract_node(
-        """
-    from dataclasses import dataclass
+        f"""
+    from {module} import dataclass
 
     @dataclass
     class A:
@@ -64,12 +71,14 @@ def test_inference_non_field_default():
     assert inferred[1].name == "str"
 
 
-def test_inference_field_default():
+@parametrize_module
+def test_inference_field_default(module: str):
     """Test inference of dataclass attribute with a field call default
     (default keyword argument given)."""
     klass, instance = astroid.extract_node(
-        """
-    from dataclasses import dataclass, field
+        f"""
+    from {module} import dataclass
+    from dataclasses import field
 
     @dataclass
     class A:
@@ -93,12 +102,14 @@ def test_inference_field_default():
     assert inferred[1].name == "str"
 
 
-def test_inference_field_default_factory():
+@parametrize_module
+def test_inference_field_default_factory(module: str):
     """Test inference of dataclass attribute with a field call default
     (default_factory keyword argument given)."""
     klass, instance = astroid.extract_node(
-        """
-    from dataclasses import dataclass, field
+        f"""
+    from {module} import dataclass
+    from dataclasses import field
 
     @dataclass
     class A:
@@ -122,16 +133,18 @@ def test_inference_field_default_factory():
     assert inferred[1].name == "list"
 
 
-def test_inference_method():
+@parametrize_module
+def test_inference_method(module: str):
     """Test inference of dataclass attribute within a method,
     with a default_factory field.
 
     Based on https://github.com/PyCQA/pylint/issues/2600
     """
     node = astroid.extract_node(
-        """
+        f"""
     from typing import Dict
-    from dataclasses import dataclass, field
+    from {module} import dataclass
+    from dataclasses import field
 
     @dataclass
     class TestClass:
@@ -150,13 +163,14 @@ def test_inference_method():
     assert isinstance(inferred, bases.BoundMethod)
 
 
-def test_inference_no_annotation():
+@parametrize_module
+def test_inference_no_annotation(module: str):
     """Test that class variables without type annotations are not
     turned into instance attributes.
     """
     class_def, klass, instance = astroid.extract_node(
-        """
-    from dataclasses import dataclass
+        f"""
+    from {module} import dataclass
 
     @dataclass
     class A:
@@ -179,13 +193,14 @@ def test_inference_no_annotation():
         assert inferred[0].value == "hi"
 
 
-def test_inference_class_var():
+@parametrize_module
+def test_inference_class_var(module: str):
     """Test that class variables with a ClassVar type annotations are not
     turned into instance attributes.
     """
     class_def, klass, instance = astroid.extract_node(
-        """
-    from dataclasses import dataclass
+        f"""
+    from {module} import dataclass
     from typing import ClassVar
 
     @dataclass
@@ -209,13 +224,15 @@ def test_inference_class_var():
         assert inferred[0].value == "hi"
 
 
-def test_inference_init_var():
+@parametrize_module
+def test_inference_init_var(module: str):
     """Test that class variables with InitVar type annotations are not
     turned into instance attributes.
     """
     class_def, klass, instance = astroid.extract_node(
-        """
-    from dataclasses import dataclass, InitVar
+        f"""
+    from {module} import dataclass
+    from dataclasses import InitVar
 
     @dataclass
     class A:
@@ -238,13 +255,15 @@ def test_inference_init_var():
         assert inferred[0].value == "hi"
 
 
-def test_inference_generic_collection_attribute():
+@parametrize_module
+def test_inference_generic_collection_attribute(module: str):
     """Test that an attribute with a generic collection type from the
     typing module is inferred correctly.
     """
     attr_nodes = astroid.extract_node(
-        """
-    from dataclasses import dataclass, field
+        f"""
+    from {module} import dataclass
+    from dataclasses import field
     import typing
 
     @dataclass
@@ -255,7 +274,7 @@ def test_inference_generic_collection_attribute():
         set_prop: typing.Set[str]
         tuple_prop: typing.Tuple[int, str]
 
-    a = A({}, frozenset(), [], set(), (1, 'hi'))
+    a = A({{}}, frozenset(), [], set(), (1, 'hi'))
     a.dict_prop       #@
     a.frozenset_prop  #@
     a.list_prop       #@
@@ -276,16 +295,23 @@ def test_inference_generic_collection_attribute():
         assert inferred.name == name
 
 
-@pytest.mark.parametrize(("module",), [("typing",), ("collections.abc",)])
-def test_inference_callable_attribute(module: str):
+@pytest.mark.parametrize(
+    ("module", "typing_module"),
+    [
+        ("dataclasses", "typing"),
+        ("pydantic.dataclasses", "typing"),
+        ("pydantic.dataclasses", "collections.abc"),
+    ],
+)
+def test_inference_callable_attribute(module: str, typing_module: str):
     """Test that an attribute with a Callable annotation is inferred as Uninferable.
 
     See issue #1129 and PyCQA/pylint#4895
     """
     instance = astroid.extract_node(
         f"""
-    from dataclasses import dataclass
-    from {module} import Any, Callable
+    from {module} import dataclass
+    from {typing_module} import Any, Callable
 
     @dataclass
     class A:
@@ -298,11 +324,12 @@ def test_inference_callable_attribute(module: str):
     assert inferred is Uninferable
 
 
-def test_inference_inherited():
+@parametrize_module
+def test_inference_inherited(module: str):
     """Test that an attribute is inherited from a superclass dataclass."""
     klass1, instance1, klass2, instance2 = astroid.extract_node(
-        """
-    from dataclasses import dataclass
+        f"""
+    from {module} import dataclass
 
     @dataclass
     class A:
@@ -339,11 +366,42 @@ def test_inference_inherited():
     assert inferred[1].name == "str"
 
 
-def test_init_empty():
+def test_pydantic_field():
+    """Test that pydantic.Field attributes are currently Uninferable.
+
+    (Eventually, we can extend the brain to support pydantic.Field)
+    """
+    klass, instance = astroid.extract_node(
+        """
+    from pydantic import Field
+    from pydantic.dataclasses import dataclass
+
+    @dataclass
+    class A:
+        name: str = Field("hi")
+
+    A.name  #@
+    A().name #@
+    """
+    )
+
+    inferred = klass.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = instance.inferred()
+    assert len(inferred) == 2
+    assert inferred[0] is Uninferable
+    assert isinstance(inferred[1], bases.Instance)
+    assert inferred[1].name == "str"
+
+
+@parametrize_module
+def test_init_empty(module: str):
     """Test init for a dataclass with no attributes"""
     node = astroid.extract_node(
-        """
-    from dataclasses import dataclass
+        f"""
+    from {module} import dataclass
 
     @dataclass
     class A:
@@ -356,11 +414,12 @@ def test_init_empty():
     assert [a.name for a in init.args.args] == ["self"]
 
 
-def test_init_no_defaults():
+@parametrize_module
+def test_init_no_defaults(module: str):
     """Test init for a dataclass with attributes and no defaults"""
     node = astroid.extract_node(
-        """
-    from dataclasses import dataclass
+        f"""
+    from {module} import dataclass
     from typing import List
 
     @dataclass
@@ -382,11 +441,13 @@ def test_init_no_defaults():
     ]
 
 
-def test_init_defaults():
+@parametrize_module
+def test_init_defaults(module: str):
     """Test init for a dataclass with attributes and some defaults"""
     node = astroid.extract_node(
-        """
-    from dataclasses import dataclass, field
+        f"""
+    from {module} import dataclass
+    from dataclasses import field
     from typing import List
 
     @dataclass
@@ -415,11 +476,13 @@ def test_init_defaults():
     ]
 
 
-def test_init_initvar():
+@parametrize_module
+def test_init_initvar(module: str):
     """Test init for a dataclass with attributes and an InitVar"""
     node = astroid.extract_node(
-        """
-    from dataclasses import dataclass, InitVar
+        f"""
+    from {module} import dataclass
+    from dataclasses import InitVar
     from typing import List
 
     @dataclass
@@ -443,13 +506,14 @@ def test_init_initvar():
     ]
 
 
-def test_init_decorator_init_false():
+@parametrize_module
+def test_init_decorator_init_false(module: str):
     """Test that no init is generated when init=False is passed to
     dataclass decorator.
     """
     node = astroid.extract_node(
-        """
-    from dataclasses import dataclass
+        f"""
+    from {module} import dataclass
     from typing import List
 
     @dataclass(init=False)
@@ -465,13 +529,15 @@ def test_init_decorator_init_false():
     assert init._proxied.parent.name == "object"
 
 
-def test_init_field_init_false():
+@parametrize_module
+def test_init_field_init_false(module: str):
     """Test init for a dataclass with attributes with a field value where init=False
     (these attributes should not be included in the initializer).
     """
     node = astroid.extract_node(
-        """
-    from dataclasses import dataclass, field
+        f"""
+    from {module} import dataclass
+    from dataclasses import field
     from typing import List
 
     @dataclass
@@ -492,14 +558,15 @@ def test_init_field_init_false():
     ]
 
 
-def test_init_override():
+@parametrize_module
+def test_init_override(module: str):
     """Test init for a dataclass overrides a superclass initializer.
 
     Based on https://github.com/PyCQA/pylint/issues/3201
     """
     node = astroid.extract_node(
-        """
-    from dataclasses import dataclass
+        f"""
+    from {module} import dataclass
     from typing import List
 
     class A:
@@ -525,14 +592,15 @@ def test_init_override():
     ]
 
 
-def test_init_attributes_from_superclasses():
+@parametrize_module
+def test_init_attributes_from_superclasses(module: str):
     """Test init for a dataclass that inherits and overrides attributes from superclasses.
 
     Based on https://github.com/PyCQA/pylint/issues/3201
     """
     node = astroid.extract_node(
-        """
-    from dataclasses import dataclass
+        f"""
+    from {module} import dataclass
     from typing import List
 
     @dataclass
@@ -558,11 +626,12 @@ def test_init_attributes_from_superclasses():
     ]
 
 
-def test_invalid_init():
+@parametrize_module
+def test_invalid_init(module: str):
     """Test that astroid doesn't generate an initializer when attribute order is invalid."""
     node = astroid.extract_node(
-        """
-    from dataclasses import dataclass
+        f"""
+    from {module} import dataclass
 
     @dataclass
     class A:

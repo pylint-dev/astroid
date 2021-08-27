@@ -17,6 +17,10 @@ Release date: TBA
 
   Closes PyCQA/pylint#4895
 
+* Apply dataclass inference to pydantic's dataclasses.
+
+  Closes PyCQA/pylint#4899
+
 
 What's New in astroid 2.7.2?
 ============================

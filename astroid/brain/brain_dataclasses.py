@@ -2,6 +2,10 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 """
 Astroid hook for the dataclasses library
+
+Support both built-in dataclasses and pydantic.dataclasses. References:
+- https://docs.python.org/3/library/dataclasses.html
+- https://pydantic-docs.helpmanual.io/usage/dataclasses/
 """
 from typing import Generator, List, Optional, Tuple
 
@@ -34,25 +38,10 @@ def is_decorated_with_dataclass(node, decorator_names=DATACLASSES_DECORATORS):
     if not isinstance(node, ClassDef) or not node.decorators:
         return False
 
-    for decorator_attribute in node.decorators.nodes:
-        if isinstance(decorator_attribute, Call):  # decorator with arguments
-            decorator_attribute = decorator_attribute.func
-
-        try:
-            inferred = next(decorator_attribute.infer())
-        except (InferenceError, StopIteration):
-            continue
-
-        if not isinstance(inferred, FunctionDef):
-            continue
-
-        if (
-            inferred.name in decorator_names
-            and inferred.root().name == DATACLASS_MODULE
-        ):
-            return True
-
-    return False
+    return any(
+        _looks_like_dataclass_decorator(decorator_attribute, decorator_names)
+        for decorator_attribute in node.decorators.nodes
+    )
 
 
 def dataclass_transform(node: ClassDef) -> None:
@@ -151,20 +140,7 @@ def _check_generate_dataclass_init(node: ClassDef) -> bool:
         if not isinstance(decorator_attribute, Call):
             continue
 
-        func = decorator_attribute.func
-
-        try:
-            inferred = next(func.infer())
-        except (InferenceError, StopIteration):
-            continue
-
-        if not isinstance(inferred, FunctionDef):
-            continue
-
-        if (
-            inferred.name in DATACLASSES_DECORATORS
-            and inferred.root().name == DATACLASS_MODULE
-        ):
+        if _looks_like_dataclass_decorator(decorator_attribute):
             found = decorator_attribute
 
     if found is None:
@@ -268,6 +244,37 @@ def infer_dataclass_field_call(
         new_call = parse(default.as_string()).body[0].value
         new_call.parent = field_call.parent
         yield from new_call.infer(context=ctx)
+
+
+def _looks_like_dataclass_decorator(
+    node: NodeNG, decorator_names: List[str] = DATACLASSES_DECORATORS
+) -> bool:
+    """Return True if node looks like a dataclass decorator.
+
+    Uses inference to lookup the value of the node, and if that fails,
+    matches against specific names. (Currently inference fails for dataclass import
+    from pydantic.)
+    """
+    if isinstance(node, Call):  # decorator with arguments
+        node = node.func
+    try:
+        inferred = next(node.infer())
+    except (InferenceError, StopIteration):
+        inferred = Uninferable
+
+    if inferred is Uninferable:
+        if isinstance(node, Name):
+            return node.name in decorator_names
+        if isinstance(node, Attribute):
+            return node.attrname in decorator_names
+
+        return False
+
+    return (
+        isinstance(inferred, FunctionDef)
+        and inferred.name in decorator_names
+        and inferred.root().name == DATACLASS_MODULE
+    )
 
 
 def _looks_like_dataclass_attribute(node: Unknown) -> bool:
