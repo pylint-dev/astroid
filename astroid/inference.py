@@ -304,23 +304,7 @@ def infer_attribute(self, context=None):
             yield owner
             continue
 
-        if context and context.boundnode:
-            # This handles the situation where the attribute is accessed through a subclass
-            # of a base class and the attribute is defined at the base class's level,
-            # by taking in consideration a redefinition in the subclass.
-            if isinstance(owner, bases.Instance) and isinstance(
-                context.boundnode, bases.Instance
-            ):
-                try:
-                    if helpers.is_subtype(
-                        helpers.object_type(context.boundnode),
-                        helpers.object_type(owner),
-                    ):
-                        owner = context.boundnode
-                except _NonDeducibleTypeHierarchy:
-                    # Can't determine anything useful.
-                    pass
-        elif not context:
+        if not context:
             context = contextmod.InferenceContext()
 
         old_boundnode = context.boundnode

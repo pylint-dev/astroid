@@ -534,3 +534,33 @@ def test_class_method_inherited():
         assert len(inferred) == 1
         assert isinstance(inferred[0], nodes.ClassDef)
         assert inferred[0].name == expected
+
+
+def test_chained_attribute_inherited():
+    """Tests for class methods that are inherited from a superclass.
+
+    Based on https://github.com/PyCQA/pylint/issues/4220.
+    """
+    node = builder.extract_node(
+        """
+    class A:
+        def f(self):
+            return 42
+
+
+    class B(A):
+        def __init__(self):
+            self.a = A()
+            result = self.a.f()
+
+        def f(self):
+            pass
+
+
+    B().a.f()  #@
+    """
+    )
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 42
