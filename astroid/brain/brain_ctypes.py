@@ -6,6 +6,8 @@ the C coded module _ctypes.
 Thus astroid doesn't know that the value member is a bultin type
 among float, int, bytes or str.
 """
+import sys
+
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
@@ -71,4 +73,6 @@ class {c_type}(_SimpleCData):
     return parse("\n".join(src))
 
 
-register_module_extender(AstroidManager(), "ctypes", enrich_ctypes_redefined_types)
+if not hasattr(sys, "pypy_version_info"):
+    # No need of this module in pypy where everything is written in python
+    register_module_extender(AstroidManager(), "ctypes", enrich_ctypes_redefined_types)

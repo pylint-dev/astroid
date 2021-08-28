@@ -1,5 +1,6 @@
-import pytest
 import sys
+
+import pytest
 
 from astroid import extract_node
 from astroid.nodes.node_classes import Const
@@ -70,6 +71,10 @@ def test_ctypes_redefined_types_members(c_type, builtin_type, type_code):
     assert node_inf.value == type_code
 
 
+@pytest.mark.skipIf(
+    hasattr(sys, "pypy_version_info"),
+    reason="pypy has its own implementation of _ctypes module which is different from the one of cpython",
+)
 def test_cdata_member_access():
     """
     Test that the base members are still accessible. Each redefined ctypes type inherits from _SimpleCData which itself
@@ -82,10 +87,7 @@ def test_cdata_member_access():
     """
     node = extract_node(src)
     node_inf = node.inferred()[0]
-    if hasattr(sys, "pypy_version_info"):
-        assert node_inf.display_type() == "Instance of"
-    else:
-        assert node_inf.display_type() == "Class"
+    assert node_inf.display_type() == "Class"
     assert node_inf.qname() == "_ctypes._SimpleCData._objects"
 
 
