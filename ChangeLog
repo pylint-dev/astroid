@@ -6,6 +6,14 @@ What's New in astroid 2.9.0?
 ============================
 Release date: TBA
 
+* Support "is None" constraints from if statements during inference.
+
+  Closes #791
+  Closes PyCQA/pylint#157
+  Closes PyCQA/pylint#1472
+  Closes PyCQA/pylint#2016
+  Closes PyCQA/pylint#2631
+  Closes PyCQA/pylint#2880
 
 
 What's New in astroid 2.8.1?

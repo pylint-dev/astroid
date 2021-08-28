@@ -41,6 +41,7 @@ class InferenceContext:
         "callcontext",
         "boundnode",
         "extra_context",
+        "constraints",
         "_nodes_inferred",
     )
 
@@ -89,6 +90,13 @@ class InferenceContext:
 
         Context that needs to be passed down through call stacks
         for call arguments
+        """
+
+        self.constraints = {}
+        """
+        :type: dict
+
+        The constraints on nodes
         """
 
     @property
@@ -145,6 +153,7 @@ class InferenceContext:
         clone.callcontext = self.callcontext
         clone.boundnode = self.boundnode
         clone.extra_context = self.extra_context
+        clone.constraints = self.constraints.copy()
         return clone
 
     @contextlib.contextmanager

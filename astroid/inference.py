@@ -35,7 +35,9 @@ from typing import Any, Callable, Dict, Iterable, Optional
 
 import wrapt
 
-from astroid import bases, decorators, helpers, nodes, protocols, util
+from astroid import bases
+from astroid import constraint as constraintmod
+from astroid import decorators, helpers, nodes, protocols, util
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -215,6 +217,8 @@ def infer_name(self, context=None):
             )
     context = copy_context(context)
     context.lookupname = self.name
+    context.constraints[self.name] = constraintmod.get_constraints(self, frame)
+
     return bases._infer_stmts(stmts, context, frame)
 
 
@@ -317,6 +321,11 @@ def infer_attribute(self, context=None):
         old_boundnode = context.boundnode
         try:
             context.boundnode = owner
+            if isinstance(owner, (nodes.ClassDef, bases.Instance)):
+                frame = owner if isinstance(owner, nodes.ClassDef) else owner._proxied
+                context.constraints[self.attrname] = constraintmod.get_constraints(
+                    self, frame=frame
+                )
             yield from owner.igetattr(self.attrname, context)
         except (
             AttributeInferenceError,
