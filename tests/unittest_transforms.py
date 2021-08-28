@@ -86,8 +86,7 @@ class TestTransforms(unittest.TestCase):
     def test_transform_patches_locals(self):
         def transform_function(node):
             assign = nodes.Assign()
-            name = nodes.AssignName()
-            name.name = "value"
+            name = nodes.AssignName(name="value")
             assign.targets = [name]
             assign.value = nodes.const_factory(42)
             node.body.append(assign)
@@ -182,8 +181,7 @@ class TestTransforms(unittest.TestCase):
     def test_transforms_are_called_for_builtin_modules(self):
         # Test that transforms are called for builtin modules.
         def transform_function(node):
-            name = nodes.AssignName()
-            name.name = "value"
+            name = nodes.AssignName(name="value")
             node.args.args = [name]
             return node
 
