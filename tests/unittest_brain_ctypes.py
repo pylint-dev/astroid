@@ -1,5 +1,6 @@
-import pytest
 import sys
+
+import pytest
 
 from astroid import extract_node
 from astroid.nodes.node_classes import Const
