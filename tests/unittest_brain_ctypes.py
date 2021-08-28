@@ -5,11 +5,11 @@ import pytest
 from astroid import extract_node
 from astroid.nodes.node_classes import Const
 
-
-@pytest.mark.skipIf(
+pytestmark = pytest.mark.skipif(
     hasattr(sys, "pypy_version_info"),
     reason="pypy has its own implementation of _ctypes module which is different from the one of cpython",
 )
+
 # The parameters of the test define a mapping between the ctypes redefined types
 # and the builtin types that the "value" member holds
 @pytest.mark.parametrize(
@@ -75,10 +75,6 @@ def test_ctypes_redefined_types_members(c_type, builtin_type, type_code):
     assert node_inf.value == type_code
 
 
-@pytest.mark.skipIf(
-    hasattr(sys, "pypy_version_info"),
-    reason="pypy has its own implementation of _ctypes module which is different from the one of cpython",
-)
 def test_cdata_member_access():
     """
     Test that the base members are still accessible. Each redefined ctypes type inherits from _SimpleCData which itself
@@ -95,10 +91,6 @@ def test_cdata_member_access():
     assert node_inf.qname() == "_ctypes._SimpleCData._objects"
 
 
-@pytest.mark.skipIf(
-    hasattr(sys, "pypy_version_info"),
-    reason="pypy has its own implementation of _ctypes module which is different from the one of cpython",
-)
 def test_other_ctypes_member_untouched():
     """
     Test that other ctypes members, which are not touched by the brain, are correctly inferred
