@@ -169,6 +169,7 @@ def _infer_method_result_truth(instance, method_name, context):
         if not meth.callable():
             return util.Uninferable
         try:
+            context.callcontext = contextmod.CallContext(args=[], callee=meth)
             for value in meth.infer_call_result(instance, context=context):
                 if value is util.Uninferable:
                     return value
@@ -318,7 +319,6 @@ class Instance(BaseInstance):
              all its instances are considered true.
         """
         context = context or contextmod.InferenceContext()
-        context.callcontext = contextmod.CallContext(args=[])
         context.boundnode = self
 
         try:
@@ -336,9 +336,9 @@ class Instance(BaseInstance):
         new_context = contextmod.bind_context_to_node(context, self)
         if not context:
             context = new_context
-        # Create a new CallContext for providing index as an argument.
-        new_context.callcontext = contextmod.CallContext(args=[index])
         method = next(self.igetattr("__getitem__", context=context), None)
+        # Create a new CallContext for providing index as an argument.
+        new_context.callcontext = contextmod.CallContext(args=[index], callee=method)
         if not isinstance(method, BoundMethod):
             raise InferenceError(
                 "Could not find __getitem__ for {node!r}.", node=self, context=context

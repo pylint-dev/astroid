@@ -6,6 +6,20 @@ What's New in astroid 2.8.0?
 ============================
 Release date: TBA
 
+* Fixed bug in attribute inference from inside method calls.
+
+    Closes PyCQA/pylint#400
+
+* Fixed bug in inference for superclass instance methods called
+  from the class rather than an instance.
+
+    Closes #1008
+    Closes PyCQA/pylint#4377
+
+* Fixed bug in inference of chained attributes where a subclass
+  had an attribute that was an instance of its superclass.
+
+    Closes PyCQA/pylint#4220
 
 
 What's New in astroid 2.7.3?
@@ -21,12 +35,18 @@ Release date: TBA
 
   Closes PyCQA/pylint#4895
 
+* Apply dataclass inference to pydantic's dataclasses.
+
+  Closes PyCQA/pylint#4899
+
 
 What's New in astroid 2.7.2?
 ============================
 Release date: 2021-08-20
 
 * ``BaseContainer`` is now public, and will replace ``_BaseContainer`` completely in astroid 3.0.
+* The call cache used by inference functions produced by ``inference_tip``
+  can now be cleared via ``clear_inference_tip_cache``.
 
 * ``astroid.const.BUILTINS`` and ``astroid.bases.BUILTINS`` are not used internally anymore
   and will be removed in astroid 3.0. Simply replace this by the string 'builtins' for better

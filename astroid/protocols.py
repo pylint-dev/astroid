@@ -350,9 +350,13 @@ def _arguments_infer_argname(self, name, context):
             return
 
     if context and context.callcontext:
-        call_site = arguments.CallSite(context.callcontext, context.extra_context)
-        yield from call_site.infer_argument(self.parent, name, context)
-        return
+        callee = context.callcontext.callee
+        while hasattr(callee, "_proxied"):
+            callee = callee._proxied
+        if getattr(callee, "name", None) == self.parent.name:
+            call_site = arguments.CallSite(context.callcontext, context.extra_context)
+            yield from call_site.infer_argument(self.parent, name, context)
+            return
 
     if name == self.vararg:
         vararg = nodes.const_factory(())
@@ -379,6 +383,16 @@ def _arguments_infer_argname(self, name, context):
 
 def arguments_assigned_stmts(self, node=None, context=None, assign_path=None):
     if context.callcontext:
+        callee = context.callcontext.callee
+        while hasattr(callee, "_proxied"):
+            callee = callee._proxied
+    else:
+        callee = None
+    if (
+        context.callcontext
+        and node
+        and getattr(callee, "name", None) == node.frame().name
+    ):
         # reset call context/name
         callcontext = context.callcontext
         context = contextmod.copy_context(context)
