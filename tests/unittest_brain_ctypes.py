@@ -1,4 +1,5 @@
 import pytest
+import sys
 
 from astroid import extract_node
 from astroid.nodes.node_classes import Const
@@ -81,7 +82,10 @@ def test_cdata_member_access():
     """
     node = extract_node(src)
     node_inf = node.inferred()[0]
-    assert node_inf.display_type() == "Class"
+    if hasattr(sys, "pypy_version_info"):
+        assert node_inf.display_type() == "Instance of"
+    else:
+        assert node_inf.display_type() == "Class"
     assert node_inf.qname() == "_ctypes._SimpleCData._objects"
 
 
