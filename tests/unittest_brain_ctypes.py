@@ -10,6 +10,7 @@ pytestmark = pytest.mark.skipif(
     reason="pypy has its own implementation of _ctypes module which is different from the one of cpython",
 )
 
+
 # The parameters of the test define a mapping between the ctypes redefined types
 # and the builtin types that the "value" member holds
 @pytest.mark.parametrize(
