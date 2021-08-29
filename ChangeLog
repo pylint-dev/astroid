@@ -26,6 +26,10 @@ What's New in astroid 2.7.3?
 ============================
 Release date: TBA
 
+* Adds a brain for the ctypes module.
+
+  Closes PyCQA/pylint#4896
+
 * When processing dataclass attributes, exclude the same type hints from abc.collections
   as from typing.
 
