@@ -28,6 +28,7 @@ from various source and using a cache of built modules)
 """
 
 import os
+import types
 import zipimport
 from typing import ClassVar
 
@@ -37,6 +38,7 @@ from astroid.modutils import (
     NoSourceFile,
     file_info_from_modpath,
     get_source_file,
+    is_module_name_part_of_extension_package_whitelist,
     is_python_source,
     is_standard_module,
     load_module_from_name,
@@ -138,15 +140,13 @@ class AstroidManager:
 
         return build_namespace_package_module(modname, path)
 
-    def _can_load_extension(self, modname):
+    def _can_load_extension(self, modname: str) -> bool:
         if self.always_load_extensions:
             return True
         if is_standard_module(modname):
             return True
-        parts = modname.split(".")
-        return any(
-            ".".join(parts[:x]) in self.extension_package_whitelist
-            for x in range(1, len(parts) + 1)
+        return is_module_name_part_of_extension_package_whitelist(
+            modname, self.extension_package_whitelist
         )
 
     def ast_from_module_name(self, modname, context_file=None):
@@ -263,7 +263,7 @@ class AstroidManager:
             raise value.with_traceback(None)
         return value
 
-    def ast_from_module(self, module, modname=None):
+    def ast_from_module(self, module: types.ModuleType, modname: str = None):
         """given an imported module, return the astroid object"""
         modname = modname or module.__name__
         if modname in self.astroid_cache:
