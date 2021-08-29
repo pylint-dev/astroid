@@ -14,10 +14,10 @@
 """Various context related utilities, including inference and call contexts."""
 import contextlib
 import pprint
-from typing import TYPE_CHECKING, MutableMapping, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, List, MutableMapping, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
-    from astroid.nodes.node_classes import NodeNG
+    from astroid.nodes.node_classes import Keyword, NodeNG
 
 
 _INFERENCE_CACHE = {}
@@ -164,19 +164,21 @@ class InferenceContext:
 class CallContext:
     """Holds information for a call site."""
 
-    __slots__ = ("args", "keywords")
+    __slots__ = ("args", "keywords", "callee")
 
-    def __init__(self, args, keywords=None):
-        """
-        :param List[NodeNG] args: Call positional arguments
-        :param Union[List[nodes.Keyword], None] keywords: Call keywords
-        """
-        self.args = args
+    def __init__(
+        self,
+        args: List["NodeNG"],
+        keywords: Optional[List["Keyword"]] = None,
+        callee: Optional["NodeNG"] = None,
+    ):
+        self.args = args  # Call positional arguments
         if keywords:
             keywords = [(arg.arg, arg.value) for arg in keywords]
         else:
             keywords = []
-        self.keywords = keywords
+        self.keywords = keywords  # Call keyword arguments
+        self.callee = callee  # Function being called
 
 
 def copy_context(context: Optional[InferenceContext]) -> InferenceContext:
