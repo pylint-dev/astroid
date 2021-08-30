@@ -1249,7 +1249,7 @@ class Assign(mixins.AssignTypeMixin, Statement):
         self.value: Optional[NodeNG] = None
         """The value being assigned to the variables."""
 
-        self.type_annotation: Optional[NodeNG] = None
+        self.type_annotation: Optional[NodeNG] = None  # can be None
         """If present, this will contain the type annotation passed by a type comment"""
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
