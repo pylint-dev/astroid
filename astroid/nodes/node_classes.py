@@ -1141,6 +1141,12 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
         self.attrname: Optional[str] = attrname
         """The name of the attribute being assigned to."""
 
+        if attrname is None:
+            warnings.warn(
+                "'attrname' will be a required attribute of 'nodes.AssignAttr' in astroid 3.0.0",
+                DeprecationWarning,
+            )
+
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(self, expr: Optional[NodeNG] = None) -> None:
@@ -2085,6 +2091,12 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
         self.attrname: Optional[str] = attrname
         """The name of the attribute that is being deleted."""
 
+        if attrname is None:
+            warnings.warn(
+                "'attrname' will be a required attribute of 'nodes.DelAttr' in astroid 3.0.0",
+                DeprecationWarning,
+            )
+
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(self, expr: Optional[NodeNG] = None) -> None:
@@ -2715,6 +2727,12 @@ class Attribute(NodeNG):
 
         self.attrname: Optional[str] = attrname
         """The name of the attribute."""
+
+        if attrname is None:
+            warnings.warn(
+                "'attrname' will be a required attribute of 'nodes.Attribute' in astroid 3.0.0",
+                DeprecationWarning,
+            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
