@@ -6,6 +6,17 @@ What's New in astroid 2.8.0?
 ============================
 Release date: TBA
 
+
+What's New in astroid 2.7.4?
+============================
+Release date: TBA
+
+
+
+What's New in astroid 2.7.3?
+============================
+Release date: 2021-08-30
+
 * The transforms related to a module are applied only if this module has not been explicitly authorized to be imported
   (i.e is not in AstroidManager.extension_package_whitelist). Solves the following issues if numpy is authorized to be imported
   through the `extension-pkg-allow-list` option.
@@ -27,11 +38,6 @@ Release date: TBA
   had an attribute that was an instance of its superclass.
 
     Closes PyCQA/pylint#4220
-
-
-What's New in astroid 2.7.3?
-============================
-Release date: TBA
 
 * Adds a brain for the ctypes module.
 
