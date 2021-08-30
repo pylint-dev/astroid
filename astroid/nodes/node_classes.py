@@ -3036,6 +3036,12 @@ class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         and the alias that the name is assigned to (if any).
         """
 
+        if names is None:
+            warnings.warn(
+                "'names' will be a required attribute of 'nodes.Import' in astroid 3.0.0",
+                DeprecationWarning,
+            )
+
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
 
