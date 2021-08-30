@@ -39,6 +39,7 @@ import abc
 import itertools
 import sys
 import typing
+import warnings
 from functools import lru_cache
 from typing import Callable, Generator, Optional
 
@@ -610,6 +611,12 @@ class AssignName(
         self.name: Optional[str] = name
         """The name that is assigned to."""
 
+        if name is None:
+            warnings.warn(
+                "'name' will be a required attribute of 'nodes.AssignName' in astroid 3.0.0",
+                DeprecationWarning,
+            )
+
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
 
@@ -649,6 +656,12 @@ class DelName(
         """
         self.name: Optional[str] = name
         """The name that is being deleted."""
+
+        if name is None:
+            warnings.warn(
+                "'name' will be a required attribute of 'nodes.DelName' in astroid 3.0.0",
+                DeprecationWarning,
+            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -690,6 +703,12 @@ class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
         """
         self.name: Optional[str] = name
         """The name that this node refers to."""
+
+        if name is None:
+            warnings.warn(
+                "'name' will be a required attribute of 'nodes.Name' in astroid 3.0.0",
+                DeprecationWarning,
+            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
