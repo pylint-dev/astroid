@@ -1401,6 +1401,12 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
         self.value: Optional[NodeNG] = None
         """The value being assigned to the variable."""
 
+        if op is None:
+            warnings.warn(
+                "'op' will be a required attribute of 'nodes.AugAssign' in astroid 3.0.0",
+                DeprecationWarning,
+            )
+
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
@@ -1488,6 +1494,12 @@ class BinOp(NodeNG):
         self.right: Optional[NodeNG] = None
         """What is being applied to the operator on the right side."""
 
+        if op is None:
+            warnings.warn(
+                "'op' will be a required attribute of 'nodes.BinOp' in astroid 3.0.0",
+                DeprecationWarning,
+            )
+
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
@@ -1573,6 +1585,12 @@ class BoolOp(NodeNG):
 
         self.values: typing.List[NodeNG] = []
         """The values being applied to the operator."""
+
+        if op is None:
+            warnings.warn(
+                "'op' will be a required attribute of 'nodes.BoolOp' in astroid 3.0.0",
+                DeprecationWarning,
+            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -3792,6 +3810,12 @@ class UnaryOp(NodeNG):
 
         self.operand: Optional[NodeNG] = None
         """What the unary operator is applied to."""
+
+        if op is None:
+            warnings.warn(
+                "'op' will be a required attribute of 'nodes.UnaryOp' in astroid 3.0.0",
+                DeprecationWarning,
+            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
