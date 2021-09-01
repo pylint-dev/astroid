@@ -39,7 +39,6 @@ import abc
 import itertools
 import sys
 import typing
-import warnings
 from functools import lru_cache
 from typing import Callable, Generator, Optional
 
@@ -591,6 +590,7 @@ class AssignName(
 
     _other_fields = ("name",)
 
+    @decorators.deprecate_default_argument_values(name="str")
     def __init__(
         self,
         name: Optional[str] = None,
@@ -610,12 +610,6 @@ class AssignName(
         """
         self.name: Optional[str] = name
         """The name that is assigned to."""
-
-        if name is None:
-            warnings.warn(
-                "'name' will be a required attribute of 'nodes.AssignName' in astroid 3.0.0",
-                DeprecationWarning,
-            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -637,6 +631,7 @@ class DelName(
 
     _other_fields = ("name",)
 
+    @decorators.deprecate_default_argument_values(name="str")
     def __init__(
         self,
         name: Optional[str] = None,
@@ -656,12 +651,6 @@ class DelName(
         """
         self.name: Optional[str] = name
         """The name that is being deleted."""
-
-        if name is None:
-            warnings.warn(
-                "'name' will be a required attribute of 'nodes.DelName' in astroid 3.0.0",
-                DeprecationWarning,
-            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -684,6 +673,7 @@ class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
 
     _other_fields = ("name",)
 
+    @decorators.deprecate_default_argument_values(name="str")
     def __init__(
         self,
         name: Optional[str] = None,
@@ -703,12 +693,6 @@ class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
         """
         self.name: Optional[str] = name
         """The name that this node refers to."""
-
-        if name is None:
-            warnings.warn(
-                "'name' will be a required attribute of 'nodes.Name' in astroid 3.0.0",
-                DeprecationWarning,
-            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -1118,6 +1102,7 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
 
+    @decorators.deprecate_default_argument_values(attrname="str")
     def __init__(
         self,
         attrname: Optional[str] = None,
@@ -1140,12 +1125,6 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
 
         self.attrname: Optional[str] = attrname
         """The name of the attribute being assigned to."""
-
-        if attrname is None:
-            warnings.warn(
-                "'attrname' will be a required attribute of 'nodes.AssignAttr' in astroid 3.0.0",
-                DeprecationWarning,
-            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -1371,6 +1350,7 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
     _astroid_fields = ("target", "value")
     _other_fields = ("op",)
 
+    @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
         op: Optional[str] = None,
@@ -1400,12 +1380,6 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
 
         self.value: Optional[NodeNG] = None
         """The value being assigned to the variable."""
-
-        if op is None:
-            warnings.warn(
-                "'op' will be a required attribute of 'nodes.AugAssign' in astroid 3.0.0",
-                DeprecationWarning,
-            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -1468,6 +1442,7 @@ class BinOp(NodeNG):
     _astroid_fields = ("left", "right")
     _other_fields = ("op",)
 
+    @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
         op: Optional[str] = None,
@@ -1493,12 +1468,6 @@ class BinOp(NodeNG):
 
         self.right: Optional[NodeNG] = None
         """What is being applied to the operator on the right side."""
-
-        if op is None:
-            warnings.warn(
-                "'op' will be a required attribute of 'nodes.BinOp' in astroid 3.0.0",
-                DeprecationWarning,
-            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -1563,6 +1532,7 @@ class BoolOp(NodeNG):
     _astroid_fields = ("values",)
     _other_fields = ("op",)
 
+    @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
         op: Optional[str] = None,
@@ -1585,12 +1555,6 @@ class BoolOp(NodeNG):
 
         self.values: typing.List[NodeNG] = []
         """The values being applied to the operator."""
-
-        if op is None:
-            warnings.warn(
-                "'op' will be a required attribute of 'nodes.BoolOp' in astroid 3.0.0",
-                DeprecationWarning,
-            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -2083,6 +2047,7 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
 
+    @decorators.deprecate_default_argument_values(attrname="str")
     def __init__(
         self,
         attrname: Optional[str] = None,
@@ -2108,12 +2073,6 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
 
         self.attrname: Optional[str] = attrname
         """The name of the attribute that is being deleted."""
-
-        if attrname is None:
-            warnings.warn(
-                "'attrname' will be a required attribute of 'nodes.DelAttr' in astroid 3.0.0",
-                DeprecationWarning,
-            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -2720,6 +2679,7 @@ class Attribute(NodeNG):
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
 
+    @decorators.deprecate_default_argument_values(attrname="str")
     def __init__(
         self,
         attrname: Optional[str] = None,
@@ -2745,12 +2705,6 @@ class Attribute(NodeNG):
 
         self.attrname: Optional[str] = attrname
         """The name of the attribute."""
-
-        if attrname is None:
-            warnings.warn(
-                "'attrname' will be a required attribute of 'nodes.Attribute' in astroid 3.0.0",
-                DeprecationWarning,
-            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -3012,6 +2966,7 @@ class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
 
     _other_fields = ("names",)
 
+    @decorators.deprecate_default_argument_values(names="list[tuple[str, str | None]]")
     def __init__(
         self,
         names: Optional[typing.List[typing.Tuple[str, Optional[str]]]] = None,
@@ -3035,12 +2990,6 @@ class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         Each entry is a :class:`tuple` of the name being imported,
         and the alias that the name is assigned to (if any).
         """
-
-        if names is None:
-            warnings.warn(
-                "'names' will be a required attribute of 'nodes.Import' in astroid 3.0.0",
-                DeprecationWarning,
-            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -3794,6 +3743,7 @@ class UnaryOp(NodeNG):
     _astroid_fields = ("operand",)
     _other_fields = ("op",)
 
+    @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
         op: Optional[str] = None,
@@ -3816,12 +3766,6 @@ class UnaryOp(NodeNG):
 
         self.operand: Optional[NodeNG] = None
         """What the unary operator is applied to."""
-
-        if op is None:
-            warnings.warn(
-                "'op' will be a required attribute of 'nodes.UnaryOp' in astroid 3.0.0",
-                DeprecationWarning,
-            )
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
