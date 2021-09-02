@@ -590,6 +590,7 @@ class AssignName(
 
     _other_fields = ("name",)
 
+    @decorators.deprecate_default_argument_values(name="str")
     def __init__(
         self,
         name: Optional[str] = None,
@@ -630,6 +631,7 @@ class DelName(
 
     _other_fields = ("name",)
 
+    @decorators.deprecate_default_argument_values(name="str")
     def __init__(
         self,
         name: Optional[str] = None,
@@ -671,6 +673,7 @@ class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
 
     _other_fields = ("name",)
 
+    @decorators.deprecate_default_argument_values(name="str")
     def __init__(
         self,
         name: Optional[str] = None,
@@ -1099,6 +1102,7 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
 
+    @decorators.deprecate_default_argument_values(attrname="str")
     def __init__(
         self,
         attrname: Optional[str] = None,
@@ -1224,7 +1228,7 @@ class Assign(mixins.AssignTypeMixin, Statement):
         self.value: Optional[NodeNG] = None
         """The value being assigned to the variables."""
 
-        self.type_annotation: Optional[NodeNG] = None
+        self.type_annotation: Optional[NodeNG] = None  # can be None
         """If present, this will contain the type annotation passed by a type comment"""
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
@@ -1346,6 +1350,7 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
     _astroid_fields = ("target", "value")
     _other_fields = ("op",)
 
+    @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
         op: Optional[str] = None,
@@ -1437,6 +1442,7 @@ class BinOp(NodeNG):
     _astroid_fields = ("left", "right")
     _other_fields = ("op",)
 
+    @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
         op: Optional[str] = None,
@@ -1526,6 +1532,7 @@ class BoolOp(NodeNG):
     _astroid_fields = ("values",)
     _other_fields = ("op",)
 
+    @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
         op: Optional[str] = None,
@@ -2040,6 +2047,7 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
 
+    @decorators.deprecate_default_argument_values(attrname="str")
     def __init__(
         self,
         attrname: Optional[str] = None,
@@ -2671,6 +2679,7 @@ class Attribute(NodeNG):
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
 
+    @decorators.deprecate_default_argument_values(attrname="str")
     def __init__(
         self,
         attrname: Optional[str] = None,
@@ -2957,6 +2966,7 @@ class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
 
     _other_fields = ("names",)
 
+    @decorators.deprecate_default_argument_values(names="list[tuple[str, str | None]]")
     def __init__(
         self,
         names: Optional[typing.List[typing.Tuple[str, Optional[str]]]] = None,
@@ -3733,6 +3743,7 @@ class UnaryOp(NodeNG):
     _astroid_fields = ("operand",)
     _other_fields = ("op",)
 
+    @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
         op: Optional[str] = None,
