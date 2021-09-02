@@ -6,7 +6,7 @@ What's New in astroid 2.8.0?
 ============================
 Release date: TBA
 
-* Add additional deprecation warnings in preparation for astroid 3.0.0
+* Add additional deprecation warnings in preparation for astroid 3.0
 
   * Require attributes for some node classes with ``__init__`` call.
 
