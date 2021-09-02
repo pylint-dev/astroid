@@ -46,7 +46,7 @@ from astroid.modutils import (
 )
 from astroid.transforms import TransformVisitor
 
-ZIP_IMPORT_EXTS = (".zip", ".egg", ".whl")
+ZIP_IMPORT_EXTS = (".zip", ".egg", ".whl", ".pyz", ".pyzw")
 
 
 def safe_repr(obj):
