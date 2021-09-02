@@ -60,6 +60,7 @@ from astroid.builder import extract_node, parse
 from astroid.const import Context, Del, Load, Store
 from astroid.exceptions import *
 from astroid.inference_tip import _inference_tip_cached, inference_tip
+from astroid.objects import ExceptionInstance
 
 # isort: off
 # It's impossible to import from astroid.nodes with a wildcard, because
