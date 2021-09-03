@@ -75,7 +75,7 @@ def test_ctypes_redefined_types_members(c_type, builtin_type, type_code):
     assert node_inf.value == type_code
 
 
-def test_cdata_member_access():
+def test_cdata_member_access() -> None:
     """
     Test that the base members are still accessible. Each redefined ctypes type inherits from _SimpleCData which itself
     inherits from _CData. Checks that _CData members are accessibles
@@ -91,7 +91,7 @@ def test_cdata_member_access():
     assert node_inf.qname() == "_ctypes._SimpleCData._objects"
 
 
-def test_other_ctypes_member_untouched():
+def test_other_ctypes_member_untouched() -> None:
     """
     Test that other ctypes members, which are not touched by the brain, are correctly inferred
     """

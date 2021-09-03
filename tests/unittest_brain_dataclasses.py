@@ -366,7 +366,7 @@ def test_inference_inherited(module: str):
     assert inferred[1].name == "str"
 
 
-def test_pydantic_field():
+def test_pydantic_field() -> None:
     """Test that pydantic.Field attributes are currently Uninferable.
 
     (Eventually, we can extend the brain to support pydantic.Field)

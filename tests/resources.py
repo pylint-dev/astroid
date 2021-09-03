@@ -13,27 +13,29 @@
 
 import os
 import sys
+from typing import Optional
 
 from astroid import builder
 from astroid.manager import AstroidManager
+from astroid.nodes.scoped_nodes import Module
 
 DATA_DIR = os.path.join("testdata", "python3")
 RESOURCE_PATH = os.path.join(os.path.dirname(__file__), DATA_DIR, "data")
 
 
-def find(name):
+def find(name: str) -> str:
     return os.path.normpath(os.path.join(os.path.dirname(__file__), DATA_DIR, name))
 
 
-def build_file(path, modname=None):
+def build_file(path: str, modname: Optional[str] = None) -> Module:
     return builder.AstroidBuilder().file_build(find(path), modname)
 
 
 class SysPathSetup:
-    def setUp(self):
+    def setUp(self) -> None:
         sys.path.insert(0, find(""))
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         del sys.path[0]
         datadir = find("")
         for key in list(sys.path_importer_cache):

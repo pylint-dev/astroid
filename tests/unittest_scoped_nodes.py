@@ -37,6 +37,7 @@ import sys
 import textwrap
 import unittest
 from functools import partial
+from typing import Any, List, Union
 
 import pytest
 
@@ -65,7 +66,9 @@ except ImportError:
     HAS_SIX = False
 
 
-def _test_dict_interface(self, node, test_attr):
+def _test_dict_interface(
+    self: Any, node: Union[nodes.ClassDef, nodes.FunctionDef, nodes.Module], test_attr: str
+) -> None:
     self.assertIs(node[test_attr], node[test_attr])
     self.assertIn(test_attr, node)
     node.keys()
@@ -75,7 +78,7 @@ def _test_dict_interface(self, node, test_attr):
 
 
 class ModuleLoader(resources.SysPathSetup):
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.module = resources.build_file("data/module.py", "data.module")
         self.module2 = resources.build_file("data/module2.py", "data.module2")
@@ -84,7 +87,7 @@ class ModuleLoader(resources.SysPathSetup):
 
 
 class ModuleNodeTest(ModuleLoader, unittest.TestCase):
-    def test_special_attributes(self):
+    def test_special_attributes(self) -> None:
         self.assertEqual(len(self.module.getattr("__name__")), 1)
         self.assertIsInstance(self.module.getattr("__name__")[0], nodes.Const)
         self.assertEqual(self.module.getattr("__name__")[0].value, "data.module")
@@ -105,10 +108,10 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(self.pack.getattr("__path__")), 1)
         self.assertIsInstance(self.pack.getattr("__path__")[0], nodes.List)
 
-    def test_dict_interface(self):
+    def test_dict_interface(self) -> None:
         _test_dict_interface(self, self.module, "YO")
 
-    def test_getattr(self):
+    def test_getattr(self) -> None:
         yo = self.module.getattr("YO")[0]
         self.assertIsInstance(yo, nodes.ClassDef)
         self.assertEqual(yo.name, "YO")
@@ -130,14 +133,14 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(self.nonregr.getattr("enumerate")), 2)
         self.assertRaises(InferenceError, self.nonregr.igetattr, "YOAA")
 
-    def test_wildcard_import_names(self):
+    def test_wildcard_import_names(self) -> None:
         m = resources.build_file("data/all.py", "all")
         self.assertEqual(m.wildcard_import_names(), ["Aaa", "_bla", "name"])
         m = resources.build_file("data/notall.py", "notall")
         res = sorted(m.wildcard_import_names())
         self.assertEqual(res, ["Aaa", "func", "name", "other"])
 
-    def test_public_names(self):
+    def test_public_names(self) -> None:
         m = builder.parse(
             """
         name = 'a'
@@ -182,7 +185,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         res = sorted(m.public_names())
         self.assertEqual(res, ["test", "tzop"])
 
-    def test_module_getattr(self):
+    def test_module_getattr(self) -> None:
         data = """
             appli = application
             appli += 2
@@ -192,7 +195,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         # test del statement not returned by getattr
         self.assertEqual(len(astroid.getattr("appli")), 2, astroid.getattr("appli"))
 
-    def test_relative_to_absolute_name(self):
+    def test_relative_to_absolute_name(self) -> None:
         # package
         mod = nodes.Module("very.multi.package", "doc")
         mod.package = True
@@ -216,7 +219,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         modname = mod.relative_to_absolute_name("", 1)
         self.assertEqual(modname, "very.multi")
 
-    def test_relative_to_absolute_name_beyond_top_level(self):
+    def test_relative_to_absolute_name_beyond_top_level(self) -> None:
         mod = nodes.Module("a.b.c", "")
         mod.package = True
         for level in (5, 4):
@@ -229,7 +232,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
             )
             self.assertEqual(expected, str(cm.exception))
 
-    def test_import_1(self):
+    def test_import_1(self) -> None:
         data = """from . import subpackage"""
         sys.path.insert(0, resources.find("data"))
         astroid = builder.parse(data, "package", "data/package/__init__.py")
@@ -242,7 +245,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         finally:
             del sys.path[0]
 
-    def test_import_2(self):
+    def test_import_2(self) -> None:
         data = """from . import subpackage as pouet"""
         astroid = builder.parse(data, "package", "data/package/__init__.py")
         sys.path.insert(0, resources.find("data"))
@@ -255,27 +258,27 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         finally:
             del sys.path[0]
 
-    def test_file_stream_in_memory(self):
+    def test_file_stream_in_memory(self) -> None:
         data = """irrelevant_variable is irrelevant"""
         astroid = builder.parse(data, "in_memory")
         with astroid.stream() as stream:
             self.assertEqual(stream.read().decode(), data)
 
-    def test_file_stream_physical(self):
+    def test_file_stream_physical(self) -> None:
         path = resources.find("data/all.py")
         astroid = builder.AstroidBuilder().file_build(path, "all")
         with open(path, "rb") as file_io:
             with astroid.stream() as stream:
                 self.assertEqual(stream.read(), file_io.read())
 
-    def test_file_stream_api(self):
+    def test_file_stream_api(self) -> None:
         path = resources.find("data/all.py")
         file_build = builder.AstroidBuilder().file_build(path, "all")
         with self.assertRaises(AttributeError):
             # pylint: disable=pointless-statement, no-member
             file_build.file_stream
 
-    def test_stream_api(self):
+    def test_stream_api(self) -> None:
         path = resources.find("data/all.py")
         astroid = builder.AstroidBuilder().file_build(path, "all")
         stream = astroid.stream()
@@ -286,7 +289,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
 
 
 class FunctionNodeTest(ModuleLoader, unittest.TestCase):
-    def test_special_attributes(self):
+    def test_special_attributes(self) -> None:
         func = self.module2["make_class"]
         self.assertEqual(len(func.getattr("__name__")), 1)
         self.assertIsInstance(func.getattr("__name__")[0], nodes.Const)
@@ -300,10 +303,10 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(self.module.getattr("__dict__")), 1)
         self.assertIsInstance(self.module.getattr("__dict__")[0], nodes.Dict)
 
-    def test_dict_interface(self):
+    def test_dict_interface(self) -> None:
         _test_dict_interface(self, self.module["global_access"], "local")
 
-    def test_default_value(self):
+    def test_default_value(self) -> None:
         func = self.module2["make_class"]
         self.assertIsInstance(func.args.default_value("base"), nodes.Attribute)
         self.assertRaises(NoDefault, func.args.default_value, "args")
@@ -313,7 +316,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         # self.assertIsInstance(func.mularg_class('kwargs'), nodes.Dict)
         # self.assertIsNone(func.mularg_class('base'))
 
-    def test_navigation(self):
+    def test_navigation(self) -> None:
         function = self.module["global_access"]
         self.assertEqual(function.statement(), function)
         l_sibling = function.previous_sibling()
@@ -331,13 +334,13 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         first = l_sibling.root().body[0]
         self.assertIsNone(first.previous_sibling())
 
-    def test_four_args(self):
+    def test_four_args(self) -> None:
         func = self.module["four_args"]
         local = sorted(func.keys())
         self.assertEqual(local, ["a", "b", "c", "d"])
         self.assertEqual(func.type, "function")
 
-    def test_format_args(self):
+    def test_format_args(self) -> None:
         func = self.module2["make_class"]
         self.assertEqual(
             func.args.format_args(), "any, base=data.module.YO, *args, **kwargs"
@@ -345,7 +348,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         func = self.module["four_args"]
         self.assertEqual(func.args.format_args(), "a, b, c, d")
 
-    def test_format_args_keyword_only_args(self):
+    def test_format_args_keyword_only_args(self) -> None:
         node = (
             builder.parse(
                 """
@@ -359,12 +362,12 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         formatted = node.format_args()
         self.assertEqual(formatted, "a: int, *, b: dict")
 
-    def test_is_generator(self):
+    def test_is_generator(self) -> None:
         self.assertTrue(self.module2["generator"].is_generator())
         self.assertFalse(self.module2["not_a_generator"].is_generator())
         self.assertFalse(self.module2["make_class"].is_generator())
 
-    def test_is_abstract(self):
+    def test_is_abstract(self) -> None:
         method = self.module2["AbstractClass"]["to_override"]
         self.assertTrue(method.is_abstract(pass_is_abstract=False))
         self.assertEqual(method.qname(), "data.module2.AbstractClass.to_override")
@@ -375,7 +378,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         func = self.module2["raise_string"]
         self.assertFalse(func.is_abstract(pass_is_abstract=False))
 
-    def test_is_abstract_decorated(self):
+    def test_is_abstract_decorated(self) -> None:
         methods = builder.extract_node(
             """
             import abc
@@ -410,7 +413,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
     ##         self.assertEqual([str(term) for term in method.returns()],
     ##                           ["Const('toto')", "Const(None)"])
 
-    def test_lambda_pytype(self):
+    def test_lambda_pytype(self) -> None:
         data = """
             def f():
                 g = lambda: None
@@ -419,11 +422,11 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         g = list(astroid["f"].ilookup("g"))[0]
         self.assertEqual(g.pytype(), "builtins.function")
 
-    def test_lambda_qname(self):
+    def test_lambda_qname(self) -> None:
         astroid = builder.parse("lmbd = lambda: None", __name__)
         self.assertEqual("%s.<lambda>" % __name__, astroid["lmbd"].parent.value.qname())
 
-    def test_is_method(self):
+    def test_is_method(self) -> None:
         data = """
             class A:
                 def meth1(self):
@@ -449,12 +452,12 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertFalse(astroid["function"].is_method())
         self.assertFalse(astroid["sfunction"].is_method())
 
-    def test_argnames(self):
+    def test_argnames(self) -> None:
         code = "def f(a, b, c, *args, **kwargs): pass"
         astroid = builder.parse(code, __name__)
         self.assertEqual(astroid["f"].argnames(), ["a", "b", "c", "args", "kwargs"])
 
-    def test_return_nothing(self):
+    def test_return_nothing(self) -> None:
         """test inferred value on a function with empty return"""
         data = """
             def func():
@@ -469,7 +472,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(func_vals[0], nodes.Const)
         self.assertIsNone(func_vals[0].value)
 
-    def test_no_returns_is_implicitly_none(self):
+    def test_no_returns_is_implicitly_none(self) -> None:
         code = """
             def f():
                 print('non-empty, non-pass, no return statements')
@@ -481,7 +484,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         assert isinstance(inferred, nodes.Const)
         assert inferred.value is None
 
-    def test_only_raises_is_not_implicitly_none(self):
+    def test_only_raises_is_not_implicitly_none(self) -> None:
         code = """
             def f():
                 raise SystemExit()
@@ -491,7 +494,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         inferred = next(node.infer())
         assert inferred is util.Uninferable
 
-    def test_abstract_methods_are_not_implicitly_none(self):
+    def test_abstract_methods_are_not_implicitly_none(self) -> None:
         code = """
             from abc import ABCMeta, abstractmethod
 
@@ -518,7 +521,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             assert isinstance(inferred, nodes.Const)
             assert inferred.value == value
 
-    def test_func_instance_attr(self):
+    def test_func_instance_attr(self) -> None:
         """test instance attributes for functions"""
         data = """
             def test():
@@ -535,7 +538,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(one, nodes.Const)
         self.assertEqual(one.value, 1)
 
-    def test_type_builtin_descriptor_subclasses(self):
+    def test_type_builtin_descriptor_subclasses(self) -> None:
         astroid = builder.parse(
             """
             class classonlymethod(classmethod):
@@ -564,7 +567,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(node.locals["staticmethod_subclass"][0].type, "staticmethod")
         self.assertEqual(node.locals["stcmethod"][0].type, "staticmethod")
 
-    def test_decorator_builtin_descriptors(self):
+    def test_decorator_builtin_descriptors(self) -> None:
         astroid = builder.parse(
             """
             def static_decorator(platform=None, order=50):
@@ -638,7 +641,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(node.locals["staticmethod_wrapped"][0].type, "staticmethod")
         self.assertEqual(node.locals["long_classmethod"][0].type, "classmethod")
 
-    def test_igetattr(self):
+    def test_igetattr(self) -> None:
         func = builder.extract_node(
             """
         def test():
@@ -654,7 +657,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
 
-    def test_return_annotation_is_not_the_last(self):
+    def test_return_annotation_is_not_the_last(self) -> None:
         func = builder.extract_node(
             """
         def test() -> bytes:
@@ -667,7 +670,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(last_child, nodes.Return)
         self.assertEqual(func.tolineno, 5)
 
-    def test_method_init_subclass(self):
+    def test_method_init_subclass(self) -> None:
         klass = builder.extract_node(
             """
         class MyClass:
@@ -679,7 +682,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual([n.name for n in method.args.args], ["cls"])
         self.assertEqual(method.type, "classmethod")
 
-    def test_dunder_class_local_to_method(self):
+    def test_dunder_class_local_to_method(self) -> None:
         node = builder.extract_node(
             """
         class MyClass:
@@ -691,7 +694,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "MyClass")
 
-    def test_dunder_class_local_to_function(self):
+    def test_dunder_class_local_to_function(self) -> None:
         node = builder.extract_node(
             """
         def test(self):
@@ -701,7 +704,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         with self.assertRaises(NameInferenceError):
             next(node.infer())
 
-    def test_dunder_class_local_to_classmethod(self):
+    def test_dunder_class_local_to_classmethod(self) -> None:
         node = builder.extract_node(
             """
         class MyClass:
@@ -716,10 +719,10 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
 
 
 class ClassNodeTest(ModuleLoader, unittest.TestCase):
-    def test_dict_interface(self):
+    def test_dict_interface(self) -> None:
         _test_dict_interface(self, self.module["YOUPI"], "method")
 
-    def test_cls_special_attributes_1(self):
+    def test_cls_special_attributes_1(self) -> None:
         cls = self.module["YO"]
         self.assertEqual(len(cls.getattr("__bases__")), 1)
         self.assertEqual(len(cls.getattr("__name__")), 1)
@@ -748,7 +751,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertEqual(len(cls.getattr("__dict__")), 1)
             self.assertEqual(len(cls.getattr("__mro__")), 1)
 
-    def test__mro__attribute(self):
+    def test__mro__attribute(self) -> None:
         node = builder.extract_node(
             """
         class A(object): pass
@@ -760,7 +763,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(mro, nodes.Tuple)
         self.assertEqual(mro.elts, node.mro())
 
-    def test__bases__attribute(self):
+    def test__bases__attribute(self) -> None:
         node = builder.extract_node(
             """
         class A(object): pass
@@ -775,7 +778,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(bases.elts[0], nodes.ClassDef)
         self.assertEqual(bases.elts[0].name, "C")
 
-    def test_cls_special_attributes_2(self):
+    def test_cls_special_attributes_2(self) -> None:
         astroid = builder.parse(
             """
             class A(object): pass
@@ -789,7 +792,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(astroid["A"].getattr("__bases__")[1], nodes.Tuple)
         self.assertIsInstance(astroid["A"].getattr("__bases__")[0], nodes.AssignAttr)
 
-    def test_instance_special_attributes(self):
+    def test_instance_special_attributes(self) -> None:
         for inst in (Instance(self.module["YO"]), nodes.List(), nodes.Const(1)):
             self.assertRaises(AttributeInferenceError, inst.getattr, "__mro__")
             self.assertRaises(AttributeInferenceError, inst.getattr, "__bases__")
@@ -797,7 +800,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertEqual(len(inst.getattr("__dict__")), 1)
             self.assertEqual(len(inst.getattr("__doc__")), 1)
 
-    def test_navigation(self):
+    def test_navigation(self) -> None:
         klass = self.module["YO"]
         self.assertEqual(klass.statement(), klass)
         l_sibling = klass.previous_sibling()
@@ -807,7 +810,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(r_sibling, nodes.ClassDef)
         self.assertEqual(r_sibling.name, "YOUPI")
 
-    def test_local_attr_ancestors(self):
+    def test_local_attr_ancestors(self) -> None:
         module = builder.parse(
             """
         class A():
@@ -841,7 +844,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(anc_klass.name, "object")
         self.assertRaises(StopIteration, partial(next, it))
 
-    def test_local_attr_mro(self):
+    def test_local_attr_mro(self) -> None:
         module = builder.parse(
             """
         class A(object):
@@ -865,7 +868,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         ancestors = list(dclass.local_attr_ancestors("__init__"))
         self.assertEqual([node.name for node in ancestors], ["B", "A", "object"])
 
-    def test_instance_attr_ancestors(self):
+    def test_instance_attr_ancestors(self) -> None:
         klass2 = self.module["YOUPI"]
         it = klass2.instance_attr_ancestors("yo")
         anc_klass = next(it)
@@ -876,7 +879,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         it = klass2.instance_attr_ancestors("member")
         self.assertRaises(StopIteration, partial(next, it))
 
-    def test_methods(self):
+    def test_methods(self) -> None:
         expected_methods = {"__init__", "class_method", "method", "static_method"}
         klass2 = self.module["YOUPI"]
         methods = {m.name for m in klass2.methods()}
@@ -901,13 +904,13 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     #    self.assertIsInstance(value, nodes.Const)
     #    self.assertEqual(value.value, 1)
 
-    def test_ancestors(self):
+    def test_ancestors(self) -> None:
         klass = self.module["YOUPI"]
         self.assertEqual(["YO", "object"], [a.name for a in klass.ancestors()])
         klass = self.module2["Specialization"]
         self.assertEqual(["YOUPI", "YO", "object"], [a.name for a in klass.ancestors()])
 
-    def test_type(self):
+    def test_type(self) -> None:
         klass = self.module["YOUPI"]
         self.assertEqual(klass.type, "class")
         klass = self.module2["Metaclass"]
@@ -922,11 +925,11 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         klass = self.module2["NotMetaclass"]
         self.assertEqual(klass.type, "class")
 
-    def test_inner_classes(self):
+    def test_inner_classes(self) -> None:
         eee = self.nonregr["Ccc"]["Eee"]
         self.assertEqual([n.name for n in eee.ancestors()], ["Ddd", "Aaa", "object"])
 
-    def test_classmethod_attributes(self):
+    def test_classmethod_attributes(self) -> None:
         data = """
             class WebAppObject(object):
                 def registered(cls, application):
@@ -948,7 +951,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         ]
         self.assertEqual(sorted(cls.locals.keys()), assert_keys)
 
-    def test_class_getattr(self):
+    def test_class_getattr(self) -> None:
         data = """
             class WebAppObject(object):
                 appli = application
@@ -960,7 +963,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         # test del statement not returned by getattr
         self.assertEqual(len(cls.getattr("appli")), 2)
 
-    def test_instance_getattr(self):
+    def test_instance_getattr(self) -> None:
         data = """
             class WebAppObject(object):
                 def __init__(self, application):
@@ -973,7 +976,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         # test del statement not returned by getattr
         self.assertEqual(len(inst.getattr("appli")), 2)
 
-    def test_instance_getattr_with_class_attr(self):
+    def test_instance_getattr_with_class_attr(self) -> None:
         data = """
             class Parent:
                 aa = 1
@@ -997,7 +1000,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(inst.getattr("bb")), 1, inst.getattr("bb"))
         self.assertEqual(len(inst.getattr("cc")), 2, inst.getattr("cc"))
 
-    def test_getattr_method_transform(self):
+    def test_getattr_method_transform(self) -> None:
         data = """
             class Clazz(object):
 
@@ -1027,7 +1030,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
 
-    def test_getattr_from_grandpa(self):
+    def test_getattr_from_grandpa(self) -> None:
         data = """
             class Future:
                 attr = 1
@@ -1046,7 +1049,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(attr1, nodes.AssignName)
         self.assertEqual(attr1.name, "attr")
 
-    def test_function_with_decorator_lineno(self):
+    def test_function_with_decorator_lineno(self) -> None:
         data = """
             @f(a=2,
                b=3)
@@ -1064,7 +1067,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(astroid["g2"].fromlineno, 9)
         self.assertEqual(astroid["g2"].tolineno, 10)
 
-    def test_metaclass_error(self):
+    def test_metaclass_error(self) -> None:
         astroid = builder.parse(
             """
             class Test(object):
@@ -1074,7 +1077,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         klass = astroid["Test"]
         self.assertFalse(klass.metaclass())
 
-    def test_metaclass_yes_leak(self):
+    def test_metaclass_yes_leak(self) -> None:
         astroid = builder.parse(
             """
             # notice `ab` instead of `abc`
@@ -1087,7 +1090,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         klass = astroid["Meta"]
         self.assertIsNone(klass.metaclass())
 
-    def test_metaclass_type(self):
+    def test_metaclass_type(self) -> None:
         klass = builder.extract_node(
             """
             def with_metaclass(meta, base=object):
@@ -1101,7 +1104,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             ["NewBase", "object"], [base.name for base in klass.ancestors()]
         )
 
-    def test_no_infinite_metaclass_loop(self):
+    def test_no_infinite_metaclass_loop(self) -> None:
         klass = builder.extract_node(
             """
             class SSS(object):
@@ -1125,7 +1128,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIn("object", ancestors)
         self.assertIn("JJJ", ancestors)
 
-    def test_no_infinite_metaclass_loop_with_redefine(self):
+    def test_no_infinite_metaclass_loop_with_redefine(self) -> None:
         ast_nodes = builder.extract_node(
             """
             import datetime
@@ -1158,7 +1161,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(["object"], [base.name for base in klass.ancestors()])
         self.assertEqual("type", klass.metaclass().name)
 
-    def test_add_metaclass(self):
+    def test_add_metaclass(self) -> None:
         klass = builder.extract_node(
             """
         import abc
@@ -1185,7 +1188,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         inferred = next(klass.infer())
         self.assertIsNone(inferred.metaclass())
 
-    def test_nonregr_infer_callresult(self):
+    def test_nonregr_infer_callresult(self) -> None:
         astroid = builder.parse(
             """
             class Delegate(object):
@@ -1204,7 +1207,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         # https://bitbucket.org/logilab/astroid/issue/17
         self.assertEqual(list(instance.infer()), [util.Uninferable])
 
-    def test_slots(self):
+    def test_slots(self) -> None:
         astroid = builder.parse(
             """
             from collections import deque
@@ -1251,7 +1254,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             else:
                 self.assertEqual(list(expected_value), [node.value for node in slots])
 
-    def test_slots_for_dict_keys(self):
+    def test_slots_for_dict_keys(self) -> None:
         module = builder.parse(
             """
         class Issue(object):
@@ -1265,7 +1268,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(slots[0].value, "id")
         self.assertEqual(slots[1].value, "id1")
 
-    def test_slots_empty_list_of_slots(self):
+    def test_slots_empty_list_of_slots(self) -> None:
         module = builder.parse(
             """
         class Klass(object):
@@ -1275,7 +1278,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         cls = module["Klass"]
         self.assertEqual(cls.slots(), [])
 
-    def test_slots_taken_from_parents(self):
+    def test_slots_taken_from_parents(self) -> None:
         module = builder.parse(
             """
         class FirstParent(object):
@@ -1292,7 +1295,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             sorted({slot.value for slot in slots}), ["a", "b", "c", "d", "e"]
         )
 
-    def test_all_ancestors_need_slots(self):
+    def test_all_ancestors_need_slots(self) -> None:
         module = builder.parse(
             """
         class A(object):
@@ -1307,7 +1310,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         cls = module["B"]
         self.assertIsNone(cls.slots())
 
-    def test_slots_added_dynamically_still_inferred(self):
+    def test_slots_added_dynamically_still_inferred(self) -> None:
         code = """
         class NodeBase(object):
             __slots__ = "a", "b"
@@ -1322,10 +1325,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         assert len(slots) == 3, slots
         assert [slot.value for slot in slots] == ["a", "b", "c"]
 
-    def assertEqualMro(self, klass, expected_mro):
+    def assertEqualMro(self, klass: nodes.ClassDef, expected_mro: List[str]) -> None:
         self.assertEqual([member.name for member in klass.mro()], expected_mro)
 
-    def assertEqualMroQName(self, klass, expected_mro):
+    def assertEqualMroQName(self, klass: nodes.ClassDef, expected_mro: List[str]) -> None:
         self.assertEqual([member.qname() for member in klass.mro()], expected_mro)
 
     @unittest.skipUnless(HAS_SIX, "These tests require the six library")
@@ -1344,7 +1347,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         )
         self.assertEqualMro(astroid["A"], ["A", "B", "C", "object"])
 
-    def test_mro(self):
+    def test_mro(self) -> None:
         astroid = builder.parse(
             """
         class C(object): pass
@@ -1436,7 +1439,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(cm.exception, MroError)
         self.assertIsInstance(cm.exception, ResolveError)
 
-    def test_mro_with_factories(self):
+    def test_mro_with_factories(self) -> None:
         cls = builder.extract_node(
             """
         def MixinFactory(cls):
@@ -1475,7 +1478,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             ],
         )
 
-    def test_mro_with_attribute_classes(self):
+    def test_mro_with_attribute_classes(self) -> None:
         cls = builder.extract_node(
             """
         class A:
@@ -1629,7 +1632,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         with self.assertRaises(DuplicateBasesError):
             cls.mro()
 
-    def test_generator_from_infer_call_result_parent(self):
+    def test_generator_from_infer_call_result_parent(self) -> None:
         func = builder.extract_node(
             """
         import contextlib
@@ -1643,7 +1646,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(result, Generator)
         self.assertEqual(result.parent, func)
 
-    def test_type_three_arguments(self):
+    def test_type_three_arguments(self) -> None:
         classes = builder.extract_node(
             """
         type('A', (object, ), {"a": 1, "b": 2, missing: 3}) #@
@@ -1660,7 +1663,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         with self.assertRaises(AttributeInferenceError):
             first.getattr("missing")
 
-    def test_implicit_metaclass(self):
+    def test_implicit_metaclass(self) -> None:
         cls = builder.extract_node(
             """
         class A(object):
@@ -1670,7 +1673,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         type_cls = nodes.builtin_lookup("type")[1][0]
         self.assertEqual(cls.implicit_metaclass(), type_cls)
 
-    def test_implicit_metaclass_lookup(self):
+    def test_implicit_metaclass_lookup(self) -> None:
         cls = builder.extract_node(
             """
         class A(object):
@@ -1682,7 +1685,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(func), 1)
         self.assertRaises(AttributeInferenceError, instance.getattr, "mro")
 
-    def test_metaclass_lookup_using_same_class(self):
+    def test_metaclass_lookup_using_same_class(self) -> None:
         # Check that we don't have recursive attribute access for metaclass
         cls = builder.extract_node(
             """
@@ -1691,7 +1694,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         )
         self.assertEqual(len(cls.getattr("mro")), 1)
 
-    def test_metaclass_lookup_inference_errors(self):
+    def test_metaclass_lookup_inference_errors(self) -> None:
         module = builder.parse(
             """
         class Metaclass(type):
@@ -1703,7 +1706,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         cls = module["B"]
         self.assertEqual(util.Uninferable, next(cls.igetattr("foo")))
 
-    def test_metaclass_lookup(self):
+    def test_metaclass_lookup(self) -> None:
         module = builder.parse(
             """
         class Metaclass(type):
@@ -1753,7 +1756,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         static = next(acls.igetattr("static"))
         self.assertIsInstance(static, nodes.FunctionDef)
 
-    def test_local_attr_invalid_mro(self):
+    def test_local_attr_invalid_mro(self) -> None:
         cls = builder.extract_node(
             """
         # A has an invalid MRO, local_attr should fallback
@@ -1769,7 +1772,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
 
-    def test_has_dynamic_getattr(self):
+    def test_has_dynamic_getattr(self) -> None:
         module = builder.parse(
             """
         class Getattr(object):
@@ -1794,7 +1797,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         module = astroid_builder.module_build(datetime)
         self.assertFalse(module["timedelta"].has_dynamic_getattr())
 
-    def test_duplicate_bases_namedtuple(self):
+    def test_duplicate_bases_namedtuple(self) -> None:
         module = builder.parse(
             """
         import collections
@@ -1810,7 +1813,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class_names = [i.name for i in mro]
         self.assertEqual(names, class_names)
 
-    def test_instance_bound_method_lambdas(self):
+    def test_instance_bound_method_lambdas(self) -> None:
         ast_nodes = builder.extract_node(
             """
         class Test(object): #@
@@ -1829,7 +1832,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         not_method = next(instance.igetattr("not_method"))
         self.assertIsInstance(not_method, nodes.Lambda)
 
-    def test_instance_bound_method_lambdas_2(self):
+    def test_instance_bound_method_lambdas_2(self) -> None:
         """
         Test the fact that a method which is a lambda built from
         a factory is well inferred as a bound method (bug pylint 2594)
@@ -1852,7 +1855,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         f2 = next(instance.igetattr("f2"))
         self.assertIsInstance(f2, BoundMethod)
 
-    def test_class_extra_decorators_frame_is_not_class(self):
+    def test_class_extra_decorators_frame_is_not_class(self) -> None:
         ast_node = builder.extract_node(
             """
         def ala():
@@ -1862,7 +1865,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         )
         self.assertEqual(ast_node.extra_decorators, [])
 
-    def test_class_extra_decorators_only_callfunc_are_considered(self):
+    def test_class_extra_decorators_only_callfunc_are_considered(self) -> None:
         ast_node = builder.extract_node(
             """
         class Ala(object):
@@ -1873,7 +1876,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         )
         self.assertEqual(ast_node.extra_decorators, [])
 
-    def test_class_extra_decorators_only_assignment_names_are_considered(self):
+    def test_class_extra_decorators_only_assignment_names_are_considered(self) -> None:
         ast_node = builder.extract_node(
             """
         class Ala(object):
@@ -1886,7 +1889,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         )
         self.assertEqual(ast_node.extra_decorators, [])
 
-    def test_class_extra_decorators_only_same_name_considered(self):
+    def test_class_extra_decorators_only_same_name_considered(self) -> None:
         ast_node = builder.extract_node(
             """
         class Ala(object):
@@ -1898,7 +1901,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(ast_node.extra_decorators, [])
         self.assertEqual(ast_node.type, "method")
 
-    def test_class_extra_decorators(self):
+    def test_class_extra_decorators(self) -> None:
         static_method, clsmethod = builder.extract_node(
             """
         class Ala(object):
@@ -1915,7 +1918,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(static_method.extra_decorators), 1)
         self.assertEqual(static_method.type, "staticmethod")
 
-    def test_extra_decorators_only_class_level_assignments(self):
+    def test_extra_decorators_only_class_level_assignments(self) -> None:
         node = builder.extract_node(
             """
         def _bind(arg):
@@ -1940,7 +1943,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         parent = bind.scope()
         self.assertEqual(len(parent.extra_decorators), 0)
 
-    def test_class_keywords(self):
+    def test_class_keywords(self) -> None:
         data = """
             class TestKlass(object, metaclass=TestMetaKlass,
                     foo=42, bar='baz'):
@@ -1957,7 +1960,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         assert children[1].arg == "foo"
         assert children[2].arg == "bar"
 
-    def test_kite_graph(self):
+    def test_kite_graph(self) -> None:
         data = """
         A = type('A', (object,), {})
 
@@ -1975,7 +1978,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         builder.parse(data)
 
 
-def test_issue940_metaclass_subclass_property():
+def test_issue940_metaclass_subclass_property() -> None:
     node = builder.extract_node(
         """
     class BaseMeta(type):
@@ -1994,7 +1997,7 @@ def test_issue940_metaclass_subclass_property():
     assert [c.value for c in inferred.elts] == ["a", "property"]
 
 
-def test_issue940_property_grandchild():
+def test_issue940_property_grandchild() -> None:
     node = builder.extract_node(
         """
     class Grandparent:
@@ -2013,7 +2016,7 @@ def test_issue940_property_grandchild():
     assert [c.value for c in inferred.elts] == ["a", "property"]
 
 
-def test_issue940_metaclass_property():
+def test_issue940_metaclass_property() -> None:
     node = builder.extract_node(
         """
     class BaseMeta(type):
@@ -2030,7 +2033,7 @@ def test_issue940_metaclass_property():
     assert [c.value for c in inferred.elts] == ["a", "property"]
 
 
-def test_issue940_with_metaclass_class_context_property():
+def test_issue940_with_metaclass_class_context_property() -> None:
     node = builder.extract_node(
         """
     class BaseMeta(type):
@@ -2049,7 +2052,7 @@ def test_issue940_with_metaclass_class_context_property():
     assert isinstance(inferred, objects.Property)
 
 
-def test_issue940_metaclass_values_funcdef():
+def test_issue940_metaclass_values_funcdef() -> None:
     node = builder.extract_node(
         """
     class BaseMeta(type):
@@ -2065,7 +2068,7 @@ def test_issue940_metaclass_values_funcdef():
     assert [c.value for c in inferred.elts] == ["a", "func"]
 
 
-def test_issue940_metaclass_derived_funcdef():
+def test_issue940_metaclass_derived_funcdef() -> None:
     node = builder.extract_node(
         """
     class BaseMeta(type):
@@ -2083,7 +2086,7 @@ def test_issue940_metaclass_derived_funcdef():
     assert [c.value for c in inferred_result.elts] == ["a", "func"]
 
 
-def test_issue940_metaclass_funcdef_is_not_datadescriptor():
+def test_issue940_metaclass_funcdef_is_not_datadescriptor() -> None:
     node = builder.extract_node(
         """
     class BaseMeta(type):
@@ -2106,7 +2109,7 @@ def test_issue940_metaclass_funcdef_is_not_datadescriptor():
     assert isinstance(inferred, objects.Property)
 
 
-def test_issue940_enums_as_a_real_world_usecase():
+def test_issue940_enums_as_a_real_world_usecase() -> None:
     node = builder.extract_node(
         """
     from enum import Enum
@@ -2122,7 +2125,7 @@ def test_issue940_enums_as_a_real_world_usecase():
     assert sorted(actual) == ["bee", "cat"]
 
 
-def test_metaclass_cannot_infer_call_yields_an_instance():
+def test_metaclass_cannot_infer_call_yields_an_instance() -> None:
     node = builder.extract_node(
         """
     from undefined import Undefined
@@ -2191,7 +2194,7 @@ def test_posonlyargs_python_38(func):
 
 
 @test_utils.require_version("3.8")
-def test_posonlyargs_default_value():
+def test_posonlyargs_default_value() -> None:
     ast_node = builder.extract_node(
         """
     def func(a, b=1, /, c=2): pass
@@ -2207,7 +2210,7 @@ def test_posonlyargs_default_value():
 
 
 @test_utils.require_version(minver="3.7")
-def test_ancestor_with_generic():
+def test_ancestor_with_generic() -> None:
     # https://github.com/PyCQA/astroid/issues/942
     tree = builder.parse(
         """
@@ -2232,7 +2235,7 @@ def test_ancestor_with_generic():
     ]
 
 
-def test_slots_duplicate_bases_issue_1089():
+def test_slots_duplicate_bases_issue_1089() -> None:
     astroid = builder.parse(
         """
             class First(object, object): #@

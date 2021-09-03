@@ -4,7 +4,7 @@ from astroid import bases, builder, nodes
 from astroid.util import Uninferable
 
 
-def test_no_return():
+def test_no_return() -> None:
     """Test function with no return statements"""
     node = builder.extract_node(
         """
@@ -19,7 +19,7 @@ def test_no_return():
     assert inferred[0] is Uninferable
 
 
-def test_one_return():
+def test_one_return() -> None:
     """Test function with a single return that always executes"""
     node = builder.extract_node(
         """
@@ -35,7 +35,7 @@ def test_one_return():
     assert inferred[0].value == 1
 
 
-def test_one_return_possible():
+def test_one_return_possible() -> None:
     """Test function with a single return that only sometimes executes
 
     Note: currently, inference doesn't handle this type of control flow
@@ -55,7 +55,7 @@ def test_one_return_possible():
     assert inferred[0].value == 1
 
 
-def test_multiple_returns():
+def test_multiple_returns() -> None:
     """Test function with multiple returns"""
     node = builder.extract_node(
         """
@@ -76,7 +76,7 @@ def test_multiple_returns():
     assert {node.value for node in inferred} == {1, 2, 3}
 
 
-def test_argument():
+def test_argument() -> None:
     """Test function whose return value uses its arguments"""
     node = builder.extract_node(
         """
@@ -92,7 +92,7 @@ def test_argument():
     assert inferred[0].value == 3
 
 
-def test_inner_call():
+def test_inner_call() -> None:
     """Test function where return value is the result of a separate function call"""
     node = builder.extract_node(
         """
@@ -111,7 +111,7 @@ def test_inner_call():
     assert inferred[0].value == 1
 
 
-def test_inner_call_with_const_argument():
+def test_inner_call_with_const_argument() -> None:
     """Test function where return value is the result of a separate function call,
     with a constant value passed to the inner function.
     """
@@ -132,7 +132,7 @@ def test_inner_call_with_const_argument():
     assert inferred[0].value == 3
 
 
-def test_inner_call_with_dynamic_argument():
+def test_inner_call_with_dynamic_argument() -> None:
     """Test function where return value is the result of a separate function call,
     with a dynamic value passed to the inner function.
 
@@ -154,7 +154,7 @@ def test_inner_call_with_dynamic_argument():
     assert inferred[0] is Uninferable
 
 
-def test_method_const_instance_attr():
+def test_method_const_instance_attr() -> None:
     """Test method where the return value is based on an instance attribute with a
     constant value.
     """
@@ -176,7 +176,7 @@ def test_method_const_instance_attr():
     assert inferred[0].value == 1
 
 
-def test_method_const_instance_attr_multiple():
+def test_method_const_instance_attr_multiple() -> None:
     """Test method where the return value is based on an instance attribute with
     multiple possible constant values, across different methods.
     """
@@ -204,7 +204,7 @@ def test_method_const_instance_attr_multiple():
     assert {node.value for node in inferred} == {1, 2, 3}
 
 
-def test_method_const_instance_attr_same_method():
+def test_method_const_instance_attr_same_method() -> None:
     """Test method where the return value is based on an instance attribute with
     multiple possible constant values, including in the method being called.
 
@@ -237,7 +237,7 @@ def test_method_const_instance_attr_same_method():
     assert {node.value for node in inferred} == {1, 2, 3, 4}
 
 
-def test_method_dynamic_instance_attr_1():
+def test_method_dynamic_instance_attr_1() -> None:
     """Test method where the return value is based on an instance attribute with
     a dynamically-set value in a different method.
 
@@ -260,7 +260,7 @@ def test_method_dynamic_instance_attr_1():
     assert inferred[0] is Uninferable
 
 
-def test_method_dynamic_instance_attr_2():
+def test_method_dynamic_instance_attr_2() -> None:
     """Test method where the return value is based on an instance attribute with
     a dynamically-set value in the same method.
     """
@@ -282,7 +282,7 @@ def test_method_dynamic_instance_attr_2():
     assert inferred[0].value == 1
 
 
-def test_method_dynamic_instance_attr_3():
+def test_method_dynamic_instance_attr_3() -> None:
     """Test method where the return value is based on an instance attribute with
     a dynamically-set value in a different method.
 
@@ -305,7 +305,7 @@ def test_method_dynamic_instance_attr_3():
     assert inferred[0] is Uninferable  # not 10!
 
 
-def test_method_dynamic_instance_attr_4():
+def test_method_dynamic_instance_attr_4() -> None:
     """Test method where the return value is based on an instance attribute with
     a dynamically-set value in a different method, and is passed a constant value.
 
@@ -331,7 +331,7 @@ def test_method_dynamic_instance_attr_4():
     assert inferred[0] is Uninferable
 
 
-def test_method_dynamic_instance_attr_5():
+def test_method_dynamic_instance_attr_5() -> None:
     """Test method where the return value is based on an instance attribute with
     a dynamically-set value in a different method, and is passed a constant value.
 
@@ -361,7 +361,7 @@ def test_method_dynamic_instance_attr_5():
     assert inferred[0] is Uninferable
 
 
-def test_method_dynamic_instance_attr_6():
+def test_method_dynamic_instance_attr_6() -> None:
     """Test method where the return value is based on an instance attribute with
     a dynamically-set value in a different method, and is passed a dynamic value.
 
@@ -387,7 +387,7 @@ def test_method_dynamic_instance_attr_6():
     assert inferred[0] is Uninferable
 
 
-def test_dunder_getitem():
+def test_dunder_getitem() -> None:
     """Test for the special method __getitem__ (used by Instance.getitem).
 
     This is currently Uninferable, until we can infer instance attribute values through
@@ -411,7 +411,7 @@ def test_dunder_getitem():
     assert inferred[0] is Uninferable
 
 
-def test_instance_method():
+def test_instance_method() -> None:
     """Tests for instance method, both bound and unbound."""
     nodes_ = builder.extract_node(
         """
@@ -433,7 +433,7 @@ def test_instance_method():
         assert inferred[0].value == 42
 
 
-def test_class_method():
+def test_class_method() -> None:
     """Tests for class method calls, both instance and with the class."""
     nodes_ = builder.extract_node(
         """
@@ -455,7 +455,7 @@ def test_class_method():
         assert inferred[0].value == 42
 
 
-def test_static_method():
+def test_static_method() -> None:
     """Tests for static method calls, both instance and with the class."""
     nodes_ = builder.extract_node(
         """
@@ -476,7 +476,7 @@ def test_static_method():
         assert inferred[0].value == 42
 
 
-def test_instance_method_inherited():
+def test_instance_method_inherited() -> None:
     """Tests for instance methods that are inherited from a superclass.
 
     Based on https://github.com/PyCQA/astroid/issues/1008.
@@ -506,7 +506,7 @@ def test_instance_method_inherited():
         assert inferred[0].name == expected
 
 
-def test_class_method_inherited():
+def test_class_method_inherited() -> None:
     """Tests for class methods that are inherited from a superclass.
 
     Based on https://github.com/PyCQA/astroid/issues/1008.
@@ -536,7 +536,7 @@ def test_class_method_inherited():
         assert inferred[0].name == expected
 
 
-def test_chained_attribute_inherited():
+def test_chained_attribute_inherited() -> None:
     """Tests for class methods that are inherited from a superclass.
 
     Based on https://github.com/PyCQA/pylint/issues/4220.
