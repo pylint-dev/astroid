@@ -53,7 +53,7 @@ from astroid.exceptions import (
     ResolveError,
     TooManyLevelsError,
 )
-from astroid.nodes import scoped_nodes
+from astroid.nodes.scoped_nodes import _is_metaclass
 
 from . import resources
 
@@ -1120,7 +1120,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 pass
         """
         )
-        self.assertFalse(scoped_nodes._is_metaclass(klass))
+        self.assertFalse(_is_metaclass(klass))
         ancestors = [base.name for base in klass.ancestors()]
         self.assertIn("object", ancestors)
         self.assertIn("JJJ", ancestors)
@@ -1169,7 +1169,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         )
         inferred = next(klass.infer())
         metaclass = inferred.metaclass()
-        self.assertIsInstance(metaclass, scoped_nodes.ClassDef)
+        self.assertIsInstance(metaclass, nodes.ClassDef)
         self.assertIn(metaclass.qname(), ("abc.ABCMeta", "_py_abc.ABCMeta"))
 
     @unittest.skipUnless(HAS_SIX, "These tests require the six library")
@@ -1667,7 +1667,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             pass
         """
         )
-        type_cls = scoped_nodes.builtin_lookup("type")[1][0]
+        type_cls = nodes.builtin_lookup("type")[1][0]
         self.assertEqual(cls.implicit_metaclass(), type_cls)
 
     def test_implicit_metaclass_lookup(self):
@@ -1743,7 +1743,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         #   of the property
         property_meta = next(module["Metaclass"].igetattr("meta_property"))
         self.assertIsInstance(property_meta, objects.Property)
-        wrapping = scoped_nodes.get_wrapping_class(property_meta)
+        wrapping = nodes.get_wrapping_class(property_meta)
         self.assertEqual(wrapping, module["Metaclass"])
 
         property_class = next(acls.igetattr("meta_property"))
@@ -1751,7 +1751,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(property_class.value, 42)
 
         static = next(acls.igetattr("static"))
-        self.assertIsInstance(static, scoped_nodes.FunctionDef)
+        self.assertIsInstance(static, nodes.FunctionDef)
 
     def test_local_attr_invalid_mro(self):
         cls = builder.extract_node(
@@ -1820,14 +1820,14 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """
         )
         cls = next(ast_nodes[0].infer())
-        self.assertIsInstance(next(cls.igetattr("lam")), scoped_nodes.Lambda)
-        self.assertIsInstance(next(cls.igetattr("not_method")), scoped_nodes.Lambda)
+        self.assertIsInstance(next(cls.igetattr("lam")), nodes.Lambda)
+        self.assertIsInstance(next(cls.igetattr("not_method")), nodes.Lambda)
 
         instance = next(ast_nodes[1].infer())
         lam = next(instance.igetattr("lam"))
         self.assertIsInstance(lam, BoundMethod)
         not_method = next(instance.igetattr("not_method"))
-        self.assertIsInstance(not_method, scoped_nodes.Lambda)
+        self.assertIsInstance(not_method, nodes.Lambda)
 
     def test_instance_bound_method_lambdas_2(self):
         """
@@ -1846,7 +1846,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """
         )
         cls = next(ast_nodes[0].infer())
-        self.assertIsInstance(next(cls.igetattr("f2")), scoped_nodes.Lambda)
+        self.assertIsInstance(next(cls.igetattr("f2")), nodes.Lambda)
 
         instance = next(ast_nodes[1].infer())
         f2 = next(instance.igetattr("f2"))
