@@ -36,7 +36,6 @@ import unittest
 from typing import Any, Optional
 
 import pytest
-from mypy_extensions import NoReturn
 
 import astroid
 from astroid import (
@@ -729,8 +728,11 @@ class AnnAssignNodeTest(unittest.TestCase):
         self.assertEqual(ast.as_string().strip(), code.strip())
 
 
+@pytest.mark.skip(
+    "FIXME  http://bugs.python.org/issue10445 (no line number on function args)"
+)
 class ArgumentsNodeTC(unittest.TestCase):
-    def test_linenumbering(self) -> NoReturn:
+    def test_linenumbering(self) -> None:
         ast = builder.parse(
             """
             def func(a,
@@ -744,10 +746,6 @@ class ArgumentsNodeTC(unittest.TestCase):
         self.assertEqual(xlambda.args.fromlineno, 4)
         self.assertEqual(xlambda.args.tolineno, 4)
         self.assertFalse(xlambda.args.is_statement)
-        self.skipTest(
-            "FIXME  http://bugs.python.org/issue10445 "
-            "(no line number on function args)"
-        )
 
     def test_kwoargs(self) -> None:
         ast = builder.parse(

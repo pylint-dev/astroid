@@ -29,7 +29,6 @@ import sys
 import unittest
 
 import pytest
-from mypy_extensions import NoReturn
 
 from astroid import Instance, builder, nodes, test_utils, util
 from astroid.const import PY38_PLUS
@@ -99,7 +98,10 @@ class FromToLineNoTest(unittest.TestCase):
             self.assertEqual(arg.fromlineno, 10 + i)
             self.assertEqual(arg.tolineno, 10 + i)
 
-    def test_function_lineno(self) -> NoReturn:
+    @pytest.mark.skip(
+        "FIXME  http://bugs.python.org/issue10445 (no line number on function args)"
+    )
+    def test_function_lineno(self) -> None:
         stmts = self.astroid.body
         # on line 15:
         #    def definition(a,
@@ -114,10 +116,6 @@ class FromToLineNoTest(unittest.TestCase):
         self.assertIsInstance(return_, nodes.Return)
         self.assertEqual(return_.fromlineno, 18)
         self.assertEqual(return_.tolineno, 18)
-        self.skipTest(
-            "FIXME  http://bugs.python.org/issue10445 "
-            "(no line number on function args)"
-        )
 
     def test_decorated_function_lineno(self) -> None:
         astroid = builder.parse(
