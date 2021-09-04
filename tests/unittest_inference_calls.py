@@ -14,6 +14,7 @@ def test_no_return() -> None:
     f()  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert inferred[0] is Uninferable
@@ -29,6 +30,7 @@ def test_one_return() -> None:
     f()  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)
@@ -49,6 +51,7 @@ def test_one_return_possible() -> None:
     f(1)  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)
@@ -70,6 +73,7 @@ def test_multiple_returns() -> None:
     f(100)  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 3
     assert all(isinstance(node, nodes.Const) for node in inferred)
@@ -86,6 +90,7 @@ def test_argument() -> None:
     f(1, 2)  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)
@@ -105,6 +110,7 @@ def test_inner_call() -> None:
     f()  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)
@@ -126,6 +132,7 @@ def test_inner_call_with_const_argument() -> None:
     f()  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)
@@ -149,6 +156,7 @@ def test_inner_call_with_dynamic_argument() -> None:
     f(1)  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert inferred[0] is Uninferable
@@ -170,6 +178,7 @@ def test_method_const_instance_attr() -> None:
     A().get_x()  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)
@@ -198,6 +207,7 @@ def test_method_const_instance_attr_multiple() -> None:
     A().get_x()  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 3
     assert all(isinstance(node, nodes.Const) for node in inferred)
@@ -231,6 +241,7 @@ def test_method_const_instance_attr_same_method() -> None:
     A().get_x()  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 4
     assert all(isinstance(node, nodes.Const) for node in inferred)
@@ -255,6 +266,7 @@ def test_method_dynamic_instance_attr_1() -> None:
     A(1).get_x()  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert inferred[0] is Uninferable
@@ -276,6 +288,7 @@ def test_method_dynamic_instance_attr_2() -> None:
     A().get_x(1)  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)
@@ -300,6 +313,7 @@ def test_method_dynamic_instance_attr_3() -> None:
     A().get_x(10)  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert inferred[0] is Uninferable  # not 10!
@@ -326,6 +340,7 @@ def test_method_dynamic_instance_attr_4() -> None:
     A().get_x()  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert inferred[0] is Uninferable
@@ -356,6 +371,7 @@ def test_method_dynamic_instance_attr_5() -> None:
     A().get_x(1)  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert inferred[0] is Uninferable
@@ -382,6 +398,7 @@ def test_method_dynamic_instance_attr_6() -> None:
     A().get_x(1)  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert inferred[0] is Uninferable
@@ -405,7 +422,7 @@ def test_dunder_getitem() -> None:
     A(1)[2]  #@
     """
     )
-
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert inferred[0] is Uninferable
@@ -427,6 +444,7 @@ def test_instance_method() -> None:
     )
 
     for node in nodes_:
+        assert isinstance(node, nodes.NodeNG)
         inferred = node.inferred()
         assert len(inferred) == 1
         assert isinstance(inferred[0], nodes.Const)
@@ -449,6 +467,7 @@ def test_class_method() -> None:
     )
 
     for node in nodes_:
+        assert isinstance(node, nodes.NodeNG)
         inferred = node.inferred()
         assert len(inferred) == 1
         assert isinstance(inferred[0], nodes.Const), node
@@ -470,6 +489,7 @@ def test_static_method() -> None:
     )
 
     for node in nodes_:
+        assert isinstance(node, nodes.NodeNG)
         inferred = node.inferred()
         assert len(inferred) == 1
         assert isinstance(inferred[0], nodes.Const), node
@@ -500,6 +520,7 @@ def test_instance_method_inherited() -> None:
     )
     expected = ["A", "A", "B", "B", "B"]
     for node, expected in zip(nodes_, expected):
+        assert isinstance(node, nodes.NodeNG)
         inferred = node.inferred()
         assert len(inferred) == 1
         assert isinstance(inferred[0], bases.Instance)
@@ -530,6 +551,7 @@ def test_class_method_inherited() -> None:
     )
     expected = ["A", "A", "B", "B"]
     for node, expected in zip(nodes_, expected):
+        assert isinstance(node, nodes.NodeNG)
         inferred = node.inferred()
         assert len(inferred) == 1
         assert isinstance(inferred[0], nodes.ClassDef)
@@ -560,6 +582,7 @@ def test_chained_attribute_inherited() -> None:
     B().a.f()  #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)

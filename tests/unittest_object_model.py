@@ -17,7 +17,7 @@ import xml
 import pytest
 
 import astroid
-from astroid import builder, objects, test_utils, util
+from astroid import builder, nodes, objects, test_utils, util
 from astroid.exceptions import InferenceError
 
 
@@ -37,7 +37,7 @@ class InstanceModelTest(unittest.TestCase):
         """,
             module_name="fake_module",
         )
-
+        assert isinstance(ast_nodes, list)
         cls = next(ast_nodes[0].infer())
         self.assertIsInstance(cls, astroid.ClassDef)
         self.assertEqual(cls.name, "A")
@@ -84,7 +84,7 @@ class BoundMethodModelTest(unittest.TestCase):
         a.test.__self__ #@
         """
         )
-
+        assert isinstance(ast_nodes, list)
         func = next(ast_nodes[0].infer())
         self.assertIsInstance(func, astroid.FunctionDef)
         self.assertEqual(func.name, "test")
@@ -109,7 +109,7 @@ class UnboundMethodModelTest(unittest.TestCase):
         t.im_self #@
         """
         )
-
+        assert isinstance(ast_nodes, list)
         cls = next(ast_nodes[0].infer())
         self.assertIsInstance(cls, astroid.ClassDef)
         unbound_name = "function"
@@ -180,7 +180,7 @@ class ClassModelTest(unittest.TestCase):
         """,
             module_name="fake_module",
         )
-
+        assert isinstance(ast_nodes, list)
         module = next(ast_nodes[0].infer())
         self.assertIsInstance(module, astroid.Const)
         self.assertEqual(module.value, "fake_module")
@@ -256,7 +256,7 @@ class ModuleModelTest(unittest.TestCase):
         xml.__dict__ #@
         """
         )
-
+        assert isinstance(ast_nodes, list)
         path = next(ast_nodes[0].infer())
         self.assertIsInstance(path, astroid.List)
         self.assertIsInstance(path.elts[0], astroid.Const)
@@ -377,6 +377,7 @@ class FunctionModelTest(unittest.TestCase):
         cl #@
         """
         )
+        assert isinstance(node, nodes.NodeNG)
         [const] = node.inferred()
         assert const.value == "MyText"
 
@@ -397,7 +398,7 @@ class FunctionModelTest(unittest.TestCase):
         ''',
             module_name="fake_module",
         )
-
+        assert isinstance(ast_nodes, list)
         name = next(ast_nodes[0].infer())
         self.assertIsInstance(name, astroid.Const)
         self.assertEqual(name.value, "func")
@@ -511,7 +512,7 @@ class GeneratorModelTest(unittest.TestCase):
         gen.send #@
         """
         )
-
+        assert isinstance(ast_nodes, list)
         name = next(ast_nodes[0].infer())
         self.assertEqual(name.value, "test")
 
@@ -543,6 +544,7 @@ class ExceptionModelTest(unittest.TestCase):
            err.message #@
         """
         )
+        assert isinstance(ast_nodes, list)
         args = next(ast_nodes[0].infer())
         self.assertIsInstance(args, astroid.Tuple)
         tb = next(ast_nodes[1].infer())
@@ -649,6 +651,7 @@ class DictObjectModelTest(unittest.TestCase):
         {1:1, 2:3}.items() #@
         """
         )
+        assert isinstance(ast_nodes, list)
         values = next(ast_nodes[0].infer())
         self.assertIsInstance(values, objects.DictValues)
         self.assertEqual([elt.value for elt in values.elts], [1, 3])
@@ -674,6 +677,7 @@ class LruCacheModelTest(unittest.TestCase):
         f.foo.cache_info() #@
         """
         )
+        assert isinstance(ast_nodes, list)
         cache_clear = next(ast_nodes[0].infer())
         self.assertIsInstance(cache_clear, astroid.BoundMethod)
         wrapped = next(ast_nodes[1].infer())

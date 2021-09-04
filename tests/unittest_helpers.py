@@ -13,7 +13,7 @@
 import builtins
 import unittest
 
-from astroid import builder, helpers, manager, raw_building, util
+from astroid import builder, helpers, manager, nodes, raw_building, util
 from astroid.exceptions import _NonDeducibleTypeHierarchy
 from astroid.nodes.scoped_nodes import ClassDef
 
@@ -81,6 +81,7 @@ class TestHelpers(unittest.TestCase):
         generator() #@
         """
         )
+        assert isinstance(ast_nodes, list)
         from_self = helpers.object_type(ast_nodes[0])
         cls = next(ast_nodes[1].infer())
         self.assert_classes_equal(from_self, cls)
@@ -136,6 +137,7 @@ class TestHelpers(unittest.TestCase):
             pass
         """
         )
+        assert isinstance(node, nodes.NodeNG)
         metaclass = node.metaclass()
         self.assertEqual(metaclass.name, "A")
         obj_type = helpers.object_type(node)
@@ -175,6 +177,7 @@ class TestHelpers(unittest.TestCase):
         int_subclass() #@
         """
         )
+        assert isinstance(ast_nodes, list)
         cls_a = ast_nodes[0]
         cls_b = ast_nodes[1]
         cls_c = ast_nodes[2]

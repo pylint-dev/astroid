@@ -124,7 +124,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.value, expected)
 
     def assertInferDict(
-        self, node: Union[nodes.Call, nodes.Dict], expected: Any
+        self, node: Union[nodes.Call, nodes.Dict, nodes.NodeNG], expected: Any
     ) -> None:
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Dict)
@@ -1072,6 +1072,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         1 + A() #@
         """
         )
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.Const)
         self.assertEqual(first.value, 43)
@@ -1089,6 +1090,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         1 + A() #@
         """
         )
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertEqual(first, util.Uninferable)
 
@@ -1311,6 +1313,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 return ctx
         """
         node = extract_node(code)
+        assert isinstance(node, nodes.NodeNG)
         result = node.inferred()
         assert len(result) == 2
         assert isinstance(result[0], nodes.Dict)
@@ -1666,11 +1669,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         ast = parse(code, __name__)
         node = ast["c"]
+        assert isinstance(node, nodes.NodeNG)
         self.assertEqual(node.inferred(), [util.Uninferable])
 
     def test_infer_empty_nodes(self) -> None:
         # Should not crash when trying to infer EmptyNodes.
         node = nodes.EmptyNode()
+        assert isinstance(node, nodes.NodeNG)
         self.assertEqual(node.inferred(), [util.Uninferable])
 
     def test_infinite_loop_for_decorators(self) -> None:
@@ -1974,6 +1979,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         set({1:2, 2:4}.keys()) #@
         """
         )
+        assert isinstance(ast_nodes, list)
         self.assertInferList(ast_nodes[0], [2, 3])
         self.assertInferList(ast_nodes[1], [1, 2])
         self.assertInferTuple(ast_nodes[2], [2, 3])
@@ -3317,6 +3323,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         a * NotIndex2() #@
         """
         )
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.List)
         self.assertEqual([node.value for node in first.itered()], [1, 2, 1, 2])
@@ -3341,6 +3348,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         a[NonIndex()] #@
         """
         )
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.Const)
         self.assertEqual(first.value, 3)
@@ -3792,6 +3800,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             c #@
         """
         )
+        assert isinstance(ast_nodes, list)
         first_a = next(ast_nodes[0].infer())
         self.assertIsInstance(first_a, Instance)
         self.assertEqual(first_a.name, "A")
@@ -3865,6 +3874,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 cls #@
         """
         )
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.ClassDef)
         second = next(ast_nodes[1].infer())
@@ -4240,6 +4250,7 @@ class GetattrTest(unittest.TestCase):
         getattr(int, 'bala', getattr(int, 'portocala', None)) #@
         """
         )
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.Const)
         self.assertIsNone(first.value)
@@ -4273,7 +4284,7 @@ class GetattrTest(unittest.TestCase):
                 getattr(self, 'test') #@
         """
         )
-
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, BoundMethod)
         self.assertEqual(first.bound.name, "A")
@@ -4419,6 +4430,7 @@ class BoolOpTest(unittest.TestCase):
         1 and test #@
         """
         )
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertEqual(first.value, 0)
         second = next(ast_nodes[1].infer())
@@ -4862,6 +4874,7 @@ class ArgumentsTest(unittest.TestCase):
         wrapper()() #@
         """
         )
+        assert isinstance(node, nodes.NodeNG)
         inferred = node.inferred()
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.Const, inferred[0])
@@ -5071,6 +5084,7 @@ def test_unpack_dicts_in_assignment() -> None:
     b #@
     """
     )
+    assert isinstance(ast_nodes, list)
     first_inferred = next(ast_nodes[0].infer())
     second_inferred = next(ast_nodes[1].infer())
     assert isinstance(first_inferred, nodes.Const)
@@ -5179,6 +5193,7 @@ def test_regression_infinite_loop_decorator() -> None:
     Foo().lru_cache(1)
     """
     node = extract_node(code)
+    assert isinstance(node, nodes.NodeNG)
     [result] = node.inferred()
     assert result.value == 1
 
@@ -5219,6 +5234,7 @@ def test_call_on_instance_with_inherited_dunder_call_method() -> None:
     val #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     [val] = node.inferred()
     assert isinstance(val, Instance)
     assert val.name == "Sub"
@@ -5368,6 +5384,7 @@ def test_exception_lookup_last_except_handler_wins() -> None:
         exc #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     inferred_exc = inferred[0]
@@ -5386,6 +5403,7 @@ def test_exception_lookup_last_except_handler_wins() -> None:
         exc #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     inferred_exc = inferred[0]
@@ -5407,6 +5425,7 @@ def test_exception_lookup_name_bound_in_except_handler() -> None:
         name #@
     """
     )
+    assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
     inferred_exc = inferred[0]
@@ -5564,6 +5583,7 @@ def test_ifexp_inference() -> None:
     both_branches() #@
     """
     ast_nodes = extract_node(code)
+    assert isinstance(ast_nodes, list)
     first = next(ast_nodes[0].infer())
     assert isinstance(first, nodes.Const)
     assert first.value == 1

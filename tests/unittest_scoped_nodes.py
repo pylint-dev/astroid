@@ -67,7 +67,9 @@ except ImportError:
 
 
 def _test_dict_interface(
-    self: Any, node: Union[nodes.ClassDef, nodes.FunctionDef, nodes.Module], test_attr: str
+    self: Any,
+    node: Union[nodes.ClassDef, nodes.FunctionDef, nodes.Module],
+    test_attr: str,
 ) -> None:
     self.assertIs(node[test_attr], node[test_attr])
     self.assertIn(test_attr, node)
@@ -398,20 +400,30 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                    pass
          """
         )
-        self.assertTrue(methods[0].is_abstract(pass_is_abstract=False))
-        self.assertTrue(methods[1].is_abstract(pass_is_abstract=False))
-        self.assertFalse(methods[2].is_abstract(pass_is_abstract=False))
+        assert len(methods) == 3
+        prop, method1, method2 = methods
+        assert isinstance(prop, nodes.FunctionDef)
+        assert prop.is_abstract(pass_is_abstract=False)
 
-    ##     def test_raises(self):
-    ##         method = self.module2['AbstractClass']['to_override']
-    ##         self.assertEqual([str(term) for term in method.raises()],
-    ##                           ["Call(Name('NotImplementedError'), [], None, None)"] )
+        assert isinstance(method1, nodes.FunctionDef)
+        assert method1.is_abstract(pass_is_abstract=False)
 
-    ##     def test_returns(self):
-    ##         method = self.module2['AbstractClass']['return_something']
-    ##         # use string comp since Node doesn't handle __cmp__
-    ##         self.assertEqual([str(term) for term in method.returns()],
-    ##                           ["Const('toto')", "Const(None)"])
+        assert isinstance(method2, nodes.FunctionDef)
+        assert not method2.is_abstract(pass_is_abstract=False)
+
+    # def test_raises(self):
+    #     method = self.module2["AbstractClass"]["to_override"]
+    #     self.assertEqual(
+    #         [str(term) for term in method.raises()],
+    #         ["Call(Name('NotImplementedError'), [], None, None)"],
+    #     )
+
+    # def test_returns(self):
+    #     method = self.module2["AbstractClass"]["return_something"]
+    #     # use string comp since Node doesn't handle __cmp__
+    #     self.assertEqual(
+    #         [str(term) for term in method.returns()], ["Const('toto')", "Const(None)"]
+    #     )
 
     def test_lambda_pytype(self) -> None:
         data = """
@@ -490,7 +502,8 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                 raise SystemExit()
             f()
         """
-        node = builder.extract_node(code)  # type: nodes.Call
+        node = builder.extract_node(code)
+        assert isinstance(node, nodes.Call)
         inferred = next(node.infer())
         assert inferred is util.Uninferable
 
@@ -648,6 +661,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             pass
         """
         )
+        assert isinstance(func, nodes.FunctionDef)
         func.instance_attrs["value"] = [nodes.Const(42)]
         value = func.getattr("value")
         self.assertEqual(len(value), 1)
@@ -759,6 +773,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class C(A, B): pass
         """
         )
+        assert isinstance(node, nodes.ClassDef)
         mro = node.getattr("__mro__")[0]
         self.assertIsInstance(mro, nodes.Tuple)
         self.assertEqual(mro.elts, node.mro())
@@ -772,6 +787,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class D(C): pass
         """
         )
+        assert isinstance(node, nodes.ClassDef)
         bases = node.getattr("__bases__")[0]
         self.assertIsInstance(bases, nodes.Tuple)
         self.assertEqual(len(bases.elts), 1)
@@ -1100,6 +1116,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 pass
         """
         )
+        assert isinstance(klass, nodes.ClassDef)
         self.assertEqual(
             ["NewBase", "object"], [base.name for base in klass.ancestors()]
         )
@@ -1123,6 +1140,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 pass
         """
         )
+        assert isinstance(klass, nodes.ClassDef)
         self.assertFalse(_is_metaclass(klass))
         ancestors = [base.name for base in klass.ancestors()]
         self.assertIn("object", ancestors)
@@ -1158,6 +1176,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 pass
         """
         )
+        assert isinstance(klass, nodes.ClassDef)
         self.assertEqual(["object"], [base.name for base in klass.ancestors()])
         self.assertEqual("type", klass.metaclass().name)
 
@@ -1170,6 +1189,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             pass
         """
         )
+        assert isinstance(klass, nodes.ClassDef)
         inferred = next(klass.infer())
         metaclass = inferred.metaclass()
         self.assertIsInstance(metaclass, nodes.ClassDef)
@@ -1328,7 +1348,9 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def assertEqualMro(self, klass: nodes.ClassDef, expected_mro: List[str]) -> None:
         self.assertEqual([member.name for member in klass.mro()], expected_mro)
 
-    def assertEqualMroQName(self, klass: nodes.ClassDef, expected_mro: List[str]) -> None:
+    def assertEqualMroQName(
+        self, klass: nodes.ClassDef, expected_mro: List[str]
+    ) -> None:
         self.assertEqual([member.qname() for member in klass.mro()], expected_mro)
 
     @unittest.skipUnless(HAS_SIX, "These tests require the six library")
@@ -1463,6 +1485,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 self.name = 'x'
         """
         )
+        assert isinstance(cls, nodes.ClassDef)
         self.assertEqualMro(
             cls,
             [
@@ -1494,6 +1517,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             pass
         """
         )
+        assert isinstance(cls, nodes.ClassDef)
         self.assertEqualMro(cls, ["C", "A", "B", "object"])
 
     @test_utils.require_version(minver="3.7")
@@ -1507,6 +1531,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class C(A[T], B): ...
         """
         )
+        assert isinstance(cls, nodes.ClassDef)
         self.assertEqualMroQName(
             cls, [".C", ".A", "typing.Generic", ".B", "builtins.object"]
         )
@@ -1522,6 +1547,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class C(Generic[T], A, B[T]): ...
         """
         )
+        assert isinstance(cls, nodes.ClassDef)
         self.assertEqualMroQName(
             cls, [".C", ".A", ".B", "typing.Generic", "builtins.object"]
         )
@@ -1538,6 +1564,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class D(B[T], C[T], Generic[T]): ...
         """
         )
+        assert isinstance(cls, nodes.ClassDef)
         self.assertEqualMroQName(
             cls, [".D", ".B", ".A", ".C", "typing.Generic", "builtins.object"]
         )
@@ -1553,6 +1580,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class C(A, Generic[T], B[T]): ...
         """
         )
+        assert isinstance(cls, nodes.ClassDef)
         self.assertEqualMroQName(
             cls, [".C", ".A", ".B", "typing.Generic", "builtins.object"]
         )
@@ -1569,6 +1597,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class C(A[T1], B[T2]): ...
         """
         )
+        assert isinstance(cls, nodes.ClassDef)
         self.assertEqualMroQName(
             cls, [".C", ".A", ".B", "typing.Generic", "builtins.object"]
         )
@@ -1585,6 +1614,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class C(A, B[T]): ...
         """
         )
+        assert isinstance(cls, nodes.ClassDef)
         self.assertEqualMroQName(
             cls, [".C", ".A", ".Generic", ".B", "typing.Generic", "builtins.object"]
         )
@@ -1602,6 +1632,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class E(C[str], D): ...
         """
         )
+        assert isinstance(cls, nodes.ClassDef)
         self.assertEqualMroQName(
             cls, [".E", ".C", ".A", ".B", "typing.Generic", ".D", "builtins.object"]
         )
@@ -1616,6 +1647,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class A(Generic[T1], Generic[T2]): ...
         """
         )
+        assert isinstance(cls, nodes.ClassDef)
         with self.assertRaises(DuplicateBasesError):
             cls.mro()
 
@@ -1629,6 +1661,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class B(A[T], A[T]): ...
         """
         )
+        assert isinstance(cls, nodes.ClassDef)
         with self.assertRaises(DuplicateBasesError):
             cls.mro()
 
@@ -1642,6 +1675,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             yield
         """
         )
+        assert isinstance(func, nodes.FunctionDef)
         result = next(func.infer_call_result())
         self.assertIsInstance(result, Generator)
         self.assertEqual(result.parent, func)
@@ -1652,6 +1686,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         type('A', (object, ), {"a": 1, "b": 2, missing: 3}) #@
         """
         )
+        assert isinstance(classes, nodes.Call)
         first = next(classes.infer())
         self.assertIsInstance(first, nodes.ClassDef)
         self.assertEqual(first.name, "A")
@@ -1670,6 +1705,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             pass
         """
         )
+        assert isinstance(cls, nodes.ClassDef)
         type_cls = nodes.builtin_lookup("type")[1][0]
         self.assertEqual(cls.implicit_metaclass(), type_cls)
 
@@ -1680,18 +1716,20 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             pass
         """
         )
+        assert isinstance(cls, nodes.ClassDef)
         instance = cls.instantiate_class()
         func = cls.getattr("mro")
         self.assertEqual(len(func), 1)
         self.assertRaises(AttributeInferenceError, instance.getattr, "mro")
 
     def test_metaclass_lookup_using_same_class(self) -> None:
-        # Check that we don't have recursive attribute access for metaclass
+        """Check that we don't have recursive attribute access for metaclass"""
         cls = builder.extract_node(
             """
         class A(object): pass
         """
         )
+        assert isinstance(cls, nodes.ClassDef)
         self.assertEqual(len(cls.getattr("mro")), 1)
 
     def test_metaclass_lookup_inference_errors(self) -> None:
@@ -1767,6 +1805,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             pass
         """
         )
+        assert isinstance(cls, nodes.ClassDef)
         local = cls.local_attr("test")[0]
         inferred = next(local.infer())
         self.assertIsInstance(inferred, nodes.Const)
@@ -1822,6 +1861,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         Test() #@
         """
         )
+        assert isinstance(ast_nodes, list)
         cls = next(ast_nodes[0].infer())
         self.assertIsInstance(next(cls.igetattr("lam")), nodes.Lambda)
         self.assertIsInstance(next(cls.igetattr("not_method")), nodes.Lambda)
@@ -1848,6 +1888,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         MyClass() #@
         """
         )
+        assert isinstance(ast_nodes, list)
         cls = next(ast_nodes[0].infer())
         self.assertIsInstance(next(cls.igetattr("f2")), nodes.Lambda)
 
@@ -1863,6 +1904,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 func = 42
         """
         )
+        assert isinstance(ast_node, nodes.FunctionDef)
         self.assertEqual(ast_node.extra_decorators, [])
 
     def test_class_extra_decorators_only_callfunc_are_considered(self) -> None:

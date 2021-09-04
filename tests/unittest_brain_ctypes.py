@@ -61,6 +61,7 @@ def test_ctypes_redefined_types_members(c_type, builtin_type, type_code):
     x.value
     """
     node = extract_node(src)
+    assert isinstance(node, nodes.NodeNG)
     node_inf = node.inferred()[0]
     assert node_inf.pytype() == f"builtins.{builtin_type}"
 
@@ -70,6 +71,7 @@ def test_ctypes_redefined_types_members(c_type, builtin_type, type_code):
     x._type_
     """
     node = extract_node(src)
+    assert isinstance(node, nodes.NodeNG)
     node_inf = node.inferred()[0]
     assert isinstance(node_inf, nodes.Const)
     assert node_inf.value == type_code
@@ -86,6 +88,7 @@ def test_cdata_member_access() -> None:
     x._objects
     """
     node = extract_node(src)
+    assert isinstance(node, nodes.NodeNG)
     node_inf = node.inferred()[0]
     assert node_inf.display_type() == "Class"
     assert node_inf.qname() == "_ctypes._SimpleCData._objects"
@@ -100,6 +103,7 @@ def test_other_ctypes_member_untouched() -> None:
     ctypes.ARRAY(3, 2)
     """
     node = extract_node(src)
+    assert isinstance(node, nodes.NodeNG)
     node_inf = node.inferred()[0]
     assert isinstance(node_inf, nodes.Const)
     assert node_inf.value == 6

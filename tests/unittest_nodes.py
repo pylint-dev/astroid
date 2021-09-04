@@ -122,7 +122,7 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         """
         )
         ast_nodes = [next(node.infer()) for node in ast_nodes]
-
+        assert isinstance(ast_nodes, list)
         self.assertEqual(ast_nodes[0].as_string(), "frozenset((1, 2, 3))")
         self.assertEqual(ast_nodes[1].as_string(), "frozenset({1, 2, 3})")
         self.assertEqual(ast_nodes[2].as_string(), "frozenset([1, 2, 3])")

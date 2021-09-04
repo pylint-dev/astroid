@@ -186,6 +186,7 @@ class NamedTupleTest(unittest.TestCase):
            pass
         """
         )
+        assert isinstance(klass, nodes.ClassDef)
         self.assertEqual(
             [anc.name for anc in klass.ancestors()], ["X", "tuple", "object"]
         )
@@ -203,6 +204,7 @@ class NamedTupleTest(unittest.TestCase):
            pass
         """
         )
+        assert isinstance(klass, nodes.ClassDef)
         base = next(base for base in klass.ancestors() if base.name == "X")
         self.assertSetEqual({"a", "b", "c"}, set(base.instance_attrs))
 
@@ -490,6 +492,7 @@ class NoseBrainTest(unittest.TestCase):
         assert_equals = assert_equals #@
         """
         )
+        assert isinstance(methods, list)
         assert_equal = next(methods[0].value.infer())
         assert_true = next(methods[1].value.infer())
         assert_equals = next(methods[2].value.infer())
@@ -514,6 +517,7 @@ class SixBrainTest(unittest.TestCase):
         six.moves.urllib.request #@
         """
         )
+        assert isinstance(ast_nodes, list)
         http_client = next(ast_nodes[0].infer())
         self.assertIsInstance(http_client, nodes.Module)
         self.assertEqual(http_client.name, "http.client")
@@ -638,6 +642,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
         import multiprocessing
         """
         )
+        assert isinstance(module, nodes.Import)
         module = module.do_import_module("multiprocessing")
         cpu_count = next(module.igetattr("cpu_count"))
         self.assertIsInstance(cpu_count, astroid.BoundMethod)
@@ -809,6 +814,7 @@ class EnumBrainTest(unittest.TestCase):
         Color.red #@
         """
         )
+        assert isinstance(ast_node, nodes.NodeNG)
         inferred = ast_node.inferred()
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], astroid.Const)
@@ -1087,6 +1093,7 @@ class EnumBrainTest(unittest.TestCase):
         Color.red.name #@
         """
         )
+        assert isinstance(ast_node, nodes.NodeNG)
         inferred = ast_node.inferred()
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], astroid.Const)
@@ -1106,6 +1113,7 @@ class EnumBrainTest(unittest.TestCase):
         Color.red.value #@
         """
         )
+        assert isinstance(ast_node, nodes.NodeNG)
         inferred = ast_node.inferred()
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], astroid.Const)
@@ -1127,6 +1135,7 @@ class EnumBrainTest(unittest.TestCase):
         Color.red.hello_pylint()  #@
         """
         )
+        assert isinstance(ast_node, nodes.NodeNG)
         inferred = ast_node.inferred()
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], astroid.Const)
@@ -1153,6 +1162,7 @@ class EnumBrainTest(unittest.TestCase):
         Color.red.value #@
         """
         )
+        assert isinstance(ast_node, nodes.NodeNG)
         inferred = ast_node.inferred()
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], astroid.Const)
@@ -1271,6 +1281,7 @@ class TypeBrain(unittest.TestCase):
         self.assertEqual(val_inf.name, "str")
         with self.assertRaises(AttributeInferenceError):
             # pylint: disable=expression-not-assigned
+            # noinspection PyStatementEffect
             val_inf.getattr("__class_getitem__")[0]
 
     @test_utils.require_version(minver="3.9")
@@ -2999,6 +3010,7 @@ def test_no_recursionerror_on_self_referential_length_check() -> None:
         len(Crash()) #@
         """
         )
+        assert isinstance(node, nodes.NodeNG)
         node.inferred()
 
 

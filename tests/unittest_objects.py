@@ -58,6 +58,7 @@ class SuperTests(unittest.TestCase):
         super() #@
         """
         )
+        assert isinstance(ast_nodes, list)
         in_static = next(ast_nodes[0].value.infer())
         self.assertIsInstance(in_static, bases.Instance)
         self.assertEqual(in_static.qname(), "builtins.super")
@@ -91,6 +92,7 @@ class SuperTests(unittest.TestCase):
                 super(Test, lala) #@
         """
         )
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, bases.Instance)
         self.assertEqual(first.qname(), "builtins.super")
@@ -111,6 +113,7 @@ class SuperTests(unittest.TestCase):
                 super() #@
         """
         )
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, objects.Super)
         self.assertIsInstance(first.type, bases.Instance)
@@ -150,6 +153,7 @@ class SuperTests(unittest.TestCase):
         # the lookup should be done.
 
         # super(Third, self)
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, objects.Super)
         self.assertIsInstance(first.type, bases.Instance)
@@ -218,6 +222,7 @@ class SuperTests(unittest.TestCase):
             pass
         """
         )
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, objects.Super)
         with self.assertRaises(SuperError) as cm:
@@ -269,6 +274,7 @@ class SuperTests(unittest.TestCase):
         """
         )
         # Super(type, type) is the same for both functions and classmethods.
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.FunctionDef)
         self.assertEqual(first.name, "method")
@@ -321,6 +327,7 @@ class SuperTests(unittest.TestCase):
 
         """
         )
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, bases.BoundMethod)
         self.assertEqual(first.bound.name, "Second")
@@ -383,6 +390,7 @@ class SuperTests(unittest.TestCase):
                 super(E, self).static #@
         """
         )
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, bases.BoundMethod)
         self.assertEqual(first.bound.name, "C")
@@ -409,6 +417,7 @@ class SuperTests(unittest.TestCase):
                 super(X, A) #@
         """
         )
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         thisclass = first.getattr("__thisclass__")[0]
         self.assertIsInstance(thisclass, nodes.ClassDef)
@@ -454,6 +463,7 @@ class SuperTests(unittest.TestCase):
                 super(1, B) #@
         """
         )
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertEqualMro(first, ["C", "B", "A", "object"])
         second = next(ast_nodes[1].infer())
@@ -478,6 +488,7 @@ class SuperTests(unittest.TestCase):
                 super(A, Missing) #@
         """
         )
+        assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, bases.Instance)
         second = next(ast_nodes[1].infer())

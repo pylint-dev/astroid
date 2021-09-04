@@ -252,6 +252,7 @@ def test_named_expr_inference() -> None:
     x #@
     """
     ast_nodes = extract_node(code)
+    assert isinstance(ast_nodes, list)
     node = next(ast_nodes[0].infer())
     assert isinstance(node, nodes.Const)
     assert node.value == 2
