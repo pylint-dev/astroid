@@ -116,6 +116,7 @@ from astroid.nodes.scoped_nodes import (
     SetComp,
     builtin_lookup,
     function_to_method,
+    get_wrapping_class,
 )
 
 _BaseContainer = BaseContainer  # TODO Remove for astroid 3.0
@@ -254,6 +255,7 @@ __all__ = (
     "FunctionDef",
     "function_to_method",
     "GeneratorExp",
+    "get_wrapping_class",
     "Global",
     "If",
     "IfExp",

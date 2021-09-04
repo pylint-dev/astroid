@@ -2,8 +2,7 @@ import sys
 
 import pytest
 
-from astroid import extract_node
-from astroid.nodes.node_classes import Const
+from astroid import extract_node, nodes
 
 pytestmark = pytest.mark.skipif(
     hasattr(sys, "pypy_version_info"),
@@ -72,7 +71,7 @@ def test_ctypes_redefined_types_members(c_type, builtin_type, type_code):
     """
     node = extract_node(src)
     node_inf = node.inferred()[0]
-    assert isinstance(node_inf, Const)
+    assert isinstance(node_inf, nodes.Const)
     assert node_inf.value == type_code
 
 
@@ -102,5 +101,5 @@ def test_other_ctypes_member_untouched():
     """
     node = extract_node(src)
     node_inf = node.inferred()[0]
-    assert isinstance(node_inf, Const)
+    assert isinstance(node_inf, nodes.Const)
     assert node_inf.value == 6

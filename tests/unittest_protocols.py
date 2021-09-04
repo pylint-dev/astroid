@@ -22,7 +22,6 @@ import astroid
 from astroid import extract_node, nodes, util
 from astroid.const import PY38_PLUS, PY310_PLUS
 from astroid.exceptions import InferenceError
-from astroid.nodes.node_classes import AssignName, Const, Name, Starred
 
 
 @contextlib.contextmanager
@@ -38,14 +37,14 @@ class ProtocolTests(unittest.TestCase):
     def assertConstNodesEqual(self, nodes_list_expected, nodes_list_got):
         self.assertEqual(len(nodes_list_expected), len(nodes_list_got))
         for node in nodes_list_got:
-            self.assertIsInstance(node, Const)
+            self.assertIsInstance(node, nodes.Const)
         for node, expected_value in zip(nodes_list_got, nodes_list_expected):
             self.assertEqual(expected_value, node.value)
 
     def assertNameNodesEqual(self, nodes_list_expected, nodes_list_got):
         self.assertEqual(len(nodes_list_expected), len(nodes_list_got))
         for node in nodes_list_got:
-            self.assertIsInstance(node, Name)
+            self.assertIsInstance(node, nodes.Name)
         for node, expected_name in zip(nodes_list_got, nodes_list_expected):
             self.assertEqual(expected_name, node.name)
 
@@ -60,11 +59,11 @@ class ProtocolTests(unittest.TestCase):
         """
         )
 
-        for1_assnode = next(assign_stmts[0].nodes_of_class(AssignName))
+        for1_assnode = next(assign_stmts[0].nodes_of_class(nodes.AssignName))
         assigned = list(for1_assnode.assigned_stmts())
         self.assertConstNodesEqual([1, 2, 3], assigned)
 
-        for2_assnode = next(assign_stmts[1].nodes_of_class(AssignName))
+        for2_assnode = next(assign_stmts[1].nodes_of_class(nodes.AssignName))
         self.assertRaises(InferenceError, list, for2_assnode.assigned_stmts())
 
     def test_assigned_stmts_starred_for(self):
@@ -75,14 +74,14 @@ class ProtocolTests(unittest.TestCase):
         """
         )
 
-        for1_starred = next(assign_stmts.nodes_of_class(Starred))
+        for1_starred = next(assign_stmts.nodes_of_class(nodes.Starred))
         assigned = next(for1_starred.assigned_stmts())
         assert isinstance(assigned, astroid.List)
         assert assigned.as_string() == "[1, 2]"
 
     def _get_starred_stmts(self, code):
         assign_stmt = extract_node(f"{code} #@")
-        starred = next(assign_stmt.nodes_of_class(Starred))
+        starred = next(assign_stmt.nodes_of_class(nodes.Starred))
         return next(starred.assigned_stmts())
 
     def _helper_starred_expected_const(self, code, expected):
@@ -97,7 +96,7 @@ class ProtocolTests(unittest.TestCase):
 
     def _helper_starred_inference_error(self, code):
         assign_stmt = extract_node(f"{code} #@")
-        starred = next(assign_stmt.nodes_of_class(Starred))
+        starred = next(assign_stmt.nodes_of_class(nodes.Starred))
         self.assertRaises(InferenceError, list, starred.assigned_stmts())
 
     def test_assigned_stmts_starred_assnames(self):
@@ -143,11 +142,11 @@ class ProtocolTests(unittest.TestCase):
         """
         )
 
-        simple_assnode = next(assign_stmts[0].nodes_of_class(AssignName))
+        simple_assnode = next(assign_stmts[0].nodes_of_class(nodes.AssignName))
         assigned = list(simple_assnode.assigned_stmts())
         self.assertNameNodesEqual(["a"], assigned)
 
-        assnames = assign_stmts[1].nodes_of_class(AssignName)
+        assnames = assign_stmts[1].nodes_of_class(nodes.AssignName)
         simple_mul_assnode_1 = next(assnames)
         assigned = list(simple_mul_assnode_1.assigned_stmts())
         self.assertNameNodesEqual(["b"], assigned)
@@ -162,13 +161,15 @@ class ProtocolTests(unittest.TestCase):
         b: str  #@
         """
         )
-        simple_annassign_node = next(annassign_stmts[0].nodes_of_class(AssignName))
+        simple_annassign_node = next(
+            annassign_stmts[0].nodes_of_class(nodes.AssignName)
+        )
         assigned = list(simple_annassign_node.assigned_stmts())
         self.assertEqual(1, len(assigned))
-        self.assertIsInstance(assigned[0], Const)
+        self.assertIsInstance(assigned[0], nodes.Const)
         self.assertEqual(assigned[0].value, "abc")
 
-        empty_annassign_node = next(annassign_stmts[1].nodes_of_class(AssignName))
+        empty_annassign_node = next(annassign_stmts[1].nodes_of_class(nodes.AssignName))
         assigned = list(empty_annassign_node.assigned_stmts())
         self.assertEqual(1, len(assigned))
         self.assertIs(assigned[0], util.Uninferable)

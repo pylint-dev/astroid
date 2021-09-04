@@ -20,8 +20,6 @@ from textwrap import dedent
 
 from astroid import nodes
 from astroid.builder import AstroidBuilder, extract_node
-from astroid.nodes.node_classes import Assign, Const, Expr, Name, YieldFrom
-from astroid.nodes.scoped_nodes import ClassDef, FunctionDef
 from astroid.test_utils import require_version
 
 
@@ -36,7 +34,7 @@ class Python3TC(unittest.TestCase):
         # Get the star node
         node = next(next(next(astroid.get_children()).get_children()).get_children())
 
-        self.assertTrue(isinstance(node.assign_type(), Assign))
+        self.assertTrue(isinstance(node.assign_type(), nodes.Assign))
 
     def test_yield_from(self):
         body = dedent(
@@ -47,11 +45,11 @@ class Python3TC(unittest.TestCase):
         )
         astroid = self.builder.string_build(body)
         func = astroid.body[0]
-        self.assertIsInstance(func, FunctionDef)
+        self.assertIsInstance(func, nodes.FunctionDef)
         yieldfrom_stmt = func.body[0]
 
-        self.assertIsInstance(yieldfrom_stmt, Expr)
-        self.assertIsInstance(yieldfrom_stmt.value, YieldFrom)
+        self.assertIsInstance(yieldfrom_stmt, nodes.Expr)
+        self.assertIsInstance(yieldfrom_stmt.value, nodes.YieldFrom)
         self.assertEqual(yieldfrom_stmt.as_string(), "yield from iter([1, 2])")
 
     def test_yield_from_is_generator(self):
@@ -63,7 +61,7 @@ class Python3TC(unittest.TestCase):
         )
         astroid = self.builder.string_build(body)
         func = astroid.body[0]
-        self.assertIsInstance(func, FunctionDef)
+        self.assertIsInstance(func, nodes.FunctionDef)
         self.assertTrue(func.is_generator())
 
     def test_yield_from_as_string(self):
@@ -85,7 +83,7 @@ class Python3TC(unittest.TestCase):
         klass = astroid.body[0]
 
         metaclass = klass.metaclass()
-        self.assertIsInstance(metaclass, ClassDef)
+        self.assertIsInstance(metaclass, nodes.ClassDef)
         self.assertEqual(metaclass.name, "type")
 
     def test_metaclass_error(self):
@@ -104,7 +102,7 @@ class Python3TC(unittest.TestCase):
         klass = astroid.body[1]
 
         metaclass = klass.metaclass()
-        self.assertIsInstance(metaclass, ClassDef)
+        self.assertIsInstance(metaclass, nodes.ClassDef)
         self.assertEqual(metaclass.name, "ABCMeta")
 
     def test_metaclass_multiple_keywords(self):
@@ -114,7 +112,7 @@ class Python3TC(unittest.TestCase):
         klass = astroid.body[0]
 
         metaclass = klass.metaclass()
-        self.assertIsInstance(metaclass, ClassDef)
+        self.assertIsInstance(metaclass, nodes.ClassDef)
         self.assertEqual(metaclass.name, "type")
 
     def test_as_string(self):
@@ -171,7 +169,7 @@ class Python3TC(unittest.TestCase):
         klass = astroid["SubTest"]
         self.assertTrue(klass.newstyle)
         metaclass = klass.metaclass()
-        self.assertIsInstance(metaclass, ClassDef)
+        self.assertIsInstance(metaclass, nodes.ClassDef)
         self.assertEqual(metaclass.name, "ABCMeta")
 
     def test_metaclass_ancestors(self):
@@ -199,7 +197,7 @@ class Python3TC(unittest.TestCase):
             for name in names:
                 impl = astroid[name]
                 meta = impl.metaclass()
-                self.assertIsInstance(meta, ClassDef)
+                self.assertIsInstance(meta, nodes.ClassDef)
                 self.assertEqual(meta.name, metaclass)
 
     def test_annotation_support(self):
@@ -213,18 +211,18 @@ class Python3TC(unittest.TestCase):
             )
         )
         func = astroid["test"]
-        self.assertIsInstance(func.args.varargannotation, Name)
+        self.assertIsInstance(func.args.varargannotation, nodes.Name)
         self.assertEqual(func.args.varargannotation.name, "float")
-        self.assertIsInstance(func.args.kwargannotation, Name)
+        self.assertIsInstance(func.args.kwargannotation, nodes.Name)
         self.assertEqual(func.args.kwargannotation.name, "int")
-        self.assertIsInstance(func.returns, Name)
+        self.assertIsInstance(func.returns, nodes.Name)
         self.assertEqual(func.returns.name, "int")
         arguments = func.args
-        self.assertIsInstance(arguments.annotations[0], Name)
+        self.assertIsInstance(arguments.annotations[0], nodes.Name)
         self.assertEqual(arguments.annotations[0].name, "int")
-        self.assertIsInstance(arguments.annotations[1], Name)
+        self.assertIsInstance(arguments.annotations[1], nodes.Name)
         self.assertEqual(arguments.annotations[1].name, "str")
-        self.assertIsInstance(arguments.annotations[2], Const)
+        self.assertIsInstance(arguments.annotations[2], nodes.Const)
         self.assertIsNone(arguments.annotations[2].value)
         self.assertIsNone(arguments.annotations[3])
         self.assertIsNone(arguments.annotations[4])
@@ -238,9 +236,9 @@ class Python3TC(unittest.TestCase):
             )
         )
         func = astroid["test"]
-        self.assertIsInstance(func.args.annotations[0], Name)
+        self.assertIsInstance(func.args.annotations[0], nodes.Name)
         self.assertEqual(func.args.annotations[0].name, "int")
-        self.assertIsInstance(func.args.annotations[1], Name)
+        self.assertIsInstance(func.args.annotations[1], nodes.Name)
         self.assertEqual(func.args.annotations[1].name, "str")
         self.assertIsNone(func.returns)
 
@@ -255,11 +253,11 @@ class Python3TC(unittest.TestCase):
         )
         func = node["test"]
         arguments = func.args
-        self.assertIsInstance(arguments.kwonlyargs_annotations[0], Name)
+        self.assertIsInstance(arguments.kwonlyargs_annotations[0], nodes.Name)
         self.assertEqual(arguments.kwonlyargs_annotations[0].name, "int")
-        self.assertIsInstance(arguments.kwonlyargs_annotations[1], Name)
+        self.assertIsInstance(arguments.kwonlyargs_annotations[1], nodes.Name)
         self.assertEqual(arguments.kwonlyargs_annotations[1].name, "str")
-        self.assertIsInstance(arguments.kwonlyargs_annotations[2], Const)
+        self.assertIsInstance(arguments.kwonlyargs_annotations[2], nodes.Const)
         self.assertIsNone(arguments.kwonlyargs_annotations[2].value)
         self.assertIsNone(arguments.kwonlyargs_annotations[3])
         self.assertIsNone(arguments.kwonlyargs_annotations[4])
@@ -283,6 +281,7 @@ class Python3TC(unittest.TestCase):
         code = "{'x': 1, **{'y': 2}}"
         node = extract_node(code)
         self.assertEqual(node.as_string(), code)
+        assert isinstance(node, nodes.Dict)
         keys = [key for (key, _) in node.items]
         self.assertIsInstance(keys[0], nodes.Const)
         self.assertIsInstance(keys[1], nodes.DictUnpack)

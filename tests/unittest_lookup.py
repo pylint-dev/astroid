@@ -24,7 +24,6 @@ from astroid.exceptions import (
     InferenceError,
     NameInferenceError,
 )
-from astroid.nodes.scoped_nodes import builtin_lookup
 
 from . import resources
 
@@ -389,8 +388,8 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(path.lookup("__path__")[1]), 1)
 
     def test_builtin_lookup(self):
-        self.assertEqual(builtin_lookup("__dict__")[1], ())
-        intstmts = builtin_lookup("int")[1]
+        self.assertEqual(nodes.builtin_lookup("__dict__")[1], ())
+        intstmts = nodes.builtin_lookup("int")[1]
         self.assertEqual(len(intstmts), 1)
         self.assertIsInstance(intstmts[0], nodes.ClassDef)
         self.assertEqual(intstmts[0].name, "int")
@@ -411,7 +410,10 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
                 def test(self):
                     pass
         """
-        member = builder.extract_node(code, __name__).targets[0]
+
+        node = builder.extract_node(code, __name__)
+        assert isinstance(node, nodes.Assign)
+        member = node.targets[0]
         it = member.infer()
         obj = next(it)
         self.assertIsInstance(obj, nodes.Const)
