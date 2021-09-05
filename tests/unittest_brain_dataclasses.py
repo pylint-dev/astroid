@@ -643,3 +643,39 @@ def test_invalid_init(module: str):
     )
     init = next(node.infer())
     assert init._proxied.parent.name == "object"
+
+
+@parametrize_module
+def test_annotated_enclosed_field_call(module: str):
+    """Test inference of dataclass attribute with an annotated field call in another function call"""
+    node = astroid.extract_node(
+        f"""
+    from {module} import dataclass, field
+    from typing import cast
+
+    @dc.dataclass
+    class A:
+        attribute: int = cast(int, field(default_factory=dict))
+
+    """
+    )
+    inferred = node.inferred()
+    assert len(inferred) == 1
+
+
+@parametrize_module
+def test_enclosed_field_call(module: str):
+    """Test inference of dataclass attribute with a non-annotated field call in another function call"""
+    node = astroid.extract_node(
+        f"""
+    from {module} import dataclass, field
+    from typing import cast
+
+    @dc.dataclass
+    class A:
+        attribute = cast(int, field(default_factory=dict))
+
+    """
+    )
+    inferred = node.inferred()
+    assert len(inferred) == 1
