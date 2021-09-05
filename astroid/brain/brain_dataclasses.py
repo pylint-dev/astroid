@@ -233,19 +233,20 @@ def infer_dataclass_attribute(
 
 def infer_dataclass_field_call(
     node: Call, ctx: context.InferenceContext = None
-) -> Generator:
+) -> Optional[Generator]:
     """Inference tip for dataclass field calls."""
-    if isinstance(node.parent, (AnnAssign, Assign)):
-        field_call = node.parent.value
-        default_type, default = _get_field_default(field_call)
-        if not default_type:
-            yield Uninferable
-        elif default_type == "default":
-            yield from default.infer(context=ctx)
-        else:
-            new_call = parse(default.as_string()).body[0].value
-            new_call.parent = field_call.parent
-            yield from new_call.infer(context=ctx)
+    if not isinstance(node.parent, (AnnAssign, Assign)):
+        return
+    field_call = node.parent.value
+    default_type, default = _get_field_default(field_call)
+    if not default_type:
+        yield Uninferable
+    elif default_type == "default":
+        yield from default.infer(context=ctx)
+    else:
+        new_call = parse(default.as_string()).body[0].value
+        new_call.parent = field_call.parent
+        yield from new_call.infer(context=ctx)
 
 
 def _looks_like_dataclass_decorator(
