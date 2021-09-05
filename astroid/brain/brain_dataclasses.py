@@ -12,7 +12,12 @@ from typing import Generator, List, Optional, Tuple
 from astroid import context, inference_tip
 from astroid.builder import parse
 from astroid.const import PY37_PLUS, PY39_PLUS
-from astroid.exceptions import AstroidSyntaxError, InferenceError, MroError, UseInferenceDefault
+from astroid.exceptions import (
+    AstroidSyntaxError,
+    InferenceError,
+    MroError,
+    UseInferenceDefault,
+)
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import (
     AnnAssign,
