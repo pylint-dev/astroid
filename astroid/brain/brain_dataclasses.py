@@ -232,7 +232,7 @@ def infer_dataclass_attribute(
 
 
 def infer_dataclass_field_call(
-    node: Call, ctx: context.InferenceContext = None
+    node: Call, ctx: Optional[context.InferenceContext] = None
 ) -> Optional[Generator]:
     """Inference tip for dataclass field calls."""
     if not isinstance(node.parent, (AnnAssign, Assign)):
