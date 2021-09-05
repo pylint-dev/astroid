@@ -647,35 +647,17 @@ def test_invalid_init(module: str):
 
 @parametrize_module
 def test_annotated_enclosed_field_call(module: str):
-    """Test inference of dataclass attribute with an annotated field call in another function call"""
+    """Test inference of dataclass attribute with a field call in another function call"""
     node = astroid.extract_node(
         f"""
     from {module} import dataclass, field
     from typing import cast
 
-    @dc.dataclass
+    @dataclass
     class A:
         attribute: int = cast(int, field(default_factory=dict))
-
     """
     )
     inferred = node.inferred()
-    assert len(inferred) == 1
-
-
-@parametrize_module
-def test_enclosed_field_call(module: str):
-    """Test inference of dataclass attribute with a non-annotated field call in another function call"""
-    node = astroid.extract_node(
-        f"""
-    from {module} import dataclass, field
-    from typing import cast
-
-    @dc.dataclass
-    class A:
-        attribute = cast(int, field(default_factory=dict))
-
-    """
-    )
-    inferred = node.inferred()
-    assert len(inferred) == 1
+    assert len(inferred) == 1 and isinstance(inferred[0], nodes.ClassDef)
+    assert "attribute" in inferred[0].instance_attrs
