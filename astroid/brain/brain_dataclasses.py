@@ -12,7 +12,7 @@ from typing import Generator, List, Optional, Tuple
 from astroid import context, inference_tip
 from astroid.builder import parse
 from astroid.const import PY37_PLUS, PY39_PLUS
-from astroid.exceptions import AstroidSyntaxError, InferenceError, MroError
+from astroid.exceptions import AstroidSyntaxError, InferenceError, MroError, UseInferenceDefault
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import (
     AnnAssign,
@@ -233,10 +233,10 @@ def infer_dataclass_attribute(
 
 def infer_dataclass_field_call(
     node: Call, ctx: Optional[context.InferenceContext] = None
-) -> Optional[Generator]:
+) -> Generator:
     """Inference tip for dataclass field calls."""
     if not isinstance(node.parent, (AnnAssign, Assign)):
-        return
+        raise UseInferenceDefault
     field_call = node.parent.value
     default_type, default = _get_field_default(field_call)
     if not default_type:
