@@ -1629,6 +1629,27 @@ class TypingBrain(unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
 
+    def test_namedtuple_nested_class(self):
+        result = builder.extract_node(
+            """
+        from typing import NamedTuple
+
+        class Example(NamedTuple):
+            class Foo:
+                bar = "bar"
+
+        Example
+        """
+        )
+        inferred = next(result.infer())
+        self.assertIsInstance(inferred, astroid.ClassDef)
+
+        class_def_attr = inferred.getattr("Foo")[0]
+        self.assertIsInstance(class_def_attr, astroid.ClassDef)
+        attr_def = class_def_attr.getattr("bar")[0]
+        attr = next(attr_def.infer())
+        self.assertEqual(attr.value, "bar")
+
     @test_utils.require_version(minver="3.7")
     def test_tuple_type(self):
         node = builder.extract_node(
