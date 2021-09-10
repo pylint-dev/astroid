@@ -220,6 +220,21 @@ class AstroidManagerTest(
                 os.path.sep.join(["data", os.path.normcase("MyPyPa-0.1.0-py2.5.zip")])
             )
 
+    def test_ast_from_module_name_pyz(self):
+        try:
+            linked_file_name = os.path.join(
+                resources.RESOURCE_PATH, "MyPyPa-0.1.0-py2.5.pyz"
+            )
+            os.symlink(
+                os.path.join(resources.RESOURCE_PATH, "MyPyPa-0.1.0-py2.5.zip"),
+                linked_file_name,
+            )
+
+            with self._restore_package_cache():
+                self._test_ast_from_zip(linked_file_name)
+        finally:
+            os.remove(linked_file_name)
+
     def test_zip_import_data(self):
         """check if zip_import_data works"""
         with self._restore_package_cache():
