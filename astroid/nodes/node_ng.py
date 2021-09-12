@@ -6,6 +6,7 @@ from typing import (
     ClassVar,
     Iterator,
     Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -503,7 +504,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.AnnAssign"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.AnnAssign"]:
         ...
 
@@ -511,7 +512,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Arguments"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Arguments"]:
         ...
 
@@ -519,7 +520,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Assert"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Assert"]:
         ...
 
@@ -527,7 +528,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Assign"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Assign"]:
         ...
 
@@ -535,7 +536,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.AssignAttr"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.AssignAttr"]:
         ...
 
@@ -543,7 +544,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.AssignName"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.AssignName"]:
         ...
 
@@ -551,7 +552,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.AsyncFor"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.AsyncFor"]:
         ...
 
@@ -559,7 +560,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.AsyncFunctionDef"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.AsyncFunctionDef"]:
         ...
 
@@ -567,7 +568,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.AsyncWith"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.AsyncWith"]:
         ...
 
@@ -575,7 +576,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Attribute"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Attribute"]:
         ...
 
@@ -583,7 +584,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.AugAssign"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.AugAssign"]:
         ...
 
@@ -591,7 +592,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Await"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Await"]:
         ...
 
@@ -599,7 +600,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.BinOp"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.BinOp"]:
         ...
 
@@ -607,7 +608,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.BoolOp"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.BoolOp"]:
         ...
 
@@ -615,7 +616,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Break"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Break"]:
         ...
 
@@ -623,7 +624,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Call"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Call"]:
         ...
 
@@ -631,7 +632,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.ClassDef"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.ClassDef"]:
         ...
 
@@ -639,7 +640,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Compare"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Compare"]:
         ...
 
@@ -647,7 +648,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Comprehension"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Comprehension"]:
         ...
 
@@ -655,7 +656,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Const"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Const"]:
         ...
 
@@ -663,7 +664,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Continue"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Continue"]:
         ...
 
@@ -671,7 +672,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Decorators"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Decorators"]:
         ...
 
@@ -679,7 +680,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.DelAttr"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.DelAttr"]:
         ...
 
@@ -687,7 +688,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.DelName"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.DelName"]:
         ...
 
@@ -695,7 +696,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Delete"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Delete"]:
         ...
 
@@ -703,7 +704,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Dict"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Dict"]:
         ...
 
@@ -711,7 +712,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.DictComp"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.DictComp"]:
         ...
 
@@ -719,7 +720,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.DictUnpack"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.DictUnpack"]:
         ...
 
@@ -727,7 +728,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Ellipsis"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Ellipsis"]:
         ...
 
@@ -735,7 +736,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.EmptyNode"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.EmptyNode"]:
         ...
 
@@ -743,7 +744,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.ExceptHandler"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.ExceptHandler"]:
         ...
 
@@ -751,7 +752,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Expr"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Expr"]:
         ...
 
@@ -759,7 +760,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.ExtSlice"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.ExtSlice"]:
         ...
 
@@ -767,7 +768,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.For"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.For"]:
         ...
 
@@ -775,7 +776,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.FormattedValue"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.FormattedValue"]:
         ...
 
@@ -783,7 +784,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.FunctionDef"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.FunctionDef"]:
         ...
 
@@ -791,7 +792,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.GeneratorExp"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.GeneratorExp"]:
         ...
 
@@ -799,7 +800,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Global"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Global"]:
         ...
 
@@ -807,7 +808,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.If"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.If"]:
         ...
 
@@ -815,7 +816,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.IfExp"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.IfExp"]:
         ...
 
@@ -823,7 +824,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Import"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Import"]:
         ...
 
@@ -831,7 +832,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.ImportFrom"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.ImportFrom"]:
         ...
 
@@ -839,7 +840,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Index"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Index"]:
         ...
 
@@ -847,7 +848,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.JoinedStr"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.JoinedStr"]:
         ...
 
@@ -855,7 +856,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Keyword"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Keyword"]:
         ...
 
@@ -863,7 +864,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Lambda"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Lambda"]:
         ...
 
@@ -871,7 +872,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.List"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.List"]:
         ...
 
@@ -879,7 +880,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.ListComp"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.ListComp"]:
         ...
 
@@ -887,7 +888,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Match"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Match"]:
         ...
 
@@ -895,7 +896,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.MatchAs"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.MatchAs"]:
         ...
 
@@ -903,7 +904,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.MatchCase"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.MatchCase"]:
         ...
 
@@ -911,7 +912,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.MatchClass"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.MatchClass"]:
         ...
 
@@ -919,7 +920,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.MatchMapping"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.MatchMapping"]:
         ...
 
@@ -927,7 +928,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.MatchOr"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.MatchOr"]:
         ...
 
@@ -935,7 +936,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.MatchSequence"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.MatchSequence"]:
         ...
 
@@ -943,7 +944,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.MatchSingleton"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.MatchSingleton"]:
         ...
 
@@ -951,7 +952,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.MatchStar"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.MatchStar"]:
         ...
 
@@ -959,7 +960,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.MatchValue"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.MatchValue"]:
         ...
 
@@ -967,7 +968,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Module"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Module"]:
         ...
 
@@ -975,7 +976,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Name"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Name"]:
         ...
 
@@ -983,7 +984,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Nonlocal"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Nonlocal"]:
         ...
 
@@ -991,7 +992,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Pass"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Pass"]:
         ...
 
@@ -999,7 +1000,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Raise"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Raise"]:
         ...
 
@@ -1007,7 +1008,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Return"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Return"]:
         ...
 
@@ -1015,7 +1016,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Set"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Set"]:
         ...
 
@@ -1023,7 +1024,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.SetComp"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.SetComp"]:
         ...
 
@@ -1031,7 +1032,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Slice"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Slice"]:
         ...
 
@@ -1039,7 +1040,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Starred"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Starred"]:
         ...
 
@@ -1047,7 +1048,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Subscript"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Subscript"]:
         ...
 
@@ -1055,7 +1056,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.TryExcept"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.TryExcept"]:
         ...
 
@@ -1063,7 +1064,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.TryFinally"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.TryFinally"]:
         ...
 
@@ -1071,7 +1072,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Tuple"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Tuple"]:
         ...
 
@@ -1079,7 +1080,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.UnaryOp"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.UnaryOp"]:
         ...
 
@@ -1087,7 +1088,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Unknown"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Unknown"]:
         ...
 
@@ -1095,7 +1096,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.While"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.While"]:
         ...
 
@@ -1103,7 +1104,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.With"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.With"]:
         ...
 
@@ -1111,7 +1112,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.YieldFrom"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.YieldFrom"]:
         ...
 
@@ -1119,7 +1120,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Yield"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Yield"]:
         ...
 
@@ -1127,7 +1128,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Statement"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Statement"]:
         ...
 
@@ -1135,7 +1136,7 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["nodes.Pattern"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["nodes.Pattern"]:
         ...
 
@@ -1143,14 +1144,14 @@ class NodeNG:
     def nodes_of_class(
         self: "NodeNG",
         klass: Type["NodeNG"],
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["NodeNG"]:
         ...
 
     def nodes_of_class(
         self: "NodeNG",
         klass: "T_Nodes",
-        skip_klass: Union[None, Type["NodeNG"], tuple[Type["NodeNG"], ...]] = None,
+        skip_klass: Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]] = None,
     ) -> Iterator["NodeNG"]:
         """Get the nodes (including this one or below) of the given types.
 
