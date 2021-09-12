@@ -19,6 +19,8 @@ Release date: TBA
 
   Closes PyCQA/pylint#3887
 
+* Add ``node_ancestors`` method to ``NodeNG`` for obtaining the ancestors of nodes.
+
 What's New in astroid 2.7.4?
 ============================
 Release date: TBA
