@@ -226,6 +226,13 @@ class NodeNG:
             return attr
         return None
 
+    def node_ancestors(self) -> Iterator["NodeNG"]:
+        """Yield parent, grandparent, etc until there are no more."""
+        parent = self.parent
+        while parent is not None:
+            yield parent
+            parent = parent.parent
+
     def parent_of(self, node):
         """Check if this node is the parent of the given node.
 
@@ -236,11 +243,9 @@ class NodeNG:
             False otherwise.
         :rtype: bool
         """
-        parent = node.parent
-        while parent is not None:
+        for parent in node.node_ancestors():
             if self is parent:
                 return True
-            parent = parent.parent
         return False
 
     def statement(self):
