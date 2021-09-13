@@ -9,7 +9,7 @@ from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 
-# These TypeVar's are used to type NodeNG.nodes_of_class()
+# Types for 'NodeNG.nodes_of_class()'
 T_Nodes = TypeVar("T_Nodes", bound="NodeNG")
 T_Nodes2 = TypeVar("T_Nodes2", bound="NodeNG")
 T_Nodes3 = TypeVar("T_Nodes3", bound="NodeNG")
