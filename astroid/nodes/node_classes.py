@@ -40,7 +40,7 @@ import itertools
 import sys
 import typing
 from functools import lru_cache
-from typing import Callable, Generator, Optional
+from typing import TYPE_CHECKING, Callable, Generator, Optional
 
 from astroid import decorators, mixins, util
 from astroid.bases import Instance, _infer_stmts
@@ -60,6 +60,9 @@ if sys.version_info >= (3, 8):
     from typing import Literal
 else:
     from typing_extensions import Literal
+
+if TYPE_CHECKING:
+    from astroid.scoped_nodes import LocalsDictNodeNG
 
 
 def _is_const(value):
@@ -2020,7 +2023,7 @@ class Decorators(NodeNG):
         """
         self.nodes = nodes
 
-    def scope(self):
+    def scope(self) -> Optional["LocalsDictNodeNG"]:
         """The first parent node defining a new scope.
 
         :returns: The first parent scope node.

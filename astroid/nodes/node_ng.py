@@ -1,13 +1,26 @@
 import pprint
 import typing
 from functools import singledispatch as _singledispatch
-from typing import ClassVar, Iterator, Optional, Tuple, Type, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    ClassVar,
+    Iterator,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from astroid import decorators, util
 from astroid.exceptions import AstroidError, InferenceError, UseInferenceDefault
 from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
+
+if TYPE_CHECKING:
+    from astroid.scoped_nodes import LocalsDictNodeNG
 
 # Types for 'NodeNG.nodes_of_class()'
 T_Nodes = TypeVar("T_Nodes", bound="NodeNG")
@@ -246,7 +259,7 @@ class NodeNG:
         """
         return self.parent.frame()
 
-    def scope(self):
+    def scope(self) -> Optional["LocalsDictNodeNG"]:
         """The first parent node defining a new scope.
 
         :returns: The first parent scope node.
