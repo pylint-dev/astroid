@@ -109,17 +109,14 @@ def are_exclusive(stmt1, stmt2, exceptions: Optional[typing.List[str]] = None) -
     # index stmt1's parents
     stmt1_parents = {}
     children = {}
-    node = stmt1.parent
     previous = stmt1
-    while node:
+    for node in stmt1.node_ancestors():
         stmt1_parents[node] = 1
         children[node] = previous
         previous = node
-        node = node.parent
     # climb among stmt2's parents until we find a common parent
-    node = stmt2.parent
     previous = stmt2
-    while node:
+    for node in stmt2.node_ancestors():
         if node in stmt1_parents:
             # if the common parent is a If or TryExcept statement, look if
             # nodes are in exclusive branches
@@ -162,7 +159,6 @@ def are_exclusive(stmt1, stmt2, exceptions: Optional[typing.List[str]] = None) -
                     return previous is not children[node]
             return False
         previous = node
-        node = node.parent
     return False
 
 
@@ -4719,9 +4715,7 @@ def const_factory(value):
 
 def is_from_decorator(node):
     """Return True if the given node is the child of a decorator"""
-    parent = node.parent
-    while parent is not None:
+    for parent in node.node_ancestors():
         if isinstance(parent, Decorators):
             return True
-        parent = parent.parent
     return False
