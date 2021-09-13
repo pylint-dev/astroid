@@ -15,11 +15,17 @@ Release date: TBA
     * ``op`` (``str``) for ``AugAssign``, ``BinOp``, ``BoolOp``, ``UnaryOp``
     * ``names`` (``list[tuple[str, str | None]]``) for ``Import``
 
+* Support pyz imports
+
+  Closes PyCQA/pylint#3887
 
 What's New in astroid 2.7.4?
 ============================
 Release date: TBA
 
+* Fixed bug in inference of dataclass field calls.
+
+    Closes PyCQA/pylint#4963
 
 
 What's New in astroid 2.7.3?
