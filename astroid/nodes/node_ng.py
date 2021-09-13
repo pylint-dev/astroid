@@ -186,11 +186,7 @@ class NodeNG:
         return func(self)
 
     def get_children(self) -> Iterator["NodeNG"]:
-        """Get the child nodes below this node.
-
-        :returns: The children.
-        :rtype: iterable(NodeNG)
-        """
+        """Get the child nodes below this node."""
         for field in self._astroid_fields:
             attr = getattr(self, field)
             if attr is None:
@@ -453,14 +449,11 @@ class NodeNG:
         """Get the nodes (including this one or below) of the given types.
 
         :param klass: The types of node to search for.
-        :type klass: builtins.type or tuple(builtins.type)
 
         :param skip_klass: The types of node to ignore. This is useful to ignore
             subclasses of :attr:`klass`.
-        :type skip_klass: builtins.type or tuple(builtins.type)
 
         :returns: The node of the given types.
-        :rtype: iterable(NodeNG)
         """
         if isinstance(self, klass):
             yield self
