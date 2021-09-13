@@ -1734,6 +1734,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :returns: What the function yields
         :rtype: iterable(NodeNG or Uninferable) or None
         """
+        # pylint: disable=not-an-iterable
+        # https://github.com/PyCQA/astroid/issues/1015
         for yield_ in self.nodes_of_class(node_classes.Yield):
             if yield_.value is None:
                 const = node_classes.Const(None)

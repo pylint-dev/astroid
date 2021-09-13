@@ -1,13 +1,19 @@
 import pprint
 import typing
 from functools import singledispatch as _singledispatch
-from typing import ClassVar, Optional
+from typing import ClassVar, Iterator, Optional, Tuple, Type, TypeVar, Union, overload
 
 from astroid import decorators, util
 from astroid.exceptions import AstroidError, InferenceError, UseInferenceDefault
 from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
+
+# Types for 'NodeNG.nodes_of_class()'
+T_Nodes = TypeVar("T_Nodes", bound="NodeNG")
+T_Nodes2 = TypeVar("T_Nodes2", bound="NodeNG")
+T_Nodes3 = TypeVar("T_Nodes3", bound="NodeNG")
+SkipKlassT = Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]]
 
 
 class NodeNG:
@@ -179,12 +185,8 @@ class NodeNG:
         func = getattr(visitor, "visit_" + self.__class__.__name__.lower())
         return func(self)
 
-    def get_children(self):
-        """Get the child nodes below this node.
-
-        :returns: The children.
-        :rtype: iterable(NodeNG)
-        """
+    def get_children(self) -> Iterator["NodeNG"]:
+        """Get the child nodes below this node."""
         for field in self._astroid_fields:
             attr = getattr(self, field)
             if attr is None:
@@ -402,18 +404,56 @@ class NodeNG:
         """
         self.parent.set_local(name, stmt)
 
-    def nodes_of_class(self, klass, skip_klass=None):
+    @overload
+    def nodes_of_class(
+        self,
+        klass: Type[T_Nodes],
+        skip_klass: SkipKlassT = None,
+    ) -> Iterator[T_Nodes]:
+        ...
+
+    @overload
+    def nodes_of_class(
+        self,
+        klass: Tuple[Type[T_Nodes], Type[T_Nodes2]],
+        skip_klass: SkipKlassT = None,
+    ) -> Union[Iterator[T_Nodes], Iterator[T_Nodes2]]:
+        ...
+
+    @overload
+    def nodes_of_class(
+        self,
+        klass: Tuple[Type[T_Nodes], Type[T_Nodes2], Type[T_Nodes3]],
+        skip_klass: SkipKlassT = None,
+    ) -> Union[Iterator[T_Nodes], Iterator[T_Nodes2], Iterator[T_Nodes3]]:
+        ...
+
+    @overload
+    def nodes_of_class(
+        self,
+        klass: Tuple[Type[T_Nodes], ...],
+        skip_klass: SkipKlassT = None,
+    ) -> Iterator[T_Nodes]:
+        ...
+
+    def nodes_of_class(  # type: ignore # mypy doesn't correctly recognize the overloads
+        self,
+        klass: Union[
+            Type[T_Nodes],
+            Tuple[Type[T_Nodes], Type[T_Nodes2]],
+            Tuple[Type[T_Nodes], Type[T_Nodes2], Type[T_Nodes3]],
+            Tuple[Type[T_Nodes], ...],
+        ],
+        skip_klass: SkipKlassT = None,
+    ) -> Union[Iterator[T_Nodes], Iterator[T_Nodes2], Iterator[T_Nodes3]]:
         """Get the nodes (including this one or below) of the given types.
 
         :param klass: The types of node to search for.
-        :type klass: builtins.type or tuple(builtins.type)
 
         :param skip_klass: The types of node to ignore. This is useful to ignore
             subclasses of :attr:`klass`.
-        :type skip_klass: builtins.type or tuple(builtins.type)
 
         :returns: The node of the given types.
-        :rtype: iterable(NodeNG)
         """
         if isinstance(self, klass):
             yield self
