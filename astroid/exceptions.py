@@ -14,7 +14,12 @@
 
 """this module contains exceptions used in the astroid library
 """
+from typing import TYPE_CHECKING
+
 from astroid import util
+
+if TYPE_CHECKING:
+    from astroid import nodes
 
 __all__ = (
     "AstroidBuildingError",
@@ -263,7 +268,8 @@ class ParentMissingError(AstroidError):
         target: The node for which the parent lookup failed.
     """
 
-    def __init__(self, target):
+    def __init__(self, target: "nodes.NodeNG") -> None:
+        self.target = target
         super().__init__(message=f"Parent not found on {target!r}.")
 
 
