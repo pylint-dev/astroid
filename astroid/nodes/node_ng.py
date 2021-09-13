@@ -14,7 +14,12 @@ from typing import (
 )
 
 from astroid import decorators, util
-from astroid.exceptions import AstroidError, InferenceError, ParentMissingError, UseInferenceDefault
+from astroid.exceptions import (
+    AstroidError,
+    InferenceError,
+    ParentMissingError,
+    UseInferenceDefault,
+)
 from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
