@@ -23,6 +23,9 @@ What's New in astroid 2.7.4?
 ============================
 Release date: TBA
 
+* Fixed bug in inference of dataclass field calls.
+
+    Closes PyCQA/pylint#4963
 
 
 What's New in astroid 2.7.3?
