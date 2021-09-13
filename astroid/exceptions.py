@@ -100,7 +100,7 @@ class TooManyLevelsError(AstroidImportError):
     def __init__(
         self,
         message="Relative import with too many levels " "({level}) for module {name!r}",
-        **kws
+        **kws,
     ):
         super().__init__(message, **kws)
 
