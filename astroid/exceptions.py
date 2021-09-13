@@ -263,10 +263,8 @@ class ParentMissingError(AstroidError):
         target: The node for which the parent lookup failed.
     """
 
-    target = None
-
-    def __init__(self, message="Parent not found on {target!r}.", **kws):
-        super().__init__(message, **kws)
+    def __init__(self, target):
+        super().__init__(message=f"Parent not found on {target!r}.")
 
 
 # Backwards-compatibility aliases
