@@ -14,7 +14,7 @@ from typing import (
 )
 
 from astroid import decorators, util
-from astroid.exceptions import AstroidError, InferenceError, UseInferenceDefault
+from astroid.exceptions import AstroidError, InferenceError, ParentMissingError, UseInferenceDefault
 from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
@@ -259,15 +259,15 @@ class NodeNG:
         """
         return self.parent.frame()
 
-    def scope(self) -> Optional["LocalsDictNodeNG"]:
+    def scope(self) -> "LocalsDictNodeNG":
         """The first parent node defining a new scope.
 
         :returns: The first parent scope node.
         :rtype: Module or FunctionDef or ClassDef or Lambda or GenExpr
         """
-        if self.parent:
-            return self.parent.scope()
-        return None
+        if not self.parent:
+            raise ParentMissingError(target=self)
+        return self.parent.scope()
 
     def root(self):
         """Return the root node of the syntax tree.

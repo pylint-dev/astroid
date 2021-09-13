@@ -77,8 +77,7 @@ BUILTIN_DESCRIPTORS = frozenset(
     {"classmethod", "staticmethod", "builtins.classmethod", "builtins.staticmethod"}
 )
 
-# # Type for 'LocalsDictNodeNG.scope()'
-T_LocalsDictScope = TypeVar("T_LocalsDictScope", bound="LocalsDictNodeNG")
+T = TypeVar("T")
 
 
 def _c3_merge(sequences, cls, context):
@@ -240,7 +239,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
         """
         return self
 
-    def scope(self: T_LocalsDictScope) -> T_LocalsDictScope:
+    def scope(self: T) -> T:
         """The first parent node defining a new scope.
 
         :returns: The first parent scope node.

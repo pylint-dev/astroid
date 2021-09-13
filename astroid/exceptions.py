@@ -255,6 +255,17 @@ class InferenceOverwriteError(AstroidError):
     Currently only used for debugging.
     """
 
+class ParentMissingError(AstroidError):
+    """Raised when a node which is expected to have a parent attribute is missing one
+
+    Standard attributes:
+        target: The node for which the parent lookup failed.
+    """
+
+    target = None
+
+    def __init__(self, message="Parent not found on {target!r}.", **kws):
+        super().__init__(message, **kws)
 
 # Backwards-compatibility aliases
 OperationError = util.BadOperationMessage

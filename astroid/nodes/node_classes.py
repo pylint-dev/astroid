@@ -51,6 +51,7 @@ from astroid.exceptions import (
     AstroidTypeError,
     InferenceError,
     NoDefault,
+    ParentMissingError,
 )
 from astroid.manager import AstroidManager
 from astroid.nodes.const import OP_PRECEDENCE
@@ -2023,13 +2024,17 @@ class Decorators(NodeNG):
         """
         self.nodes = nodes
 
-    def scope(self) -> Optional["LocalsDictNodeNG"]:
+    def scope(self) -> "LocalsDictNodeNG":
         """The first parent node defining a new scope.
 
         :returns: The first parent scope node.
         :rtype: Module or FunctionDef or ClassDef or Lambda or GenExpr
         """
         # skip the function node to go directly to the upper level scope
+        if not self.parent:
+            raise ParentMissingError(target=self)
+        if not self.parent.parent:
+            raise ParentMissingError(target=self.parent)
         return self.parent.parent.scope()
 
     def get_children(self):
