@@ -1,4 +1,3 @@
-import builtins
 import enum
 import sys
 
@@ -6,6 +5,7 @@ PY37_PLUS = sys.version_info >= (3, 7)
 PY38_PLUS = sys.version_info >= (3, 8)
 PY39_PLUS = sys.version_info >= (3, 9)
 PY310_PLUS = sys.version_info >= (3, 10)
+BUILTINS = "builtins"  # TODO Remove in 2.8
 
 
 class Context(enum.Enum):
@@ -18,5 +18,3 @@ class Context(enum.Enum):
 Load = Context.Load
 Store = Context.Store
 Del = Context.Del
-
-BUILTINS = builtins.__name__  # Could be just 'builtins' ?

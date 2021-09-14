@@ -42,10 +42,10 @@ import typing
 from functools import lru_cache
 from typing import Callable, Generator, Optional
 
-from astroid import bases
-from astroid import context as contextmod
 from astroid import decorators, mixins, util
-from astroid.const import BUILTINS, Context
+from astroid.bases import Instance, _infer_stmts
+from astroid.const import Context
+from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidIndexError,
     AstroidTypeError,
@@ -109,17 +109,14 @@ def are_exclusive(stmt1, stmt2, exceptions: Optional[typing.List[str]] = None) -
     # index stmt1's parents
     stmt1_parents = {}
     children = {}
-    node = stmt1.parent
     previous = stmt1
-    while node:
+    for node in stmt1.node_ancestors():
         stmt1_parents[node] = 1
         children[node] = previous
         previous = node
-        node = node.parent
     # climb among stmt2's parents until we find a common parent
-    node = stmt2.parent
     previous = stmt2
-    while node:
+    for node in stmt2.node_ancestors():
         if node in stmt1_parents:
             # if the common parent is a If or TryExcept statement, look if
             # nodes are in exclusive branches
@@ -162,7 +159,6 @@ def are_exclusive(stmt1, stmt2, exceptions: Optional[typing.List[str]] = None) -
                     return previous is not children[node]
             return False
         previous = node
-        node = node.parent
     return False
 
 
@@ -272,7 +268,7 @@ class Statement(NodeNG):
 
 
 class BaseContainer(
-    mixins.ParentAssignTypeMixin, NodeNG, bases.Instance, metaclass=abc.ABCMeta
+    mixins.ParentAssignTypeMixin, NodeNG, Instance, metaclass=abc.ABCMeta
 ):
     """Base class for Set, FrozenSet, Tuple and List."""
 
@@ -381,8 +377,8 @@ class LookupMixIn:
         :rtype: iterable
         """
         frame, stmts = self.lookup(name)
-        context = contextmod.InferenceContext()
-        return bases._infer_stmts(stmts, context, frame)
+        context = InferenceContext()
+        return _infer_stmts(stmts, context, frame)
 
     def _get_filtered_node_statements(self, nodes):
         statements = [(node, node.statement()) for node in nodes]
@@ -590,6 +586,7 @@ class AssignName(
 
     _other_fields = ("name",)
 
+    @decorators.deprecate_default_argument_values(name="str")
     def __init__(
         self,
         name: Optional[str] = None,
@@ -630,6 +627,7 @@ class DelName(
 
     _other_fields = ("name",)
 
+    @decorators.deprecate_default_argument_values(name="str")
     def __init__(
         self,
         name: Optional[str] = None,
@@ -671,6 +669,7 @@ class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
 
     _other_fields = ("name",)
 
+    @decorators.deprecate_default_argument_values(name="str")
     def __init__(
         self,
         name: Optional[str] = None,
@@ -1099,6 +1098,7 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
 
+    @decorators.deprecate_default_argument_values(attrname="str")
     def __init__(
         self,
         attrname: Optional[str] = None,
@@ -1224,7 +1224,7 @@ class Assign(mixins.AssignTypeMixin, Statement):
         self.value: Optional[NodeNG] = None
         """The value being assigned to the variables."""
 
-        self.type_annotation: Optional[NodeNG] = None
+        self.type_annotation: Optional[NodeNG] = None  # can be None
         """If present, this will contain the type annotation passed by a type comment"""
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
@@ -1346,6 +1346,7 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
     _astroid_fields = ("target", "value")
     _other_fields = ("op",)
 
+    @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
         op: Optional[str] = None,
@@ -1437,6 +1438,7 @@ class BinOp(NodeNG):
     _astroid_fields = ("left", "right")
     _other_fields = ("op",)
 
+    @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
         op: Optional[str] = None,
@@ -1526,6 +1528,7 @@ class BoolOp(NodeNG):
     _astroid_fields = ("values",)
     _other_fields = ("op",)
 
+    @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
         op: Optional[str] = None,
@@ -1822,7 +1825,7 @@ class Comprehension(NodeNG):
         yield from self.ifs
 
 
-class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
+class Const(mixins.NoChildrenMixin, NodeNG, Instance):
     """Class representing any constant including num, str, bool, None, bytes.
 
     >>> import astroid
@@ -2040,6 +2043,7 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
 
+    @decorators.deprecate_default_argument_values(attrname="str")
     def __init__(
         self,
         attrname: Optional[str] = None,
@@ -2124,7 +2128,7 @@ class Delete(mixins.AssignTypeMixin, Statement):
         yield from self.targets
 
 
-class Dict(NodeNG, bases.Instance):
+class Dict(NodeNG, Instance):
     """Class representing an :class:`ast.Dict` node.
 
     A :class:`Dict` is a dictionary that is created with ``{}`` syntax.
@@ -2191,7 +2195,7 @@ class Dict(NodeNG, bases.Instance):
         :returns: The name of the type.
         :rtype: str
         """
-        return "%s.dict" % BUILTINS
+        return "builtins.dict"
 
     def get_children(self):
         """Get the key and value nodes below this node.
@@ -2671,6 +2675,7 @@ class Attribute(NodeNG):
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
 
+    @decorators.deprecate_default_argument_values(attrname="str")
     def __init__(
         self,
         attrname: Optional[str] = None,
@@ -2957,6 +2962,7 @@ class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
 
     _other_fields = ("names",)
 
+    @decorators.deprecate_default_argument_values(names="list[tuple[str, str | None]]")
     def __init__(
         self,
         names: Optional[typing.List[typing.Tuple[str, Optional[str]]]] = None,
@@ -3083,7 +3089,7 @@ class List(BaseContainer):
         :returns: The name of the type.
         :rtype: str
         """
-        return "%s.list" % BUILTINS
+        return "builtins.list"
 
     def getitem(self, index, context=None):
         """Get an item from this node.
@@ -3278,7 +3284,7 @@ class Set(BaseContainer):
         :returns: The name of the type.
         :rtype: str
         """
-        return "%s.set" % BUILTINS
+        return "builtins.set"
 
 
 class Slice(NodeNG):
@@ -3356,7 +3362,7 @@ class Slice(NodeNG):
         :returns: The name of the type.
         :rtype: str
         """
-        return "%s.slice" % BUILTINS
+        return "builtins.slice"
 
     def igetattr(self, attrname, context=None):
         """Infer the possible values of the given attribute on the slice.
@@ -3710,7 +3716,7 @@ class Tuple(BaseContainer):
         :returns: The name of the type.
         :rtype: str
         """
-        return "%s.tuple" % BUILTINS
+        return "builtins.tuple"
 
     def getitem(self, index, context=None):
         """Get an item from this node.
@@ -3733,6 +3739,7 @@ class UnaryOp(NodeNG):
     _astroid_fields = ("operand",)
     _other_fields = ("op",)
 
+    @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
         op: Optional[str] = None,
@@ -4458,7 +4465,7 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
         [
             "MatchMapping",
             AssignName,
-            Optional[contextmod.InferenceContext],
+            Optional[InferenceContext],
             Literal[None],
         ],
         Generator[NodeNG, None, None],
@@ -4542,7 +4549,7 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
         [
             "MatchStar",
             AssignName,
-            Optional[contextmod.InferenceContext],
+            Optional[InferenceContext],
             Literal[None],
         ],
         Generator[NodeNG, None, None],
@@ -4599,7 +4606,7 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
         [
             "MatchAs",
             AssignName,
-            Optional[contextmod.InferenceContext],
+            Optional[InferenceContext],
             Literal[None],
         ],
         Generator[NodeNG, None, None],
@@ -4708,9 +4715,7 @@ def const_factory(value):
 
 def is_from_decorator(node):
     """Return True if the given node is the child of a decorator"""
-    parent = node.parent
-    while parent is not None:
+    for parent in node.node_ancestors():
         if isinstance(parent, Decorators):
             return True
-        parent = parent.parent
     return False

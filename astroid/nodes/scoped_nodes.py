@@ -24,8 +24,8 @@
 # Copyright (c) 2020 Tim Martin <tim@asymptotic.co.uk>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
+# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
 # Copyright (c) 2021 doranid <ddandd@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
@@ -46,10 +46,15 @@ import typing
 from typing import List, Optional
 
 from astroid import bases
-from astroid import context as contextmod
 from astroid import decorators as decorators_mod
 from astroid import mixins, util
-from astroid.const import BUILTINS, PY39_PLUS
+from astroid.const import PY39_PLUS
+from astroid.context import (
+    CallContext,
+    InferenceContext,
+    bind_context_to_node,
+    copy_context,
+)
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidTypeError,
@@ -575,7 +580,7 @@ class Module(LocalsDictNodeNG):
         :returns: The name of the type.
         :rtype: str
         """
-        return "%s.module" % BUILTINS
+        return "builtins.module"
 
     def display_type(self):
         """A human readable type of this node.
@@ -619,7 +624,7 @@ class Module(LocalsDictNodeNG):
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         context.lookupname = name
         try:
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
@@ -1137,9 +1142,9 @@ def _infer_decorator_callchain(node):
     if isinstance(result, bases.Instance):
         result = result._proxied
     if isinstance(result, ClassDef):
-        if result.is_subtype_of("%s.classmethod" % BUILTINS):
+        if result.is_subtype_of("builtins.classmethod"):
             return "classmethod"
-        if result.is_subtype_of("%s.staticmethod" % BUILTINS):
+        if result.is_subtype_of("builtins.staticmethod"):
             return "staticmethod"
     if isinstance(result, FunctionDef):
         if not result.decorators:
@@ -1152,7 +1157,7 @@ def _infer_decorator_callchain(node):
             if (
                 isinstance(decorator, node_classes.Attribute)
                 and isinstance(decorator.expr, node_classes.Name)
-                and decorator.expr.name == BUILTINS
+                and decorator.expr.name == "builtins"
                 and decorator.attrname in BUILTIN_DESCRIPTORS
             ):
                 return decorator.attrname
@@ -1241,8 +1246,8 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :rtype: str
         """
         if "method" in self.type:
-            return "%s.instancemethod" % BUILTINS
-        return "%s.function" % BUILTINS
+            return "builtins.instancemethod"
+        return "builtins.function"
 
     def display_type(self):
         """A human readable type of this node.
@@ -1541,7 +1546,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             if (
                 isinstance(node, node_classes.Attribute)
                 and isinstance(node.expr, node_classes.Name)
-                and node.expr.name == BUILTINS
+                and node.expr.name == "builtins"
                 and node.attrname in BUILTIN_DESCRIPTORS
             ):
                 return node.attrname
@@ -1571,9 +1576,9 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                     for ancestor in inferred.ancestors():
                         if not isinstance(ancestor, ClassDef):
                             continue
-                        if ancestor.is_subtype_of("%s.classmethod" % BUILTINS):
+                        if ancestor.is_subtype_of("builtins.classmethod"):
                             return "classmethod"
-                        if ancestor.is_subtype_of("%s.staticmethod" % BUILTINS):
+                        if ancestor.is_subtype_of("builtins.staticmethod"):
                             return "staticmethod"
             except InferenceError:
                 pass
@@ -1729,6 +1734,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :returns: What the function yields
         :rtype: iterable(NodeNG or Uninferable) or None
         """
+        # pylint: disable=not-an-iterable
+        # https://github.com/PyCQA/astroid/issues/1015
         for yield_ in self.nodes_of_class(node_classes.Yield):
             if yield_.value is None:
                 const = node_classes.Const(None)
@@ -2111,7 +2118,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
     def _newstyle_impl(self, context=None):
         if context is None:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
         if self._newstyle is not None:
             return self._newstyle
         for base in self.ancestors(recurs=False, context=context):
@@ -2162,8 +2169,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :rtype: str
         """
         if self.newstyle:
-            return "%s.type" % BUILTINS
-        return "%s.classobj" % BUILTINS
+            return "builtins.type"
+        return "builtins.classobj"
 
     def display_type(self):
         """A human readable type of this node.
@@ -2250,7 +2257,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
     def infer_call_result(self, caller, context=None):
         """infer what a class is returning when called"""
-        if self.is_subtype_of(f"{BUILTINS}.type", context) and len(caller.args) == 3:
+        if self.is_subtype_of("builtins.type", context) and len(caller.args) == 3:
             result = self._infer_type_call(caller, context)
             yield result
             return
@@ -2266,7 +2273,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         if dunder_call and dunder_call.qname() != "builtins.type.__call__":
             # Call type.__call__ if not set metaclass
             # (since type is the default metaclass)
-            context = contextmod.bind_context_to_node(context, self)
+            context = bind_context_to_node(context, self)
+            context.callcontext.callee = dunder_call
             yield from dunder_call.infer_call_result(caller, context)
         else:
             yield self.instantiate_class()
@@ -2345,7 +2353,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # FIXME: inference make infinite loops possible here
         yielded = {self}
         if context is None:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
         if not self.bases and self.qname() != "builtins.object":
             yield builtin_lookup("object")[1][0]
             return
@@ -2546,7 +2554,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """Search the given name in the implicit and the explicit metaclass."""
         attrs = set()
         implicit_meta = self.implicit_metaclass()
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         metaclass = self.metaclass(context=context)
         for cls in (implicit_meta, metaclass):
             if cls and cls != self and isinstance(cls, ClassDef):
@@ -2592,7 +2600,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         context.lookupname = name
 
         metaclass = self.metaclass(context=context)
@@ -2666,7 +2674,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         def _valid_getattr(node):
             root = node.root()
-            return root.name != BUILTINS and getattr(root, "pure_python", None)
+            return root.name != "builtins" and getattr(root, "pure_python", None)
 
         try:
             return _valid_getattr(self.getattr("__getattr__", context)[0])
@@ -2711,8 +2719,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         method = methods[0]
 
         # Create a new callcontext for providing index as an argument.
-        new_context = contextmod.bind_context_to_node(context, self)
-        new_context.callcontext = contextmod.CallContext(args=[index])
+        new_context = bind_context_to_node(context, self)
+        new_context.callcontext = CallContext(args=[index], callee=method)
 
         try:
             return next(method.infer_call_result(self, new_context), util.Uninferable)
@@ -2965,7 +2973,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # only in SomeClass.
 
         if context is None:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
         if not self.bases and self.qname() != "builtins.object":
             yield builtin_lookup("object")[1][0]
             return

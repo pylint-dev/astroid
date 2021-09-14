@@ -29,7 +29,7 @@ def require_version(minver: str = "0.0.0", maxver: str = "4.0.0") -> Callable:
     Skip the test if older.
     """
 
-    def parse(python_version: str) -> Tuple[int]:
+    def parse(python_version: str) -> Tuple[int, ...]:
         try:
             return tuple(int(v) for v in python_version.split("."))
         except ValueError as e:
@@ -82,4 +82,5 @@ def brainless_manager():
     m.astroid_cache = {}
     m._mod_file_cache = {}
     m._transform = transforms.TransformVisitor()
+    m.extension_package_whitelist = {}
     return m

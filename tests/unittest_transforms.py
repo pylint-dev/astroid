@@ -14,12 +14,21 @@
 import contextlib
 import time
 import unittest
+from typing import Callable, Iterator, Optional
 
 from astroid import MANAGER, builder, nodes, parse, transforms
+from astroid.manager import AstroidManager
+from astroid.nodes.node_classes import Call, Compare, Const, Name
+from astroid.nodes.scoped_nodes import FunctionDef, Module
 
 
 @contextlib.contextmanager
-def add_transform(manager, node, transform, predicate=None):
+def add_transform(
+    manager: AstroidManager,
+    node: type,
+    transform: Callable,
+    predicate: Optional[Callable] = None,
+) -> Iterator:
     manager.register_transform(node, transform, predicate)
     try:
         yield
@@ -28,15 +37,15 @@ def add_transform(manager, node, transform, predicate=None):
 
 
 class TestTransforms(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.transformer = transforms.TransformVisitor()
 
-    def parse_transform(self, code):
+    def parse_transform(self, code: str) -> Module:
         module = parse(code, apply_transforms=False)
         return self.transformer.visit(module)
 
-    def test_function_inlining_transform(self):
-        def transform_call(node):
+    def test_function_inlining_transform(self) -> None:
+        def transform_call(node: Call) -> Const:
             # Let's do some function inlining
             inferred = next(node.infer())
             return inferred
@@ -54,17 +63,17 @@ class TestTransforms(unittest.TestCase):
         self.assertIsInstance(module.body[1].value, nodes.Const)
         self.assertEqual(module.body[1].value.value, 42)
 
-    def test_recursive_transforms_into_astroid_fields(self):
+    def test_recursive_transforms_into_astroid_fields(self) -> None:
         # Test that the transformer walks properly the tree
         # by going recursively into the _astroid_fields per each node.
-        def transform_compare(node):
+        def transform_compare(node: Compare) -> Const:
             # Let's check the values of the ops
             _, right = node.ops[0]
             # Assume they are Consts and they were transformed before
             # us.
             return nodes.const_factory(node.left.value < right.value)
 
-        def transform_name(node):
+        def transform_name(node: Name) -> Const:
             # Should be Consts
             return next(node.infer())
 
@@ -83,11 +92,10 @@ class TestTransforms(unittest.TestCase):
         self.assertIsInstance(module.body[2].value, nodes.Const)
         self.assertFalse(module.body[2].value.value)
 
-    def test_transform_patches_locals(self):
-        def transform_function(node):
+    def test_transform_patches_locals(self) -> None:
+        def transform_function(node: FunctionDef) -> None:
             assign = nodes.Assign()
-            name = nodes.AssignName()
-            name.name = "value"
+            name = nodes.AssignName(name="value")
             assign.targets = [name]
             assign.value = nodes.const_factory(42)
             node.body.append(assign)
@@ -106,12 +114,12 @@ class TestTransforms(unittest.TestCase):
         self.assertIsInstance(func.body[1], nodes.Assign)
         self.assertEqual(func.body[1].as_string(), "value = 42")
 
-    def test_predicates(self):
-        def transform_call(node):
+    def test_predicates(self) -> None:
+        def transform_call(node: Call) -> Const:
             inferred = next(node.infer())
             return inferred
 
-        def should_inline(node):
+        def should_inline(node: Call) -> bool:
             return node.func.name.startswith("inlineme")
 
         self.transformer.register_transform(nodes.Call, transform_call, should_inline)
@@ -139,13 +147,13 @@ class TestTransforms(unittest.TestCase):
         self.assertIsInstance(values[2].value, nodes.Const)
         self.assertEqual(values[2].value.value, 2)
 
-    def test_transforms_are_separated(self):
+    def test_transforms_are_separated(self) -> None:
         # Test that the transforming is done at a separate
         # step, which means that we are not doing inference
         # on a partially constructed tree anymore, which was the
         # source of crashes in the past when certain inference rules
         # were used in a transform.
-        def transform_function(node):
+        def transform_function(node: FunctionDef) -> Const:
             if node.decorators:
                 for decorator in node.decorators.nodes:
                     inferred = next(decorator.infer())
@@ -179,17 +187,16 @@ class TestTransforms(unittest.TestCase):
         self.assertIsInstance(bala, nodes.Const)
         self.assertEqual(bala.value, 42)
 
-    def test_transforms_are_called_for_builtin_modules(self):
+    def test_transforms_are_called_for_builtin_modules(self) -> None:
         # Test that transforms are called for builtin modules.
-        def transform_function(node):
-            name = nodes.AssignName()
-            name.name = "value"
+        def transform_function(node: FunctionDef) -> FunctionDef:
+            name = nodes.AssignName(name="value")
             node.args.args = [name]
             return node
 
         manager = MANAGER
 
-        def predicate(node):
+        def predicate(node: FunctionDef) -> bool:
             return node.root().name == "time"
 
         with add_transform(manager, nodes.FunctionDef, transform_function, predicate):
@@ -201,7 +208,7 @@ class TestTransforms(unittest.TestCase):
         self.assertIsInstance(asctime.args.args[0], nodes.AssignName)
         self.assertEqual(asctime.args.args[0].name, "value")
 
-    def test_builder_apply_transforms(self):
+    def test_builder_apply_transforms(self) -> None:
         def transform_function(node):
             return nodes.const_factory(42)
 
@@ -213,7 +220,7 @@ class TestTransforms(unittest.TestCase):
         # The transform wasn't applied.
         self.assertIsInstance(module.body[0], nodes.FunctionDef)
 
-    def test_transform_crashes_on_is_subtype_of(self):
+    def test_transform_crashes_on_is_subtype_of(self) -> None:
         # Test that we don't crash when having is_subtype_of
         # in a transform, as per issue #188. This happened
         # before, when the transforms weren't in their own step.

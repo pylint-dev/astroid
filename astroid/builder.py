@@ -22,6 +22,7 @@ at the same time.
 """
 import os
 import textwrap
+import types
 from tokenize import detect_encoding
 from typing import List, Union
 
@@ -79,7 +80,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
         super().__init__(manager)
         self._apply_transforms = apply_transforms
 
-    def module_build(self, module, modname=None):
+    def module_build(
+        self, module: types.ModuleType, modname: str = None
+    ) -> nodes.Module:
         """Build an astroid from a living module instance."""
         node = None
         path = getattr(module, "__file__", None)
@@ -157,6 +160,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
         # Visit the transforms
         if self._apply_transforms:
+            if modutils.is_module_name_part_of_extension_package_whitelist(
+                module.name, self._manager.extension_package_whitelist
+            ):
+                return module
             module = self._manager.visit_transforms(module)
         return module
 
@@ -260,7 +267,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             pass
 
 
-def build_namespace_package_module(name, path):
+def build_namespace_package_module(name, path: str) -> nodes.Module:
     return nodes.Module(name, doc="", path=path, package=True)
 
 

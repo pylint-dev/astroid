@@ -17,6 +17,7 @@
 # Copyright (c) 2020 Vilnis Termanis <vilnis.termanis@iotics.com>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 doranid <ddandd@gmail.com>
 
@@ -33,10 +34,9 @@ import operator as operator_mod
 import sys
 from typing import Generator, Optional
 
-from astroid import arguments, bases
-from astroid import context as contextmod
-from astroid import decorators, helpers, nodes, util
+from astroid import arguments, bases, decorators, helpers, nodes, util
 from astroid.const import Context
+from astroid.context import InferenceContext, copy_context
 from astroid.exceptions import (
     AstroidIndexError,
     AstroidTypeError,
@@ -350,9 +350,13 @@ def _arguments_infer_argname(self, name, context):
             return
 
     if context and context.callcontext:
-        call_site = arguments.CallSite(context.callcontext, context.extra_context)
-        yield from call_site.infer_argument(self.parent, name, context)
-        return
+        callee = context.callcontext.callee
+        while hasattr(callee, "_proxied"):
+            callee = callee._proxied
+        if getattr(callee, "name", None) == self.parent.name:
+            call_site = arguments.CallSite(context.callcontext, context.extra_context)
+            yield from call_site.infer_argument(self.parent, name, context)
+            return
 
     if name == self.vararg:
         vararg = nodes.const_factory(())
@@ -370,7 +374,7 @@ def _arguments_infer_argname(self, name, context):
     # if there is a default value, yield it. And then yield Uninferable to reflect
     # we can't guess given argument value
     try:
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         yield from self.default_value(name).infer(context)
         yield util.Uninferable
     except NoDefault:
@@ -379,9 +383,19 @@ def _arguments_infer_argname(self, name, context):
 
 def arguments_assigned_stmts(self, node=None, context=None, assign_path=None):
     if context.callcontext:
+        callee = context.callcontext.callee
+        while hasattr(callee, "_proxied"):
+            callee = callee._proxied
+    else:
+        callee = None
+    if (
+        context.callcontext
+        and node
+        and getattr(callee, "name", None) == node.frame().name
+    ):
         # reset call context/name
         callcontext = context.callcontext
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         context.callcontext = None
         args = arguments.CallSite(callcontext, context=context)
         return args.infer_argument(self.parent, node.name, context)
@@ -634,7 +648,7 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
         )
 
     if context is None:
-        context = contextmod.InferenceContext()
+        context = InferenceContext()
 
     if isinstance(stmt, nodes.Assign):
         value = stmt.value
@@ -789,7 +803,7 @@ nodes.Starred.assigned_stmts = starred_assigned_stmts
 def match_mapping_assigned_stmts(
     self: nodes.MatchMapping,
     node: nodes.AssignName,
-    context: Optional[contextmod.InferenceContext] = None,
+    context: Optional[InferenceContext] = None,
     assign_path: Literal[None] = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Return empty generator (return -> raises StopIteration) so inferred value
@@ -806,7 +820,7 @@ nodes.MatchMapping.assigned_stmts = match_mapping_assigned_stmts
 def match_star_assigned_stmts(
     self: nodes.MatchStar,
     node: nodes.AssignName,
-    context: Optional[contextmod.InferenceContext] = None,
+    context: Optional[InferenceContext] = None,
     assign_path: Literal[None] = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Return empty generator (return -> raises StopIteration) so inferred value
@@ -823,7 +837,7 @@ nodes.MatchStar.assigned_stmts = match_star_assigned_stmts
 def match_as_assigned_stmts(
     self: nodes.MatchAs,
     node: nodes.AssignName,
-    context: Optional[contextmod.InferenceContext] = None,
+    context: Optional[InferenceContext] = None,
     assign_path: Literal[None] = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Infer MatchAs as the Match subject if it's the only MatchCase pattern

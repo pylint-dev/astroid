@@ -6,14 +6,85 @@ What's New in astroid 2.8.0?
 ============================
 Release date: TBA
 
+* Add additional deprecation warnings in preparation for astroid 3.0
+
+  * Require attributes for some node classes with ``__init__`` call.
+
+    * ``name`` (``str``) for ``Name``, ``AssignName``, ``DelName``
+    * ``attrname`` (``str``) for ``Attribute``, ``AssignAttr``, ``DelAttr``
+    * ``op`` (``str``) for ``AugAssign``, ``BinOp``, ``BoolOp``, ``UnaryOp``
+    * ``names`` (``list[tuple[str, str | None]]``) for ``Import``
+
+* Support pyz imports
+
+  Closes PyCQA/pylint#3887
+
+* Add ``node_ancestors`` method to ``NodeNG`` for obtaining the ancestors of nodes.
+
+What's New in astroid 2.7.4?
+============================
+Release date: TBA
+
+* Fixed bug in inference of dataclass field calls.
+
+    Closes PyCQA/pylint#4963
+
+
+What's New in astroid 2.7.3?
+============================
+Release date: 2021-08-30
+
+* The transforms related to a module are applied only if this module has not been explicitly authorized to be imported
+  (i.e is not in AstroidManager.extension_package_whitelist). Solves the following issues if numpy is authorized to be imported
+  through the `extension-pkg-allow-list` option.
+
+  Closes PyCQA/pylint#3342
+  Closes PyCQA/pylint#4326
+
+* Fixed bug in attribute inference from inside method calls.
+
+    Closes PyCQA/pylint#400
+
+* Fixed bug in inference for superclass instance methods called
+  from the class rather than an instance.
+
+    Closes #1008
+    Closes PyCQA/pylint#4377
+
+* Fixed bug in inference of chained attributes where a subclass
+  had an attribute that was an instance of its superclass.
+
+    Closes PyCQA/pylint#4220
+
+* Adds a brain for the ctypes module.
+
+  Closes PyCQA/pylint#4896
+
+* When processing dataclass attributes, exclude the same type hints from abc.collections
+  as from typing.
+
+  Closes PyCQA/pylint#4895
+
+* Apply dataclass inference to pydantic's dataclasses.
+
+  Closes PyCQA/pylint#4899
 
 
 What's New in astroid 2.7.2?
 ============================
-Release date: TBA
+Release date: 2021-08-20
 
 * ``BaseContainer`` is now public, and will replace ``_BaseContainer`` completely in astroid 3.0.
+* The call cache used by inference functions produced by ``inference_tip``
+  can now be cleared via ``clear_inference_tip_cache``.
 
+* ``astroid.const.BUILTINS`` and ``astroid.bases.BUILTINS`` are not used internally anymore
+  and will be removed in astroid 3.0. Simply replace this by the string 'builtins' for better
+  performances and clarity.
+
+* Add inference for dataclass initializer method.
+
+    Closes PyCQA/pylint#3201
 
 What's New in astroid 2.7.1?
 ============================

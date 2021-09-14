@@ -2,7 +2,7 @@
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
 # Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
+# Copyright (c) 2018, 2021 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Tomas Gavenciak <gavento@ucw.cz>
 # Copyright (c) 2018 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
@@ -18,12 +18,24 @@
 """ A few useful function/method decorators."""
 
 import functools
+import inspect
+import sys
+import warnings
+from typing import Callable, TypeVar
 
 import wrapt
 
-from astroid import context as contextmod
 from astroid import util
+from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
+
+if sys.version_info >= (3, 10):
+    from typing import ParamSpec
+else:
+    from typing_extensions import ParamSpec
+
+R = TypeVar("R")
+P = ParamSpec("P")
 
 
 @wrapt.decorator
@@ -89,20 +101,13 @@ def path_wrapper(func):
     def wrapped(node, context=None, _func=func, **kwargs):
         """wrapper function handling context"""
         if context is None:
-            context = contextmod.InferenceContext()
+            context = InferenceContext()
         if context.push(node):
-            return None
+            return
 
         yielded = set()
-        generator = _func(node, context, **kwargs)
-        while True:
-            try:
-                res = next(generator)
-            except StopIteration as error:
-                if error.args:
-                    return error.args[0]
-                return None
 
+        for res in _func(node, context, **kwargs):
             # unproxy only true instance, not const, tuple, dict...
             if res.__class__.__name__ == "Instance":
                 ares = res._proxied
@@ -144,3 +149,60 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
         ) from error
 
     yield from generator
+
+
+def deprecate_default_argument_values(
+    astroid_version: str = "3.0", **arguments: str
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    """Decorator which emitts a DeprecationWarning if any arguments specified
+    are None or not passed at all.
+
+    Arguments should be a key-value mapping, with the key being the argument to check
+    and the value being a type annotation as string for the value of the argument.
+    """
+    # Helpful links
+    # Decorator for DeprecationWarning: https://stackoverflow.com/a/49802489
+    # Typing of stacked decorators: https://stackoverflow.com/a/68290080
+
+    def deco(func: Callable[P, R]) -> Callable[P, R]:
+        """Decorator function."""
+
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            """Emit DeprecationWarnings if conditions are met."""
+
+            keys = list(inspect.signature(func).parameters.keys())
+            for arg, type_annotation in arguments.items():
+                try:
+                    index = keys.index(arg)
+                except ValueError:
+                    raise Exception(
+                        f"Can't find argument '{arg}' for '{args[0].__class__.__qualname__}'"
+                    ) from None
+                if (
+                    # Check kwargs
+                    # - if found, check it's not None
+                    (arg in kwargs and kwargs[arg] is None)
+                    # Check args
+                    # - make sure not in kwargs
+                    # - len(args) needs to be long enough, if too short
+                    #   arg can't be in args either
+                    # - args[index] should not be None
+                    or arg not in kwargs
+                    and (
+                        index == -1
+                        or len(args) <= index
+                        or (len(args) > index and args[index] is None)
+                    )
+                ):
+                    warnings.warn(
+                        f"'{arg}' will be a required attribute for "
+                        f"'{args[0].__class__.__qualname__}.{func.__name__}' in astroid {astroid_version} "
+                        f"('{arg}' should be of type: '{type_annotation}')",
+                        DeprecationWarning,
+                    )
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return deco

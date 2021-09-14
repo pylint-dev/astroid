@@ -13,6 +13,8 @@ from bump_changelog import (
     "version,version_type,expected_version,expected_versions",
     [
         ["2.6.1", VersionType.PATCH, "2.6.2", ["2.6.2"]],
+        ["2.10.0", VersionType.MINOR, "2.11.0", ["2.11.0", "2.10.1"]],
+        ["10.1.10", VersionType.PATCH, "10.1.11", ["10.1.11"]],
         [
             "2.6.0",
             VersionType.MINOR,

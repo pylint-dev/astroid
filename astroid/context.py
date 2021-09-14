@@ -4,6 +4,7 @@
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2019-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
+# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
@@ -14,10 +15,10 @@
 """Various context related utilities, including inference and call contexts."""
 import contextlib
 import pprint
-from typing import TYPE_CHECKING, MutableMapping, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, List, MutableMapping, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
-    from astroid.nodes.node_classes import NodeNG
+    from astroid.nodes.node_classes import Keyword, NodeNG
 
 
 _INFERENCE_CACHE = {}
@@ -164,19 +165,21 @@ class InferenceContext:
 class CallContext:
     """Holds information for a call site."""
 
-    __slots__ = ("args", "keywords")
+    __slots__ = ("args", "keywords", "callee")
 
-    def __init__(self, args, keywords=None):
-        """
-        :param List[NodeNG] args: Call positional arguments
-        :param Union[List[nodes.Keyword], None] keywords: Call keywords
-        """
-        self.args = args
+    def __init__(
+        self,
+        args: List["NodeNG"],
+        keywords: Optional[List["Keyword"]] = None,
+        callee: Optional["NodeNG"] = None,
+    ):
+        self.args = args  # Call positional arguments
         if keywords:
             keywords = [(arg.arg, arg.value) for arg in keywords]
         else:
             keywords = []
-        self.keywords = keywords
+        self.keywords = keywords  # Call keyword arguments
+        self.callee = callee  # Function being called
 
 
 def copy_context(context: Optional[InferenceContext]) -> InferenceContext:

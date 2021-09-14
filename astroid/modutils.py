@@ -15,7 +15,7 @@
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2019 markmcclain <markmcclain@users.noreply.github.com>
 # Copyright (c) 2019 BasPH <BasPH@users.noreply.github.com>
-# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
@@ -46,8 +46,10 @@ import itertools
 import os
 import platform
 import sys
+import types
 from distutils.errors import DistutilsPlatformError  # pylint: disable=import-error
 from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
+from typing import Set
 
 from astroid.interpreter._import import spec, util
 
@@ -197,7 +199,7 @@ def _cache_normalize_path(path):
         return result
 
 
-def load_module_from_name(dotted_name):
+def load_module_from_name(dotted_name: str) -> types.ModuleType:
     """Load a Python module from its name.
 
     :type dotted_name: str
@@ -648,3 +650,18 @@ def is_namespace(specobj):
 
 def is_directory(specobj):
     return specobj.type == spec.ModuleType.PKG_DIRECTORY
+
+
+def is_module_name_part_of_extension_package_whitelist(
+    module_name: str, package_whitelist: Set[str]
+) -> bool:
+    """
+    Returns True if one part of the module name is in the package whitelist
+
+    >>> is_module_name_part_of_extension_package_whitelist('numpy.core.umath', {'numpy'})
+    True
+    """
+    parts = module_name.split(".")
+    return any(
+        ".".join(parts[:x]) in package_whitelist for x in range(1, len(parts) + 1)
+    )

@@ -89,6 +89,7 @@ from astroid.nodes.node_classes import (  # pylint: disable=redefined-builtin (E
     Set,
     Slice,
     Starred,
+    Statement,
     Subscript,
     TryExcept,
     TryFinally,
@@ -116,6 +117,7 @@ from astroid.nodes.scoped_nodes import (
     SetComp,
     builtin_lookup,
     function_to_method,
+    get_wrapping_class,
 )
 
 _BaseContainer = BaseContainer  # TODO Remove for astroid 3.0
@@ -254,6 +256,7 @@ __all__ = (
     "FunctionDef",
     "function_to_method",
     "GeneratorExp",
+    "get_wrapping_class",
     "Global",
     "If",
     "IfExp",
@@ -287,6 +290,7 @@ __all__ = (
     "SetComp",
     "Slice",
     "Starred",
+    "Statement",
     "Subscript",
     "TryExcept",
     "TryFinally",

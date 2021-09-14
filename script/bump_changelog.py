@@ -33,7 +33,7 @@ def main() -> None:
     with open(DEFAULT_CHANGELOG_PATH, encoding="utf-8") as f:
         content = f.read()
     content = transform_content(content, args.version)
-    with open(DEFAULT_CHANGELOG_PATH, "w") as f:
+    with open(DEFAULT_CHANGELOG_PATH, "w", encoding="utf8") as f:
         f.write(content)
 
 
@@ -55,7 +55,6 @@ def get_next_version(version: str, version_type: VersionType) -> str:
 
 
 def get_next_versions(version: str, version_type: VersionType) -> List[str]:
-
     if version_type == VersionType.PATCH:
         # "2.6.1" => ["2.6.2"]
         return [get_next_version(version, VersionType.PATCH)]
@@ -72,9 +71,9 @@ def get_next_versions(version: str, version_type: VersionType) -> List[str]:
 
 
 def get_version_type(version: str) -> VersionType:
-    if version.endswith("0.0"):
+    if version.endswith(".0.0"):
         version_type = VersionType.MAJOR
-    elif version.endswith("0"):
+    elif version.endswith(".0"):
         version_type = VersionType.MINOR
     else:
         version_type = VersionType.PATCH

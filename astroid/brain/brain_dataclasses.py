@@ -2,16 +2,26 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 """
 Astroid hook for the dataclasses library
+
+Support both built-in dataclasses and pydantic.dataclasses. References:
+- https://docs.python.org/3/library/dataclasses.html
+- https://pydantic-docs.helpmanual.io/usage/dataclasses/
 """
-from typing import Generator, Tuple, Union
+from typing import Generator, List, Optional, Tuple
 
 from astroid import context, inference_tip
 from astroid.builder import parse
 from astroid.const import PY37_PLUS, PY39_PLUS
-from astroid.exceptions import InferenceError
+from astroid.exceptions import (
+    AstroidSyntaxError,
+    InferenceError,
+    MroError,
+    UseInferenceDefault,
+)
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import (
     AnnAssign,
+    Assign,
     AssignName,
     Attribute,
     Call,
@@ -26,6 +36,7 @@ from astroid.util import Uninferable
 DATACLASSES_DECORATORS = frozenset(("dataclass",))
 FIELD_NAME = "field"
 DATACLASS_MODULE = "dataclasses"
+DEFAULT_FACTORY = "_HAS_DEFAULT_FACTORY"  # based on typing.py
 
 
 def is_decorated_with_dataclass(node, decorator_names=DATACLASSES_DECORATORS):
@@ -33,41 +44,16 @@ def is_decorated_with_dataclass(node, decorator_names=DATACLASSES_DECORATORS):
     if not isinstance(node, ClassDef) or not node.decorators:
         return False
 
-    for decorator_attribute in node.decorators.nodes:
-        if isinstance(decorator_attribute, Call):  # decorator with arguments
-            decorator_attribute = decorator_attribute.func
-
-        try:
-            inferred = next(decorator_attribute.infer())
-        except (InferenceError, StopIteration):
-            continue
-
-        if not isinstance(inferred, FunctionDef):
-            continue
-
-        if (
-            inferred.name in decorator_names
-            and inferred.root().name == DATACLASS_MODULE
-        ):
-            return True
-
-    return False
+    return any(
+        _looks_like_dataclass_decorator(decorator_attribute, decorator_names)
+        for decorator_attribute in node.decorators.nodes
+    )
 
 
 def dataclass_transform(node: ClassDef) -> None:
     """Rewrite a dataclass to be easily understood by pylint"""
 
-    for assign_node in node.body:
-        if not isinstance(assign_node, AnnAssign) or not isinstance(
-            assign_node.target, AssignName
-        ):
-            continue
-
-        if _is_class_var(assign_node.annotation) or _is_init_var(
-            assign_node.annotation
-        ):
-            continue
-
+    for assign_node in _get_dataclass_attributes(node):
         name = assign_node.target.name
 
         rhs_node = Unknown(
@@ -77,6 +63,154 @@ def dataclass_transform(node: ClassDef) -> None:
         )
         rhs_node = AstroidManager().visit_transforms(rhs_node)
         node.instance_attrs[name] = [rhs_node]
+
+    if not _check_generate_dataclass_init(node):
+        return
+
+    try:
+        reversed_mro = reversed(node.mro())
+    except MroError:
+        reversed_mro = [node]
+
+    field_assigns = {}
+    field_order = []
+    for klass in (k for k in reversed_mro if is_decorated_with_dataclass(k)):
+        for assign_node in _get_dataclass_attributes(klass, init=True):
+            name = assign_node.target.name
+            if name not in field_assigns:
+                field_order.append(name)
+            field_assigns[name] = assign_node
+
+    init_str = _generate_dataclass_init([field_assigns[name] for name in field_order])
+    try:
+        init_node = parse(init_str)["__init__"]
+    except AstroidSyntaxError:
+        pass
+    else:
+        init_node.parent = node
+        init_node.lineno, init_node.col_offset = None, None
+        node.locals["__init__"] = [init_node]
+
+        root = node.root()
+        if DEFAULT_FACTORY not in root.locals:
+            new_assign = parse(f"{DEFAULT_FACTORY} = object()").body[0]
+            new_assign.parent = root
+            root.locals[DEFAULT_FACTORY] = [new_assign.targets[0]]
+
+
+def _get_dataclass_attributes(node: ClassDef, init: bool = False) -> Generator:
+    """Yield the AnnAssign nodes of dataclass attributes for the node.
+
+    If init is True, also include InitVars, but exclude attributes from calls to
+    field where init=False.
+    """
+    for assign_node in node.body:
+        if not isinstance(assign_node, AnnAssign) or not isinstance(
+            assign_node.target, AssignName
+        ):
+            continue
+
+        if _is_class_var(assign_node.annotation):
+            continue
+
+        if init:
+            value = assign_node.value
+            if (
+                isinstance(value, Call)
+                and _looks_like_dataclass_field_call(value, check_scope=False)
+                and any(
+                    keyword.arg == "init" and not keyword.value.bool_value()
+                    for keyword in value.keywords
+                )
+            ):
+                continue
+        elif _is_init_var(assign_node.annotation):
+            continue
+
+        yield assign_node
+
+
+def _check_generate_dataclass_init(node: ClassDef) -> bool:
+    """Return True if we should generate an __init__ method for node.
+
+    This is True when:
+        - node doesn't define its own __init__ method
+        - the dataclass decorator was called *without* the keyword argument init=False
+    """
+    if "__init__" in node.locals:
+        return False
+
+    found = None
+
+    for decorator_attribute in node.decorators.nodes:
+        if not isinstance(decorator_attribute, Call):
+            continue
+
+        if _looks_like_dataclass_decorator(decorator_attribute):
+            found = decorator_attribute
+
+    if found is None:
+        return True
+
+    # Check for keyword arguments of the form init=False
+    return all(
+        keyword.arg != "init" or keyword.value.bool_value()
+        for keyword in found.keywords
+    )
+
+
+def _generate_dataclass_init(assigns: List[AnnAssign]) -> str:
+    """Return an init method for a dataclass given the targets."""
+    target_names = []
+    params = []
+    assignments = []
+
+    for assign in assigns:
+        name, annotation, value = assign.target.name, assign.annotation, assign.value
+        target_names.append(name)
+
+        if _is_init_var(annotation):
+            init_var = True
+            if isinstance(annotation, Subscript):
+                annotation = annotation.slice
+            else:
+                # Cannot determine type annotation for parameter from InitVar
+                annotation = None
+            assignment_str = ""
+        else:
+            init_var = False
+            assignment_str = f"self.{name} = {name}"
+
+        if annotation:
+            param_str = f"{name}: {annotation.as_string()}"
+        else:
+            param_str = name
+
+        if value:
+            if isinstance(value, Call) and _looks_like_dataclass_field_call(
+                value, check_scope=False
+            ):
+                result = _get_field_default(value)
+
+                default_type, default_node = result
+                if default_type == "default":
+                    param_str += f" = {default_node.as_string()}"
+                elif default_type == "default_factory":
+                    param_str += f" = {DEFAULT_FACTORY}"
+                    assignment_str = (
+                        f"self.{name} = {default_node.as_string()} "
+                        f"if {name} is {DEFAULT_FACTORY} else {name}"
+                    )
+            else:
+                param_str += f" = {value.as_string()}"
+
+        params.append(param_str)
+        if not init_var:
+            assignments.append(assignment_str)
+
+    params = ", ".join(["self"] + params)
+    assignments = "\n    ".join(assignments) if assignments else "pass"
+    return f"def __init__({params}) -> None:\n    {assignments}"
 
 
 def infer_dataclass_attribute(
@@ -103,21 +237,52 @@ def infer_dataclass_attribute(
 
 
 def infer_dataclass_field_call(
-    node: AssignName, ctx: context.InferenceContext = None
+    node: Call, ctx: Optional[context.InferenceContext] = None
 ) -> Generator:
     """Inference tip for dataclass field calls."""
+    if not isinstance(node.parent, (AnnAssign, Assign)):
+        raise UseInferenceDefault
     field_call = node.parent.value
-    result = _get_field_default(field_call)
-    if result is None:
+    default_type, default = _get_field_default(field_call)
+    if not default_type:
         yield Uninferable
+    elif default_type == "default":
+        yield from default.infer(context=ctx)
     else:
-        default_type, default = result
-        if default_type == "default":
-            yield from default.infer(context=ctx)
-        else:
-            new_call = parse(default.as_string()).body[0].value
-            new_call.parent = field_call.parent
-            yield from new_call.infer(context=ctx)
+        new_call = parse(default.as_string()).body[0].value
+        new_call.parent = field_call.parent
+        yield from new_call.infer(context=ctx)
+
+
+def _looks_like_dataclass_decorator(
+    node: NodeNG, decorator_names: List[str] = DATACLASSES_DECORATORS
+) -> bool:
+    """Return True if node looks like a dataclass decorator.
+
+    Uses inference to lookup the value of the node, and if that fails,
+    matches against specific names. (Currently inference fails for dataclass import
+    from pydantic.)
+    """
+    if isinstance(node, Call):  # decorator with arguments
+        node = node.func
+    try:
+        inferred = next(node.infer())
+    except (InferenceError, StopIteration):
+        inferred = Uninferable
+
+    if inferred is Uninferable:
+        if isinstance(node, Name):
+            return node.name in decorator_names
+        if isinstance(node, Attribute):
+            return node.attrname in decorator_names
+
+        return False
+
+    return (
+        isinstance(inferred, FunctionDef)
+        and inferred.name in decorator_names
+        and inferred.root().name == DATACLASS_MODULE
+    )
 
 
 def _looks_like_dataclass_attribute(node: Unknown) -> bool:
@@ -160,13 +325,14 @@ def _looks_like_dataclass_field_call(node: Call, check_scope: bool = True) -> bo
     return inferred.name == FIELD_NAME and inferred.root().name == DATACLASS_MODULE
 
 
-def _get_field_default(field_call: Call) -> Union[Tuple[str, NodeNG], None]:
+def _get_field_default(field_call: Call) -> Tuple[str, Optional[NodeNG]]:
     """Return a the default value of a field call, and the corresponding keyword argument name.
 
     field(default=...) results in the ... node
     field(default_factory=...) results in a Call node with func ... and no arguments
 
-    If neither or both arguments are present, return None instead.
+    If neither or both arguments are present, return ("", None) instead,
+    indicating that there is not a valid default value.
     """
     default, default_factory = None, None
     for keyword in field_call.keywords:
@@ -187,7 +353,7 @@ def _get_field_default(field_call: Call) -> Union[Tuple[str, NodeNG], None]:
         new_call.postinit(func=default_factory)
         return "default_factory", new_call
 
-    return None
+    return "", None
 
 
 def _is_class_var(node: NodeNG) -> bool:
@@ -248,6 +414,7 @@ def _infer_instance_from_annotation(
         yield Uninferable
     elif klass.root().name in (
         "typing",
+        "_collections_abc",
         "",
     ):  # "" because of synthetic nodes in brain_typing.py
         if klass.name in _INFERABLE_TYPING_TYPES:
