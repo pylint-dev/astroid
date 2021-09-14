@@ -13,31 +13,32 @@
 import builtins
 import unittest
 
-from astroid import builder, helpers, manager, raw_building, util
+from astroid import builder, helpers, manager, nodes, raw_building, util
 from astroid.exceptions import _NonDeducibleTypeHierarchy
+from astroid.nodes.scoped_nodes import ClassDef
 
 
 class TestHelpers(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         builtins_name = builtins.__name__
         astroid_manager = manager.AstroidManager()
         self.builtins = astroid_manager.astroid_cache[builtins_name]
         self.manager = manager.AstroidManager()
 
-    def _extract(self, obj_name):
+    def _extract(self, obj_name: str) -> ClassDef:
         return self.builtins.getattr(obj_name)[0]
 
-    def _build_custom_builtin(self, obj_name):
+    def _build_custom_builtin(self, obj_name: str) -> ClassDef:
         proxy = raw_building.build_class(obj_name)
         proxy.parent = self.builtins
         return proxy
 
-    def assert_classes_equal(self, cls, other):
+    def assert_classes_equal(self, cls: ClassDef, other: ClassDef) -> None:
         self.assertEqual(cls.name, other.name)
         self.assertEqual(cls.parent, other.parent)
         self.assertEqual(cls.qname(), other.qname())
 
-    def test_object_type(self):
+    def test_object_type(self) -> None:
         pairs = [
             ("1", self._extract("int")),
             ("[]", self._extract("list")),
@@ -56,7 +57,7 @@ class TestHelpers(unittest.TestCase):
             objtype = helpers.object_type(node)
             self.assert_classes_equal(objtype, expected)
 
-    def test_object_type_classes_and_functions(self):
+    def test_object_type_classes_and_functions(self) -> None:
         ast_nodes = builder.extract_node(
             """
         def generator():
@@ -80,6 +81,7 @@ class TestHelpers(unittest.TestCase):
         generator() #@
         """
         )
+        assert isinstance(ast_nodes, list)
         from_self = helpers.object_type(ast_nodes[0])
         cls = next(ast_nodes[1].infer())
         self.assert_classes_equal(from_self, cls)
@@ -105,7 +107,7 @@ class TestHelpers(unittest.TestCase):
             expected_type = self._build_custom_builtin(expected)
             self.assert_classes_equal(node_type, expected_type)
 
-    def test_object_type_metaclasses(self):
+    def test_object_type_metaclasses(self) -> None:
         module = builder.parse(
             """
         import abc
@@ -121,7 +123,7 @@ class TestHelpers(unittest.TestCase):
         instance_type = helpers.object_type(meta_instance)
         self.assert_classes_equal(instance_type, module["Meta"])
 
-    def test_object_type_most_derived(self):
+    def test_object_type_most_derived(self) -> None:
         node = builder.extract_node(
             """
         class A(type):
@@ -135,12 +137,13 @@ class TestHelpers(unittest.TestCase):
             pass
         """
         )
+        assert isinstance(node, nodes.NodeNG)
         metaclass = node.metaclass()
         self.assertEqual(metaclass.name, "A")
         obj_type = helpers.object_type(node)
         self.assertEqual(metaclass, obj_type)
 
-    def test_inference_errors(self):
+    def test_inference_errors(self) -> None:
         node = builder.extract_node(
             """
         from unknown import Unknown
@@ -149,7 +152,7 @@ class TestHelpers(unittest.TestCase):
         )
         self.assertEqual(helpers.object_type(node), util.Uninferable)
 
-    def test_object_type_too_many_types(self):
+    def test_object_type_too_many_types(self) -> None:
         node = builder.extract_node(
             """
         from unknown import Unknown
@@ -163,7 +166,7 @@ class TestHelpers(unittest.TestCase):
         )
         self.assertEqual(helpers.object_type(node), util.Uninferable)
 
-    def test_is_subtype(self):
+    def test_is_subtype(self) -> None:
         ast_nodes = builder.extract_node(
             """
         class int_subclass(int):
@@ -174,6 +177,7 @@ class TestHelpers(unittest.TestCase):
         int_subclass() #@
         """
         )
+        assert isinstance(ast_nodes, list)
         cls_a = ast_nodes[0]
         cls_b = ast_nodes[1]
         cls_c = ast_nodes[2]
@@ -190,7 +194,7 @@ class TestHelpers(unittest.TestCase):
         self.assertFalse(helpers.is_subtype(cls_a, cls_b))
         self.assertFalse(helpers.is_subtype(cls_a, cls_b))
 
-    def test_is_subtype_supertype_mro_error(self):
+    def test_is_subtype_supertype_mro_error(self) -> None:
         cls_e, cls_f = builder.extract_node(
             """
         class A(object): pass
@@ -208,7 +212,7 @@ class TestHelpers(unittest.TestCase):
             helpers.is_subtype(cls_f, cls_e)
         self.assertFalse(helpers.is_supertype(cls_f, cls_e))
 
-    def test_is_subtype_supertype_unknown_bases(self):
+    def test_is_subtype_supertype_unknown_bases(self) -> None:
         cls_a, cls_b = builder.extract_node(
             """
         from unknown import Unknown
@@ -221,7 +225,7 @@ class TestHelpers(unittest.TestCase):
         with self.assertRaises(_NonDeducibleTypeHierarchy):
             helpers.is_supertype(cls_a, cls_b)
 
-    def test_is_subtype_supertype_unrelated_classes(self):
+    def test_is_subtype_supertype_unrelated_classes(self) -> None:
         cls_a, cls_b = builder.extract_node(
             """
         class A(object): pass #@
@@ -233,7 +237,7 @@ class TestHelpers(unittest.TestCase):
         self.assertFalse(helpers.is_supertype(cls_a, cls_b))
         self.assertFalse(helpers.is_supertype(cls_b, cls_a))
 
-    def test_is_subtype_supertype_classes_no_type_ancestor(self):
+    def test_is_subtype_supertype_classes_no_type_ancestor(self) -> None:
         cls_a = builder.extract_node(
             """
         class A(object): #@
@@ -244,7 +248,7 @@ class TestHelpers(unittest.TestCase):
         self.assertFalse(helpers.is_supertype(builtin_type, cls_a))
         self.assertFalse(helpers.is_subtype(cls_a, builtin_type))
 
-    def test_is_subtype_supertype_classes_metaclasses(self):
+    def test_is_subtype_supertype_classes_metaclasses(self) -> None:
         cls_a = builder.extract_node(
             """
         class A(type): #@

@@ -28,7 +28,7 @@ class Python3TC(unittest.TestCase):
     def setUpClass(cls):
         cls.builder = AstroidBuilder()
 
-    def test_starred_notation(self):
+    def test_starred_notation(self) -> None:
         astroid = self.builder.string_build("*a, b = [1, 2, 3]", "test", "test")
 
         # Get the star node
@@ -36,7 +36,7 @@ class Python3TC(unittest.TestCase):
 
         self.assertTrue(isinstance(node.assign_type(), nodes.Assign))
 
-    def test_yield_from(self):
+    def test_yield_from(self) -> None:
         body = dedent(
             """
         def func():
@@ -52,7 +52,7 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(yieldfrom_stmt.value, nodes.YieldFrom)
         self.assertEqual(yieldfrom_stmt.as_string(), "yield from iter([1, 2])")
 
-    def test_yield_from_is_generator(self):
+    def test_yield_from_is_generator(self) -> None:
         body = dedent(
             """
         def func():
@@ -64,7 +64,7 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(func, nodes.FunctionDef)
         self.assertTrue(func.is_generator())
 
-    def test_yield_from_as_string(self):
+    def test_yield_from_as_string(self) -> None:
         body = dedent(
             """
         def func():
@@ -78,7 +78,7 @@ class Python3TC(unittest.TestCase):
 
     # metaclass tests
 
-    def test_simple_metaclass(self):
+    def test_simple_metaclass(self) -> None:
         astroid = self.builder.string_build("class Test(metaclass=type): pass")
         klass = astroid.body[0]
 
@@ -86,12 +86,12 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(metaclass, nodes.ClassDef)
         self.assertEqual(metaclass.name, "type")
 
-    def test_metaclass_error(self):
+    def test_metaclass_error(self) -> None:
         astroid = self.builder.string_build("class Test(metaclass=typ): pass")
         klass = astroid.body[0]
         self.assertFalse(klass.metaclass())
 
-    def test_metaclass_imported(self):
+    def test_metaclass_imported(self) -> None:
         astroid = self.builder.string_build(
             dedent(
                 """
@@ -105,7 +105,7 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(metaclass, nodes.ClassDef)
         self.assertEqual(metaclass.name, "ABCMeta")
 
-    def test_metaclass_multiple_keywords(self):
+    def test_metaclass_multiple_keywords(self) -> None:
         astroid = self.builder.string_build(
             "class Test(magic=None, metaclass=type): pass"
         )
@@ -115,7 +115,7 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(metaclass, nodes.ClassDef)
         self.assertEqual(metaclass.name, "type")
 
-    def test_as_string(self):
+    def test_as_string(self) -> None:
         body = dedent(
             """
         from abc import ABCMeta
@@ -128,7 +128,7 @@ class Python3TC(unittest.TestCase):
             klass.as_string(), "\n\nclass Test(metaclass=ABCMeta):\n    pass\n"
         )
 
-    def test_old_syntax_works(self):
+    def test_old_syntax_works(self) -> None:
         astroid = self.builder.string_build(
             dedent(
                 """
@@ -142,7 +142,7 @@ class Python3TC(unittest.TestCase):
         metaclass = klass.metaclass()
         self.assertIsNone(metaclass)
 
-    def test_metaclass_yes_leak(self):
+    def test_metaclass_yes_leak(self) -> None:
         astroid = self.builder.string_build(
             dedent(
                 """
@@ -156,7 +156,7 @@ class Python3TC(unittest.TestCase):
         klass = astroid["Meta"]
         self.assertIsNone(klass.metaclass())
 
-    def test_parent_metaclass(self):
+    def test_parent_metaclass(self) -> None:
         astroid = self.builder.string_build(
             dedent(
                 """
@@ -172,7 +172,7 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(metaclass, nodes.ClassDef)
         self.assertEqual(metaclass.name, "ABCMeta")
 
-    def test_metaclass_ancestors(self):
+    def test_metaclass_ancestors(self) -> None:
         astroid = self.builder.string_build(
             dedent(
                 """
@@ -200,7 +200,7 @@ class Python3TC(unittest.TestCase):
                 self.assertIsInstance(meta, nodes.ClassDef)
                 self.assertEqual(meta.name, metaclass)
 
-    def test_annotation_support(self):
+    def test_annotation_support(self) -> None:
         astroid = self.builder.string_build(
             dedent(
                 """
@@ -242,7 +242,7 @@ class Python3TC(unittest.TestCase):
         self.assertEqual(func.args.annotations[1].name, "str")
         self.assertIsNone(func.returns)
 
-    def test_kwonlyargs_annotations_supper(self):
+    def test_kwonlyargs_annotations_supper(self) -> None:
         node = self.builder.string_build(
             dedent(
                 """
@@ -262,7 +262,7 @@ class Python3TC(unittest.TestCase):
         self.assertIsNone(arguments.kwonlyargs_annotations[3])
         self.assertIsNone(arguments.kwonlyargs_annotations[4])
 
-    def test_annotation_as_string(self):
+    def test_annotation_as_string(self) -> None:
         code1 = dedent(
             """
         def test(a, b: int = 4, c=2, f: 'lala' = 4) -> 2:
@@ -277,7 +277,7 @@ class Python3TC(unittest.TestCase):
             func = extract_node(code)
             self.assertEqual(func.as_string(), code)
 
-    def test_unpacking_in_dicts(self):
+    def test_unpacking_in_dicts(self) -> None:
         code = "{'x': 1, **{'y': 2}}"
         node = extract_node(code)
         self.assertEqual(node.as_string(), code)
@@ -286,24 +286,24 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(keys[0], nodes.Const)
         self.assertIsInstance(keys[1], nodes.DictUnpack)
 
-    def test_nested_unpacking_in_dicts(self):
+    def test_nested_unpacking_in_dicts(self) -> None:
         code = "{'x': 1, **{'y': 2, **{'z': 3}}}"
         node = extract_node(code)
         self.assertEqual(node.as_string(), code)
 
-    def test_unpacking_in_dict_getitem(self):
+    def test_unpacking_in_dict_getitem(self) -> None:
         node = extract_node("{1:2, **{2:3, 3:4}, **{5: 6}}")
         for key, expected in ((1, 2), (2, 3), (3, 4), (5, 6)):
             value = node.getitem(nodes.Const(key))
             self.assertIsInstance(value, nodes.Const)
             self.assertEqual(value.value, expected)
 
-    def test_format_string(self):
+    def test_format_string(self) -> None:
         code = "f'{greetings} {person}'"
         node = extract_node(code)
         self.assertEqual(node.as_string(), code)
 
-    def test_underscores_in_numeral_literal(self):
+    def test_underscores_in_numeral_literal(self) -> None:
         pairs = [("10_1000", 101000), ("10_000_000", 10000000), ("0x_FF_FF", 65535)]
         for value, expected in pairs:
             node = extract_node(value)
@@ -311,7 +311,7 @@ class Python3TC(unittest.TestCase):
             self.assertIsInstance(inferred, nodes.Const)
             self.assertEqual(inferred.value, expected)
 
-    def test_async_comprehensions(self):
+    def test_async_comprehensions(self) -> None:
         async_comprehensions = [
             extract_node(
                 "async def f(): return __([i async for i in aiter() if i % 2])"
@@ -359,7 +359,7 @@ class Python3TC(unittest.TestCase):
             node = extract_node(comp)
             self.assertTrue(node.generators[0].is_async)
 
-    def test_async_comprehensions_as_string(self):
+    def test_async_comprehensions_as_string(self) -> None:
         func_bodies = [
             "return [i async for i in aiter() if condition(i)]",
             "return [await fun() for fun in funcs]",
