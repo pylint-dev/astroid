@@ -605,7 +605,6 @@ class CmpNodeTest(unittest.TestCase):
 class ConstNodeTest(unittest.TestCase):
     def _test(self, value):
         node = nodes.const_factory(value)
-        # pylint: disable=no-member; Infers two potential values
         self.assertIsInstance(node._proxied, nodes.ClassDef)
         self.assertEqual(node._proxied.name, value.__class__.__name__)
         self.assertIs(node.value, value)
