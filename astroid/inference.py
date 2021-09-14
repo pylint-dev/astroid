@@ -27,9 +27,11 @@
 """this module contains a set of functions to handle inference on astroid trees
 """
 
+import ast
 import functools
 import itertools
 import operator
+from typing import Any, Iterable
 
 import wrapt
 
@@ -789,6 +791,98 @@ def infer_binop(self, context=None):
 
 nodes.BinOp._infer_binop = _infer_binop
 nodes.BinOp._infer = infer_binop
+
+COMPARE_OPS = {
+    "==": operator.eq,
+    "!=": operator.ne,
+    "<": operator.lt,
+    "<=": operator.le,
+    ">": operator.gt,
+    ">=": operator.ge,
+    "in": lambda a, b: a in b,
+    "not in": lambda a, b: a not in b,
+}
+UNINFERABLE_OPS = {
+    "is",
+    "is not",
+}
+
+
+def _to_literal(node: nodes.NodeNG) -> Any:
+    # Can raise SyntaxError or ValueError from ast.literal_eval
+    # Is this the stupidest idea or the simplest idea?
+    return ast.literal_eval(node.as_string())
+
+
+def _do_compare(
+    left_iter: Iterable[nodes.NodeNG], op: str, right_iter: Iterable[nodes.NodeNG]
+) -> "bool | type[util.Uninferable]":
+    """
+    If all possible combinations are either True or False, return that:
+    >>> _do_compare([1, 2], '<=', [3, 4])
+    True
+    >>> _do_compare([1, 2], '==', [3, 4])
+    False
+
+    If any item is uninferable, or if some combinations are True and some
+    are False, return Uninferable:
+    >>> _do_compare([1, 3], '<=', [2, 4])
+    util.Uninferable
+    """
+    retval = None
+    if op in UNINFERABLE_OPS:
+        return util.Uninferable
+    op_func = COMPARE_OPS[op]
+
+    for left, right in itertools.product(left_iter, right_iter):
+        if left is util.Uninferable or right is util.Uninferable:
+            return util.Uninferable
+
+        try:
+            left, right = _to_literal(left), _to_literal(right)
+        except (SyntaxError, ValueError):
+            return util.Uninferable
+
+        try:
+            expr = op_func(left, right)
+        except TypeError as exc:
+            raise AstroidTypeError from exc
+
+        if retval is None:
+            retval = expr
+        elif retval != expr:
+            return util.Uninferable
+            # (or both, but "True | False" is basically the same)
+
+    return retval  # it was all the same value
+
+
+def _infer_compare(self: nodes.Compare, context: InferenceContext) -> Any:
+    """Chained comparison inference logic."""
+    retval = True
+
+    ops = self.ops
+    left_node = self.left
+    lhs = list(left_node.infer(context=context))
+    # should we break early if first element is uninferable?
+    for op, right_node in ops:
+        # eagerly evaluate rhs so that values can be re-used as lhs
+        rhs = list(right_node.infer(context=context))
+        try:
+            retval = _do_compare(lhs, op, rhs)
+        except AstroidTypeError:
+            retval = util.Uninferable
+            break
+        if retval is not True:
+            break  # short-circuit
+        lhs = rhs  # continue
+    if retval is util.Uninferable:
+        yield retval
+    else:
+        yield nodes.Const(retval)
+
+
+nodes.Compare._infer = _infer_compare
 
 
 def _infer_augassign(self, context=None):

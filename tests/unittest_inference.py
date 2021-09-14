@@ -5280,6 +5280,261 @@ class TestInferencePropagation:
         assert next(extract_node(code).infer()).as_string() == "{'f': 1}"
 
 
+@pytest.mark.parametrize(
+    "op,result",
+    [
+        ("<", False),
+        ("<=", True),
+        ("==", True),
+        (">=", True),
+        (">", False),
+        ("!=", False),
+    ],
+)
+def test_compare(op, result) -> None:
+    code = """
+    123 {} 123
+    """.format(
+        op
+    )
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred.value == result
+
+
+@pytest.mark.xfail(reason="uninferable")
+@pytest.mark.parametrize(
+    "op,result",
+    [
+        ("is", True),
+        ("is not", False),
+    ],
+)
+def test_compare_identity(op, result) -> None:
+    code = """
+    obj = object()
+    obj {} obj
+    """.format(
+        op
+    )
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred.value == result
+
+
+@pytest.mark.parametrize(
+    "op,result",
+    [
+        ("in", True),
+        ("not in", False),
+    ],
+)
+def test_compare_membership(op, result) -> None:
+    code = """
+    1 {} [1, 2, 3]
+    """.format(
+        op
+    )
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred.value == result
+
+
+@pytest.mark.parametrize(
+    "lhs,rhs,result",
+    [
+        (1, 1, True),
+        (1, 1.1, True),
+        (1.1, 1, False),
+        (1.0, 1.0, True),
+        ("abc", "def", True),
+        ("abc", "", False),
+        ([], [1], True),
+        ((1, 2), (2, 3), True),
+        ((1, 0), (1,), False),
+        (True, True, True),
+        (True, False, False),
+        (False, 1, True),
+        (1 + 0j, 2 + 0j, util.Uninferable),
+        (+0.0, -0.0, True),
+        (0, "1", util.Uninferable),
+        (b"\x00", b"\x01", True),
+    ],
+)
+def test_compare_lesseq_types(lhs, rhs, result) -> None:
+    code = """
+    {lhs!r} <= {rhs!r}
+    """.format(
+        lhs=lhs, rhs=rhs
+    )
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred.value == result
+
+
+def test_compare_chained() -> None:
+    code = """
+    3 < 5 > 3
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred.value is True
+
+
+def test_compare_inferred_members() -> None:
+    code = """
+    a = 11
+    b = 13
+    a < b
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred.value is True
+
+
+def test_compare_instance_members() -> None:
+    code = """
+    class A:
+        value = 123
+    class B:
+        @property
+        def value(self):
+            return 456
+    A().value < B().value
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred.value is True
+
+
+@pytest.mark.xfail(reason="unimplemented")
+def test_compare_dynamic() -> None:
+    code = """
+    class A:
+        def __le__(self, other):
+            return True
+    A() <= None
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred.value is True
+
+
+def test_compare_uninferable_member() -> None:
+    code = """
+    from unknown import UNKNOWN
+    0 <= UNKNOWN
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred is util.Uninferable
+
+
+def test_compare_chained_comparisons_shortcircuit_on_false() -> None:
+    code = """
+    from unknown import UNKNOWN
+    2 < 1 < UNKNOWN
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred.value is False
+
+
+def test_compare_chained_comparisons_continue_on_true() -> None:
+    code = """
+    from unknown import UNKNOWN
+    1 < 2 < UNKNOWN
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred is util.Uninferable
+
+
+@pytest.mark.xfail(reason="unimplemented")
+def test_compare_known_false_branch() -> None:
+    code = """
+    a = 'hello'
+    if 1 < 2:
+        a = 'goodbye'
+    a
+    """
+    node = extract_node(code)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == "hello"
+
+
+def test_compare_ifexp_constant() -> None:
+    code = """
+    a = 'hello' if 1 < 2 else 'goodbye'
+    a
+    """
+    node = extract_node(code)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == "hello"
+
+
+def test_compare_typeerror() -> None:
+    code = """
+    123 <= "abc"
+    """
+    node = extract_node(code)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert inferred[0] is util.Uninferable
+
+
+def test_compare_multiple_possibilites() -> None:
+    code = """
+    from unknown import UNKNOWN
+    a = 1
+    if UNKNOWN:
+        a = 2
+    b = 3
+    if UNKNOWN:
+        b = 4
+    a < b
+    """
+    node = extract_node(code)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    # All possible combinations are true: (1 < 3), (1 < 4), (2 < 3), (2 < 4)
+    assert inferred[0].value is True
+
+
+def test_compare_ambiguous_multiple_possibilites() -> None:
+    code = """
+    from unknown import UNKNOWN
+    a = 1
+    if UNKNOWN:
+        a = 3
+    b = 2
+    if UNKNOWN:
+        b = 4
+    a < b
+    """
+    node = extract_node(code)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    # Not all possible combinations are true: (1 < 2), (1 < 4), (3 !< 2), (3 < 4)
+    assert inferred[0] is util.Uninferable
+
+
+def test_compare_nonliteral() -> None:
+    code = """
+    def func(a, b):
+        return (a, b) <= (1, 2) #@
+    """
+    return_node = extract_node(code)
+    node = return_node.value
+    inferred = list(node.infer())  # should not raise ValueError
+    assert len(inferred) == 1
+    assert inferred[0] is util.Uninferable
+
+
 def test_limit_inference_result_amount() -> None:
     """Test setting limit inference result amount"""
     code = """
@@ -5560,7 +5815,7 @@ def test_infer_context_manager_with_unknown_args() -> None:
         """,
     ],
 )
-def test_subclass_of_exception(code):
+def test_subclass_of_exception(code) -> None:
     inferred = next(extract_node(code).infer())
     assert isinstance(inferred, Instance)
     args = next(inferred.igetattr("args"))
@@ -5721,7 +5976,7 @@ def test_infer_exception_instance_attributes() -> None:
         ),
     ],
 )
-def test_inference_is_limited_to_the_boundnode(code, instance_name):
+def test_inference_is_limited_to_the_boundnode(code, instance_name) -> None:
     node = extract_node(code)
     inferred = next(node.infer())
     assert isinstance(inferred, Instance)
