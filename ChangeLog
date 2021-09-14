@@ -2,9 +2,21 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.8.0?
+What's New in astroid 2.9.0?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 2.8.1?
+============================
+Release date: TBA
+
+
+
+What's New in astroid 2.8.0?
+============================
+Release date: 2021-09-14
 
 * Add additional deprecation warnings in preparation for astroid 3.0
 
@@ -21,9 +33,9 @@ Release date: TBA
 
 * Add ``node_ancestors`` method to ``NodeNG`` for obtaining the ancestors of nodes.
 
-What's New in astroid 2.7.4?
-============================
-Release date: TBA
+* It's now possible to infer the value of comparison nodes
+
+  Closes #846
 
 * Fixed bug in inference of dataclass field calls.
 
