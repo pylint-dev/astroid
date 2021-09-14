@@ -857,7 +857,7 @@ def _do_compare(
     return retval  # it was all the same value
 
 
-def _infer_compare(self: nodes.Compare, context: contextmod.InferenceContext) -> Any:
+def _infer_compare(self: nodes.Compare, context: InferenceContext) -> Any:
     """Chained comparison inference logic."""
     retval = True
 
