@@ -1437,7 +1437,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """Do some setup after initialisation.
 
         :param args: The arguments that the function takes.
-        :type args: Arguments or list
 
         :param body: The contents of the function body.
         :type body: list(NodeNG)
