@@ -25,7 +25,7 @@ from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 
 if TYPE_CHECKING:
-    from astroid.scoped_nodes import LocalsDictNodeNG
+    from astroid.nodes import LocalsDictNodeNG
 
 # Types for 'NodeNG.nodes_of_class()'
 T_Nodes = TypeVar("T_Nodes", bound="NodeNG")

@@ -63,7 +63,7 @@ else:
     from typing_extensions import Literal
 
 if TYPE_CHECKING:
-    from astroid.scoped_nodes import LocalsDictNodeNG
+    from astroid.nodes import LocalsDictNodeNG
 
 
 def _is_const(value):
