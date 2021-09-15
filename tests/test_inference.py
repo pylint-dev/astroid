@@ -30,7 +30,7 @@ from astroid import (
 )
 from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
-from astroid.bases import BoundMethod, Instance, UnboundMethod, UnionType
+from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod, UnionType
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
 from astroid.const import IS_PYPY, PY39_PLUS, PY310_PLUS, PY312_PLUS
 from astroid.context import CallContext, InferenceContext
@@ -4320,6 +4320,38 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(attr_node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == 123
+
+    def test_infer_method_empty_body(self) -> None:
+        # https://github.com/PyCQA/astroid/issues/1015
+        node = extract_node(
+            """
+            class A:
+                def foo(self): ...
+
+            A().foo()  #@
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value is None
+
+    def test_infer_method_overload(self) -> None:
+        # https://github.com/PyCQA/astroid/issues/1015
+        node = extract_node(
+            """
+            class A:
+                def foo(self): ...
+
+                def foo(self):
+                    yield
+
+            A().foo()  #@
+        """
+        )
+        inferred = list(node.infer())
+        assert len(inferred) == 2
+        assert isinstance(inferred[0], nodes.Const)
+        assert isinstance(inferred[1], Generator)
 
     def test_delayed_attributes_without_slots(self) -> None:
         ast_node = extract_node(

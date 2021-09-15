@@ -2508,7 +2508,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
             # to the attribute happening *after* the attribute's definition (e.g. AugAssigns on lists)
             if len(attributes) > 1:
                 first_attr, attributes = attributes[0], attributes[1:]
-                first_scope = first_attr.scope()
+                first_scope = first_attr.parent.scope()
                 attributes = [first_attr] + [
                     attr
                     for attr in attributes
