@@ -23,6 +23,7 @@
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2020 Tim Martin <tim@asymptotic.co.uk>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
@@ -68,7 +69,7 @@ from astroid.exceptions import (
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
-from astroid.nodes import Const, node_classes
+from astroid.nodes import Arguments, Const, node_classes
 
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
@@ -1191,7 +1192,6 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :returns: 'method' if this is a method, 'function' otherwise.
         :rtype: str
         """
-        # pylint: disable=no-member
         if self.args.arguments and self.args.arguments[0].name == "self":
             if isinstance(self.parent.scope(), ClassDef):
                 return "method"
@@ -1215,11 +1215,8 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :type: dict(str, NodeNG)
         """
 
-        self.args = []
-        """The arguments that the function takes.
-
-        :type: Arguments or list
-        """
+        self.args: Arguments
+        """The arguments that the function takes."""
 
         self.body = []
         """The contents of the function body.
@@ -1229,11 +1226,10 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 
         super().__init__(lineno, col_offset, parent)
 
-    def postinit(self, args, body):
+    def postinit(self, args: Arguments, body):
         """Do some setup after initialisation.
 
         :param args: The arguments that the function takes.
-        :type args: Arguments
 
         :param body: The contents of the function body.
         :type body: list(NodeNG)
@@ -1277,10 +1273,6 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :returns: The names of the arguments.
         :rtype: list(str)
         """
-        # pylint: disable=no-member; github.com/pycqa/astroid/issues/291
-        # args is in fact redefined later on by postinit. Can't be changed
-        # to None due to a strong interaction between Lambda and FunctionDef.
-
         if self.args.arguments:  # maybe None with builtin functions
             names = _rec_get_names(self.args.arguments)
         else:
@@ -1320,10 +1312,6 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
             globals or builtin).
         :rtype: tuple(str, list(NodeNG))
         """
-        # pylint: disable=no-member; github.com/pycqa/astroid/issues/291
-        # args is in fact redefined later on by postinit. Can't be changed
-        # to None due to a strong interaction between Lambda and FunctionDef.
-
         if node in self.args.defaults or node in self.args.kw_defaults:
             frame = self.parent.frame()
             # line offset to avoid that def func(f=func) resolve the default
@@ -1441,7 +1429,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     # pylint: disable=arguments-differ; different than Lambdas
     def postinit(
         self,
-        args,
+        args: Arguments,
         body,
         decorators=None,
         returns=None,
@@ -1451,7 +1439,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """Do some setup after initialisation.
 
         :param args: The arguments that the function takes.
-        :type args: Arguments or list
 
         :param body: The contents of the function body.
         :type body: list(NodeNG)

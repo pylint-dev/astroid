@@ -29,13 +29,13 @@ from . import resources
 
 
 class LookupTest(resources.SysPathSetup, unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.module = resources.build_file("data/module.py", "data.module")
         self.module2 = resources.build_file("data/module2.py", "data.module2")
         self.nonregr = resources.build_file("data/nonregr.py", "data.nonregr")
 
-    def test_limit(self):
+    def test_limit(self) -> None:
         code = """
             l = [a
                  for a,b in list]
@@ -65,7 +65,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         func = astroid.locals["func"][0]
         self.assertEqual(len(func.lookup("c")[1]), 1)
 
-    def test_module(self):
+    def test_module(self) -> None:
         astroid = builder.parse("pass", __name__)
         # built-in objects
         none = next(astroid.ilookup("None"))
@@ -80,7 +80,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         # XXX
         self.assertEqual(len(list(self.nonregr.ilookup("enumerate"))), 2)
 
-    def test_class_ancestor_name(self):
+    def test_class_ancestor_name(self) -> None:
         code = """
             class A:
                 pass
@@ -95,7 +95,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(next(name.infer()), cls1)
 
     ### backport those test to inline code
-    def test_method(self):
+    def test_method(self) -> None:
         method = self.module["YOUPI"]["method"]
         my_dict = next(method.ilookup("MY_DICT"))
         self.assertTrue(isinstance(my_dict, nodes.Dict), my_dict)
@@ -105,14 +105,14 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
             InferenceError, functools.partial(next, method.ilookup("YOAA"))
         )
 
-    def test_function_argument_with_default(self):
+    def test_function_argument_with_default(self) -> None:
         make_class = self.module2["make_class"]
         base = next(make_class.ilookup("base"))
         self.assertTrue(isinstance(base, nodes.ClassDef), base.__class__)
         self.assertEqual(base.name, "YO")
         self.assertEqual(base.root().name, "data.module")
 
-    def test_class(self):
+    def test_class(self) -> None:
         klass = self.module["YOUPI"]
         my_dict = next(klass.ilookup("MY_DICT"))
         self.assertIsInstance(my_dict, nodes.Dict)
@@ -125,11 +125,11 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
             InferenceError, functools.partial(next, klass.ilookup("YOAA"))
         )
 
-    def test_inner_classes(self):
+    def test_inner_classes(self) -> None:
         ddd = list(self.nonregr["Ccc"].ilookup("Ddd"))
         self.assertEqual(ddd[0].name, "Ddd")
 
-    def test_loopvar_hiding(self):
+    def test_loopvar_hiding(self) -> None:
         astroid = builder.parse(
             """
             x = 10
@@ -148,7 +148,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(xnames[1].lookup("x")[1]), 2)
         self.assertEqual(len(xnames[2].lookup("x")[1]), 2)
 
-    def test_list_comps(self):
+    def test_list_comps(self) -> None:
         astroid = builder.parse(
             """
             print ([ i for i in range(10) ])
@@ -165,7 +165,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(xnames[2].lookup("i")[1]), 1)
         self.assertEqual(xnames[2].lookup("i")[1][0].lineno, 4)
 
-    def test_list_comp_target(self):
+    def test_list_comp_target(self) -> None:
         """test the list comprehension target"""
         astroid = builder.parse(
             """
@@ -176,7 +176,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         var = astroid.body[1].value
         self.assertRaises(NameInferenceError, var.inferred)
 
-    def test_dict_comps(self):
+    def test_dict_comps(self) -> None:
         astroid = builder.parse(
             """
             print ({ i: j for i in range(10) for j in range(10) })
@@ -196,7 +196,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(xnames[1].lookup("i")[1]), 1)
         self.assertEqual(xnames[1].lookup("i")[1][0].lineno, 3)
 
-    def test_set_comps(self):
+    def test_set_comps(self) -> None:
         astroid = builder.parse(
             """
             print ({ i for i in range(10) })
@@ -210,7 +210,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(xnames[1].lookup("i")[1]), 1)
         self.assertEqual(xnames[1].lookup("i")[1][0].lineno, 3)
 
-    def test_set_comp_closure(self):
+    def test_set_comp_closure(self) -> None:
         astroid = builder.parse(
             """
             ten = { var for var in range(10) }
@@ -220,7 +220,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         var = astroid.body[1].value
         self.assertRaises(NameInferenceError, var.inferred)
 
-    def test_list_comp_nested(self):
+    def test_list_comp_nested(self) -> None:
         astroid = builder.parse(
             """
             x = [[i + j for j in range(20)]
@@ -232,7 +232,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(xnames[0].lookup("i")[1]), 1)
         self.assertEqual(xnames[0].lookup("i")[1][0].lineno, 3)
 
-    def test_dict_comp_nested(self):
+    def test_dict_comp_nested(self) -> None:
         astroid = builder.parse(
             """
             x = {i: {i: j for j in range(20)}
@@ -248,7 +248,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(xnames[1].lookup("i")[1]), 1)
         self.assertEqual(xnames[1].lookup("i")[1][0].lineno, 3)
 
-    def test_set_comp_nested(self):
+    def test_set_comp_nested(self) -> None:
         astroid = builder.parse(
             """
             x = [{i + j for j in range(20)}  # Can't do nested sets
@@ -260,7 +260,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(xnames[0].lookup("i")[1]), 1)
         self.assertEqual(xnames[0].lookup("i")[1][0].lineno, 3)
 
-    def test_lambda_nested(self):
+    def test_lambda_nested(self) -> None:
         astroid = builder.parse(
             """
             f = lambda x: (
@@ -271,7 +271,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(xnames[0].lookup("x")[1]), 1)
         self.assertEqual(xnames[0].lookup("x")[1][0].lineno, 2)
 
-    def test_function_nested(self):
+    def test_function_nested(self) -> None:
         astroid = builder.parse(
             """
             def f1(x):
@@ -285,7 +285,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(xnames[0].lookup("x")[1]), 1)
         self.assertEqual(xnames[0].lookup("x")[1][0].lineno, 2)
 
-    def test_class_variables(self):
+    def test_class_variables(self) -> None:
         # Class variables are NOT available within nested scopes.
         astroid = builder.parse(
             """
@@ -308,7 +308,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         for name in names:
             self.assertRaises(NameInferenceError, name.inferred)
 
-    def test_class_in_function(self):
+    def test_class_in_function(self) -> None:
         # Function variables are available within classes, including methods
         astroid = builder.parse(
             """
@@ -334,7 +334,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
             self.assertEqual(len(name.lookup("x")[1]), 1, repr(name))
             self.assertEqual(name.lookup("x")[1][0].lineno, 3, repr(name))
 
-    def test_generator_attributes(self):
+    def test_generator_attributes(self) -> None:
         tree = builder.parse(
             """
             def count():
@@ -352,7 +352,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(gener.getattr("throw")[0], nodes.FunctionDef)
         self.assertIsInstance(gener.getattr("close")[0], nodes.FunctionDef)
 
-    def test_explicit___name__(self):
+    def test_explicit___name__(self) -> None:
         code = """
             class Pouet:
                 __name__ = "pouet"
@@ -373,7 +373,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         p3 = next(astroid["p3"].infer())
         self.assertRaises(AttributeInferenceError, p3.getattr, "__name__")
 
-    def test_function_module_special(self):
+    def test_function_module_special(self) -> None:
         astroid = builder.parse(
             '''
         def initialize(linter):
@@ -387,7 +387,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         ]
         self.assertEqual(len(path.lookup("__path__")[1]), 1)
 
-    def test_builtin_lookup(self):
+    def test_builtin_lookup(self) -> None:
         self.assertEqual(nodes.builtin_lookup("__dict__")[1], ())
         intstmts = nodes.builtin_lookup("int")[1]
         self.assertEqual(len(intstmts), 1)
@@ -395,7 +395,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(intstmts[0].name, "int")
         self.assertIs(intstmts[0], nodes.const_factory(1)._proxied)
 
-    def test_decorator_arguments_lookup(self):
+    def test_decorator_arguments_lookup(self) -> None:
         code = """
             def decorator(value):
                 def wrapper(function):
@@ -419,7 +419,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(obj.value, 10)
         self.assertRaises(StopIteration, functools.partial(next, it))
 
-    def test_inner_decorator_member_lookup(self):
+    def test_inner_decorator_member_lookup(self) -> None:
         code = """
             class FileA:
                 def decorator(bla):
@@ -435,7 +435,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(obj, nodes.FunctionDef)
         self.assertRaises(StopIteration, functools.partial(next, it))
 
-    def test_static_method_lookup(self):
+    def test_static_method_lookup(self) -> None:
         code = """
             class FileA:
                 @staticmethod
@@ -455,7 +455,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(obj, nodes.ClassDef)
         self.assertRaises(StopIteration, functools.partial(next, it))
 
-    def test_global_delete(self):
+    def test_global_delete(self) -> None:
         code = """
             def run2():
                 f = Frobble()
@@ -479,7 +479,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
 class LookupControlFlowTest(unittest.TestCase):
     """Tests for lookup capabilities and control flow"""
 
-    def test_consecutive_assign(self):
+    def test_consecutive_assign(self) -> None:
         """When multiple assignment statements are in the same block, only the last one
         is returned.
         """
@@ -494,7 +494,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 1)
         self.assertEqual(stmts[0].lineno, 3)
 
-    def test_assign_after_use(self):
+    def test_assign_after_use(self) -> None:
         """An assignment statement appearing after the variable is not returned."""
         code = """
             print(x)
@@ -505,7 +505,7 @@ class LookupControlFlowTest(unittest.TestCase):
         _, stmts = x_name.lookup("x")
         self.assertEqual(len(stmts), 0)
 
-    def test_del_removes_prior(self):
+    def test_del_removes_prior(self) -> None:
         """Delete statement removes any prior assignments"""
         code = """
             x = 10
@@ -517,7 +517,7 @@ class LookupControlFlowTest(unittest.TestCase):
         _, stmts = x_name.lookup("x")
         self.assertEqual(len(stmts), 0)
 
-    def test_del_no_effect_after(self):
+    def test_del_no_effect_after(self) -> None:
         """Delete statement doesn't remove future assignments"""
         code = """
             x = 10
@@ -531,7 +531,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 1)
         self.assertEqual(stmts[0].lineno, 4)
 
-    def test_if_assign(self):
+    def test_if_assign(self) -> None:
         """Assignment in if statement is added to lookup results, but does not replace
         prior assignments.
         """
@@ -548,7 +548,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 2)
         self.assertCountEqual([stmt.lineno for stmt in stmts], [3, 5])
 
-    def test_if_assigns_same_branch(self):
+    def test_if_assigns_same_branch(self) -> None:
         """When if branch has multiple assignment statements, only the last one
         is added.
         """
@@ -566,7 +566,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 2)
         self.assertCountEqual([stmt.lineno for stmt in stmts], [3, 6])
 
-    def test_if_assigns_different_branch(self):
+    def test_if_assigns_different_branch(self) -> None:
         """When different branches have assignment statements, the last one
         in each branch is added.
         """
@@ -588,7 +588,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 4)
         self.assertCountEqual([stmt.lineno for stmt in stmts], [3, 6, 8, 10])
 
-    def test_assign_exclusive(self):
+    def test_assign_exclusive(self) -> None:
         """When the variable appears inside a branch of an if statement,
         no assignment statements from other branches are returned.
         """
@@ -611,7 +611,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 1)
         self.assertEqual(stmts[0].lineno, 3)
 
-    def test_assign_not_exclusive(self):
+    def test_assign_not_exclusive(self) -> None:
         """When the variable appears inside a branch of an if statement,
         only the last assignment statement in the same branch is returned.
         """
@@ -635,7 +635,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 1)
         self.assertEqual(stmts[0].lineno, 10)
 
-    def test_if_else(self):
+    def test_if_else(self) -> None:
         """When an assignment statement appears in both an if and else branch, both
         are added. This does NOT replace an assignment statement appearing before the
         if statement. (See issue #213)
@@ -655,7 +655,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 3)
         self.assertCountEqual([stmt.lineno for stmt in stmts], [3, 5, 7])
 
-    def test_if_variable_in_condition_1(self):
+    def test_if_variable_in_condition_1(self) -> None:
         """Test lookup works correctly when a variable appears in an if condition."""
         code = """
             x = 10
@@ -677,7 +677,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts2), 1)
         self.assertEqual(stmts2[0].lineno, 2)
 
-    def test_if_variable_in_condition_2(self):
+    def test_if_variable_in_condition_2(self) -> None:
         """Test lookup works correctly when a variable appears in an if condition,
         and the variable is reassigned in each branch.
 
@@ -703,7 +703,7 @@ class LookupControlFlowTest(unittest.TestCase):
             self.assertEqual(len(stmts), 1)
             self.assertEqual(stmts[0].lineno, 2)
 
-    def test_del_not_exclusive(self):
+    def test_del_not_exclusive(self) -> None:
         """A delete statement in an if statement branch removes all previous
         assignment statements when the delete statement is not exclusive with
         the variable (e.g., when the variable is used below the if statement).
@@ -725,7 +725,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 1)
         self.assertEqual(stmts[0].lineno, 9)
 
-    def test_del_exclusive(self):
+    def test_del_exclusive(self) -> None:
         """A delete statement in an if statement branch that is exclusive with the
         variable does not remove previous assignment statements.
         """
@@ -745,7 +745,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 1)
         self.assertEqual(stmts[0].lineno, 3)
 
-    def test_assign_after_param(self):
+    def test_assign_after_param(self) -> None:
         """When an assignment statement overwrites a function parameter, only the
         assignment is returned, even when the variable and assignment do not have
         the same parent.
@@ -772,7 +772,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts2), 1)
         self.assertEqual(stmts2[0].lineno, 7)
 
-    def test_assign_after_kwonly_param(self):
+    def test_assign_after_kwonly_param(self) -> None:
         """When an assignment statement overwrites a function keyword-only parameter,
         only the assignment is returned, even when the variable and assignment do
         not have the same parent.
@@ -827,7 +827,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts2), 1)
         self.assertEqual(stmts2[0].lineno, 7)
 
-    def test_assign_after_args_param(self):
+    def test_assign_after_args_param(self) -> None:
         """When an assignment statement overwrites a function parameter, only the
         assignment is returned.
         """
@@ -851,7 +851,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts2), 1)
         self.assertEqual(stmts2[0].lineno, 4)
 
-    def test_except_var_in_block(self):
+    def test_except_var_in_block(self) -> None:
         """When the variable bound to an exception in an except clause, it is returned
         when that variable is used inside the except block.
         """
@@ -867,7 +867,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 1)
         self.assertEqual(stmts[0].lineno, 4)
 
-    def test_except_var_in_block_overwrites(self):
+    def test_except_var_in_block_overwrites(self) -> None:
         """When the variable bound to an exception in an except clause, it is returned
         when that variable is used inside the except block, and replaces any previous
         assignments.
@@ -885,7 +885,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 1)
         self.assertEqual(stmts[0].lineno, 5)
 
-    def test_except_var_in_multiple_blocks(self):
+    def test_except_var_in_multiple_blocks(self) -> None:
         """When multiple variables with the same name are bound to an exception
         in an except clause, and the variable is used inside the except block,
         only the assignment from the corresponding except clause is returned.
@@ -910,7 +910,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts2), 1)
         self.assertEqual(stmts2[0].lineno, 7)
 
-    def test_except_var_after_block_single(self):
+    def test_except_var_after_block_single(self) -> None:
         """When the variable bound to an exception in an except clause, it is NOT returned
         when that variable is used after the except block.
         """
@@ -926,7 +926,7 @@ class LookupControlFlowTest(unittest.TestCase):
         _, stmts = x_name.lookup("e")
         self.assertEqual(len(stmts), 0)
 
-    def test_except_var_after_block_multiple(self):
+    def test_except_var_after_block_multiple(self) -> None:
         """When the variable bound to an exception in multiple except clauses, it is NOT returned
         when that variable is used after the except blocks.
         """
@@ -944,7 +944,7 @@ class LookupControlFlowTest(unittest.TestCase):
         _, stmts = x_name.lookup("e")
         self.assertEqual(len(stmts), 0)
 
-    def test_except_assign_in_block(self):
+    def test_except_assign_in_block(self) -> None:
         """When a variable is assigned in an except block, it is returned
         when that variable is used in the except block.
         """
@@ -961,7 +961,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 1)
         self.assertEqual(stmts[0].lineno, 5)
 
-    def test_except_assign_in_block_multiple(self):
+    def test_except_assign_in_block_multiple(self) -> None:
         """When a variable is assigned in multiple except blocks, and the variable is
         used in one of the blocks, only the assignments in that block are returned.
         """
@@ -980,7 +980,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 1)
         self.assertEqual(stmts[0].lineno, 7)
 
-    def test_except_assign_after_block(self):
+    def test_except_assign_after_block(self) -> None:
         """When a variable is assigned in an except clause, it is returned
         when that variable is used after the except block.
         """
@@ -999,7 +999,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 2)
         self.assertCountEqual([stmt.lineno for stmt in stmts], [5, 7])
 
-    def test_except_assign_after_block_overwritten(self):
+    def test_except_assign_after_block_overwritten(self) -> None:
         """When a variable is assigned in an except clause, it is not returned
         when it is reassigned and used after the except block.
         """

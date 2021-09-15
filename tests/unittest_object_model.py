@@ -17,12 +17,12 @@ import xml
 import pytest
 
 import astroid
-from astroid import builder, objects, test_utils, util
+from astroid import builder, nodes, objects, test_utils, util
 from astroid.exceptions import InferenceError
 
 
 class InstanceModelTest(unittest.TestCase):
-    def test_instance_special_model(self):
+    def test_instance_special_model(self) -> None:
         ast_nodes = builder.extract_node(
             """
         class A:
@@ -37,7 +37,7 @@ class InstanceModelTest(unittest.TestCase):
         """,
             module_name="fake_module",
         )
-
+        assert isinstance(ast_nodes, list)
         cls = next(ast_nodes[0].infer())
         self.assertIsInstance(cls, astroid.ClassDef)
         self.assertEqual(cls.name, "A")
@@ -74,7 +74,7 @@ class InstanceModelTest(unittest.TestCase):
 
 
 class BoundMethodModelTest(unittest.TestCase):
-    def test_bound_method_model(self):
+    def test_bound_method_model(self) -> None:
         ast_nodes = builder.extract_node(
             """
         class A:
@@ -84,7 +84,7 @@ class BoundMethodModelTest(unittest.TestCase):
         a.test.__self__ #@
         """
         )
-
+        assert isinstance(ast_nodes, list)
         func = next(ast_nodes[0].infer())
         self.assertIsInstance(func, astroid.FunctionDef)
         self.assertEqual(func.name, "test")
@@ -95,7 +95,7 @@ class BoundMethodModelTest(unittest.TestCase):
 
 
 class UnboundMethodModelTest(unittest.TestCase):
-    def test_unbound_method_model(self):
+    def test_unbound_method_model(self) -> None:
         ast_nodes = builder.extract_node(
             """
         class A:
@@ -109,7 +109,7 @@ class UnboundMethodModelTest(unittest.TestCase):
         t.im_self #@
         """
         )
-
+        assert isinstance(ast_nodes, list)
         cls = next(ast_nodes[0].infer())
         self.assertIsInstance(cls, astroid.ClassDef)
         unbound_name = "function"
@@ -130,7 +130,7 @@ class UnboundMethodModelTest(unittest.TestCase):
 
 
 class ClassModelTest(unittest.TestCase):
-    def test_priority_to_local_defined_values(self):
+    def test_priority_to_local_defined_values(self) -> None:
         ast_node = builder.extract_node(
             """
         class A:
@@ -142,7 +142,7 @@ class ClassModelTest(unittest.TestCase):
         self.assertIsInstance(inferred, astroid.Const)
         self.assertEqual(inferred.value, "first")
 
-    def test_class_model_correct_mro_subclasses_proxied(self):
+    def test_class_model_correct_mro_subclasses_proxied(self) -> None:
         ast_nodes = builder.extract_node(
             """
         class A(object):
@@ -158,7 +158,7 @@ class ClassModelTest(unittest.TestCase):
             self.assertIsInstance(inferred.bound, astroid.ClassDef)
             self.assertEqual(inferred.bound.name, "type")
 
-    def test_class_model(self):
+    def test_class_model(self) -> None:
         ast_nodes = builder.extract_node(
             """
         class A(object):
@@ -180,7 +180,7 @@ class ClassModelTest(unittest.TestCase):
         """,
             module_name="fake_module",
         )
-
+        assert isinstance(ast_nodes, list)
         module = next(ast_nodes[0].infer())
         self.assertIsInstance(module, astroid.Const)
         self.assertEqual(module.value, "fake_module")
@@ -221,7 +221,7 @@ class ClassModelTest(unittest.TestCase):
 
 
 class ModuleModelTest(unittest.TestCase):
-    def test_priority_to_local_defined_values(self):
+    def test_priority_to_local_defined_values(self) -> None:
         ast_node = astroid.parse(
             """
         __file__ = "mine"
@@ -231,7 +231,7 @@ class ModuleModelTest(unittest.TestCase):
         self.assertIsInstance(file_value, astroid.Const)
         self.assertEqual(file_value.value, "mine")
 
-    def test__path__not_a_package(self):
+    def test__path__not_a_package(self) -> None:
         ast_node = builder.extract_node(
             """
         import sys
@@ -241,7 +241,7 @@ class ModuleModelTest(unittest.TestCase):
         with self.assertRaises(InferenceError):
             next(ast_node.infer())
 
-    def test_module_model(self):
+    def test_module_model(self) -> None:
         ast_nodes = builder.extract_node(
             """
         import xml
@@ -256,7 +256,7 @@ class ModuleModelTest(unittest.TestCase):
         xml.__dict__ #@
         """
         )
-
+        assert isinstance(ast_nodes, list)
         path = next(ast_nodes[0].infer())
         self.assertIsInstance(path, astroid.List)
         self.assertIsInstance(path.elts[0], astroid.Const)
@@ -287,7 +287,7 @@ class ModuleModelTest(unittest.TestCase):
 
 
 class FunctionModelTest(unittest.TestCase):
-    def test_partial_descriptor_support(self):
+    def test_partial_descriptor_support(self) -> None:
         bound, result = builder.extract_node(
             """
         class A(object): pass
@@ -304,7 +304,7 @@ class FunctionModelTest(unittest.TestCase):
         self.assertIsInstance(result, astroid.Const)
         self.assertEqual(result.value, 42)
 
-    def test___get__has_extra_params_defined(self):
+    def test___get__has_extra_params_defined(self) -> None:
         node = builder.extract_node(
             """
         def test(self): return 42
@@ -345,7 +345,7 @@ class FunctionModelTest(unittest.TestCase):
         self.assertIsInstance(result, astroid.Const)
         self.assertEqual(result.value, 42)
 
-    def test_descriptors_binding_invalid(self):
+    def test_descriptors_binding_invalid(self) -> None:
         ast_nodes = builder.extract_node(
             """
         class A: pass
@@ -358,7 +358,7 @@ class FunctionModelTest(unittest.TestCase):
             with self.assertRaises(InferenceError):
                 next(node.infer())
 
-    def test_descriptor_error_regression(self):
+    def test_descriptor_error_regression(self) -> None:
         """Make sure the following code does
         node cause an exception"""
         node = builder.extract_node(
@@ -377,10 +377,11 @@ class FunctionModelTest(unittest.TestCase):
         cl #@
         """
         )
+        assert isinstance(node, nodes.NodeNG)
         [const] = node.inferred()
         assert const.value == "MyText"
 
-    def test_function_model(self):
+    def test_function_model(self) -> None:
         ast_nodes = builder.extract_node(
             '''
         def func(a=1, b=2):
@@ -397,7 +398,7 @@ class FunctionModelTest(unittest.TestCase):
         ''',
             module_name="fake_module",
         )
-
+        assert isinstance(ast_nodes, list)
         name = next(ast_nodes[0].infer())
         self.assertIsInstance(name, astroid.Const)
         self.assertEqual(name.value, "func")
@@ -427,7 +428,7 @@ class FunctionModelTest(unittest.TestCase):
         for ast_node in ast_nodes[7:9]:
             self.assertIs(next(ast_node.infer()), astroid.Uninferable)
 
-    def test_empty_return_annotation(self):
+    def test_empty_return_annotation(self) -> None:
         ast_node = builder.extract_node(
             """
         def test(): pass
@@ -438,7 +439,9 @@ class FunctionModelTest(unittest.TestCase):
         self.assertIsInstance(annotations, astroid.Dict)
         self.assertEqual(len(annotations.items), 0)
 
-    def test_builtin_dunder_init_does_not_crash_when_accessing_annotations(self):
+    def test_builtin_dunder_init_does_not_crash_when_accessing_annotations(
+        self,
+    ) -> None:
         ast_node = builder.extract_node(
             """
         class Class:
@@ -451,7 +454,7 @@ class FunctionModelTest(unittest.TestCase):
         self.assertIsInstance(inferred, astroid.Dict)
         self.assertEqual(len(inferred.items), 0)
 
-    def test_annotations_kwdefaults(self):
+    def test_annotations_kwdefaults(self) -> None:
         ast_node = builder.extract_node(
             """
         def test(a: 1, *args: 2, f:4='lala', **kwarg:3)->2: pass
@@ -494,7 +497,7 @@ class FunctionModelTest(unittest.TestCase):
 
 
 class GeneratorModelTest(unittest.TestCase):
-    def test_model(self):
+    def test_model(self) -> None:
         ast_nodes = builder.extract_node(
             """
         def test():
@@ -509,7 +512,7 @@ class GeneratorModelTest(unittest.TestCase):
         gen.send #@
         """
         )
-
+        assert isinstance(ast_nodes, list)
         name = next(ast_nodes[0].infer())
         self.assertEqual(name.value, "test")
 
@@ -529,7 +532,7 @@ class GeneratorModelTest(unittest.TestCase):
 
 
 class ExceptionModelTest(unittest.TestCase):
-    def test_valueerror_py3(self):
+    def test_valueerror_py3(self) -> None:
         ast_nodes = builder.extract_node(
             """
         try:
@@ -541,6 +544,7 @@ class ExceptionModelTest(unittest.TestCase):
            err.message #@
         """
         )
+        assert isinstance(ast_nodes, list)
         args = next(ast_nodes[0].infer())
         self.assertIsInstance(args, astroid.Tuple)
         tb = next(ast_nodes[1].infer())
@@ -550,7 +554,7 @@ class ExceptionModelTest(unittest.TestCase):
         with self.assertRaises(InferenceError):
             next(ast_nodes[2].infer())
 
-    def test_syntax_error(self):
+    def test_syntax_error(self) -> None:
         ast_node = builder.extract_node(
             """
         try:
@@ -562,7 +566,7 @@ class ExceptionModelTest(unittest.TestCase):
         inferred = next(ast_node.infer())
         assert isinstance(inferred, astroid.Const)
 
-    def test_oserror(self):
+    def test_oserror(self) -> None:
         ast_nodes = builder.extract_node(
             """
         try:
@@ -579,7 +583,7 @@ class ExceptionModelTest(unittest.TestCase):
             assert isinstance(inferred, astroid.Const)
             assert inferred.value == value
 
-    def test_unicodedecodeerror(self):
+    def test_unicodedecodeerror(self) -> None:
         code = """
         try:
             raise UnicodeDecodeError("utf-8", "blob", 0, 1, "reason")
@@ -590,7 +594,7 @@ class ExceptionModelTest(unittest.TestCase):
         inferred = next(node.infer())
         assert isinstance(inferred, astroid.Const)
 
-    def test_import_error(self):
+    def test_import_error(self) -> None:
         ast_nodes = builder.extract_node(
             """
         try:
@@ -605,7 +609,7 @@ class ExceptionModelTest(unittest.TestCase):
             assert isinstance(inferred, astroid.Const)
             assert inferred.value == ""
 
-    def test_exception_instance_correctly_instantiated(self):
+    def test_exception_instance_correctly_instantiated(self) -> None:
         ast_node = builder.extract_node(
             """
         try:
@@ -621,13 +625,13 @@ class ExceptionModelTest(unittest.TestCase):
 
 
 class DictObjectModelTest(unittest.TestCase):
-    def test__class__(self):
+    def test__class__(self) -> None:
         ast_node = builder.extract_node("{}.__class__")
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, astroid.ClassDef)
         self.assertEqual(inferred.name, "dict")
 
-    def test_attributes_inferred_as_methods(self):
+    def test_attributes_inferred_as_methods(self) -> None:
         ast_nodes = builder.extract_node(
             """
         {}.values #@
@@ -639,7 +643,7 @@ class DictObjectModelTest(unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, astroid.BoundMethod)
 
-    def test_wrapper_objects_for_dict_methods_python3(self):
+    def test_wrapper_objects_for_dict_methods_python3(self) -> None:
         ast_nodes = builder.extract_node(
             """
         {1:1, 2:3}.values() #@
@@ -647,6 +651,7 @@ class DictObjectModelTest(unittest.TestCase):
         {1:1, 2:3}.items() #@
         """
         )
+        assert isinstance(ast_nodes, list)
         values = next(ast_nodes[0].infer())
         self.assertIsInstance(values, objects.DictValues)
         self.assertEqual([elt.value for elt in values.elts], [1, 3])
@@ -658,7 +663,7 @@ class DictObjectModelTest(unittest.TestCase):
 
 
 class LruCacheModelTest(unittest.TestCase):
-    def test_lru_cache(self):
+    def test_lru_cache(self) -> None:
         ast_nodes = builder.extract_node(
             """
         import functools
@@ -672,6 +677,7 @@ class LruCacheModelTest(unittest.TestCase):
         f.foo.cache_info() #@
         """
         )
+        assert isinstance(ast_nodes, list)
         cache_clear = next(ast_nodes[0].infer())
         self.assertIsInstance(cache_clear, astroid.BoundMethod)
         wrapped = next(ast_nodes[1].infer())

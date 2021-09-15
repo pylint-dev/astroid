@@ -18,7 +18,7 @@ from astroid.exceptions import InferenceError
 
 
 class InferenceUtil(unittest.TestCase):
-    def test_not_exclusive(self):
+    def test_not_exclusive(self) -> None:
         module = builder.parse(
             """
         x = 10
@@ -39,7 +39,7 @@ class InferenceUtil(unittest.TestCase):
         self.assertEqual(nodes.are_exclusive(xass1, xnames[1]), False)
         self.assertEqual(nodes.are_exclusive(xass1, xnames[2]), False)
 
-    def test_if(self):
+    def test_if(self) -> None:
         module = builder.parse(
             """
         if 1:
@@ -66,7 +66,7 @@ class InferenceUtil(unittest.TestCase):
         self.assertEqual(nodes.are_exclusive(a3, a4), False)
         self.assertEqual(nodes.are_exclusive(a5, a6), False)
 
-    def test_try_except(self):
+    def test_try_except(self) -> None:
         module = builder.parse(
             """
         try:
@@ -98,7 +98,7 @@ class InferenceUtil(unittest.TestCase):
         self.assertEqual(nodes.are_exclusive(f4, f1), False)
         self.assertEqual(nodes.are_exclusive(f4, f2), True)
 
-    def test_unpack_infer_uninferable_nodes(self):
+    def test_unpack_infer_uninferable_nodes(self) -> None:
         node = builder.extract_node(
             """
         x = [A] * 1
@@ -111,7 +111,7 @@ class InferenceUtil(unittest.TestCase):
         self.assertEqual(len(unpacked), 3)
         self.assertTrue(all(elt is Uninferable for elt in unpacked))
 
-    def test_unpack_infer_empty_tuple(self):
+    def test_unpack_infer_empty_tuple(self) -> None:
         node = builder.extract_node(
             """
         ()
