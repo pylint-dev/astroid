@@ -30,6 +30,7 @@ Exceptions
       NameInferenceError
       NoDefault
       NotFoundError
+      ParentMissingError
       ResolveError
       SuperArgumentTypeError
       SuperError

@@ -44,7 +44,7 @@ import builtins
 import io
 import itertools
 import typing
-from typing import List, Optional
+from typing import List, Optional, TypeVar
 
 from astroid import bases
 from astroid import decorators as decorators_mod
@@ -77,6 +77,8 @@ objects = util.lazy_import("objects")
 BUILTIN_DESCRIPTORS = frozenset(
     {"classmethod", "staticmethod", "builtins.classmethod", "builtins.staticmethod"}
 )
+
+T = TypeVar("T")
 
 
 def _c3_merge(sequences, cls, context):
@@ -238,7 +240,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
         """
         return self
 
-    def scope(self):
+    def scope(self: T) -> T:
         """The first parent node defining a new scope.
 
         :returns: The first parent scope node.

@@ -12,7 +12,7 @@ These are abstract node classes that :ref:`other nodes <nodes>` inherit from.
    astroid.mixins.FilterStmtsMixin
    astroid.mixins.ImportFromMixin
    astroid.nodes.ListComp
-   astroid.nodes.scoped_nodes.LocalsDictNodeNG
+   astroid.nodes.LocalsDictNodeNG
    astroid.nodes.node_classes.LookupMixIn
    astroid.nodes.NodeNG
    astroid.mixins.ParentAssignTypeMixin
@@ -34,7 +34,7 @@ These are abstract node classes that :ref:`other nodes <nodes>` inherit from.
 
 .. autoclass:: astroid.nodes.ListComp
 
-.. autoclass:: astroid.nodes.scoped_nodes.LocalsDictNodeNG
+.. autoclass:: astroid.nodes.LocalsDictNodeNG
 
 .. autoclass:: astroid.nodes.node_classes.LookupMixIn
 

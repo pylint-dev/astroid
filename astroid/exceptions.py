@@ -14,7 +14,12 @@
 
 """this module contains exceptions used in the astroid library
 """
+from typing import TYPE_CHECKING
+
 from astroid import util
+
+if TYPE_CHECKING:
+    from astroid import nodes
 
 __all__ = (
     "AstroidBuildingError",
@@ -100,7 +105,7 @@ class TooManyLevelsError(AstroidImportError):
     def __init__(
         self,
         message="Relative import with too many levels " "({level}) for module {name!r}",
-        **kws
+        **kws,
     ):
         super().__init__(message, **kws)
 
@@ -254,6 +259,18 @@ class InferenceOverwriteError(AstroidError):
 
     Currently only used for debugging.
     """
+
+
+class ParentMissingError(AstroidError):
+    """Raised when a node which is expected to have a parent attribute is missing one
+
+    Standard attributes:
+        target: The node for which the parent lookup failed.
+    """
+
+    def __init__(self, target: "nodes.NodeNG") -> None:
+        self.target = target
+        super().__init__(message=f"Parent not found on {target!r}.")
 
 
 # Backwards-compatibility aliases

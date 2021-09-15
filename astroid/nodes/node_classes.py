@@ -40,7 +40,7 @@ import itertools
 import sys
 import typing
 from functools import lru_cache
-from typing import Callable, Generator, Optional
+from typing import TYPE_CHECKING, Callable, Generator, Optional
 
 from astroid import decorators, mixins, util
 from astroid.bases import Instance, _infer_stmts
@@ -51,6 +51,7 @@ from astroid.exceptions import (
     AstroidTypeError,
     InferenceError,
     NoDefault,
+    ParentMissingError,
 )
 from astroid.manager import AstroidManager
 from astroid.nodes.const import OP_PRECEDENCE
@@ -60,6 +61,9 @@ if sys.version_info >= (3, 8):
     from typing import Literal
 else:
     from typing_extensions import Literal
+
+if TYPE_CHECKING:
+    from astroid.nodes import LocalsDictNodeNG
 
 
 def _is_const(value):
@@ -2016,13 +2020,17 @@ class Decorators(NodeNG):
         """
         self.nodes = nodes
 
-    def scope(self):
+    def scope(self) -> "LocalsDictNodeNG":
         """The first parent node defining a new scope.
+        These can be Module, FunctionDef, ClassDef, Lambda, or GeneratorExp nodes.
 
         :returns: The first parent scope node.
-        :rtype: Module or FunctionDef or ClassDef or Lambda or GenExpr
         """
         # skip the function node to go directly to the upper level scope
+        if not self.parent:
+            raise ParentMissingError(target=self)
+        if not self.parent.parent:
+            raise ParentMissingError(target=self.parent)
         return self.parent.parent.scope()
 
     def get_children(self):

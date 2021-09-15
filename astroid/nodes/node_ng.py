@@ -1,13 +1,31 @@
 import pprint
 import typing
 from functools import singledispatch as _singledispatch
-from typing import ClassVar, Iterator, Optional, Tuple, Type, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    ClassVar,
+    Iterator,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from astroid import decorators, util
-from astroid.exceptions import AstroidError, InferenceError, UseInferenceDefault
+from astroid.exceptions import (
+    AstroidError,
+    InferenceError,
+    ParentMissingError,
+    UseInferenceDefault,
+)
 from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
+
+if TYPE_CHECKING:
+    from astroid.nodes import LocalsDictNodeNG
 
 # Types for 'NodeNG.nodes_of_class()'
 T_Nodes = TypeVar("T_Nodes", bound="NodeNG")
@@ -251,15 +269,15 @@ class NodeNG:
         """
         return self.parent.frame()
 
-    def scope(self):
+    def scope(self) -> "LocalsDictNodeNG":
         """The first parent node defining a new scope.
+        These can be Module, FunctionDef, ClassDef, Lambda, or GeneratorExp nodes.
 
         :returns: The first parent scope node.
-        :rtype: Module or FunctionDef or ClassDef or Lambda or GenExpr
         """
-        if self.parent:
-            return self.parent.scope()
-        return None
+        if not self.parent:
+            raise ParentMissingError(target=self)
+        return self.parent.scope()
 
     def root(self):
         """Return the root node of the syntax tree.
