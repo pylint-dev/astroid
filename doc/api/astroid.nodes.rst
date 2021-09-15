@@ -1,8 +1,6 @@
 Nodes
 =====
 
-.. automodule:: astroid.nodes
-
 For a list of available nodes see :ref:`nodes`.
 
 .. _nodes:
@@ -11,237 +9,237 @@ Nodes
 -----
 .. autosummary::
 
-   AnnAssign
-   Arguments
-   Assert
-   Assign
-   AssignAttr
-   AssignName
-   AsyncFor
-   AsyncFunctionDef
-   AsyncWith
-   Attribute
-   AugAssign
-   Await
-   BinOp
-   BoolOp
-   Break
-   Call
-   ClassDef
-   Compare
-   Comprehension
-   Const
-   Continue
-   Decorators
-   DelAttr
-   DelName
-   Delete
-   Dict
-   DictComp
-   DictUnpack
-   Ellipsis
-   EmptyNode
-   ExceptHandler
-   Expr
-   ExtSlice
-   For
-   FormattedValue
-   FunctionDef
-   GeneratorExp
-   Global
-   If
-   IfExp
-   Import
-   ImportFrom
-   Index
-   JoinedStr
-   Keyword
-   Lambda
-   List
-   ListComp
-   Match
-   MatchAs
-   MatchCase
-   MatchClass
-   MatchMapping
-   MatchOr
-   MatchSequence
-   MatchSingleton
-   MatchStar
-   MatchValue
-   Module
-   Name
-   Nonlocal
-   Pass
-   Raise
-   Return
-   Set
-   SetComp
-   Slice
-   Starred
-   Subscript
-   TryExcept
-   TryFinally
-   Tuple
-   UnaryOp
-   Unknown
-   While
-   With
-   Yield
-   YieldFrom
+   astroid.nodes.AnnAssign
+   astroid.nodes.Arguments
+   astroid.nodes.Assert
+   astroid.nodes.Assign
+   astroid.nodes.AssignAttr
+   astroid.nodes.AssignName
+   astroid.nodes.AsyncFor
+   astroid.nodes.AsyncFunctionDef
+   astroid.nodes.AsyncWith
+   astroid.nodes.Attribute
+   astroid.nodes.AugAssign
+   astroid.nodes.Await
+   astroid.nodes.BinOp
+   astroid.nodes.BoolOp
+   astroid.nodes.Break
+   astroid.nodes.Call
+   astroid.nodes.ClassDef
+   astroid.nodes.Compare
+   astroid.nodes.Comprehension
+   astroid.nodes.Const
+   astroid.nodes.Continue
+   astroid.nodes.Decorators
+   astroid.nodes.DelAttr
+   astroid.nodes.DelName
+   astroid.nodes.Delete
+   astroid.nodes.Dict
+   astroid.nodes.DictComp
+   astroid.nodes.DictUnpack
+   astroid.nodes.Ellipsis
+   astroid.nodes.EmptyNode
+   astroid.nodes.ExceptHandler
+   astroid.nodes.Expr
+   astroid.nodes.ExtSlice
+   astroid.nodes.For
+   astroid.nodes.FormattedValue
+   astroid.nodes.FunctionDef
+   astroid.nodes.GeneratorExp
+   astroid.nodes.Global
+   astroid.nodes.If
+   astroid.nodes.IfExp
+   astroid.nodes.Import
+   astroid.nodes.ImportFrom
+   astroid.nodes.Index
+   astroid.nodes.JoinedStr
+   astroid.nodes.Keyword
+   astroid.nodes.Lambda
+   astroid.nodes.List
+   astroid.nodes.ListComp
+   astroid.nodes.Match
+   astroid.nodes.MatchAs
+   astroid.nodes.MatchCase
+   astroid.nodes.MatchClass
+   astroid.nodes.MatchMapping
+   astroid.nodes.MatchOr
+   astroid.nodes.MatchSequence
+   astroid.nodes.MatchSingleton
+   astroid.nodes.MatchStar
+   astroid.nodes.MatchValue
+   astroid.nodes.Module
+   astroid.nodes.Name
+   astroid.nodes.Nonlocal
+   astroid.nodes.Pass
+   astroid.nodes.Raise
+   astroid.nodes.Return
+   astroid.nodes.Set
+   astroid.nodes.SetComp
+   astroid.nodes.Slice
+   astroid.nodes.Starred
+   astroid.nodes.Subscript
+   astroid.nodes.TryExcept
+   astroid.nodes.TryFinally
+   astroid.nodes.Tuple
+   astroid.nodes.UnaryOp
+   astroid.nodes.Unknown
+   astroid.nodes.While
+   astroid.nodes.With
+   astroid.nodes.Yield
+   astroid.nodes.YieldFrom
 
-.. autoclass:: AnnAssign
+.. autoclass:: astroid.nodes.AnnAssign
 
-.. autoclass:: Arguments
+.. autoclass:: astroid.nodes.Arguments
 
-.. autoclass:: Assert
+.. autoclass:: astroid.nodes.Assert
 
-.. autoclass:: Assign
+.. autoclass:: astroid.nodes.Assign
 
-.. autoclass:: AssignAttr
+.. autoclass:: astroid.nodes.AssignAttr
 
-.. autoclass:: AssignName
+.. autoclass:: astroid.nodes.AssignName
 
-.. autoclass:: AsyncFor
+.. autoclass:: astroid.nodes.AsyncFor
 
-.. autoclass:: AsyncFunctionDef
+.. autoclass:: astroid.nodes.AsyncFunctionDef
 
-.. autoclass:: AsyncWith
+.. autoclass:: astroid.nodes.AsyncWith
 
-.. autoclass:: Attribute
+.. autoclass:: astroid.nodes.Attribute
 
-.. autoclass:: AugAssign
+.. autoclass:: astroid.nodes.AugAssign
 
-.. autoclass:: Await
+.. autoclass:: astroid.nodes.Await
 
-.. autoclass:: BinOp
+.. autoclass:: astroid.nodes.BinOp
 
-.. autoclass:: BoolOp
+.. autoclass:: astroid.nodes.BoolOp
 
-.. autoclass:: Break
+.. autoclass:: astroid.nodes.Break
 
-.. autoclass:: Call
+.. autoclass:: astroid.nodes.Call
 
-.. autoclass:: ClassDef
+.. autoclass:: astroid.nodes.ClassDef
 
-.. autoclass:: Compare
+.. autoclass:: astroid.nodes.Compare
 
-.. autoclass:: Comprehension
+.. autoclass:: astroid.nodes.Comprehension
 
-.. autoclass:: Const
+.. autoclass:: astroid.nodes.Const
 
-.. autoclass:: Continue
+.. autoclass:: astroid.nodes.Continue
 
-.. autoclass:: Decorators
+.. autoclass:: astroid.nodes.Decorators
 
-.. autoclass:: DelAttr
+.. autoclass:: astroid.nodes.DelAttr
 
-.. autoclass:: DelName
+.. autoclass:: astroid.nodes.DelName
 
-.. autoclass:: Delete
+.. autoclass:: astroid.nodes.Delete
 
-.. autoclass:: Dict
+.. autoclass:: astroid.nodes.Dict
 
-.. autoclass:: DictComp
+.. autoclass:: astroid.nodes.DictComp
 
-.. autoclass:: DictUnpack
+.. autoclass:: astroid.nodes.DictUnpack
 
-.. autoclass:: Ellipsis
+.. autoclass:: astroid.nodes.Ellipsis
 
-.. autoclass:: EmptyNode
+.. autoclass:: astroid.nodes.EmptyNode
 
-.. autoclass:: ExceptHandler
+.. autoclass:: astroid.nodes.ExceptHandler
 
-.. autoclass:: Expr
+.. autoclass:: astroid.nodes.Expr
 
-.. autoclass:: ExtSlice
+.. autoclass:: astroid.nodes.ExtSlice
 
-.. autoclass:: For
+.. autoclass:: astroid.nodes.For
 
-.. autoclass:: FormattedValue
+.. autoclass:: astroid.nodes.FormattedValue
 
-.. autoclass:: FunctionDef
+.. autoclass:: astroid.nodes.FunctionDef
 
-.. autoclass:: GeneratorExp
+.. autoclass:: astroid.nodes.GeneratorExp
 
-.. autoclass:: Global
+.. autoclass:: astroid.nodes.Global
 
-.. autoclass:: If
+.. autoclass:: astroid.nodes.If
 
-.. autoclass:: IfExp
+.. autoclass:: astroid.nodes.IfExp
 
-.. autoclass:: Import
+.. autoclass:: astroid.nodes.Import
 
-.. autoclass:: ImportFrom
+.. autoclass:: astroid.nodes.ImportFrom
 
-.. autoclass:: Index
+.. autoclass:: astroid.nodes.Index
 
-.. autoclass:: JoinedStr
+.. autoclass:: astroid.nodes.JoinedStr
 
-.. autoclass:: Keyword
+.. autoclass:: astroid.nodes.Keyword
 
-.. autoclass:: Lambda
+.. autoclass:: astroid.nodes.Lambda
 
-.. autoclass:: List
+.. autoclass:: astroid.nodes.List
 
-.. autoclass:: ListComp
+.. autoclass:: astroid.nodes.ListComp
 
-.. autoclass:: Match
+.. autoclass:: astroid.nodes.Match
 
-.. autoclass:: MatchAs
+.. autoclass:: astroid.nodes.MatchAs
 
-.. autoclass:: MatchCase
+.. autoclass:: astroid.nodes.MatchCase
 
-.. autoclass:: MatchClass
+.. autoclass:: astroid.nodes.MatchClass
 
-.. autoclass:: MatchMapping
+.. autoclass:: astroid.nodes.MatchMapping
 
-.. autoclass:: MatchOr
+.. autoclass:: astroid.nodes.MatchOr
 
-.. autoclass:: MatchSequence
+.. autoclass:: astroid.nodes.MatchSequence
 
-.. autoclass:: MatchSingleton
+.. autoclass:: astroid.nodes.MatchSingleton
 
-.. autoclass:: MatchStar
+.. autoclass:: astroid.nodes.MatchStar
 
-.. autoclass:: MatchValue
+.. autoclass:: astroid.nodes.MatchValue
 
-.. autoclass:: Module
+.. autoclass:: astroid.nodes.Module
 
-.. autoclass:: Name
+.. autoclass:: astroid.nodes.Name
 
-.. autoclass:: Nonlocal
+.. autoclass:: astroid.nodes.Nonlocal
 
-.. autoclass:: Pass
+.. autoclass:: astroid.nodes.Pass
 
-.. autoclass:: Raise
+.. autoclass:: astroid.nodes.Raise
 
-.. autoclass:: Return
+.. autoclass:: astroid.nodes.Return
 
-.. autoclass:: Set
+.. autoclass:: astroid.nodes.Set
 
-.. autoclass:: SetComp
+.. autoclass:: astroid.nodes.SetComp
 
-.. autoclass:: Slice
+.. autoclass:: astroid.nodes.Slice
 
-.. autoclass:: Starred
+.. autoclass:: astroid.nodes.Starred
 
-.. autoclass:: Subscript
+.. autoclass:: astroid.nodes.Subscript
 
-.. autoclass:: TryExcept
+.. autoclass:: astroid.nodes.TryExcept
 
-.. autoclass:: TryFinally
+.. autoclass:: astroid.nodes.TryFinally
 
-.. autoclass:: Tuple
+.. autoclass:: astroid.nodes.Tuple
 
-.. autoclass:: UnaryOp
+.. autoclass:: astroid.nodes.UnaryOp
 
-.. autoclass:: Unknown
+.. autoclass:: astroid.nodes.Unknown
 
-.. autoclass:: While
+.. autoclass:: astroid.nodes.While
 
-.. autoclass:: With
+.. autoclass:: astroid.nodes.With
 
-.. autoclass:: Yield
+.. autoclass:: astroid.nodes.Yield
 
-.. autoclass:: YieldFrom
+.. autoclass:: astroid.nodes.YieldFrom
