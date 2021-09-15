@@ -271,7 +271,7 @@ class NodeNG:
 
     def scope(self) -> "LocalsDictNodeNG":
         """The first parent node defining a new scope.
-        These can be  Module, FunctionDef, ClassDef, Lambda or GeneratorExp nodes
+        These can be Module, FunctionDef, ClassDef, Lambda, or GeneratorExp nodes.
 
         :returns: The first parent scope node.
         """
