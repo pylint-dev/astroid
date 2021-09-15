@@ -1595,7 +1595,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         :type: int
         """
-        # pylint: disable-next=no-member
         return self.args.tolineno
 
     def block_range(self, lineno):
@@ -1757,9 +1756,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         # generators, and filter it out later.
         if (
             self.name == "with_metaclass"
-            # pylint: disable-next=no-member
             and len(self.args.args) == 1
-            # pylint: disable-next=no-member
             and self.args.vararg is not None
         ):
             metaclass = next(caller.args[0].infer(context), None)
