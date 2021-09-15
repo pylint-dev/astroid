@@ -2024,7 +2024,7 @@ class Decorators(NodeNG):
         """The first parent node defining a new scope.
 
         :returns: The first parent scope node.
-        :rtype: Module or FunctionDef or ClassDef or Lambda or GenExpr
+        :rtype: LocalsDictNodeNG
         """
         # skip the function node to go directly to the upper level scope
         if not self.parent:
