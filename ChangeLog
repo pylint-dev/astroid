@@ -166,7 +166,7 @@ Release date: 2021-07-21
   Closes PyCQA/pylint#4439
 
 * Fix a crash when a AttributeInferenceError was raised when
- failing to find the real name in infer_import_from.
+  failing to find the real name in infer_import_from.
 
   Closes PyCQA/pylint#4692
 
