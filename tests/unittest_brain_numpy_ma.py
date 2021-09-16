@@ -31,7 +31,7 @@ class BrainNumpyMaTest(unittest.TestCase):
         data = np.ndarray((1,2))
         np.ma.masked_where([1, 0, 0], data)
         """
-        node=builder.extract_node(src)
+        node = builder.extract_node(src)
         cls_node = node.inferred()[0]
         self.assertEqual(cls_node.pytype(), "numpy.ma.core.MaskedArray")
 
@@ -46,7 +46,7 @@ class BrainNumpyMaTest(unittest.TestCase):
         data = np.ndarray((1,2))
         masked_where([1, 0, 0], data)
         """
-        node=builder.extract_node(src)
+        node = builder.extract_node(src)
         cls_node = node.inferred()[0]
         self.assertEqual(cls_node.pytype(), "numpy.ma.core.MaskedArray")
 
