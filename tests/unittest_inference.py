@@ -1190,7 +1190,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         # (__name__ == '__main__') and through pytest (__name__ ==
         # 'unittest_inference')
         self.assertEqual(
-            value, ["Instance of %s.myarray" % __name__, "Const.int(value=5)"]
+            value, [f"Instance of {__name__}.myarray", "Const.int(value=5)"]
         )
 
     def test_nonregr_lambda_arg(self) -> None:
@@ -1450,7 +1450,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             if isinstance(node, Instance) and node.name == "Application":
                 break
         else:
-            self.fail("expected to find an instance of Application in %s" % inferred)
+            self.fail(f"expected to find an instance of Application in {inferred}")
 
     def test_list_inference(self) -> None:
         """#20464"""
@@ -5292,11 +5292,9 @@ class TestInferencePropagation:
     ],
 )
 def test_compare(op, result) -> None:
-    code = """
-    123 {} 123
-    """.format(
-        op
-    )
+    code = f"""
+    123 {op} 123
+    """
     node = extract_node(code)
     inferred = next(node.infer())
     assert inferred.value == result
@@ -5311,12 +5309,10 @@ def test_compare(op, result) -> None:
     ],
 )
 def test_compare_identity(op, result) -> None:
-    code = """
+    code = f"""
     obj = object()
-    obj {} obj
-    """.format(
-        op
-    )
+    obj {op} obj
+    """
     node = extract_node(code)
     inferred = next(node.infer())
     assert inferred.value == result
@@ -5330,11 +5326,9 @@ def test_compare_identity(op, result) -> None:
     ],
 )
 def test_compare_membership(op, result) -> None:
-    code = """
-    1 {} [1, 2, 3]
-    """.format(
-        op
-    )
+    code = f"""
+    1 {op} [1, 2, 3]
+    """
     node = extract_node(code)
     inferred = next(node.infer())
     assert inferred.value == result
@@ -5362,11 +5356,9 @@ def test_compare_membership(op, result) -> None:
     ],
 )
 def test_compare_lesseq_types(lhs, rhs, result) -> None:
-    code = """
+    code = f"""
     {lhs!r} <= {rhs!r}
-    """.format(
-        lhs=lhs, rhs=rhs
-    )
+    """
     node = extract_node(code)
     inferred = next(node.infer())
     assert inferred.value == result

@@ -155,9 +155,7 @@ class MroError(ResolveError):
     cls = None
 
     def __str__(self):
-        mro_names = ", ".join(
-            "({})".format(", ".join(b.name for b in m)) for m in self.mros
-        )
+        mro_names = ", ".join(f"({', '.join(b.name for b in m)})" for m in self.mros)
         return self.message.format(mros=mro_names, cls=self.cls)
 
 

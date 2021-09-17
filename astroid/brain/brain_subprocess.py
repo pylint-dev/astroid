@@ -93,8 +93,8 @@ def _subprocess_transform():
         """.strip()
 
     code = textwrap.dedent(
-        """
-    def %(check_output_signature)s
+        f"""
+    def {check_output_signature}
         if universal_newlines:
             return ""
         return b""
@@ -102,11 +102,11 @@ def _subprocess_transform():
     class Popen(object):
         returncode = pid = 0
         stdin = stdout = stderr = file()
-        %(py3_args)s
+        {py3_args}
 
-        %(communicate_signature)s:
-            return %(communicate)r
-        %(wait_signature)s:
+        {communicate_signature}:
+            return {communicate!r}
+        {wait_signature}:
             return self.returncode
         def poll(self):
             return self.returncode
@@ -116,16 +116,8 @@ def _subprocess_transform():
             pass
         def kill(self):
             pass
-        %(ctx_manager)s
+        {ctx_manager}
        """
-        % {
-            "check_output_signature": check_output_signature,
-            "communicate": communicate,
-            "communicate_signature": communicate_signature,
-            "wait_signature": wait_signature,
-            "ctx_manager": ctx_manager,
-            "py3_args": py3_args,
-        }
     )
     if PY39_PLUS:
         code += """

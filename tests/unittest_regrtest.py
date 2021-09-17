@@ -219,16 +219,15 @@ def test():
 
         # In a regular file, "coding: utf-8" would have been used.
         node = extract_node(
-            """
+            f"""
         from __future__ import unicode_literals
 
         class MyClass(object):
             def method(self):
-                "With unicode : %s "
+                "With unicode : {'’'} "
 
         instance = MyClass()
         """
-            % "\u2019"
         )
 
         next(node.value.infer()).as_string()

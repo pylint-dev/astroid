@@ -436,7 +436,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_lambda_qname(self) -> None:
         astroid = builder.parse("lmbd = lambda: None", __name__)
-        self.assertEqual("%s.<lambda>" % __name__, astroid["lmbd"].parent.value.qname())
+        self.assertEqual(f"{__name__}.<lambda>", astroid["lmbd"].parent.value.qname())
 
     def test_is_method(self) -> None:
         data = """

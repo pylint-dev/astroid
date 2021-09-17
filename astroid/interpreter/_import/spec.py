@@ -319,7 +319,7 @@ def _search_zip(modpath, pic):
                     os.path.abspath(filepath) + os.path.sep + os.path.sep.join(modpath),
                     filepath,
                 )
-    raise ImportError("No module named %s" % ".".join(modpath))
+    raise ImportError(f"No module named {'.'.join(modpath)}")
 
 
 def _find_spec_with_path(search_path, modname, module_parts, processed, submodule_path):
@@ -330,7 +330,7 @@ def _find_spec_with_path(search_path, modname, module_parts, processed, submodul
             continue
         return finder, spec
 
-    raise ImportError("No module named %s" % ".".join(module_parts))
+    raise ImportError(f"No module named {'.'.join(module_parts)}")
 
 
 def find_spec(modpath, path=None):

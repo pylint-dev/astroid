@@ -236,7 +236,7 @@ def _container_getitem(instance, elts, index, context=None):
             message="Type error {error!r}", node=instance, index=index, context=context
         ) from exc
 
-    raise AstroidTypeError("Could not use %s as subscript index" % index)
+    raise AstroidTypeError(f"Could not use {index} as subscript index")
 
 
 class Statement(NodeNG):
@@ -947,7 +947,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
                 )
             )
         if self.vararg:
-            result.append("*%s" % self.vararg)
+            result.append(f"*{self.vararg}")
         if self.kwonlyargs:
             if not self.vararg:
                 result.append("*")
@@ -957,7 +957,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
                 )
             )
         if self.kwarg:
-            result.append("**%s" % self.kwarg)
+            result.append(f"**{self.kwarg}")
         return ", ".join(result)
 
     def default_value(self, argname):
@@ -1071,7 +1071,7 @@ def _format_args(args, defaults=None, annotations=None):
     packed = itertools.zip_longest(args, annotations)
     for i, (arg, annotation) in enumerate(packed):
         if isinstance(arg, Tuple):
-            values.append("(%s)" % _format_args(arg.elts))
+            values.append(f"({_format_args(arg.elts)})")
         else:
             argname = arg.name
             default_sep = "="

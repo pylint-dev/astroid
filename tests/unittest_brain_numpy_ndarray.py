@@ -141,9 +141,7 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
                 )
                 self.assertTrue(
                     inferred_values[-1].pytype() in licit_array_types,
-                    msg="Illicit type for {:s} ({})".format(
-                        func_, inferred_values[-1].pytype()
-                    ),
+                    msg=f"Illicit type for {func_:s} ({inferred_values[-1].pytype()})",
                 )
 
     def test_numpy_ndarray_attribute_inferred_as_ndarray(self):
@@ -160,9 +158,7 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
                 )
                 self.assertTrue(
                     inferred_values[-1].pytype() in licit_array_types,
-                    msg="Illicit type for {:s} ({})".format(
-                        attr_, inferred_values[-1].pytype()
-                    ),
+                    msg=f"Illicit type for {attr_:s} ({inferred_values[-1].pytype()})",
                 )
 
 

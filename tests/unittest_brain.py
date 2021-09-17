@@ -1291,11 +1291,9 @@ class TypeBrain(unittest.TestCase):
         Starting with python3.9 builtin type such as list are subscriptable
         """
         for typename in ("tuple", "list", "dict", "set", "frozenset"):
-            src = """
-            {:s}[int]
-            """.format(
-                typename
-            )
+            src = f"""
+            {typename:s}[int]
+            """
             right_node = builder.extract_node(src)
             inferred = next(right_node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef)
@@ -1937,12 +1935,10 @@ class TypingBrain(unittest.TestCase):
         """
         # Do not test Tuple as it is inferred as _TupleType class (needs a brain?)
         for typename in ("List", "Dict", "Set", "FrozenSet"):
-            src = """
+            src = f"""
             import typing
-            typing.{:s}[int]
-            """.format(
-                typename
-            )
+            typing.{typename:s}[int]
+            """
             right_node = builder.extract_node(src)
             inferred = next(right_node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef)

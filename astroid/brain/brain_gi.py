@@ -115,7 +115,7 @@ def _gi_build_stub(parent):
     ret = ""
 
     if constants:
-        ret += "# %s constants\n\n" % parent.__name__
+        ret += f"# {parent.__name__} constants\n\n"
     for name in sorted(constants):
         if name[0].isdigit():
             # GDK has some busted constant names like
@@ -132,23 +132,23 @@ def _gi_build_stub(parent):
     if ret:
         ret += "\n\n"
     if functions:
-        ret += "# %s functions\n\n" % parent.__name__
+        ret += f"# {parent.__name__} functions\n\n"
     for name in sorted(functions):
-        ret += "def %s(*args, **kwargs):\n" % name
+        ret += f"def {name}(*args, **kwargs):\n"
         ret += "    pass\n"
 
     if ret:
         ret += "\n\n"
     if methods:
-        ret += "# %s methods\n\n" % parent.__name__
+        ret += f"# {parent.__name__} methods\n\n"
     for name in sorted(methods):
-        ret += "def %s(self, *args, **kwargs):\n" % name
+        ret += f"def {name}(self, *args, **kwargs):\n"
         ret += "    pass\n"
 
     if ret:
         ret += "\n\n"
     if classes:
-        ret += "# %s classes\n\n" % parent.__name__
+        ret += f"# {parent.__name__} classes\n\n"
     for name, obj in sorted(classes.items()):
         base = "object"
         if issubclass(obj, Exception):

@@ -72,7 +72,7 @@ class cachedproperty:
         try:
             wrapped.__name__
         except AttributeError as exc:
-            raise TypeError("%s must have a __name__ attribute" % wrapped) from exc
+            raise TypeError(f"{wrapped} must have a __name__ attribute") from exc
         self.wrapped = wrapped
 
     @property
