@@ -119,6 +119,9 @@ disable=fixme,
         # Legacy warning not checked in astroid/brain before we
         # transitioned to setuptools and added an init.py
         duplicate-code,
+        # This one would help performance but we need to fix the pipeline first
+        # and there are a lot of warning for it
+        consider-using-f-string,
 
 enable=useless-suppression
 
