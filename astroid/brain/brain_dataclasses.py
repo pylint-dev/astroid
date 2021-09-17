@@ -7,7 +7,7 @@ Support both built-in dataclasses and pydantic.dataclasses. References:
 - https://docs.python.org/3/library/dataclasses.html
 - https://pydantic-docs.helpmanual.io/usage/dataclasses/
 """
-from typing import Generator, List, Optional, Tuple
+from typing import FrozenSet, Generator, List, Optional, Tuple
 
 from astroid import context, inference_tip
 from astroid.builder import parse
@@ -35,7 +35,7 @@ from astroid.util import Uninferable
 
 DATACLASSES_DECORATORS = frozenset(("dataclass",))
 FIELD_NAME = "field"
-DATACLASS_MODULE = "dataclasses"
+DATACLASS_MODULES = frozenset(("dataclasses", "pydantic.dataclasses"))
 DEFAULT_FACTORY = "_HAS_DEFAULT_FACTORY"  # based on typing.py
 
 
@@ -255,13 +255,12 @@ def infer_dataclass_field_call(
 
 
 def _looks_like_dataclass_decorator(
-    node: NodeNG, decorator_names: List[str] = DATACLASSES_DECORATORS
+    node: NodeNG, decorator_names: FrozenSet[str] = DATACLASSES_DECORATORS
 ) -> bool:
     """Return True if node looks like a dataclass decorator.
 
     Uses inference to lookup the value of the node, and if that fails,
-    matches against specific names. (Currently inference fails for dataclass import
-    from pydantic.)
+    matches against specific names.
     """
     if isinstance(node, Call):  # decorator with arguments
         node = node.func
@@ -281,7 +280,7 @@ def _looks_like_dataclass_decorator(
     return (
         isinstance(inferred, FunctionDef)
         and inferred.name in decorator_names
-        and inferred.root().name == DATACLASS_MODULE
+        and inferred.root().name in DATACLASS_MODULES
     )
 
 
@@ -322,7 +321,7 @@ def _looks_like_dataclass_field_call(node: Call, check_scope: bool = True) -> bo
     if not isinstance(inferred, FunctionDef):
         return False
 
-    return inferred.name == FIELD_NAME and inferred.root().name == DATACLASS_MODULE
+    return inferred.name == FIELD_NAME and inferred.root().name in DATACLASS_MODULES
 
 
 def _get_field_default(field_call: Call) -> Tuple[str, Optional[NodeNG]]:

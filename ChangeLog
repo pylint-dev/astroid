@@ -12,6 +12,10 @@ What's New in astroid 2.8.1?
 ============================
 Release date: TBA
 
+* Enable inference of dataclass import from pydantic.dataclasses.
+  This allows the dataclasses brain to recognize pydantic dataclasses.
+
+  Closes PyCQA/pylint#4899
 
 
 What's New in astroid 2.8.0?
