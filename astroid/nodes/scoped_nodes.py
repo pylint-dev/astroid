@@ -2096,7 +2096,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :param keywords: The keywords given to the class definition.
         :type keywords: list(Keyword) or None
         """
-        self.keywords = keywords
+        if keywords is not None:
+            self.keywords = keywords
         self.bases = bases
         self.body = body
         self.decorators = decorators

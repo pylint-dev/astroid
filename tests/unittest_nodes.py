@@ -256,6 +256,7 @@ y = (3).imag
     def test_class_def(self) -> None:
         code = """
 import abc
+from typing import Tuple
 
 
 class A:
@@ -274,6 +275,10 @@ class C(B):
 
 
 class D(metaclass=abc.ABCMeta):
+    pass
+
+
+def func(param: Tuple):
     pass
 """
         ast = abuilder.string_build(code)

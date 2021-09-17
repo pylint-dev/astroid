@@ -17,6 +17,11 @@ Release date: TBA
 
   Closes PyCQA/pylint#4899
 
+* Fix regression on ClassDef inference
+
+  Closes PyCQA/pylint#5030
+  Closes PyCQA/pylint#5036
+
 
 What's New in astroid 2.8.0?
 ============================
