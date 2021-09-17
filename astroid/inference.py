@@ -802,7 +802,10 @@ COMPARE_OPS: Dict[str, Callable[[Any, Any], bool]] = {
     "in": lambda a, b: a in b,
     "not in": lambda a, b: a not in b,
 }
-UNINFERABLE_OPS = frozenset(("is", "is not"))
+UNINFERABLE_OPS = {
+    "is",
+    "is not",
+}
 
 
 def _to_literal(node: nodes.NodeNG) -> Any:
