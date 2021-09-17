@@ -164,7 +164,7 @@ def infer_typing_attr(
         PY37_PLUS
         and isinstance(value, ClassDef)
         and value.qname()
-        in ("typing.Generic", "typing.Annotated", "typing_extensions.Annotated")
+        in {"typing.Generic", "typing.Annotated", "typing_extensions.Annotated"}
     ):
         # With PY37+ typing.Generic and typing.Annotated (PY39) are subscriptable
         # through __class_getitem__. Since astroid can't easily
@@ -191,7 +191,7 @@ def _looks_like_typedDict(  # pylint: disable=invalid-name
     node: typing.Union[FunctionDef, ClassDef],
 ) -> bool:
     """Check if node is TypedDict FunctionDef."""
-    return node.qname() in ("typing.TypedDict", "typing_extensions.TypedDict")
+    return node.qname() in {"typing.TypedDict", "typing_extensions.TypedDict"}
 
 
 def infer_old_typedDict(  # pylint: disable=invalid-name

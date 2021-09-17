@@ -84,5 +84,5 @@ AstroidManager().register_transform(
 AstroidManager().register_transform(
     nodes.ClassDef,
     transform_pyside_signal,
-    lambda node: node.qname() in ("PySide.QtCore.Signal", "PySide2.QtCore.Signal"),
+    lambda node: node.qname() in {"PySide.QtCore.Signal", "PySide2.QtCore.Signal"},
 )

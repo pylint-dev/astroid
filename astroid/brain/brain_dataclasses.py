@@ -412,11 +412,11 @@ def _infer_instance_from_annotation(
         yield Uninferable
     if not isinstance(klass, ClassDef):
         yield Uninferable
-    elif klass.root().name in (
+    elif klass.root().name in {
         "typing",
         "_collections_abc",
         "",
-    ):  # "" because of synthetic nodes in brain_typing.py
+    }:  # "" because of synthetic nodes in brain_typing.py
         if klass.name in _INFERABLE_TYPING_TYPES:
             yield klass.instantiate_class()
         else:
