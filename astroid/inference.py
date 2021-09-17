@@ -31,7 +31,7 @@ import ast
 import functools
 import itertools
 import operator
-from typing import Any, Iterable
+from typing import Any, Callable, Dict, Iterable, Optional
 
 import wrapt
 
@@ -792,7 +792,7 @@ def infer_binop(self, context=None):
 nodes.BinOp._infer_binop = _infer_binop
 nodes.BinOp._infer = infer_binop
 
-COMPARE_OPS = {
+COMPARE_OPS: Dict[str, Callable[[Any, Any], bool]] = {
     "==": operator.eq,
     "!=": operator.ne,
     "<": operator.lt,
@@ -802,10 +802,7 @@ COMPARE_OPS = {
     "in": lambda a, b: a in b,
     "not in": lambda a, b: a not in b,
 }
-UNINFERABLE_OPS = {
-    "is",
-    "is not",
-}
+UNINFERABLE_OPS = frozenset(("is", "is not"))
 
 
 def _to_literal(node: nodes.NodeNG) -> Any:
@@ -857,7 +854,9 @@ def _do_compare(
     return retval  # it was all the same value
 
 
-def _infer_compare(self: nodes.Compare, context: InferenceContext) -> Any:
+def _infer_compare(
+    self: nodes.Compare, context: Optional[InferenceContext] = None
+) -> Any:
     """Chained comparison inference logic."""
     retval = True
 
