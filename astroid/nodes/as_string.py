@@ -178,8 +178,7 @@ class AsStringVisitor:
         args = [n.accept(self) for n in node.bases]
         if node._metaclass and not node.has_metaclass_hack():
             args.append("metaclass=" + node._metaclass.accept(self))
-        if node.keywords:
-            args += [n.accept(self) for n in node.keywords]
+        args += [n.accept(self) for n in node.keywords]
         args = f"({', '.join(args)})" if args else ""
         docs = self._docs_dedent(node.doc) if node.doc else ""
         return "\n\n{}class {}{}:{}\n{}\n".format(
