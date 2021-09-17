@@ -25,6 +25,8 @@ load-plugins=
     pylint.extensions.code_style,
     pylint.extensions.overlapping_exceptions,
     pylint.extensions.typing,
+    pylint.extensions.code_style,
+    pylint.extensions.set_membership,
     pylint.extensions.redefined_variable_type,
 
 # Use multiple processes to speed up Pylint.
@@ -109,8 +111,6 @@ disable=fixme,
         no-self-use,
         # API requirements in most of the occurrences
         unused-argument,
-        # We'll have to disable this until we drop support for Python 2
-        stop-iteration-return,
         # black handles these
         format,
         # We might want to disable new checkers from master that do not exists

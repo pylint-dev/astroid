@@ -1704,10 +1704,10 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                     inferred = next(node.infer())
                 except (InferenceError, StopIteration):
                     continue
-                if inferred and inferred.qname() in (
+                if inferred and inferred.qname() in {
                     "abc.abstractproperty",
                     "abc.abstractmethod",
-                ):
+                }:
                     return True
 
         for child_node in self.body:
@@ -2733,7 +2733,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             # AttributeError
             if (
                 isinstance(method, node_classes.EmptyNode)
-                and self.name in ("list", "dict", "set", "tuple", "frozenset")
+                and self.name in {"list", "dict", "set", "tuple", "frozenset"}
                 and PY39_PLUS
             ):
                 return self

@@ -60,7 +60,7 @@ def _looks_like_pattern_or_match(node: nodes.Call) -> bool:
         and isinstance(node.parent, nodes.Assign)
         and len(node.parent.targets) == 1
         and isinstance(node.parent.targets[0], nodes.AssignName)
-        and node.parent.targets[0].name in ("Pattern", "Match")
+        and node.parent.targets[0].name in {"Pattern", "Match"}
     )
 
 

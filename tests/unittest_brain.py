@@ -2868,10 +2868,10 @@ class TestFunctoolsPartial:
         for node in ast_nodes:
             inferred = next(node.infer())
             assert isinstance(inferred, (astroid.FunctionDef, astroid.Instance))
-            assert inferred.qname() in (
+            assert inferred.qname() in {
                 "functools.partial",
                 "functools.partial.newfunc",
-            )
+            }
 
     def test_inferred_partial_function_calls(self) -> None:
         ast_nodes = astroid.extract_node(

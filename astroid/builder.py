@@ -88,7 +88,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         path = getattr(module, "__file__", None)
         if path is not None:
             path_, ext = os.path.splitext(modutils._path_from_filename(path))
-            if ext in (".py", ".pyc", ".pyo") and os.path.exists(path_ + ".py"):
+            if ext in {".py", ".pyc", ".pyo"} and os.path.exists(path_ + ".py"):
                 node = self.file_build(path_ + ".py", modname)
         if node is None:
             # this is a built-in module

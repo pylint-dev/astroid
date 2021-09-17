@@ -397,7 +397,7 @@ class InspectBuilder:
         except TypeError:
             modname = None
         if modname is None:
-            if name in ("__new__", "__subclasshook__"):
+            if name in {"__new__", "__subclasshook__"}:
                 # Python 2.5.1 (r251:54863, Sep  1 2010, 22:03:14)
                 # >>> print object.__new__.__module__
                 # None
