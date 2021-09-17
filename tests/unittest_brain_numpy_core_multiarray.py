@@ -67,25 +67,21 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
 
     def _inferred_numpy_func_call(self, func_name, *func_args):
         node = builder.extract_node(
-            """
+            f"""
         import numpy as np
-        func = np.{:s}
-        func({:s})
-        """.format(
-                func_name, ",".join(func_args)
-            )
+        func = np.{func_name:s}
+        func({','.join(func_args):s})
+        """
         )
         return node.infer()
 
     def _inferred_numpy_no_alias_func_call(self, func_name, *func_args):
         node = builder.extract_node(
-            """
+            f"""
         import numpy
-        func = numpy.{:s}
-        func({:s})
-        """.format(
-                func_name, ",".join(func_args)
-            )
+        func = numpy.{func_name:s}
+        func({','.join(func_args):s})
+        """
         )
         return node.infer()
 

@@ -668,9 +668,7 @@ def infer_issubclass(callnode, context=None):
         raise UseInferenceDefault("TypeError: issubclass() takes no keyword arguments")
     if len(call.positional_arguments) != 2:
         raise UseInferenceDefault(
-            "Expected two arguments, got {count}".format(
-                count=len(call.positional_arguments)
-            )
+            f"Expected two arguments, got {len(call.positional_arguments)}"
         )
     # The left hand argument is the obj to be checked
     obj_node, class_or_tuple_node = call.positional_arguments
@@ -715,9 +713,7 @@ def infer_isinstance(callnode, context=None):
         raise UseInferenceDefault("TypeError: isinstance() takes no keyword arguments")
     if len(call.positional_arguments) != 2:
         raise UseInferenceDefault(
-            "Expected two arguments, got {count}".format(
-                count=len(call.positional_arguments)
-            )
+            f"Expected two arguments, got {len(call.positional_arguments)}"
         )
     # The left hand argument is the obj to be checked
     obj_node, class_or_tuple_node = call.positional_arguments

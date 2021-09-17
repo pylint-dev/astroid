@@ -155,8 +155,7 @@ class InferenceContext:
 
     def __str__(self):
         state = (
-            "%s=%s"
-            % (field, pprint.pformat(getattr(self, field), width=80 - len(field)))
+            f"{field}={pprint.pformat(getattr(self, field), width=80 - len(field))}"
             for field in self.__slots__
         )
         return "{}({})".format(type(self).__name__, ",\n    ".join(state))

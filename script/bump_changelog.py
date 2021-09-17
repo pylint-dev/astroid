@@ -15,7 +15,7 @@ RELEASE_DATE_TEXT = "Release date: TBA"
 WHATS_NEW_TEXT = "What's New in astroid"
 TODAY = datetime.now()
 FULL_WHATS_NEW_TEXT = WHATS_NEW_TEXT + " {version}?"
-NEW_RELEASE_DATE_MESSAGE = "Release date: {}".format(TODAY.strftime("%Y-%m-%d"))
+NEW_RELEASE_DATE_MESSAGE = f"Release date: {TODAY.strftime('%Y-%m-%d')}"
 
 
 def main() -> None:

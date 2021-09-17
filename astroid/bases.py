@@ -575,12 +575,10 @@ class Generator(BaseInstance):
         return True
 
     def __repr__(self):
-        return "<Generator({}) l.{} at 0x{}>".format(
-            self._proxied.name, self.lineno, id(self)
-        )
+        return f"<Generator({self._proxied.name}) l.{self.lineno} at 0x{id(self)}>"
 
     def __str__(self):
-        return "Generator(%s)" % self._proxied.name
+        return f"Generator({self._proxied.name})"
 
 
 class AsyncGenerator(Generator):
@@ -593,9 +591,7 @@ class AsyncGenerator(Generator):
         return "AsyncGenerator"
 
     def __repr__(self):
-        return "<AsyncGenerator({}) l.{} at 0x{}>".format(
-            self._proxied.name, self.lineno, id(self)
-        )
+        return f"<AsyncGenerator({self._proxied.name}) l.{self.lineno} at 0x{id(self)}>"
 
     def __str__(self):
-        return "AsyncGenerator(%s)" % self._proxied.name
+        return f"AsyncGenerator({self._proxied.name})"

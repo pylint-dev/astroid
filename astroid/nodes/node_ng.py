@@ -177,7 +177,7 @@ class NodeNG:
             inner = [lines[0]]
             for line in lines[1:]:
                 inner.append(" " * alignment + line)
-            result.append("{}={}".format(field, "".join(inner)))
+            result.append(f"{field}={''.join(inner)}")
 
         return string % {
             "cname": cname,
@@ -651,10 +651,7 @@ class NodeNG:
             """Outputs a strings representation of an astroid node."""
             if node in done:
                 result.append(
-                    indent
-                    + "<Recursion on {} with id={}".format(
-                        type(node).__name__, id(node)
-                    )
+                    indent + f"<Recursion on {type(node).__name__} with id={id(node)}"
                 )
                 return False
             done.add(node)
@@ -667,7 +664,7 @@ class NodeNG:
             if ids:
                 result.append(f"{type(node).__name__}<0x{id(node):x}>(\n")
             else:
-                result.append("%s(" % type(node).__name__)
+                result.append(f"{type(node).__name__}(")
             fields = []
             if include_linenos:
                 fields.extend(("lineno", "col_offset"))
@@ -678,7 +675,7 @@ class NodeNG:
             if not fields:
                 broken = False
             elif len(fields) == 1:
-                result.append("%s=" % fields[0])
+                result.append(f"{fields[0]}=")
                 broken = _repr_tree(
                     getattr(node, fields[0]), result, done, cur_indent, depth
                 )
@@ -686,11 +683,11 @@ class NodeNG:
                 result.append("\n")
                 result.append(cur_indent)
                 for field in fields[:-1]:
-                    result.append("%s=" % field)
+                    result.append(f"{field}=")
                     _repr_tree(getattr(node, field), result, done, cur_indent, depth)
                     result.append(",\n")
                     result.append(cur_indent)
-                result.append("%s=" % fields[-1])
+                result.append(f"{fields[-1]}=")
                 _repr_tree(getattr(node, fields[-1]), result, done, cur_indent, depth)
                 broken = True
             result.append(")")

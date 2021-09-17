@@ -229,9 +229,7 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
                 )
                 self.assertTrue(
                     inferred_values[0].pytype() == ".ndarray",
-                    msg="Illicit type for {:s} ({})".format(
-                        func_, inferred_values[-1].pytype()
-                    ),
+                    msg=f"Illicit type for {func_:s} ({inferred_values[-1].pytype()})",
                 )
 
     def test_numpy_core_umath_functions_return_type_tuple(self):
@@ -245,15 +243,11 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
                 inferred_values = list(self._inferred_numpy_func_call(func_))
                 self.assertTrue(
                     len(inferred_values) == 1,
-                    msg="Too much inferred values ({}) for {:s}".format(
-                        inferred_values, func_
-                    ),
+                    msg=f"Too much inferred values ({inferred_values}) for {func_:s}",
                 )
                 self.assertTrue(
                     inferred_values[-1].pytype() == "builtins.tuple",
-                    msg="Illicit type for {:s} ({})".format(
-                        func_, inferred_values[-1].pytype()
-                    ),
+                    msg=f"Illicit type for {func_:s} ({inferred_values[-1].pytype()})",
                 )
                 self.assertTrue(
                     len(inferred_values[0].elts) == 2,

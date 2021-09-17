@@ -216,27 +216,21 @@ def infer_named_tuple(node, context=None):
         for index, name in enumerate(attributes)
     )
     fake = AstroidBuilder(AstroidManager()).string_build(
-        """
-class %(name)s(tuple):
+        f"""
+class {name}(tuple):
     __slots__ = ()
-    _fields = %(fields)r
+    _fields = {attributes!r}
     def _asdict(self):
         return self.__dict__
     @classmethod
     def _make(cls, iterable, new=tuple.__new__, len=len):
         return new(cls, iterable)
-    def _replace(self, %(replace_args)s):
+    def _replace(self, {replace_args}):
         return self
     def __getnewargs__(self):
         return tuple(self)
-%(field_defs)s
+{field_defs}
     """
-        % {
-            "name": name,
-            "fields": attributes,
-            "field_defs": field_defs,
-            "replace_args": replace_args,
-        }
     )
     class_node.locals["_asdict"] = fake.body[0].locals["_asdict"]
     class_node.locals["_make"] = fake.body[0].locals["_make"]
@@ -539,7 +533,7 @@ def infer_typing_namedtuple(node, context=None):
 
     typename = node.args[0].as_string()
     if names:
-        field_names = "({},)".format(",".join(names))
+        field_names = f"({','.join(names)},)"
     else:
         field_names = "''"
     node = extract_node(f"namedtuple({typename}, {field_names})")
