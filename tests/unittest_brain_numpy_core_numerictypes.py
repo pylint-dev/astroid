@@ -17,6 +17,7 @@ except ImportError:
     HAS_NUMPY = False
 
 from astroid import builder, nodes
+from astroid.brain.brain_numpy_utils import numpy_supports_type_hints, NUMPY_VERSION_TYPE_HINTS_SUPPORT
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
@@ -340,6 +341,58 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
                 "datetime64.astype", inferred_values[-1].pytype()
             ),
         )
+
+    @unittest.skipUnless(
+            HAS_NUMPY and numpy_supports_type_hints(),
+             f"This test requires the numpy library with a version above {NUMPY_VERSION_TYPE_HINTS_SUPPORT}")
+    def test_generic_types_are_subscriptables(self):
+        """
+        Test that all types deriving from generic are subscriptables
+        """
+        for type_ in (
+            "bool_",
+            "bytes_",
+            "character",
+            "complex128",
+            "complex192",
+            "complex64",
+            "complexfloating",
+            "datetime64",
+            "flexible",
+            "float16",
+            "float32",
+            "float64",
+            "float96",
+            "floating",
+            "generic",
+            "inexact",
+            "int16",
+            "int32",
+            "int32",
+            "int64",
+            "int8",
+            "integer",
+            "number",
+            "signedinteger",
+            "str_",
+            "timedelta64",
+            "uint16",
+            "uint32",
+            "uint32",
+            "uint64",
+            "uint8",
+            "unsignedinteger",
+            "void",
+        ):
+            with self.subTest(type_=type_):
+                src = f"""
+                import numpy as np
+                np.{type_}[int]
+                """
+                node=builder.extract_node(src)
+                cls_node = node.inferred()[0]
+                self.assertIsInstance(cls_node, nodes.ClassDef)
+                self.assertEqual(cls_node.name, type_)
 
 
 if __name__ == "__main__":
