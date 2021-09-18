@@ -9,12 +9,12 @@
 
 """Different utilities for the numpy brains"""
 from typing import Tuple
+
 from astroid.builder import extract_node
 from astroid.nodes.node_classes import Attribute, Import, Name, NodeNG
 
-
 # Class subscript is available in numpy starting with version 1.20.0
-NUMPY_VERSION_TYPE_HINTS_SUPPORT = ('1', '20', '0')
+NUMPY_VERSION_TYPE_HINTS_SUPPORT = ("1", "20", "0")
 
 
 def numpy_supports_type_hints() -> bool:
@@ -32,7 +32,8 @@ def _get_numpy_version() -> Tuple[str, str, str]:
     """
     try:
         import numpy  # pylint: disable=unused-import
-        return tuple(numpy.version.version.split('.'))
+
+        return tuple(numpy.version.version.split("."))
     except ImportError:
         return None
 

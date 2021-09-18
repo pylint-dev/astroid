@@ -9,10 +9,10 @@
 # TODO(hippo91) : correct the methods signature.
 
 """Astroid hooks for numpy.core.numerictypes module."""
+from astroid.brain.brain_numpy_utils import numpy_supports_type_hints
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
-from astroid.brain.brain_numpy_utils import numpy_supports_type_hints
 
 
 def numpy_core_numerictypes_transform():
@@ -112,8 +112,9 @@ def numpy_core_numerictypes_transform():
         def __class_getitem__(cls, value):
             return cls
         """
-    return parse(generic_src + 
-        """
+    return parse(
+        generic_src
+        + """
     class dtype(object):
         def __init__(self, obj, align=False, copy=False):
             self.alignment = None

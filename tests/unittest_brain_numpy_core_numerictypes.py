@@ -17,7 +17,10 @@ except ImportError:
     HAS_NUMPY = False
 
 from astroid import builder, nodes
-from astroid.brain.brain_numpy_utils import numpy_supports_type_hints, NUMPY_VERSION_TYPE_HINTS_SUPPORT
+from astroid.brain.brain_numpy_utils import (
+    NUMPY_VERSION_TYPE_HINTS_SUPPORT,
+    numpy_supports_type_hints,
+)
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
@@ -343,8 +346,9 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
         )
 
     @unittest.skipUnless(
-            HAS_NUMPY and numpy_supports_type_hints(),
-             f"This test requires the numpy library with a version above {NUMPY_VERSION_TYPE_HINTS_SUPPORT}")
+        HAS_NUMPY and numpy_supports_type_hints(),
+        f"This test requires the numpy library with a version above {NUMPY_VERSION_TYPE_HINTS_SUPPORT}",
+    )
     def test_generic_types_are_subscriptables(self):
         """
         Test that all types deriving from generic are subscriptables
@@ -389,7 +393,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
                 import numpy as np
                 np.{type_}[int]
                 """
-                node=builder.extract_node(src)
+                node = builder.extract_node(src)
                 cls_node = node.inferred()[0]
                 self.assertIsInstance(cls_node, nodes.ClassDef)
                 self.assertEqual(cls_node.name, type_)

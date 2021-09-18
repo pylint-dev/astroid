@@ -9,11 +9,11 @@
 
 
 """Astroid hooks for numpy ndarray class."""
+from astroid.brain.brain_numpy_utils import numpy_supports_type_hints
 from astroid.builder import extract_node
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import Attribute
-from astroid.brain.brain_numpy_utils import numpy_supports_type_hints
 
 
 def infer_numpy_ndarray(node, context=None):
