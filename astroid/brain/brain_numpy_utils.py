@@ -31,7 +31,7 @@ def _get_numpy_version() -> Tuple[str, str, str]:
     None
     """
     try:
-        import numpy  # pylint: disable=unused-import
+        import numpy  # pylint: disable=import-outside-toplevel
 
         return tuple(numpy.version.version.split("."))
     except ImportError:

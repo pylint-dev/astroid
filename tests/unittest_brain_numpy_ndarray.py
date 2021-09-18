@@ -173,7 +173,7 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
         """
         Test that numpy ndarray class can be subscripted (type hints)
         """
-        src = f"""
+        src = """
         import numpy as np
         np.ndarray[int]
         """
