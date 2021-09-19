@@ -28,14 +28,14 @@ def numpy_supports_type_hints() -> bool:
 def _get_numpy_version() -> Tuple[str, str, str]:
     """
     Return the numpy version number if numpy can be imported. Otherwise returns
-    None
+    ('0', '0', '0')
     """
     try:
         import numpy  # pylint: disable=import-outside-toplevel
 
         return tuple(numpy.version.version.split("."))
     except ImportError:
-        return None
+        return ('0', '0', '0')
 
 
 def infer_numpy_member(src, node, context=None):
