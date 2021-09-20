@@ -19,7 +19,6 @@ class TestBrainNumpyMa:
     """
     Test the numpy ma brain module
     """
-
     @staticmethod
     def test_numpy_ma_masked_where_returns_maskedarray():
         """
