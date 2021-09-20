@@ -19,6 +19,7 @@ class TestBrainNumpyMa:
     """
     Test the numpy ma brain module
     """
+
     @staticmethod
     def test_numpy_ma_masked_where_returns_maskedarray():
         """
@@ -50,4 +51,3 @@ class TestBrainNumpyMa:
         node = builder.extract_node(src)
         cls_node = node.inferred()[0]
         assert cls_node.pytype() == "numpy.ma.core.MaskedArray"
-
