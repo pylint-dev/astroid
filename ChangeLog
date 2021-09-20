@@ -58,7 +58,7 @@ Release date: 2021-09-14
   modules. (Revert the "The transforms related to a module are applied only if this
   module has not been explicitly authorized to be imported" of version 2.7.3)
 
-* Adds a brain to infer the `numpy.ma.masked_where` function.
+* Adds a brain to infer the ``numpy.ma.masked_where`` function.
 
   Closes PyCQA/pylint#3342
 
