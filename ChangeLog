@@ -22,6 +22,10 @@ Release date: TBA
   Closes PyCQA/pylint#5030
   Closes PyCQA/pylint#5036
 
+* Fix regression on Compare node inference
+
+  Closes PyCQA/pylint#5048
+
 
 What's New in astroid 2.8.0?
 ============================

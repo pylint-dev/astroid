@@ -5527,6 +5527,18 @@ def test_compare_nonliteral() -> None:
     assert inferred[0] is util.Uninferable
 
 
+def test_compare_unknown() -> None:
+    code = """
+    def func(a):
+        if tuple() + (a[1],) in set():
+            raise Exception()
+    """
+    node = extract_node(code)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.FunctionDef)
+
+
 def test_limit_inference_result_amount() -> None:
     """Test setting limit inference result amount"""
     code = """
