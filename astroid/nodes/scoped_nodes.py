@@ -43,6 +43,7 @@ Lambda, GeneratorExp, DictComp and SetComp to some extent).
 import builtins
 import io
 import itertools
+import os
 import typing
 from typing import List, Optional, TypeVar
 
@@ -732,10 +733,16 @@ class Module(LocalsDictNodeNG):
         if level:
             if self.package:
                 level = level - 1
+                package_name = self.name.rsplit(".", level)[0]
+            elif not os.path.exists("__init__.py") and os.path.exists(modname.split(".")[0]):
+                level = level - 1
+                package_name = ""
+            else:
+                package_name = self.name.rsplit(".", level)[0]
             if level and self.name.count(".") < level:
                 raise TooManyLevelsError(level=level, name=self.name)
 
-            package_name = self.name.rsplit(".", level)[0]
+            
         elif self.package:
             package_name = self.name
         else:
@@ -744,7 +751,7 @@ class Module(LocalsDictNodeNG):
         if package_name:
             if not modname:
                 return package_name
-            return f"{package_name}.{modname}"
+            return f"{package_name}.{modname.split('.')[0]}"
         return modname
 
     def wildcard_import_names(self):
