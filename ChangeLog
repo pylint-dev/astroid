@@ -6,7 +6,7 @@ What's New in astroid 2.9.0?
 ============================
 Release date: TBA
 
-* Extended attrs brain to support the provisional APIs
+
 
 What's New in astroid 2.8.1?
 ============================
@@ -25,6 +25,8 @@ Release date: TBA
 * Fix regression on Compare node inference
 
   Closes PyCQA/pylint#5048
+
+* Extended attrs brain to support the provisional APIs
 
 
 What's New in astroid 2.8.0?
