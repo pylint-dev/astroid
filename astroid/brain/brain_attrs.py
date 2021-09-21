@@ -11,7 +11,17 @@ from astroid.nodes.node_classes import AnnAssign, Assign, AssignName, Call, Unkn
 from astroid.nodes.scoped_nodes import ClassDef
 
 ATTRIB_NAMES = frozenset(("attr.ib", "attrib", "attr.attrib", "attr.field", "field"))
-ATTRS_NAMES = frozenset(("attr.s", "attrs", "attr.attrs", "attr.attributes", "attr.define", "attr.mutable", "attr.frozen"))
+ATTRS_NAMES = frozenset(
+    (
+        "attr.s",
+        "attrs",
+        "attr.attrs",
+        "attr.attributes",
+        "attr.define",
+        "attr.mutable",
+        "attr.frozen",
+    )
+)
 
 
 def is_decorated_with_attrs(node, decorator_names=ATTRS_NAMES):
