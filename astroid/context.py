@@ -25,7 +25,7 @@ _INFERENCE_CACHE = {}
 
 
 def _invalidate_cache():
-    _INFERENCE_CACHE = {}
+    pass
 
 
 class InferenceContext:
