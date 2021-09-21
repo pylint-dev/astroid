@@ -734,7 +734,9 @@ class Module(LocalsDictNodeNG):
             if self.package:
                 level = level - 1
                 package_name = self.name.rsplit(".", level)[0]
-            elif not os.path.exists("__init__.py") and os.path.exists(modname.split(".")[0]):
+            elif not os.path.exists("__init__.py") and os.path.exists(
+                modname.split(".")[0]
+            ):
                 level = level - 1
                 package_name = ""
             else:
@@ -742,7 +744,6 @@ class Module(LocalsDictNodeNG):
             if level and self.name.count(".") < level:
                 raise TooManyLevelsError(level=level, name=self.name)
 
-            
         elif self.package:
             package_name = self.name
         else:
