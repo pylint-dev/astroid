@@ -7,23 +7,25 @@
 # Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
+# Copyright (c) 2019, 2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 import sys
-import unittest
 import textwrap
+import unittest
 
-from astroid import MANAGER, Instance, nodes
-from astroid.bases import BUILTINS
+from astroid import MANAGER, Instance, nodes, test_utils
 from astroid.builder import AstroidBuilder, extract_node
-from astroid import exceptions
+from astroid.exceptions import InferenceError
 from astroid.raw_building import build_module
-from astroid.manager import AstroidManager
-from astroid.test_utils import require_version
-from astroid import transforms
+
 from . import resources
 
 try:
@@ -35,28 +37,17 @@ else:
 
 
 class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         sys.path.insert(0, resources.find("data"))
         MANAGER.always_load_extensions = True
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         MANAGER.always_load_extensions = False
         sys.path.pop(0)
         sys.path_importer_cache.pop(resources.find("data"), None)
 
-    def brainless_manager(self):
-        manager = AstroidManager()
-        # avoid caching into the AstroidManager borg since we get problems
-        # with other tests :
-        manager.__dict__ = {}
-        manager._failed_import_hooks = []
-        manager.astroid_cache = {}
-        manager._mod_file_cache = {}
-        manager._transform = transforms.TransformVisitor()
-        return manager
-
-    def test_module_path(self):
-        man = self.brainless_manager()
+    def test_module_path(self) -> None:
+        man = test_utils.brainless_manager()
         mod = man.ast_from_module_name("package.import_package_subpackage_module")
         package = next(mod.igetattr("package"))
         self.assertEqual(package.name, "package")
@@ -67,8 +58,8 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
         module = next(subpackage.igetattr("module"))
         self.assertEqual(module.name, "package.subpackage.module")
 
-    def test_package_sidepackage(self):
-        manager = self.brainless_manager()
+    def test_package_sidepackage(self) -> None:
+        manager = test_utils.brainless_manager()
         assert "package.sidepackage" not in MANAGER.astroid_cache
         package = manager.ast_from_module_name("absimp")
         self.assertIsInstance(package, nodes.Module)
@@ -78,7 +69,7 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
         self.assertTrue(subpackage.package)
         self.assertEqual(subpackage.name, "absimp.sidepackage")
 
-    def test_living_property(self):
+    def test_living_property(self) -> None:
         builder = AstroidBuilder()
         builder._done = {}
         builder._module = sys.modules[__name__]
@@ -93,15 +84,14 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
         data = """
 from numpy import multiply
 
-multiply(1, 2, 3)
+multiply([1, 2], [3, 4])
 """
         astroid = builder.string_build(data, __name__, __file__)
         callfunc = astroid.body[1].value.func
         inferred = callfunc.inferred()
         self.assertEqual(len(inferred), 1)
 
-    @require_version("3.0")
-    def test_nameconstant(self):
+    def test_nameconstant(self) -> None:
         # used to fail for Python 3.4
         builder = AstroidBuilder()
         astroid = builder.string_build("def test(x=True): pass")
@@ -109,7 +99,7 @@ multiply(1, 2, 3)
         self.assertEqual(default.name, "x")
         self.assertEqual(next(default.infer()).value, True)
 
-    def test_recursion_regression_issue25(self):
+    def test_recursion_regression_issue25(self) -> None:
         builder = AstroidBuilder()
         data = """
 import recursion as base
@@ -130,7 +120,7 @@ def run():
             # triggers the _is_metaclass call
             klass.type  # pylint: disable=pointless-statement
 
-    def test_decorator_callchain_issue42(self):
+    def test_decorator_callchain_issue42(self) -> None:
         builder = AstroidBuilder()
         data = """
 
@@ -148,7 +138,7 @@ def crash():
         astroid = builder.string_build(data, __name__, __file__)
         self.assertEqual(astroid["crash"].type, "function")
 
-    def test_filter_stmts_scoping(self):
+    def test_filter_stmts_scoping(self) -> None:
         builder = AstroidBuilder()
         data = """
 def test():
@@ -165,7 +155,7 @@ def test():
         base = next(result._proxied.bases[0].infer())
         self.assertEqual(base.name, "int")
 
-    def test_ancestors_patching_class_recursion(self):
+    def test_ancestors_patching_class_recursion(self) -> None:
         node = AstroidBuilder().string_build(
             textwrap.dedent(
                 """
@@ -190,7 +180,7 @@ def test():
         ancestors = list(klass.ancestors())
         self.assertEqual(ancestors[0].qname(), "string.Template")
 
-    def test_ancestors_yes_in_bases(self):
+    def test_ancestors_yes_in_bases(self) -> None:
         # Test for issue https://bitbucket.org/logilab/astroid/issue/84
         # This used to crash astroid with a TypeError, because an Uninferable
         # node was present in the bases
@@ -210,9 +200,9 @@ def test():
         )
         ancestors = list(node.ancestors())
         self.assertEqual(len(ancestors), 1)
-        self.assertEqual(ancestors[0].qname(), "{}.object".format(BUILTINS))
+        self.assertEqual(ancestors[0].qname(), "builtins.object")
 
-    def test_ancestors_missing_from_function(self):
+    def test_ancestors_missing_from_function(self) -> None:
         # Test for https://www.logilab.org/ticket/122793
         node = extract_node(
             """
@@ -221,29 +211,28 @@ def test():
         next(GEN)
         """
         )
-        self.assertRaises(exceptions.InferenceError, next, node.infer())
+        self.assertRaises(InferenceError, next, node.infer())
 
-    def test_unicode_in_docstring(self):
+    def test_unicode_in_docstring(self) -> None:
         # Crashed for astroid==1.4.1
         # Test for https://bitbucket.org/logilab/astroid/issues/273/
 
         # In a regular file, "coding: utf-8" would have been used.
         node = extract_node(
-            """
+            f"""
         from __future__ import unicode_literals
 
         class MyClass(object):
             def method(self):
-                "With unicode : %s "
+                "With unicode : {'’'} "
 
         instance = MyClass()
         """
-            % "\u2019"
         )
 
         next(node.value.infer()).as_string()
 
-    def test_binop_generates_nodes_with_parents(self):
+    def test_binop_generates_nodes_with_parents(self) -> None:
         node = extract_node(
             """
         def no_op(*args):
@@ -259,7 +248,7 @@ def test():
         self.assertIsNotNone(inferred.parent)
         self.assertIsInstance(inferred.parent, nodes.BinOp)
 
-    def test_decorator_names_inference_error_leaking(self):
+    def test_decorator_names_inference_error_leaking(self) -> None:
         node = extract_node(
             """
         class Parent(object):
@@ -276,7 +265,7 @@ def test():
         inferred = next(node.infer())
         self.assertEqual(inferred.decoratornames(), {".Parent.foo.getter"})
 
-    def test_ssl_protocol(self):
+    def test_ssl_protocol(self) -> None:
         node = extract_node(
             """
         import ssl
@@ -286,7 +275,7 @@ def test():
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Const)
 
-    def test_recursive_property_method(self):
+    def test_recursive_property_method(self) -> None:
         node = extract_node(
             """
         class APropert():
@@ -298,7 +287,7 @@ def test():
         )
         next(node.infer())
 
-    def test_uninferable_string_argument_of_namedtuple(self):
+    def test_uninferable_string_argument_of_namedtuple(self) -> None:
         node = extract_node(
             """
         import collections
@@ -307,7 +296,7 @@ def test():
         )
         next(node.infer())
 
-    def test_regression_inference_of_self_in_lambda(self):
+    def test_regression_inference_of_self_in_lambda(self) -> None:
         code = """
         class A:
             @b(lambda self: __(self))
@@ -321,10 +310,10 @@ def test():
 
 
 class Whatever:
-    a = property(lambda x: x, lambda x: x)
+    a = property(lambda x: x, lambda x: x)  # type: ignore
 
 
-def test_ancestor_looking_up_redefined_function():
+def test_ancestor_looking_up_redefined_function() -> None:
     code = """
     class Foo:
         def _format(self):
@@ -341,6 +330,17 @@ def test_ancestor_looking_up_redefined_function():
     _, found = ancestor.lookup("format")
     assert len(found) == 1
     assert isinstance(found[0], nodes.FunctionDef)
+
+
+def test_crash_in_dunder_inference_prevented() -> None:
+    code = """
+    class MyClass():
+        def fu(self, objects):
+            delitem = dict.__delitem__.__get__(self, dict)
+            delitem #@
+    """
+    inferred = next(extract_node(code).infer())
+    assert inferred.qname() == "builtins.dict.__delitem__"
 
 
 if __name__ == "__main__":

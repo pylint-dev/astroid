@@ -1,11 +1,15 @@
-# Copyright (c) 2017-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2017-2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020 Karthikeyan Singaravelan <tir.karthi@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
-import collections
-import sys
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+import collections.abc
 
-import astroid
+from astroid.manager import AstroidManager
+from astroid.nodes.node_classes import FormattedValue
 
 
 def _clone_node_with_lineno(node, parent, lineno):
@@ -19,7 +23,7 @@ def _clone_node_with_lineno(node, parent, lineno):
     new_node = cls(**init_params)
     if hasattr(node, "postinit") and _astroid_fields:
         for param, child in postinit_params.items():
-            if child and not isinstance(child, collections.Sequence):
+            if child and not isinstance(child, collections.abc.Sequence):
                 cloned_child = _clone_node_with_lineno(
                     node=child, lineno=new_node.lineno, parent=new_node
                 )
@@ -28,10 +32,10 @@ def _clone_node_with_lineno(node, parent, lineno):
     return new_node
 
 
-def _transform_formatted_value(node):
+def _transform_formatted_value(node):  # pylint: disable=inconsistent-return-statements
     if node.value and node.value.lineno == 1:
         if node.lineno != node.value.lineno:
-            new_node = astroid.FormattedValue(
+            new_node = FormattedValue(
                 lineno=node.lineno, col_offset=node.col_offset, parent=node.parent
             )
             new_value = _clone_node_with_lineno(
@@ -41,11 +45,8 @@ def _transform_formatted_value(node):
             return new_node
 
 
-if sys.version_info[:2] >= (3, 6):
-    # TODO: this fix tries to *patch* http://bugs.python.org/issue29051
-    # The problem is that FormattedValue.value, which is a Name node,
-    # has wrong line numbers, usually 1. This creates problems for pylint,
-    # which expects correct line numbers for things such as message control.
-    astroid.MANAGER.register_transform(
-        astroid.FormattedValue, _transform_formatted_value
-    )
+# TODO: this fix tries to *patch* http://bugs.python.org/issue29051
+# The problem is that FormattedValue.value, which is a Name node,
+# has wrong line numbers, usually 1. This creates problems for pylint,
+# which expects correct line numbers for things such as message control.
+AstroidManager().register_transform(FormattedValue, _transform_formatted_value)

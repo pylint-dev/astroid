@@ -1,11 +1,12 @@
-# -*- encoding=utf-8 -*-
 # Copyright (c) 2017-2020 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2017-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2017-2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 import unittest
 
 try:
@@ -108,25 +109,21 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
 
     def _inferred_ndarray_method_call(self, func_name):
         node = builder.extract_node(
-            """
+            f"""
         import numpy as np
         test_array = np.ndarray((2, 2))
-        test_array.{:s}()
-        """.format(
-                func_name
-            )
+        test_array.{func_name:s}()
+        """
         )
         return node.infer()
 
     def _inferred_ndarray_attribute(self, attr_name):
         node = builder.extract_node(
-            """
+            f"""
         import numpy as np
         test_array = np.ndarray((2, 2))
-        test_array.{:s}
-        """.format(
-                attr_name
-            )
+        test_array.{attr_name:s}
+        """
         )
         return node.infer()
 
@@ -140,13 +137,11 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
                 inferred_values = list(self._inferred_ndarray_method_call(func_))
                 self.assertTrue(
                     len(inferred_values) == 1,
-                    msg="Too much inferred value for {:s}".format(func_),
+                    msg=f"Too much inferred value for {func_:s}",
                 )
                 self.assertTrue(
                     inferred_values[-1].pytype() in licit_array_types,
-                    msg="Illicit type for {:s} ({})".format(
-                        func_, inferred_values[-1].pytype()
-                    ),
+                    msg=f"Illicit type for {func_:s} ({inferred_values[-1].pytype()})",
                 )
 
     def test_numpy_ndarray_attribute_inferred_as_ndarray(self):
@@ -154,18 +149,16 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
         Test that some numpy ndarray attributes are inferred as numpy.ndarray
         """
         licit_array_types = ".ndarray"
-        for attr_ in ("real", "imag"):
+        for attr_ in ("real", "imag", "shape", "T"):
             with self.subTest(typ=attr_):
                 inferred_values = list(self._inferred_ndarray_attribute(attr_))
                 self.assertTrue(
                     len(inferred_values) == 1,
-                    msg="Too much inferred value for {:s}".format(attr_),
+                    msg=f"Too much inferred value for {attr_:s}",
                 )
                 self.assertTrue(
                     inferred_values[-1].pytype() in licit_array_types,
-                    msg="Illicit type for {:s} ({})".format(
-                        attr_, inferred_values[-1].pytype()
-                    ),
+                    msg=f"Illicit type for {attr_:s} ({inferred_values[-1].pytype()})",
                 )
 
 

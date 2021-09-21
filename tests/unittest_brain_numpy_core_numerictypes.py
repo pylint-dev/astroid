@@ -1,11 +1,12 @@
-# -*- encoding=utf-8 -*-
-# Copyright (c) 2017-2020 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2017-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2017-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2017-2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 import unittest
 
 try:
@@ -15,8 +16,7 @@ try:
 except ImportError:
     HAS_NUMPY = False
 
-from astroid import builder
-from astroid import nodes
+from astroid import builder, nodes
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
@@ -80,11 +80,9 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
 
     def _inferred_numpy_attribute(self, attrib):
         node = builder.extract_node(
-            """
+            f"""
         import numpy.core.numerictypes as tested_module
-        missing_type = tested_module.{:s}""".format(
-                attrib
-            )
+        missing_type = tested_module.{attrib:s}"""
         )
         return next(node.value.infer())
 
@@ -334,7 +332,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
         inferred_values = list(node.infer())
         self.assertTrue(
             len(inferred_values) == 1,
-            msg="Too much inferred value for {:s}".format("datetime64.astype"),
+            msg="Too much inferred value for datetime64.astype",
         )
         self.assertTrue(
             inferred_values[-1].pytype() in licit_array_types,

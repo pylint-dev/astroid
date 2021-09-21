@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2006-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2012 FELD Boris <lothiraldan@gmail.com>
 # Copyright (c) 2013-2014 Google, Inc.
@@ -17,31 +16,45 @@
 # Copyright (c) 2018 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
 # Copyright (c) 2020 Leandro T. C. Melo <ltcmelo@gmail.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """this module contains a set of functions to handle inference on astroid trees
 """
 
+import ast
 import functools
 import itertools
 import operator
+from typing import Any, Callable, Dict, Iterable, Optional
 
 import wrapt
-from astroid import bases
-from astroid import context as contextmod
-from astroid import exceptions
-from astroid import decorators
-from astroid import helpers
-from astroid import manager
-from astroid import nodes
+
+from astroid import bases, decorators, helpers, nodes, protocols, util
+from astroid.context import (
+    CallContext,
+    InferenceContext,
+    bind_context_to_node,
+    copy_context,
+)
+from astroid.exceptions import (
+    AstroidBuildingError,
+    AstroidError,
+    AstroidIndexError,
+    AstroidTypeError,
+    AttributeInferenceError,
+    InferenceError,
+    NameInferenceError,
+    _NonDeducibleTypeHierarchy,
+)
 from astroid.interpreter import dunder_lookup
-from astroid import protocols
-from astroid import util
+from astroid.manager import AstroidManager
 
-
-MANAGER = manager.AstroidManager()
 # Prevents circular imports
 objects = util.lazy_import("objects")
 
@@ -73,14 +86,14 @@ def _infer_sequence_helper(node, context=None):
         if isinstance(elt, nodes.Starred):
             starred = helpers.safe_infer(elt.value, context)
             if not starred:
-                raise exceptions.InferenceError(node=node, context=context)
+                raise InferenceError(node=node, context=context)
             if not hasattr(starred, "elts"):
-                raise exceptions.InferenceError(node=node, context=context)
+                raise InferenceError(node=node, context=context)
             values.extend(_infer_sequence_helper(starred))
         elif isinstance(elt, nodes.NamedExpr):
             value = helpers.safe_infer(elt.value, context)
             if not value:
-                raise exceptions.InferenceError(node=node, context=context)
+                raise InferenceError(node=node, context=context)
             values.append(value)
         else:
             values.append(elt)
@@ -149,16 +162,16 @@ def _infer_map(node, context):
         if isinstance(name, nodes.DictUnpack):
             double_starred = helpers.safe_infer(value, context)
             if not double_starred:
-                raise exceptions.InferenceError
+                raise InferenceError
             if not isinstance(double_starred, nodes.Dict):
-                raise exceptions.InferenceError(node=node, context=context)
+                raise InferenceError(node=node, context=context)
             unpack_items = _infer_map(double_starred, context)
             values = _update_with_replacement(values, unpack_items)
         else:
             key = helpers.safe_infer(name, context=context)
             value = helpers.safe_infer(value, context=context)
             if any(not elem for elem in (key, value)):
-                raise exceptions.InferenceError(node=node, context=context)
+                raise InferenceError(node=node, context=context)
             values = _update_with_replacement(values, {key: value})
     return values
 
@@ -167,7 +180,7 @@ nodes.Dict._infer = infer_map
 
 
 def _higher_function_scope(node):
-    """ Search for the first function which encloses the given
+    """Search for the first function which encloses the given
     scope. This can be used for looking up in that function's
     scope, in case looking up in a lower scope for a particular
     name fails.
@@ -175,7 +188,7 @@ def _higher_function_scope(node):
     :param node: A scope node.
     :returns:
         ``None``, if no parent function scope was found,
-        otherwise an instance of :class:`astroid.scoped_nodes.Function`,
+        otherwise an instance of :class:`astroid.nodes.scoped_nodes.Function`,
         which encloses the given node.
     """
     current = node
@@ -197,10 +210,10 @@ def infer_name(self, context=None):
             _, stmts = parent_function.lookup(self.name)
 
         if not stmts:
-            raise exceptions.NameInferenceError(
+            raise NameInferenceError(
                 name=self.name, scope=self.scope(), context=context
             )
-    context = contextmod.copy_context(context)
+    context = copy_context(context)
     context.lookupname = self.name
     return bases._infer_stmts(stmts, context, frame)
 
@@ -216,10 +229,7 @@ nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper
 @decorators.path_wrapper
 def infer_call(self, context=None):
     """infer a Call node by trying to guess what the function returns"""
-    callcontext = contextmod.copy_context(context)
-    callcontext.callcontext = contextmod.CallContext(
-        args=self.args, keywords=self.keywords
-    )
+    callcontext = copy_context(context)
     callcontext.boundnode = None
     if context is not None:
         callcontext.extra_context = _populate_context_lookup(self, context.clone())
@@ -230,8 +240,11 @@ def infer_call(self, context=None):
             continue
         try:
             if hasattr(callee, "infer_call_result"):
+                callcontext.callcontext = CallContext(
+                    args=self.args, keywords=self.keywords, callee=callee
+                )
                 yield from callee.infer_call_result(caller=self, context=callcontext)
-        except exceptions.InferenceError:
+        except InferenceError:
             continue
     return dict(node=self, context=context)
 
@@ -245,15 +258,15 @@ def infer_import(self, context=None, asname=True):
     """infer an Import node: return the imported module/object"""
     name = context.lookupname
     if name is None:
-        raise exceptions.InferenceError(node=self, context=context)
+        raise InferenceError(node=self, context=context)
 
     try:
         if asname:
             yield self.do_import_module(self.real_name(name))
         else:
             yield self.do_import_module(name)
-    except exceptions.AstroidBuildingError as exc:
-        raise exceptions.InferenceError(node=self, context=context) from exc
+    except AstroidBuildingError as exc:
+        raise InferenceError(node=self, context=context) from exc
 
 
 nodes.Import._infer = infer_import
@@ -265,23 +278,26 @@ def infer_import_from(self, context=None, asname=True):
     """infer a ImportFrom node: return the imported module/object"""
     name = context.lookupname
     if name is None:
-        raise exceptions.InferenceError(node=self, context=context)
+        raise InferenceError(node=self, context=context)
     if asname:
-        name = self.real_name(name)
-
+        try:
+            name = self.real_name(name)
+        except AttributeInferenceError as exc:
+            # See https://github.com/PyCQA/pylint/issues/4692
+            raise InferenceError(node=self, context=context) from exc
     try:
         module = self.do_import_module()
-    except exceptions.AstroidBuildingError as exc:
-        raise exceptions.InferenceError(node=self, context=context) from exc
+    except AstroidBuildingError as exc:
+        raise InferenceError(node=self, context=context) from exc
 
     try:
-        context = contextmod.copy_context(context)
+        context = copy_context(context)
         context.lookupname = name
         stmts = module.getattr(name, ignore_locals=module is self.root())
         return bases._infer_stmts(stmts, context)
-    except exceptions.AttributeInferenceError as error:
-        raise exceptions.InferenceError(
-            error.message, target=self, attribute=name, context=context
+    except AttributeInferenceError as error:
+        raise InferenceError(
+            str(error), target=self, attribute=name, context=context
         ) from error
 
 
@@ -295,36 +311,21 @@ def infer_attribute(self, context=None):
             yield owner
             continue
 
-        if context and context.boundnode:
-            # This handles the situation where the attribute is accessed through a subclass
-            # of a base class and the attribute is defined at the base class's level,
-            # by taking in consideration a redefinition in the subclass.
-            if isinstance(owner, bases.Instance) and isinstance(
-                context.boundnode, bases.Instance
-            ):
-                try:
-                    if helpers.is_subtype(
-                        helpers.object_type(context.boundnode),
-                        helpers.object_type(owner),
-                    ):
-                        owner = context.boundnode
-                except exceptions._NonDeducibleTypeHierarchy:
-                    # Can't determine anything useful.
-                    pass
-        elif not context:
-            context = contextmod.InferenceContext()
+        if not context:
+            context = InferenceContext()
 
+        old_boundnode = context.boundnode
         try:
             context.boundnode = owner
             yield from owner.igetattr(self.attrname, context)
         except (
-            exceptions.AttributeInferenceError,
-            exceptions.InferenceError,
+            AttributeInferenceError,
+            InferenceError,
             AttributeError,
         ):
             pass
         finally:
-            context.boundnode = None
+            context.boundnode = old_boundnode
     return dict(node=self, context=context)
 
 
@@ -339,12 +340,12 @@ nodes.AssignAttr.infer_lhs = decorators.raise_if_nothing_inferred(infer_attribut
 @decorators.path_wrapper
 def infer_global(self, context=None):
     if context.lookupname is None:
-        raise exceptions.InferenceError(node=self, context=context)
+        raise InferenceError(node=self, context=context)
     try:
         return bases._infer_stmts(self.root().getattr(context.lookupname), context)
-    except exceptions.AttributeInferenceError as error:
-        raise exceptions.InferenceError(
-            error.message, target=self, attribute=context.lookupname, context=context
+    except AttributeInferenceError as error:
+        raise InferenceError(
+            str(error), target=self, attribute=context.lookupname, context=context
         ) from error
 
 
@@ -385,17 +386,17 @@ def infer_subscript(self, context=None):
                 index_value = index
 
             if index_value is _SUBSCRIPT_SENTINEL:
-                raise exceptions.InferenceError(node=self, context=context)
+                raise InferenceError(node=self, context=context)
 
             try:
                 assigned = value.getitem(index_value, context)
             except (
-                exceptions.AstroidTypeError,
-                exceptions.AstroidIndexError,
-                exceptions.AttributeInferenceError,
+                AstroidTypeError,
+                AstroidIndexError,
+                AttributeInferenceError,
                 AttributeError,
             ) as exc:
-                raise exceptions.InferenceError(node=self, context=context) from exc
+                raise InferenceError(node=self, context=context) from exc
 
             # Prevent inferring if the inferred subscript
             # is the same as the original subscripted object.
@@ -433,7 +434,7 @@ def _infer_boolop(self, context=None):
 
     try:
         values = [value.infer(context=context) for value in values]
-    except exceptions.InferenceError:
+    except InferenceError:
         yield util.Uninferable
         return None
 
@@ -515,17 +516,19 @@ def _infer_unaryop(self, context=None):
                 try:
                     try:
                         methods = dunder_lookup.lookup(operand, meth)
-                    except exceptions.AttributeInferenceError:
+                    except AttributeInferenceError:
                         yield util.BadUnaryOperationMessage(operand, self.op, exc)
                         continue
 
                     meth = methods[0]
-                    inferred = next(meth.infer(context=context))
+                    inferred = next(meth.infer(context=context), None)
                     if inferred is util.Uninferable or not inferred.callable():
                         continue
 
-                    context = contextmod.copy_context(context)
-                    context.callcontext = contextmod.CallContext(args=[operand])
+                    context = copy_context(context)
+                    context.boundnode = operand
+                    context.callcontext = CallContext(args=[], callee=inferred)
+
                     call_results = inferred.infer_call_result(self, context=context)
                     result = next(call_results, None)
                     if result is None:
@@ -533,10 +536,10 @@ def _infer_unaryop(self, context=None):
                         yield operand
                     else:
                         yield result
-                except exceptions.AttributeInferenceError as exc:
+                except AttributeInferenceError as exc:
                     # The unary operation special method was not found.
                     yield util.BadUnaryOperationMessage(operand, self.op, exc)
-                except exceptions.InferenceError:
+                except InferenceError:
                     yield util.Uninferable
 
 
@@ -562,11 +565,15 @@ def _is_not_implemented(const):
 def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     """Invoke binary operation inference on the given instance."""
     methods = dunder_lookup.lookup(instance, method_name)
-    context = contextmod.bind_context_to_node(context, instance)
+    context = bind_context_to_node(context, instance)
     method = methods[0]
-    inferred = next(method.infer(context=context))
+    context.callcontext.callee = method
+    try:
+        inferred = next(method.infer(context=context))
+    except StopIteration as e:
+        raise InferenceError(node=method, context=context) from e
     if inferred is util.Uninferable:
-        raise exceptions.InferenceError
+        raise InferenceError
     return instance.infer_binary_op(opnode, op, other, context, inferred)
 
 
@@ -615,7 +622,7 @@ def _get_binop_contexts(context, left, right):
     # left.__op__(right).
     for arg in (right, left):
         new_context = context.clone()
-        new_context.callcontext = contextmod.CallContext(args=[arg])
+        new_context.callcontext = CallContext(args=[arg])
         new_context.boundnode = None
         yield new_context
 
@@ -723,9 +730,9 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
             results = list(method())
         except AttributeError:
             continue
-        except exceptions.AttributeInferenceError:
+        except AttributeInferenceError:
             continue
-        except exceptions.InferenceError:
+        except InferenceError:
             yield util.Uninferable
             return
         else:
@@ -757,9 +764,9 @@ def _infer_binop(self, context):
     # we use two separate contexts for evaluating lhs and rhs because
     # 1. evaluating lhs may leave some undesired entries in context.path
     #    which may not let us infer right value of rhs
-    context = context or contextmod.InferenceContext()
-    lhs_context = contextmod.copy_context(context)
-    rhs_context = contextmod.copy_context(context)
+    context = context or InferenceContext()
+    lhs_context = copy_context(context)
+    rhs_context = copy_context(context)
     lhs_iter = left.infer(context=lhs_context)
     rhs_iter = right.infer(context=rhs_context)
     for lhs, rhs in itertools.product(lhs_iter, rhs_iter):
@@ -770,7 +777,7 @@ def _infer_binop(self, context):
 
         try:
             yield from _infer_binary_operation(lhs, rhs, self, context, _get_binop_flow)
-        except exceptions._NonDeducibleTypeHierarchy:
+        except _NonDeducibleTypeHierarchy:
             yield util.Uninferable
 
 
@@ -785,11 +792,106 @@ def infer_binop(self, context=None):
 nodes.BinOp._infer_binop = _infer_binop
 nodes.BinOp._infer = infer_binop
 
+COMPARE_OPS: Dict[str, Callable[[Any, Any], bool]] = {
+    "==": operator.eq,
+    "!=": operator.ne,
+    "<": operator.lt,
+    "<=": operator.le,
+    ">": operator.gt,
+    ">=": operator.ge,
+    "in": lambda a, b: a in b,
+    "not in": lambda a, b: a not in b,
+}
+UNINFERABLE_OPS = {
+    "is",
+    "is not",
+}
+
+
+def _to_literal(node: nodes.NodeNG) -> Any:
+    # Can raise SyntaxError or ValueError from ast.literal_eval
+    # Can raise AttributeError from node.as_string() as not all nodes have a visitor
+    # Is this the stupidest idea or the simplest idea?
+    return ast.literal_eval(node.as_string())
+
+
+def _do_compare(
+    left_iter: Iterable[nodes.NodeNG], op: str, right_iter: Iterable[nodes.NodeNG]
+) -> "bool | type[util.Uninferable]":
+    """
+    If all possible combinations are either True or False, return that:
+    >>> _do_compare([1, 2], '<=', [3, 4])
+    True
+    >>> _do_compare([1, 2], '==', [3, 4])
+    False
+
+    If any item is uninferable, or if some combinations are True and some
+    are False, return Uninferable:
+    >>> _do_compare([1, 3], '<=', [2, 4])
+    util.Uninferable
+    """
+    retval = None
+    if op in UNINFERABLE_OPS:
+        return util.Uninferable
+    op_func = COMPARE_OPS[op]
+
+    for left, right in itertools.product(left_iter, right_iter):
+        if left is util.Uninferable or right is util.Uninferable:
+            return util.Uninferable
+
+        try:
+            left, right = _to_literal(left), _to_literal(right)
+        except (SyntaxError, ValueError, AttributeError):
+            return util.Uninferable
+
+        try:
+            expr = op_func(left, right)
+        except TypeError as exc:
+            raise AstroidTypeError from exc
+
+        if retval is None:
+            retval = expr
+        elif retval != expr:
+            return util.Uninferable
+            # (or both, but "True | False" is basically the same)
+
+    return retval  # it was all the same value
+
+
+def _infer_compare(
+    self: nodes.Compare, context: Optional[InferenceContext] = None
+) -> Any:
+    """Chained comparison inference logic."""
+    retval = True
+
+    ops = self.ops
+    left_node = self.left
+    lhs = list(left_node.infer(context=context))
+    # should we break early if first element is uninferable?
+    for op, right_node in ops:
+        # eagerly evaluate rhs so that values can be re-used as lhs
+        rhs = list(right_node.infer(context=context))
+        try:
+            retval = _do_compare(lhs, op, rhs)
+        except AstroidTypeError:
+            retval = util.Uninferable
+            break
+        if retval is not True:
+            break  # short-circuit
+        lhs = rhs  # continue
+    if retval is util.Uninferable:
+        yield retval
+    else:
+        yield nodes.Const(retval)
+
+
+nodes.Compare._infer = _infer_compare
+
 
 def _infer_augassign(self, context=None):
     """Inference logic for augmented binary operations."""
     if context is None:
-        context = contextmod.InferenceContext()
+        context = InferenceContext()
 
     rhs_context = context.clone()
 
@@ -809,7 +911,7 @@ def _infer_augassign(self, context=None):
                 context=context,
                 flow_factory=_get_aug_flow,
             )
-        except exceptions._NonDeducibleTypeHierarchy:
+        except _NonDeducibleTypeHierarchy:
             yield util.Uninferable
 
 
@@ -831,7 +933,7 @@ nodes.AugAssign._infer = infer_augassign
 def infer_arguments(self, context=None):
     name = context.lookupname
     if name is None:
-        raise exceptions.InferenceError(node=self, context=context)
+        raise InferenceError(node=self, context=context)
     return protocols._arguments_infer_argname(self, name, context)
 
 
@@ -862,8 +964,10 @@ def infer_empty_node(self, context=None):
         yield util.Uninferable
     else:
         try:
-            yield from MANAGER.infer_ast_from_something(self.object, context=context)
-        except exceptions.AstroidError:
+            yield from AstroidManager().infer_ast_from_something(
+                self.object, context=context
+            )
+        except AstroidError:
             yield util.Uninferable
 
 
@@ -876,28 +980,6 @@ def infer_index(self, context=None):
 
 
 nodes.Index._infer = infer_index
-
-# TODO: move directly into bases.Instance when the dependency hell
-# will be solved.
-def instance_getitem(self, index, context=None):
-    # Rewrap index to Const for this case
-    new_context = contextmod.bind_context_to_node(context, self)
-    if not context:
-        context = new_context
-
-    # Create a new callcontext for providing index as an argument.
-    new_context.callcontext = contextmod.CallContext(args=[index])
-
-    method = next(self.igetattr("__getitem__", context=context), None)
-    if not isinstance(method, bases.BoundMethod):
-        raise exceptions.InferenceError(
-            "Could not find __getitem__ for {node!r}.", node=self, context=context
-        )
-
-    return next(method.infer_call_result(self, new_context))
-
-
-bases.Instance.getitem = instance_getitem
 
 
 def _populate_context_lookup(call, context):
@@ -930,12 +1012,12 @@ def infer_ifexp(self, context=None):
     # evaluating lhs may leave some undesired entries in context.path
     # which may not let us infer right value of rhs.
 
-    context = context or contextmod.InferenceContext()
-    lhs_context = contextmod.copy_context(context)
-    rhs_context = contextmod.copy_context(context)
+    context = context or InferenceContext()
+    lhs_context = copy_context(context)
+    rhs_context = copy_context(context)
     try:
         test = next(self.test.infer(context=context.clone()))
-    except exceptions.InferenceError:
+    except (InferenceError, StopIteration):
         both_branches = True
     else:
         if test is not util.Uninferable:
@@ -955,7 +1037,7 @@ nodes.IfExp._infer = infer_ifexp
 
 # pylint: disable=dangerous-default-value
 @wrapt.decorator
-def _cached_generator(func, instance, args, kwargs, _cache={}):
+def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
     node = args[0]
     try:
         return iter(_cache[func, id(node)])

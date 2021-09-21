@@ -4,9 +4,12 @@
 # Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2018 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 
 """
@@ -18,33 +21,32 @@ leads to an inferred FrozenSet:
     Call(func=Name('frozenset'), args=Tuple(...))
 """
 
-import builtins
 
-from astroid import bases
-from astroid import decorators
-from astroid import exceptions
-from astroid import MANAGER
-from astroid import node_classes
-from astroid import scoped_nodes
-from astroid import util
+from astroid import bases, decorators, util
+from astroid.exceptions import (
+    AttributeInferenceError,
+    InferenceError,
+    MroError,
+    SuperError,
+)
+from astroid.manager import AstroidManager
+from astroid.nodes import node_classes, scoped_nodes
 
-
-BUILTINS = builtins.__name__
 objectmodel = util.lazy_import("interpreter.objectmodel")
 
 
-class FrozenSet(node_classes._BaseContainer):
+class FrozenSet(node_classes.BaseContainer):
     """class representing a FrozenSet composite node"""
 
     def pytype(self):
-        return "%s.frozenset" % BUILTINS
+        return "builtins.frozenset"
 
     def _infer(self, context=None):
         yield self
 
     @decorators.cachedproperty
     def _proxied(self):  # pylint: disable=method-hidden
-        ast_builtins = MANAGER.builtins_module
+        ast_builtins = AstroidManager().builtins_module
         return ast_builtins.getattr("frozenset")[0]
 
 
@@ -64,13 +66,13 @@ class Super(node_classes.NodeNG):
     # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.SuperModel())
 
-    # pylint: disable=super-init-not-called
     def __init__(self, mro_pointer, mro_type, self_class, scope):
         self.type = mro_type
         self.mro_pointer = mro_pointer
         self._class_based = False
         self._self_class = self_class
         self._scope = scope
+        super().__init__()
 
     def _infer(self, context=None):
         yield self
@@ -78,7 +80,7 @@ class Super(node_classes.NodeNG):
     def super_mro(self):
         """Get the MRO which will be used to lookup attributes in this super."""
         if not isinstance(self.mro_pointer, scoped_nodes.ClassDef):
-            raise exceptions.SuperError(
+            raise SuperError(
                 "The first argument to super must be a subtype of "
                 "type, not {mro_pointer}.",
                 super_=self,
@@ -91,20 +93,18 @@ class Super(node_classes.NodeNG):
         else:
             mro_type = getattr(self.type, "_proxied", None)
             if not isinstance(mro_type, (bases.Instance, scoped_nodes.ClassDef)):
-                raise exceptions.SuperError(
+                raise SuperError(
                     "The second argument to super must be an "
                     "instance or subtype of type, not {type}.",
                     super_=self,
                 )
 
         if not mro_type.newstyle:
-            raise exceptions.SuperError(
-                "Unable to call super on old-style classes.", super_=self
-            )
+            raise SuperError("Unable to call super on old-style classes.", super_=self)
 
         mro = mro_type.mro()
         if self.mro_pointer not in mro:
-            raise exceptions.SuperError(
+            raise SuperError(
                 "The second argument to super must be an "
                 "instance or subtype of type, not {type}.",
                 super_=self,
@@ -115,11 +115,11 @@ class Super(node_classes.NodeNG):
 
     @decorators.cachedproperty
     def _proxied(self):
-        ast_builtins = MANAGER.builtins_module
+        ast_builtins = AstroidManager().builtins_module
         return ast_builtins.getattr("super")[0]
 
     def pytype(self):
-        return "%s.super" % BUILTINS
+        return "builtins.super"
 
     def display_type(self):
         return "Super of"
@@ -143,8 +143,8 @@ class Super(node_classes.NodeNG):
             mro = self.super_mro()
         # Don't let invalid MROs or invalid super calls
         # leak out as is from this function.
-        except exceptions.SuperError as exc:
-            raise exceptions.AttributeInferenceError(
+        except SuperError as exc:
+            raise AttributeInferenceError(
                 (
                     "Lookup for {name} on {target!r} because super call {super!r} "
                     "is invalid."
@@ -154,8 +154,8 @@ class Super(node_classes.NodeNG):
                 context=context,
                 super_=exc.super_,
             ) from exc
-        except exceptions.MroError as exc:
-            raise exceptions.AttributeInferenceError(
+        except MroError as exc:
+            raise AttributeInferenceError(
                 (
                     "Lookup for {name} on {target!r} failed because {cls!r} has an "
                     "invalid MRO."
@@ -191,21 +191,19 @@ class Super(node_classes.NodeNG):
                         yield from function.infer_call_result(
                             caller=self, context=context
                         )
-                    except exceptions.InferenceError:
+                    except InferenceError:
                         yield util.Uninferable
                 elif bases._is_property(inferred):
                     # TODO: support other descriptors as well.
                     try:
                         yield from inferred.infer_call_result(self, context)
-                    except exceptions.InferenceError:
+                    except InferenceError:
                         yield util.Uninferable
                 else:
                     yield bases.BoundMethod(inferred, cls)
 
         if not found:
-            raise exceptions.AttributeInferenceError(
-                target=self, attribute=name, context=context
-            )
+            raise AttributeInferenceError(target=self, attribute=name, context=context)
 
     def getattr(self, name, context=None):
         return list(self.igetattr(name, context=context))
@@ -263,7 +261,10 @@ class PartialFunction(scoped_nodes.FunctionDef):
     def __init__(
         self, call, name=None, doc=None, lineno=None, col_offset=None, parent=None
     ):
-        super().__init__(name, doc, lineno, col_offset, parent)
+        super().__init__(name, doc, lineno, col_offset, parent=None)
+        # A typical FunctionDef automatically adds its name to the parent scope,
+        # but a partial should not, so defer setting parent until after init
+        self.parent = parent
         self.filled_positionals = len(call.positional_arguments[1:])
         self.filled_args = call.positional_arguments[1:]
         self.filled_keywords = call.keyword_arguments
@@ -305,10 +306,10 @@ class Property(scoped_nodes.FunctionDef):
     type = "property"
 
     def pytype(self):
-        return "%s.property" % BUILTINS
+        return "builtins.property"
 
     def infer_call_result(self, caller=None, context=None):
-        raise exceptions.InferenceError("Properties are not callable")
+        raise InferenceError("Properties are not callable")
 
     def infer(self, context=None, **kwargs):
         return iter((self,))

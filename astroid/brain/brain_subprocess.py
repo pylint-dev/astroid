@@ -3,55 +3,36 @@
 # Copyright (c) 2018 Peter Talley <peterctalley@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020 Peter Pentchev <roam@ringlet.net>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021 Damien Baty <damien@damienbaty.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
-import sys
 import textwrap
 
-import astroid
-
-
-PY37 = sys.version_info >= (3, 7)
-PY36 = sys.version_info >= (3, 6)
+from astroid.brain.helpers import register_module_extender
+from astroid.builder import parse
+from astroid.const import PY37_PLUS, PY39_PLUS
+from astroid.manager import AstroidManager
 
 
 def _subprocess_transform():
     communicate = (bytes("string", "ascii"), bytes("string", "ascii"))
     communicate_signature = "def communicate(self, input=None, timeout=None)"
-    if PY37:
-        init = """
-        def __init__(self, args, bufsize=0, executable=None,
-                     stdin=None, stdout=None, stderr=None,
-                     preexec_fn=None, close_fds=False, shell=False,
-                     cwd=None, env=None, universal_newlines=False,
-                     startupinfo=None, creationflags=0, restore_signals=True,
-                     start_new_session=False, pass_fds=(), *,
-                     encoding=None, errors=None, text=None):
-            pass
-        """
-    elif PY36:
-        init = """
-        def __init__(self, args, bufsize=0, executable=None,
-                     stdin=None, stdout=None, stderr=None,
-                     preexec_fn=None, close_fds=False, shell=False,
-                     cwd=None, env=None, universal_newlines=False,
-                     startupinfo=None, creationflags=0, restore_signals=True,
-                     start_new_session=False, pass_fds=(), *,
-                     encoding=None, errors=None):
-            pass
-        """
-    else:
-        init = """
-        def __init__(self, args, bufsize=0, executable=None,
-                     stdin=None, stdout=None, stderr=None,
-                     preexec_fn=None, close_fds=False, shell=False,
-                     cwd=None, env=None, universal_newlines=False,
-                     startupinfo=None, creationflags=0, restore_signals=True,
-                     start_new_session=False, pass_fds=()):
-            pass
-        """
+    args = """\
+        self, args, bufsize=0, executable=None, stdin=None, stdout=None, stderr=None,
+        preexec_fn=None, close_fds=False, shell=False, cwd=None, env=None,
+        universal_newlines=False, startupinfo=None, creationflags=0, restore_signals=True,
+        start_new_session=False, pass_fds=(), *, encoding=None, errors=None"""
+    if PY37_PLUS:
+        args += ", text=None"
+    init = f"""
+        def __init__({args}):
+            pass"""
     wait_signature = "def wait(self, timeout=None)"
     ctx_manager = """
         def __enter__(self): return self
@@ -59,7 +40,7 @@ def _subprocess_transform():
     """
     py3_args = "args = []"
 
-    if PY37:
+    if PY37_PLUS:
         check_output_signature = """
         check_output(
             args, *,
@@ -112,8 +93,8 @@ def _subprocess_transform():
         """.strip()
 
     code = textwrap.dedent(
-        """
-    def %(check_output_signature)s
+        f"""
+    def {check_output_signature}
         if universal_newlines:
             return ""
         return b""
@@ -121,11 +102,11 @@ def _subprocess_transform():
     class Popen(object):
         returncode = pid = 0
         stdin = stdout = stderr = file()
-        %(py3_args)s
+        {py3_args}
 
-        %(communicate_signature)s:
-            return %(communicate)r
-        %(wait_signature)s:
+        {communicate_signature}:
+            return {communicate!r}
+        {wait_signature}:
             return self.returncode
         def poll(self):
             return self.returncode
@@ -135,22 +116,20 @@ def _subprocess_transform():
             pass
         def kill(self):
             pass
-        %(ctx_manager)s
+        {ctx_manager}
        """
-        % {
-            "check_output_signature": check_output_signature,
-            "communicate": communicate,
-            "communicate_signature": communicate_signature,
-            "wait_signature": wait_signature,
-            "ctx_manager": ctx_manager,
-            "py3_args": py3_args,
-        }
     )
+    if PY39_PLUS:
+        code += """
+    @classmethod
+    def __class_getitem__(cls, item):
+        pass
+        """
 
     init_lines = textwrap.dedent(init).splitlines()
     indented_init = "\n".join(" " * 4 + line for line in init_lines)
     code += indented_init
-    return astroid.parse(code)
+    return parse(code)
 
 
-astroid.register_module_extender(astroid.MANAGER, "subprocess", _subprocess_transform)
+register_module_extender(AstroidManager(), "subprocess", _subprocess_transform)

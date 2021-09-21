@@ -1,15 +1,19 @@
 # Copyright (c) 2006-2013, 2015 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2014 Google, Inc.
 # Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2015-2016, 2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2016 Moises Lopez <moylop260@vauxoo.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2019 Nick Drozd <nicholasdrozd@gmail.com>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """Python Abstract Syntax Tree New Generation
 
@@ -36,133 +40,132 @@ Main modules are:
 * builder contains the class responsible to build astroid trees
 """
 
-import enum
-import itertools
-import os
-import sys
+from importlib import import_module
+from pathlib import Path
 
-import wrapt
+# isort: off
+# We have an isort: off on '__version__' because the packaging need to access
+# the version before the dependencies are installed (in particular 'wrapt'
+# that is imported in astroid.inference)
+from astroid.__pkginfo__ import __version__, version
 
+# isort: on
 
-_Context = enum.Enum("Context", "Load Store Del")
-Load = _Context.Load
-Store = _Context.Store
-Del = _Context.Del
-del _Context
-
-
-# pylint: disable=wrong-import-order,wrong-import-position
-from .__pkginfo__ import version as __version__
-
-# WARNING: internal imports order matters !
-
-# pylint: disable=redefined-builtin
-
-# make all exception classes accessible from astroid package
+from astroid import node_classes  # Deprecated, to remove later
+from astroid import scoped_nodes  # Deprecated, to remove later
+from astroid import inference, raw_building
+from astroid.astroid_manager import MANAGER
+from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
+from astroid.brain.helpers import register_module_extender
+from astroid.builder import extract_node, parse
+from astroid.const import Context, Del, Load, Store
 from astroid.exceptions import *
+from astroid.inference_tip import _inference_tip_cached, inference_tip
+from astroid.objects import ExceptionInstance
 
-# make all node classes accessible from astroid package
-from astroid.nodes import *
+# isort: off
+# It's impossible to import from astroid.nodes with a wildcard, because
+# there is a cyclic import that prevent creating an __all__ in astroid/nodes
+# and we need astroid/scoped_nodes and astroid/node_classes to work. So
+# importing with a wildcard would clash with astroid/nodes/scoped_nodes
+# and astroid/nodes/node_classes.
+from astroid.nodes import (  # pylint: disable=redefined-builtin (Ellipsis)
+    CONST_CLS,
+    AnnAssign,
+    Arguments,
+    Assert,
+    Assign,
+    AssignAttr,
+    AssignName,
+    AsyncFor,
+    AsyncFunctionDef,
+    AsyncWith,
+    Attribute,
+    AugAssign,
+    Await,
+    BinOp,
+    BoolOp,
+    Break,
+    Call,
+    ClassDef,
+    Compare,
+    Comprehension,
+    ComprehensionScope,
+    Const,
+    Continue,
+    Decorators,
+    DelAttr,
+    Delete,
+    DelName,
+    Dict,
+    DictComp,
+    DictUnpack,
+    Ellipsis,
+    EmptyNode,
+    EvaluatedObject,
+    ExceptHandler,
+    Expr,
+    ExtSlice,
+    For,
+    FormattedValue,
+    FunctionDef,
+    GeneratorExp,
+    Global,
+    If,
+    IfExp,
+    Import,
+    ImportFrom,
+    Index,
+    JoinedStr,
+    Keyword,
+    Lambda,
+    List,
+    ListComp,
+    Match,
+    MatchAs,
+    MatchCase,
+    MatchClass,
+    MatchMapping,
+    MatchOr,
+    MatchSequence,
+    MatchSingleton,
+    MatchStar,
+    MatchValue,
+    Module,
+    Name,
+    NamedExpr,
+    NodeNG,
+    Nonlocal,
+    Pass,
+    Raise,
+    Return,
+    Set,
+    SetComp,
+    Slice,
+    Starred,
+    Subscript,
+    TryExcept,
+    TryFinally,
+    Tuple,
+    UnaryOp,
+    Unknown,
+    While,
+    With,
+    Yield,
+    YieldFrom,
+    are_exclusive,
+    builtin_lookup,
+    unpack_infer,
+    function_to_method,
+)
 
-# trigger extra monkey-patching
-from astroid import inference
+# isort: on
 
-# more stuff available
-from astroid import raw_building
-from astroid.bases import BaseInstance, Instance, BoundMethod, UnboundMethod
-from astroid.node_classes import are_exclusive, unpack_infer
-from astroid.scoped_nodes import builtin_lookup
-from astroid.builder import parse, extract_node
 from astroid.util import Uninferable
 
-# make a manager instance (borg) accessible from astroid package
-from astroid.manager import AstroidManager
-
-MANAGER = AstroidManager()
-del AstroidManager
-
-# transform utilities (filters and decorator)
-
-
-# pylint: disable=dangerous-default-value
-@wrapt.decorator
-def _inference_tip_cached(func, instance, args, kwargs, _cache={}):
-    """Cache decorator used for inference tips"""
-    node = args[0]
-    try:
-        return iter(_cache[func, node])
-    except KeyError:
-        result = func(*args, **kwargs)
-        # Need to keep an iterator around
-        original, copy = itertools.tee(result)
-        _cache[func, node] = list(copy)
-        return original
-
-
-# pylint: enable=dangerous-default-value
-
-
-def inference_tip(infer_function, raise_on_overwrite=False):
-    """Given an instance specific inference function, return a function to be
-    given to MANAGER.register_transform to set this inference function.
-
-    :param bool raise_on_overwrite: Raise an `InferenceOverwriteError`
-        if the inference tip will overwrite another. Used for debugging
-
-    Typical usage
-
-    .. sourcecode:: python
-
-       MANAGER.register_transform(Call, inference_tip(infer_named_tuple),
-                                  predicate)
-
-    .. Note::
-
-        Using an inference tip will override
-        any previously set inference tip for the given
-        node. Use a predicate in the transform to prevent
-        excess overwrites.
-    """
-
-    def transform(node, infer_function=infer_function):
-        if (
-            raise_on_overwrite
-            and node._explicit_inference is not None
-            and node._explicit_inference is not infer_function
-        ):
-            raise InferenceOverwriteError(
-                "Inference already set to {existing_inference}. "
-                "Trying to overwrite with {new_inference} for {node}".format(
-                    existing_inference=infer_function,
-                    new_inference=node._explicit_inference,
-                    node=node,
-                )
-            )
-        # pylint: disable=no-value-for-parameter
-        node._explicit_inference = _inference_tip_cached(infer_function)
-        return node
-
-    return transform
-
-
-def register_module_extender(manager, module_name, get_extension_mod):
-    def transform(node):
-        extension_module = get_extension_mod()
-        for name, objs in extension_module.locals.items():
-            node.locals[name] = objs
-            for obj in objs:
-                if obj.parent is extension_module:
-                    obj.parent = node
-
-    manager.register_transform(Module, transform, lambda n: n.name == module_name)
-
-
 # load brain plugins
-BRAIN_MODULES_DIR = os.path.join(os.path.dirname(__file__), "brain")
-if BRAIN_MODULES_DIR not in sys.path:
-    # add it to the end of the list so user path take precedence
-    sys.path.append(BRAIN_MODULES_DIR)
-# load modules in this directory
-for module in os.listdir(BRAIN_MODULES_DIR):
-    if module.endswith(".py"):
-        __import__(module[:-3])
+ASTROID_INSTALL_DIRECTORY = Path(__file__).parent
+BRAIN_MODULES_DIRECTORY = ASTROID_INSTALL_DIRECTORY / "brain"
+for module in BRAIN_MODULES_DIRECTORY.iterdir():
+    if module.suffix == ".py":
+        import_module(f"astroid.brain.{module.stem}")

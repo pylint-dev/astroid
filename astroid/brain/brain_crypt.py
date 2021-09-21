@@ -1,16 +1,16 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
-import sys
-import astroid
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+from astroid.brain.helpers import register_module_extender
+from astroid.builder import parse
+from astroid.const import PY37_PLUS
+from astroid.manager import AstroidManager
 
-PY37 = sys.version_info >= (3, 7)
-
-if PY37:
+if PY37_PLUS:
     # Since Python 3.7 Hashing Methods are added
     # dynamically to globals()
 
     def _re_transform():
-        return astroid.parse(
+        return parse(
             """
         from collections import namedtuple
         _Method = namedtuple('_Method', 'name ident salt_chars total_size')
@@ -23,4 +23,4 @@ if PY37:
         """
         )
 
-    astroid.register_module_extender(astroid.MANAGER, "crypt", _re_transform)
+    register_module_extender(AstroidManager(), "crypt", _re_transform)

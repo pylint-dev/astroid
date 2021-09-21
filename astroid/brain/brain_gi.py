@@ -1,32 +1,37 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2014 Google, Inc.
 # Copyright (c) 2014 Cole Robinson <crobinso@redhat.com>
-# Copyright (c) 2015-2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2015-2016, 2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2015 David Shea <dshea@redhat.com>
 # Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
 # Copyright (c) 2016 Giuseppe Scrivano <gscrivan@redhat.com>
 # Copyright (c) 2018 Christoph Reiter <reiter.christoph@gmail.com>
 # Copyright (c) 2019 Philipp Hörist <philipp@hoerist.com>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """Astroid hooks for the Python 2 GObject introspection bindings.
 
 Helps with understanding everything imported from 'gi.repository'
 """
 
+# pylint:disable=import-error,import-outside-toplevel
+
 import inspect
 import itertools
-import sys
 import re
+import sys
 import warnings
 
-from astroid import MANAGER, AstroidBuildingError, nodes
+from astroid import nodes
 from astroid.builder import AstroidBuilder
-
+from astroid.exceptions import AstroidBuildingError
+from astroid.manager import AstroidManager
 
 _inspected_modules = {}
 
@@ -82,7 +87,7 @@ def _gi_build_stub(parent):
 
         try:
             obj = getattr(parent, name)
-        except:
+        except AttributeError:
             continue
 
         if inspect.isclass(obj):
@@ -110,7 +115,7 @@ def _gi_build_stub(parent):
     ret = ""
 
     if constants:
-        ret += "# %s constants\n\n" % parent.__name__
+        ret += f"# {parent.__name__} constants\n\n"
     for name in sorted(constants):
         if name[0].isdigit():
             # GDK has some busted constant names like
@@ -122,33 +127,33 @@ def _gi_build_stub(parent):
         strval = str(val)
         if isinstance(val, str):
             strval = '"%s"' % str(val).replace("\\", "\\\\")
-        ret += "%s = %s\n" % (name, strval)
+        ret += f"{name} = {strval}\n"
 
     if ret:
         ret += "\n\n"
     if functions:
-        ret += "# %s functions\n\n" % parent.__name__
+        ret += f"# {parent.__name__} functions\n\n"
     for name in sorted(functions):
-        ret += "def %s(*args, **kwargs):\n" % name
+        ret += f"def {name}(*args, **kwargs):\n"
         ret += "    pass\n"
 
     if ret:
         ret += "\n\n"
     if methods:
-        ret += "# %s methods\n\n" % parent.__name__
+        ret += f"# {parent.__name__} methods\n\n"
     for name in sorted(methods):
-        ret += "def %s(self, *args, **kwargs):\n" % name
+        ret += f"def {name}(self, *args, **kwargs):\n"
         ret += "    pass\n"
 
     if ret:
         ret += "\n\n"
     if classes:
-        ret += "# %s classes\n\n" % parent.__name__
+        ret += f"# {parent.__name__} classes\n\n"
     for name, obj in sorted(classes.items()):
         base = "object"
         if issubclass(obj, Exception):
             base = "Exception"
-        ret += "class %s(%s):\n" % (name, base)
+        ret += f"class {name}({base}):\n"
 
         classret = _gi_build_stub(obj)
         if not classret:
@@ -187,11 +192,14 @@ def _import_gi_module(modname):
                         # Just inspecting the code can raise gi deprecation
                         # warnings, so ignore them.
                         try:
-                            from gi import PyGIDeprecationWarning, PyGIWarning
+                            from gi import (  # pylint:disable=import-error
+                                PyGIDeprecationWarning,
+                                PyGIWarning,
+                            )
 
                             warnings.simplefilter("ignore", PyGIDeprecationWarning)
                             warnings.simplefilter("ignore", PyGIWarning)
-                        except Exception:
+                        except Exception:  # pylint:disable=broad-except
                             pass
 
                         __import__(m)
@@ -202,7 +210,7 @@ def _import_gi_module(modname):
         except ImportError:
             astng = _inspected_modules[modname] = None
         else:
-            astng = AstroidBuilder(MANAGER).string_build(modcode, modname)
+            astng = AstroidBuilder(AstroidManager()).string_build(modcode, modname)
             _inspected_modules[modname] = astng
     else:
         astng = _inspected_modules[modname]
@@ -241,13 +249,13 @@ def _register_require_version(node):
         import gi
 
         gi.require_version(node.args[0].value, node.args[1].value)
-    except Exception:
+    except Exception:  # pylint:disable=broad-except
         pass
 
     return node
 
 
-MANAGER.register_failed_import_hook(_import_gi_module)
-MANAGER.register_transform(
+AstroidManager().register_failed_import_hook(_import_gi_module)
+AstroidManager().register_transform(
     nodes.Call, _register_require_version, _looks_like_require_version
 )

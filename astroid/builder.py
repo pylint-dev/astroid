@@ -1,36 +1,36 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2006-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2013 Phil Schaf <flying-sheep@web.de>
-# Copyright (c) 2014-2019 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014-2015 Google, Inc.
 # Copyright (c) 2014 Alexander Presnyakov <flagist0@gmail.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """The AstroidBuilder makes astroid from living object and / or from _ast
 
 The builder is not thread safe and can't be used to parse different sources
 at the same time.
 """
-
 import os
 import textwrap
+import types
 from tokenize import detect_encoding
+from typing import List, Union
 
+from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import get_parser_module
-from astroid import bases
-from astroid import exceptions
-from astroid import manager
-from astroid import modutils
-from astroid import raw_building
-from astroid import rebuilder
-from astroid import nodes
-from astroid import util
+from astroid.exceptions import AstroidBuildingError, AstroidSyntaxError, InferenceError
+from astroid.manager import AstroidManager
+from astroid.nodes.node_classes import NodeNG
 
 objects = util.lazy_import("objects")
 
@@ -43,13 +43,13 @@ _TRANSIENT_FUNCTION = "__"
 # when calling extract_node.
 _STATEMENT_SELECTOR = "#@"
 MISPLACED_TYPE_ANNOTATION_ERROR = "misplaced type annotation"
-MANAGER = manager.AstroidManager()
 
 
 def open_source_file(filename):
+    # pylint: disable=consider-using-with
     with open(filename, "rb") as byte_stream:
         encoding = detect_encoding(byte_stream.readline)[0]
-    stream = open(filename, "r", newline=None, encoding=encoding)
+    stream = open(filename, newline=None, encoding=encoding)
     data = stream.read()
     return stream, encoding, data
 
@@ -62,7 +62,7 @@ def _can_assign_attr(node, attrname):
     else:
         if slots and attrname not in {slot.value for slot in slots}:
             return False
-    return True
+    return node.qname() != "builtins.object"
 
 
 class AstroidBuilder(raw_building.InspectBuilder):
@@ -77,17 +77,18 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
     # pylint: disable=redefined-outer-name
     def __init__(self, manager=None, apply_transforms=True):
-        super().__init__()
-        self._manager = manager or MANAGER
+        super().__init__(manager)
         self._apply_transforms = apply_transforms
 
-    def module_build(self, module, modname=None):
+    def module_build(
+        self, module: types.ModuleType, modname: str = None
+    ) -> nodes.Module:
         """Build an astroid from a living module instance."""
         node = None
         path = getattr(module, "__file__", None)
         if path is not None:
             path_, ext = os.path.splitext(modutils._path_from_filename(path))
-            if ext in (".py", ".pyc", ".pyo") and os.path.exists(path_ + ".py"):
+            if ext in {".py", ".pyc", ".pyo"} and os.path.exists(path_ + ".py"):
                 node = self.file_build(path_ + ".py", modname)
         if node is None:
             # this is a built-in module
@@ -106,15 +107,15 @@ class AstroidBuilder(raw_building.InspectBuilder):
         """
         try:
             stream, encoding, data = open_source_file(path)
-        except IOError as exc:
-            raise exceptions.AstroidBuildingError(
+        except OSError as exc:
+            raise AstroidBuildingError(
                 "Unable to load file {path}:\n{error}",
                 modname=modname,
                 path=path,
                 error=exc,
             ) from exc
         except (SyntaxError, LookupError) as exc:
-            raise exceptions.AstroidSyntaxError(
+            raise AstroidSyntaxError(
                 "Python 3 encoding specification error or unknown encoding:\n"
                 "{error}",
                 modname=modname,
@@ -123,7 +124,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             ) from exc
         except UnicodeError as exc:  # wrong encoding
             # detect_encoding returns utf-8 if no encoding specified
-            raise exceptions.AstroidBuildingError(
+            raise AstroidBuildingError(
                 "Wrong or no encoding specified for {filename}.", filename=path
             ) from exc
         with stream:
@@ -159,6 +160,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
         # Visit the transforms
         if self._apply_transforms:
+            if modutils.is_module_name_part_of_extension_package_whitelist(
+                module.name, self._manager.extension_package_whitelist
+            ):
+                return module
             module = self._manager.visit_transforms(module)
         return module
 
@@ -167,7 +172,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         try:
             node, parser_module = _parse_string(data, type_comments=True)
         except (TypeError, ValueError, SyntaxError) as exc:
-            raise exceptions.AstroidSyntaxError(
+            raise AstroidSyntaxError(
                 "Parsing Python code failed:\n{error}",
                 source=data,
                 modname=modname,
@@ -198,7 +203,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
         Resort the locals if coming from a delayed node
         """
-        _key_func = lambda node: node.fromlineno
+
+        def _key_func(node):
+            return node.fromlineno
 
         def sort_locals(my_list):
             my_list.sort(key=_key_func)
@@ -207,7 +214,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             if name == "*":
                 try:
                     imported = node.do_import_module()
-                except exceptions.AstroidBuildingError:
+                except AstroidBuildingError:
                     continue
                 for name in imported.public_names():
                     node.parent.set_local(name, node)
@@ -256,11 +263,11 @@ class AstroidBuilder(raw_building.InspectBuilder):
                     values.insert(0, node)
                 else:
                     values.append(node)
-        except exceptions.InferenceError:
+        except InferenceError:
             pass
 
 
-def build_namespace_package_module(name, path):
+def build_namespace_package_module(name, path: str) -> nodes.Module:
     return nodes.Module(name, doc="", path=path, package=True)
 
 
@@ -275,7 +282,9 @@ def parse(code, module_name="", path=None, apply_transforms=True):
         don't want the default transforms to be applied.
     """
     code = textwrap.dedent(code)
-    builder = AstroidBuilder(manager=MANAGER, apply_transforms=apply_transforms)
+    builder = AstroidBuilder(
+        manager=AstroidManager(), apply_transforms=apply_transforms
+    )
     return builder.string_build(code, modname=module_name, path=path)
 
 
@@ -333,7 +342,7 @@ def _find_statement_by_line(node, line):
       can be found.
     :rtype:  astroid.bases.NodeNG or None
     """
-    if isinstance(node, (nodes.ClassDef, nodes.FunctionDef)):
+    if isinstance(node, (nodes.ClassDef, nodes.FunctionDef, nodes.MatchCase)):
         # This is an inaccuracy in the AST: the nodes that can be
         # decorated do not carry explicit information on which line
         # the actual definition (class/def), but .fromline seems to
@@ -353,7 +362,7 @@ def _find_statement_by_line(node, line):
     return None
 
 
-def extract_node(code, module_name=""):
+def extract_node(code: str, module_name: str = "") -> Union[NodeNG, List[NodeNG]]:
     """Parses some Python code as a module and extracts a designated AST node.
 
     Statements:
@@ -405,7 +414,6 @@ def extract_node(code, module_name=""):
     a module. Will be passed through textwrap.dedent first.
     :param str module_name: The name of the module.
     :returns: The designated node from the parse tree, or a list of nodes.
-    :rtype: astroid.bases.NodeNG, or a list of nodes.
     """
 
     def _extract(node):

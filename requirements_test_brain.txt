@@ -1,0 +1,8 @@
+attrs
+types-attrs
+nose
+numpy
+python-dateutil
+types-python-dateutil
+six
+types-six

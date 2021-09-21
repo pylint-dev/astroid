@@ -1,9 +1,11 @@
-# -*- encoding=utf-8 -*-
+# Copyright (c) 2019-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2019 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 import unittest
 
 try:
@@ -13,8 +15,7 @@ try:
 except ImportError:
     HAS_NUMPY = False
 
-from astroid import builder
-from astroid import nodes
+from astroid import builder, nodes
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
@@ -23,7 +24,7 @@ class NumpyBrainRandomMtrandTest(unittest.TestCase):
     Test of all the functions of numpy.random.mtrand module.
     """
 
-    #  Map between functions names and arguments names and default values
+    # Map between functions names and arguments names and default values
     all_mtrand = {
         "beta": (["a", "b", "size"], [None]),
         "binomial": (["n", "p", "size"], [None]),
@@ -55,6 +56,7 @@ class NumpyBrainRandomMtrandTest(unittest.TestCase):
         "rand": (["args"], []),
         "randint": (["low", "high", "size", "dtype"], [None, None, "l"]),
         "randn": (["args"], []),
+        "random": (["size"], [None]),
         "random_integers": (["low", "high", "size"], [None, None]),
         "random_sample": (["size"], [None]),
         "rayleigh": (["scale", "size"], [1.0, None]),
@@ -76,12 +78,10 @@ class NumpyBrainRandomMtrandTest(unittest.TestCase):
 
     def _inferred_numpy_attribute(self, func_name):
         node = builder.extract_node(
-            """
+            f"""
         import numpy.random.mtrand as tested_module
-        func = tested_module.{:s}
-        func""".format(
-                func_name
-            )
+        func = tested_module.{func_name:s}
+        func"""
         )
         return next(node.infer())
 

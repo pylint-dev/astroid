@@ -1,5 +1,5 @@
 # Copyright (c) 2006-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2014-2019 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 BioGeek <jeroen.vangoey@gmail.com>
 # Copyright (c) 2014 Google, Inc.
 # Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
@@ -9,11 +9,19 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2019 Raphael Gaschignard <raphael@makeleaps.com>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2020 Anubhav <35621759+anubh-v@users.noreply.github.com>
 # Copyright (c) 2020 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2021 grayjk <grayjk@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
+# Copyright (c) 2021 DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
+# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """astroid manager: avoid multiple astroid build of a same module when
 possible by providing a class responsible to get astroid representation
@@ -21,15 +29,25 @@ from various source and using a cache of built modules)
 """
 
 import os
+import types
 import zipimport
+from typing import ClassVar
 
-from astroid import exceptions
+from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec
-from astroid import modutils
-from astroid import transforms
+from astroid.modutils import (
+    NoSourceFile,
+    file_info_from_modpath,
+    get_source_file,
+    is_module_name_part_of_extension_package_whitelist,
+    is_python_source,
+    is_standard_module,
+    load_module_from_name,
+    modpath_from_file,
+)
+from astroid.transforms import TransformVisitor
 
-
-ZIP_IMPORT_EXTS = (".zip", ".egg", ".whl")
+ZIP_IMPORT_EXTS = (".zip", ".egg", ".whl", ".pyz", ".pyzw")
 
 
 def safe_repr(obj):
@@ -40,14 +58,14 @@ def safe_repr(obj):
 
 
 class AstroidManager:
-    """the astroid manager, responsible to build astroid from files
-     or modules.
+    """Responsible to build astroid from files or modules.
 
-    Use the Borg pattern.
+    Use the Borg (singleton) pattern.
     """
 
     name = "astroid loader"
     brain = {}
+    max_inferable_values: ClassVar[int] = 100
 
     def __init__(self):
         self.__dict__ = AstroidManager.brain
@@ -59,12 +77,16 @@ class AstroidManager:
             self.always_load_extensions = False
             self.optimize_ast = False
             self.extension_package_whitelist = set()
-            self._transform = transforms.TransformVisitor()
+            self._transform = TransformVisitor()
 
-            # Export these APIs for convenience
-            self.register_transform = self._transform.register_transform
-            self.unregister_transform = self._transform.unregister_transform
-            self.max_inferable_values = 100
+    @property
+    def register_transform(self):
+        # This and unregister_transform below are exported for convenience
+        return self._transform.register_transform
+
+    @property
+    def unregister_transform(self):
+        return self._transform.unregister_transform
 
     @property
     def builtins_module(self):
@@ -77,13 +99,13 @@ class AstroidManager:
     def ast_from_file(self, filepath, modname=None, fallback=True, source=False):
         """given a module name, return the astroid object"""
         try:
-            filepath = modutils.get_source_file(filepath, include_no_ext=True)
+            filepath = get_source_file(filepath, include_no_ext=True)
             source = True
-        except modutils.NoSourceFile:
+        except NoSourceFile:
             pass
         if modname is None:
             try:
-                modname = ".".join(modutils.modpath_from_file(filepath))
+                modname = ".".join(modpath_from_file(filepath))
             except ImportError:
                 modname = filepath
         if (
@@ -98,12 +120,10 @@ class AstroidManager:
             return AstroidBuilder(self).file_build(filepath, modname)
         if fallback and modname:
             return self.ast_from_module_name(modname)
-        raise exceptions.AstroidBuildingError(
-            "Unable to build an AST for {path}.", path=filepath
-        )
+        raise AstroidBuildingError("Unable to build an AST for {path}.", path=filepath)
 
     def ast_from_string(self, data, modname="", filepath=None):
-        """ Given some source code as a string, return its corresponding astroid object"""
+        """Given some source code as a string, return its corresponding astroid object"""
         # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import AstroidBuilder
 
@@ -121,15 +141,13 @@ class AstroidManager:
 
         return build_namespace_package_module(modname, path)
 
-    def _can_load_extension(self, modname):
+    def _can_load_extension(self, modname: str) -> bool:
         if self.always_load_extensions:
             return True
-        if modutils.is_standard_module(modname):
+        if is_standard_module(modname):
             return True
-        parts = modname.split(".")
-        return any(
-            ".".join(parts[:x]) in self.extension_package_whitelist
-            for x in range(1, len(parts) + 1)
+        return is_module_name_part_of_extension_package_whitelist(
+            modname, self.extension_package_whitelist
         )
 
     def ast_from_module_name(self, modname, context_file=None):
@@ -158,17 +176,17 @@ class AstroidManager:
                 ):
                     return self._build_stub_module(modname)
                 try:
-                    module = modutils.load_module_from_name(modname)
-                except Exception as ex:
-                    raise exceptions.AstroidImportError(
+                    module = load_module_from_name(modname)
+                except Exception as e:
+                    raise AstroidImportError(
                         "Loading {modname} failed with:\n{error}",
                         modname=modname,
                         path=found_spec.location,
-                    ) from ex
+                    ) from e
                 return self.ast_from_module(module, modname)
 
             elif found_spec.type == spec.ModuleType.PY_COMPILED:
-                raise exceptions.AstroidImportError(
+                raise AstroidImportError(
                     "Unable to load compiled module {modname}.",
                     modname=modname,
                     path=found_spec.location,
@@ -182,16 +200,16 @@ class AstroidManager:
                 return self._build_stub_module(modname)
 
             if found_spec.location is None:
-                raise exceptions.AstroidImportError(
+                raise AstroidImportError(
                     "Can't find a file for module {modname}.", modname=modname
                 )
 
             return self.ast_from_file(found_spec.location, modname, fallback=False)
-        except exceptions.AstroidBuildingError as e:
+        except AstroidBuildingError as e:
             for hook in self._failed_import_hooks:
                 try:
                     return hook(modname)
-                except exceptions.AstroidBuildingError:
+                except AstroidBuildingError:
                     pass
             raise e
         finally:
@@ -213,6 +231,7 @@ class AstroidManager:
                 continue
             try:
                 importer = zipimport.zipimporter(eggpath + ext)
+                # pylint: enable=no-member
                 zmodname = resource.replace(os.path.sep, ".")
                 if importer.is_package(resource):
                     zmodname = zmodname + ".__init__"
@@ -229,21 +248,23 @@ class AstroidManager:
             value = self._mod_file_cache[(modname, contextfile)]
         except KeyError:
             try:
-                value = modutils.file_info_from_modpath(
+                value = file_info_from_modpath(
                     modname.split("."), context_file=contextfile
                 )
-            except ImportError as ex:
-                value = exceptions.AstroidImportError(
+            except ImportError as e:
+                value = AstroidImportError(
                     "Failed to import module {modname} with error:\n{error}.",
                     modname=modname,
-                    error=ex,
+                    # we remove the traceback here to save on memory usage (since these exceptions are cached)
+                    error=e.with_traceback(None),
                 )
             self._mod_file_cache[(modname, contextfile)] = value
-        if isinstance(value, exceptions.AstroidBuildingError):
-            raise value
+        if isinstance(value, AstroidBuildingError):
+            # we remove the traceback here to save on memory usage (since these exceptions are cached)
+            raise value.with_traceback(None)
         return value
 
-    def ast_from_module(self, module, modname=None):
+    def ast_from_module(self, module: types.ModuleType, modname: str = None):
         """given an imported module, return the astroid object"""
         modname = modname or module.__name__
         if modname in self.astroid_cache:
@@ -251,7 +272,7 @@ class AstroidManager:
         try:
             # some builtin modules don't have __file__ attribute
             filepath = module.__file__
-            if modutils.is_python_source(filepath):
+            if is_python_source(filepath):
                 return self.ast_from_file(filepath, modname)
         except AttributeError:
             pass
@@ -267,7 +288,7 @@ class AstroidManager:
             try:
                 modname = klass.__module__
             except AttributeError as exc:
-                raise exceptions.AstroidBuildingError(
+                raise AstroidBuildingError(
                     "Unable to get module for class {class_name}.",
                     cls=klass,
                     class_repr=safe_repr(klass),
@@ -285,13 +306,13 @@ class AstroidManager:
         try:
             modname = klass.__module__
         except AttributeError as exc:
-            raise exceptions.AstroidBuildingError(
+            raise AstroidBuildingError(
                 "Unable to get module for {class_repr}.",
                 cls=klass,
                 class_repr=safe_repr(klass),
             ) from exc
         except Exception as exc:
-            raise exceptions.AstroidImportError(
+            raise AstroidImportError(
                 "Unexpected error while retrieving module for {class_repr}:\n"
                 "{error}",
                 cls=klass,
@@ -300,13 +321,13 @@ class AstroidManager:
         try:
             name = klass.__name__
         except AttributeError as exc:
-            raise exceptions.AstroidBuildingError(
+            raise AstroidBuildingError(
                 "Unable to get name for {class_repr}:\n",
                 cls=klass,
                 class_repr=safe_repr(klass),
             ) from exc
         except Exception as exc:
-            raise exceptions.AstroidImportError(
+            raise AstroidImportError(
                 "Unexpected error while retrieving name for {class_repr}:\n" "{error}",
                 cls=klass,
                 class_repr=safe_repr(klass),

@@ -1,16 +1,28 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 import random
 
-import astroid
 from astroid import helpers
-from astroid import MANAGER
+from astroid.exceptions import UseInferenceDefault
+from astroid.inference_tip import inference_tip
+from astroid.manager import AstroidManager
+from astroid.nodes.node_classes import (
+    Attribute,
+    Call,
+    Const,
+    EvaluatedObject,
+    List,
+    Name,
+    Set,
+    Tuple,
+)
 
-
-ACCEPTED_ITERABLES_FOR_SAMPLE = (astroid.List, astroid.Set, astroid.Tuple)
+ACCEPTED_ITERABLES_FOR_SAMPLE = (List, Set, Tuple)
 
 
 def _clone_node_with_lineno(node, parent, lineno):
+    if isinstance(node, EvaluatedObject):
+        node = node.original
     cls = node.__class__
     other_fields = node._other_fields
     _astroid_fields = node._astroid_fields
@@ -26,33 +38,31 @@ def _clone_node_with_lineno(node, parent, lineno):
 
 def infer_random_sample(node, context=None):
     if len(node.args) != 2:
-        raise astroid.UseInferenceDefault
+        raise UseInferenceDefault
 
     length = node.args[1]
-    if not isinstance(length, astroid.Const):
-        raise astroid.UseInferenceDefault
+    if not isinstance(length, Const):
+        raise UseInferenceDefault
     if not isinstance(length.value, int):
-        raise astroid.UseInferenceDefault
+        raise UseInferenceDefault
 
     inferred_sequence = helpers.safe_infer(node.args[0], context=context)
     if not inferred_sequence:
-        raise astroid.UseInferenceDefault
+        raise UseInferenceDefault
 
     if not isinstance(inferred_sequence, ACCEPTED_ITERABLES_FOR_SAMPLE):
-        raise astroid.UseInferenceDefault
+        raise UseInferenceDefault
 
     if length.value > len(inferred_sequence.elts):
         # In this case, this will raise a ValueError
-        raise astroid.UseInferenceDefault
+        raise UseInferenceDefault
 
     try:
         elts = random.sample(inferred_sequence.elts, length.value)
     except ValueError as exc:
-        raise astroid.UseInferenceDefault from exc
+        raise UseInferenceDefault from exc
 
-    new_node = astroid.List(
-        lineno=node.lineno, col_offset=node.col_offset, parent=node.scope()
-    )
+    new_node = List(lineno=node.lineno, col_offset=node.col_offset, parent=node.scope())
     new_elts = [
         _clone_node_with_lineno(elt, parent=new_node, lineno=new_node.lineno)
         for elt in elts
@@ -63,13 +73,13 @@ def infer_random_sample(node, context=None):
 
 def _looks_like_random_sample(node):
     func = node.func
-    if isinstance(func, astroid.Attribute):
+    if isinstance(func, Attribute):
         return func.attrname == "sample"
-    if isinstance(func, astroid.Name):
+    if isinstance(func, Name):
         return func.name == "sample"
     return False
 
 
-MANAGER.register_transform(
-    astroid.Call, astroid.inference_tip(infer_random_sample), _looks_like_random_sample
+AstroidManager().register_transform(
+    Call, inference_tip(infer_random_sample), _looks_like_random_sample
 )

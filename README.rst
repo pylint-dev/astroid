@@ -1,15 +1,9 @@
 Astroid
 =======
 
-.. image:: https://travis-ci.org/PyCQA/astroid.svg?branch=master
-    :target: https://travis-ci.org/PyCQA/astroid
-
-.. image:: https://ci.appveyor.com/api/projects/status/co3u42kunguhbh6l/branch/master?svg=true
-    :alt: AppVeyor Build Status
-    :target: https://ci.appveyor.com/project/PCManticore/astroid
-
-.. image:: https://coveralls.io/repos/github/PyCQA/astroid/badge.svg?branch=master
-    :target: https://coveralls.io/github/PyCQA/astroid?branch=master
+.. image:: https://coveralls.io/repos/github/PyCQA/astroid/badge.svg?branch=main
+    :target: https://coveralls.io/github/PyCQA/astroid?branch=main
+    :alt: Coverage badge from coveralls.io
 
 .. image:: https://readthedocs.org/projects/astroid/badge/?version=latest
     :target: http://astroid.readthedocs.io/en/latest/?badge=latest
@@ -18,7 +12,11 @@ Astroid
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/ambv/black
 
-.. |tideliftlogo| image:: doc/media/Tidelift_Logos_RGB_Tidelift_Shorthand_On-White_small.png
+.. image:: https://results.pre-commit.ci/badge/github/PyCQA/astroid/main.svg
+   :target: https://results.pre-commit.ci/latest/github/PyCQA/astroid/main
+   :alt: pre-commit.ci status
+
+.. |tidelift_logo| image:: https://raw.githubusercontent.com/PyCQA/astroid/main/doc/media/Tidelift_Logos_RGB_Tidelift_Shorthand_On-White.png
    :width: 75
    :height: 60
    :alt: Tidelift
@@ -26,9 +24,9 @@ Astroid
 .. list-table::
    :widths: 10 100
 
-   * - |tideliftlogo|
-     - Professional support for astroid is available as part of the `Tidelift
-       Subscription`_.  Tidelift gives software development teams a single source for
+   * - |tidelift_logo|
+     - Professional support for astroid is available as part of the
+       `Tidelift Subscription`_.  Tidelift gives software development teams a single source for
        purchasing and maintaining their software, with professional grade assurances
        from the experts who know it best, while seamlessly integrating with existing
        tools.
@@ -57,7 +55,7 @@ Installation
 
 Extract the tarball, jump into the created directory and run::
 
-	pip install .
+    pip install .
 
 
 If you want to do an editable installation, you can run::
@@ -88,5 +86,5 @@ Test
 Tests are in the 'test' subdirectory. To launch the whole tests suite, you can use
 either `tox` or `pytest`::
 
-  tox
-  pytest astroid
+    tox
+    pytest astroid

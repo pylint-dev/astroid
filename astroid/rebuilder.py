@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2009-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2013-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2013-2014 Google, Inc.
@@ -15,60 +14,88 @@
 # Copyright (c) 2018 Serhiy Storchaka <storchaka@gmail.com>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2019-2020 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2019-2021 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2019 Zbigniew Jędrzejewski-Szmek <zbyszek@in.waw.pl>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021 Federico Bond <federicobond@gmail.com>
+# Copyright (c) 2021 hippo91 <guillaume.peillex@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """this module contains utilities for rebuilding an _ast tree in
 order to get a single Astroid representation
 """
 
 import sys
-from typing import Optional
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
-import astroid
-from astroid._ast import parse_function_type_comment, get_parser_module, ParserModule
 from astroid import nodes
+from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
+from astroid.const import PY37_PLUS, PY38_PLUS, PY39_PLUS, Context
+from astroid.manager import AstroidManager
+from astroid.nodes import NodeNG
+
+if sys.version_info >= (3, 8):
+    from typing import Final
+else:
+    from typing_extensions import Final
+
+if TYPE_CHECKING:
+    import ast
 
 
-CONST_NAME_TRANSFORMS = {"None": None, "True": True, "False": False}
-
-REDIRECT = {
+REDIRECT: Final[Dict[str, str]] = {
     "arguments": "Arguments",
     "comprehension": "Comprehension",
     "ListCompFor": "Comprehension",
     "GenExprFor": "Comprehension",
     "excepthandler": "ExceptHandler",
     "keyword": "Keyword",
+    "match_case": "MatchCase",
 }
-PY37 = sys.version_info >= (3, 7)
-PY38 = sys.version_info >= (3, 8)
 
 
-def _visit_or_none(node, attr, visitor, parent, visit="visit", **kws):
-    """If the given node has an attribute, visits the attribute, and
-    otherwise returns None.
+T_Doc = TypeVar(
+    "T_Doc",
+    "ast.Module",
+    "ast.ClassDef",
+    Union["ast.FunctionDef", "ast.AsyncFunctionDef"],
+)
+T_Function = TypeVar("T_Function", nodes.FunctionDef, nodes.AsyncFunctionDef)
+T_For = TypeVar("T_For", nodes.For, nodes.AsyncFor)
+T_With = TypeVar("T_With", nodes.With, nodes.AsyncWith)
 
-    """
-    value = getattr(node, attr, None)
-    if value:
-        return getattr(visitor, visit)(value, parent, **kws)
 
-    return None
-
-
+# noinspection PyMethodMayBeStatic
 class TreeRebuilder:
     """Rebuilds the _ast tree to become an Astroid tree"""
 
-    def __init__(self, manager, parser_module: Optional[ParserModule] = None):
+    def __init__(
+        self, manager: AstroidManager, parser_module: Optional[ParserModule] = None
+    ):
         self._manager = manager
-        self._global_names = []
-        self._import_from_nodes = []
-        self._delayed_assattr = []
-        self._visit_meths = {}
+        self._global_names: List[Dict[str, List[nodes.Global]]] = []
+        self._import_from_nodes: List[nodes.ImportFrom] = []
+        self._delayed_assattr: List[nodes.AssignAttr] = []
+        self._visit_meths: Dict[
+            Type["ast.AST"], Callable[["ast.AST", NodeNG], NodeNG]
+        ] = {}
 
         if parser_module is None:
             self._parser_module = get_parser_module()
@@ -76,31 +103,46 @@ class TreeRebuilder:
             self._parser_module = parser_module
         self._module = self._parser_module.module
 
-    def _get_doc(self, node):
+    def _get_doc(self, node: T_Doc) -> Tuple[T_Doc, Optional[str]]:
         try:
-            if PY37 and hasattr(node, "docstring"):
+            if PY37_PLUS and hasattr(node, "docstring"):
                 doc = node.docstring
                 return node, doc
             if node.body and isinstance(node.body[0], self._module.Expr):
 
                 first_value = node.body[0].value
                 if isinstance(first_value, self._module.Str) or (
-                    PY38
+                    PY38_PLUS
                     and isinstance(first_value, self._module.Constant)
                     and isinstance(first_value.value, str)
                 ):
-                    doc = first_value.value if PY38 else first_value.s
+                    doc = first_value.value if PY38_PLUS else first_value.s
                     node.body = node.body[1:]
                     return node, doc
         except IndexError:
             pass  # ast built from scratch
         return node, None
 
-    def _get_context(self, node):
-        return self._parser_module.context_classes.get(type(node.ctx), astroid.Load)
+    def _get_context(
+        self,
+        node: Union[
+            "ast.Attribute",
+            "ast.List",
+            "ast.Name",
+            "ast.Subscript",
+            "ast.Starred",
+            "ast.Tuple",
+        ],
+    ) -> Context:
+        return self._parser_module.context_classes.get(type(node.ctx), Context.Load)
 
-    def visit_module(self, node, modname, modpath, package):
-        """visit a Module node by returning a fresh instance of it"""
+    def visit_module(
+        self, node: "ast.Module", modname: str, modpath: str, package: bool
+    ) -> nodes.Module:
+        """visit a Module node by returning a fresh instance of it
+
+        Note: Method not called by 'visit'
+        """
         node, doc = self._get_doc(node)
         newnode = nodes.Module(
             name=modname,
@@ -113,68 +155,693 @@ class TreeRebuilder:
         newnode.postinit([self.visit(child, newnode) for child in node.body])
         return newnode
 
-    def visit(self, node, parent):
-        cls = node.__class__
-        if cls in self._visit_meths:
-            visit_method = self._visit_meths[cls]
-        else:
-            cls_name = cls.__name__
-            visit_name = "visit_" + REDIRECT.get(cls_name, cls_name).lower()
-            visit_method = getattr(self, visit_name)
-            self._visit_meths[cls] = visit_method
-        return visit_method(node, parent)
+    if sys.version_info >= (3, 10):
 
-    def _save_assignment(self, node, name=None):
+        @overload
+        def visit(self, node: "ast.arg", parent: NodeNG) -> nodes.AssignName:
+            ...
+
+        @overload
+        def visit(self, node: "ast.arguments", parent: NodeNG) -> nodes.Arguments:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Assert", parent: NodeNG) -> nodes.Assert:
+            ...
+
+        @overload
+        def visit(
+            self, node: "ast.AsyncFunctionDef", parent: NodeNG
+        ) -> nodes.AsyncFunctionDef:
+            ...
+
+        @overload
+        def visit(self, node: "ast.AsyncFor", parent: NodeNG) -> nodes.AsyncFor:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Await", parent: NodeNG) -> nodes.Await:
+            ...
+
+        @overload
+        def visit(self, node: "ast.AsyncWith", parent: NodeNG) -> nodes.AsyncWith:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Assign", parent: NodeNG) -> nodes.Assign:
+            ...
+
+        @overload
+        def visit(self, node: "ast.AnnAssign", parent: NodeNG) -> nodes.AnnAssign:
+            ...
+
+        @overload
+        def visit(self, node: "ast.AugAssign", parent: NodeNG) -> nodes.AugAssign:
+            ...
+
+        @overload
+        def visit(self, node: "ast.BinOp", parent: NodeNG) -> nodes.BinOp:
+            ...
+
+        @overload
+        def visit(self, node: "ast.BoolOp", parent: NodeNG) -> nodes.BoolOp:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Break", parent: NodeNG) -> nodes.Break:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Call", parent: NodeNG) -> nodes.Call:
+            ...
+
+        @overload
+        def visit(self, node: "ast.ClassDef", parent: NodeNG) -> nodes.ClassDef:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Continue", parent: NodeNG) -> nodes.Continue:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Compare", parent: NodeNG) -> nodes.Compare:
+            ...
+
+        @overload
+        def visit(
+            self, node: "ast.comprehension", parent: NodeNG
+        ) -> nodes.Comprehension:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Delete", parent: NodeNG) -> nodes.Delete:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Dict", parent: NodeNG) -> nodes.Dict:
+            ...
+
+        @overload
+        def visit(self, node: "ast.DictComp", parent: NodeNG) -> nodes.DictComp:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Expr", parent: NodeNG) -> nodes.Expr:
+            ...
+
+        # Not used in Python 3.8+
+        @overload
+        def visit(self, node: "ast.Ellipsis", parent: NodeNG) -> nodes.Const:
+            ...
+
+        @overload
+        def visit(
+            self, node: "ast.ExceptHandler", parent: NodeNG
+        ) -> nodes.ExceptHandler:
+            ...
+
+        # Not used in Python 3.9+
+        @overload
+        def visit(self, node: "ast.ExtSlice", parent: nodes.Subscript) -> nodes.Tuple:
+            ...
+
+        @overload
+        def visit(self, node: "ast.For", parent: NodeNG) -> nodes.For:
+            ...
+
+        @overload
+        def visit(self, node: "ast.ImportFrom", parent: NodeNG) -> nodes.ImportFrom:
+            ...
+
+        @overload
+        def visit(self, node: "ast.FunctionDef", parent: NodeNG) -> nodes.FunctionDef:
+            ...
+
+        @overload
+        def visit(self, node: "ast.GeneratorExp", parent: NodeNG) -> nodes.GeneratorExp:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Attribute", parent: NodeNG) -> nodes.Attribute:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Global", parent: NodeNG) -> nodes.Global:
+            ...
+
+        @overload
+        def visit(self, node: "ast.If", parent: NodeNG) -> nodes.If:
+            ...
+
+        @overload
+        def visit(self, node: "ast.IfExp", parent: NodeNG) -> nodes.IfExp:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Import", parent: NodeNG) -> nodes.Import:
+            ...
+
+        @overload
+        def visit(self, node: "ast.JoinedStr", parent: NodeNG) -> nodes.JoinedStr:
+            ...
+
+        @overload
+        def visit(
+            self, node: "ast.FormattedValue", parent: NodeNG
+        ) -> nodes.FormattedValue:
+            ...
+
+        @overload
+        def visit(self, node: "ast.NamedExpr", parent: NodeNG) -> nodes.NamedExpr:
+            ...
+
+        # Not used in Python 3.9+
+        @overload
+        def visit(self, node: "ast.Index", parent: nodes.Subscript) -> NodeNG:
+            ...
+
+        @overload
+        def visit(self, node: "ast.keyword", parent: NodeNG) -> nodes.Keyword:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Lambda", parent: NodeNG) -> nodes.Lambda:
+            ...
+
+        @overload
+        def visit(self, node: "ast.List", parent: NodeNG) -> nodes.List:
+            ...
+
+        @overload
+        def visit(self, node: "ast.ListComp", parent: NodeNG) -> nodes.ListComp:
+            ...
+
+        @overload
+        def visit(
+            self, node: "ast.Name", parent: NodeNG
+        ) -> Union[nodes.Name, nodes.Const, nodes.AssignName, nodes.DelName]:
+            ...
+
+        # Not used in Python 3.8+
+        @overload
+        def visit(self, node: "ast.NameConstant", parent: NodeNG) -> nodes.Const:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Nonlocal", parent: NodeNG) -> nodes.Nonlocal:
+            ...
+
+        # Not used in Python 3.8+
+        @overload
+        def visit(self, node: "ast.Str", parent: NodeNG) -> nodes.Const:
+            ...
+
+        # Not used in Python 3.8+
+        @overload
+        def visit(self, node: "ast.Bytes", parent: NodeNG) -> nodes.Const:
+            ...
+
+        # Not used in Python 3.8+
+        @overload
+        def visit(self, node: "ast.Num", parent: NodeNG) -> nodes.Const:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Constant", parent: NodeNG) -> nodes.Const:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Pass", parent: NodeNG) -> nodes.Pass:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Raise", parent: NodeNG) -> nodes.Raise:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Return", parent: NodeNG) -> nodes.Return:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Set", parent: NodeNG) -> nodes.Set:
+            ...
+
+        @overload
+        def visit(self, node: "ast.SetComp", parent: NodeNG) -> nodes.SetComp:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Slice", parent: nodes.Subscript) -> nodes.Slice:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Subscript", parent: NodeNG) -> nodes.Subscript:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Starred", parent: NodeNG) -> nodes.Starred:
+            ...
+
+        @overload
+        def visit(
+            self, node: "ast.Try", parent: NodeNG
+        ) -> Union[nodes.TryExcept, nodes.TryFinally]:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Tuple", parent: NodeNG) -> nodes.Tuple:
+            ...
+
+        @overload
+        def visit(self, node: "ast.UnaryOp", parent: NodeNG) -> nodes.UnaryOp:
+            ...
+
+        @overload
+        def visit(self, node: "ast.While", parent: NodeNG) -> nodes.While:
+            ...
+
+        @overload
+        def visit(self, node: "ast.With", parent: NodeNG) -> nodes.With:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Yield", parent: NodeNG) -> nodes.Yield:
+            ...
+
+        @overload
+        def visit(self, node: "ast.YieldFrom", parent: NodeNG) -> nodes.YieldFrom:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Match", parent: NodeNG) -> nodes.Match:
+            ...
+
+        @overload
+        def visit(self, node: "ast.match_case", parent: NodeNG) -> nodes.MatchCase:
+            ...
+
+        @overload
+        def visit(self, node: "ast.MatchValue", parent: NodeNG) -> nodes.MatchValue:
+            ...
+
+        @overload
+        def visit(
+            self, node: "ast.MatchSingleton", parent: NodeNG
+        ) -> nodes.MatchSingleton:
+            ...
+
+        @overload
+        def visit(
+            self, node: "ast.MatchSequence", parent: NodeNG
+        ) -> nodes.MatchSequence:
+            ...
+
+        @overload
+        def visit(self, node: "ast.MatchMapping", parent: NodeNG) -> nodes.MatchMapping:
+            ...
+
+        @overload
+        def visit(self, node: "ast.MatchClass", parent: NodeNG) -> nodes.MatchClass:
+            ...
+
+        @overload
+        def visit(self, node: "ast.MatchStar", parent: NodeNG) -> nodes.MatchStar:
+            ...
+
+        @overload
+        def visit(self, node: "ast.MatchAs", parent: NodeNG) -> nodes.MatchAs:
+            ...
+
+        @overload
+        def visit(self, node: "ast.MatchOr", parent: NodeNG) -> nodes.MatchOr:
+            ...
+
+        @overload
+        def visit(self, node: "ast.pattern", parent: NodeNG) -> nodes.Pattern:
+            ...
+
+        @overload
+        def visit(self, node: "ast.AST", parent: NodeNG) -> NodeNG:
+            ...
+
+        @overload
+        def visit(self, node: None, parent: NodeNG) -> None:
+            ...
+
+        def visit(self, node: Optional["ast.AST"], parent: NodeNG) -> Optional[NodeNG]:
+            if node is None:
+                return None
+            cls = node.__class__
+            if cls in self._visit_meths:
+                visit_method = self._visit_meths[cls]
+            else:
+                cls_name = cls.__name__
+                visit_name = "visit_" + REDIRECT.get(cls_name, cls_name).lower()
+                visit_method = getattr(self, visit_name)
+                self._visit_meths[cls] = visit_method
+            return visit_method(node, parent)
+
+    else:
+
+        @overload
+        def visit(self, node: "ast.arg", parent: NodeNG) -> nodes.AssignName:
+            ...
+
+        @overload
+        def visit(self, node: "ast.arguments", parent: NodeNG) -> nodes.Arguments:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Assert", parent: NodeNG) -> nodes.Assert:
+            ...
+
+        @overload
+        def visit(
+            self, node: "ast.AsyncFunctionDef", parent: NodeNG
+        ) -> nodes.AsyncFunctionDef:
+            ...
+
+        @overload
+        def visit(self, node: "ast.AsyncFor", parent: NodeNG) -> nodes.AsyncFor:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Await", parent: NodeNG) -> nodes.Await:
+            ...
+
+        @overload
+        def visit(self, node: "ast.AsyncWith", parent: NodeNG) -> nodes.AsyncWith:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Assign", parent: NodeNG) -> nodes.Assign:
+            ...
+
+        @overload
+        def visit(self, node: "ast.AnnAssign", parent: NodeNG) -> nodes.AnnAssign:
+            ...
+
+        @overload
+        def visit(self, node: "ast.AugAssign", parent: NodeNG) -> nodes.AugAssign:
+            ...
+
+        @overload
+        def visit(self, node: "ast.BinOp", parent: NodeNG) -> nodes.BinOp:
+            ...
+
+        @overload
+        def visit(self, node: "ast.BoolOp", parent: NodeNG) -> nodes.BoolOp:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Break", parent: NodeNG) -> nodes.Break:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Call", parent: NodeNG) -> nodes.Call:
+            ...
+
+        @overload
+        def visit(self, node: "ast.ClassDef", parent: NodeNG) -> nodes.ClassDef:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Continue", parent: NodeNG) -> nodes.Continue:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Compare", parent: NodeNG) -> nodes.Compare:
+            ...
+
+        @overload
+        def visit(
+            self, node: "ast.comprehension", parent: NodeNG
+        ) -> nodes.Comprehension:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Delete", parent: NodeNG) -> nodes.Delete:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Dict", parent: NodeNG) -> nodes.Dict:
+            ...
+
+        @overload
+        def visit(self, node: "ast.DictComp", parent: NodeNG) -> nodes.DictComp:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Expr", parent: NodeNG) -> nodes.Expr:
+            ...
+
+        # Not used in Python 3.8+
+        @overload
+        def visit(self, node: "ast.Ellipsis", parent: NodeNG) -> nodes.Const:
+            ...
+
+        @overload
+        def visit(
+            self, node: "ast.ExceptHandler", parent: NodeNG
+        ) -> nodes.ExceptHandler:
+            ...
+
+        # Not used in Python 3.9+
+        @overload
+        def visit(self, node: "ast.ExtSlice", parent: nodes.Subscript) -> nodes.Tuple:
+            ...
+
+        @overload
+        def visit(self, node: "ast.For", parent: NodeNG) -> nodes.For:
+            ...
+
+        @overload
+        def visit(self, node: "ast.ImportFrom", parent: NodeNG) -> nodes.ImportFrom:
+            ...
+
+        @overload
+        def visit(self, node: "ast.FunctionDef", parent: NodeNG) -> nodes.FunctionDef:
+            ...
+
+        @overload
+        def visit(self, node: "ast.GeneratorExp", parent: NodeNG) -> nodes.GeneratorExp:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Attribute", parent: NodeNG) -> nodes.Attribute:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Global", parent: NodeNG) -> nodes.Global:
+            ...
+
+        @overload
+        def visit(self, node: "ast.If", parent: NodeNG) -> nodes.If:
+            ...
+
+        @overload
+        def visit(self, node: "ast.IfExp", parent: NodeNG) -> nodes.IfExp:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Import", parent: NodeNG) -> nodes.Import:
+            ...
+
+        @overload
+        def visit(self, node: "ast.JoinedStr", parent: NodeNG) -> nodes.JoinedStr:
+            ...
+
+        @overload
+        def visit(
+            self, node: "ast.FormattedValue", parent: NodeNG
+        ) -> nodes.FormattedValue:
+            ...
+
+        @overload
+        def visit(self, node: "ast.NamedExpr", parent: NodeNG) -> nodes.NamedExpr:
+            ...
+
+        # Not used in Python 3.9+
+        @overload
+        def visit(self, node: "ast.Index", parent: nodes.Subscript) -> NodeNG:
+            ...
+
+        @overload
+        def visit(self, node: "ast.keyword", parent: NodeNG) -> nodes.Keyword:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Lambda", parent: NodeNG) -> nodes.Lambda:
+            ...
+
+        @overload
+        def visit(self, node: "ast.List", parent: NodeNG) -> nodes.List:
+            ...
+
+        @overload
+        def visit(self, node: "ast.ListComp", parent: NodeNG) -> nodes.ListComp:
+            ...
+
+        @overload
+        def visit(
+            self, node: "ast.Name", parent: NodeNG
+        ) -> Union[nodes.Name, nodes.Const, nodes.AssignName, nodes.DelName]:
+            ...
+
+        # Not used in Python 3.8+
+        @overload
+        def visit(self, node: "ast.NameConstant", parent: NodeNG) -> nodes.Const:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Nonlocal", parent: NodeNG) -> nodes.Nonlocal:
+            ...
+
+        # Not used in Python 3.8+
+        @overload
+        def visit(self, node: "ast.Str", parent: NodeNG) -> nodes.Const:
+            ...
+
+        # Not used in Python 3.8+
+        @overload
+        def visit(self, node: "ast.Bytes", parent: NodeNG) -> nodes.Const:
+            ...
+
+        # Not used in Python 3.8+
+        @overload
+        def visit(self, node: "ast.Num", parent: NodeNG) -> nodes.Const:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Constant", parent: NodeNG) -> nodes.Const:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Pass", parent: NodeNG) -> nodes.Pass:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Raise", parent: NodeNG) -> nodes.Raise:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Return", parent: NodeNG) -> nodes.Return:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Set", parent: NodeNG) -> nodes.Set:
+            ...
+
+        @overload
+        def visit(self, node: "ast.SetComp", parent: NodeNG) -> nodes.SetComp:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Slice", parent: nodes.Subscript) -> nodes.Slice:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Subscript", parent: NodeNG) -> nodes.Subscript:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Starred", parent: NodeNG) -> nodes.Starred:
+            ...
+
+        @overload
+        def visit(
+            self, node: "ast.Try", parent: NodeNG
+        ) -> Union[nodes.TryExcept, nodes.TryFinally]:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Tuple", parent: NodeNG) -> nodes.Tuple:
+            ...
+
+        @overload
+        def visit(self, node: "ast.UnaryOp", parent: NodeNG) -> nodes.UnaryOp:
+            ...
+
+        @overload
+        def visit(self, node: "ast.While", parent: NodeNG) -> nodes.While:
+            ...
+
+        @overload
+        def visit(self, node: "ast.With", parent: NodeNG) -> nodes.With:
+            ...
+
+        @overload
+        def visit(self, node: "ast.Yield", parent: NodeNG) -> nodes.Yield:
+            ...
+
+        @overload
+        def visit(self, node: "ast.YieldFrom", parent: NodeNG) -> nodes.YieldFrom:
+            ...
+
+        @overload
+        def visit(self, node: "ast.AST", parent: NodeNG) -> NodeNG:
+            ...
+
+        @overload
+        def visit(self, node: None, parent: NodeNG) -> None:
+            ...
+
+        def visit(self, node: Optional["ast.AST"], parent: NodeNG) -> Optional[NodeNG]:
+            if node is None:
+                return None
+            cls = node.__class__
+            if cls in self._visit_meths:
+                visit_method = self._visit_meths[cls]
+            else:
+                cls_name = cls.__name__
+                visit_name = "visit_" + REDIRECT.get(cls_name, cls_name).lower()
+                visit_method = getattr(self, visit_name)
+                self._visit_meths[cls] = visit_method
+            return visit_method(node, parent)
+
+    def _save_assignment(self, node: Union[nodes.AssignName, nodes.DelName]) -> None:
         """save assignement situation since node.parent is not available yet"""
         if self._global_names and node.name in self._global_names[-1]:
             node.root().set_local(node.name, node)
         else:
             node.parent.set_local(node.name, node)
 
-    def visit_arg(self, node, parent):
+    def visit_arg(self, node: "ast.arg", parent: NodeNG) -> nodes.AssignName:
         """visit an arg node by returning a fresh AssName instance"""
         return self.visit_assignname(node, parent, node.arg)
 
-    def visit_arguments(self, node, parent):
+    def visit_arguments(self, node: "ast.arguments", parent: NodeNG) -> nodes.Arguments:
         """visit an Arguments node by returning a fresh instance of it"""
-        vararg, kwarg = node.vararg, node.kwarg
+        vararg: Optional[str] = None
+        kwarg: Optional[str] = None
         newnode = nodes.Arguments(
-            vararg.arg if vararg else None, kwarg.arg if kwarg else None, parent
+            node.vararg.arg if node.vararg else None,
+            node.kwarg.arg if node.kwarg else None,
+            parent,
         )
         args = [self.visit(child, newnode) for child in node.args]
         defaults = [self.visit(child, newnode) for child in node.defaults]
-        varargannotation = None
-        kwargannotation = None
-        posonlyargs = []
-        # change added in 82732 (7c5c678e4164), vararg and kwarg
-        # are instances of `_ast.arg`, not strings
-        if vararg:
-            if node.vararg.annotation:
-                varargannotation = self.visit(node.vararg.annotation, newnode)
-            vararg = vararg.arg
-        if kwarg:
-            if node.kwarg.annotation:
-                kwargannotation = self.visit(node.kwarg.annotation, newnode)
-            kwarg = kwarg.arg
+        varargannotation: Optional[NodeNG] = None
+        kwargannotation: Optional[NodeNG] = None
+        posonlyargs: List[nodes.AssignName] = []
+        if node.vararg:
+            vararg = node.vararg.arg
+            varargannotation = self.visit(node.vararg.annotation, newnode)
+        if node.kwarg:
+            kwarg = node.kwarg.arg
+            kwargannotation = self.visit(node.kwarg.annotation, newnode)
         kwonlyargs = [self.visit(child, newnode) for child in node.kwonlyargs]
-        kw_defaults = [
-            self.visit(child, newnode) if child else None for child in node.kw_defaults
-        ]
-        annotations = [
-            self.visit(arg.annotation, newnode) if arg.annotation else None
-            for arg in node.args
-        ]
+        kw_defaults = [self.visit(child, newnode) for child in node.kw_defaults]
+        annotations = [self.visit(arg.annotation, newnode) for arg in node.args]
         kwonlyargs_annotations = [
-            self.visit(arg.annotation, newnode) if arg.annotation else None
-            for arg in node.kwonlyargs
+            self.visit(arg.annotation, newnode) for arg in node.kwonlyargs
         ]
 
-        posonlyargs_annotations = []
-        if PY38:
+        posonlyargs_annotations: List[Optional[NodeNG]] = []
+        if PY38_PLUS:
             posonlyargs = [self.visit(child, newnode) for child in node.posonlyargs]
             posonlyargs_annotations = [
-                self.visit(arg.annotation, newnode) if arg.annotation else None
-                for arg in node.posonlyargs
+                self.visit(arg.annotation, newnode) for arg in node.posonlyargs
             ]
         type_comment_args = [
             self.check_type_comment(child, parent=newnode) for child in node.args
@@ -182,8 +849,8 @@ class TreeRebuilder:
         type_comment_kwonlyargs = [
             self.check_type_comment(child, parent=newnode) for child in node.kwonlyargs
         ]
-        type_comment_posonlyargs = []
-        if PY38:
+        type_comment_posonlyargs: List[Optional[NodeNG]] = []
+        if PY38_PLUS:
             type_comment_posonlyargs = [
                 self.check_type_comment(child, parent=newnode)
                 for child in node.posonlyargs
@@ -211,18 +878,35 @@ class TreeRebuilder:
             newnode.parent.set_local(kwarg, newnode)
         return newnode
 
-    def visit_assert(self, node, parent):
+    def visit_assert(self, node: "ast.Assert", parent: NodeNG) -> nodes.Assert:
         """visit a Assert node by returning a fresh instance of it"""
         newnode = nodes.Assert(node.lineno, node.col_offset, parent)
+        msg: Optional[NodeNG] = None
         if node.msg:
             msg = self.visit(node.msg, newnode)
-        else:
-            msg = None
         newnode.postinit(self.visit(node.test, newnode), msg)
         return newnode
 
-    def check_type_comment(self, node, parent):
-        type_comment = getattr(node, "type_comment", None)
+    def check_type_comment(
+        self,
+        node: Union[
+            "ast.Assign",
+            "ast.arg",
+            "ast.For",
+            "ast.AsyncFor",
+            "ast.With",
+            "ast.AsyncWith",
+        ],
+        parent: Union[
+            nodes.Assign,
+            nodes.Arguments,
+            nodes.For,
+            nodes.AsyncFor,
+            nodes.With,
+            nodes.AsyncWith,
+        ],
+    ) -> Optional[NodeNG]:
+        type_comment = getattr(node, "type_comment", None)  # Added in Python 3.8
         if not type_comment:
             return None
 
@@ -238,8 +922,10 @@ class TreeRebuilder:
 
         return type_object.value
 
-    def check_function_type_comment(self, node):
-        type_comment = getattr(node, "type_comment", None)
+    def check_function_type_comment(
+        self, node: Union["ast.FunctionDef", "ast.AsyncFunctionDef"], parent: NodeNG
+    ) -> Optional[Tuple[Optional[NodeNG], List[NodeNG]]]:
+        type_comment = getattr(node, "type_comment", None)  # Added in Python 3.8
         if not type_comment:
             return None
 
@@ -249,31 +935,32 @@ class TreeRebuilder:
             # Invalid type comment, just skip it.
             return None
 
-        returns = None
-        argtypes = [
-            self.visit(elem, node) for elem in (type_comment_ast.argtypes or [])
+        returns: Optional[NodeNG] = None
+        argtypes: List[NodeNG] = [
+            self.visit(elem, parent) for elem in (type_comment_ast.argtypes or [])
         ]
         if type_comment_ast.returns:
-            returns = self.visit(type_comment_ast.returns, node)
+            returns = self.visit(type_comment_ast.returns, parent)
 
         return returns, argtypes
 
-    # Async structs added in Python 3.5
-    def visit_asyncfunctiondef(self, node, parent):
+    def visit_asyncfunctiondef(
+        self, node: "ast.AsyncFunctionDef", parent: NodeNG
+    ) -> nodes.AsyncFunctionDef:
         return self._visit_functiondef(nodes.AsyncFunctionDef, node, parent)
 
-    def visit_asyncfor(self, node, parent):
+    def visit_asyncfor(self, node: "ast.AsyncFor", parent: NodeNG) -> nodes.AsyncFor:
         return self._visit_for(nodes.AsyncFor, node, parent)
 
-    def visit_await(self, node, parent):
+    def visit_await(self, node: "ast.Await", parent: NodeNG) -> nodes.Await:
         newnode = nodes.Await(node.lineno, node.col_offset, parent)
         newnode.postinit(value=self.visit(node.value, newnode))
         return newnode
 
-    def visit_asyncwith(self, node, parent):
+    def visit_asyncwith(self, node: "ast.AsyncWith", parent: NodeNG) -> nodes.AsyncWith:
         return self._visit_with(nodes.AsyncWith, node, parent)
 
-    def visit_assign(self, node, parent):
+    def visit_assign(self, node: "ast.Assign", parent: NodeNG) -> nodes.Assign:
         """visit a Assign node by returning a fresh instance of it"""
         newnode = nodes.Assign(node.lineno, node.col_offset, parent)
         type_annotation = self.check_type_comment(node, parent=newnode)
@@ -284,30 +971,48 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_annassign(self, node, parent):
+    def visit_annassign(self, node: "ast.AnnAssign", parent: NodeNG) -> nodes.AnnAssign:
         """visit an AnnAssign node by returning a fresh instance of it"""
         newnode = nodes.AnnAssign(node.lineno, node.col_offset, parent)
-        annotation = _visit_or_none(node, "annotation", self, newnode)
         newnode.postinit(
             target=self.visit(node.target, newnode),
-            annotation=annotation,
+            annotation=self.visit(node.annotation, newnode),
             simple=node.simple,
-            value=_visit_or_none(node, "value", self, newnode),
+            value=self.visit(node.value, newnode),
         )
         return newnode
 
-    def visit_assignname(self, node, parent, node_name=None):
-        """visit a node and return a AssignName node"""
+    @overload
+    def visit_assignname(
+        self, node: "ast.AST", parent: NodeNG, node_name: str
+    ) -> nodes.AssignName:
+        ...
+
+    @overload
+    def visit_assignname(
+        self, node: "ast.AST", parent: NodeNG, node_name: None
+    ) -> None:
+        ...
+
+    def visit_assignname(
+        self, node: "ast.AST", parent: NodeNG, node_name: Optional[str]
+    ) -> Optional[nodes.AssignName]:
+        """visit a node and return a AssignName node
+
+        Note: Method not called by 'visit'
+        """
+        if node_name is None:
+            return None
         newnode = nodes.AssignName(
             node_name,
-            getattr(node, "lineno", None),
-            getattr(node, "col_offset", None),
+            node.lineno,
+            node.col_offset,
             parent,
         )
         self._save_assignment(newnode)
         return newnode
 
-    def visit_augassign(self, node, parent):
+    def visit_augassign(self, node: "ast.AugAssign", parent: NodeNG) -> nodes.AugAssign:
         """visit a AugAssign node by returning a fresh instance of it"""
         newnode = nodes.AugAssign(
             self._parser_module.bin_op_classes[type(node.op)] + "=",
@@ -320,13 +1025,7 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_repr(self, node, parent):
-        """visit a Backquote node by returning a fresh instance of it"""
-        newnode = nodes.Repr(node.lineno, node.col_offset, parent)
-        newnode.postinit(self.visit(node.value, newnode))
-        return newnode
-
-    def visit_binop(self, node, parent):
+    def visit_binop(self, node: "ast.BinOp", parent: NodeNG) -> nodes.BinOp:
         """visit a BinOp node by returning a fresh instance of it"""
         newnode = nodes.BinOp(
             self._parser_module.bin_op_classes[type(node.op)],
@@ -339,7 +1038,7 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_boolop(self, node, parent):
+    def visit_boolop(self, node: "ast.BoolOp", parent: NodeNG) -> nodes.BoolOp:
         """visit a BoolOp node by returning a fresh instance of it"""
         newnode = nodes.BoolOp(
             self._parser_module.bool_op_classes[type(node.op)],
@@ -350,48 +1049,23 @@ class TreeRebuilder:
         newnode.postinit([self.visit(child, newnode) for child in node.values])
         return newnode
 
-    def visit_break(self, node, parent):
+    def visit_break(self, node: "ast.Break", parent: NodeNG) -> nodes.Break:
         """visit a Break node by returning a fresh instance of it"""
-        return nodes.Break(
-            getattr(node, "lineno", None), getattr(node, "col_offset", None), parent
-        )
+        return nodes.Break(node.lineno, node.col_offset, parent)
 
-    def visit_call(self, node, parent):
+    def visit_call(self, node: "ast.Call", parent: NodeNG) -> nodes.Call:
         """visit a CallFunc node by returning a fresh instance of it"""
         newnode = nodes.Call(node.lineno, node.col_offset, parent)
-        starargs = _visit_or_none(node, "starargs", self, newnode)
-        kwargs = _visit_or_none(node, "kwargs", self, newnode)
-        args = [self.visit(child, newnode) for child in node.args]
-
-        if node.keywords:
-            keywords = [self.visit(child, newnode) for child in node.keywords]
-        else:
-            keywords = None
-        if starargs:
-            new_starargs = nodes.Starred(
-                col_offset=starargs.col_offset,
-                lineno=starargs.lineno,
-                parent=starargs.parent,
-            )
-            new_starargs.postinit(value=starargs)
-            args.append(new_starargs)
-        if kwargs:
-            new_kwargs = nodes.Keyword(
-                arg=None,
-                col_offset=kwargs.col_offset,
-                lineno=kwargs.lineno,
-                parent=kwargs.parent,
-            )
-            new_kwargs.postinit(value=kwargs)
-            if keywords:
-                keywords.append(new_kwargs)
-            else:
-                keywords = [new_kwargs]
-
-        newnode.postinit(self.visit(node.func, newnode), args, keywords)
+        newnode.postinit(
+            func=self.visit(node.func, newnode),
+            args=[self.visit(child, newnode) for child in node.args],
+            keywords=[self.visit(child, newnode) for child in node.keywords],
+        )
         return newnode
 
-    def visit_classdef(self, node, parent, newstyle=True):
+    def visit_classdef(
+        self, node: "ast.ClassDef", parent: NodeNG, newstyle: bool = True
+    ) -> nodes.ClassDef:
         """visit a ClassDef node to become astroid"""
         node, doc = self._get_doc(node)
         newnode = nodes.ClassDef(node.name, doc, node.lineno, node.col_offset, parent)
@@ -400,10 +1074,7 @@ class TreeRebuilder:
             if keyword.arg == "metaclass":
                 metaclass = self.visit(keyword, newnode).value
                 break
-        if node.decorator_list:
-            decorators = self.visit_decorators(node, newnode)
-        else:
-            decorators = None
+        decorators = self.visit_decorators(node, newnode)
         newnode.postinit(
             [self.visit(child, newnode) for child in node.bases],
             [self.visit(child, newnode) for child in node.body],
@@ -418,22 +1089,11 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_const(self, node, parent):
-        """visit a Const node by returning a fresh instance of it"""
-        return nodes.Const(
-            node.value,
-            getattr(node, "lineno", None),
-            getattr(node, "col_offset", None),
-            parent,
-        )
-
-    def visit_continue(self, node, parent):
+    def visit_continue(self, node: "ast.Continue", parent: NodeNG) -> nodes.Continue:
         """visit a Continue node by returning a fresh instance of it"""
-        return nodes.Continue(
-            getattr(node, "lineno", None), getattr(node, "col_offset", None), parent
-        )
+        return nodes.Continue(node.lineno, node.col_offset, parent)
 
-    def visit_compare(self, node, parent):
+    def visit_compare(self, node: "ast.Compare", parent: NodeNG) -> nodes.Compare:
         """visit a Compare node by returning a fresh instance of it"""
         newnode = nodes.Compare(node.lineno, node.col_offset, parent)
         newnode.postinit(
@@ -448,22 +1108,33 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_comprehension(self, node, parent):
+    def visit_comprehension(
+        self, node: "ast.comprehension", parent: NodeNG
+    ) -> nodes.Comprehension:
         """visit a Comprehension node by returning a fresh instance of it"""
         newnode = nodes.Comprehension(parent)
         newnode.postinit(
             self.visit(node.target, newnode),
             self.visit(node.iter, newnode),
             [self.visit(child, newnode) for child in node.ifs],
-            getattr(node, "is_async", None),
+            bool(node.is_async),
         )
         return newnode
 
-    def visit_decorators(self, node, parent):
-        """visit a Decorators node by returning a fresh instance of it"""
+    def visit_decorators(
+        self,
+        node: Union["ast.ClassDef", "ast.FunctionDef", "ast.AsyncFunctionDef"],
+        parent: NodeNG,
+    ) -> Optional[nodes.Decorators]:
+        """visit a Decorators node by returning a fresh instance of it
+
+        Note: Method not called by 'visit'
+        """
+        if not node.decorator_list:
+            return None
         # /!\ node is actually an _ast.FunctionDef node while
         # parent is an astroid.nodes.FunctionDef node
-        if PY38:
+        if PY38_PLUS:
             # Set the line number of the first decorator for Python 3.8+.
             lineno = node.decorator_list[0].lineno
         else:
@@ -472,17 +1143,20 @@ class TreeRebuilder:
         newnode.postinit([self.visit(child, newnode) for child in node.decorator_list])
         return newnode
 
-    def visit_delete(self, node, parent):
+    def visit_delete(self, node: "ast.Delete", parent: NodeNG) -> nodes.Delete:
         """visit a Delete node by returning a fresh instance of it"""
         newnode = nodes.Delete(node.lineno, node.col_offset, parent)
         newnode.postinit([self.visit(child, newnode) for child in node.targets])
         return newnode
 
-    def _visit_dict_items(self, node, parent, newnode):
+    def _visit_dict_items(
+        self, node: "ast.Dict", parent: NodeNG, newnode: nodes.Dict
+    ) -> Generator[Tuple[NodeNG, NodeNG], None, None]:
         for key, value in zip(node.keys, node.values):
+            rebuilt_key: NodeNG
             rebuilt_value = self.visit(value, newnode)
             if not key:
-                # Python 3.5 and extended unpacking
+                # Extended unpacking
                 rebuilt_key = nodes.DictUnpack(
                     rebuilt_value.lineno, rebuilt_value.col_offset, parent
                 )
@@ -490,14 +1164,14 @@ class TreeRebuilder:
                 rebuilt_key = self.visit(key, newnode)
             yield rebuilt_key, rebuilt_value
 
-    def visit_dict(self, node, parent):
+    def visit_dict(self, node: "ast.Dict", parent: NodeNG) -> nodes.Dict:
         """visit a Dict node by returning a fresh instance of it"""
         newnode = nodes.Dict(node.lineno, node.col_offset, parent)
         items = list(self._visit_dict_items(node, parent, newnode))
         newnode.postinit(items)
         return newnode
 
-    def visit_dictcomp(self, node, parent):
+    def visit_dictcomp(self, node: "ast.DictComp", parent: NodeNG) -> nodes.DictComp:
         """visit a DictComp node by returning a fresh instance of it"""
         newnode = nodes.DictComp(node.lineno, node.col_offset, parent)
         newnode.postinit(
@@ -507,57 +1181,58 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_expr(self, node, parent):
+    def visit_expr(self, node: "ast.Expr", parent: NodeNG) -> nodes.Expr:
         """visit a Expr node by returning a fresh instance of it"""
         newnode = nodes.Expr(node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
     # Not used in Python 3.8+.
-    def visit_ellipsis(self, node, parent):
-        """visit an Ellipsis node by returning a fresh instance of it"""
-        return nodes.Ellipsis(
-            getattr(node, "lineno", None), getattr(node, "col_offset", None), parent
+    def visit_ellipsis(self, node: "ast.Ellipsis", parent: NodeNG) -> nodes.Const:
+        """visit an Ellipsis node by returning a fresh instance of Const"""
+        return nodes.Const(
+            value=Ellipsis,
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            parent=parent,
         )
 
-    def visit_emptynode(self, node, parent):
-        """visit an EmptyNode node by returning a fresh instance of it"""
-        return nodes.EmptyNode(
-            getattr(node, "lineno", None), getattr(node, "col_offset", None), parent
-        )
-
-    def visit_excepthandler(self, node, parent):
+    def visit_excepthandler(
+        self, node: "ast.ExceptHandler", parent: NodeNG
+    ) -> nodes.ExceptHandler:
         """visit an ExceptHandler node by returning a fresh instance of it"""
         newnode = nodes.ExceptHandler(node.lineno, node.col_offset, parent)
-        if node.name:
-            name = self.visit_assignname(node, newnode, node.name)
-        else:
-            name = None
         newnode.postinit(
-            _visit_or_none(node, "type", self, newnode),
-            name,
+            self.visit(node.type, newnode),
+            self.visit_assignname(node, newnode, node.name),
             [self.visit(child, newnode) for child in node.body],
         )
         return newnode
 
-    def visit_exec(self, node, parent):
-        """visit an Exec node by returning a fresh instance of it"""
-        newnode = nodes.Exec(node.lineno, node.col_offset, parent)
-        newnode.postinit(
-            self.visit(node.body, newnode),
-            _visit_or_none(node, "globals", self, newnode),
-            _visit_or_none(node, "locals", self, newnode),
-        )
+    # Not used in Python 3.9+.
+    def visit_extslice(
+        self, node: "ast.ExtSlice", parent: nodes.Subscript
+    ) -> nodes.Tuple:
+        """visit an ExtSlice node by returning a fresh instance of Tuple"""
+        newnode = nodes.Tuple(ctx=Context.Load, parent=parent)
+        newnode.postinit([self.visit(dim, newnode) for dim in node.dims])  # type: ignore
         return newnode
 
-    # Not used in Python 3.8+.
-    def visit_extslice(self, node, parent):
-        """visit an ExtSlice node by returning a fresh instance of it"""
-        newnode = nodes.ExtSlice(parent=parent)
-        newnode.postinit([self.visit(dim, newnode) for dim in node.dims])
-        return newnode
+    @overload
+    def _visit_for(
+        self, cls: Type[nodes.For], node: "ast.For", parent: NodeNG
+    ) -> nodes.For:
+        ...
 
-    def _visit_for(self, cls, node, parent):
+    @overload
+    def _visit_for(
+        self, cls: Type[nodes.AsyncFor], node: "ast.AsyncFor", parent: NodeNG
+    ) -> nodes.AsyncFor:
+        ...
+
+    def _visit_for(
+        self, cls: Type[T_For], node: Union["ast.For", "ast.AsyncFor"], parent: NodeNG
+    ) -> T_For:
         """visit a For node by returning a fresh instance of it"""
         newnode = cls(node.lineno, node.col_offset, parent)
         type_annotation = self.check_type_comment(node, parent=newnode)
@@ -570,31 +1245,53 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_for(self, node, parent):
+    def visit_for(self, node: "ast.For", parent: NodeNG) -> nodes.For:
         return self._visit_for(nodes.For, node, parent)
 
-    def visit_importfrom(self, node, parent):
+    def visit_importfrom(
+        self, node: "ast.ImportFrom", parent: NodeNG
+    ) -> nodes.ImportFrom:
         """visit an ImportFrom node by returning a fresh instance of it"""
         names = [(alias.name, alias.asname) for alias in node.names]
         newnode = nodes.ImportFrom(
             node.module or "",
             names,
             node.level or None,
-            getattr(node, "lineno", None),
-            getattr(node, "col_offset", None),
+            node.lineno,
+            node.col_offset,
             parent,
         )
         # store From names to add them to locals after building
         self._import_from_nodes.append(newnode)
         return newnode
 
-    def _visit_functiondef(self, cls, node, parent):
+    @overload
+    def _visit_functiondef(
+        self, cls: Type[nodes.FunctionDef], node: "ast.FunctionDef", parent: NodeNG
+    ) -> nodes.FunctionDef:
+        ...
+
+    @overload
+    def _visit_functiondef(
+        self,
+        cls: Type[nodes.AsyncFunctionDef],
+        node: "ast.AsyncFunctionDef",
+        parent: NodeNG,
+    ) -> nodes.AsyncFunctionDef:
+        ...
+
+    def _visit_functiondef(
+        self,
+        cls: Type[T_Function],
+        node: Union["ast.FunctionDef", "ast.AsyncFunctionDef"],
+        parent: NodeNG,
+    ) -> T_Function:
         """visit an FunctionDef node to become astroid"""
         self._global_names.append({})
         node, doc = self._get_doc(node)
 
         lineno = node.lineno
-        if PY38 and node.decorator_list:
+        if PY38_PLUS and node.decorator_list:
             # Python 3.8 sets the line number of a decorated function
             # to be the actual line number of the function, but the
             # previous versions expected the decorator's line number instead.
@@ -605,17 +1302,15 @@ class TreeRebuilder:
             lineno = node.decorator_list[0].lineno
 
         newnode = cls(node.name, doc, lineno, node.col_offset, parent)
-        if node.decorator_list:
-            decorators = self.visit_decorators(node, newnode)
-        else:
-            decorators = None
+        decorators = self.visit_decorators(node, newnode)
+        returns: Optional[NodeNG]
         if node.returns:
             returns = self.visit(node.returns, newnode)
         else:
             returns = None
 
         type_comment_args = type_comment_returns = None
-        type_comment_annotation = self.check_function_type_comment(node)
+        type_comment_annotation = self.check_function_type_comment(node, newnode)
         if type_comment_annotation:
             type_comment_returns, type_comment_args = type_comment_annotation
         newnode.postinit(
@@ -629,10 +1324,14 @@ class TreeRebuilder:
         self._global_names.pop()
         return newnode
 
-    def visit_functiondef(self, node, parent):
+    def visit_functiondef(
+        self, node: "ast.FunctionDef", parent: NodeNG
+    ) -> nodes.FunctionDef:
         return self._visit_functiondef(nodes.FunctionDef, node, parent)
 
-    def visit_generatorexp(self, node, parent):
+    def visit_generatorexp(
+        self, node: "ast.GeneratorExp", parent: NodeNG
+    ) -> nodes.GeneratorExp:
         """visit a GeneratorExp node by returning a fresh instance of it"""
         newnode = nodes.GeneratorExp(node.lineno, node.col_offset, parent)
         newnode.postinit(
@@ -641,29 +1340,32 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_attribute(self, node, parent):
+    def visit_attribute(
+        self, node: "ast.Attribute", parent: NodeNG
+    ) -> Union[nodes.Attribute, nodes.AssignAttr, nodes.DelAttr]:
         """visit an Attribute node by returning a fresh instance of it"""
         context = self._get_context(node)
-        if context == astroid.Del:
+        newnode: Union[nodes.Attribute, nodes.AssignAttr, nodes.DelAttr]
+        if context == Context.Del:
             # FIXME : maybe we should reintroduce and visit_delattr ?
             # for instance, deactivating assign_ctx
             newnode = nodes.DelAttr(node.attr, node.lineno, node.col_offset, parent)
-        elif context == astroid.Store:
+        elif context == Context.Store:
             newnode = nodes.AssignAttr(node.attr, node.lineno, node.col_offset, parent)
             # Prohibit a local save if we are in an ExceptHandler.
-            if not isinstance(parent, astroid.ExceptHandler):
+            if not isinstance(parent, nodes.ExceptHandler):
                 self._delayed_assattr.append(newnode)
         else:
             newnode = nodes.Attribute(node.attr, node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
-    def visit_global(self, node, parent):
+    def visit_global(self, node: "ast.Global", parent: NodeNG) -> nodes.Global:
         """visit a Global node to become astroid"""
         newnode = nodes.Global(
             node.names,
-            getattr(node, "lineno", None),
-            getattr(node, "col_offset", None),
+            node.lineno,
+            node.col_offset,
             parent,
         )
         if self._global_names:  # global at the module level, no effect
@@ -671,7 +1373,7 @@ class TreeRebuilder:
                 self._global_names[-1].setdefault(name, []).append(newnode)
         return newnode
 
-    def visit_if(self, node, parent):
+    def visit_if(self, node: "ast.If", parent: NodeNG) -> nodes.If:
         """visit an If node by returning a fresh instance of it"""
         newnode = nodes.If(node.lineno, node.col_offset, parent)
         newnode.postinit(
@@ -681,7 +1383,7 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_ifexp(self, node, parent):
+    def visit_ifexp(self, node: "ast.IfExp", parent: NodeNG) -> nodes.IfExp:
         """visit a IfExp node by returning a fresh instance of it"""
         newnode = nodes.IfExp(node.lineno, node.col_offset, parent)
         newnode.postinit(
@@ -691,13 +1393,13 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_import(self, node, parent):
+    def visit_import(self, node: "ast.Import", parent: NodeNG) -> nodes.Import:
         """visit a Import node by returning a fresh instance of it"""
         names = [(alias.name, alias.asname) for alias in node.names]
         newnode = nodes.Import(
             names,
-            getattr(node, "lineno", None),
-            getattr(node, "col_offset", None),
+            node.lineno,
+            node.col_offset,
             parent,
         )
         # save import names in parent's locals:
@@ -706,47 +1408,50 @@ class TreeRebuilder:
             parent.set_local(name.split(".")[0], newnode)
         return newnode
 
-    def visit_joinedstr(self, node, parent):
+    def visit_joinedstr(self, node: "ast.JoinedStr", parent: NodeNG) -> nodes.JoinedStr:
         newnode = nodes.JoinedStr(node.lineno, node.col_offset, parent)
         newnode.postinit([self.visit(child, newnode) for child in node.values])
         return newnode
 
-    def visit_formattedvalue(self, node, parent):
+    def visit_formattedvalue(
+        self, node: "ast.FormattedValue", parent: NodeNG
+    ) -> nodes.FormattedValue:
         newnode = nodes.FormattedValue(node.lineno, node.col_offset, parent)
         newnode.postinit(
             self.visit(node.value, newnode),
             node.conversion,
-            _visit_or_none(node, "format_spec", self, newnode),
+            self.visit(node.format_spec, newnode),
         )
         return newnode
 
-    def visit_namedexpr(self, node, parent):
+    def visit_namedexpr(self, node: "ast.NamedExpr", parent: NodeNG) -> nodes.NamedExpr:
         newnode = nodes.NamedExpr(node.lineno, node.col_offset, parent)
         newnode.postinit(
             self.visit(node.target, newnode), self.visit(node.value, newnode)
         )
         return newnode
 
-    # Not used in Python 3.8+.
-    def visit_index(self, node, parent):
-        """visit a Index node by returning a fresh instance of it"""
-        newnode = nodes.Index(parent=parent)
-        newnode.postinit(self.visit(node.value, newnode))
-        return newnode
+    # Not used in Python 3.9+.
+    def visit_index(self, node: "ast.Index", parent: nodes.Subscript) -> NodeNG:
+        """visit a Index node by returning a fresh instance of NodeNG"""
+        return self.visit(node.value, parent)  # type: ignore
 
-    def visit_keyword(self, node, parent):
+    def visit_keyword(self, node: "ast.keyword", parent: NodeNG) -> nodes.Keyword:
         """visit a Keyword node by returning a fresh instance of it"""
-        newnode = nodes.Keyword(node.arg, parent=parent)
+        if PY39_PLUS:
+            newnode = nodes.Keyword(node.arg, node.lineno, node.col_offset, parent)
+        else:
+            newnode = nodes.Keyword(node.arg, parent=parent)
         newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
-    def visit_lambda(self, node, parent):
+    def visit_lambda(self, node: "ast.Lambda", parent: NodeNG) -> nodes.Lambda:
         """visit a Lambda node by returning a fresh instance of it"""
         newnode = nodes.Lambda(node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.args, newnode), self.visit(node.body, newnode))
         return newnode
 
-    def visit_list(self, node, parent):
+    def visit_list(self, node: "ast.List", parent: NodeNG) -> nodes.List:
         """visit a List node by returning a fresh instance of it"""
         context = self._get_context(node)
         newnode = nodes.List(
@@ -755,7 +1460,7 @@ class TreeRebuilder:
         newnode.postinit([self.visit(child, newnode) for child in node.elts])
         return newnode
 
-    def visit_listcomp(self, node, parent):
+    def visit_listcomp(self, node: "ast.ListComp", parent: NodeNG) -> nodes.ListComp:
         """visit a ListComp node by returning a fresh instance of it"""
         newnode = nodes.ListComp(node.lineno, node.col_offset, parent)
         newnode.postinit(
@@ -764,117 +1469,108 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_name(self, node, parent):
+    def visit_name(
+        self, node: "ast.Name", parent: NodeNG
+    ) -> Union[nodes.Name, nodes.AssignName, nodes.DelName]:
         """visit a Name node by returning a fresh instance of it"""
         context = self._get_context(node)
-        # True and False can be assigned to something in py2x, so we have to
-        # check first the context.
-        if context == astroid.Del:
+        newnode: Union[nodes.Name, nodes.AssignName, nodes.DelName]
+        if context == Context.Del:
             newnode = nodes.DelName(node.id, node.lineno, node.col_offset, parent)
-        elif context == astroid.Store:
+        elif context == Context.Store:
             newnode = nodes.AssignName(node.id, node.lineno, node.col_offset, parent)
-        elif node.id in CONST_NAME_TRANSFORMS:
-            newnode = nodes.Const(
-                CONST_NAME_TRANSFORMS[node.id],
-                getattr(node, "lineno", None),
-                getattr(node, "col_offset", None),
-                parent,
-            )
-            return newnode
         else:
             newnode = nodes.Name(node.id, node.lineno, node.col_offset, parent)
         # XXX REMOVE me :
-        if context in (astroid.Del, astroid.Store):  # 'Aug' ??
+        if context in (Context.Del, Context.Store):  # 'Aug' ??
+            newnode = cast(Union[nodes.AssignName, nodes.DelName], newnode)
             self._save_assignment(newnode)
         return newnode
 
     # Not used in Python 3.8+.
-    def visit_nameconstant(self, node, parent):
-        # in Python 3.4 we have NameConstant for True / False / None
+    def visit_nameconstant(
+        self, node: "ast.NameConstant", parent: NodeNG
+    ) -> nodes.Const:
+        # For singleton values True / False / None
         return nodes.Const(
             node.value,
-            getattr(node, "lineno", None),
-            getattr(node, "col_offset", None),
+            node.lineno,
+            node.col_offset,
             parent,
         )
 
-    def visit_nonlocal(self, node, parent):
+    def visit_nonlocal(self, node: "ast.Nonlocal", parent: NodeNG) -> nodes.Nonlocal:
         """visit a Nonlocal node and return a new instance of it"""
         return nodes.Nonlocal(
             node.names,
-            getattr(node, "lineno", None),
-            getattr(node, "col_offset", None),
+            node.lineno,
+            node.col_offset,
             parent,
         )
 
-    def visit_constant(self, node, parent):
+    def visit_constant(self, node: "ast.Constant", parent: NodeNG) -> nodes.Const:
         """visit a Constant node by returning a fresh instance of Const"""
         return nodes.Const(
             node.value,
-            getattr(node, "lineno", None),
-            getattr(node, "col_offset", None),
+            node.lineno,
+            node.col_offset,
             parent,
+            node.kind,
         )
 
     # Not used in Python 3.8+.
-    def visit_str(self, node, parent):
+    def visit_str(
+        self, node: Union["ast.Str", "ast.Bytes"], parent: NodeNG
+    ) -> nodes.Const:
         """visit a String/Bytes node by returning a fresh instance of Const"""
         return nodes.Const(
             node.s,
-            getattr(node, "lineno", None),
-            getattr(node, "col_offset", None),
+            node.lineno,
+            node.col_offset,
             parent,
         )
 
+    # Not used in Python 3.8+
     visit_bytes = visit_str
 
     # Not used in Python 3.8+.
-    def visit_num(self, node, parent):
+    def visit_num(self, node: "ast.Num", parent: NodeNG) -> nodes.Const:
         """visit a Num node by returning a fresh instance of Const"""
         return nodes.Const(
             node.n,
-            getattr(node, "lineno", None),
-            getattr(node, "col_offset", None),
+            node.lineno,
+            node.col_offset,
             parent,
         )
 
-    def visit_pass(self, node, parent):
+    def visit_pass(self, node: "ast.Pass", parent: NodeNG) -> nodes.Pass:
         """visit a Pass node by returning a fresh instance of it"""
         return nodes.Pass(node.lineno, node.col_offset, parent)
 
-    def visit_print(self, node, parent):
-        """visit a Print node by returning a fresh instance of it"""
-        newnode = nodes.Print(node.nl, node.lineno, node.col_offset, parent)
-        newnode.postinit(
-            _visit_or_none(node, "dest", self, newnode),
-            [self.visit(child, newnode) for child in node.values],
-        )
-        return newnode
-
-    def visit_raise(self, node, parent):
+    def visit_raise(self, node: "ast.Raise", parent: NodeNG) -> nodes.Raise:
         """visit a Raise node by returning a fresh instance of it"""
         newnode = nodes.Raise(node.lineno, node.col_offset, parent)
         # no traceback; anyway it is not used in Pylint
         newnode.postinit(
-            _visit_or_none(node, "exc", self, newnode),
-            _visit_or_none(node, "cause", self, newnode),
+            exc=self.visit(node.exc, newnode),
+            cause=self.visit(node.cause, newnode),
         )
         return newnode
 
-    def visit_return(self, node, parent):
+    def visit_return(self, node: "ast.Return", parent: NodeNG) -> nodes.Return:
         """visit a Return node by returning a fresh instance of it"""
         newnode = nodes.Return(node.lineno, node.col_offset, parent)
         if node.value is not None:
             newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
-    def visit_set(self, node, parent):
+    def visit_set(self, node: "ast.Set", parent: NodeNG) -> nodes.Set:
         """visit a Set node by returning a fresh instance of it"""
         newnode = nodes.Set(node.lineno, node.col_offset, parent)
         newnode.postinit([self.visit(child, newnode) for child in node.elts])
         return newnode
 
-    def visit_setcomp(self, node, parent):
+    def visit_setcomp(self, node: "ast.SetComp", parent: NodeNG) -> nodes.SetComp:
         """visit a SetComp node by returning a fresh instance of it"""
         newnode = nodes.SetComp(node.lineno, node.col_offset, parent)
         newnode.postinit(
@@ -883,17 +1579,17 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_slice(self, node, parent):
+    def visit_slice(self, node: "ast.Slice", parent: nodes.Subscript) -> nodes.Slice:
         """visit a Slice node by returning a fresh instance of it"""
         newnode = nodes.Slice(parent=parent)
         newnode.postinit(
-            _visit_or_none(node, "lower", self, newnode),
-            _visit_or_none(node, "upper", self, newnode),
-            _visit_or_none(node, "step", self, newnode),
+            lower=self.visit(node.lower, newnode),
+            upper=self.visit(node.upper, newnode),
+            step=self.visit(node.step, newnode),
         )
         return newnode
 
-    def visit_subscript(self, node, parent):
+    def visit_subscript(self, node: "ast.Subscript", parent: NodeNG) -> nodes.Subscript:
         """visit a Subscript node by returning a fresh instance of it"""
         context = self._get_context(node)
         newnode = nodes.Subscript(
@@ -904,7 +1600,7 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_starred(self, node, parent):
+    def visit_starred(self, node: "ast.Starred", parent: NodeNG) -> nodes.Starred:
         """visit a Starred node and return a new instance of it"""
         context = self._get_context(node)
         newnode = nodes.Starred(
@@ -913,7 +1609,7 @@ class TreeRebuilder:
         newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
-    def visit_tryexcept(self, node, parent):
+    def visit_tryexcept(self, node: "ast.Try", parent: NodeNG) -> nodes.TryExcept:
         """visit a TryExcept node by returning a fresh instance of it"""
         newnode = nodes.TryExcept(node.lineno, node.col_offset, parent)
         newnode.postinit(
@@ -923,11 +1619,14 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_try(self, node, parent):
+    def visit_try(
+        self, node: "ast.Try", parent: NodeNG
+    ) -> Union[nodes.TryExcept, nodes.TryFinally, None]:
         # python 3.3 introduce a new Try node replacing
         # TryFinally/TryExcept nodes
         if node.finalbody:
             newnode = nodes.TryFinally(node.lineno, node.col_offset, parent)
+            body: Union[List[nodes.TryExcept], List[NodeNG]]
             if node.handlers:
                 body = [self.visit_tryexcept(node, newnode)]
             else:
@@ -938,7 +1637,7 @@ class TreeRebuilder:
             return self.visit_tryexcept(node, parent)
         return None
 
-    def visit_tryfinally(self, node, parent):
+    def visit_tryfinally(self, node: "ast.Try", parent: NodeNG) -> nodes.TryFinally:
         """visit a TryFinally node by returning a fresh instance of it"""
         newnode = nodes.TryFinally(node.lineno, node.col_offset, parent)
         newnode.postinit(
@@ -947,7 +1646,7 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_tuple(self, node, parent):
+    def visit_tuple(self, node: "ast.Tuple", parent: NodeNG) -> nodes.Tuple:
         """visit a Tuple node by returning a fresh instance of it"""
         context = self._get_context(node)
         newnode = nodes.Tuple(
@@ -956,7 +1655,7 @@ class TreeRebuilder:
         newnode.postinit([self.visit(child, newnode) for child in node.elts])
         return newnode
 
-    def visit_unaryop(self, node, parent):
+    def visit_unaryop(self, node: "ast.UnaryOp", parent: NodeNG) -> nodes.UnaryOp:
         """visit a UnaryOp node by returning a fresh instance of it"""
         newnode = nodes.UnaryOp(
             self._parser_module.unary_op_classes[node.op.__class__],
@@ -967,7 +1666,7 @@ class TreeRebuilder:
         newnode.postinit(self.visit(node.operand, newnode))
         return newnode
 
-    def visit_while(self, node, parent):
+    def visit_while(self, node: "ast.While", parent: NodeNG) -> nodes.While:
         """visit a While node by returning a fresh instance of it"""
         newnode = nodes.While(node.lineno, node.col_offset, parent)
         newnode.postinit(
@@ -977,12 +1676,29 @@ class TreeRebuilder:
         )
         return newnode
 
-    def _visit_with(self, cls, node, parent):
+    @overload
+    def _visit_with(
+        self, cls: Type[nodes.With], node: "ast.With", parent: NodeNG
+    ) -> nodes.With:
+        ...
+
+    @overload
+    def _visit_with(
+        self, cls: Type[nodes.AsyncWith], node: "ast.AsyncWith", parent: NodeNG
+    ) -> nodes.AsyncWith:
+        ...
+
+    def _visit_with(
+        self,
+        cls: Type[T_With],
+        node: Union["ast.With", "ast.AsyncWith"],
+        parent: NodeNG,
+    ) -> T_With:
         newnode = cls(node.lineno, node.col_offset, parent)
 
-        def visit_child(child):
+        def visit_child(child: "ast.withitem") -> Tuple[NodeNG, Optional[NodeNG]]:
             expr = self.visit(child.context_expr, newnode)
-            var = _visit_or_none(child, "optional_vars", self, newnode)
+            var = self.visit(child.optional_vars, newnode)
             return expr, var
 
         type_annotation = self.check_type_comment(node, parent=newnode)
@@ -993,18 +1709,118 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_with(self, node, parent):
+    def visit_with(self, node: "ast.With", parent: NodeNG) -> NodeNG:
         return self._visit_with(nodes.With, node, parent)
 
-    def visit_yield(self, node, parent):
+    def visit_yield(self, node: "ast.Yield", parent: NodeNG) -> NodeNG:
         """visit a Yield node by returning a fresh instance of it"""
         newnode = nodes.Yield(node.lineno, node.col_offset, parent)
         if node.value is not None:
             newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
-    def visit_yieldfrom(self, node, parent):
+    def visit_yieldfrom(self, node: "ast.YieldFrom", parent: NodeNG) -> NodeNG:
         newnode = nodes.YieldFrom(node.lineno, node.col_offset, parent)
         if node.value is not None:
             newnode.postinit(self.visit(node.value, newnode))
         return newnode
+
+    if sys.version_info >= (3, 10):
+
+        def visit_match(self, node: "ast.Match", parent: NodeNG) -> nodes.Match:
+            newnode = nodes.Match(node.lineno, node.col_offset, parent)
+            newnode.postinit(
+                subject=self.visit(node.subject, newnode),
+                cases=[self.visit(case, newnode) for case in node.cases],
+            )
+            return newnode
+
+        def visit_matchcase(
+            self, node: "ast.match_case", parent: NodeNG
+        ) -> nodes.MatchCase:
+            newnode = nodes.MatchCase(parent=parent)
+            newnode.postinit(
+                pattern=self.visit(node.pattern, newnode),
+                guard=self.visit(node.guard, newnode),
+                body=[self.visit(child, newnode) for child in node.body],
+            )
+            return newnode
+
+        def visit_matchvalue(
+            self, node: "ast.MatchValue", parent: NodeNG
+        ) -> nodes.MatchValue:
+            newnode = nodes.MatchValue(node.lineno, node.col_offset, parent)
+            newnode.postinit(value=self.visit(node.value, newnode))
+            return newnode
+
+        def visit_matchsingleton(
+            self, node: "ast.MatchSingleton", parent: NodeNG
+        ) -> nodes.MatchSingleton:
+            return nodes.MatchSingleton(
+                value=node.value,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                parent=parent,
+            )
+
+        def visit_matchsequence(
+            self, node: "ast.MatchSequence", parent: NodeNG
+        ) -> nodes.MatchSequence:
+            newnode = nodes.MatchSequence(node.lineno, node.col_offset, parent)
+            newnode.postinit(
+                patterns=[self.visit(pattern, newnode) for pattern in node.patterns]
+            )
+            return newnode
+
+        def visit_matchmapping(
+            self, node: "ast.MatchMapping", parent: NodeNG
+        ) -> nodes.MatchMapping:
+            newnode = nodes.MatchMapping(node.lineno, node.col_offset, parent)
+            # Add AssignName node for 'node.name'
+            # https://bugs.python.org/issue43994
+            newnode.postinit(
+                keys=[self.visit(child, newnode) for child in node.keys],
+                patterns=[self.visit(pattern, newnode) for pattern in node.patterns],
+                rest=self.visit_assignname(node, newnode, node.rest),
+            )
+            return newnode
+
+        def visit_matchclass(
+            self, node: "ast.MatchClass", parent: NodeNG
+        ) -> nodes.MatchClass:
+            newnode = nodes.MatchClass(node.lineno, node.col_offset, parent)
+            newnode.postinit(
+                cls=self.visit(node.cls, newnode),
+                patterns=[self.visit(pattern, newnode) for pattern in node.patterns],
+                kwd_attrs=node.kwd_attrs,
+                kwd_patterns=[
+                    self.visit(pattern, newnode) for pattern in node.kwd_patterns
+                ],
+            )
+            return newnode
+
+        def visit_matchstar(
+            self, node: "ast.MatchStar", parent: NodeNG
+        ) -> nodes.MatchStar:
+            newnode = nodes.MatchStar(node.lineno, node.col_offset, parent)
+            # Add AssignName node for 'node.name'
+            # https://bugs.python.org/issue43994
+            newnode.postinit(name=self.visit_assignname(node, newnode, node.name))
+            return newnode
+
+        def visit_matchas(self, node: "ast.MatchAs", parent: NodeNG) -> nodes.MatchAs:
+            newnode = nodes.MatchAs(node.lineno, node.col_offset, parent)
+            # Add AssignName node for 'node.name'
+            # https://bugs.python.org/issue43994
+            newnode.postinit(
+                pattern=self.visit(node.pattern, newnode),
+                name=self.visit_assignname(node, newnode, node.name),
+            )
+            return newnode
+
+        def visit_matchor(self, node: "ast.MatchOr", parent: NodeNG) -> nodes.MatchOr:
+            newnode = nodes.MatchOr(node.lineno, node.col_offset, parent)
+            newnode.postinit(
+                patterns=[self.visit(pattern, newnode) for pattern in node.patterns]
+            )
+            return newnode

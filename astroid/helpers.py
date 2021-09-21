@@ -1,28 +1,34 @@
 # Copyright (c) 2015-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020 Simon Hewitt <si@sjhewitt.co.uk>
+# Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
+# Copyright (c) 2020 Ram Rachum <ram@rachum.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 
 """
 Various helper utilities.
 """
 
-import builtins as builtins_mod
 
-from astroid import bases
-from astroid import context as contextmod
-from astroid import exceptions
-from astroid import manager
-from astroid import nodes
-from astroid import raw_building
-from astroid import scoped_nodes
-from astroid import util
-
-
-BUILTINS = builtins_mod.__name__
+from astroid import bases, manager, nodes, raw_building, util
+from astroid.context import CallContext, InferenceContext
+from astroid.exceptions import (
+    AstroidTypeError,
+    AttributeInferenceError,
+    InferenceError,
+    MroError,
+    _NonDeducibleTypeHierarchy,
+)
+from astroid.nodes import scoped_nodes
 
 
 def _build_proxy_class(cls_name, builtins):
@@ -33,7 +39,7 @@ def _build_proxy_class(cls_name, builtins):
 
 def _function_type(function, builtins):
     if isinstance(function, scoped_nodes.Lambda):
-        if function.root().name == BUILTINS:
+        if function.root().name == "builtins":
             cls_name = "builtin_function_or_method"
         else:
             cls_name = "function"
@@ -47,7 +53,7 @@ def _function_type(function, builtins):
 def _object_type(node, context=None):
     astroid_manager = manager.AstroidManager()
     builtins = astroid_manager.builtins_module
-    context = context or contextmod.InferenceContext()
+    context = context or InferenceContext()
 
     for inferred in node.infer(context=context):
         if isinstance(inferred, scoped_nodes.ClassDef):
@@ -77,7 +83,7 @@ def object_type(node, context=None):
 
     try:
         types = set(_object_type(node, context))
-    except exceptions.InferenceError:
+    except InferenceError:
         return util.Uninferable
     if len(types) > 1 or not types:
         return util.Uninferable
@@ -103,7 +109,7 @@ def _object_type_is_subclass(obj_type, class_or_seq, context=None):
     # issubclass(object, (1, type)) raises TypeError
     for klass in class_seq:
         if klass is util.Uninferable:
-            raise exceptions.AstroidTypeError("arg 2 must be a type or tuple of types")
+            raise AstroidTypeError("arg 2 must be a type or tuple of types")
 
         for obj_subclass in obj_type.mro():
             if obj_subclass == klass:
@@ -138,7 +144,7 @@ def object_issubclass(node, class_or_seq, context=None):
         or its type's mro doesn't work
     """
     if not isinstance(node, nodes.ClassDef):
-        raise TypeError("{node} needs to be a ClassDef node".format(node=node))
+        raise TypeError(f"{node} needs to be a ClassDef node")
     return _object_type_is_subclass(node, class_or_seq, context=context)
 
 
@@ -151,12 +157,12 @@ def safe_infer(node, context=None):
     try:
         inferit = node.infer(context=context)
         value = next(inferit)
-    except exceptions.InferenceError:
+    except (InferenceError, StopIteration):
         return None
     try:
         next(inferit)
         return None  # None if there is ambiguity on the inferred node
-    except exceptions.InferenceError:
+    except InferenceError:
         return None  # there is some kind of ambiguity
     except StopIteration:
         return value
@@ -184,15 +190,15 @@ def has_known_bases(klass, context=None):
 
 def _type_check(type1, type2):
     if not all(map(has_known_bases, (type1, type2))):
-        raise exceptions._NonDeducibleTypeHierarchy
+        raise _NonDeducibleTypeHierarchy
 
     if not all([type1.newstyle, type2.newstyle]):
         return False
     try:
         return type1 in type2.mro()[:-1]
-    except exceptions.MroError as e:
+    except MroError as e:
         # The MRO is invalid.
-        raise exceptions._NonDeducibleTypeHierarchy from e
+        raise _NonDeducibleTypeHierarchy from e
 
 
 def is_subtype(type1, type2):
@@ -212,18 +218,18 @@ def class_instance_as_index(node):
     be used in some scenarios where an integer is expected,
     for instance when multiplying or subscripting a list.
     """
-    context = contextmod.InferenceContext()
-    context.callcontext = contextmod.CallContext(args=[node])
-
+    context = InferenceContext()
     try:
         for inferred in node.igetattr("__index__", context=context):
             if not isinstance(inferred, bases.BoundMethod):
                 continue
 
+            context.boundnode = node
+            context.callcontext = CallContext(args=[], callee=inferred)
             for result in inferred.infer_call_result(node, context=context):
                 if isinstance(result, nodes.Const) and isinstance(result.value, int):
                     return result
-    except exceptions.InferenceError:
+    except InferenceError:
         pass
     return None
 
@@ -252,6 +258,7 @@ def object_len(node, context=None):
     if (
         isinstance(node_frame, scoped_nodes.FunctionDef)
         and node_frame.name == "__len__"
+        and inferred_node is not None
         and inferred_node._proxied == node_frame.parent
     ):
         message = (
@@ -260,10 +267,10 @@ def object_len(node, context=None):
                 node.lineno, node.root().file
             )
         )
-        raise exceptions.InferenceError(message)
+        raise InferenceError(message)
 
     if inferred_node is None or inferred_node is util.Uninferable:
-        raise exceptions.InferenceError(node=node)
+        raise InferenceError(node=node)
     if isinstance(inferred_node, nodes.Const) and isinstance(
         inferred_node.value, (bytes, str)
     ):
@@ -275,26 +282,33 @@ def object_len(node, context=None):
 
     node_type = object_type(inferred_node, context=context)
     if not node_type:
-        raise exceptions.InferenceError(node=node)
+        raise InferenceError(node=node)
 
     try:
         len_call = next(node_type.igetattr("__len__", context=context))
-    except exceptions.AttributeInferenceError as e:
-        raise exceptions.AstroidTypeError(
-            "object of type '{}' has no len()".format(node_type.pytype())
+    except StopIteration as e:
+        raise AstroidTypeError(str(e)) from e
+    except AttributeInferenceError as e:
+        raise AstroidTypeError(
+            f"object of type '{node_type.pytype()}' has no len()"
         ) from e
 
-    result_of_len = next(len_call.infer_call_result(node, context))
+    inferred = len_call.infer_call_result(node, context)
+    if inferred is util.Uninferable:
+        raise InferenceError(node=node, context=context)
+    result_of_len = next(inferred, None)
     if (
         isinstance(result_of_len, nodes.Const)
         and result_of_len.pytype() == "builtins.int"
     ):
         return result_of_len.value
-    if isinstance(result_of_len, bases.Instance) and result_of_len.is_subtype_of(
-        "builtins.int"
+    if (
+        result_of_len is None
+        or isinstance(result_of_len, bases.Instance)
+        and result_of_len.is_subtype_of("builtins.int")
     ):
         # Fake a result as we don't know the arguments of the instance call.
         return 0
-    raise exceptions.AstroidTypeError(
-        "'{}' object cannot be interpreted as an integer".format(result_of_len)
+    raise AstroidTypeError(
+        f"'{result_of_len}' object cannot be interpreted as an integer"
     )

@@ -1,18 +1,21 @@
-# Copyright (c) 2015-2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2015-2016, 2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2017 Roy Wright <roy@wright.org>
 # Copyright (c) 2018 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2019 Antoine Boellinger <aboellinger@hotmail.com>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """Astroid hooks for the PyQT library."""
 
-from astroid import MANAGER, register_module_extender
+from astroid import nodes, parse
+from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
-from astroid import nodes
-from astroid import parse
+from astroid.manager import AstroidManager
 
 
 def _looks_like_signal(node, signal_name="pyqtSignal"):
@@ -63,7 +66,7 @@ def transform_pyside_signal(node):
 
 
 def pyqt4_qtcore_transform():
-    return AstroidBuilder(MANAGER).string_build(
+    return AstroidBuilder(AstroidManager()).string_build(
         """
 
 def SIGNAL(signal_name): pass
@@ -74,10 +77,12 @@ class QObject(object):
     )
 
 
-register_module_extender(MANAGER, "PyQt4.QtCore", pyqt4_qtcore_transform)
-MANAGER.register_transform(nodes.FunctionDef, transform_pyqt_signal, _looks_like_signal)
-MANAGER.register_transform(
+register_module_extender(AstroidManager(), "PyQt4.QtCore", pyqt4_qtcore_transform)
+AstroidManager().register_transform(
+    nodes.FunctionDef, transform_pyqt_signal, _looks_like_signal
+)
+AstroidManager().register_transform(
     nodes.ClassDef,
     transform_pyside_signal,
-    lambda node: node.qname() in ("PySide.QtCore.Signal", "PySide2.QtCore.Signal"),
+    lambda node: node.qname() in {"PySide.QtCore.Signal", "PySide2.QtCore.Signal"},
 )

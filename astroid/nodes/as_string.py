@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2009-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2010 Daniel Harding <dharding@gmail.com>
 # Copyright (c) 2013-2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
@@ -14,27 +13,41 @@
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2019 Alex Hall <alex.mojaki@gmail.com>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
-"""This module renders Astroid nodes as string:
+"""This module renders Astroid nodes as string"""
+from typing import TYPE_CHECKING
 
-* :func:`to_code` function return equivalent (hopefully valid) python string
-
-* :func:`dump` function return an internal representation of nodes found
-  in the tree, useful for debugging or understanding the tree structure
-"""
+if TYPE_CHECKING:
+    from astroid.nodes.node_classes import (
+        Match,
+        MatchAs,
+        MatchCase,
+        MatchClass,
+        MatchMapping,
+        MatchOr,
+        MatchSequence,
+        MatchSingleton,
+        MatchStar,
+        MatchValue,
+    )
 
 # pylint: disable=unused-argument
 
 DOC_NEWLINE = "\0"
 
 
+# Visitor pattern require argument all the time and is not better with staticmethod
+# noinspection PyUnusedLocal,PyMethodMayBeStatic
 class AsStringVisitor:
     """Visitor to render an Astroid node as a valid python code string"""
 
-    def __init__(self, indent):
+    def __init__(self, indent="    "):
         self.indent = indent
 
     def __call__(self, node):
@@ -43,7 +56,7 @@ class AsStringVisitor:
 
     def _docs_dedent(self, doc):
         """Stop newlines in docs being indented by self._stmt_list"""
-        return '\n%s"""%s"""' % (self.indent, doc.replace("\n", DOC_NEWLINE))
+        return '\n{}"""{}"""'.format(self.indent, doc.replace("\n", DOC_NEWLINE))
 
     def _stmt_list(self, stmts, indent=True):
         """return a list of nodes to string"""
@@ -56,14 +69,14 @@ class AsStringVisitor:
     def _precedence_parens(self, node, child, is_left=True):
         """Wrap child in parens only if required to keep same semantics"""
         if self._should_wrap(node, child, is_left):
-            return "(%s)" % child.accept(self)
+            return f"({child.accept(self)})"
 
         return child.accept(self)
 
     def _should_wrap(self, node, child, is_left):
         """Wrap child if:
-            - it has lower precedence
-            - same precedence with position opposite to associativity direction
+        - it has lower precedence
+        - same precedence with position opposite to associativity direction
         """
         node_precedence = node.op_precedence()
         child_precedence = child.op_precedence()
@@ -82,16 +95,16 @@ class AsStringVisitor:
 
         return False
 
-    ## visit_<node> methods ###########################################
+    # visit_<node> methods ###########################################
 
     def visit_await(self, node):
-        return "await %s" % node.value.accept(self)
+        return f"await {node.value.accept(self)}"
 
     def visit_asyncwith(self, node):
-        return "async %s" % self.visit_with(node)
+        return f"async {self.visit_with(node)}"
 
     def visit_asyncfor(self, node):
-        return "async %s" % self.visit_for(node)
+        return f"async {self.visit_for(node)}"
 
     def visit_arguments(self, node):
         """return an astroid.Function node as string"""
@@ -104,8 +117,8 @@ class AsStringVisitor:
     def visit_assert(self, node):
         """return an astroid.Assert node as string"""
         if node.fail:
-            return "assert %s, %s" % (node.test.accept(self), node.fail.accept(self))
-        return "assert %s" % node.test.accept(self)
+            return f"assert {node.test.accept(self)}, {node.fail.accept(self)}"
+        return f"assert {node.test.accept(self)}"
 
     def visit_assignname(self, node):
         """return an astroid.AssName node as string"""
@@ -114,11 +127,11 @@ class AsStringVisitor:
     def visit_assign(self, node):
         """return an astroid.Assign node as string"""
         lhs = " = ".join(n.accept(self) for n in node.targets)
-        return "%s = %s" % (lhs, node.value.accept(self))
+        return f"{lhs} = {node.value.accept(self)}"
 
     def visit_augassign(self, node):
         """return an astroid.AugAssign node as string"""
-        return "%s %s %s" % (node.target.accept(self), node.op, node.value.accept(self))
+        return f"{node.target.accept(self)} {node.op} {node.value.accept(self)}"
 
     def visit_annassign(self, node):
         """Return an astroid.AugAssign node as string"""
@@ -126,26 +139,22 @@ class AsStringVisitor:
         target = node.target.accept(self)
         annotation = node.annotation.accept(self)
         if node.value is None:
-            return "%s: %s" % (target, annotation)
-        return "%s: %s = %s" % (target, annotation, node.value.accept(self))
-
-    def visit_repr(self, node):
-        """return an astroid.Repr node as string"""
-        return "`%s`" % node.value.accept(self)
+            return f"{target}: {annotation}"
+        return f"{target}: {annotation} = {node.value.accept(self)}"
 
     def visit_binop(self, node):
         """return an astroid.BinOp node as string"""
         left = self._precedence_parens(node, node.left)
         right = self._precedence_parens(node, node.right, is_left=False)
         if node.op == "**":
-            return "%s%s%s" % (left, node.op, right)
+            return f"{left}{node.op}{right}"
 
-        return "%s %s %s" % (left, node.op, right)
+        return f"{left} {node.op} {right}"
 
     def visit_boolop(self, node):
         """return an astroid.BoolOp node as string"""
-        values = ["%s" % self._precedence_parens(node, n) for n in node.values]
-        return (" %s " % node.op).join(values)
+        values = [f"{self._precedence_parens(node, n)}" for n in node.values]
+        return (f" {node.op} ").join(values)
 
     def visit_break(self, node):
         """return an astroid.Break node as string"""
@@ -161,7 +170,7 @@ class AsStringVisitor:
             keywords = []
 
         args.extend(keywords)
-        return "%s(%s)" % (expr_str, ", ".join(args))
+        return f"{expr_str}({', '.join(args)})"
 
     def visit_classdef(self, node):
         """return an astroid.ClassDef node as string"""
@@ -170,35 +179,25 @@ class AsStringVisitor:
         if node._metaclass and not node.has_metaclass_hack():
             args.append("metaclass=" + node._metaclass.accept(self))
         args += [n.accept(self) for n in node.keywords]
-        args = "(%s)" % ", ".join(args) if args else ""
+        args = f"({', '.join(args)})" if args else ""
         docs = self._docs_dedent(node.doc) if node.doc else ""
-        return "\n\n%sclass %s%s:%s\n%s\n" % (
-            decorate,
-            node.name,
-            args,
-            docs,
-            self._stmt_list(node.body),
+        return "\n\n{}class {}{}:{}\n{}\n".format(
+            decorate, node.name, args, docs, self._stmt_list(node.body)
         )
 
     def visit_compare(self, node):
         """return an astroid.Compare node as string"""
         rhs_str = " ".join(
-            [
-                "%s %s" % (op, self._precedence_parens(node, expr, is_left=False))
-                for op, expr in node.ops
-            ]
+            f"{op} {self._precedence_parens(node, expr, is_left=False)}"
+            for op, expr in node.ops
         )
-        return "%s %s" % (self._precedence_parens(node, node.left), rhs_str)
+        return f"{self._precedence_parens(node, node.left)} {rhs_str}"
 
     def visit_comprehension(self, node):
         """return an astroid.Comprehension node as string"""
-        ifs = "".join(" if %s" % n.accept(self) for n in node.ifs)
-        generated = "for %s in %s%s" % (
-            node.target.accept(self),
-            node.iter.accept(self),
-            ifs,
-        )
-        return "%s%s" % ("async " if node.is_async else "", generated)
+        ifs = "".join(f" if {n.accept(self)}" for n in node.ifs)
+        generated = f"for {node.target.accept(self)} in {node.iter.accept(self)}{ifs}"
+        return f"{'async ' if node.is_async else ''}{generated}"
 
     def visit_const(self, node):
         """return an astroid.Const node as string"""
@@ -212,7 +211,7 @@ class AsStringVisitor:
 
     def visit_delete(self, node):  # XXX check if correct
         """return an astroid.Delete node as string"""
-        return "del %s" % ", ".join(child.accept(self) for child in node.targets)
+        return f"del {', '.join(child.accept(self) for child in node.targets)}"
 
     def visit_delattr(self, node):
         """return an astroid.DelAttr node as string"""
@@ -238,14 +237,14 @@ class AsStringVisitor:
                 # It can only be a DictUnpack node.
                 yield key + value
             else:
-                yield "%s: %s" % (key, value)
+                yield f"{key}: {value}"
 
     def visit_dictunpack(self, node):
         return "**"
 
     def visit_dictcomp(self, node):
         """return an astroid.DictComp node as string"""
-        return "{%s: %s %s}" % (
+        return "{{{}: {} {}}}".format(
             node.key.accept(self),
             node.value.accept(self),
             " ".join(n.accept(self) for n in node.generators),
@@ -262,56 +261,30 @@ class AsStringVisitor:
     def visit_excepthandler(self, node):
         if node.type:
             if node.name:
-                excs = "except %s as %s" % (
-                    node.type.accept(self),
-                    node.name.accept(self),
-                )
+                excs = f"except {node.type.accept(self)} as {node.name.accept(self)}"
             else:
-                excs = "except %s" % node.type.accept(self)
+                excs = f"except {node.type.accept(self)}"
         else:
             excs = "except"
-        return "%s:\n%s" % (excs, self._stmt_list(node.body))
-
-    def visit_ellipsis(self, node):
-        """return an astroid.Ellipsis node as string"""
-        return "..."
+        return f"{excs}:\n{self._stmt_list(node.body)}"
 
     def visit_empty(self, node):
         """return an Empty node as string"""
         return ""
 
-    def visit_exec(self, node):
-        """return an astroid.Exec node as string"""
-        if node.locals:
-            return "exec %s in %s, %s" % (
-                node.expr.accept(self),
-                node.locals.accept(self),
-                node.globals.accept(self),
-            )
-        if node.globals:
-            return "exec %s in %s" % (node.expr.accept(self), node.globals.accept(self))
-        return "exec %s" % node.expr.accept(self)
-
-    def visit_extslice(self, node):
-        """return an astroid.ExtSlice node as string"""
-        return ", ".join(dim.accept(self) for dim in node.dims)
-
     def visit_for(self, node):
         """return an astroid.For node as string"""
-        fors = "for %s in %s:\n%s" % (
-            node.target.accept(self),
-            node.iter.accept(self),
-            self._stmt_list(node.body),
+        fors = "for {} in {}:\n{}".format(
+            node.target.accept(self), node.iter.accept(self), self._stmt_list(node.body)
         )
         if node.orelse:
-            fors = "%s\nelse:\n%s" % (fors, self._stmt_list(node.orelse))
+            fors = f"{fors}\nelse:\n{self._stmt_list(node.orelse)}"
         return fors
 
     def visit_importfrom(self, node):
         """return an astroid.ImportFrom node as string"""
-        return "from %s import %s" % (
-            "." * (node.level or 0) + node.modname,
-            _import_string(node.names),
+        return "from {} import {}".format(
+            "." * (node.level or 0) + node.modname, _import_string(node.names)
         )
 
     def visit_joinedstr(self, node):
@@ -332,7 +305,7 @@ class AsStringVisitor:
         # Try to find surrounding quotes that don't appear at all in the string.
         # Because the formatted values inside {} can't contain backslash (\)
         # using a triple quote is sometimes necessary
-        for quote in ["'", '"', '"""', "'''"]:
+        for quote in ("'", '"', '"""', "'''"):
             if quote not in string:
                 break
 
@@ -378,34 +351,33 @@ class AsStringVisitor:
 
     def visit_generatorexp(self, node):
         """return an astroid.GeneratorExp node as string"""
-        return "(%s %s)" % (
-            node.elt.accept(self),
-            " ".join(n.accept(self) for n in node.generators),
+        return "({} {})".format(
+            node.elt.accept(self), " ".join(n.accept(self) for n in node.generators)
         )
 
     def visit_attribute(self, node):
         """return an astroid.Getattr node as string"""
         left = self._precedence_parens(node, node.expr)
         if left.isdigit():
-            left = "(%s)" % left
-        return "%s.%s" % (left, node.attrname)
+            left = f"({left})"
+        return f"{left}.{node.attrname}"
 
     def visit_global(self, node):
         """return an astroid.Global node as string"""
-        return "global %s" % ", ".join(node.names)
+        return f"global {', '.join(node.names)}"
 
     def visit_if(self, node):
         """return an astroid.If node as string"""
-        ifs = ["if %s:\n%s" % (node.test.accept(self), self._stmt_list(node.body))]
+        ifs = [f"if {node.test.accept(self)}:\n{self._stmt_list(node.body)}"]
         if node.has_elif_block():
-            ifs.append("el%s" % self._stmt_list(node.orelse, indent=False))
+            ifs.append(f"el{self._stmt_list(node.orelse, indent=False)}")
         elif node.orelse:
-            ifs.append("else:\n%s" % self._stmt_list(node.orelse))
+            ifs.append(f"else:\n{self._stmt_list(node.orelse)}")
         return "\n".join(ifs)
 
     def visit_ifexp(self, node):
         """return an astroid.IfExp node as string"""
-        return "%s if %s else %s" % (
+        return "{} if {} else {}".format(
             self._precedence_parens(node, node.body, is_left=True),
             self._precedence_parens(node, node.test, is_left=True),
             self._precedence_parens(node, node.orelse, is_left=False),
@@ -413,37 +385,36 @@ class AsStringVisitor:
 
     def visit_import(self, node):
         """return an astroid.Import node as string"""
-        return "import %s" % _import_string(node.names)
+        return f"import {_import_string(node.names)}"
 
     def visit_keyword(self, node):
         """return an astroid.Keyword node as string"""
         if node.arg is None:
-            return "**%s" % node.value.accept(self)
-        return "%s=%s" % (node.arg, node.value.accept(self))
+            return f"**{node.value.accept(self)}"
+        return f"{node.arg}={node.value.accept(self)}"
 
     def visit_lambda(self, node):
         """return an astroid.Lambda node as string"""
         args = node.args.accept(self)
         body = node.body.accept(self)
         if args:
-            return "lambda %s: %s" % (args, body)
+            return f"lambda {args}: {body}"
 
-        return "lambda: %s" % body
+        return f"lambda: {body}"
 
     def visit_list(self, node):
         """return an astroid.List node as string"""
-        return "[%s]" % ", ".join(child.accept(self) for child in node.elts)
+        return f"[{', '.join(child.accept(self) for child in node.elts)}]"
 
     def visit_listcomp(self, node):
         """return an astroid.ListComp node as string"""
-        return "[%s %s]" % (
-            node.elt.accept(self),
-            " ".join(n.accept(self) for n in node.generators),
+        return "[{} {}]".format(
+            node.elt.accept(self), " ".join(n.accept(self) for n in node.generators)
         )
 
     def visit_module(self, node):
         """return an astroid.Module node as string"""
-        docs = '"""%s"""\n\n' % node.doc if node.doc else ""
+        docs = f'"""{node.doc}"""\n\n' if node.doc else ""
         return docs + "\n".join(n.accept(self) for n in node.body) + "\n\n"
 
     def visit_name(self, node):
@@ -454,50 +425,34 @@ class AsStringVisitor:
         """Return an assignment expression node as string"""
         target = node.target.accept(self)
         value = node.value.accept(self)
-        return "%s := %s" % (target, value)
+        return f"{target} := {value}"
 
     def visit_nonlocal(self, node):
         """return an astroid.Nonlocal node as string"""
-        return "nonlocal %s" % ", ".join(node.names)
+        return f"nonlocal {', '.join(node.names)}"
 
     def visit_pass(self, node):
         """return an astroid.Pass node as string"""
         return "pass"
 
-    def visit_print(self, node):
-        """return an astroid.Print node as string"""
-        nodes = ", ".join(n.accept(self) for n in node.values)
-        if not node.nl:
-            nodes = "%s," % nodes
-        if node.dest:
-            return "print >> %s, %s" % (node.dest.accept(self), nodes)
-        return "print %s" % nodes
-
     def visit_raise(self, node):
         """return an astroid.Raise node as string"""
         if node.exc:
             if node.cause:
-                return "raise %s from %s" % (
-                    node.exc.accept(self),
-                    node.cause.accept(self),
-                )
-            return "raise %s" % node.exc.accept(self)
+                return f"raise {node.exc.accept(self)} from {node.cause.accept(self)}"
+            return f"raise {node.exc.accept(self)}"
         return "raise"
 
     def visit_return(self, node):
         """return an astroid.Return node as string"""
         if node.is_tuple_return() and len(node.value.elts) > 1:
             elts = [child.accept(self) for child in node.value.elts]
-            return "return %s" % ", ".join(elts)
+            return f"return {', '.join(elts)}"
 
         if node.value:
-            return "return %s" % node.value.accept(self)
+            return f"return {node.value.accept(self)}"
 
         return "return"
-
-    def visit_index(self, node):
-        """return an astroid.Index node as string"""
-        return node.value.accept(self)
 
     def visit_set(self, node):
         """return an astroid.Set node as string"""
@@ -505,9 +460,8 @@ class AsStringVisitor:
 
     def visit_setcomp(self, node):
         """return an astroid.SetComp node as string"""
-        return "{%s %s}" % (
-            node.elt.accept(self),
-            " ".join(n.accept(self) for n in node.generators),
+        return "{{{} {}}}".format(
+            node.elt.accept(self), " ".join(n.accept(self) for n in node.generators)
         )
 
     def visit_slice(self, node):
@@ -516,8 +470,8 @@ class AsStringVisitor:
         upper = node.upper.accept(self) if node.upper else ""
         step = node.step.accept(self) if node.step else ""
         if step:
-            return "%s:%s:%s" % (lower, upper, step)
-        return "%s:%s" % (lower, upper)
+            return f"{lower}:{upper}:{step}"
+        return f"{lower}:{upper}"
 
     def visit_subscript(self, node):
         """return an astroid.Subscript node as string"""
@@ -529,29 +483,28 @@ class AsStringVisitor:
             # Remove parenthesis in tuple and extended slice.
             # a[(::1, 1:)] is not valid syntax.
             idxstr = idxstr[1:-1]
-        return "%s[%s]" % (self._precedence_parens(node, node.value), idxstr)
+        return f"{self._precedence_parens(node, node.value)}[{idxstr}]"
 
     def visit_tryexcept(self, node):
         """return an astroid.TryExcept node as string"""
-        trys = ["try:\n%s" % self._stmt_list(node.body)]
+        trys = [f"try:\n{self._stmt_list(node.body)}"]
         for handler in node.handlers:
             trys.append(handler.accept(self))
         if node.orelse:
-            trys.append("else:\n%s" % self._stmt_list(node.orelse))
+            trys.append(f"else:\n{self._stmt_list(node.orelse)}")
         return "\n".join(trys)
 
     def visit_tryfinally(self, node):
         """return an astroid.TryFinally node as string"""
-        return "try:\n%s\nfinally:\n%s" % (
-            self._stmt_list(node.body),
-            self._stmt_list(node.finalbody),
+        return "try:\n{}\nfinally:\n{}".format(
+            self._stmt_list(node.body), self._stmt_list(node.finalbody)
         )
 
     def visit_tuple(self, node):
         """return an astroid.Tuple node as string"""
         if len(node.elts) == 1:
-            return "(%s, )" % node.elts[0].accept(self)
-        return "(%s)" % ", ".join(child.accept(self) for child in node.elts)
+            return f"({node.elts[0].accept(self)}, )"
+        return f"({', '.join(child.accept(self) for child in node.elts)})"
 
     def visit_unaryop(self, node):
         """return an astroid.UnaryOp node as string"""
@@ -559,22 +512,22 @@ class AsStringVisitor:
             operator = "not "
         else:
             operator = node.op
-        return "%s%s" % (operator, self._precedence_parens(node, node.operand))
+        return f"{operator}{self._precedence_parens(node, node.operand)}"
 
     def visit_while(self, node):
         """return an astroid.While node as string"""
-        whiles = "while %s:\n%s" % (node.test.accept(self), self._stmt_list(node.body))
+        whiles = f"while {node.test.accept(self)}:\n{self._stmt_list(node.body)}"
         if node.orelse:
-            whiles = "%s\nelse:\n%s" % (whiles, self._stmt_list(node.orelse))
+            whiles = f"{whiles}\nelse:\n{self._stmt_list(node.orelse)}"
         return whiles
 
     def visit_with(self, node):  # 'with' without 'as' is possible
         """return an astroid.With node as string"""
         items = ", ".join(
-            ("%s" % expr.accept(self)) + (vars and " as %s" % (vars.accept(self)) or "")
-            for expr, vars in node.items
+            f"{expr.accept(self)}" + (v and f" as {v.accept(self)}" or "")
+            for expr, v in node.items
         )
-        return "with %s:\n%s" % (items, self._stmt_list(node.body))
+        return f"with {items}:\n{self._stmt_list(node.body)}"
 
     def visit_yield(self, node):
         """yield an ast.Yield node as string"""
@@ -583,20 +536,94 @@ class AsStringVisitor:
         if node.parent.is_statement:
             return expr
 
-        return "(%s)" % (expr,)
+        return f"({expr})"
 
     def visit_yieldfrom(self, node):
-        """ Return an astroid.YieldFrom node as string. """
+        """Return an astroid.YieldFrom node as string."""
         yi_val = (" " + node.value.accept(self)) if node.value else ""
         expr = "yield from" + yi_val
         if node.parent.is_statement:
             return expr
 
-        return "(%s)" % (expr,)
+        return f"({expr})"
 
     def visit_starred(self, node):
         """return Starred node as string"""
         return "*" + node.value.accept(self)
+
+    def visit_match(self, node: "Match") -> str:
+        """Return an astroid.Match node as string."""
+        return f"match {node.subject.accept(self)}:\n{self._stmt_list(node.cases)}"
+
+    def visit_matchcase(self, node: "MatchCase") -> str:
+        """Return an astroid.MatchCase node as string."""
+        guard_str = f" if {node.guard.accept(self)}" if node.guard else ""
+        return (
+            f"case {node.pattern.accept(self)}{guard_str}:\n"
+            f"{self._stmt_list(node.body)}"
+        )
+
+    def visit_matchvalue(self, node: "MatchValue") -> str:
+        """Return an astroid.MatchValue node as string."""
+        return node.value.accept(self)
+
+    @staticmethod
+    def visit_matchsingleton(node: "MatchSingleton") -> str:
+        """Return an astroid.MatchSingleton node as string."""
+        return str(node.value)
+
+    def visit_matchsequence(self, node: "MatchSequence") -> str:
+        """Return an astroid.MatchSequence node as string."""
+        if node.patterns is None:
+            return "[]"
+        return f"[{', '.join(p.accept(self) for p in node.patterns)}]"
+
+    def visit_matchmapping(self, node: "MatchMapping") -> str:
+        """Return an astroid.MatchMapping node as string."""
+        mapping_strings = []
+        if node.keys and node.patterns:
+            mapping_strings.extend(
+                f"{key.accept(self)}: {p.accept(self)}"
+                for key, p in zip(node.keys, node.patterns)
+            )
+        if node.rest:
+            mapping_strings.append(f"**{node.rest.accept(self)}")
+        return f"{'{'}{', '.join(mapping_strings)}{'}'}"
+
+    def visit_matchclass(self, node: "MatchClass") -> str:
+        """Return an astroid.MatchClass node as string."""
+        if node.cls is None:
+            raise Exception(f"{node} does not have a 'cls' node")
+        class_strings = []
+        if node.patterns:
+            class_strings.extend(p.accept(self) for p in node.patterns)
+        if node.kwd_attrs and node.kwd_patterns:
+            for attr, pattern in zip(node.kwd_attrs, node.kwd_patterns):
+                class_strings.append(f"{attr}={pattern.accept(self)}")
+        return f"{node.cls.accept(self)}({', '.join(class_strings)})"
+
+    def visit_matchstar(self, node: "MatchStar") -> str:
+        """Return an astroid.MatchStar node as string."""
+        return f"*{node.name.accept(self) if node.name else '_'}"
+
+    def visit_matchas(self, node: "MatchAs") -> str:
+        """Return an astroid.MatchAs node as string."""
+        # pylint: disable=import-outside-toplevel
+        # Prevent circular dependency
+        from astroid.nodes.node_classes import MatchClass, MatchMapping, MatchSequence
+
+        if isinstance(node.parent, (MatchSequence, MatchMapping, MatchClass)):
+            return node.name.accept(self) if node.name else "_"
+        return (
+            f"{node.pattern.accept(self) if node.pattern else '_'}"
+            f"{f' as {node.name.accept(self)}' if node.name else ''}"
+        )
+
+    def visit_matchor(self, node: "MatchOr") -> str:
+        """Return an astroid.MatchOr node as string."""
+        if node.patterns is None:
+            raise Exception(f"{node} does not have pattern nodes")
+        return " | ".join(p.accept(self) for p in node.patterns)
 
     # These aren't for real AST nodes, but for inference objects.
 
@@ -621,7 +648,7 @@ def _import_string(names):
     _names = []
     for name, asname in names:
         if asname is not None:
-            _names.append("%s as %s" % (name, asname))
+            _names.append(f"{name} as {asname}")
         else:
             _names.append(name)
     return ", ".join(_names)

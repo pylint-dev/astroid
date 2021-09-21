@@ -7,11 +7,13 @@ It might need to be manually updated from the public methods of
 See: https://github.com/getsentry/responses/blob/master/responses.py
 
 """
-import astroid
+from astroid.brain.helpers import register_module_extender
+from astroid.builder import parse
+from astroid.manager import AstroidManager
 
 
 def responses_funcs():
-    return astroid.parse(
+    return parse(
         """
         DELETE = "DELETE"
         GET = "GET"
@@ -70,4 +72,4 @@ def responses_funcs():
     )
 
 
-astroid.register_module_extender(astroid.MANAGER, "responses", responses_funcs)
+register_module_extender(AstroidManager(), "responses", responses_funcs)

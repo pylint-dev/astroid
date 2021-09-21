@@ -1,17 +1,23 @@
-# Copyright (c) 2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2016, 2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
+# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
-import sys
-
-import astroid
-from astroid import exceptions
+from astroid.bases import BoundMethod
+from astroid.brain.helpers import register_module_extender
+from astroid.builder import parse
+from astroid.exceptions import InferenceError
+from astroid.manager import AstroidManager
+from astroid.nodes.scoped_nodes import FunctionDef
 
 
 def _multiprocessing_transform():
-    module = astroid.parse(
+    module = parse(
         """
     from multiprocessing.managers import SyncManager
     def Manager():
@@ -21,7 +27,7 @@ def _multiprocessing_transform():
     # Multiprocessing uses a getattr lookup inside contexts,
     # in order to get the attributes they need. Since it's extremely
     # dynamic, we use this approach to fake it.
-    node = astroid.parse(
+    node = parse(
         """
     from multiprocessing.context import DefaultContext, BaseContext
     default = DefaultContext()
@@ -31,7 +37,7 @@ def _multiprocessing_transform():
     try:
         context = next(node["default"].infer())
         base = next(node["base"].infer())
-    except exceptions.InferenceError:
+    except (InferenceError, StopIteration):
         return module
 
     for node in (context, base):
@@ -40,22 +46,21 @@ def _multiprocessing_transform():
                 continue
 
             value = value[0]
-            if isinstance(value, astroid.FunctionDef):
+            if isinstance(value, FunctionDef):
                 # We need to rebound this, since otherwise
                 # it will have an extra argument (self).
-                value = astroid.BoundMethod(value, node)
+                value = BoundMethod(value, node)
             module[key] = value
     return module
 
 
 def _multiprocessing_managers_transform():
-    return astroid.parse(
+    return parse(
         """
     import array
     import threading
     import multiprocessing.pool as pool
-
-    import six
+    import queue
 
     class Namespace(object):
         pass
@@ -76,7 +81,7 @@ def _multiprocessing_managers_transform():
         return array.array(typecode, sequence)
 
     class SyncManager(object):
-        Queue = JoinableQueue = six.moves.queue.Queue
+        Queue = JoinableQueue = queue.Queue
         Event = threading.Event
         RLock = threading.RLock
         BoundedSemaphore = threading.BoundedSemaphore
@@ -99,9 +104,9 @@ def _multiprocessing_managers_transform():
     )
 
 
-astroid.register_module_extender(
-    astroid.MANAGER, "multiprocessing.managers", _multiprocessing_managers_transform
+register_module_extender(
+    AstroidManager(), "multiprocessing.managers", _multiprocessing_managers_transform
 )
-astroid.register_module_extender(
-    astroid.MANAGER, "multiprocessing", _multiprocessing_transform
+register_module_extender(
+    AstroidManager(), "multiprocessing", _multiprocessing_transform
 )

@@ -1,6 +1,8 @@
 # Copyright (c) 2016-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """Contains logic for retrieving special methods.
 
@@ -15,7 +17,7 @@ the dot attribute access.
 import itertools
 
 import astroid
-from astroid import exceptions
+from astroid.exceptions import AttributeInferenceError
 
 
 def _lookup_in_mro(node, name):
@@ -26,7 +28,7 @@ def _lookup_in_mro(node, name):
     )
     values = list(itertools.chain(attrs, nodes))
     if not values:
-        raise exceptions.AttributeInferenceError(attribute=name, target=node)
+        raise AttributeInferenceError(attribute=name, target=node)
 
     return values
 
@@ -47,13 +49,13 @@ def lookup(node, name):
     if isinstance(node, astroid.ClassDef):
         return _class_lookup(node, name)
 
-    raise exceptions.AttributeInferenceError(attribute=name, target=node)
+    raise AttributeInferenceError(attribute=name, target=node)
 
 
 def _class_lookup(node, name):
     metaclass = node.metaclass()
     if metaclass is None:
-        raise exceptions.AttributeInferenceError(attribute=name, target=node)
+        raise AttributeInferenceError(attribute=name, target=node)
 
     return _lookup_in_mro(metaclass, name)
 
@@ -61,6 +63,6 @@ def _class_lookup(node, name):
 def _builtin_lookup(node, name):
     values = node.locals.get(name, [])
     if not values:
-        raise exceptions.AttributeInferenceError(attribute=name, target=node)
+        raise AttributeInferenceError(attribute=name, target=node)
 
     return values

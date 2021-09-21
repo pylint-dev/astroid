@@ -6,20 +6,23 @@
 # Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
 # Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """This module contains some mixins for the different nodes.
 """
 import itertools
 
 from astroid import decorators
-from astroid import exceptions
+from astroid.exceptions import AttributeInferenceError
 
 
 class BlockRangeMixIn:
-    """override block range """
+    """override block range"""
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -80,8 +83,7 @@ class ImportFromMixin(FilterStmtsMixin):
         return name
 
     def do_import_module(self, modname=None):
-        """return the ast for a module whose name is <modname> imported by <self>
-        """
+        """return the ast for a module whose name is <modname> imported by <self>"""
         # handle special case where we are on a package node importing a module
         # using the same name as the package, which may end in an infinite loop
         # on relative imports
@@ -110,7 +112,7 @@ class ImportFromMixin(FilterStmtsMixin):
                 _asname = name
             if asname == _asname:
                 return name
-        raise exceptions.AttributeInferenceError(
+        raise AttributeInferenceError(
             "Could not find original name for {attribute} in {target!r}",
             target=self,
             attribute=asname,

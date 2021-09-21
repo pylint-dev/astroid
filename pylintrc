@@ -4,7 +4,6 @@
 #rcfile=
 
 # Python code to execute, usually for sys.path manipulation such as
-
 # pygtk.require().
 #init-hook=
 
@@ -12,7 +11,6 @@
 profile=no
 
 # Add files or directories to the blacklist. They should be base names, not
-
 # paths.
 ignore=CVS
 
@@ -20,23 +18,26 @@ ignore=CVS
 persistent=yes
 
 # List of plugins (as comma separated values of python modules names) to load,
-
 # usually to register additional checkers.
 load-plugins=
     pylint.extensions.check_elif,
+    pylint.extensions.bad_builtin,
+    pylint.extensions.code_style,
+    pylint.extensions.overlapping_exceptions,
+    pylint.extensions.typing,
+    pylint.extensions.code_style,
+    pylint.extensions.set_membership,
+    pylint.extensions.redefined_variable_type,
 
 # Use multiple processes to speed up Pylint.
 jobs=1
 
 # Allow loading of arbitrary C extensions. Extensions are imported into the
-
 # active Python interpreter and may run arbitrary code.
 unsafe-load-any-extension=no
 
 # A comma-separated list of package or module names from where C extensions may
-
 # be loaded. Extensions are loading into the active Python interpreter and may
-
 # run arbitrary code
 extension-pkg-whitelist=
 
@@ -44,35 +45,26 @@ extension-pkg-whitelist=
 [REPORTS]
 
 # Set the output format. Available formats are text, parseable, colorized, msvs
-
 # (visual studio) and html. You can also give a reporter class, eg
-
 # mypackage.mymodule.MyReporterClass.
 output-format=text
 
 # Put messages in a separate file for each module / package specified on the
-
 # command line instead of printing them on stdout. Reports (if any) will be
-
 # written in a file name "pylint_global.[txt|html]".
 files-output=no
 
 # Tells whether to display a full report or only the messages
-reports=yes
+reports=no
 
 # Python expression which should return a note less than 10 (10 is the highest
-
 # note). You have access to the variables errors warning, statement which
-
 # respectively contain the number of errors / warnings messages and the total
-
 # number of statements analyzed. This is used by the global evaluation report
-
 # (RP0004).
 evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)
 
 # Template used to display messages. This is a python new-style format string
-
 # used to format the message information. See doc for all details
 #msg-template=
 
@@ -80,33 +72,30 @@ evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / stateme
 [MESSAGES CONTROL]
 
 # Only show warnings with the listed confidence levels. Leave empty to show
-
 # all. Valid levels: HIGH, INFERENCE, INFERENCE_FAILURE, UNDEFINED
 confidence=
 
 
 # Disable the message, report, category or checker with the given id(s). You
-
 # can either give multiple identifiers separated by comma (,) or put this
-
 # option multiple times (only on the command line, not in the configuration
-
 # file where it should appear only once).You can also use "--disable=all" to
-
 # disable everything first and then reenable specific checks. For example, if
-
 # you want to run only the similarities checker, you can use "--disable=all
-
 # --enable=similarities". If you want to run only the classes checker, but have
-
 # no Warning level messages displayed, use"--disable=all --enable=classes
-
 # --disable=W"
 
-disable=fixme,invalid-name, missing-docstring, too-few-public-methods,
+disable=fixme,
+        invalid-name,
+        missing-docstring,
+        too-few-public-methods,
         too-many-public-methods,
-        # We know about it and we're doing our best to remove it
-        # in 2.0
+        too-many-boolean-expressions,
+        too-many-branches,
+        too-many-lines, # https://github.com/PyCQA/astroid/issues/465
+        too-many-statements,
+        # We know about it and we're doing our best to remove it in 2.0 (oups)
         cyclic-import,
         # The check is faulty in most cases and it doesn't take in
         # account how the variable is being used. For instance,
@@ -122,13 +111,19 @@ disable=fixme,invalid-name, missing-docstring, too-few-public-methods,
         no-self-use,
         # API requirements in most of the occurrences
         unused-argument,
-        # We'll have to disable this until we drop support for Python 2
-        stop-iteration-return,
         # black handles these
         format,
-        # temporary until we fix the problems with InferenceContexts
-        no-member
+        # We might want to disable new checkers from master that do not exists
+        # in latest published pylint
+        bad-option-value,
+        # Legacy warning not checked in astroid/brain before we
+        # transitioned to setuptools and added an init.py
+        duplicate-code,
+        # This one would help performance but we need to fix the pipeline first
+        # and there are a lot of warning for it
+        consider-using-f-string,
 
+enable=useless-suppression
 
 [BASIC]
 
@@ -136,13 +131,12 @@ disable=fixme,invalid-name, missing-docstring, too-few-public-methods,
 bad-functions=
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=i,j,k,ex,Run,_
+good-names=i,j,k,e,ex,f,m,cm,Run,_,n,op,it
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=foo,bar,baz,toto,tutu,tata
 
 # Colon-delimited sets of names that determine each other's naming style when
-
 # the name regexes allow several styles.
 name-group=
 
@@ -215,7 +209,6 @@ class-attribute-name-hint=([A-Za-z_][A-Za-z0-9_]{2,30}|(__.*__))$
 no-docstring-rgx=__.*__
 
 # Minimum line length for functions/classes that require docstrings, shorter
-
 # ones are exempt.
 docstring-min-length=-1
 
@@ -229,7 +222,6 @@ max-line-length=100
 ignore-long-lines=^\s*(# )?<?https?://\S+>?$
 
 # Allow the body of an if to be on the same line as the test if there is no
-
 # else.
 single-line-if-stmt=no
 
@@ -240,7 +232,6 @@ no-space-check=trailing-comma,dict-separator
 max-module-lines=3000
 
 # String used as indentation unit. This is usually " " (4 spaces) or "\t" (1
-
 # tab).
 indent-string='    '
 
@@ -254,7 +245,6 @@ expected-line-ending-format=
 [LOGGING]
 
 # Logging modules to check that the string format arguments are in logging
-
 # function parameter format
 logging-modules=logging
 
@@ -277,13 +267,12 @@ ignore-comments=yes
 ignore-docstrings=yes
 
 # Ignore imports when computing similarities.
-ignore-imports=no
+ignore-imports=yes
 
 
 [SPELLING]
 
 # Spelling dictionary name. Available dictionaries: none. To make it working
-
 # install python-enchant package.
 spelling-dict=
 
@@ -294,7 +283,6 @@ spelling-ignore-words=
 spelling-private-dict-file=
 
 # Tells whether to store unknown words to indicated private dictionary in
-
 # --spelling-private-dict-file option instead of raising a message.
 spelling-store-unknown-words=no
 
@@ -315,14 +303,11 @@ ignore-mixin-members=yes
 ignored-modules=typed_ast.ast3
 
 # List of classes names for which member attributes should not be checked
-
 # (useful for classes with attributes dynamically set).
 ignored-classes=SQLObject
 
 # List of members which are set dynamically and missed by pylint inference
-
 # system, and so shouldn't trigger E0201 when accessed. Python regular
-
 # expressions are accepted.
 generated-members=REQUEST,acl_users,aq_parent
 
@@ -333,17 +318,14 @@ generated-members=REQUEST,acl_users,aq_parent
 init-import=no
 
 # A regular expression matching the name of dummy variables (i.e. expectedly
-
 # not used).
 dummy-variables-rgx=_$|dummy
 
 # List of additional names supposed to be defined in builtins. Remember that
-
 # you should avoid to define new builtins when possible.
 additional-builtins=
 
 # List of strings which can identify a callback function by name. A callback
-
 # name must start or end with one of those strings.
 callbacks=cb_,_cb
 
@@ -360,7 +342,6 @@ valid-classmethod-first-arg=cls
 valid-metaclass-classmethod-first-arg=mcs
 
 # List of member names, which should be excluded from the protected access
-
 # warning.
 exclude-protected=_asdict,_fields,_replace,_source,_make
 
@@ -406,17 +387,14 @@ max-public-methods=20
 deprecated-modules=stringprep,optparse
 
 # Create a graph of every (i.e. internal and external) dependencies in the
-
 # given file (report RP0402 must not be disabled)
 import-graph=
 
 # Create a graph of external dependencies in the given file (report RP0402 must
-
 # not be disabled)
 ext-import-graph=
 
 # Create a graph of internal dependencies in the given file (report RP0402 must
-
 # not be disabled)
 int-import-graph=
 
@@ -424,6 +402,14 @@ int-import-graph=
 [EXCEPTIONS]
 
 # Exceptions that will emit a warning when being caught. Defaults to
-
 # "Exception"
 overgeneral-exceptions=Exception
+
+
+[TYPING]
+
+# Minimum supported python version (used for typing only!)
+py-version = 3.6
+
+# Annotations are used exclusively for type checking
+runtime-typing = no

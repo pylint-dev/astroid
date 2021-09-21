@@ -1,20 +1,18 @@
 import ast
+import sys
 from collections import namedtuple
 from functools import partial
-from typing import Optional
-import sys
+from typing import Dict, Optional
 
-import astroid
+from astroid.const import PY38_PLUS, Context
 
-_ast_py3 = None
 try:
     import typed_ast.ast3 as _ast_py3
 except ImportError:
-    pass
+    _ast_py3 = None
 
 
-PY38 = sys.version_info[:2] >= (3, 8)
-if PY38:
+if PY38_PLUS:
     # On Python 3.8, typed_ast was merged back into `ast`
     _ast_py3 = ast
 
@@ -37,7 +35,7 @@ class ParserModule(
 ):
     def parse(self, string: str, type_comments=True):
         if self.module is _ast_py3:
-            if PY38:
+            if PY38_PLUS:
                 parse_func = partial(self.module.parse, type_comments=type_comments)
             else:
                 parse_func = partial(
@@ -122,10 +120,10 @@ def _compare_operators_from_module(module):
     }
 
 
-def _contexts_from_module(module):
+def _contexts_from_module(module) -> Dict[ast.expr_context, Context]:
     return {
-        module.Load: astroid.Load,
-        module.Store: astroid.Store,
-        module.Del: astroid.Del,
-        module.Param: astroid.Store,
+        module.Load: Context.Load,
+        module.Store: Context.Store,
+        module.Del: Context.Del,
+        module.Param: Context.Store,
     }

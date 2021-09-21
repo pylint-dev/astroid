@@ -1,8 +1,10 @@
-import astroid
+from astroid.brain.helpers import register_module_extender
+from astroid.builder import parse
+from astroid.manager import AstroidManager
 
 
 def _session_transform():
-    return astroid.parse(
+    return parse(
         """
     from sqlalchemy.orm.session import Session
 
@@ -30,6 +32,4 @@ def _session_transform():
     )
 
 
-astroid.register_module_extender(
-    astroid.MANAGER, "sqlalchemy.orm.session", _session_transform
-)
+register_module_extender(AstroidManager(), "sqlalchemy.orm.session", _session_transform)

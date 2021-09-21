@@ -1,9 +1,10 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """Astroid hooks for understanding boto3.ServiceRequest()"""
-import astroid
-from astroid import MANAGER, extract_node
+from astroid import extract_node
+from astroid.manager import AstroidManager
+from astroid.nodes.scoped_nodes import ClassDef
 
 BOTO_SERVICE_FACTORY_QUALIFIED_NAME = "boto3.resources.base.ServiceResource"
 
@@ -23,6 +24,6 @@ def _looks_like_boto3_service_request(node):
     return node.qname() == BOTO_SERVICE_FACTORY_QUALIFIED_NAME
 
 
-MANAGER.register_transform(
-    astroid.ClassDef, service_request_transform, _looks_like_boto3_service_request
+AstroidManager().register_transform(
+    ClassDef, service_request_transform, _looks_like_boto3_service_request
 )

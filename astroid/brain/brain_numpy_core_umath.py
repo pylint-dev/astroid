@@ -1,12 +1,19 @@
-# Copyright (c) 2019 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2019-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
+# Note: starting with version 1.18 numpy module has `__getattr__` method which prevent
+# `pylint` to emit `no-member` message for all numpy's attributes. (see pylint's module
+# typecheck in `_emit_no_member` function)
 
 """Astroid hooks for numpy.core.umath module."""
-
-import astroid
+from astroid.brain.helpers import register_module_extender
+from astroid.builder import parse
+from astroid.manager import AstroidManager
 
 
 def numpy_core_umath_transform():
@@ -14,7 +21,7 @@ def numpy_core_umath_transform():
         """out=None, where=True, casting='same_kind', order='K', """
         """dtype=None, subok=True"""
     )
-    return astroid.parse(
+    return parse(
         """
     class FakeUfunc:
         def __init__(self):
@@ -76,6 +83,7 @@ def numpy_core_umath_transform():
     conjugate = FakeUfuncOneArg()
     cosh = FakeUfuncOneArg()
     deg2rad = FakeUfuncOneArg()
+    degrees = FakeUfuncOneArg()
     exp2 = FakeUfuncOneArg()
     expm1 = FakeUfuncOneArg()
     fabs = FakeUfuncOneArg()
@@ -90,6 +98,7 @@ def numpy_core_umath_transform():
     negative = FakeUfuncOneArg()
     positive = FakeUfuncOneArg()
     rad2deg = FakeUfuncOneArg()
+    radians = FakeUfuncOneArg()
     reciprocal = FakeUfuncOneArg()
     rint = FakeUfuncOneArg()
     sign = FakeUfuncOneArg()
@@ -102,6 +111,7 @@ def numpy_core_umath_transform():
     trunc = FakeUfuncOneArg()
 
     # Two args functions with optional kwargs
+    add = FakeUfuncTwoArgs()
     bitwise_and = FakeUfuncTwoArgs()
     bitwise_or = FakeUfuncTwoArgs()
     bitwise_xor = FakeUfuncTwoArgs()
@@ -129,6 +139,7 @@ def numpy_core_umath_transform():
     logical_xor = FakeUfuncTwoArgs()
     maximum = FakeUfuncTwoArgs()
     minimum = FakeUfuncTwoArgs()
+    multiply = FakeUfuncTwoArgs()
     nextafter = FakeUfuncTwoArgs()
     not_equal = FakeUfuncTwoArgs()
     power = FakeUfuncTwoArgs()
@@ -142,6 +153,6 @@ def numpy_core_umath_transform():
     )
 
 
-astroid.register_module_extender(
-    astroid.MANAGER, "numpy.core.umath", numpy_core_umath_transform
+register_module_extender(
+    AstroidManager(), "numpy.core.umath", numpy_core_umath_transform
 )

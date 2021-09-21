@@ -3,16 +3,21 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
+# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+from typing import Optional
 
-
-from astroid import bases
-from astroid import context as contextmod
-from astroid import exceptions
 from astroid import nodes
-from astroid import util
+from astroid.bases import Instance
+from astroid.const import Context
+from astroid.context import CallContext, InferenceContext
+from astroid.exceptions import InferenceError, NoDefault
+from astroid.util import Uninferable
 
 
 class CallSite:
@@ -32,7 +37,9 @@ class CallSite:
         An instance of :class:`astroid.context.Context`.
     """
 
-    def __init__(self, callcontext, argument_context_map=None, context=None):
+    def __init__(
+        self, callcontext: CallContext, argument_context_map=None, context=None
+    ):
         if argument_context_map is None:
             argument_context_map = {}
         self.argument_context_map = argument_context_map
@@ -43,26 +50,24 @@ class CallSite:
         self._unpacked_kwargs = self._unpack_keywords(keywords, context=context)
 
         self.positional_arguments = [
-            arg for arg in self._unpacked_args if arg is not util.Uninferable
+            arg for arg in self._unpacked_args if arg is not Uninferable
         ]
         self.keyword_arguments = {
             key: value
             for key, value in self._unpacked_kwargs.items()
-            if value is not util.Uninferable
+            if value is not Uninferable
         }
 
     @classmethod
-    def from_call(cls, call_node, context=None):
+    def from_call(cls, call_node, context: Optional[Context] = None):
         """Get a CallSite object from the given Call node.
 
-        :param context:
-            An instance of :class:`astroid.context.Context` that will be used
-            to force a single inference path.
+        context will be used to force a single inference path.
         """
 
         # Determine the callcontext from the given `context` object if any.
-        context = context or contextmod.InferenceContext()
-        callcontext = contextmod.CallContext(call_node.args, call_node.keywords)
+        context = context or InferenceContext()
+        callcontext = CallContext(call_node.args, call_node.keywords)
         return cls(callcontext, context=context)
 
     def has_invalid_arguments(self):
@@ -87,37 +92,41 @@ class CallSite:
 
     def _unpack_keywords(self, keywords, context=None):
         values = {}
-        context = context or contextmod.InferenceContext()
+        context = context or InferenceContext()
         context.extra_context = self.argument_context_map
         for name, value in keywords:
             if name is None:
                 # Then it's an unpacking operation (**)
                 try:
                     inferred = next(value.infer(context=context))
-                except exceptions.InferenceError:
-                    values[name] = util.Uninferable
+                except InferenceError:
+                    values[name] = Uninferable
+                    continue
+                except StopIteration:
                     continue
 
                 if not isinstance(inferred, nodes.Dict):
                     # Not something we can work with.
-                    values[name] = util.Uninferable
+                    values[name] = Uninferable
                     continue
 
                 for dict_key, dict_value in inferred.items:
                     try:
                         dict_key = next(dict_key.infer(context=context))
-                    except exceptions.InferenceError:
-                        values[name] = util.Uninferable
+                    except InferenceError:
+                        values[name] = Uninferable
+                        continue
+                    except StopIteration:
                         continue
                     if not isinstance(dict_key, nodes.Const):
-                        values[name] = util.Uninferable
+                        values[name] = Uninferable
                         continue
                     if not isinstance(dict_key.value, str):
-                        values[name] = util.Uninferable
+                        values[name] = Uninferable
                         continue
                     if dict_key.value in values:
                         # The name is already in the dictionary
-                        values[dict_key.value] = util.Uninferable
+                        values[dict_key.value] = Uninferable
                         self.duplicated_keywords.add(dict_key.value)
                         continue
                     values[dict_key.value] = dict_value
@@ -127,21 +136,23 @@ class CallSite:
 
     def _unpack_args(self, args, context=None):
         values = []
-        context = context or contextmod.InferenceContext()
+        context = context or InferenceContext()
         context.extra_context = self.argument_context_map
         for arg in args:
             if isinstance(arg, nodes.Starred):
                 try:
                     inferred = next(arg.value.infer(context=context))
-                except exceptions.InferenceError:
-                    values.append(util.Uninferable)
+                except InferenceError:
+                    values.append(Uninferable)
+                    continue
+                except StopIteration:
                     continue
 
-                if inferred is util.Uninferable:
-                    values.append(util.Uninferable)
+                if inferred is Uninferable:
+                    values.append(Uninferable)
                     continue
                 if not hasattr(inferred, "elts"):
-                    values.append(util.Uninferable)
+                    values.append(Uninferable)
                     continue
                 values.extend(inferred.elts)
             else:
@@ -157,7 +168,7 @@ class CallSite:
             context: Inference context object
         """
         if name in self.duplicated_keywords:
-            raise exceptions.InferenceError(
+            raise InferenceError(
                 "The arguments passed to {func!r} " " have duplicate keywords.",
                 call_site=self,
                 func=funcnode,
@@ -173,8 +184,8 @@ class CallSite:
 
         # Too many arguments given and no variable arguments.
         if len(self.positional_arguments) > len(funcnode.args.args):
-            if not funcnode.args.vararg:
-                raise exceptions.InferenceError(
+            if not funcnode.args.vararg and not funcnode.args.posonlyargs:
+                raise InferenceError(
                     "Too many positional arguments "
                     "passed to {func!r} that does "
                     "not have *args.",
@@ -205,11 +216,15 @@ class CallSite:
                     positional.append(arg)
 
         if argindex is not None:
+            boundnode = getattr(context, "boundnode", None)
             # 2. first argument of instance/class method
-            if argindex == 0 and funcnode.type in ("method", "classmethod"):
-                if context.boundnode is not None:
-                    boundnode = context.boundnode
-                else:
+            if argindex == 0 and funcnode.type in {"method", "classmethod"}:
+                # context.boundnode is None when an instance method is called with
+                # the class, e.g. MyClass.method(obj, ...). In this case, self
+                # is the first argument.
+                if boundnode is None and funcnode.type == "method" and positional:
+                    return positional[0].infer(context=context)
+                if boundnode is None:
                     # XXX can do better ?
                     boundnode = funcnode.parent.frame()
 
@@ -223,7 +238,7 @@ class CallSite:
                         return iter((boundnode,))
 
                 if funcnode.type == "method":
-                    if not isinstance(boundnode, bases.Instance):
+                    if not isinstance(boundnode, Instance):
                         boundnode = boundnode.instantiate_class()
                     return iter((boundnode,))
                 if funcnode.type == "classmethod":
@@ -231,7 +246,7 @@ class CallSite:
             # if we have a method, extract one position
             # from the index, so we'll take in account
             # the extra parameter represented by `self` or `cls`
-            if funcnode.type in ("method", "classmethod"):
+            if funcnode.type in {"method", "classmethod"} and boundnode:
                 argindex -= 1
             # 2. search arg index
             try:
@@ -243,7 +258,7 @@ class CallSite:
             # It wants all the keywords that were passed into
             # the call site.
             if self.has_invalid_keywords():
-                raise exceptions.InferenceError(
+                raise InferenceError(
                     "Inference failed to find values for all keyword arguments "
                     "to {func!r}: {unpacked_kwargs!r} doesn't correspond to "
                     "{keyword_arguments!r}.",
@@ -267,7 +282,7 @@ class CallSite:
             # It wants all the args that were passed into
             # the call site.
             if self.has_invalid_arguments():
-                raise exceptions.InferenceError(
+                raise InferenceError(
                     "Inference failed to find values for all positional "
                     "arguments to {func!r}: {unpacked_args!r} doesn't "
                     "correspond to {positional_arguments!r}.",
@@ -289,10 +304,10 @@ class CallSite:
         # Check if it's a default parameter.
         try:
             return funcnode.args.default_value(name).infer(context)
-        except exceptions.NoDefault:
+        except NoDefault:
             pass
-        raise exceptions.InferenceError(
-            "No value found for argument {name} to " "{func!r}",
+        raise InferenceError(
+            "No value found for argument {arg} to {func!r}",
             call_site=self,
             func=funcnode,
             arg=name,

@@ -1,13 +1,17 @@
 # Copyright (c) 2019-2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 # TODO(hippo91) : correct the methods signature.
 
 """Astroid hooks for numpy.core.numerictypes module."""
-
-import astroid
+from astroid.brain.helpers import register_module_extender
+from astroid.builder import parse
+from astroid.manager import AstroidManager
 
 
 def numpy_core_numerictypes_transform():
@@ -15,17 +19,19 @@ def numpy_core_numerictypes_transform():
     #       According to numpy doc the generic object should expose
     #       the same API than ndarray. This has been done here partially
     #       through the astype method.
-    return astroid.parse(
+    return parse(
         """
     # different types defined in numerictypes.py
     class generic(object):
         def __init__(self, value):
-            self.T = None
+            self.T = np.ndarray([0, 0])
             self.base = None
             self.data = None
             self.dtype = None
             self.flags = None
-            self.flat = None
+            # Should be a numpy.flatiter instance but not available for now
+            # Putting an array instead so that iteration and indexing are authorized
+            self.flat = np.ndarray([0, 0])
             self.imag = None
             self.itemsize = None
             self.nbytes = None
@@ -249,6 +255,6 @@ def numpy_core_numerictypes_transform():
     )
 
 
-astroid.register_module_extender(
-    astroid.MANAGER, "numpy.core.numerictypes", numpy_core_numerictypes_transform
+register_module_extender(
+    AstroidManager(), "numpy.core.numerictypes", numpy_core_numerictypes_transform
 )
