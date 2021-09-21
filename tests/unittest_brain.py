@@ -2153,14 +2153,14 @@ class AttrsTest(unittest.TestCase):
             d = attr.field(default=attr.Factory(dict))
 
         k = Eggs(d=1)
-        k.d['answer'] = 42        
+        k.d['answer'] = 42
 
         @attr.frozen
         class Eggs:
             d = attr.field(default=attr.Factory(dict))
 
         l = Eggs(d=1)
-        l.d['answer'] = 42  
+        l.d['answer'] = 42
         """
         )
 
