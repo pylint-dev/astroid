@@ -810,6 +810,7 @@ UNINFERABLE_OPS = {
 
 def _to_literal(node: nodes.NodeNG) -> Any:
     # Can raise SyntaxError or ValueError from ast.literal_eval
+    # Can raise AttributeError from node.as_string() as not all nodes have a visitor
     # Is this the stupidest idea or the simplest idea?
     return ast.literal_eval(node.as_string())
 
@@ -840,7 +841,7 @@ def _do_compare(
 
         try:
             left, right = _to_literal(left), _to_literal(right)
-        except (SyntaxError, ValueError):
+        except (SyntaxError, ValueError, AttributeError):
             return util.Uninferable
 
         try:
