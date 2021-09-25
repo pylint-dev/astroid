@@ -26,6 +26,7 @@ Release date: TBA
 
   Closes PyCQA/pylint#5048
 
+* Astroid does not trigger it's own deprecation warning anymore.
 
 What's New in astroid 2.8.0?
 ============================
