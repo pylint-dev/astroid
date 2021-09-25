@@ -6,6 +6,7 @@ import pytest
 
 try:
     import numpy  # pylint: disable=unused-import
+
     HAS_NUMPY = True
 except ImportError:
     HAS_NUMPY = False
@@ -18,6 +19,7 @@ class TestBrainNumpyMa:
     """
     Test the numpy ma brain module
     """
+
     @staticmethod
     def test_numpy_ma_masked_where_returns_maskedarray():
         """
