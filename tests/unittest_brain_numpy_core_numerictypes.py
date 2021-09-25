@@ -11,15 +11,15 @@ import unittest
 
 try:
     import numpy  # pylint: disable=unused-import
-
     HAS_NUMPY = True
 except ImportError:
     HAS_NUMPY = False
 
-from astroid import builder, nodes
+from astroid import builder, nodes, Uninferable
 from astroid.brain.brain_numpy_utils import (
     NUMPY_VERSION_TYPE_HINTS_SUPPORT,
     numpy_supports_type_hints,
+    _get_numpy_version
 )
 
 
@@ -397,6 +397,32 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
                 cls_node = node.inferred()[0]
                 self.assertIsInstance(cls_node, nodes.ClassDef)
                 self.assertEqual(cls_node.name, type_)
+
+
+@unittest.skipIf(HAS_NUMPY, "Those tests check that astroid does not crash if numpy is not available")
+class NumpyBrainUtilsTest(unittest.TestCase):
+    """
+    This class is dedicated to test that astroid does not crash
+    if numpy module is not available
+    """
+    def test_get_numpy_version_do_not_crash(self):
+        """
+        Test that the function _get_numpy_version doesn't crash even if numpy is not installed
+        """
+        self.assertEqual(_get_numpy_version(), ('0', '0', '0'))
+
+    def test_numpy_object_uninferable(self):
+        """
+        Test that in case numpy is not available, then a numpy object is uninferable
+        but the inference doesn't lead to a crash
+        """
+        src = f"""
+        import numpy as np
+        np.number[int]
+        """
+        node = builder.extract_node(src)
+        cls_node = node.inferred()[0]
+        self.assertIs(cls_node, Uninferable)
 
 
 if __name__ == "__main__":
