@@ -35,7 +35,7 @@ def _get_numpy_version() -> Tuple[str, str, str]:
 
         return tuple(numpy.version.version.split("."))
     except ImportError:
-        return ('0', '0', '0')
+        return ("0", "0", "0")
 
 
 def infer_numpy_member(src, node, context=None):
