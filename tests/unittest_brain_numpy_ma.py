@@ -14,7 +14,7 @@ except ImportError:
 from astroid import builder
 
 
-@pytest.mark.skipif(not HAS_NUMPY, reason="This test requires the numpy library.")
+@pytest.mark.skipif(HAS_NUMPY is False, reason="This test requires the numpy library.")
 class TestBrainNumpyMa:
     """
     Test the numpy ma brain module
