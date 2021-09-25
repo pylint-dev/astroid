@@ -48,11 +48,10 @@ from pathlib import Path
 # the version before the dependencies are installed (in particular 'wrapt'
 # that is imported in astroid.inference)
 from astroid.__pkginfo__ import __version__, version
+from astroid.nodes import node_classes, scoped_nodes
 
 # isort: on
 
-from astroid import node_classes  # Deprecated, to remove later
-from astroid import scoped_nodes  # Deprecated, to remove later
 from astroid import inference, raw_building
 from astroid.astroid_manager import MANAGER
 from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
