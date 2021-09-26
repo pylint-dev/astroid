@@ -750,6 +750,8 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         vararg: Optional[str] = None,
         kwarg: Optional[str] = None,
         parent: Optional[NodeNG] = None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
     ) -> None:
         """
         :param vararg: The name of the variable length arguments.
@@ -758,7 +760,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
 
         :param parent: The parent node in the syntax tree.
         """
-        super().__init__(parent=parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
         self.vararg: Optional[str] = vararg  # can be None
         """The name of the variable length arguments."""
@@ -1282,6 +1284,7 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        simple: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -1300,7 +1303,7 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
         self.value: Optional[NodeNG] = None  # can be None
         """The value being assigned to the variables."""
 
-        self.simple: Optional[int] = None
+        self.simple: Optional[int] = simple
         """Whether :attr:`target` is a pure name or a complex statement."""
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
@@ -1309,7 +1312,7 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
         self,
         target: NodeNG,
         annotation: NodeNG,
-        simple: int,
+        simple: int = None,
         value: Optional[NodeNG] = None,
     ) -> None:
         """Do some setup after initialisation.
@@ -1326,7 +1329,7 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
         self.target = target
         self.annotation = annotation
         self.value = value
-        self.simple = simple
+        self.simple = simple or self.simple
 
     def get_children(self):
         yield self.target
@@ -1757,7 +1760,13 @@ class Comprehension(NodeNG):
     optional_assign = True
     """Whether this node optionally assigns a variable."""
 
-    def __init__(self, parent: Optional[NodeNG] = None) -> None:
+    def __init__(
+        self,
+        parent: Optional[NodeNG] = None,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        is_async: Optional[bool] = None,
+    ) -> None:
         """
         :param parent: The parent node in the syntax tree.
         """
@@ -1770,10 +1779,10 @@ class Comprehension(NodeNG):
         self.ifs: typing.List[NodeNG] = []
         """The contents of any if statements that filter the comprehension."""
 
-        self.is_async: Optional[bool] = None
+        self.is_async: Optional[bool] = is_async
         """Whether this is an asynchronous comprehension or not."""
 
-        super().__init__(parent=parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     # pylint: disable=redefined-builtin; same name as builtin ast module.
     def postinit(
@@ -1781,7 +1790,7 @@ class Comprehension(NodeNG):
         target: Optional[NodeNG] = None,
         iter: Optional[NodeNG] = None,
         ifs: Optional[typing.List[NodeNG]] = None,
-        is_async: Optional[bool] = None,
+        is_async: Optional[bool] = None,  # @TODO: Deprecate and remove
     ) -> None:
         """Do some setup after initialisation.
 
@@ -1844,7 +1853,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
     <Const.bytes l.1 at 0x7f23b2e35a20>]
     """
 
-    _other_fields = ("value",)
+    _other_fields = ("value", "kind")
 
     def __init__(
         self,
@@ -2628,7 +2637,7 @@ class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
     <ImportFrom l.1 at 0x7f23b2e415c0>
     """
 
-    _other_fields = ("modname", "names", "level")
+    _other_fields = ("fromname", "names", "level")
 
     def __init__(
         self,
@@ -2653,7 +2662,8 @@ class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
 
         :param parent: The parent node in the syntax tree.
         """
-        self.modname: Optional[str] = fromname  # can be None
+        self.fromname: Optional[str] = fromname  # can be None
+        self.modname = self.fromname  # For backwards
         """The module that is being imported from.
 
         This is ``None`` for relative imports.

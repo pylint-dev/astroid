@@ -43,6 +43,7 @@ Lambda, GeneratorExp, DictComp and SetComp to some extent).
 import builtins
 import io
 import itertools
+import json
 import typing
 from typing import List, Optional, TypeVar
 
@@ -365,6 +366,19 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
         """
         return name in self.locals
 
+    def __load__(self, data, loader):
+        """Load the node from the data dict."""
+        self.__init__(
+            **{key: loader(data[key]) for key in {"lineno", "col_offset", "parent"} if key in data},
+            **{key: data[key] for key in self._other_fields},
+        )
+
+        self.postinit(
+            **{key: loader(data[key]) for key in self._astroid_fields}
+        )
+        # Use update so Module's globals get updated too
+        self.locals.update(loader(data['locals']))
+
 
 class Module(LocalsDictNodeNG):
     """Class representing an :class:`ast.Module` node.
@@ -473,6 +487,7 @@ class Module(LocalsDictNodeNG):
         package=None,
         parent=None,
         pure_python=True,
+        future_imports=None,
     ):
         """
         :param name: The name of the module.
@@ -495,6 +510,9 @@ class Module(LocalsDictNodeNG):
 
         :param pure_python: Whether the ast was built from source.
         :type pure_python: bool or None
+
+        :param future_imports: The imports from ``__future__``.
+        :type future_imports: Optional[Set[str]]
         """
         self.name = name
         self.doc = doc
@@ -513,7 +531,7 @@ class Module(LocalsDictNodeNG):
 
         :type: list(NodeNG) or None
         """
-        self.future_imports = set()
+        self.future_imports = future_imports or set()
 
     # pylint: enable=redefined-builtin
 
@@ -816,6 +834,28 @@ class Module(LocalsDictNodeNG):
 
     def get_children(self):
         yield from self.body
+
+    def __dump__(self, dumper):
+        """Dump the node as a JSON-serializable dict."""
+        # Don't serialize globals since globals is locals
+        assert self.locals is self.globals
+        data = super().__dump__(dumper)
+        data.pop("globals")
+        return data
+
+    def dump(self):
+        """Dump the node as a JSON-serializable dict."""
+        import astroid._persistence
+
+        refmap = {}
+        data = astroid._persistence.dump(self, refmap)
+        return json.dumps(dict(refmap=refmap, data=data))
+
+    @classmethod
+    def load(cls, data):
+        import astroid._persistence
+
+        return astroid._persistence.load(**json.loads(data))
 
 
 class ComprehensionScope(LocalsDictNodeNG):
@@ -2096,8 +2136,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :param keywords: The keywords given to the class definition.
         :type keywords: list(Keyword) or None
         """
-        if keywords is not None:
-            self.keywords = keywords
+        self.keywords = keywords
         self.bases = bases
         self.body = body
         self.decorators = decorators

@@ -724,3 +724,33 @@ class NodeNG:
     def op_left_associative(self):
         # Everything is left associative except `**` and IfExp
         return True
+
+    def __dump__(self, dumper):
+        data = dict(
+            **{field_name: dumper(getattr(self, field_name)) for field_name in self._other_fields},
+            **{field_name: dumper(getattr(self, field_name)) for field_name in self._other_other_fields},
+            **{field_name: dumper(getattr(self, field_name)) for field_name in self._astroid_fields},
+        )
+        # Not all __init__s take these
+        if getattr(self, "lineno", None) is not None:
+            data["lineo"] = self.lineno
+        if getattr(self, "col_offset", None) is not None:
+            data["col_offset"] = self.col_offset
+        if self.parent is not None:
+            data["parent"] = dumper(self.parent)
+        return data
+
+    def __load__(self, data, loader):
+        """@TODO
+        """
+        self.__init__(
+            **{key: loader(data[key]) for key in {"lineno", "col_offset", "parent"} if key in data},
+            **{key: data[key] for key in self._other_fields},
+        )
+
+        postinit_fields = self._astroid_fields + self._other_other_fields
+
+        if postinit_fields:
+            self.postinit(
+                **{key: loader(data[key]) for key in postinit_fields}
+            )

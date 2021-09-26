@@ -133,6 +133,10 @@ class Proxy:
     def infer(self, context=None):
         yield self
 
+    def __dump__(self, dumper):
+        return {
+            "proxied": dumper(self._proxied),
+        }
 
 def _infer_stmts(stmts, context, frame=None):
     """Return an iterator on statements inferred by each statement in *stmts*."""
@@ -422,6 +426,7 @@ class BoundMethod(UnboundMethod):
     # pylint: disable=unnecessary-lambda
     special_attributes = lazy_descriptor(lambda: objectmodel.BoundMethodModel())
 
+    # @TODO deprecate "proxy" for "proxied?"
     def __init__(self, proxy, bound):
         UnboundMethod.__init__(self, proxy)
         self.bound = bound
@@ -543,6 +548,12 @@ class BoundMethod(UnboundMethod):
 
     def bool_value(self, context=None):
         return True
+
+    def __dump__(self, dumper):
+        data = super().__dump__(dumper)
+        data["proxy"] = data.pop("proxied")
+        data.update(bound=dumper(self.bound))
+        return data
 
 
 class Generator(BaseInstance):
