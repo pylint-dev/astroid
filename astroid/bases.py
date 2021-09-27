@@ -423,7 +423,7 @@ class BoundMethod(UnboundMethod):
     special_attributes = lazy_descriptor(lambda: objectmodel.BoundMethodModel())
 
     def __init__(self, proxy, bound):
-        UnboundMethod.__init__(self, proxy)
+        super().__init__(proxy)
         self.bound = bound
 
     def implicit_parameters(self):
