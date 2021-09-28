@@ -2110,7 +2110,7 @@ class AttrsTest(unittest.TestCase):
         module = astroid.parse(
             """
         import attr
-        from attr import attrs, attrib
+        from attr import attrs, attrib, field
 
         @attr.s
         class Foo:
@@ -2140,10 +2140,31 @@ class AttrsTest(unittest.TestCase):
 
         i = Bai()
         i.d['answer'] = 42
+
+        @attr.define
+        class Spam:
+            d = field(default=attr.Factory(dict))
+
+        j = Spam(d=1)
+        j.d['answer'] = 42
+
+        @attr.mutable
+        class Eggs:
+            d = attr.field(default=attr.Factory(dict))
+
+        k = Eggs(d=1)
+        k.d['answer'] = 42
+
+        @attr.frozen
+        class Eggs:
+            d = attr.field(default=attr.Factory(dict))
+
+        l = Eggs(d=1)
+        l.d['answer'] = 42
         """
         )
 
-        for name in ("f", "g", "h", "i"):
+        for name in ("f", "g", "h", "i", "j", "k", "l"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
             self.assertIsInstance(should_be_unknown, astroid.Unknown)
 
