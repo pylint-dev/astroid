@@ -11,9 +11,15 @@ Without these hooks, the following are erroneously triggered by Pylint:
     * E1101: Module 'signal' has no 'Handlers' member (no-member)
     * E1101: Module 'signal' has no 'Sigmasks' member (no-member)
 
-Note that the enum.auto() values defined for the Signals, Handlers and Sigmasks
-IntEnums are just dummy integer values, and do not correspond to the actual
-standard signal numbers - which may vary depending on the system.
+These enums are defined slightly differently depending on the user's operating
+system and platform. These platform differences should follow the current
+Python typeshed stdlib `signal.pyi` stub file, available at:
+
+* https://github.com/python/typeshed/blob/master/stdlib/signal.pyi
+
+Note that the enum.auto() values defined here for the Signals, Handlers and
+Sigmasks IntEnums are just dummy integer values, and do not correspond to the
+actual standard signal numbers - which may vary depending on the system.
 """
 
 
