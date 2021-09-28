@@ -9,7 +9,6 @@ import pytest
 
 from astroid import builder, nodes
 
-
 # Define signal enums
 ENUMS = ["Signals", "Handlers", "Sigmasks"]
 if sys.platform == "win32":
