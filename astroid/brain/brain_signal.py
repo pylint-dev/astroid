@@ -80,7 +80,7 @@ def _signals_enum():
         signals_enum += """
         SIGBREAK  = enum.auto()
         """
-    if sys.platform != "darwin" and sys.platform != "win32":
+    if sys.platform not in ("darwin", "win32"):
         signals_enum += """
         SIGCLD    = enum.auto()
         SIGPOLL   = enum.auto()
