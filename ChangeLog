@@ -30,10 +30,7 @@ Release date: TBA
 
 * Astroid does not trigger it's own deprecation warning anymore.
 
-* Improve inference of ``typing.Callable``.
-  Fix pylint false-positive when used in ``isinstance``.
-
-  Closes PyCQA/pylint#3507
+* Improve brain for ``typing.Callable`` and ``typing.Type``.
 
 
 What's New in astroid 2.8.0?

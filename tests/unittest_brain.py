@@ -1946,8 +1946,7 @@ class TypingBrain(unittest.TestCase):
         """
         Test that builtins alias, such as typing.List, are subscriptable
         """
-        # Do not test Tuple as it is inferred as _TupleType class (needs a brain?)
-        for typename in ("List", "Dict", "Set", "FrozenSet"):
+        for typename in ("List", "Dict", "Set", "FrozenSet", "Tuple"):
             src = f"""
             import typing
             typing.{typename:s}[int]
@@ -1956,6 +1955,20 @@ class TypingBrain(unittest.TestCase):
             inferred = next(right_node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef)
             self.assertIsInstance(inferred.getattr("__iter__")[0], nodes.FunctionDef)
+
+    @staticmethod
+    @test_utils.require_version(minver="3.9")
+    def test_typing_type_subscriptable():
+        node = builder.extract_node(
+            """
+        from typing import Type
+        Type[int]
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+        assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
+        assert inferred.qname() == "typing.Type"
 
     def test_typing_cast(self) -> None:
         node = builder.extract_node(

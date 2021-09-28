@@ -232,9 +232,7 @@ def _looks_like_typing_alias(node: Call) -> bool:
         and node.func.name == "_alias"
         and (
             # _alias function works also for builtins object such as list and dict
-            isinstance(node.args[0], Attribute)
-            or isinstance(node.args[0], Name)
-            and node.args[0].name != "type"
+            isinstance(node.args[0], (Attribute, Name))
         )
     )
 
