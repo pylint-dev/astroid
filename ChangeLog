@@ -32,6 +32,10 @@ Release date: TBA
 
 * Improve brain for ``typing.Callable`` and ``typing.Type``.
 
+* Fix bug with importing namespace packages with relative imports
+
+  Closes PyCQA/pylint#5059
+
 
 What's New in astroid 2.8.0?
 ============================

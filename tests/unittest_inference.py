@@ -6534,6 +6534,9 @@ b
     node = extract_node(code)
     assert next(node.infer()).pytype() == ".B"
 
+def test_namespace_package() -> None:
+    """check that a file using namespace packages and relative imports is parseable"""
+    resources.build_file("data/beyond_top_level/import_package.py")
 
 if __name__ == "__main__":
     unittest.main()
