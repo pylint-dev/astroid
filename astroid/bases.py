@@ -133,6 +133,7 @@ class Proxy:
     def infer(self, context=None):
         yield self
 
+    #@TODO: Can remove (uses default)
     def __dump__(self, dumper):
         return {
             "proxied": dumper(self._proxied),

@@ -745,7 +745,7 @@ class NodeNG:
         """
         self.__init__(
             **{key: loader(data[key]) for key in {"lineno", "col_offset", "parent"} if key in data},
-            **{key: data[key] for key in self._other_fields},
+            **{key: loader(data[key]) for key in self._other_fields},
         )
 
         postinit_fields = self._astroid_fields + self._other_other_fields

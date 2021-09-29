@@ -1870,6 +1870,15 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 return self, [frame]
         return super().scope_lookup(node, name, offset)
 
+    def __dump__(self, dumper):
+        data = super().__dump__(dumper)
+        data['instance_attrs'] = dumper(self.instance_attrs)
+        return data
+
+    def __load__(self, data, loader):
+        super().__load__(data, loader)
+        self.instance_attrs = loader(data['instance_attrs'])
+
 
 class AsyncFunctionDef(FunctionDef):
     """Class representing an :class:`ast.FunctionDef` node.
@@ -3084,3 +3093,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             child_node._get_assign_nodes() for child_node in self.body
         )
         return list(itertools.chain.from_iterable(children_assign_nodes))
+
+    def __dump__(self, dumper):
+        data = super().__dump__(dumper)
+        data['instance_attrs'] = dumper(self.instance_attrs)
+        return data
+
+    def __load__(self, data, loader):
+        super().__load__(data, loader)
+        self.instance_attrs = loader(data['instance_attrs'])

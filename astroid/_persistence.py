@@ -23,7 +23,13 @@ don't infinitely recurse.
 
 import base64
 import builtins
+import enum
 import functools
+
+def _dump_obj_default(instance, dumper):
+    if isinstance(instance, enum.Enum):
+        return {"value": instance.value}
+    return {k: dumper(v) for k, v in instance.__dict__.items()}
 
 def dump(obj, refmap):
     """Dumps an astroid object or builtin type."""
@@ -69,15 +75,18 @@ def dump(obj, refmap):
         }
 
     if id(obj) not in refmap:
+        # @TODO: getset_desciptor for __doc__ if it doesn't exist in CPython implementation
         assert obj.__class__.__module__.startswith("astroid")
         # Phase 1, add the obj to the refmap
         submodule = obj.__class__.__module__.split('.')[1]
         refmap[id(obj)] = {
             ".class": f"{submodule}.{obj.__class__.__name__}"
         }
+
         # Phase 2, actually populate the entry
+        data_dumper = getattr(obj, "__dump__", functools.partial(_dump_obj_default, obj))
         refmap[id(obj)].update(
-            **obj.__dump__(dumper=dumper)
+            **data_dumper(dumper=dumper)
         )
 
     # Stringify the id, since JSON objects must have str keys
@@ -90,22 +99,25 @@ def _loadref(ref, refmap):
     import astroid
 
     instance_or_data = refmap[ref]
-    if not isinstance(instance_or_data, dict):
-        return instance_or_data  # instance
+    if isinstance(instance_or_data, dict):
+        data = instance_or_data
+        # pop in case nodes want to just unpack the dict
+        submodname, classname = data.pop(".class").split(".")
+        submodule = getattr(astroid, submodname)
+        cls = getattr(submodule, classname)
 
-    data = instance_or_data
-    # pop in case nodes want to just unpack the dict
-    submodname, classname = data.pop(".class").split(".")
-    submodule = getattr(astroid, submodname)
-    cls = getattr(submodule, classname)
-    instance = cls.__new__(cls)
-    refmap[ref] = instance
+        if issubclass(cls, enum.Enum):
+            # Enum uses __new__ to initialize :(
+            refmap[ref] = cls.__new__(cls, **data)
+        else:
+            instance = cls.__new__(cls)
+            refmap[ref] = instance
 
-    # Phase 2, populate any fields that are or contain astroic objects
-    data_loader = getattr(instance, "__load__", functools.partial(_load_obj_default, instance))
-    data_loader(data, loader=lambda x: load(x, refmap))
+            # Phase 2, populate any fields that are or contain astroic objects
+            data_loader = getattr(instance, "__load__", functools.partial(_load_obj_default, instance))
+            data_loader(data, loader=lambda x: load(x, refmap))
 
-    return instance
+    return refmap[ref]
 
 def load(data, refmap):
     loader = lambda x: load(x, refmap)
