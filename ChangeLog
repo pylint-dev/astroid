@@ -30,6 +30,8 @@ Release date: TBA
 
 * Astroid does not trigger it's own deprecation warning anymore.
 
+* Improve brain for ``typing.Callable`` and ``typing.Type``.
+
 
 What's New in astroid 2.8.0?
 ============================

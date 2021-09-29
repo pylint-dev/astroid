@@ -232,9 +232,7 @@ def _looks_like_typing_alias(node: Call) -> bool:
         and node.func.name == "_alias"
         and (
             # _alias function works also for builtins object such as list and dict
-            isinstance(node.args[0], Attribute)
-            or isinstance(node.args[0], Name)
-            and node.args[0].name != "type"
+            isinstance(node.args[0], (Attribute, Name))
         )
     )
 
@@ -280,7 +278,7 @@ def infer_typing_alias(
         or not len(node.parent.targets) == 1
         or not isinstance(node.parent.targets[0], AssignName)
     ):
-        return None
+        raise UseInferenceDefault
     try:
         res = next(node.args[0].infer(context=ctx))
     except StopIteration as e:
@@ -318,37 +316,58 @@ def infer_typing_alias(
     return iter([class_def])
 
 
-def _looks_like_tuple_alias(node: Call) -> bool:
-    """Return True if call is for Tuple alias.
+def _looks_like_special_alias(node: Call) -> bool:
+    """Return True if call is for Tuple or Callable alias.
 
     In PY37 and PY38 the call is to '_VariadicGenericAlias' with 'tuple' as
     first argument. In PY39+ it is replaced by a call to '_TupleType'.
 
     PY37: Tuple = _VariadicGenericAlias(tuple, (), inst=False, special=True)
     PY39: Tuple = _TupleType(tuple, -1, inst=False, name='Tuple')
+
+
+    PY37: Callable = _VariadicGenericAlias(collections.abc.Callable, (), special=True)
+    PY39: Callable = _CallableType(collections.abc.Callable, 2)
     """
     return isinstance(node.func, Name) and (
         not PY39_PLUS
         and node.func.name == "_VariadicGenericAlias"
-        and isinstance(node.args[0], Name)
-        and node.args[0].name == "tuple"
+        and (
+            isinstance(node.args[0], Name)
+            and node.args[0].name == "tuple"
+            or isinstance(node.args[0], Attribute)
+            and node.args[0].as_string() == "collections.abc.Callable"
+        )
         or PY39_PLUS
-        and node.func.name == "_TupleType"
-        and isinstance(node.args[0], Name)
-        and node.args[0].name == "tuple"
+        and (
+            node.func.name == "_TupleType"
+            and isinstance(node.args[0], Name)
+            and node.args[0].name == "tuple"
+            or node.func.name == "_CallableType"
+            and isinstance(node.args[0], Attribute)
+            and node.args[0].as_string() == "collections.abc.Callable"
+        )
     )
 
 
-def infer_tuple_alias(
+def infer_special_alias(
     node: Call, ctx: context.InferenceContext = None
 ) -> typing.Iterator[ClassDef]:
     """Infer call to tuple alias as new subscriptable class typing.Tuple."""
+    if not (
+        isinstance(node.parent, Assign)
+        and len(node.parent.targets) == 1
+        and isinstance(node.parent.targets[0], AssignName)
+    ):
+        raise UseInferenceDefault
     try:
         res = next(node.args[0].infer(context=ctx))
     except StopIteration as e:
         raise InferenceError(node=node.args[0], context=context) from e
+
+    assign_name = node.parent.targets[0]
     class_def = ClassDef(
-        name="Tuple",
+        name=assign_name.name,
         parent=node.parent,
     )
     class_def.postinit(bases=[res], body=[], decorators=None)
@@ -413,5 +432,5 @@ if PY37_PLUS:
         Call, inference_tip(infer_typing_alias), _looks_like_typing_alias
     )
     AstroidManager().register_transform(
-        Call, inference_tip(infer_tuple_alias), _looks_like_tuple_alias
+        Call, inference_tip(infer_special_alias), _looks_like_special_alias
     )
