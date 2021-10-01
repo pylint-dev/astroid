@@ -733,7 +733,7 @@ class NodeNG:
         )
         # Not all __init__s take these
         if getattr(self, "lineno", None) is not None:
-            data["lineo"] = self.lineno
+            data["lineno"] = self.lineno
         if getattr(self, "col_offset", None) is not None:
             data["col_offset"] = self.col_offset
         if self.parent is not None:
@@ -741,8 +741,7 @@ class NodeNG:
         return data
 
     def __load__(self, data, loader):
-        """@TODO
-        """
+        import astroid.nodes
         self.__init__(
             **{key: loader(data[key]) for key in {"lineno", "col_offset", "parent"} if key in data},
             **{key: loader(data[key]) for key in self._other_fields},
