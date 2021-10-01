@@ -370,7 +370,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
         """Load the node from the data dict."""
         self.__init__(
             **{key: loader(data[key]) for key in {"lineno", "col_offset", "parent"} if key in data},
-            **{key: data[key] for key in self._other_fields},
+            **{key: loader(data[key]) for key in self._other_fields},
         )
 
         self.postinit(
@@ -2093,6 +2093,14 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         :type name: str or None
         """
+
+        if not isinstance(doc, (str, type(None))):
+            # This can happen for C-implemented types, like `wrapper_descriptor`
+            # `type(str.__dict__['__add__'])` is a `wrapper_descriptor`
+            # `__doc__` on that object is a `getset_descriptor`, I assume
+            # because `wrapper_descriptor` has no doc.
+            # https://github.com/python/cpython/blob/f25f2e2e8c8e48490d22b0cdf67f575608701f6f/Objects/descrobject.c#L865
+            doc = None
 
         self.doc = doc
         """The class' docstring.

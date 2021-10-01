@@ -31,14 +31,14 @@ def _dump_obj_default(instance, dumper):
         return {"value": instance.value}
     return {k: dumper(v) for k, v in instance.__dict__.items()}
 
-def dump(obj, refmap):
+def dump(obj, refmap, depth=0):
     """Dumps an astroid object or builtin type."""
     # @TODO: Make types for the "special" dicts and serialize them specially
 
     if isinstance(obj, (int, str, float, bool, type(None))):
         return obj  # JSON serializable and unambiguous
 
-    dumper = lambda x: dump(x, refmap)
+    dumper = lambda x: dump(x, refmap, depth+1)
 
     if isinstance(obj, list):
         return list(map(dumper, obj))
@@ -75,7 +75,6 @@ def dump(obj, refmap):
         }
 
     if id(obj) not in refmap:
-        # @TODO: getset_desciptor for __doc__ if it doesn't exist in CPython implementation
         assert obj.__class__.__module__.startswith("astroid")
         # Phase 1, add the obj to the refmap
         submodule = obj.__class__.__module__.split('.')[1]
