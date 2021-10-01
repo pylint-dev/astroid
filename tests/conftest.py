@@ -24,7 +24,7 @@ def roundtrip_builder(f):
         assert isinstance(node, astroid.Module)
         data = node.dump()
         new_node = astroid.Module.load(data)
-        return node
+        # return node
         return new_node
 
     return func
