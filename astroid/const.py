@@ -13,6 +13,7 @@ class Context(enum.Enum):
     Store = 2
     Del = 3
 
+
 # TODO Remove in 3.0 in favor of Context
 Load = Context.Load
 Store = Context.Store
