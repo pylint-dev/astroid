@@ -59,10 +59,10 @@ def dump(obj, refmap, depth=0):
         }
 
     if obj is ...:
-        return {".class": "Ellipses"}
+        return {".class": "Ellipsis"}
 
     if obj is NotImplemented:
-        return {",class": "NotImplemented"}
+        return {".class": "NotImplemented"}
 
     if isinstance(obj, bytes):
         return {
