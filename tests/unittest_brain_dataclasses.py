@@ -36,6 +36,7 @@ def test_inference_attribute_no_default(module: str):
     with pytest.raises(InferenceError):
         klass.inferred()
 
+    bases.DEBUGIT = True
     inferred = instance.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)

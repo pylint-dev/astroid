@@ -19,11 +19,17 @@ def pytest_runtest_setup(item):
 
 def roundtrip_builder(f):
     @wraps(f)
-    def func(*args, **kwargs):
-        node = f(*args, **kwargs)
+    def func(self, *args, **kwargs):
+        node = f(self, *args, **kwargs)
         assert isinstance(node, astroid.Module)
         data = node.dump()
         new_node = astroid.Module.load(data)
+
+        # @TODO: This would probably be handled by the builder
+        if self._apply_transforms:
+            # We have to handle transformation by ourselves since the
+            # rebuilder isn't called for builtin nodes
+            new_node = self._manager.visit_transforms(node)
         # return node
         return new_node
 

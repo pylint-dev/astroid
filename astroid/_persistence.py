@@ -58,8 +58,11 @@ def dump(obj, refmap, depth=0):
             ".values": {k: dumper(v) for k, v in obj.items()}
         }
 
-    if obj in {..., NotImplemented}:
-        return {".class": f"{obj.__class__.__name__}"}
+    if obj is ...:
+        return {".class": "Ellipses"}
+
+    if obj is NotImplemented:
+        return {",class": "NotImplemented"}
 
     if isinstance(obj, bytes):
         return {
@@ -132,10 +135,10 @@ def load(data, refmap):
 
     classname = data.pop(".class")
     cls = getattr(builtins, classname)
-    if cls is type(NotImplemented):
+    if cls is builtins.NotImplemented:
         return NotImplemented
 
-    if cls is type(...):
+    if cls is builtins.Ellipsis:
         return ...
 
     if cls is dict:
@@ -148,6 +151,6 @@ def load(data, refmap):
         return complex(**data)
 
     if cls is bytes:
-        return base64.b64decode(data['.values'])
+        return base64.b64decode(data['.value'])
 
     assert False, "Unhandled case!"
