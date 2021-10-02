@@ -13,9 +13,7 @@ def pytest_runtest_setup(item):
     use_roundtrip_build = item.config.getoption("--test-roundtrip-persistence")
     if use_roundtrip_build:
         astroid.builder.AstroidBuilder.string_build = roundtrip_builder(astroid.builder.AstroidBuilder.string_build)
-        astroid.builder.AstroidBuilder.module_build = roundtrip_builder(astroid.builder.AstroidBuilder.module_build)
         astroid.builder.AstroidBuilder.file_build = roundtrip_builder(astroid.builder.AstroidBuilder.file_build)
-        astroid.builder.AstroidBuilder.inspect_build = roundtrip_builder(astroid.builder.AstroidBuilder.inspect_build)
 
 def roundtrip_builder(f):
     @wraps(f)
