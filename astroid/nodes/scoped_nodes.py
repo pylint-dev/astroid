@@ -369,15 +369,17 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
     def __load__(self, data, loader):
         """Load the node from the data dict."""
         self.__init__(
-            **{key: loader(data[key]) for key in {"lineno", "col_offset", "parent"} if key in data},
+            **{
+                key: loader(data[key])
+                for key in {"lineno", "col_offset", "parent"}
+                if key in data
+            },
             **{key: loader(data[key]) for key in self._other_fields},
         )
 
-        self.postinit(
-            **{key: loader(data[key]) for key in self._astroid_fields}
-        )
+        self.postinit(**{key: loader(data[key]) for key in self._astroid_fields})
         # Use update so Module's globals get updated too
-        self.locals.update(loader(data['locals']))
+        self.locals.update(loader(data["locals"]))
 
 
 class Module(LocalsDictNodeNG):
@@ -1872,12 +1874,12 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
     def __dump__(self, dumper):
         data = super().__dump__(dumper)
-        data['instance_attrs'] = dumper(self.instance_attrs)
+        data["instance_attrs"] = dumper(self.instance_attrs)
         return data
 
     def __load__(self, data, loader):
         super().__load__(data, loader)
-        self.instance_attrs = loader(data['instance_attrs'])
+        self.instance_attrs = loader(data["instance_attrs"])
 
 
 class AsyncFunctionDef(FunctionDef):
@@ -3104,9 +3106,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
     def __dump__(self, dumper):
         data = super().__dump__(dumper)
-        data['instance_attrs'] = dumper(self.instance_attrs)
+        data["instance_attrs"] = dumper(self.instance_attrs)
         return data
 
     def __load__(self, data, loader):
         super().__load__(data, loader)
-        self.instance_attrs = loader(data['instance_attrs'])
+        self.instance_attrs = loader(data["instance_attrs"])

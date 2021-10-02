@@ -26,10 +26,12 @@ import builtins
 import enum
 import functools
 
+
 def _dump_obj_default(instance, dumper):
     if isinstance(instance, enum.Enum):
         return {"value": instance.value}
     return {k: dumper(v) for k, v in instance.__dict__.items()}
+
 
 def dump(obj, refmap, depth=0):
     """Dumps an astroid object or builtin type."""
@@ -38,7 +40,7 @@ def dump(obj, refmap, depth=0):
     if isinstance(obj, (int, str, float, bool, type(None))):
         return obj  # JSON serializable and unambiguous
 
-    dumper = lambda x: dump(x, refmap, depth+1)
+    dumper = lambda x: dump(x, refmap, depth + 1)
 
     if isinstance(obj, list):
         return list(map(dumper, obj))
@@ -53,10 +55,7 @@ def dump(obj, refmap, depth=0):
         # Serializable, but ambiguous w.r.t. dumping an object
         # If this is ever false, we can serialize it as .items()
         assert all(isinstance(k, str) for k in obj)
-        return {
-            ".class": "dict",
-            ".values": {k: dumper(v) for k, v in obj.items()}
-        }
+        return {".class": "dict", ".values": {k: dumper(v) for k, v in obj.items()}}
 
     if obj is ...:
         return {".class": "Ellipsis"}
@@ -67,7 +66,7 @@ def dump(obj, refmap, depth=0):
     if isinstance(obj, bytes):
         return {
             ".class": "bytes",
-            ".value": base64.b64encode(obj).decode('ascii'),
+            ".value": base64.b64encode(obj).decode("ascii"),
         }
 
     if isinstance(obj, complex):
@@ -80,22 +79,22 @@ def dump(obj, refmap, depth=0):
     if id(obj) not in refmap:
         assert obj.__class__.__module__.startswith("astroid")
         # Phase 1, add the obj to the refmap
-        submodule = obj.__class__.__module__.split('.')[1]
-        refmap[id(obj)] = {
-            ".class": f"{submodule}.{obj.__class__.__name__}"
-        }
+        submodule = obj.__class__.__module__.split(".")[1]
+        refmap[id(obj)] = {".class": f"{submodule}.{obj.__class__.__name__}"}
 
         # Phase 2, actually populate the entry
-        data_dumper = getattr(obj, "__dump__", functools.partial(_dump_obj_default, obj))
-        refmap[id(obj)].update(
-            **data_dumper(dumper=dumper)
+        data_dumper = getattr(
+            obj, "__dump__", functools.partial(_dump_obj_default, obj)
         )
+        refmap[id(obj)].update(**data_dumper(dumper=dumper))
 
     # Stringify the id, since JSON objects must have str keys
     return {".class": "Ref", ".value": str(id(obj))}
 
+
 def _load_obj_default(instance, data, loader):
     return instance.__init__(**{k: loader(v) for k, v in data.items()})
+
 
 def _loadref(ref, refmap):
     import astroid
@@ -116,10 +115,13 @@ def _loadref(ref, refmap):
             refmap[ref] = instance
 
             # Phase 2, populate any fields that are or contain astroic objects
-            data_loader = getattr(instance, "__load__", functools.partial(_load_obj_default, instance))
+            data_loader = getattr(
+                instance, "__load__", functools.partial(_load_obj_default, instance)
+            )
             data_loader(data, loader=lambda x: load(x, refmap))
 
     return refmap[ref]
+
 
 def load(data, refmap):
     loader = lambda x: load(x, refmap)
@@ -131,7 +133,7 @@ def load(data, refmap):
         return data  # Just use the deserialized int or str or whatever
 
     if data[".class"] == "Ref":
-        return _loadref(data['.value'], refmap)
+        return _loadref(data[".value"], refmap)
 
     classname = data.pop(".class")
     cls = getattr(builtins, classname)
@@ -145,12 +147,12 @@ def load(data, refmap):
         return {k: loader(v) for k, v in data[".values"].items()}
 
     if cls in {set, tuple}:
-        return cls(map(loader, data['.values']))
+        return cls(map(loader, data[".values"]))
 
     if cls is complex:
         return complex(**data)
 
     if cls is bytes:
-        return base64.b64decode(data['.value'])
+        return base64.b64decode(data[".values"])
 
     assert False, "Unhandled case!"

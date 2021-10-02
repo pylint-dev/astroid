@@ -3,11 +3,15 @@ from functools import wraps
 import astroid.builder
 import astroid.nodes
 
+
 def pytest_addoption(parser):
     parser.addoption(
-        "--test-roundtrip-persistence", type=bool, default=True,
+        "--test-roundtrip-persistence",
+        type=bool,
+        default=True,
         help="run tests with modules having been serialized and then deserialized",
     )
+
 
 def pytest_runtest_setup(item):
     use_roundtrip_build = item.config.getoption("--test-roundtrip-persistence")
