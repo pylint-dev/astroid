@@ -16,7 +16,9 @@ def pytest_addoption(parser):
 def pytest_runtest_setup(item):
     use_roundtrip_build = item.config.getoption("--test-roundtrip-persistence")
     if use_roundtrip_build:
-        astroid.rebuilder.TreeRebuilder.visit_module = roundtrip_builder(astroid.rebuilder.TreeRebuilder.visit_module)
+        astroid.rebuilder.TreeRebuilder.visit_module = roundtrip_builder(
+            astroid.rebuilder.TreeRebuilder.visit_module
+        )
 
 def roundtrip_builder(f):
     @wraps(f)
