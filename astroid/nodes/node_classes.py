@@ -2247,13 +2247,21 @@ class Dict(NodeNG, Instance):
         :raises AstroidIndexError: If the given index does not exist in the
             dictionary.
         """
+
+        from astroid.helpers import safe_infer
+
         for key, value in self.items:
             # TODO(cpopa): no support for overriding yet, {1:2, **{1: 3}}.
             if isinstance(key, DictUnpack):
+                inferred_value = safe_infer(value)
+                if inferred_value is None or not hasattr(inferred_value, "getitem"):
+                    continue
+
                 try:
-                    return value.getitem(index, context)
+                    return safe_infer(value).getitem(index, context)
                 except (AstroidTypeError, AstroidIndexError):
                     continue
+
             for inferredkey in key.infer(context):
                 if inferredkey is util.Uninferable:
                     continue

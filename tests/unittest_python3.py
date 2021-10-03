@@ -298,6 +298,19 @@ class Python3TC(unittest.TestCase):
             self.assertIsInstance(value, nodes.Const)
             self.assertEqual(value.value, expected)
 
+    def test_unpacking_in_dict_getitem_with_ref(self) -> None:
+        assign = extract_node(
+            """
+        a = {1: 2}
+        b = {**a, 2: 3}
+        """
+        )
+        node = assign.value
+
+        for key, expected in ((1, 2), (2, 3)):
+            value = node.getitem(nodes.Const(key))
+            self.assertEqual(value.value, expected)
+
     def test_format_string(self) -> None:
         code = "f'{greetings} {person}'"
         node = extract_node(code)
