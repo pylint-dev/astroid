@@ -135,6 +135,11 @@ class Proxy:
     def infer(self, context=None):
         yield self
 
+    def __dump__(self, dumper):
+        return {
+            "proxied": dumper(self._proxied)
+        }
+
 def _infer_stmts(stmts, context, frame=None):
     """Return an iterator on statements inferred by each statement in *stmts*."""
     inferred = False

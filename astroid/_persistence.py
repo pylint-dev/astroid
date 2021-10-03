@@ -153,6 +153,6 @@ def load(data, refmap):
         return complex(**data)
 
     if cls is bytes:
-        return base64.b64decode(data[".values"])
+        return base64.b64decode(data[".value"])
 
     assert False, "Unhandled case!"
