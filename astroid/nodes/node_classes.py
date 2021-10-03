@@ -2248,7 +2248,9 @@ class Dict(NodeNG, Instance):
             dictionary.
         """
 
-        from astroid.helpers import safe_infer
+        from astroid.helpers import (  # pylint: disable=import-outside-toplevel; circular import
+            safe_infer,
+        )
 
         for key, value in self.items:
             # TODO(cpopa): no support for overriding yet, {1:2, **{1: 3}}.
