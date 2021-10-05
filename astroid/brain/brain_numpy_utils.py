@@ -8,8 +8,34 @@
 
 
 """Different utilities for the numpy brains"""
+from typing import Tuple
+
 from astroid.builder import extract_node
 from astroid.nodes.node_classes import Attribute, Import, Name, NodeNG
+
+# Class subscript is available in numpy starting with version 1.20.0
+NUMPY_VERSION_TYPE_HINTS_SUPPORT = ("1", "20", "0")
+
+
+def numpy_supports_type_hints() -> bool:
+    """
+    Returns True if numpy supports type hints
+    """
+    np_ver = _get_numpy_version()
+    return np_ver and np_ver > NUMPY_VERSION_TYPE_HINTS_SUPPORT
+
+
+def _get_numpy_version() -> Tuple[str, str, str]:
+    """
+    Return the numpy version number if numpy can be imported. Otherwise returns
+    ('0', '0', '0')
+    """
+    try:
+        import numpy  # pylint: disable=import-outside-toplevel
+
+        return tuple(numpy.version.version.split("."))
+    except ImportError:
+        return ("0", "0", "0")
 
 
 def infer_numpy_member(src, node, context=None):

@@ -12,6 +12,10 @@ What's New in astroid 2.8.1?
 ============================
 Release date: TBA
 
+* Adds support of type hints inside numpy's brains.
+
+  Closes PyCQA/pylint#4326
+
 * Enable inference of dataclass import from pydantic.dataclasses.
   This allows the dataclasses brain to recognize pydantic dataclasses.
 
