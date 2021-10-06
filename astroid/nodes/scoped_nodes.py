@@ -752,7 +752,7 @@ class Module(LocalsDictNodeNG):
         if package_name:
             if not modname:
                 return package_name
-            return f"{package_name}.{modname.split('.')[0]}"
+            return f"{package_name}.{modname}"
         return modname
 
     def wildcard_import_names(self):

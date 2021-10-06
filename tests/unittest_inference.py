@@ -6540,5 +6540,11 @@ def test_namespace_package() -> None:
     resources.build_file("data/beyond_top_level/import_package.py")
 
 
+def test_namespace_package_same_name() -> None:
+    """check that a file using namespace packages and relative imports
+    with similar names is parseable"""
+    resources.build_file("data/beyond_top_level_two/a.py")
+
+
 if __name__ == "__main__":
     unittest.main()
