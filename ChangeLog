@@ -40,6 +40,10 @@ Release date: TBA
 
   Closes PyCQA/pylint#5059
 
+* The ``is_typing_guard`` and ``is_sys_guard`` functions were deprecated and will
+  be removed in 3.0.0. They are complex meta-inference functions that are not
+  suitable for astroid.
+
 
 What's New in astroid 2.8.0?
 ============================

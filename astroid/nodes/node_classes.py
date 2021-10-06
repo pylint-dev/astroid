@@ -39,6 +39,7 @@ import abc
 import itertools
 import sys
 import typing
+import warnings
 from functools import lru_cache
 from typing import TYPE_CHECKING, Callable, Generator, Optional
 
@@ -2870,6 +2871,10 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         >>> node.is_sys_guard()
         True
         """
+        warnings.warn(
+            "The 'is_sys_guard' function is deprecated and will be removed in astroid 3.0.0",
+            DeprecationWarning,
+        )
         if isinstance(self.test, Compare):
             value = self.test.left
             if isinstance(value, Subscript):
@@ -2891,6 +2896,10 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         >>> node.is_typing_guard()
         True
         """
+        warnings.warn(
+            "The 'is_typing_guard' function is deprecated and will be removed in astroid 3.0.0",
+            DeprecationWarning,
+        )
         return isinstance(
             self.test, (Name, Attribute)
         ) and self.test.as_string().endswith("TYPE_CHECKING")
