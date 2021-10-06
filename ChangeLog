@@ -40,6 +40,8 @@ Release date: TBA
 
   Closes PyCQA/pylint#5059
 
+* Add support for wrapt 0.13
+
 
 What's New in astroid 2.8.0?
 ============================
