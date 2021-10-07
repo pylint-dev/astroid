@@ -26,8 +26,9 @@
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2020 Karthikeyan Singaravelan <tir.karthi@gmail.com>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 doranid <ddandd@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Francis Charette Migneault <francis.charette.migneault@gmail.com>
@@ -6538,6 +6539,12 @@ b
 def test_namespace_package() -> None:
     """check that a file using namespace packages and relative imports is parseable"""
     resources.build_file("data/beyond_top_level/import_package.py")
+
+
+def test_namespace_package_same_name() -> None:
+    """check that a file using namespace packages and relative imports
+    with similar names is parseable"""
+    resources.build_file("data/beyond_top_level_two/a.py")
 
 
 if __name__ == "__main__":

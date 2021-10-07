@@ -13,8 +13,8 @@
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2020 Anubhav <35621759+anubh-v@users.noreply.github.com>
 # Copyright (c) 2020 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2021 grayjk <grayjk@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 grayjk <grayjk@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
