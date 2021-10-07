@@ -6,6 +6,11 @@ What's New in astroid 2.9.0?
 ============================
 Release date: TBA
 
+* Prefer the module loader get_source() method in AstroidBuilder's
+  module_build() when possible to avoid assumptions about source
+  code being available on a filesystem.  Otherwise the source cannot
+  be found and application behavior changes when running within an
+  embedded hermetic interpreter environment (pyoxidizer, etc.).
 
 
 What's New in astroid 2.8.3?
