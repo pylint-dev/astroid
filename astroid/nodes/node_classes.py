@@ -2873,7 +2873,9 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         True
         """
         warnings.warn(
-            "The 'is_sys_guard' function is deprecated and will be removed in astroid 3.0.0",
+            "The 'is_sys_guard' function is deprecated and will be removed in astroid 3.0.0 "
+            "It has been moved to pylint and can be imported from 'pylint.checkers.utils' "
+            "starting with pylint 2.12",
             DeprecationWarning,
         )
         if isinstance(self.test, Compare):
@@ -2898,7 +2900,9 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         True
         """
         warnings.warn(
-            "The 'is_typing_guard' function is deprecated and will be removed in astroid 3.0.0",
+            "The 'is_typing_guard' function is deprecated and will be removed in astroid 3.0.0 "
+            "It has been moved to pylint and can be imported from 'pylint.checkers.utils' "
+            "starting with pylint 2.12",
             DeprecationWarning,
         )
         return isinstance(
