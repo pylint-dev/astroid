@@ -22,6 +22,7 @@ Release date: 2021-10-07
 Same content than 2.8.2-dev0 / 2.8.1, released in order to fix a
 mistake when creating the tag.
 
+
 What's New in astroid 2.8.1?
 ============================
 Release date: 2021-10-06
@@ -66,6 +67,7 @@ Release date: 2021-10-06
 * Adds a brain to infer the ``numpy.ma.masked_where`` function.
 
   Closes PyCQA/pylint#3342
+
 
 What's New in astroid 2.8.0?
 ============================
