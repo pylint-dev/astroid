@@ -12,6 +12,7 @@ What's New in astroid 2.8.3?
 ============================
 Release date: TBA
 
+* Add support for wrapt 1.13
 
 
 What's New in astroid 2.8.2?
