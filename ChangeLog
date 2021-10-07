@@ -12,7 +12,7 @@ What's New in astroid 2.8.3?
 ============================
 Release date: TBA
 
-
+* Bump the `wrapt` upper constraint to `wrapt>=1.11, <1.14`
 
 What's New in astroid 2.8.2?
 ============================
