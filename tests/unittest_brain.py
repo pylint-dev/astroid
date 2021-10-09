@@ -2986,6 +2986,34 @@ class TestFunctoolsPartial:
         assert set(mod_scope) == {"test", "scope", "partial"}
         assert set(scope) == {"test2"}
 
+    def test_multiple_partial_args(self) -> None:
+        "Make sure partials remember locked-in args."
+        ast_node = astroid.extract_node(
+            """
+        from functools import partial
+        def test(a, b, c, d, e=5):
+            return a + b + c + d + e
+        test1 = partial(test, 1)
+        test2 = partial(test1, 2)
+        test3 = partial(test2, 3)
+        test3(4, e=6) #@
+        """
+        )
+        expected_args = [1, 2, 3, 4]
+        expected_keywords = {"e": 6}
+
+        call_site = astroid.arguments.CallSite.from_call(ast_node)
+        called_func = next(ast_node.func.infer())
+        called_args = called_func.filled_args + call_site.positional_arguments
+        called_keywords = {**called_func.filled_keywords, **call_site.keyword_arguments}
+        assert len(called_args) == len(expected_args)
+        assert [arg.value for arg in called_args] == expected_args
+        assert len(called_keywords) == len(expected_keywords)
+
+        for keyword, value in expected_keywords.items():
+            assert keyword in called_keywords
+            assert called_keywords[keyword].value == value
+
 
 def test_http_client_brain() -> None:
     node = astroid.extract_node(
