@@ -17,7 +17,7 @@ Release date: TBA
 * Fixes handling of nested partial functions
 
   Closes pyCQA/pylint#2462
-  Closes pyCQA/astroid#1208
+  Closes #1208
 
 
 What's New in astroid 2.8.2?
