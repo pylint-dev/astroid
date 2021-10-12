@@ -6550,7 +6550,9 @@ def test_namespace_package_same_name() -> None:
 def test_relative_imports_init_package() -> None:
     """check that relative imports within a package that uses __init__.py
     still works"""
-    resources.build_file("data/beyond_top_level_three/module/sub_module/sub_sub_module/main.py")
+    resources.build_file(
+        "data/beyond_top_level_three/module/sub_module/sub_sub_module/main.py"
+    )
 
 
 if __name__ == "__main__":
