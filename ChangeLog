@@ -19,6 +19,9 @@ Release date: TBA
   Closes pyCQA/pylint#2462
   Closes #1208
 
+* Fix regression with the import resolver
+
+  Closes PyCQA/pylint#5131
 
 What's New in astroid 2.8.2?
 ============================
