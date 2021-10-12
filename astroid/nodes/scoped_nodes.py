@@ -708,16 +708,19 @@ class Module(LocalsDictNodeNG):
                 raise
         return AstroidManager().ast_from_module_name(modname)
 
-    def relative_to_absolute_name(self, modname: str, level: int) -> str:
+    def relative_to_absolute_name(self, modname, level):
         """Get the absolute module name for a relative import.
 
         The relative import can be implicit or explicit.
 
         :param modname: The module name to convert.
+        :type modname: str
 
         :param level: The level of relative import.
+        :type level: int
 
         :returns: The absolute module name.
+        :rtype: str
 
         :raises TooManyLevelsError: When the relative import refers to a
             module too far above this one.
@@ -731,12 +734,8 @@ class Module(LocalsDictNodeNG):
             if self.package:
                 level = level - 1
                 package_name = self.name.rsplit(".", level)[0]
-            elif (
-                self.path
-                and not os.path.exists(os.path.dirname(self.path[0]) + "/__init__.py")
-                and os.path.exists(
-                    os.path.dirname(self.path[0]) + "/" + modname.split(".")[0]
-                )
+            elif not os.path.exists("__init__.py") and os.path.exists(
+                modname.split(".")[0]
             ):
                 level = level - 1
                 package_name = ""
