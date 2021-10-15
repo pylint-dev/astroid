@@ -664,3 +664,20 @@ def test_annotated_enclosed_field_call(module: str):
     inferred = node.inferred()
     assert len(inferred) == 1 and isinstance(inferred[0], nodes.ClassDef)
     assert "attribute" in inferred[0].instance_attrs
+
+
+@parametrize_module
+def test_invalid_field_call(module: str) -> None:
+    """Test inference of invalid field call doesn't crash."""
+    code = astroid.extract_node(
+        f"""
+    from {module} import dataclass, field
+
+    @dataclass
+    class A:
+        val: field()
+    """
+    )
+    inferred = code.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.ClassDef)
