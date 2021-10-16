@@ -16,12 +16,17 @@ Release date: TBA
 
 * Fixes handling of nested partial functions
 
-  Closes pyCQA/pylint#2462
+  Closes PyCQA/pylint#2462
   Closes #1208
 
 * Fix regression with the import resolver
 
   Closes PyCQA/pylint#5131
+
+* Fix crash with invalid dataclass field call
+
+  Closes PyCQA/pylint#5153
+
 
 What's New in astroid 2.8.2?
 ============================
