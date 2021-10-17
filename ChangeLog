@@ -19,6 +19,10 @@ Release date: TBA
   Closes PyCQA/pylint#2462
   Closes #1208
 
+* Fix regression with the import resolver
+
+  Closes PyCQA/pylint#5131
+
 * Fix crash with invalid dataclass field call
 
   Closes PyCQA/pylint#5153
