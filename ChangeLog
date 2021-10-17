@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.8.3?
+What's New in astroid 2.8.4?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 2.8.3?
+============================
+Release date: 2021-10-17
 
 * Add support for wrapt 1.13
 
