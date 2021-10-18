@@ -320,10 +320,10 @@ class InspectBuilder:
             node = build_module(modname)
         node.file = node.path = os.path.abspath(path) if path else path
         node.name = modname
-        self._manager.cache_module(node)
-        node.package = hasattr(module, "__path__")
-        self._done = {}
-        self.object_build(node, module)
+        with self._manager.cache_module(node):
+            node.package = hasattr(module, "__path__")
+            self._done = {}
+            self.object_build(node, module)
         return node
 
     def object_build(self, node, obj):

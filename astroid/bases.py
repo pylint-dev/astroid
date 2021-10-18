@@ -136,9 +136,8 @@ class Proxy:
         yield self
 
     def __dump__(self, dumper):
-        return {
-            "proxied": dumper(self._proxied)
-        }
+        return {"proxied": dumper(self._proxied)}
+
 
 def _infer_stmts(stmts, context, frame=None):
     """Return an iterator on statements inferred by each statement in *stmts*."""
@@ -591,6 +590,8 @@ class Generator(BaseInstance):
 
     def __str__(self):
         return f"Generator({self._proxied.name})"
+
+    # @TODO: Do we need special dump/load?
 
 
 class AsyncGenerator(Generator):

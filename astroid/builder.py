@@ -147,17 +147,6 @@ class AstroidBuilder(raw_building.InspectBuilder):
     def _post_build(self, module, encoding):
         """Handles encoding and delayed nodes after a module has been built"""
         module.file_encoding = encoding
-        self._manager.cache_module(module)
-        # post tree building steps after we stored the module in the cache:
-        for from_node in module._import_from_nodes:
-            if from_node.modname == "__future__":
-                for symbol, _ in from_node.names:
-                    module.future_imports.add(symbol)
-            self.add_from_names_to_locals(from_node)
-        # handle delayed assattr nodes
-        for delayed in module._delayed_assattr:
-            self.delayed_assattr(delayed)
-
         # Visit the transforms
         if self._apply_transforms:
             module = self._manager.visit_transforms(module)
@@ -190,8 +179,18 @@ class AstroidBuilder(raw_building.InspectBuilder):
             )
         builder = rebuilder.TreeRebuilder(self._manager, parser_module)
         module = builder.visit_module(node, modname, node_file, package)
-        module._import_from_nodes = builder._import_from_nodes
-        module._delayed_assattr = builder._delayed_assattr
+
+        with self._manager.cache_module(module):
+            # post tree building steps after we stored the module in the cache:
+            for from_node in builder._import_from_nodes:
+                if from_node.modname == "__future__":
+                    for symbol, _ in from_node.names:
+                        module.future_imports.add(symbol)
+                self.add_from_names_to_locals(from_node)
+            # handle delayed assattr nodes
+            for delayed in builder._delayed_assattr:
+                self.delayed_assattr(delayed)
+
         return module
 
     def add_from_names_to_locals(self, node):

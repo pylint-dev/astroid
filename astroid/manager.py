@@ -28,6 +28,7 @@ possible by providing a class responsible to get astroid representation
 from various source and using a cache of built modules)
 """
 
+import contextlib
 import os
 import types
 import zipimport
@@ -351,9 +352,17 @@ class AstroidManager:
         """
         self._failed_import_hooks.append(hook)
 
+    @contextlib.contextmanager
     def cache_module(self, module):
-        """Cache a module if no module with the same name is known yet."""
+        """Cache a module if no module with the same name is known yet.
+
+        Should be used as a context manager, to allow recursive situations.
+        E.g. An operation that looks up from the cache, then performs an operation
+            that might look up from the cache.
+        """
         self.astroid_cache.setdefault(module.name, module)
+        yield module
+        # self.astroid_cache.persist(module.name)
 
     def bootstrap(self):
         """Bootstrap the required AST modules needed for the manager to work
