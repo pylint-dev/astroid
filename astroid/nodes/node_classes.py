@@ -1807,7 +1807,7 @@ class Comprehension(NodeNG):
         self.iter = iter
         if ifs is not None:
             self.ifs = ifs
-        self.is_async = is_async
+        self.is_async = is_async or self.is_async
 
     def assign_type(self):
         """The type of assignment that this node performs.
@@ -4072,6 +4072,7 @@ class FormattedValue(NodeNG):
     """
 
     _astroid_fields = ("value", "format_spec")
+    _other_other_fields = ("conversion",)
 
     def __init__(
         self,

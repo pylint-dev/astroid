@@ -51,8 +51,11 @@ def rountrip_extracton(f):
     @functools.wraps(f)
     def func(*args, **kwargs):
         module = f(*args, **kwargs)
-        new_module = astroid.nodes.Module.load(module.dump())
+        data = module.dump()
+        new_module = astroid.nodes.Module.load(data)
         new_module = astroid.MANAGER.visit_transforms(new_module)
+        # Copy the file_bytes. This shouldn't be persisted
+        new_module.file_bytes = module.file_bytes
         return new_module
     return func
 

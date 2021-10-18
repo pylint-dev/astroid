@@ -35,8 +35,6 @@ def _dump_obj_default(instance, dumper):
 
 def dump(obj, refmap, depth=0):
     """Dumps an astroid object or builtin type."""
-    # @TODO: Make types for the "special" dicts and serialize them specially
-
     if isinstance(obj, (int, str, float, bool, type(None))):
         return obj  # JSON serializable and unambiguous
 

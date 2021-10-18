@@ -377,7 +377,8 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
             **{key: loader(data[key]) for key in self._other_fields},
         )
 
-        self.postinit(**{key: loader(data[key]) for key in self._astroid_fields})
+        postinit_fields = set(self._astroid_fields + self._other_other_fields) - {"locals", "globals"}
+        self.postinit(**{key: loader(data[key]) for key in postinit_fields if key in data})
         # Use update so Module's globals get updated too
         self.locals.update(loader(data["locals"]))
 
@@ -1426,7 +1427,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     _other_fields = ("name", "doc")
     _other_other_fields = (
         "locals",
-        "_type",
+        # "_type",
         "type_comment_returns",
         "type_comment_args",
     )
@@ -3107,8 +3108,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     def __dump__(self, dumper):
         data = super().__dump__(dumper)
         data["instance_attrs"] = dumper(self.instance_attrs)
+        data["metaclass"] = dumper(self._metaclass)
         return data
 
     def __load__(self, data, loader):
+        newstyle = data.pop("_newstyle")
         super().__load__(data, loader)
         self.instance_attrs = loader(data["instance_attrs"])
+        self._metaclass = loader(data["metaclass"])
+        self._newstyle = newstyle
