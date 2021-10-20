@@ -6,7 +6,8 @@ What's New in astroid 2.9.0?
 ============================
 Release date: TBA
 
-
+* Start adding assignment expressions to the correct scope if they get evaluated
+  automatically
 
 What's New in astroid 2.8.4?
 ============================

@@ -4225,6 +4225,10 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
         self.target = target
         self.value = value
 
+    def set_local(self, name: str, stmt: AssignName):
+        """We pass here so we can add NamedExpr's to scopes after other nodes have been built
+        See delayed_namedexpr_handler()"""
+
 
 class Unknown(mixins.AssignTypeMixin, NodeNG):
     """This node represents a node in a constructed AST where

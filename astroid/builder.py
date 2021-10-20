@@ -155,8 +155,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
                     module.future_imports.add(symbol)
             self.add_from_names_to_locals(from_node)
         # handle delayed assattr nodes
-        for delayed in module._delayed_assattr:
-            self.delayed_assattr(delayed)
+        for delayed_assattr in module._delayed_assattr:
+            self._delayed_assattr_handler(delayed_assattr)
+        for delayed_namedexpr in module._delayed_namedexpr:
+            self._delayed_namedexpr_handler(delayed_namedexpr)
 
         # Visit the transforms
         if self._apply_transforms:
@@ -192,6 +194,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         module = builder.visit_module(node, modname, node_file, package)
         module._import_from_nodes = builder._import_from_nodes
         module._delayed_assattr = builder._delayed_assattr
+        module._delayed_namedexpr = builder._delayed_namedexpr
         return module
 
     def add_from_names_to_locals(self, node):
@@ -219,7 +222,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 node.parent.set_local(asname or name, node)
                 sort_locals(node.parent.scope().locals[asname or name])
 
-    def delayed_assattr(self, node):
+    def _delayed_assattr_handler(self, node: nodes.AssignAttr) -> None:
         """Visit a AssAttr node
 
         This adds name to locals and handle members definition.
@@ -261,6 +264,48 @@ class AstroidBuilder(raw_building.InspectBuilder):
                     values.append(node)
         except InferenceError:
             pass
+
+    def _delayed_namedexpr_handler(self, node: nodes.NamedExpr) -> None:
+        """Add the assignment expressions of NamedExpr to their
+        parent's frame locals. Do some basic checks to see whether the
+        NamedExpr has been evaluated."""
+        parent_node = node.parent
+        frame = parent_node.frame()
+
+        # Always evaluated in: def f(def = NamedExpr):
+        if isinstance(parent_node, nodes.Arguments):
+            frame = parent_node.scope().parent.frame()
+        elif isinstance(parent_node, nodes.If):
+            # Not always evaluated in: elif NamedExpr
+            if isinstance(parent_node.parent, nodes.If):
+                return
+        elif isinstance(parent_node, nodes.IfExp):
+            # Always evaluated in: x if NamedExpr (else y)
+            if not parent_node.test == node:
+                return
+        elif isinstance(parent_node, nodes.Comprehension):
+            # Always evaluated in: [x for x in y if NamedExpr]
+            if not parent_node.ifs == [node]:
+                return
+        elif isinstance(parent_node, nodes.ComprehensionScope):
+            if isinstance(parent_node, nodes.DictComp):
+                # Always evaluated in: {NamedExpr: x for x in y}
+                # Always evaluated in: {x: NamedExpr for x in y}
+                if node in (parent_node.key, parent_node.value):
+                    pass
+                else:
+                    return
+            # Always evaluated in: [NamedExpr for x in y]
+            # Always evaluated in: (NamedExpr for x in y)
+            # Always evaluated in: {NamedExpr for x in y}
+            elif parent_node.elt == node:
+                pass
+            else:
+                return
+        else:
+            return
+        frame.locals.setdefault(node.target.name, [])
+        frame.locals[node.target.name].append(node.target)
 
 
 def build_namespace_package_module(name, path: str) -> nodes.Module:
