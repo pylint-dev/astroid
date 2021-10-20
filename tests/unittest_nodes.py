@@ -1493,6 +1493,44 @@ def test_assignment_expression_in_setcomp() -> None:
     assert isinstance(module.locals.get("assignment_1")[0], nodes.AssignName)
 
 
+@pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
+def test_assignment_expression_in_tuple() -> None:
+    code = """
+    (1, (assignment_1 := True), 2)
+    ((assignment_2 := True),)
+    var = ((assignment_3 := True),)
+    """
+    module = astroid.parse(code)
+    assert "assignment_1" in module.locals
+    assert isinstance(module.locals.get("assignment_1")[0], nodes.AssignName)
+    assert "assignment_2" in module.locals
+    assert isinstance(module.locals.get("assignment_2")[0], nodes.AssignName)
+    assert "assignment_3" in module.locals
+    assert isinstance(module.locals.get("assignment_3")[0], nodes.AssignName)
+
+
+@pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
+def test_assignment_expression_in_comparison() -> None:
+    code = """
+    if (assignment_1 := True) == True:
+        pass
+    elif (assignment_2 := True) == True:
+        pass
+
+    if True == (assignment_3 := True):
+        pass
+    elif True == (assignment_4 := True):
+        pass
+    """
+    module = astroid.parse(code)
+    assert "assignment_1" in module.locals
+    assert isinstance(module.locals.get("assignment_1")[0], nodes.AssignName)
+    assert "assignment_2" not in module.locals
+    assert "assignment_3" in module.locals
+    assert isinstance(module.locals.get("assignment_3")[0], nodes.AssignName)
+    assert "assignment_4" not in module.locals
+
+
 def test_get_doc() -> None:
     node = astroid.extract_node(
         """
