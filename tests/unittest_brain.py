@@ -1187,6 +1187,7 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(inferred, astroid.Dict)
         self.assertTrue(inferred.locals)
 
+
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
     def test_parser(self):
