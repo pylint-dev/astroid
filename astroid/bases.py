@@ -26,8 +26,6 @@
 inference utils.
 """
 
-DEBUGIT = False
-
 import collections
 
 from astroid import decorators
