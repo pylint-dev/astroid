@@ -308,6 +308,7 @@ def _looks_like_dataclass_field_call(node: Call, check_scope: bool = True) -> bo
         scope = stmt.scope()
         if not (
             isinstance(stmt, AnnAssign)
+            and stmt.value is not None
             and isinstance(scope, ClassDef)
             and is_decorated_with_dataclass(scope)
         ):

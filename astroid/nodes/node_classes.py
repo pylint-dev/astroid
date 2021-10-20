@@ -25,6 +25,7 @@
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
@@ -39,6 +40,7 @@ import abc
 import itertools
 import sys
 import typing
+import warnings
 from functools import lru_cache
 from typing import TYPE_CHECKING, Callable, Generator, Optional
 
@@ -2880,6 +2882,12 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         >>> node.is_sys_guard()
         True
         """
+        warnings.warn(
+            "The 'is_sys_guard' function is deprecated and will be removed in astroid 3.0.0 "
+            "It has been moved to pylint and can be imported from 'pylint.checkers.utils' "
+            "starting with pylint 2.12",
+            DeprecationWarning,
+        )
         if isinstance(self.test, Compare):
             value = self.test.left
             if isinstance(value, Subscript):
@@ -2901,6 +2909,12 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         >>> node.is_typing_guard()
         True
         """
+        warnings.warn(
+            "The 'is_typing_guard' function is deprecated and will be removed in astroid 3.0.0 "
+            "It has been moved to pylint and can be imported from 'pylint.checkers.utils' "
+            "starting with pylint 2.12",
+            DeprecationWarning,
+        )
         return isinstance(
             self.test, (Name, Attribute)
         ) and self.test.as_string().endswith("TYPE_CHECKING")

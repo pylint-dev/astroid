@@ -8,9 +8,47 @@ Release date: TBA
 
 
 
-What's New in astroid 2.8.1?
+What's New in astroid 2.8.4?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 2.8.3?
+============================
+Release date: 2021-10-17
+
+* Add support for wrapt 1.13
+
+* Fixes handling of nested partial functions
+
+  Closes PyCQA/pylint#2462
+  Closes #1208
+
+* Fix regression with the import resolver
+
+  Closes PyCQA/pylint#5131
+
+* Fix crash with invalid dataclass field call
+
+  Closes PyCQA/pylint#5153
+
+
+What's New in astroid 2.8.2?
+============================
+Release date: 2021-10-07
+
+Same content than 2.8.2-dev0 / 2.8.1, released in order to fix a
+mistake when creating the tag.
+
+
+What's New in astroid 2.8.1?
+============================
+Release date: 2021-10-06
+
+* Adds support of type hints inside numpy's brains.
+
+  Closes PyCQA/pylint#4326
 
 * Enable inference of dataclass import from pydantic.dataclasses.
   This allows the dataclasses brain to recognize pydantic dataclasses.
@@ -26,7 +64,29 @@ Release date: TBA
 
   Closes PyCQA/pylint#5048
 
+* Extended attrs brain to support the provisional APIs
+
 * Astroid does not trigger it's own deprecation warning anymore.
+
+* Improve brain for ``typing.Callable`` and ``typing.Type``.
+
+* Fix bug with importing namespace packages with relative imports
+
+  Closes PyCQA/pylint#5059
+
+* The ``is_typing_guard`` and ``is_sys_guard`` functions are deprecated and will
+  be removed in 3.0.0. They are complex meta-inference functions that are better
+  suited for pylint. Import them from ``pylint.checkers.utils`` instead
+  (requires pylint ``2.12``).
+
+* Suppress the conditional between applied brains and dynamic import authorized
+  modules. (Revert the "The transforms related to a module are applied only if this
+  module has not been explicitly authorized to be imported" of version 2.7.3)
+
+* Adds a brain to infer the ``numpy.ma.masked_where`` function.
+
+  Closes PyCQA/pylint#3342
+
 
 What's New in astroid 2.8.0?
 ============================
@@ -54,14 +114,6 @@ Release date: 2021-09-14
 * Fixed bug in inference of dataclass field calls.
 
   Closes PyCQA/pylint#4963
-
-* Suppress the conditional between applied brains and dynamic import authorized
-  modules. (Revert the "The transforms related to a module are applied only if this
-  module has not been explicitly authorized to be imported" of version 2.7.3)
-
-* Adds a brain to infer the ``numpy.ma.masked_where`` function.
-
-  Closes PyCQA/pylint#3342
 
 
 What's New in astroid 2.7.3?

@@ -24,13 +24,16 @@
 # Copyright (c) 2019 Grygorii Iermolenko <gyermolenko@gmail.com>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
+# Copyright (c) 2021 Craig Franklin <craigjfranklin@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021 Jonathan Striebel <jstriebel@users.noreply.github.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Dimitri Prybysh <dmand@yandex.ru>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
 # Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
 # Copyright (c) 2021 Tim Martin <tim@asymptotic.co.uk>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 Artsiom Kaval <lezeroq@gmail.com>
 # Copyright (c) 2021 Damien Baty <damien@damienbaty.com>
@@ -1692,6 +1695,19 @@ class TypingBrain(unittest.TestCase):
         assert inferred.qname() == "typing.Tuple"
 
     @test_utils.require_version(minver="3.7")
+    def test_callable_type(self):
+        node = builder.extract_node(
+            """
+        from typing import Callable, Any
+        Callable[..., Any]
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+        assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
+        assert inferred.qname() == "typing.Callable"
+
+    @test_utils.require_version(minver="3.7")
     def test_typing_generic_subscriptable(self):
         """Test typing.Generic is subscriptable with __class_getitem__ (added in PY37)"""
         node = builder.extract_node(
@@ -1947,8 +1963,7 @@ class TypingBrain(unittest.TestCase):
         """
         Test that builtins alias, such as typing.List, are subscriptable
         """
-        # Do not test Tuple as it is inferred as _TupleType class (needs a brain?)
-        for typename in ("List", "Dict", "Set", "FrozenSet"):
+        for typename in ("List", "Dict", "Set", "FrozenSet", "Tuple"):
             src = f"""
             import typing
             typing.{typename:s}[int]
@@ -1957,6 +1972,20 @@ class TypingBrain(unittest.TestCase):
             inferred = next(right_node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef)
             self.assertIsInstance(inferred.getattr("__iter__")[0], nodes.FunctionDef)
+
+    @staticmethod
+    @test_utils.require_version(minver="3.9")
+    def test_typing_type_subscriptable():
+        node = builder.extract_node(
+            """
+        from typing import Type
+        Type[int]
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+        assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
+        assert inferred.qname() == "typing.Type"
 
     def test_typing_cast(self) -> None:
         node = builder.extract_node(
@@ -2124,7 +2153,7 @@ class AttrsTest(unittest.TestCase):
         module = astroid.parse(
             """
         import attr
-        from attr import attrs, attrib
+        from attr import attrs, attrib, field
 
         @attr.s
         class Foo:
@@ -2154,10 +2183,31 @@ class AttrsTest(unittest.TestCase):
 
         i = Bai()
         i.d['answer'] = 42
+
+        @attr.define
+        class Spam:
+            d = field(default=attr.Factory(dict))
+
+        j = Spam(d=1)
+        j.d['answer'] = 42
+
+        @attr.mutable
+        class Eggs:
+            d = attr.field(default=attr.Factory(dict))
+
+        k = Eggs(d=1)
+        k.d['answer'] = 42
+
+        @attr.frozen
+        class Eggs:
+            d = attr.field(default=attr.Factory(dict))
+
+        l = Eggs(d=1)
+        l.d['answer'] = 42
         """
         )
 
-        for name in ("f", "g", "h", "i"):
+        for name in ("f", "g", "h", "i", "j", "k", "l"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
             self.assertIsInstance(should_be_unknown, astroid.Unknown)
 
@@ -2950,6 +3000,34 @@ class TestFunctoolsPartial:
         scope = test2.parent.scope()
         assert set(mod_scope) == {"test", "scope", "partial"}
         assert set(scope) == {"test2"}
+
+    def test_multiple_partial_args(self) -> None:
+        "Make sure partials remember locked-in args."
+        ast_node = astroid.extract_node(
+            """
+        from functools import partial
+        def test(a, b, c, d, e=5):
+            return a + b + c + d + e
+        test1 = partial(test, 1)
+        test2 = partial(test1, 2)
+        test3 = partial(test2, 3)
+        test3(4, e=6) #@
+        """
+        )
+        expected_args = [1, 2, 3, 4]
+        expected_keywords = {"e": 6}
+
+        call_site = astroid.arguments.CallSite.from_call(ast_node)
+        called_func = next(ast_node.func.infer())
+        called_args = called_func.filled_args + call_site.positional_arguments
+        called_keywords = {**called_func.filled_keywords, **call_site.keyword_arguments}
+        assert len(called_args) == len(expected_args)
+        assert [arg.value for arg in called_args] == expected_args
+        assert len(called_keywords) == len(expected_keywords)
+
+        for keyword, value in expected_keywords.items():
+            assert keyword in called_keywords
+            assert called_keywords[keyword].value == value
 
 
 def test_http_client_brain() -> None:

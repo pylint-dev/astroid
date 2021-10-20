@@ -24,11 +24,11 @@
 # Copyright (c) 2020 Tim Martin <tim@asymptotic.co.uk>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
 # Copyright (c) 2021 doranid <ddandd@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
@@ -44,6 +44,7 @@ import builtins
 import io
 import itertools
 import json
+import os
 import typing
 from typing import List, Optional, TypeVar
 
@@ -728,19 +729,16 @@ class Module(LocalsDictNodeNG):
                 raise
         return AstroidManager().ast_from_module_name(modname)
 
-    def relative_to_absolute_name(self, modname, level):
+    def relative_to_absolute_name(self, modname: str, level: int) -> str:
         """Get the absolute module name for a relative import.
 
         The relative import can be implicit or explicit.
 
         :param modname: The module name to convert.
-        :type modname: str
 
         :param level: The level of relative import.
-        :type level: int
 
         :returns: The absolute module name.
-        :rtype: str
 
         :raises TooManyLevelsError: When the relative import refers to a
             module too far above this one.
@@ -753,10 +751,21 @@ class Module(LocalsDictNodeNG):
         if level:
             if self.package:
                 level = level - 1
+                package_name = self.name.rsplit(".", level)[0]
+            elif (
+                self.path
+                and not os.path.exists(os.path.dirname(self.path[0]) + "/__init__.py")
+                and os.path.exists(
+                    os.path.dirname(self.path[0]) + "/" + modname.split(".")[0]
+                )
+            ):
+                level = level - 1
+                package_name = ""
+            else:
+                package_name = self.name.rsplit(".", level)[0]
             if level and self.name.count(".") < level:
                 raise TooManyLevelsError(level=level, name=self.name)
 
-            package_name = self.name.rsplit(".", level)[0]
         elif self.package:
             package_name = self.name
         else:

@@ -1,4 +1,4 @@
-# Copyright (c) 2019-2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2019-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
@@ -9,6 +9,7 @@
 # TODO(hippo91) : correct the methods signature.
 
 """Astroid hooks for numpy.core.numerictypes module."""
+from astroid.brain.brain_numpy_utils import numpy_supports_type_hints
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
@@ -19,9 +20,7 @@ def numpy_core_numerictypes_transform():
     #       According to numpy doc the generic object should expose
     #       the same API than ndarray. This has been done here partially
     #       through the astype method.
-    return parse(
-        """
-    # different types defined in numerictypes.py
+    generic_src = """
     class generic(object):
         def __init__(self, value):
             self.T = np.ndarray([0, 0])
@@ -106,8 +105,16 @@ def numpy_core_numerictypes_transform():
         def transpose(self): return uninferable
         def var(self): return uninferable
         def view(self): return uninferable
-
-
+        """
+    if numpy_supports_type_hints():
+        generic_src += """
+        @classmethod
+        def __class_getitem__(cls, value):
+            return cls
+        """
+    return parse(
+        generic_src
+        + """
     class dtype(object):
         def __init__(self, obj, align=False, copy=False):
             self.alignment = None
