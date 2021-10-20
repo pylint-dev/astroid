@@ -273,9 +273,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         frame = parent_node.frame()
 
         # Always evaluated in: def f(def = NamedExpr):
-        if not parent_node:
-            frame = self.frame()
-        elif isinstance(parent_node, nodes.Arguments):
+        if isinstance(parent_node, nodes.Arguments):
             frame = parent_node.scope().parent.frame()
         elif isinstance(parent_node, nodes.If):
             # Not always evaluated in: elif NamedExpr
