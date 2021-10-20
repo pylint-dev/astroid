@@ -28,11 +28,9 @@ def pytest_addoption(parser):
         help="run tests with modules having been serialized and then deserialized",
     )
 
+
 @contextlib.contextmanager
-def cache_module(
-    manager: astroid.manager.AstroidManager,
-    module: astroid.nodes.Module
-):
+def cache_module(manager: astroid.manager.AstroidManager, module: astroid.nodes.Module):
     cache = manager.astroid_cache
     key = module.name
     roundtrip = False
@@ -47,6 +45,7 @@ def cache_module(
     if roundtrip:
         cache[key] = astroid.nodes.Module.load(module.dump())
 
+
 def rountrip_extracton(f):
     @functools.wraps(f)
     def func(*args, **kwargs):
@@ -57,18 +56,22 @@ def rountrip_extracton(f):
         # Need to opt out of transforming enums, the original module's transform
         # has already stored the appropriate info, and re-transforming would
         # alter the data to a state that doesn't reflect the truth
-        astroid.MANAGER.unregister_transform(astroid.nodes.ClassDef, infer_enum_class, predicate=_is_enum_subclass)
+        astroid.MANAGER.unregister_transform(
+            astroid.nodes.ClassDef, infer_enum_class, predicate=_is_enum_subclass
+        )
 
         # From brain_namedtuple_enum.py
-        #AstroidManager().register_transform(
+        # AstroidManager().register_transform(
         #   nodes.ClassDef, infer_enum_class, predicate=_is_enum_subclass
-        #)
+        # )
 
         new_module = astroid.MANAGER.visit_transforms(new_module)
         # Copy the file_bytes. This shouldn't be persisted
         new_module.file_bytes = module.file_bytes
         return module
+
     return func
+
 
 def pytest_collection(session):
     use_roundtrip_build = session.config.getoption("--test-roundtrip-persistence")

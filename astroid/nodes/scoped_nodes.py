@@ -378,8 +378,13 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
             **{key: loader(data[key]) for key in self._other_fields},
         )
 
-        postinit_fields = set(self._astroid_fields + self._other_other_fields) - {"locals", "globals"}
-        self.postinit(**{key: loader(data[key]) for key in postinit_fields if key in data})
+        postinit_fields = set(self._astroid_fields + self._other_other_fields) - {
+            "locals",
+            "globals",
+        }
+        self.postinit(
+            **{key: loader(data[key]) for key in postinit_fields if key in data}
+        )
         # Use update so Module's globals get updated too
         self.locals.update(loader(data["locals"]))
 
