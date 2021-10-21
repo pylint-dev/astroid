@@ -306,6 +306,8 @@ node_classes.Dict.__bases__ = (node_classes.NodeNG, DictInstance)
 class Property(scoped_nodes.FunctionDef):
     """Class representing a Python property"""
 
+    _other_fields = scoped_nodes.FunctionDef._other_fields + ("function",)
+
     def __init__(
         self, function, name=None, doc=None, lineno=None, col_offset=None, parent=None
     ):

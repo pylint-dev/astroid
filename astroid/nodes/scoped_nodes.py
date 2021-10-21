@@ -43,6 +43,7 @@ Lambda, GeneratorExp, DictComp and SetComp to some extent).
 import builtins
 import io
 import itertools
+import json
 import os
 import typing
 from typing import List, Optional, TypeVar
@@ -366,6 +367,27 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
         """
         return name in self.locals
 
+    def __load__(self, data, loader):
+        """Load the node from the data dict."""
+        self.__init__(
+            **{
+                key: loader(data[key])
+                for key in {"lineno", "col_offset", "parent"}
+                if key in data
+            },
+            **{key: loader(data[key]) for key in self._other_fields},
+        )
+
+        postinit_fields = set(self._astroid_fields + self._other_other_fields) - {
+            "locals",
+            "globals",
+        }
+        self.postinit(
+            **{key: loader(data[key]) for key in postinit_fields if key in data}
+        )
+        # Use update so Module's globals get updated too
+        self.locals.update(loader(data["locals"]))
+
 
 class Module(LocalsDictNodeNG):
     """Class representing an :class:`ast.Module` node.
@@ -385,7 +407,7 @@ class Module(LocalsDictNodeNG):
 
     :type: int or None
     """
-    lineno = 0
+    lineno = None
     """The line that this node appears on in the source code.
 
     :type: int or None
@@ -474,6 +496,7 @@ class Module(LocalsDictNodeNG):
         package=None,
         parent=None,
         pure_python=True,
+        future_imports=None,
     ):
         """
         :param name: The name of the module.
@@ -496,6 +519,9 @@ class Module(LocalsDictNodeNG):
 
         :param pure_python: Whether the ast was built from source.
         :type pure_python: bool or None
+
+        :param future_imports: The imports from ``__future__``.
+        :type future_imports: Optional[Set[str]]
         """
         self.name = name
         self.doc = doc
@@ -514,7 +540,7 @@ class Module(LocalsDictNodeNG):
 
         :type: list(NodeNG) or None
         """
-        self.future_imports = set()
+        self.future_imports = future_imports or set()
 
     # pylint: enable=redefined-builtin
 
@@ -825,6 +851,28 @@ class Module(LocalsDictNodeNG):
 
     def get_children(self):
         yield from self.body
+
+    def __dump__(self, dumper):
+        """Dump the node as a JSON-serializable dict."""
+        # Don't serialize globals since globals is locals
+        assert self.locals is self.globals
+        data = super().__dump__(dumper)
+        data.pop("globals")
+        return data
+
+    def dump(self):
+        """Dump the node as a JSON-serializable dict."""
+        import astroid._persistence
+
+        refmap = {}
+        data = astroid._persistence.dump(self, refmap)
+        return json.dumps(dict(refmap=refmap, data=data))
+
+    @classmethod
+    def load(cls, data):
+        import astroid._persistence
+
+        return astroid._persistence.load(**json.loads(data))
 
 
 class ComprehensionScope(LocalsDictNodeNG):
@@ -1393,7 +1441,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     _other_fields = ("name", "doc")
     _other_other_fields = (
         "locals",
-        "_type",
+        # "_type",
         "type_comment_returns",
         "type_comment_args",
     )
@@ -1839,6 +1887,15 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 return self, [frame]
         return super().scope_lookup(node, name, offset)
 
+    def __dump__(self, dumper):
+        data = super().__dump__(dumper)
+        data["instance_attrs"] = dumper(self.instance_attrs)
+        return data
+
+    def __load__(self, data, loader):
+        super().__load__(data, loader)
+        self.instance_attrs = loader(data["instance_attrs"])
+
 
 class AsyncFunctionDef(FunctionDef):
     """Class representing an :class:`ast.FunctionDef` node.
@@ -2054,6 +2111,14 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type name: str or None
         """
 
+        if not isinstance(doc, (str, type(None))):
+            # This can happen for C-implemented types, like `wrapper_descriptor`
+            # `type(str.__dict__['__add__'])` is a `wrapper_descriptor`
+            # `__doc__` on that object is a `getset_descriptor`, I assume
+            # because `wrapper_descriptor` has no doc.
+            # https://github.com/python/cpython/blob/f25f2e2e8c8e48490d22b0cdf67f575608701f6f/Objects/descrobject.c#L865
+            doc = None
+
         self.doc = doc
         """The class' docstring.
 
@@ -2105,8 +2170,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :param keywords: The keywords given to the class definition.
         :type keywords: list(Keyword) or None
         """
-        if keywords is not None:
-            self.keywords = keywords
+        self.keywords = keywords
         self.bases = bases
         self.body = body
         self.decorators = decorators
@@ -3054,3 +3118,16 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             child_node._get_assign_nodes() for child_node in self.body
         )
         return list(itertools.chain.from_iterable(children_assign_nodes))
+
+    def __dump__(self, dumper):
+        data = super().__dump__(dumper)
+        data["instance_attrs"] = dumper(self.instance_attrs)
+        data["metaclass"] = dumper(self._metaclass)
+        return data
+
+    def __load__(self, data, loader):
+        newstyle = data.pop("_newstyle")
+        super().__load__(data, loader)
+        self.instance_attrs = loader(data["instance_attrs"])
+        self._metaclass = loader(data["metaclass"])
+        self._newstyle = newstyle

@@ -1704,6 +1704,13 @@ class TestPatternMatching:
             *case1.pattern.kwd_patterns,
         ]
 
+@pytest.mark.parametrize(
+    "node_class", nodes.ALL_NODE_CLASSES
+)
+def test_fields_declaration(node_class):
+    if not isinstance(node_class, nodes.NodeNG):
+        pass
+    ...
 
 if __name__ == "__main__":
     unittest.main()
