@@ -93,7 +93,6 @@ class TreeRebuilder:
         self._global_names: List[Dict[str, List[nodes.Global]]] = []
         self._import_from_nodes: List[nodes.ImportFrom] = []
         self._delayed_assattr: List[nodes.AssignAttr] = []
-        self._delayed_namedexpr: List[nodes.NamedExpr] = []
         self._visit_meths: Dict[
             Type["ast.AST"], Callable[["ast.AST", NodeNG], NodeNG]
         ] = {}
@@ -1427,7 +1426,6 @@ class TreeRebuilder:
 
     def visit_namedexpr(self, node: "ast.NamedExpr", parent: NodeNG) -> nodes.NamedExpr:
         newnode = nodes.NamedExpr(node.lineno, node.col_offset, parent)
-        self._delayed_namedexpr.append(newnode)
         newnode.postinit(
             self.visit(node.target, newnode), self.visit(node.value, newnode)
         )

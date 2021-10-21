@@ -4225,9 +4225,22 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
         self.target = target
         self.value = value
 
-    def set_local(self, name: str, stmt: AssignName):
-        """We pass here so we can add NamedExpr's to scopes after other nodes have been built
-        See delayed_namedexpr_handler()"""
+    def set_local(self, name: str, stmt: AssignName) -> None:
+        """Define that the given name is declared in the given statement node.
+        NamedExpr's in Arguments are evaluated in the scope of the FunctionDef
+        instead of the function's scope.
+
+        .. seealso:: :meth:`scope`
+
+        :param name: The name that is being defined.
+
+        :param stmt: The statement that defines the given name.
+        """
+        #
+        if isinstance(self.parent, Arguments):
+            self.scope().parent.frame().set_local(name, stmt)
+        else:
+            self.parent.set_local(name, stmt)
 
 
 class Unknown(mixins.AssignTypeMixin, NodeNG):
