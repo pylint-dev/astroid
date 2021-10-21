@@ -4263,7 +4263,7 @@ class EvaluatedObject(NodeNG):
 
     name = "EvaluatedObject"
     _astroid_fields = ("original",)
-    _other_fields = ("value",)
+    _other_other_fields = ("value",)
 
     def __init__(
         self, original: NodeNG, value: typing.Union[NodeNG, util.Uninferable]
@@ -4344,11 +4344,17 @@ class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
     _astroid_fields = ("pattern", "guard", "body")
     _multi_line_block_fields = ("body",)
 
-    def __init__(self, *, parent: Optional[NodeNG] = None) -> None:
+    def __init__(
+        self,
+        *,
+        lineno: Optional[int] = None,
+        col_offset: Optional[int] = None,
+        parent: Optional[NodeNG] = None
+    ) -> None:
         self.pattern: Pattern
         self.guard: Optional[NodeNG]
         self.body: typing.List[NodeNG]
-        super().__init__(parent=parent)
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
         self,
@@ -4530,10 +4536,12 @@ class MatchClass(Pattern):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        kwd_attrs: typing.List[str] = [],
     ) -> None:
         self.cls: NodeNG
         self.patterns: typing.List[Pattern]
-        self.kwd_attrs: typing.List[str]
+        self.kwd_attrs = kwd_attrs
         self.kwd_patterns: typing.List[Pattern]
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
@@ -4542,12 +4550,12 @@ class MatchClass(Pattern):
         *,
         cls: NodeNG,
         patterns: typing.List[Pattern],
-        kwd_attrs: typing.List[str],
         kwd_patterns: typing.List[Pattern],
+        kwd_attrs: typing.List[str] = [],  # @TODO: Handle deprecation (moved to __init__)
     ) -> None:
         self.cls = cls
         self.patterns = patterns
-        self.kwd_attrs = kwd_attrs
+        self.kwd_attrs = kwd_attrs or self.kwd_attrs
         self.kwd_patterns = kwd_patterns
 
 

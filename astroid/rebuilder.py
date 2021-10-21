@@ -1788,11 +1788,15 @@ class TreeRebuilder:
         def visit_matchclass(
             self, node: "ast.MatchClass", parent: NodeNG
         ) -> nodes.MatchClass:
-            newnode = nodes.MatchClass(node.lineno, node.col_offset, parent)
+            newnode = nodes.MatchClass(
+                node.lineno,
+                node.col_offset,
+                parent,
+                kwd_attrs=node.kwd_attrs,
+            )
             newnode.postinit(
                 cls=self.visit(node.cls, newnode),
                 patterns=[self.visit(pattern, newnode) for pattern in node.patterns],
-                kwd_attrs=node.kwd_attrs,
                 kwd_patterns=[
                     self.visit(pattern, newnode) for pattern in node.kwd_patterns
                 ],

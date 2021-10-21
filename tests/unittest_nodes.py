@@ -29,6 +29,7 @@
 """tests for specific behaviour of astroid nodes
 """
 import copy
+import inspect
 import os
 import platform
 import sys
@@ -56,6 +57,7 @@ from astroid.exceptions import (
     AstroidSyntaxError,
     AttributeInferenceError,
 )
+from astroid.nodes import node_classes
 from astroid.nodes.node_classes import (
     AssignAttr,
     AssignName,
@@ -1705,12 +1707,23 @@ class TestPatternMatching:
         ]
 
 @pytest.mark.parametrize(
-    "node_class", nodes.ALL_NODE_CLASSES
-)
+    "node_class", [
+        node_class for node_class in nodes.ALL_NODE_CLASSES
+        if isinstance(node_class, type) and issubclass(node_class, nodes.NodeNG) and node_class is not nodes.EvaluatedObject
+    ])
 def test_fields_declaration(node_class):
-    if not isinstance(node_class, nodes.NodeNG):
-        pass
-    ...
+    expected_init_fields = set(node_class._other_fields)
+    expected_postinit_fields = node_class._astroid_fields + node_class._other_other_fields
+    args = set(inspect.signature(node_class.__init__).parameters.keys())
+    args -= {"self"}
+
+    if node_class not in {nodes.Module, nodes.EvaluatedObject}:
+        expected_init_fields |= {"lineno", "col_offset"}
+
+    assert "parent" not in expected_init_fields
+    expected_init_fields |= {"parent"}
+
+    assert args == expected_init_fields
 
 if __name__ == "__main__":
     unittest.main()
