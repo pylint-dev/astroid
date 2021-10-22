@@ -12,6 +12,10 @@ What's New in astroid 2.8.4?
 ============================
 Release date: TBA
 
+* Fix incosistency between ``NodeNG`` subclass ``*_field`` definitions and
+  ``__init__``/``postinit``. A ``DeprecationWarning`` will be emitted for code
+  which provides an argument to the now-incorrect method (generally the
+  parameters have been moved from ``postinit`` to ``__init__``).
 
 
 What's New in astroid 2.8.3?
