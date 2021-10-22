@@ -131,19 +131,19 @@ class TestDeprecationDecorators:
             assert "'SomeOtherClass.func'" in records[0].message.args[0]
 
         with pytest.warns(DeprecationWarning) as records:
-            SomeOtherClass().func(1, baz=3)
+            SomeOtherClass().func(1, arg3=3)
             assert len(records) == 1
             assert "arg1" in records[0].message.args[0]
             assert "'SomeOtherClass.func'" in records[0].message.args[0]
 
         with pytest.warns(None) as records:
-            SomeOtherClass().func(baz=3)
+            SomeOtherClass().func(arg3=3)
             assert len(records) == 0
 
     @staticmethod
     def test_deprecated_argument_pass_by_name() -> None:
         with pytest.warns(DeprecationWarning) as records:
-            SomeOtherClass().func(arg1=1, arg2=2, baz=3)
+            SomeOtherClass().func(arg1=1, arg2=2, arg3=3)
             assert len(records) == 2
             assert "arg1" in records[0].message.args[0]
             assert "'SomeOtherClass.func'" in records[0].message.args[0]
@@ -171,11 +171,11 @@ class TestDeprecationDecorators:
             assert "'SomeOtherClass.func'" in records[0].message.args[0]
 
         with pytest.warns(DeprecationWarning) as records:
-            SomeOtherClass().func(1, baz=3)
+            SomeOtherClass().func(1, arg3=3)
             assert len(records) == 1
             assert "arg1" in records[0].message.args[0]
             assert "'SomeOtherClass.func'" in records[0].message.args[0]
 
         with pytest.warns(None) as records:
-            SomeOtherClass().func(baz=3)
+            SomeOtherClass().func(arg3=3)
             assert len(records) == 0
