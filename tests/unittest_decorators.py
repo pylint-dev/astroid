@@ -1,18 +1,22 @@
 import pytest
 from _pytest.recwarn import WarningsRecorder
 
-from astroid.decorators import deprecate_default_argument_values
+import astroid.decorators
 
 
 class SomeClass:
-    @deprecate_default_argument_values(name="str")
+    @astroid.decorators.deprecate_default_argument_values(name="str")
     def __init__(self, name=None, lineno=None):
         ...
 
-    @deprecate_default_argument_values("3.2", name="str", var="int")
+    @astroid.decorators.deprecate_default_argument_values("3.2", name="str", var="int")
     def func(self, name=None, var=None, type_annotation=None):
         ...
 
+class SomeOtherClass:
+    @astroid.decorators.deprecate_arguments("foo", "bar", hint="pass to `func2` instead")
+    def func(self, foo=None, bar=None, baz=None):
+        ...
 
 class TestDeprecationDecorators:
     @staticmethod
@@ -97,3 +101,77 @@ class TestDeprecationDecorators:
         instance = SomeClass(name="some_name")
         instance.func(name="", var=42)
         assert len(recwarn) == 0
+
+    @staticmethod
+    def test_deprecated_argument_pass_by_position() -> None:
+        with pytest.warns(DeprecationWarning) as records:
+            SomeOtherClass().func(1, 2, 3)
+            assert len(records) == 2
+            assert "foo" in records[0].message.args[0]
+            assert "'SomeOtherClass.func'" in records[0].message.args[0]
+            assert "bar" in records[1].message.args[0]
+            assert "'SomeOtherClass.func'" in records[1].message.args[0]
+
+        with pytest.warns(DeprecationWarning) as records:
+            SomeOtherClass().func(1, 2)
+            assert len(records) == 2
+            assert "foo" in records[0].message.args[0]
+            assert "'SomeOtherClass.func'" in records[0].message.args[0]
+            assert "bar" in records[1].message.args[0]
+            assert "'SomeOtherClass.func'" in records[1].message.args[0]
+
+        with pytest.warns(DeprecationWarning) as records:
+            SomeOtherClass().func(1)
+            assert len(records) == 1
+            assert "foo" in records[0].message.args[0]
+            assert "'SomeOtherClass.func'" in records[0].message.args[0]
+
+        with pytest.warns(DeprecationWarning) as records:
+            SomeOtherClass().func(1, baz=3)
+            assert len(records) == 1
+            assert "foo" in records[0].message.args[0]
+            assert "'SomeOtherClass.func'" in records[0].message.args[0]
+
+        with pytest.warns(None) as records:
+            SomeOtherClass().func(baz=3)
+            assert len(records) == 0
+
+    @staticmethod
+    def test_deprecated_argument_pass_by_name() -> None:
+        with pytest.warns(DeprecationWarning) as records:
+            SomeOtherClass().func(foo=1, bar=2, baz=3)
+            assert len(records) == 2
+            assert "foo" in records[0].message.args[0]
+            assert "'SomeOtherClass.func'" in records[0].message.args[0]
+            assert "bar" in records[1].message.args[0]
+            assert "'SomeOtherClass.func'" in records[1].message.args[0]
+
+        with pytest.warns(DeprecationWarning) as records:
+            SomeOtherClass().func(foo=1, bar=2)
+            assert len(records) == 2
+            assert "foo" in records[0].message.args[0]
+            assert "'SomeOtherClass.func'" in records[0].message.args[0]
+            assert "bar" in records[1].message.args[0]
+            assert "'SomeOtherClass.func'" in records[1].message.args[0]
+
+        with pytest.warns(DeprecationWarning) as records:
+            SomeOtherClass().func(foo=1)
+            assert len(records) == 1
+            assert "foo" in records[0].message.args[0]
+            assert "'SomeOtherClass.func'" in records[0].message.args[0]
+
+        with pytest.warns(DeprecationWarning) as records:
+            SomeOtherClass().func(bar=1)
+            assert len(records) == 1
+            assert "bar" in records[0].message.args[0]
+            assert "'SomeOtherClass.func'" in records[0].message.args[0]
+
+        with pytest.warns(DeprecationWarning) as records:
+            SomeOtherClass().func(1, baz=3)
+            assert len(records) == 1
+            assert "foo" in records[0].message.args[0]
+            assert "'SomeOtherClass.func'" in records[0].message.args[0]
+
+        with pytest.warns(None) as records:
+            SomeOtherClass().func(baz=3)
+            assert len(records) == 0

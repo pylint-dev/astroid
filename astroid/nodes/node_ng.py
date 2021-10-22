@@ -171,6 +171,8 @@ class NodeNG:
         result = []
         for field in self._other_fields + self._astroid_fields:
             value = getattr(self, field)
+            if value is None:
+                continue
             width = 80 - len(field) - alignment
             lines = pprint.pformat(value, indent=2, width=width).splitlines(True)
 

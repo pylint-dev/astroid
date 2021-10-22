@@ -197,9 +197,48 @@ def deprecate_default_argument_values(
                     )
                 ):
                     warnings.warn(
-                        f"'{arg}' will be a required attribute for "
+                        f"'{arg}' will be a required argument for "
                         f"'{args[0].__class__.__qualname__}.{func.__name__}' in astroid {astroid_version} "
                         f"('{arg}' should be of type: '{type_annotation}')",
+                        DeprecationWarning,
+                    )
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return deco
+
+def deprecate_arguments(*arguments: str, hint: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    """Decorator which emitts a DeprecationWarning if any arguments specified
+    are provided.
+    """
+    def deco(func: Callable[P, R]) -> Callable[P, R]:
+        """Decorator function."""
+
+        parameter_names = inspect.signature(func).parameters.keys()
+        for arg in arguments:
+            if arg not in parameter_names:
+                raise Exception(
+                    f"Can't find argument '{arg}'"
+                )
+        params = list(parameter_names)
+        func.deprecated_args = arguments
+
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            """Emit DeprecationWarnings if conditions are met."""
+
+            for arg in arguments:
+                index = params.index(arg)
+                if (
+                    arg in kwargs
+                    or len(args) > index
+                ):
+                    warnings.warn(
+                        f"'{arg}' is a deprecated argument for "
+                        f"'{args[0].__class__.__qualname__}.{func.__name__}' "
+                        "and will be removed in a future version of astroid."
+                        f"({hint})",
                         DeprecationWarning,
                     )
             return func(*args, **kwargs)

@@ -52,6 +52,7 @@ from astroid import (
 )
 from astroid.const import PY38_PLUS, PY310_PLUS, Context
 from astroid.context import InferenceContext
+from astroid.decorators import deprecate_arguments
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -1711,19 +1712,41 @@ class TestPatternMatching:
         node_class for node_class in nodes.ALL_NODE_CLASSES
         if isinstance(node_class, type) and issubclass(node_class, nodes.NodeNG) and node_class is not nodes.EvaluatedObject
     ])
-def test_fields_declaration(node_class):
-    expected_init_fields = set(node_class._other_fields)
-    expected_postinit_fields = node_class._astroid_fields + node_class._other_other_fields
-    args = set(inspect.signature(node_class.__init__).parameters.keys())
-    args -= {"self"}
+def test_init_fields_declaration(node_class):
+    expected_args = set(node_class._other_fields)
+    actual_args = set(inspect.signature(node_class.__init__).parameters.keys())
+    actual_args -= {"self"}
 
     if node_class not in {nodes.Module, nodes.EvaluatedObject}:
-        expected_init_fields |= {"lineno", "col_offset"}
+        expected_args |= {"lineno", "col_offset"}
 
-    assert "parent" not in expected_init_fields
-    expected_init_fields |= {"parent"}
+    assert "parent" not in expected_args
+    expected_args |= {"parent"}
 
-    assert args == expected_init_fields
+    assert actual_args == expected_args
+
+@pytest.mark.parametrize(
+    "node_class", [
+        node_class for node_class in nodes.ALL_NODE_CLASSES
+        if isinstance(node_class, type) and issubclass(node_class, nodes.NodeNG) and node_class is not nodes.EvaluatedObject
+    ])
+def test_postinit_fields_declaration(node_class):
+    expected_args = set(node_class._astroid_fields + node_class._other_other_fields)
+
+    if not expected_args:
+        assert not hasattr(node_class, "postinit")
+        return
+
+    expected_args = {arg.lstrip("_") for arg in expected_args}
+    actual_args = set(inspect.signature(node_class.postinit).parameters.keys())
+    deprecated_args = getattr(node_class.postinit, "deprecated_args", [])
+    actual_args -= {"self", *deprecated_args}
+    if issubclass(node_class, nodes.LocalsDictNodeNG):
+        expected_args -= {"locals"}
+    if node_class is nodes.Module:
+        expected_args -= {"globals"}
+
+    assert actual_args == expected_args
 
 if __name__ == "__main__":
     unittest.main()

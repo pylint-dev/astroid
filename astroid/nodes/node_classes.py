@@ -1310,6 +1310,7 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
 
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
+    @decorators.deprecate_arguments("simple", hint="Pass it to __init__ instead")
     def postinit(
         self,
         target: NodeNG,
@@ -1787,6 +1788,7 @@ class Comprehension(NodeNG):
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     # pylint: disable=redefined-builtin; same name as builtin ast module.
+    @decorators.deprecate_arguments("is_async", hint="Pass to __init__ instead")
     def postinit(
         self,
         target: Optional[NodeNG] = None,
@@ -4537,21 +4539,22 @@ class MatchClass(Pattern):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
         *,
-        kwd_attrs: typing.List[str] = [],
+        kwd_attrs: typing.List[str] = None,
     ) -> None:
         self.cls: NodeNG
         self.patterns: typing.List[Pattern]
-        self.kwd_attrs = kwd_attrs
+        self.kwd_attrs = kwd_attrs or []
         self.kwd_patterns: typing.List[Pattern]
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
+    @decorators.deprecate_arguments("kwd_attrs", hint="Pass it to __init__ instead")
     def postinit(
         self,
         *,
         cls: NodeNG,
         patterns: typing.List[Pattern],
         kwd_patterns: typing.List[Pattern],
-        kwd_attrs: typing.List[str] = [],  # @TODO: Handle deprecation (moved to __init__)
+        kwd_attrs: typing.List[str] = [],
     ) -> None:
         self.cls = cls
         self.patterns = patterns

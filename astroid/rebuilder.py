@@ -973,11 +973,10 @@ class TreeRebuilder:
 
     def visit_annassign(self, node: "ast.AnnAssign", parent: NodeNG) -> nodes.AnnAssign:
         """visit an AnnAssign node by returning a fresh instance of it"""
-        newnode = nodes.AnnAssign(node.lineno, node.col_offset, parent)
+        newnode = nodes.AnnAssign(node.lineno, node.col_offset, parent, simple=node.simple)
         newnode.postinit(
             target=self.visit(node.target, newnode),
             annotation=self.visit(node.annotation, newnode),
-            simple=node.simple,
             value=self.visit(node.value, newnode),
         )
         return newnode
@@ -1112,12 +1111,11 @@ class TreeRebuilder:
         self, node: "ast.comprehension", parent: NodeNG
     ) -> nodes.Comprehension:
         """visit a Comprehension node by returning a fresh instance of it"""
-        newnode = nodes.Comprehension(parent)
+        newnode = nodes.Comprehension(parent, is_async=bool(node.is_async))
         newnode.postinit(
             self.visit(node.target, newnode),
             self.visit(node.iter, newnode),
             [self.visit(child, newnode) for child in node.ifs],
-            bool(node.is_async),
         )
         return newnode
 

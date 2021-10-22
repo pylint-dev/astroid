@@ -2057,7 +2057,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         ),
     )
     _other_fields = ("name", "doc")
-    _other_other_fields = ("locals", "_newstyle")
+    _other_other_fields = ("locals", "_newstyle", "_metaclass")
     _newstyle = None
 
     def __init__(self, name=None, doc=None, lineno=None, col_offset=None, parent=None):
