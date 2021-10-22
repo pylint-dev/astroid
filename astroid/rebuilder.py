@@ -973,7 +973,9 @@ class TreeRebuilder:
 
     def visit_annassign(self, node: "ast.AnnAssign", parent: NodeNG) -> nodes.AnnAssign:
         """visit an AnnAssign node by returning a fresh instance of it"""
-        newnode = nodes.AnnAssign(node.lineno, node.col_offset, parent, simple=node.simple)
+        newnode = nodes.AnnAssign(
+            node.lineno, node.col_offset, parent, simple=node.simple
+        )
         newnode.postinit(
             target=self.visit(node.target, newnode),
             annotation=self.visit(node.annotation, newnode),

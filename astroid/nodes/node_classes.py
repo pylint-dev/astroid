@@ -4351,7 +4351,7 @@ class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
         *,
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
-        parent: Optional[NodeNG] = None
+        parent: Optional[NodeNG] = None,
     ) -> None:
         self.pattern: Pattern
         self.guard: Optional[NodeNG]

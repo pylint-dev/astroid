@@ -13,10 +13,14 @@ class SomeClass:
     def func(self, name=None, var=None, type_annotation=None):
         ...
 
+
 class SomeOtherClass:
-    @astroid.decorators.deprecate_arguments("foo", "bar", hint="pass to `func2` instead")
+    @astroid.decorators.deprecate_arguments(
+        "foo", "bar", hint="pass to `func2` instead"
+    )
     def func(self, foo=None, bar=None, baz=None):
         ...
+
 
 class TestDeprecationDecorators:
     @staticmethod

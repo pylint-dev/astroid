@@ -208,19 +208,21 @@ def deprecate_default_argument_values(
 
     return deco
 
-def deprecate_arguments(*arguments: str, hint: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
+
+def deprecate_arguments(
+    *arguments: str, hint: str
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """Decorator which emitts a DeprecationWarning if any arguments specified
     are provided.
     """
+
     def deco(func: Callable[P, R]) -> Callable[P, R]:
         """Decorator function."""
 
         parameter_names = inspect.signature(func).parameters.keys()
         for arg in arguments:
             if arg not in parameter_names:
-                raise Exception(
-                    f"Can't find argument '{arg}'"
-                )
+                raise Exception(f"Can't find argument '{arg}'")
         params = list(parameter_names)
         func.deprecated_args = arguments
 
@@ -230,10 +232,7 @@ def deprecate_arguments(*arguments: str, hint: str) -> Callable[[Callable[P, R]]
 
             for arg in arguments:
                 index = params.index(arg)
-                if (
-                    arg in kwargs
-                    or len(args) > index
-                ):
+                if arg in kwargs or len(args) > index:
                     warnings.warn(
                         f"'{arg}' is a deprecated argument for "
                         f"'{args[0].__class__.__qualname__}.{func.__name__}' "
