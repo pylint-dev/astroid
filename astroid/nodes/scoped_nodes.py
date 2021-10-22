@@ -648,11 +648,10 @@ class Module(LocalsDictNodeNG):
         """
         return self.file is not None and self.file.endswith(".py")
 
-    def statement(self):
+    def statement(self) -> "Module":
         """The first parent node, including self, marked as statement node.
 
         :returns: The first parent statement.
-        :rtype: NodeNG
         """
         return self
 

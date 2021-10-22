@@ -10,6 +10,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
@@ -25,7 +26,7 @@ from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 
 if TYPE_CHECKING:
-    from astroid.nodes import LocalsDictNodeNG
+    from astroid import nodes
 
 # Types for 'NodeNG.nodes_of_class()'
 T_Nodes = TypeVar("T_Nodes", bound="NodeNG")
@@ -248,14 +249,17 @@ class NodeNG:
                 return True
         return False
 
-    def statement(self):
+    def statement(self) -> Union["nodes.Statement", "nodes.Module"]:
         """The first parent node, including self, marked as statement node.
 
         :returns: The first parent statement.
         :rtype: NodeNG
         """
         if self.is_statement:
+            self = cast("nodes.Statement", self)
             return self
+        if not self.parent:
+            raise ParentMissingError(target=self)
         return self.parent.statement()
 
     def frame(self):
@@ -269,7 +273,7 @@ class NodeNG:
         """
         return self.parent.frame()
 
-    def scope(self) -> "LocalsDictNodeNG":
+    def scope(self) -> "nodes.LocalsDictNodeNG":
         """The first parent node defining a new scope.
         These can be Module, FunctionDef, ClassDef, Lambda, or GeneratorExp nodes.
 
