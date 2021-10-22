@@ -2667,7 +2667,7 @@ class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         :param parent: The parent node in the syntax tree.
         """
         self.fromname: Optional[str] = fromname  # can be None
-        self.modname = self.fromname  # For backwards
+        self.modname = self.fromname  # For backwards compatibility
         """The module that is being imported from.
 
         This is ``None`` for relative imports.
