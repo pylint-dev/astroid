@@ -67,6 +67,13 @@ else:
 if TYPE_CHECKING:
     from astroid.nodes import LocalsDictNodeNG
 
+from enum import Enum
+class operator_category(Enum):
+    UNKNOWN = 0
+    COMPUTATION = 1
+    COMPARISON = 2
+    ASSIGNMENT = 3
+
 
 def _is_const(value):
     return isinstance(value, tuple(CONST_CLS))
@@ -1518,6 +1525,28 @@ class BinOp(NodeNG):
     def op_left_associative(self):
         # 2**3**4 == 2**(3**4)
         return self.op != "**"
+
+    def is_computation(self) -> bool:
+        return self.op in ("+",  "-",  "*",  "/",  "//", "%",  "@",\
+                                     "**",  "|",  "&",  "^",  "<<",  ">>")
+
+    def is_comparison(self) -> bool:
+        return self.op in ("==",  "!=",  "<",  ">",  "<=",  ">=", \
+                                     "is",  "is not",  "in",  "not in")
+
+    def is_assignment(self) -> bool:
+        return self.op in ("=",  "+=",  "-=",  "*=",  "/=",  "//=", "%=",  "@=",\
+                                     "**=",  "|=",  "&=",  "^=",  "<<=",  ">>=")
+
+    def get_category(self) -> operator_category:
+        if self.is_computation():
+            return operator_category.COMPUTATION
+        elif self.is_comparison():
+            return operator_category.COMPARISON
+        elif self.is_assignment():
+            return operator_category.ASSIGNMENT
+        else:
+            return operator_category.UNKNOWN
 
 
 class BoolOp(NodeNG):
