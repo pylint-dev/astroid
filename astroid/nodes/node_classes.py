@@ -4539,7 +4539,7 @@ class MatchClass(Pattern):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
         *,
-        kwd_attrs: typing.List[str] = None,
+        kwd_attrs: typing.Optional[typing.List[str]] = None,
     ) -> None:
         self.cls: NodeNG
         self.patterns: typing.List[Pattern]
@@ -4554,11 +4554,11 @@ class MatchClass(Pattern):
         cls: NodeNG,
         patterns: typing.List[Pattern],
         kwd_patterns: typing.List[Pattern],
-        kwd_attrs: typing.List[str] = [],
+        kwd_attrs: typing.Optional[typing.List[str]] = None,
     ) -> None:
         self.cls = cls
         self.patterns = patterns
-        self.kwd_attrs = kwd_attrs or self.kwd_attrs
+        self.kwd_attrs = kwd_attrs or self.kwd_attrs or []
         self.kwd_patterns = kwd_patterns
 
 
