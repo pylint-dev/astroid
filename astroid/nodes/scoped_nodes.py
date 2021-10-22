@@ -389,7 +389,7 @@ class Module(LocalsDictNodeNG):
     """The line that this node appears on in the source code.
 
     :type: int or None"
-    """"
+    """
 
     # attributes below are set by the builder module or by raw factories
 
