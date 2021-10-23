@@ -1740,7 +1740,7 @@ def test_init_fields_declaration(node_class):
         and node_class is not nodes.EvaluatedObject
     ],
 )
-def test_postinit_fields_declaration(node_class):
+def test_postinit_fields_declaration(node_class: nodes.NodeNG) -> None:
     expected_args = set(node_class._astroid_fields + node_class._other_other_fields)
 
     if not expected_args:
