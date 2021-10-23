@@ -1315,7 +1315,7 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
         self,
         target: NodeNG,
         annotation: NodeNG,
-        simple: int = None,
+        simple: Optional[int] = None,
         value: Optional[NodeNG] = None,
     ) -> None:
         """Do some setup after initialisation.
