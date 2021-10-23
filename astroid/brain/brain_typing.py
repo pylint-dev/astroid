@@ -394,7 +394,7 @@ def infer_typing_cast(
 
     try:
         func = next(node.func.infer(context=ctx))
-    except InferenceError as exc:
+    except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
     if (
         not isinstance(func, FunctionDef)
