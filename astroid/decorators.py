@@ -222,7 +222,7 @@ def deprecate_arguments(
         parameter_names = inspect.signature(func).parameters.keys()
         for arg in arguments:
             if arg not in parameter_names:
-                raise Exception(f"Can't find argument '{arg}'")
+                raise ValueError(f"Can't find argument '{arg}'")
         params = list(parameter_names)
         func.deprecated_args = arguments
 
