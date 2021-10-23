@@ -212,7 +212,7 @@ def deprecate_default_argument_values(
 def deprecate_arguments(
     *arguments: str, hint: str
 ) -> Callable[[Callable[P, R]], Callable[P, R]]:
-    """Decorator which emitts a DeprecationWarning if any arguments specified
+    """Decorator which emits a DeprecationWarning if any arguments specified
     are provided.
     """
 
