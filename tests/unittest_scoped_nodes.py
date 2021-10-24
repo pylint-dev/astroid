@@ -44,6 +44,7 @@ import pytest
 
 from astroid import MANAGER, builder, nodes, objects, test_utils, util
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
+from astroid.const import PY38_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     DuplicateBasesError,
@@ -2291,6 +2292,7 @@ def test_slots_duplicate_bases_issue_1089() -> None:
 
 class TestFrameNodes:
 
+    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
     @staticmethod
     def test_frame_node():
         """Test if the frame of FunctionDef, ClassDef and Module is correctly set"""
@@ -2307,7 +2309,7 @@ class TestFrameNodes:
                 def method():
                     pass
             
-            VAR = lambda y = (named_expr_3 := "walrus"): print(y)
+            VAR = lambda y = (named_expr := "walrus"): print(y)
         """
         )
         function = module.body[0]
