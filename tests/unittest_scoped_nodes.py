@@ -2291,7 +2291,6 @@ def test_slots_duplicate_bases_issue_1089() -> None:
 
 
 class TestFrameNodes:
-
     @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
     @staticmethod
     def test_frame_node():
@@ -2305,7 +2304,7 @@ class TestFrameNodes:
             class MyClass:
 
                 attribute = 1
-                
+
                 def method():
                     pass
             
@@ -2332,7 +2331,7 @@ class TestFrameNodes:
         module = builder.parse(
             """
             VAR_ONE = 1
-            
+
             VAR_TWO = [x for x in range(1)]
         """
         )
