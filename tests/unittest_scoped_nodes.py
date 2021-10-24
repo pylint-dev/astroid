@@ -2290,7 +2290,6 @@ def test_slots_duplicate_bases_issue_1089() -> None:
 
 
 class TestFrameNodes:
-
     @staticmethod
     def test_frame_node():
         """Test if the frame of FunctionDef, ClassDef and Module is correctly set"""
@@ -2303,10 +2302,10 @@ class TestFrameNodes:
             class MyClass:
 
                 attribute = 1
-                
+
                 def method():
                     pass
-            
+
             VAR = lambda y = (named_expr_3 := "walrus"): print(y)
         """
         )
@@ -2330,7 +2329,7 @@ class TestFrameNodes:
         module = builder.parse(
             """
             VAR_ONE = 1
-            
+
             VAR_TWO = [x for x in range(1)]
         """
         )
