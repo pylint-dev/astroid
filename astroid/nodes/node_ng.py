@@ -25,7 +25,7 @@ from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 
 if TYPE_CHECKING:
-    from astroid.nodes import LocalsDictNodeNG
+    from astroid import nodes
 
 # Types for 'NodeNG.nodes_of_class()'
 T_Nodes = TypeVar("T_Nodes", bound="NodeNG")
@@ -258,18 +258,19 @@ class NodeNG:
             return self
         return self.parent.statement()
 
-    def frame(self):
+    def frame(
+        self,
+    ) -> Union["nodes.FunctionDef", "nodes.Module", "nodes.ClassDef", "nodes.Lambda"]:
         """The first parent frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
-        or :class:`ClassDef`.
+        :class:`ClassDef` or :class:`Lambda`.
 
         :returns: The first parent frame node.
-        :rtype: Module or FunctionDef or ClassDef
         """
         return self.parent.frame()
 
-    def scope(self) -> "LocalsDictNodeNG":
+    def scope(self) -> "nodes.LocalsDictNodeNG":
         """The first parent node defining a new scope.
         These can be Module, FunctionDef, ClassDef, Lambda, or GeneratorExp nodes.
 

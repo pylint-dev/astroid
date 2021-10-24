@@ -2289,5 +2289,55 @@ def test_slots_duplicate_bases_issue_1089() -> None:
         astroid["First"].slots()
 
 
+class TestFrameNodes:
+
+    @staticmethod
+    def test_frame_node():
+        """Test if the frame of FunctionDef, ClassDef and Module is correctly set"""
+        module = builder.parse(
+            """
+            def func():
+                var_1 = x
+                return var_1
+
+            class MyClass:
+
+                attribute = 1
+                
+                def method():
+                    pass
+            
+            VAR = lambda y = (named_expr_3 := "walrus"): print(y)
+        """
+        )
+        function = module.body[0]
+        assert function.frame() == function
+        assert function.body[0].frame() == function
+
+        class_node = module.body[1]
+        assert class_node.frame() == class_node
+        assert class_node.body[0].frame() == class_node
+        assert class_node.body[1].frame() == class_node.body[1]
+
+        lambda_assignment = module.body[2].value
+        assert lambda_assignment.args.args[0].frame() == lambda_assignment
+
+        assert module.frame() == module
+
+    @staticmethod
+    def test_non_frame_node():
+        """Test if the frame of non frame nodes is set correctly"""
+        module = builder.parse(
+            """
+            VAR_ONE = 1
+            
+            VAR_TWO = [x for x in range(1)]
+        """
+        )
+        assert module.body[0].frame() == module
+
+        assert module.body[1].value.locals["x"][0].frame() == module
+
+
 if __name__ == "__main__":
     unittest.main()
