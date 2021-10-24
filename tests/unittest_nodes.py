@@ -682,6 +682,7 @@ class NameNodeTest(unittest.TestCase):
             builder.parse(code)
 
 
+@pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
 class NamedExprNodeTest(unittest.TestCase):
     """Tests for the NamedExpr node"""
 
