@@ -96,11 +96,6 @@ disable=fixme,
         too-many-statements,
         # We know about it and we're doing our best to remove it in 2.0 (oups)
         cyclic-import,
-        # The check is faulty in most cases and it doesn't take in
-        # account how the variable is being used. For instance,
-        # using a variable that is a list or a generator in an
-        # iteration context is fine.
-        redefined-variable-type,
         # Requires major redesign for fixing this (and private
         # access in the same project is fine)
         protected-access,
