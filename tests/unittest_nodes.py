@@ -733,10 +733,10 @@ class AnnAssignNodeTest(unittest.TestCase):
         self.assertEqual(ast.as_string().strip(), code.strip())
 
 
-@pytest.mark.skip(
-    "FIXME  http://bugs.python.org/issue10445 (no line number on function args)"
-)
 class ArgumentsNodeTC(unittest.TestCase):
+    @pytest.mark.skip(
+        "FIXME  http://bugs.python.org/issue10445 (no line number on function args)"
+    )
     def test_linenumbering(self) -> None:
         ast = builder.parse(
             """
