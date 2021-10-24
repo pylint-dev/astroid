@@ -12,7 +12,10 @@ What's New in astroid 2.8.4?
 ============================
 Release date: TBA
 
-
+* Fix the `scope()` and `frame()` methods of `NamedExpr` nodes.
+  When these nodes occur in `Arguments`, `Keyword` or `Comprehension` nodes these
+  methods now correctly point to the outer-scope of the `FunctionDef`,
+  `ClassDef` or comprehension.
 
 What's New in astroid 2.8.3?
 ============================

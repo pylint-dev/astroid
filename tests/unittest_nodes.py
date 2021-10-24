@@ -683,10 +683,11 @@ class NameNodeTest(unittest.TestCase):
 
 
 @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
-class NamedExprNodeTest(unittest.TestCase):
+class TestNamedExprNode:
     """Tests for the NamedExpr node"""
 
-    def test_frame(self) -> None:
+    @staticmethod
+    def test_frame() -> None:
         """Test if the frame of NamedExpr is correctly set for certain types
         of parent nodes.
         """
@@ -712,6 +713,8 @@ class NamedExprNodeTest(unittest.TestCase):
                     )
                 ):
                 pass
+
+            COMPREHENSION = [y for i in (1, 2) if (y := i ** 2)]
         """
         )
         function = module.body[0]
@@ -733,7 +736,11 @@ class NamedExprNodeTest(unittest.TestCase):
         lambda_named_expr = module.body[5].args.defaults[0]
         assert lambda_named_expr.value.args.defaults[0].frame() == module
 
-    def test_scope(self) -> None:
+        comprehension = module.body[6].value
+        assert comprehension.generators[0].ifs[0].frame() == module
+
+    @staticmethod
+    def test_scope() -> None:
         """Test if the scope of NamedExpr is correctly set for certain types
         of parent nodes.
         """
@@ -759,6 +766,8 @@ class NamedExprNodeTest(unittest.TestCase):
                     )
                 ):
                 pass
+
+            COMPREHENSION = [y for i in (1, 2) if (y := i ** 2)]
         """
         )
         function = module.body[0]
@@ -779,6 +788,9 @@ class NamedExprNodeTest(unittest.TestCase):
 
         lambda_named_expr = module.body[5].args.defaults[0]
         assert lambda_named_expr.value.args.defaults[0].scope() == module
+
+        comprehension = module.body[6].value
+        assert comprehension.generators[0].ifs[0].scope() == module
 
 
 class AnnAssignNodeTest(unittest.TestCase):

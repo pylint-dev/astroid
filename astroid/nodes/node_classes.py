@@ -4237,7 +4237,7 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
             raise ParentMissingError(target=self)
 
         # For certain parents NamedExpr evaluate to the scope of the parent
-        if isinstance(self.parent, (Arguments, Keyword)):
+        if isinstance(self.parent, (Arguments, Keyword, Comprehension)):
             if not self.parent.parent:
                 raise ParentMissingError(target=self.parent)
             if not self.parent.parent.parent:
@@ -4256,7 +4256,7 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
             raise ParentMissingError(target=self)
 
         # For certain parents NamedExpr evaluate to the scope of the parent
-        if isinstance(self.parent, (Arguments, Keyword)):
+        if isinstance(self.parent, (Arguments, Keyword, Comprehension)):
             if not self.parent.parent:
                 raise ParentMissingError(target=self.parent)
             if not self.parent.parent.parent:
