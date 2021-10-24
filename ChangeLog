@@ -12,8 +12,15 @@ What's New in astroid 2.8.4?
 ============================
 Release date: TBA
 
-* Add assignment expressions in function definition arguments to
-  the correct scope
+* Fix the ``scope()`` and ``frame()`` methods of ``NamedExpr`` nodes.
+  When these nodes occur in ``Arguments``, ``Keyword``  or ``Comprehension`` nodes these
+  methods now correctly point to the outer-scope of the `` FunctionDef``,
+  ``ClassDef`` or ``Comprehension``.
+
+* Fix the ``set_local`` function for ``NamedExpr`` nodes.
+  When these nodes occur in ``Arguments``, ``Keyword``  or ``Comprehension`` nodes these
+  methods now correctly added to the locals of the `` FunctionDef``,
+  ``ClassDef`` or ``Comprehension``.
 
 What's New in astroid 2.8.3?
 ============================

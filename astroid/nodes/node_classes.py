@@ -4225,22 +4225,45 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
         self.target = target
         self.value = value
 
-    def set_local(self, name: str, stmt: AssignName) -> None:
-        """Define that the given name is declared in the given statement node.
-        NamedExpr's in Arguments are evaluated in the scope of the FunctionDef
-        instead of the function's scope.
+    def frame(self):
+        """The first parent frame node.
 
-        .. seealso:: :meth:`scope`
+        A frame node is a :class:`Module`, :class:`FunctionDef`,
+        or :class:`ClassDef`.
 
-        :param name: The name that is being defined.
-
-        :param stmt: The statement that defines the given name.
+        :returns: The first parent frame node.
         """
-        #
-        if isinstance(self.parent, Arguments):
-            self.scope().parent.frame().set_local(name, stmt)
-        else:
-            self.parent.set_local(name, stmt)
+        if not self.parent:
+            raise ParentMissingError(target=self)
+
+        # For certain parents NamedExpr evaluate to the scope of the parent
+        if isinstance(self.parent, (Arguments, Keyword, Comprehension)):
+            if not self.parent.parent:
+                raise ParentMissingError(target=self.parent)
+            if not self.parent.parent.parent:
+                raise ParentMissingError(target=self.parent.parent)
+            return self.parent.parent.parent.frame()
+
+        return self.parent.frame()
+
+    def scope(self) -> "LocalsDictNodeNG":
+        """The first parent node defining a new scope.
+        These can be Module, FunctionDef, ClassDef, Lambda, or GeneratorExp nodes.
+
+        :returns: The first parent scope node.
+        """
+        if not self.parent:
+            raise ParentMissingError(target=self)
+
+        # For certain parents NamedExpr evaluate to the scope of the parent
+        if isinstance(self.parent, (Arguments, Keyword, Comprehension)):
+            if not self.parent.parent:
+                raise ParentMissingError(target=self.parent)
+            if not self.parent.parent.parent:
+                raise ParentMissingError(target=self.parent.parent)
+            return self.parent.parent.parent.scope()
+
+        return self.parent.scope()
 
 
 class Unknown(mixins.AssignTypeMixin, NodeNG):

@@ -1172,6 +1172,21 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(inferred[0], astroid.Const)
         self.assertEqual(inferred[0].value, 1)
 
+    def test_members_member_ignored(self) -> None:
+        ast_node = builder.extract_node(
+            """
+        from enum import Enum
+        class Animal(Enum):
+            a = 1
+            __members__ = {}
+        Animal.__members__ #@
+        """
+        )
+
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, astroid.Dict)
+        self.assertTrue(inferred.locals)
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
