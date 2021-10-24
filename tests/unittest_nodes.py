@@ -1506,6 +1506,14 @@ def test_assignment_expression_in_functiondef() -> None:
         pass
 
     COMPREHENSION = [y for i in (1, 2) if (assignment_five := i ** 2)]
+
+    def func():
+        var = lambda y = (assignment_six := 2): print(y)
+
+    VAR_TWO = [
+        func(assignment_seven := 2)
+        for _ in (1,)
+    ]
     """
     module = astroid.parse(code)
 
@@ -1523,6 +1531,12 @@ def test_assignment_expression_in_functiondef() -> None:
 
     assert "assignment_five" in module.locals
     assert isinstance(module.locals.get("assignment_five")[0], nodes.AssignName)
+
+    assert "assignment_six" in module.body[5].locals
+    assert isinstance(module.body[5].locals.get("assignment_six")[0], nodes.AssignName)
+
+    assert "assignment_seven" in module.locals
+    assert isinstance(module.locals.get("assignment_seven")[0], nodes.AssignName)
 
 
 def test_get_doc() -> None:
