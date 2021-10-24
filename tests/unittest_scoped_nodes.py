@@ -2307,7 +2307,7 @@ class TestFrameNodes:
 
                 def method():
                     pass
-            
+
             VAR = lambda y = (named_expr := "walrus"): print(y)
         """
         )
