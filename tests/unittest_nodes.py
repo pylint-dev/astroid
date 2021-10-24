@@ -734,7 +734,6 @@ class AnnAssignNodeTest(unittest.TestCase):
 
 
 class ArgumentsNodeTC(unittest.TestCase):
-    
     @pytest.mark.skip(
         "FIXME  http://bugs.python.org/issue10445 (no line number on function args)"
     )
