@@ -682,6 +682,104 @@ class NameNodeTest(unittest.TestCase):
             builder.parse(code)
 
 
+class NamedExprNodeTest(unittest.TestCase):
+    """Tests for the NamedExpr node"""
+
+    def test_frame(self) -> None:
+        """Test if the frame of NamedExpr is correctly set for certain types
+        of parent nodes.
+        """
+        module = builder.parse(
+            """
+            def func(var_1):
+                pass
+
+            def func_two(var_2, var_2 = (named_expr_1 := "walrus")):
+                pass
+
+            class MyBaseClass:
+                pass
+
+            class MyInheritedClass(MyBaseClass, var_3=(named_expr_2 := "walrus")):
+                pass
+
+            VAR = lambda y = (named_expr_3 := "walrus"): print(y)
+
+            def func_with_lambda(
+                var_5 = (
+                    named_expr_4 := lambda y = (named_expr_5 := "walrus"): y
+                    )
+                ):
+                pass
+        """
+        )
+        function = module.body[0]
+        assert function.args.frame() == function
+
+        function_two = module.body[1]
+        assert function_two.args.args[0].frame() == function_two
+        assert function_two.args.args[1].frame() == function_two
+        assert function_two.args.defaults[0].frame() == module
+
+        inherited_class = module.body[3]
+        assert inherited_class.keywords[0].frame() == inherited_class
+        assert inherited_class.keywords[0].value.frame() == module
+
+        lambda_assignment = module.body[4].value
+        assert lambda_assignment.args.args[0].frame() == lambda_assignment
+        assert lambda_assignment.args.defaults[0].frame() == module
+
+        lambda_named_expr = module.body[5].args.defaults[0]
+        assert lambda_named_expr.value.args.defaults[0].frame() == module
+
+    def test_scope(self) -> None:
+        """Test if the scope of NamedExpr is correctly set for certain types
+        of parent nodes.
+        """
+        module = builder.parse(
+            """
+            def func(var_1):
+                pass
+
+            def func_two(var_2, var_2 = (named_expr_1 := "walrus")):
+                pass
+
+            class MyBaseClass:
+                pass
+
+            class MyInheritedClass(MyBaseClass, var_3=(named_expr_2 := "walrus")):
+                pass
+
+            VAR = lambda y = (named_expr_3 := "walrus"): print(y)
+
+            def func_with_lambda(
+                var_5 = (
+                    named_expr_4 := lambda y = (named_expr_5 := "walrus"): y
+                    )
+                ):
+                pass
+        """
+        )
+        function = module.body[0]
+        assert function.args.scope() == function
+
+        function_two = module.body[1]
+        assert function_two.args.args[0].scope() == function_two
+        assert function_two.args.args[1].scope() == function_two
+        assert function_two.args.defaults[0].scope() == module
+
+        inherited_class = module.body[3]
+        assert inherited_class.keywords[0].scope() == inherited_class
+        assert inherited_class.keywords[0].value.scope() == module
+
+        lambda_assignment = module.body[4].value
+        assert lambda_assignment.args.args[0].scope() == lambda_assignment
+        assert lambda_assignment.args.defaults[0].scope()
+
+        lambda_named_expr = module.body[5].args.defaults[0]
+        assert lambda_named_expr.value.args.defaults[0].scope() == module
+
+
 class AnnAssignNodeTest(unittest.TestCase):
     def test_primitive(self) -> None:
         code = textwrap.dedent(

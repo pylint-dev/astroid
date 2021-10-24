@@ -4225,6 +4225,46 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
         self.target = target
         self.value = value
 
+    def frame(self):
+        """The first parent frame node.
+
+        A frame node is a :class:`Module`, :class:`FunctionDef`,
+        or :class:`ClassDef`.
+
+        :returns: The first parent frame node.
+        """
+        if not self.parent:
+            raise ParentMissingError(target=self)
+
+        # For certain parents NamedExpr evaluate to the scope of the parent
+        if isinstance(self.parent, (Arguments, Keyword)):
+            if not self.parent.parent:
+                raise ParentMissingError(target=self.parent)
+            if not self.parent.parent.parent:
+                raise ParentMissingError(target=self.parent.parent)
+            return self.parent.parent.parent.frame()
+
+        return self.parent.frame()
+
+    def scope(self) -> "LocalsDictNodeNG":
+        """The first parent node defining a new scope.
+        These can be Module, FunctionDef, ClassDef, Lambda, or GeneratorExp nodes.
+
+        :returns: The first parent scope node.
+        """
+        if not self.parent:
+            raise ParentMissingError(target=self)
+
+        # For certain parents NamedExpr evaluate to the scope of the parent
+        if isinstance(self.parent, (Arguments, Keyword)):
+            if not self.parent.parent:
+                raise ParentMissingError(target=self.parent)
+            if not self.parent.parent.parent:
+                raise ParentMissingError(target=self.parent.parent)
+            return self.parent.parent.parent.scope()
+
+        return self.parent.scope()
+
 
 class Unknown(mixins.AssignTypeMixin, NodeNG):
     """This node represents a node in a constructed AST where
