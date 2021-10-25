@@ -230,17 +230,6 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
             return self.name
         return f"{self.parent.frame().qname()}.{self.name}"
 
-    def frame(self):
-        """The first parent frame node.
-
-        A frame node is a :class:`Module`, :class:`FunctionDef`,
-        or :class:`ClassDef`.
-
-        :returns: The first parent frame node.
-        :rtype: Module or FunctionDef or ClassDef
-        """
-        return self
-
     def scope(self: T) -> T:
         """The first parent node defining a new scope.
 
@@ -826,20 +815,19 @@ class Module(LocalsDictNodeNG):
     def get_children(self):
         yield from self.body
 
+    def frame(self: T) -> T:
+        """The node's frame node.
+
+        A frame node is a :class:`Module`, :class:`FunctionDef`,
+        :class:`ClassDef` or :class:`Lambda`.
+
+        :returns: The node itself.
+        """
+        return self
+
 
 class ComprehensionScope(LocalsDictNodeNG):
     """Scoping for different types of comprehensions."""
-
-    def frame(self):
-        """The first parent frame node.
-
-        A frame node is a :class:`Module`, :class:`FunctionDef`,
-        or :class:`ClassDef`.
-
-        :returns: The first parent frame node.
-        :rtype: Module or FunctionDef or ClassDef
-        """
-        return self.parent.frame()
 
     scope_lookup = LocalsDictNodeNG._scope_lookup
 
@@ -1344,6 +1332,16 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         yield self.args
         yield self.body
 
+    def frame(self: T) -> T:
+        """The node's frame node.
+
+        A frame node is a :class:`Module`, :class:`FunctionDef`,
+        :class:`ClassDef` or :class:`Lambda`.
+
+        :returns: The node itself.
+        """
+        return self
+
 
 class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     """Class representing an :class:`ast.FunctionDef`.
@@ -1838,6 +1836,16 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             if isinstance(frame, ClassDef):
                 return self, [frame]
         return super().scope_lookup(node, name, offset)
+
+    def frame(self: T) -> T:
+        """The node's frame node.
+
+        A frame node is a :class:`Module`, :class:`FunctionDef`,
+        :class:`ClassDef` or :class:`Lambda`.
+
+        :returns: The node itself.
+        """
+        return self
 
 
 class AsyncFunctionDef(FunctionDef):
@@ -3054,3 +3062,13 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             child_node._get_assign_nodes() for child_node in self.body
         )
         return list(itertools.chain.from_iterable(children_assign_nodes))
+
+    def frame(self: T) -> T:
+        """The node's frame node.
+
+        A frame node is a :class:`Module`, :class:`FunctionDef`,
+        :class:`ClassDef` or :class:`Lambda`.
+
+        :returns: The node itself.
+        """
+        return self
