@@ -15,12 +15,12 @@ Release date: TBA
 * Fix the ``scope()`` and ``frame()`` methods of ``NamedExpr`` nodes.
   When these nodes occur in ``Arguments``, ``Keyword``  or ``Comprehension`` nodes these
   methods now correctly point to the outer-scope of the ``FunctionDef``,
-  ``ClassDef`` or ``Comprehension``.
+  ``ClassDef``, or ``Comprehension``.
 
 * Fix the ``set_local`` function for ``NamedExpr`` nodes.
-  When these nodes occur in ``Arguments``, ``Keyword``  or ``Comprehension`` nodes these
+  When these nodes occur in ``Arguments``, ``Keyword``, or ``Comprehension`` nodes these
   nodes are now correctly added to the locals of the ``FunctionDef``,
-  ``ClassDef`` or ``Comprehension``.
+  ``ClassDef``, or ``Comprehension``.
 
 
 What's New in astroid 2.8.3?

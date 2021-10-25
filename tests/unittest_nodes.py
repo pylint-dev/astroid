@@ -1499,10 +1499,8 @@ def test_assignment_expression_in_functiondef() -> None:
     VAR = lambda y = (assignment_three := "walrus"): print(y)
 
     def func_with_lambda(
-        param = (
-            named_expr_four := lambda y = (assignment_four := "walrus"): y
-            )
-        ):
+        param=(named_expr_four := lambda y=(assignment_four := "walrus"): y),
+    ):
         pass
 
     COMPREHENSION = [y for i in (1, 2) if (assignment_five := i ** 2)]
@@ -1532,8 +1530,9 @@ def test_assignment_expression_in_functiondef() -> None:
     assert "assignment_five" in module.locals
     assert isinstance(module.locals.get("assignment_five")[0], nodes.AssignName)
 
-    assert "assignment_six" in module.body[5].locals
-    assert isinstance(module.body[5].locals.get("assignment_six")[0], nodes.AssignName)
+    func = module.body[5]
+    assert "assignment_six" in func.locals
+    assert isinstance(func.locals.get("assignment_six")[0], nodes.AssignName)
 
     assert "assignment_seven" in module.locals
     assert isinstance(module.locals.get("assignment_seven")[0], nodes.AssignName)
