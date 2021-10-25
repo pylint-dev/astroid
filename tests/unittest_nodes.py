@@ -1512,6 +1512,11 @@ def test_assignment_expression_in_functiondef() -> None:
         func(assignment_seven := 2)
         for _ in (1,)
     ]
+
+    LAMBDA = lambda x: print(assignment_eight := x ** 2)
+
+    class SomeClass:
+        (assignment_nine := 2**2)
     """
     module = astroid.parse(code)
 
@@ -1519,7 +1524,11 @@ def test_assignment_expression_in_functiondef() -> None:
     assert isinstance(module.locals.get("assignment")[0], nodes.AssignName)
     function = module.body[0]
     assert "inner_assign" in function.locals
+    assert "inner_assign" not in module.locals
     assert isinstance(function.locals.get("inner_assign")[0], nodes.AssignName)
+
+    assert "assignment_two" in module.locals
+    assert isinstance(module.locals.get("assignment_two")[0], nodes.AssignName)
 
     assert "assignment_three" in module.locals
     assert isinstance(module.locals.get("assignment_three")[0], nodes.AssignName)
@@ -1532,10 +1541,25 @@ def test_assignment_expression_in_functiondef() -> None:
 
     func = module.body[5]
     assert "assignment_six" in func.locals
+    assert "assignment_six" not in module.locals
     assert isinstance(func.locals.get("assignment_six")[0], nodes.AssignName)
 
     assert "assignment_seven" in module.locals
     assert isinstance(module.locals.get("assignment_seven")[0], nodes.AssignName)
+
+    lambda_assign = module.body[7]
+    assert "assignment_eight" in lambda_assign.value.locals
+    assert "assignment_eight" not in module.locals
+    assert isinstance(
+        lambda_assign.value.locals.get("assignment_eight")[0], nodes.AssignName
+    )
+
+    class_assign = module.body[8]
+    assert "assignment_nine" in class_assign.locals
+    assert "assignment_nine" not in module.locals
+    assert isinstance(
+        class_assign.locals.get("assignment_nine")[0], nodes.AssignName
+    )
 
 
 def test_get_doc() -> None:
