@@ -1557,9 +1557,7 @@ def test_assignment_expression_in_functiondef() -> None:
     class_assign = module.body[8]
     assert "assignment_nine" in class_assign.locals
     assert "assignment_nine" not in module.locals
-    assert isinstance(
-        class_assign.locals.get("assignment_nine")[0], nodes.AssignName
-    )
+    assert isinstance(class_assign.locals.get("assignment_nine")[0], nodes.AssignName)
 
 
 def test_get_doc() -> None:
