@@ -1485,6 +1485,81 @@ def test_assignment_expression() -> None:
     assert second.as_string() == "b := test"
 
 
+@pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
+def test_assignment_expression_in_functiondef() -> None:
+    code = """
+    def function(param = (assignment := "walrus")):
+        def inner_function(inner_param = (inner_assign := "walrus")):
+            pass
+        pass
+
+    class MyClass(attr = (assignment_two := "walrus")):
+        pass
+
+    VAR = lambda y = (assignment_three := "walrus"): print(y)
+
+    def func_with_lambda(
+        param=(named_expr_four := lambda y=(assignment_four := "walrus"): y),
+    ):
+        pass
+
+    COMPREHENSION = [y for i in (1, 2) if (assignment_five := i ** 2)]
+
+    def func():
+        var = lambda y = (assignment_six := 2): print(y)
+
+    VAR_TWO = [
+        func(assignment_seven := 2)
+        for _ in (1,)
+    ]
+
+    LAMBDA = lambda x: print(assignment_eight := x ** 2)
+
+    class SomeClass:
+        (assignment_nine := 2**2)
+    """
+    module = astroid.parse(code)
+
+    assert "assignment" in module.locals
+    assert isinstance(module.locals.get("assignment")[0], nodes.AssignName)
+    function = module.body[0]
+    assert "inner_assign" in function.locals
+    assert "inner_assign" not in module.locals
+    assert isinstance(function.locals.get("inner_assign")[0], nodes.AssignName)
+
+    assert "assignment_two" in module.locals
+    assert isinstance(module.locals.get("assignment_two")[0], nodes.AssignName)
+
+    assert "assignment_three" in module.locals
+    assert isinstance(module.locals.get("assignment_three")[0], nodes.AssignName)
+
+    assert "assignment_four" in module.locals
+    assert isinstance(module.locals.get("assignment_four")[0], nodes.AssignName)
+
+    assert "assignment_five" in module.locals
+    assert isinstance(module.locals.get("assignment_five")[0], nodes.AssignName)
+
+    func = module.body[5]
+    assert "assignment_six" in func.locals
+    assert "assignment_six" not in module.locals
+    assert isinstance(func.locals.get("assignment_six")[0], nodes.AssignName)
+
+    assert "assignment_seven" in module.locals
+    assert isinstance(module.locals.get("assignment_seven")[0], nodes.AssignName)
+
+    lambda_assign = module.body[7]
+    assert "assignment_eight" in lambda_assign.value.locals
+    assert "assignment_eight" not in module.locals
+    assert isinstance(
+        lambda_assign.value.locals.get("assignment_eight")[0], nodes.AssignName
+    )
+
+    class_assign = module.body[8]
+    assert "assignment_nine" in class_assign.locals
+    assert "assignment_nine" not in module.locals
+    assert isinstance(class_assign.locals.get("assignment_nine")[0], nodes.AssignName)
+
+
 def test_get_doc() -> None:
     node = astroid.extract_node(
         """

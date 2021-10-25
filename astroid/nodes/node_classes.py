@@ -4265,6 +4265,19 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
 
         return self.parent.scope()
 
+    def set_local(self, name: str, stmt: AssignName) -> None:
+        """Define that the given name is declared in the given statement node.
+        NamedExpr's in Arguments, Keyword or Comprehension are evaluated in their
+        parent's parent scope. So we add to their frame's locals.
+
+        .. seealso:: :meth:`scope`
+
+        :param name: The name that is being defined.
+
+        :param stmt: The statement that defines the given name.
+        """
+        self.frame().set_local(name, stmt)
+
 
 class Unknown(mixins.AssignTypeMixin, NodeNG):
     """This node represents a node in a constructed AST where
