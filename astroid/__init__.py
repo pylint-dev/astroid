@@ -165,6 +165,6 @@ from astroid.util import Uninferable
 # load brain plugins
 ASTROID_INSTALL_DIRECTORY = Path(__file__).parent
 BRAIN_MODULES_DIRECTORY = ASTROID_INSTALL_DIRECTORY / "brain"
-for module in (Path(f) for f in resources.contents('astroid.brain')):
+for module in (Path(f) for f in resources.contents("astroid.brain")):
     if module.suffix == ".py":
         import_module(f"astroid.brain.{module.stem}")
