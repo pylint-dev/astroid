@@ -40,7 +40,7 @@ Main modules are:
 * builder contains the class responsible to build astroid trees
 """
 
-from importlib import import_module
+from importlib import import_module, resources
 from pathlib import Path
 
 # isort: off
@@ -165,6 +165,6 @@ from astroid.util import Uninferable
 # load brain plugins
 ASTROID_INSTALL_DIRECTORY = Path(__file__).parent
 BRAIN_MODULES_DIRECTORY = ASTROID_INSTALL_DIRECTORY / "brain"
-for module in BRAIN_MODULES_DIRECTORY.iterdir():
+for module in (Path(f) for f in resources.contents('astroid.brain')):
     if module.suffix == ".py":
         import_module(f"astroid.brain.{module.stem}")
