@@ -19,6 +19,7 @@ from astroid.exceptions import (
     AstroidError,
     InferenceError,
     ParentMissingError,
+    StatementMissing,
     UseInferenceDefault,
 )
 from astroid.manager import AstroidManager
@@ -249,17 +250,19 @@ class NodeNG:
                 return True
         return False
 
-    def statement(self) -> Union["nodes.Statement", "nodes.Module"]:
+    def statement(self) -> "nodes.Statement":
         """The first parent node, including self, marked as statement node.
 
         :returns: The first parent statement.
         :rtype: NodeNG
+
+        :raises StatementMissing: If no self has no parent attribute
         """
         if self.is_statement:
             self = cast("nodes.Statement", self)
             return self
         if not self.parent:
-            raise ParentMissingError(target=self)
+            raise StatementMissing(target=self)
         return self.parent.statement()
 
     def frame(self):

@@ -44,6 +44,7 @@ import builtins
 import io
 import itertools
 import os
+import sys
 import typing
 from typing import List, Optional, TypeVar
 
@@ -65,12 +66,18 @@ from astroid.exceptions import (
     InconsistentMroError,
     InferenceError,
     MroError,
+    StatementMissing,
     TooManyLevelsError,
 )
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
 from astroid.nodes import Arguments, Const, node_classes
+
+if sys.version_info >= (3, 6, 2):
+    from typing import NoReturn
+else:
+    from typing_extensions import NoReturn
 
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
@@ -648,12 +655,14 @@ class Module(LocalsDictNodeNG):
         """
         return self.file is not None and self.file.endswith(".py")
 
-    def statement(self) -> "Module":
+    def statement(self) -> NoReturn:
         """The first parent node, including self, marked as statement node.
+        
+        When called on a :class:`Module` this raises an error.
 
-        :returns: The first parent statement.
+        :raises StatementMissing: If no self has no parent attribute
         """
-        return self
+        raise StatementMissing(target=self)
 
     def previous_sibling(self):
         """The previous sibling statement.
