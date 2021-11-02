@@ -646,7 +646,7 @@ class Module(LocalsDictNodeNG):
 
     def statement(self) -> NoReturn:
         """The first parent node, including self, marked as statement node.
-        
+
         When called on a :class:`Module` this raises an error.
 
         :raises StatementMissing: If no self has no parent attribute

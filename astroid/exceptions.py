@@ -285,6 +285,7 @@ class StatementMissing(ParentMissingError):
         self.target = target
         super().__init__(message=f"Statement not found for {target!r}.")
 
+
 # Backwards-compatibility aliases
 OperationError = util.BadOperationMessage
 UnaryOperationError = util.BadUnaryOperationMessage
