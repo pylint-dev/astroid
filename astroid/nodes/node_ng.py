@@ -112,7 +112,7 @@ class NodeNG:
             # explicit_inference is not bound, give it self explicitly
             try:
                 # pylint: disable=not-callable
-                results = tuple(self._explicit_inference(self, context, **kwargs))
+                results = list(self._explicit_inference(self, context, **kwargs))
                 if context is not None:
                     context.nodes_inferred += len(results)
                 yield from results
@@ -265,14 +265,15 @@ class NodeNG:
             raise StatementMissing(target=self)
         return self.parent.statement()
 
-    def frame(self):
+    def frame(
+        self,
+    ) -> Union["nodes.FunctionDef", "nodes.Module", "nodes.ClassDef", "nodes.Lambda"]:
         """The first parent frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
-        or :class:`ClassDef`.
+        :class:`ClassDef` or :class:`Lambda`.
 
         :returns: The first parent frame node.
-        :rtype: Module or FunctionDef or ClassDef
         """
         return self.parent.frame()
 

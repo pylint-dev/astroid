@@ -23,9 +23,9 @@
 # Copyright (c) 2019 kavins14 <kavinsingh@hotmail.com>
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
@@ -4224,6 +4224,59 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
     def postinit(self, target: NodeNG, value: NodeNG) -> None:
         self.target = target
         self.value = value
+
+    def frame(self):
+        """The first parent frame node.
+
+        A frame node is a :class:`Module`, :class:`FunctionDef`,
+        or :class:`ClassDef`.
+
+        :returns: The first parent frame node.
+        """
+        if not self.parent:
+            raise ParentMissingError(target=self)
+
+        # For certain parents NamedExpr evaluate to the scope of the parent
+        if isinstance(self.parent, (Arguments, Keyword, Comprehension)):
+            if not self.parent.parent:
+                raise ParentMissingError(target=self.parent)
+            if not self.parent.parent.parent:
+                raise ParentMissingError(target=self.parent.parent)
+            return self.parent.parent.parent.frame()
+
+        return self.parent.frame()
+
+    def scope(self) -> "LocalsDictNodeNG":
+        """The first parent node defining a new scope.
+        These can be Module, FunctionDef, ClassDef, Lambda, or GeneratorExp nodes.
+
+        :returns: The first parent scope node.
+        """
+        if not self.parent:
+            raise ParentMissingError(target=self)
+
+        # For certain parents NamedExpr evaluate to the scope of the parent
+        if isinstance(self.parent, (Arguments, Keyword, Comprehension)):
+            if not self.parent.parent:
+                raise ParentMissingError(target=self.parent)
+            if not self.parent.parent.parent:
+                raise ParentMissingError(target=self.parent.parent)
+            return self.parent.parent.parent.scope()
+
+        return self.parent.scope()
+
+    def set_local(self, name: str, stmt: AssignName) -> None:
+        """Define that the given name is declared in the given statement node.
+        NamedExpr's in Arguments, Keyword or Comprehension are evaluated in their
+        parent's parent scope. So we add to their frame's locals.
+
+        .. seealso:: :meth:`scope`
+
+        :param name: The name that is being defined.
+
+        :param stmt: The statement that defines the given name.
+        """
+        self.frame().set_local(name, stmt)
 
 
 class Unknown(mixins.AssignTypeMixin, NodeNG):
