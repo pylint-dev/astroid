@@ -285,7 +285,6 @@ class StatementMissing(ParentMissingError):
         super().__init__(target, "Statement")
 
 
-
 # Backwards-compatibility aliases
 OperationError = util.BadOperationMessage
 UnaryOperationError = util.BadUnaryOperationMessage
