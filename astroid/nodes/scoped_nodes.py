@@ -666,7 +666,7 @@ class Module(LocalsDictNodeNG):
     def statement(self, future: bool = False) -> Union[NoReturn, "Module"]:
         """The first parent node, including self, marked as statement node.
 
-        When called on a :class:`Module` with the future paramter this raises an error.
+        When called on a :class:`Module` with the future parameter this raises an error.
 
         TODO: Deprecate the future parameter and only raise StatementMissing
 
