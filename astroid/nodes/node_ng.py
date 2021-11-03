@@ -30,6 +30,11 @@ from astroid.nodes.const import OP_PRECEDENCE
 if TYPE_CHECKING:
     from astroid import nodes
 
+if sys.version_info >= (3, 6, 2):
+    from typing import NoReturn
+else:
+    from typing_extensions import NoReturn
+
 if sys.version_info >= (3, 8):
     from typing import Literal
 else:
@@ -259,23 +264,17 @@ class NodeNG:
 
     @overload
     def statement(
-        self, future: Literal[None] = ...
+        self, future: Literal[False] = ...
     ) -> Union["nodes.Statement", "nodes.Module"]:
         ...
 
     @overload
-    def statement(
-        self, future: Literal[False]
-    ) -> Union["nodes.Statement", "nodes.Module"]:
-        ...
-
-    @overload
-    def statement(self, future: Literal[True]) -> "nodes.Statement":
+    def statement(self, future: Literal[True]) -> Union[NoReturn, "nodes.Statement"]:
         ...
 
     def statement(
         self, future: bool = False
-    ) -> Union["nodes.Statement", "nodes.Module"]:
+    ) -> Union["nodes.Statement", "nodes.Module", NoReturn]:
         """The first parent node, including self, marked as statement node.
 
         TODO: Deprecate the future parameter and only raise StatementMissing and return
