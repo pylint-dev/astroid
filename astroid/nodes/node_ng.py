@@ -283,8 +283,7 @@ class NodeNG:
         :raises StatementMissing: If no self has no parent attribute
         """
         if self.is_statement:
-            self = cast("nodes.Statement", self)
-            return self
+            return cast("nodes.Statement", self)
         if not self.parent:
             if future:
                 raise StatementMissing(target=self)
