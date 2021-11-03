@@ -46,7 +46,7 @@ import itertools
 import os
 import sys
 import typing
-from typing import List, Optional, TypeVar
+from typing import List, Optional, TypeVar, Union, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
@@ -78,6 +78,13 @@ if sys.version_info >= (3, 6, 2):
     from typing import NoReturn
 else:
     from typing_extensions import NoReturn
+
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
+
 
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
@@ -644,14 +651,30 @@ class Module(LocalsDictNodeNG):
         """
         return self.file is not None and self.file.endswith(".py")
 
-    def statement(self) -> NoReturn:
-        """The first parent node, including self, marked as statement node.
-        
-        When called on a :class:`Module` this raises an error.
+    @overload
+    def statement(self, future: Literal[None] = ...) -> "Module":
+        ...
 
-        :raises StatementMissing: If no self has no parent attribute
+    @overload
+    def statement(self, future: Literal[False]) -> "Module":
+        ...
+
+    @overload
+    def statement(self, future: Literal[True]) -> NoReturn:
+        ...
+
+    def statement(self, future: bool = False) -> Union[NoReturn, "Module"]:
+        """The first parent node, including self, marked as statement node.
+
+        When called on a :class:`Module` with the future paramter this raises an error.
+
+        TODO: Deprecate the future parameter and only raise StatementMissing
+
+        :raises StatementMissing: If no self has no parent attribute and future is True
         """
-        raise StatementMissing(target=self)
+        if future:
+            raise StatementMissing(target=self)
+        return self
 
     def previous_sibling(self):
         """The previous sibling statement.
@@ -2558,7 +2581,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # Look for AnnAssigns, which are not attributes in the purest sense.
         for value in values:
             if isinstance(value, node_classes.AssignName):
-                stmt = value.statement()
+                stmt = value.statement(True)
                 if isinstance(stmt, node_classes.AnnAssign) and stmt.value is None:
                     raise AttributeInferenceError(
                         target=self, attribute=name, context=context

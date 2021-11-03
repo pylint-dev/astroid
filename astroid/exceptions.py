@@ -267,9 +267,9 @@ class ParentMissingError(AstroidError):
         target: The node for which the parent lookup failed.
     """
 
-    def __init__(self, target: "nodes.NodeNG") -> None:
+    def __init__(self, target: "nodes.NodeNG", missing_element: str = "Parent") -> None:
         self.target = target
-        super().__init__(message=f"Parent not found on {target!r}.")
+        super().__init__(message=f"{missing_element} not found on {target!r}.")
 
 
 class StatementMissing(ParentMissingError):
@@ -282,8 +282,8 @@ class StatementMissing(ParentMissingError):
     """
 
     def __init__(self, target: "nodes.NodeNG") -> None:
-        self.target = target
-        super().__init__(message=f"Statement not found for {target!r}.")
+        super().__init__(target, "Statement")
+
 
 # Backwards-compatibility aliases
 OperationError = util.BadOperationMessage

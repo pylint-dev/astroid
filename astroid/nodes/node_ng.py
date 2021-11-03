@@ -1,4 +1,5 @@
 import pprint
+import sys
 import typing
 from functools import singledispatch as _singledispatch
 from typing import (
@@ -28,6 +29,12 @@ from astroid.nodes.const import OP_PRECEDENCE
 
 if TYPE_CHECKING:
     from astroid import nodes
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
+
 
 # Types for 'NodeNG.nodes_of_class()'
 T_Nodes = TypeVar("T_Nodes", bound="NodeNG")
@@ -250,11 +257,29 @@ class NodeNG:
                 return True
         return False
 
-    def statement(self) -> "nodes.Statement":
+    @overload
+    def statement(
+        self, future: Literal[None] = ...
+    ) -> Union["nodes.Statement", "nodes.Module"]:
+        ...
+
+    @overload
+    def statement(
+        self, future: Literal[False]
+    ) -> Union["nodes.Statement", "nodes.Module"]:
+        ...
+
+    @overload
+    def statement(self, future: Literal[True]) -> "nodes.Statement":
+        ...
+
+    def statement(
+        self, future: bool = False
+    ) -> Union["nodes.Statement", "nodes.Module"]:
         """The first parent node, including self, marked as statement node.
 
-        :returns: The first parent statement.
-        :rtype: NodeNG
+        TODO: Deprecate the future parameter and only raise StatementMissing and return
+        nodes.Statement
 
         :raises StatementMissing: If no self has no parent attribute
         """
@@ -262,8 +287,10 @@ class NodeNG:
             self = cast("nodes.Statement", self)
             return self
         if not self.parent:
-            raise StatementMissing(target=self)
-        return self.parent.statement()
+            if future:
+                raise StatementMissing(target=self)
+            raise AttributeError(f"{self} object has no attribute 'parent'")
+        return self.parent.statement(future)
 
     def frame(
         self,

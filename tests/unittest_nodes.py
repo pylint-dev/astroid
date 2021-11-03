@@ -55,6 +55,7 @@ from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
     AttributeInferenceError,
+    StatementMissing,
 )
 from astroid.nodes.node_classes import (
     AssignAttr,
@@ -626,6 +627,12 @@ class ConstNodeTest(unittest.TestCase):
         self.assertIs(node.value, value)
         self.assertTrue(node._proxied.parent)
         self.assertEqual(node._proxied.root().name, value.__class__.__module__)
+        with self.assertRaises(AttributeError):
+            node.statement()
+        with self.assertRaises(AttributeError):
+            node.statement(False)
+        with self.assertRaises(StatementMissing):
+            node.statement(True)
 
     def test_none(self) -> None:
         self._test(None)
