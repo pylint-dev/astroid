@@ -660,7 +660,7 @@ class Module(LocalsDictNodeNG):
         ...
 
     def statement(
-        self, future: Union[Literal[True]] = None
+        self, future: Optional[Literal[True]] = None
     ) -> Union[NoReturn, "Module"]:
         """The first parent node, including self, marked as statement node.
 
