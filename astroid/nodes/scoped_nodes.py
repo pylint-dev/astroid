@@ -652,14 +652,16 @@ class Module(LocalsDictNodeNG):
         return self.file is not None and self.file.endswith(".py")
 
     @overload
-    def statement(self, future: Literal[False] = ...) -> "Module":
+    def statement(self, future: Literal[None] = ...) -> "Module":
         ...
 
     @overload
-    def statement(self, future: Literal[True] = ...) -> NoReturn:
+    def statement(self, future: Literal[True]) -> NoReturn:
         ...
 
-    def statement(self, future: bool = False) -> Union[NoReturn, "Module"]:
+    def statement(
+        self, future: Union[Literal[True]] = None
+    ) -> Union[NoReturn, "Module"]:
         """The first parent node, including self, marked as statement node.
 
         When called on a :class:`Module` with the future parameter this raises an error.
