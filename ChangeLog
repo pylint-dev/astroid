@@ -12,6 +12,7 @@ What's New in astroid 2.8.5?
 ============================
 Release date: TBA
 
+* Added missing ``kind`` (for ``Const``) and ``conversion`` (for ``FormattedValue``) fields to repr.
 
 
 What's New in astroid 2.8.4?
