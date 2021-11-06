@@ -22,8 +22,11 @@ import sys
 import textwrap
 import unittest
 
+import pytest
+
 from astroid import MANAGER, Instance, nodes, test_utils
 from astroid.builder import AstroidBuilder, extract_node
+from astroid.const import PY38_PLUS
 from astroid.exceptions import InferenceError
 from astroid.raw_building import build_module
 
@@ -156,6 +159,7 @@ def test():
         base = next(result._proxied.bases[0].infer())
         self.assertEqual(base.name, "int")
 
+    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
     def test_filter_stmts_nested_if(self) -> None:
         builder = AstroidBuilder()
         data = """
