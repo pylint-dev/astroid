@@ -629,8 +629,6 @@ class ConstNodeTest(unittest.TestCase):
         self.assertEqual(node._proxied.root().name, value.__class__.__module__)
         with self.assertRaises(AttributeError):
             node.statement()
-        with self.assertRaises(AttributeError):
-            node.statement(False)
         with self.assertRaises(StatementMissing):
             node.statement(True)
 
