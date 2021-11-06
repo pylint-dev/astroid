@@ -1846,7 +1846,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
     <Const.bytes l.1 at 0x7f23b2e35a20>]
     """
 
-    _other_fields = ("value",)
+    _other_fields = ("value", "kind")
 
     def __init__(
         self,
@@ -4076,6 +4076,7 @@ class FormattedValue(NodeNG):
     """
 
     _astroid_fields = ("value", "format_spec")
+    _other_fields = ("conversion",)
 
     def __init__(
         self,

@@ -1191,7 +1191,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         # (__name__ == '__main__') and through pytest (__name__ ==
         # 'unittest_inference')
         self.assertEqual(
-            value, [f"Instance of {__name__}.myarray", "Const.int(value=5)"]
+            value,
+            [
+                f"Instance of {__name__}.myarray",
+                "Const.int(value=5,\n          kind=None)",
+            ],
         )
 
     def test_nonregr_lambda_arg(self) -> None:
