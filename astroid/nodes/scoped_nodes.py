@@ -674,11 +674,11 @@ class Module(LocalsDictNodeNG):
         if future:
             raise StatementMissing(target=self)
         warnings.warn(
-                "In astroid 3.0.0 NodeNG.statement() will return either a nodes.Statement "
-                "or raise a StatementMissing exception. This behaviour can already be triggered "
-                "by passing 'future=True' to a statement() call.",
-                DeprecationWarning,
-            )
+            "In astroid 3.0.0 NodeNG.statement() will return either a nodes.Statement "
+            "or raise a StatementMissing exception. This behaviour can already be triggered "
+            "by passing 'future=True' to a statement() call.",
+            DeprecationWarning,
+        )
         return self
 
     def previous_sibling(self):
