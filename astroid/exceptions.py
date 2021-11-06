@@ -282,9 +282,9 @@ class StatementMissing(ParentMissingError):
     """
 
     def __init__(self, target: "nodes.NodeNG") -> None:
-        # See: https://github.com/PyCQA/pylint/issues/2903
-        # and: https://github.com/PyCQA/astroid/pull/1217#discussion_r744149027
         # pylint: disable-next=bad-super-call
+        # https://github.com/PyCQA/pylint/issues/2903
+        # https://github.com/PyCQA/astroid/pull/1217#discussion_r744149027
         super(ParentMissingError, self).__init__(
             message=f"Statement not found on {target!r}"
         )
