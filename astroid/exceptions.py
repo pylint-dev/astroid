@@ -265,7 +265,6 @@ class ParentMissingError(AstroidError):
 
     Standard attributes:
         target: The node for which the parent lookup failed.
-        missing_element: The type of attribute/method that is missing because of the missing parent
     """
 
     def __init__(self, target: "nodes.NodeNG") -> None:

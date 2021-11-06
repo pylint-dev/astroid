@@ -274,7 +274,7 @@ class NodeNG:
         ...
 
     def statement(
-        self, future: Literal[None, True] = None
+        self, *, future: Literal[None, True] = None
     ) -> Union["nodes.Statement", "nodes.Module", NoReturn]:
         """The first parent node, including self, marked as statement node.
 
