@@ -265,12 +265,12 @@ class NodeNG:
 
     @overload
     def statement(
-        self, future: Literal[None] = ...
+        self, *, future: Literal[None] = ...
     ) -> Union["nodes.Statement", "nodes.Module"]:
         ...
 
     @overload
-    def statement(self, future: Literal[True]) -> "nodes.Statement":
+    def statement(self, *, future: Literal[True]) -> "nodes.Statement":
         ...
 
     def statement(

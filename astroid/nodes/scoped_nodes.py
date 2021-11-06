@@ -653,17 +653,17 @@ class Module(LocalsDictNodeNG):
         return self.file is not None and self.file.endswith(".py")
 
     @overload
-    def statement(self, future: Literal[None] = ...) -> "Module":
+    def statement(self, *, future: Literal[None] = ...) -> "Module":
         ...
 
     # pylint: disable-next=signature-differs
     # https://github.com/PyCQA/pylint/issues/5264
     @overload
-    def statement(self, future: Literal[True]) -> NoReturn:
+    def statement(self, *, future: Literal[True]) -> NoReturn:
         ...
 
     def statement(
-        self, future: Literal[None, True] = None
+        self, *, future: Literal[None, True] = None
     ) -> Union[NoReturn, "Module"]:
         """The first parent node, including self, marked as statement node.
 
