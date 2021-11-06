@@ -268,9 +268,9 @@ class ParentMissingError(AstroidError):
         missing_element: The type of attribute/method that is missing because of the missing parent
     """
 
-    def __init__(self, target: "nodes.NodeNG", missing_element: str = "Parent") -> None:
+    def __init__(self, target: "nodes.NodeNG") -> None:
         self.target = target
-        super().__init__(message=f"{missing_element} not found on {target!r}.")
+        super().__init__(message=f"Parent not found on {target!r}.")
 
 
 class StatementMissing(ParentMissingError):
@@ -283,7 +283,9 @@ class StatementMissing(ParentMissingError):
     """
 
     def __init__(self, target: "nodes.NodeNG") -> None:
-        super().__init__(target, "Statement")
+        super(ParentMissingError, self).__init__(
+            message=f"Statement not found on {target!r}"
+        )
 
 
 # Backwards-compatibility aliases

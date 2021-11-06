@@ -615,7 +615,6 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(module.package, 0)
         self.assertFalse(module.is_statement)
         self.assertEqual(module.statement(), module)
-        self.assertEqual(module.statement(False), module)
         with self.assertRaises(StatementMissing):
             module.statement(True)
 

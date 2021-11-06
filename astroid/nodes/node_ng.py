@@ -1,6 +1,7 @@
 import pprint
 import sys
 import typing
+import warnings
 from functools import singledispatch as _singledispatch
 from typing import (
     TYPE_CHECKING,
@@ -288,6 +289,12 @@ class NodeNG:
         if not self.parent:
             if future:
                 raise StatementMissing(target=self)
+            warnings.warn(
+                "In astroid 3.0.0 NodeNG.statement() will return either a nodes.Statement "
+                "or raise a StatementMissing exception. This behaviour can already be triggered "
+                "by passing 'future=True' to a statement() call.",
+                DeprecationWarning,
+            )
             raise AttributeError(f"{self} object has no attribute 'parent'")
         return self.parent.statement(future)
 
