@@ -4224,7 +4224,7 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
 
     optional_assign = True
     """Whether this node optionally assigns a variable.
-    
+
     Since NamedExpr are not always called they do not always assign."""
 
     def __init__(
