@@ -677,7 +677,8 @@ class Module(LocalsDictNodeNG):
             raise StatementMissing(target=self)
         warnings.warn(
             "In astroid 3.0.0 NodeNG.statement() will return either a nodes.Statement "
-            "or raise a StatementMissing exception. This behaviour can already be triggered "
+            "or raise a StatementMissing exception. nodes.Module will no longer be "
+            "considered a statement. This behaviour can already be triggered "
             "by passing 'future=True' to a statement() call.",
             DeprecationWarning,
         )
@@ -2588,7 +2589,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # Look for AnnAssigns, which are not attributes in the purest sense.
         for value in values:
             if isinstance(value, node_classes.AssignName):
-                stmt = value.statement(True)
+                stmt = value.statement()
                 if isinstance(stmt, node_classes.AnnAssign) and stmt.value is None:
                     raise AttributeInferenceError(
                         target=self, attribute=name, context=context

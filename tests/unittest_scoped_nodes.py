@@ -323,7 +323,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
     def test_navigation(self) -> None:
         function = self.module["global_access"]
         self.assertEqual(function.statement(), function)
-        self.assertEqual(function.statement(True), function)
+        self.assertEqual(function.statement(future=True), function)
         l_sibling = function.previous_sibling()
         # check taking parent if child is not a stmt
         self.assertIsInstance(l_sibling, nodes.Assign)
@@ -822,7 +822,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_navigation(self) -> None:
         klass = self.module["YO"]
         self.assertEqual(klass.statement(), klass)
-        self.assertEqual(klass.statement(True), klass)
+        self.assertEqual(klass.statement(future=True), klass)
         l_sibling = klass.previous_sibling()
         self.assertTrue(isinstance(l_sibling, nodes.FunctionDef), l_sibling)
         self.assertEqual(l_sibling.name, "global_access")

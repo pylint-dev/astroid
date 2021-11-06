@@ -291,12 +291,13 @@ class NodeNG:
                 raise StatementMissing(target=self)
             warnings.warn(
                 "In astroid 3.0.0 NodeNG.statement() will return either a nodes.Statement "
-                "or raise a StatementMissing exception. This behaviour can already be triggered "
+                "or raise a StatementMissing exception. AttributeError will no longer be raised. "
+                "This behaviour can already be triggered "
                 "by passing 'future=True' to a statement() call.",
                 DeprecationWarning,
             )
             raise AttributeError(f"{self} object has no attribute 'parent'")
-        return self.parent.statement(future)
+        return self.parent.statement(future=future)
 
     def frame(
         self,

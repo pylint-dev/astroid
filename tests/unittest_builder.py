@@ -619,7 +619,7 @@ class FileBuildTest(unittest.TestCase):
             module.statement()
             assert len(records) == 1
         with self.assertRaises(StatementMissing):
-            module.statement(True)
+            module.statement(future=True)
 
     def test_module_locals(self) -> None:
         """test the 'locals' dictionary of an astroid module"""
