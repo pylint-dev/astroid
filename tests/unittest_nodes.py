@@ -628,7 +628,9 @@ class ConstNodeTest(unittest.TestCase):
         self.assertTrue(node._proxied.parent)
         self.assertEqual(node._proxied.root().name, value.__class__.__module__)
         with self.assertRaises(AttributeError):
-            node.statement()
+            with pytest.warns(DeprecationWarning) as warnings:
+                node.statement()
+                assert len(warnings) == 1
         with self.assertRaises(StatementMissing):
             node.statement(True)
 
