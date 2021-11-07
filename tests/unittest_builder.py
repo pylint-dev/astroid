@@ -38,6 +38,7 @@ from astroid.exceptions import (
     AstroidSyntaxError,
     AttributeInferenceError,
     InferenceError,
+    StatementMissing,
 )
 from astroid.nodes.scoped_nodes import Module
 
@@ -614,7 +615,11 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(module.package, 0)
         self.assertFalse(module.is_statement)
         self.assertEqual(module.statement(), module)
-        self.assertEqual(module.statement(), module)
+        with pytest.warns(DeprecationWarning) as records:
+            module.statement()
+            assert len(records) == 1
+        with self.assertRaises(StatementMissing):
+            module.statement(future=True)
 
     def test_module_locals(self) -> None:
         """test the 'locals' dictionary of an astroid module"""

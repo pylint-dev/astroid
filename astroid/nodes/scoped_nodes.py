@@ -44,8 +44,10 @@ import builtins
 import io
 import itertools
 import os
+import sys
 import typing
-from typing import List, Optional, TypeVar
+import warnings
+from typing import List, Optional, TypeVar, Union, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
@@ -65,12 +67,25 @@ from astroid.exceptions import (
     InconsistentMroError,
     InferenceError,
     MroError,
+    StatementMissing,
     TooManyLevelsError,
 )
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
 from astroid.nodes import Arguments, Const, node_classes
+
+if sys.version_info >= (3, 6, 2):
+    from typing import NoReturn
+else:
+    from typing_extensions import NoReturn
+
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
+
 
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
@@ -637,12 +652,34 @@ class Module(LocalsDictNodeNG):
         """
         return self.file is not None and self.file.endswith(".py")
 
-    def statement(self):
+    @overload
+    def statement(self, *, future: Literal[None] = ...) -> "Module":
+        ...
+
+    @overload
+    def statement(self, *, future: Literal[True]) -> NoReturn:
+        ...
+
+    def statement(
+        self, *, future: Literal[None, True] = None
+    ) -> Union[NoReturn, "Module"]:
         """The first parent node, including self, marked as statement node.
 
-        :returns: The first parent statement.
-        :rtype: NodeNG
+        When called on a :class:`Module` with the future parameter this raises an error.
+
+        TODO: Deprecate the future parameter and only raise StatementMissing
+
+        :raises StatementMissing: If no self has no parent attribute and future is True
         """
+        if future:
+            raise StatementMissing(target=self)
+        warnings.warn(
+            "In astroid 3.0.0 NodeNG.statement() will return either a nodes.Statement "
+            "or raise a StatementMissing exception. nodes.Module will no longer be "
+            "considered a statement. This behaviour can already be triggered "
+            "by passing 'future=True' to a statement() call.",
+            DeprecationWarning,
+        )
         return self
 
     def previous_sibling(self):

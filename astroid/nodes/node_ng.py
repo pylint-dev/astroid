@@ -1,5 +1,7 @@
 import pprint
+import sys
 import typing
+import warnings
 from functools import singledispatch as _singledispatch
 from typing import (
     TYPE_CHECKING,
@@ -10,6 +12,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
@@ -18,6 +21,7 @@ from astroid.exceptions import (
     AstroidError,
     InferenceError,
     ParentMissingError,
+    StatementMissing,
     UseInferenceDefault,
 )
 from astroid.manager import AstroidManager
@@ -26,6 +30,17 @@ from astroid.nodes.const import OP_PRECEDENCE
 
 if TYPE_CHECKING:
     from astroid import nodes
+
+if sys.version_info >= (3, 6, 2):
+    from typing import NoReturn
+else:
+    from typing_extensions import NoReturn
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
+
 
 # Types for 'NodeNG.nodes_of_class()'
 T_Nodes = TypeVar("T_Nodes", bound="NodeNG")
@@ -248,15 +263,41 @@ class NodeNG:
                 return True
         return False
 
-    def statement(self):
+    @overload
+    def statement(
+        self, *, future: Literal[None] = ...
+    ) -> Union["nodes.Statement", "nodes.Module"]:
+        ...
+
+    @overload
+    def statement(self, *, future: Literal[True]) -> "nodes.Statement":
+        ...
+
+    def statement(
+        self, *, future: Literal[None, True] = None
+    ) -> Union["nodes.Statement", "nodes.Module", NoReturn]:
         """The first parent node, including self, marked as statement node.
 
-        :returns: The first parent statement.
-        :rtype: NodeNG
+        TODO: Deprecate the future parameter and only raise StatementMissing and return
+        nodes.Statement
+
+        :raises AttributeError: If self has no parent attribute
+        :raises StatementMissing: If self has no parent attribute and future is True
         """
         if self.is_statement:
-            return self
-        return self.parent.statement()
+            return cast("nodes.Statement", self)
+        if not self.parent:
+            if future:
+                raise StatementMissing(target=self)
+            warnings.warn(
+                "In astroid 3.0.0 NodeNG.statement() will return either a nodes.Statement "
+                "or raise a StatementMissing exception. AttributeError will no longer be raised. "
+                "This behaviour can already be triggered "
+                "by passing 'future=True' to a statement() call.",
+                DeprecationWarning,
+            )
+            raise AttributeError(f"{self} object has no attribute 'parent'")
+        return self.parent.statement(future=future)
 
     def frame(
         self,

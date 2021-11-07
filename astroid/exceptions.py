@@ -272,6 +272,24 @@ class ParentMissingError(AstroidError):
         super().__init__(message=f"Parent not found on {target!r}.")
 
 
+class StatementMissing(ParentMissingError):
+    """Raised when a call to node.statement() does not return a node. This is because
+    a node in the chain does not have a parent attribute and therefore does not
+    return a node for statement().
+
+    Standard attributes:
+        target: The node for which the parent lookup failed.
+    """
+
+    def __init__(self, target: "nodes.NodeNG") -> None:
+        # pylint: disable-next=bad-super-call
+        # https://github.com/PyCQA/pylint/issues/2903
+        # https://github.com/PyCQA/astroid/pull/1217#discussion_r744149027
+        super(ParentMissingError, self).__init__(
+            message=f"Statement not found on {target!r}"
+        )
+
+
 # Backwards-compatibility aliases
 OperationError = util.BadOperationMessage
 UnaryOperationError = util.BadUnaryOperationMessage
