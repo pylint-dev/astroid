@@ -258,7 +258,8 @@ def object_len(node, context=None):
     if (
         isinstance(node_frame, scoped_nodes.FunctionDef)
         and node_frame.name == "__len__"
-        and inferred_node is not None
+        and hasattr(inferred_node, "_proxied")
+        and inferred_node._proxied == node_frame.parent
     ):
         message = (
             "Self referential __len__ function will "

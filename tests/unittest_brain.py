@@ -3126,5 +3126,50 @@ def test_no_recursionerror_on_self_referential_length_check() -> None:
         node.inferred()
 
 
+def test_no_inference_on_outer_referential_length_check() -> None:
+    """
+    Regression test for https://github.com/PyCQA/pylint/issues/5244
+    """
+    node = astroid.extract_node(
+        """
+    class A:
+        def __len__(self) -> int:
+            return 42
+
+    class Crash:
+        def __len__(self) -> int:
+            a = A()
+            return len(a)
+
+    len(Crash()) #@
+    """
+    )
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 42
+
+
+def test_no_attributeerror_on_self_referential_length_check() -> None:
+    """
+    Regression test for https://github.com/PyCQA/pylint/issues/5244
+    """
+    with pytest.raises(InferenceError):
+        node = astroid.extract_node(
+            """
+        class MyClass:
+            def some_func(self):
+                return lambda: 42
+
+            def __len__(self):
+                return len(self.some_func())
+
+        len(MyClass()) #@
+        """
+        )
+        assert isinstance(node, nodes.NodeNG)
+        node.inferred()
+
+
 if __name__ == "__main__":
     unittest.main()
