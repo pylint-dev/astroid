@@ -54,6 +54,7 @@ from astroid.exceptions import (
     InferenceError,
     NoDefault,
     ParentMissingError,
+    StatementMissing,
 )
 from astroid.manager import AstroidManager
 from astroid.nodes.const import OP_PRECEDENCE
@@ -387,7 +388,7 @@ class LookupMixIn:
         return _infer_stmts(stmts, context, frame)
 
     def _get_filtered_node_statements(self, nodes):
-        statements = [(node, node.statement()) for node in nodes]
+        statements = [(node, node.statement(future=True)) for node in nodes]
         # Next we check if we have ExceptHandlers that are parent
         # of the underlying variable, in which case the last one survives
         if len(statements) > 1 and all(
@@ -437,10 +438,18 @@ class LookupMixIn:
             #
             # def test(b=1):
             #     ...
-
-            if self.statement() is myframe and myframe.parent:
+            if (
+                self.parent
+                and self.statement(future=True) is myframe
+                and myframe.parent
+            ):
                 myframe = myframe.parent.frame()
-        mystmt = self.statement()
+
+        # nodes.Module don't have a parent attribute
+        try:
+            mystmt = self.statement(future=True)
+        except StatementMissing:
+            mystmt = self
         # line filtering if we are in the same frame
         #
         # take care node may be missing lineno information (this is the case for
@@ -1816,7 +1825,7 @@ class Comprehension(NodeNG):
             if isinstance(lookup_node, (Const, Name)):
                 return [lookup_node], True
 
-        elif self.statement() is mystmt:
+        elif self.statement(future=True) is mystmt:
             # original node's statement is the assignment, only keeps
             # current node (gen exp, list comp)
 

@@ -2587,7 +2587,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # Look for AnnAssigns, which are not attributes in the purest sense.
         for value in values:
             if isinstance(value, node_classes.AssignName):
-                stmt = value.statement()
+                stmt = value.statement(future=True)
                 if isinstance(stmt, node_classes.AnnAssign) and stmt.value is None:
                     raise AttributeInferenceError(
                         target=self, attribute=name, context=context
