@@ -656,8 +656,6 @@ class Module(LocalsDictNodeNG):
     def statement(self, *, future: Literal[None] = ...) -> "Module":
         ...
 
-    # pylint: disable-next=signature-differs
-    # https://github.com/PyCQA/pylint/issues/5264
     @overload
     def statement(self, *, future: Literal[True]) -> NoReturn:
         ...
