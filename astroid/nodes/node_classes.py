@@ -4828,7 +4828,7 @@ def is_from_decorator(node):
 
 
 def _get_if_statement_ancestor(node: NodeNG) -> Optional[If]:
-    """Return True if the given node is the child of a If node"""
+    """Return the first parent node that is an If node (or None)"""
     for parent in node.node_ancestors():
         if isinstance(parent, If):
             return parent
