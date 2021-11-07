@@ -3126,7 +3126,7 @@ def test_no_recursionerror_on_self_referential_length_check() -> None:
         node.inferred()
 
 
-def test_no_inference_on_outer_referential_length_check() -> None:
+def test_inference_on_outer_referential_length_check() -> None:
     """
     Regression test for https://github.com/PyCQA/pylint/issues/5244
     """
