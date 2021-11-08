@@ -3113,7 +3113,7 @@ def test_no_recursionerror_on_self_referential_length_check() -> None:
     """
     Regression test for https://github.com/PyCQA/astroid/issues/777
 
-    This inference should only raise an InferenceError and no RecursionError
+    This test should only raise an InferenceError and no RecursionError.
     """
     with pytest.raises(InferenceError):
         node = astroid.extract_node(
@@ -3133,7 +3133,7 @@ def test_inference_on_outer_referential_length_check() -> None:
     Regression test for https://github.com/PyCQA/pylint/issues/5244
     See also https://github.com/PyCQA/astroid/pull/1234
 
-    This inference should succeed without any error
+    This test should succeed without any error.
     """
     node = astroid.extract_node(
         """
@@ -3160,7 +3160,7 @@ def test_no_attributeerror_on_self_referential_length_check() -> None:
     Regression test for https://github.com/PyCQA/pylint/issues/5244
     See also https://github.com/PyCQA/astroid/pull/1234
 
-    This inference should only raise an InferenceError and no AttributeError
+    This test should only raise an InferenceError and no AttributeError.
     """
     with pytest.raises(InferenceError):
         node = astroid.extract_node(

@@ -12,7 +12,7 @@ What's New in astroid 2.8.5?
 ============================
 Release date: TBA
 
-* Fix crash on inference of ``__len__``
+* Fix crash on inference of ``__len__``.
 
   Closes PyCQA/pylint#5244
 
