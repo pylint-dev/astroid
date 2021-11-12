@@ -12,6 +12,10 @@ What's New in astroid 2.8.5?
 ============================
 Release date: TBA
 
+* Use more permissive versions for the ``typed-ast`` dependencie (<2.0 instead of <1.5)
+
+  Closes #1237
+
 * Fix crash on inference of ``__len__``.
 
   Closes PyCQA/pylint#5244
