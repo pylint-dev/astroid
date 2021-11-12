@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.8.5?
+What's New in astroid 2.8.6?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 2.8.5?
+============================
+Release date: 2021-11-12
 
 * Use more permissive versions for the ``typed-ast`` dependencie (<2.0 instead of <1.5)
 
