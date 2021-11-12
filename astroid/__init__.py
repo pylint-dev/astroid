@@ -58,7 +58,36 @@ from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
 from astroid.const import Context, Del, Load, Store
-from astroid.exceptions import *
+from astroid.exceptions import (
+    AstroidBuildingError,
+    AstroidBuildingException,
+    AstroidError,
+    AstroidImportError,
+    AstroidIndexError,
+    AstroidSyntaxError,
+    AstroidTypeError,
+    AstroidValueError,
+    AttributeInferenceError,
+    BinaryOperationError,
+    DuplicateBasesError,
+    InconsistentMroError,
+    InferenceError,
+    InferenceOverwriteError,
+    MroError,
+    NameInferenceError,
+    NoDefault,
+    NotFoundError,
+    OperationError,
+    ParentMissingError,
+    ResolveError,
+    StatementMissing,
+    SuperArgumentTypeError,
+    SuperError,
+    TooManyLevelsError,
+    UnaryOperationError,
+    UnresolvableName,
+    UseInferenceDefault,
+)
 from astroid.inference_tip import _inference_tip_cached, inference_tip
 from astroid.objects import ExceptionInstance
 
