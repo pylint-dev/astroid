@@ -18,6 +18,12 @@ Release date: TBA
 
 * Added missing ``kind`` (for ``Const``) and ``conversion`` (for ``FormattedValue``) fields to repr.
 
+* Fix crash with assignment expressions, nested if expressions and filtering of statements
+
+  Closes PyCQA/pylint#5178
+
+* Fix incorrect filtering of assignment expressions statements
+
 
 What's New in astroid 2.8.4?
 ============================
