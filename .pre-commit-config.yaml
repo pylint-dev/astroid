@@ -27,7 +27,7 @@ repos:
         exclude: tests/testdata
         args: [--py36-plus]
   - repo: https://github.com/PyCQA/isort
-    rev: 5.9.3
+    rev: 5.10.0
     hooks:
       - id: isort
         exclude: tests/testdata

@@ -8,11 +8,31 @@ Release date: TBA
 
 
 
-What's New in astroid 2.8.5?
+What's New in astroid 2.8.6?
 ============================
 Release date: TBA
 
+
+
+What's New in astroid 2.8.5?
+============================
+Release date: 2021-11-12
+
+* Use more permissive versions for the ``typed-ast`` dependencie (<2.0 instead of <1.5)
+
+  Closes #1237
+
+* Fix crash on inference of ``__len__``.
+
+  Closes PyCQA/pylint#5244
+
 * Added missing ``kind`` (for ``Const``) and ``conversion`` (for ``FormattedValue``) fields to repr.
+
+* Fix crash with assignment expressions, nested if expressions and filtering of statements
+
+  Closes PyCQA/pylint#5178
+
+* Fix incorrect filtering of assignment expressions statements
 
 
 What's New in astroid 2.8.4?

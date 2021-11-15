@@ -10,8 +10,8 @@
 # Copyright (c) 2019, 2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
@@ -22,8 +22,11 @@ import sys
 import textwrap
 import unittest
 
+import pytest
+
 from astroid import MANAGER, Instance, nodes, test_utils
 from astroid.builder import AstroidBuilder, extract_node
+from astroid.const import PY38_PLUS
 from astroid.exceptions import InferenceError
 from astroid.raw_building import build_module
 
@@ -155,6 +158,38 @@ def test():
         self.assertIsInstance(result, Instance)
         base = next(result._proxied.bases[0].infer())
         self.assertEqual(base.name, "int")
+
+    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
+    def test_filter_stmts_nested_if(self) -> None:
+        builder = AstroidBuilder()
+        data = """
+def test(val):
+    variable = None
+
+    if val == 1:
+        variable = "value"
+        if variable := "value":
+            pass
+
+    elif val == 2:
+        variable = "value_two"
+        variable = "value_two"
+
+    return variable
+"""
+        module = builder.string_build(data, __name__, __file__)
+        test_func = module["test"]
+        result = list(test_func.infer_call_result(module))
+        assert len(result) == 3
+        assert isinstance(result[0], nodes.Const)
+        assert result[0].value is None
+        assert result[0].lineno == 3
+        assert isinstance(result[1], nodes.Const)
+        assert result[1].value == "value"
+        assert result[1].lineno == 7
+        assert isinstance(result[1], nodes.Const)
+        assert result[2].value == "value_two"
+        assert result[2].lineno == 12
 
     def test_ancestors_patching_class_recursion(self) -> None:
         node = AstroidBuilder().string_build(

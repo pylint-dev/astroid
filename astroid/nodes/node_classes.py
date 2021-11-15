@@ -24,8 +24,8 @@
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
@@ -493,8 +493,28 @@ class LookupMixIn:
                 continue
 
             if isinstance(assign_type, NamedExpr):
-                _stmts = [node]
-                continue
+                # If the NamedExpr is in an if statement we do some basic control flow inference
+                if_parent = _get_if_statement_ancestor(assign_type)
+                if if_parent:
+                    # If the if statement is within another if statement we append the node
+                    # to possible statements
+                    if _get_if_statement_ancestor(if_parent):
+                        optional_assign = False
+                        _stmts.append(node)
+                        _stmt_parents.append(stmt.parent)
+                    # If the if statement is first-level and not within an orelse block
+                    # we know that it will be evaluated
+                    elif not if_parent.is_orelse:
+                        _stmts = [node]
+                        _stmt_parents = [stmt.parent]
+                    # Else we do not known enough about the control flow to be 100% certain
+                    # and we append to possible statements
+                    else:
+                        _stmts.append(node)
+                        _stmt_parents.append(stmt.parent)
+                else:
+                    _stmts = [node]
+                    _stmt_parents = [stmt.parent]
 
             # XXX comment various branches below!!!
             try:
@@ -541,7 +561,7 @@ class LookupMixIn:
             # An AssignName node overrides previous assignments if:
             #   1. node's statement always assigns
             #   2. node and self are in the same block (i.e., has the same parent as self)
-            if isinstance(node, AssignName):
+            if isinstance(node, (NamedExpr, AssignName)):
                 if isinstance(stmt, ExceptHandler):
                     # If node's statement is an ExceptHandler, then it is the variable
                     # bound to the caught exception. If self is not contained within
@@ -2805,6 +2825,9 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         self.orelse: typing.List[NodeNG] = []
         """The contents of the ``else`` block."""
 
+        self.is_orelse: bool = False
+        """Whether the if-statement is the orelse-block of another if statement."""
+
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(
@@ -2826,6 +2849,8 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
             self.body = body
         if orelse is not None:
             self.orelse = orelse
+        if isinstance(self.parent, If) and self in self.parent.orelse:
+            self.is_orelse = True
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -4204,6 +4229,11 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
 
     _astroid_fields = ("target", "value")
 
+    optional_assign = True
+    """Whether this node optionally assigns a variable.
+
+    Since NamedExpr are not always called they do not always assign."""
+
     def __init__(
         self,
         lineno: Optional[int] = None,
@@ -4802,3 +4832,11 @@ def is_from_decorator(node):
         if isinstance(parent, Decorators):
             return True
     return False
+
+
+def _get_if_statement_ancestor(node: NodeNG) -> Optional[If]:
+    """Return the first parent node that is an If node (or None)"""
+    for parent in node.node_ancestors():
+        if isinstance(parent, If):
+            return parent
+    return None
