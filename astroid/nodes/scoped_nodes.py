@@ -662,7 +662,7 @@ class Module(LocalsDictNodeNG):
 
     def statement(
         self, *, future: Literal[None, True] = None
-    ) -> Union[NoReturn, "Module"]:
+    ) -> Union["NoReturn", "Module"]:
         """The first parent node, including self, marked as statement node.
 
         When called on a :class:`Module` with the future parameter this raises an error.

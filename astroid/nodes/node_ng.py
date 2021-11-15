@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from astroid import nodes
 
 if sys.version_info >= (3, 6, 2):
-    from typing import NoReturn
+    from typing import NoReturn  # pylint: disable=unused-import
 else:
     from typing_extensions import NoReturn
 
@@ -275,7 +275,7 @@ class NodeNG:
 
     def statement(
         self, *, future: Literal[None, True] = None
-    ) -> Union["nodes.Statement", "nodes.Module", NoReturn]:
+    ) -> Union["nodes.Statement", "nodes.Module", "NoReturn"]:
         """The first parent node, including self, marked as statement node.
 
         TODO: Deprecate the future parameter and only raise StatementMissing and return
