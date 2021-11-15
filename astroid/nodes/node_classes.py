@@ -54,7 +54,6 @@ from astroid.exceptions import (
     InferenceError,
     NoDefault,
     ParentMissingError,
-    StatementMissing,
 )
 from astroid.manager import AstroidManager
 from astroid.nodes.const import OP_PRECEDENCE
@@ -445,16 +444,15 @@ class LookupMixIn:
             ):
                 myframe = myframe.parent.frame()
 
-        # nodes.Module don't have a parent attribute
-        try:
+        mystmt = None
+        if self.parent:
             mystmt = self.statement(future=True)
-        except StatementMissing:
-            mystmt = self
+
         # line filtering if we are in the same frame
         #
         # take care node may be missing lineno information (this is the case for
         # nodes inserted for living objects)
-        if myframe is frame and mystmt.fromlineno is not None:
+        if myframe is frame and mystmt and mystmt.fromlineno is not None:
             assert mystmt.fromlineno is not None, mystmt
             mylineno = mystmt.fromlineno + offset
         else:
@@ -555,7 +553,7 @@ class LookupMixIn:
                         _stmt_parents = []
                     else:
                         continue
-                elif not optional_assign and stmt.parent is mystmt.parent:
+                elif not optional_assign and mystmt and stmt.parent is mystmt.parent:
                     _stmts = []
                     _stmt_parents = []
             elif isinstance(node, DelName):
