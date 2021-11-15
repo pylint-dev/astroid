@@ -25,11 +25,11 @@ import itertools
 import os
 import pprint
 import types
-from functools import lru_cache
 from typing import TYPE_CHECKING, Optional
 
 import astroid
 from astroid import util
+from astroid.cache import lru_cache
 from astroid.context import InferenceContext, copy_context
 from astroid.exceptions import AttributeInferenceError, InferenceError, NoDefault
 from astroid.manager import AstroidManager
@@ -100,7 +100,7 @@ class ObjectModel:
     def __contains__(self, name):
         return name in self.attributes()
 
-    @lru_cache(maxsize=None)
+    @lru_cache()
     def attributes(self):
         """Get the attributes which are exported by this object model."""
         return [

@@ -3,9 +3,8 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 import collections
-from functools import lru_cache
 
-from astroid.context import _invalidate_cache
+from astroid.cache import INFERENCE_CACHE, lru_cache
 
 
 class TransformVisitor:
@@ -17,12 +16,10 @@ class TransformVisitor:
     transforms for each encountered node.
     """
 
-    TRANSFORM_MAX_CACHE_SIZE = 10000
-
     def __init__(self):
         self.transforms = collections.defaultdict(list)
 
-    @lru_cache(maxsize=TRANSFORM_MAX_CACHE_SIZE)
+    @lru_cache()
     def _transform(self, node):
         """Call matching transforms for the given node if any and return the
         transformed node.
@@ -39,7 +36,7 @@ class TransformVisitor:
                 # if the transformation function returns something, it's
                 # expected to be a replacement for the node
                 if ret is not None:
-                    _invalidate_cache()
+                    INFERENCE_CACHE.clear()
                     node = ret
                 if ret.__class__ != cls:
                     # Can no longer apply the rest of the transforms.

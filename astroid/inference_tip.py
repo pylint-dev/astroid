@@ -9,6 +9,7 @@ import typing
 import wrapt
 
 from astroid import bases, util
+from astroid.cache import cached_generator
 from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
 from astroid.nodes import NodeNG
 from astroid.typing import InferFn
@@ -82,8 +83,9 @@ def inference_tip(infer_function: InferFn, raise_on_overwrite: bool = False) -> 
                     node=node,
                 )
             )
+
         # pylint: disable=no-value-for-parameter
-        node._explicit_inference = _inference_tip_cached(infer_function)
+        node._explicit_inference = cached_generator(infer_function)
         return node
 
     return transform

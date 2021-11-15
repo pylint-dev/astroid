@@ -24,6 +24,7 @@ from typing import (
 
 from astroid import decorators, mixins, util
 from astroid.bases import Instance, _infer_stmts
+from astroid.cache import lru_cache
 from astroid.const import Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
@@ -366,7 +367,7 @@ class BaseContainer(
 class LookupMixIn:
     """Mixin to look up a name in the right scope."""
 
-    @lru_cache(maxsize=None)
+    @lru_cache()
     def lookup(self, name):
         """Lookup where the given variable is assigned.
 

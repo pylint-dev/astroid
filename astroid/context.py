@@ -7,6 +7,8 @@ import contextlib
 import pprint
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
+from astroid.cache import INFERENCE_CACHE
+
 if TYPE_CHECKING:
     from astroid.nodes.node_classes import Keyword, NodeNG
 
@@ -106,7 +108,7 @@ class InferenceContext:
         Currently the key is ``(node, lookupname, callcontext, boundnode)``
         and the value is tuple of the inferred results
         """
-        return _INFERENCE_CACHE
+        return INFERENCE_CACHE
 
     def push(self, node):
         """Push node into inference path

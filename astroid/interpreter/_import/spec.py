@@ -13,7 +13,8 @@ import zipimport
 from functools import lru_cache
 from pathlib import Path
 
-from . import util
+from astroid.cache import lru_cache
+from astroid.interpreter._import import util
 
 ModuleType = enum.Enum(
     "ModuleType",
