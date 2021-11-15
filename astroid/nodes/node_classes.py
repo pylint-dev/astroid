@@ -367,7 +367,7 @@ class BaseContainer(
 class LookupMixIn:
     """Mixin to look up a name in the right scope."""
 
-    @lru_cache()
+    @lru_cache
     def lookup(self, name):
         """Lookup where the given variable is assigned.
 

@@ -85,7 +85,7 @@ def inference_tip(infer_function: InferFn, raise_on_overwrite: bool = False) -> 
             )
 
         # pylint: disable=no-value-for-parameter
-        node._explicit_inference = cached_generator(infer_function)
+        node._explicit_inference = cached_generator()(infer_function)
         return node
 
     return transform

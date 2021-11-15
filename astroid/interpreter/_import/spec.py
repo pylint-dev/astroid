@@ -262,7 +262,7 @@ def _is_setuptools_namespace(location):
         return extend_path or declare_namespace
 
 
-@lru_cache()
+@lru_cache
 def _cached_set_diff(left, right):
     result = set(left)
     result.difference_update(right)

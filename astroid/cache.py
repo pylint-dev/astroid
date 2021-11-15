@@ -8,7 +8,6 @@ from weakref import WeakSet
 import wrapt
 
 LRU_CACHE_CAPACITY = 128
-GENERATOR_CACHES = {}
 
 
 class LRUCache:
@@ -42,7 +41,7 @@ class LRUCache:
             cache.clear()
 
 
-def lru_cache():
+def lru_cache(arg=None):
     cache = LRUCache()
 
     @wrapt.decorator
@@ -59,19 +58,32 @@ def lru_cache():
 
         return result
 
+    if callable(arg):
+        return decorator(arg)
+
     return decorator
 
 
-@wrapt.decorator
-def cached_generator(func, instance, args, kwargs):
-    node = args[0]
-    try:
-        result = GENERATOR_CACHES[func, node]
-    except KeyError:
-        result = GENERATOR_CACHES[func, node] = list(func(*args, **kwargs))
-    return iter(result)
+_GENERATOR_CACHE = LRUCache()
+
+
+def cached_generator(arg=None):
+    @wrapt.decorator
+    def decorator(func, instance, args, kwargs):
+        key = func, args[0]
+
+        if key in _GENERATOR_CACHE:
+            result = _GENERATOR_CACHE[key]
+        else:
+            result = _GENERATOR_CACHE[key] = list(func(*args, **kwargs))
+
+        return iter(result)
+
+    if callable(arg):
+        return decorator(arg)
+
+    return decorator
 
 
 def clear_caches():
     LRUCache.clear_all()
-    GENERATOR_CACHES.clear()

@@ -100,7 +100,7 @@ class ObjectModel:
     def __contains__(self, name):
         return name in self.attributes()
 
-    @lru_cache()
+    @lru_cache
     def attributes(self):
         """Get the attributes which are exported by this object model."""
         return [
