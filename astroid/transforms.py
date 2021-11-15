@@ -4,7 +4,7 @@
 
 import collections
 
-from astroid.cache import INFERENCE_CACHE, lru_cache
+from astroid.cache import clear_caches, lru_cache
 
 
 class TransformVisitor:
@@ -36,7 +36,7 @@ class TransformVisitor:
                 # if the transformation function returns something, it's
                 # expected to be a replacement for the node
                 if ret is not None:
-                    INFERENCE_CACHE.clear()
+                    clear_caches()
                     node = ret
                 if ret.__class__ != cls:
                     # Can no longer apply the rest of the transforms.

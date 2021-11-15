@@ -7,20 +7,17 @@ import contextlib
 import pprint
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
-from astroid.cache import INFERENCE_CACHE
+from astroid.cache import LRUCache
 
 if TYPE_CHECKING:
     from astroid.nodes.node_classes import Keyword, NodeNG
+
 
 _InferenceCache = Dict[
     Tuple["NodeNG", Optional[str], Optional[str], Optional[str]], Sequence["NodeNG"]
 ]
 
-_INFERENCE_CACHE: _InferenceCache = {}
-
-
-def _invalidate_cache() -> None:
-    _INFERENCE_CACHE.clear()
+_INFERENCE_CACHE = LRUCache()
 
 
 class InferenceContext:
@@ -108,7 +105,7 @@ class InferenceContext:
         Currently the key is ``(node, lookupname, callcontext, boundnode)``
         and the value is tuple of the inferred results
         """
-        return INFERENCE_CACHE
+        return _INFERENCE_CACHE
 
     def push(self, node):
         """Push node into inference path
