@@ -48,6 +48,7 @@ from typing import (
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
 from astroid.const import PY37_PLUS, PY38_PLUS, PY39_PLUS, Context
+from astroid.exceptions import ParentMissingError
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 
@@ -106,7 +107,7 @@ class TreeRebuilder:
     def _get_doc(self, node: T_Doc) -> Tuple[T_Doc, Optional[str]]:
         try:
             if PY37_PLUS and hasattr(node, "docstring"):
-                doc = node.docstring
+                doc = node.docstring  # type: ignore # mypy doesn't recognize hasattr
                 return node, doc
             if node.body and isinstance(node.body[0], self._module.Expr):
 
@@ -803,8 +804,10 @@ class TreeRebuilder:
         """save assignement situation since node.parent is not available yet"""
         if self._global_names and node.name in self._global_names[-1]:
             node.root().set_local(node.name, node)
-        else:
+        elif node.parent:
             node.parent.set_local(node.name, node)
+        else:
+            raise ParentMissingError(target=node)
 
     def visit_arg(self, node: "ast.arg", parent: NodeNG) -> nodes.AssignName:
         """visit an arg node by returning a fresh AssName instance"""
@@ -873,8 +876,12 @@ class TreeRebuilder:
         )
         # save argument names in locals:
         if vararg:
+            if not newnode.parent:
+                raise ParentMissingError(target=newnode)
             newnode.parent.set_local(vararg, newnode)
         if kwarg:
+            if not newnode.parent:
+                raise ParentMissingError(target=newnode)
             newnode.parent.set_local(kwarg, newnode)
         return newnode
 
@@ -933,6 +940,9 @@ class TreeRebuilder:
             type_comment_ast = parse_function_type_comment(type_comment)
         except SyntaxError:
             # Invalid type comment, just skip it.
+            return None
+
+        if not type_comment_ast:
             return None
 
         returns: Optional[NodeNG] = None
@@ -1354,7 +1364,8 @@ class TreeRebuilder:
             newnode = nodes.AssignAttr(node.attr, node.lineno, node.col_offset, parent)
             # Prohibit a local save if we are in an ExceptHandler.
             if not isinstance(parent, nodes.ExceptHandler):
-                self._delayed_assattr.append(newnode)
+                # mypy doesn't recognize that newnode has to be AssignAttr
+                self._delayed_assattr.append(newnode)  # type: ignore
         else:
             newnode = nodes.Attribute(node.attr, node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.value, newnode))

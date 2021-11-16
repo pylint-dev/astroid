@@ -4489,12 +4489,12 @@ class MatchSingleton(Pattern):
     def __init__(
         self,
         *,
-        value: Literal[True, False, None],
+        value: Optional[bool],
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.value: Literal[True, False, None] = value
+        self.value = value
         super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
 
