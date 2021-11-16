@@ -22,8 +22,9 @@ leads to an inferred FrozenSet:
     Call(func=Name('frozenset'), args=Tuple(...))
 """
 
+from functools import cached_property
 
-from astroid import bases, decorators, util
+from astroid import bases, util
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -45,7 +46,7 @@ class FrozenSet(node_classes.BaseContainer):
     def _infer(self, context=None):
         yield self
 
-    @decorators.cachedproperty
+    @cached_property
     def _proxied(self):  # pylint: disable=method-hidden
         ast_builtins = AstroidManager().builtins_module
         return ast_builtins.getattr("frozenset")[0]
@@ -114,7 +115,7 @@ class Super(node_classes.NodeNG):
         index = mro.index(self.mro_pointer)
         return mro[index + 1 :]
 
-    @decorators.cachedproperty
+    @cached_property
     def _proxied(self):
         ast_builtins = AstroidManager().builtins_module
         return ast_builtins.getattr("super")[0]
@@ -218,7 +219,7 @@ class ExceptionInstance(bases.Instance):
     the case of .args.
     """
 
-    @decorators.cachedproperty
+    @cached_property
     def special_attributes(self):
         qname = self.qname()
         instance = objectmodel.BUILTIN_EXCEPTIONS.get(

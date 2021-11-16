@@ -47,6 +47,7 @@ import os
 import sys
 import typing
 import warnings
+from functools import cached_property
 from typing import List, Optional, TypeVar, Union, overload
 
 from astroid import bases
@@ -1502,7 +1503,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         self.type_comment_returns = type_comment_returns
         self.type_comment_args = type_comment_args
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def extra_decorators(self):
         """The extra decorators that this function can have.
 
@@ -1545,7 +1546,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                             decorators.append(assign.value)
         return decorators
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def type(
         self,
     ):  # pylint: disable=invalid-overridden-method,too-many-return-statements
@@ -1617,7 +1618,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 pass
         return type_name
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def fromlineno(self):
         """The first line that this node appears on in the source code.
 
@@ -1633,7 +1634,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         return lineno
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -2184,7 +2185,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         doc=("Whether this is a new style class or not\n\n" ":type: bool or None"),
     )
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 

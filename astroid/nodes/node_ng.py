@@ -2,6 +2,7 @@ import pprint
 import sys
 import typing
 import warnings
+from functools import cached_property
 from functools import singledispatch as _singledispatch
 from typing import (
     TYPE_CHECKING,
@@ -405,14 +406,14 @@ class NodeNG:
     # these are lazy because they're relatively expensive to compute for every
     # single node, and they rarely get looked at
 
-    @decorators.cachedproperty
+    @cached_property
     def fromlineno(self) -> Optional[int]:
         """The first line that this node appears on in the source code."""
         if self.lineno is None:
             return self._fixed_source_line()
         return self.lineno
 
-    @decorators.cachedproperty
+    @cached_property
     def tolineno(self) -> Optional[int]:
         """The last line that this node appears on in the source code."""
         if not self._astroid_fields:

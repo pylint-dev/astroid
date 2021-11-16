@@ -70,6 +70,12 @@ class cachedproperty:
     __slots__ = ("wrapped",)
 
     def __init__(self, wrapped):
+        warnings.warn(
+            "astroid.decorators.cachedproperty will be deprecated in astroid 3.0.0. "
+            "functools.cached_property offers similar behaviour and is supported by mypy and "
+            "other projects.",
+            DeprecationWarning,
+        )
         try:
             wrapped.__name__
         except AttributeError as exc:
