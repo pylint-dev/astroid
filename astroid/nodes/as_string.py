@@ -22,7 +22,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """This module renders Astroid nodes as string"""
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from astroid.nodes.node_classes import (
@@ -581,7 +581,7 @@ class AsStringVisitor:
 
     def visit_matchmapping(self, node: "MatchMapping") -> str:
         """Return an astroid.MatchMapping node as string."""
-        mapping_strings = []
+        mapping_strings: List[str] = []
         if node.keys and node.patterns:
             mapping_strings.extend(
                 f"{key.accept(self)}: {p.accept(self)}"
@@ -595,7 +595,7 @@ class AsStringVisitor:
         """Return an astroid.MatchClass node as string."""
         if node.cls is None:
             raise Exception(f"{node} does not have a 'cls' node")
-        class_strings = []
+        class_strings: List[str] = []
         if node.patterns:
             class_strings.extend(p.accept(self) for p in node.patterns)
         if node.kwd_attrs and node.kwd_patterns:
