@@ -72,11 +72,11 @@ def infer_end(self, context=None):
     yield self
 
 
-nodes.Module._infer = infer_end
-nodes.ClassDef._infer = infer_end
-nodes.Lambda._infer = infer_end
-nodes.Const._infer = infer_end
-nodes.Slice._infer = infer_end
+nodes.Module._infer = infer_end  # type: ignore # See https://github.com/python/mypy/issues/2427
+nodes.ClassDef._infer = infer_end  # type: ignore
+nodes.Lambda._infer = infer_end  # type: ignore
+nodes.Const._infer = infer_end  # type: ignore
+nodes.Slice._infer = infer_end  # type: ignore
 
 
 def _infer_sequence_helper(node, context=None):
@@ -118,9 +118,9 @@ def infer_sequence(self, context=None):
         yield self
 
 
-nodes.List._infer = infer_sequence
-nodes.Tuple._infer = infer_sequence
-nodes.Set._infer = infer_sequence
+nodes.List._infer = infer_sequence  # type: ignore # See https://github.com/python/mypy/issues/2427
+nodes.Tuple._infer = infer_sequence  # type: ignore
+nodes.Set._infer = infer_sequence  # type: ignore
 
 
 def infer_map(self, context=None):
@@ -177,7 +177,7 @@ def _infer_map(node, context):
     return values
 
 
-nodes.Dict._infer = infer_map
+nodes.Dict._infer = infer_map  # type: ignore # See https://github.com/python/mypy/issues/2427
 
 
 def _higher_function_scope(node):
@@ -250,7 +250,7 @@ def infer_call(self, context=None):
     return dict(node=self, context=context)
 
 
-nodes.Call._infer = infer_call
+nodes.Call._infer = infer_call  # type: ignore # See https://github.com/python/mypy/issues/2427
 
 
 @decorators.raise_if_nothing_inferred
@@ -302,7 +302,7 @@ def infer_import_from(self, context=None, asname=True):
         ) from error
 
 
-nodes.ImportFrom._infer = infer_import_from
+nodes.ImportFrom._infer = infer_import_from  # type: ignore # See https://github.com/python/mypy/issues/2427
 
 
 def infer_attribute(self, context=None):
@@ -350,7 +350,7 @@ def infer_global(self, context=None):
         ) from error
 
 
-nodes.Global._infer = infer_global
+nodes.Global._infer = infer_global  # type: ignore # See https://github.com/python/mypy/issues/2427
 
 
 _SUBSCRIPT_SENTINEL = object()
@@ -886,7 +886,7 @@ def _infer_compare(
         yield nodes.Const(retval)
 
 
-nodes.Compare._infer = _infer_compare
+nodes.Compare._infer = _infer_compare  # type: ignore # See https://github.com/python/mypy/issues/2427
 
 
 def _infer_augassign(self, context=None):
@@ -938,7 +938,7 @@ def infer_arguments(self, context=None):
     return protocols._arguments_infer_argname(self, name, context)
 
 
-nodes.Arguments._infer = infer_arguments
+nodes.Arguments._infer = infer_arguments  # type: ignore # See https://github.com/python/mypy/issues/2427
 
 
 @decorators.raise_if_nothing_inferred
@@ -972,7 +972,7 @@ def infer_empty_node(self, context=None):
             yield util.Uninferable
 
 
-nodes.EmptyNode._infer = infer_empty_node
+nodes.EmptyNode._infer = infer_empty_node  # type: ignore # See https://github.com/python/mypy/issues/2427
 
 
 @decorators.raise_if_nothing_inferred
@@ -980,7 +980,7 @@ def infer_index(self, context=None):
     return self.value.infer(context)
 
 
-nodes.Index._infer = infer_index
+nodes.Index._infer = infer_index  # type: ignore # See https://github.com/python/mypy/issues/2427
 
 
 def _populate_context_lookup(call, context):
@@ -1033,7 +1033,7 @@ def infer_ifexp(self, context=None):
         yield from self.orelse.infer(context=rhs_context)
 
 
-nodes.IfExp._infer = infer_ifexp
+nodes.IfExp._infer = infer_ifexp  # type: ignore # See https://github.com/python/mypy/issues/2427
 
 
 # pylint: disable=dangerous-default-value
@@ -1074,4 +1074,4 @@ def infer_functiondef(self, context=None):
     return dict(node=self, context=context)
 
 
-nodes.FunctionDef._infer = infer_functiondef
+nodes.FunctionDef._infer = infer_functiondef  # type: ignore # See https://github.com/python/mypy/issues/2427
