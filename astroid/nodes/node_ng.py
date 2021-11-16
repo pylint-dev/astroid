@@ -7,6 +7,7 @@ from typing import (
     TYPE_CHECKING,
     ClassVar,
     Iterator,
+    List,
     Optional,
     Tuple,
     Type,
@@ -430,7 +431,7 @@ class NodeNG:
         We need this method since not all nodes have :attr:`lineno` set.
         """
         line = self.lineno
-        _node = self
+        _node: Optional[NodeNG] = self
         try:
             while line is None:
                 _node = next(_node.get_children())
@@ -735,7 +736,7 @@ class NodeNG:
             result.append(")")
             return broken
 
-        result = []
+        result: List[str] = []
         _repr_tree(self, result, set())
         return "".join(result)
 
