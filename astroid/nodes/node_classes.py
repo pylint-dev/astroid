@@ -386,8 +386,12 @@ class LookupMixIn:
         context = InferenceContext()
         return _infer_stmts(stmts, context, frame)
 
-    def _get_filtered_node_statements(self, nodes):
-        statements = [(node, node.statement(future=True)) for node in nodes]
+    def _get_filtered_node_statements(
+        self, nodes: typing.List[NodeNG]
+    ) -> typing.List[typing.Tuple[NodeNG, Statement]]:
+        statements: typing.List[typing.Tuple[NodeNG, Statement]] = [
+            (node, node.statement(future=True)) for node in nodes
+        ]
         # Next we check if we have ExceptHandlers that are parent
         # of the underlying variable, in which case the last one survives
         if len(statements) > 1 and all(
@@ -444,7 +448,7 @@ class LookupMixIn:
             ):
                 myframe = myframe.parent.frame()
 
-        mystmt = None
+        mystmt: Optional[Statement] = None
         if self.parent:
             mystmt = self.statement(future=True)
 
@@ -1837,7 +1841,9 @@ class Comprehension(NodeNG):
         """
         return self
 
-    def _get_filtered_stmts(self, lookup_node, node, stmts, mystmt):
+    def _get_filtered_stmts(
+        self, lookup_node, node, stmts, mystmt: Optional[Statement]
+    ):
         """method used in filter_stmts"""
         if self is mystmt:
             if isinstance(lookup_node, (Const, Name)):
