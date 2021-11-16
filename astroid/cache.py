@@ -2,6 +2,9 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+""" Caching utilities used in various places."""
+
+
 from collections import OrderedDict
 from weakref import WeakSet
 
@@ -11,11 +14,13 @@ LRU_CACHE_CAPACITY = 128
 
 
 class LRUCache:
+    """An LRU cache that keeps track of its instances."""
+
     instances = WeakSet()
 
     def __init__(self):
         self.cache = OrderedDict()
-        type(self).instances.add(self)
+        LRUCache.instances.add(self)
 
     def __setitem__(self, key, value):
         self.cache[key] = value
@@ -37,11 +42,15 @@ class LRUCache:
 
     @classmethod
     def clear_all(cls):
+        """Clears all LRUCache instances."""
         for cache in cls.instances:
             cache.clear()
 
 
 def lru_cache(arg=None):
+    """A decorator to cache the results of a function. Similar to
+    functools.lru_cache but uses astroid.cache.LRUCache as its internal cache.
+    """
     cache = LRUCache()
 
     @wrapt.decorator
@@ -52,9 +61,9 @@ def lru_cache(arg=None):
             key += kv
 
         if key in cache:
-            return cache[key]
-
-        result = cache[key] = func(*args, **kwargs)
+            result = cache[key]
+        else:
+            result = cache[key] = func(*args, **kwargs)
 
         return result
 
@@ -68,6 +77,10 @@ _GENERATOR_CACHE = LRUCache()
 
 
 def cached_generator(arg=None):
+    """A decorator to cache the elements returned by a generator. The input
+    generator is consumed and cached as a list.
+    """
+
     @wrapt.decorator
     def decorator(func, instance, args, kwargs):
         key = func, args[0]
@@ -86,4 +99,5 @@ def cached_generator(arg=None):
 
 
 def clear_caches():
+    """Clears all caches."""
     LRUCache.clear_all()
