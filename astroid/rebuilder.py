@@ -48,7 +48,6 @@ from typing import (
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
 from astroid.const import PY37_PLUS, PY38_PLUS, PY39_PLUS, Context
-from astroid.exceptions import ParentMissingError
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 
@@ -804,10 +803,9 @@ class TreeRebuilder:
         """save assignement situation since node.parent is not available yet"""
         if self._global_names and node.name in self._global_names[-1]:
             node.root().set_local(node.name, node)
-        elif node.parent:
-            node.parent.set_local(node.name, node)
         else:
-            raise ParentMissingError(target=node)
+            assert node.parent
+            node.parent.set_local(node.name, node)
 
     def visit_arg(self, node: "ast.arg", parent: NodeNG) -> nodes.AssignName:
         """visit an arg node by returning a fresh AssName instance"""
@@ -875,10 +873,11 @@ class TreeRebuilder:
             type_comment_posonlyargs=type_comment_posonlyargs,
         )
         # save argument names in locals:
+        assert newnode.parent
         if vararg:
-            newnode.parent.set_local(vararg, newnode)  # type: ignore[union-attr] # newnode is initialized with a parent
+            newnode.parent.set_local(vararg, newnode)
         if kwarg:
-            newnode.parent.set_local(kwarg, newnode)  # type: ignore[union-attr] # newnode is initialized with a parent
+            newnode.parent.set_local(kwarg, newnode)
         return newnode
 
     def visit_assert(self, node: "ast.Assert", parent: NodeNG) -> nodes.Assert:
@@ -1360,7 +1359,8 @@ class TreeRebuilder:
             newnode = nodes.AssignAttr(node.attr, node.lineno, node.col_offset, parent)
             # Prohibit a local save if we are in an ExceptHandler.
             if not isinstance(parent, nodes.ExceptHandler):
-                # mypy doesn't recognize that newnode has to be AssignAttr
+                # mypy doesn't recognize that newnode has to be AssignAttr because it doesn't support ParamSpec
+                # See https://github.com/python/mypy/issues/8645
                 self._delayed_assattr.append(newnode)  # type: ignore[arg-type]
         else:
             newnode = nodes.Attribute(node.attr, node.lineno, node.col_offset, parent)
@@ -1764,7 +1764,7 @@ class TreeRebuilder:
             self, node: "ast.MatchSingleton", parent: NodeNG
         ) -> nodes.MatchSingleton:
             return nodes.MatchSingleton(
-                value=node.value,
+                value=node.value,  # type: ignore[arg-type] # See https://github.com/python/mypy/pull/10389
                 lineno=node.lineno,
                 col_offset=node.col_offset,
                 parent=parent,

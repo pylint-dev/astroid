@@ -4489,7 +4489,7 @@ class MatchSingleton(Pattern):
     def __init__(
         self,
         *,
-        value: Literal[True, False, None],  # type: ignore[assignment] # See https://github.com/python/mypy/pull/10389
+        value: Literal[True, False, None],
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
