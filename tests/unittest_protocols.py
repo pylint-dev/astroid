@@ -297,7 +297,7 @@ class TestPatternMatching:
                 pass
         """
         )
-        match_mapping: nodes.MatchMapping = assign_stmts.pattern  # type: ignore
+        match_mapping: nodes.MatchMapping = assign_stmts.pattern
         assert match_mapping.rest
         assigned = next(match_mapping.rest.assigned_stmts())
         assert assigned == Uninferable
@@ -316,7 +316,7 @@ class TestPatternMatching:
                 pass
         """
         )
-        match_sequence: nodes.MatchSequence = assign_stmts.pattern  # type: ignore
+        match_sequence: nodes.MatchSequence = assign_stmts.pattern
         match_star = match_sequence.patterns[2]
         assert isinstance(match_star, nodes.MatchStar) and match_star.name
         assigned = next(match_star.name.assigned_stmts())
@@ -337,10 +337,10 @@ class TestPatternMatching:
                 pass
         """
         )
-        subject: nodes.Const = assign_stmts[0].subject  # type: ignore
-        match_or: nodes.MatchOr = assign_stmts[1].pattern  # type: ignore
-        match_as_with_pattern: nodes.MatchAs = assign_stmts[2].pattern  # type: ignore
-        match_as: nodes.MatchAs = assign_stmts[3].pattern  # type: ignore
+        subject: nodes.Const = assign_stmts[0].subject
+        match_or: nodes.MatchOr = assign_stmts[1].pattern
+        match_as_with_pattern: nodes.MatchAs = assign_stmts[2].pattern
+        match_as: nodes.MatchAs = assign_stmts[3].pattern
 
         match_or_1 = match_or.patterns[1]
         assert isinstance(match_or_1, nodes.MatchAs) and match_or_1.name

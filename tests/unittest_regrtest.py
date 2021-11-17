@@ -346,7 +346,7 @@ def test(val):
 
 
 class Whatever:
-    a = property(lambda x: x, lambda x: x)  # type: ignore
+    a = property(lambda x: x, lambda x: x)  # type: ignore[misc]
 
 
 def test_ancestor_looking_up_redefined_function() -> None:

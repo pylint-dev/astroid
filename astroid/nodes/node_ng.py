@@ -502,7 +502,7 @@ class NodeNG:
     ) -> Iterator[T_Nodes]:
         ...
 
-    def nodes_of_class(  # type: ignore # mypy doesn't correctly recognize the overloads
+    def nodes_of_class(  # type: ignore[misc] # mypy doesn't correctly recognize the overloads
         self,
         klass: Union[
             Type[T_Nodes],
