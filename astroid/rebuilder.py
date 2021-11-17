@@ -875,12 +875,10 @@ class TreeRebuilder:
             type_comment_posonlyargs=type_comment_posonlyargs,
         )
         # save argument names in locals:
-        if not newnode.parent:
-            raise ParentMissingError(target=newnode)
         if vararg:
-            newnode.parent.set_local(vararg, newnode)
+            newnode.parent.set_local(vararg, newnode)  # type: ignore[union-attr] # newnode is initialized with a parent
         if kwarg:
-            newnode.parent.set_local(kwarg, newnode)
+            newnode.parent.set_local(kwarg, newnode)  # type: ignore[union-attr] # newnode is initialized with a parent
         return newnode
 
     def visit_assert(self, node: "ast.Assert", parent: NodeNG) -> nodes.Assert:
