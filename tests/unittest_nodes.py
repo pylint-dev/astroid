@@ -369,6 +369,7 @@ class IfNodeTest(_NodeTest):
         self.assertEqual(self.astroid.body[1].orelse[0].block_range(8), (8, 8))
 
     @staticmethod
+    @pytest.mark.filterwarnings("ignore:.*is_sys_guard:DeprecationWarning")
     def test_if_sys_guard() -> None:
         code = builder.extract_node(
             """
@@ -394,6 +395,7 @@ class IfNodeTest(_NodeTest):
         assert code[2].is_sys_guard() is False
 
     @staticmethod
+    @pytest.mark.filterwarnings("ignore:.*is_typing_guard:DeprecationWarning")
     def test_if_typing_guard() -> None:
         code = builder.extract_node(
             """
