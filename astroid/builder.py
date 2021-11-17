@@ -263,7 +263,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             pass
 
 
-def build_namespace_package_module(name, path: List[str]) -> nodes.Module:
+def build_namespace_package_module(name: str, path: List[str]) -> nodes.Module:
     return nodes.Module(name, doc="", path=path, package=True)
 
 
