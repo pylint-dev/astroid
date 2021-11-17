@@ -68,6 +68,7 @@ def lru_cache(arg=None):
         return result
 
     if callable(arg):
+        # pylint: disable=no-value-for-parameter
         return decorator(arg)
 
     return decorator
@@ -93,6 +94,7 @@ def cached_generator(arg=None):
         return iter(result)
 
     if callable(arg):
+        # pylint: disable=no-value-for-parameter
         return decorator(arg)
 
     return decorator
