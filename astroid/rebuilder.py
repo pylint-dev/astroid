@@ -1361,7 +1361,7 @@ class TreeRebuilder:
             # Prohibit a local save if we are in an ExceptHandler.
             if not isinstance(parent, nodes.ExceptHandler):
                 # mypy doesn't recognize that newnode has to be AssignAttr
-                self._delayed_assattr.append(newnode)  # type: ignore [arg-type]
+                self._delayed_assattr.append(newnode)  # type: ignore[arg-type]
         else:
             newnode = nodes.Attribute(node.attr, node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.value, newnode))
