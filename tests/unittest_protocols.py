@@ -337,10 +337,10 @@ class TestPatternMatching:
                 pass
         """
         )
-        subject: nodes.Const = assign_stmts[0].subject  # type: ignore[index, union-attr]
-        match_or: nodes.MatchOr = assign_stmts[1].pattern  # type: ignore[index, union-attr]
-        match_as_with_pattern: nodes.MatchAs = assign_stmts[2].pattern  # type: ignore[index, union-attr]
-        match_as: nodes.MatchAs = assign_stmts[3].pattern  # type: ignore[index, union-attr]
+        subject: nodes.Const = assign_stmts[0].subject  # type: ignore[index,union-attr]
+        match_or: nodes.MatchOr = assign_stmts[1].pattern  # type: ignore[index,union-attr]
+        match_as_with_pattern: nodes.MatchAs = assign_stmts[2].pattern  # type: ignore[index,union-attr]
+        match_as: nodes.MatchAs = assign_stmts[3].pattern  # type: ignore[index,union-attr]
 
         match_or_1 = match_or.patterns[1]
         assert isinstance(match_or_1, nodes.MatchAs) and match_or_1.name
