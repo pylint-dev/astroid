@@ -154,11 +154,7 @@ class NoSourceFile(Exception):
 
 
 def _normalize_path(path):
-    return os.path.normcase(os.path.abspath(path))
-
-
-def _canonicalize_path(path):
-    return os.path.realpath(os.path.expanduser(path))
+    return os.path.normcase(os.path.realpath(os.path.expanduser(path)))
 
 
 def _path_from_filename(filename, is_jython=IS_JYTHON):
@@ -298,9 +294,8 @@ def _get_relative_base_path(filename, path_to_check):
 def modpath_from_file_with_callback(filename, path=None, is_package_cb=None):
     filename = os.path.expanduser(_path_from_filename(filename))
     for pathname in itertools.chain(
-        path or [], map(_canonicalize_path, sys.path), sys.path
+        path or [], map(_cache_normalize_path, sys.path), sys.path
     ):
-        pathname = _cache_normalize_path(pathname)
         if not pathname:
             continue
         modpath = _get_relative_base_path(filename, pathname)
