@@ -107,7 +107,7 @@ class TreeRebuilder:
     def _get_doc(self, node: T_Doc) -> Tuple[T_Doc, Optional[str]]:
         try:
             if PY37_PLUS and hasattr(node, "docstring"):
-                doc = node.docstring  # type: ignore[union-attr, attr-defined] # mypy doesn't recognize hasattr
+                doc = node.docstring  # type: ignore[union-attr,attr-defined] # mypy doesn't recognize hasattr
                 return node, doc
             if node.body and isinstance(node.body[0], self._module.Expr):
 
