@@ -107,7 +107,7 @@ class TreeRebuilder:
     def _get_doc(self, node: T_Doc) -> Tuple[T_Doc, Optional[str]]:
         try:
             if PY37_PLUS and hasattr(node, "docstring"):
-                doc = node.docstring  # type: ignore # mypy doesn't recognize hasattr
+                doc = node.docstring  # type: ignore[union-attr, attr-defined] # mypy doesn't recognize hasattr
                 return node, doc
             if node.body and isinstance(node.body[0], self._module.Expr):
 
@@ -875,13 +875,11 @@ class TreeRebuilder:
             type_comment_posonlyargs=type_comment_posonlyargs,
         )
         # save argument names in locals:
+        if not newnode.parent:
+            raise ParentMissingError(target=newnode)
         if vararg:
-            if not newnode.parent:
-                raise ParentMissingError(target=newnode)
             newnode.parent.set_local(vararg, newnode)
         if kwarg:
-            if not newnode.parent:
-                raise ParentMissingError(target=newnode)
             newnode.parent.set_local(kwarg, newnode)
         return newnode
 
@@ -1365,7 +1363,7 @@ class TreeRebuilder:
             # Prohibit a local save if we are in an ExceptHandler.
             if not isinstance(parent, nodes.ExceptHandler):
                 # mypy doesn't recognize that newnode has to be AssignAttr
-                self._delayed_assattr.append(newnode)  # type: ignore
+                self._delayed_assattr.append(newnode)  # type: ignore [arg-type]
         else:
             newnode = nodes.Attribute(node.attr, node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.value, newnode))
