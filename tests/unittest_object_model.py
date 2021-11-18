@@ -20,6 +20,13 @@ import astroid
 from astroid import builder, nodes, objects, test_utils, util
 from astroid.exceptions import InferenceError
 
+try:
+    import six  # pylint: disable=unused-import
+
+    HAS_SIX = True
+except ImportError:
+    HAS_SIX = False
+
 
 class InstanceModelTest(unittest.TestCase):
     def test_instance_special_model(self) -> None:
@@ -566,6 +573,7 @@ class ExceptionModelTest(unittest.TestCase):
         inferred = next(ast_node.infer())
         assert isinstance(inferred, astroid.Const)
 
+    @unittest.skipIf(HAS_SIX, "This test fails if the six library is installed")
     def test_oserror(self) -> None:
         ast_nodes = builder.extract_node(
             """
