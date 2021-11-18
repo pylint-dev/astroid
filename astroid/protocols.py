@@ -276,7 +276,9 @@ def _resolve_looppart(parts, assign_path, context):
 @decorators.raise_if_nothing_inferred
 def for_assigned_stmts(
     self: Union[nodes.For, nodes.Comprehension],
-    node: Optional[mixins.AssignTypeMixin] = None,
+    node: Union[
+        nodes.List, nodes.Tuple, nodes.AssignName, nodes.AssignAttr, None
+    ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ):
@@ -298,7 +300,9 @@ nodes.Comprehension.assigned_stmts = for_assigned_stmts
 
 def sequence_assigned_stmts(
     self: Union[nodes.Tuple, nodes.List],
-    node: Optional[mixins.AssignTypeMixin] = None,
+    node: Union[
+        nodes.List, nodes.Tuple, nodes.AssignName, nodes.AssignAttr, None
+    ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ):
@@ -326,7 +330,9 @@ nodes.List.assigned_stmts = sequence_assigned_stmts
 
 def assend_assigned_stmts(
     self: Union[nodes.AssignName, nodes.AssignAttr],
-    node: Optional[mixins.AssignTypeMixin] = None,
+    node: Union[
+        nodes.List, nodes.Tuple, nodes.AssignName, nodes.AssignAttr, None
+    ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ):
@@ -398,7 +404,9 @@ def _arguments_infer_argname(self, name, context):
 
 def arguments_assigned_stmts(
     self: nodes.Arguments,
-    node: Optional[mixins.AssignTypeMixin] = None,
+    node: Union[
+        nodes.List, nodes.Tuple, nodes.AssignName, nodes.AssignAttr, None
+    ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ):
@@ -428,7 +436,9 @@ nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 @decorators.raise_if_nothing_inferred
 def assign_assigned_stmts(
     self: Union[nodes.AugAssign, nodes.Assign, nodes.AnnAssign],
-    node: Optional[mixins.AssignTypeMixin] = None,
+    node: Union[
+        nodes.List, nodes.Tuple, nodes.AssignName, nodes.AssignAttr, None
+    ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ):
@@ -444,7 +454,9 @@ def assign_assigned_stmts(
 
 def assign_annassigned_stmts(
     self: nodes.AnnAssign,
-    node: Optional[mixins.AssignTypeMixin] = None,
+    node: Union[
+        nodes.List, nodes.Tuple, nodes.AssignName, nodes.AssignAttr, None
+    ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ):
@@ -503,7 +515,9 @@ def _resolve_assignment_parts(parts, assign_path, context):
 @decorators.raise_if_nothing_inferred
 def excepthandler_assigned_stmts(
     self: nodes.ExceptHandler,
-    node: Optional[mixins.AssignTypeMixin] = None,
+    node: Union[
+        nodes.List, nodes.Tuple, nodes.AssignName, nodes.AssignAttr, None
+    ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ):
@@ -559,7 +573,9 @@ def _infer_context_manager(self, mgr, context):
 @decorators.raise_if_nothing_inferred
 def with_assigned_stmts(
     self: nodes.With,
-    node: Optional[mixins.AssignTypeMixin] = None,
+    node: Union[
+        nodes.List, nodes.Tuple, nodes.AssignName, nodes.AssignAttr, None
+    ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ):
@@ -659,7 +675,9 @@ nodes.NamedExpr.assigned_stmts = named_expr_assigned_stmts
 @decorators.yes_if_nothing_inferred
 def starred_assigned_stmts(
     self: nodes.Starred,
-    node: Optional[mixins.AssignTypeMixin] = None,
+    node: Union[
+        nodes.List, nodes.Tuple, nodes.AssignName, nodes.AssignAttr, None
+    ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ):
