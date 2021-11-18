@@ -6027,7 +6027,6 @@ def test_property_inference() -> None:
     assert inferred.type == "property"
 
     inferred = next(prop_result.infer())
-    print(prop_result.as_string())
     assert isinstance(inferred, nodes.Const)
     assert inferred.value == 42
 
