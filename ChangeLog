@@ -12,6 +12,10 @@ What's New in astroid 2.8.6?
 ============================
 Release date: TBA
 
+* Fix crash on inference of subclasses created from ``Class().__subclasses__``
+
+  Closes PyCQA/pylint#4982
+
 * Fix bug with Python 3.7.0 / 3.7.1 and ``typing.NoReturn``.
 
   Closes #1239

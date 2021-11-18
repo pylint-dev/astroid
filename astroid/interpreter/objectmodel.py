@@ -403,6 +403,12 @@ class FunctionModel(ObjectModel):
 
 
 class ClassModel(ObjectModel):
+    def __init__(self):
+        # Add a context so that inferences called from an instance don't recurse endlessly
+        self.context = InferenceContext()
+
+        super().__init__()
+
     @property
     def attr___module__(self):
         return node_classes.Const(self._instance.root().qname())
@@ -485,7 +491,7 @@ class ClassModel(ObjectModel):
         classes = [
             cls
             for cls in root.nodes_of_class(scoped_nodes.ClassDef)
-            if cls != self._instance and cls.is_subtype_of(qname)
+            if cls != self._instance and cls.is_subtype_of(qname, context=self.context)
         ]
 
         obj = node_classes.List(parent=self._instance)
