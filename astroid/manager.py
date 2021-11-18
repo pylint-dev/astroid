@@ -31,7 +31,7 @@ from various source and using a cache of built modules)
 import os
 import types
 import zipimport
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar, List
 
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec
@@ -46,6 +46,9 @@ from astroid.modutils import (
     modpath_from_file,
 )
 from astroid.transforms import TransformVisitor
+
+if TYPE_CHECKING:
+    from astroid import nodes
 
 ZIP_IMPORT_EXTS = (".zip", ".egg", ".whl", ".pyz", ".pyzw")
 
@@ -135,7 +138,7 @@ class AstroidManager:
 
         return AstroidBuilder(self).string_build("", modname)
 
-    def _build_namespace_module(self, modname, path):
+    def _build_namespace_module(self, modname: str, path: List[str]) -> "nodes.Module":
         # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import build_namespace_package_module
 

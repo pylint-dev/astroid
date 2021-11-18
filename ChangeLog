@@ -12,6 +12,9 @@ What's New in astroid 2.8.6?
 ============================
 Release date: TBA
 
+* Fix bug with Python 3.7.0 / 3.7.1 and ``typing.NoReturn``.
+
+  Closes #1239
 
 
 What's New in astroid 2.8.5?

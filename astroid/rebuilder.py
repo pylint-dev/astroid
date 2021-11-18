@@ -1215,7 +1215,7 @@ class TreeRebuilder:
     ) -> nodes.Tuple:
         """visit an ExtSlice node by returning a fresh instance of Tuple"""
         newnode = nodes.Tuple(ctx=Context.Load, parent=parent)
-        newnode.postinit([self.visit(dim, newnode) for dim in node.dims])  # type: ignore
+        newnode.postinit([self.visit(dim, newnode) for dim in node.dims])  # type: ignore[attr-defined]
         return newnode
 
     @overload
@@ -1434,7 +1434,7 @@ class TreeRebuilder:
     # Not used in Python 3.9+.
     def visit_index(self, node: "ast.Index", parent: nodes.Subscript) -> NodeNG:
         """visit a Index node by returning a fresh instance of NodeNG"""
-        return self.visit(node.value, parent)  # type: ignore
+        return self.visit(node.value, parent)  # type: ignore[attr-defined]
 
     def visit_keyword(self, node: "ast.keyword", parent: NodeNG) -> nodes.Keyword:
         """visit a Keyword node by returning a fresh instance of it"""
