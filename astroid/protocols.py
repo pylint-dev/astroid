@@ -637,7 +637,7 @@ nodes.With.assigned_stmts = with_assigned_stmts
 @decorators.raise_if_nothing_inferred
 def named_expr_assigned_stmts(
     self: nodes.NamedExpr,
-    node,
+    node: mixins.AssignTypeMixin,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ):
