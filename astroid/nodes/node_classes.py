@@ -389,9 +389,7 @@ class LookupMixIn:
     def _get_filtered_node_statements(
         self, nodes: typing.List[NodeNG]
     ) -> typing.List[typing.Tuple[NodeNG, Statement]]:
-        statements: typing.List[typing.Tuple[NodeNG, Statement]] = [
-            (node, node.statement(future=True)) for node in nodes
-        ]
+        statements = [(node, node.statement(future=True)) for node in nodes]
         # Next we check if we have ExceptHandlers that are parent
         # of the underlying variable, in which case the last one survives
         if len(statements) > 1 and all(
