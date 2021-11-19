@@ -1784,7 +1784,16 @@ class TreeRebuilder:
 
     def visit_lambda(self, node: "ast.Lambda", parent: NodeNG) -> nodes.Lambda:
         """visit a Lambda node by returning a fresh instance of it"""
-        newnode = nodes.Lambda(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Lambda(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Lambda(node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.args, newnode), self.visit(node.body, newnode))
         return newnode
 
