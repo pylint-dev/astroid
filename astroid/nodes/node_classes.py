@@ -42,7 +42,7 @@ import sys
 import typing
 import warnings
 from functools import lru_cache
-from typing import TYPE_CHECKING, Callable, Generator, Optional
+from typing import TYPE_CHECKING, Any, Callable, Generator, Optional, Union
 
 from astroid import decorators, mixins, util
 from astroid.bases import Instance, _infer_stmts
@@ -612,6 +612,19 @@ class AssignName(
 
     _other_fields = ("name",)
 
+    assigned_stmts: Callable[
+        [
+            Union["AssignName", "AssignAttr"],
+            Union["List", "Tuple", "AssignName", "AssignAttr", None],
+            Optional[InferenceContext],
+            Optional[typing.List[int]],
+        ],
+        Any,
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     @decorators.deprecate_default_argument_values(name="str")
     def __init__(
         self,
@@ -766,6 +779,19 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
     )
 
     _other_fields = ("vararg", "kwarg")
+
+    assigned_stmts: Callable[
+        [
+            "Arguments",
+            Union["List", "Tuple", "AssignName", "AssignAttr", None],
+            Optional[InferenceContext],
+            Optional[typing.List[int]],
+        ],
+        Any,
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def __init__(
         self,
@@ -1124,6 +1150,19 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
 
+    assigned_stmts: Callable[
+        [
+            Union["AssignName", "AssignAttr"],
+            Union["List", "Tuple", "AssignName", "AssignAttr", None],
+            Optional[InferenceContext],
+            Optional[typing.List[int]],
+        ],
+        Any,
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     @decorators.deprecate_default_argument_values(attrname="str")
     def __init__(
         self,
@@ -1230,6 +1269,19 @@ class Assign(mixins.AssignTypeMixin, Statement):
     _astroid_fields = ("targets", "value")
     _other_other_fields = ("type_annotation",)
 
+    assigned_stmts: Callable[
+        [
+            Union["AugAssign", "Assign", "AnnAssign"],
+            Union["List", "Tuple", "AssignName", "AssignAttr", None],
+            Optional[InferenceContext],
+            Optional[typing.List[int]],
+        ],
+        Any,
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def __init__(
         self,
         lineno: Optional[int] = None,
@@ -1298,6 +1350,19 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
 
     _astroid_fields = ("target", "annotation", "value")
     _other_fields = ("simple",)
+
+    assigned_stmts: Callable[
+        [
+            "AnnAssign",
+            Union["List", "Tuple", "AssignName", "AssignAttr", None],
+            Optional[InferenceContext],
+            Optional[typing.List[int]],
+        ],
+        Any,
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def __init__(
         self,
@@ -1371,6 +1436,19 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
 
     _astroid_fields = ("target", "value")
     _other_fields = ("op",)
+
+    assigned_stmts: Callable[
+        [
+            Union["AugAssign", "Assign", "AnnAssign"],
+            Union["List", "Tuple", "AssignName", "AssignAttr", None],
+            Optional[InferenceContext],
+            Optional[typing.List[int]],
+        ],
+        Any,
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     @decorators.deprecate_default_argument_values(op="str")
     def __init__(
@@ -1778,6 +1856,19 @@ class Comprehension(NodeNG):
 
     optional_assign = True
     """Whether this node optionally assigns a variable."""
+
+    assigned_stmts: Callable[
+        [
+            Union["For", "Comprehension"],
+            Union["List", "Tuple", "AssignName", "AssignAttr", None],
+            Optional[InferenceContext],
+            Optional[typing.List[int]],
+        ],
+        Any,
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def __init__(self, parent: Optional[NodeNG] = None) -> None:
         """
@@ -2381,6 +2472,19 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
     _astroid_fields = ("type", "name", "body")
     _multi_line_block_fields = ("body",)
 
+    assigned_stmts: Callable[
+        [
+            "ExceptHandler",
+            Union["List", "Tuple", "AssignName", "AssignAttr", None],
+            Optional[InferenceContext],
+            Optional[typing.List[int]],
+        ],
+        Any,
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def __init__(
         self,
         lineno: Optional[int] = None,
@@ -2496,6 +2600,19 @@ class For(
     """Whether this node optionally assigns a variable.
 
     This is always ``True`` for :class:`For` nodes.
+    """
+
+    assigned_stmts: Callable[
+        [
+            Union["For", "Comprehension"],
+            Union["List", "Tuple", "AssignName", "AssignAttr", None],
+            Optional[InferenceContext],
+            Optional[typing.List[int]],
+        ],
+        Any,
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
     """
 
     def __init__(
@@ -3108,6 +3225,19 @@ class List(BaseContainer):
 
     _other_fields = ("ctx",)
 
+    assigned_stmts: Callable[
+        [
+            Union["Tuple", "List"],
+            Union["List", "Tuple", "AssignName", "AssignAttr", None],
+            Optional[InferenceContext],
+            Optional[typing.List[int]],
+        ],
+        Any,
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def __init__(
         self,
         ctx: Optional[Context] = None,
@@ -3455,6 +3585,19 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
     _astroid_fields = ("value",)
     _other_fields = ("ctx",)
 
+    assigned_stmts: Callable[
+        [
+            "Starred",
+            Union["List", "Tuple", "AssignName", "AssignAttr", None],
+            Optional[InferenceContext],
+            Optional[typing.List[int]],
+        ],
+        Any,
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def __init__(
         self,
         ctx: Optional[Context] = None,
@@ -3735,6 +3878,19 @@ class Tuple(BaseContainer):
 
     _other_fields = ("ctx",)
 
+    assigned_stmts: Callable[
+        [
+            Union["Tuple", "List"],
+            Union["List", "Tuple", "AssignName", "AssignAttr", None],
+            Optional[InferenceContext],
+            Optional[typing.List[int]],
+        ],
+        Any,
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def __init__(
         self,
         ctx: Optional[Context] = None,
@@ -3964,6 +4120,19 @@ class With(
     _astroid_fields = ("items", "body")
     _other_other_fields = ("type_annotation",)
     _multi_line_block_fields = ("body",)
+
+    assigned_stmts: Callable[
+        [
+            "With",
+            Union["List", "Tuple", "AssignName", "AssignAttr", None],
+            Optional[InferenceContext],
+            Optional[typing.List[int]],
+        ],
+        Any,
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def __init__(
         self,
@@ -4226,6 +4395,19 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
     """Whether this node optionally assigns a variable.
 
     Since NamedExpr are not always called they do not always assign."""
+
+    assigned_stmts: Callable[
+        [
+            "NamedExpr",
+            Union["List", "Tuple", "AssignName", "AssignAttr", None],
+            Optional[InferenceContext],
+            Optional[typing.List[int]],
+        ],
+        Any,
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def __init__(
         self,
