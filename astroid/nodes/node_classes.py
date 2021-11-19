@@ -805,6 +805,8 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
 
     lineno: None
     col_offset: None
+    end_lineno: None
+    end_col_offset: None
 
     def __init__(
         self,
@@ -1901,6 +1903,8 @@ class Comprehension(NodeNG):
 
     lineno: None
     col_offset: None
+    end_lineno: None
+    end_col_offset: None
 
     def __init__(self, parent: Optional[NodeNG] = None) -> None:
         """
@@ -4848,6 +4852,8 @@ class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
 
     lineno: None
     col_offset: None
+    end_lineno: None
+    end_col_offset: None
 
     def __init__(self, *, parent: Optional[NodeNG] = None) -> None:
         self.pattern: Pattern

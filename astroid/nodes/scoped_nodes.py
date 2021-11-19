@@ -471,6 +471,8 @@ class Module(LocalsDictNodeNG):
 
     lineno: None
     col_offset: None
+    end_lineno: None
+    end_col_offset: None
     parent: None
 
     def __init__(
