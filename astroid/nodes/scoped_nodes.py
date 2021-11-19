@@ -469,6 +469,10 @@ class Module(LocalsDictNodeNG):
     )
     _other_other_fields = ("locals", "globals")
 
+    lineno: None
+    col_offset: None
+    parent: None
+
     def __init__(
         self,
         name,

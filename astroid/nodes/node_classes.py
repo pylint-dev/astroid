@@ -767,6 +767,9 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
 
     _other_fields = ("vararg", "kwarg")
 
+    lineno: None
+    col_offset: None
+
     def __init__(
         self,
         vararg: Optional[str] = None,
@@ -1778,6 +1781,9 @@ class Comprehension(NodeNG):
 
     optional_assign = True
     """Whether this node optionally assigns a variable."""
+
+    lineno: None
+    col_offset: None
 
     def __init__(self, parent: Optional[NodeNG] = None) -> None:
         """
@@ -4416,6 +4422,9 @@ class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
 
     _astroid_fields = ("pattern", "guard", "body")
     _multi_line_block_fields = ("body",)
+
+    lineno: None
+    col_offset: None
 
     def __init__(self, *, parent: Optional[NodeNG] = None) -> None:
         self.pattern: Pattern
