@@ -32,7 +32,7 @@ import collections
 import itertools
 import operator as operator_mod
 import sys
-from typing import Generator, List, Optional, Union
+from typing import Any, Generator, List, Optional, Union
 
 from astroid import arguments, bases, decorators, helpers, mixins, nodes, util
 from astroid.const import Context
@@ -281,7 +281,7 @@ def for_assigned_stmts(
     ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
-):
+) -> Any:
     if isinstance(self, nodes.AsyncFor) or getattr(self, "is_async", False):
         # Skip inferring of async code for now
         return dict(node=self, unknown=node, assign_path=assign_path, context=context)
@@ -305,7 +305,7 @@ def sequence_assigned_stmts(
     ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
-):
+) -> Any:
     if assign_path is None:
         assign_path = []
     try:
@@ -335,7 +335,7 @@ def assend_assigned_stmts(
     ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
-):
+) -> Any:
     return self.parent.assigned_stmts(node=self, context=context)
 
 
@@ -409,7 +409,7 @@ def arguments_assigned_stmts(
     ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
-):
+) -> Any:
     if context.callcontext:
         callee = context.callcontext.callee
         while hasattr(callee, "_proxied"):
@@ -441,7 +441,7 @@ def assign_assigned_stmts(
     ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
-):
+) -> Any:
     if not assign_path:
         yield self.value
         return None
@@ -459,7 +459,7 @@ def assign_annassigned_stmts(
     ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
-):
+) -> Any:
     for inferred in assign_assigned_stmts(self, node, context, assign_path):
         if inferred is None:
             yield util.Uninferable
@@ -520,7 +520,7 @@ def excepthandler_assigned_stmts(
     ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
-):
+) -> Any:
     for assigned in node_classes.unpack_infer(self.type):
         if isinstance(assigned, nodes.ClassDef):
             assigned = objects.ExceptionInstance(assigned)
@@ -578,7 +578,7 @@ def with_assigned_stmts(
     ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
-):
+) -> Any:
     """Infer names and other nodes from a *with* statement.
 
     This enables only inference for name binding in a *with* statement.
@@ -656,7 +656,7 @@ def named_expr_assigned_stmts(
     node: mixins.AssignTypeMixin,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
-):
+) -> Any:
     """Infer names and other nodes from an assignment expression"""
     if self.target == node:
         yield from self.value.infer(context=context)
@@ -680,7 +680,7 @@ def starred_assigned_stmts(
     ] = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
-):
+) -> Any:
     """
     Arguments:
         self: nodes.Starred
