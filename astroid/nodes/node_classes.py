@@ -285,6 +285,9 @@ class BaseContainer(
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -297,7 +300,13 @@ class BaseContainer(
         self.elts: typing.List[NodeNG] = []
         """The elements in the node."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, elts: typing.List[NodeNG]) -> None:
         """Do some setup after initialisation.
@@ -619,6 +628,9 @@ class AssignName(
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param name: The name that is assigned to.
@@ -633,7 +645,13 @@ class AssignName(
         self.name: Optional[str] = name
         """The name that is assigned to."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
 
 class DelName(
@@ -660,6 +678,9 @@ class DelName(
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param name: The name that is being deleted.
@@ -674,7 +695,13 @@ class DelName(
         self.name: Optional[str] = name
         """The name that is being deleted."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
 
 class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
@@ -702,6 +729,9 @@ class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param name: The name that this node refers to.
@@ -716,7 +746,13 @@ class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
         self.name: Optional[str] = name
         """The name that this node refers to."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def _get_name_nodes(self):
         yield self
@@ -1134,6 +1170,9 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param attrname: The name of the attribute being assigned to.
@@ -1151,7 +1190,13 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
         self.attrname: Optional[str] = attrname
         """The name of the attribute being assigned to."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, expr: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -1182,6 +1227,9 @@ class Assert(Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -1197,7 +1245,13 @@ class Assert(Statement):
         self.fail: Optional[NodeNG] = None  # can be None
         """The message shown when the assertion fails."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self, test: Optional[NodeNG] = None, fail: Optional[NodeNG] = None
@@ -1238,6 +1292,9 @@ class Assign(mixins.AssignTypeMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -1256,7 +1313,13 @@ class Assign(mixins.AssignTypeMixin, Statement):
         self.type_annotation: Optional[NodeNG] = None  # can be None
         """If present, this will contain the type annotation passed by a type comment"""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -1307,6 +1370,9 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -1328,7 +1394,13 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
         self.simple: Optional[int] = None
         """Whether :attr:`target` is a pure name or a complex statement."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -1382,6 +1454,9 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param op: The operator that is being combined with the assignment.
@@ -1406,7 +1481,13 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
         self.value: Optional[NodeNG] = None
         """The value being assigned to the variable."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self, target: Optional[NodeNG] = None, value: Optional[NodeNG] = None
@@ -1474,6 +1555,9 @@ class BinOp(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param op: The operator.
@@ -1494,7 +1578,13 @@ class BinOp(NodeNG):
         self.right: Optional[NodeNG] = None
         """What is being applied to the operator on the right side."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self, left: Optional[NodeNG] = None, right: Optional[NodeNG] = None
@@ -1564,6 +1654,9 @@ class BoolOp(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param op: The operator.
@@ -1581,7 +1674,13 @@ class BoolOp(NodeNG):
         self.values: typing.List[NodeNG] = []
         """The values being applied to the operator."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, values: Optional[typing.List[NodeNG]] = None) -> None:
         """Do some setup after initialisation.
@@ -1626,6 +1725,9 @@ class Call(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -1644,7 +1746,13 @@ class Call(NodeNG):
         self.keywords: typing.List["Keyword"] = []
         """The keyword arguments being given to the call."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -1704,6 +1812,9 @@ class Compare(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -1719,7 +1830,13 @@ class Compare(NodeNG):
         self.ops: typing.List[typing.Tuple[str, NodeNG]] = []
         """The remainder of the operators and their relevant right hand value."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -1881,6 +1998,9 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
         kind: Optional[str] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param value: The value that the constant represents.
@@ -1900,7 +2020,13 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
         self.kind: Optional[str] = kind  # can be None
         """"The string prefix. "u" for u-prefixed strings and ``None`` otherwise. Python 3.8+ only."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def __getattr__(self, name):
         # This is needed because of Proxy's __getattr__ method.
@@ -2023,6 +2149,9 @@ class Decorators(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2038,7 +2167,13 @@ class Decorators(NodeNG):
         :type: list(Name or Call) or None
         """
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, nodes: typing.List[NodeNG]) -> None:
         """Do some setup after initialisation.
@@ -2086,6 +2221,9 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param attrname: The name of the attribute that is being deleted.
@@ -2106,7 +2244,13 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
         self.attrname: Optional[str] = attrname
         """The name of the attribute that is being deleted."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, expr: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -2138,6 +2282,9 @@ class Delete(mixins.AssignTypeMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2150,7 +2297,13 @@ class Delete(mixins.AssignTypeMixin, Statement):
         self.targets: typing.List[NodeNG] = []
         """What is being deleted."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, targets: Optional[typing.List[NodeNG]] = None) -> None:
         """Do some setup after initialisation.
@@ -2182,6 +2335,9 @@ class Dict(NodeNG, Instance):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2194,7 +2350,13 @@ class Dict(NodeNG, Instance):
         self.items: typing.List[typing.Tuple[NodeNG, NodeNG]] = []
         """The key-value pairs contained in the dictionary."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, items: typing.List[typing.Tuple[NodeNG, NodeNG]]) -> None:
         """Do some setup after initialisation.
@@ -2321,6 +2483,9 @@ class Expr(Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2333,7 +2498,13 @@ class Expr(Statement):
         self.value: Optional[NodeNG] = None
         """What the expression does."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -2392,6 +2563,9 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2413,7 +2587,13 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
         self.body: typing.List[NodeNG] = []
         """The contents of the block."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def get_children(self):
         if self.type is not None:
@@ -2509,6 +2689,9 @@ class For(
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2533,7 +2716,13 @@ class For(
         self.type_annotation: Optional[NodeNG] = None  # can be None
         """If present, this will contain the type annotation passed by a type comment"""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
     def postinit(
@@ -2622,6 +2811,9 @@ class Await(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2634,7 +2826,13 @@ class Await(NodeNG):
         self.value: Optional[NodeNG] = None
         """What to wait for."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -2666,6 +2864,9 @@ class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param fromname: The module that is being imported from.
@@ -2702,7 +2903,13 @@ class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         This is always 0 for absolute imports.
         """
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
 
 class Attribute(NodeNG):
@@ -2718,6 +2925,9 @@ class Attribute(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param attrname: The name of the attribute.
@@ -2738,7 +2948,13 @@ class Attribute(NodeNG):
         self.attrname: Optional[str] = attrname
         """The name of the attribute."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, expr: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -2769,6 +2985,9 @@ class Global(mixins.NoChildrenMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param names: The names being declared as global.
@@ -2783,7 +3002,13 @@ class Global(mixins.NoChildrenMixin, Statement):
         self.names: typing.List[str] = names
         """The names being declared as global."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def _infer_name(self, frame, name):
         return name
@@ -2806,6 +3031,9 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2827,7 +3055,13 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         self.is_orelse: bool = False
         """Whether the if-statement is the orelse-block of another if statement."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -2956,6 +3190,9 @@ class IfExp(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2974,7 +3211,13 @@ class IfExp(NodeNG):
         self.orelse: Optional[NodeNG] = None
         """The contents of the ``else`` block."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -3022,6 +3265,9 @@ class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param names: The names being imported.
@@ -3040,7 +3286,13 @@ class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         and the alias that the name is assigned to (if any).
         """
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
 
 class Index(NodeNG):
@@ -3073,6 +3325,9 @@ class Keyword(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param arg: The argument being assigned to.
@@ -3090,7 +3345,13 @@ class Keyword(NodeNG):
         self.value: Optional[NodeNG] = None
         """The value being assigned to the keyword argument."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -3120,6 +3381,9 @@ class List(BaseContainer):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param ctx: Whether the list is assigned to or loaded from.
@@ -3134,7 +3398,13 @@ class List(BaseContainer):
         self.ctx: Optional[Context] = ctx
         """Whether the list is assigned to or loaded from."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def pytype(self):
         """Get the name of the type that this node represents.
@@ -3175,6 +3445,9 @@ class Nonlocal(mixins.NoChildrenMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param names: The names being declared as not local.
@@ -3189,7 +3462,13 @@ class Nonlocal(mixins.NoChildrenMixin, Statement):
         self.names: typing.List[str] = names
         """The names being declared as not local."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def _infer_name(self, frame, name):
         return name
@@ -3221,6 +3500,9 @@ class Raise(Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3236,7 +3518,13 @@ class Raise(Statement):
         self.cause: Optional[NodeNG] = None  # can be None
         """The exception being used to raise this one."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -3290,6 +3578,9 @@ class Return(Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3302,7 +3593,13 @@ class Return(Statement):
         self.value: Optional[NodeNG] = None  # can be None
         """The value being returned."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -3358,6 +3655,9 @@ class Slice(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3376,7 +3676,13 @@ class Slice(NodeNG):
         self.step: Optional[NodeNG] = None  # can be None
         """The step to take between indexes."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -3467,6 +3773,9 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param ctx: Whether the list is assigned to or loaded from.
@@ -3484,7 +3793,13 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
         self.ctx: Optional[Context] = ctx
         """Whether the starred item is assigned to or loaded from."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -3515,6 +3830,9 @@ class Subscript(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param ctx: Whether the subscripted item is assigned to or loaded from.
@@ -3535,7 +3853,13 @@ class Subscript(NodeNG):
         self.ctx: Optional[Context] = ctx
         """Whether the subscripted item is assigned to or loaded from."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
     def postinit(
@@ -3577,6 +3901,9 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3595,7 +3922,13 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         self.orelse: typing.List[NodeNG] = []
         """The contents of the ``else`` block."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -3672,6 +4005,9 @@ class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3687,7 +4023,13 @@ class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         self.finalbody: typing.List[NodeNG] = []
         """The contents of the ``finally`` block."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -3747,6 +4089,9 @@ class Tuple(BaseContainer):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param ctx: Whether the tuple is assigned to or loaded from.
@@ -3761,7 +4106,13 @@ class Tuple(BaseContainer):
         self.ctx: Optional[Context] = ctx
         """Whether the tuple is assigned to or loaded from."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def pytype(self):
         """Get the name of the type that this node represents.
@@ -3799,6 +4150,9 @@ class UnaryOp(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param op: The operator.
@@ -3816,7 +4170,13 @@ class UnaryOp(NodeNG):
         self.operand: Optional[NodeNG] = None
         """What the unary operator is applied to."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, operand: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -3878,6 +4238,9 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3896,7 +4259,13 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         self.orelse: typing.List[NodeNG] = []
         """The contents of the ``else`` block."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -3976,6 +4345,9 @@ class With(
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3994,7 +4366,13 @@ class With(
         self.type_annotation: Optional[NodeNG] = None  # can be None
         """If present, this will contain the type annotation passed by a type comment"""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -4056,6 +4434,9 @@ class Yield(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -4068,7 +4449,13 @@ class Yield(NodeNG):
         self.value: Optional[NodeNG] = None  # can be None
         """The value to yield."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -4114,6 +4501,9 @@ class FormattedValue(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -4142,7 +4532,13 @@ class FormattedValue(NodeNG):
         :type: JoinedStr or None
         """
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -4186,6 +4582,9 @@ class JoinedStr(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -4201,7 +4600,13 @@ class JoinedStr(NodeNG):
         :type: list(FormattedValue or Const)
         """
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, values: Optional[typing.List[NodeNG]] = None) -> None:
         """Do some setup after initialisation.
@@ -4238,6 +4643,9 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -4256,7 +4664,13 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
         self.value: NodeNG
         """The value that gets assigned in the expression"""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, target: NodeNG, value: NodeNG) -> None:
         self.target = target
@@ -4388,10 +4802,19 @@ class Match(Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.subject: NodeNG
         self.cases: typing.List["MatchCase"]
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -4464,9 +4887,18 @@ class MatchValue(Pattern):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.value: NodeNG
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, *, value: NodeNG) -> None:
         self.value = value
@@ -4501,10 +4933,18 @@ class MatchSingleton(Pattern):
         value: Literal[True, False, None],
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
         self.value: Literal[True, False, None] = value
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
 
 class MatchSequence(Pattern):
@@ -4531,9 +4971,18 @@ class MatchSequence(Pattern):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.patterns: typing.List[Pattern]
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, *, patterns: typing.List[Pattern]) -> None:
         self.patterns = patterns
@@ -4559,11 +5008,20 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.keys: typing.List[NodeNG]
         self.patterns: typing.List[Pattern]
         self.rest: Optional[AssignName]
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -4612,12 +5070,21 @@ class MatchClass(Pattern):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.cls: NodeNG
         self.patterns: typing.List[Pattern]
         self.kwd_attrs: typing.List[str]
         self.kwd_patterns: typing.List[Pattern]
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -4653,9 +5120,18 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.name: Optional[AssignName]
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, *, name: Optional[AssignName]) -> None:
         self.name = name
@@ -4703,10 +5179,19 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.pattern: Optional[Pattern]
         self.name: Optional[AssignName]
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -4748,9 +5233,18 @@ class MatchOr(Pattern):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.patterns: typing.List[Pattern]
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, *, patterns: typing.List[Pattern]) -> None:
         self.patterns = patterns

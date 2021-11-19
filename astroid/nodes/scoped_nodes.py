@@ -895,7 +895,15 @@ class GeneratorExp(ComprehensionScope):
     :type: list(Comprehension) or None
     """
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
         """
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -913,7 +921,13 @@ class GeneratorExp(ComprehensionScope):
         :type: dict(str, NodeNG)
         """
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, elt=None, generators=None):
         """Do some setup after initialisation.
@@ -972,7 +986,15 @@ class DictComp(ComprehensionScope):
     :type: list(Comprehension) or None
     """
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
         """
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -990,7 +1012,13 @@ class DictComp(ComprehensionScope):
         :type: dict(str, NodeNG)
         """
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, key=None, value=None, generators=None):
         """Do some setup after initialisation.
@@ -1049,7 +1077,15 @@ class SetComp(ComprehensionScope):
     :type: list(Comprehension) or None
     """
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
         """
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -1067,7 +1103,13 @@ class SetComp(ComprehensionScope):
         :type: dict(str, NodeNG)
         """
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, elt=None, generators=None):
         """Do some setup after initialisation.
@@ -1158,14 +1200,28 @@ class ListComp(_ListComp, ComprehensionScope):
 
     _other_other_fields = ("locals",)
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
         self.locals = {}
         """A map of the name of a local variable to the node defining it.
 
         :type: dict(str, NodeNG)
         """
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
 
 def _infer_decorator_callchain(node):
@@ -1235,7 +1291,15 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
                 return "method"
         return "function"
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
         """
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -1262,7 +1326,13 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :type: list(NodeNG)
         """
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, args: Arguments, body):
         """Do some setup after initialisation.
@@ -1438,7 +1508,17 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     )
     _type = None
 
-    def __init__(self, name=None, doc=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        name=None,
+        doc=None,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
         """
         :param name: The name of the function.
         :type name: str or None
@@ -1469,7 +1549,13 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
 
         self.instance_attrs = {}
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
         if parent:
             frame = parent.frame()
             frame.set_local(name, self)
@@ -2052,7 +2138,17 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     _other_other_fields = ("locals", "_newstyle")
     _newstyle = None
 
-    def __init__(self, name=None, doc=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        name=None,
+        doc=None,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
         """
         :param name: The name of the class.
         :type name: str or None
@@ -2109,7 +2205,13 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type doc: str or None
         """
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
         if parent is not None:
             parent.frame().set_local(name, self)
 
