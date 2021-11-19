@@ -1607,7 +1607,9 @@ class TreeRebuilder:
             if not isinstance(parent, nodes.ExceptHandler):
                 self._delayed_assattr.append(newnode)
         else:
-            if sys.version_info >= (3, 8):  # pylint: disable=else-if-used
+            # pylint: disable-next=else-if-used
+            # Preserve symmetry with other cases
+            if sys.version_info >= (3, 8):
                 newnode = nodes.Attribute(
                     attrname=node.attr,
                     lineno=node.lineno,
@@ -1859,7 +1861,9 @@ class TreeRebuilder:
                     node.id, node.lineno, node.col_offset, parent
                 )
         else:
-            if sys.version_info >= (3, 8):  # pylint: disable=else-if-used
+            # pylint: disable-next=else-if-used
+            # Preserve symmetry with other cases
+            if sys.version_info >= (3, 8):
                 newnode = nodes.Name(
                     name=node.id,
                     lineno=node.lineno,
