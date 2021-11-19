@@ -614,7 +614,7 @@ class AssignName(
 
     assigned_stmts: Callable[
         [
-            Union["AssignName", "AssignAttr"],
+            "AssignName",
             Union["List", "Tuple", "AssignName", "AssignAttr", None],
             Optional[InferenceContext],
             Optional[typing.List[int]],
@@ -1152,7 +1152,7 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
 
     assigned_stmts: Callable[
         [
-            Union["AssignName", "AssignAttr"],
+            "AssignAttr",
             Union["List", "Tuple", "AssignName", "AssignAttr", None],
             Optional[InferenceContext],
             Optional[typing.List[int]],
@@ -1271,7 +1271,7 @@ class Assign(mixins.AssignTypeMixin, Statement):
 
     assigned_stmts: Callable[
         [
-            Union["AugAssign", "Assign", "AnnAssign"],
+            "Assign",
             Union["List", "Tuple", "AssignName", "AssignAttr", None],
             Optional[InferenceContext],
             Optional[typing.List[int]],
@@ -1439,7 +1439,7 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
 
     assigned_stmts: Callable[
         [
-            Union["AugAssign", "Assign", "AnnAssign"],
+            "AugAssign",
             Union["List", "Tuple", "AssignName", "AssignAttr", None],
             Optional[InferenceContext],
             Optional[typing.List[int]],
@@ -1859,7 +1859,7 @@ class Comprehension(NodeNG):
 
     assigned_stmts: Callable[
         [
-            Union["For", "Comprehension"],
+            "Comprehension",
             Union["List", "Tuple", "AssignName", "AssignAttr", None],
             Optional[InferenceContext],
             Optional[typing.List[int]],
@@ -2604,7 +2604,7 @@ class For(
 
     assigned_stmts: Callable[
         [
-            Union["For", "Comprehension"],
+            "For",
             Union["List", "Tuple", "AssignName", "AssignAttr", None],
             Optional[InferenceContext],
             Optional[typing.List[int]],
@@ -3227,7 +3227,7 @@ class List(BaseContainer):
 
     assigned_stmts: Callable[
         [
-            Union["Tuple", "List"],
+            "List",
             Union["List", "Tuple", "AssignName", "AssignAttr", None],
             Optional[InferenceContext],
             Optional[typing.List[int]],
@@ -3880,7 +3880,7 @@ class Tuple(BaseContainer):
 
     assigned_stmts: Callable[
         [
-            Union["Tuple", "List"],
+            "Tuple",
             Union["List", "Tuple", "AssignName", "AssignAttr", None],
             Optional[InferenceContext],
             Optional[typing.List[int]],
