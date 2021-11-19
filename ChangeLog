@@ -14,6 +14,10 @@ Release date: TBA
 
 * Require Python 3.6.2 to use astroid.
 
+* Fix ``deque.insert()`` signature in ``collections`` brain.
+
+  Closes #1260
+
 
 What's New in astroid 2.9.0?
 ============================
