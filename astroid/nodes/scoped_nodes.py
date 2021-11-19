@@ -510,7 +510,6 @@ class Module(LocalsDictNodeNG):
         self.file = file
         self.path = path
         self.package = package
-        self.parent = parent
         self.pure_python = pure_python
         self.locals = self.globals = {}
         """A map of the name of a local variable to the node defining the local.
@@ -523,6 +522,8 @@ class Module(LocalsDictNodeNG):
         :type: list(NodeNG) or None
         """
         self.future_imports = set()
+
+        super().__init__(lineno=None, col_offset=None, parent=parent)
 
     # pylint: enable=redefined-builtin
 
