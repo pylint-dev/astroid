@@ -17,7 +17,7 @@ from typing import (
     overload,
 )
 
-from astroid import decorators, util
+from astroid import decorators, nodes, util
 from astroid.exceptions import (
     AstroidError,
     InferenceError,
