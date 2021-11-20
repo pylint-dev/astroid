@@ -588,6 +588,7 @@ class TestLinenoColOffset:
         assert (f1.body[0].end_lineno, f1.body[0].end_col_offset) == (6, 8)
 
         # pos only arguments
+        # TODO fix column offset: arg -> arg (AssignName)
         assert isinstance(f1.args.posonlyargs[0], nodes.AssignName)
         assert (f1.args.posonlyargs[0].lineno, f1.args.posonlyargs[0].col_offset) == (2, 4)
         assert (f1.args.posonlyargs[0].end_lineno, f1.args.posonlyargs[0].end_col_offset) == (2, 10)
@@ -737,6 +738,7 @@ class TestLinenoColOffset:
         assert (t2.end_lineno, t2.end_col_offset) == (4, 8)
         assert (t2.type.lineno, t2.type.col_offset) == (3, 7)
         assert (t2.type.end_lineno, t2.type.end_col_offset) == (3, 15)
+        # TODO fix column offset: ExceptHandler -> name (AssignName)
         assert (t2.name.lineno, t2.name.col_offset) == (3, 0)
         assert (t2.name.end_lineno, t2.name.end_col_offset) == (4, 8)
         assert (t2.body[0].lineno, t2.body[0].col_offset) == (4, 4)
@@ -1003,6 +1005,7 @@ class TestLinenoColOffset:
         assert isinstance(m5.name, nodes.AssignName)
         assert (m5.lineno, m5.col_offset) == (6, 16)
         assert (m5.end_lineno, m5.end_col_offset) == (6, 21)
+        # TODO fix column offset: MatchStar -> name (AssignName)
         assert (m5.name.lineno, m5.name.col_offset) == (6, 16)
         assert (m5.name.end_lineno, m5.name.end_col_offset) == (6, 21)
 
@@ -1018,6 +1021,7 @@ class TestLinenoColOffset:
         assert (m6.pattern.keys[0].end_lineno, m6.pattern.keys[0].end_col_offset) == (8, 11)
         assert (m6.pattern.patterns[0].lineno, m6.pattern.patterns[0].col_offset) == (8, 13)
         assert (m6.pattern.patterns[0].end_lineno, m6.pattern.patterns[0].end_col_offset) == (8, 20)
+        # TODO fix column offset: MatchMapping -> rest (AssignName)
         assert (m6.pattern.rest.lineno, m6.pattern.rest.col_offset) == (8, 9)
         assert (m6.pattern.rest.end_lineno, m6.pattern.rest.end_col_offset) == (8, 29)
 
@@ -1054,6 +1058,7 @@ class TestLinenoColOffset:
         assert (m9.pattern.end_lineno, m9.pattern.end_col_offset) == (14, 17)
         assert (m9.pattern.pattern.lineno, m9.pattern.pattern.col_offset) == (14, 9)
         assert (m9.pattern.pattern.end_lineno, m9.pattern.pattern.end_col_offset) == (14, 12)
+        # TODO fix column offset: MatchAs -> name (AssignName)
         assert (m9.pattern.name.lineno, m9.pattern.name.col_offset) == (14, 9)
         assert (m9.pattern.name.end_lineno, m9.pattern.name.end_col_offset) == (14, 17)
         # fmt: on
