@@ -916,6 +916,13 @@ class GeneratorExp(ComprehensionScope):
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param end_lineno: The last line this node appears on in the source code.
+        :type end_lineno: Optional[int]
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
+        :type end_col_offset: Optional[int]
         """
         self.locals = {}
         """A map of the name of a local variable to the node defining the local.
@@ -1007,6 +1014,13 @@ class DictComp(ComprehensionScope):
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param end_lineno: The last line this node appears on in the source code.
+        :type end_lineno: Optional[int]
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
+        :type end_col_offset: Optional[int]
         """
         self.locals = {}
         """A map of the name of a local variable to the node defining the local.
@@ -1098,6 +1112,13 @@ class SetComp(ComprehensionScope):
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param end_lineno: The last line this node appears on in the source code.
+        :type end_lineno: Optional[int]
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
+        :type end_col_offset: Optional[int]
         """
         self.locals = {}
         """A map of the name of a local variable to the node defining the local.
@@ -1312,6 +1333,13 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param end_lineno: The last line this node appears on in the source code.
+        :type end_lineno: Optional[int]
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
+        :type end_col_offset: Optional[int]
         """
         self.locals = {}
         """A map of the name of a local variable to the node defining it.
@@ -1537,6 +1565,13 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param end_lineno: The last line this node appears on in the source code.
+        :type end_lineno: Optional[int]
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
+        :type end_col_offset: Optional[int]
         """
         self.name = name
         """The name of the function.
@@ -2167,6 +2202,13 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param end_lineno: The last line this node appears on in the source code.
+        :type end_lineno: Optional[int]
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
+        :type end_col_offset: Optional[int]
         """
         self.instance_attrs = {}
         self.locals = {}

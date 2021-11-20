@@ -296,6 +296,11 @@ class BaseContainer(
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.elts: typing.List[NodeNG] = []
         """The elements in the node."""
@@ -641,6 +646,11 @@ class AssignName(
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.name: Optional[str] = name
         """The name that is assigned to."""
@@ -691,6 +701,11 @@ class DelName(
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.name: Optional[str] = name
         """The name that is being deleted."""
@@ -742,6 +757,11 @@ class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.name: Optional[str] = name
         """The name that this node refers to."""
@@ -1185,6 +1205,11 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.expr: Optional[NodeNG] = None
         """What has the attribute that is being assigned to."""
@@ -1240,6 +1265,11 @@ class Assert(Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.test: Optional[NodeNG] = None
         """The test that passes or fails the assertion."""
@@ -1305,6 +1335,11 @@ class Assign(mixins.AssignTypeMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.targets: typing.List[NodeNG] = []
         """What is being assigned to."""
@@ -1383,6 +1418,11 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.target: Optional[NodeNG] = None
         """What is being assigned to."""
@@ -1470,6 +1510,11 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.target: Optional[NodeNG] = None
         """What is being assigned to."""
@@ -1570,6 +1615,11 @@ class BinOp(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.left: Optional[NodeNG] = None
         """What is being applied to the operator on the left side."""
@@ -1669,6 +1719,11 @@ class BoolOp(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.op: Optional[str] = op
         """The operator."""
@@ -1738,6 +1793,11 @@ class Call(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.func: Optional[NodeNG] = None
         """What is being called."""
@@ -1825,6 +1885,11 @@ class Compare(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.left: Optional[NodeNG] = None
         """The value at the left being applied to a comparison operator."""
@@ -2017,6 +2082,11 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
         :param parent: The parent node in the syntax tree.
 
         :param kind: The string prefix. "u" for u-prefixed strings and ``None`` otherwise. Python 3.8+ only.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: typing.Any = value
         """The value that the constant represents."""
@@ -2164,6 +2234,11 @@ class Decorators(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.nodes: typing.List[NodeNG]
         """The decorators that this node contains.
@@ -2238,6 +2313,11 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.expr: Optional[NodeNG] = None
         """The name that this node represents.
@@ -2297,6 +2377,11 @@ class Delete(mixins.AssignTypeMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.targets: typing.List[NodeNG] = []
         """What is being deleted."""
@@ -2350,6 +2435,11 @@ class Dict(NodeNG, Instance):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.items: typing.List[typing.Tuple[NodeNG, NodeNG]] = []
         """The key-value pairs contained in the dictionary."""
@@ -2498,6 +2588,11 @@ class Expr(Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: Optional[NodeNG] = None
         """What the expression does."""
@@ -2578,6 +2673,11 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.type: Optional[NodeNG] = None  # can be None
         """The types that the block handles.
@@ -2704,6 +2804,11 @@ class For(
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.target: Optional[NodeNG] = None
         """What the loop assigns to."""
@@ -2826,6 +2931,11 @@ class Await(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: Optional[NodeNG] = None
         """What to wait for."""
@@ -2885,6 +2995,11 @@ class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.modname: Optional[str] = fromname  # can be None
         """The module that is being imported from.
@@ -2942,6 +3057,11 @@ class Attribute(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.expr: Optional[NodeNG] = None
         """The name that this node represents.
@@ -3002,6 +3122,11 @@ class Global(mixins.NoChildrenMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.names: typing.List[str] = names
         """The names being declared as global."""
@@ -3046,6 +3171,11 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.test: Optional[NodeNG] = None
         """The condition that the statement tests."""
@@ -3205,6 +3335,11 @@ class IfExp(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.test: Optional[NodeNG] = None
         """The condition that the statement tests."""
@@ -3282,6 +3417,11 @@ class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.names: typing.List[typing.Tuple[str, Optional[str]]] = names or []
         """The names being imported.
@@ -3342,6 +3482,11 @@ class Keyword(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.arg: Optional[str] = arg  # can be None
         """The argument being assigned to."""
@@ -3398,6 +3543,11 @@ class List(BaseContainer):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.ctx: Optional[Context] = ctx
         """Whether the list is assigned to or loaded from."""
@@ -3462,6 +3612,11 @@ class Nonlocal(mixins.NoChildrenMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.names: typing.List[str] = names
         """The names being declared as not local."""
@@ -3515,6 +3670,11 @@ class Raise(Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.exc: Optional[NodeNG] = None  # can be None
         """What is being raised."""
@@ -3593,6 +3753,11 @@ class Return(Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: Optional[NodeNG] = None  # can be None
         """The value being returned."""
@@ -3670,6 +3835,11 @@ class Slice(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.lower: Optional[NodeNG] = None  # can be None
         """The lower index in the slice."""
@@ -3790,6 +3960,11 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: Optional[NodeNG] = None
         """What is being unpacked."""
@@ -3847,6 +4022,11 @@ class Subscript(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: Optional[NodeNG] = None
         """What is being indexed."""
@@ -3916,6 +4096,11 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.body: typing.List[NodeNG] = []
         """The contents of the block to catch exceptions from."""
@@ -4020,6 +4205,11 @@ class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.body: typing.Union[typing.List[TryExcept], typing.List[NodeNG]] = []
         """The try-except that the finally is attached to."""
@@ -4106,6 +4296,11 @@ class Tuple(BaseContainer):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.ctx: Optional[Context] = ctx
         """Whether the tuple is assigned to or loaded from."""
@@ -4167,6 +4362,11 @@ class UnaryOp(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.op: Optional[str] = op
         """The operator."""
@@ -4253,6 +4453,11 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.test: Optional[NodeNG] = None
         """The condition that the loop tests."""
@@ -4360,6 +4565,11 @@ class With(
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.items: typing.List[typing.Tuple[NodeNG, Optional[NodeNG]]] = []
         """The pairs of context managers and the names they are assigned to."""
@@ -4449,6 +4659,11 @@ class Yield(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: Optional[NodeNG] = None  # can be None
         """The value to yield."""
@@ -4516,6 +4731,11 @@ class FormattedValue(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: NodeNG
         """The value to be formatted into the string."""
@@ -4597,6 +4817,11 @@ class JoinedStr(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.values: typing.List[NodeNG] = []
         """The string expressions to be joined.
@@ -4658,6 +4883,11 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.target: NodeNG
         """The assignment target

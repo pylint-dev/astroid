@@ -102,9 +102,10 @@ class NodeNG:
 
         :param parent: The parent node in the syntax tree.
 
-        :param end_lineno:
+        :param end_lineno: The last line this node appears on in the source code.
 
-        :param end_col_offset:
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.lineno: Optional[int] = lineno
         """The line that this node appears on in the source code."""
@@ -116,10 +117,12 @@ class NodeNG:
         """The parent node in the syntax tree."""
 
         self.end_lineno: Optional[int] = end_lineno
-        """ """
+        """The last line this node appears on in the source code."""
 
         self.end_col_offset: Optional[int] = end_col_offset
-        """ """
+        """The end column this node appears on in the source code.
+        Note: This is after the last symbol.
+        """
 
     def infer(self, context=None, **kwargs):
         """Get a generator of the inferred values.
