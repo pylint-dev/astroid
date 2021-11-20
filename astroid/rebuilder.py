@@ -47,7 +47,7 @@ from typing import (
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import PY37_PLUS, PY38_PLUS, Context
+from astroid.const import PY37_PLUS, PY38, PY38_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 
@@ -830,6 +830,15 @@ class TreeRebuilder:
         if node.kwarg:
             kwarg = node.kwarg.arg
             kwargannotation = self.visit(node.kwarg.annotation, newnode)
+
+        if PY38:
+            # In Python 3.8 'end_lineno' and 'end_col_offset'
+            # for 'kwonlyargs' don't include the annotation.
+            for arg in node.kwonlyargs:
+                if arg.annotation is not None:
+                    arg.end_lineno = arg.annotation.end_lineno
+                    arg.end_col_offset = arg.annotation.end_col_offset
+
         kwonlyargs = [self.visit(child, newnode) for child in node.kwonlyargs]
         kw_defaults = [self.visit(child, newnode) for child in node.kw_defaults]
         annotations = [self.visit(arg.annotation, newnode) for arg in node.args]
@@ -1401,7 +1410,7 @@ class TreeRebuilder:
         self, node: "ast.ExtSlice", parent: nodes.Subscript
     ) -> nodes.Tuple:
         """visit an ExtSlice node by returning a fresh instance of Tuple"""
-        # TODO: add line and column info?
+        # ExtSlice doesn't have lineno or col_offset information
         newnode = nodes.Tuple(ctx=Context.Load, parent=parent)
         newnode.postinit([self.visit(dim, newnode) for dim in node.dims])  # type: ignore[attr-defined]
         return newnode
@@ -2046,8 +2055,16 @@ class TreeRebuilder:
 
     def visit_slice(self, node: "ast.Slice", parent: nodes.Subscript) -> nodes.Slice:
         """visit a Slice node by returning a fresh instance of it"""
-        # TODO add lineno and col offset info?
-        newnode = nodes.Slice(parent=parent)
+        if sys.version_info >= (3, 9):
+            newnode = nodes.Slice(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Slice(parent=parent)
         newnode.postinit(
             lower=self.visit(node.lower, newnode),
             upper=self.visit(node.upper, newnode),
