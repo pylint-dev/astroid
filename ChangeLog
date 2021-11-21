@@ -6,6 +6,11 @@ What's New in astroid 2.9.0?
 ============================
 Release date: TBA
 
+* The last version compatible with python '3.6.0' and '3.6.1' is astroid '2.6.6'. We did not
+  realize that when adding incompatible typing at the time, and versions might be broken
+  for this interpreter. 2.9.0 meta-information will permit to download pylint on those
+  interpreters but the installation will fail and tell you to install '2.6.6' instead.
+  astroid 2.9.1 will require python >= 3.6.2.
 
 
 What's New in astroid 2.8.6?
