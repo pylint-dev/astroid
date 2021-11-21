@@ -6,12 +6,12 @@ What's New in astroid 2.9.0?
 ============================
 Release date: TBA
 
-
 * Always treat ``__class_getitem__`` as a classmethod.
 
 * Add missing ``as_string`` visitor method for ``Unknown`` node.
 
   Closes #1264
+
 
 What's New in astroid 2.8.6?
 ============================
