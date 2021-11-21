@@ -48,7 +48,7 @@ from typing import (
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import PY37_PLUS, PY38_PLUS, PY39_PLUS, Context
+from astroid.const import PY37_PLUS, PY38, PY38_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 
@@ -831,6 +831,15 @@ class TreeRebuilder:
         if node.kwarg:
             kwarg = node.kwarg.arg
             kwargannotation = self.visit(node.kwarg.annotation, newnode)
+
+        if PY38:
+            # In Python 3.8 'end_lineno' and 'end_col_offset'
+            # for 'kwonlyargs' don't include the annotation.
+            for arg in node.kwonlyargs:
+                if arg.annotation is not None:
+                    arg.end_lineno = arg.annotation.end_lineno
+                    arg.end_col_offset = arg.annotation.end_col_offset
+
         kwonlyargs = [self.visit(child, newnode) for child in node.kwonlyargs]
         kw_defaults = [self.visit(child, newnode) for child in node.kw_defaults]
         annotations = [self.visit(arg.annotation, newnode) for arg in node.args]
@@ -881,7 +890,16 @@ class TreeRebuilder:
 
     def visit_assert(self, node: "ast.Assert", parent: NodeNG) -> nodes.Assert:
         """visit a Assert node by returning a fresh instance of it"""
-        newnode = nodes.Assert(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Assert(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Assert(node.lineno, node.col_offset, parent)
         msg: Optional[NodeNG] = None
         if node.msg:
             msg = self.visit(node.msg, newnode)
@@ -954,7 +972,16 @@ class TreeRebuilder:
         return self._visit_for(nodes.AsyncFor, node, parent)
 
     def visit_await(self, node: "ast.Await", parent: NodeNG) -> nodes.Await:
-        newnode = nodes.Await(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Await(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Await(node.lineno, node.col_offset, parent)
         newnode.postinit(value=self.visit(node.value, newnode))
         return newnode
 
@@ -963,7 +990,16 @@ class TreeRebuilder:
 
     def visit_assign(self, node: "ast.Assign", parent: NodeNG) -> nodes.Assign:
         """visit a Assign node by returning a fresh instance of it"""
-        newnode = nodes.Assign(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Assign(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Assign(node.lineno, node.col_offset, parent)
         type_annotation = self.check_type_comment(node, parent=newnode)
         newnode.postinit(
             targets=[self.visit(child, newnode) for child in node.targets],
@@ -974,7 +1010,16 @@ class TreeRebuilder:
 
     def visit_annassign(self, node: "ast.AnnAssign", parent: NodeNG) -> nodes.AnnAssign:
         """visit an AnnAssign node by returning a fresh instance of it"""
-        newnode = nodes.AnnAssign(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.AnnAssign(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.AnnAssign(node.lineno, node.col_offset, parent)
         newnode.postinit(
             target=self.visit(node.target, newnode),
             annotation=self.visit(node.annotation, newnode),
@@ -1004,23 +1049,43 @@ class TreeRebuilder:
         """
         if node_name is None:
             return None
-        newnode = nodes.AssignName(
-            node_name,
-            node.lineno,
-            node.col_offset,
-            parent,
-        )
+        if sys.version_info >= (3, 8):
+            newnode = nodes.AssignName(
+                name=node_name,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.AssignName(
+                node_name,
+                node.lineno,
+                node.col_offset,
+                parent,
+            )
         self._save_assignment(newnode)
         return newnode
 
     def visit_augassign(self, node: "ast.AugAssign", parent: NodeNG) -> nodes.AugAssign:
         """visit a AugAssign node by returning a fresh instance of it"""
-        newnode = nodes.AugAssign(
-            self._parser_module.bin_op_classes[type(node.op)] + "=",
-            node.lineno,
-            node.col_offset,
-            parent,
-        )
+        if sys.version_info >= (3, 8):
+            newnode = nodes.AugAssign(
+                op=self._parser_module.bin_op_classes[type(node.op)] + "=",
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.AugAssign(
+                self._parser_module.bin_op_classes[type(node.op)] + "=",
+                node.lineno,
+                node.col_offset,
+                parent,
+            )
         newnode.postinit(
             self.visit(node.target, newnode), self.visit(node.value, newnode)
         )
@@ -1028,12 +1093,22 @@ class TreeRebuilder:
 
     def visit_binop(self, node: "ast.BinOp", parent: NodeNG) -> nodes.BinOp:
         """visit a BinOp node by returning a fresh instance of it"""
-        newnode = nodes.BinOp(
-            self._parser_module.bin_op_classes[type(node.op)],
-            node.lineno,
-            node.col_offset,
-            parent,
-        )
+        if sys.version_info >= (3, 8):
+            newnode = nodes.BinOp(
+                op=self._parser_module.bin_op_classes[type(node.op)],
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.BinOp(
+                self._parser_module.bin_op_classes[type(node.op)],
+                node.lineno,
+                node.col_offset,
+                parent,
+            )
         newnode.postinit(
             self.visit(node.left, newnode), self.visit(node.right, newnode)
         )
@@ -1041,22 +1116,49 @@ class TreeRebuilder:
 
     def visit_boolop(self, node: "ast.BoolOp", parent: NodeNG) -> nodes.BoolOp:
         """visit a BoolOp node by returning a fresh instance of it"""
-        newnode = nodes.BoolOp(
-            self._parser_module.bool_op_classes[type(node.op)],
-            node.lineno,
-            node.col_offset,
-            parent,
-        )
+        if sys.version_info >= (3, 8):
+            newnode = nodes.BoolOp(
+                op=self._parser_module.bool_op_classes[type(node.op)],
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.BoolOp(
+                self._parser_module.bool_op_classes[type(node.op)],
+                node.lineno,
+                node.col_offset,
+                parent,
+            )
         newnode.postinit([self.visit(child, newnode) for child in node.values])
         return newnode
 
     def visit_break(self, node: "ast.Break", parent: NodeNG) -> nodes.Break:
         """visit a Break node by returning a fresh instance of it"""
+        if sys.version_info >= (3, 8):
+            return nodes.Break(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
         return nodes.Break(node.lineno, node.col_offset, parent)
 
     def visit_call(self, node: "ast.Call", parent: NodeNG) -> nodes.Call:
         """visit a CallFunc node by returning a fresh instance of it"""
-        newnode = nodes.Call(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Call(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Call(node.lineno, node.col_offset, parent)
         newnode.postinit(
             func=self.visit(node.func, newnode),
             args=[self.visit(child, newnode) for child in node.args],
@@ -1069,7 +1171,20 @@ class TreeRebuilder:
     ) -> nodes.ClassDef:
         """visit a ClassDef node to become astroid"""
         node, doc = self._get_doc(node)
-        newnode = nodes.ClassDef(node.name, doc, node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.ClassDef(
+                name=node.name,
+                doc=doc,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.ClassDef(
+                node.name, doc, node.lineno, node.col_offset, parent
+            )
         metaclass = None
         for keyword in node.keywords:
             if keyword.arg == "metaclass":
@@ -1092,11 +1207,28 @@ class TreeRebuilder:
 
     def visit_continue(self, node: "ast.Continue", parent: NodeNG) -> nodes.Continue:
         """visit a Continue node by returning a fresh instance of it"""
+        if sys.version_info >= (3, 8):
+            return nodes.Continue(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
         return nodes.Continue(node.lineno, node.col_offset, parent)
 
     def visit_compare(self, node: "ast.Compare", parent: NodeNG) -> nodes.Compare:
         """visit a Compare node by returning a fresh instance of it"""
-        newnode = nodes.Compare(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Compare(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Compare(node.lineno, node.col_offset, parent)
         newnode.postinit(
             self.visit(node.left, newnode),
             [
@@ -1135,18 +1267,37 @@ class TreeRebuilder:
             return None
         # /!\ node is actually an _ast.FunctionDef node while
         # parent is an astroid.nodes.FunctionDef node
-        if PY38_PLUS:
+        if sys.version_info >= (3, 8):
             # Set the line number of the first decorator for Python 3.8+.
             lineno = node.decorator_list[0].lineno
+            end_lineno = node.decorator_list[-1].end_lineno
+            end_col_offset = node.decorator_list[-1].end_col_offset
         else:
             lineno = node.lineno
-        newnode = nodes.Decorators(lineno, node.col_offset, parent)
+            end_lineno = None
+            end_col_offset = None
+        newnode = nodes.Decorators(
+            lineno=lineno,
+            col_offset=node.col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
         newnode.postinit([self.visit(child, newnode) for child in node.decorator_list])
         return newnode
 
     def visit_delete(self, node: "ast.Delete", parent: NodeNG) -> nodes.Delete:
         """visit a Delete node by returning a fresh instance of it"""
-        newnode = nodes.Delete(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Delete(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Delete(node.lineno, node.col_offset, parent)
         newnode.postinit([self.visit(child, newnode) for child in node.targets])
         return newnode
 
@@ -1158,23 +1309,50 @@ class TreeRebuilder:
             rebuilt_value = self.visit(value, newnode)
             if not key:
                 # Extended unpacking
-                rebuilt_key = nodes.DictUnpack(
-                    rebuilt_value.lineno, rebuilt_value.col_offset, parent
-                )
+                if sys.version_info >= (3, 8):
+                    rebuilt_key = nodes.DictUnpack(
+                        lineno=rebuilt_value.lineno,
+                        col_offset=rebuilt_value.col_offset,
+                        end_lineno=rebuilt_value.end_lineno,
+                        end_col_offset=rebuilt_value.end_col_offset,
+                        parent=parent,
+                    )
+                else:
+                    rebuilt_key = nodes.DictUnpack(
+                        rebuilt_value.lineno, rebuilt_value.col_offset, parent
+                    )
             else:
                 rebuilt_key = self.visit(key, newnode)
             yield rebuilt_key, rebuilt_value
 
     def visit_dict(self, node: "ast.Dict", parent: NodeNG) -> nodes.Dict:
         """visit a Dict node by returning a fresh instance of it"""
-        newnode = nodes.Dict(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Dict(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Dict(node.lineno, node.col_offset, parent)
         items = list(self._visit_dict_items(node, parent, newnode))
         newnode.postinit(items)
         return newnode
 
     def visit_dictcomp(self, node: "ast.DictComp", parent: NodeNG) -> nodes.DictComp:
         """visit a DictComp node by returning a fresh instance of it"""
-        newnode = nodes.DictComp(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.DictComp(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.DictComp(node.lineno, node.col_offset, parent)
         newnode.postinit(
             self.visit(node.key, newnode),
             self.visit(node.value, newnode),
@@ -1184,7 +1362,16 @@ class TreeRebuilder:
 
     def visit_expr(self, node: "ast.Expr", parent: NodeNG) -> nodes.Expr:
         """visit a Expr node by returning a fresh instance of it"""
-        newnode = nodes.Expr(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Expr(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Expr(node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
@@ -1202,7 +1389,16 @@ class TreeRebuilder:
         self, node: "ast.ExceptHandler", parent: NodeNG
     ) -> nodes.ExceptHandler:
         """visit an ExceptHandler node by returning a fresh instance of it"""
-        newnode = nodes.ExceptHandler(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.ExceptHandler(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.ExceptHandler(node.lineno, node.col_offset, parent)
         newnode.postinit(
             self.visit(node.type, newnode),
             self.visit_assignname(node, newnode, node.name),
@@ -1215,6 +1411,7 @@ class TreeRebuilder:
         self, node: "ast.ExtSlice", parent: nodes.Subscript
     ) -> nodes.Tuple:
         """visit an ExtSlice node by returning a fresh instance of Tuple"""
+        # ExtSlice doesn't have lineno or col_offset information
         newnode = nodes.Tuple(ctx=Context.Load, parent=parent)
         newnode.postinit([self.visit(dim, newnode) for dim in node.dims])  # type: ignore[attr-defined]
         return newnode
@@ -1235,7 +1432,16 @@ class TreeRebuilder:
         self, cls: Type[T_For], node: Union["ast.For", "ast.AsyncFor"], parent: NodeNG
     ) -> T_For:
         """visit a For node by returning a fresh instance of it"""
-        newnode = cls(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = cls(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = cls(node.lineno, node.col_offset, parent)
         type_annotation = self.check_type_comment(node, parent=newnode)
         newnode.postinit(
             target=self.visit(node.target, newnode),
@@ -1254,14 +1460,26 @@ class TreeRebuilder:
     ) -> nodes.ImportFrom:
         """visit an ImportFrom node by returning a fresh instance of it"""
         names = [(alias.name, alias.asname) for alias in node.names]
-        newnode = nodes.ImportFrom(
-            node.module or "",
-            names,
-            node.level or None,
-            node.lineno,
-            node.col_offset,
-            parent,
-        )
+        if sys.version_info >= (3, 8):
+            newnode = nodes.ImportFrom(
+                fromname=node.module or "",
+                names=names,
+                level=node.level or None,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.ImportFrom(
+                node.module or "",
+                names,
+                node.level or None,
+                node.lineno,
+                node.col_offset,
+                parent,
+            )
         # store From names to add them to locals after building
         self._import_from_nodes.append(newnode)
         return newnode
@@ -1302,7 +1520,18 @@ class TreeRebuilder:
             # the framework for *years*.
             lineno = node.decorator_list[0].lineno
 
-        newnode = cls(node.name, doc, lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = cls(
+                name=node.name,
+                doc=doc,
+                lineno=lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = cls(node.name, doc, lineno, node.col_offset, parent)
         decorators = self.visit_decorators(node, newnode)
         returns: Optional[NodeNG]
         if node.returns:
@@ -1334,7 +1563,16 @@ class TreeRebuilder:
         self, node: "ast.GeneratorExp", parent: NodeNG
     ) -> nodes.GeneratorExp:
         """visit a GeneratorExp node by returning a fresh instance of it"""
-        newnode = nodes.GeneratorExp(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.GeneratorExp(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.GeneratorExp(node.lineno, node.col_offset, parent)
         newnode.postinit(
             self.visit(node.elt, newnode),
             [self.visit(child, newnode) for child in node.generators],
@@ -1350,25 +1588,71 @@ class TreeRebuilder:
         if context == Context.Del:
             # FIXME : maybe we should reintroduce and visit_delattr ?
             # for instance, deactivating assign_ctx
-            newnode = nodes.DelAttr(node.attr, node.lineno, node.col_offset, parent)
+            if sys.version_info >= (3, 8):
+                newnode = nodes.DelAttr(
+                    attrname=node.attr,
+                    lineno=node.lineno,
+                    col_offset=node.col_offset,
+                    end_lineno=node.end_lineno,
+                    end_col_offset=node.end_col_offset,
+                    parent=parent,
+                )
+            else:
+                newnode = nodes.DelAttr(node.attr, node.lineno, node.col_offset, parent)
         elif context == Context.Store:
-            newnode = nodes.AssignAttr(node.attr, node.lineno, node.col_offset, parent)
+            if sys.version_info >= (3, 8):
+                newnode = nodes.AssignAttr(
+                    attrname=node.attr,
+                    lineno=node.lineno,
+                    col_offset=node.col_offset,
+                    end_lineno=node.end_lineno,
+                    end_col_offset=node.end_col_offset,
+                    parent=parent,
+                )
+            else:
+                newnode = nodes.AssignAttr(
+                    node.attr, node.lineno, node.col_offset, parent
+                )
             # Prohibit a local save if we are in an ExceptHandler.
             if not isinstance(parent, nodes.ExceptHandler):
                 self._delayed_assattr.append(newnode)
         else:
-            newnode = nodes.Attribute(node.attr, node.lineno, node.col_offset, parent)
+            # pylint: disable-next=else-if-used
+            # Preserve symmetry with other cases
+            if sys.version_info >= (3, 8):
+                newnode = nodes.Attribute(
+                    attrname=node.attr,
+                    lineno=node.lineno,
+                    col_offset=node.col_offset,
+                    end_lineno=node.end_lineno,
+                    end_col_offset=node.end_col_offset,
+                    parent=parent,
+                )
+            else:
+                newnode = nodes.Attribute(
+                    node.attr, node.lineno, node.col_offset, parent
+                )
         newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
     def visit_global(self, node: "ast.Global", parent: NodeNG) -> nodes.Global:
         """visit a Global node to become astroid"""
-        newnode = nodes.Global(
-            node.names,
-            node.lineno,
-            node.col_offset,
-            parent,
-        )
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Global(
+                names=node.names,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Global(
+                node.names,
+                node.lineno,
+                node.col_offset,
+                parent,
+            )
         if self._global_names:  # global at the module level, no effect
             for name in node.names:
                 self._global_names[-1].setdefault(name, []).append(newnode)
@@ -1376,7 +1660,16 @@ class TreeRebuilder:
 
     def visit_if(self, node: "ast.If", parent: NodeNG) -> nodes.If:
         """visit an If node by returning a fresh instance of it"""
-        newnode = nodes.If(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.If(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.If(node.lineno, node.col_offset, parent)
         newnode.postinit(
             self.visit(node.test, newnode),
             [self.visit(child, newnode) for child in node.body],
@@ -1386,7 +1679,16 @@ class TreeRebuilder:
 
     def visit_ifexp(self, node: "ast.IfExp", parent: NodeNG) -> nodes.IfExp:
         """visit a IfExp node by returning a fresh instance of it"""
-        newnode = nodes.IfExp(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.IfExp(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.IfExp(node.lineno, node.col_offset, parent)
         newnode.postinit(
             self.visit(node.test, newnode),
             self.visit(node.body, newnode),
@@ -1397,12 +1699,22 @@ class TreeRebuilder:
     def visit_import(self, node: "ast.Import", parent: NodeNG) -> nodes.Import:
         """visit a Import node by returning a fresh instance of it"""
         names = [(alias.name, alias.asname) for alias in node.names]
-        newnode = nodes.Import(
-            names,
-            node.lineno,
-            node.col_offset,
-            parent,
-        )
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Import(
+                names=names,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Import(
+                names,
+                node.lineno,
+                node.col_offset,
+                parent,
+            )
         # save import names in parent's locals:
         for (name, asname) in newnode.names:
             name = asname or name
@@ -1410,14 +1722,32 @@ class TreeRebuilder:
         return newnode
 
     def visit_joinedstr(self, node: "ast.JoinedStr", parent: NodeNG) -> nodes.JoinedStr:
-        newnode = nodes.JoinedStr(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.JoinedStr(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.JoinedStr(node.lineno, node.col_offset, parent)
         newnode.postinit([self.visit(child, newnode) for child in node.values])
         return newnode
 
     def visit_formattedvalue(
         self, node: "ast.FormattedValue", parent: NodeNG
     ) -> nodes.FormattedValue:
-        newnode = nodes.FormattedValue(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.FormattedValue(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.FormattedValue(node.lineno, node.col_offset, parent)
         newnode.postinit(
             self.visit(node.value, newnode),
             node.conversion,
@@ -1426,7 +1756,16 @@ class TreeRebuilder:
         return newnode
 
     def visit_namedexpr(self, node: "ast.NamedExpr", parent: NodeNG) -> nodes.NamedExpr:
-        newnode = nodes.NamedExpr(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.NamedExpr(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.NamedExpr(node.lineno, node.col_offset, parent)
         newnode.postinit(
             self.visit(node.target, newnode), self.visit(node.value, newnode)
         )
@@ -1439,8 +1778,15 @@ class TreeRebuilder:
 
     def visit_keyword(self, node: "ast.keyword", parent: NodeNG) -> nodes.Keyword:
         """visit a Keyword node by returning a fresh instance of it"""
-        if PY39_PLUS:
-            newnode = nodes.Keyword(node.arg, node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 9):
+            newnode = nodes.Keyword(
+                arg=node.arg,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
         else:
             newnode = nodes.Keyword(node.arg, parent=parent)
         newnode.postinit(self.visit(node.value, newnode))
@@ -1448,22 +1794,53 @@ class TreeRebuilder:
 
     def visit_lambda(self, node: "ast.Lambda", parent: NodeNG) -> nodes.Lambda:
         """visit a Lambda node by returning a fresh instance of it"""
-        newnode = nodes.Lambda(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Lambda(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Lambda(node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.args, newnode), self.visit(node.body, newnode))
         return newnode
 
     def visit_list(self, node: "ast.List", parent: NodeNG) -> nodes.List:
         """visit a List node by returning a fresh instance of it"""
         context = self._get_context(node)
-        newnode = nodes.List(
-            ctx=context, lineno=node.lineno, col_offset=node.col_offset, parent=parent
-        )
+        if sys.version_info >= (3, 8):
+            newnode = nodes.List(
+                ctx=context,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.List(
+                ctx=context,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                parent=parent,
+            )
         newnode.postinit([self.visit(child, newnode) for child in node.elts])
         return newnode
 
     def visit_listcomp(self, node: "ast.ListComp", parent: NodeNG) -> nodes.ListComp:
         """visit a ListComp node by returning a fresh instance of it"""
-        newnode = nodes.ListComp(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.ListComp(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.ListComp(node.lineno, node.col_offset, parent)
         newnode.postinit(
             self.visit(node.elt, newnode),
             [self.visit(child, newnode) for child in node.generators],
@@ -1477,11 +1854,45 @@ class TreeRebuilder:
         context = self._get_context(node)
         newnode: Union[nodes.Name, nodes.AssignName, nodes.DelName]
         if context == Context.Del:
-            newnode = nodes.DelName(node.id, node.lineno, node.col_offset, parent)
+            if sys.version_info >= (3, 8):
+                newnode = nodes.DelName(
+                    name=node.id,
+                    lineno=node.lineno,
+                    col_offset=node.col_offset,
+                    end_lineno=node.end_lineno,
+                    end_col_offset=node.end_col_offset,
+                    parent=parent,
+                )
+            else:
+                newnode = nodes.DelName(node.id, node.lineno, node.col_offset, parent)
         elif context == Context.Store:
-            newnode = nodes.AssignName(node.id, node.lineno, node.col_offset, parent)
+            if sys.version_info >= (3, 8):
+                newnode = nodes.AssignName(
+                    name=node.id,
+                    lineno=node.lineno,
+                    col_offset=node.col_offset,
+                    end_lineno=node.end_lineno,
+                    end_col_offset=node.end_col_offset,
+                    parent=parent,
+                )
+            else:
+                newnode = nodes.AssignName(
+                    node.id, node.lineno, node.col_offset, parent
+                )
         else:
-            newnode = nodes.Name(node.id, node.lineno, node.col_offset, parent)
+            # pylint: disable-next=else-if-used
+            # Preserve symmetry with other cases
+            if sys.version_info >= (3, 8):
+                newnode = nodes.Name(
+                    name=node.id,
+                    lineno=node.lineno,
+                    col_offset=node.col_offset,
+                    end_lineno=node.end_lineno,
+                    end_col_offset=node.end_col_offset,
+                    parent=parent,
+                )
+            else:
+                newnode = nodes.Name(node.id, node.lineno, node.col_offset, parent)
         # XXX REMOVE me :
         if context in (Context.Del, Context.Store):  # 'Aug' ??
             newnode = cast(Union[nodes.AssignName, nodes.DelName], newnode)
@@ -1502,6 +1913,15 @@ class TreeRebuilder:
 
     def visit_nonlocal(self, node: "ast.Nonlocal", parent: NodeNG) -> nodes.Nonlocal:
         """visit a Nonlocal node and return a new instance of it"""
+        if sys.version_info >= (3, 8):
+            return nodes.Nonlocal(
+                names=node.names,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
         return nodes.Nonlocal(
             node.names,
             node.lineno,
@@ -1511,6 +1931,16 @@ class TreeRebuilder:
 
     def visit_constant(self, node: "ast.Constant", parent: NodeNG) -> nodes.Const:
         """visit a Constant node by returning a fresh instance of Const"""
+        if sys.version_info >= (3, 8):
+            return nodes.Const(
+                value=node.value,
+                kind=node.kind,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
         return nodes.Const(
             node.value,
             node.lineno,
@@ -1546,11 +1976,28 @@ class TreeRebuilder:
 
     def visit_pass(self, node: "ast.Pass", parent: NodeNG) -> nodes.Pass:
         """visit a Pass node by returning a fresh instance of it"""
+        if sys.version_info >= (3, 8):
+            return nodes.Pass(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
         return nodes.Pass(node.lineno, node.col_offset, parent)
 
     def visit_raise(self, node: "ast.Raise", parent: NodeNG) -> nodes.Raise:
         """visit a Raise node by returning a fresh instance of it"""
-        newnode = nodes.Raise(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Raise(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Raise(node.lineno, node.col_offset, parent)
         # no traceback; anyway it is not used in Pylint
         newnode.postinit(
             exc=self.visit(node.exc, newnode),
@@ -1560,20 +2007,47 @@ class TreeRebuilder:
 
     def visit_return(self, node: "ast.Return", parent: NodeNG) -> nodes.Return:
         """visit a Return node by returning a fresh instance of it"""
-        newnode = nodes.Return(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Return(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Return(node.lineno, node.col_offset, parent)
         if node.value is not None:
             newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
     def visit_set(self, node: "ast.Set", parent: NodeNG) -> nodes.Set:
         """visit a Set node by returning a fresh instance of it"""
-        newnode = nodes.Set(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Set(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Set(node.lineno, node.col_offset, parent)
         newnode.postinit([self.visit(child, newnode) for child in node.elts])
         return newnode
 
     def visit_setcomp(self, node: "ast.SetComp", parent: NodeNG) -> nodes.SetComp:
         """visit a SetComp node by returning a fresh instance of it"""
-        newnode = nodes.SetComp(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.SetComp(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.SetComp(node.lineno, node.col_offset, parent)
         newnode.postinit(
             self.visit(node.elt, newnode),
             [self.visit(child, newnode) for child in node.generators],
@@ -1582,7 +2056,16 @@ class TreeRebuilder:
 
     def visit_slice(self, node: "ast.Slice", parent: nodes.Subscript) -> nodes.Slice:
         """visit a Slice node by returning a fresh instance of it"""
-        newnode = nodes.Slice(parent=parent)
+        if sys.version_info >= (3, 9):
+            newnode = nodes.Slice(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Slice(parent=parent)
         newnode.postinit(
             lower=self.visit(node.lower, newnode),
             upper=self.visit(node.upper, newnode),
@@ -1593,9 +2076,22 @@ class TreeRebuilder:
     def visit_subscript(self, node: "ast.Subscript", parent: NodeNG) -> nodes.Subscript:
         """visit a Subscript node by returning a fresh instance of it"""
         context = self._get_context(node)
-        newnode = nodes.Subscript(
-            ctx=context, lineno=node.lineno, col_offset=node.col_offset, parent=parent
-        )
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Subscript(
+                ctx=context,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Subscript(
+                ctx=context,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                parent=parent,
+            )
         newnode.postinit(
             self.visit(node.value, newnode), self.visit(node.slice, newnode)
         )
@@ -1604,15 +2100,37 @@ class TreeRebuilder:
     def visit_starred(self, node: "ast.Starred", parent: NodeNG) -> nodes.Starred:
         """visit a Starred node and return a new instance of it"""
         context = self._get_context(node)
-        newnode = nodes.Starred(
-            ctx=context, lineno=node.lineno, col_offset=node.col_offset, parent=parent
-        )
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Starred(
+                ctx=context,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Starred(
+                ctx=context,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                parent=parent,
+            )
         newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
     def visit_tryexcept(self, node: "ast.Try", parent: NodeNG) -> nodes.TryExcept:
         """visit a TryExcept node by returning a fresh instance of it"""
-        newnode = nodes.TryExcept(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.TryExcept(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.TryExcept(node.lineno, node.col_offset, parent)
         newnode.postinit(
             [self.visit(child, newnode) for child in node.body],
             [self.visit(child, newnode) for child in node.handlers],
@@ -1626,7 +2144,16 @@ class TreeRebuilder:
         # python 3.3 introduce a new Try node replacing
         # TryFinally/TryExcept nodes
         if node.finalbody:
-            newnode = nodes.TryFinally(node.lineno, node.col_offset, parent)
+            if sys.version_info >= (3, 8):
+                newnode = nodes.TryFinally(
+                    lineno=node.lineno,
+                    col_offset=node.col_offset,
+                    end_lineno=node.end_lineno,
+                    end_col_offset=node.end_col_offset,
+                    parent=parent,
+                )
+            else:
+                newnode = nodes.TryFinally(node.lineno, node.col_offset, parent)
             body: Union[List[nodes.TryExcept], List[NodeNG]]
             if node.handlers:
                 body = [self.visit_tryexcept(node, newnode)]
@@ -1640,7 +2167,16 @@ class TreeRebuilder:
 
     def visit_tryfinally(self, node: "ast.Try", parent: NodeNG) -> nodes.TryFinally:
         """visit a TryFinally node by returning a fresh instance of it"""
-        newnode = nodes.TryFinally(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.TryFinally(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.TryFinally(node.lineno, node.col_offset, parent)
         newnode.postinit(
             [self.visit(child, newnode) for child in node.body],
             [self.visit(n, newnode) for n in node.finalbody],
@@ -1650,26 +2186,58 @@ class TreeRebuilder:
     def visit_tuple(self, node: "ast.Tuple", parent: NodeNG) -> nodes.Tuple:
         """visit a Tuple node by returning a fresh instance of it"""
         context = self._get_context(node)
-        newnode = nodes.Tuple(
-            ctx=context, lineno=node.lineno, col_offset=node.col_offset, parent=parent
-        )
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Tuple(
+                ctx=context,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Tuple(
+                ctx=context,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                parent=parent,
+            )
         newnode.postinit([self.visit(child, newnode) for child in node.elts])
         return newnode
 
     def visit_unaryop(self, node: "ast.UnaryOp", parent: NodeNG) -> nodes.UnaryOp:
         """visit a UnaryOp node by returning a fresh instance of it"""
-        newnode = nodes.UnaryOp(
-            self._parser_module.unary_op_classes[node.op.__class__],
-            node.lineno,
-            node.col_offset,
-            parent,
-        )
+        if sys.version_info >= (3, 8):
+            newnode = nodes.UnaryOp(
+                op=self._parser_module.unary_op_classes[node.op.__class__],
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.UnaryOp(
+                self._parser_module.unary_op_classes[node.op.__class__],
+                node.lineno,
+                node.col_offset,
+                parent,
+            )
         newnode.postinit(self.visit(node.operand, newnode))
         return newnode
 
     def visit_while(self, node: "ast.While", parent: NodeNG) -> nodes.While:
         """visit a While node by returning a fresh instance of it"""
-        newnode = nodes.While(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.While(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.While(node.lineno, node.col_offset, parent)
         newnode.postinit(
             self.visit(node.test, newnode),
             [self.visit(child, newnode) for child in node.body],
@@ -1695,7 +2263,16 @@ class TreeRebuilder:
         node: Union["ast.With", "ast.AsyncWith"],
         parent: NodeNG,
     ) -> T_With:
-        newnode = cls(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = cls(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = cls(node.lineno, node.col_offset, parent)
 
         def visit_child(child: "ast.withitem") -> Tuple[NodeNG, Optional[NodeNG]]:
             expr = self.visit(child.context_expr, newnode)
@@ -1715,13 +2292,31 @@ class TreeRebuilder:
 
     def visit_yield(self, node: "ast.Yield", parent: NodeNG) -> NodeNG:
         """visit a Yield node by returning a fresh instance of it"""
-        newnode = nodes.Yield(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.Yield(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.Yield(node.lineno, node.col_offset, parent)
         if node.value is not None:
             newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
     def visit_yieldfrom(self, node: "ast.YieldFrom", parent: NodeNG) -> NodeNG:
-        newnode = nodes.YieldFrom(node.lineno, node.col_offset, parent)
+        if sys.version_info >= (3, 8):
+            newnode = nodes.YieldFrom(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+        else:
+            newnode = nodes.YieldFrom(node.lineno, node.col_offset, parent)
         if node.value is not None:
             newnode.postinit(self.visit(node.value, newnode))
         return newnode
@@ -1729,7 +2324,13 @@ class TreeRebuilder:
     if sys.version_info >= (3, 10):
 
         def visit_match(self, node: "ast.Match", parent: NodeNG) -> nodes.Match:
-            newnode = nodes.Match(node.lineno, node.col_offset, parent)
+            newnode = nodes.Match(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
             newnode.postinit(
                 subject=self.visit(node.subject, newnode),
                 cases=[self.visit(case, newnode) for case in node.cases],
@@ -1750,7 +2351,13 @@ class TreeRebuilder:
         def visit_matchvalue(
             self, node: "ast.MatchValue", parent: NodeNG
         ) -> nodes.MatchValue:
-            newnode = nodes.MatchValue(node.lineno, node.col_offset, parent)
+            newnode = nodes.MatchValue(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
             newnode.postinit(value=self.visit(node.value, newnode))
             return newnode
 
@@ -1761,13 +2368,21 @@ class TreeRebuilder:
                 value=node.value,
                 lineno=node.lineno,
                 col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
                 parent=parent,
             )
 
         def visit_matchsequence(
             self, node: "ast.MatchSequence", parent: NodeNG
         ) -> nodes.MatchSequence:
-            newnode = nodes.MatchSequence(node.lineno, node.col_offset, parent)
+            newnode = nodes.MatchSequence(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
             newnode.postinit(
                 patterns=[self.visit(pattern, newnode) for pattern in node.patterns]
             )
@@ -1776,7 +2391,13 @@ class TreeRebuilder:
         def visit_matchmapping(
             self, node: "ast.MatchMapping", parent: NodeNG
         ) -> nodes.MatchMapping:
-            newnode = nodes.MatchMapping(node.lineno, node.col_offset, parent)
+            newnode = nodes.MatchMapping(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
             # Add AssignName node for 'node.name'
             # https://bugs.python.org/issue43994
             newnode.postinit(
@@ -1789,7 +2410,13 @@ class TreeRebuilder:
         def visit_matchclass(
             self, node: "ast.MatchClass", parent: NodeNG
         ) -> nodes.MatchClass:
-            newnode = nodes.MatchClass(node.lineno, node.col_offset, parent)
+            newnode = nodes.MatchClass(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
             newnode.postinit(
                 cls=self.visit(node.cls, newnode),
                 patterns=[self.visit(pattern, newnode) for pattern in node.patterns],
@@ -1803,14 +2430,26 @@ class TreeRebuilder:
         def visit_matchstar(
             self, node: "ast.MatchStar", parent: NodeNG
         ) -> nodes.MatchStar:
-            newnode = nodes.MatchStar(node.lineno, node.col_offset, parent)
+            newnode = nodes.MatchStar(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
             # Add AssignName node for 'node.name'
             # https://bugs.python.org/issue43994
             newnode.postinit(name=self.visit_assignname(node, newnode, node.name))
             return newnode
 
         def visit_matchas(self, node: "ast.MatchAs", parent: NodeNG) -> nodes.MatchAs:
-            newnode = nodes.MatchAs(node.lineno, node.col_offset, parent)
+            newnode = nodes.MatchAs(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
             # Add AssignName node for 'node.name'
             # https://bugs.python.org/issue43994
             newnode.postinit(
@@ -1820,7 +2459,13 @@ class TreeRebuilder:
             return newnode
 
         def visit_matchor(self, node: "ast.MatchOr", parent: NodeNG) -> nodes.MatchOr:
-            newnode = nodes.MatchOr(node.lineno, node.col_offset, parent)
+            newnode = nodes.MatchOr(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
             newnode.postinit(
                 patterns=[self.visit(pattern, newnode) for pattern in node.patterns]
             )
