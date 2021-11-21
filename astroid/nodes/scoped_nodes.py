@@ -1570,6 +1570,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 return "classmethod"
             if self.name == "__init_subclass__":
                 return "classmethod"
+            if self.name == "__class_getitem__":
+                return "classmethod"
 
             type_name = "method"
 

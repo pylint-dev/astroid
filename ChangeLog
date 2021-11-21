@@ -20,6 +20,8 @@ Release date: TBA
 
   Closes #1239
 
+* Always treat ``__class_getitem__`` as a classmethod.
+
 
 What's New in astroid 2.8.5?
 ============================
