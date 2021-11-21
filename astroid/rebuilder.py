@@ -2120,7 +2120,6 @@ class TreeRebuilder:
 
     def visit_tryexcept(self, node: "ast.Try", parent: NodeNG) -> nodes.TryExcept:
         """visit a TryExcept node by returning a fresh instance of it"""
-        # TODO check lineno and col_offset
         if sys.version_info >= (3, 8):
             newnode = nodes.TryExcept(
                 lineno=node.lineno,
@@ -2143,7 +2142,6 @@ class TreeRebuilder:
     ) -> Union[nodes.TryExcept, nodes.TryFinally, None]:
         # python 3.3 introduce a new Try node replacing
         # TryFinally/TryExcept nodes
-        # TODO check lineno and col_offset
         if node.finalbody:
             if sys.version_info >= (3, 8):
                 newnode = nodes.TryFinally(
@@ -2168,7 +2166,6 @@ class TreeRebuilder:
 
     def visit_tryfinally(self, node: "ast.Try", parent: NodeNG) -> nodes.TryFinally:
         """visit a TryFinally node by returning a fresh instance of it"""
-        # TODO check lineno and col_offset
         if sys.version_info >= (3, 8):
             newnode = nodes.TryFinally(
                 lineno=node.lineno,
