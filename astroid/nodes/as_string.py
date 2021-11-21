@@ -36,6 +36,7 @@ if TYPE_CHECKING:
         MatchSingleton,
         MatchStar,
         MatchValue,
+        Unknown,
     )
 
 # pylint: disable=unused-argument
@@ -642,6 +643,9 @@ class AsStringVisitor:
 
     def visit_evaluatedobject(self, node):
         return node.original.accept(self)
+
+    def visit_unknown(self, node: "Unknown") -> str:
+        return str(node)
 
 
 def _import_string(names):

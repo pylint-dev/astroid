@@ -6,6 +6,10 @@ What's New in astroid 2.9.0?
 ============================
 Release date: TBA
 
+* Add missing ``as_string`` visitor method for ``Unknown`` node.
+
+  Closes #1264
+
 
 
 What's New in astroid 2.8.6?
