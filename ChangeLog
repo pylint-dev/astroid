@@ -6,6 +6,7 @@ What's New in astroid 2.9.0?
 ============================
 Release date: TBA
 
+* Add ``end_lineno`` and ``end_col_offset`` attributes to astroid nodes.
 
 
 What's New in astroid 2.8.6?
