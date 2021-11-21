@@ -31,8 +31,6 @@ from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 
 if TYPE_CHECKING:
-    from astroid import nodes
-
     if sys.version_info >= (3, 6, 2):
         from typing import NoReturn
     else:
