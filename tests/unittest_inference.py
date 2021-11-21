@@ -4612,7 +4612,7 @@ class TestBool(unittest.TestCase):
             def __class_getitem__(cls, *args, **kwargs):
                 return cls
 
-        Foo[True]
+        Foo[int]
         """
         )
         inferred = next(node.infer())
