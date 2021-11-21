@@ -13,6 +13,9 @@ Release date: TBA
   astroid 2.9.1 will require python >= 3.6.2.
 
 
+* Always treat ``__class_getitem__`` as a classmethod.
+
+
 What's New in astroid 2.8.6?
 ============================
 Release date: 2021-11-21
