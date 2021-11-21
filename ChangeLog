@@ -8,10 +8,12 @@ Release date: TBA
 
 * Add ``end_lineno`` and ``end_col_offset`` attributes to astroid nodes.
 
+* Always treat ``__class_getitem__`` as a classmethod.
+
 
 What's New in astroid 2.8.6?
 ============================
-Release date: TBA
+Release date: 2021-11-21
 
 * Fix crash on inference of subclasses created from ``Class().__subclasses__``
 
@@ -26,7 +28,7 @@ What's New in astroid 2.8.5?
 ============================
 Release date: 2021-11-12
 
-* Use more permissive versions for the ``typed-ast`` dependencie (<2.0 instead of <1.5)
+* Use more permissive versions for the ``typed-ast`` dependency (<2.0 instead of <1.5)
 
   Closes #1237
 
@@ -235,7 +237,7 @@ Release date: 2021-08-15
 * Import from ``astroid.node_classes`` and ``astroid.scoped_nodes`` has been deprecated in favor of
   ``astroid.nodes``. Only the imports from ``astroid.nodes`` will work in astroid 3.0.0.
 
-* Add support for arbitrary Enum subclass hierachies
+* Add support for arbitrary Enum subclass hierarchies
 
   Closes PyCQA/pylint#533
   Closes PyCQA/pylint#2224
@@ -711,7 +713,7 @@ Release date: 2020-06-08
 
   Close PyCQA/pylint#3519
 
-* Properly construct the arguments of infered property descriptors
+* Properly construct the arguments of inferred property descriptors
 
   Close PyCQA/pylint#3648
 
