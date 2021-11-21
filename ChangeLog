@@ -6,6 +6,7 @@ What's New in astroid 2.9.0?
 ============================
 Release date: TBA
 
+* Always treat ``__class_getitem__`` as a classmethod.
 
 
 What's New in astroid 2.8.6?

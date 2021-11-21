@@ -4605,6 +4605,20 @@ class TestBool(unittest.TestCase):
             inferred = next(node.infer())
             self.assertEqual(inferred, util.Uninferable)
 
+    def test_class_subscript(self) -> None:
+        node = extract_node(
+            """
+        class Foo:
+            def __class_getitem__(cls, *args, **kwargs):
+                return cls
+
+        Foo[int]
+        """
+        )
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertEqual(inferred.name, "Foo")
+
 
 class TestType(unittest.TestCase):
     def test_type(self) -> None:
