@@ -289,6 +289,21 @@ class StatementMissing(ParentMissingError):
             message=f"Statement not found on {target!r}"
         )
 
+class FrameMissing(ParentMissingError):
+    """Raised when a call to node.frame() does not return a node. This is because
+    a node in the chain does not have a parent attribute and therefore does not
+    return a node for frame().
+
+    Standard attributes:
+        target: The node for which the parent lookup failed.
+    """
+
+    def __init__(self, target: "nodes.NodeNG") -> None:
+        super(ParentMissingError, self).__init__(
+            message=f"Frame not found on {target!r}"
+        )
+
+
 
 # Backwards-compatibility aliases
 OperationError = util.BadOperationMessage

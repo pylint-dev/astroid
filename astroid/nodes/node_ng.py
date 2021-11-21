@@ -20,6 +20,7 @@ from typing import (
 from astroid import decorators, nodes, util
 from astroid.exceptions import (
     AstroidError,
+    FrameMissing,
     InferenceError,
     ParentMissingError,
     StatementMissing,
@@ -328,7 +329,7 @@ class NodeNG:
                 self, (nodes.Module, nodes.FunctionDef, nodes.ClassDef, nodes.Lambda)
             ):
                 return self
-            return None
+            raise FrameMissing(target=self)
 
         return self.parent.frame()
 
