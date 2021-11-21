@@ -10,7 +10,7 @@ Release date: TBA
 
 What's New in astroid 2.8.6?
 ============================
-Release date: TBA
+Release date: 2021-11-21
 
 * Fix crash on inference of subclasses created from ``Class().__subclasses__``
 
