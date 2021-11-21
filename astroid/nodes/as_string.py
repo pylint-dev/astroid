@@ -99,6 +99,9 @@ class AsStringVisitor:
 
     # visit_<node> methods ###########################################
 
+    def visit_unknown(self, node):
+        return 'astroid.Unknown()'
+    
     def visit_await(self, node):
         return f"await {node.value.accept(self)}"
 
