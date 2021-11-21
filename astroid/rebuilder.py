@@ -800,7 +800,7 @@ class TreeRebuilder:
             return visit_method(node, parent)
 
     def _save_assignment(self, node: Union[nodes.AssignName, nodes.DelName]) -> None:
-        """save assignement situation since node.parent is not available yet"""
+        """save assignment situation since node.parent is not available yet"""
         if self._global_names and node.name in self._global_names[-1]:
             node.root().set_local(node.name, node)
         else:
