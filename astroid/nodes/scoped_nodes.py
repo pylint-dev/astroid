@@ -389,10 +389,8 @@ class Module(LocalsDictNodeNG):
 
     :type: int or None
     """
-    lineno = 0
+    lineno: Literal["0"] = 0
     """The line that this node appears on in the source code.
-
-    :type: int or None
     """
 
     # attributes below are set by the builder module or by raw factories
@@ -469,7 +467,6 @@ class Module(LocalsDictNodeNG):
     )
     _other_other_fields = ("locals", "globals")
 
-    lineno: None
     col_offset: None
     end_lineno: None
     end_col_offset: None
