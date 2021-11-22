@@ -1229,7 +1229,7 @@ class TestLinenoColOffset:
         code = """print()"""
         module = astroid.parse(code)
         assert isinstance(module, nodes.Module)
-        assert module.lineno == 1
+        assert module.lineno == 0
         assert module.col_offset is None
         assert module.end_lineno is None
         assert module.end_col_offset is None
