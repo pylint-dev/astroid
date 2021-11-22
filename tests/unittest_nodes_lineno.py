@@ -1225,7 +1225,7 @@ class TestLinenoColOffset:
 
     @staticmethod
     def test_end_lineno_module() -> None:
-        """Test end_lineno and end_col_offset for Module"""
+        """Tests for Module"""
         code = """print()"""
         module = astroid.parse(code)
         assert isinstance(module, nodes.Module)
