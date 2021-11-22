@@ -523,7 +523,7 @@ class Module(LocalsDictNodeNG):
         """
         self.future_imports = set()
 
-        super().__init__(parent=parent)
+        super().__init__(lineno=1, parent=parent)
 
     # pylint: enable=redefined-builtin
 
