@@ -23,9 +23,9 @@
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2020 Tim Martin <tim@asymptotic.co.uk>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
 # Copyright (c) 2021 doranid <ddandd@gmail.com>
@@ -469,6 +469,12 @@ class Module(LocalsDictNodeNG):
     )
     _other_other_fields = ("locals", "globals")
 
+    lineno: None
+    col_offset: None
+    end_lineno: None
+    end_col_offset: None
+    parent: None
+
     def __init__(
         self,
         name,
@@ -662,7 +668,7 @@ class Module(LocalsDictNodeNG):
 
     def statement(
         self, *, future: Literal[None, True] = None
-    ) -> Union[NoReturn, "Module"]:
+    ) -> Union["NoReturn", "Module"]:
         """The first parent node, including self, marked as statement node.
 
         When called on a :class:`Module` with the future parameter this raises an error.
@@ -891,7 +897,15 @@ class GeneratorExp(ComprehensionScope):
     :type: list(Comprehension) or None
     """
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
         """
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -902,6 +916,13 @@ class GeneratorExp(ComprehensionScope):
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param end_lineno: The last line this node appears on in the source code.
+        :type end_lineno: Optional[int]
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
+        :type end_col_offset: Optional[int]
         """
         self.locals = {}
         """A map of the name of a local variable to the node defining the local.
@@ -909,7 +930,13 @@ class GeneratorExp(ComprehensionScope):
         :type: dict(str, NodeNG)
         """
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, elt=None, generators=None):
         """Do some setup after initialisation.
@@ -968,7 +995,15 @@ class DictComp(ComprehensionScope):
     :type: list(Comprehension) or None
     """
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
         """
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -979,6 +1014,13 @@ class DictComp(ComprehensionScope):
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param end_lineno: The last line this node appears on in the source code.
+        :type end_lineno: Optional[int]
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
+        :type end_col_offset: Optional[int]
         """
         self.locals = {}
         """A map of the name of a local variable to the node defining the local.
@@ -986,7 +1028,13 @@ class DictComp(ComprehensionScope):
         :type: dict(str, NodeNG)
         """
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, key=None, value=None, generators=None):
         """Do some setup after initialisation.
@@ -1045,7 +1093,15 @@ class SetComp(ComprehensionScope):
     :type: list(Comprehension) or None
     """
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
         """
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -1056,6 +1112,13 @@ class SetComp(ComprehensionScope):
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param end_lineno: The last line this node appears on in the source code.
+        :type end_lineno: Optional[int]
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
+        :type end_col_offset: Optional[int]
         """
         self.locals = {}
         """A map of the name of a local variable to the node defining the local.
@@ -1063,7 +1126,13 @@ class SetComp(ComprehensionScope):
         :type: dict(str, NodeNG)
         """
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, elt=None, generators=None):
         """Do some setup after initialisation.
@@ -1154,14 +1223,28 @@ class ListComp(_ListComp, ComprehensionScope):
 
     _other_other_fields = ("locals",)
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
         self.locals = {}
         """A map of the name of a local variable to the node defining it.
 
         :type: dict(str, NodeNG)
         """
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
 
 def _infer_decorator_callchain(node):
@@ -1231,7 +1314,15 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
                 return "method"
         return "function"
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
         """
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -1242,6 +1333,13 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param end_lineno: The last line this node appears on in the source code.
+        :type end_lineno: Optional[int]
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
+        :type end_col_offset: Optional[int]
         """
         self.locals = {}
         """A map of the name of a local variable to the node defining it.
@@ -1258,7 +1356,13 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :type: list(NodeNG)
         """
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, args: Arguments, body):
         """Do some setup after initialisation.
@@ -1434,7 +1538,17 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     )
     _type = None
 
-    def __init__(self, name=None, doc=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        name=None,
+        doc=None,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
         """
         :param name: The name of the function.
         :type name: str or None
@@ -1451,6 +1565,13 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param end_lineno: The last line this node appears on in the source code.
+        :type end_lineno: Optional[int]
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
+        :type end_col_offset: Optional[int]
         """
         self.name = name
         """The name of the function.
@@ -1465,7 +1586,13 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
 
         self.instance_attrs = {}
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
         if parent:
             frame = parent.frame()
             frame.set_local(name, self)
@@ -1565,6 +1692,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             if self.name == "__new__":
                 return "classmethod"
             if self.name == "__init_subclass__":
+                return "classmethod"
+            if self.name == "__class_getitem__":
                 return "classmethod"
 
             type_name = "method"
@@ -2048,7 +2177,17 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     _other_other_fields = ("locals", "_newstyle")
     _newstyle = None
 
-    def __init__(self, name=None, doc=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self,
+        name=None,
+        doc=None,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
         """
         :param name: The name of the class.
         :type name: str or None
@@ -2065,6 +2204,13 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param end_lineno: The last line this node appears on in the source code.
+        :type end_lineno: Optional[int]
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
+        :type end_col_offset: Optional[int]
         """
         self.instance_attrs = {}
         self.locals = {}
@@ -2105,7 +2251,13 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type doc: str or None
         """
 
-        super().__init__(lineno, col_offset, parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
         if parent is not None:
             parent.frame().set_local(name, self)
 

@@ -13,6 +13,7 @@
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2020 Anubhav <35621759+anubh-v@users.noreply.github.com>
 # Copyright (c) 2020 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 grayjk <grayjk@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
@@ -31,7 +32,7 @@ from various source and using a cache of built modules)
 import os
 import types
 import zipimport
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar, List
 
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec
@@ -46,6 +47,9 @@ from astroid.modutils import (
     modpath_from_file,
 )
 from astroid.transforms import TransformVisitor
+
+if TYPE_CHECKING:
+    from astroid import nodes
 
 ZIP_IMPORT_EXTS = (".zip", ".egg", ".whl", ".pyz", ".pyzw")
 
@@ -135,7 +139,7 @@ class AstroidManager:
 
         return AstroidBuilder(self).string_build("", modname)
 
-    def _build_namespace_module(self, modname, path):
+    def _build_namespace_module(self, modname: str, path: List[str]) -> "nodes.Module":
         # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import build_namespace_package_module
 

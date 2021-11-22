@@ -24,7 +24,7 @@ import unittest
 
 import pytest
 
-from astroid import MANAGER, Instance, nodes, test_utils
+from astroid import MANAGER, Instance, nodes, parse, test_utils
 from astroid.builder import AstroidBuilder, extract_node
 from astroid.const import PY38_PLUS
 from astroid.exceptions import InferenceError
@@ -346,7 +346,7 @@ def test(val):
 
 
 class Whatever:
-    a = property(lambda x: x, lambda x: x)  # type: ignore
+    a = property(lambda x: x, lambda x: x)  # type: ignore[misc]
 
 
 def test_ancestor_looking_up_redefined_function() -> None:
@@ -377,6 +377,26 @@ def test_crash_in_dunder_inference_prevented() -> None:
     """
     inferred = next(extract_node(code).infer())
     assert inferred.qname() == "builtins.dict.__delitem__"
+
+
+def test_regression_crash_classmethod() -> None:
+    """Regression test for a crash reported in https://github.com/PyCQA/pylint/issues/4982"""
+    code = """
+    class Base:
+        @classmethod
+        def get_first_subclass(cls):
+            for subclass in cls.__subclasses__():
+                return subclass
+            return object
+
+
+    subclass = Base.get_first_subclass()
+
+
+    class Another(subclass):
+        pass
+    """
+    parse(code)
 
 
 if __name__ == "__main__":

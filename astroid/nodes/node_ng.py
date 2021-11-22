@@ -7,6 +7,7 @@ from typing import (
     TYPE_CHECKING,
     ClassVar,
     Iterator,
+    List,
     Optional,
     Tuple,
     Type,
@@ -31,10 +32,11 @@ from astroid.nodes.const import OP_PRECEDENCE
 if TYPE_CHECKING:
     from astroid import nodes
 
-if sys.version_info >= (3, 6, 2):
-    from typing import NoReturn
-else:
-    from typing_extensions import NoReturn
+    if sys.version_info >= (3, 6, 2):
+        # To be fixed with https://github.com/PyCQA/pylint/pull/5316
+        from typing import NoReturn  # pylint: disable=unused-import
+    else:
+        from typing_extensions import NoReturn
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -88,6 +90,9 @@ class NodeNG:
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional["NodeNG"] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -96,6 +101,11 @@ class NodeNG:
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.lineno: Optional[int] = lineno
         """The line that this node appears on in the source code."""
@@ -105,6 +115,14 @@ class NodeNG:
 
         self.parent: Optional["NodeNG"] = parent
         """The parent node in the syntax tree."""
+
+        self.end_lineno: Optional[int] = end_lineno
+        """The last line this node appears on in the source code."""
+
+        self.end_col_offset: Optional[int] = end_col_offset
+        """The end column this node appears on in the source code.
+        Note: This is after the last symbol.
+        """
 
     def infer(self, context=None, **kwargs):
         """Get a generator of the inferred values.
@@ -275,7 +293,7 @@ class NodeNG:
 
     def statement(
         self, *, future: Literal[None, True] = None
-    ) -> Union["nodes.Statement", "nodes.Module", NoReturn]:
+    ) -> Union["nodes.Statement", "nodes.Module", "NoReturn"]:
         """The first parent node, including self, marked as statement node.
 
         TODO: Deprecate the future parameter and only raise StatementMissing and return
@@ -430,7 +448,7 @@ class NodeNG:
         We need this method since not all nodes have :attr:`lineno` set.
         """
         line = self.lineno
-        _node = self
+        _node: Optional[NodeNG] = self
         try:
             while line is None:
                 _node = next(_node.get_children())
@@ -501,7 +519,7 @@ class NodeNG:
     ) -> Iterator[T_Nodes]:
         ...
 
-    def nodes_of_class(  # type: ignore # mypy doesn't correctly recognize the overloads
+    def nodes_of_class(  # type: ignore[misc] # mypy doesn't correctly recognize the overloads
         self,
         klass: Union[
             Type[T_Nodes],
@@ -735,7 +753,7 @@ class NodeNG:
             result.append(")")
             return broken
 
-        result = []
+        result: List[str] = []
         _repr_tree(self, result, set())
         return "".join(result)
 
