@@ -18,6 +18,11 @@ Release date: TBA
 
   Closes #1260
 
+* Fix ``Module`` nodes not having a ``col_offset``, ``end_lineno`` and ``end_col_offset``
+  attribute.
+
+  Closes #1273
+
 
 What's New in astroid 2.9.0?
 ============================
