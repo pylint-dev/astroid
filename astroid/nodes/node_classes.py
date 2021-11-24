@@ -400,8 +400,10 @@ class LookupMixIn:
         context = InferenceContext()
         return _infer_stmts(stmts, context, frame)
 
-    def _get_filtered_node_statements(self, nodes):
-        statements = [(node, node.statement()) for node in nodes]
+    def _get_filtered_node_statements(
+        self, nodes: typing.List[NodeNG]
+    ) -> typing.List[typing.Tuple[NodeNG, Statement]]:
+        statements = [(node, node.statement(future=True)) for node in nodes]
         # Next we check if we have ExceptHandlers that are parent
         # of the underlying variable, in which case the last one survives
         if len(statements) > 1 and all(
@@ -451,15 +453,22 @@ class LookupMixIn:
             #
             # def test(b=1):
             #     ...
-
-            if self.statement() is myframe and myframe.parent:
+            if (
+                self.parent
+                and self.statement(future=True) is myframe
+                and myframe.parent
+            ):
                 myframe = myframe.parent.frame()
-        mystmt = self.statement()
+
+        mystmt: Optional[Statement] = None
+        if self.parent:
+            mystmt = self.statement(future=True)
+
         # line filtering if we are in the same frame
         #
         # take care node may be missing lineno information (this is the case for
         # nodes inserted for living objects)
-        if myframe is frame and mystmt.fromlineno is not None:
+        if myframe is frame and mystmt and mystmt.fromlineno is not None:
             assert mystmt.fromlineno is not None, mystmt
             mylineno = mystmt.fromlineno + offset
         else:
@@ -580,7 +589,7 @@ class LookupMixIn:
                         _stmt_parents = []
                     else:
                         continue
-                elif not optional_assign and stmt.parent is mystmt.parent:
+                elif not optional_assign and mystmt and stmt.parent is mystmt.parent:
                     _stmts = []
                     _stmt_parents = []
             elif isinstance(node, DelName):
@@ -2022,13 +2031,15 @@ class Comprehension(NodeNG):
         """
         return self
 
-    def _get_filtered_stmts(self, lookup_node, node, stmts, mystmt):
+    def _get_filtered_stmts(
+        self, lookup_node, node, stmts, mystmt: Optional[Statement]
+    ):
         """method used in filter_stmts"""
         if self is mystmt:
             if isinstance(lookup_node, (Const, Name)):
                 return [lookup_node], True
 
-        elif self.statement() is mystmt:
+        elif self.statement(future=True) is mystmt:
             # original node's statement is the assignment, only keeps
             # current node (gen exp, list comp)
 

@@ -637,7 +637,7 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
                 lookups.append((index, len(element.itered())))
                 _determine_starred_iteration_lookups(starred, element, lookups)
 
-    stmt = self.statement()
+    stmt = self.statement(future=True)
     if not isinstance(stmt, (nodes.Assign, nodes.For)):
         raise InferenceError(
             "Statement {stmt!r} enclosing {node!r} " "must be an Assign or For node.",
