@@ -107,7 +107,7 @@ class TreeRebuilder:
     def _get_doc(self, node: T_Doc) -> Tuple[T_Doc, Optional[str]]:
         try:
             if PY37_PLUS and hasattr(node, "docstring"):
-                doc = node.docstring
+                doc = node.docstring  # type: ignore[union-attr,attr-defined] # mypy doesn't recognize hasattr
                 return node, doc
             if node.body and isinstance(node.body[0], self._module.Expr):
 
@@ -805,6 +805,7 @@ class TreeRebuilder:
         if self._global_names and node.name in self._global_names[-1]:
             node.root().set_local(node.name, node)
         else:
+            assert node.parent
             node.parent.set_local(node.name, node)
 
     def visit_arg(self, node: "ast.arg", parent: NodeNG) -> nodes.AssignName:
@@ -882,6 +883,7 @@ class TreeRebuilder:
             type_comment_posonlyargs=type_comment_posonlyargs,
         )
         # save argument names in locals:
+        assert newnode.parent
         if vararg:
             newnode.parent.set_local(vararg, newnode)
         if kwarg:
@@ -952,6 +954,9 @@ class TreeRebuilder:
             type_comment_ast = parse_function_type_comment(type_comment)
         except SyntaxError:
             # Invalid type comment, just skip it.
+            return None
+
+        if not type_comment_ast:
             return None
 
         returns: Optional[NodeNG] = None
@@ -1615,7 +1620,9 @@ class TreeRebuilder:
                 )
             # Prohibit a local save if we are in an ExceptHandler.
             if not isinstance(parent, nodes.ExceptHandler):
-                self._delayed_assattr.append(newnode)
+                # mypy doesn't recognize that newnode has to be AssignAttr because it doesn't support ParamSpec
+                # See https://github.com/python/mypy/issues/8645
+                self._delayed_assattr.append(newnode)  # type: ignore[arg-type]
         else:
             # pylint: disable-next=else-if-used
             # Preserve symmetry with other cases
@@ -2365,7 +2372,7 @@ class TreeRebuilder:
             self, node: "ast.MatchSingleton", parent: NodeNG
         ) -> nodes.MatchSingleton:
             return nodes.MatchSingleton(
-                value=node.value,
+                value=node.value,  # type: ignore[arg-type] # See https://github.com/python/mypy/pull/10389
                 lineno=node.lineno,
                 col_offset=node.col_offset,
                 end_lineno=node.end_lineno,
