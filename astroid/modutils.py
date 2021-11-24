@@ -154,7 +154,11 @@ class NoSourceFile(Exception):
 
 
 def _normalize_path(path):
-    return os.path.normcase(os.path.realpath(os.path.expanduser(path)))
+    """Resolve symlinks in path and convert to absolute path.
+    Note that environment variables and ~ in the path need to be expanded in
+    advance.
+    """
+    return os.path.normcase(os.path.realpath(path))
 
 
 def _path_from_filename(filename, is_jython=IS_JYTHON):
@@ -182,7 +186,7 @@ _NORM_PATH_CACHE = {}
 
 
 def _cache_normalize_path(path):
-    """abspath with caching"""
+    """Normalize path with caching."""
     # _module_file calls abspath on every path in sys.path every time it's
     # called; on a larger codebase this easily adds up to half a second just
     # assembling path components. This cache alleviates that.
