@@ -1583,6 +1583,7 @@ def test_get_doc() -> None:
     """
     )
     assert node.doc == "Docstring"
+    assert node.doc_node
 
     node = astroid.extract_node(
         """
@@ -1592,6 +1593,7 @@ def test_get_doc() -> None:
     """
     )
     assert node.doc is None
+    assert node.doc_node is None
 
 
 @test_utils.require_version(minver="3.8")
