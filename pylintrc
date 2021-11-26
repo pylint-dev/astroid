@@ -28,6 +28,7 @@ load-plugins=
     pylint.extensions.code_style,
     pylint.extensions.set_membership,
     pylint.extensions.redefined_variable_type,
+    pylint.extensions.for_any_all,
 
 # Use multiple processes to speed up Pylint.
 jobs=1

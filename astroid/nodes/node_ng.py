@@ -276,10 +276,7 @@ class NodeNG:
             False otherwise.
         :rtype: bool
         """
-        for parent in node.node_ancestors():
-            if self is parent:
-                return True
-        return False
+        return any(self is parent for parent in node.node_ancestors())
 
     @overload
     def statement(
