@@ -28,8 +28,6 @@ if TYPE_CHECKING:
 class BlockRangeMixIn:
     """override block range"""
 
-    # pylint: disable = no-member
-
     @decorators.cachedproperty
     def blockstart_tolineno(self):
         return self.lineno

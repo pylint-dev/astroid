@@ -368,8 +368,6 @@ class BaseContainer(
 class LookupMixIn:
     """Mixin to look up a name in the right scope."""
 
-    # pylint: disable = no-member
-
     @lru_cache(maxsize=None)
     def lookup(self, name):
         """Lookup where the given variable is assigned.
