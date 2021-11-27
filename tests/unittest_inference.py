@@ -6469,7 +6469,7 @@ def test_infer_generated_setter() -> None:
     assert isinstance(inferred.args, nodes.Arguments)
     # This line used to crash because property generated functions
     # did not have args properly set
-    assert list(inferred.nodes_of_class(nodes.Const)) == []
+    assert not list(inferred.nodes_of_class(nodes.Const))
 
 
 def test_infer_list_of_uninferables_does_not_crash() -> None:

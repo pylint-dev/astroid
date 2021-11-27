@@ -59,13 +59,10 @@ def _is_a_numpy_module(node: Name) -> bool:
     potential_import_target = [
         x for x in node.lookup(module_nickname)[1] if isinstance(x, Import)
     ]
-    for target in potential_import_target:
-        if ("numpy", module_nickname) in target.names or (
-            "numpy",
-            None,
-        ) in target.names:
-            return True
-    return False
+    return any(
+        ("numpy", module_nickname) in target.names or ("numpy", None) in target.names
+        for target in potential_import_target
+    )
 
 
 def looks_like_numpy_member(member_name: str, node: NodeNG) -> bool:

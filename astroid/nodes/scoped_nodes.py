@@ -2398,10 +2398,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         if self.qname() == type_name:
             return True
-        for anc in self.ancestors(context=context):
-            if anc.qname() == type_name:
-                return True
-        return False
+
+        return any(anc.qname() == type_name for anc in self.ancestors(context=context))
 
     def _infer_type_call(self, caller, context):
         try:

@@ -28,6 +28,7 @@ load-plugins=
     pylint.extensions.code_style,
     pylint.extensions.set_membership,
     pylint.extensions.redefined_variable_type,
+    pylint.extensions.for_any_all,
 
 # Use multiple processes to speed up Pylint.
 jobs=1
@@ -299,6 +300,9 @@ ignored-modules=typed_ast.ast3
 # List of classes names for which member attributes should not be checked
 # (useful for classes with attributes dynamically set).
 ignored-classes=SQLObject
+
+# Regex pattern to define which classes are considered mixins.
+mixin-class-rgx=.*Mix[i|I]n
 
 # List of members which are set dynamically and missed by pylint inference
 # system, and so shouldn't trigger E0201 when accessed. Python regular

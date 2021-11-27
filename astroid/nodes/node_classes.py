@@ -2759,10 +2759,7 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
         """
         if self.type is None or exceptions is None:
             return True
-        for node in self.type._get_name_nodes():
-            if node.name in exceptions:
-                return True
-        return False
+        return any(node.name in exceptions for node in self.type._get_name_nodes())
 
 
 class ExtSlice(NodeNG):
@@ -3724,10 +3721,9 @@ class Raise(Statement):
         """
         if not self.exc:
             return False
-        for name in self.exc._get_name_nodes():
-            if name.name == "NotImplementedError":
-                return True
-        return False
+        return any(
+            name.name == "NotImplementedError" for name in self.exc._get_name_nodes()
+        )
 
     def get_children(self):
         if self.exc is not None:
@@ -5571,10 +5567,7 @@ def const_factory(value):
 
 def is_from_decorator(node):
     """Return True if the given node is the child of a decorator"""
-    for parent in node.node_ancestors():
-        if isinstance(parent, Decorators):
-            return True
-    return False
+    return any(isinstance(parent, Decorators) for parent in node.node_ancestors())
 
 
 def _get_if_statement_ancestor(node: NodeNG) -> Optional[If]:

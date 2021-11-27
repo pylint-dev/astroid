@@ -555,10 +555,8 @@ def is_standard_module(modname, std_path=None):
             return False
     if std_path is None:
         std_path = STD_LIB_DIRS
-    for path in std_path:
-        if filename.startswith(_cache_normalize_path(path)):
-            return True
-    return False
+
+    return any(filename.startswith(_cache_normalize_path(path)) for path in std_path)
 
 
 def is_relative(modname, from_file):
