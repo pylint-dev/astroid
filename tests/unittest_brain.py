@@ -1238,10 +1238,7 @@ def streams_are_fine():
 
     PY3 only
     """
-    for stream in (sys.stdout, sys.stderr, sys.stdin):
-        if not isinstance(stream, io.IOBase):
-            return False
-    return True
+    return all(isinstance(s, io.IOBase) for s in (sys.stdout, sys.stderr, sys.stdin))
 
 
 class IOBrainTest(unittest.TestCase):

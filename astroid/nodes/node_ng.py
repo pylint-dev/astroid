@@ -445,7 +445,7 @@ class NodeNG:
         We need this method since not all nodes have :attr:`lineno` set.
         """
         line = self.lineno
-        _node: Optional[NodeNG] = self
+        _node: Optional[NodeNG] = self  # pylint: disable = used-before-assignment
         try:
             while line is None:
                 _node = next(_node.get_children())
