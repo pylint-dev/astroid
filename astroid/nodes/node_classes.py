@@ -367,6 +367,7 @@ class BaseContainer(
 
 class LookupMixIn:
     """Mixin to look up a name in the right scope."""
+
     # pylint: disable = no-member
 
     @lru_cache(maxsize=None)
