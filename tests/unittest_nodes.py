@@ -1584,6 +1584,8 @@ def test_get_doc() -> None:
     )
     assert node.doc == "Docstring"
     assert node.doc_node
+    assert node.doc_node.lineno == 3
+    assert node.doc_node.col_offset == 4
 
     node = astroid.extract_node(
         """
