@@ -511,7 +511,7 @@ class Module(LocalsDictNodeNG):
         :param pure_python: Whether the ast was built from source.
         :type pure_python: bool or None
         """
-        super.__init__(doc_node=doc_node)
+        super().__init__(doc_node=doc_node)
 
         self.name = name
         self.doc = doc
