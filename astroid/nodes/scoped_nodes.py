@@ -511,7 +511,6 @@ class Module(LocalsDictNodeNG):
         :param pure_python: Whether the ast was built from source.
         :type pure_python: bool or None
         """
-        super().__init__(doc_node=doc_node)
 
         self.name = name
         self.doc = doc
@@ -521,6 +520,7 @@ class Module(LocalsDictNodeNG):
         self.parent = parent
         self.pure_python = pure_python
         self.locals = self.globals = {}
+        self.doc_node = doc_node
         """A map of the name of a local variable to the node defining the local.
 
         :type: dict(str, NodeNG)
@@ -1602,11 +1602,11 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             end_lineno=end_lineno,
             end_col_offset=end_col_offset,
             parent=parent,
-            doc_node=doc_node,
         )
         if parent:
             frame = parent.frame()
             frame.set_local(name, self)
+        self.doc_node = doc_node
 
     # pylint: disable=arguments-differ; different than Lambdas
     def postinit(
@@ -2272,8 +2272,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             end_lineno=end_lineno,
             end_col_offset=end_col_offset,
             parent=parent,
-            doc_node=doc_node,
         )
+        self.doc_node = doc_node
         if parent is not None:
             parent.frame().set_local(name, self)
 

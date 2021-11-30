@@ -84,13 +84,14 @@ class NodeNG:
     """Attributes that contain AST-dependent fields."""
     # instance specific inference function infer(node, context)
     _explicit_inference = None
+    doc_node: Optional["nodes.Const"] = None
+    """The doc node."""
 
     def __init__(
         self,
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional["NodeNG"] = None,
-        doc_node: Optional["nodes.Const"] = None,
         *,
         end_lineno: Optional[int] = None,
         end_col_offset: Optional[int] = None,
@@ -102,8 +103,6 @@ class NodeNG:
             source code.
 
         :param parent: The parent node in the syntax tree.
-
-        :param doc_node: The docstring node.
 
         :param end_lineno: The last line this node appears on in the source code.
 
@@ -118,9 +117,6 @@ class NodeNG:
 
         self.parent: Optional["NodeNG"] = parent
         """The parent node in the syntax tree."""
-
-        self.doc_node: Optional["nodes.Const"] = doc_node
-        """The docstring node."""
 
         self.end_lineno: Optional[int] = end_lineno
         """The last line this node appears on in the source code."""
