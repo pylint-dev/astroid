@@ -484,6 +484,7 @@ class Module(LocalsDictNodeNG):
         package=None,
         parent=None,
         pure_python=True,
+        doc_node=None,
     ):
         """
         :param name: The name of the module.
@@ -504,9 +505,14 @@ class Module(LocalsDictNodeNG):
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
 
+        :param doc_node: The doc node.
+        :type parent: Const or None
+
         :param pure_python: Whether the ast was built from source.
         :type pure_python: bool or None
         """
+        super.__init__(doc_node=doc_node)
+
         self.name = name
         self.doc = doc
         self.file = file
@@ -1545,6 +1551,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         lineno=None,
         col_offset=None,
         parent=None,
+        doc_node=None,
         *,
         end_lineno=None,
         end_col_offset=None,
@@ -1565,6 +1572,9 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param doc_node: The doc node.
+        :type parent: Const or None
 
         :param end_lineno: The last line this node appears on in the source code.
         :type end_lineno: Optional[int]
@@ -1592,6 +1602,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             end_lineno=end_lineno,
             end_col_offset=end_col_offset,
             parent=parent,
+            doc_node=doc_node,
         )
         if parent:
             frame = parent.frame()
@@ -2184,6 +2195,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         lineno=None,
         col_offset=None,
         parent=None,
+        doc_node=None,
         *,
         end_lineno=None,
         end_col_offset=None,
@@ -2204,6 +2216,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
+
+        :param doc_node: The doc node.
+        :type parent: Const or None
 
         :param end_lineno: The last line this node appears on in the source code.
         :type end_lineno: Optional[int]
@@ -2257,6 +2272,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             end_lineno=end_lineno,
             end_col_offset=end_col_offset,
             parent=parent,
+            doc_node=doc_node,
         )
         if parent is not None:
             parent.frame().set_local(name, self)
