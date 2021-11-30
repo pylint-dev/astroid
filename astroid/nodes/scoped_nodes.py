@@ -438,11 +438,6 @@ class Module(LocalsDictNodeNG):
 
     :type: dict(str, NodeNG)
     """
-    doc_node = None
-    """The docstring node.
-
-    :type: Const or None
-    """
 
     # Future imports
     future_imports = None
@@ -471,7 +466,6 @@ class Module(LocalsDictNodeNG):
         "package",
         "pure_python",
         "future_imports",
-        "doc_node",
     )
     _other_other_fields = ("locals", "globals")
 
@@ -490,7 +484,6 @@ class Module(LocalsDictNodeNG):
         package=None,
         parent=None,
         pure_python=True,
-        doc_node=None,
     ):
         """
         :param name: The name of the module.
@@ -513,9 +506,6 @@ class Module(LocalsDictNodeNG):
 
         :param pure_python: Whether the ast was built from source.
         :type pure_python: bool or None
-
-        :param doc_node: The docstring node.
-        :type doc_node: Const
         """
         self.name = name
         self.doc = doc
@@ -524,7 +514,6 @@ class Module(LocalsDictNodeNG):
         self.package = package
         self.parent = parent
         self.pure_python = pure_python
-        self.doc_node = doc_node
         self.locals = self.globals = {}
         """A map of the name of a local variable to the node defining the local.
 
@@ -1539,13 +1528,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     """
     type_comment_returns = None
     """If present, this will contain the return type annotation, passed by a type comment"""
-    doc_node = None
-    """The docstring node.
-
-    :type: Const or None
-    """
     # attributes below are set by the builder module or by raw factories
-    _other_fields = ("name", "doc", "doc_node")
+    _other_fields = ("name", "doc")
     _other_other_fields = (
         "locals",
         "_type",
@@ -1561,7 +1545,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         lineno=None,
         col_offset=None,
         parent=None,
-        doc_node=None,
         *,
         end_lineno=None,
         end_col_offset=None,
@@ -1600,12 +1583,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """The function's docstring.
 
         :type doc: str or None
-        """
-
-        self.doc_node = doc_node
-        """ The docstring node.
-
-        :type doc_node: Const
         """
 
         self.instance_attrs = {}
@@ -2184,11 +2161,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
     :type: objectmodel.ClassModel
     """
-    doc_node = None
-    """The docstring node.
-
-    :type: Const or None
-    """
 
     _type = None
     _metaclass_hack = False
@@ -2201,7 +2173,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             ":type: str"
         ),
     )
-    _other_fields = ("name", "doc", "doc_node")
+    _other_fields = ("name", "doc")
     _other_other_fields = ("locals", "_newstyle")
     _newstyle = None
 
@@ -2212,7 +2184,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         lineno=None,
         col_offset=None,
         parent=None,
-        doc_node=None,
         *,
         end_lineno=None,
         end_col_offset=None,
@@ -2233,9 +2204,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
-
-        :param doc_node: The docstring node.
-        :type doc_node: Const
 
         :param end_lineno: The last line this node appears on in the source code.
         :type end_lineno: Optional[int]
@@ -2290,7 +2258,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             end_col_offset=end_col_offset,
             parent=parent,
         )
-        self.doc_node = doc_node
         if parent is not None:
             parent.frame().set_local(name, self)
 
