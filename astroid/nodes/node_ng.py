@@ -85,7 +85,7 @@ class NodeNG:
     # instance specific inference function infer(node, context)
     _explicit_inference = None
     doc_node: Optional["nodes.Const"] = None
-    """The doc node."""
+    """The doc node associated with this node."""
 
     def __init__(
         self,
