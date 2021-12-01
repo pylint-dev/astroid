@@ -2199,30 +2199,30 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         end_col_offset=None,
     ):
         """
-        :param name: The name of the class.
-        :type name: str or None
+                :param name: The name of the class.
+                :type name: str or None
 
-        :param doc: The function's docstring.
-        :type doc: str or None
+                :param doc: The function's docstring.
+                :type doc: str or None
 
-        :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
+                :param lineno: The line that this node appears on in the source code.
+                :type lineno: int or None
 
-        :param col_offset: The column that this node appears on in the
-            source code.
-        :type col_offset: int or None
+                :param col_offset: The column that this node appears on in the
+                    source code.
+                :type col_offset: int or None
 
-        :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
+                :param parent: The parent node in the syntax tree.
+                :type parent: NodeNG or None
 
-        :param doc_node: The doc node.
-s
-        :param end_lineno: The last line this node appears on in the source code.
-        :type end_lineno: Optional[int]
+                :param doc_node: The doc node.
+        s
+                :param end_lineno: The last line this node appears on in the source code.
+                :type end_lineno: Optional[int]
 
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        :type end_col_offset: Optional[int]
+                :param end_col_offset: The end column this node appears on in the
+                    source code. Note: This is after the last symbol.
+                :type end_col_offset: Optional[int]
         """
         self.instance_attrs = {}
         self.locals = {}
