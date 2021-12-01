@@ -506,7 +506,6 @@ class Module(LocalsDictNodeNG):
         :type parent: NodeNG or None
 
         :param doc_node: The doc node.
-        :type parent: Const or None
 
         :param pure_python: Whether the ast was built from source.
         :type pure_python: bool or None
@@ -1574,7 +1573,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :type parent: NodeNG or None
 
         :param doc_node: The doc node.
-        :type parent: Const or None
 
         :param end_lineno: The last line this node appears on in the source code.
         :type end_lineno: Optional[int]
@@ -2218,8 +2216,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type parent: NodeNG or None
 
         :param doc_node: The doc node.
-        :type parent: Const or None
-
+s
         :param end_lineno: The last line this node appears on in the source code.
         :type end_lineno: Optional[int]
 
