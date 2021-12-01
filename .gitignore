@@ -15,4 +15,3 @@ astroid.egg-info/
 .pytest_cache/
 .mypy_cache/
 venv
-.vscode/
