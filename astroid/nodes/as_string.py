@@ -129,6 +129,10 @@ class AsStringVisitor:
     def visit_assign(self, node):
         """return an astroid.Assign node as string"""
         lhs = " = ".join(n.accept(self) for n in node.targets)
+        # handler the situation where "1e10000" is automatically converted to "inf"
+        # "inf" may influence the program execution
+        if f"{node.value.accept(self)}" == "inf":
+            return f"{lhs} = 1e10000"
         return f"{lhs} = {node.value.accept(self)}"
 
     def visit_augassign(self, node):
