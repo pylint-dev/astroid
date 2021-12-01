@@ -1583,7 +1583,7 @@ def test_get_doc() -> None:
     """
     )
     assert node.doc == "Docstring"
-    assert node.doc_node
+    assert isinstance(node.doc_node, nodes.Const)
     assert node.doc_node.lineno == 3
     assert node.doc_node.col_offset == 4
     if PY38_PLUS:
