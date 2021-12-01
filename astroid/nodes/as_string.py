@@ -182,8 +182,16 @@ class AsStringVisitor:
         """return an astroid.ClassDef node as string"""
         decorate = node.decorators.accept(self) if node.decorators else ""
         args = [n.accept(self) for n in node.bases]
+        # if node._metaclass and not node.has_metaclass_hack():
+        #     args.append("metaclass=" + node._metaclass.accept(self))
         if node._metaclass and not node.has_metaclass_hack():
-            args.append("metaclass=" + node._metaclass.accept(self))
+            # if class definition node has with_metaclass attribute, it does not need to add "args.append("metaclass=" + node._metaclass.accept(self))"
+            # for example, "class ClientCallDetails(six.with_metaclass(abc.ABCMeta))"
+            if (node.bases) and (node.bases[0]) and (type(node.bases[0]).__name__=="Call") and (node.bases[0].func) and (type(node.bases[0].func).__name__=="Attribute") and (node.bases[0].func.attrname) and (node.bases[0].func.attrname == "with_metaclass"):
+                #print("with_metaclass")
+                print("")
+            else:            
+                args.append("metaclass=" + node._metaclass.accept(self))
         args += [n.accept(self) for n in node.keywords]
         args = f"({', '.join(args)})" if args else ""
         docs = self._docs_dedent(node.doc) if node.doc else ""
