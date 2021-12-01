@@ -120,12 +120,22 @@ class TreeRebuilder:
                 ):
                     doc = first_value.value if PY38_PLUS else first_value.s
                     node.body = node.body[1:]
-                    doc_node = nodes.Const(
-                        value=doc,
-                        lineno=first_value.lineno,
-                        col_offset=first_value.col_offset,
-                        parent=node,
-                    )
+                    if PY38_PLUS:
+                        doc_node = nodes.Const(
+                            value=doc,
+                            lineno=first_value.lineno,
+                            col_offset=first_value.col_offset,
+                            parent=node,
+                            end_lineno=node.end_lineno,
+                            end_col_offset=node.end_col_offset,
+                        )
+                    else:
+                        doc_node = nodes.Const(
+                            value=doc,
+                            lineno=first_value.lineno,
+                            col_offset=first_value.col_offset,
+                            parent=node,
+                        )
                     return node, doc, doc_node
         except IndexError:
             pass  # ast built from scratch

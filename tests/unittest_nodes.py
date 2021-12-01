@@ -1586,6 +1586,9 @@ def test_get_doc() -> None:
     assert node.doc_node
     assert node.doc_node.lineno == 3
     assert node.doc_node.col_offset == 4
+    if PY38_PLUS:
+        assert node.doc_node.end_lineno == 4
+        assert node.doc_node.end_col_offset == 12
 
     node = astroid.extract_node(
         """
