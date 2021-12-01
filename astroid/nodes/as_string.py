@@ -168,7 +168,11 @@ class AsStringVisitor:
     def visit_boolop(self, node):
         """return an astroid.BoolOp node as string"""
         values = [f"{self._precedence_parens(node, n)}" for n in node.values]
-        return (f" {node.op} ").join(values)
+        # return (f" {node.op} ").join(values)
+        tmp = (f" {node.op} ").join(values)
+        tmp = "({})".format(tmp)
+        # print("({})".format(tmp))
+        return tmp
 
     def visit_break(self, node):
         """return an astroid.Break node as string"""
@@ -477,7 +481,10 @@ class AsStringVisitor:
         """return an astroid.Return node as string"""
         if node.is_tuple_return() and len(node.value.elts) > 1:
             elts = [child.accept(self) for child in node.value.elts]
-            return f"return {', '.join(elts)}"
+            tmp =f"{', '.join(elts)}"
+            tmp = "return ({})".format(tmp)
+            return tmp
+            # return f"return {', '.join(elts)}"
 
         if node.value:
             return f"return {node.value.accept(self)}"
