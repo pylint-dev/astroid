@@ -484,7 +484,7 @@ class Module(LocalsDictNodeNG):
         package=None,
         parent=None,
         pure_python=True,
-        doc_node=None,
+        doc_node: Optional[Const] = None,
     ):
         """
         :param name: The name of the module.
@@ -1551,7 +1551,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         lineno=None,
         col_offset=None,
         parent=None,
-        doc_node=None,
+        doc_node: Optional[Const] = None,
         *,
         end_lineno=None,
         end_col_offset=None,
@@ -2195,7 +2195,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         lineno=None,
         col_offset=None,
         parent=None,
-        doc_node=None,
+        doc_node: Optional[Const] = None,
         *,
         end_lineno=None,
         end_col_offset=None,
