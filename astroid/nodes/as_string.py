@@ -58,7 +58,7 @@ class AsStringVisitor:
 
     def _docs_dedent(self, doc):
         """Stop newlines in docs being indented by self._stmt_list"""
-        # document string can not handle special character, such as \X, \x, \U, \u, \N and so on.
+        # document string can not handle special characters, such as \X, \x, \U, \u, \N and so on.
         doc = doc.replace("\"\"\"", "\"")
         doc = doc.replace('\\x', r'\-x')
         doc = doc.replace('\\X', r'\-X')
