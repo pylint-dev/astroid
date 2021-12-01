@@ -170,7 +170,7 @@ class AsStringVisitor:
         values = [f"{self._precedence_parens(node, n)}" for n in node.values]
         # return (f" {node.op} ").join(values)
         tmp = (f" {node.op} ").join(values)
-        tmp = "({})".format(tmp)
+        tmp = f"({tmp})"
         # print("({})".format(tmp))
         return tmp
 
@@ -481,8 +481,8 @@ class AsStringVisitor:
         """return an astroid.Return node as string"""
         if node.is_tuple_return() and len(node.value.elts) > 1:
             elts = [child.accept(self) for child in node.value.elts]
-            tmp =f"{', '.join(elts)}"
-            tmp = "return ({})".format(tmp)
+            tmp = f"{', '.join(elts)}"
+            tmp = f"return ({tmp})"
             return tmp
             # return f"return {', '.join(elts)}"
 
