@@ -1572,7 +1572,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
 
-        :param doc_node: The doc node.
+        :param doc_node: The doc node associated with this node.
 
         :param end_lineno: The last line this node appears on in the source code.
         :type end_lineno: Optional[int]
