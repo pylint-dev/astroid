@@ -104,13 +104,12 @@ class TreeRebuilder:
             self._parser_module = parser_module
         self._module = self._parser_module.module
 
-    def _get_doc(
-        self, node: T_Doc
-    ) -> Tuple[T_Doc, Optional[str], Optional[nodes.Const]]:
+    def _get_doc(self, node: T_Doc) -> Tuple[Optional[str], Optional[nodes.Const]]:
+        """Returns the docstring of a node both in str and nodes.Const."""
         try:
             if PY37_PLUS and hasattr(node, "docstring"):
                 doc = node.docstring  # type: ignore[union-attr,attr-defined] # mypy doesn't recognize hasattr
-                return node, doc, None
+                return doc, None
             if node.body and isinstance(node.body[0], self._module.Expr):
                 first_value = node.body[0].value
                 if isinstance(first_value, self._module.Str) or (
@@ -136,10 +135,10 @@ class TreeRebuilder:
                             col_offset=first_value.col_offset,
                             parent=node,
                         )
-                    return node, doc, doc_node
+                    return doc, doc_node
         except IndexError:
             pass  # ast built from scratch
-        return node, None, None
+        return None, None
 
     def _get_context(
         self,
@@ -161,7 +160,7 @@ class TreeRebuilder:
 
         Note: Method not called by 'visit'
         """
-        node, doc, doc_node = self._get_doc(node)
+        doc, doc_node = self._get_doc(node)
         newnode = nodes.Module(
             name=modname,
             doc=doc,
@@ -1193,7 +1192,7 @@ class TreeRebuilder:
         self, node: "ast.ClassDef", parent: NodeNG, newstyle: bool = True
     ) -> nodes.ClassDef:
         """visit a ClassDef node to become astroid"""
-        node, doc, doc_node = self._get_doc(node)
+        doc, doc_node = self._get_doc(node)
         if sys.version_info >= (3, 8):
             newnode = nodes.ClassDef(
                 name=node.name,
@@ -1531,7 +1530,7 @@ class TreeRebuilder:
     ) -> T_Function:
         """visit an FunctionDef node to become astroid"""
         self._global_names.append({})
-        node, doc, doc_node = self._get_doc(node)
+        doc, doc_node = self._get_doc(node)
 
         lineno = node.lineno
         if PY38_PLUS and node.decorator_list:
