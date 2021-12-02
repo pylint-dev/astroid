@@ -126,8 +126,8 @@ class TreeRebuilder:
                             lineno=first_value.lineno,
                             col_offset=first_value.col_offset,
                             parent=node,
-                            end_lineno=node.end_lineno,
-                            end_col_offset=node.end_col_offset,
+                            end_lineno=first_value.end_lineno,
+                            end_col_offset=first_value.end_col_offset,
                         )
                     else:
                         doc_node = nodes.Const(
