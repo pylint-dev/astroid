@@ -291,6 +291,21 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
             with open(path, "rb") as file_io:
                 self.assertEqual(stream.read(), file_io.read())
 
+    def test_with_docstring(self) -> None:
+        data = """
+            '''Hello World'''
+            foo = 1
+        """
+        module = builder.parse(data, __name__)
+        assert module.doc_node
+
+    def test_without_docstring(self) -> None:
+        data = """
+            foo = 1
+        """
+        module = builder.parse(data, __name__)
+        assert not module.doc_node
+
 
 class FunctionNodeTest(ModuleLoader, unittest.TestCase):
     def test_special_attributes(self) -> None:
