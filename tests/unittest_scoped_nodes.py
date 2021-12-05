@@ -291,13 +291,40 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
             with open(path, "rb") as file_io:
                 self.assertEqual(stream.read(), file_io.read())
 
-    def test_with_docstring(self) -> None:
+    def test_with_singleline_docstring(self) -> None:
         data = """
             '''Hello World'''
             foo = 1
         """
         module = builder.parse(data, __name__)
-        assert module.doc_node
+        assert isinstance(module.doc_node, nodes.Const)
+        assert module.doc_node.lineno == 2
+        assert module.doc_node.col_offset == 0
+        if PY38_PLUS:
+            assert module.doc_node.end_lineno == 2
+            assert module.doc_node.end_col_offset == 17
+        else:
+            assert module.doc_node.end_lineno is None
+            assert module.doc_node.end_col_offset is None
+
+    def test_with_multiline_docstring(self) -> None:
+        data = """
+            '''Hello World
+
+            Also on this line.
+            '''
+            foo = 1
+        """
+        module = builder.parse(data, __name__)
+        assert isinstance(module.doc_node, nodes.Const)
+        assert module.doc_node.lineno == 2
+        assert module.doc_node.col_offset == 0
+        if PY38_PLUS:
+            assert module.doc_node.end_lineno == 5
+            assert module.doc_node.end_col_offset == 3
+        else:
+            assert module.doc_node.end_lineno is None
+            assert module.doc_node.end_col_offset is None
 
     def test_without_docstring(self) -> None:
         data = """
