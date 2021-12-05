@@ -244,9 +244,9 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
         if self.parent is None:
             return self.name
         try:
-            maybe_name = '.' + self.name
+            maybe_name = "." + self.name
         except AttributeError:
-            maybe_name = ''
+            maybe_name = ""
         return f"{self.parent.frame().qname()}{maybe_name}"
 
     def scope(self: T) -> T:
