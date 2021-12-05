@@ -776,6 +776,54 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "MyClass")
 
+    def test_with_singleline_docstring(self) -> None:
+        func = builder.extract_node(
+            """
+            def foo():
+                '''Hello World'''
+                bar = 1
+        """
+        )
+        assert isinstance(func.doc_node, nodes.Const)
+        assert func.doc_node.lineno == 3
+        assert func.doc_node.col_offset == 4
+        if PY38_PLUS:
+            assert func.doc_node.end_lineno == 3
+            assert func.doc_node.end_col_offset == 21
+        else:
+            assert func.doc_node.end_lineno is None
+            assert func.doc_node.end_col_offset is None
+
+    def test_with_multiline_docstring(self) -> None:
+        func = builder.extract_node(
+            """
+            def foo():
+                '''Hello World
+
+                Also on this line.
+                '''
+                bar = 1
+        """
+        )
+        assert isinstance(func.doc_node, nodes.Const)
+        assert func.doc_node.lineno == 3
+        assert func.doc_node.col_offset == 4
+        if PY38_PLUS:
+            assert func.doc_node.end_lineno == 6
+            assert func.doc_node.end_col_offset == 7
+        else:
+            assert func.doc_node.end_lineno is None
+            assert func.doc_node.end_col_offset is None
+
+    def test_without_docstring(self) -> None:
+        func = builder.extract_node(
+            """
+            def foo():
+                bar = 1
+        """
+        )
+        assert not func.doc_node
+
 
 class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_dict_interface(self) -> None:
@@ -2064,6 +2112,54 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """
         # Should not crash
         builder.parse(data)
+
+    def test_with_singleline_docstring(self) -> None:
+        node = builder.extract_node(
+            """
+            class Foo:
+                '''Hello World'''
+                bar = 1
+        """
+        )
+        assert isinstance(node.doc_node, nodes.Const)
+        assert node.doc_node.lineno == 3
+        assert node.doc_node.col_offset == 4
+        if PY38_PLUS:
+            assert node.doc_node.end_lineno == 3
+            assert node.doc_node.end_col_offset == 21
+        else:
+            assert node.doc_node.end_lineno is None
+            assert node.doc_node.end_col_offset is None
+
+    def test_with_multiline_docstring(self) -> None:
+        node = builder.extract_node(
+            """
+            class Foo:
+                '''Hello World
+
+                Also on this line.
+                '''
+                bar = 1
+        """
+        )
+        assert isinstance(node.doc_node, nodes.Const)
+        assert node.doc_node.lineno == 3
+        assert node.doc_node.col_offset == 4
+        if PY38_PLUS:
+            assert node.doc_node.end_lineno == 6
+            assert node.doc_node.end_col_offset == 7
+        else:
+            assert node.doc_node.end_lineno is None
+            assert node.doc_node.end_col_offset is None
+
+    def test_without_docstring(self) -> None:
+        node = builder.extract_node(
+            """
+            class Foo:
+                bar = 1
+        """
+        )
+        assert not node.doc_node
 
 
 def test_issue940_metaclass_subclass_property() -> None:
