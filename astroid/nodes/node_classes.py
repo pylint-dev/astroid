@@ -858,8 +858,13 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.kwarg: Optional[str] = kwarg  # can be None
         """The name of the variable length keyword arguments."""
 
-        self.args: typing.List[AssignName]
-        """The names of the required arguments."""
+        self.args: typing.Optional[typing.List[AssignName]]
+        """The names of the required arguments.
+
+        Can be None if the assosciated function does not have a retrievable
+        signature and the arguments are therefore unknown.
+        This happens with builtin functions implemented in C.
+        """
 
         self.defaults: typing.List[NodeNG]
         """The default values for arguments that can be passed positionally."""

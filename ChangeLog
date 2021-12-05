@@ -18,6 +18,8 @@ Release date: TBA
 
   Closes #1260
 
+* Fix typing and update explanation for ``Arguments.args`` being ``None``.
+
 
 What's New in astroid 2.9.0?
 ============================
