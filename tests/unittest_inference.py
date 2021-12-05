@@ -4200,6 +4200,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == 123
 
+    def test_uninferable_type_subscript(self) -> None:
+        node = extract_node("[type for type in [] if type['id']]")
+        with self.assertRaises(InferenceError):
+            _ = next(node.infer())
+
 
 class GetattrTest(unittest.TestCase):
     def test_yes_when_unknown(self) -> None:
