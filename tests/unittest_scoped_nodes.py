@@ -1684,6 +1684,11 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(result, Generator)
         self.assertEqual(result.parent, func)
 
+    def test_list_comp_qname(self) -> None:
+        # Variable inside generator is a builtin
+        node = builder.extract_node("[type for type in [] if type['id']]")
+        self.assertEqual(node.qname(), '')
+
     def test_type_three_arguments(self) -> None:
         classes = builder.extract_node(
             """

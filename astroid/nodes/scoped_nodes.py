@@ -243,7 +243,11 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
         # pylint: disable=no-member; github.com/pycqa/astroid/issues/278
         if self.parent is None:
             return self.name
-        return f"{self.parent.frame().qname()}.{self.name}"
+        try:
+            maybe_name = '.' + self.name
+        except AttributeError:
+            maybe_name = ''
+        return f"{self.parent.frame().qname()}{maybe_name}"
 
     def scope(self: T) -> T:
         """The first parent node defining a new scope.

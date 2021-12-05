@@ -20,6 +20,11 @@ Release date: TBA
 
 * Fix typing and update explanation for ``Arguments.args`` being ``None``.
 
+* Fix crash in LocalsDictNodeNG.qname() if a variable named "type" is used in
+  a generator expression.
+
+  Closes PyCQA/pylint#5461
+
 
 What's New in astroid 2.9.0?
 ============================
