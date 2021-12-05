@@ -1206,7 +1206,7 @@ class TreeRebuilder:
             )
         else:
             newnode = nodes.ClassDef(
-                node.name, doc, node.lineno, node.col_offset, parent
+                node.name, doc, node.lineno, node.col_offset, parent, doc_node
             )
         metaclass = None
         for keyword in node.keywords:

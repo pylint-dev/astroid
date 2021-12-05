@@ -317,12 +317,14 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         """
         module = builder.parse(data, __name__)
         assert isinstance(module.doc_node, nodes.Const)
-        assert module.doc_node.lineno == 2
-        assert module.doc_node.col_offset == 0
         if PY38_PLUS:
+            assert module.doc_node.lineno == 2
+            assert module.doc_node.col_offset == 0
             assert module.doc_node.end_lineno == 5
             assert module.doc_node.end_col_offset == 3
         else:
+            assert module.doc_node.lineno == 5
+            assert module.doc_node.col_offset == -1
             assert module.doc_node.end_lineno is None
             assert module.doc_node.end_col_offset is None
 
@@ -806,12 +808,14 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         """
         )
         assert isinstance(func.doc_node, nodes.Const)
-        assert func.doc_node.lineno == 3
-        assert func.doc_node.col_offset == 4
         if PY38_PLUS:
+            assert func.doc_node.lineno == 3
+            assert func.doc_node.col_offset == 4
             assert func.doc_node.end_lineno == 6
             assert func.doc_node.end_col_offset == 7
         else:
+            assert func.doc_node.lineno == 6
+            assert func.doc_node.col_offset == -1
             assert func.doc_node.end_lineno is None
             assert func.doc_node.end_col_offset is None
 
@@ -2143,12 +2147,14 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """
         )
         assert isinstance(node.doc_node, nodes.Const)
-        assert node.doc_node.lineno == 3
-        assert node.doc_node.col_offset == 4
         if PY38_PLUS:
+            assert node.doc_node.lineno == 3
+            assert node.doc_node.col_offset == 4
             assert node.doc_node.end_lineno == 6
             assert node.doc_node.end_col_offset == 7
         else:
+            assert node.doc_node.lineno == 6
+            assert node.doc_node.col_offset == -1
             assert node.doc_node.end_lineno is None
             assert node.doc_node.end_col_offset is None
 
