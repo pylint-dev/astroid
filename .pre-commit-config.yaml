@@ -37,7 +37,7 @@ repos:
       - id: black-disable-checker
         exclude: tests/unittest_nodes_lineno.py
   - repo: https://github.com/psf/black
-    rev: 21.11b1
+    rev: 21.12b0
     hooks:
       - id: black
         args: [--safe, --quiet]
@@ -82,7 +82,7 @@ repos:
           ]
         exclude: tests/testdata| # exclude everything, we're not ready
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.5.0
+    rev: v2.5.1
     hooks:
       - id: prettier
         args: [--prose-wrap=always, --print-width=88]
