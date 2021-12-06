@@ -34,7 +34,7 @@ import operator as operator_mod
 import sys
 from typing import Any, Generator, List, Optional, Union
 
-from astroid import arguments, bases, decorators, helpers, mixins, nodes, util
+from astroid import arguments, bases, decorators, helpers, nodes, util
 from astroid.const import Context
 from astroid.context import InferenceContext, copy_context
 from astroid.exceptions import (
@@ -641,7 +641,7 @@ nodes.With.assigned_stmts = with_assigned_stmts
 @decorators.raise_if_nothing_inferred
 def named_expr_assigned_stmts(
     self: nodes.NamedExpr,
-    node: mixins.AssignTypeMixin,
+    node: AssignedStmtsPossibleNode,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ) -> Any:
