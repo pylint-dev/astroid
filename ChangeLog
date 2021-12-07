@@ -20,7 +20,7 @@ Release date: TBA
 
 * Fix typing and update explanation for ``Arguments.args`` being ``None``.
 
-* Fix crash if a variable named "type" is subscripted in a generator expression.
+* Fix crash if a variable named ``type`` is subscripted in a generator expression.
 
   Closes PyCQA/pylint#5461
 
