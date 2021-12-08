@@ -276,7 +276,7 @@ def _resolve_looppart(parts, assign_path, context):
 @decorators.raise_if_nothing_inferred
 def for_assigned_stmts(
     self: Union[nodes.For, nodes.Comprehension],
-    node: nodes.AssignedStmtsPossibleNode = None,
+    node: node_classes.AssignedStmtsPossibleNode = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ) -> Any:
@@ -298,7 +298,7 @@ nodes.Comprehension.assigned_stmts = for_assigned_stmts
 
 def sequence_assigned_stmts(
     self: Union[nodes.Tuple, nodes.List],
-    node: nodes.AssignedStmtsPossibleNode = None,
+    node: node_classes.AssignedStmtsPossibleNode = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ) -> Any:
@@ -326,7 +326,7 @@ nodes.List.assigned_stmts = sequence_assigned_stmts
 
 def assend_assigned_stmts(
     self: Union[nodes.AssignName, nodes.AssignAttr],
-    node: nodes.AssignedStmtsPossibleNode = None,
+    node: node_classes.AssignedStmtsPossibleNode = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ) -> Any:
@@ -398,7 +398,7 @@ def _arguments_infer_argname(self, name, context):
 
 def arguments_assigned_stmts(
     self: nodes.Arguments,
-    node: nodes.AssignedStmtsPossibleNode = None,
+    node: node_classes.AssignedStmtsPossibleNode = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ) -> Any:
@@ -428,7 +428,7 @@ nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 @decorators.raise_if_nothing_inferred
 def assign_assigned_stmts(
     self: Union[nodes.AugAssign, nodes.Assign, nodes.AnnAssign],
-    node: nodes.AssignedStmtsPossibleNode = None,
+    node: node_classes.AssignedStmtsPossibleNode = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ) -> Any:
@@ -444,7 +444,7 @@ def assign_assigned_stmts(
 
 def assign_annassigned_stmts(
     self: nodes.AnnAssign,
-    node: nodes.AssignedStmtsPossibleNode = None,
+    node: node_classes.AssignedStmtsPossibleNode = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ) -> Any:
@@ -503,7 +503,7 @@ def _resolve_assignment_parts(parts, assign_path, context):
 @decorators.raise_if_nothing_inferred
 def excepthandler_assigned_stmts(
     self: nodes.ExceptHandler,
-    node: nodes.AssignedStmtsPossibleNode = None,
+    node: node_classes.AssignedStmtsPossibleNode = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ) -> Any:
@@ -559,7 +559,7 @@ def _infer_context_manager(self, mgr, context):
 @decorators.raise_if_nothing_inferred
 def with_assigned_stmts(
     self: nodes.With,
-    node: nodes.AssignedStmtsPossibleNode = None,
+    node: node_classes.AssignedStmtsPossibleNode = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ) -> Any:
@@ -637,7 +637,7 @@ nodes.With.assigned_stmts = with_assigned_stmts
 @decorators.raise_if_nothing_inferred
 def named_expr_assigned_stmts(
     self: nodes.NamedExpr,
-    node: nodes.AssignedStmtsPossibleNode,
+    node: node_classes.AssignedStmtsPossibleNode,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ) -> Any:
@@ -659,7 +659,7 @@ nodes.NamedExpr.assigned_stmts = named_expr_assigned_stmts
 @decorators.yes_if_nothing_inferred
 def starred_assigned_stmts(
     self: nodes.Starred,
-    node: nodes.AssignedStmtsPossibleNode = None,
+    node: node_classes.AssignedStmtsPossibleNode = None,
     context: Optional[InferenceContext] = None,
     assign_path: Optional[List[int]] = None,
 ) -> Any:
