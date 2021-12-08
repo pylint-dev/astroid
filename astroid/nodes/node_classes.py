@@ -72,8 +72,9 @@ def _is_const(value):
     return isinstance(value, tuple(CONST_CLS))
 
 
-AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
 T = TypeVar("T")
+
+AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
 AssignedStmtsCall = Callable[
     [
         T,
