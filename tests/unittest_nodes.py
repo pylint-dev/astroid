@@ -1583,15 +1583,14 @@ def test_get_doc() -> None:
     """
     )
     assert node.doc == "Docstring"
-    assert isinstance(node.doc_node, nodes.Const)
-    assert node.doc_node.lineno == 3
-    assert node.doc_node.col_offset == 4
     if PY38_PLUS:
+        assert isinstance(node.doc_node, nodes.Const)
+        assert node.doc_node.lineno == 3
+        assert node.doc_node.col_offset == 4
         assert node.doc_node.end_lineno == 3
         assert node.doc_node.end_col_offset == 15
     else:
-        assert node.doc_node.end_lineno is None
-        assert node.doc_node.end_col_offset is None
+        assert not node.doc_node
 
     node = astroid.extract_node(
         """

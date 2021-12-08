@@ -129,12 +129,7 @@ class TreeRebuilder:
                             end_col_offset=first_value.end_col_offset,
                         )
                     else:
-                        doc_node = nodes.Const(
-                            value=doc,
-                            lineno=first_value.lineno,
-                            col_offset=first_value.col_offset,
-                            parent=node,
-                        )
+                        doc_node = None
                     return doc, doc_node
         except IndexError:
             pass  # ast built from scratch
