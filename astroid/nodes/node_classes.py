@@ -42,7 +42,7 @@ import sys
 import typing
 import warnings
 from functools import lru_cache
-from typing import TYPE_CHECKING, Callable, Generator, Optional
+from typing import TYPE_CHECKING, Any, Callable, Generator, Optional, TypeVar, Union
 
 from astroid import decorators, mixins, util
 from astroid.bases import Instance, _infer_stmts
@@ -70,6 +70,20 @@ if TYPE_CHECKING:
 
 def _is_const(value):
     return isinstance(value, tuple(CONST_CLS))
+
+
+T_Nodes = TypeVar("T_Nodes", bound=NodeNG)
+
+AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
+AssignedStmtsCall = Callable[
+    [
+        T_Nodes,
+        AssignedStmtsPossibleNode,
+        Optional[InferenceContext],
+        Optional[typing.List[int]],
+    ],
+    Any,
+]
 
 
 @decorators.raise_if_nothing_inferred
@@ -672,6 +686,11 @@ class AssignName(
             parent=parent,
         )
 
+    assigned_stmts: AssignedStmtsCall["AssignName"]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
 
 class DelName(
     mixins.NoChildrenMixin, LookupMixIn, mixins.ParentAssignTypeMixin, NodeNG
@@ -993,6 +1012,11 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         if type_comment_posonlyargs is not None:
             self.type_comment_posonlyargs = type_comment_posonlyargs
 
+    assigned_stmts: AssignedStmtsCall["Arguments"]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def _infer_name(self, frame, name):
         if self.parent is frame:
             return name
@@ -1246,6 +1270,11 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
         """
         self.expr = expr
 
+    assigned_stmts: AssignedStmtsCall["AssignAttr"]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def get_children(self):
         yield self.expr
 
@@ -1389,6 +1418,11 @@ class Assign(mixins.AssignTypeMixin, Statement):
         self.value = value
         self.type_annotation = type_annotation
 
+    assigned_stmts: AssignedStmtsCall["Assign"]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def get_children(self):
         yield from self.targets
 
@@ -1481,6 +1515,11 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
         self.value = value
         self.simple = simple
 
+    assigned_stmts: AssignedStmtsCall["AnnAssign"]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def get_children(self):
         yield self.target
         yield self.annotation
@@ -1561,6 +1600,11 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
         """
         self.target = target
         self.value = value
+
+    assigned_stmts: AssignedStmtsCall["AugAssign"]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     # This is set by inference.py
     def _infer_augassign(self, context=None):
@@ -2027,6 +2071,11 @@ class Comprehension(NodeNG):
         if ifs is not None:
             self.ifs = ifs
         self.is_async = is_async
+
+    assigned_stmts: AssignedStmtsCall["Comprehension"]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def assign_type(self):
         """The type of assignment that this node performs.
@@ -2715,6 +2764,11 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
             parent=parent,
         )
 
+    assigned_stmts: AssignedStmtsCall["ExceptHandler"]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def get_children(self):
         if self.type is not None:
             yield self.type
@@ -2872,6 +2926,11 @@ class For(
         if orelse is not None:
             self.orelse = orelse
         self.type_annotation = type_annotation
+
+    assigned_stmts: AssignedStmtsCall["For"]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -3573,6 +3632,11 @@ class List(BaseContainer):
             parent=parent,
         )
 
+    assigned_stmts: AssignedStmtsCall["List"]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def pytype(self):
         """Get the name of the type that this node represents.
 
@@ -3999,6 +4063,11 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
         """
         self.value = value
 
+    assigned_stmts: AssignedStmtsCall["Starred"]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def get_children(self):
         yield self.value
 
@@ -4325,6 +4394,11 @@ class Tuple(BaseContainer):
             parent=parent,
         )
 
+    assigned_stmts: AssignedStmtsCall["Tuple"]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def pytype(self):
         """Get the name of the type that this node represents.
 
@@ -4618,6 +4692,11 @@ class With(
         if body is not None:
             self.body = body
         self.type_annotation = type_annotation
+
+    assigned_stmts: AssignedStmtsCall["With"]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -4921,6 +5000,11 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
     def postinit(self, target: NodeNG, value: NodeNG) -> None:
         self.target = target
         self.value = value
+
+    assigned_stmts: AssignedStmtsCall["NamedExpr"]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def frame(self):
         """The first parent frame node.
@@ -5291,6 +5375,9 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
         ],
         Generator[NodeNG, None, None],
     ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
 
 class MatchClass(Pattern):
@@ -5393,6 +5480,9 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
         ],
         Generator[NodeNG, None, None],
     ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
 
 class MatchAs(mixins.AssignTypeMixin, Pattern):
@@ -5459,6 +5549,9 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
         ],
         Generator[NodeNG, None, None],
     ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
 
 class MatchOr(Pattern):
