@@ -51,7 +51,6 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-
 raw_building = util.lazy_import("raw_building")
 objects = util.lazy_import("objects")
 
