@@ -42,7 +42,7 @@ import sys
 import typing
 import warnings
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Generator, Optional, TypeVar, Union
 
 from astroid import decorators, mixins, util
 from astroid.bases import Instance, _infer_stmts
@@ -4651,7 +4651,15 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
         self.patterns = patterns
         self.rest = rest
 
-    assigned_stmts: AssignedStmtsCall["MatchMapping"]
+    assigned_stmts: Callable[
+        [
+            "MatchMapping",
+            AssignName,
+            Optional[InferenceContext],
+            Literal[None],
+        ],
+        Generator[NodeNG, None, None],
+    ]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -4730,7 +4738,15 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
     def postinit(self, *, name: Optional[AssignName]) -> None:
         self.name = name
 
-    assigned_stmts: AssignedStmtsCall["MatchStar"]
+    assigned_stmts: Callable[
+        [
+            "MatchStar",
+            AssignName,
+            Optional[InferenceContext],
+            Literal[None],
+        ],
+        Generator[NodeNG, None, None],
+    ]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -4782,7 +4798,15 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
         self.pattern = pattern
         self.name = name
 
-    assigned_stmts: AssignedStmtsCall["MatchAs"]
+    assigned_stmts: Callable[
+        [
+            "MatchAs",
+            AssignName,
+            Optional[InferenceContext],
+            Literal[None],
+        ],
+        Generator[NodeNG, None, None],
+    ]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
