@@ -809,7 +809,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             assert func.doc_node.end_lineno == 6
             assert func.doc_node.end_col_offset == 7
         else:
-            assert not func.doc_node
+            assert func.doc_node is None
 
     def test_without_docstring(self) -> None:
         func = builder.extract_node(
