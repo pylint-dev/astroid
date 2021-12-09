@@ -304,7 +304,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
             assert module.doc_node.end_lineno == 2
             assert module.doc_node.end_col_offset == 17
         else:
-            assert not module.doc_node
+            assert module.doc_node is None
 
     def test_with_multiline_docstring(self) -> None:
         data = """
