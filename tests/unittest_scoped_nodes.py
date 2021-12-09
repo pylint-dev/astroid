@@ -789,7 +789,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             assert func.doc_node.end_lineno == 3
             assert func.doc_node.end_col_offset == 21
         else:
-            assert not func.doc_node
+            assert func.doc_node is None
 
     def test_with_multiline_docstring(self) -> None:
         func = builder.extract_node(
