@@ -818,7 +818,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                 bar = 1
         """
         )
-        assert not func.doc_node
+        assert func.doc_node is None
 
 
 class ClassNodeTest(ModuleLoader, unittest.TestCase):
