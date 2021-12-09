@@ -329,7 +329,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
             foo = 1
         """
         module = builder.parse(data, __name__)
-        assert not module.doc_node
+        assert module.doc_node is None
 
 
 class FunctionNodeTest(ModuleLoader, unittest.TestCase):
