@@ -2144,7 +2144,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             assert node.doc_node.end_lineno == 6
             assert node.doc_node.end_col_offset == 7
         else:
-            assert not node.doc_node
+            assert node.doc_node is None
 
     def test_without_docstring(self) -> None:
         node = builder.extract_node(
