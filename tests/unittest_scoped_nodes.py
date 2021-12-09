@@ -2153,7 +2153,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 bar = 1
         """
         )
-        assert not node.doc_node
+        assert node.doc_node is None
 
 
 def test_issue940_metaclass_subclass_property() -> None:
