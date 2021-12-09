@@ -510,7 +510,6 @@ class Module(LocalsDictNodeNG):
         :param pure_python: Whether the ast was built from source.
         :type pure_python: bool or None
         """
-
         self.name = name
         self.doc = doc
         self.file = file

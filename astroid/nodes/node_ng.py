@@ -85,7 +85,11 @@ class NodeNG:
     # instance specific inference function infer(node, context)
     _explicit_inference = None
     doc_node: Optional["nodes.Const"] = None
-    """The doc node associated with this node."""
+    """The doc node associated with this node.
+
+    On Python < 3.8 this attribute will always be None as the ast parser
+    does not allow us to extract the correct line numbering.
+    """
 
     def __init__(
         self,

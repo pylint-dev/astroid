@@ -304,7 +304,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
             assert module.doc_node.end_lineno == 2
             assert module.doc_node.end_col_offset == 17
         else:
-            assert not module.doc_node
+            assert module.doc_node is None
 
     def test_with_multiline_docstring(self) -> None:
         data = """
@@ -322,14 +322,14 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
             assert module.doc_node.end_lineno == 5
             assert module.doc_node.end_col_offset == 3
         else:
-            assert not module.doc_node
+            assert module.doc_node is None
 
     def test_without_docstring(self) -> None:
         data = """
             foo = 1
         """
         module = builder.parse(data, __name__)
-        assert not module.doc_node
+        assert module.doc_node is None
 
 
 class FunctionNodeTest(ModuleLoader, unittest.TestCase):
@@ -789,7 +789,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             assert func.doc_node.end_lineno == 3
             assert func.doc_node.end_col_offset == 21
         else:
-            assert not func.doc_node
+            assert func.doc_node is None
 
     def test_with_multiline_docstring(self) -> None:
         func = builder.extract_node(
@@ -809,7 +809,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             assert func.doc_node.end_lineno == 6
             assert func.doc_node.end_col_offset == 7
         else:
-            assert not func.doc_node
+            assert func.doc_node is None
 
     def test_without_docstring(self) -> None:
         func = builder.extract_node(
@@ -818,7 +818,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                 bar = 1
         """
         )
-        assert not func.doc_node
+        assert func.doc_node is None
 
 
 class ClassNodeTest(ModuleLoader, unittest.TestCase):
@@ -2144,7 +2144,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             assert node.doc_node.end_lineno == 6
             assert node.doc_node.end_col_offset == 7
         else:
-            assert not node.doc_node
+            assert node.doc_node is None
 
     def test_without_docstring(self) -> None:
         node = builder.extract_node(
@@ -2153,7 +2153,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 bar = 1
         """
         )
-        assert not node.doc_node
+        assert node.doc_node is None
 
 
 def test_issue940_metaclass_subclass_property() -> None:

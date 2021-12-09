@@ -1590,7 +1590,7 @@ def test_get_doc() -> None:
         assert node.doc_node.end_lineno == 3
         assert node.doc_node.end_col_offset == 15
     else:
-        assert not node.doc_node
+        assert node.doc_node is None
 
     node = astroid.extract_node(
         """
