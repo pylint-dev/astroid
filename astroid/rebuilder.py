@@ -105,7 +105,10 @@ class TreeRebuilder:
         self._module = self._parser_module.module
 
     def _get_doc(self, node: T_Doc) -> Tuple[Optional[str], Optional[nodes.Const]]:
-        """Returns the docstring of a node both in str and nodes.Const."""
+        """Returns the docstring of a node both in str and nodes.Const.
+
+        The constant will only be returned in python 3.8+.
+        """
         try:
             if PY37_PLUS and hasattr(node, "docstring"):
                 doc = node.docstring  # type: ignore[union-attr,attr-defined] # mypy doesn't recognize hasattr
