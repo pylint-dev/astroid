@@ -880,7 +880,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.args: typing.Optional[typing.List[AssignName]]
         """The names of the required arguments.
 
-        Can be None if the assosciated function does not have a retrievable
+        Can be None if the associated function does not have a retrievable
         signature and the arguments are therefore unknown.
         This happens with builtin functions implemented in C.
         """

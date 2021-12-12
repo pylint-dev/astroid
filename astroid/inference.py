@@ -1054,7 +1054,7 @@ def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
 
 # When inferring a property, we instantiate a new `objects.Property` object,
 # which in turn, because it inherits from `FunctionDef`, sets itself in the locals
-# of the wrapping frame. This means that everytime we infer a property, the locals
+# of the wrapping frame. This means that every time we infer a property, the locals
 # are mutated with a new instance of the property. This is why we cache the result
 # of the function's inference.
 @_cached_generator
