@@ -839,7 +839,7 @@ class Module(LocalsDictNodeNG):
     def public_names(self):
         """The list of the names that are publicly available in this module.
 
-        :returns: The list of publc names.
+        :returns: The list of public names.
         :rtype: list(str)
         """
         return [name for name in self.keys() if not name.startswith("_")]
@@ -2396,10 +2396,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         if self.qname() == type_name:
             return True
-        for anc in self.ancestors(context=context):
-            if anc.qname() == type_name:
-                return True
-        return False
+
+        return any(anc.qname() == type_name for anc in self.ancestors(context=context))
 
     def _infer_type_call(self, caller, context):
         try:
@@ -2737,7 +2735,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # Look for AnnAssigns, which are not attributes in the purest sense.
         for value in values:
             if isinstance(value, node_classes.AssignName):
-                stmt = value.statement()
+                stmt = value.statement(future=True)
                 if isinstance(stmt, node_classes.AnnAssign) and stmt.value is None:
                     raise AttributeInferenceError(
                         target=self, attribute=name, context=context

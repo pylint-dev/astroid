@@ -2293,8 +2293,8 @@ def test_slots_duplicate_bases_issue_1089() -> None:
 
 
 class TestFrameNodes:
-    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
     @staticmethod
+    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
     def test_frame_node():
         """Test if the frame of FunctionDef, ClassDef and Module is correctly set"""
         module = builder.parse(

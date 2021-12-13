@@ -165,7 +165,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         return module
 
     def _data_build(self, data, modname, path):
-        """Build tree node from data and add some informations"""
+        """Build tree node from data and add some information"""
         try:
             node, parser_module = _parse_string(data, type_comments=True)
         except (TypeError, ValueError, SyntaxError) as exc:
