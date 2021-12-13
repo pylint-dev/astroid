@@ -5593,7 +5593,7 @@ def test_limit_inference_result_amount() -> None:
 
 
 def test_attribute_inference_should_not_access_base_classes() -> None:
-    """attributes of classes should mask ancestor attribues"""
+    """attributes of classes should mask ancestor attributes"""
     code = """
     type.__new__ #@
     """

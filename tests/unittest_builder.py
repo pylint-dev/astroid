@@ -285,7 +285,7 @@ class BuilderTest(unittest.TestCase):
 
     def test_missing_file(self) -> None:
         with self.assertRaises(AstroidBuildingError):
-            resources.build_file("data/inexistant.py")
+            resources.build_file("data/inexistent.py")
 
     def test_inspect_build0(self) -> None:
         """test astroid tree build from a living object"""

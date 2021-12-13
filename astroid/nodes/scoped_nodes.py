@@ -841,7 +841,7 @@ class Module(LocalsDictNodeNG):
     def public_names(self):
         """The list of the names that are publicly available in this module.
 
-        :returns: The list of publc names.
+        :returns: The list of public names.
         :rtype: list(str)
         """
         return [name for name in self.keys() if not name.startswith("_")]

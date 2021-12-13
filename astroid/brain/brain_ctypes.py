@@ -3,7 +3,7 @@ Astroid hooks for ctypes module.
 
 Inside the ctypes module, the value class is defined inside
 the C coded module _ctypes.
-Thus astroid doesn't know that the value member is a bultin type
+Thus astroid doesn't know that the value member is a builtin type
 among float, int, bytes or str.
 """
 import sys

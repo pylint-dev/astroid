@@ -95,7 +95,7 @@ class InferenceContext:
     @property
     def nodes_inferred(self):
         """
-        Number of nodes inferred in this context and all its clones/decendents
+        Number of nodes inferred in this context and all its clones/descendents
 
         Wrap inner value in a mutable cell to allow for mutating a class
         variable in the presence of __slots__
