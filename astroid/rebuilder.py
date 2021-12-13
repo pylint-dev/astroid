@@ -48,7 +48,7 @@ from typing import (
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import PY37_PLUS, PY38, PY38_PLUS, Context
+from astroid.const import PY38, PY38_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 
@@ -106,11 +106,7 @@ class TreeRebuilder:
 
     def _get_doc(self, node: T_Doc) -> Tuple[T_Doc, Optional[str]]:
         try:
-            if PY37_PLUS and hasattr(node, "docstring"):
-                doc = node.docstring  # type: ignore[union-attr,attr-defined] # mypy doesn't recognize hasattr
-                return node, doc
             if node.body and isinstance(node.body[0], self._module.Expr):
-
                 first_value = node.body[0].value
                 if isinstance(first_value, self._module.Str) or (
                     PY38_PLUS
