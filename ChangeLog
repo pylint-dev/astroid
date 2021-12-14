@@ -92,6 +92,7 @@ Release date: 2021-10-25
   nodes are now correctly added to the locals of the ``FunctionDef``,
   ``ClassDef``, or ``Comprehension``.
 
+
 What's New in astroid 2.8.3?
 ============================
 Release date: 2021-10-17
