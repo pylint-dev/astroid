@@ -153,7 +153,7 @@ class NoSourceFile(Exception):
     """
 
 
-def _normalize_path(path):
+def _normalize_path(path: str) -> str:
     """Resolve symlinks in path and convert to absolute path.
     Note that environment variables and ~ in the path need to be expanded in
     advance.
@@ -185,7 +185,7 @@ def _handle_blacklist(blacklist, dirnames, filenames):
 _NORM_PATH_CACHE = {}
 
 
-def _cache_normalize_path(path):
+def _cache_normalize_path(path: str) -> str:
     """Normalize path with caching."""
     # _module_file calls abspath on every path in sys.path every time it's
     # called; on a larger codebase this easily adds up to half a second just
