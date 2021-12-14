@@ -5,8 +5,8 @@
 # Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
@@ -270,6 +270,24 @@ class ParentMissingError(AstroidError):
     def __init__(self, target: "nodes.NodeNG") -> None:
         self.target = target
         super().__init__(message=f"Parent not found on {target!r}.")
+
+
+class StatementMissing(ParentMissingError):
+    """Raised when a call to node.statement() does not return a node. This is because
+    a node in the chain does not have a parent attribute and therefore does not
+    return a node for statement().
+
+    Standard attributes:
+        target: The node for which the parent lookup failed.
+    """
+
+    def __init__(self, target: "nodes.NodeNG") -> None:
+        # pylint: disable-next=bad-super-call
+        # https://github.com/PyCQA/pylint/issues/2903
+        # https://github.com/PyCQA/astroid/pull/1217#discussion_r744149027
+        super(ParentMissingError, self).__init__(
+            message=f"Statement not found on {target!r}"
+        )
 
 
 # Backwards-compatibility aliases

@@ -61,7 +61,7 @@ def _deque_mock():
         def __copy__(self): return deque(self.iterable)
         def copy(self): return deque(self.iterable)
         def index(self, x, start=0, end=0): return 0
-        def insert(self, x, i): pass
+        def insert(self, i, x): pass
         def __add__(self, other): pass
         def __iadd__(self, other): pass
         def __mul__(self, other): pass

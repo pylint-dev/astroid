@@ -5,6 +5,7 @@
 # Copyright (c) 2018 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Craig Franklin <craigjfranklin@gmail.com>
 # Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
@@ -265,9 +266,19 @@ class PartialFunction(scoped_nodes.FunctionDef):
         # A typical FunctionDef automatically adds its name to the parent scope,
         # but a partial should not, so defer setting parent until after init
         self.parent = parent
-        self.filled_positionals = len(call.positional_arguments[1:])
         self.filled_args = call.positional_arguments[1:]
         self.filled_keywords = call.keyword_arguments
+
+        wrapped_function = call.positional_arguments[0]
+        inferred_wrapped_function = next(wrapped_function.infer())
+        if isinstance(inferred_wrapped_function, PartialFunction):
+            self.filled_args = inferred_wrapped_function.filled_args + self.filled_args
+            self.filled_keywords = {
+                **inferred_wrapped_function.filled_keywords,
+                **self.filled_keywords,
+            }
+
+        self.filled_positionals = len(self.filled_args)
 
     def infer_call_result(self, caller=None, context=None):
         if context:

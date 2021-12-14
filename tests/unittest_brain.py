@@ -24,10 +24,12 @@
 # Copyright (c) 2019 Grygorii Iermolenko <gyermolenko@gmail.com>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
+# Copyright (c) 2021 Joshua Cannon <joshua.cannon@ni.com>
+# Copyright (c) 2021 Craig Franklin <craigjfranklin@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Jonathan Striebel <jstriebel@users.noreply.github.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Dimitri Prybysh <dmand@yandex.ru>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
@@ -1171,6 +1173,21 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(inferred[0], astroid.Const)
         self.assertEqual(inferred[0].value, 1)
 
+    def test_members_member_ignored(self) -> None:
+        ast_node = builder.extract_node(
+            """
+        from enum import Enum
+        class Animal(Enum):
+            a = 1
+            __members__ = {}
+        Animal.__members__ #@
+        """
+        )
+
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, astroid.Dict)
+        self.assertTrue(inferred.locals)
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
@@ -1221,10 +1238,7 @@ def streams_are_fine():
 
     PY3 only
     """
-    for stream in (sys.stdout, sys.stderr, sys.stdin):
-        if not isinstance(stream, io.IOBase):
-            return False
-    return True
+    return all(isinstance(s, io.IOBase) for s in (sys.stdout, sys.stderr, sys.stdin))
 
 
 class IOBrainTest(unittest.TestCase):
@@ -2372,7 +2386,7 @@ class TestIsinstanceInference:
         )
 
     def test_isinstance_str_true(self) -> None:
-        """Make sure isinstance can check bultin str types"""
+        """Make sure isinstance can check builtin str types"""
         assert _get_result("isinstance('a', str)") == "True"
 
     def test_isinstance_str_false(self) -> None:
@@ -2833,7 +2847,7 @@ def test_infer_dict_from_keys() -> None:
         assert isinstance(inferred, astroid.Dict)
         assert inferred.items == []
 
-    # Test inferrable values
+    # Test inferable values
 
     # from a dictionary's keys
     from_dict = astroid.extract_node(
@@ -2986,6 +3000,34 @@ class TestFunctoolsPartial:
         assert set(mod_scope) == {"test", "scope", "partial"}
         assert set(scope) == {"test2"}
 
+    def test_multiple_partial_args(self) -> None:
+        "Make sure partials remember locked-in args."
+        ast_node = astroid.extract_node(
+            """
+        from functools import partial
+        def test(a, b, c, d, e=5):
+            return a + b + c + d + e
+        test1 = partial(test, 1)
+        test2 = partial(test1, 2)
+        test3 = partial(test2, 3)
+        test3(4, e=6) #@
+        """
+        )
+        expected_args = [1, 2, 3, 4]
+        expected_keywords = {"e": 6}
+
+        call_site = astroid.arguments.CallSite.from_call(ast_node)
+        called_func = next(ast_node.func.infer())
+        called_args = called_func.filled_args + call_site.positional_arguments
+        called_keywords = {**called_func.filled_keywords, **call_site.keyword_arguments}
+        assert len(called_args) == len(expected_args)
+        assert [arg.value for arg in called_args] == expected_args
+        assert len(called_keywords) == len(expected_keywords)
+
+        for keyword, value in expected_keywords.items():
+            assert keyword in called_keywords
+            assert called_keywords[keyword].value == value
+
 
 def test_http_client_brain() -> None:
     node = astroid.extract_node(
@@ -3067,6 +3109,8 @@ def test_str_and_bytes(code, expected_class, expected_value):
 def test_no_recursionerror_on_self_referential_length_check() -> None:
     """
     Regression test for https://github.com/PyCQA/astroid/issues/777
+
+    This test should only raise an InferenceError and no RecursionError.
     """
     with pytest.raises(InferenceError):
         node = astroid.extract_node(
@@ -3075,6 +3119,57 @@ def test_no_recursionerror_on_self_referential_length_check() -> None:
             def __len__(self) -> int:
                 return len(self)
         len(Crash()) #@
+        """
+        )
+        assert isinstance(node, nodes.NodeNG)
+        node.inferred()
+
+
+def test_inference_on_outer_referential_length_check() -> None:
+    """
+    Regression test for https://github.com/PyCQA/pylint/issues/5244
+    See also https://github.com/PyCQA/astroid/pull/1234
+
+    This test should succeed without any error.
+    """
+    node = astroid.extract_node(
+        """
+    class A:
+        def __len__(self) -> int:
+            return 42
+
+    class Crash:
+        def __len__(self) -> int:
+            a = A()
+            return len(a)
+
+    len(Crash()) #@
+    """
+    )
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 42
+
+
+def test_no_attributeerror_on_self_referential_length_check() -> None:
+    """
+    Regression test for https://github.com/PyCQA/pylint/issues/5244
+    See also https://github.com/PyCQA/astroid/pull/1234
+
+    This test should only raise an InferenceError and no AttributeError.
+    """
+    with pytest.raises(InferenceError):
+        node = astroid.extract_node(
+            """
+        class MyClass:
+            def some_func(self):
+                return lambda: 42
+
+            def __len__(self):
+                return len(self.some_func())
+
+        len(MyClass()) #@
         """
         )
         assert isinstance(node, nodes.NodeNG)

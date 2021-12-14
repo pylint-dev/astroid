@@ -9,9 +9,9 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
@@ -197,7 +197,7 @@ def deprecate_default_argument_values(
                     )
                 ):
                     warnings.warn(
-                        f"'{arg}' will be a required attribute for "
+                        f"'{arg}' will be a required argument for "
                         f"'{args[0].__class__.__qualname__}.{func.__name__}' in astroid {astroid_version} "
                         f"('{arg}' should be of type: '{type_annotation}')",
                         DeprecationWarning,
