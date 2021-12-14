@@ -116,7 +116,9 @@ class TreeRebuilder:
                 ):
                     doc_node = self.visit(node.body[0], node)
                     node.body = node.body[1:]
-                    if not PY38_PLUS and doc_node.value.col_offset == -1:
+                    # The ast parser of python < 3.8 sets col_offset of multi-line strings to -1
+                    # as it is unable to determine the value correctly. We reset this to None.
+                    if doc_node.value.col_offset == -1:
                         doc_node.value.col_offset = None
                     return doc_node.value.value, doc_node.value
         except IndexError:
