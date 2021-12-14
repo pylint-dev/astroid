@@ -88,7 +88,9 @@ if os.name == "nt":
     try:
         # real_prefix is defined when running inside virtual environments,
         # created with the **virtualenv** library.
-        STD_LIB_DIRS.add(os.path.join(sys.real_prefix, "dlls"))
+        # Deprecated in virtualenv==16.7.9
+        # See: https://github.com/pypa/virtualenv/issues/1622
+        STD_LIB_DIRS.add(os.path.join(sys.real_prefix, "dlls"))  # type: ignore[attr-defined]
     except AttributeError:
         # sys.base_exec_prefix is always defined, but in a virtual environment
         # created with the stdlib **venv** module, it points to the original
@@ -120,10 +122,12 @@ if platform.python_implementation() == "PyPy":
         pass
     del _root
 if os.name == "posix":
-    # Need the real prefix is we're under a virtualenv, otherwise
+    # Need the real prefix if we're in a virtualenv, otherwise
     # the usual one will do.
+    # Deprecated in virtualenv==16.7.9
+    # See: https://github.com/pypa/virtualenv/issues/1622
     try:
-        prefix = sys.real_prefix
+        prefix = sys.real_prefix  # type: ignore[attr-defined]
     except AttributeError:
         prefix = sys.prefix
 
