@@ -297,14 +297,15 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
             foo = 1
         """
         module = builder.parse(data, __name__)
+        assert isinstance(module.doc_node, nodes.Const)
+        assert module.doc_node.lineno == 2
+        assert module.doc_node.col_offset == 0
         if PY38_PLUS:
-            assert isinstance(module.doc_node, nodes.Const)
-            assert module.doc_node.lineno == 2
-            assert module.doc_node.col_offset == 0
             assert module.doc_node.end_lineno == 2
             assert module.doc_node.end_col_offset == 17
         else:
-            assert module.doc_node is None
+            assert module.doc_node.end_lineno is None
+            assert module.doc_node.end_col_offset is None
 
     def test_with_multiline_docstring(self) -> None:
         data = """
@@ -315,14 +316,18 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
             foo = 1
         """
         module = builder.parse(data, __name__)
+
+        assert isinstance(module.doc_node, nodes.Const)
         if PY38_PLUS:
-            assert isinstance(module.doc_node, nodes.Const)
             assert module.doc_node.lineno == 2
             assert module.doc_node.col_offset == 0
             assert module.doc_node.end_lineno == 5
             assert module.doc_node.end_col_offset == 3
         else:
-            assert module.doc_node is None
+            assert module.doc_node.lineno == 5
+            assert module.doc_node.col_offset is None
+            assert module.doc_node.end_lineno is None
+            assert module.doc_node.end_col_offset is None
 
     def test_without_docstring(self) -> None:
         data = """
@@ -782,14 +787,16 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                 bar = 1
         """
         )
+
+        assert isinstance(func.doc_node, nodes.Const)
+        assert func.doc_node.lineno == 3
+        assert func.doc_node.col_offset == 4
         if PY38_PLUS:
-            assert isinstance(func.doc_node, nodes.Const)
-            assert func.doc_node.lineno == 3
-            assert func.doc_node.col_offset == 4
             assert func.doc_node.end_lineno == 3
             assert func.doc_node.end_col_offset == 21
         else:
-            assert func.doc_node is None
+            assert func.doc_node.end_lineno is None
+            assert func.doc_node.end_col_offset is None
 
     def test_with_multiline_docstring(self) -> None:
         func = builder.extract_node(
@@ -802,14 +809,18 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                 bar = 1
         """
         )
+
+        assert isinstance(func.doc_node, nodes.Const)
         if PY38_PLUS:
-            assert isinstance(func.doc_node, nodes.Const)
             assert func.doc_node.lineno == 3
             assert func.doc_node.col_offset == 4
             assert func.doc_node.end_lineno == 6
             assert func.doc_node.end_col_offset == 7
         else:
-            assert func.doc_node is None
+            assert func.doc_node.lineno == 6
+            assert func.doc_node.col_offset is None
+            assert func.doc_node.end_lineno is None
+            assert func.doc_node.end_col_offset is None
 
     def test_without_docstring(self) -> None:
         func = builder.extract_node(
@@ -2117,14 +2128,15 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 bar = 1
         """
         )
+        assert isinstance(node.doc_node, nodes.Const)
+        assert node.doc_node.lineno == 3
+        assert node.doc_node.col_offset == 4
         if PY38_PLUS:
-            assert isinstance(node.doc_node, nodes.Const)
-            assert node.doc_node.lineno == 3
-            assert node.doc_node.col_offset == 4
             assert node.doc_node.end_lineno == 3
             assert node.doc_node.end_col_offset == 21
         else:
-            assert node.doc_node is None
+            assert node.doc_node.end_lineno is None
+            assert node.doc_node.end_col_offset is None
 
     def test_with_multiline_docstring(self) -> None:
         node = builder.extract_node(
@@ -2137,14 +2149,17 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 bar = 1
         """
         )
+        assert isinstance(node.doc_node, nodes.Const)
         if PY38_PLUS:
-            assert isinstance(node.doc_node, nodes.Const)
             assert node.doc_node.lineno == 3
             assert node.doc_node.col_offset == 4
             assert node.doc_node.end_lineno == 6
             assert node.doc_node.end_col_offset == 7
         else:
-            assert node.doc_node is None
+            assert node.doc_node.lineno == 6
+            assert node.doc_node.col_offset is None
+            assert node.doc_node.end_lineno is None
+            assert node.doc_node.end_col_offset is None
 
     def test_without_docstring(self) -> None:
         node = builder.extract_node(

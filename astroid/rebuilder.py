@@ -116,7 +116,9 @@ class TreeRebuilder:
                 ):
                     doc_node = self.visit(node.body[0], node)
                     node.body = node.body[1:]
-                    return doc_node.value, doc_node
+                    if not PY38_PLUS and doc_node.value.col_offset == -1:
+                        doc_node.value.col_offset = None
+                    return doc_node.value.value, doc_node.value
         except IndexError:
             pass  # ast built from scratch
         return None, None
@@ -1187,7 +1189,7 @@ class TreeRebuilder:
             )
         else:
             newnode = nodes.ClassDef(
-                node.name, doc, node.lineno, node.col_offset, parent, doc_node
+                node.name, doc, node.lineno, node.col_offset, parent, doc_node=doc_node
             )
         metaclass = None
         for keyword in node.keywords:
@@ -1536,7 +1538,9 @@ class TreeRebuilder:
                 doc_node=doc_node,
             )
         else:
-            newnode = cls(node.name, doc, lineno, node.col_offset, parent, doc_node)
+            newnode = cls(
+                node.name, doc, lineno, node.col_offset, parent, doc_node=doc_node
+            )
         decorators = self.visit_decorators(node, newnode)
         returns: Optional[NodeNG]
         if node.returns:
