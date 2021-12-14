@@ -119,7 +119,9 @@ def _get_dataclass_attributes(node: ClassDef, init: bool = False) -> Generator:
                 isinstance(value, Call)
                 and _looks_like_dataclass_field_call(value, check_scope=False)
                 and any(
-                    keyword.arg == "init" and not keyword.value.bool_value()
+                    keyword.arg == "init"
+                    and keyword.value
+                    and not keyword.value.bool_value()
                     for keyword in value.keywords
                 )
             ):
@@ -142,6 +144,9 @@ def _check_generate_dataclass_init(node: ClassDef) -> bool:
 
     found = None
 
+    # Since this is a dataclass it should have at least one decorator
+    assert node.decorators
+
     for decorator_attribute in node.decorators.nodes:
         if not isinstance(decorator_attribute, Call):
             continue
@@ -154,7 +159,7 @@ def _check_generate_dataclass_init(node: ClassDef) -> bool:
 
     # Check for keyword arguments of the form init=False
     return all(
-        keyword.arg != "init" or keyword.value.bool_value()
+        keyword.arg != "init" or keyword.value and keyword.value.bool_value()
         for keyword in found.keywords
     )
 
@@ -190,12 +195,12 @@ def _generate_dataclass_init(assigns: List[AnnAssign]) -> str:
             if isinstance(value, Call) and _looks_like_dataclass_field_call(
                 value, check_scope=False
             ):
-                result = _get_field_default(value)
-
-                default_type, default_node = result
+                default_type, default_node = _get_field_default(value)
                 if default_type == "default":
+                    assert default_node
                     param_str += f" = {default_node.as_string()}"
                 elif default_type == "default_factory":
+                    assert default_node
                     param_str += f" = {DEFAULT_FACTORY}"
                     assignment_str = (
                         f"self.{name} = {default_node.as_string()} "
@@ -214,7 +219,7 @@ def _generate_dataclass_init(assigns: List[AnnAssign]) -> str:
 
 
 def infer_dataclass_attribute(
-    node: Unknown, ctx: context.InferenceContext = None
+    node: Unknown, ctx: Optional[context.InferenceContext] = None
 ) -> Generator:
     """Inference tip for an Unknown node that was dynamically generated to
     represent a dataclass attribute.
@@ -247,15 +252,17 @@ def infer_dataclass_field_call(
     if not default_type:
         yield Uninferable
     elif default_type == "default":
+        assert default
         yield from default.infer(context=ctx)
     else:
+        assert default
         new_call = parse(default.as_string()).body[0].value
         new_call.parent = field_call.parent
         yield from new_call.infer(context=ctx)
 
 
 def _looks_like_dataclass_decorator(
-    node: NodeNG, decorator_names: FrozenSet[str] = DATACLASSES_DECORATORS
+    node: Optional[NodeNG], decorator_names: FrozenSet[str] = DATACLASSES_DECORATORS
 ) -> bool:
     """Return True if node looks like a dataclass decorator.
 
@@ -264,6 +271,10 @@ def _looks_like_dataclass_decorator(
     """
     if isinstance(node, Call):  # decorator with arguments
         node = node.func
+
+    if not node:
+        return False
+
     try:
         inferred = next(node.infer())
     except (InferenceError, StopIteration):
@@ -288,6 +299,9 @@ def _looks_like_dataclass_attribute(node: Unknown) -> bool:
     """Return True if node was dynamically generated as the child of an AnnAssign
     statement.
     """
+    if not node.parent:
+        return False
+
     parent = node.parent
     scope = parent.scope()
     return (
@@ -356,8 +370,11 @@ def _get_field_default(field_call: Call) -> Tuple[str, Optional[NodeNG]]:
     return "", None
 
 
-def _is_class_var(node: NodeNG) -> bool:
+def _is_class_var(node: Optional[NodeNG]) -> bool:
     """Return True if node is a ClassVar, with or without subscripting."""
+    if not node:
+        return False
+
     if PY39_PLUS:
         try:
             inferred = next(node.infer())
@@ -376,8 +393,11 @@ def _is_class_var(node: NodeNG) -> bool:
     )
 
 
-def _is_init_var(node: NodeNG) -> bool:
+def _is_init_var(node: Optional[NodeNG]) -> bool:
     """Return True if node is an InitVar, with or without subscripting."""
+    if not node:
+        return False
+
     try:
         inferred = next(node.infer())
     except (InferenceError, StopIteration):
@@ -399,7 +419,7 @@ _INFERABLE_TYPING_TYPES = frozenset(
 
 
 def _infer_instance_from_annotation(
-    node: NodeNG, ctx: context.InferenceContext = None
+    node: NodeNG, ctx: Optional[context.InferenceContext] = None
 ) -> Generator:
     """Infer an instance corresponding to the type annotation represented by node.
 
