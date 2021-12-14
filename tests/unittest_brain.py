@@ -1238,10 +1238,7 @@ def streams_are_fine():
 
     PY3 only
     """
-    for stream in (sys.stdout, sys.stderr, sys.stdin):
-        if not isinstance(stream, io.IOBase):
-            return False
-    return True
+    return all(isinstance(s, io.IOBase) for s in (sys.stdout, sys.stderr, sys.stdin))
 
 
 class IOBrainTest(unittest.TestCase):
@@ -2389,7 +2386,7 @@ class TestIsinstanceInference:
         )
 
     def test_isinstance_str_true(self) -> None:
-        """Make sure isinstance can check bultin str types"""
+        """Make sure isinstance can check builtin str types"""
         assert _get_result("isinstance('a', str)") == "True"
 
     def test_isinstance_str_false(self) -> None:
@@ -2850,7 +2847,7 @@ def test_infer_dict_from_keys() -> None:
         assert isinstance(inferred, astroid.Dict)
         assert inferred.items == []
 
-    # Test inferrable values
+    # Test inferable values
 
     # from a dictionary's keys
     from_dict = astroid.extract_node(

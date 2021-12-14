@@ -1726,12 +1726,12 @@ class TestPatternMatching:
 
         assert isinstance(case2.pattern, nodes.MatchSingleton)
         assert case2.pattern.value is None
-        assert list(case2.pattern.get_children()) == []
+        assert not list(case2.pattern.get_children())
 
         assert isinstance(case3.pattern, nodes.MatchAs)
         assert case3.pattern.name is None
         assert case3.pattern.pattern is None
-        assert list(case3.pattern.get_children()) == []
+        assert not list(case3.pattern.get_children())
 
     @staticmethod
     def test_match_sequence():

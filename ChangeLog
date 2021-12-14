@@ -18,6 +18,12 @@ Release date: TBA
 
   Closes #1260
 
+* Fix typing and update explanation for ``Arguments.args`` being ``None``.
+
+* Fix crash if a variable named ``type`` is subscripted in a generator expression.
+
+  Closes PyCQA/pylint#5461
+
 
 What's New in astroid 2.9.0?
 ============================
@@ -884,7 +890,7 @@ Release date: 2020-04-27
 
 * Added transform for ``scipy.gaussian``
 
-* Add suport for inferring properties.
+* Add support for inferring properties.
 
 * Added a brain for ``responses``
 
@@ -2731,7 +2737,7 @@ Release date: 2009-12-18
       bad inference of function call)
 
     * fix #18953: inference fails with augmented assignment (special case for augmented
-      assignement in infer_ass method)
+      assignment in infer_ass method)
 
     * fix #13944: false positive for class/instance attributes (Instance.getattr
       should return assign nodes on instance classes as well as instance.

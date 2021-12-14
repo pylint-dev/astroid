@@ -123,7 +123,7 @@ class ProtocolTests(unittest.TestCase):
     def test_assigned_stmts_starred_yes(self) -> None:
         # Not something iterable and known
         self._helper_starred_expected("a, *b = range(3) #@", Uninferable)
-        # Not something inferrable
+        # Not something inferable
         self._helper_starred_expected("a, *b = balou() #@", Uninferable)
         # In function, unknown.
         self._helper_starred_expected(

@@ -32,7 +32,7 @@ import collections
 import itertools
 import operator as operator_mod
 import sys
-from typing import Generator, Optional
+from typing import Any, Generator, List, Optional, Union
 
 from astroid import arguments, bases, decorators, helpers, nodes, util
 from astroid.const import Context
@@ -274,7 +274,12 @@ def _resolve_looppart(parts, assign_path, context):
 
 
 @decorators.raise_if_nothing_inferred
-def for_assigned_stmts(self, node=None, context=None, assign_path=None):
+def for_assigned_stmts(
+    self: Union[nodes.For, nodes.Comprehension],
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: Optional[InferenceContext] = None,
+    assign_path: Optional[List[int]] = None,
+) -> Any:
     if isinstance(self, nodes.AsyncFor) or getattr(self, "is_async", False):
         # Skip inferring of async code for now
         return dict(node=self, unknown=node, assign_path=assign_path, context=context)
@@ -291,7 +296,12 @@ nodes.For.assigned_stmts = for_assigned_stmts
 nodes.Comprehension.assigned_stmts = for_assigned_stmts
 
 
-def sequence_assigned_stmts(self, node=None, context=None, assign_path=None):
+def sequence_assigned_stmts(
+    self: Union[nodes.Tuple, nodes.List],
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: Optional[InferenceContext] = None,
+    assign_path: Optional[List[int]] = None,
+) -> Any:
     if assign_path is None:
         assign_path = []
     try:
@@ -314,7 +324,12 @@ nodes.Tuple.assigned_stmts = sequence_assigned_stmts
 nodes.List.assigned_stmts = sequence_assigned_stmts
 
 
-def assend_assigned_stmts(self, node=None, context=None, assign_path=None):
+def assend_assigned_stmts(
+    self: Union[nodes.AssignName, nodes.AssignAttr],
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: Optional[InferenceContext] = None,
+    assign_path: Optional[List[int]] = None,
+) -> Any:
     return self.parent.assigned_stmts(node=self, context=context)
 
 
@@ -381,7 +396,12 @@ def _arguments_infer_argname(self, name, context):
         yield util.Uninferable
 
 
-def arguments_assigned_stmts(self, node=None, context=None, assign_path=None):
+def arguments_assigned_stmts(
+    self: nodes.Arguments,
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: Optional[InferenceContext] = None,
+    assign_path: Optional[List[int]] = None,
+) -> Any:
     if context.callcontext:
         callee = context.callcontext.callee
         while hasattr(callee, "_proxied"):
@@ -406,7 +426,12 @@ nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 
 
 @decorators.raise_if_nothing_inferred
-def assign_assigned_stmts(self, node=None, context=None, assign_path=None):
+def assign_assigned_stmts(
+    self: Union[nodes.AugAssign, nodes.Assign, nodes.AnnAssign],
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: Optional[InferenceContext] = None,
+    assign_path: Optional[List[int]] = None,
+) -> Any:
     if not assign_path:
         yield self.value
         return None
@@ -417,7 +442,12 @@ def assign_assigned_stmts(self, node=None, context=None, assign_path=None):
     return dict(node=self, unknown=node, assign_path=assign_path, context=context)
 
 
-def assign_annassigned_stmts(self, node=None, context=None, assign_path=None):
+def assign_annassigned_stmts(
+    self: nodes.AnnAssign,
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: Optional[InferenceContext] = None,
+    assign_path: Optional[List[int]] = None,
+) -> Any:
     for inferred in assign_assigned_stmts(self, node, context, assign_path):
         if inferred is None:
             yield util.Uninferable
@@ -471,7 +501,12 @@ def _resolve_assignment_parts(parts, assign_path, context):
 
 
 @decorators.raise_if_nothing_inferred
-def excepthandler_assigned_stmts(self, node=None, context=None, assign_path=None):
+def excepthandler_assigned_stmts(
+    self: nodes.ExceptHandler,
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: Optional[InferenceContext] = None,
+    assign_path: Optional[List[int]] = None,
+) -> Any:
     for assigned in node_classes.unpack_infer(self.type):
         if isinstance(assigned, nodes.ClassDef):
             assigned = objects.ExceptionInstance(assigned)
@@ -522,7 +557,12 @@ def _infer_context_manager(self, mgr, context):
 
 
 @decorators.raise_if_nothing_inferred
-def with_assigned_stmts(self, node=None, context=None, assign_path=None):
+def with_assigned_stmts(
+    self: nodes.With,
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: Optional[InferenceContext] = None,
+    assign_path: Optional[List[int]] = None,
+) -> Any:
     """Infer names and other nodes from a *with* statement.
 
     This enables only inference for name binding in a *with* statement.
@@ -595,7 +635,12 @@ nodes.With.assigned_stmts = with_assigned_stmts
 
 
 @decorators.raise_if_nothing_inferred
-def named_expr_assigned_stmts(self, node, context=None, assign_path=None):
+def named_expr_assigned_stmts(
+    self: nodes.NamedExpr,
+    node: node_classes.AssignedStmtsPossibleNode,
+    context: Optional[InferenceContext] = None,
+    assign_path: Optional[List[int]] = None,
+) -> Any:
     """Infer names and other nodes from an assignment expression"""
     if self.target == node:
         yield from self.value.infer(context=context)
@@ -612,7 +657,12 @@ nodes.NamedExpr.assigned_stmts = named_expr_assigned_stmts
 
 
 @decorators.yes_if_nothing_inferred
-def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
+def starred_assigned_stmts(
+    self: nodes.Starred,
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: Optional[InferenceContext] = None,
+    assign_path: Optional[List[int]] = None,
+) -> Any:
     """
     Arguments:
         self: nodes.Starred
