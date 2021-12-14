@@ -105,10 +105,7 @@ class TreeRebuilder:
         self._module = self._parser_module.module
 
     def _get_doc(self, node: T_Doc) -> Tuple[Optional[str], Optional[nodes.Const]]:
-        """Returns the docstring of a node both in str and nodes.Const.
-
-        The constant will only be returned in python 3.8+.
-        """
+        """Returns the docstring of a node both in str and nodes.Const."""
         try:
             if node.body and isinstance(node.body[0], self._module.Expr):
                 first_value = node.body[0].value
@@ -117,20 +114,9 @@ class TreeRebuilder:
                     and isinstance(first_value, self._module.Constant)
                     and isinstance(first_value.value, str)
                 ):
-                    doc = first_value.value if PY38_PLUS else first_value.s
+                    doc_node = self.visit(node.body[0], node)
                     node.body = node.body[1:]
-                    if PY38_PLUS:
-                        doc_node = nodes.Const(
-                            value=doc,
-                            lineno=first_value.lineno,
-                            col_offset=first_value.col_offset,
-                            parent=node,
-                            end_lineno=first_value.end_lineno,
-                            end_col_offset=first_value.end_col_offset,
-                        )
-                    else:
-                        doc_node = None
-                    return doc, doc_node
+                    return doc_node.value, doc_node
         except IndexError:
             pass  # ast built from scratch
         return None, None
