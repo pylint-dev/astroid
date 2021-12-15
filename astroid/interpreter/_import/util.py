@@ -5,7 +5,7 @@
 try:
     import pkg_resources
 except ImportError:
-    pkg_resources = None
+    pkg_resources = None  # type: ignore[assignment]
 
 
 def is_namespace(modname):
