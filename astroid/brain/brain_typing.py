@@ -52,7 +52,7 @@ class Meta(type):
 class {0}(metaclass=Meta):
     pass
 """
-TYPING_MEMBERS = set(typing.__all__)
+TYPING_MEMBERS = set(getattr(typing, "__all__", []))
 
 TYPING_ALIAS = frozenset(
     (
@@ -144,7 +144,7 @@ def _looks_like_typing_subscript(node):
 
 
 def infer_typing_attr(
-    node: Subscript, ctx: context.InferenceContext = None
+    node: Subscript, ctx: typing.Optional[context.InferenceContext] = None
 ) -> typing.Iterator[ClassDef]:
     """Infer a typing.X[...] subscript"""
     try:
@@ -179,7 +179,7 @@ def infer_typing_attr(
         ):
             # node.parent.slots is evaluated and cached before the inference tip
             # is first applied. Remove the last result to allow a recalculation of slots
-            cache = node.parent.__cache
+            cache = node.parent.__cache  # type: ignore[attr-defined] # Unrecognized getattr
             if cache.get(node.parent.slots) is not None:
                 del cache[node.parent.slots]
         return iter([value])
@@ -196,7 +196,7 @@ def _looks_like_typedDict(  # pylint: disable=invalid-name
 
 
 def infer_old_typedDict(  # pylint: disable=invalid-name
-    node: ClassDef, ctx: context.InferenceContext = None
+    node: ClassDef, ctx: typing.Optional[context.InferenceContext] = None
 ) -> typing.Iterator[ClassDef]:
     func_to_add = extract_node("dict")
     node.locals["__call__"] = [func_to_add]
@@ -204,7 +204,7 @@ def infer_old_typedDict(  # pylint: disable=invalid-name
 
 
 def infer_typedDict(  # pylint: disable=invalid-name
-    node: FunctionDef, ctx: context.InferenceContext = None
+    node: FunctionDef, ctx: typing.Optional[context.InferenceContext] = None
 ) -> typing.Iterator[ClassDef]:
     """Replace TypedDict FunctionDef with ClassDef."""
     class_def = ClassDef(
@@ -264,7 +264,7 @@ def _forbid_class_getitem_access(node: ClassDef) -> None:
 
 
 def infer_typing_alias(
-    node: Call, ctx: context.InferenceContext = None
+    node: Call, ctx: typing.Optional[context.InferenceContext] = None
 ) -> typing.Iterator[ClassDef]:
     """
     Infers the call to _alias function
@@ -352,7 +352,7 @@ def _looks_like_special_alias(node: Call) -> bool:
 
 
 def infer_special_alias(
-    node: Call, ctx: context.InferenceContext = None
+    node: Call, ctx: typing.Optional[context.InferenceContext] = None
 ) -> typing.Iterator[ClassDef]:
     """Infer call to tuple alias as new subscriptable class typing.Tuple."""
     if not (
@@ -387,7 +387,7 @@ def _looks_like_typing_cast(node: Call) -> bool:
 
 
 def infer_typing_cast(
-    node: Call, ctx: context.InferenceContext = None
+    node: Call, ctx: typing.Optional[context.InferenceContext] = None
 ) -> typing.Iterator[NodeNG]:
     """Infer call to cast() returning same type as casted-from var"""
     if not isinstance(node.func, (Name, Attribute)):
