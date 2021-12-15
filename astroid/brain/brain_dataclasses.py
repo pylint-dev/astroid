@@ -262,7 +262,7 @@ def infer_dataclass_field_call(
 
 
 def _looks_like_dataclass_decorator(
-    node: Optional[NodeNG], decorator_names: FrozenSet[str] = DATACLASSES_DECORATORS
+    node: NodeNG, decorator_names: FrozenSet[str] = DATACLASSES_DECORATORS
 ) -> bool:
     """Return True if node looks like a dataclass decorator.
 
@@ -271,9 +271,6 @@ def _looks_like_dataclass_decorator(
     """
     if isinstance(node, Call):  # decorator with arguments
         node = node.func
-
-    if not node:
-        return False
 
     try:
         inferred = next(node.infer())
@@ -299,10 +296,10 @@ def _looks_like_dataclass_attribute(node: Unknown) -> bool:
     """Return True if node was dynamically generated as the child of an AnnAssign
     statement.
     """
-    if not node.parent:
+    parent = node.parent
+    if not parent:
         return False
 
-    parent = node.parent
     scope = parent.scope()
     return (
         isinstance(parent, AnnAssign)
