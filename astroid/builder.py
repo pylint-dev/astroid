@@ -25,7 +25,7 @@ import os
 import textwrap
 import types
 from tokenize import detect_encoding
-from typing import List, Union
+from typing import List, Optional, Union
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import get_parser_module
@@ -82,7 +82,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         self._apply_transforms = apply_transforms
 
     def module_build(
-        self, module: types.ModuleType, modname: str = None
+        self, module: types.ModuleType, modname: Optional[str] = None
     ) -> nodes.Module:
         """Build an astroid from a living module instance."""
         node = None

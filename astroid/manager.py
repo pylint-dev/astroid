@@ -32,7 +32,7 @@ from various source and using a cache of built modules)
 import os
 import types
 import zipimport
-from typing import TYPE_CHECKING, ClassVar, List
+from typing import TYPE_CHECKING, ClassVar, List, Optional
 
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec
@@ -268,7 +268,7 @@ class AstroidManager:
             raise value.with_traceback(None)
         return value
 
-    def ast_from_module(self, module: types.ModuleType, modname: str = None):
+    def ast_from_module(self, module: types.ModuleType, modname: Optional[str] = None):
         """given an imported module, return the astroid object"""
         modname = modname or module.__name__
         if modname in self.astroid_cache:

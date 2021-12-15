@@ -106,7 +106,7 @@ def attach_import_node(node, modname, membername):
     _attach_local_node(node, from_node, membername)
 
 
-def build_module(name: str, doc: str = None) -> nodes.Module:
+def build_module(name: str, doc: Optional[str] = None) -> nodes.Module:
     """create and initialize an astroid Module node"""
     node = nodes.Module(name, doc, pure_python=False)
     node.package = False
@@ -304,7 +304,10 @@ class InspectBuilder:
         self._module = None
 
     def inspect_build(
-        self, module: types.ModuleType, modname: str = None, path: str = None
+        self,
+        module: types.ModuleType,
+        modname: Optional[str] = None,
+        path: Optional[str] = None,
     ) -> nodes.Module:
         """build astroid from a living module (i.e. using inspect)
         this is used when there is no python source code available (either
