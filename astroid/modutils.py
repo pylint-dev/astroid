@@ -159,10 +159,10 @@ class NoSourceFile(Exception):
 
 def _normalize_path(path: str) -> str:
     """Resolve symlinks in path and convert to absolute path.
-    
+
     Note that environment variables and ~ in the path need to be expanded in
     advance.
-    
+
     This can be cached by using _cache_normalize_path.
     """
     return os.path.normcase(os.path.realpath(path))
