@@ -49,7 +49,7 @@ import sys
 import types
 from distutils.errors import DistutilsPlatformError  # pylint: disable=import-error
 from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
-from typing import Set
+from typing import Dict, Set
 
 from astroid.interpreter._import import spec, util
 
@@ -159,8 +159,11 @@ class NoSourceFile(Exception):
 
 def _normalize_path(path: str) -> str:
     """Resolve symlinks in path and convert to absolute path.
+
     Note that environment variables and ~ in the path need to be expanded in
     advance.
+
+    This can be cached by using _cache_normalize_path.
     """
     return os.path.normcase(os.path.realpath(path))
 
@@ -186,7 +189,7 @@ def _handle_blacklist(blacklist, dirnames, filenames):
             filenames.remove(norecurs)
 
 
-_NORM_PATH_CACHE = {}
+_NORM_PATH_CACHE: Dict[str, str] = {}
 
 
 def _cache_normalize_path(path: str) -> str:
