@@ -87,7 +87,15 @@ class AstroidBuilder(raw_building.InspectBuilder):
         """Build an astroid from a living module instance."""
         node = None
         path = getattr(module, "__file__", None)
-        if path is not None:
+        loader = getattr(module, "__loader__", None)
+        # Prefer the loader to get the source rather than assuming we have a
+        # filesystem to read the source file from ourselves.
+        if loader:
+            modname = modname or module.__name__
+            source = loader.get_source(modname)
+            if source:
+                node = self.string_build(source, modname, path=path)
+        if node is None and path is not None:
             path_, ext = os.path.splitext(modutils._path_from_filename(path))
             if ext in {".py", ".pyc", ".pyo"} and os.path.exists(path_ + ".py"):
                 node = self.file_build(path_ + ".py", modname)
