@@ -33,8 +33,7 @@ if TYPE_CHECKING:
     from astroid import nodes
 
     if sys.version_info >= (3, 6, 2):
-        # To be fixed with https://github.com/PyCQA/pylint/pull/5316
-        from typing import NoReturn  # pylint: disable=unused-import
+        from typing import NoReturn
     else:
         from typing_extensions import NoReturn
 
@@ -445,7 +444,7 @@ class NodeNG:
         We need this method since not all nodes have :attr:`lineno` set.
         """
         line = self.lineno
-        _node: Optional[NodeNG] = self  # pylint: disable = used-before-assignment
+        _node: Optional[NodeNG] = self
         try:
             while line is None:
                 _node = next(_node.get_children())
