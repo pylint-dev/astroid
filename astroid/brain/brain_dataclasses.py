@@ -271,7 +271,6 @@ def _looks_like_dataclass_decorator(
     """
     if isinstance(node, Call):  # decorator with arguments
         node = node.func
-
     try:
         inferred = next(node.infer())
     except (InferenceError, StopIteration):
