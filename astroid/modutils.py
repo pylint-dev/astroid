@@ -157,12 +157,12 @@ class NoSourceFile(Exception):
     """
 
 
-def _normalize_path(path):
-    return os.path.normcase(os.path.abspath(path))
-
-
-def _canonicalize_path(path):
-    return os.path.realpath(os.path.expanduser(path))
+def _normalize_path(path: str) -> str:
+    """Resolve symlinks in path and convert to absolute path.
+    Note that environment variables and ~ in the path need to be expanded in
+    advance.
+    """
+    return os.path.normcase(os.path.realpath(path))
 
 
 def _path_from_filename(filename, is_jython=IS_JYTHON):
@@ -189,8 +189,8 @@ def _handle_blacklist(blacklist, dirnames, filenames):
 _NORM_PATH_CACHE = {}
 
 
-def _cache_normalize_path(path):
-    """abspath with caching"""
+def _cache_normalize_path(path: str) -> str:
+    """Normalize path with caching."""
     # _module_file calls abspath on every path in sys.path every time it's
     # called; on a larger codebase this easily adds up to half a second just
     # assembling path components. This cache alleviates that.
@@ -302,9 +302,8 @@ def _get_relative_base_path(filename, path_to_check):
 def modpath_from_file_with_callback(filename, path=None, is_package_cb=None):
     filename = os.path.expanduser(_path_from_filename(filename))
     for pathname in itertools.chain(
-        path or [], map(_canonicalize_path, sys.path), sys.path
+        path or [], map(_cache_normalize_path, sys.path), sys.path
     ):
-        pathname = _cache_normalize_path(pathname)
         if not pathname:
             continue
         modpath = _get_relative_base_path(filename, pathname)
