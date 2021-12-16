@@ -24,6 +24,9 @@ Release date: TBA
 
   Closes #1260
 
+* Fix ``Module`` nodes not having a ``col_offset``, ``end_lineno``, and ``end_col_offset``
+  attributes.
+
 * Fix typing and update explanation for ``Arguments.args`` being ``None``.
 
 * Fix crash if a variable named ``type`` is subscripted in a generator expression.
