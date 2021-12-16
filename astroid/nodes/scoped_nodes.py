@@ -389,7 +389,7 @@ class Module(LocalsDictNodeNG):
 
     :type: int or None
     """
-    lineno: Literal["0"] = 0
+    lineno: Literal[0] = 0
     """The line that this node appears on in the source code.
     """
 
