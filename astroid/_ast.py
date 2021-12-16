@@ -7,12 +7,12 @@ from typing import Dict, Optional
 
 from astroid.const import PY38_PLUS, Context
 
-if PY38_PLUS:
+if sys.version_info >= (3, 8):
     # On Python 3.8, typed_ast was merged back into `ast`
     _ast_py3: Optional[types.ModuleType] = ast
 else:
     try:
-        import typed_ast.ast3 as _ast_py3  # type: ignore[no-redef]
+        import typed_ast.ast3 as _ast_py3
     except ImportError:
         _ast_py3 = None
 
