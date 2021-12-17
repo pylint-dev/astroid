@@ -10,7 +10,7 @@ import typing
 from collections.abc import Iterator
 from functools import partial
 
-from astroid import context, extract_node, inference_tip
+from astroid import context, extract_node, inference_tip, nodes
 from astroid.builder import _extract_single_node
 from astroid.const import PY38_PLUS, PY39_PLUS
 from astroid.exceptions import (
@@ -35,8 +35,6 @@ from astroid.nodes.scoped_nodes import ClassDef, FunctionDef
 from astroid.util import Uninferable
 
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
-TYPING_TYPEVARS = {"TypeVar", "NewType"}
-TYPING_TYPEVARS_QUALIFIED = {"typing.TypeVar", "typing.NewType"}
 TYPING_TYPE_TEMPLATE = """
 class Meta(type):
     def __getitem__(self, item):
@@ -48,6 +46,13 @@ class Meta(type):
 
 class {0}(metaclass=Meta):
     pass
+"""
+# PEP484 suggests NewType is equivalent to this for typing purposes
+# https://www.python.org/dev/peps/pep-0484/#newtype-helper-function
+TYPING_NEWTYPE_TEMPLATE = """
+class {derived}({base}):
+    def __init__(self, val: {base}) -> None:
+        ...
 """
 TYPING_MEMBERS = set(getattr(typing, "__all__", []))
 
@@ -103,24 +108,33 @@ def __class_getitem__(cls, item):
 """
 
 
-def looks_like_typing_typevar_or_newtype(node):
+def looks_like_typing_typevar(node: nodes.Call) -> bool:
     func = node.func
     if isinstance(func, Attribute):
-        return func.attrname in TYPING_TYPEVARS
+        return func.attrname == "TypeVar"
     if isinstance(func, Name):
-        return func.name in TYPING_TYPEVARS
+        return func.name == "TypeVar"
     return False
 
 
-def infer_typing_typevar_or_newtype(node, context_itton=None):
-    """Infer a typing.TypeVar(...) or typing.NewType(...) call"""
+def looks_like_typing_newtype(node: nodes.Call) -> bool:
+    func = node.func
+    if isinstance(func, Attribute):
+        return func.attrname == "NewType"
+    if isinstance(func, Name):
+        return func.name == "NewType"
+    return False
+
+
+def infer_typing_typevar(
+    node: nodes.Call, ctx: context.InferenceContext | None = None
+) -> Iterator[nodes.ClassDef]:
+    """Infer a typing.TypeVar(...) call"""
     try:
-        func = next(node.func.infer(context=context_itton))
+        next(node.func.infer(context=ctx))
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
-    if func.qname() not in TYPING_TYPEVARS_QUALIFIED:
-        raise UseInferenceDefault
     if not node.args:
         raise UseInferenceDefault
     # Cannot infer from a dynamic class name (f-string)
@@ -129,7 +143,53 @@ def infer_typing_typevar_or_newtype(node, context_itton=None):
 
     typename = node.args[0].as_string().strip("'")
     node = extract_node(TYPING_TYPE_TEMPLATE.format(typename))
-    return node.infer(context=context_itton)
+    return node.infer(context=ctx)
+
+
+def infer_typing_newtype(
+    node: nodes.Call, ctx: context.InferenceContext | None = None
+) -> Iterator[nodes.ClassDef]:
+    """Infer a typing.NewType(...) call"""
+    try:
+        next(node.func.infer(context=ctx))
+    except (InferenceError, StopIteration) as exc:
+        raise UseInferenceDefault from exc
+
+    if len(node.args) != 2:
+        raise UseInferenceDefault
+
+    # Cannot infer from a dynamic class name (f-string)
+    if isinstance(node.args[0], JoinedStr) or isinstance(node.args[1], JoinedStr):
+        raise UseInferenceDefault
+
+    derived, base = node.args
+    derived_name = derived.as_string().strip("'")
+    base_name = base.as_string().strip("'")
+
+    new_node: ClassDef = extract_node(
+        TYPING_NEWTYPE_TEMPLATE.format(derived=derived_name, base=base_name)
+    )
+    new_node.parent = node.parent
+
+    # Base type arg is a normal reference, so no need to do special lookups
+    if not isinstance(base, nodes.Const):
+        new_node.postinit(
+            bases=[base], body=new_node.body, decorators=new_node.decorators
+        )
+
+    # If the base type is given as a string (e.g. for a forward reference),
+    # make a naive attempt to find the corresponding node.
+    # Note that this will not work with imported types.
+    if isinstance(base, nodes.Const) and isinstance(base.value, str):
+        _, resolved_base = node.frame().lookup(base_name)
+        if resolved_base:
+            new_node.postinit(
+                bases=[resolved_base[0]],
+                body=new_node.body,
+                decorators=new_node.decorators,
+            )
+
+    return new_node.infer(context=ctx)
 
 
 def _looks_like_typing_subscript(node):
@@ -403,8 +463,13 @@ def infer_typing_cast(
 
 AstroidManager().register_transform(
     Call,
-    inference_tip(infer_typing_typevar_or_newtype),
-    looks_like_typing_typevar_or_newtype,
+    inference_tip(infer_typing_typevar),
+    looks_like_typing_typevar,
+)
+AstroidManager().register_transform(
+    Call,
+    inference_tip(infer_typing_newtype),
+    looks_like_typing_newtype,
 )
 AstroidManager().register_transform(
     Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript

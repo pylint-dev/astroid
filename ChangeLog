@@ -55,6 +55,11 @@ Release date: TBA
 * Fix test for Python ``3.11``. In some instances ``err.__traceback__`` will
   be uninferable now.
 
+* Treat ``typing.NewType()`` values as normal subclasses.
+
+  Closes PyCQA/pylint#2296
+  Closes PyCQA/pylint#3162
+
 What's New in astroid 2.11.6?
 =============================
 Release date: TBA
