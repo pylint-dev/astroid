@@ -68,7 +68,7 @@ def dataclass_transform(node: ClassDef) -> None:
         return
 
     try:
-        reversed_mro = reversed(node.mro())
+        reversed_mro = list(reversed(node.mro()))
     except MroError:
         reversed_mro = [node]
 
@@ -208,9 +208,9 @@ def _generate_dataclass_init(assigns: List[AnnAssign]) -> str:
         if not init_var:
             assignments.append(assignment_str)
 
-    params = ", ".join(["self"] + params)
-    assignments = "\n    ".join(assignments) if assignments else "pass"
-    return f"def __init__({params}) -> None:\n    {assignments}"
+    params_string = ", ".join(["self"] + params)
+    assignments_string = "\n    ".join(assignments) if assignments else "pass"
+    return f"def __init__({params_string}) -> None:\n    {assignments_string}"
 
 
 def infer_dataclass_attribute(
@@ -304,10 +304,11 @@ def _looks_like_dataclass_field_call(node: Call, check_scope: bool = True) -> bo
     If check_scope is False, skips checking the statement and body.
     """
     if check_scope:
-        stmt = node.statement()
+        stmt = node.statement(future=True)
         scope = stmt.scope()
         if not (
             isinstance(stmt, AnnAssign)
+            and stmt.value is not None
             and isinstance(scope, ClassDef)
             and is_decorated_with_dataclass(scope)
         ):

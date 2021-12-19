@@ -11,6 +11,7 @@
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
@@ -291,6 +292,7 @@ def _precache_zipimporters(path=None):
     req_paths = tuple(path or sys.path)
     cached_paths = tuple(pic)
     new_paths = _cached_set_diff(req_paths, cached_paths)
+    # pylint: disable=no-member
     for entry_path in new_paths:
         try:
             pic[entry_path] = zipimport.zipimporter(entry_path)

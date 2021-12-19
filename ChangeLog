@@ -2,8 +2,8 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.9.0?
-============================
+What's New in astroid 2.10.0?
+=============================
 Release date: TBA
 
 * Support "is None" constraints from if statements during inference.
@@ -16,9 +16,139 @@ Release date: TBA
   Closes PyCQA/pylint#2880
 
 
-What's New in astroid 2.8.1?
+What's New in astroid 2.9.1?
 ============================
 Release date: TBA
+
+* Prefer the module loader get_source() method in AstroidBuilder's
+  module_build() when possible to avoid assumptions about source
+  code being available on a filesystem.  Otherwise the source cannot
+  be found and application behavior changes when running within an
+  embedded hermetic interpreter environment (pyoxidizer, etc.).
+
+* Require Python 3.6.2 to use astroid.
+
+* Fix ``deque.insert()`` signature in ``collections`` brain.
+
+  Closes #1260
+
+* Fix ``Module`` nodes not having a ``col_offset``, ``end_lineno``, and ``end_col_offset``
+  attributes.
+
+* Fix typing and update explanation for ``Arguments.args`` being ``None``.
+
+* Fix crash if a variable named ``type`` is subscripted in a generator expression.
+
+  Closes PyCQA/pylint#5461
+
+
+What's New in astroid 2.9.0?
+============================
+Release date: 2021-11-21
+
+* Add ``end_lineno`` and ``end_col_offset`` attributes to astroid nodes.
+
+* Always treat ``__class_getitem__`` as a classmethod.
+
+* Add missing ``as_string`` visitor method for ``Unknown`` node.
+
+  Closes #1264
+
+
+What's New in astroid 2.8.6?
+============================
+Release date: 2021-11-21
+
+* Fix crash on inference of subclasses created from ``Class().__subclasses__``
+
+  Closes PyCQA/pylint#4982
+
+* Fix bug with Python 3.7.0 / 3.7.1 and ``typing.NoReturn``.
+
+  Closes #1239
+
+* Resolve symlinks in the import path
+  Fixes inference error when the import path includes symlinks (e.g. Python
+  installed on macOS via Homebrew).
+
+  Closes #823
+  Closes PyCQA/pylint#3499
+  Closes PyCQA/pylint#4302
+  Closes PyCQA/pylint#4798
+  Closes PyCQA/pylint#5081
+
+
+What's New in astroid 2.8.5?
+============================
+Release date: 2021-11-12
+
+* Use more permissive versions for the ``typed-ast`` dependency (<2.0 instead of <1.5)
+
+  Closes #1237
+
+* Fix crash on inference of ``__len__``.
+
+  Closes PyCQA/pylint#5244
+
+* Added missing ``kind`` (for ``Const``) and ``conversion`` (for ``FormattedValue``) fields to repr.
+
+* Fix crash with assignment expressions, nested if expressions and filtering of statements
+
+  Closes PyCQA/pylint#5178
+
+* Fix incorrect filtering of assignment expressions statements
+
+
+What's New in astroid 2.8.4?
+============================
+Release date: 2021-10-25
+
+* Fix the ``scope()`` and ``frame()`` methods of ``NamedExpr`` nodes.
+  When these nodes occur in ``Arguments``, ``Keyword``  or ``Comprehension`` nodes these
+  methods now correctly point to the outer-scope of the ``FunctionDef``,
+  ``ClassDef``, or ``Comprehension``.
+
+* Fix the ``set_local`` function for ``NamedExpr`` nodes.
+  When these nodes occur in ``Arguments``, ``Keyword``, or ``Comprehension`` nodes these
+  nodes are now correctly added to the locals of the ``FunctionDef``,
+  ``ClassDef``, or ``Comprehension``.
+
+
+What's New in astroid 2.8.3?
+============================
+Release date: 2021-10-17
+
+* Add support for wrapt 1.13
+
+* Fixes handling of nested partial functions
+
+  Closes PyCQA/pylint#2462
+  Closes #1208
+
+* Fix regression with the import resolver
+
+  Closes PyCQA/pylint#5131
+
+* Fix crash with invalid dataclass field call
+
+  Closes PyCQA/pylint#5153
+
+
+What's New in astroid 2.8.2?
+============================
+Release date: 2021-10-07
+
+Same content than 2.8.2-dev0 / 2.8.1, released in order to fix a
+mistake when creating the tag.
+
+
+What's New in astroid 2.8.1?
+============================
+Release date: 2021-10-06
+
+* Adds support of type hints inside numpy's brains.
+
+  Closes PyCQA/pylint#4326
 
 * Enable inference of dataclass import from pydantic.dataclasses.
   This allows the dataclasses brain to recognize pydantic dataclasses.
@@ -33,6 +163,29 @@ Release date: TBA
 * Fix regression on Compare node inference
 
   Closes PyCQA/pylint#5048
+
+* Extended attrs brain to support the provisional APIs
+
+* Astroid does not trigger it's own deprecation warning anymore.
+
+* Improve brain for ``typing.Callable`` and ``typing.Type``.
+
+* Fix bug with importing namespace packages with relative imports
+
+  Closes PyCQA/pylint#5059
+
+* The ``is_typing_guard`` and ``is_sys_guard`` functions are deprecated and will
+  be removed in 3.0.0. They are complex meta-inference functions that are better
+  suited for pylint. Import them from ``pylint.checkers.utils`` instead
+  (requires pylint ``2.12``).
+
+* Suppress the conditional between applied brains and dynamic import authorized
+  modules. (Revert the "The transforms related to a module are applied only if this
+  module has not been explicitly authorized to be imported" of version 2.7.3)
+
+* Adds a brain to infer the ``numpy.ma.masked_where`` function.
+
+  Closes PyCQA/pylint#3342
 
 
 What's New in astroid 2.8.0?
@@ -60,7 +213,7 @@ Release date: 2021-09-14
 
 * Fixed bug in inference of dataclass field calls.
 
-    Closes PyCQA/pylint#4963
+  Closes PyCQA/pylint#4963
 
 
 What's New in astroid 2.7.3?
@@ -138,7 +291,7 @@ Release date: 2021-08-15
 * Import from ``astroid.node_classes`` and ``astroid.scoped_nodes`` has been deprecated in favor of
   ``astroid.nodes``. Only the imports from ``astroid.nodes`` will work in astroid 3.0.0.
 
-* Add support for arbitrary Enum subclass hierachies
+* Add support for arbitrary Enum subclass hierarchies
 
   Closes PyCQA/pylint#533
   Closes PyCQA/pylint#2224
@@ -614,7 +767,7 @@ Release date: 2020-06-08
 
   Close PyCQA/pylint#3519
 
-* Properly construct the arguments of infered property descriptors
+* Properly construct the arguments of inferred property descriptors
 
   Close PyCQA/pylint#3648
 
@@ -764,7 +917,7 @@ Release date: 2020-04-27
 
 * Added transform for ``scipy.gaussian``
 
-* Add suport for inferring properties.
+* Add support for inferring properties.
 
 * Added a brain for ``responses``
 
@@ -2611,7 +2764,7 @@ Release date: 2009-12-18
       bad inference of function call)
 
     * fix #18953: inference fails with augmented assignment (special case for augmented
-      assignement in infer_ass method)
+      assignment in infer_ass method)
 
     * fix #13944: false positive for class/instance attributes (Instance.getattr
       should return assign nodes on instance classes as well as instance.

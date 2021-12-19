@@ -77,7 +77,7 @@ it for ``astroid.Call``, which is the node for function calls, so this now becom
 The next step would be to do the actual transformation, but before dwelving
 into that, let's see some important concepts that nodes in astroid have:
 
-* they have a parent. Everytime we build a node, we have to provide a parent
+* they have a parent. Every time we build a node, we have to provide a parent
 
 * most of the time they have a line number and a column offset as well
 

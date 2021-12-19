@@ -21,13 +21,13 @@ repos:
           - --remove-duplicate-keys
           - --remove-unused-variables
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.26.0
+    rev: v2.29.1
     hooks:
       - id: pyupgrade
         exclude: tests/testdata
         args: [--py36-plus]
   - repo: https://github.com/PyCQA/isort
-    rev: 5.9.3
+    rev: 5.10.1
     hooks:
       - id: isort
         exclude: tests/testdata
@@ -35,18 +35,19 @@ repos:
     rev: 1.0.1
     hooks:
       - id: black-disable-checker
+        exclude: tests/unittest_nodes_lineno.py
   - repo: https://github.com/psf/black
-    rev: 21.9b0
+    rev: 21.12b0
     hooks:
       - id: black
         args: [--safe, --quiet]
         exclude: tests/testdata
   - repo: https://github.com/PyCQA/flake8
-    rev: 3.9.2
+    rev: 4.0.1
     hooks:
       - id: flake8
-        additional_dependencies: [flake8-bugbear]
-        exclude: tests/testdata|doc/conf.py|astroid/__init__.py|setup.py
+        additional_dependencies: [flake8-bugbear, flake8-typing-imports==1.11.0]
+        exclude: tests/testdata|doc/conf.py|astroid/__init__.py
   - repo: local
     hooks:
       - id: pylint
@@ -62,7 +63,7 @@ repos:
           ]
         exclude: tests/testdata|conf.py
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.910
+    rev: v0.920
     hooks:
       - id: mypy
         name: mypy
@@ -81,7 +82,7 @@ repos:
           ]
         exclude: tests/testdata| # exclude everything, we're not ready
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.4.1
+    rev: v2.5.1
     hooks:
       - id: prettier
         args: [--prose-wrap=always, --print-width=88]

@@ -20,6 +20,7 @@
 # Copyright (c) 2019 Peter de Blanc <peter@standard.ai>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2020 Tim Martin <tim@asymptotic.co.uk>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 doranid <ddandd@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
@@ -43,6 +44,7 @@ import pytest
 
 from astroid import MANAGER, builder, nodes, objects, test_utils, util
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
+from astroid.const import PY38_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     DuplicateBasesError,
@@ -321,6 +323,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
     def test_navigation(self) -> None:
         function = self.module["global_access"]
         self.assertEqual(function.statement(), function)
+        self.assertEqual(function.statement(future=True), function)
         l_sibling = function.previous_sibling()
         # check taking parent if child is not a stmt
         self.assertIsInstance(l_sibling, nodes.Assign)
@@ -819,6 +822,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_navigation(self) -> None:
         klass = self.module["YO"]
         self.assertEqual(klass.statement(), klass)
+        self.assertEqual(klass.statement(future=True), klass)
         l_sibling = klass.previous_sibling()
         self.assertTrue(isinstance(l_sibling, nodes.FunctionDef), l_sibling)
         self.assertEqual(l_sibling.name, "global_access")
@@ -2286,6 +2290,56 @@ def test_slots_duplicate_bases_issue_1089() -> None:
     )
     with pytest.raises(NotImplementedError):
         astroid["First"].slots()
+
+
+class TestFrameNodes:
+    @staticmethod
+    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
+    def test_frame_node():
+        """Test if the frame of FunctionDef, ClassDef and Module is correctly set"""
+        module = builder.parse(
+            """
+            def func():
+                var_1 = x
+                return var_1
+
+            class MyClass:
+
+                attribute = 1
+
+                def method():
+                    pass
+
+            VAR = lambda y = (named_expr := "walrus"): print(y)
+        """
+        )
+        function = module.body[0]
+        assert function.frame() == function
+        assert function.body[0].frame() == function
+
+        class_node = module.body[1]
+        assert class_node.frame() == class_node
+        assert class_node.body[0].frame() == class_node
+        assert class_node.body[1].frame() == class_node.body[1]
+
+        lambda_assignment = module.body[2].value
+        assert lambda_assignment.args.args[0].frame() == lambda_assignment
+
+        assert module.frame() == module
+
+    @staticmethod
+    def test_non_frame_node():
+        """Test if the frame of non frame nodes is set correctly"""
+        module = builder.parse(
+            """
+            VAR_ONE = 1
+
+            VAR_TWO = [x for x in range(1)]
+        """
+        )
+        assert module.body[0].frame() == module
+
+        assert module.body[1].value.locals["x"][0].frame() == module
 
 
 if __name__ == "__main__":

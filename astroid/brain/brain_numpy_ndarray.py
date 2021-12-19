@@ -1,6 +1,6 @@
 # Copyright (c) 2015-2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2017-2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2017-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
@@ -9,6 +9,7 @@
 
 
 """Astroid hooks for numpy ndarray class."""
+from astroid.brain.brain_numpy_utils import numpy_supports_type_hints
 from astroid.builder import extract_node
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
@@ -143,6 +144,12 @@ def infer_numpy_ndarray(node, context=None):
         def var(self, axis=None, dtype=None, out=None, ddof=0, keepdims=False): return np.ndarray([0, 0])
         def view(self, dtype=None, type=None): return np.ndarray([0, 0])
     """
+    if numpy_supports_type_hints():
+        ndarray += """
+        @classmethod
+        def __class_getitem__(cls, value):
+            return cls
+        """
     node = extract_node(ndarray)
     return node.infer(context=context)
 

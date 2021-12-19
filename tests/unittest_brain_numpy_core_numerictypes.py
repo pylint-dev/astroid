@@ -16,7 +16,12 @@ try:
 except ImportError:
     HAS_NUMPY = False
 
-from astroid import builder, nodes
+from astroid import Uninferable, builder, nodes
+from astroid.brain.brain_numpy_utils import (
+    NUMPY_VERSION_TYPE_HINTS_SUPPORT,
+    _get_numpy_version,
+    numpy_supports_type_hints,
+)
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
@@ -340,6 +345,88 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
                 "datetime64.astype", inferred_values[-1].pytype()
             ),
         )
+
+    @unittest.skipUnless(
+        HAS_NUMPY and numpy_supports_type_hints(),
+        f"This test requires the numpy library with a version above {NUMPY_VERSION_TYPE_HINTS_SUPPORT}",
+    )
+    def test_generic_types_are_subscriptables(self):
+        """
+        Test that all types deriving from generic are subscriptables
+        """
+        for type_ in (
+            "bool_",
+            "bytes_",
+            "character",
+            "complex128",
+            "complex192",
+            "complex64",
+            "complexfloating",
+            "datetime64",
+            "flexible",
+            "float16",
+            "float32",
+            "float64",
+            "float96",
+            "floating",
+            "generic",
+            "inexact",
+            "int16",
+            "int32",
+            "int32",
+            "int64",
+            "int8",
+            "integer",
+            "number",
+            "signedinteger",
+            "str_",
+            "timedelta64",
+            "uint16",
+            "uint32",
+            "uint32",
+            "uint64",
+            "uint8",
+            "unsignedinteger",
+            "void",
+        ):
+            with self.subTest(type_=type_):
+                src = f"""
+                import numpy as np
+                np.{type_}[int]
+                """
+                node = builder.extract_node(src)
+                cls_node = node.inferred()[0]
+                self.assertIsInstance(cls_node, nodes.ClassDef)
+                self.assertEqual(cls_node.name, type_)
+
+
+@unittest.skipIf(
+    HAS_NUMPY, "Those tests check that astroid does not crash if numpy is not available"
+)
+class NumpyBrainUtilsTest(unittest.TestCase):
+    """
+    This class is dedicated to test that astroid does not crash
+    if numpy module is not available
+    """
+
+    def test_get_numpy_version_do_not_crash(self):
+        """
+        Test that the function _get_numpy_version doesn't crash even if numpy is not installed
+        """
+        self.assertEqual(_get_numpy_version(), ("0", "0", "0"))
+
+    def test_numpy_object_uninferable(self):
+        """
+        Test that in case numpy is not available, then a numpy object is uninferable
+        but the inference doesn't lead to a crash
+        """
+        src = """
+        import numpy as np
+        np.number[int]
+        """
+        node = builder.extract_node(src)
+        cls_node = node.inferred()[0]
+        self.assertIs(cls_node, Uninferable)
 
 
 if __name__ == "__main__":

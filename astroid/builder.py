@@ -8,6 +8,7 @@
 # Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
@@ -24,7 +25,7 @@ import os
 import textwrap
 import types
 from tokenize import detect_encoding
-from typing import List, Union
+from typing import List, Optional, Union
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import get_parser_module
@@ -81,12 +82,20 @@ class AstroidBuilder(raw_building.InspectBuilder):
         self._apply_transforms = apply_transforms
 
     def module_build(
-        self, module: types.ModuleType, modname: str = None
+        self, module: types.ModuleType, modname: Optional[str] = None
     ) -> nodes.Module:
         """Build an astroid from a living module instance."""
         node = None
         path = getattr(module, "__file__", None)
-        if path is not None:
+        loader = getattr(module, "__loader__", None)
+        # Prefer the loader to get the source rather than assuming we have a
+        # filesystem to read the source file from ourselves.
+        if loader:
+            modname = modname or module.__name__
+            source = loader.get_source(modname)
+            if source:
+                node = self.string_build(source, modname, path=path)
+        if node is None and path is not None:
             path_, ext = os.path.splitext(modutils._path_from_filename(path))
             if ext in {".py", ".pyc", ".pyo"} and os.path.exists(path_ + ".py"):
                 node = self.file_build(path_ + ".py", modname)
@@ -160,15 +169,11 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
         # Visit the transforms
         if self._apply_transforms:
-            if modutils.is_module_name_part_of_extension_package_whitelist(
-                module.name, self._manager.extension_package_whitelist
-            ):
-                return module
             module = self._manager.visit_transforms(module)
         return module
 
     def _data_build(self, data, modname, path):
-        """Build tree node from data and add some informations"""
+        """Build tree node from data and add some information"""
         try:
             node, parser_module = _parse_string(data, type_comments=True)
         except (TypeError, ValueError, SyntaxError) as exc:
@@ -267,7 +272,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             pass
 
 
-def build_namespace_package_module(name, path: str) -> nodes.Module:
+def build_namespace_package_module(name: str, path: List[str]) -> nodes.Module:
     return nodes.Module(name, doc="", path=path, package=True)
 
 

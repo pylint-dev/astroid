@@ -1,15 +1,19 @@
 import pprint
+import sys
 import typing
+import warnings
 from functools import singledispatch as _singledispatch
 from typing import (
     TYPE_CHECKING,
     ClassVar,
     Iterator,
+    List,
     Optional,
     Tuple,
     Type,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
@@ -18,6 +22,7 @@ from astroid.exceptions import (
     AstroidError,
     InferenceError,
     ParentMissingError,
+    StatementMissing,
     UseInferenceDefault,
 )
 from astroid.manager import AstroidManager
@@ -25,7 +30,18 @@ from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 
 if TYPE_CHECKING:
-    from astroid.nodes import LocalsDictNodeNG
+    from astroid import nodes
+
+    if sys.version_info >= (3, 6, 2):
+        from typing import NoReturn
+    else:
+        from typing_extensions import NoReturn
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
+
 
 # Types for 'NodeNG.nodes_of_class()'
 T_Nodes = TypeVar("T_Nodes", bound="NodeNG")
@@ -73,6 +89,9 @@ class NodeNG:
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional["NodeNG"] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -81,6 +100,11 @@ class NodeNG:
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.lineno: Optional[int] = lineno
         """The line that this node appears on in the source code."""
@@ -90,6 +114,14 @@ class NodeNG:
 
         self.parent: Optional["NodeNG"] = parent
         """The parent node in the syntax tree."""
+
+        self.end_lineno: Optional[int] = end_lineno
+        """The last line this node appears on in the source code."""
+
+        self.end_col_offset: Optional[int] = end_col_offset
+        """The end column this node appears on in the source code.
+        Note: This is after the last symbol.
+        """
 
     def infer(self, context=None, **kwargs):
         """Get a generator of the inferred values.
@@ -110,7 +142,7 @@ class NodeNG:
             # explicit_inference is not bound, give it self explicitly
             try:
                 # pylint: disable=not-callable
-                results = tuple(self._explicit_inference(self, context, **kwargs))
+                results = list(self._explicit_inference(self, context, **kwargs))
                 if context is not None:
                     context.nodes_inferred += len(results)
                 yield from results
@@ -243,33 +275,57 @@ class NodeNG:
             False otherwise.
         :rtype: bool
         """
-        for parent in node.node_ancestors():
-            if self is parent:
-                return True
-        return False
+        return any(self is parent for parent in node.node_ancestors())
 
-    def statement(self):
+    @overload
+    def statement(
+        self, *, future: Literal[None] = ...
+    ) -> Union["nodes.Statement", "nodes.Module"]:
+        ...
+
+    @overload
+    def statement(self, *, future: Literal[True]) -> "nodes.Statement":
+        ...
+
+    def statement(
+        self, *, future: Literal[None, True] = None
+    ) -> Union["nodes.Statement", "nodes.Module", "NoReturn"]:
         """The first parent node, including self, marked as statement node.
 
-        :returns: The first parent statement.
-        :rtype: NodeNG
+        TODO: Deprecate the future parameter and only raise StatementMissing and return
+        nodes.Statement
+
+        :raises AttributeError: If self has no parent attribute
+        :raises StatementMissing: If self has no parent attribute and future is True
         """
         if self.is_statement:
-            return self
-        return self.parent.statement()
+            return cast("nodes.Statement", self)
+        if not self.parent:
+            if future:
+                raise StatementMissing(target=self)
+            warnings.warn(
+                "In astroid 3.0.0 NodeNG.statement() will return either a nodes.Statement "
+                "or raise a StatementMissing exception. AttributeError will no longer be raised. "
+                "This behaviour can already be triggered "
+                "by passing 'future=True' to a statement() call.",
+                DeprecationWarning,
+            )
+            raise AttributeError(f"{self} object has no attribute 'parent'")
+        return self.parent.statement(future=future)
 
-    def frame(self):
+    def frame(
+        self,
+    ) -> Union["nodes.FunctionDef", "nodes.Module", "nodes.ClassDef", "nodes.Lambda"]:
         """The first parent frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
-        or :class:`ClassDef`.
+        :class:`ClassDef` or :class:`Lambda`.
 
         :returns: The first parent frame node.
-        :rtype: Module or FunctionDef or ClassDef
         """
         return self.parent.frame()
 
-    def scope(self) -> "LocalsDictNodeNG":
+    def scope(self) -> "nodes.LocalsDictNodeNG":
         """The first parent node defining a new scope.
         These can be Module, FunctionDef, ClassDef, Lambda, or GeneratorExp nodes.
 
@@ -388,7 +444,7 @@ class NodeNG:
         We need this method since not all nodes have :attr:`lineno` set.
         """
         line = self.lineno
-        _node = self
+        _node: Optional[NodeNG] = self
         try:
             while line is None:
                 _node = next(_node.get_children())
@@ -459,7 +515,7 @@ class NodeNG:
     ) -> Iterator[T_Nodes]:
         ...
 
-    def nodes_of_class(  # type: ignore # mypy doesn't correctly recognize the overloads
+    def nodes_of_class(  # type: ignore[misc] # mypy doesn't correctly recognize the overloads
         self,
         klass: Union[
             Type[T_Nodes],
@@ -693,7 +749,7 @@ class NodeNG:
             result.append(")")
             return broken
 
-        result = []
+        result: List[str] = []
         _repr_tree(self, result, set())
         return "".join(result)
 

@@ -8,8 +8,8 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2019 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
@@ -48,11 +48,10 @@ from pathlib import Path
 # the version before the dependencies are installed (in particular 'wrapt'
 # that is imported in astroid.inference)
 from astroid.__pkginfo__ import __version__, version
+from astroid.nodes import node_classes, scoped_nodes
 
 # isort: on
 
-from astroid import node_classes  # Deprecated, to remove later
-from astroid import scoped_nodes  # Deprecated, to remove later
 from astroid import inference, raw_building
 from astroid.astroid_manager import MANAGER
 from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod

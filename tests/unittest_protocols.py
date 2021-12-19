@@ -7,6 +7,7 @@
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
@@ -122,7 +123,7 @@ class ProtocolTests(unittest.TestCase):
     def test_assigned_stmts_starred_yes(self) -> None:
         # Not something iterable and known
         self._helper_starred_expected("a, *b = range(3) #@", Uninferable)
-        # Not something inferrable
+        # Not something inferable
         self._helper_starred_expected("a, *b = balou() #@", Uninferable)
         # In function, unknown.
         self._helper_starred_expected(
@@ -297,7 +298,7 @@ class TestPatternMatching:
                 pass
         """
         )
-        match_mapping: nodes.MatchMapping = assign_stmts.pattern  # type: ignore
+        match_mapping: nodes.MatchMapping = assign_stmts.pattern  # type: ignore[union-attr]
         assert match_mapping.rest
         assigned = next(match_mapping.rest.assigned_stmts())
         assert assigned == Uninferable
@@ -316,7 +317,7 @@ class TestPatternMatching:
                 pass
         """
         )
-        match_sequence: nodes.MatchSequence = assign_stmts.pattern  # type: ignore
+        match_sequence: nodes.MatchSequence = assign_stmts.pattern  # type: ignore[union-attr]
         match_star = match_sequence.patterns[2]
         assert isinstance(match_star, nodes.MatchStar) and match_star.name
         assigned = next(match_star.name.assigned_stmts())
@@ -337,10 +338,10 @@ class TestPatternMatching:
                 pass
         """
         )
-        subject: nodes.Const = assign_stmts[0].subject  # type: ignore
-        match_or: nodes.MatchOr = assign_stmts[1].pattern  # type: ignore
-        match_as_with_pattern: nodes.MatchAs = assign_stmts[2].pattern  # type: ignore
-        match_as: nodes.MatchAs = assign_stmts[3].pattern  # type: ignore
+        subject: nodes.Const = assign_stmts[0].subject  # type: ignore[index,union-attr]
+        match_or: nodes.MatchOr = assign_stmts[1].pattern  # type: ignore[index,union-attr]
+        match_as_with_pattern: nodes.MatchAs = assign_stmts[2].pattern  # type: ignore[index,union-attr]
+        match_as: nodes.MatchAs = assign_stmts[3].pattern  # type: ignore[index,union-attr]
 
         match_or_1 = match_or.patterns[1]
         assert isinstance(match_or_1, nodes.MatchAs) and match_or_1.name

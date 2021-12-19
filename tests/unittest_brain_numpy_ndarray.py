@@ -1,8 +1,9 @@
-# Copyright (c) 2017-2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2017-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2017-2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
@@ -16,7 +17,11 @@ try:
 except ImportError:
     HAS_NUMPY = False
 
-from astroid import builder
+from astroid import builder, nodes
+from astroid.brain.brain_numpy_utils import (
+    NUMPY_VERSION_TYPE_HINTS_SUPPORT,
+    numpy_supports_type_hints,
+)
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
@@ -160,6 +165,23 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
                     inferred_values[-1].pytype() in licit_array_types,
                     msg=f"Illicit type for {attr_:s} ({inferred_values[-1].pytype()})",
                 )
+
+    @unittest.skipUnless(
+        HAS_NUMPY and numpy_supports_type_hints(),
+        f"This test requires the numpy library with a version above {NUMPY_VERSION_TYPE_HINTS_SUPPORT}",
+    )
+    def test_numpy_ndarray_class_support_type_indexing(self):
+        """
+        Test that numpy ndarray class can be subscripted (type hints)
+        """
+        src = """
+        import numpy as np
+        np.ndarray[int]
+        """
+        node = builder.extract_node(src)
+        cls_node = node.inferred()[0]
+        self.assertIsInstance(cls_node, nodes.ClassDef)
+        self.assertEqual(cls_node.name, "ndarray")
 
 
 if __name__ == "__main__":
