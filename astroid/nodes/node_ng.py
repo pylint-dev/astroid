@@ -16,7 +16,7 @@ from typing import (
     overload,
 )
 
-from astroid import decorators, nodes, util
+from astroid import decorators, util
 from astroid.exceptions import (
     AstroidError,
     InferenceError,
@@ -29,7 +29,8 @@ from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 
 if sys.version_info >= (3, 8):
-    from typing import Literal
+    from astroid import nodes
+    from typing import Literal, Union
 else:
     from typing_extensions import Literal
 
