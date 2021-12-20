@@ -22,7 +22,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """This module renders Astroid nodes as string"""
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from astroid.nodes.node_classes import (
