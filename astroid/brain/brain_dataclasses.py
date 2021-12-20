@@ -195,17 +195,17 @@ def _generate_dataclass_init(assigns: List[AnnAssign]) -> str:
             if isinstance(value, Call) and _looks_like_dataclass_field_call(
                 value, check_scope=False
             ):
-                default_type, default_node = _get_field_default(value)
-                if default_type == "default":
-                    assert default_node
-                    param_str += f" = {default_node.as_string()}"
-                elif default_type == "default_factory":
-                    assert default_node
-                    param_str += f" = {DEFAULT_FACTORY}"
-                    assignment_str = (
-                        f"self.{name} = {default_node.as_string()} "
-                        f"if {name} is {DEFAULT_FACTORY} else {name}"
-                    )
+                result = _get_field_default(value)
+                if result:
+                    default_type, default_node = result
+                    if default_type == "default":
+                        param_str += f" = {default_node.as_string()}"
+                    elif default_type == "default_factory":
+                        param_str += f" = {DEFAULT_FACTORY}"
+                        assignment_str = (
+                            f"self.{name} = {default_node.as_string()} "
+                            f"if {name} is {DEFAULT_FACTORY} else {name}"
+                        )
             else:
                 param_str += f" = {value.as_string()}"
 
@@ -248,17 +248,17 @@ def infer_dataclass_field_call(
     if not isinstance(node.parent, (AnnAssign, Assign)):
         raise UseInferenceDefault
     field_call = node.parent.value
-    default_type, default = _get_field_default(field_call)
-    if not default_type:
+    result = _get_field_default(field_call)
+    if not result:
         yield Uninferable
-    elif default_type == "default":
-        assert default
-        yield from default.infer(context=ctx)
     else:
-        assert default
-        new_call = parse(default.as_string()).body[0].value
-        new_call.parent = field_call.parent
-        yield from new_call.infer(context=ctx)
+        default_type, default = result
+        if default_type == "default":
+            yield from default.infer(context=ctx)
+        else:
+            new_call = parse(default.as_string()).body[0].value
+            new_call.parent = field_call.parent
+            yield from new_call.infer(context=ctx)
 
 
 def _looks_like_dataclass_decorator(
@@ -335,7 +335,9 @@ def _looks_like_dataclass_field_call(node: Call, check_scope: bool = True) -> bo
     return inferred.name == FIELD_NAME and inferred.root().name in DATACLASS_MODULES
 
 
-def _get_field_default(field_call: Call) -> Tuple[str, Optional[NodeNG]]:
+def _get_field_default(
+    field_call: Call,
+) -> Optional[Tuple[str, NodeNG]]:
     """Return a the default value of a field call, and the corresponding keyword argument name.
 
     field(default=...) results in the ... node
@@ -363,7 +365,7 @@ def _get_field_default(field_call: Call) -> Tuple[str, Optional[NodeNG]]:
         new_call.postinit(func=default_factory)
         return "default_factory", new_call
 
-    return "", None
+    return None
 
 
 def _is_class_var(node: Optional[NodeNG]) -> bool:
