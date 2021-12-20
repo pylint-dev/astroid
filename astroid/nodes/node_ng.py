@@ -11,6 +11,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Sequence,
     Union,
     cast,
     overload,
@@ -30,7 +31,7 @@ from astroid.nodes.const import OP_PRECEDENCE
 
 if sys.version_info >= (3, 8):
     from astroid import nodes
-    from typing import Literal, Union
+    from typing import Literal
 else:
     from typing_extensions import Literal
 
