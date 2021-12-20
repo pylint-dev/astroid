@@ -279,22 +279,22 @@ class AstroidManagerTest(
     def test_ast_from_class(self) -> None:
         ast = self.manager.ast_from_class(int)
         self.assertEqual(ast.name, "int")
-        self.assertEqual(ast.parent.frame().name, "builtins")
+        self.assertEqual(ast.parent.frame(future=True).name, "builtins")
 
         ast = self.manager.ast_from_class(object)
         self.assertEqual(ast.name, "object")
-        self.assertEqual(ast.parent.frame().name, "builtins")
+        self.assertEqual(ast.parent.frame(future=True).name, "builtins")
         self.assertIn("__setattr__", ast)
 
     def test_ast_from_class_with_module(self) -> None:
         """check if the method works with the module name"""
         ast = self.manager.ast_from_class(int, int.__module__)
         self.assertEqual(ast.name, "int")
-        self.assertEqual(ast.parent.frame().name, "builtins")
+        self.assertEqual(ast.parent.frame(future=True).name, "builtins")
 
         ast = self.manager.ast_from_class(object, object.__module__)
         self.assertEqual(ast.name, "object")
-        self.assertEqual(ast.parent.frame().name, "builtins")
+        self.assertEqual(ast.parent.frame(future=True).name, "builtins")
         self.assertIn("__setattr__", ast)
 
     def test_ast_from_class_attr_error(self) -> None:

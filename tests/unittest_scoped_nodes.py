@@ -2314,18 +2314,18 @@ class TestFrameNodes:
         """
         )
         function = module.body[0]
-        assert function.frame() == function
-        assert function.body[0].frame() == function
+        assert function.frame(future=True) == function
+        assert function.body[0].frame(future=True) == function
 
         class_node = module.body[1]
-        assert class_node.frame() == class_node
-        assert class_node.body[0].frame() == class_node
-        assert class_node.body[1].frame() == class_node.body[1]
+        assert class_node.frame(future=True) == class_node
+        assert class_node.body[0].frame(future=True) == class_node
+        assert class_node.body[1].frame(future=True) == class_node.body[1]
 
         lambda_assignment = module.body[2].value
-        assert lambda_assignment.args.args[0].frame() == lambda_assignment
+        assert lambda_assignment.args.args[0].frame(future=True) == lambda_assignment
 
-        assert module.frame() == module
+        assert module.frame(future=True) == module
 
     @staticmethod
     def test_non_frame_node():
@@ -2337,9 +2337,9 @@ class TestFrameNodes:
             VAR_TWO = [x for x in range(1)]
         """
         )
-        assert module.body[0].frame() == module
+        assert module.body[0].frame(future=True) == module
 
-        assert module.body[1].value.locals["x"][0].frame() == module
+        assert module.body[1].value.locals["x"][0].frame(future=True) == module
 
 
 if __name__ == "__main__":

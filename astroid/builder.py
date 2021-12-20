@@ -234,7 +234,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         This adds name to locals and handle members definition.
         """
         try:
-            frame = node.frame()
+            frame = node.frame(future=True)
             for inferred in node.expr.infer():
                 if inferred is util.Uninferable:
                     continue
@@ -263,7 +263,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 if (
                     frame.name == "__init__"
                     and values
-                    and values[0].frame().name != "__init__"
+                    and values[0].frame(future=True).name != "__init__"
                 ):
                     values.insert(0, node)
                 else:

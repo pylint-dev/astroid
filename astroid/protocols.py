@@ -411,7 +411,7 @@ def arguments_assigned_stmts(
     if (
         context.callcontext
         and node
-        and getattr(callee, "name", None) == node.frame().name
+        and getattr(callee, "name", None) == node.frame(future=True).name
     ):
         # reset call context/name
         callcontext = context.callcontext

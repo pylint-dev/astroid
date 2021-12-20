@@ -740,26 +740,26 @@ class TestNamedExprNode:
         """
         )
         function = module.body[0]
-        assert function.args.frame() == function
+        assert function.args.frame(future=True) == function
 
         function_two = module.body[1]
-        assert function_two.args.args[0].frame() == function_two
-        assert function_two.args.args[1].frame() == function_two
-        assert function_two.args.defaults[0].frame() == module
+        assert function_two.args.args[0].frame(future=True) == function_two
+        assert function_two.args.args[1].frame(future=True) == function_two
+        assert function_two.args.defaults[0].frame(future=True) == module
 
         inherited_class = module.body[3]
-        assert inherited_class.keywords[0].frame() == inherited_class
-        assert inherited_class.keywords[0].value.frame() == module
+        assert inherited_class.keywords[0].frame(future=True) == inherited_class
+        assert inherited_class.keywords[0].value.frame(future=True) == module
 
         lambda_assignment = module.body[4].value
-        assert lambda_assignment.args.args[0].frame() == lambda_assignment
-        assert lambda_assignment.args.defaults[0].frame() == module
+        assert lambda_assignment.args.args[0].frame(future=True) == lambda_assignment
+        assert lambda_assignment.args.defaults[0].frame(future=True) == module
 
         lambda_named_expr = module.body[5].args.defaults[0]
-        assert lambda_named_expr.value.args.defaults[0].frame() == module
+        assert lambda_named_expr.value.args.defaults[0].frame(future=True) == module
 
         comprehension = module.body[6].value
-        assert comprehension.generators[0].ifs[0].frame() == module
+        assert comprehension.generators[0].ifs[0].frame(future=True) == module
 
     @staticmethod
     def test_scope() -> None:

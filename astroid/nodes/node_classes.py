@@ -454,9 +454,9 @@ class LookupMixIn:
         #
         # we need this to resolve B correctly
         if offset == -1:
-            myframe = self.frame().parent.frame()
+            myframe = self.frame(future=True).parent.frame(future=True)
         else:
-            myframe = self.frame()
+            myframe = self.frame(future=True)
             # If the frame of this node is the same as the statement
             # of this node, then the node is part of a class or
             # a function definition and the frame of this node should be the
@@ -473,7 +473,7 @@ class LookupMixIn:
                 and self.statement(future=True) is myframe
                 and myframe.parent
             ):
-                myframe = myframe.parent.frame()
+                myframe = myframe.parent.frame(future=True)
 
         mystmt: Optional[Statement] = None
         if self.parent:
@@ -5026,9 +5026,9 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
                 raise ParentMissingError(target=self.parent)
             if not self.parent.parent.parent:
                 raise ParentMissingError(target=self.parent.parent)
-            return self.parent.parent.parent.frame()
+            return self.parent.parent.parent.frame(future=True)
 
-        return self.parent.frame()
+        return self.parent.frame(future=True)
 
     def scope(self) -> "LocalsDictNodeNG":
         """The first parent node defining a new scope.
@@ -5060,7 +5060,7 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
 
         :param stmt: The statement that defines the given name.
         """
-        self.frame().set_local(name, stmt)
+        self.frame(future=True).set_local(name, stmt)
 
 
 class Unknown(mixins.AssignTypeMixin, NodeNG):
