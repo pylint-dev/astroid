@@ -4,7 +4,6 @@ import typing
 import warnings
 from functools import singledispatch as _singledispatch
 from typing import (
-    TYPE_CHECKING,
     ClassVar,
     Iterator,
     List,
