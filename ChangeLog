@@ -12,11 +12,20 @@ What's New in astroid 2.9.1?
 ============================
 Release date: TBA
 
+* Prefer the module loader get_source() method in AstroidBuilder's
+  module_build() when possible to avoid assumptions about source
+  code being available on a filesystem.  Otherwise the source cannot
+  be found and application behavior changes when running within an
+  embedded hermetic interpreter environment (pyoxidizer, etc.).
+
 * Require Python 3.6.2 to use astroid.
 
 * Fix ``deque.insert()`` signature in ``collections`` brain.
 
   Closes #1260
+
+* Fix ``Module`` nodes not having a ``col_offset``, ``end_lineno``, and ``end_col_offset``
+  attributes.
 
 * Fix typing and update explanation for ``Arguments.args`` being ``None``.
 
@@ -49,6 +58,16 @@ Release date: 2021-11-21
 * Fix bug with Python 3.7.0 / 3.7.1 and ``typing.NoReturn``.
 
   Closes #1239
+
+* Resolve symlinks in the import path
+  Fixes inference error when the import path includes symlinks (e.g. Python
+  installed on macOS via Homebrew).
+
+  Closes #823
+  Closes PyCQA/pylint#3499
+  Closes PyCQA/pylint#4302
+  Closes PyCQA/pylint#4798
+  Closes PyCQA/pylint#5081
 
 
 What's New in astroid 2.8.5?

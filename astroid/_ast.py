@@ -1,21 +1,20 @@
 import ast
 import sys
+import types
 from collections import namedtuple
 from functools import partial
 from typing import Dict, Optional
 
 from astroid.const import PY38_PLUS, Context
 
-try:
-    import typed_ast.ast3 as _ast_py3
-except ImportError:
-    _ast_py3 = None
-
-
-if PY38_PLUS:
+if sys.version_info >= (3, 8):
     # On Python 3.8, typed_ast was merged back into `ast`
-    _ast_py3 = ast
-
+    _ast_py3: Optional[types.ModuleType] = ast
+else:
+    try:
+        import typed_ast.ast3 as _ast_py3
+    except ImportError:
+        _ast_py3 = None
 
 FunctionType = namedtuple("FunctionType", ["argtypes", "returns"])
 
@@ -51,16 +50,14 @@ def parse_function_type_comment(type_comment: str) -> Optional[FunctionType]:
     if _ast_py3 is None:
         return None
 
-    func_type = _ast_py3.parse(type_comment, "<type_comment>", "func_type")
+    func_type = _ast_py3.parse(type_comment, "<type_comment>", "func_type")  # type: ignore[attr-defined]
     return FunctionType(argtypes=func_type.argtypes, returns=func_type.returns)
 
 
 def get_parser_module(type_comments=True) -> ParserModule:
-    if not type_comments:
-        parser_module = ast
-    else:
+    parser_module = ast
+    if type_comments and _ast_py3:
         parser_module = _ast_py3
-    parser_module = parser_module or ast
 
     unary_op_classes = _unary_operators_from_module(parser_module)
     cmp_op_classes = _compare_operators_from_module(parser_module)

@@ -49,7 +49,7 @@ import sys
 import types
 from distutils.errors import DistutilsPlatformError  # pylint: disable=import-error
 from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
-from typing import Set
+from typing import Dict, Set
 
 from astroid.interpreter._import import spec, util
 
@@ -88,7 +88,9 @@ if os.name == "nt":
     try:
         # real_prefix is defined when running inside virtual environments,
         # created with the **virtualenv** library.
-        STD_LIB_DIRS.add(os.path.join(sys.real_prefix, "dlls"))
+        # Deprecated in virtualenv==16.7.9
+        # See: https://github.com/pypa/virtualenv/issues/1622
+        STD_LIB_DIRS.add(os.path.join(sys.real_prefix, "dlls"))  # type: ignore[attr-defined]
     except AttributeError:
         # sys.base_exec_prefix is always defined, but in a virtual environment
         # created with the stdlib **venv** module, it points to the original
@@ -120,10 +122,12 @@ if platform.python_implementation() == "PyPy":
         pass
     del _root
 if os.name == "posix":
-    # Need the real prefix is we're under a virtualenv, otherwise
+    # Need the real prefix if we're in a virtualenv, otherwise
     # the usual one will do.
+    # Deprecated in virtualenv==16.7.9
+    # See: https://github.com/pypa/virtualenv/issues/1622
     try:
-        prefix = sys.real_prefix
+        prefix = sys.real_prefix  # type: ignore[attr-defined]
     except AttributeError:
         prefix = sys.prefix
 
@@ -153,12 +157,15 @@ class NoSourceFile(Exception):
     """
 
 
-def _normalize_path(path):
-    return os.path.normcase(os.path.abspath(path))
+def _normalize_path(path: str) -> str:
+    """Resolve symlinks in path and convert to absolute path.
 
+    Note that environment variables and ~ in the path need to be expanded in
+    advance.
 
-def _canonicalize_path(path):
-    return os.path.realpath(os.path.expanduser(path))
+    This can be cached by using _cache_normalize_path.
+    """
+    return os.path.normcase(os.path.realpath(path))
 
 
 def _path_from_filename(filename, is_jython=IS_JYTHON):
@@ -182,11 +189,11 @@ def _handle_blacklist(blacklist, dirnames, filenames):
             filenames.remove(norecurs)
 
 
-_NORM_PATH_CACHE = {}
+_NORM_PATH_CACHE: Dict[str, str] = {}
 
 
-def _cache_normalize_path(path):
-    """abspath with caching"""
+def _cache_normalize_path(path: str) -> str:
+    """Normalize path with caching."""
     # _module_file calls abspath on every path in sys.path every time it's
     # called; on a larger codebase this easily adds up to half a second just
     # assembling path components. This cache alleviates that.
@@ -298,9 +305,8 @@ def _get_relative_base_path(filename, path_to_check):
 def modpath_from_file_with_callback(filename, path=None, is_package_cb=None):
     filename = os.path.expanduser(_path_from_filename(filename))
     for pathname in itertools.chain(
-        path or [], map(_canonicalize_path, sys.path), sys.path
+        path or [], map(_cache_normalize_path, sys.path), sys.path
     ):
-        pathname = _cache_normalize_path(pathname)
         if not pathname:
             continue
         modpath = _get_relative_base_path(filename, pathname)

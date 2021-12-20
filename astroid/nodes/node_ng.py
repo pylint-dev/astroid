@@ -32,12 +32,6 @@ from astroid.nodes.const import OP_PRECEDENCE
 if TYPE_CHECKING:
     from astroid import nodes
 
-    if sys.version_info >= (3, 6, 2):
-        # To be fixed with https://github.com/PyCQA/pylint/pull/5316
-        from typing import NoReturn  # pylint: disable=unused-import
-    else:
-        from typing_extensions import NoReturn
-
 if sys.version_info >= (3, 8):
     from typing import Literal
 else:
@@ -290,7 +284,7 @@ class NodeNG:
 
     def statement(
         self, *, future: Literal[None, True] = None
-    ) -> Union["nodes.Statement", "nodes.Module", "NoReturn"]:
+    ) -> Union["nodes.Statement", "nodes.Module"]:
         """The first parent node, including self, marked as statement node.
 
         TODO: Deprecate the future parameter and only raise StatementMissing and return
@@ -445,7 +439,7 @@ class NodeNG:
         We need this method since not all nodes have :attr:`lineno` set.
         """
         line = self.lineno
-        _node: Optional[NodeNG] = self  # pylint: disable = used-before-assignment
+        _node: Optional[NodeNG] = self
         try:
             while line is None:
                 _node = next(_node.get_children())

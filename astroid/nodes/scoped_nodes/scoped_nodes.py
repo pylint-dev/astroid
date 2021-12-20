@@ -70,6 +70,7 @@ from astroid.exceptions import (
     StatementMissing,
     TooManyLevelsError,
 )
+from astroid.filter_statements import _filter_stmts
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
@@ -256,7 +257,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
     def _scope_lookup(self, node, name, offset=0):
         """XXX method for interfacing the scope lookup"""
         try:
-            stmts = node._filter_stmts(self.locals[name], self, offset)
+            stmts = _filter_stmts(node, self.locals[name], self, offset)
         except KeyError:
             stmts = ()
         if stmts:
@@ -389,10 +390,8 @@ class Module(LocalsDictNodeNG):
 
     :type: int or None
     """
-    lineno = 0
+    lineno: Literal[0] = 0
     """The line that this node appears on in the source code.
-
-    :type: int or None
     """
 
     # attributes below are set by the builder module or by raw factories
@@ -469,7 +468,6 @@ class Module(LocalsDictNodeNG):
     )
     _other_other_fields = ("locals", "globals")
 
-    lineno: None
     col_offset: None
     end_lineno: None
     end_col_offset: None
@@ -512,7 +510,6 @@ class Module(LocalsDictNodeNG):
         self.file = file
         self.path = path
         self.package = package
-        self.parent = parent
         self.pure_python = pure_python
         self.locals = self.globals = {}
         """A map of the name of a local variable to the node defining the local.
@@ -525,6 +522,8 @@ class Module(LocalsDictNodeNG):
         :type: list(NodeNG) or None
         """
         self.future_imports = set()
+
+        super().__init__(lineno=0, parent=parent)
 
     # pylint: enable=redefined-builtin
 
