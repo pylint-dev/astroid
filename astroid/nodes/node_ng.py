@@ -20,7 +20,6 @@ from typing import (
 from astroid import decorators, nodes, util
 from astroid.exceptions import (
     AstroidError,
-    FrameMissing,
     InferenceError,
     ParentMissingError,
     StatementMissing,
@@ -288,7 +287,7 @@ class NodeNG:
 
     def statement(
         self, *, future: Literal[None, True] = None
-    ) -> Union["nodes.Statement", "nodes.Module", "NoReturn"]:
+    ) -> Union["nodes.Statement", "nodes.Module"]:
         """The first parent node, including self, marked as statement node.
 
         TODO: Deprecate the future parameter and only raise StatementMissing and return
@@ -313,7 +312,7 @@ class NodeNG:
         return self.parent.statement(future=future)
 
     def frame(
-        self,
+        self, *, future: Literal[None, True] = None
     ) -> Union["nodes.FunctionDef", "nodes.Module", "nodes.ClassDef", "nodes.Lambda"]:
         """The first parent frame node.
 
@@ -323,9 +322,18 @@ class NodeNG:
         :returns: The first parent frame node.
         """
         if self.parent is None:
-            raise FrameMissing(target=self)
+            if future:
+                raise ParentMissingError(target=self)
+            warnings.warn(
+                "In astroid 3.0.0 NodeNG.frame() will return either a Frame, "
+                "or raise ParentMissingError. AttributeError will no longer be raised. "
+                "This behaviour can already be triggered "
+                "by passing 'future=True' to a statement() call.",
+                DeprecationWarning,
+            )
+            raise AttributeError(f"{self} object has no attribute 'parent'")
 
-        return self.parent.frame()
+        return self.parent.frame(future=future)
 
     def scope(self) -> "nodes.LocalsDictNodeNG":
         """The first parent node defining a new scope.

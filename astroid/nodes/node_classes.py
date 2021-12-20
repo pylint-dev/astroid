@@ -65,6 +65,7 @@ else:
     from typing_extensions import Literal
 
 if TYPE_CHECKING:
+    from astroid import nodes
     from astroid.nodes import LocalsDictNodeNG
 
 
@@ -5006,7 +5007,9 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
     See astroid/protocols.py for actual implementation.
     """
 
-    def frame(self):
+    def frame(
+        self, *, future: Literal[None, True] = None
+    ) -> Union["nodes.FunctionDef", "nodes.Module", "nodes.ClassDef", "nodes.Lambda"]:
         """The first parent frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
