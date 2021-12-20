@@ -4,6 +4,7 @@ import typing
 import warnings
 from functools import singledispatch as _singledispatch
 from typing import (
+    TYPE_CHECKING,
     ClassVar,
     Iterator,
     List,
@@ -30,11 +31,12 @@ from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 
 if sys.version_info >= (3, 8):
-    from astroid import nodes
     from typing import Literal
 else:
     from typing_extensions import Literal
 
+if TYPE_CHECKING:
+    from astroid import nodes
 
 # Types for 'NodeNG.nodes_of_class()'
 T_Nodes = TypeVar("T_Nodes", bound="NodeNG")
