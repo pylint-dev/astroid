@@ -425,7 +425,7 @@ class LookupMixIn:
             isinstance(stmt, ExceptHandler) for _, stmt in statements
         ):
             statements = [
-                (node, stmt) for node, stmt in statements if stmt.parent_of(self)
+                (node, stmt) for node, stmt sin statements if stmt.parent_of(self)
             ]
         return statements
 
@@ -5664,16 +5664,3 @@ def const_factory(value):
         node = EmptyNode()
         node.object = value
         return node
-
-
-def is_from_decorator(node):
-    """Return True if the given node is the child of a decorator"""
-    return any(isinstance(parent, Decorators) for parent in node.node_ancestors())
-
-
-def _get_if_statement_ancestor(node: NodeNG) -> Optional[If]:
-    """Return the first parent node that is an If node (or None)"""
-    for parent in node.node_ancestors():
-        if isinstance(parent, If):
-            return parent
-    return None
