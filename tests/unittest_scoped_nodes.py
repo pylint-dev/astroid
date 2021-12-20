@@ -56,7 +56,7 @@ from astroid.exceptions import (
     ResolveError,
     TooManyLevelsError,
 )
-from astroid.nodes.scoped_nodes import _is_metaclass
+from astroid.nodes.scoped_nodes.scoped_nodes import _is_metaclass
 
 from . import resources
 
