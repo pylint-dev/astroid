@@ -31,8 +31,6 @@ from astroid.nodes.const import OP_PRECEDENCE
 
 if sys.version_info >= (3, 8):
     from typing import Literal
-
-    from astroid import nodes
 else:
     from typing_extensions import Literal
 
