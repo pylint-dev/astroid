@@ -29,12 +29,6 @@ from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 
-if TYPE_CHECKING:
-    if sys.version_info >= (3, 6, 2):
-        from typing import NoReturn
-    else:
-        from typing_extensions import NoReturn
-
 if sys.version_info >= (3, 8):
     from typing import Literal
 else:
