@@ -661,6 +661,8 @@ class Module(LocalsDictNodeNG):
     def statement(self) -> "Module":
         ...
 
+    # pylint: disable-next=arguments-differ
+    # https://github.com/PyCQA/pylint/issues/5264
     @overload
     def statement(self, *, future: Literal[True]) -> NoReturn:
         ...
