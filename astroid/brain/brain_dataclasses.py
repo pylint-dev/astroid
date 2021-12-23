@@ -335,9 +335,7 @@ def _looks_like_dataclass_field_call(node: Call, check_scope: bool = True) -> bo
     return inferred.name == FIELD_NAME and inferred.root().name in DATACLASS_MODULES
 
 
-def _get_field_default(
-    field_call: Call,
-) -> Optional[Tuple[str, NodeNG]]:
+def _get_field_default(field_call: Call) -> Optional[Tuple[str, NodeNG]]:
     """Return a the default value of a field call, and the corresponding keyword argument name.
 
     field(default=...) results in the ... node
