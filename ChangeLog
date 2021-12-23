@@ -42,6 +42,11 @@ Release date: TBA
 
   Closes #1085
 
+* Fixed pylint `not-callable` false positive with nested-tuple assignment in a
+for-loop.
+
+  Closes PyCQA/pylint#5113
+
 What's New in astroid 2.9.4?
 ============================
 Release date: TBA

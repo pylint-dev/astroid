@@ -835,6 +835,45 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             [i.value for i in test_utils.get_name_node(ast, "e", -1).infer()], [1, 3]
         )
 
+    def test_for_dict(self) -> None:
+        code = """
+            for a, b in {1: 2, 3: 4}.items():
+                print (a)
+                print (b)
+
+            for c, (d, e) in {1: (2, 3), 4: (5, 6)}.items():
+                print (c)
+                print (d)
+                print (e)
+
+            print([(f, g, h) for f, (g, h) in {1: (2, 3), 4: (5, 6)}.items()])
+        """
+        ast = parse(code, __name__)
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "a", -1).infer()], [1, 3]
+        )
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "b", -1).infer()], [2, 4]
+        )
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "c", -1).infer()], [1, 4]
+        )
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "d", -1).infer()], [2, 5]
+        )
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "e", -1).infer()], [3, 6]
+        )
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "f", -1).infer()], [1, 4]
+        )
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "g", -1).infer()], [2, 5]
+        )
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "h", -1).infer()], [3, 6]
+        )
+
     def test_builtin_help(self) -> None:
         code = """
             help()

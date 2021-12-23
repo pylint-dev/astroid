@@ -80,6 +80,45 @@ class ProtocolTests(unittest.TestCase):
         for2_assnode = next(assign_stmts[1].nodes_of_class(nodes.AssignName))
         self.assertRaises(InferenceError, list, for2_assnode.assigned_stmts())
 
+    def test_assigned_stmts_nested_for_tuple(self) -> None:
+        assign_stmts = extract_node(
+            """
+        for a, (b, c) in [(1, (2, 3))]:  #@
+          pass
+        """
+        )
+
+        assign_nodes = assign_stmts.nodes_of_class(nodes.AssignName)
+
+        for1_assnode = next(assign_nodes)
+        assigned = list(for1_assnode.assigned_stmts())
+        self.assertConstNodesEqual([1], assigned)
+
+        for2_assnode = next(assign_nodes)
+        assigned2 = list(for2_assnode.assigned_stmts())
+        self.assertConstNodesEqual([2], assigned2)
+
+    def test_assigned_stmts_nested_for_dict(self) -> None:
+        assign_stmts = extract_node(
+            """
+        for a, (b, c) in {1: (2, 3), 4: (5, 6)}.items():  #@
+            pass
+        """
+        )
+        assign_nodes = assign_stmts.nodes_of_class(nodes.AssignName)
+        for1_assnode = next(assign_nodes)
+        assigned = list(for1_assnode.assigned_stmts())
+        self.assertConstNodesEqual([1, 4], assigned)
+
+        for2_assnode = next(assign_nodes)
+        assigned2 = list(for2_assnode.assigned_stmts())
+        self.assertConstNodesEqual([2, 5], assigned2)
+
+        for3_assnode = next(assign_nodes)
+        assigned3 = list(for3_assnode.assigned_stmts())
+        self.assertConstNodesEqual([3, 6], assigned3)
+
+
     def test_assigned_stmts_starred_for(self) -> None:
         assign_stmts = extract_node(
             """
