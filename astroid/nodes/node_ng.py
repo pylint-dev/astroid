@@ -33,9 +33,9 @@ if TYPE_CHECKING:
     from astroid import nodes
 
     if sys.version_info >= (3, 6, 2):
-        from typing import NoReturn
+        pass
     else:
-        from typing_extensions import NoReturn
+        pass
 
 if sys.version_info >= (3, 8):
     from typing import Literal
