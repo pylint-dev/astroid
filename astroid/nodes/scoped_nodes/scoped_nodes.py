@@ -70,6 +70,7 @@ from astroid.exceptions import (
     StatementMissing,
     TooManyLevelsError,
 )
+from astroid.filter_statements import _filter_stmts
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
@@ -256,7 +257,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
     def _scope_lookup(self, node, name, offset=0):
         """XXX method for interfacing the scope lookup"""
         try:
-            stmts = node._filter_stmts(self.locals[name], self, offset)
+            stmts = _filter_stmts(node, self.locals[name], self, offset)
         except KeyError:
             stmts = ()
         if stmts:
@@ -657,9 +658,11 @@ class Module(LocalsDictNodeNG):
         return self.file is not None and self.file.endswith(".py")
 
     @overload
-    def statement(self, *, future: Literal[None] = ...) -> "Module":
+    def statement(self) -> "Module":
         ...
 
+    # pylint: disable-next=arguments-differ
+    # https://github.com/PyCQA/pylint/issues/5264
     @overload
     def statement(self, *, future: Literal[True]) -> NoReturn:
         ...

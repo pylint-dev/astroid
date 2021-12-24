@@ -11,7 +11,7 @@ if not PY37_PLUS:
 
 
 parametrize_module = pytest.mark.parametrize(
-    ("module",), (["dataclasses"], ["pydantic.dataclasses"])
+    ("module",), (["dataclasses"], ["pydantic.dataclasses"], ["marshmallow_dataclass"])
 )
 
 
@@ -304,6 +304,8 @@ def test_inference_generic_collection_attribute(module: str):
         ("dataclasses", "typing"),
         ("pydantic.dataclasses", "typing"),
         ("pydantic.dataclasses", "collections.abc"),
+        ("marshmallow_dataclass", "typing"),
+        ("marshmallow_dataclass", "collections.abc"),
     ],
 )
 def test_inference_callable_attribute(module: str, typing_module: str):

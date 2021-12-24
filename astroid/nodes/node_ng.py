@@ -273,9 +273,7 @@ class NodeNG:
         return any(self is parent for parent in node.node_ancestors())
 
     @overload
-    def statement(
-        self, *, future: Literal[None] = ...
-    ) -> Union["nodes.Statement", "nodes.Module"]:
+    def statement(self) -> Union["nodes.Statement", "nodes.Module"]:
         ...
 
     @overload

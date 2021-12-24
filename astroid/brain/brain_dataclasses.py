@@ -3,9 +3,12 @@
 """
 Astroid hook for the dataclasses library
 
-Support both built-in dataclasses and pydantic.dataclasses. References:
+Support built-in dataclasses, pydantic.dataclasses, and marshmallow_dataclass-annotated
+dataclasses. References:
 - https://docs.python.org/3/library/dataclasses.html
 - https://pydantic-docs.helpmanual.io/usage/dataclasses/
+- https://lovasoa.github.io/marshmallow_dataclass/
+
 """
 from typing import FrozenSet, Generator, List, Optional, Tuple
 
@@ -35,7 +38,9 @@ from astroid.util import Uninferable
 
 DATACLASSES_DECORATORS = frozenset(("dataclass",))
 FIELD_NAME = "field"
-DATACLASS_MODULES = frozenset(("dataclasses", "pydantic.dataclasses"))
+DATACLASS_MODULES = frozenset(
+    ("dataclasses", "marshmallow_dataclass", "pydantic.dataclasses")
+)
 DEFAULT_FACTORY = "_HAS_DEFAULT_FACTORY"  # based on typing.py
 
 

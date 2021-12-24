@@ -33,6 +33,9 @@ Release date: TBA
 
   Closes PyCQA/pylint#5461
 
+* Enable inference of dataclass import from marshmallow_dataclass.
+  This allows the dataclasses brain to recognize dataclasses annotated by marshmallow_dataclass.
+
 
 What's New in astroid 2.9.0?
 ============================
