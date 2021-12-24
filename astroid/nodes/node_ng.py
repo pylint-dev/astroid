@@ -321,10 +321,10 @@ class NodeNG:
             if future:
                 raise ParentMissingError(target=self)
             warnings.warn(
-                "In astroid 3.0.0 NodeNG.frame(future=True) will return either a Frame, "
+                "In astroid 3.0.0 NodeNG.frame() will return either a Frame, "
                 "or raise ParentMissingError. AttributeError will no longer be raised. "
                 "This behaviour can already be triggered "
-                "by passing 'future=True' to a statement() call.",
+                "by passing 'future=True' to a frame() call.",
                 DeprecationWarning,
             )
             raise AttributeError(f"{self} object has no attribute 'parent'")
