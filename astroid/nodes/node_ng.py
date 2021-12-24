@@ -42,6 +42,7 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
+
 # Types for 'NodeNG.nodes_of_class()'
 T_Nodes = TypeVar("T_Nodes", bound="NodeNG")
 T_Nodes2 = TypeVar("T_Nodes2", bound="NodeNG")
