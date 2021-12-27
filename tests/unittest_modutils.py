@@ -33,6 +33,8 @@ import xml
 from xml import etree
 from xml.etree import ElementTree
 
+import pytest
+
 import astroid
 from astroid import modutils
 from astroid.interpreter._import import spec
@@ -72,6 +74,13 @@ class ModuleFileTest(unittest.TestCase):
             ["data", "MyPyPa-0.1.0-py2.5.egg", self.package],
         )
 
+    # TODO: Fix when removing distutils dependency
+    # https://github.com/pypa/setuptools/pull/2896
+    @pytest.mark.xfail(
+        sys.version_info > (3, 7),
+        sys.version_info < (3, 11),
+        reason="setuptools v60.0.0 starts using local copy of distutils",
+    )
     def test_find_distutils_submodules_in_virtualenv(self) -> None:
         found_spec = spec.find_spec(["distutils", "version"])
         self.assertEqual(found_spec.location, distutils.version.__file__)
