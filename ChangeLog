@@ -6,13 +6,13 @@ What's New in astroid 2.10.0?
 =============================
 Release date: TBA
 
-* ``NodeNG.frame()`` and ``NodeNG.statement()`` will start raising ``ParentMissingError``
-  instead of ``AttributeError`` in astroid 3.0. This behaviour can already be triggered
-  by passing ``future=True`` to a ``frame()`` or ``statement()`` call.
-
 What's New in astroid 2.9.1?
 ============================
 Release date: TBA
+
+* ``NodeNG.frame()`` and ``NodeNG.statement()`` will start raising ``ParentMissingError``
+  instead of ``AttributeError`` in astroid 3.0. This behaviour can already be triggered
+  by passing ``future=True`` to a ``frame()`` or ``statement()`` call.
 
 * Prefer the module loader get_source() method in AstroidBuilder's
   module_build() when possible to avoid assumptions about source
