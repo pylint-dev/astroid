@@ -661,6 +661,8 @@ class Module(LocalsDictNodeNG):
     def statement(self, *, future: Literal[None] = ...) -> "Module":
         ...
 
+    # pylint: disable-next=arguments-differ
+    # https://github.com/PyCQA/pylint/issues/5264
     @overload
     def statement(self, *, future: Literal[True]) -> NoReturn:
         ...
@@ -857,7 +859,7 @@ class Module(LocalsDictNodeNG):
     def get_children(self):
         yield from self.body
 
-    def frame(self: T) -> T:
+    def frame(self: T, *, future: Literal[None, True] = None) -> T:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -1472,7 +1474,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         yield self.args
         yield self.body
 
-    def frame(self: T) -> T:
+    def frame(self: T, *, future: Literal[None, True] = None) -> T:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -2002,7 +2004,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 return self, [frame]
         return super().scope_lookup(node, name, offset)
 
-    def frame(self: T) -> T:
+    def frame(self: T, *, future: Literal[None, True] = None) -> T:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -3249,7 +3251,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         )
         return list(itertools.chain.from_iterable(children_assign_nodes))
 
-    def frame(self: T) -> T:
+    def frame(self: T, *, future: Literal[None, True] = None) -> T:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,

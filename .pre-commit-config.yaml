@@ -3,7 +3,7 @@ ci:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
+    rev: v4.1.0
     hooks:
       - id: trailing-whitespace
         exclude: .github/|tests/testdata
@@ -63,7 +63,7 @@ repos:
           ]
         exclude: tests/testdata|conf.py
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.920
+    rev: v0.930
     hooks:
       - id: mypy
         name: mypy

@@ -65,6 +65,7 @@ else:
     from typing_extensions import Literal
 
 if TYPE_CHECKING:
+    from astroid import nodes
     from astroid.nodes import LocalsDictNodeNG
 
 
@@ -3366,7 +3367,7 @@ class Keyword(NodeNG):
     def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
 
-        :param value: The value being assigned to the ketword argument.
+        :param value: The value being assigned to the keyword argument.
         """
         self.value = value
 
@@ -4795,7 +4796,9 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
     See astroid/protocols.py for actual implementation.
     """
 
-    def frame(self):
+    def frame(
+        self, *, future: Literal[None, True] = None
+    ) -> Union["nodes.FunctionDef", "nodes.Module", "nodes.ClassDef", "nodes.Lambda"]:
         """The first parent frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
