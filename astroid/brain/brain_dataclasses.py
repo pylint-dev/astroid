@@ -10,7 +10,8 @@ dataclasses. References:
 - https://lovasoa.github.io/marshmallow_dataclass/
 
 """
-from typing import FrozenSet, Generator, List, Optional, Tuple
+import sys
+from typing import FrozenSet, Generator, List, Optional, Tuple, Union
 
 from astroid import context, inference_tip
 from astroid.builder import parse
@@ -35,6 +36,11 @@ from astroid.nodes.node_classes import (
 )
 from astroid.nodes.scoped_nodes import ClassDef, FunctionDef
 from astroid.util import Uninferable
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 DATACLASSES_DECORATORS = frozenset(("dataclass",))
 FIELD_NAME = "field"
@@ -115,7 +121,7 @@ def _get_dataclass_attributes(node: ClassDef, init: bool = False) -> Generator:
         ):
             continue
 
-        if _is_class_var(assign_node.annotation):
+        if _is_class_var(assign_node.annotation):  # type: ignore[arg-type] # annotation is never None
             continue
 
         if init:
@@ -125,13 +131,12 @@ def _get_dataclass_attributes(node: ClassDef, init: bool = False) -> Generator:
                 and _looks_like_dataclass_field_call(value, check_scope=False)
                 and any(
                     keyword.arg == "init"
-                    and keyword.value
-                    and not keyword.value.bool_value()
+                    and not keyword.value.bool_value()  # type: ignore[union-attr] # value is never None
                     for keyword in value.keywords
                 )
             ):
                 continue
-        elif _is_init_var(assign_node.annotation):
+        elif _is_init_var(assign_node.annotation):  # type: ignore[arg-type] # annotation is never None
             continue
 
         yield assign_node
@@ -149,9 +154,6 @@ def _check_generate_dataclass_init(node: ClassDef) -> bool:
 
     found = None
 
-    # Since this is a dataclass it should have at least one decorator
-    assert node.decorators
-
     for decorator_attribute in node.decorators.nodes:
         if not isinstance(decorator_attribute, Call):
             continue
@@ -164,7 +166,8 @@ def _check_generate_dataclass_init(node: ClassDef) -> bool:
 
     # Check for keyword arguments of the form init=False
     return all(
-        keyword.arg != "init" or keyword.value and keyword.value.bool_value()
+        keyword.arg != "init"
+        and keyword.value.bool_value()  # type: ignore[untion-attr] # value is never None
         for keyword in found.keywords
     )
 
@@ -179,7 +182,7 @@ def _generate_dataclass_init(assigns: List[AnnAssign]) -> str:
         name, annotation, value = assign.target.name, assign.annotation, assign.value
         target_names.append(name)
 
-        if _is_init_var(annotation):
+        if _is_init_var(annotation):  # type: ignore[arg-type] # annotation is never None
             init_var = True
             if isinstance(annotation, Subscript):
                 annotation = annotation.slice
@@ -252,8 +255,7 @@ def infer_dataclass_field_call(
     """Inference tip for dataclass field calls."""
     if not isinstance(node.parent, (AnnAssign, Assign)):
         raise UseInferenceDefault
-    field_call = node.parent.value
-    result = _get_field_default(field_call)
+    result = _get_field_default(node)
     if not result:
         yield Uninferable
     else:
@@ -262,7 +264,7 @@ def infer_dataclass_field_call(
             yield from default.infer(context=ctx)
         else:
             new_call = parse(default.as_string()).body[0].value
-            new_call.parent = field_call.parent
+            new_call.parent = node.parent
             yield from new_call.infer(context=ctx)
 
 
@@ -340,7 +342,11 @@ def _looks_like_dataclass_field_call(node: Call, check_scope: bool = True) -> bo
     return inferred.name == FIELD_NAME and inferred.root().name in DATACLASS_MODULES
 
 
-def _get_field_default(field_call: Call) -> Optional[Tuple[str, NodeNG]]:
+def _get_field_default(
+    field_call: Call,
+) -> Union[
+    None, Tuple[Literal["default"], NodeNG], Tuple[Literal["default_factory"], Call]
+]:
     """Return a the default value of a field call, and the corresponding keyword argument name.
 
     field(default=...) results in the ... node
@@ -371,11 +377,8 @@ def _get_field_default(field_call: Call) -> Optional[Tuple[str, NodeNG]]:
     return None
 
 
-def _is_class_var(node: Optional[NodeNG]) -> bool:
+def _is_class_var(node: NodeNG) -> bool:
     """Return True if node is a ClassVar, with or without subscripting."""
-    if not node:
-        return False
-
     if PY39_PLUS:
         try:
             inferred = next(node.infer())
@@ -394,11 +397,8 @@ def _is_class_var(node: Optional[NodeNG]) -> bool:
     )
 
 
-def _is_init_var(node: Optional[NodeNG]) -> bool:
+def _is_init_var(node: NodeNG) -> bool:
     """Return True if node is an InitVar, with or without subscripting."""
-    if not node:
-        return False
-
     try:
         inferred = next(node.infer())
     except (InferenceError, StopIteration):
