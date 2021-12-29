@@ -658,7 +658,7 @@ class Module(LocalsDictNodeNG):
         return self.file is not None and self.file.endswith(".py")
 
     @overload
-    def statement(self) -> "Module":
+    def statement(self, *, future: Literal[None] = ...) -> "Module":
         ...
 
     # pylint: disable-next=arguments-differ
