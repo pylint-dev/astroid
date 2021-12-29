@@ -272,7 +272,9 @@ class NodeNG:
         return any(self is parent for parent in node.node_ancestors())
 
     @overload
-    def statement(self) -> Union["nodes.Statement", "nodes.Module"]:
+    def statement(
+        self, *, future: Literal[None] = ...
+    ) -> Union["nodes.Statement", "nodes.Module"]:
         ...
 
     @overload
@@ -319,7 +321,7 @@ class NodeNG:
             if future:
                 raise ParentMissingError(target=self)
             warnings.warn(
-                "In astroid 3.0.0 NodeNG.frame() will return either a Frame, "
+                "In astroid 3.0.0 NodeNG.frame() will return either a Frame node, "
                 "or raise ParentMissingError. AttributeError will no longer be raised. "
                 "This behaviour can already be triggered "
                 "by passing 'future=True' to a frame() call.",

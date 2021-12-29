@@ -3367,7 +3367,7 @@ class Keyword(NodeNG):
     def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
 
-        :param value: The value being assigned to the ketword argument.
+        :param value: The value being assigned to the keyword argument.
         """
         self.value = value
 
