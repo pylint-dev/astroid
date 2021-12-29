@@ -167,7 +167,7 @@ def _check_generate_dataclass_init(node: ClassDef) -> bool:
     # Check for keyword arguments of the form init=False
     return all(
         keyword.arg != "init"
-        and keyword.value.bool_value()  # type: ignore[untion-attr] # value is never None
+        and keyword.value.bool_value()  # type: ignore[union-attr] # value is never None
         for keyword in found.keywords
     )
 
