@@ -368,7 +368,7 @@ class UnboundMethod(Proxy):
     special_attributes = lazy_descriptor(lambda: objectmodel.UnboundMethodModel())
 
     def __repr__(self):
-        frame = self._proxied.parent.frame()
+        frame = self._proxied.parent.frame(future=True)
         return "<{} {} of {} at 0x{}".format(
             self.__class__.__name__, self._proxied.name, frame.qname(), id(self)
         )
@@ -404,7 +404,7 @@ class UnboundMethod(Proxy):
         # instance of the class given as first argument.
         if (
             self._proxied.name == "__new__"
-            and self._proxied.parent.frame().qname() == "builtins.object"
+            and self._proxied.parent.frame(future=True).qname() == "builtins.object"
         ):
             if caller.args:
                 node_context = context.extra_context.get(caller.args[0])

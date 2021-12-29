@@ -337,6 +337,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(meth1, UnboundMethod)
         self.assertEqual(meth1.name, "meth1")
         self.assertEqual(meth1.parent.frame().name, "C")
+        self.assertEqual(meth1.parent.frame(future=True).name, "C")
         self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_bound_method_inference(self) -> None:
@@ -345,6 +346,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(meth1, BoundMethod)
         self.assertEqual(meth1.name, "meth1")
         self.assertEqual(meth1.parent.frame().name, "C")
+        self.assertEqual(meth1.parent.frame(future=True).name, "C")
         self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_args_default_inference1(self) -> None:

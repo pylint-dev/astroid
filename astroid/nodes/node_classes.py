@@ -4815,9 +4815,9 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
                 raise ParentMissingError(target=self.parent)
             if not self.parent.parent.parent:
                 raise ParentMissingError(target=self.parent.parent)
-            return self.parent.parent.parent.frame()
+            return self.parent.parent.parent.frame(future=True)
 
-        return self.parent.frame()
+        return self.parent.frame(future=True)
 
     def scope(self) -> "LocalsDictNodeNG":
         """The first parent node defining a new scope.
@@ -4849,7 +4849,7 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
 
         :param stmt: The statement that defines the given name.
         """
-        self.frame().set_local(name, stmt)
+        self.frame(future=True).set_local(name, stmt)
 
 
 class Unknown(mixins.AssignTypeMixin, NodeNG):

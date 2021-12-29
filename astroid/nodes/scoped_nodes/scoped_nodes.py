@@ -244,7 +244,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
         # pylint: disable=no-member; github.com/pycqa/astroid/issues/278
         if self.parent is None:
             return self.name
-        return f"{self.parent.frame().qname()}.{self.name}"
+        return f"{self.parent.frame(future=True).qname()}.{self.name}"
 
     def scope(self: T) -> T:
         """The first parent node defining a new scope.
@@ -1452,7 +1452,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :rtype: tuple(str, list(NodeNG))
         """
         if node in self.args.defaults or node in self.args.kw_defaults:
-            frame = self.parent.frame()
+            frame = self.parent.frame(future=True)
             # line offset to avoid that def func(f=func) resolve the default
             # value to the defined function
             offset = -1
@@ -1595,7 +1595,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             parent=parent,
         )
         if parent:
-            frame = parent.frame()
+            frame = parent.frame(future=True)
             frame.set_local(name, self)
 
     # pylint: disable=arguments-differ; different than Lambdas
@@ -1641,7 +1641,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         :type: list(NodeNG)
         """
-        frame = self.parent.frame()
+        frame = self.parent.frame(future=True)
         if not isinstance(frame, ClassDef):
             return []
 
@@ -1668,7 +1668,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                         # original method.
                         if (
                             isinstance(meth, FunctionDef)
-                            and assign_node.frame() == frame
+                            and assign_node.frame(future=True) == frame
                         ):
                             decorators.append(assign.value)
         return decorators
@@ -1687,7 +1687,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             if decorator.func.name in BUILTIN_DESCRIPTORS:
                 return decorator.func.name
 
-        frame = self.parent.frame()
+        frame = self.parent.frame(future=True)
         type_name = "function"
         if isinstance(frame, ClassDef):
             if self.name == "__new__":
@@ -1815,7 +1815,9 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
         # check we are defined in a ClassDef, because this is usually expected
         # (e.g. pylint...) when is_method() return True
-        return self.type != "function" and isinstance(self.parent.frame(), ClassDef)
+        return self.type != "function" and isinstance(
+            self.parent.frame(future=True), ClassDef
+        )
 
     @decorators_mod.cached
     def decoratornames(self, context=None):
@@ -1999,7 +2001,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             # if any methods in a class body refer to either __class__ or super.
             # In our case, we want to be able to look it up in the current scope
             # when `__class__` is being used.
-            frame = self.parent.frame()
+            frame = self.parent.frame(future=True)
             if isinstance(frame, ClassDef):
                 return self, [frame]
         return super().scope_lookup(node, name, offset)
@@ -2124,12 +2126,12 @@ def get_wrapping_class(node):
     :rtype: ClassDef or None
     """
 
-    klass = node.frame()
+    klass = node.frame(future=True)
     while klass is not None and not isinstance(klass, ClassDef):
         if klass.parent is None:
             klass = None
         else:
-            klass = klass.parent.frame()
+            klass = klass.parent.frame(future=True)
     return klass
 
 
@@ -2260,7 +2262,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             parent=parent,
         )
         if parent is not None:
-            parent.frame().set_local(name, self)
+            parent.frame(future=True).set_local(name, self)
 
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)
@@ -2517,7 +2519,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             # class A(name.Name):
             #     def name(self): ...
 
-            frame = self.parent.frame()
+            frame = self.parent.frame(future=True)
             # line offset to avoid that class A(A) resolve the ancestor to
             # the defined class
             offset = -1

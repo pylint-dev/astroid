@@ -255,7 +255,7 @@ def object_len(node, context=None):
 
     # prevent self referential length calls from causing a recursion error
     # see https://github.com/PyCQA/astroid/issues/777
-    node_frame = node.frame()
+    node_frame = node.frame(future=True)
     if (
         isinstance(node_frame, scoped_nodes.FunctionDef)
         and node_frame.name == "__len__"
