@@ -42,7 +42,7 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-FieldDefaultReturn = Union[
+_FieldDefaultReturn = Union[
     None, Tuple[Literal["default"], NodeNG], Tuple[Literal["default_factory"], Call]
 ]
 
@@ -346,7 +346,7 @@ def _looks_like_dataclass_field_call(node: Call, check_scope: bool = True) -> bo
     return inferred.name == FIELD_NAME and inferred.root().name in DATACLASS_MODULES
 
 
-def _get_field_default(field_call: Call) -> FieldDefaultReturn:
+def _get_field_default(field_call: Call) -> _FieldDefaultReturn:
     """Return a the default value of a field call, and the corresponding keyword argument name.
 
     field(default=...) results in the ... node
