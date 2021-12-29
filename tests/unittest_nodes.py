@@ -55,6 +55,7 @@ from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
     AttributeInferenceError,
+    ParentMissingError,
     StatementMissing,
 )
 from astroid.nodes.node_classes import (
@@ -640,6 +641,13 @@ class ConstNodeTest(unittest.TestCase):
                 assert len(records) == 1
         with self.assertRaises(StatementMissing):
             node.statement(future=True)
+
+        with self.assertRaises(AttributeError):
+            with pytest.warns(DeprecationWarning) as records:
+                node.frame()
+                assert len(records) == 1
+        with self.assertRaises(ParentMissingError):
+            node.frame(future=True)
 
     def test_none(self) -> None:
         self._test(None)
