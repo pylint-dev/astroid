@@ -50,15 +50,23 @@ class LRUCache(typing.Generic[K, V]):
             cache.clear()
 
 
-def lru_cache_astroid(arg=None):
+F = typing.TypeVar("F", bound=typing.Callable[..., typing.Any])
+
+
+def lru_cache_astroid(arg: typing.Optional[F] = None) -> F:
     """A decorator to cache the results of a function. Similar to
     functools.lru_cache but uses astroid.cache.LRUCache as its internal cache.
     """
-    cache = LRUCache()
+    cache: LRUCache[typing.Tuple[typing.Any, ...], typing.Any] = LRUCache()
 
     @wrapt.decorator
-    def decorator(func, instance, args, kwargs):
-        key = (instance,) + args
+    def decorator(
+        func: F,
+        instance: typing.Any,
+        args: typing.Tuple[typing.Any, ...],
+        kwargs: typing.Dict[typing.Any, typing.Any],
+    ) -> typing.Any:
+        key: typing.Tuple[typing.Any, ...] = (instance,) + args
 
         for kv in kwargs:
             key += kv
@@ -72,21 +80,26 @@ def lru_cache_astroid(arg=None):
 
     if callable(arg):
         # pylint: disable=no-value-for-parameter
-        return decorator(arg)
+        return typing.cast(F, decorator(arg))
 
-    return decorator
-
-
-_GENERATOR_CACHE = LRUCache()
+    return typing.cast(F, decorator)
 
 
-def cached_generator(arg=None):
+_GENERATOR_CACHE: LRUCache[typing.Any, typing.Any] = LRUCache()
+
+
+def cached_generator(arg: typing.Optional[F] = None) -> F:
     """A decorator to cache the elements returned by a generator. The input
     generator is consumed and cached as a list.
     """
 
     @wrapt.decorator
-    def decorator(func, instance, args, kwargs):
+    def decorator(
+        func: F,
+        instance: typing.Any,
+        args: typing.Tuple[typing.Any, ...],
+        kwargs: typing.Dict[typing.Any, typing.Any],
+    ) -> typing.Any:
         key = func, args[0]
 
         if key in _GENERATOR_CACHE:
@@ -98,9 +111,9 @@ def cached_generator(arg=None):
 
     if callable(arg):
         # pylint: disable=no-value-for-parameter
-        return decorator(arg)
+        return typing.cast(F, decorator(arg))
 
-    return decorator
+    return typing.cast(F, decorator)
 
 
 def clear_caches() -> None:
