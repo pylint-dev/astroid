@@ -4,7 +4,7 @@
 
 """ Caching utilities used in various places."""
 
-
+import typing
 from collections import OrderedDict
 from weakref import WeakSet
 
@@ -12,36 +12,39 @@ import wrapt
 
 LRU_CACHE_CAPACITY = 128
 
+K = typing.TypeVar("K")
+V = typing.TypeVar("V")
 
-class LRUCache:
+
+class LRUCache(typing.Generic[K, V]):
     """An LRU cache that keeps track of its instances."""
 
-    instances = WeakSet()
+    instances: WeakSet["LRUCache[typing.Any, typing.Any]"] = WeakSet()
 
-    def __init__(self):
-        self.cache = OrderedDict()
+    def __init__(self) -> None:
+        self.cache: typing.OrderedDict[K, V] = OrderedDict()
         LRUCache.instances.add(self)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: K, value: V) -> None:
         self.cache[key] = value
 
         if len(self.cache) > LRU_CACHE_CAPACITY:
             self.cache.popitem(last=False)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: K) -> V:
         if key in self.cache:
             self.cache.move_to_end(key)
 
         return self.cache[key]
 
-    def __contains__(self, key):
+    def __contains__(self, key: K) -> bool:
         return key in self.cache
 
-    def clear(self):
+    def clear(self) -> None:
         self.cache.clear()
 
     @classmethod
-    def clear_all(cls):
+    def clear_all(cls) -> None:
         """Clears all LRUCache instances."""
         for cache in cls.instances:
             cache.clear()
@@ -100,6 +103,6 @@ def cached_generator(arg=None):
     return decorator
 
 
-def clear_caches():
+def clear_caches() -> None:
     """Clears all caches."""
     LRUCache.clear_all()
