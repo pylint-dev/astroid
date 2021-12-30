@@ -19,7 +19,7 @@ V = typing.TypeVar("V")
 class LRUCache(typing.Generic[K, V]):
     """An LRU cache that keeps track of its instances."""
 
-    instances: WeakSet["LRUCache[typing.Any, typing.Any]"] = WeakSet()
+    instances: "WeakSet[LRUCache[typing.Any, typing.Any]]" = WeakSet()
 
     def __init__(self) -> None:
         self.cache: typing.OrderedDict[K, V] = OrderedDict()
