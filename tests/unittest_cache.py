@@ -8,14 +8,10 @@ from astroid.cache import LRUCache
 
 
 class TestLRUCache:
-    """
-    Test astroid.cache.LRUCache
-    """
+    """Test astroid.cache.LRUCache"""
 
     def test_set_and_get(self):
-        """
-        Test __setitem__, __getitem__, and __contains__
-        """
+        """Test __setitem__, __getitem__, and __contains__"""
         cache = LRUCache()
         cache["a"] = 123
 
@@ -24,9 +20,7 @@ class TestLRUCache:
         assert "b" not in cache
 
     def test_clear(self):
-        """
-        Test LRUCache.clear()
-        """
+        """Test LRUCache.clear()"""
         cache = LRUCache()
         cache["c"] = 789
 
@@ -38,17 +32,13 @@ class TestLRUCache:
 
     @pytest.fixture
     def reduce_cache_capacity(self):
-        """
-        A fixture to temporarily decrease the cache capactiy
-        """
+        """A fixture to temporarily decrease the cache capactiy"""
         astroid.cache.LRU_CACHE_CAPACITY = 3
         yield
         astroid.cache.LRU_CACHE_CAPACITY = 128
 
     def test_eviction(self, reduce_cache_capacity):
-        """
-        Test cache eviction behavior
-        """
+        """Test cache eviction behaviour"""
         cache = LRUCache()
         cache["a"] = 1
         cache["b"] = 2
@@ -60,7 +50,7 @@ class TestLRUCache:
 
         cache["d"] = 3
 
-        # "a" is evicted since it's the least recelty used item
+        # "a" is evicted since it's the least recenlty used item
         assert "a" not in cache
         assert "b" in cache
         assert "c" in cache
@@ -75,9 +65,7 @@ class TestLRUCache:
         assert "e" in cache
 
     def test_clear_caches(self):
-        """
-        Test clear_caches() (global cache flush)
-        """
+        """Test clear_caches() (global cache flush)"""
         cache1 = LRUCache()
         cache1["abc"] = 123
 
