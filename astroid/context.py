@@ -5,7 +5,7 @@
 """Various context related utilities, including inference and call contexts."""
 import contextlib
 import pprint
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
 from astroid.cache import LRUCache
 

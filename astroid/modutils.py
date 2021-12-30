@@ -25,7 +25,7 @@ import types
 from pathlib import Path
 from typing import Set
 
-from astroid.cache import lru_cache
+from astroid.cache import lru_cache_astroid
 from astroid.const import IS_JYTHON, IS_PYPY
 from astroid.interpreter._import import spec, util
 
@@ -139,7 +139,7 @@ def _handle_blacklist(blacklist, dirnames, filenames):
             filenames.remove(norecurs)
 
 
-@lru_cache
+@lru_cache_astroid
 def _cache_normalize_path(path: str) -> str:
     """Normalize path with caching."""
     # _module_file calls abspath on every path in sys.path every time it's

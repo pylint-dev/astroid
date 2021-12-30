@@ -4,7 +4,7 @@
 
 import collections
 
-from astroid.cache import clear_caches, lru_cache
+from astroid.cache import clear_caches, lru_cache_astroid
 
 
 class TransformVisitor:
@@ -19,7 +19,7 @@ class TransformVisitor:
     def __init__(self):
         self.transforms = collections.defaultdict(list)
 
-    @lru_cache
+    @lru_cache_astroid
     def _transform(self, node):
         """Call matching transforms for the given node if any and return the
         transformed node.

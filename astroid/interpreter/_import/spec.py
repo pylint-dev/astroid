@@ -10,10 +10,9 @@ import importlib.util
 import os
 import sys
 import zipimport
-from functools import lru_cache
 from pathlib import Path
 
-from astroid.cache import lru_cache
+from astroid.cache import lru_cache_astroid
 from astroid.interpreter._import import util
 
 ModuleType = enum.Enum(
@@ -262,7 +261,7 @@ def _is_setuptools_namespace(location):
         return extend_path or declare_namespace
 
 
-@lru_cache
+@lru_cache_astroid
 def _cached_set_diff(left, right):
     result = set(left)
     result.difference_update(right)

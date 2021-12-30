@@ -9,7 +9,6 @@ import itertools
 import sys
 import typing
 import warnings
-from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -24,7 +23,7 @@ from typing import (
 
 from astroid import decorators, mixins, util
 from astroid.bases import Instance, _infer_stmts
-from astroid.cache import lru_cache
+from astroid.cache import lru_cache_astroid
 from astroid.const import Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
@@ -367,7 +366,7 @@ class BaseContainer(
 class LookupMixIn:
     """Mixin to look up a name in the right scope."""
 
-    @lru_cache
+    @lru_cache_astroid
     def lookup(self, name):
         """Lookup where the given variable is assigned.
 

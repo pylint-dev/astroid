@@ -47,7 +47,7 @@ class LRUCache:
             cache.clear()
 
 
-def lru_cache(arg=None):
+def lru_cache_astroid(arg=None):
     """A decorator to cache the results of a function. Similar to
     functools.lru_cache but uses astroid.cache.LRUCache as its internal cache.
     """
