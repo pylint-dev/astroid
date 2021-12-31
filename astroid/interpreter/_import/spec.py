@@ -17,18 +17,12 @@
 
 import abc
 import collections
-import distutils
 import enum
 import importlib.machinery
 import os
 import sys
 import zipimport
 from functools import lru_cache
-
-try:
-    from setuptools import _distutils
-except ImportError:
-    _distutils = None
 
 from . import util
 
@@ -167,14 +161,6 @@ class ImportlibFinder(Finder):
                 if os.path.isdir(os.path.join(p, *processed))
             ]
         # We already import distutils elsewhere in astroid,
-        # so if it is the same module, we can use it directly.
-        elif spec.name == "distutils" and spec.location in distutils.__path__:
-            # distutils is patched inside virtualenvs to pick up submodules
-            # from the original Python, not from the virtualenv itself.
-            path = list(distutils.__path__)
-        elif spec.name == "distutils" and _distutils:
-            # distutils is patched in setuptools >= 60.0.0 to _distutils
-            path = list(_distutils.__path__)
         else:
             path = [spec.location]
         return path
