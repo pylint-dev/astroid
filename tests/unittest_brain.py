@@ -10,10 +10,10 @@
 # Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2017 David Euresti <github@euresti.com>
 # Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
+# Copyright (c) 2018, 2021 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Tomas Gavenciak <gavento@ucw.cz>
 # Copyright (c) 2018 David Poirier <david-poirier-csn@users.noreply.github.com>
 # Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
 # Copyright (c) 2018 Ioana Tagirta <ioana.tagirta@gmail.com>
 # Copyright (c) 2018 Ahmed Azzaoui <ahmed.azzaoui@engie.com>
@@ -24,6 +24,7 @@
 # Copyright (c) 2019 Grygorii Iermolenko <gyermolenko@gmail.com>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
+# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Joshua Cannon <joshua.cannon@ni.com>

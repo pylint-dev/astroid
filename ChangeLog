@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.9.1?
+What's New in astroid 2.9.2?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 2.9.1?
+============================
+Release date: 2021-12-31
 
 * ``NodeNG.frame()`` and ``NodeNG.statement()`` will start raising ``ParentMissingError``
   instead of ``AttributeError`` in astroid 3.0. This behaviour can already be triggered
@@ -44,6 +50,15 @@ Release date: TBA
 * Enable inference of dataclass import from marshmallow_dataclass.
   This allows the dataclasses brain to recognize dataclasses annotated by marshmallow_dataclass.
 
+* Resolve symlinks in the import path
+  Fixes inference error when the import path includes symlinks (e.g. Python
+  installed on macOS via Homebrew).
+
+  Closes #823
+  Closes PyCQA/pylint#3499
+  Closes PyCQA/pylint#4302
+  Closes PyCQA/pylint#4798
+  Closes PyCQA/pylint#5081
 
 What's New in astroid 2.9.0?
 ============================
@@ -69,16 +84,6 @@ Release date: 2021-11-21
 * Fix bug with Python 3.7.0 / 3.7.1 and ``typing.NoReturn``.
 
   Closes #1239
-
-* Resolve symlinks in the import path
-  Fixes inference error when the import path includes symlinks (e.g. Python
-  installed on macOS via Homebrew).
-
-  Closes #823
-  Closes PyCQA/pylint#3499
-  Closes PyCQA/pylint#4302
-  Closes PyCQA/pylint#4798
-  Closes PyCQA/pylint#5081
 
 
 What's New in astroid 2.8.5?
