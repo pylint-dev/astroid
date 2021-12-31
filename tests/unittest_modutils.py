@@ -22,7 +22,6 @@
 """
 unit tests for module modutils (module manipulation utilities)
 """
-import distutils.version
 import email
 import os
 import shutil
@@ -71,10 +70,6 @@ class ModuleFileTest(unittest.TestCase):
             found_spec.location.split(os.sep)[-3:],
             ["data", "MyPyPa-0.1.0-py2.5.egg", self.package],
         )
-
-    def test_find_distutils_submodules_in_virtualenv(self) -> None:
-        found_spec = spec.find_spec(["distutils", "version"])
-        self.assertEqual(found_spec.location, distutils.version.__file__)
 
 
 class LoadModuleFromNameTest(unittest.TestCase):
