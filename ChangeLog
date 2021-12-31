@@ -24,7 +24,7 @@ Release date: TBA
 
 * Require Python 3.6.2 to use astroid.
 
-* Removed custom ``distutils`` handling for resolving paths to submodules
+* Removed custom ``distutils`` handling for resolving paths to submodules.
 
 * Fix ``deque.insert()`` signature in ``collections`` brain.
 
