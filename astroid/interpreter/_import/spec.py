@@ -160,7 +160,6 @@ class ImportlibFinder(Finder):
                 for p in sys.path
                 if os.path.isdir(os.path.join(p, *processed))
             ]
-        # We already import distutils elsewhere in astroid,
         else:
             path = [spec.location]
         return path
