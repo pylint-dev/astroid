@@ -21,6 +21,7 @@ from astroid.nodes.scoped_nodes.scoped_nodes import (
     builtin_lookup,
     function_to_method,
     get_wrapping_class,
+    _is_metaclass,
 )
 
 __all__ = (
@@ -38,4 +39,5 @@ __all__ = (
     "builtin_lookup",
     "function_to_method",
     "get_wrapping_class",
+    "_is_metaclass",
 )
