@@ -12,7 +12,7 @@ What's New in astroid 2.9.2?
 ============================
 Release date: 2022-01-04
 
-* Fixed regression in ``astroid.scoped_nodes`` where ```_is_metaclass``
+* Fixed regression in ``astroid.scoped_nodes`` where ``_is_metaclass``
   was not accessible anymore.
 
 Closes #1325
