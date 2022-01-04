@@ -57,17 +57,17 @@ def lru_cache_astroid(arg: typing.Optional[F] = None) -> F:
     """
     cache: LRUCache[typing.Tuple[typing.Any, ...], typing.Any] = LRUCache()
 
-    @wrapt.decorator
+    @wrapt.decorator  # type: ignore[misc] # wrapt.decorator is untyped
     def decorator(
         func: F,
         instance: typing.Any,
         args: typing.Tuple[typing.Any, ...],
-        kwargs: typing.Dict[typing.Any, typing.Any],
+        kwargs: typing.Dict[str, typing.Any],
     ) -> typing.Any:
         key: typing.Tuple[typing.Any, ...] = (instance,) + args
 
         for kv in kwargs:
-            key += kv
+            key += typing.cast(typing.Any, kv)
 
         if key in cache:
             result = cache[key]
@@ -91,12 +91,12 @@ def cached_generator(arg: typing.Optional[F] = None) -> F:
     generator is consumed and cached as a list.
     """
 
-    @wrapt.decorator
+    @wrapt.decorator  # type: ignore[misc] # wrapt.decorator is untyped
     def decorator(
         func: F,
         instance: typing.Any,
         args: typing.Tuple[typing.Any, ...],
-        kwargs: typing.Dict[typing.Any, typing.Any],
+        kwargs: typing.Dict[str, typing.Any],
     ) -> typing.Any:
         key = func, args[0]
 
