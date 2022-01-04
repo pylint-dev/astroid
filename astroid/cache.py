@@ -14,6 +14,7 @@ LRU_CACHE_CAPACITY = 128
 
 K = typing.TypeVar("K")
 V = typing.TypeVar("V")
+F = typing.TypeVar("F", bound=typing.Callable[..., typing.Any])
 
 
 class LRUCache(typing.Generic[K, V]):
@@ -48,9 +49,6 @@ class LRUCache(typing.Generic[K, V]):
         """Clears all LRUCache instances."""
         for cache in cls.instances:
             cache.clear()
-
-
-F = typing.TypeVar("F", bound=typing.Callable[..., typing.Any])
 
 
 def lru_cache_astroid(arg: typing.Optional[F] = None) -> F:
