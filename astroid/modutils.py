@@ -308,7 +308,7 @@ def _get_relative_base_path(filename, path_to_check):
 def modpath_from_file_with_callback(filename, path=None, is_package_cb=None):
     filename = os.path.expanduser(_path_from_filename(filename))
     for pathname in itertools.chain(
-        path or [], map(_cache_normalize_path, sys.path), sys.path
+        path or [], sys.path, map(_cache_normalize_path, path or [], sys.path)
     ):
         if not pathname:
             continue
