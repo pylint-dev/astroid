@@ -7,9 +7,15 @@ What's New in astroid 2.10.0?
 Release date: TBA
 
 
-What's New in astroid 2.9.3?
+What's New in astroid 2.9.4?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 2.9.3?
+============================
+Release date: 2022-01-09
 
 * Fixed regression where packages without a ``__init__.py`` file were
   not recognized or imported correctly.
