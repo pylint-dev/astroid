@@ -194,8 +194,11 @@ class ModPathFromFileTest(unittest.TestCase):
         """Test that we correctly find packages with an __init__.py file.
 
         Regression test for issue reported in:
+        https://github.com/PyCQA/astroid/issues/1327
         """
         tmp_dir = Path(tempfile.gettempdir())
+        self.addCleanup(os.chdir, os.curdir)
+        os.chdir(tmp_dir)
 
         self.addCleanup(shutil.rmtree, tmp_dir / "src")
         os.mkdir(tmp_dir / "src")
@@ -207,8 +210,8 @@ class ModPathFromFileTest(unittest.TestCase):
 
         # this should be equivalent to: import secret
         self.assertEqual(
-            modutils.modpath_from_file("src.package", [str(tmp_dir / "src")]),
-            ["package"],
+            modutils.modpath_from_file(str(Path("src") / "package"), ["."]),
+            ["src", "package"],
         )
 
 
