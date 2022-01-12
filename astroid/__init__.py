@@ -23,8 +23,8 @@ pylint... Well, actually the development of this library is essentially
 governed by pylint's needs.
 
 It mimics the class defined in the python's _ast module with some
-additional methods and attributes. New nodes instances are not fully 
-compatible with python's _ast. 
+additional methods and attributes. New nodes instances are not fully
+compatible with python's _ast.
 
 Instance attributes are added by a
 builder object, which can either generate extended ast (let's call
