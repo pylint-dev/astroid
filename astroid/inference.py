@@ -53,6 +53,7 @@ from astroid.exceptions import (
     InferenceError,
     NameInferenceError,
     _NonDeducibleTypeHierarchy,
+    AstroidSyntaxError,
 )
 from astroid.interpreter import dunder_lookup
 from astroid.manager import AstroidManager
@@ -812,13 +813,6 @@ UNINFERABLE_OPS = {
 }
 
 
-def _to_literal(node: nodes.NodeNG) -> Any:
-    # Can raise SyntaxError or ValueError from ast.literal_eval
-    # Can raise AttributeError from node.as_string() as not all nodes have a visitor
-    # Is this the stupidest idea or the simplest idea?
-    return ast.literal_eval(node.as_string())
-
-
 def _do_compare(
     left_iter: Iterable[nodes.NodeNG], op: str, right_iter: Iterable[nodes.NodeNG]
 ) -> "bool | type[util.Uninferable]":
@@ -844,8 +838,8 @@ def _do_compare(
             return util.Uninferable
 
         try:
-            left, right = _to_literal(left), _to_literal(right)
-        except (SyntaxError, ValueError, AttributeError):
+            left, right = helpers.literal_eval(left), helpers.literal_eval(right)
+        except (AstroidSyntaxError, ValueError):
             return util.Uninferable
 
         try:
