@@ -260,45 +260,47 @@ class TestHelpers(unittest.TestCase):
         self.assertTrue(helpers.is_subtype(cls_a, builtin_type))
 
     def test_literal_eval(self):
-        self.assertEqual(helpers.literal_eval('[1, 2, 3]'), [1, 2, 3])
+        self.assertEqual(helpers.literal_eval("[1, 2, 3]"), [1, 2, 3])
         self.assertEqual(helpers.literal_eval('{"foo": 42}'), {"foo": 42})
-        self.assertEqual(helpers.literal_eval('(True, False, None)'), (True, False, None))
-        self.assertEqual(helpers.literal_eval('{1, 2, 3}'), {1, 2, 3})
+        self.assertEqual(
+            helpers.literal_eval("(True, False, None)"), (True, False, None)
+        )
+        self.assertEqual(helpers.literal_eval("{1, 2, 3}"), {1, 2, 3})
         self.assertEqual(helpers.literal_eval('b"hi"'), b"hi")
-        self.assertEqual(helpers.literal_eval('set()'), set())
-        self.assertRaises(ValueError, helpers.literal_eval, 'foo()')
-        self.assertEqual(helpers.literal_eval('6'), 6)
-        self.assertEqual(helpers.literal_eval('+6'), 6)
-        self.assertEqual(helpers.literal_eval('-6'), -6)
-        self.assertEqual(helpers.literal_eval('3.25'), 3.25)
-        self.assertEqual(helpers.literal_eval('+3.25'), 3.25)
-        self.assertEqual(helpers.literal_eval('-3.25'), -3.25)
-        self.assertEqual(repr(helpers.literal_eval('-0.0')), '-0.0')
-        self.assertRaises(ValueError, helpers.literal_eval, '++6')
-        self.assertRaises(ValueError, helpers.literal_eval, '+True')
-        self.assertRaises(ValueError, helpers.literal_eval, '2+3')
+        self.assertEqual(helpers.literal_eval("set()"), set())
+        self.assertRaises(ValueError, helpers.literal_eval, "foo()")
+        self.assertEqual(helpers.literal_eval("6"), 6)
+        self.assertEqual(helpers.literal_eval("+6"), 6)
+        self.assertEqual(helpers.literal_eval("-6"), -6)
+        self.assertEqual(helpers.literal_eval("3.25"), 3.25)
+        self.assertEqual(helpers.literal_eval("+3.25"), 3.25)
+        self.assertEqual(helpers.literal_eval("-3.25"), -3.25)
+        self.assertEqual(repr(helpers.literal_eval("-0.0")), "-0.0")
+        self.assertRaises(ValueError, helpers.literal_eval, "++6")
+        self.assertRaises(ValueError, helpers.literal_eval, "+True")
+        self.assertRaises(ValueError, helpers.literal_eval, "2+3")
 
     def test_literal_eval_complex(self):
         # Issue #4907
-        self.assertEqual(helpers.literal_eval('6j'), 6j)
-        self.assertEqual(helpers.literal_eval('-6j'), -6j)
-        self.assertEqual(helpers.literal_eval('6.75j'), 6.75j)
-        self.assertEqual(helpers.literal_eval('-6.75j'), -6.75j)
-        self.assertEqual(helpers.literal_eval('3+6j'), 3+6j)
-        self.assertEqual(helpers.literal_eval('-3+6j'), -3+6j)
-        self.assertEqual(helpers.literal_eval('3-6j'), 3-6j)
-        self.assertEqual(helpers.literal_eval('-3-6j'), -3-6j)
-        self.assertEqual(helpers.literal_eval('3.25+6.75j'), 3.25+6.75j)
-        self.assertEqual(helpers.literal_eval('-3.25+6.75j'), -3.25+6.75j)
-        self.assertEqual(helpers.literal_eval('3.25-6.75j'), 3.25-6.75j)
-        self.assertEqual(helpers.literal_eval('-3.25-6.75j'), -3.25-6.75j)
-        self.assertEqual(helpers.literal_eval('(3+6j)'), 3+6j)
-        self.assertRaises(ValueError, helpers.literal_eval, '-6j+3')
-        self.assertRaises(ValueError, helpers.literal_eval, '-6j+3j')
-        self.assertRaises(ValueError, helpers.literal_eval, '3+-6j')
-        self.assertRaises(ValueError, helpers.literal_eval, '3+(0+6j)')
-        self.assertRaises(ValueError, helpers.literal_eval, '-(3+6j)')
-        self.assertRaises(ValueError, helpers.literal_eval, 'random()')
+        self.assertEqual(helpers.literal_eval("6j"), 6j)
+        self.assertEqual(helpers.literal_eval("-6j"), -6j)
+        self.assertEqual(helpers.literal_eval("6.75j"), 6.75j)
+        self.assertEqual(helpers.literal_eval("-6.75j"), -6.75j)
+        self.assertEqual(helpers.literal_eval("3+6j"), 3 + 6j)
+        self.assertEqual(helpers.literal_eval("-3+6j"), -3 + 6j)
+        self.assertEqual(helpers.literal_eval("3-6j"), 3 - 6j)
+        self.assertEqual(helpers.literal_eval("-3-6j"), -3 - 6j)
+        self.assertEqual(helpers.literal_eval("3.25+6.75j"), 3.25 + 6.75j)
+        self.assertEqual(helpers.literal_eval("-3.25+6.75j"), -3.25 + 6.75j)
+        self.assertEqual(helpers.literal_eval("3.25-6.75j"), 3.25 - 6.75j)
+        self.assertEqual(helpers.literal_eval("-3.25-6.75j"), -3.25 - 6.75j)
+        self.assertEqual(helpers.literal_eval("(3+6j)"), 3 + 6j)
+        self.assertRaises(ValueError, helpers.literal_eval, "-6j+3")
+        self.assertRaises(ValueError, helpers.literal_eval, "-6j+3j")
+        self.assertRaises(ValueError, helpers.literal_eval, "3+-6j")
+        self.assertRaises(ValueError, helpers.literal_eval, "3+(0+6j)")
+        self.assertRaises(ValueError, helpers.literal_eval, "-(3+6j)")
+        self.assertRaises(ValueError, helpers.literal_eval, "random()")
 
     def test_literal_eval_trailing_ws(self):
         self.assertEqual(helpers.literal_eval("    -1"), -1)
@@ -306,7 +308,7 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(helpers.literal_eval(" \t -1"), -1)
 
     def test_literal_eval_malformed_lineno(self):
-        msg = r'malformed node or string on line 3:'
+        msg = r"malformed node or string on line 3:"
         with self.assertRaisesRegex(ValueError, msg):
             helpers.literal_eval("{'a': 1,\n'b':2,\n'c':++3,\n'd':4}")
 
@@ -315,10 +317,11 @@ class TestHelpers(unittest.TestCase):
         node = nodes.UnaryOp("+")
         node.postinit(operand=op)
 
-        self.assertIsNone(getattr(node, 'lineno', None))
-        msg = r'malformed node or string:'
+        self.assertIsNone(getattr(node, "lineno", None))
+        msg = r"malformed node or string:"
         with self.assertRaisesRegex(ValueError, msg):
             helpers.literal_eval(node)
+
 
 if __name__ == "__main__":
     unittest.main()

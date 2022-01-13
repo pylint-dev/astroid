@@ -22,7 +22,8 @@ Various helper utilities.
 
 
 from typing import Any, Union
-from astroid import bases, manager, nodes, raw_building, util, builder
+
+from astroid import bases, builder, manager, nodes, raw_building, util
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -316,6 +317,7 @@ def object_len(node, context=None):
         f"'{result_of_len}' object cannot be interpreted as an integer"
     )
 
+
 def literal_eval(node_or_string: Union[str, nodes.NodeNG]) -> Any:
     """
     Safely evaluate an expression node or a string containing a Python
@@ -323,17 +325,18 @@ def literal_eval(node_or_string: Union[str, nodes.NodeNG]) -> Any:
     Python literal structures: strings, bytes, numbers, tuples, lists, dicts,
     sets, booleans, and None.
 
-    Can raise `AstroidSyntaxError` or `ValueError`. 
+    Can raise `AstroidSyntaxError` or `ValueError`.
 
     Adapted from `ast.literal_eval`.
     """
     if isinstance(node_or_string, str):
         _node = builder.parse(node_or_string.lstrip(" \t")).body
         if len(_node) != 1:
-            raise ValueError(f'expected only one expression, found {len(_node)}')
+            raise ValueError(f"expected only one expression, found {len(_node)}")
         node_or_string = _node[0]
     if isinstance(node_or_string, nodes.Expr):
         node_or_string = node_or_string.value
+
     def _raise_malformed_node(node):
         msg = "malformed node or string"
         lno = getattr(node, 'lineno', None)
@@ -341,17 +344,23 @@ def literal_eval(node_or_string: Union[str, nodes.NodeNG]) -> Any:
             msg += f' on line {lno}'
         raise ValueError(msg + f': {node!r}')
     def _convert_num(node):
-        if not isinstance(node, nodes.Const) or type(node.value) not in (int, float, complex):
+        if not isinstance(node, nodes.Const) or type(node.value) not in (
+            int,
+            float,
+            complex,
+        ):
             _raise_malformed_node(node)
         return node.value
+
     def _convert_signed_num(node):
         if isinstance(node, nodes.UnaryOp) and node.op in ("+", "-"):
             operand = _convert_num(node.operand)
             if node.op == "+":
-                return + operand
+                return +operand
             else:
-                return - operand
+                return -operand
         return _convert_num(node)
+
     def _convert(node):
         if isinstance(node, nodes.Const):
             return node.value
@@ -361,11 +370,15 @@ def literal_eval(node_or_string: Union[str, nodes.NodeNG]) -> Any:
             return list(map(_convert, node.elts))
         elif isinstance(node, nodes.Set):
             return set(map(_convert, node.elts))
-        elif (isinstance(node, nodes.Call) and isinstance(node.func, nodes.Name) and
-              node.func.name == 'set' and node.args == node.keywords == []):
+        elif (
+            isinstance(node, nodes.Call)
+            and isinstance(node.func, nodes.Name)
+            and node.func.name == "set"
+            and node.args == node.keywords == []
+        ):
             return set()
         elif isinstance(node, nodes.Dict):
-            return {_convert(k):_convert(v) for k,v in node.items}
+            return {_convert(k): _convert(v) for k, v in node.items}
         elif isinstance(node, nodes.BinOp) and node.op in ("+", "-"):
             left = _convert_signed_num(node.left)
             right = _convert_num(node.right)
@@ -375,4 +388,5 @@ def literal_eval(node_or_string: Union[str, nodes.NodeNG]) -> Any:
                 else:
                     return left - right
         return _convert_signed_num(node)
+
     return _convert(node_or_string)

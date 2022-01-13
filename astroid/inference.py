@@ -29,7 +29,6 @@
 """this module contains a set of functions to handle inference on astroid trees
 """
 
-import ast
 import functools
 import itertools
 import operator
@@ -48,12 +47,12 @@ from astroid.exceptions import (
     AstroidBuildingError,
     AstroidError,
     AstroidIndexError,
+    AstroidSyntaxError,
     AstroidTypeError,
     AttributeInferenceError,
     InferenceError,
     NameInferenceError,
     _NonDeducibleTypeHierarchy,
-    AstroidSyntaxError,
 )
 from astroid.interpreter import dunder_lookup
 from astroid.manager import AstroidManager
