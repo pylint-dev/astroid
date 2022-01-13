@@ -11,8 +11,8 @@
 
 
 import builtins
-from textwrap import dedent
 import unittest
+from textwrap import dedent
 
 from astroid import builder, helpers, manager, nodes, raw_building, util
 from astroid.exceptions import _NonDeducibleTypeHierarchy
@@ -264,11 +264,21 @@ class TestHelpers(unittest.TestCase):
         class Visitor(helpers.NodeVisitor):
             def __init__(self, log) -> None:
                 self.log = log
+
             def visit_Const(self, node: nodes.Const):
-                log.append( (node.lineno, node.__class__.__name__, getattr(node, 'value', node.as_string())) )
+                log.append(
+                    (
+                        node.lineno,
+                        node.__class__.__name__,
+                        getattr(node, "value", node.as_string()),
+                    )
+                )
+
             visit_Call = visit_Const
-            
-        mod = builder.parse(dedent('''\
+
+        mod = builder.parse(
+            dedent(
+                """\
             i = 42
             f = 4.25
             c = 4.25j
@@ -281,34 +291,42 @@ class TestHelpers(unittest.TestCase):
             @list(123)
             class Node:
                 pass
-            '''))
+            """
+            )
+        )
         log = []
         visitor = Visitor(log)
-        
+
         visitor.visit(mod)
-        self.assertEqual(log, [
-            (1, 'Const', 42),
-            (2, 'Const', 4.25),
-            (3, 'Const', 4.25j),
-            (4, 'Const', 'string'),
-            (5, 'Const', b'bytes'),
-            (6, 'Const', True),
-            (7, 'Const', None),
-            (8, 'Const', ...),
-            (9, 'Call', 'list()'),
-            (10, 'Call', 'list(123)'),
-        ])
-    
+        self.assertEqual(
+            log,
+            [
+                (1, "Const", 42),
+                (2, "Const", 4.25),
+                (3, "Const", 4.25j),
+                (4, "Const", "string"),
+                (5, "Const", b"bytes"),
+                (6, "Const", True),
+                (7, "Const", None),
+                (8, "Const", ...),
+                (9, "Call", "list()"),
+                (10, "Call", "list(123)"),
+            ],
+        )
+
     def test_node_transformer(self):
         class RewriteName(helpers.NodeTransformer):
             # rewrites names to data['<name>']
-           def visit_Name(self, node:nodes.Name) -> nodes.NodeNG:
+            def visit_Name(self, node: nodes.Name) -> nodes.NodeNG:
                 subscript = nodes.Subscript()
-                subscript.postinit(value=nodes.Name(name='data'),
-                   slice=nodes.Const(value=node.name))
+                subscript.postinit(
+                    value=nodes.Name(name="data"), slice=nodes.Const(value=node.name)
+                )
                 return subscript
-        
-        mod = builder.parse(dedent('''\
+
+        mod = builder.parse(
+            dedent(
+                """\
             range(list(123), 'soleil')
             f = 4.25
             k = list()
@@ -317,9 +335,12 @@ class TestHelpers(unittest.TestCase):
             @list(123)
             class Node:
                 pass
-            '''))
-        
-        expected = dedent('''\
+            """
+            )
+        )
+
+        expected = dedent(
+            """\
             data['range'](data['list'](123), 'soleil')
             f = 4.25
             k = data['list']()
@@ -328,11 +349,13 @@ class TestHelpers(unittest.TestCase):
             @data['list'](123)
             class Node:
                 pass
-            ''')
-        
+            """
+        )
+
         visitor = RewriteName()
         visitor.visit(mod)
         self.assertEqual(mod.as_string().strip(), expected.strip())
+
 
 if __name__ == "__main__":
     unittest.main()

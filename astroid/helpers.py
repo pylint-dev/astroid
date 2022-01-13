@@ -21,7 +21,8 @@ Various helper utilities.
 """
 
 
-from typing import Any, Iterable, Union, Tuple
+from typing import Any, Iterable, Tuple, Union
+
 from astroid import bases, manager, nodes, raw_building, util
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
@@ -316,6 +317,7 @@ def object_len(node, context=None):
         f"'{result_of_len}' object cannot be interpreted as an integer"
     )
 
+
 class NodeVisitor:
     """
     A node visitor base class that walks the abstract syntax tree and calls a
@@ -325,7 +327,7 @@ class NodeVisitor:
     methods.
     Per default the visitor functions for the nodes are ``'visit_'`` +
     class name of the node.  So a `ClassDef` node visit function would
-    be `visit_ClassDef` or alternatively `visit_classdef`.  
+    be `visit_ClassDef` or alternatively `visit_classdef`.
     This behavior can be changed by overriding
     the `visit` method.  If no visitor function exists for a node
     (return value `None`) the `generic_visit` visitor is used instead.
@@ -338,8 +340,10 @@ class NodeVisitor:
 
     def visit(self, node: nodes.NodeNG) -> Any:
         """Visit a node."""
-        method = 'visit_' + node.__class__.__name__
-        visitor = getattr(self, method, getattr(self, method.lower(), self.generic_visit))
+        method = "visit_" + node.__class__.__name__
+        visitor = getattr(
+            self, method, getattr(self, method.lower(), self.generic_visit)
+        )
         return visitor(node)
 
     def generic_visit(self, node: nodes.NodeNG) -> None:
@@ -351,14 +355,17 @@ class NodeVisitor:
                         self.visit(item)
             elif isinstance(value, nodes.NodeNG):
                 self.visit(value)
-    
-    def _iter_fields(self, node: nodes.NodeNG) -> Tuple[str, Union[Iterable[nodes.NodeNG], nodes.NodeNG]]:
+
+    def _iter_fields(
+        self, node: nodes.NodeNG
+    ) -> Tuple[str, Union[Iterable[nodes.NodeNG], nodes.NodeNG]]:
         """Given a node, get the fields names and their values. We need the fields names in NodeTransformer."""
         for field in node._astroid_fields:
             try:
                 yield field, getattr(node, field)
             except AttributeError:
                 pass
+
 
 class NodeTransformer(NodeVisitor):
     """
@@ -386,7 +393,7 @@ class NodeTransformer(NodeVisitor):
     just a single node.
     Usually you use the transformer like this::
        node = YourTransformer().visit(node)
-    
+
     Adapted from Python standard's library `ast.NodeTransformer` class.
     """
 
