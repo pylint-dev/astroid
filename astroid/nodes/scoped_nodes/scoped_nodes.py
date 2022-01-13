@@ -1503,11 +1503,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     _astroid_fields = ("decorators", "args", "returns", "body")
     _multi_line_block_fields = ("body",)
     returns = None
-    decorators = None
-    """The decorators that are applied to this method or function.
-
-    :type: Decorators or None
-    """
+    decorators: Optional[node_classes.Decorators] = None
+    """The decorators that are applied to this method or function."""
     special_attributes = FunctionModel()
     """The names of special attributes that this function has.
 
@@ -1606,7 +1603,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         self,
         args: Arguments,
         body,
-        decorators=None,
+        decorators: Optional[node_classes.Decorators] = None,
         returns=None,
         type_comment_returns=None,
         type_comment_args=None,
@@ -1634,21 +1631,19 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         self.type_comment_args = type_comment_args
 
     @decorators_mod.cachedproperty
-    def extra_decorators(self):
+    def extra_decorators(self) -> List[node_classes.Call]:
         """The extra decorators that this function can have.
 
         Additional decorators are considered when they are used as
         assignments, as in ``method = staticmethod(method)``.
         The property will return all the callables that are used for
         decoration.
-
-        :type: list(NodeNG)
         """
         frame = self.parent.frame(future=True)
         if not isinstance(frame, ClassDef):
             return []
 
-        decorators = []
+        decorators: List[node_classes.Call] = []
         for assign in frame._get_assign_nodes():
             if isinstance(assign.value, node_classes.Call) and isinstance(
                 assign.value.func, node_classes.Name
