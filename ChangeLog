@@ -6,6 +6,8 @@ What's New in astroid 2.10.0?
 =============================
 Release date: TBA
 
+* Provide `astroid.helpers.NodeVisitor` and `astroid.helpers.NodeTransformer` 
+  adapted from `ast.NodeVisitor` and `ast.NodeTransformer`.
 
 What's New in astroid 2.9.4?
 ============================
