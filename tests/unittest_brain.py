@@ -1346,7 +1346,11 @@ class CollectionsBrain(unittest.TestCase):
         inferred = next(right_node.infer())
         check_metaclass_is_abc(inferred)
         assertEqualMro(
-            inferred, ["_collections_abc.Hashable", "builtins.object",],
+            inferred,
+            [
+                "_collections_abc.Hashable",
+                "builtins.object",
+            ],
         )
         with self.assertRaises(AttributeInferenceError):
             inferred.getattr("__class_getitem__")
@@ -1878,7 +1882,11 @@ class TypingBrain(unittest.TestCase):
         inferred = next(right_node.infer())
         assertEqualMro(
             inferred,
-            ["typing.Hashable", "_collections_abc.Hashable", "builtins.object",],
+            [
+                "typing.Hashable",
+                "_collections_abc.Hashable",
+                "builtins.object",
+            ],
         )
         with self.assertRaises(AttributeInferenceError):
             inferred.getattr("__class_getitem__")
