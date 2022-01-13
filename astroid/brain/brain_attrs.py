@@ -17,7 +17,6 @@ ATTRS_NAMES = frozenset(
     (
         "attr.s",
         "attrs",
-        "define",
         "attr.attrs",
         "attr.attributes",
         "attr.define",

@@ -1346,11 +1346,7 @@ class CollectionsBrain(unittest.TestCase):
         inferred = next(right_node.infer())
         check_metaclass_is_abc(inferred)
         assertEqualMro(
-            inferred,
-            [
-                "_collections_abc.Hashable",
-                "builtins.object",
-            ],
+            inferred, ["_collections_abc.Hashable", "builtins.object",],
         )
         with self.assertRaises(AttributeInferenceError):
             inferred.getattr("__class_getitem__")
@@ -1882,11 +1878,7 @@ class TypingBrain(unittest.TestCase):
         inferred = next(right_node.infer())
         assertEqualMro(
             inferred,
-            [
-                "typing.Hashable",
-                "_collections_abc.Hashable",
-                "builtins.object",
-            ],
+            ["typing.Hashable", "_collections_abc.Hashable", "builtins.object",],
         )
         with self.assertRaises(AttributeInferenceError):
             inferred.getattr("__class_getitem__")
@@ -2215,7 +2207,7 @@ class AttrsTest(unittest.TestCase):
         module = astroid.parse(
             """
         import attrs
-        from attrs import define, field, mutable, frozen
+        from attrs import field, mutable, frozen
 
         @attrs.define
         class Foo:
@@ -2225,7 +2217,7 @@ class AttrsTest(unittest.TestCase):
         f = Foo()
         f.d['answer'] = 42
 
-        @define(slots=True)
+        @attrs.define(slots=True)
         class Bar:
             d = field(attrs.Factory(dict))
 
