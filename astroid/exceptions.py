@@ -113,6 +113,7 @@ class TooManyLevelsError(AstroidImportError):
 
 class AstroidSyntaxError(AstroidBuildingError):
     """Exception class used when a module can't be parsed."""
+
     # this should probably be a SyntaxError subclass.
 
 
