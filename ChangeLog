@@ -6,6 +6,7 @@ What's New in astroid 2.10.0?
 =============================
 Release date: TBA
 
+* Provide `astroid.helpers.literal_eval` adapted from `ast.literal_eval`.
 
 What's New in astroid 2.9.4?
 ============================
