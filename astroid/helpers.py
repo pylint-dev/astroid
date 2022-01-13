@@ -339,10 +339,11 @@ def literal_eval(node_or_string: Union[str, nodes.NodeNG]) -> Any:
 
     def _raise_malformed_node(node):
         msg = "malformed node or string"
-        lno = getattr(node, 'lineno', None)
+        lno = getattr(node, "lineno", None)
         if lno:
-            msg += f' on line {lno}'
-        raise ValueError(msg + f': {node!r}')
+            msg += f" on line {lno}"
+        raise ValueError(msg + f": {node!r}")
+
     def _convert_num(node):
         if not isinstance(node, nodes.Const) or type(node.value) not in (
             int,
