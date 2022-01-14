@@ -70,12 +70,12 @@ class FromToLineNoTest(unittest.TestCase):
         self.assertEqual(name.tolineno, 4)
         strarg = callfunc.args[0]
         self.assertIsInstance(strarg, nodes.Const)
-        if hasattr(sys, "pypy_version_info"):
-            lineno = 4
+        if hasattr(sys, "pypy_version_info") or not PY38_PLUS:
+            self.assertEqual(strarg.fromlineno, 4)
+            self.assertEqual(strarg.tolineno, 4)
         else:
-            lineno = 5 if not PY38_PLUS else 4
-        self.assertEqual(strarg.fromlineno, lineno)
-        self.assertEqual(strarg.tolineno, lineno)
+            self.assertEqual(strarg.fromlineno, 4)
+            self.assertEqual(strarg.tolineno, 5)
         namearg = callfunc.args[1]
         self.assertIsInstance(namearg, nodes.Name)
         self.assertEqual(namearg.fromlineno, 5)

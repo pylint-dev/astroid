@@ -1078,15 +1078,16 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 print(x)
 
             @f(a=2,
-               b=3)
+               b=3,
+            )
             def g2():
                 pass
         """
         astroid = builder.parse(data)
         self.assertEqual(astroid["g1"].fromlineno, 4)
         self.assertEqual(astroid["g1"].tolineno, 5)
-        self.assertEqual(astroid["g2"].fromlineno, 9)
-        self.assertEqual(astroid["g2"].tolineno, 10)
+        self.assertEqual(astroid["g2"].fromlineno, 10)
+        self.assertEqual(astroid["g2"].tolineno, 11)
 
     def test_metaclass_error(self) -> None:
         astroid = builder.parse(
