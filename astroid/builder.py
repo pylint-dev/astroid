@@ -455,6 +455,14 @@ def extract_node(code: str, module_name: str = "") -> Union[NodeNG, List[NodeNG]
     return extracted
 
 
+def _extract_single_node(code: str, module_name: str = "") -> NodeNG:
+    """Call extract_node while making sure that only one value is returned."""
+    ret = extract_node(code, module_name)
+    if isinstance(ret, list):
+        return ret[0]
+    return ret
+
+
 def _parse_string(data, type_comments=True):
     parser_module = get_parser_module(type_comments=type_comments)
     try:
