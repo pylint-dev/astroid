@@ -476,7 +476,6 @@ class Module(LocalsDictNodeNG):
         """A map of the name of a global variable to the node defining the global."""
 
         self.locals = self.globals = {}
-        """A map of the name of a local variable to the node defining the local."""
 
         self.body: Optional[List[node_classes.NodeNG]] = []
         """The contents of the module."""
