@@ -50,7 +50,7 @@ import os
 import sys
 import typing
 import warnings
-from typing import Dict, List, Optional, TypeVar, Union, overload
+from typing import Dict, List, Optional, Set, TypeVar, Union, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
@@ -385,77 +385,30 @@ class Module(LocalsDictNodeNG):
 
     _astroid_fields = ("body",)
 
-    fromlineno = 0
-    """The first line that this node appears on in the source code.
+    fromlineno: Literal[0] = 0
+    """The first line that this node appears on in the source code."""
 
-    :type: int or None
-    """
     lineno: Literal[0] = 0
-    """The line that this node appears on in the source code.
-    """
+    """The line that this node appears on in the source code."""
 
     # attributes below are set by the builder module or by raw factories
 
-    file = None
-    """The path to the file that this ast has been extracted from.
+    file_bytes: Union[str, bytes, None] = None
+    """The string/bytes that this ast was built from."""
 
-    This will be ``None`` when the representation has been built from a
-    built-in module.
-
-    :type: str or None
-    """
-    file_bytes = None
-    """The string/bytes that this ast was built from.
-
-    :type: str or bytes or None
-    """
-    file_encoding = None
+    file_encoding: Optional[str] = None
     """The encoding of the source file.
 
     This is used to get unicode out of a source file.
     Python 2 only.
-
-    :type: str or None
-    """
-    name = None
-    """The name of the module.
-
-    :type: str or None
-    """
-    pure_python = None
-    """Whether the ast was built from source.
-
-    :type: bool or None
-    """
-    package = None
-    """Whether the node represents a package or a module.
-
-    :type: bool or None
-    """
-    globals = None
-    """A map of the name of a global variable to the node defining the global.
-
-    :type: dict(str, NodeNG)
     """
 
-    # Future imports
-    future_imports = None
-    """The imports from ``__future__``.
-
-    :type: set(str) or None
-    """
     special_attributes = ModuleModel()
-    """The names of special attributes that this module has.
-
-    :type: objectmodel.ModuleModel
-    """
+    """The names of special attributes that this module has."""
 
     # names of module attributes available through the global scope
     scope_attrs = {"__name__", "__doc__", "__file__", "__path__", "__package__"}
-    """The names of module attributes available through the global scope.
-
-    :type: str(str)
-    """
+    """The names of module attributes available through the global scope."""
 
     _other_fields = (
         "name",
@@ -475,53 +428,61 @@ class Module(LocalsDictNodeNG):
 
     def __init__(
         self,
-        name,
-        doc,
-        file=None,
+        name: str,
+        doc: str,
+        file: Optional[str] = None,
         path: Optional[List[str]] = None,
-        package=None,
-        parent=None,
-        pure_python=True,
-    ):
+        package: Optional[bool] = None,
+        parent: Literal[None] = None,
+        pure_python: Optional[bool] = True,
+    ) -> None:
         """
         :param name: The name of the module.
-        :type name: str
 
         :param doc: The module docstring.
-        :type doc: str
 
         :param file: The path to the file that this ast has been extracted from.
-        :type file: str or None
 
         :param path:
-        :type path: Optional[List[str]]
 
         :param package: Whether the node represents a package or a module.
-        :type package: bool or None
 
         :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
 
         :param pure_python: Whether the ast was built from source.
-        :type pure_python: bool or None
         """
         self.name = name
+        """The name of the module."""
+
         self.doc = doc
+        """The module docstring."""
+
         self.file = file
+        """The path to the file that this ast has been extracted from.
+
+        This will be ``None`` when the representation has been built from a
+        built-in module.
+        """
+
         self.path = path
+
         self.package = package
+        """Whether the node represents a package or a module."""
+
         self.pure_python = pure_python
+        """Whether the ast was built from source."""
+
+        self.globals: Dict[str, List[node_classes.NodeNG]]
+        """A map of the name of a global variable to the node defining the global."""
+
         self.locals = self.globals = {}
-        """A map of the name of a local variable to the node defining the local.
+        """A map of the name of a local variable to the node defining the local."""
 
-        :type: dict(str, NodeNG)
-        """
-        self.body = []
-        """The contents of the module.
+        self.body: Optional[List[node_classes.NodeNG]] = []
+        """The contents of the module."""
 
-        :type: list(NodeNG) or None
-        """
-        self.future_imports = set()
+        self.future_imports: Set[str] = set()
+        """The imports from ``__future__``."""
 
         super().__init__(lineno=0, parent=parent)
 
