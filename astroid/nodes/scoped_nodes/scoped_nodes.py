@@ -50,7 +50,7 @@ import os
 import sys
 import typing
 import warnings
-from typing import List, Optional, TypeVar, Union, overload
+from typing import Dict, List, Optional, TypeVar, Union, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
@@ -230,11 +230,8 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
 
     # attributes below are set by the builder module or by raw factories
 
-    locals = {}
-    """A map of the name of a local variable to the node defining the local.
-
-    :type: dict(str, NodeNG)
-    """
+    locals: Dict[str, List[node_classes.NodeNG]] = {}
+    """A map of the name of a local variable to the node defining the local."""
 
     def qname(self):
         """Get the 'qualified' name of the node.
