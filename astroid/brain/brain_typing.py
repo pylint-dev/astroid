@@ -150,7 +150,7 @@ def infer_typing_attr(
 ) -> typing.Iterator[ClassDef]:
     """Infer a typing.X[...] subscript"""
     try:
-        value = next(node.value.infer())
+        value = next(node.value.infer())  # type: ignore[union-attr] # value shouldn't be None for Subscript.
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
