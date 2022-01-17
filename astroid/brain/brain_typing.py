@@ -17,6 +17,7 @@ import typing
 from functools import partial
 
 from astroid import context, extract_node, inference_tip
+from astroid.builder import _extract_single_node
 from astroid.const import PY37_PLUS, PY38_PLUS, PY39_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
@@ -171,7 +172,7 @@ def infer_typing_attr(
         # With PY37+ typing.Generic and typing.Annotated (PY39) are subscriptable
         # through __class_getitem__. Since astroid can't easily
         # infer the native methods, replace them for an easy inference tip
-        func_to_add = extract_node(CLASS_GETITEM_TEMPLATE)
+        func_to_add = _extract_single_node(CLASS_GETITEM_TEMPLATE)
         value.locals["__class_getitem__"] = [func_to_add]
         if (
             isinstance(node.parent, ClassDef)
@@ -199,7 +200,7 @@ def _looks_like_typedDict(  # pylint: disable=invalid-name
 def infer_old_typedDict(  # pylint: disable=invalid-name
     node: ClassDef, ctx: typing.Optional[context.InferenceContext] = None
 ) -> typing.Iterator[ClassDef]:
-    func_to_add = extract_node("dict")
+    func_to_add = _extract_single_node("dict")
     node.locals["__call__"] = [func_to_add]
     return iter([node])
 
@@ -215,7 +216,7 @@ def infer_typedDict(  # pylint: disable=invalid-name
         parent=node.parent,
     )
     class_def.postinit(bases=[extract_node("dict")], body=[], decorators=None)
-    func_to_add = extract_node("dict")
+    func_to_add = _extract_single_node("dict")
     class_def.locals["__call__"] = [func_to_add]
     return iter([class_def])
 
@@ -308,7 +309,7 @@ def infer_typing_alias(
         and maybe_type_var.value > 0
     ):
         # If typing alias is subscriptable, add `__class_getitem__` to ClassDef
-        func_to_add = extract_node(CLASS_GETITEM_TEMPLATE)
+        func_to_add = _extract_single_node(CLASS_GETITEM_TEMPLATE)
         class_def.locals["__class_getitem__"] = [func_to_add]
     else:
         # If not, make sure that `__class_getitem__` access is forbidden.
@@ -373,7 +374,7 @@ def infer_special_alias(
         parent=node.parent,
     )
     class_def.postinit(bases=[res], body=[], decorators=None)
-    func_to_add = extract_node(CLASS_GETITEM_TEMPLATE)
+    func_to_add = _extract_single_node(CLASS_GETITEM_TEMPLATE)
     class_def.locals["__class_getitem__"] = [func_to_add]
     return iter([class_def])
 
