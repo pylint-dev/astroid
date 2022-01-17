@@ -174,7 +174,7 @@ class NodeNG:
         context.inferred[key] = tuple(results)
         return
 
-    def _repr_name(self):
+    def _repr_name(self) -> str:
         """Get a name for nice representation.
 
         This is either :attr:`name`, :attr:`attrname`, or the empty string.
@@ -186,7 +186,7 @@ class NodeNG:
             return getattr(self, "name", "") or getattr(self, "attrname", "")
         return ""
 
-    def __str__(self):
+    def __str__(self) -> str:
         rname = self._repr_name()
         cname = type(self).__name__
         if rname:
@@ -212,7 +212,7 @@ class NodeNG:
             "fields": (",\n" + " " * alignment).join(result),
         }
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         rname = self._repr_name()
         if rname:
             string = "<%(cname)s.%(rname)s l.%(lineno)s at 0x%(id)x>"
