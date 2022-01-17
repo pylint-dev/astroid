@@ -429,7 +429,7 @@ class Module(LocalsDictNodeNG):
     def __init__(
         self,
         name: str,
-        doc: str,
+        doc: Optional[str],
         file: Optional[str] = None,
         path: Optional[List[str]] = None,
         package: Optional[bool] = None,
