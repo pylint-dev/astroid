@@ -2212,6 +2212,11 @@ class AttrsTest(unittest.TestCase):
             self.assertIsInstance(should_be_unknown, astroid.Unknown)
 
     def test_attrs_transform(self) -> None:
+        """Test brain for decorators of the 'attrs' package.
+        
+        Package added support for 'attrs' a long side 'attr' in v21.3.0.
+        See: https://github.com/python-attrs/attrs/releases/tag/21.3.0
+        """
         module = astroid.parse(
             """
         import attrs
