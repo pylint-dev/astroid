@@ -6,6 +6,10 @@ What's New in astroid 2.10.0?
 =============================
 Release date: TBA
 
+* Fixed inference of ``self`` in binary operations in which ``self``
+  is part of a list or tuple.
+
+  Closes PyCQA/pylint#4826
 
 What's New in astroid 2.9.4?
 ============================
