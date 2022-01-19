@@ -11,7 +11,7 @@ from astroid.nodes.node_classes import AnnAssign, Assign, AssignName, Call, Unkn
 from astroid.nodes.scoped_nodes import ClassDef
 
 ATTRIB_NAMES = frozenset(
-    ("attr.ib", "attrib", "attr.attrib", "attr.field", "attrs.field", "field")
+    ("attr.ib", "attr.attrib", "attr.field", "attrs.field")
 )
 ATTRS_NAMES = frozenset(
     (
