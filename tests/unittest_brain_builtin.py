@@ -6,10 +6,11 @@ import unittest
 
 from astroid import extract_node, objects
 
+
 class BuiltinsTest(unittest.TestCase):
     def test_infer_property(self):
         class_with_property = extract_node(
-        """
+            """
         class Something:
             def getter():
                 return 5
@@ -17,5 +18,5 @@ class BuiltinsTest(unittest.TestCase):
         """
         )
         inferred_property = list(class_with_property.value.infer())[0]
-        assert isinstance(inferred_property, objects.Property)
-        assert hasattr(inferred_property, "args")
+        self.assertTrue(isinstance(inferred_property, objects.Property))
+        self.assertTrue(hasattr(inferred_property, "args"))
