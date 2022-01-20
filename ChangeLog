@@ -6,6 +6,8 @@ What's New in astroid 2.10.0?
 =============================
 Release date: TBA
 
+* Fixed builtin inferenence on `property` calls not calling the `postinit` of the new node, which 
+  resulted in instance arguments missing on these nodes.
 
 What's New in astroid 2.9.4?
 ============================
