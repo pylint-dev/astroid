@@ -7,6 +7,11 @@ What's New in astroid 2.10.0?
 Release date: TBA
 
 
+* Fixed crash when trying to infer ``items()`` on the ``__dict__``
+  attribute of an imported module.
+
+  Closes #1085
+
 What's New in astroid 2.9.4?
 ============================
 Release date: TBA
