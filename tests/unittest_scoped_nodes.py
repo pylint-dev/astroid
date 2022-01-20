@@ -43,7 +43,7 @@ from typing import Any, List, Union
 
 import pytest
 
-from astroid import MANAGER, builder, nodes, objects, test_utils, util
+from astroid import MANAGER, builder, nodes, objects, parse, test_utils, util
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
 from astroid.const import PY38_PLUS
 from astroid.exceptions import (
@@ -1669,6 +1669,45 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         assert isinstance(cls, nodes.ClassDef)
         with self.assertRaises(DuplicateBasesError):
             cls.mro()
+
+    @test_utils.require_version(minver="3.7")
+    def test_mro_typing_extensions(self):
+        """Regression test for mro() inference on typing_extesnions.
+
+        Regression reported in:
+        https://github.com/PyCQA/astroid/issues/1124
+        """
+        module = parse(
+            """
+        import abc
+        import typing
+        import dataclasses
+
+        import typing_extensions
+
+        T = typing.TypeVar("T")
+
+        class MyProtocol(typing_extensions.Protocol): pass
+        class EarlyBase(typing.Generic[T], MyProtocol): pass
+        class Base(EarlyBase[T], abc.ABC): pass
+        class Final(Base[object]): pass
+        """
+        )
+        class_names = [
+            "ABC",
+            "Base",
+            "EarlyBase",
+            "Final",
+            "Generic",
+            "MyProtocol",
+            "Protocol",
+            "object",
+        ]
+        if not PY38_PLUS:
+            class_names.pop(-2)
+
+        final_def = module.body[-1]
+        self.assertEqual(class_names, sorted(i.name for i in final_def.mro()))
 
     def test_generator_from_infer_call_result_parent(self) -> None:
         func = builder.extract_node(
