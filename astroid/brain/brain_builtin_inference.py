@@ -566,7 +566,7 @@ def infer_property(node, context=None):
     if not isinstance(inferred, (nodes.FunctionDef, nodes.Lambda)):
         raise UseInferenceDefault
 
-    return objects.Property(
+    prop_func = objects.Property(
         function=inferred,
         name=inferred.name,
         doc=getattr(inferred, "doc", None),
@@ -574,6 +574,8 @@ def infer_property(node, context=None):
         parent=node,
         col_offset=node.col_offset,
     )
+    prop_func.postinit(body=[], args=inferred.args)
+    return prop_func
 
 
 def infer_bool(node, context=None):
