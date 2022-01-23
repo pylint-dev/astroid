@@ -268,6 +268,9 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(helpers.literal_eval("{1, 2, 3}"), {1, 2, 3})
         self.assertEqual(helpers.literal_eval('b"hi"'), b"hi")
         self.assertEqual(helpers.literal_eval("set()"), set())
+        self.assertEqual(helpers.literal_eval("dict()"), dict())
+        self.assertEqual(helpers.literal_eval("list()"), list())
+        self.assertEqual(helpers.literal_eval("tuple()"), tuple())
         self.assertRaises(ValueError, helpers.literal_eval, "foo()")
         self.assertEqual(helpers.literal_eval("6"), 6)
         self.assertEqual(helpers.literal_eval("+6"), 6)
@@ -307,7 +310,7 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(helpers.literal_eval("\t\t-1"), -1)
         self.assertEqual(helpers.literal_eval(" \t -1"), -1)
 
-    def test_literal_eval_malformed_lineno(self):
+    def test_literal_eval_malformed(self):
         msg = r"malformed node or string on line 3:"
         with self.assertRaisesRegex(ValueError, msg):
             helpers.literal_eval("{'a': 1,\n'b':2,\n'c':++3,\n'd':4}")
@@ -317,11 +320,15 @@ class TestHelpers(unittest.TestCase):
         node = nodes.UnaryOp("+")
         node.postinit(operand=op)
 
-        self.assertIsNone(getattr(node, "lineno", None))
+        self.assertIsNone(node.lineno)
         msg = r"malformed node or string:"
         with self.assertRaisesRegex(ValueError, msg):
             helpers.literal_eval(node)
 
+    def test_literal_eval_multiple_expr(self):
+        msg = r"Expected only one expression, got 2"
+        with self.assertRaisesRegex(ValueError, msg):
+            helpers.literal_eval("a=1;b=2")
 
 if __name__ == "__main__":
     unittest.main()
