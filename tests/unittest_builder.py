@@ -26,14 +26,19 @@
 """tests for the astroid builder and rebuilder module"""
 
 import collections
+import importlib.util, importlib.abc, importlib.machinery
 import os
+from pathlib import Path
 import socket
+import subprocess
 import sys
+import types
+from typing import Iterator
 import unittest
 
 import pytest
 
-from astroid import Instance, builder, nodes, test_utils, util
+from astroid import Instance, builder, modutils, nodes, test_utils, util
 from astroid.const import PY38_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -789,6 +794,47 @@ def test_parse_module_with_invalid_type_comments_does_not_crash():
     )
     assert isinstance(node, nodes.Module)
 
+def test_c_module_text_signature():
+
+    def _find_dot_so_files(path:Path) -> Iterator[Path]:
+        for entry in path.iterdir():
+            if entry.suffix in importlib.machinery.EXTENSION_SUFFIXES:
+                yield entry
+
+    def _import_module(path: Path, module_full_name:str) -> types.ModuleType:
+        spec = importlib.util.spec_from_file_location(module_full_name, path)
+        if spec is None: 
+            raise RuntimeError(f"Cannot find spec for module {module_full_name} at {path}")
+        py_mod = importlib.util.module_from_spec(spec)
+        loader = spec.loader
+        assert isinstance(loader, importlib.abc.Loader), loader
+        loader.exec_module(py_mod)
+        return py_mod
+    
+    c_module_invalid_text_signature = Path(resources.RESOURCE_PATH) / 'c_module_invalid_text_signature'
+    package_path = c_module_invalid_text_signature / 'mymod'
+    
+    # build extension
+    try:
+        cwd = os.getcwd()
+        code, outstr = subprocess.getstatusoutput(f'cd {c_module_invalid_text_signature} && python3 setup.py build_ext --inplace')
+        os.chdir(cwd)
+        
+        assert code==0, outstr
+
+        for p in _find_dot_so_files(package_path):
+            py_mod = _import_module(p, 'mymod.base')
+            break
+
+        mod = builder.AstroidBuilder().module_build(py_mod, 'mymod.base')
+        as_python_string = mod.as_string()
+
+        assert "def invalid_text_signature():" in as_python_string
+        assert "def valid_text_signature(a='r', b=-3.14):" in as_python_string
+
+    finally:
+        # cleanup
+        subprocess.getoutput(f'rm -f {package_path}/*.so')
 
 if __name__ == "__main__":
     unittest.main()
