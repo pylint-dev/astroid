@@ -45,7 +45,7 @@ import pytest
 
 from astroid import MANAGER, builder, nodes, objects, parse, test_utils, util
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import PY38_PLUS
+from astroid.const import PY38_PLUS, PY310_PLUS, WIN32
 from astroid.exceptions import (
     AttributeInferenceError,
     DuplicateBasesError,
@@ -1704,6 +1704,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             "object",
         ]
         if not PY38_PLUS:
+            class_names.pop(-2)
+        # typing_extensions is not installed on this combination of version
+        # and platform
+        if PY310_PLUS and WIN32:
             class_names.pop(-2)
 
         final_def = module.body[-1]
