@@ -31,7 +31,7 @@ import os
 import sys
 import types
 import warnings
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 from astroid import bases, nodes
 from astroid.manager import AstroidManager
@@ -186,9 +186,12 @@ def object_build_class(node, member, localname):
     basenames = [base.__name__ for base in member.__bases__]
     return _base_class_object_build(node, member, basenames, localname=localname)
 
-def _get_args_info_from_callable(member: Callable) -> Tuple[List[str], List[str], List[str], List[str]]:
+
+def _get_args_info_from_callable(
+    member: Callable,
+) -> Tuple[List[str], List[str], List[str], List[str]]:
     """
-    Returns args, posonlyargs, defaults, kwonlyargs. 
+    Returns args, posonlyargs, defaults, kwonlyargs.
 
     :note: currently ignores the return annotation.
     """
@@ -206,7 +209,7 @@ def _get_args_info_from_callable(member: Callable) -> Tuple[List[str], List[str]
         if getattr(member, "__text_signature__", None) is not None:
             f"Cannot parse __text_signature__ signature of {member}"
         signature = inspect.Signature()
-    
+
     for param_name, param in signature.parameters.items():
         if param.kind == inspect.Parameter.POSITIONAL_ONLY:
             posonlyargs.append(param_name)
@@ -223,19 +226,20 @@ def _get_args_info_from_callable(member: Callable) -> Tuple[List[str], List[str]
 
     return args, posonlyargs, defaults, kwonlyargs
 
+
 def object_build_function(node, member, localname):
     """create astroid for a living function object"""
     args, posonlyargs, defaults, kwonlyargs = _get_args_info_from_callable(member)
-    
+
     func = build_function(
         name=getattr(member, "__name__", None) or localname,
         args=args,
         posonlyargs=posonlyargs,
         defaults=defaults,
         doc=member.__doc__,
-        kwonlyargs=kwonlyargs
+        kwonlyargs=kwonlyargs,
     )
-    
+
     node.add_local_node(func, localname)
 
 
@@ -250,7 +254,7 @@ def object_build_methoddescriptor(node, member, localname):
     args, posonlyargs, defaults, kwonlyargs = _get_args_info_from_callable(member)
 
     func = build_function(
-        name=getattr(member, "__name__", None) or localname, 
+        name=getattr(member, "__name__", None) or localname,
         args=args,
         posonlyargs=posonlyargs,
         defaults=defaults,
@@ -260,6 +264,7 @@ def object_build_methoddescriptor(node, member, localname):
 
     node.add_local_node(func, localname)
     _add_dunder_class(func, member)
+
 
 def _base_class_object_build(node, member, basenames, name=None, localname=None):
     """create astroid for a living class object, with a given set of base names
