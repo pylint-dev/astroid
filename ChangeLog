@@ -14,7 +14,7 @@ Release date: TBA
   This limit can be hit when the inheritance pattern of a class (and therefore of the ``__init__``
   attribute) is very large.
 
-  Closes #PyCQA/pylint#5679
+  Closes PyCQA/pylint#5679
 
 What's New in astroid 2.9.4?
 ============================
