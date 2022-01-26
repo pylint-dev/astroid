@@ -420,8 +420,8 @@ def test_max_inferred_for_complicated_class_hierarchy() -> None:
     context = InferenceContext()
 
     # Try to infer 'object.__init__' > because of limit is impossible
-    for _ in bases._infer_stmts([init_object_node], context, frame=super):
-        pass
+    for inferred in bases._infer_stmts([init_object_node], context, frame=super):
+        assert inferred == Uninferable
 
     # Reset inference limit
     InferenceContext.max_inferred = 100
