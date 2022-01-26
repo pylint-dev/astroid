@@ -24,11 +24,13 @@ import unittest
 
 import pytest
 
-from astroid import MANAGER, Instance, nodes, parse, test_utils
+from astroid import MANAGER, Instance, bases, nodes, parse, test_utils
 from astroid.builder import AstroidBuilder, extract_node
 from astroid.const import PY38_PLUS
+from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
 from astroid.raw_building import build_module
+from astroid.util import Uninferable
 
 from . import resources
 
@@ -397,6 +399,34 @@ def test_regression_crash_classmethod() -> None:
         pass
     """
     parse(code)
+
+
+def test_max_inferred_for_complicated_class_hierarchy() -> None:
+    """Regression test for a crash reported in https://github.com/PyCQA/pylint/issues/5679.
+
+    The class hierarchy of 'sqlalchemy' is so intricate that it becomes uninferable with
+    the standard max_inferred of 100. We used to crash when this happened.
+    """
+    # Create module and get relevant nodes
+    module = resources.build_file(
+        str(resources.RESOURCE_PATH / "max_inferable_limit_for_classes" / "main.py")
+    )
+    init_attr_node = module.body[-1].body[0].body[0].value.func
+    init_object_node = module.body[-1].mro()[-1]["__init__"]
+    super_node = next(init_attr_node.expr.infer())
+
+    # Arbitrarily limit the max number of infered nodes per context
+    InferenceContext.max_inferred = -1
+    context = InferenceContext()
+
+    # Try to infer 'object.__init__' > because of limit is impossible
+    for inferred in bases._infer_stmts([init_object_node], context, frame=super):
+        assert inferred == Uninferable
+
+    # Reset inference limit
+    InferenceContext.max_inferred = 100
+    # Check that we don't crash on a previously uninferable node
+    assert super_node.getattr("__init__", context=context)[0] == Uninferable
 
 
 if __name__ == "__main__":

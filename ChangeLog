@@ -9,6 +9,12 @@ Release date: TBA
 * Fixed builtin inferenence on `property` calls not calling the `postinit` of the new node, which
   resulted in instance arguments missing on these nodes.
 
+* Fixed a crash on ``Super.getattr`` when the attribute was previously uninferable due to a cache
+  limit size. This limit can be hit when the inheritance pattern of a class (and therefore of the
+  ``__init__`` attribute) is very large.
+
+  Closes PyCQA/pylint#5679
+
 What's New in astroid 2.9.4?
 ============================
 Release date: TBA

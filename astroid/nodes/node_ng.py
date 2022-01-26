@@ -163,7 +163,9 @@ class NodeNG:
         limit = AstroidManager().max_inferable_values
         for i, result in enumerate(generator):
             if i >= limit or (context.nodes_inferred > context.max_inferred):
-                yield util.Uninferable
+                uninferable = util.Uninferable
+                results.append(uninferable)
+                yield uninferable
                 break
             results.append(result)
             yield result
