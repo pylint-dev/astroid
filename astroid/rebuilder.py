@@ -48,7 +48,7 @@ from typing import (
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import PY38, PY38_PLUS, Context, PY39_PLUS
+from astroid.const import PY38, PY38_PLUS, PY39_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 

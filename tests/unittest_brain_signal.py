@@ -3,8 +3,6 @@
 """Unit Tests for the signal brain module."""
 
 
-import sys
-
 import pytest
 
 from astroid import builder, nodes

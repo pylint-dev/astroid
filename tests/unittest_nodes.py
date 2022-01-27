@@ -33,7 +33,6 @@
 import copy
 import os
 import platform
-import sys
 import textwrap
 import unittest
 from typing import Any, Optional
@@ -51,7 +50,7 @@ from astroid import (
     transforms,
     util,
 )
-from astroid.const import PY38_PLUS, PY310_PLUS, Context, WIN32
+from astroid.const import PY38_PLUS, PY310_PLUS, WIN32, Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
