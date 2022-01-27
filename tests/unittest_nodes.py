@@ -51,7 +51,7 @@ from astroid import (
     transforms,
     util,
 )
-from astroid.const import PY38_PLUS, PY310_PLUS, Context
+from astroid.const import PY38_PLUS, PY310_PLUS, Context, WIN32
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -520,7 +520,7 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         self.assertTrue(isinstance(abspath, nodes.FunctionDef), abspath)
         self.assertEqual(abspath.root().name, "os.path")
         self.assertEqual(abspath.pytype(), "builtins.function")
-        if sys.platform != "win32":
+        if not WIN32:
             # Not sure what is causing this check to fail on Windows.
             # For some reason the abspath() inference returns a different
             # path than expected:

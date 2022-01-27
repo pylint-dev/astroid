@@ -48,7 +48,7 @@ from typing import (
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import PY38, PY38_PLUS, Context
+from astroid.const import PY38, PY38_PLUS, Context, PY39_PLUS
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 
@@ -888,7 +888,7 @@ class TreeRebuilder:
 
     def visit_assert(self, node: "ast.Assert", parent: NodeNG) -> nodes.Assert:
         """visit a Assert node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Assert(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -973,7 +973,7 @@ class TreeRebuilder:
         return self._visit_for(nodes.AsyncFor, node, parent)
 
     def visit_await(self, node: "ast.Await", parent: NodeNG) -> nodes.Await:
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Await(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -991,7 +991,7 @@ class TreeRebuilder:
 
     def visit_assign(self, node: "ast.Assign", parent: NodeNG) -> nodes.Assign:
         """visit a Assign node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Assign(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1011,7 +1011,7 @@ class TreeRebuilder:
 
     def visit_annassign(self, node: "ast.AnnAssign", parent: NodeNG) -> nodes.AnnAssign:
         """visit an AnnAssign node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.AnnAssign(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1050,7 +1050,7 @@ class TreeRebuilder:
         """
         if node_name is None:
             return None
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.AssignName(
                 name=node_name,
                 lineno=node.lineno,
@@ -1071,7 +1071,7 @@ class TreeRebuilder:
 
     def visit_augassign(self, node: "ast.AugAssign", parent: NodeNG) -> nodes.AugAssign:
         """visit a AugAssign node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.AugAssign(
                 op=self._parser_module.bin_op_classes[type(node.op)] + "=",
                 lineno=node.lineno,
@@ -1094,7 +1094,7 @@ class TreeRebuilder:
 
     def visit_binop(self, node: "ast.BinOp", parent: NodeNG) -> nodes.BinOp:
         """visit a BinOp node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.BinOp(
                 op=self._parser_module.bin_op_classes[type(node.op)],
                 lineno=node.lineno,
@@ -1117,7 +1117,7 @@ class TreeRebuilder:
 
     def visit_boolop(self, node: "ast.BoolOp", parent: NodeNG) -> nodes.BoolOp:
         """visit a BoolOp node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.BoolOp(
                 op=self._parser_module.bool_op_classes[type(node.op)],
                 lineno=node.lineno,
@@ -1138,7 +1138,7 @@ class TreeRebuilder:
 
     def visit_break(self, node: "ast.Break", parent: NodeNG) -> nodes.Break:
         """visit a Break node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             return nodes.Break(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1150,7 +1150,7 @@ class TreeRebuilder:
 
     def visit_call(self, node: "ast.Call", parent: NodeNG) -> nodes.Call:
         """visit a CallFunc node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Call(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1172,7 +1172,7 @@ class TreeRebuilder:
     ) -> nodes.ClassDef:
         """visit a ClassDef node to become astroid"""
         node, doc = self._get_doc(node)
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.ClassDef(
                 name=node.name,
                 doc=doc,
@@ -1208,7 +1208,7 @@ class TreeRebuilder:
 
     def visit_continue(self, node: "ast.Continue", parent: NodeNG) -> nodes.Continue:
         """visit a Continue node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             return nodes.Continue(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1220,7 +1220,7 @@ class TreeRebuilder:
 
     def visit_compare(self, node: "ast.Compare", parent: NodeNG) -> nodes.Compare:
         """visit a Compare node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Compare(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1268,7 +1268,7 @@ class TreeRebuilder:
             return None
         # /!\ node is actually an _ast.FunctionDef node while
         # parent is an astroid.nodes.FunctionDef node
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             # Set the line number of the first decorator for Python 3.8+.
             lineno = node.decorator_list[0].lineno
             end_lineno = node.decorator_list[-1].end_lineno
@@ -1289,7 +1289,7 @@ class TreeRebuilder:
 
     def visit_delete(self, node: "ast.Delete", parent: NodeNG) -> nodes.Delete:
         """visit a Delete node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Delete(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1310,7 +1310,7 @@ class TreeRebuilder:
             rebuilt_value = self.visit(value, newnode)
             if not key:
                 # Extended unpacking
-                if sys.version_info >= (3, 8):
+                if PY38_PLUS:
                     rebuilt_key = nodes.DictUnpack(
                         lineno=rebuilt_value.lineno,
                         col_offset=rebuilt_value.col_offset,
@@ -1328,7 +1328,7 @@ class TreeRebuilder:
 
     def visit_dict(self, node: "ast.Dict", parent: NodeNG) -> nodes.Dict:
         """visit a Dict node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Dict(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1344,7 +1344,7 @@ class TreeRebuilder:
 
     def visit_dictcomp(self, node: "ast.DictComp", parent: NodeNG) -> nodes.DictComp:
         """visit a DictComp node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.DictComp(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1363,7 +1363,7 @@ class TreeRebuilder:
 
     def visit_expr(self, node: "ast.Expr", parent: NodeNG) -> nodes.Expr:
         """visit a Expr node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Expr(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1390,7 +1390,7 @@ class TreeRebuilder:
         self, node: "ast.ExceptHandler", parent: NodeNG
     ) -> nodes.ExceptHandler:
         """visit an ExceptHandler node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.ExceptHandler(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1433,7 +1433,7 @@ class TreeRebuilder:
         self, cls: Type[T_For], node: Union["ast.For", "ast.AsyncFor"], parent: NodeNG
     ) -> T_For:
         """visit a For node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = cls(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1461,7 +1461,7 @@ class TreeRebuilder:
     ) -> nodes.ImportFrom:
         """visit an ImportFrom node by returning a fresh instance of it"""
         names = [(alias.name, alias.asname) for alias in node.names]
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.ImportFrom(
                 fromname=node.module or "",
                 names=names,
@@ -1521,7 +1521,7 @@ class TreeRebuilder:
             # the framework for *years*.
             lineno = node.decorator_list[0].lineno
 
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = cls(
                 name=node.name,
                 doc=doc,
@@ -1564,7 +1564,7 @@ class TreeRebuilder:
         self, node: "ast.GeneratorExp", parent: NodeNG
     ) -> nodes.GeneratorExp:
         """visit a GeneratorExp node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.GeneratorExp(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1589,7 +1589,7 @@ class TreeRebuilder:
         if context == Context.Del:
             # FIXME : maybe we should reintroduce and visit_delattr ?
             # for instance, deactivating assign_ctx
-            if sys.version_info >= (3, 8):
+            if PY38_PLUS:
                 newnode = nodes.DelAttr(
                     attrname=node.attr,
                     lineno=node.lineno,
@@ -1601,7 +1601,7 @@ class TreeRebuilder:
             else:
                 newnode = nodes.DelAttr(node.attr, node.lineno, node.col_offset, parent)
         elif context == Context.Store:
-            if sys.version_info >= (3, 8):
+            if PY38_PLUS:
                 newnode = nodes.AssignAttr(
                     attrname=node.attr,
                     lineno=node.lineno,
@@ -1622,7 +1622,7 @@ class TreeRebuilder:
         else:
             # pylint: disable-next=else-if-used
             # Preserve symmetry with other cases
-            if sys.version_info >= (3, 8):
+            if PY38_PLUS:
                 newnode = nodes.Attribute(
                     attrname=node.attr,
                     lineno=node.lineno,
@@ -1640,7 +1640,7 @@ class TreeRebuilder:
 
     def visit_global(self, node: "ast.Global", parent: NodeNG) -> nodes.Global:
         """visit a Global node to become astroid"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Global(
                 names=node.names,
                 lineno=node.lineno,
@@ -1663,7 +1663,7 @@ class TreeRebuilder:
 
     def visit_if(self, node: "ast.If", parent: NodeNG) -> nodes.If:
         """visit an If node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.If(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1682,7 +1682,7 @@ class TreeRebuilder:
 
     def visit_ifexp(self, node: "ast.IfExp", parent: NodeNG) -> nodes.IfExp:
         """visit a IfExp node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.IfExp(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1702,7 +1702,7 @@ class TreeRebuilder:
     def visit_import(self, node: "ast.Import", parent: NodeNG) -> nodes.Import:
         """visit a Import node by returning a fresh instance of it"""
         names = [(alias.name, alias.asname) for alias in node.names]
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Import(
                 names=names,
                 lineno=node.lineno,
@@ -1725,7 +1725,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_joinedstr(self, node: "ast.JoinedStr", parent: NodeNG) -> nodes.JoinedStr:
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.JoinedStr(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1741,7 +1741,7 @@ class TreeRebuilder:
     def visit_formattedvalue(
         self, node: "ast.FormattedValue", parent: NodeNG
     ) -> nodes.FormattedValue:
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.FormattedValue(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1759,7 +1759,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_namedexpr(self, node: "ast.NamedExpr", parent: NodeNG) -> nodes.NamedExpr:
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.NamedExpr(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1781,7 +1781,7 @@ class TreeRebuilder:
 
     def visit_keyword(self, node: "ast.keyword", parent: NodeNG) -> nodes.Keyword:
         """visit a Keyword node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 9):
+        if PY39_PLUS:
             newnode = nodes.Keyword(
                 arg=node.arg,
                 lineno=node.lineno,
@@ -1797,7 +1797,7 @@ class TreeRebuilder:
 
     def visit_lambda(self, node: "ast.Lambda", parent: NodeNG) -> nodes.Lambda:
         """visit a Lambda node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Lambda(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1813,7 +1813,7 @@ class TreeRebuilder:
     def visit_list(self, node: "ast.List", parent: NodeNG) -> nodes.List:
         """visit a List node by returning a fresh instance of it"""
         context = self._get_context(node)
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.List(
                 ctx=context,
                 lineno=node.lineno,
@@ -1834,7 +1834,7 @@ class TreeRebuilder:
 
     def visit_listcomp(self, node: "ast.ListComp", parent: NodeNG) -> nodes.ListComp:
         """visit a ListComp node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.ListComp(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1857,7 +1857,7 @@ class TreeRebuilder:
         context = self._get_context(node)
         newnode: Union[nodes.Name, nodes.AssignName, nodes.DelName]
         if context == Context.Del:
-            if sys.version_info >= (3, 8):
+            if PY38_PLUS:
                 newnode = nodes.DelName(
                     name=node.id,
                     lineno=node.lineno,
@@ -1869,7 +1869,7 @@ class TreeRebuilder:
             else:
                 newnode = nodes.DelName(node.id, node.lineno, node.col_offset, parent)
         elif context == Context.Store:
-            if sys.version_info >= (3, 8):
+            if PY38_PLUS:
                 newnode = nodes.AssignName(
                     name=node.id,
                     lineno=node.lineno,
@@ -1885,7 +1885,7 @@ class TreeRebuilder:
         else:
             # pylint: disable-next=else-if-used
             # Preserve symmetry with other cases
-            if sys.version_info >= (3, 8):
+            if PY38_PLUS:
                 newnode = nodes.Name(
                     name=node.id,
                     lineno=node.lineno,
@@ -1916,7 +1916,7 @@ class TreeRebuilder:
 
     def visit_nonlocal(self, node: "ast.Nonlocal", parent: NodeNG) -> nodes.Nonlocal:
         """visit a Nonlocal node and return a new instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             return nodes.Nonlocal(
                 names=node.names,
                 lineno=node.lineno,
@@ -1934,7 +1934,7 @@ class TreeRebuilder:
 
     def visit_constant(self, node: "ast.Constant", parent: NodeNG) -> nodes.Const:
         """visit a Constant node by returning a fresh instance of Const"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             return nodes.Const(
                 value=node.value,
                 kind=node.kind,
@@ -1979,7 +1979,7 @@ class TreeRebuilder:
 
     def visit_pass(self, node: "ast.Pass", parent: NodeNG) -> nodes.Pass:
         """visit a Pass node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             return nodes.Pass(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -1991,7 +1991,7 @@ class TreeRebuilder:
 
     def visit_raise(self, node: "ast.Raise", parent: NodeNG) -> nodes.Raise:
         """visit a Raise node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Raise(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -2010,7 +2010,7 @@ class TreeRebuilder:
 
     def visit_return(self, node: "ast.Return", parent: NodeNG) -> nodes.Return:
         """visit a Return node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Return(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -2026,7 +2026,7 @@ class TreeRebuilder:
 
     def visit_set(self, node: "ast.Set", parent: NodeNG) -> nodes.Set:
         """visit a Set node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Set(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -2041,7 +2041,7 @@ class TreeRebuilder:
 
     def visit_setcomp(self, node: "ast.SetComp", parent: NodeNG) -> nodes.SetComp:
         """visit a SetComp node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.SetComp(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -2059,7 +2059,7 @@ class TreeRebuilder:
 
     def visit_slice(self, node: "ast.Slice", parent: nodes.Subscript) -> nodes.Slice:
         """visit a Slice node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 9):
+        if PY39_PLUS:
             newnode = nodes.Slice(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -2079,7 +2079,7 @@ class TreeRebuilder:
     def visit_subscript(self, node: "ast.Subscript", parent: NodeNG) -> nodes.Subscript:
         """visit a Subscript node by returning a fresh instance of it"""
         context = self._get_context(node)
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Subscript(
                 ctx=context,
                 lineno=node.lineno,
@@ -2103,7 +2103,7 @@ class TreeRebuilder:
     def visit_starred(self, node: "ast.Starred", parent: NodeNG) -> nodes.Starred:
         """visit a Starred node and return a new instance of it"""
         context = self._get_context(node)
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Starred(
                 ctx=context,
                 lineno=node.lineno,
@@ -2124,7 +2124,7 @@ class TreeRebuilder:
 
     def visit_tryexcept(self, node: "ast.Try", parent: NodeNG) -> nodes.TryExcept:
         """visit a TryExcept node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.TryExcept(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -2147,7 +2147,7 @@ class TreeRebuilder:
         # python 3.3 introduce a new Try node replacing
         # TryFinally/TryExcept nodes
         if node.finalbody:
-            if sys.version_info >= (3, 8):
+            if PY38_PLUS:
                 newnode = nodes.TryFinally(
                     lineno=node.lineno,
                     col_offset=node.col_offset,
@@ -2170,7 +2170,7 @@ class TreeRebuilder:
 
     def visit_tryfinally(self, node: "ast.Try", parent: NodeNG) -> nodes.TryFinally:
         """visit a TryFinally node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.TryFinally(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -2189,7 +2189,7 @@ class TreeRebuilder:
     def visit_tuple(self, node: "ast.Tuple", parent: NodeNG) -> nodes.Tuple:
         """visit a Tuple node by returning a fresh instance of it"""
         context = self._get_context(node)
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Tuple(
                 ctx=context,
                 lineno=node.lineno,
@@ -2210,7 +2210,7 @@ class TreeRebuilder:
 
     def visit_unaryop(self, node: "ast.UnaryOp", parent: NodeNG) -> nodes.UnaryOp:
         """visit a UnaryOp node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.UnaryOp(
                 op=self._parser_module.unary_op_classes[node.op.__class__],
                 lineno=node.lineno,
@@ -2231,7 +2231,7 @@ class TreeRebuilder:
 
     def visit_while(self, node: "ast.While", parent: NodeNG) -> nodes.While:
         """visit a While node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.While(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -2266,7 +2266,7 @@ class TreeRebuilder:
         node: Union["ast.With", "ast.AsyncWith"],
         parent: NodeNG,
     ) -> T_With:
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = cls(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -2295,7 +2295,7 @@ class TreeRebuilder:
 
     def visit_yield(self, node: "ast.Yield", parent: NodeNG) -> NodeNG:
         """visit a Yield node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.Yield(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
@@ -2310,7 +2310,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_yieldfrom(self, node: "ast.YieldFrom", parent: NodeNG) -> NodeNG:
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             newnode = nodes.YieldFrom(
                 lineno=node.lineno,
                 col_offset=node.col_offset,

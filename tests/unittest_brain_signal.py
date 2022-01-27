@@ -8,10 +8,11 @@ import sys
 import pytest
 
 from astroid import builder, nodes
+from astroid.const import WIN32
 
 # Define signal enums
 ENUMS = ["Signals", "Handlers", "Sigmasks"]
-if sys.platform == "win32":
+if WIN32:
     ENUMS.remove("Sigmasks")  # Sigmasks do not exist on Windows
 
 

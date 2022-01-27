@@ -27,6 +27,7 @@ import sys
 
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
+from astroid.const import WIN32
 from astroid.manager import AstroidManager
 
 
@@ -49,7 +50,7 @@ def _signals_enum():
         SIGSEGV   = enum.auto()
         SIGTERM   = enum.auto()
     """
-    if sys.platform != "win32":
+    if not WIN32:
         signals_enum += """
         SIGALRM   = enum.auto()
         SIGBUS    = enum.auto()
@@ -76,7 +77,7 @@ def _signals_enum():
         SIGXCPU   = enum.auto()
         SIGXFSZ   = enum.auto()
         """
-    if sys.platform == "win32":
+    if WIN32:
         signals_enum += """
         SIGBREAK  = enum.auto()
         """
@@ -103,7 +104,7 @@ def _handlers_enum():
 
 def _sigmasks_enum():
     """Generates the source code for the Sigmasks int enum."""
-    if sys.platform != "win32":
+    if not WIN32:
         return """
     import enum
     class Sigmasks(enum.IntEnum):
