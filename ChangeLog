@@ -20,6 +20,9 @@ Release date: TBA
 
   Closes #1330
 
+* Introduce `qname` method for `AssignAttr` nodes for cases where they are treated 
+  as Class definitions to fix a crash while inferring them as modules.
+
 What's New in astroid 2.9.4?
 ============================
 Release date: TBA

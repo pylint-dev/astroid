@@ -1070,6 +1070,14 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
     def get_children(self):
         yield self.expr
 
+    def qname(self):
+        cur = self
+        names = []
+        while not isinstance(cur, Name):
+            names.append(cur.attrname)
+            cur = cur.expr
+        names.append(cur.name)
+        return ".".join(reversed(names))
 
 class Assert(Statement):
     """Class representing an :class:`ast.Assert` node.
