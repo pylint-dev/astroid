@@ -1076,8 +1076,9 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
         while not isinstance(cur, Name):
             names.append(cur.attrname)
             cur = cur.expr
-        names.append(cur.name)
+        names.append(cur.name)  # pylint: disable=no-member
         return ".".join(reversed(names))
+
 
 class Assert(Statement):
     """Class representing an :class:`ast.Assert` node.
