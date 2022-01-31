@@ -108,7 +108,7 @@ if os.name == "nt":
 if platform.python_implementation() == "PyPy":
     # PyPy stores the stdlib in two places: sys.prefix/lib_pypy and sys.prefix/lib-python/3
     # sysconfig.get_path on PyPy returns the first, but without an underscore so we patch this manually.
-    STD_LIB_DIRS.add(Path(sysconfig.get_path("stdlib").parent.joinpath("lib_pypy")))
+    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("stdlib")).parent / "lib_pypy"))
     STD_LIB_DIRS.add(
         sysconfig.get_path("stdlib", vars={"implementation_lower": "python/3"})
     )
