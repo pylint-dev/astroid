@@ -6,11 +6,47 @@ What's New in astroid 2.10.0?
 =============================
 Release date: TBA
 
+* Fixed builtin inferenence on `property` calls not calling the `postinit` of the new node, which
+  resulted in instance arguments missing on these nodes.
 
+* Fixed a crash on ``Super.getattr`` when the attribute was previously uninferable due to a cache
+  limit size. This limit can be hit when the inheritance pattern of a class (and therefore of the
+  ``__init__`` attribute) is very large.
+
+  Closes PyCQA/pylint#5679
+
+* Add support for [attrs v21.3.0](https://github.com/python-attrs/attrs/releases/tag/21.3.0) which
+  added a new `attrs` module alongside the existing `attr`.
+
+  Closes #1330
+
+What's New in astroid 2.9.4?
+============================
+Release date: TBA
+
+
+
+What's New in astroid 2.9.3?
+============================
+Release date: 2022-01-09
+
+* Fixed regression where packages without a ``__init__.py`` file were
+  not recognized or imported correctly.
+
+  Closes #1327
+
+What's New in astroid 2.9.2?
+============================
+Release date: 2022-01-04
+
+* Fixed regression in ``astroid.scoped_nodes`` where ``_is_metaclass``
+  was not accessible anymore.
+
+Closes #1325
 
 What's New in astroid 2.9.1?
 ============================
-Release date: TBA
+Release date: 2021-12-31
 
 * ``NodeNG.frame()`` and ``NodeNG.statement()`` will start raising ``ParentMissingError``
   instead of ``AttributeError`` in astroid 3.0. This behaviour can already be triggered
@@ -44,6 +80,15 @@ Release date: TBA
 * Enable inference of dataclass import from marshmallow_dataclass.
   This allows the dataclasses brain to recognize dataclasses annotated by marshmallow_dataclass.
 
+* Resolve symlinks in the import path
+  Fixes inference error when the import path includes symlinks (e.g. Python
+  installed on macOS via Homebrew).
+
+  Closes #823
+  Closes PyCQA/pylint#3499
+  Closes PyCQA/pylint#4302
+  Closes PyCQA/pylint#4798
+  Closes PyCQA/pylint#5081
 
 What's New in astroid 2.9.0?
 ============================
@@ -69,16 +114,6 @@ Release date: 2021-11-21
 * Fix bug with Python 3.7.0 / 3.7.1 and ``typing.NoReturn``.
 
   Closes #1239
-
-* Resolve symlinks in the import path
-  Fixes inference error when the import path includes symlinks (e.g. Python
-  installed on macOS via Homebrew).
-
-  Closes #823
-  Closes PyCQA/pylint#3499
-  Closes PyCQA/pylint#4302
-  Closes PyCQA/pylint#4798
-  Closes PyCQA/pylint#5081
 
 
 What's New in astroid 2.8.5?

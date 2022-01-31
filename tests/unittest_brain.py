@@ -10,10 +10,10 @@
 # Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2017 David Euresti <github@euresti.com>
 # Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
+# Copyright (c) 2018, 2021 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Tomas Gavenciak <gavento@ucw.cz>
 # Copyright (c) 2018 David Poirier <david-poirier-csn@users.noreply.github.com>
 # Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
 # Copyright (c) 2018 Ioana Tagirta <ioana.tagirta@gmail.com>
 # Copyright (c) 2018 Ahmed Azzaoui <ahmed.azzaoui@engie.com>
@@ -25,6 +25,7 @@
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Joshua Cannon <joshua.cannon@ni.com>
 # Copyright (c) 2021 Craig Franklin <craigjfranklin@gmail.com>
@@ -2200,6 +2201,73 @@ class AttrsTest(unittest.TestCase):
         @attr.frozen
         class Eggs:
             d = attr.field(default=attr.Factory(dict))
+
+        l = Eggs(d=1)
+        l.d['answer'] = 42
+        """
+        )
+
+        for name in ("f", "g", "h", "i", "j", "k", "l"):
+            should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
+            self.assertIsInstance(should_be_unknown, astroid.Unknown)
+
+    def test_attrs_transform(self) -> None:
+        """Test brain for decorators of the 'attrs' package.
+
+        Package added support for 'attrs' a long side 'attr' in v21.3.0.
+        See: https://github.com/python-attrs/attrs/releases/tag/21.3.0
+        """
+        module = astroid.parse(
+            """
+        import attrs
+        from attrs import field, mutable, frozen
+
+        @attrs.define
+        class Foo:
+
+            d = attrs.field(attrs.Factory(dict))
+
+        f = Foo()
+        f.d['answer'] = 42
+
+        @attrs.define(slots=True)
+        class Bar:
+            d = field(attrs.Factory(dict))
+
+        g = Bar()
+        g.d['answer'] = 42
+
+        @attrs.mutable
+        class Bah:
+            d = field(attrs.Factory(dict))
+
+        h = Bah()
+        h.d['answer'] = 42
+
+        @attrs.frozen
+        class Bai:
+            d = attrs.field(attrs.Factory(dict))
+
+        i = Bai()
+        i.d['answer'] = 42
+
+        @attrs.define
+        class Spam:
+            d = field(default=attrs.Factory(dict))
+
+        j = Spam(d=1)
+        j.d['answer'] = 42
+
+        @attrs.mutable
+        class Eggs:
+            d = attrs.field(default=attrs.Factory(dict))
+
+        k = Eggs(d=1)
+        k.d['answer'] = 42
+
+        @attrs.frozen
+        class Eggs:
+            d = attrs.field(default=attrs.Factory(dict))
 
         l = Eggs(d=1)
         l.d['answer'] = 42
