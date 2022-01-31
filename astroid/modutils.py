@@ -140,7 +140,7 @@ if os.name == "posix":
         return os.path.join(prefix, path, base_python)
 
     STD_LIB_DIRS.add(_posix_path("lib"))
-    if sys.maxsize > 2 ** 32:
+    if sys.maxsize > 2**32:
         # This tries to fix a problem with /usr/lib64 builds,
         # where systems are running both 32-bit and 64-bit code
         # on the same machine, which reflects into the places where

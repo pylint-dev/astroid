@@ -123,7 +123,7 @@ BIN_OP_IMPL = {
     "/": lambda a, b: a / b,
     "//": lambda a, b: a // b,
     "*": lambda a, b: a * b,
-    "**": lambda a, b: a ** b,
+    "**": lambda a, b: a**b,
     "%": lambda a, b: a % b,
     "&": lambda a, b: a & b,
     "|": lambda a, b: a | b,
