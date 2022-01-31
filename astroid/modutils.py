@@ -53,6 +53,7 @@ import sysconfig
 import types
 from distutils.errors import DistutilsPlatformError  # pylint: disable=import-error
 from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
+from pathlib import Path
 from typing import Dict, Set
 
 from astroid.interpreter._import import spec, util
@@ -106,10 +107,8 @@ if os.name == "nt":
 
 if platform.python_implementation() == "PyPy":
     # PyPy stores the stdlib in two places: sys.prefix/lib_pypy and sys.prefix/lib-python/3
-    # sysconfig.get_path on PyPy only returns the first so we patch this manually.
-    # Note that sysconfig.get_path expands: '{installed_base}/lib-{implementation_lower}'
-    # sys.prefix/lib-pypy resolves into sys.prefix/lib_pypy
-    STD_LIB_DIRS.add(sysconfig.get_path("stdlib"))
+    # sysconfig.get_path on PyPy returns the first, but without an underscore so we patch this manually.
+    STD_LIB_DIRS.add(Path(sysconfig.get_path("stdlib").parent.joinpath("lib_pypy")))
     STD_LIB_DIRS.add(
         sysconfig.get_path("stdlib", vars={"implementation_lower": "python/3"})
     )
