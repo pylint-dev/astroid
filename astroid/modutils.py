@@ -49,6 +49,7 @@ import itertools
 import os
 import platform
 import sys
+import sysconfig
 import types
 from distutils.errors import DistutilsPlatformError  # pylint: disable=import-error
 from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
@@ -149,7 +150,7 @@ if os.name == "posix":
         # https://github.com/PyCQA/pylint/issues/712#issuecomment-163178753
         STD_LIB_DIRS.add(_posix_path("lib64"))
 
-EXT_LIB_DIRS = {get_python_lib(), get_python_lib(True)}
+EXT_LIB_DIRS = {sysconfig.get_path("purelib"), sysconfig.get_path("platlib")}
 IS_JYTHON = platform.python_implementation() == "Jython"
 BUILTIN_MODULES = dict.fromkeys(sys.builtin_module_names, True)
 
