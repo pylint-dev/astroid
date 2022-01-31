@@ -112,6 +112,12 @@ if platform.python_implementation() == "PyPy":
     STD_LIB_DIRS.add(
         sysconfig.get_path("stdlib", vars={"implementation_lower": "python/3"})
     )
+    # TODO: This is a fix for a workaround in virtualenv. At some point we should revisit
+    # whether this is still necessary. See https://github.com/PyCQA/astroid/pull/1324.
+    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("platstdlib")).parent / "lib_pypy"))
+    STD_LIB_DIRS.add(
+        sysconfig.get_path("platstdlib", vars={"implementation_lower": "python/3"})
+    )
 
 if os.name == "posix":
     # Need the real prefix if we're in a virtualenv, otherwise
