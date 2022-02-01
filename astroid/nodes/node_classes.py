@@ -23,9 +23,11 @@
 # Copyright (c) 2019 kavins14 <kavinsingh@hotmail.com>
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
+# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
@@ -42,7 +44,16 @@ import sys
 import typing
 import warnings
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Callable, Generator, Optional, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Generator,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from astroid import decorators, mixins, util
 from astroid.bases import Instance, _infer_stmts
@@ -476,7 +487,7 @@ class AssignName(
             parent=parent,
         )
 
-    assigned_stmts: AssignedStmtsCall["AssignName"]
+    assigned_stmts: ClassVar[AssignedStmtsCall["AssignName"]]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -802,7 +813,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         if type_comment_posonlyargs is not None:
             self.type_comment_posonlyargs = type_comment_posonlyargs
 
-    assigned_stmts: AssignedStmtsCall["Arguments"]
+    assigned_stmts: ClassVar[AssignedStmtsCall["Arguments"]]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -1060,7 +1071,7 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
         """
         self.expr = expr
 
-    assigned_stmts: AssignedStmtsCall["AssignAttr"]
+    assigned_stmts: ClassVar[AssignedStmtsCall["AssignAttr"]]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -1208,7 +1219,7 @@ class Assign(mixins.AssignTypeMixin, Statement):
         self.value = value
         self.type_annotation = type_annotation
 
-    assigned_stmts: AssignedStmtsCall["Assign"]
+    assigned_stmts: ClassVar[AssignedStmtsCall["Assign"]]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -1305,7 +1316,7 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
         self.value = value
         self.simple = simple
 
-    assigned_stmts: AssignedStmtsCall["AnnAssign"]
+    assigned_stmts: ClassVar[AssignedStmtsCall["AnnAssign"]]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -1391,7 +1402,7 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
         self.target = target
         self.value = value
 
-    assigned_stmts: AssignedStmtsCall["AugAssign"]
+    assigned_stmts: ClassVar[AssignedStmtsCall["AugAssign"]]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -1862,7 +1873,7 @@ class Comprehension(NodeNG):
             self.ifs = ifs
         self.is_async = is_async
 
-    assigned_stmts: AssignedStmtsCall["Comprehension"]
+    assigned_stmts: ClassVar[AssignedStmtsCall["Comprehension"]]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -2554,7 +2565,7 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
             parent=parent,
         )
 
-    assigned_stmts: AssignedStmtsCall["ExceptHandler"]
+    assigned_stmts: ClassVar[AssignedStmtsCall["ExceptHandler"]]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -2717,7 +2728,7 @@ class For(
             self.orelse = orelse
         self.type_annotation = type_annotation
 
-    assigned_stmts: AssignedStmtsCall["For"]
+    assigned_stmts: ClassVar[AssignedStmtsCall["For"]]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -3422,7 +3433,7 @@ class List(BaseContainer):
             parent=parent,
         )
 
-    assigned_stmts: AssignedStmtsCall["List"]
+    assigned_stmts: ClassVar[AssignedStmtsCall["List"]]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -3853,7 +3864,7 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
         """
         self.value = value
 
-    assigned_stmts: AssignedStmtsCall["Starred"]
+    assigned_stmts: ClassVar[AssignedStmtsCall["Starred"]]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -4184,7 +4195,7 @@ class Tuple(BaseContainer):
             parent=parent,
         )
 
-    assigned_stmts: AssignedStmtsCall["Tuple"]
+    assigned_stmts: ClassVar[AssignedStmtsCall["Tuple"]]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -4483,7 +4494,7 @@ class With(
             self.body = body
         self.type_annotation = type_annotation
 
-    assigned_stmts: AssignedStmtsCall["With"]
+    assigned_stmts: ClassVar[AssignedStmtsCall["With"]]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -4791,7 +4802,7 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
         self.target = target
         self.value = value
 
-    assigned_stmts: AssignedStmtsCall["NamedExpr"]
+    assigned_stmts: ClassVar[AssignedStmtsCall["NamedExpr"]]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -5158,14 +5169,16 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
         self.patterns = patterns
         self.rest = rest
 
-    assigned_stmts: Callable[
-        [
-            "MatchMapping",
-            AssignName,
-            Optional[InferenceContext],
-            Literal[None],
-        ],
-        Generator[NodeNG, None, None],
+    assigned_stmts: ClassVar[
+        Callable[
+            [
+                "MatchMapping",
+                AssignName,
+                Optional[InferenceContext],
+                Literal[None],
+            ],
+            Generator[NodeNG, None, None],
+        ]
     ]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
@@ -5263,14 +5276,16 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
     def postinit(self, *, name: Optional[AssignName]) -> None:
         self.name = name
 
-    assigned_stmts: Callable[
-        [
-            "MatchStar",
-            AssignName,
-            Optional[InferenceContext],
-            Literal[None],
-        ],
-        Generator[NodeNG, None, None],
+    assigned_stmts: ClassVar[
+        Callable[
+            [
+                "MatchStar",
+                AssignName,
+                Optional[InferenceContext],
+                Literal[None],
+            ],
+            Generator[NodeNG, None, None],
+        ]
     ]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
@@ -5332,14 +5347,16 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
         self.pattern = pattern
         self.name = name
 
-    assigned_stmts: Callable[
-        [
-            "MatchAs",
-            AssignName,
-            Optional[InferenceContext],
-            Literal[None],
-        ],
-        Generator[NodeNG, None, None],
+    assigned_stmts: ClassVar[
+        Callable[
+            [
+                "MatchAs",
+                AssignName,
+                Optional[InferenceContext],
+                Literal[None],
+            ],
+            Generator[NodeNG, None, None],
+        ]
     ]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.

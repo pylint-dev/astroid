@@ -18,6 +18,9 @@
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
+# Copyright (c) 2021 Keichi Takahashi <hello@keichi.dev>
+# Copyright (c) 2021 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
 
@@ -49,6 +52,7 @@ import sys
 import sysconfig
 import types
 from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
+from pathlib import Path
 from typing import Dict, Set
 
 from astroid.interpreter._import import spec, util
@@ -86,26 +90,19 @@ if os.name == "nt":
             pass
 
 if platform.python_implementation() == "PyPy":
-    # The get_python_lib(standard_lib=True) function does not give valid
-    # result with pypy in a virtualenv.
-    # In a virtual environment, with CPython implementation the call to this function returns a path toward
-    # the binary (its libraries) which has been used to create the virtual environment.
-    # Not with pypy implementation.
-    # The only way to retrieve such information is to use the sys.base_prefix hint.
-    # It's worth noticing that under CPython implementation the return values of
-    # get_python_lib(standard_lib=True) and get_python_lib(santdard_lib=True, prefix=sys.base_prefix)
-    # are the same.
-    # In the lines above, we could have replace the call to get_python_lib(standard=True)
-    # with the one using prefix=sys.base_prefix but we prefer modifying only what deals with pypy.
-    STD_LIB_DIRS.add(get_python_lib(standard_lib=True, prefix=sys.base_prefix))
-    _root = os.path.join(sys.prefix, "lib_pypy")
-    STD_LIB_DIRS.add(_root)
-    try:
-        # real_prefix is defined when running inside virtualenv.
-        STD_LIB_DIRS.add(os.path.join(sys.base_prefix, "lib_pypy"))
-    except AttributeError:
-        pass
-    del _root
+    # PyPy stores the stdlib in two places: sys.prefix/lib_pypy and sys.prefix/lib-python/3
+    # sysconfig.get_path on PyPy returns the first, but without an underscore so we patch this manually.
+    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("stdlib")).parent / "lib_pypy"))
+    STD_LIB_DIRS.add(
+        sysconfig.get_path("stdlib", vars={"implementation_lower": "python/3"})
+    )
+    # TODO: This is a fix for a workaround in virtualenv. At some point we should revisit
+    # whether this is still necessary. See https://github.com/PyCQA/astroid/pull/1324.
+    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("platstdlib")).parent / "lib_pypy"))
+    STD_LIB_DIRS.add(
+        sysconfig.get_path("platstdlib", vars={"implementation_lower": "python/3"})
+    )
+
 if os.name == "posix":
     # Need the real prefix if we're in a virtualenv, otherwise
     # the usual one will do.
@@ -121,7 +118,7 @@ if os.name == "posix":
         return os.path.join(prefix, path, base_python)
 
     STD_LIB_DIRS.add(_posix_path("lib"))
-    if sys.maxsize > 2 ** 32:
+    if sys.maxsize > 2**32:
         # This tries to fix a problem with /usr/lib64 builds,
         # where systems are running both 32-bit and 64-bit code
         # on the same machine, which reflects into the places where
@@ -131,7 +128,7 @@ if os.name == "posix":
         # https://github.com/PyCQA/pylint/issues/712#issuecomment-163178753
         STD_LIB_DIRS.add(_posix_path("lib64"))
 
-EXT_LIB_DIRS = {get_python_lib(), get_python_lib(True)}
+EXT_LIB_DIRS = {sysconfig.get_path("purelib"), sysconfig.get_path("platlib")}
 IS_JYTHON = platform.python_implementation() == "Jython"
 BUILTIN_MODULES = dict.fromkeys(sys.builtin_module_names, True)
 
@@ -279,6 +276,9 @@ def _get_relative_base_path(filename, path_to_check):
     if os.path.normcase(real_filename).startswith(path_to_check):
         importable_path = real_filename
 
+    # if "var" in path_to_check:
+    #     breakpoint()
+
     if importable_path:
         base_path = os.path.splitext(importable_path)[0]
         relative_base_path = base_path[len(path_to_check) :]
@@ -289,8 +289,11 @@ def _get_relative_base_path(filename, path_to_check):
 
 def modpath_from_file_with_callback(filename, path=None, is_package_cb=None):
     filename = os.path.expanduser(_path_from_filename(filename))
+    paths_to_check = sys.path.copy()
+    if path:
+        paths_to_check += path
     for pathname in itertools.chain(
-        path or [], map(_cache_normalize_path, sys.path), sys.path
+        paths_to_check, map(_cache_normalize_path, paths_to_check)
     ):
         if not pathname:
             continue

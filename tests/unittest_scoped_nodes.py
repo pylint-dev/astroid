@@ -20,8 +20,9 @@
 # Copyright (c) 2019 Peter de Blanc <peter@standard.ai>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2020 Tim Martin <tim@asymptotic.co.uk>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 doranid <ddandd@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
@@ -42,9 +43,9 @@ from typing import Any, List, Union
 
 import pytest
 
-from astroid import MANAGER, builder, nodes, objects, test_utils, util
+from astroid import MANAGER, builder, nodes, objects, parse, test_utils, util
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import PY38_PLUS
+from astroid.const import PY38_PLUS, PY310_PLUS, WIN32
 from astroid.exceptions import (
     AttributeInferenceError,
     DuplicateBasesError,
@@ -1668,6 +1669,49 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         assert isinstance(cls, nodes.ClassDef)
         with self.assertRaises(DuplicateBasesError):
             cls.mro()
+
+    @test_utils.require_version(minver="3.7")
+    def test_mro_typing_extensions(self):
+        """Regression test for mro() inference on typing_extesnions.
+
+        Regression reported in:
+        https://github.com/PyCQA/astroid/issues/1124
+        """
+        module = parse(
+            """
+        import abc
+        import typing
+        import dataclasses
+
+        import typing_extensions
+
+        T = typing.TypeVar("T")
+
+        class MyProtocol(typing_extensions.Protocol): pass
+        class EarlyBase(typing.Generic[T], MyProtocol): pass
+        class Base(EarlyBase[T], abc.ABC): pass
+        class Final(Base[object]): pass
+        """
+        )
+        class_names = [
+            "ABC",
+            "Base",
+            "EarlyBase",
+            "Final",
+            "Generic",
+            "MyProtocol",
+            "Protocol",
+            "object",
+        ]
+        if not PY38_PLUS:
+            class_names.pop(-2)
+        # typing_extensions is not installed on this combination of version
+        # and platform
+        if PY310_PLUS and WIN32:
+            class_names.pop(-2)
+
+        final_def = module.body[-1]
+        self.assertEqual(class_names, sorted(i.name for i in final_def.mro()))
 
     def test_generator_from_infer_call_result_parent(self) -> None:
         func = builder.extract_node(
