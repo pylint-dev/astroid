@@ -53,7 +53,6 @@ from typing import Dict, Set
 
 from astroid.interpreter._import import spec, util
 
-
 if sys.platform.startswith("win"):
     PY_SOURCE_EXTS = ("py", "pyw")
     PY_COMPILED_EXTS = ("dll", "pyd")
