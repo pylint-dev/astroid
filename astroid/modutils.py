@@ -39,8 +39,6 @@
 :var BUILTIN_MODULES: dictionary with builtin module names has key
 """
 
-# We disable the import-error so pylint can work without distutils installed.
-# pylint: disable=no-name-in-module,useless-suppression
 
 import importlib
 import importlib.machinery
@@ -51,16 +49,10 @@ import platform
 import sys
 import sysconfig
 import types
-from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
 from pathlib import Path
 from typing import Dict, Set
 
 from astroid.interpreter._import import spec, util
-
-# distutils is replaced by virtualenv with a module that does
-# weird path manipulations in order to get to the
-# real distutils module.
-
 
 if sys.platform.startswith("win"):
     PY_SOURCE_EXTS = ("py", "pyw")
@@ -69,8 +61,9 @@ else:
     PY_SOURCE_EXTS = ("py",)
     PY_COMPILED_EXTS = ("so",)
 
-
-STD_LIB_DIRS = {sysconfig.get_path("stdlib")}
+# TODO: Adding `platstdlib` is a fix for a workaround in virtualenv. At some point we should
+# revisit whether this is still necessary. See https://github.com/PyCQA/astroid/pull/1323.
+STD_LIB_DIRS = {sysconfig.get_path("stdlib"), sysconfig.get_path("platstdlib")}
 
 if os.name == "nt":
     STD_LIB_DIRS.add(os.path.join(sys.prefix, "dlls"))

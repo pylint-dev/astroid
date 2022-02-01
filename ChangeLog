@@ -20,6 +20,13 @@ Release date: TBA
 
   Closes #1330
 
+* Use ``sysconfig`` instead of ``distutils`` to determine the location of python files
+  and packages.
+
+  Related pull requests: #1322, #1323, #1324
+  Closes #1282
+  Ref #1103
+
 What's New in astroid 2.9.4?
 ============================
 Release date: TBA
