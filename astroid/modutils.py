@@ -39,9 +39,6 @@
 :var BUILTIN_MODULES: dictionary with builtin module names has key
 """
 
-# We disable the import-error so pylint can work without distutils installed.
-# pylint: disable=no-name-in-module,useless-suppression
-
 import importlib
 import importlib.machinery
 import importlib.util
@@ -51,17 +48,10 @@ import platform
 import sys
 import sysconfig
 import types
-from distutils.errors import DistutilsPlatformError  # pylint: disable=import-error
-from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
 from pathlib import Path
 from typing import Dict, Set
 
 from astroid.interpreter._import import spec, util
-
-# distutils is replaced by virtualenv with a module that does
-# weird path manipulations in order to get to the
-# real distutils module.
-
 
 if sys.platform.startswith("win"):
     PY_SOURCE_EXTS = ("py", "pyw")
@@ -71,22 +61,9 @@ else:
     PY_COMPILED_EXTS = ("so",)
 
 
-try:
-    # The explicit sys.prefix is to work around a patch in virtualenv that
-    # replaces the 'real' sys.prefix (i.e. the location of the binary)
-    # with the prefix from which the virtualenv was created. This throws
-    # off the detection logic for standard library modules, thus the
-    # workaround.
-    STD_LIB_DIRS = {
-        get_python_lib(standard_lib=True, prefix=sys.prefix),
-        # Take care of installations where exec_prefix != prefix.
-        get_python_lib(standard_lib=True, prefix=sys.exec_prefix),
-        get_python_lib(standard_lib=True),
-    }
-# get_python_lib(standard_lib=1) is not available on pypy, set STD_LIB_DIR to
-# non-valid path, see https://bugs.pypy.org/issue1164
-except DistutilsPlatformError:
-    STD_LIB_DIRS = set()
+# TODO: Adding `platstdlib` is a fix for a workaround in virtualenv. At some point we should
+# revisit whether this is still necessary. See https://github.com/PyCQA/astroid/pull/1323.
+STD_LIB_DIRS = {sysconfig.get_path("stdlib"), sysconfig.get_path("platstdlib")}
 
 if os.name == "nt":
     STD_LIB_DIRS.add(os.path.join(sys.prefix, "dlls"))
