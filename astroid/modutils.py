@@ -39,7 +39,6 @@
 :var BUILTIN_MODULES: dictionary with builtin module names has key
 """
 
-
 import importlib
 import importlib.machinery
 import importlib.util
@@ -60,6 +59,7 @@ if sys.platform.startswith("win"):
 else:
     PY_SOURCE_EXTS = ("py",)
     PY_COMPILED_EXTS = ("so",)
+
 
 # TODO: Adding `platstdlib` is a fix for a workaround in virtualenv. At some point we should
 # revisit whether this is still necessary. See https://github.com/PyCQA/astroid/pull/1323.
