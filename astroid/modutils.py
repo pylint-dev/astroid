@@ -53,6 +53,7 @@ import sysconfig
 import types
 from distutils.errors import DistutilsPlatformError  # pylint: disable=import-error
 from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
+from pathlib import Path
 from typing import Dict, Set
 
 from astroid.interpreter._import import spec, util
@@ -105,26 +106,19 @@ if os.name == "nt":
             pass
 
 if platform.python_implementation() == "PyPy":
-    # The get_python_lib(standard_lib=True) function does not give valid
-    # result with pypy in a virtualenv.
-    # In a virtual environment, with CPython implementation the call to this function returns a path toward
-    # the binary (its libraries) which has been used to create the virtual environment.
-    # Not with pypy implementation.
-    # The only way to retrieve such information is to use the sys.base_prefix hint.
-    # It's worth noticing that under CPython implementation the return values of
-    # get_python_lib(standard_lib=True) and get_python_lib(santdard_lib=True, prefix=sys.base_prefix)
-    # are the same.
-    # In the lines above, we could have replace the call to get_python_lib(standard=True)
-    # with the one using prefix=sys.base_prefix but we prefer modifying only what deals with pypy.
-    STD_LIB_DIRS.add(get_python_lib(standard_lib=True, prefix=sys.base_prefix))
-    _root = os.path.join(sys.prefix, "lib_pypy")
-    STD_LIB_DIRS.add(_root)
-    try:
-        # real_prefix is defined when running inside virtualenv.
-        STD_LIB_DIRS.add(os.path.join(sys.base_prefix, "lib_pypy"))
-    except AttributeError:
-        pass
-    del _root
+    # PyPy stores the stdlib in two places: sys.prefix/lib_pypy and sys.prefix/lib-python/3
+    # sysconfig.get_path on PyPy returns the first, but without an underscore so we patch this manually.
+    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("stdlib")).parent / "lib_pypy"))
+    STD_LIB_DIRS.add(
+        sysconfig.get_path("stdlib", vars={"implementation_lower": "python/3"})
+    )
+    # TODO: This is a fix for a workaround in virtualenv. At some point we should revisit
+    # whether this is still necessary. See https://github.com/PyCQA/astroid/pull/1324.
+    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("platstdlib")).parent / "lib_pypy"))
+    STD_LIB_DIRS.add(
+        sysconfig.get_path("platstdlib", vars={"implementation_lower": "python/3"})
+    )
+
 if os.name == "posix":
     # Need the real prefix if we're in a virtualenv, otherwise
     # the usual one will do.
