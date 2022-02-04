@@ -15,6 +15,10 @@ Release date: TBA
 
   Closes PyCQA/pylint#5679
 
+* Inlcude names of keyword-only arguments in ``astroid.scoped_nodes.Lambda.argnames``.
+
+  Closes PyCQA/pylint#5771
+
 * Add support for [attrs v21.3.0](https://github.com/python-attrs/attrs/releases/tag/21.3.0) which
   added a new `attrs` module alongside the existing `attr`.
 

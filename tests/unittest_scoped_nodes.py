@@ -473,6 +473,10 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         astroid = builder.parse(code, __name__)
         self.assertEqual(astroid["f"].argnames(), ["a", "b", "c", "args", "kwargs"])
 
+        code_with_kwonly_args = "def f(a, b, *, c=None, d=None): pass"
+        astroid = builder.parse(code_with_kwonly_args, __name__)
+        self.assertEqual(astroid["f"].argnames(), ["a", "b", "c", "d"])
+
     def test_return_nothing(self) -> None:
         """test inferred value on a function with empty return"""
         data = """

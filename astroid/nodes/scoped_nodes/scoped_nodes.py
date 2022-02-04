@@ -1376,6 +1376,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
             names = _rec_get_names(self.args.arguments)
         else:
             names = []
+        names += [elt.name for elt in self.args.kwonlyargs]
         if self.args.vararg:
             names.append(self.args.vararg)
         if self.args.kwarg:
