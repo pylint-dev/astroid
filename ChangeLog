@@ -27,6 +27,10 @@ Release date: TBA
   Closes #1282
   Ref #1103
 
+* Adds missing enums from ``ssl`` module
+
+  Closes PyCQA/pylint#3691
+
 What's New in astroid 2.9.4?
 ============================
 Release date: TBA

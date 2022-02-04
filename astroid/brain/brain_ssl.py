@@ -70,6 +70,8 @@ def ssl_transform():
     from _ssl import _OPENSSL_API_VERSION
     from _ssl import PROTOCOL_SSLv23, PROTOCOL_TLSv1, PROTOCOL_TLSv1_1, PROTOCOL_TLSv1_2
     from _ssl import PROTOCOL_TLS, PROTOCOL_TLS_CLIENT, PROTOCOL_TLS_SERVER
+    from _ssl import AlertDescription, SSLErrorNumber, TLSVersion, VerifyMode
+    from _ssl import Options, VerifyFlags
     """
     )
 
