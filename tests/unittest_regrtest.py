@@ -313,6 +313,16 @@ def test(val):
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Const)
 
+    def test_ssl_protocol(self) -> None:
+        node = extract_node(
+            """
+        import ssl
+        ssl.VerifyMode.CERT_REQUIRED
+        """
+        )
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+
     def test_recursive_property_method(self) -> None:
         node = extract_node(
             """
