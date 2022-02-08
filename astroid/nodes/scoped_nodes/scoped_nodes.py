@@ -1366,8 +1366,10 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         """
         return True
 
-    def argnames(self):
-        """Get the names of each of the arguments.
+    def argnames(self) -> List[str]:
+        """Get the names of each of the arguments, including that
+        of the collections of variable-length arguments ("args", "kwargs",
+        etc.), as well as keyword-only arguments.
 
         :returns: The names of the arguments.
         :rtype: list(str)
@@ -1376,6 +1378,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
             names = _rec_get_names(self.args.arguments)
         else:
             names = []
+        names += [elt.name for elt in self.args.kwonlyargs]
         if self.args.vararg:
             names.append(self.args.vararg)
         if self.args.kwarg:
@@ -1991,7 +1994,7 @@ class AsyncFunctionDef(FunctionDef):
     """
 
 
-def _rec_get_names(args, names=None):
+def _rec_get_names(args, names: Optional[List[str]] = None) -> List[str]:
     """return a list of all argument names"""
     if names is None:
         names = []

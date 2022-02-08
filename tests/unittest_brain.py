@@ -2211,6 +2211,73 @@ class AttrsTest(unittest.TestCase):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
             self.assertIsInstance(should_be_unknown, astroid.Unknown)
 
+    def test_attrs_transform(self) -> None:
+        """Test brain for decorators of the 'attrs' package.
+
+        Package added support for 'attrs' a long side 'attr' in v21.3.0.
+        See: https://github.com/python-attrs/attrs/releases/tag/21.3.0
+        """
+        module = astroid.parse(
+            """
+        import attrs
+        from attrs import field, mutable, frozen
+
+        @attrs.define
+        class Foo:
+
+            d = attrs.field(attrs.Factory(dict))
+
+        f = Foo()
+        f.d['answer'] = 42
+
+        @attrs.define(slots=True)
+        class Bar:
+            d = field(attrs.Factory(dict))
+
+        g = Bar()
+        g.d['answer'] = 42
+
+        @attrs.mutable
+        class Bah:
+            d = field(attrs.Factory(dict))
+
+        h = Bah()
+        h.d['answer'] = 42
+
+        @attrs.frozen
+        class Bai:
+            d = attrs.field(attrs.Factory(dict))
+
+        i = Bai()
+        i.d['answer'] = 42
+
+        @attrs.define
+        class Spam:
+            d = field(default=attrs.Factory(dict))
+
+        j = Spam(d=1)
+        j.d['answer'] = 42
+
+        @attrs.mutable
+        class Eggs:
+            d = attrs.field(default=attrs.Factory(dict))
+
+        k = Eggs(d=1)
+        k.d['answer'] = 42
+
+        @attrs.frozen
+        class Eggs:
+            d = attrs.field(default=attrs.Factory(dict))
+
+        l = Eggs(d=1)
+        l.d['answer'] = 42
+        """
+        )
+
+        for name in ("f", "g", "h", "i", "j", "k", "l"):
+            should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
+            self.assertIsInstance(should_be_unknown, astroid.Unknown)
+
     def test_special_attributes(self) -> None:
         """Make sure special attrs attributes exist"""
 

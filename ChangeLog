@@ -6,10 +6,36 @@ What's New in astroid 2.10.0?
 =============================
 Release date: TBA
 
+
 * Fixed inference of ``self`` in binary operations in which ``self``
   is part of a list or tuple.
 
   Closes PyCQA/pylint#4826
+
+* Fixed builtin inferenence on `property` calls not calling the `postinit` of the new node, which
+  resulted in instance arguments missing on these nodes.
+
+* Fixed a crash on ``Super.getattr`` when the attribute was previously uninferable due to a cache
+  limit size. This limit can be hit when the inheritance pattern of a class (and therefore of the
+  ``__init__`` attribute) is very large.
+
+  Closes PyCQA/pylint#5679
+
+* Inlcude names of keyword-only arguments in ``astroid.scoped_nodes.Lambda.argnames``.
+
+  Closes PyCQA/pylint#5771
+
+* Add support for [attrs v21.3.0](https://github.com/python-attrs/attrs/releases/tag/21.3.0) which
+  added a new `attrs` module alongside the existing `attr`.
+
+  Closes #1330
+
+* Use ``sysconfig`` instead of ``distutils`` to determine the location of
+  python stdlib files and packages.
+
+  Related pull requests: #1322, #1323, #1324
+  Closes #1282
+  Ref #1103
 
 What's New in astroid 2.9.4?
 ============================
