@@ -185,7 +185,22 @@ def _filter_uninferable_nodes(elts, context):
 
 
 @decorators.yes_if_nothing_inferred
-def tl_infer_binary_op(self, opnode, operator, other, context, method):
+def tl_infer_binary_op(
+    self,
+    opnode: nodes.BinOp,
+    operator: str,
+    other: nodes.NodeNG,
+    context: InferenceContext,
+    method: nodes.FunctionDef,
+) -> Generator[nodes.NodeNG, None, None]:
+    """Infer a binary operation on a tuple or list.
+
+    The instance on which the binary operation is performed is a tuple
+    or list. This refers to the left-hand side of the operation, so:
+    'tuple() + 1' or '[] + A()'
+    """
+    # For tuples and list the boundnode is no longer the tuple or list instance
+    context.boundnode = None
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, self.__class__) and operator == "+":
         node = self.__class__(parent=opnode)

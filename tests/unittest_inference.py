@@ -3009,6 +3009,34 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast_nodes:
             self.assertEqual(next(node.infer()), util.Uninferable)
 
+    def test_binop_self_in_list(self) -> None:
+        """If 'self' is referenced within a list it should not be bound by it.
+
+        Reported in https://github.com/PyCQA/pylint/issues/4826.
+        """
+        ast_nodes = extract_node(
+            """
+        class A:
+            def __init__(self):
+                for a in [self] + []:
+                    print(a) #@
+
+        class B:
+            def __init__(self):
+                for b in [] + [self]:
+                    print(b) #@
+        """
+        )
+        inferred_a = list(ast_nodes[0].args[0].infer())
+        self.assertEqual(len(inferred_a), 1)
+        self.assertIsInstance(inferred_a[0], Instance)
+        self.assertEqual(inferred_a[0]._proxied.name, "A")
+
+        inferred_b = list(ast_nodes[1].args[0].infer())
+        self.assertEqual(len(inferred_b), 1)
+        self.assertIsInstance(inferred_b[0], Instance)
+        self.assertEqual(inferred_b[0]._proxied.name, "B")
+
     def test_metaclass__getitem__(self) -> None:
         ast_node = extract_node(
             """

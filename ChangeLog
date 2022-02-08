@@ -6,6 +6,12 @@ What's New in astroid 2.10.0?
 =============================
 Release date: TBA
 
+
+* Fixed inference of ``self`` in binary operations in which ``self``
+  is part of a list or tuple.
+
+  Closes PyCQA/pylint#4826
+
 * Fixed builtin inferenence on `property` calls not calling the `postinit` of the new node, which
   resulted in instance arguments missing on these nodes.
 
