@@ -253,7 +253,7 @@ class TreeRebuilder:
 
         @overload
         def visit(
-            self, node: "ast.ExceptHandler", parent: NodeNG
+            self, node: "ast.ExceptHandler", parent: nodes.TryExcept
         ) -> nodes.ExceptHandler:
             ...
 
@@ -599,7 +599,7 @@ class TreeRebuilder:
 
         @overload
         def visit(
-            self, node: "ast.ExceptHandler", parent: NodeNG
+            self, node: "ast.ExceptHandler", parent: nodes.TryExcept
         ) -> nodes.ExceptHandler:
             ...
 
@@ -1387,7 +1387,7 @@ class TreeRebuilder:
         )
 
     def visit_excepthandler(
-        self, node: "ast.ExceptHandler", parent: NodeNG
+        self, node: "ast.ExceptHandler", parent: nodes.TryExcept
     ) -> nodes.ExceptHandler:
         """visit an ExceptHandler node by returning a fresh instance of it"""
         if sys.version_info >= (3, 8):

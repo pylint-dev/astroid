@@ -2523,11 +2523,16 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
     _astroid_fields = ("type", "name", "body")
     _multi_line_block_fields = ("body",)
 
+    # TODO: Make parent non-optional
+    parent: Optional["nodes.TryExcept"]
+    """The parent node in the syntax tree."""
+
     def __init__(
         self,
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
-        parent: Optional[NodeNG] = None,
+        # TODO: Make parent non-optional
+        parent: Optional["nodes.TryExcept"] = None,
         *,
         end_lineno: Optional[int] = None,
         end_col_offset: Optional[int] = None,
