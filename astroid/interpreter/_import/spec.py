@@ -168,7 +168,9 @@ class ImportlibFinder(Finder):
             # imported to avoid spurious import-error messages
             distutils_spec = find_spec("distutils")
             if distutils_spec:
-                origin_path = Path(distutils_spec.origin)  # e.g. .../distutils/__init__.py
+                origin_path = Path(
+                    distutils_spec.origin
+                )  # e.g. .../distutils/__init__.py
                 path = [str(origin_path.parent)]  # e.g. .../distutils
             else:
                 path = [spec.location]
