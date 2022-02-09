@@ -134,9 +134,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
             module, builder = self._data_build(data, modname, path)
             return self._post_build(module, builder, encoding)
 
-    def string_build(self, data, modname="", path=None):
+    def string_build(self, data, modname="", path=None, *, tree_rev: int | None = None):
         """Build astroid from source code string."""
-        module, builder = self._data_build(data, modname, path)
+        module, builder = self._data_build(data, modname, path, tree_rev)
         module.file_bytes = data.encode("utf-8")
         return self._post_build(module, builder, "utf-8")
 
@@ -162,7 +162,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         return module
 
     def _data_build(
-        self, data: str, modname, path
+        self, data: str, modname, path, tree_rev: int | None = None
     ) -> tuple[nodes.Module, rebuilder.TreeRebuilder]:
         """Build tree node from data and add some informations"""
         try:
@@ -188,7 +188,12 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 path is not None
                 and os.path.splitext(os.path.basename(path))[0] == "__init__"
             )
-        builder = rebuilder.TreeRebuilder(self._manager, parser_module, data)
+        builder = rebuilder.TreeRebuilder(
+            self._manager,
+            parser_module,
+            data,
+            tree_rev=tree_rev or AstroidManager.tree_rev,
+        )
         module = builder.visit_module(node, modname, node_file, package)
         return module, builder
 
@@ -265,7 +270,14 @@ def build_namespace_package_module(name: str, path: list[str]) -> nodes.Module:
     return nodes.Module(name, path=path, package=True)
 
 
-def parse(code, module_name="", path=None, apply_transforms=True):
+def parse(
+    code,
+    module_name="",
+    path=None,
+    apply_transforms=True,
+    *,
+    tree_rev: int | None = None,
+):
     """Parses a source string in order to obtain an astroid AST from it
 
     :param str code: The code for the module.
@@ -279,7 +291,7 @@ def parse(code, module_name="", path=None, apply_transforms=True):
     builder = AstroidBuilder(
         manager=AstroidManager(), apply_transforms=apply_transforms
     )
-    return builder.string_build(code, modname=module_name, path=path)
+    return builder.string_build(code, modname=module_name, path=path, tree_rev=tree_rev)
 
 
 def _extract_expressions(node):

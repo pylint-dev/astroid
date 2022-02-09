@@ -15,7 +15,7 @@ import zipimport
 from importlib.util import find_spec, module_from_spec
 from typing import TYPE_CHECKING, ClassVar
 
-from astroid.const import BRAIN_MODULES_DIRECTORY
+from astroid.const import BRAIN_MODULES_DIRECTORY, TREE_REV
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec
 from astroid.modutils import (
@@ -62,6 +62,7 @@ class AstroidManager:
         "_transform": TransformVisitor(),
     }
     max_inferable_values: ClassVar[int] = 100
+    tree_rev: ClassVar[int] = TREE_REV
 
     def __init__(self):
         # NOTE: cache entries are added by the [re]builder
