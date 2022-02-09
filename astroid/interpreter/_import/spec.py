@@ -23,6 +23,8 @@ import os
 import sys
 import zipimport
 from functools import lru_cache
+from importlib.util import find_spec
+from pathlib import Path
 
 from . import util
 
@@ -160,6 +162,16 @@ class ImportlibFinder(Finder):
                 for p in sys.path
                 if os.path.isdir(os.path.join(p, *processed))
             ]
+        elif spec.name == "distutils":
+            # virtualenv below 20.0 patches distutils in an unexpected way
+            # so we just find the location of distutils that will be
+            # imported to avoid spurious import-error messages
+            distutils_spec = find_spec("distutils")
+            if distutils_spec:
+                origin_path = Path(distutils_spec.origin)  # e.g. .../distutils/__init__.py
+                path = [str(origin_path.parent)]  # e.g. .../distutils
+            else:
+                path = [spec.location]
         else:
             path = [spec.location]
         return path
