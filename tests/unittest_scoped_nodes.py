@@ -473,9 +473,15 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         astroid = builder.parse(code, __name__)
         self.assertEqual(astroid["f"].argnames(), ["a", "b", "c", "args", "kwargs"])
 
-        code_with_kwonly_args = "def f(a, b, *, c=None, d=None): pass"
+        code_with_kwonly_args = "def f(a, b, *args, c=None, d=None, **kwargs): pass"
         astroid = builder.parse(code_with_kwonly_args, __name__)
-        self.assertEqual(astroid["f"].argnames(), ["a", "b", "c", "d"])
+        self.assertEqual(astroid["f"].argnames(), ["a", "b", "args", "c", "d", "kwargs"])
+
+    @unittest.skipUnless(PY38_PLUS, "positional-only argument syntax")
+    def test_positional_only_argnames(self) -> None:
+        code = "def f(a, b, /, c=None, *args, d, **kwargs): pass"
+        astroid = builder.parse(code, __name__)
+        self.assertEqual(astroid["f"].argnames(), ["a", "b", "c", "args", "d", "kwargs"])
 
     def test_return_nothing(self) -> None:
         """test inferred value on a function with empty return"""
