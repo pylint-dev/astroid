@@ -1369,7 +1369,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     def argnames(self) -> List[str]:
         """Get the names of each of the arguments, including that
         of the collections of variable-length arguments ("args", "kwargs",
-        etc.), as well as keyword-only arguments.
+        etc.), as well as positional-only and keyword-only arguments.
 
         :returns: The names of the arguments.
         :rtype: list(str)
