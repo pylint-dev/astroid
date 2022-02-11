@@ -169,6 +169,7 @@ class TreeRebuilder:
         else:
             return None
 
+        # pylint: disable=undefined-loop-variable
         return nodes.AssignName(
             name=t.string,
             lineno=node.lineno - 1 + t.start[0],
