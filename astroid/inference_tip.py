@@ -3,16 +3,20 @@
 
 """Transform utilities (filters and decorator)"""
 
-import typing
+
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
 
 import wrapt
 
-from astroid.exceptions import InferenceOverwriteError
-from astroid.nodes import NodeNG
+from astroid import bases, nodes, util
+from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
 
-InferFn = typing.Callable[..., typing.Any]
+InferFn = Callable[..., Any]
+InferOptions = Union[
+    nodes.NodeNG, bases.Instance, bases.UnboundMethod, Type[util.Uninferable]
+]
 
-_cache: typing.Dict[typing.Tuple[InferFn, NodeNG], typing.Any] = {}
+_cache: Dict[Tuple[InferFn, nodes.NodeNG], Optional[List[InferOptions]]] = {}
 
 
 def clear_inference_tip_cache():
@@ -21,13 +25,21 @@ def clear_inference_tip_cache():
 
 
 @wrapt.decorator
-def _inference_tip_cached(func, instance, args, kwargs):
+def _inference_tip_cached(
+    func: InferFn, instance: None, args: Any, kwargs: Any
+) -> Iterator[InferOptions]:
     """Cache decorator used for inference tips"""
     node = args[0]
     try:
         result = _cache[func, node]
+        # If through recursion we end up trying to infer the same
+        # func + node we raise here.
+        if result is None:
+            raise UseInferenceDefault()
     except KeyError:
+        _cache[func, node] = None
         result = _cache[func, node] = list(func(*args, **kwargs))
+        assert result
     return iter(result)
 
 
@@ -53,7 +65,9 @@ def inference_tip(infer_function: InferFn, raise_on_overwrite: bool = False) -> 
         excess overwrites.
     """
 
-    def transform(node: NodeNG, infer_function: InferFn = infer_function) -> NodeNG:
+    def transform(
+        node: nodes.NodeNG, infer_function: InferFn = infer_function
+    ) -> nodes.NodeNG:
         if (
             raise_on_overwrite
             and node._explicit_inference is not None
