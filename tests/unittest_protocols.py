@@ -118,7 +118,6 @@ class ProtocolTests(unittest.TestCase):
         assigned3 = list(for3_assnode.assigned_stmts())
         self.assertConstNodesEqual([3, 6], assigned3)
 
-
     def test_assigned_stmts_starred_for(self) -> None:
         assign_stmts = extract_node(
             """
