@@ -30,6 +30,8 @@ Release date: TBA
 
   Closes #1330
 
+* ``ClassDef`` now has the ``is_dataclass`` attribute.
+
 * Use ``sysconfig`` instead of ``distutils`` to determine the location of
   python stdlib files and packages.
 

@@ -184,6 +184,7 @@ def test_inference_no_annotation(module: str):
     inferred = next(class_def.infer())
     assert isinstance(inferred, nodes.ClassDef)
     assert inferred.instance_attrs == {}
+    assert inferred.is_dataclass
 
     # Both the class and instance can still access the attribute
     for node in (klass, instance):
@@ -216,6 +217,7 @@ def test_inference_class_var(module: str):
     inferred = next(class_def.infer())
     assert isinstance(inferred, nodes.ClassDef)
     assert inferred.instance_attrs == {}
+    assert inferred.is_dataclass
 
     # Both the class and instance can still access the attribute
     for node in (klass, instance):
@@ -248,6 +250,7 @@ def test_inference_init_var(module: str):
     inferred = next(class_def.infer())
     assert isinstance(inferred, nodes.ClassDef)
     assert inferred.instance_attrs == {}
+    assert inferred.is_dataclass
 
     # Both the class and instance can still access the attribute
     for node in (klass, instance):
@@ -666,6 +669,7 @@ def test_annotated_enclosed_field_call(module: str):
     inferred = node.inferred()
     assert len(inferred) == 1 and isinstance(inferred[0], nodes.ClassDef)
     assert "attribute" in inferred[0].instance_attrs
+    assert inferred[0].is_dataclass
 
 
 @parametrize_module
@@ -683,3 +687,4 @@ def test_invalid_field_call(module: str) -> None:
     inferred = code.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.ClassDef)
+    assert inferred[0].is_dataclass

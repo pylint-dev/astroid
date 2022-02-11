@@ -2138,6 +2138,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     _other_other_fields = ("locals", "_newstyle")
     _newstyle = None
 
+    is_dataclass = False
+    """Whether this class is a dataclass."""
+
     def __init__(
         self,
         name=None,
