@@ -1546,6 +1546,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :type doc: str or None
         """
 
+        self.name_node: Optional[node_classes.AssignName] = None
+
         self.instance_attrs = {}
         super().__init__(
             lineno=lineno,
@@ -1567,6 +1569,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         returns=None,
         type_comment_returns=None,
         type_comment_args=None,
+        *,
+        name_node: Optional[node_classes.AssignName] = None,
     ):
         """Do some setup after initialisation.
 
@@ -1589,6 +1593,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         self.returns = returns
         self.type_comment_returns = type_comment_returns
         self.type_comment_args = type_comment_args
+        self.name_node = name_node
 
     @decorators_mod.cachedproperty
     def extra_decorators(self) -> List[node_classes.Call]:
@@ -2212,6 +2217,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type doc: str or None
         """
 
+        self.name_node: Optional[node_classes.AssignName] = None
+
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -2241,7 +2248,15 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
     # pylint: disable=redefined-outer-name
     def postinit(
-        self, bases, body, decorators, newstyle=None, metaclass=None, keywords=None
+        self,
+        bases,
+        body,
+        decorators,
+        newstyle=None,
+        metaclass=None,
+        keywords=None,
+        *,
+        name_node: Optional[node_classes.AssignName] = None,
     ):
         """Do some setup after initialisation.
 
@@ -2272,6 +2287,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             self._newstyle = newstyle
         if metaclass is not None:
             self._metaclass = metaclass
+        self.name_node = name_node
 
     def _newstyle_impl(self, context=None):
         if context is None:

@@ -31,6 +31,9 @@ order to get a single Astroid representation
 """
 
 import sys
+import token
+from io import StringIO
+from tokenize import generate_tokens
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -88,9 +91,13 @@ class TreeRebuilder:
     """Rebuilds the _ast tree to become an Astroid tree"""
 
     def __init__(
-        self, manager: AstroidManager, parser_module: Optional[ParserModule] = None
+        self,
+        manager: AstroidManager,
+        parser_module: Optional[ParserModule] = None,
+        data: Optional[str] = None,
     ):
         self._manager = manager
+        self._data = data.split("\n") if data else None
         self._global_names: List[Dict[str, List[nodes.Global]]] = []
         self._import_from_nodes: List[nodes.ImportFrom] = []
         self._delayed_assattr: List[nodes.AssignAttr] = []
@@ -132,6 +139,44 @@ class TreeRebuilder:
         ],
     ) -> Context:
         return self._parser_module.context_classes.get(type(node.ctx), Context.Load)
+
+    def _create_name_node(
+        self,
+        node: Union["ast.ClassDef", "ast.FunctionDef", "ast.AsyncFunctionDef"],
+        parent: Union[nodes.ClassDef, nodes.FunctionDef, nodes.AsyncFunctionDef],
+    ) -> Optional[nodes.AssignName]:
+        if not self._data:
+            return None
+        end_lineno: Optional[int] = getattr(node, "end_lineno", None)
+        if node.body:
+            end_lineno = node.body[0].lineno
+        # pylint: disable-next=unsubscriptable-object
+        data = "\n".join(self._data[node.lineno - 1 : end_lineno])
+
+        if isinstance(parent, nodes.FunctionDef):
+            search_token_name = "def"
+        else:
+            search_token_name = "class"
+        token_found: bool = False
+
+        for t in generate_tokens(StringIO(data).readline):
+            if token_found and t.type == token.NAME and t.string == node.name:
+                break
+            if t.type == token.NAME and t.string == search_token_name:
+                token_found = True
+                continue
+            token_found = False
+        else:
+            return None
+
+        return nodes.AssignName(
+            name=t.string,
+            lineno=node.lineno - 1 + t.start[0],
+            col_offset=t.start[1],
+            end_lineno=node.lineno - 1 + t.end[0],
+            end_col_offset=t.end[1],
+            parent=parent,
+        )
 
     def visit_module(
         self, node: "ast.Module", modname: str, modpath: str, package: bool
@@ -1203,6 +1248,7 @@ class TreeRebuilder:
                 for kwd in node.keywords
                 if kwd.arg != "metaclass"
             ],
+            name_node=self._create_name_node(node, newnode),
         )
         return newnode
 
@@ -1551,6 +1597,7 @@ class TreeRebuilder:
             returns=returns,
             type_comment_returns=type_comment_returns,
             type_comment_args=type_comment_args,
+            name_node=self._create_name_node(node, newnode),
         )
         self._global_names.pop()
         return newnode
