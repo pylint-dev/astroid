@@ -175,7 +175,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             module = self._manager.visit_transforms(module)
         return module
 
-    def _data_build(self, data, modname, path):
+    def _data_build(self, data: str, modname, path):
         """Build tree node from data and add some information"""
         try:
             node, parser_module = _parse_string(data, type_comments=True)
@@ -200,7 +200,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 path is not None
                 and os.path.splitext(os.path.basename(path))[0] == "__init__"
             )
-        builder = rebuilder.TreeRebuilder(self._manager, parser_module)
+        builder = rebuilder.TreeRebuilder(self._manager, parser_module, data)
         module = builder.visit_module(node, modname, node_file, package)
         module._import_from_nodes = builder._import_from_nodes
         module._delayed_assattr = builder._delayed_assattr

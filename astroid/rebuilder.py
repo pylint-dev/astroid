@@ -31,6 +31,9 @@ order to get a single Astroid representation
 """
 
 import sys
+import token
+from io import StringIO
+from tokenize import TokenInfo, generate_tokens
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -51,6 +54,7 @@ from astroid._ast import ParserModule, get_parser_module, parse_function_type_co
 from astroid.const import PY38, PY38_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
+from astroid.nodes.utils import Range
 
 if sys.version_info >= (3, 8):
     from typing import Final
@@ -88,9 +92,13 @@ class TreeRebuilder:
     """Rebuilds the _ast tree to become an Astroid tree"""
 
     def __init__(
-        self, manager: AstroidManager, parser_module: Optional[ParserModule] = None
+        self,
+        manager: AstroidManager,
+        parser_module: Optional[ParserModule] = None,
+        data: Optional[str] = None,
     ):
         self._manager = manager
+        self._data = data.split("\n") if data else None
         self._global_names: List[Dict[str, List[nodes.Global]]] = []
         self._import_from_nodes: List[nodes.ImportFrom] = []
         self._delayed_assattr: List[nodes.AssignAttr] = []
@@ -132,6 +140,63 @@ class TreeRebuilder:
         ],
     ) -> Context:
         return self._parser_module.context_classes.get(type(node.ctx), Context.Load)
+
+    def _get_position_info(
+        self,
+        node: Union["ast.ClassDef", "ast.FunctionDef", "ast.AsyncFunctionDef"],
+        parent: Union[nodes.ClassDef, nodes.FunctionDef, nodes.AsyncFunctionDef],
+    ) -> Optional[Range]:
+        """Return position information for ClassDef and FunctionDef nodes.
+
+        In contrast to AST positions, these only include the actual keyword(s)
+        and the class / function name.
+
+        >>> @decorator
+        >>> async def some_func(var: int) -> None:
+        >>> ^^^^^^^^^^^^^^^^^^^
+        """
+        if not self._data:
+            return None
+        end_lineno: Optional[int] = getattr(node, "end_lineno", None)
+        if node.body:
+            end_lineno = node.body[0].lineno
+        # pylint: disable-next=unsubscriptable-object
+        data = "\n".join(self._data[node.lineno - 1 : end_lineno])
+
+        start_token: Optional[TokenInfo] = None
+        if isinstance(parent, nodes.AsyncFunctionDef):
+            search_token = "async"
+        elif isinstance(parent, nodes.FunctionDef):
+            search_token = "def"
+        else:
+            search_token = "class"
+
+        for t in generate_tokens(StringIO(data).readline):
+            if (
+                start_token is not None
+                and t.type == token.NAME
+                and t.string == node.name
+            ):
+                break
+            if t.type == token.NAME:
+                if t.string == search_token:
+                    start_token = t
+                    continue
+                if t.string in {"def"}:
+                    continue
+            start_token = None
+        else:
+            return None
+
+        start_token = cast(TokenInfo, start_token)  # type: ignore[redundant-cast]  # necessary for pyright
+
+        # pylint: disable=undefined-loop-variable
+        return Range(
+            lineno=node.lineno - 1 + start_token.start[0],
+            col_offset=start_token.start[1],
+            end_lineno=node.lineno - 1 + t.end[0],
+            end_col_offset=t.end[1],
+        )
 
     def visit_module(
         self, node: "ast.Module", modname: str, modpath: str, package: bool
@@ -1203,6 +1268,7 @@ class TreeRebuilder:
                 for kwd in node.keywords
                 if kwd.arg != "metaclass"
             ],
+            position=self._get_position_info(node, newnode),
         )
         return newnode
 
@@ -1551,6 +1617,7 @@ class TreeRebuilder:
             returns=returns,
             type_comment_returns=type_comment_returns,
             type_comment_args=type_comment_args,
+            position=self._get_position_info(node, newnode),
         )
         self._global_names.pop()
         return newnode

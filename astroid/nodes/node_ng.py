@@ -28,6 +28,7 @@ from astroid.exceptions import (
 from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
+from astroid.nodes.utils import Range
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -116,6 +117,12 @@ class NodeNG:
         self.end_col_offset: Optional[int] = end_col_offset
         """The end column this node appears on in the source code.
         Note: This is after the last symbol.
+        """
+
+        self.position: Optional[Range] = None
+        """Position of keyword(s) and name. Used as fallback for block nodes
+        which might not provide good enough positional information.
+        E.g. ClassDef, FunctionDef.
         """
 
     def infer(self, context=None, **kwargs):

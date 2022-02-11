@@ -78,6 +78,7 @@ from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
 from astroid.nodes import Arguments, Const, node_classes
+from astroid.nodes.utils import Range
 
 if sys.version_info >= (3, 6, 2):
     from typing import NoReturn
@@ -1490,7 +1491,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     type_comment_returns = None
     """If present, this will contain the return type annotation, passed by a type comment"""
     # attributes below are set by the builder module or by raw factories
-    _other_fields = ("name", "doc")
+    _other_fields = ("name", "doc", "position")
     _other_other_fields = (
         "locals",
         "_type",
@@ -1567,6 +1568,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         returns=None,
         type_comment_returns=None,
         type_comment_args=None,
+        *,
+        position: Optional[Range] = None,
     ):
         """Do some setup after initialisation.
 
@@ -1582,6 +1585,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             The return type annotation passed via a type comment.
         :params type_comment_args:
             The args type annotation passed via a type comment.
+        :params position:
+            Position of function keyword(s) and name.
         """
         self.args = args
         self.body = body
@@ -1589,6 +1594,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         self.returns = returns
         self.type_comment_returns = type_comment_returns
         self.type_comment_args = type_comment_args
+        self.position = position
 
     @decorators_mod.cachedproperty
     def extra_decorators(self) -> List[node_classes.Call]:
@@ -2134,7 +2140,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             ":type: str"
         ),
     )
-    _other_fields = ("name", "doc", "is_dataclass")
+    _other_fields = ("name", "doc", "is_dataclass", "position")
     _other_other_fields = ("locals", "_newstyle")
     _newstyle = None
 
@@ -2244,7 +2250,15 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
     # pylint: disable=redefined-outer-name
     def postinit(
-        self, bases, body, decorators, newstyle=None, metaclass=None, keywords=None
+        self,
+        bases,
+        body,
+        decorators,
+        newstyle=None,
+        metaclass=None,
+        keywords=None,
+        *,
+        position: Optional[Range] = None,
     ):
         """Do some setup after initialisation.
 
@@ -2265,6 +2279,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         :param keywords: The keywords given to the class definition.
         :type keywords: list(Keyword) or None
+
+        :param position: Position of class keyword and name.
         """
         if keywords is not None:
             self.keywords = keywords
@@ -2275,6 +2291,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             self._newstyle = newstyle
         if metaclass is not None:
             self._metaclass = metaclass
+        self.position = position
 
     def _newstyle_impl(self, context=None):
         if context is None:
