@@ -51,7 +51,7 @@ from typing import (
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import PY38, PY38_PLUS, Context
+from astroid.const import PY36, PY38, PY38_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 from astroid.nodes.utils import Range
@@ -164,8 +164,15 @@ class TreeRebuilder:
         data = "\n".join(self._data[node.lineno - 1 : end_lineno])
 
         start_token: Optional[TokenInfo] = None
+        keyword_tokens: Tuple[int, ...] = (token.NAME,)
         if isinstance(parent, nodes.AsyncFunctionDef):
             search_token = "async"
+            if PY36:
+                # In Python 3.6, the token type for 'async' was 'ASYNC'
+                # In Python 3.7, the type was changed to 'NAME' and 'ASYNC' removed
+                # Python 3.8 added it back. However, if we use it unconditionally
+                # we would break 3.7.
+                keyword_tokens = (token.NAME, token.ASYNC)
         elif isinstance(parent, nodes.FunctionDef):
             search_token = "def"
         else:
@@ -178,7 +185,7 @@ class TreeRebuilder:
                 and t.string == node.name
             ):
                 break
-            if t.type == token.NAME:
+            if t.type in keyword_tokens:
                 if t.string == search_token:
                     start_token = t
                     continue
