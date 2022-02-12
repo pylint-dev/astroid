@@ -29,12 +29,13 @@ import collections
 import os
 import socket
 import sys
+import textwrap
 import unittest
 
 import pytest
 
 from astroid import Instance, builder, nodes, test_utils, util
-from astroid.const import PY38_PLUS
+from astroid.const import PY37, PY38_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -132,11 +133,54 @@ class FromToLineNoTest(unittest.TestCase):
             __name__,
         )
         function = astroid["function"]
-        # XXX discussable, but that's what is expected by pylint right now
+        # XXX discussable, but that's what is expected by pylint right now, similar to ClassDef
         self.assertEqual(function.fromlineno, 3)
         self.assertEqual(function.tolineno, 5)
         self.assertEqual(function.decorators.fromlineno, 2)
         self.assertEqual(function.decorators.tolineno, 2)
+
+    @staticmethod
+    def test_decorated_class_lineno() -> None:
+        code = textwrap.dedent(
+            """
+        class A:
+            ...
+
+        @decorator
+        class B:
+            ...
+
+        @deco1
+        @deco2(
+            var=42
+        )
+        class C:
+            ...
+        """
+        )
+
+        ast_module: nodes.Module = builder.parse(code)  # type: ignore[assignment]
+
+        # XXX discussable, but that's what is expected by pylint right now, similar to FunctionDef
+        a = ast_module.body[0]
+        assert isinstance(a, nodes.ClassDef)
+        assert a.fromlineno == 2
+        assert a.tolineno == 3
+
+        b = ast_module.body[1]
+        assert isinstance(b, nodes.ClassDef)
+        assert b.fromlineno == 6
+        assert b.tolineno == 7
+
+        c = ast_module.body[2]
+        assert isinstance(c, nodes.ClassDef)
+        if PY37:
+            # Not perfect, but best we can do for Python 3.7
+            # Can't detect closing bracket on new line.
+            assert c.fromlineno == 12
+        else:
+            assert c.fromlineno == 13
+        assert c.tolineno == 14
 
     def test_class_lineno(self) -> None:
         stmts = self.astroid.body

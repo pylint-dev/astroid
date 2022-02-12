@@ -55,7 +55,7 @@ from typing import Dict, List, Optional, Set, TypeVar, Union, overload
 from astroid import bases
 from astroid import decorators as decorators_mod
 from astroid import mixins, util
-from astroid.const import PY39_PLUS
+from astroid.const import PY37, PY39_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -2296,6 +2296,24 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         _newstyle_impl,
         doc=("Whether this is a new style class or not\n\n" ":type: bool or None"),
     )
+
+    @decorators_mod.cachedproperty
+    def fromlineno(self):
+        """The first line that this node appears on in the source code.
+
+        :type: int or None
+        """
+        if PY37:
+            # Only in Python 3.7 is the lineno the line number of the first decorator.
+            # We want the class statement lineno. Similar to 'FunctionDef.fromlineno'
+            lineno = self.lineno
+            if self.decorators is not None:
+                lineno += sum(
+                    node.tolineno - node.lineno + 1 for node in self.decorators.nodes
+                )
+
+            return lineno
+        return super().fromlineno
 
     @decorators_mod.cachedproperty
     def blockstart_tolineno(self):
