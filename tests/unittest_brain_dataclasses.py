@@ -692,7 +692,7 @@ def test_invalid_field_call(module: str) -> None:
 
 def test_non_dataclass_is_not_dataclass() -> None:
     """Test that something that isn't a dataclass has the correct attribute."""
-    ast_nodes = astroid.extract_node(
+    ast_nodes: List[nodes.NodeNG] = astroid.extract_node(  # type: ignore[assignment]
         """
     class A: #@
         val: field()
