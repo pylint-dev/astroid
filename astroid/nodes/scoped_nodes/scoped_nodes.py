@@ -2225,7 +2225,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)
 
-        self.is_dataclass = False
+        self.is_dataclass: bool = False
         """Whether this class is a dataclass."""
 
     def implicit_parameters(self):
