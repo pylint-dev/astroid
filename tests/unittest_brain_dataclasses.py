@@ -688,3 +688,17 @@ def test_invalid_field_call(module: str) -> None:
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.ClassDef)
     assert inferred[0].is_dataclass
+
+
+def test_non_dataclass_is_not_dataclass() -> None:
+    """Test that something that isn't a dataclass has the correct attribute."""
+    code = astroid.extract_node(
+        """
+    class A:
+        val: field()
+    """
+    )
+    inferred = code.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.ClassDef)
+    assert not inferred[0].is_dataclass
