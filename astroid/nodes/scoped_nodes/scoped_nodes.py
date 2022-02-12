@@ -2212,6 +2212,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type doc: str or None
         """
 
+        self.is_dataclass: bool = False
+        """Whether this class is a dataclass."""
+
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -2224,9 +2227,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)
-
-        self.is_dataclass: bool = False
-        """Whether this class is a dataclass."""
 
     def implicit_parameters(self):
         return 1

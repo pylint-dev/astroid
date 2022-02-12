@@ -692,24 +692,20 @@ def test_invalid_field_call(module: str) -> None:
 
 def test_non_dataclass_is_not_dataclass() -> None:
     """Test that something that isn't a dataclass has the correct attribute."""
-    module = astroid.parse(
+    ast_nodes = astroid.extract_node(
         """
-    class A:
+    class A: #@
         val: field()
 
     def dataclass():
         return
 
     @dataclass
-    class B:
+    class B: #@
         val: field()
     """
     )
-    inferred = module.body[0].inferred()
-    assert len(inferred) == 1
-    assert isinstance(inferred[0], nodes.ClassDef)
-    assert not inferred[0].is_dataclass
-    inferred = module.body[2].inferred()
-    assert len(inferred) == 1
-    assert isinstance(inferred[0], nodes.ClassDef)
-    assert not inferred[0].is_dataclass
+    assert isinstance(ast_nodes[0], nodes.ClassDef)
+    assert not ast_nodes[0].is_dataclass
+    assert isinstance(ast_nodes[1], nodes.ClassDef)
+    assert not ast_nodes[1].is_dataclass
