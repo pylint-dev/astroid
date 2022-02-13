@@ -4,19 +4,21 @@
 """Transform utilities (filters and decorator)"""
 
 
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
+import typing
 
 import wrapt
 
 from astroid import bases, nodes, util
 from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
 
-InferFn = Callable[..., Any]
-InferOptions = Union[
-    nodes.NodeNG, bases.Instance, bases.UnboundMethod, Type[util.Uninferable]
+InferFn = typing.Callable[..., typing.Any]
+InferOptions = typing.Union[
+    nodes.NodeNG, bases.Instance, bases.UnboundMethod, typing.Type[util.Uninferable]
 ]
 
-_cache: Dict[Tuple[InferFn, nodes.NodeNG], Optional[List[InferOptions]]] = {}
+_cache: typing.Dict[
+    typing.Tuple[InferFn, nodes.NodeNG], typing.Optional[typing.List[InferOptions]]
+] = {}
 
 
 def clear_inference_tip_cache():
@@ -26,8 +28,8 @@ def clear_inference_tip_cache():
 
 @wrapt.decorator
 def _inference_tip_cached(
-    func: InferFn, instance: None, args: Any, kwargs: Any
-) -> Iterator[InferOptions]:
+    func: InferFn, instance: None, args: typing.Any, kwargs: typing.Any
+) -> typing.Iterator[InferOptions]:
     """Cache decorator used for inference tips"""
     node = args[0]
     try:
