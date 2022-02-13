@@ -7,16 +7,17 @@ import typing
 
 import wrapt
 
-from astroid import bases, nodes, util
+from astroid import bases, util
 from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
+from astroid.nodes import NodeNG
 
 InferFn = typing.Callable[..., typing.Any]
 InferOptions = typing.Union[
-    nodes.NodeNG, bases.Instance, bases.UnboundMethod, typing.Type[util.Uninferable]
+    NodeNG, bases.Instance, bases.UnboundMethod, typing.Type[util.Uninferable]
 ]
 
 _cache: typing.Dict[
-    typing.Tuple[InferFn, nodes.NodeNG], typing.Optional[typing.List[InferOptions]]
+    typing.Tuple[InferFn, NodeNG], typing.Optional[typing.List[InferOptions]]
 ] = {}
 
 
@@ -66,9 +67,7 @@ def inference_tip(infer_function: InferFn, raise_on_overwrite: bool = False) -> 
         excess overwrites.
     """
 
-    def transform(
-        node: nodes.NodeNG, infer_function: InferFn = infer_function
-    ) -> nodes.NodeNG:
+    def transform(node: NodeNG, infer_function: InferFn = infer_function) -> NodeNG:
         if (
             raise_on_overwrite
             and node._explicit_inference is not None
