@@ -340,7 +340,7 @@ class InspectBuilder:
         for name in dir(obj):
             try:
                 with warnings.catch_warnings():
-                    warnings.filterwarnings("error")
+                    warnings.simplefilter("error")
                     member = getattr(obj, name)
             except (AttributeError, DeprecationWarning):
                 # damned ExtensionClass.Base, I know you're there !

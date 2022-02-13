@@ -48,6 +48,7 @@ import textwrap
 import unittest
 from abc import ABCMeta
 from functools import partial
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple, Union
 from unittest.mock import patch
 
@@ -88,6 +89,7 @@ builder = AstroidBuilder()
 
 EXC_MODULE = "builtins"
 BOOL_SPECIAL_METHOD = "__bool__"
+DATA_DIR = Path(__file__).parent / "testdata" / "python3" / "data"
 
 
 class InferenceUtilsTest(unittest.TestCase):
@@ -1732,8 +1734,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         ast = extract_node(code, __name__)
         expr = ast.func.expr
-        with pytest.raises(InferenceError):
-            next(expr.infer())
+        self.assertIs(next(expr.infer()), util.Uninferable)
 
     def test_tuple_builtin_inference(self) -> None:
         code = """
@@ -3007,6 +3008,34 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         )
         for node in ast_nodes:
             self.assertEqual(next(node.infer()), util.Uninferable)
+
+    def test_binop_self_in_list(self) -> None:
+        """If 'self' is referenced within a list it should not be bound by it.
+
+        Reported in https://github.com/PyCQA/pylint/issues/4826.
+        """
+        ast_nodes = extract_node(
+            """
+        class A:
+            def __init__(self):
+                for a in [self] + []:
+                    print(a) #@
+
+        class B:
+            def __init__(self):
+                for b in [] + [self]:
+                    print(b) #@
+        """
+        )
+        inferred_a = list(ast_nodes[0].args[0].infer())
+        self.assertEqual(len(inferred_a), 1)
+        self.assertIsInstance(inferred_a[0], Instance)
+        self.assertEqual(inferred_a[0]._proxied.name, "A")
+
+        inferred_b = list(ast_nodes[1].args[0].infer())
+        self.assertEqual(len(inferred_b), 1)
+        self.assertIsInstance(inferred_b[0], Instance)
+        self.assertEqual(inferred_b[0]._proxied.name, "B")
 
     def test_metaclass__getitem__(self) -> None:
         ast_node = extract_node(
@@ -6582,6 +6611,14 @@ def test_relative_imports_init_package() -> None:
     resources.build_file(
         "data/beyond_top_level_three/module/sub_module/sub_sub_module/main.py"
     )
+
+
+def test_inference_of_items_on_module_dict() -> None:
+    """Crash test for the inference of items() on a module's dict attribute.
+
+    Originally reported in https://github.com/PyCQA/astroid/issues/1085
+    """
+    builder.file_build(str(DATA_DIR / "module_dict_items_call" / "test.py"), "models")
 
 
 if __name__ == "__main__":
