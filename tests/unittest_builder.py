@@ -161,7 +161,6 @@ class FromToLineNoTest(unittest.TestCase):
 
         ast_module: nodes.Module = builder.parse(code)  # type: ignore[assignment]
 
-        # XXX discussable, but that's what is expected by pylint right now, similar to FunctionDef
         a = ast_module.body[0]
         assert isinstance(a, nodes.ClassDef)
         assert a.fromlineno == 2

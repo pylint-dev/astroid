@@ -1706,13 +1706,10 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         return type_name
 
     @decorators_mod.cachedproperty
-    def fromlineno(self):
-        """The first line that this node appears on in the source code.
-
-        :type: int or None
-        """
+    def fromlineno(self) -> Optional[int]:
+        """The first line that this node appears on in the source code."""
         # lineno is the line number of the first decorator, we want the def
-        # statement lineno
+        # statement lineno. Similar to 'ClassDef.fromlineno'
         lineno = self.lineno
         if self.decorators is not None:
             lineno += sum(
@@ -2298,11 +2295,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     )
 
     @decorators_mod.cachedproperty
-    def fromlineno(self):
-        """The first line that this node appears on in the source code.
-
-        :type: int or None
-        """
+    def fromlineno(self) -> Optional[int]:
+        """The first line that this node appears on in the source code."""
         if not PY38_PLUS:
             # For Python < 3.8 the lineno is the line number of the first decorator.
             # We want the class statement lineno. Similar to 'FunctionDef.fromlineno'
