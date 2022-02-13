@@ -67,6 +67,7 @@ def is_decorated_with_dataclass(node, decorator_names=DATACLASSES_DECORATORS):
 
 def dataclass_transform(node: ClassDef) -> None:
     """Rewrite a dataclass to be easily understood by pylint"""
+    node.is_dataclass = True
 
     for assign_node in _get_dataclass_attributes(node):
         name = assign_node.target.name

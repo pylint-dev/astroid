@@ -2134,7 +2134,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             ":type: str"
         ),
     )
-    _other_fields = ("name", "doc")
+    _other_fields = ("name", "doc", "is_dataclass")
     _other_other_fields = ("locals", "_newstyle")
     _newstyle = None
 
@@ -2211,6 +2211,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         :type doc: str or None
         """
+
+        self.is_dataclass: bool = False
+        """Whether this class is a dataclass."""
 
         super().__init__(
             lineno=lineno,
