@@ -96,7 +96,7 @@ class TreeRebuilder:
         manager: AstroidManager,
         parser_module: Optional[ParserModule] = None,
         data: Optional[str] = None,
-    ):
+    ) -> None:
         self._manager = manager
         self._data = data.split("\n") if data else None
         self._global_names: List[Dict[str, List[nodes.Global]]] = []
@@ -194,8 +194,6 @@ class TreeRebuilder:
             start_token = None
         else:
             return None
-
-        start_token = cast(TokenInfo, start_token)  # type: ignore[redundant-cast]  # necessary for pyright
 
         # pylint: disable=undefined-loop-variable
         return Range(

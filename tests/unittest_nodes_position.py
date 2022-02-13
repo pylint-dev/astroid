@@ -31,9 +31,13 @@ class TestNodePosition:
         class E:  #@
             def f():
                 ...
+
+        @decorator
+        class F:  #@
+            ...
         """
         ).strip()
-        ast_nodes: List[nodes.NodeNG] = builder.extract_node(code)  # type: ignore
+        ast_nodes: List[nodes.NodeNG] = builder.extract_node(code)  # type: ignore[assignment]
 
         a = ast_nodes[0]
         assert isinstance(a, nodes.ClassDef)
@@ -54,6 +58,10 @@ class TestNodePosition:
         e = ast_nodes[4]
         assert isinstance(e, nodes.ClassDef)
         assert e.position == (13, 0, 13, 7)
+
+        f = ast_nodes[5]
+        assert isinstance(f, nodes.ClassDef)
+        assert f.position == (18, 0, 18, 7)
 
     @staticmethod
     def test_position_function() -> None:
@@ -81,7 +89,7 @@ class TestNodePosition:
             ...
         """
         ).strip()
-        ast_nodes: List[nodes.NodeNG] = builder.extract_node(code)  # type: ignore
+        ast_nodes: List[nodes.NodeNG] = builder.extract_node(code)  # type: ignore[assignment]
 
         a = ast_nodes[0]
         assert isinstance(a, nodes.FunctionDef)
@@ -129,7 +137,7 @@ class TestNodePosition:
             ...
         """
         ).strip()
-        ast_nodes: List[nodes.NodeNG] = builder.extract_node(code)  # type: ignore
+        ast_nodes: List[nodes.NodeNG] = builder.extract_node(code)  # type: ignore[assignment]
 
         a = ast_nodes[0]
         assert isinstance(a, nodes.FunctionDef)
