@@ -3,7 +3,6 @@
 
 """Transform utilities (filters and decorator)"""
 
-
 import typing
 
 import wrapt
