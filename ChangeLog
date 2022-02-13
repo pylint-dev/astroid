@@ -30,6 +30,11 @@ Release date: TBA
 
   Closes #1330
 
+* Use the ``end_lineno`` attribute for the ``NodeNG.toline`` property
+  when it is available.
+
+  Closes #1350
+
 * Add ``is_dataclass`` attribute to ``ClassDef`` nodes.
 
 * Use ``sysconfig`` instead of ``distutils`` to determine the location of

@@ -2125,11 +2125,20 @@ class TreeRebuilder:
     def visit_tryexcept(self, node: "ast.Try", parent: NodeNG) -> nodes.TryExcept:
         """visit a TryExcept node by returning a fresh instance of it"""
         if sys.version_info >= (3, 8):
+            # TryExcept excludes the 'finally' but that will be included in the
+            # end_lineno from 'node'. Therefore, we iterate over all non 'finally'
+            # children to find the correct end_lineno and column.
+            last_child_end_lineno = node.lineno
+            last_child_end_col_offset = node.end_col_offset
+            for child in node.body + node.handlers + node.orelse:
+                if child.end_lineno > last_child_end_lineno:
+                    last_child_end_lineno = child.end_lineno
+                    last_child_end_col_offset = child.end_col_offset
             newnode = nodes.TryExcept(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
-                end_lineno=node.end_lineno,
-                end_col_offset=node.end_col_offset,
+                end_lineno=last_child_end_lineno,
+                end_col_offset=last_child_end_col_offset,
                 parent=parent,
             )
         else:

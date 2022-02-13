@@ -1100,7 +1100,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         astroid = builder.parse(data)
         self.assertEqual(astroid["g1"].fromlineno, 4)
         self.assertEqual(astroid["g1"].tolineno, 5)
-        self.assertEqual(astroid["g2"].fromlineno, 10)
+        if not PY38_PLUS:
+            self.assertEqual(astroid["g2"].fromlineno, 9)
+        else:
+            self.assertEqual(astroid["g2"].fromlineno, 10)
         self.assertEqual(astroid["g2"].tolineno, 11)
 
     def test_metaclass_error(self) -> None:
