@@ -35,7 +35,7 @@ import unittest
 import pytest
 
 from astroid import Instance, builder, nodes, test_utils, util
-from astroid.const import PY37, PY38_PLUS
+from astroid.const import PY38_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -174,7 +174,7 @@ class FromToLineNoTest(unittest.TestCase):
 
         c = ast_module.body[2]
         assert isinstance(c, nodes.ClassDef)
-        if PY37:
+        if not PY38_PLUS:
             # Not perfect, but best we can do for Python 3.7
             # Can't detect closing bracket on new line.
             assert c.fromlineno == 12

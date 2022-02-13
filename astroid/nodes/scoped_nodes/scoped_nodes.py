@@ -55,7 +55,7 @@ from typing import Dict, List, Optional, Set, TypeVar, Union, overload
 from astroid import bases
 from astroid import decorators as decorators_mod
 from astroid import mixins, util
-from astroid.const import PY37, PY39_PLUS
+from astroid.const import PY38_PLUS, PY39_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -2303,8 +2303,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         :type: int or None
         """
-        if PY37:
-            # Only in Python 3.7 is the lineno the line number of the first decorator.
+        if not PY38_PLUS:
+            # For Python < 3.8 the lineno is the line number of the first decorator.
             # We want the class statement lineno. Similar to 'FunctionDef.fromlineno'
             lineno = self.lineno
             if self.decorators is not None:

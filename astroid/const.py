@@ -1,7 +1,6 @@
 import enum
 import sys
 
-PY37 = sys.version_info[:2] == (3, 7)
 PY38 = sys.version_info[:2] == (3, 8)
 PY37_PLUS = sys.version_info >= (3, 7)
 PY38_PLUS = sys.version_info >= (3, 8)
