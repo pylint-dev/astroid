@@ -804,6 +804,11 @@ class HermeticInterpreterTest(unittest.TestCase):
             sys.path.append(tmp_dir)
 
             # Write a python file and compile it to .pyc
+            # To make this test have even more value, we would need to come up with some 
+            # code that gets inferred differently when we get its "partial representation".
+            # This code is too simple for that. But we can't use builtins either, because we would 
+            # have to delete builtins from the filesystem.  But even if we engineered that, 
+            # the difference might evaporate over time as inference changes.
             cls.code_snippet = "def func():  return 42"
             with tempfile.NamedTemporaryFile(
                 mode="w", dir=tmp_dir, suffix=".py", delete=False
@@ -823,7 +828,7 @@ class HermeticInterpreterTest(unittest.TestCase):
             os.remove(cls.imported_module_path)
             sys.path.remove(tmp_dir)
 
-    def test_build_from_live_module_without_source_file(self):
+    def test_build_from_live_module_without_source_file(self) -> None:
         """Assert that inspect_build() is not called.
         See comment in module_build() before the call to inspect_build():
             "get a partial representation by introspection"
