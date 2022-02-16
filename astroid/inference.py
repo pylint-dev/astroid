@@ -317,6 +317,8 @@ def infer_attribute(self, context=None):
 
         if not context:
             context = InferenceContext()
+        else:
+            context = copy_context(context)
 
         old_boundnode = context.boundnode
         try:

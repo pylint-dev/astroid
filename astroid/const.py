@@ -8,6 +8,8 @@ PY39_PLUS = sys.version_info >= (3, 9)
 PY310_PLUS = sys.version_info >= (3, 10)
 BUILTINS = "builtins"  # TODO Remove in 2.8
 
+WIN32 = sys.platform == "win32"
+
 
 class Context(enum.Enum):
     Load = 1

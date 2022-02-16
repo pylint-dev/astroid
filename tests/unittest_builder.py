@@ -26,14 +26,18 @@
 """tests for the astroid builder and rebuilder module"""
 
 import collections
+import importlib
 import importlib.abc
 import importlib.machinery
 import importlib.util
 import os
+import pathlib
+import py_compile
 import socket
 import subprocess
 import sys
 import types
+import tempfile
 import unittest
 from pathlib import Path
 from typing import Iterator
@@ -843,6 +847,67 @@ def test_c_module_text_signature():
     finally:
         # cleanup
         subprocess.getoutput(f"rm -f {package_path}/*.so")
+        
+class HermeticInterpreterTest(unittest.TestCase):
+    """Modeled on https://github.com/PyCQA/astroid/pull/1207#issuecomment-951455588"""
+
+    @classmethod
+    def setUpClass(cls):
+        """Simulate a hermetic interpreter environment having no code on the filesystem."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            sys.path.append(tmp_dir)
+
+            # Write a python file and compile it to .pyc
+            # To make this test have even more value, we would need to come up with some
+            # code that gets inferred differently when we get its "partial representation".
+            # This code is too simple for that. But we can't use builtins either, because we would
+            # have to delete builtins from the filesystem.  But even if we engineered that,
+            # the difference might evaporate over time as inference changes.
+            cls.code_snippet = "def func():  return 42"
+            with tempfile.NamedTemporaryFile(
+                mode="w", dir=tmp_dir, suffix=".py", delete=False
+            ) as tmp:
+                tmp.write(cls.code_snippet)
+                pyc_file = py_compile.compile(tmp.name)
+                cls.pyc_name = tmp.name.replace(".py", ".pyc")
+            os.remove(tmp.name)
+            os.rename(pyc_file, cls.pyc_name)
+
+            # Import the module
+            cls.imported_module_path = pathlib.Path(cls.pyc_name)
+            cls.imported_module = importlib.import_module(cls.imported_module_path.stem)
+
+            # Delete source code from module object, filesystem, and path
+            del cls.imported_module.__file__
+            os.remove(cls.imported_module_path)
+            sys.path.remove(tmp_dir)
+
+    def test_build_from_live_module_without_source_file(self) -> None:
+        """Assert that inspect_build() is not called.
+        See comment in module_build() before the call to inspect_build():
+            "get a partial representation by introspection"
+
+        This "partial representation" was presumably causing unexpected behavior.
+        """
+        # Sanity check
+        self.assertIsNone(
+            self.imported_module.__loader__.get_source(self.imported_module_path.stem)
+        )
+        with self.assertRaises(AttributeError):
+            _ = self.imported_module.__file__
+
+        my_builder = builder.AstroidBuilder()
+        with unittest.mock.patch.object(
+            self.imported_module.__loader__,
+            "get_source",
+            return_value=self.code_snippet,
+        ):
+            with unittest.mock.patch.object(
+                my_builder, "inspect_build", side_effect=AssertionError
+            ):
+                my_builder.module_build(
+                    self.imported_module, modname=self.imported_module_path.stem
+                )
 
 
 if __name__ == "__main__":
