@@ -36,8 +36,8 @@ import py_compile
 import socket
 import subprocess
 import sys
-import types
 import tempfile
+import types
 import unittest
 from pathlib import Path
 from typing import Iterator
@@ -847,7 +847,8 @@ def test_c_module_text_signature():
     finally:
         # cleanup
         subprocess.getoutput(f"rm -f {package_path}/*.so")
-        
+
+
 class HermeticInterpreterTest(unittest.TestCase):
     """Modeled on https://github.com/PyCQA/astroid/pull/1207#issuecomment-951455588"""
 
