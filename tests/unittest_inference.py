@@ -6646,7 +6646,9 @@ def test_imported_module_var_inferable2():
     cache_init = AstroidManager().astroid_cache.copy()
     AstroidManager().clear_cache()
     try:
-        mod1 = parse(("from top.mod import v as z\n" "w = ['1'] + z"), module_name="top")
+        mod1 = parse(
+            ("from top.mod import v as z\n" "w = ['1'] + z"), module_name="top"
+        )
         parse("v = ['2']", module_name="top.mod")
         w_val = mod1.body[-1].value
         i_w_val = next(w_val.infer())
@@ -6654,6 +6656,7 @@ def test_imported_module_var_inferable2():
         assert i_w_val.as_string() == "['1', '2']"
     finally:
         AstroidManager().astroid_cache = cache_init
+
 
 def test_imported_module_var_inferable3():
     """
