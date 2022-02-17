@@ -69,6 +69,7 @@ from astroid.exceptions import (
     NotFoundError,
 )
 from astroid.inference import infer_end as inference_infer_end
+from astroid.manager import AstroidManager
 from astroid.objects import ExceptionInstance
 
 from . import resources
@@ -6624,6 +6625,7 @@ def test_imported_module_var_inferable():
     """
     Module variables can be imported and inferred successfully as part of binary operators.
     """
+    AstroidManager().clear_cache()
     mod1 = parse(("from top.mod import v as z\n"
                  "w = [1] + z"),
                  module_name='top')
@@ -6637,6 +6639,7 @@ def test_imported_module_var_inferable2():
     """
     Version list of strings.
     """
+    AstroidManager().clear_cache()
     mod1 = parse(("from top.mod import v as z\n"
                  "w = ['1'] + z"),
                  module_name='top')
@@ -6650,6 +6653,7 @@ def test_imported_module_var_inferable3():
     """
     Version list of strings with a __dunder__ name.
     """
+    AstroidManager().clear_cache()
     mod1 = parse(("from top.mod import __dunder_var__ as v\n"
                  "__dunder_var__ = ['w'] + v"),
                  module_name='top')
