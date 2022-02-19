@@ -57,7 +57,11 @@ import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
 from astroid.const import PY37_PLUS
-from astroid.exceptions import AttributeInferenceError, InferenceError
+from astroid.exceptions import (
+    AttributeInferenceError,
+    InferenceError,
+    UseInferenceDefault,
+)
 from astroid.nodes.node_classes import Const
 from astroid.nodes.scoped_nodes import ClassDef
 
@@ -1659,6 +1663,19 @@ class TypingBrain(unittest.TestCase):
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
+
+    def test_typing_type_without_tip(self):
+        """Regression test for https://github.com/PyCQA/pylint/issues/5770"""
+        node = builder.extract_node(
+            """
+        from typing import NewType
+
+        def make_new_type(t):
+            new_type = NewType(f'IntRange_{t}', t) #@
+        """
+        )
+        with self.assertRaises(UseInferenceDefault):
+            astroid.brain.brain_typing.infer_typing_typevar_or_newtype(node.value)
 
     def test_namedtuple_nested_class(self):
         result = builder.extract_node(

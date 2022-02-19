@@ -31,6 +31,7 @@ from astroid.nodes.node_classes import (
     Attribute,
     Call,
     Const,
+    JoinedStr,
     Name,
     NodeNG,
     Subscript,
@@ -127,6 +128,9 @@ def infer_typing_typevar_or_newtype(node, context_itton=None):
     if func.qname() not in TYPING_TYPEVARS_QUALIFIED:
         raise UseInferenceDefault
     if not node.args:
+        raise UseInferenceDefault
+    # Cannot infer from a dynamic class name (f-string)
+    if isinstance(node.args[0], JoinedStr):
         raise UseInferenceDefault
 
     typename = node.args[0].as_string().strip("'")
