@@ -420,15 +420,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Restore Python virtual environment
-        id: cache-virtualenv15_1_0
+        id: cache-virtualenv15
         uses: actions/cache@v2.1.4
         with:
           path: venv2
           key: >-
-            ${{ runner.os }}-${{ steps.python.outputs.python-version }}-${{
-            steps.generate-python-key.outputs.key }}
+            ${{ runner.os }}-virtualenv15
           restore-keys: |
-            ${{ runner.os }}-${{ steps.python.outputs.python-version }}-virtualenv15_1_0-${{ env.CACHE_VERSION }}-
+            ${{ runner.os }}-virtualenv15-${{ env.CACHE_VERSION }}
       - name: Create Python virtual environment with virtualenv==15.1.0
         if: steps.cache-virtualenv15_1_0.outputs.cache-hit != 'true'
         run: |
