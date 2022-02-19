@@ -32,8 +32,8 @@ import pathlib
 import py_compile
 import socket
 import sys
-import textwrap
 import tempfile
+import textwrap
 import unittest
 
 import pytest
