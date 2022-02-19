@@ -435,4 +435,4 @@ jobs:
       - name: Test distutils edge case
         run: |
           echo "import distutils.util  # pylint: disable=unused-import" > test.py
-          pylint test.py
+          python -m pylint test.py
