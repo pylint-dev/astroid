@@ -48,9 +48,9 @@ def require_version(minver: str = "0.0.0", maxver: str = "4.0.0") -> Callable:
 
         @functools.wraps(f)
         def new_f(*args, **kwargs):
-            if minver != "0.0.0":
+            if current <= min_version:
                 pytest.skip(f"Needs Python > {minver}. Current version is {version}.")
-            elif maxver != "4.0.0":
+            elif current > max_version:
                 pytest.skip(f"Needs Python <= {maxver}. Current version is {version}.")
 
         return new_f
