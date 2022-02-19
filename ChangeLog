@@ -49,6 +49,9 @@ Release date: TBA
   in cases where the AST doesn't provide good enough positional information.
   E.g. ``nodes.ClassDef``, ``nodes.FunctionDef``.
 
+* Fix ``ClassDef.fromlineno``. For Python < 3.8 the ``lineno`` attribute includes decorators.
+  ``fromlineno`` should return the line of the ``class`` statement itself.
+
 
 What's New in astroid 2.9.4?
 ============================
