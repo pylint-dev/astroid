@@ -434,5 +434,6 @@ jobs:
           python -m pip install -e .
       - name: Test distutils edge case
         run: |
+          . venv2\scripts\activate
           echo "import distutils.util  # pylint: disable=unused-import" > test.py
-          python -m pylint test.py
+          pylint test.py
