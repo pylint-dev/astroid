@@ -43,6 +43,11 @@ Release date: TBA
   Closes #1282
   Ref #1103
 
+* Fixed crash with recursion error for inference of class attributes that referenced
+  the class itself.
+
+  Closes PyCQA/pylint#5408
+
 * Fixed crash when trying to infer ``items()`` on the ``__dict__``
   attribute of an imported module.
 

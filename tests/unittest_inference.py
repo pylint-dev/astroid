@@ -6621,5 +6621,43 @@ def test_inference_of_items_on_module_dict() -> None:
     builder.file_build(str(DATA_DIR / "module_dict_items_call" / "test.py"), "models")
 
 
+def test_recursion_on_inference_tip() -> None:
+    """Regression test for recursion in inference tip.
+
+    Originally reported in https://github.com/PyCQA/pylint/issues/5408.
+    """
+    code = """
+    class MyInnerClass:
+        ...
+
+
+    class MySubClass:
+        inner_class = MyInnerClass
+
+
+    class MyClass:
+        sub_class = MySubClass()
+
+
+    def get_unpatched_class(cls):
+        return cls
+
+
+    def get_unpatched(item):
+        lookup = get_unpatched_class if isinstance(item, type) else lambda item: None
+        return lookup(item)
+
+
+    _Child = get_unpatched(MyClass.sub_class.inner_class)
+
+
+    class Child(_Child):
+        def patch(cls):
+            MyClass.sub_class.inner_class = cls
+    """
+    module = parse(code)
+    assert module
+
+
 if __name__ == "__main__":
     unittest.main()
