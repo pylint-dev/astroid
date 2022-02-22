@@ -66,7 +66,7 @@ Most of the time you can access the same fields as those represented
 in the output of :meth:`repr_tree` so you can do ``tree.body[0].value.left``
 to get the left hand side operand of the addition operation.
 
-Another useful function that you can use is :func`astroid.extract_node`,
+Another useful function that you can use is :func:`astroid.extract_node`,
 which given a string, tries to extract one or more nodes from the given string::
 
    >>> node = astroid.extract_node('''

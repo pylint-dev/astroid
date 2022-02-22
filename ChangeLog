@@ -7,16 +7,105 @@ What's New in astroid 2.10.0?
 Release date: TBA
 
 
+* Fixed inference of ``self`` in binary operations in which ``self``
+  is part of a list or tuple.
 
-What's New in astroid 2.9.1?
+  Closes PyCQA/pylint#4826
+
+* Fixed builtin inferenence on `property` calls not calling the `postinit` of the new node, which
+  resulted in instance arguments missing on these nodes.
+
+* Fixed a crash on ``Super.getattr`` when the attribute was previously uninferable due to a cache
+  limit size. This limit can be hit when the inheritance pattern of a class (and therefore of the
+  ``__init__`` attribute) is very large.
+
+  Closes PyCQA/pylint#5679
+
+* Inlcude names of keyword-only arguments in ``astroid.scoped_nodes.Lambda.argnames``.
+
+  Closes PyCQA/pylint#5771
+
+* Fixed a crash inferring on a ``NewType`` named with an f-string.
+
+  Closes PyCQA/pylint#5770
+
+* Add support for [attrs v21.3.0](https://github.com/python-attrs/attrs/releases/tag/21.3.0) which
+  added a new `attrs` module alongside the existing `attr`.
+
+  Closes #1330
+
+* Add ``is_dataclass`` attribute to ``ClassDef`` nodes.
+
+* Use ``sysconfig`` instead of ``distutils`` to determine the location of
+  python stdlib files and packages.
+
+  Related pull requests: #1322, #1323, #1324
+  Closes #1282
+  Ref #1103
+
+* Fixed crash with recursion error for inference of class attributes that referenced
+  the class itself.
+
+  Closes PyCQA/pylint#5408
+
+* Fixed crash when trying to infer ``items()`` on the ``__dict__``
+  attribute of an imported module.
+
+  Closes #1085
+
+* Fix ``ClassDef.fromlineno``. For Python < 3.8 the ``lineno`` attribute includes decorators.
+  ``fromlineno`` should return the line of the ``class`` statement itself.
+
+What's New in astroid 2.9.4?
 ============================
 Release date: TBA
 
+
+
+What's New in astroid 2.9.3?
+============================
+Release date: 2022-01-09
+
+* Fixed regression where packages without a ``__init__.py`` file were
+  not recognized or imported correctly.
+
+  Closes #1327
+
+What's New in astroid 2.9.2?
+============================
+Release date: 2022-01-04
+
+* Fixed regression in ``astroid.scoped_nodes`` where ``_is_metaclass``
+  was not accessible anymore.
+
+Closes #1325
+
+What's New in astroid 2.9.1?
+============================
+Release date: 2021-12-31
+
+* ``NodeNG.frame()`` and ``NodeNG.statement()`` will start raising ``ParentMissingError``
+  instead of ``AttributeError`` in astroid 3.0. This behaviour can already be triggered
+  by passing ``future=True`` to a ``frame()`` or ``statement()`` call.
+
+* Prefer the module loader get_source() method in AstroidBuilder's
+  module_build() when possible to avoid assumptions about source
+  code being available on a filesystem.  Otherwise the source cannot
+  be found and application behavior changes when running within an
+  embedded hermetic interpreter environment (pyoxidizer, etc.).
+
 * Require Python 3.6.2 to use astroid.
+
+* Removed custom ``distutils`` handling for resolving paths to submodules.
+
+  Ref #1321
 
 * Fix ``deque.insert()`` signature in ``collections`` brain.
 
   Closes #1260
+
+* Fix ``Module`` nodes not having a ``col_offset``, ``end_lineno``, and ``end_col_offset``
+  attributes.
 
 * Fix typing and update explanation for ``Arguments.args`` being ``None``.
 
@@ -24,6 +113,18 @@ Release date: TBA
 
   Closes PyCQA/pylint#5461
 
+* Enable inference of dataclass import from marshmallow_dataclass.
+  This allows the dataclasses brain to recognize dataclasses annotated by marshmallow_dataclass.
+
+* Resolve symlinks in the import path
+  Fixes inference error when the import path includes symlinks (e.g. Python
+  installed on macOS via Homebrew).
+
+  Closes #823
+  Closes PyCQA/pylint#3499
+  Closes PyCQA/pylint#4302
+  Closes PyCQA/pylint#4798
+  Closes PyCQA/pylint#5081
 
 What's New in astroid 2.9.0?
 ============================

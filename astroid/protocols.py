@@ -17,6 +17,8 @@
 # Copyright (c) 2020 Vilnis Termanis <vilnis.termanis@iotics.com>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 doranid <ddandd@gmail.com>
@@ -121,7 +123,7 @@ BIN_OP_IMPL = {
     "/": lambda a, b: a / b,
     "//": lambda a, b: a // b,
     "*": lambda a, b: a * b,
-    "**": lambda a, b: a ** b,
+    "**": lambda a, b: a**b,
     "%": lambda a, b: a % b,
     "&": lambda a, b: a & b,
     "|": lambda a, b: a | b,
@@ -183,7 +185,22 @@ def _filter_uninferable_nodes(elts, context):
 
 
 @decorators.yes_if_nothing_inferred
-def tl_infer_binary_op(self, opnode, operator, other, context, method):
+def tl_infer_binary_op(
+    self,
+    opnode: nodes.BinOp,
+    operator: str,
+    other: nodes.NodeNG,
+    context: InferenceContext,
+    method: nodes.FunctionDef,
+) -> Generator[nodes.NodeNG, None, None]:
+    """Infer a binary operation on a tuple or list.
+
+    The instance on which the binary operation is performed is a tuple
+    or list. This refers to the left-hand side of the operation, so:
+    'tuple() + 1' or '[] + A()'
+    """
+    # For tuples and list the boundnode is no longer the tuple or list instance
+    context.boundnode = None
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, self.__class__) and operator == "+":
         node = self.__class__(parent=opnode)
@@ -411,7 +428,7 @@ def arguments_assigned_stmts(
     if (
         context.callcontext
         and node
-        and getattr(callee, "name", None) == node.frame().name
+        and getattr(callee, "name", None) == node.frame(future=True).name
     ):
         # reset call context/name
         callcontext = context.callcontext

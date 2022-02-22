@@ -14,6 +14,7 @@
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2020 Anubhav <35621759+anubh-v@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
 # Copyright (c) 2021 grayjk <grayjk@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
@@ -280,10 +281,12 @@ class AstroidManagerTest(
         ast = self.manager.ast_from_class(int)
         self.assertEqual(ast.name, "int")
         self.assertEqual(ast.parent.frame().name, "builtins")
+        self.assertEqual(ast.parent.frame(future=True).name, "builtins")
 
         ast = self.manager.ast_from_class(object)
         self.assertEqual(ast.name, "object")
         self.assertEqual(ast.parent.frame().name, "builtins")
+        self.assertEqual(ast.parent.frame(future=True).name, "builtins")
         self.assertIn("__setattr__", ast)
 
     def test_ast_from_class_with_module(self) -> None:
@@ -291,10 +294,12 @@ class AstroidManagerTest(
         ast = self.manager.ast_from_class(int, int.__module__)
         self.assertEqual(ast.name, "int")
         self.assertEqual(ast.parent.frame().name, "builtins")
+        self.assertEqual(ast.parent.frame(future=True).name, "builtins")
 
         ast = self.manager.ast_from_class(object, object.__module__)
         self.assertEqual(ast.name, "object")
         self.assertEqual(ast.parent.frame().name, "builtins")
+        self.assertEqual(ast.parent.frame(future=True).name, "builtins")
         self.assertIn("__setattr__", ast)
 
     def test_ast_from_class_attr_error(self) -> None:

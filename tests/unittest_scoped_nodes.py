@@ -20,8 +20,9 @@
 # Copyright (c) 2019 Peter de Blanc <peter@standard.ai>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2020 Tim Martin <tim@asymptotic.co.uk>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 doranid <ddandd@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
@@ -42,9 +43,9 @@ from typing import Any, List, Union
 
 import pytest
 
-from astroid import MANAGER, builder, nodes, objects, test_utils, util
+from astroid import MANAGER, builder, nodes, objects, parse, test_utils, util
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import PY38_PLUS
+from astroid.const import PY38_PLUS, PY310_PLUS, WIN32
 from astroid.exceptions import (
     AttributeInferenceError,
     DuplicateBasesError,
@@ -56,7 +57,7 @@ from astroid.exceptions import (
     ResolveError,
     TooManyLevelsError,
 )
-from astroid.nodes.scoped_nodes import _is_metaclass
+from astroid.nodes.scoped_nodes.scoped_nodes import _is_metaclass
 
 from . import resources
 
@@ -516,6 +517,20 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         code = "def f(a, b, c, *args, **kwargs): pass"
         astroid = builder.parse(code, __name__)
         self.assertEqual(astroid["f"].argnames(), ["a", "b", "c", "args", "kwargs"])
+
+        code_with_kwonly_args = "def f(a, b, *args, c=None, d=None, **kwargs): pass"
+        astroid = builder.parse(code_with_kwonly_args, __name__)
+        self.assertEqual(
+            astroid["f"].argnames(), ["a", "b", "args", "c", "d", "kwargs"]
+        )
+
+    @unittest.skipUnless(PY38_PLUS, "positional-only argument syntax")
+    def test_positional_only_argnames(self) -> None:
+        code = "def f(a, b, /, c=None, *args, d, **kwargs): pass"
+        astroid = builder.parse(code, __name__)
+        self.assertEqual(
+            astroid["f"].argnames(), ["a", "b", "c", "args", "d", "kwargs"]
+        )
 
     def test_return_nothing(self) -> None:
         """test inferred value on a function with empty return"""
@@ -1766,6 +1781,49 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         with self.assertRaises(DuplicateBasesError):
             cls.mro()
 
+    @test_utils.require_version(minver="3.7")
+    def test_mro_typing_extensions(self):
+        """Regression test for mro() inference on typing_extesnions.
+
+        Regression reported in:
+        https://github.com/PyCQA/astroid/issues/1124
+        """
+        module = parse(
+            """
+        import abc
+        import typing
+        import dataclasses
+
+        import typing_extensions
+
+        T = typing.TypeVar("T")
+
+        class MyProtocol(typing_extensions.Protocol): pass
+        class EarlyBase(typing.Generic[T], MyProtocol): pass
+        class Base(EarlyBase[T], abc.ABC): pass
+        class Final(Base[object]): pass
+        """
+        )
+        class_names = [
+            "ABC",
+            "Base",
+            "EarlyBase",
+            "Final",
+            "Generic",
+            "MyProtocol",
+            "Protocol",
+            "object",
+        ]
+        if not PY38_PLUS:
+            class_names.pop(-2)
+        # typing_extensions is not installed on this combination of version
+        # and platform
+        if PY310_PLUS and WIN32:
+            class_names.pop(-2)
+
+        final_def = module.body[-1]
+        self.assertEqual(class_names, sorted(i.name for i in final_def.mro()))
+
     def test_generator_from_infer_call_result_parent(self) -> None:
         func = builder.extract_node(
             """
@@ -2462,17 +2520,24 @@ class TestFrameNodes:
         )
         function = module.body[0]
         assert function.frame() == function
+        assert function.frame(future=True) == function
         assert function.body[0].frame() == function
+        assert function.body[0].frame(future=True) == function
 
         class_node = module.body[1]
         assert class_node.frame() == class_node
+        assert class_node.frame(future=True) == class_node
         assert class_node.body[0].frame() == class_node
+        assert class_node.body[0].frame(future=True) == class_node
         assert class_node.body[1].frame() == class_node.body[1]
+        assert class_node.body[1].frame(future=True) == class_node.body[1]
 
         lambda_assignment = module.body[2].value
         assert lambda_assignment.args.args[0].frame() == lambda_assignment
+        assert lambda_assignment.args.args[0].frame(future=True) == lambda_assignment
 
         assert module.frame() == module
+        assert module.frame(future=True) == module
 
     @staticmethod
     def test_non_frame_node():
@@ -2485,8 +2550,10 @@ class TestFrameNodes:
         """
         )
         assert module.body[0].frame() == module
+        assert module.body[0].frame(future=True) == module
 
         assert module.body[1].value.locals["x"][0].frame() == module
+        assert module.body[1].value.locals["x"][0].frame(future=True) == module
 
 
 if __name__ == "__main__":

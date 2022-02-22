@@ -17,7 +17,6 @@
 
 import abc
 import collections
-import distutils
 import enum
 import importlib.machinery
 import os
@@ -161,12 +160,6 @@ class ImportlibFinder(Finder):
                 for p in sys.path
                 if os.path.isdir(os.path.join(p, *processed))
             ]
-        # We already import distutils elsewhere in astroid,
-        # so if it is the same module, we can use it directly.
-        elif spec.name == "distutils" and spec.location in distutils.__path__:
-            # distutils is patched inside virtualenvs to pick up submodules
-            # from the original Python, not from the virtualenv itself.
-            path = list(distutils.__path__)
         else:
             path = [spec.location]
         return path
@@ -292,6 +285,7 @@ def _precache_zipimporters(path=None):
     req_paths = tuple(path or sys.path)
     cached_paths = tuple(pic)
     new_paths = _cached_set_diff(req_paths, cached_paths)
+    # pylint: disable=no-member
     for entry_path in new_paths:
         try:
             pic[entry_path] = zipimport.zipimporter(entry_path)

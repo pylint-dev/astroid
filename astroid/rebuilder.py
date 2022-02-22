@@ -2176,24 +2176,6 @@ class TreeRebuilder:
             return self.visit_tryexcept(node, parent)
         return None
 
-    def visit_tryfinally(self, node: "ast.Try", parent: NodeNG) -> nodes.TryFinally:
-        """visit a TryFinally node by returning a fresh instance of it"""
-        if sys.version_info >= (3, 8):
-            newnode = nodes.TryFinally(
-                lineno=node.lineno,
-                col_offset=node.col_offset,
-                end_lineno=node.end_lineno,
-                end_col_offset=node.end_col_offset,
-                parent=parent,
-            )
-        else:
-            newnode = nodes.TryFinally(node.lineno, node.col_offset, parent)
-        newnode.postinit(
-            [self.visit(child, newnode) for child in node.body],
-            [self.visit(n, newnode) for n in node.finalbody],
-        )
-        return newnode
-
     def visit_tuple(self, node: "ast.Tuple", parent: NodeNG) -> nodes.Tuple:
         """visit a Tuple node by returning a fresh instance of it"""
         context = self._get_context(node)

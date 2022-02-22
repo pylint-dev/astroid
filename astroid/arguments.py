@@ -5,16 +5,16 @@
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
 # Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-from typing import Optional
+from typing import Optional, Set
 
 from astroid import nodes
 from astroid.bases import Instance
-from astroid.const import Context
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import InferenceError, NoDefault
 from astroid.util import Uninferable
@@ -45,7 +45,7 @@ class CallSite:
         self.argument_context_map = argument_context_map
         args = callcontext.args
         keywords = callcontext.keywords
-        self.duplicated_keywords = set()
+        self.duplicated_keywords: Set[str] = set()
         self._unpacked_args = self._unpack_args(args, context=context)
         self._unpacked_kwargs = self._unpack_keywords(keywords, context=context)
 
@@ -59,7 +59,7 @@ class CallSite:
         }
 
     @classmethod
-    def from_call(cls, call_node, context: Optional[Context] = None):
+    def from_call(cls, call_node, context: Optional[InferenceContext] = None):
         """Get a CallSite object from the given Call node.
 
         context will be used to force a single inference path.
@@ -226,7 +226,7 @@ class CallSite:
                     return positional[0].infer(context=context)
                 if boundnode is None:
                     # XXX can do better ?
-                    boundnode = funcnode.parent.frame()
+                    boundnode = funcnode.parent.frame(future=True)
 
                 if isinstance(boundnode, nodes.ClassDef):
                     # Verify that we're accessing a method
