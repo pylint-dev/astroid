@@ -61,12 +61,5 @@ def is_namespace(modname: str) -> bool:
     if not isinstance(spec.loader, abc.InspectLoader):
         return True
 
-    # Lastly we check if the package declares itself a namespace package
-    try:
-        source = spec.loader.get_source(spec.origin)
-    # If the loader can't handle the spec, we're dealing with a namespace package
-    except ImportError:
-        return False
-    return bool(
-        source and "pkg_resources" in source and "declare_namespace(__name__)" in source
-    )
+    # TODO: We should find a way to check this without importing pkg_resources
+    return _is_old_setuptools_namespace_package(modname)
