@@ -54,7 +54,7 @@ from astroid._ast import ParserModule, get_parser_module, parse_function_type_co
 from astroid.const import PY36, PY38, PY38_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
-from astroid.nodes.utils import Range
+from astroid.nodes.utils import Position
 
 if sys.version_info >= (3, 8):
     from typing import Final
@@ -145,7 +145,7 @@ class TreeRebuilder:
         self,
         node: Union["ast.ClassDef", "ast.FunctionDef", "ast.AsyncFunctionDef"],
         parent: Union[nodes.ClassDef, nodes.FunctionDef, nodes.AsyncFunctionDef],
-    ) -> Optional[Range]:
+    ) -> Optional[Position]:
         """Return position information for ClassDef and FunctionDef nodes.
 
         In contrast to AST positions, these only include the actual keyword(s)
@@ -196,7 +196,7 @@ class TreeRebuilder:
             return None
 
         # pylint: disable=undefined-loop-variable
-        return Range(
+        return Position(
             lineno=node.lineno - 1 + start_token.start[0],
             col_offset=start_token.start[1],
             end_lineno=node.lineno - 1 + t.end[0],

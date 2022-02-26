@@ -1,8 +1,8 @@
 from typing import NamedTuple
 
 
-class Range(NamedTuple):
-    """Range with line and column information."""
+class Position(NamedTuple):
+    """Position with line and column information."""
 
     lineno: int
     col_offset: int

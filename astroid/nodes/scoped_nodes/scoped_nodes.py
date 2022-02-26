@@ -78,7 +78,7 @@ from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
 from astroid.nodes import Arguments, Const, node_classes
-from astroid.nodes.utils import Range
+from astroid.nodes.utils import Position
 
 if sys.version_info >= (3, 6, 2):
     from typing import NoReturn
@@ -1569,7 +1569,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         type_comment_returns=None,
         type_comment_args=None,
         *,
-        position: Optional[Range] = None,
+        position: Optional[Position] = None,
     ):
         """Do some setup after initialisation.
 
@@ -2255,7 +2255,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         metaclass=None,
         keywords=None,
         *,
-        position: Optional[Range] = None,
+        position: Optional[Position] = None,
     ):
         """Do some setup after initialisation.
 

@@ -28,7 +28,7 @@ from astroid.exceptions import (
 from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
-from astroid.nodes.utils import Range
+from astroid.nodes.utils import Position
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -119,7 +119,7 @@ class NodeNG:
         Note: This is after the last symbol.
         """
 
-        self.position: Optional[Range] = None
+        self.position: Optional[Position] = None
         """Position of keyword(s) and name. Used as fallback for block nodes
         which might not provide good enough positional information.
         E.g. ClassDef, FunctionDef.
