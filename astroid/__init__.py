@@ -173,7 +173,7 @@ if (
     not PY310_PLUS
     and callable(getattr(tokenize, "_compile", None))
     and getattr(tokenize._compile, "__wrapped__", None) is None  # type: ignore[attr-defined]
-):  # pragma: no cover
+):
     tokenize._compile = functools.lru_cache()(tokenize._compile)  # type: ignore[attr-defined]
 
 # load brain plugins

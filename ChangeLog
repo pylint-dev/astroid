@@ -52,7 +52,6 @@ Release date: TBA
 * Fix ``ClassDef.fromlineno``. For Python < 3.8 the ``lineno`` attribute includes decorators.
   ``fromlineno`` should return the line of the ``class`` statement itself.
 
-
 What's New in astroid 2.9.4?
 ============================
 Release date: TBA
