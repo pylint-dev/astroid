@@ -14,6 +14,8 @@
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2022 Jacob Walls <jacobtylerwalls@gmail.com>
+# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
 
 import abc
 import collections

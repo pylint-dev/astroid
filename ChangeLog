@@ -2,9 +2,21 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.10.0?
+What's New in astroid 2.11.0?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.10.1?
+=============================
+Release date: TBA
+
+
+
+What's New in astroid 2.10.0?
+=============================
+Release date: 2022-02-27
 
 
 * Fixed inference of ``self`` in binary operations in which ``self``
@@ -70,11 +82,6 @@ Release date: TBA
   non-default Deprecation warnings are enabled, eg. during a Pytest run.
 
   Closes #1383
-
-What's New in astroid 2.9.4?
-============================
-Release date: TBA
-
 
 
 What's New in astroid 2.9.3?
