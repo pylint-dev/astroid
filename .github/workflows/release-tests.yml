@@ -6,6 +6,7 @@ env:
   DEFAULT_PYTHON: 3.8
 
 jobs:
+  # Regression test added in https://github.com/PyCQA/astroid/pull/1386
   virtualenv-15-windows-test:
     name: Regression test for virtualenv==15.1.0 on Windows
     runs-on: windows-latest

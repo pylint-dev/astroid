@@ -165,6 +165,7 @@ class ImportlibFinder(Finder):
             # virtualenv below 20.0 patches distutils in an unexpected way
             # so we just find the location of distutils that will be
             # imported to avoid spurious import-error messages
+            # https://github.com/PyCQA/pylint/issues/5645
             # A regression test to create this scenario exists in release-tests.yml
             # and can be triggered manually from GitHub Actions
             distutils_spec = importlib.util.find_spec("distutils")
