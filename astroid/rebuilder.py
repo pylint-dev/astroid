@@ -2128,22 +2128,18 @@ class TreeRebuilder:
             # TryExcept excludes the 'finally' but that will be included in the
             # end_lineno from 'node'. Therefore, we check all non 'finally'
             # children to find the correct end_lineno and column.
-            last_child_end_lineno: Optional[int] = node.lineno
-            last_child_end_col_offset = node.end_col_offset
-            if node.orelse:
-                last_child_end_lineno = node.orelse[-1].end_lineno
-                last_child_end_col_offset = node.orelse[-1].end_col_offset
-            elif node.handlers:
-                last_child_end_lineno = node.handlers[-1].end_lineno
-                last_child_end_col_offset = node.handlers[-1].end_col_offset
-            elif node.body:
-                last_child_end_lineno = node.body[-1].end_lineno
-                last_child_end_col_offset = node.body[-1].end_col_offset
+            end_lineno = node.end_lineno
+            end_col_offset = node.end_col_offset
+            all_children: List["ast.AST"] = [*node.body, *node.handlers, *node.orelse]
+            for child in reversed(all_children):
+                end_lineno = child.end_lineno
+                end_col_offset = child.end_col_offset
+                break
             newnode = nodes.TryExcept(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
-                end_lineno=last_child_end_lineno,
-                end_col_offset=last_child_end_col_offset,
+                end_lineno=end_lineno,
+                end_col_offset=end_col_offset,
                 parent=parent,
             )
         else:
