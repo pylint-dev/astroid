@@ -28,7 +28,7 @@ import os
 import textwrap
 import types
 from tokenize import detect_encoding
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import get_parser_module
@@ -147,27 +147,29 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 except ImportError:
                     modname = os.path.splitext(os.path.basename(path))[0]
             # build astroid representation
-            module = self._data_build(data, modname, path)
-            return self._post_build(module, encoding)
+            module, builder = self._data_build(data, modname, path)
+            return self._post_build(module, builder, encoding)
 
     def string_build(self, data, modname="", path=None):
         """Build astroid from source code string."""
-        module = self._data_build(data, modname, path)
+        module, builder = self._data_build(data, modname, path)
         module.file_bytes = data.encode("utf-8")
-        return self._post_build(module, "utf-8")
+        return self._post_build(module, builder, "utf-8")
 
-    def _post_build(self, module, encoding):
+    def _post_build(
+        self, module: nodes.Module, builder: rebuilder.TreeRebuilder, encoding: str
+    ) -> nodes.Module:
         """Handles encoding and delayed nodes after a module has been built"""
         module.file_encoding = encoding
         self._manager.cache_module(module)
         # post tree building steps after we stored the module in the cache:
-        for from_node in module._import_from_nodes:
+        for from_node in builder._import_from_nodes:
             if from_node.modname == "__future__":
                 for symbol, _ in from_node.names:
                     module.future_imports.add(symbol)
             self.add_from_names_to_locals(from_node)
         # handle delayed assattr nodes
-        for delayed in module._delayed_assattr:
+        for delayed in builder._delayed_assattr:
             self.delayed_assattr(delayed)
 
         # Visit the transforms
@@ -175,8 +177,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
             module = self._manager.visit_transforms(module)
         return module
 
-    def _data_build(self, data: str, modname, path):
-        """Build tree node from data and add some information"""
+    def _data_build(
+        self, data: str, modname, path
+    ) -> Tuple[nodes.Module, rebuilder.TreeRebuilder]:
+        """Build tree node from data and add some informations"""
         try:
             node, parser_module = _parse_string(data, type_comments=True)
         except (TypeError, ValueError, SyntaxError) as exc:
@@ -202,9 +206,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             )
         builder = rebuilder.TreeRebuilder(self._manager, parser_module, data)
         module = builder.visit_module(node, modname, node_file, package)
-        module._import_from_nodes = builder._import_from_nodes
-        module._delayed_assattr = builder._delayed_assattr
-        return module
+        return module, builder
 
     def add_from_names_to_locals(self, node):
         """Store imported names to the locals
