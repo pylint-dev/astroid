@@ -289,6 +289,7 @@ __all__ = (
     "NodeNG",
     "Nonlocal",
     "Pass",
+    "Position",
     "Raise",
     "Return",
     "Set",
@@ -307,5 +308,4 @@ __all__ = (
     "With",
     "Yield",
     "YieldFrom",
-    "Position",
 )
