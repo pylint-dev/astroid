@@ -451,9 +451,9 @@ class Module(LocalsDictNodeNG):
 
         :param parent: The parent node in the syntax tree.
 
-        :param doc_node: The doc node associated with this node.
-
         :param pure_python: Whether the ast was built from source.
+
+        :param doc_node: The doc node associated with this node.
         """
         self.name = name
         """The name of the module."""
@@ -1514,9 +1514,9 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         col_offset=None,
         parent=None,
         *,
-        doc_node: Optional[Const] = None,
         end_lineno=None,
         end_col_offset=None,
+        doc_node: Optional[Const] = None,
     ):
         """
         :param name: The name of the function.
@@ -1535,14 +1535,14 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
 
-        :param doc_node: The doc node associated with this node.
-
         :param end_lineno: The last line this node appears on in the source code.
         :type end_lineno: Optional[int]
 
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         :type end_col_offset: Optional[int]
+
+        :param doc_node: The doc node associated with this node.
         """
         self.name = name
         """The name of the function.
@@ -1557,6 +1557,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
 
         self.instance_attrs = {}
+        self.doc_node = doc_node
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -1567,7 +1568,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         if parent:
             frame = parent.frame(future=True)
             frame.set_local(name, self)
-        self.doc_node = doc_node
 
     # pylint: disable=arguments-differ; different than Lambdas
     def postinit(
@@ -2154,9 +2154,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         col_offset=None,
         parent=None,
         *,
-        doc_node: Optional[Const] = None,
         end_lineno=None,
         end_col_offset=None,
+        doc_node: Optional[Const] = None,
     ):
         """
         :param name: The name of the class.
@@ -2175,14 +2175,14 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
 
-        :param doc_node: The doc node associated with this node.
-
         :param end_lineno: The last line this node appears on in the source code.
         :type end_lineno: Optional[int]
 
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         :type end_col_offset: Optional[int]
+
+        :param doc_node: The doc node associated with this node.
         """
         self.instance_attrs = {}
         self.locals = {}
@@ -2223,6 +2223,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type doc: str or None
         """
 
+        self.doc_node = doc_node
+
         self.is_dataclass: bool = False
         """Whether this class is a dataclass."""
 
@@ -2233,7 +2235,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             end_col_offset=end_col_offset,
             parent=parent,
         )
-        self.doc_node = doc_node
         if parent is not None:
             parent.frame(future=True).set_local(name, self)
 
