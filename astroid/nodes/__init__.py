@@ -121,6 +121,7 @@ from astroid.nodes.scoped_nodes import (
     function_to_method,
     get_wrapping_class,
 )
+from astroid.nodes.utils import Position
 
 _BaseContainer = BaseContainer  # TODO Remove for astroid 3.0
 
@@ -306,4 +307,5 @@ __all__ = (
     "With",
     "Yield",
     "YieldFrom",
+    "Position",
 )
