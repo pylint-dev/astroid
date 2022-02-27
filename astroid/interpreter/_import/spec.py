@@ -19,10 +19,12 @@ import abc
 import collections
 import enum
 import importlib.machinery
+import importlib.util
 import os
 import sys
 import zipimport
 from functools import lru_cache
+from pathlib import Path
 
 from . import util
 
@@ -160,6 +162,21 @@ class ImportlibFinder(Finder):
                 for p in sys.path
                 if os.path.isdir(os.path.join(p, *processed))
             ]
+        elif spec.name == "distutils":
+            # virtualenv below 20.0 patches distutils in an unexpected way
+            # so we just find the location of distutils that will be
+            # imported to avoid spurious import-error messages
+            # https://github.com/PyCQA/pylint/issues/5645
+            # A regression test to create this scenario exists in release-tests.yml
+            # and can be triggered manually from GitHub Actions
+            distutils_spec = importlib.util.find_spec("distutils")
+            if distutils_spec and distutils_spec.origin:
+                origin_path = Path(
+                    distutils_spec.origin
+                )  # e.g. .../distutils/__init__.py
+                path = [str(origin_path.parent)]  # e.g. .../distutils
+            else:
+                path = [spec.location]
         else:
             path = [spec.location]
         return path

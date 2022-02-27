@@ -4,6 +4,8 @@ So, you want to release the `X.Y.Z` version of astroid ?
 
 ## Process
 
+(Consider triggering the "release tests" workflow in GitHub Actions first.)
+
 1. Check if the dependencies of the package are correct
 2. Check the result (Do `git diff vX.Y.Z-1 ChangeLog` in particular).
 3. Install the release dependencies `pip3 install pre-commit tbump`

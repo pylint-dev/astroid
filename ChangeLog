@@ -110,6 +110,10 @@ Release date: 2021-12-31
 
   Ref #1321
 
+* Restore custom ``distutils`` handling for resolving paths to submodules.
+
+  Closes PyCQA/pylint#5645
+
 * Fix ``deque.insert()`` signature in ``collections`` brain.
 
   Closes #1260
