@@ -2126,14 +2126,19 @@ class TreeRebuilder:
         """visit a TryExcept node by returning a fresh instance of it"""
         if sys.version_info >= (3, 8):
             # TryExcept excludes the 'finally' but that will be included in the
-            # end_lineno from 'node'. Therefore, we iterate over all non 'finally'
+            # end_lineno from 'node'. Therefore, we check all non 'finally'
             # children to find the correct end_lineno and column.
-            last_child_end_lineno = node.lineno
+            last_child_end_lineno: Optional[int] = node.lineno
             last_child_end_col_offset = node.end_col_offset
-            for child in node.body + node.handlers + node.orelse:
-                if child.end_lineno > last_child_end_lineno:
-                    last_child_end_lineno = child.end_lineno
-                    last_child_end_col_offset = child.end_col_offset
+            if node.orelse:
+                last_child_end_lineno = node.orelse[-1].end_lineno
+                last_child_end_col_offset = node.orelse[-1].end_col_offset
+            elif node.handlers:
+                last_child_end_lineno = node.handlers[-1].end_lineno
+                last_child_end_col_offset = node.handlers[-1].end_col_offset
+            elif node.body:
+                last_child_end_lineno = node.body[-1].end_lineno
+                last_child_end_col_offset = node.body[-1].end_col_offset
             newnode = nodes.TryExcept(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
