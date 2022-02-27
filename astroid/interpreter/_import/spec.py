@@ -19,6 +19,7 @@ import abc
 import collections
 import enum
 import importlib.machinery
+import importlib.util
 import os
 import sys
 import zipimport
@@ -169,7 +170,7 @@ class ImportlibFinder(Finder):
             # A regression test to create this scenario exists in release-tests.yml
             # and can be triggered manually from GitHub Actions
             distutils_spec = importlib.util.find_spec("distutils")
-            if distutils_spec:
+            if distutils_spec and distutils_spec.origin:
                 origin_path = Path(
                     distutils_spec.origin
                 )  # e.g. .../distutils/__init__.py
