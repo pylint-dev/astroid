@@ -445,6 +445,8 @@ class NodeNG:
     @decorators.cachedproperty
     def tolineno(self) -> Optional[int]:
         """The last line that this node appears on in the source code."""
+        if self.end_lineno is not None:
+            return self.end_lineno
         if not self._astroid_fields:
             # can't have children
             last_child = None
