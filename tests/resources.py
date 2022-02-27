@@ -13,14 +13,15 @@
 
 import os
 import sys
+from pathlib import Path
 from typing import Optional
 
 from astroid import builder
 from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import Module
 
-DATA_DIR = os.path.join("testdata", "python3")
-RESOURCE_PATH = os.path.join(os.path.dirname(__file__), DATA_DIR, "data")
+DATA_DIR = Path("testdata") / "python3"
+RESOURCE_PATH = Path(__file__).parent / DATA_DIR / "data"
 
 
 def find(name: str) -> str:

@@ -5,6 +5,7 @@
 # Copyright (c) 2019-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
@@ -95,7 +96,7 @@ class InferenceContext:
     @property
     def nodes_inferred(self):
         """
-        Number of nodes inferred in this context and all its clones/decendents
+        Number of nodes inferred in this context and all its clones/descendents
 
         Wrap inner value in a mutable cell to allow for mutating a class
         variable in the presence of __slots__

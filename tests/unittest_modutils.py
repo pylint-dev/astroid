@@ -11,10 +11,12 @@
 # Copyright (c) 2019 markmcclain <markmcclain@users.noreply.github.com>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
+# Copyright (c) 2021-2022 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
 # Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
+# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
@@ -22,7 +24,6 @@
 """
 unit tests for module modutils (module manipulation utilities)
 """
-import distutils.version
 import email
 import os
 import shutil
@@ -30,6 +31,7 @@ import sys
 import tempfile
 import unittest
 import xml
+from pathlib import Path
 from xml import etree
 from xml.etree import ElementTree
 
@@ -71,10 +73,6 @@ class ModuleFileTest(unittest.TestCase):
             found_spec.location.split(os.sep)[-3:],
             ["data", "MyPyPa-0.1.0-py2.5.egg", self.package],
         )
-
-    def test_find_distutils_submodules_in_virtualenv(self) -> None:
-        found_spec = spec.find_spec(["distutils", "version"])
-        self.assertEqual(found_spec.location, distutils.version.__file__)
 
 
 class LoadModuleFromNameTest(unittest.TestCase):
@@ -192,6 +190,30 @@ class ModPathFromFileTest(unittest.TestCase):
 
         # this should be equivalent to: import secret
         self.assertEqual(modutils.modpath_from_file(symlink_secret_path), ["secret"])
+
+    def test_load_packages_without_init(self) -> None:
+        """Test that we correctly find packages with an __init__.py file.
+
+        Regression test for issue reported in:
+        https://github.com/PyCQA/astroid/issues/1327
+        """
+        tmp_dir = Path(tempfile.gettempdir())
+        self.addCleanup(os.chdir, os.curdir)
+        os.chdir(tmp_dir)
+
+        self.addCleanup(shutil.rmtree, tmp_dir / "src")
+        os.mkdir(tmp_dir / "src")
+        os.mkdir(tmp_dir / "src" / "package")
+        with open(tmp_dir / "src" / "__init__.py", "w", encoding="utf-8"):
+            pass
+        with open(tmp_dir / "src" / "package" / "file.py", "w", encoding="utf-8"):
+            pass
+
+        # this should be equivalent to: import secret
+        self.assertEqual(
+            modutils.modpath_from_file(str(Path("src") / "package"), ["."]),
+            ["src", "package"],
+        )
 
 
 class LoadModuleFromPathTest(resources.SysPathSetup, unittest.TestCase):

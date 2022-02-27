@@ -1,6 +1,7 @@
 # Copyright (c) 2019-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2019-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
@@ -59,13 +60,10 @@ def _is_a_numpy_module(node: Name) -> bool:
     potential_import_target = [
         x for x in node.lookup(module_nickname)[1] if isinstance(x, Import)
     ]
-    for target in potential_import_target:
-        if ("numpy", module_nickname) in target.names or (
-            "numpy",
-            None,
-        ) in target.names:
-            return True
-    return False
+    return any(
+        ("numpy", module_nickname) in target.names or ("numpy", None) in target.names
+        for target in potential_import_target
+    )
 
 
 def looks_like_numpy_member(member_name: str, node: NodeNG) -> bool:

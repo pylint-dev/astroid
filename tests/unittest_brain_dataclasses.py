@@ -11,7 +11,7 @@ if not PY37_PLUS:
 
 
 parametrize_module = pytest.mark.parametrize(
-    ("module",), (["dataclasses"], ["pydantic.dataclasses"])
+    ("module",), (["dataclasses"], ["pydantic.dataclasses"], ["marshmallow_dataclass"])
 )
 
 
@@ -184,6 +184,7 @@ def test_inference_no_annotation(module: str):
     inferred = next(class_def.infer())
     assert isinstance(inferred, nodes.ClassDef)
     assert inferred.instance_attrs == {}
+    assert inferred.is_dataclass
 
     # Both the class and instance can still access the attribute
     for node in (klass, instance):
@@ -216,6 +217,7 @@ def test_inference_class_var(module: str):
     inferred = next(class_def.infer())
     assert isinstance(inferred, nodes.ClassDef)
     assert inferred.instance_attrs == {}
+    assert inferred.is_dataclass
 
     # Both the class and instance can still access the attribute
     for node in (klass, instance):
@@ -248,6 +250,7 @@ def test_inference_init_var(module: str):
     inferred = next(class_def.infer())
     assert isinstance(inferred, nodes.ClassDef)
     assert inferred.instance_attrs == {}
+    assert inferred.is_dataclass
 
     # Both the class and instance can still access the attribute
     for node in (klass, instance):
@@ -304,6 +307,8 @@ def test_inference_generic_collection_attribute(module: str):
         ("dataclasses", "typing"),
         ("pydantic.dataclasses", "typing"),
         ("pydantic.dataclasses", "collections.abc"),
+        ("marshmallow_dataclass", "typing"),
+        ("marshmallow_dataclass", "collections.abc"),
     ],
 )
 def test_inference_callable_attribute(module: str, typing_module: str):
@@ -664,6 +669,7 @@ def test_annotated_enclosed_field_call(module: str):
     inferred = node.inferred()
     assert len(inferred) == 1 and isinstance(inferred[0], nodes.ClassDef)
     assert "attribute" in inferred[0].instance_attrs
+    assert inferred[0].is_dataclass
 
 
 @parametrize_module
@@ -681,3 +687,30 @@ def test_invalid_field_call(module: str) -> None:
     inferred = code.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.ClassDef)
+    assert inferred[0].is_dataclass
+
+
+def test_non_dataclass_is_not_dataclass() -> None:
+    """Test that something that isn't a dataclass has the correct attribute."""
+    module = astroid.parse(
+        """
+    class A:
+        val: field()
+
+    def dataclass():
+        return
+
+    @dataclass
+    class B:
+        val: field()
+    """
+    )
+    class_a = module.body[0].inferred()
+    assert len(class_a) == 1
+    assert isinstance(class_a[0], nodes.ClassDef)
+    assert not class_a[0].is_dataclass
+
+    class_b = module.body[2].inferred()
+    assert len(class_b) == 1
+    assert isinstance(class_b[0], nodes.ClassDef)
+    assert not class_b[0].is_dataclass

@@ -22,8 +22,11 @@ python source code for projects such as pychecker, pyreverse,
 pylint... Well, actually the development of this library is essentially
 governed by pylint's needs.
 
-It extends class defined in the python's _ast module with some
-additional methods and attributes. Instance attributes are added by a
+It mimics the class defined in the python's _ast module with some
+additional methods and attributes. New nodes instances are not fully
+compatible with python's _ast.
+
+Instance attributes are added by a
 builder object, which can either generate extended ast (let's call
 them astroid ;) by visiting an existent ast tree or by inspecting living
 object. Methods are added by monkey patching ast classes.
@@ -40,6 +43,8 @@ Main modules are:
 * builder contains the class responsible to build astroid trees
 """
 
+import functools
+import tokenize
 from importlib import import_module
 from pathlib import Path
 
@@ -57,7 +62,7 @@ from astroid.astroid_manager import MANAGER
 from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
-from astroid.const import Context, Del, Load, Store
+from astroid.const import PY310_PLUS, Context, Del, Load, Store
 from astroid.exceptions import *
 from astroid.inference_tip import _inference_tip_cached, inference_tip
 from astroid.objects import ExceptionInstance
@@ -161,6 +166,15 @@ from astroid.nodes import (  # pylint: disable=redefined-builtin (Ellipsis)
 # isort: on
 
 from astroid.util import Uninferable
+
+# Performance hack for tokenize. See https://bugs.python.org/issue43014
+# Adapted from https://github.com/PyCQA/pycodestyle/pull/993
+if (
+    not PY310_PLUS
+    and callable(getattr(tokenize, "_compile", None))
+    and getattr(tokenize._compile, "__wrapped__", None) is None  # type: ignore[attr-defined]
+):
+    tokenize._compile = functools.lru_cache()(tokenize._compile)  # type: ignore[attr-defined]
 
 # load brain plugins
 ASTROID_INSTALL_DIRECTORY = Path(__file__).parent

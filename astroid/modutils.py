@@ -18,6 +18,9 @@
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
+# Copyright (c) 2021 Keichi Takahashi <hello@keichi.dev>
+# Copyright (c) 2021 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
 
@@ -36,9 +39,6 @@
 :var BUILTIN_MODULES: dictionary with builtin module names has key
 """
 
-# We disable the import-error so pylint can work without distutils installed.
-# pylint: disable=no-name-in-module,useless-suppression
-
 import importlib
 import importlib.machinery
 import importlib.util
@@ -46,17 +46,12 @@ import itertools
 import os
 import platform
 import sys
+import sysconfig
 import types
-from distutils.errors import DistutilsPlatformError  # pylint: disable=import-error
-from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
-from typing import Set
+from pathlib import Path
+from typing import Dict, Set
 
 from astroid.interpreter._import import spec, util
-
-# distutils is replaced by virtualenv with a module that does
-# weird path manipulations in order to get to the
-# real distutils module.
-
 
 if sys.platform.startswith("win"):
     PY_SOURCE_EXTS = ("py", "pyw")
@@ -66,29 +61,18 @@ else:
     PY_COMPILED_EXTS = ("so",)
 
 
-try:
-    # The explicit sys.prefix is to work around a patch in virtualenv that
-    # replaces the 'real' sys.prefix (i.e. the location of the binary)
-    # with the prefix from which the virtualenv was created. This throws
-    # off the detection logic for standard library modules, thus the
-    # workaround.
-    STD_LIB_DIRS = {
-        get_python_lib(standard_lib=True, prefix=sys.prefix),
-        # Take care of installations where exec_prefix != prefix.
-        get_python_lib(standard_lib=True, prefix=sys.exec_prefix),
-        get_python_lib(standard_lib=True),
-    }
-# get_python_lib(standard_lib=1) is not available on pypy, set STD_LIB_DIR to
-# non-valid path, see https://bugs.pypy.org/issue1164
-except DistutilsPlatformError:
-    STD_LIB_DIRS = set()
+# TODO: Adding `platstdlib` is a fix for a workaround in virtualenv. At some point we should
+# revisit whether this is still necessary. See https://github.com/PyCQA/astroid/pull/1323.
+STD_LIB_DIRS = {sysconfig.get_path("stdlib"), sysconfig.get_path("platstdlib")}
 
 if os.name == "nt":
     STD_LIB_DIRS.add(os.path.join(sys.prefix, "dlls"))
     try:
         # real_prefix is defined when running inside virtual environments,
         # created with the **virtualenv** library.
-        STD_LIB_DIRS.add(os.path.join(sys.real_prefix, "dlls"))
+        # Deprecated in virtualenv==16.7.9
+        # See: https://github.com/pypa/virtualenv/issues/1622
+        STD_LIB_DIRS.add(os.path.join(sys.real_prefix, "dlls"))  # type: ignore[attr-defined]
     except AttributeError:
         # sys.base_exec_prefix is always defined, but in a virtual environment
         # created with the stdlib **venv** module, it points to the original
@@ -99,31 +83,26 @@ if os.name == "nt":
             pass
 
 if platform.python_implementation() == "PyPy":
-    # The get_python_lib(standard_lib=True) function does not give valid
-    # result with pypy in a virtualenv.
-    # In a virtual environment, with CPython implementation the call to this function returns a path toward
-    # the binary (its libraries) which has been used to create the virtual environment.
-    # Not with pypy implementation.
-    # The only way to retrieve such information is to use the sys.base_prefix hint.
-    # It's worth noticing that under CPython implementation the return values of
-    # get_python_lib(standard_lib=True) and get_python_lib(santdard_lib=True, prefix=sys.base_prefix)
-    # are the same.
-    # In the lines above, we could have replace the call to get_python_lib(standard=True)
-    # with the one using prefix=sys.base_prefix but we prefer modifying only what deals with pypy.
-    STD_LIB_DIRS.add(get_python_lib(standard_lib=True, prefix=sys.base_prefix))
-    _root = os.path.join(sys.prefix, "lib_pypy")
-    STD_LIB_DIRS.add(_root)
-    try:
-        # real_prefix is defined when running inside virtualenv.
-        STD_LIB_DIRS.add(os.path.join(sys.base_prefix, "lib_pypy"))
-    except AttributeError:
-        pass
-    del _root
+    # PyPy stores the stdlib in two places: sys.prefix/lib_pypy and sys.prefix/lib-python/3
+    # sysconfig.get_path on PyPy returns the first, but without an underscore so we patch this manually.
+    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("stdlib")).parent / "lib_pypy"))
+    STD_LIB_DIRS.add(
+        sysconfig.get_path("stdlib", vars={"implementation_lower": "python/3"})
+    )
+    # TODO: This is a fix for a workaround in virtualenv. At some point we should revisit
+    # whether this is still necessary. See https://github.com/PyCQA/astroid/pull/1324.
+    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("platstdlib")).parent / "lib_pypy"))
+    STD_LIB_DIRS.add(
+        sysconfig.get_path("platstdlib", vars={"implementation_lower": "python/3"})
+    )
+
 if os.name == "posix":
-    # Need the real prefix is we're under a virtualenv, otherwise
+    # Need the real prefix if we're in a virtualenv, otherwise
     # the usual one will do.
+    # Deprecated in virtualenv==16.7.9
+    # See: https://github.com/pypa/virtualenv/issues/1622
     try:
-        prefix = sys.real_prefix
+        prefix = sys.real_prefix  # type: ignore[attr-defined]
     except AttributeError:
         prefix = sys.prefix
 
@@ -132,7 +111,7 @@ if os.name == "posix":
         return os.path.join(prefix, path, base_python)
 
     STD_LIB_DIRS.add(_posix_path("lib"))
-    if sys.maxsize > 2 ** 32:
+    if sys.maxsize > 2**32:
         # This tries to fix a problem with /usr/lib64 builds,
         # where systems are running both 32-bit and 64-bit code
         # on the same machine, which reflects into the places where
@@ -142,7 +121,7 @@ if os.name == "posix":
         # https://github.com/PyCQA/pylint/issues/712#issuecomment-163178753
         STD_LIB_DIRS.add(_posix_path("lib64"))
 
-EXT_LIB_DIRS = {get_python_lib(), get_python_lib(True)}
+EXT_LIB_DIRS = {sysconfig.get_path("purelib"), sysconfig.get_path("platlib")}
 IS_JYTHON = platform.python_implementation() == "Jython"
 BUILTIN_MODULES = dict.fromkeys(sys.builtin_module_names, True)
 
@@ -153,12 +132,15 @@ class NoSourceFile(Exception):
     """
 
 
-def _normalize_path(path):
-    return os.path.normcase(os.path.abspath(path))
+def _normalize_path(path: str) -> str:
+    """Resolve symlinks in path and convert to absolute path.
 
+    Note that environment variables and ~ in the path need to be expanded in
+    advance.
 
-def _canonicalize_path(path):
-    return os.path.realpath(os.path.expanduser(path))
+    This can be cached by using _cache_normalize_path.
+    """
+    return os.path.normcase(os.path.realpath(path))
 
 
 def _path_from_filename(filename, is_jython=IS_JYTHON):
@@ -182,11 +164,11 @@ def _handle_blacklist(blacklist, dirnames, filenames):
             filenames.remove(norecurs)
 
 
-_NORM_PATH_CACHE = {}
+_NORM_PATH_CACHE: Dict[str, str] = {}
 
 
-def _cache_normalize_path(path):
-    """abspath with caching"""
+def _cache_normalize_path(path: str) -> str:
+    """Normalize path with caching."""
     # _module_file calls abspath on every path in sys.path every time it's
     # called; on a larger codebase this easily adds up to half a second just
     # assembling path components. This cache alleviates that.
@@ -287,6 +269,9 @@ def _get_relative_base_path(filename, path_to_check):
     if os.path.normcase(real_filename).startswith(path_to_check):
         importable_path = real_filename
 
+    # if "var" in path_to_check:
+    #     breakpoint()
+
     if importable_path:
         base_path = os.path.splitext(importable_path)[0]
         relative_base_path = base_path[len(path_to_check) :]
@@ -297,10 +282,12 @@ def _get_relative_base_path(filename, path_to_check):
 
 def modpath_from_file_with_callback(filename, path=None, is_package_cb=None):
     filename = os.path.expanduser(_path_from_filename(filename))
+    paths_to_check = sys.path.copy()
+    if path:
+        paths_to_check += path
     for pathname in itertools.chain(
-        path or [], map(_canonicalize_path, sys.path), sys.path
+        paths_to_check, map(_cache_normalize_path, paths_to_check)
     ):
-        pathname = _cache_normalize_path(pathname)
         if not pathname:
             continue
         modpath = _get_relative_base_path(filename, pathname)
@@ -555,10 +542,8 @@ def is_standard_module(modname, std_path=None):
             return False
     if std_path is None:
         std_path = STD_LIB_DIRS
-    for path in std_path:
-        if filename.startswith(_cache_normalize_path(path)):
-            return True
-    return False
+
+    return any(filename.startswith(_cache_normalize_path(path)) for path in std_path)
 
 
 def is_relative(modname, from_file):

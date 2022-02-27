@@ -4,8 +4,8 @@
 # Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2018 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2021 Craig Franklin <craigjfranklin@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Craig Franklin <craigjfranklin@gmail.com>
 # Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 

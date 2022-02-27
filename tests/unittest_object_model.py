@@ -5,6 +5,7 @@
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Keichi Takahashi <keichi.t@me.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 hippo91 <guillaume.peillex@gmail.com>
@@ -19,6 +20,13 @@ import pytest
 import astroid
 from astroid import builder, nodes, objects, test_utils, util
 from astroid.exceptions import InferenceError
+
+try:
+    import six  # pylint: disable=unused-import
+
+    HAS_SIX = True
+except ImportError:
+    HAS_SIX = False
 
 
 class InstanceModelTest(unittest.TestCase):
@@ -566,6 +574,7 @@ class ExceptionModelTest(unittest.TestCase):
         inferred = next(ast_node.infer())
         assert isinstance(inferred, astroid.Const)
 
+    @unittest.skipIf(HAS_SIX, "This test fails if the six library is installed")
     def test_oserror(self) -> None:
         ast_nodes = builder.extract_node(
             """

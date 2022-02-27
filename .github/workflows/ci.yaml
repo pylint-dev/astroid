@@ -8,14 +8,15 @@ on:
   pull_request: ~
 
 env:
-  CACHE_VERSION: 3
-  DEFAULT_PYTHON: 3.6
+  CACHE_VERSION: 4
+  DEFAULT_PYTHON: 3.8
   PRE_COMMIT_CACHE: ~/.cache/pre-commit
 
 jobs:
   prepare-base:
     name: Prepare base dependencies
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       python-key: ${{ steps.generate-python-key.outputs.key }}
       pre-commit-key: ${{ steps.generate-pre-commit-key.outputs.key }}
@@ -52,6 +53,7 @@ jobs:
           . venv/bin/activate
           python -m pip install -U pip setuptools wheel
           pip install -U -r requirements_test.txt -r requirements_test_brain.txt
+          pip install -e .
       - name: Generate pre-commit restore key
         id: generate-pre-commit-key
         run: >-
@@ -75,6 +77,7 @@ jobs:
   formatting:
     name: Run pre-commit checks
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: prepare-base
     steps:
       - name: Check out code from GitHub
@@ -117,6 +120,7 @@ jobs:
   prepare-tests-linux:
     name: Prepare tests for Python ${{ matrix.python-version }} (Linux)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9, "3.10"]
@@ -155,10 +159,12 @@ jobs:
           . venv/bin/activate
           python -m pip install -U pip setuptools wheel
           pip install -U -r requirements_test.txt -r requirements_test_brain.txt
+          pip install -e .
 
   pytest-linux:
     name: Run tests Python ${{ matrix.python-version }} (Linux)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: prepare-tests-linux
     strategy:
       fail-fast: false
@@ -198,6 +204,7 @@ jobs:
   coverage:
     name: Process test coverage
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: ["prepare-tests-linux", "pytest-linux"]
     strategy:
       matrix:
@@ -242,6 +249,7 @@ jobs:
   prepare-tests-windows:
     name: Prepare tests for Python ${{ matrix.python-version }} (Windows)
     runs-on: windows-latest
+    timeout-minutes: 5
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9, "3.10"]
@@ -280,10 +288,12 @@ jobs:
           . venv\\Scripts\\activate
           python -m pip install -U pip setuptools wheel
           pip install -U -r requirements_test_min.txt -r requirements_test_brain.txt
+          pip install -e .
 
   pytest-windows:
     name: Run tests Python ${{ matrix.python-version }} (Windows)
     runs-on: windows-latest
+    timeout-minutes: 10
     needs: prepare-tests-windows
     strategy:
       fail-fast: false
@@ -322,6 +332,7 @@ jobs:
   prepare-tests-pypy:
     name: Prepare tests for Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     strategy:
       matrix:
         python-version: ["pypy3"]
@@ -359,10 +370,12 @@ jobs:
           . venv/bin/activate
           python -m pip install -U pip setuptools wheel
           pip install -U -r requirements_test_min.txt
+          pip install -e .
 
   pytest-pypy:
     name: Run tests Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: prepare-tests-pypy
     strategy:
       fail-fast: false

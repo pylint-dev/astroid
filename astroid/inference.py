@@ -17,6 +17,7 @@
 # Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
 # Copyright (c) 2020 Leandro T. C. Melo <ltcmelo@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
@@ -72,11 +73,13 @@ def infer_end(self, context=None):
     yield self
 
 
-nodes.Module._infer = infer_end
-nodes.ClassDef._infer = infer_end
-nodes.Lambda._infer = infer_end
-nodes.Const._infer = infer_end
-nodes.Slice._infer = infer_end
+# We add ignores to all these assignments in this file
+# See https://github.com/python/mypy/issues/2427
+nodes.Module._infer = infer_end  # type: ignore[assignment]
+nodes.ClassDef._infer = infer_end  # type: ignore[assignment]
+nodes.Lambda._infer = infer_end  # type: ignore[assignment]
+nodes.Const._infer = infer_end  # type: ignore[assignment]
+nodes.Slice._infer = infer_end  # type: ignore[assignment]
 
 
 def _infer_sequence_helper(node, context=None):
@@ -118,9 +121,9 @@ def infer_sequence(self, context=None):
         yield self
 
 
-nodes.List._infer = infer_sequence
-nodes.Tuple._infer = infer_sequence
-nodes.Set._infer = infer_sequence
+nodes.List._infer = infer_sequence  # type: ignore[assignment]
+nodes.Tuple._infer = infer_sequence  # type: ignore[assignment]
+nodes.Set._infer = infer_sequence  # type: ignore[assignment]
 
 
 def infer_map(self, context=None):
@@ -177,7 +180,7 @@ def _infer_map(node, context):
     return values
 
 
-nodes.Dict._infer = infer_map
+nodes.Dict._infer = infer_map  # type: ignore[assignment]
 
 
 def _higher_function_scope(node):
@@ -250,7 +253,7 @@ def infer_call(self, context=None):
     return dict(node=self, context=context)
 
 
-nodes.Call._infer = infer_call
+nodes.Call._infer = infer_call  # type: ignore[assignment]
 
 
 @decorators.raise_if_nothing_inferred
@@ -302,7 +305,7 @@ def infer_import_from(self, context=None, asname=True):
         ) from error
 
 
-nodes.ImportFrom._infer = infer_import_from
+nodes.ImportFrom._infer = infer_import_from  # type: ignore[assignment]
 
 
 def infer_attribute(self, context=None):
@@ -314,6 +317,8 @@ def infer_attribute(self, context=None):
 
         if not context:
             context = InferenceContext()
+        else:
+            context = copy_context(context)
 
         old_boundnode = context.boundnode
         try:
@@ -350,7 +355,7 @@ def infer_global(self, context=None):
         ) from error
 
 
-nodes.Global._infer = infer_global
+nodes.Global._infer = infer_global  # type: ignore[assignment]
 
 
 _SUBSCRIPT_SENTINEL = object()
@@ -412,7 +417,7 @@ def infer_subscript(self, context=None):
     return None
 
 
-nodes.Subscript._infer = decorators.raise_if_nothing_inferred(
+nodes.Subscript._infer = decorators.raise_if_nothing_inferred(  # type: ignore[assignment]
     decorators.path_wrapper(infer_subscript)
 )
 nodes.Subscript.infer_lhs = decorators.raise_if_nothing_inferred(infer_subscript)
@@ -886,7 +891,7 @@ def _infer_compare(
         yield nodes.Const(retval)
 
 
-nodes.Compare._infer = _infer_compare
+nodes.Compare._infer = _infer_compare  # type: ignore[assignment]
 
 
 def _infer_augassign(self, context=None):
@@ -938,7 +943,7 @@ def infer_arguments(self, context=None):
     return protocols._arguments_infer_argname(self, name, context)
 
 
-nodes.Arguments._infer = infer_arguments
+nodes.Arguments._infer = infer_arguments  # type: ignore[assignment]
 
 
 @decorators.raise_if_nothing_inferred
@@ -972,7 +977,7 @@ def infer_empty_node(self, context=None):
             yield util.Uninferable
 
 
-nodes.EmptyNode._infer = infer_empty_node
+nodes.EmptyNode._infer = infer_empty_node  # type: ignore[assignment]
 
 
 @decorators.raise_if_nothing_inferred
@@ -980,7 +985,7 @@ def infer_index(self, context=None):
     return self.value.infer(context)
 
 
-nodes.Index._infer = infer_index
+nodes.Index._infer = infer_index  # type: ignore[assignment]
 
 
 def _populate_context_lookup(call, context):
@@ -1033,7 +1038,7 @@ def infer_ifexp(self, context=None):
         yield from self.orelse.infer(context=rhs_context)
 
 
-nodes.IfExp._infer = infer_ifexp
+nodes.IfExp._infer = infer_ifexp  # type: ignore[assignment]
 
 
 # pylint: disable=dangerous-default-value
@@ -1052,7 +1057,7 @@ def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
 
 # When inferring a property, we instantiate a new `objects.Property` object,
 # which in turn, because it inherits from `FunctionDef`, sets itself in the locals
-# of the wrapping frame. This means that everytime we infer a property, the locals
+# of the wrapping frame. This means that every time we infer a property, the locals
 # are mutated with a new instance of the property. This is why we cache the result
 # of the function's inference.
 @_cached_generator
@@ -1074,4 +1079,4 @@ def infer_functiondef(self, context=None):
     return dict(node=self, context=context)
 
 
-nodes.FunctionDef._infer = infer_functiondef
+nodes.FunctionDef._infer = infer_functiondef  # type: ignore[assignment]

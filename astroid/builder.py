@@ -9,6 +9,10 @@
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
+# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
+# Copyright (c) 2021 Gregory P. Smith <greg@krypto.org>
+# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 
@@ -24,7 +28,7 @@ import os
 import textwrap
 import types
 from tokenize import detect_encoding
-from typing import List, Union
+from typing import List, Optional, Union
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import get_parser_module
@@ -81,12 +85,20 @@ class AstroidBuilder(raw_building.InspectBuilder):
         self._apply_transforms = apply_transforms
 
     def module_build(
-        self, module: types.ModuleType, modname: str = None
+        self, module: types.ModuleType, modname: Optional[str] = None
     ) -> nodes.Module:
         """Build an astroid from a living module instance."""
         node = None
         path = getattr(module, "__file__", None)
-        if path is not None:
+        loader = getattr(module, "__loader__", None)
+        # Prefer the loader to get the source rather than assuming we have a
+        # filesystem to read the source file from ourselves.
+        if loader:
+            modname = modname or module.__name__
+            source = loader.get_source(modname)
+            if source:
+                node = self.string_build(source, modname, path=path)
+        if node is None and path is not None:
             path_, ext = os.path.splitext(modutils._path_from_filename(path))
             if ext in {".py", ".pyc", ".pyo"} and os.path.exists(path_ + ".py"):
                 node = self.file_build(path_ + ".py", modname)
@@ -152,8 +164,8 @@ class AstroidBuilder(raw_building.InspectBuilder):
             module = self._manager.visit_transforms(module)
         return module
 
-    def _data_build(self, data, modname, path):
-        """Build tree node from data and add some informations"""
+    def _data_build(self, data: str, modname, path):
+        """Build tree node from data and add some information"""
         try:
             node, parser_module = _parse_string(data, type_comments=True)
         except (TypeError, ValueError, SyntaxError) as exc:
@@ -177,7 +189,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 path is not None
                 and os.path.splitext(os.path.basename(path))[0] == "__init__"
             )
-        builder = rebuilder.TreeRebuilder(self._manager, parser_module)
+        builder = rebuilder.TreeRebuilder(self._manager, parser_module, data)
         module = builder.visit_module(node, modname, node_file, package)
 
         self._manager.cache_module(module)
@@ -224,7 +236,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         This adds name to locals and handle members definition.
         """
         try:
-            frame = node.frame()
+            frame = node.frame(future=True)
             for inferred in node.expr.infer():
                 if inferred is util.Uninferable:
                     continue
@@ -253,7 +265,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 if (
                     frame.name == "__init__"
                     and values
-                    and values[0].frame().name != "__init__"
+                    and values[0].frame(future=True).name != "__init__"
                 ):
                     values.insert(0, node)
                 else:
@@ -262,7 +274,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             pass
 
 
-def build_namespace_package_module(name, path: str) -> nodes.Module:
+def build_namespace_package_module(name: str, path: List[str]) -> nodes.Module:
     return nodes.Module(name, doc="", path=path, package=True)
 
 
@@ -440,6 +452,14 @@ def extract_node(code: str, module_name: str = "") -> Union[NodeNG, List[NodeNG]
     if len(extracted) == 1:
         return extracted[0]
     return extracted
+
+
+def _extract_single_node(code: str, module_name: str = "") -> NodeNG:
+    """Call extract_node while making sure that only one value is returned."""
+    ret = extract_node(code, module_name)
+    if isinstance(ret, list):
+        return ret[0]
+    return ret
 
 
 def _parse_string(data, type_comments=True):

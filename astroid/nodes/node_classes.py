@@ -23,9 +23,11 @@
 # Copyright (c) 2019 kavins14 <kavinsingh@hotmail.com>
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
+# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
@@ -42,7 +44,16 @@ import sys
 import typing
 import warnings
 from functools import lru_cache
-from typing import TYPE_CHECKING, Callable, Generator, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Generator,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from astroid import decorators, mixins, util
 from astroid.bases import Instance, _infer_stmts
@@ -65,11 +76,26 @@ else:
     from typing_extensions import Literal
 
 if TYPE_CHECKING:
+    from astroid import nodes
     from astroid.nodes import LocalsDictNodeNG
 
 
 def _is_const(value):
     return isinstance(value, tuple(CONST_CLS))
+
+
+T_Nodes = TypeVar("T_Nodes", bound=NodeNG)
+
+AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
+AssignedStmtsCall = Callable[
+    [
+        T_Nodes,
+        AssignedStmtsPossibleNode,
+        Optional[InferenceContext],
+        Optional[typing.List[int]],
+    ],
+    Any,
+]
 
 
 @decorators.raise_if_nothing_inferred
@@ -285,6 +311,9 @@ class BaseContainer(
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -293,11 +322,22 @@ class BaseContainer(
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.elts: typing.List[NodeNG] = []
         """The elements in the node."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, elts: typing.List[NodeNG]) -> None:
         """Do some setup after initialisation.
@@ -386,188 +426,6 @@ class LookupMixIn:
         context = InferenceContext()
         return _infer_stmts(stmts, context, frame)
 
-    def _get_filtered_node_statements(self, nodes):
-        statements = [(node, node.statement()) for node in nodes]
-        # Next we check if we have ExceptHandlers that are parent
-        # of the underlying variable, in which case the last one survives
-        if len(statements) > 1 and all(
-            isinstance(stmt, ExceptHandler) for _, stmt in statements
-        ):
-            statements = [
-                (node, stmt) for node, stmt in statements if stmt.parent_of(self)
-            ]
-        return statements
-
-    def _filter_stmts(self, stmts, frame, offset):
-        """Filter the given list of statements to remove ignorable statements.
-
-        If self is not a frame itself and the name is found in the inner
-        frame locals, statements will be filtered to remove ignorable
-        statements according to self's location.
-
-        :param stmts: The statements to filter.
-        :type stmts: list(NodeNG)
-
-        :param frame: The frame that all of the given statements belong to.
-        :type frame: NodeNG
-
-        :param offset: The line offset to filter statements up to.
-        :type offset: int
-
-        :returns: The filtered statements.
-        :rtype: list(NodeNG)
-        """
-        # if offset == -1, my actual frame is not the inner frame but its parent
-        #
-        # class A(B): pass
-        #
-        # we need this to resolve B correctly
-        if offset == -1:
-            myframe = self.frame().parent.frame()
-        else:
-            myframe = self.frame()
-            # If the frame of this node is the same as the statement
-            # of this node, then the node is part of a class or
-            # a function definition and the frame of this node should be the
-            # the upper frame, not the frame of the definition.
-            # For more information why this is important,
-            # see Pylint issue #295.
-            # For example, for 'b', the statement is the same
-            # as the frame / scope:
-            #
-            # def test(b=1):
-            #     ...
-
-            if self.statement() is myframe and myframe.parent:
-                myframe = myframe.parent.frame()
-        mystmt = self.statement()
-        # line filtering if we are in the same frame
-        #
-        # take care node may be missing lineno information (this is the case for
-        # nodes inserted for living objects)
-        if myframe is frame and mystmt.fromlineno is not None:
-            assert mystmt.fromlineno is not None, mystmt
-            mylineno = mystmt.fromlineno + offset
-        else:
-            # disabling lineno filtering
-            mylineno = 0
-
-        _stmts = []
-        _stmt_parents = []
-        statements = self._get_filtered_node_statements(stmts)
-        for node, stmt in statements:
-            # line filtering is on and we have reached our location, break
-            if stmt.fromlineno and stmt.fromlineno > mylineno > 0:
-                break
-            # Ignore decorators with the same name as the
-            # decorated function
-            # Fixes issue #375
-            if mystmt is stmt and is_from_decorator(self):
-                continue
-            assert hasattr(node, "assign_type"), (
-                node,
-                node.scope(),
-                node.scope().locals,
-            )
-            assign_type = node.assign_type()
-            if node.has_base(self):
-                break
-
-            _stmts, done = assign_type._get_filtered_stmts(self, node, _stmts, mystmt)
-            if done:
-                break
-
-            optional_assign = assign_type.optional_assign
-            if optional_assign and assign_type.parent_of(self):
-                # we are inside a loop, loop var assignment is hiding previous
-                # assignment
-                _stmts = [node]
-                _stmt_parents = [stmt.parent]
-                continue
-
-            if isinstance(assign_type, NamedExpr):
-                _stmts = [node]
-                continue
-
-            # XXX comment various branches below!!!
-            try:
-                pindex = _stmt_parents.index(stmt.parent)
-            except ValueError:
-                pass
-            else:
-                # we got a parent index, this means the currently visited node
-                # is at the same block level as a previously visited node
-                if _stmts[pindex].assign_type().parent_of(assign_type):
-                    # both statements are not at the same block level
-                    continue
-                # if currently visited node is following previously considered
-                # assignment and both are not exclusive, we can drop the
-                # previous one. For instance in the following code ::
-                #
-                #   if a:
-                #     x = 1
-                #   else:
-                #     x = 2
-                #   print x
-                #
-                # we can't remove neither x = 1 nor x = 2 when looking for 'x'
-                # of 'print x'; while in the following ::
-                #
-                #   x = 1
-                #   x = 2
-                #   print x
-                #
-                # we can remove x = 1 when we see x = 2
-                #
-                # moreover, on loop assignment types, assignment won't
-                # necessarily be done if the loop has no iteration, so we don't
-                # want to clear previous assignments if any (hence the test on
-                # optional_assign)
-                if not (optional_assign or are_exclusive(_stmts[pindex], node)):
-                    del _stmt_parents[pindex]
-                    del _stmts[pindex]
-
-            # If self and node are exclusive, then we can ignore node
-            if are_exclusive(self, node):
-                continue
-
-            # An AssignName node overrides previous assignments if:
-            #   1. node's statement always assigns
-            #   2. node and self are in the same block (i.e., has the same parent as self)
-            if isinstance(node, AssignName):
-                if isinstance(stmt, ExceptHandler):
-                    # If node's statement is an ExceptHandler, then it is the variable
-                    # bound to the caught exception. If self is not contained within
-                    # the exception handler block, node should override previous assignments;
-                    # otherwise, node should be ignored, as an exception variable
-                    # is local to the handler block.
-                    if stmt.parent_of(self):
-                        _stmts = []
-                        _stmt_parents = []
-                    else:
-                        continue
-                elif not optional_assign and stmt.parent is mystmt.parent:
-                    _stmts = []
-                    _stmt_parents = []
-            elif isinstance(node, DelName):
-                # Remove all previously stored assignments
-                _stmts = []
-                _stmt_parents = []
-                continue
-            # Add the new assignment
-            _stmts.append(node)
-            if isinstance(node, Arguments) or isinstance(node.parent, Arguments):
-                # Special case for _stmt_parents when node is a function parameter;
-                # in this case, stmt is the enclosing FunctionDef, which is what we
-                # want to add to _stmt_parents, not stmt.parent. This case occurs when
-                # node is an Arguments node (representing varargs or kwargs parameter),
-                # and when node.parent is an Arguments node (other parameters).
-                # See issue #180.
-                _stmt_parents.append(stmt)
-            else:
-                _stmt_parents.append(stmt.parent)
-        return _stmts
-
 
 # Name classes
 
@@ -599,6 +457,9 @@ class AssignName(
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param name: The name that is assigned to.
@@ -609,11 +470,27 @@ class AssignName(
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.name: Optional[str] = name
         """The name that is assigned to."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["AssignName"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
 
 class DelName(
@@ -640,6 +517,9 @@ class DelName(
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param name: The name that is being deleted.
@@ -650,11 +530,22 @@ class DelName(
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.name: Optional[str] = name
         """The name that is being deleted."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
 
 class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
@@ -682,6 +573,9 @@ class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param name: The name that this node refers to.
@@ -692,11 +586,22 @@ class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.name: Optional[str] = name
         """The name that this node refers to."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def _get_name_nodes(self):
         yield self
@@ -747,6 +652,11 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
 
     _other_fields = ("vararg", "kwarg")
 
+    lineno: None
+    col_offset: None
+    end_lineno: None
+    end_col_offset: None
+
     def __init__(
         self,
         vararg: Optional[str] = None,
@@ -768,8 +678,13 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.kwarg: Optional[str] = kwarg  # can be None
         """The name of the variable length keyword arguments."""
 
-        self.args: typing.List[AssignName]
-        """The names of the required arguments."""
+        self.args: typing.Optional[typing.List[AssignName]]
+        """The names of the required arguments.
+
+        Can be None if the associated function does not have a retrievable
+        signature and the arguments are therefore unknown.
+        This happens with builtin functions implemented in C.
+        """
 
         self.defaults: typing.List[NodeNG]
         """The default values for arguments that can be passed positionally."""
@@ -897,6 +812,11 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
             self.type_comment_kwonlyargs = type_comment_kwonlyargs
         if type_comment_posonlyargs is not None:
             self.type_comment_posonlyargs = type_comment_posonlyargs
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["Arguments"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def _infer_name(self, frame, name):
         if self.parent is frame:
@@ -1111,6 +1031,9 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param attrname: The name of the attribute being assigned to.
@@ -1121,6 +1044,11 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.expr: Optional[NodeNG] = None
         """What has the attribute that is being assigned to."""
@@ -1128,7 +1056,13 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
         self.attrname: Optional[str] = attrname
         """The name of the attribute being assigned to."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, expr: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -1136,6 +1070,11 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
         :param expr: What has the attribute that is being assigned to.
         """
         self.expr = expr
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["AssignAttr"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def get_children(self):
         yield self.expr
@@ -1159,6 +1098,9 @@ class Assert(Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -1167,6 +1109,11 @@ class Assert(Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.test: Optional[NodeNG] = None
         """The test that passes or fails the assertion."""
@@ -1174,7 +1121,13 @@ class Assert(Statement):
         self.fail: Optional[NodeNG] = None  # can be None
         """The message shown when the assertion fails."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self, test: Optional[NodeNG] = None, fail: Optional[NodeNG] = None
@@ -1215,6 +1168,9 @@ class Assign(mixins.AssignTypeMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -1223,6 +1179,11 @@ class Assign(mixins.AssignTypeMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.targets: typing.List[NodeNG] = []
         """What is being assigned to."""
@@ -1233,7 +1194,13 @@ class Assign(mixins.AssignTypeMixin, Statement):
         self.type_annotation: Optional[NodeNG] = None  # can be None
         """If present, this will contain the type annotation passed by a type comment"""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -1251,6 +1218,11 @@ class Assign(mixins.AssignTypeMixin, Statement):
             self.targets = targets
         self.value = value
         self.type_annotation = type_annotation
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["Assign"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def get_children(self):
         yield from self.targets
@@ -1284,6 +1256,9 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -1292,6 +1267,11 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.target: Optional[NodeNG] = None
         """What is being assigned to."""
@@ -1305,7 +1285,13 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
         self.simple: Optional[int] = None
         """Whether :attr:`target` is a pure name or a complex statement."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -1329,6 +1315,11 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
         self.annotation = annotation
         self.value = value
         self.simple = simple
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["AnnAssign"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def get_children(self):
         yield self.target
@@ -1359,6 +1350,9 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param op: The operator that is being combined with the assignment.
@@ -1370,6 +1364,11 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.target: Optional[NodeNG] = None
         """What is being assigned to."""
@@ -1383,7 +1382,13 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
         self.value: Optional[NodeNG] = None
         """The value being assigned to the variable."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self, target: Optional[NodeNG] = None, value: Optional[NodeNG] = None
@@ -1396,6 +1401,11 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
         """
         self.target = target
         self.value = value
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["AugAssign"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     # This is set by inference.py
     def _infer_augassign(self, context=None):
@@ -1451,6 +1461,9 @@ class BinOp(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param op: The operator.
@@ -1461,6 +1474,11 @@ class BinOp(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.left: Optional[NodeNG] = None
         """What is being applied to the operator on the left side."""
@@ -1471,7 +1489,13 @@ class BinOp(NodeNG):
         self.right: Optional[NodeNG] = None
         """What is being applied to the operator on the right side."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self, left: Optional[NodeNG] = None, right: Optional[NodeNG] = None
@@ -1541,6 +1565,9 @@ class BoolOp(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param op: The operator.
@@ -1551,6 +1578,11 @@ class BoolOp(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.op: Optional[str] = op
         """The operator."""
@@ -1558,7 +1590,13 @@ class BoolOp(NodeNG):
         self.values: typing.List[NodeNG] = []
         """The values being applied to the operator."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, values: Optional[typing.List[NodeNG]] = None) -> None:
         """Do some setup after initialisation.
@@ -1603,6 +1641,9 @@ class Call(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -1611,6 +1652,11 @@ class Call(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.func: Optional[NodeNG] = None
         """What is being called."""
@@ -1621,7 +1667,13 @@ class Call(NodeNG):
         self.keywords: typing.List["Keyword"] = []
         """The keyword arguments being given to the call."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -1681,6 +1733,9 @@ class Compare(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -1689,6 +1744,11 @@ class Compare(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.left: Optional[NodeNG] = None
         """The value at the left being applied to a comparison operator."""
@@ -1696,7 +1756,13 @@ class Compare(NodeNG):
         self.ops: typing.List[typing.Tuple[str, NodeNG]] = []
         """The remainder of the operators and their relevant right hand value."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -1759,6 +1825,11 @@ class Comprehension(NodeNG):
     optional_assign = True
     """Whether this node optionally assigns a variable."""
 
+    lineno: None
+    col_offset: None
+    end_lineno: None
+    end_col_offset: None
+
     def __init__(self, parent: Optional[NodeNG] = None) -> None:
         """
         :param parent: The parent node in the syntax tree.
@@ -1802,6 +1873,11 @@ class Comprehension(NodeNG):
             self.ifs = ifs
         self.is_async = is_async
 
+    assigned_stmts: ClassVar[AssignedStmtsCall["Comprehension"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def assign_type(self):
         """The type of assignment that this node performs.
 
@@ -1810,13 +1886,15 @@ class Comprehension(NodeNG):
         """
         return self
 
-    def _get_filtered_stmts(self, lookup_node, node, stmts, mystmt):
+    def _get_filtered_stmts(
+        self, lookup_node, node, stmts, mystmt: Optional[Statement]
+    ):
         """method used in filter_stmts"""
         if self is mystmt:
             if isinstance(lookup_node, (Const, Name)):
                 return [lookup_node], True
 
-        elif self.statement() is mystmt:
+        elif self.statement(future=True) is mystmt:
             # original node's statement is the assignment, only keeps
             # current node (gen exp, list comp)
 
@@ -1846,7 +1924,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
     <Const.bytes l.1 at 0x7f23b2e35a20>]
     """
 
-    _other_fields = ("value",)
+    _other_fields = ("value", "kind")
 
     def __init__(
         self,
@@ -1855,6 +1933,9 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
         kind: Optional[str] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param value: The value that the constant represents.
@@ -1867,6 +1948,11 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
         :param parent: The parent node in the syntax tree.
 
         :param kind: The string prefix. "u" for u-prefixed strings and ``None`` otherwise. Python 3.8+ only.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: typing.Any = value
         """The value that the constant represents."""
@@ -1874,7 +1960,13 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
         self.kind: Optional[str] = kind  # can be None
         """"The string prefix. "u" for u-prefixed strings and ``None`` otherwise. Python 3.8+ only."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def __getattr__(self, name):
         # This is needed because of Proxy's __getattr__ method.
@@ -1997,6 +2089,9 @@ class Decorators(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2005,6 +2100,11 @@ class Decorators(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.nodes: typing.List[NodeNG]
         """The decorators that this node contains.
@@ -2012,7 +2112,13 @@ class Decorators(NodeNG):
         :type: list(Name or Call) or None
         """
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, nodes: typing.List[NodeNG]) -> None:
         """Do some setup after initialisation.
@@ -2060,6 +2166,9 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param attrname: The name of the attribute that is being deleted.
@@ -2070,6 +2179,11 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.expr: Optional[NodeNG] = None
         """The name that this node represents.
@@ -2080,7 +2194,13 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
         self.attrname: Optional[str] = attrname
         """The name of the attribute that is being deleted."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, expr: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -2112,6 +2232,9 @@ class Delete(mixins.AssignTypeMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2120,11 +2243,22 @@ class Delete(mixins.AssignTypeMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.targets: typing.List[NodeNG] = []
         """What is being deleted."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, targets: Optional[typing.List[NodeNG]] = None) -> None:
         """Do some setup after initialisation.
@@ -2156,6 +2290,9 @@ class Dict(NodeNG, Instance):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2164,11 +2301,22 @@ class Dict(NodeNG, Instance):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.items: typing.List[typing.Tuple[NodeNG, NodeNG]] = []
         """The key-value pairs contained in the dictionary."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, items: typing.List[typing.Tuple[NodeNG, NodeNG]]) -> None:
         """Do some setup after initialisation.
@@ -2295,6 +2443,9 @@ class Expr(Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2303,11 +2454,22 @@ class Expr(Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: Optional[NodeNG] = None
         """What the expression does."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -2366,6 +2528,9 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2374,6 +2539,11 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.type: Optional[NodeNG] = None  # can be None
         """The types that the block handles.
@@ -2387,7 +2557,18 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
         self.body: typing.List[NodeNG] = []
         """The contents of the block."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["ExceptHandler"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def get_children(self):
         if self.type is not None:
@@ -2438,10 +2619,7 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
         """
         if self.type is None or exceptions is None:
             return True
-        for node in self.type._get_name_nodes():
-            if node.name in exceptions:
-                return True
-        return False
+        return any(node.name in exceptions for node in self.type._get_name_nodes())
 
 
 class ExtSlice(NodeNG):
@@ -2483,6 +2661,9 @@ class For(
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2491,6 +2672,11 @@ class For(
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.target: Optional[NodeNG] = None
         """What the loop assigns to."""
@@ -2507,7 +2693,13 @@ class For(
         self.type_annotation: Optional[NodeNG] = None  # can be None
         """If present, this will contain the type annotation passed by a type comment"""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
     def postinit(
@@ -2535,6 +2727,11 @@ class For(
         if orelse is not None:
             self.orelse = orelse
         self.type_annotation = type_annotation
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["For"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -2596,6 +2793,9 @@ class Await(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2604,11 +2804,22 @@ class Await(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: Optional[NodeNG] = None
         """What to wait for."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -2640,6 +2851,9 @@ class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param fromname: The module that is being imported from.
@@ -2654,6 +2868,11 @@ class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.modname: Optional[str] = fromname  # can be None
         """The module that is being imported from.
@@ -2676,7 +2895,13 @@ class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         This is always 0 for absolute imports.
         """
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
 
 class Attribute(NodeNG):
@@ -2692,6 +2917,9 @@ class Attribute(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param attrname: The name of the attribute.
@@ -2702,6 +2930,11 @@ class Attribute(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.expr: Optional[NodeNG] = None
         """The name that this node represents.
@@ -2712,7 +2945,13 @@ class Attribute(NodeNG):
         self.attrname: Optional[str] = attrname
         """The name of the attribute."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, expr: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -2743,6 +2982,9 @@ class Global(mixins.NoChildrenMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param names: The names being declared as global.
@@ -2753,11 +2995,22 @@ class Global(mixins.NoChildrenMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.names: typing.List[str] = names
         """The names being declared as global."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def _infer_name(self, frame, name):
         return name
@@ -2780,6 +3033,9 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2788,6 +3044,11 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.test: Optional[NodeNG] = None
         """The condition that the statement tests."""
@@ -2798,7 +3059,16 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         self.orelse: typing.List[NodeNG] = []
         """The contents of the ``else`` block."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        self.is_orelse: bool = False
+        """Whether the if-statement is the orelse-block of another if statement."""
+
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -2819,6 +3089,8 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
             self.body = body
         if orelse is not None:
             self.orelse = orelse
+        if isinstance(self.parent, If) and self in self.parent.orelse:
+            self.is_orelse = True
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -2925,6 +3197,9 @@ class IfExp(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -2933,6 +3208,11 @@ class IfExp(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.test: Optional[NodeNG] = None
         """The condition that the statement tests."""
@@ -2943,7 +3223,13 @@ class IfExp(NodeNG):
         self.orelse: Optional[NodeNG] = None
         """The contents of the ``else`` block."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -2991,6 +3277,9 @@ class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param names: The names being imported.
@@ -3001,6 +3290,11 @@ class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.names: typing.List[typing.Tuple[str, Optional[str]]] = names or []
         """The names being imported.
@@ -3009,7 +3303,13 @@ class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         and the alias that the name is assigned to (if any).
         """
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
 
 class Index(NodeNG):
@@ -3042,6 +3342,9 @@ class Keyword(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param arg: The argument being assigned to.
@@ -3052,6 +3355,11 @@ class Keyword(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.arg: Optional[str] = arg  # can be None
         """The argument being assigned to."""
@@ -3059,12 +3367,18 @@ class Keyword(NodeNG):
         self.value: Optional[NodeNG] = None
         """The value being assigned to the keyword argument."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
 
-        :param value: The value being assigned to the ketword argument.
+        :param value: The value being assigned to the keyword argument.
         """
         self.value = value
 
@@ -3089,6 +3403,9 @@ class List(BaseContainer):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param ctx: Whether the list is assigned to or loaded from.
@@ -3099,11 +3416,27 @@ class List(BaseContainer):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.ctx: Optional[Context] = ctx
         """Whether the list is assigned to or loaded from."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["List"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def pytype(self):
         """Get the name of the type that this node represents.
@@ -3144,6 +3477,9 @@ class Nonlocal(mixins.NoChildrenMixin, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param names: The names being declared as not local.
@@ -3154,11 +3490,22 @@ class Nonlocal(mixins.NoChildrenMixin, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.names: typing.List[str] = names
         """The names being declared as not local."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def _infer_name(self, frame, name):
         return name
@@ -3190,6 +3537,9 @@ class Raise(Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3198,6 +3548,11 @@ class Raise(Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.exc: Optional[NodeNG] = None  # can be None
         """What is being raised."""
@@ -3205,7 +3560,13 @@ class Raise(Statement):
         self.cause: Optional[NodeNG] = None  # can be None
         """The exception being used to raise this one."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -3230,10 +3591,9 @@ class Raise(Statement):
         """
         if not self.exc:
             return False
-        for name in self.exc._get_name_nodes():
-            if name.name == "NotImplementedError":
-                return True
-        return False
+        return any(
+            name.name == "NotImplementedError" for name in self.exc._get_name_nodes()
+        )
 
     def get_children(self):
         if self.exc is not None:
@@ -3259,6 +3619,9 @@ class Return(Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3267,11 +3630,22 @@ class Return(Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: Optional[NodeNG] = None  # can be None
         """The value being returned."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -3327,6 +3701,9 @@ class Slice(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3335,6 +3712,11 @@ class Slice(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.lower: Optional[NodeNG] = None  # can be None
         """The lower index in the slice."""
@@ -3345,7 +3727,13 @@ class Slice(NodeNG):
         self.step: Optional[NodeNG] = None  # can be None
         """The step to take between indexes."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -3436,6 +3824,9 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param ctx: Whether the list is assigned to or loaded from.
@@ -3446,6 +3837,11 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: Optional[NodeNG] = None
         """What is being unpacked."""
@@ -3453,7 +3849,13 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
         self.ctx: Optional[Context] = ctx
         """Whether the starred item is assigned to or loaded from."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -3461,6 +3863,11 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
         :param value: What is being unpacked.
         """
         self.value = value
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["Starred"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def get_children(self):
         yield self.value
@@ -3484,6 +3891,9 @@ class Subscript(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param ctx: Whether the subscripted item is assigned to or loaded from.
@@ -3494,6 +3904,11 @@ class Subscript(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: Optional[NodeNG] = None
         """What is being indexed."""
@@ -3504,7 +3919,13 @@ class Subscript(NodeNG):
         self.ctx: Optional[Context] = ctx
         """Whether the subscripted item is assigned to or loaded from."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
     def postinit(
@@ -3546,6 +3967,9 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3554,6 +3978,11 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.body: typing.List[NodeNG] = []
         """The contents of the block to catch exceptions from."""
@@ -3564,7 +3993,13 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         self.orelse: typing.List[NodeNG] = []
         """The contents of the ``else`` block."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -3641,6 +4076,9 @@ class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3649,6 +4087,11 @@ class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.body: typing.Union[typing.List[TryExcept], typing.List[NodeNG]] = []
         """The try-except that the finally is attached to."""
@@ -3656,7 +4099,13 @@ class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         self.finalbody: typing.List[NodeNG] = []
         """The contents of the ``finally`` block."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -3716,6 +4165,9 @@ class Tuple(BaseContainer):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param ctx: Whether the tuple is assigned to or loaded from.
@@ -3726,11 +4178,27 @@ class Tuple(BaseContainer):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.ctx: Optional[Context] = ctx
         """Whether the tuple is assigned to or loaded from."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["Tuple"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def pytype(self):
         """Get the name of the type that this node represents.
@@ -3768,6 +4236,9 @@ class UnaryOp(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param op: The operator.
@@ -3778,6 +4249,11 @@ class UnaryOp(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.op: Optional[str] = op
         """The operator."""
@@ -3785,7 +4261,13 @@ class UnaryOp(NodeNG):
         self.operand: Optional[NodeNG] = None
         """What the unary operator is applied to."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, operand: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -3847,6 +4329,9 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3855,6 +4340,11 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.test: Optional[NodeNG] = None
         """The condition that the loop tests."""
@@ -3865,7 +4355,13 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         self.orelse: typing.List[NodeNG] = []
         """The contents of the ``else`` block."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -3945,6 +4441,9 @@ class With(
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3953,6 +4452,11 @@ class With(
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.items: typing.List[typing.Tuple[NodeNG, Optional[NodeNG]]] = []
         """The pairs of context managers and the names they are assigned to."""
@@ -3963,7 +4467,13 @@ class With(
         self.type_annotation: Optional[NodeNG] = None  # can be None
         """If present, this will contain the type annotation passed by a type comment"""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -3983,6 +4493,11 @@ class With(
         if body is not None:
             self.body = body
         self.type_annotation = type_annotation
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["With"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -4025,6 +4540,9 @@ class Yield(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -4033,11 +4551,22 @@ class Yield(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: Optional[NodeNG] = None  # can be None
         """The value to yield."""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
@@ -4076,12 +4605,16 @@ class FormattedValue(NodeNG):
     """
 
     _astroid_fields = ("value", "format_spec")
+    _other_fields = ("conversion",)
 
     def __init__(
         self,
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -4090,6 +4623,11 @@ class FormattedValue(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.value: NodeNG
         """The value to be formatted into the string."""
@@ -4110,7 +4648,13 @@ class FormattedValue(NodeNG):
         :type: JoinedStr or None
         """
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -4154,6 +4698,9 @@ class JoinedStr(NodeNG):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -4162,6 +4709,11 @@ class JoinedStr(NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.values: typing.List[NodeNG] = []
         """The string expressions to be joined.
@@ -4169,7 +4721,13 @@ class JoinedStr(NodeNG):
         :type: list(FormattedValue or Const)
         """
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, values: Optional[typing.List[NodeNG]] = None) -> None:
         """Do some setup after initialisation.
@@ -4196,11 +4754,19 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
 
     _astroid_fields = ("target", "value")
 
+    optional_assign = True
+    """Whether this node optionally assigns a variable.
+
+    Since NamedExpr are not always called they do not always assign."""
+
     def __init__(
         self,
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -4209,6 +4775,11 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
         self.target: NodeNG
         """The assignment target
@@ -4219,11 +4790,77 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
         self.value: NodeNG
         """The value that gets assigned in the expression"""
 
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, target: NodeNG, value: NodeNG) -> None:
         self.target = target
         self.value = value
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["NamedExpr"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
+    def frame(
+        self, *, future: Literal[None, True] = None
+    ) -> Union["nodes.FunctionDef", "nodes.Module", "nodes.ClassDef", "nodes.Lambda"]:
+        """The first parent frame node.
+
+        A frame node is a :class:`Module`, :class:`FunctionDef`,
+        or :class:`ClassDef`.
+
+        :returns: The first parent frame node.
+        """
+        if not self.parent:
+            raise ParentMissingError(target=self)
+
+        # For certain parents NamedExpr evaluate to the scope of the parent
+        if isinstance(self.parent, (Arguments, Keyword, Comprehension)):
+            if not self.parent.parent:
+                raise ParentMissingError(target=self.parent)
+            if not self.parent.parent.parent:
+                raise ParentMissingError(target=self.parent.parent)
+            return self.parent.parent.parent.frame(future=True)
+
+        return self.parent.frame(future=True)
+
+    def scope(self) -> "LocalsDictNodeNG":
+        """The first parent node defining a new scope.
+        These can be Module, FunctionDef, ClassDef, Lambda, or GeneratorExp nodes.
+
+        :returns: The first parent scope node.
+        """
+        if not self.parent:
+            raise ParentMissingError(target=self)
+
+        # For certain parents NamedExpr evaluate to the scope of the parent
+        if isinstance(self.parent, (Arguments, Keyword, Comprehension)):
+            if not self.parent.parent:
+                raise ParentMissingError(target=self.parent)
+            if not self.parent.parent.parent:
+                raise ParentMissingError(target=self.parent.parent)
+            return self.parent.parent.parent.scope()
+
+        return self.parent.scope()
+
+    def set_local(self, name: str, stmt: AssignName) -> None:
+        """Define that the given name is declared in the given statement node.
+        NamedExpr's in Arguments, Keyword or Comprehension are evaluated in their
+        parent's parent scope. So we add to their frame's locals.
+
+        .. seealso:: :meth:`scope`
+
+        :param name: The name that is being defined.
+
+        :param stmt: The statement that defines the given name.
+        """
+        self.frame(future=True).set_local(name, stmt)
 
 
 class Unknown(mixins.AssignTypeMixin, NodeNG):
@@ -4298,10 +4935,19 @@ class Match(Statement):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.subject: NodeNG
         self.cases: typing.List["MatchCase"]
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -4332,6 +4978,11 @@ class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
 
     _astroid_fields = ("pattern", "guard", "body")
     _multi_line_block_fields = ("body",)
+
+    lineno: None
+    col_offset: None
+    end_lineno: None
+    end_col_offset: None
 
     def __init__(self, *, parent: Optional[NodeNG] = None) -> None:
         self.pattern: Pattern
@@ -4371,9 +5022,18 @@ class MatchValue(Pattern):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.value: NodeNG
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, *, value: NodeNG) -> None:
         self.value = value
@@ -4408,10 +5068,18 @@ class MatchSingleton(Pattern):
         value: Literal[True, False, None],
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.value: Literal[True, False, None] = value
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        self.value = value
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
 
 class MatchSequence(Pattern):
@@ -4438,9 +5106,18 @@ class MatchSequence(Pattern):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.patterns: typing.List[Pattern]
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, *, patterns: typing.List[Pattern]) -> None:
         self.patterns = patterns
@@ -4466,11 +5143,20 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.keys: typing.List[NodeNG]
         self.patterns: typing.List[Pattern]
         self.rest: Optional[AssignName]
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -4483,15 +5169,20 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
         self.patterns = patterns
         self.rest = rest
 
-    assigned_stmts: Callable[
-        [
-            "MatchMapping",
-            AssignName,
-            Optional[InferenceContext],
-            Literal[None],
-        ],
-        Generator[NodeNG, None, None],
+    assigned_stmts: ClassVar[
+        Callable[
+            [
+                "MatchMapping",
+                AssignName,
+                Optional[InferenceContext],
+                Literal[None],
+            ],
+            Generator[NodeNG, None, None],
+        ]
     ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
 
 class MatchClass(Pattern):
@@ -4519,12 +5210,21 @@ class MatchClass(Pattern):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.cls: NodeNG
         self.patterns: typing.List[Pattern]
         self.kwd_attrs: typing.List[str]
         self.kwd_patterns: typing.List[Pattern]
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -4560,22 +5260,36 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.name: Optional[AssignName]
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, *, name: Optional[AssignName]) -> None:
         self.name = name
 
-    assigned_stmts: Callable[
-        [
-            "MatchStar",
-            AssignName,
-            Optional[InferenceContext],
-            Literal[None],
-        ],
-        Generator[NodeNG, None, None],
+    assigned_stmts: ClassVar[
+        Callable[
+            [
+                "MatchStar",
+                AssignName,
+                Optional[InferenceContext],
+                Literal[None],
+            ],
+            Generator[NodeNG, None, None],
+        ]
     ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
 
 class MatchAs(mixins.AssignTypeMixin, Pattern):
@@ -4610,10 +5324,19 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.pattern: Optional[Pattern]
         self.name: Optional[AssignName]
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(
         self,
@@ -4624,15 +5347,20 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
         self.pattern = pattern
         self.name = name
 
-    assigned_stmts: Callable[
-        [
-            "MatchAs",
-            AssignName,
-            Optional[InferenceContext],
-            Literal[None],
-        ],
-        Generator[NodeNG, None, None],
+    assigned_stmts: ClassVar[
+        Callable[
+            [
+                "MatchAs",
+                AssignName,
+                Optional[InferenceContext],
+                Literal[None],
+            ],
+            Generator[NodeNG, None, None],
+        ]
     ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
 
 class MatchOr(Pattern):
@@ -4655,9 +5383,18 @@ class MatchOr(Pattern):
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
+        *,
+        end_lineno: Optional[int] = None,
+        end_col_offset: Optional[int] = None,
     ) -> None:
         self.patterns: typing.List[Pattern]
-        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, *, patterns: typing.List[Pattern]) -> None:
         self.patterns = patterns
@@ -4733,11 +5470,3 @@ def const_factory(value):
         node = EmptyNode()
         node.object = value
         return node
-
-
-def is_from_decorator(node):
-    """Return True if the given node is the child of a decorator"""
-    for parent in node.node_ancestors():
-        if isinstance(parent, Decorators):
-            return True
-    return False

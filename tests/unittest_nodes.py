@@ -17,9 +17,11 @@
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
+# Copyright (c) 2021 Nick Drozd <nicholasdrozd@gmail.com>
+# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 René Fritze <47802+renefritze@users.noreply.github.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Federico Bond <federicobond@gmail.com>
 # Copyright (c) 2021 hippo91 <guillaume.peillex@gmail.com>
 
@@ -55,6 +57,8 @@ from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
     AttributeInferenceError,
+    ParentMissingError,
+    StatementMissing,
 )
 from astroid.nodes.node_classes import (
     AssignAttr,
@@ -305,6 +309,11 @@ everything = f""" " \' \r \t \\ {{ }} {'x' + x!r:a} {["'"]!s:{a}}"""
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string().strip(), code.strip())
 
+    @staticmethod
+    def test_as_string_unknown() -> None:
+        assert nodes.Unknown().as_string() == "Unknown.Unknown()"
+        assert nodes.Unknown(lineno=1, col_offset=0).as_string() == "Unknown.Unknown()"
+
 
 class _NodeTest(unittest.TestCase):
     """test transformation of If Node"""
@@ -368,6 +377,7 @@ class IfNodeTest(_NodeTest):
         self.assertEqual(self.astroid.body[1].orelse[0].block_range(8), (8, 8))
 
     @staticmethod
+    @pytest.mark.filterwarnings("ignore:.*is_sys_guard:DeprecationWarning")
     def test_if_sys_guard() -> None:
         code = builder.extract_node(
             """
@@ -393,6 +403,7 @@ class IfNodeTest(_NodeTest):
         assert code[2].is_sys_guard() is False
 
     @staticmethod
+    @pytest.mark.filterwarnings("ignore:.*is_typing_guard:DeprecationWarning")
     def test_if_typing_guard() -> None:
         code = builder.extract_node(
             """
@@ -626,6 +637,19 @@ class ConstNodeTest(unittest.TestCase):
         self.assertIs(node.value, value)
         self.assertTrue(node._proxied.parent)
         self.assertEqual(node._proxied.root().name, value.__class__.__module__)
+        with self.assertRaises(AttributeError):
+            with pytest.warns(DeprecationWarning) as records:
+                node.statement()
+                assert len(records) == 1
+        with self.assertRaises(StatementMissing):
+            node.statement(future=True)
+
+        with self.assertRaises(AttributeError):
+            with pytest.warns(DeprecationWarning) as records:
+                node.frame()
+                assert len(records) == 1
+        with self.assertRaises(ParentMissingError):
+            node.frame(future=True)
 
     def test_none(self) -> None:
         self._test(None)
@@ -682,6 +706,127 @@ class NameNodeTest(unittest.TestCase):
             builder.parse(code)
 
 
+@pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
+class TestNamedExprNode:
+    """Tests for the NamedExpr node"""
+
+    @staticmethod
+    def test_frame() -> None:
+        """Test if the frame of NamedExpr is correctly set for certain types
+        of parent nodes.
+        """
+        module = builder.parse(
+            """
+            def func(var_1):
+                pass
+
+            def func_two(var_2, var_2 = (named_expr_1 := "walrus")):
+                pass
+
+            class MyBaseClass:
+                pass
+
+            class MyInheritedClass(MyBaseClass, var_3=(named_expr_2 := "walrus")):
+                pass
+
+            VAR = lambda y = (named_expr_3 := "walrus"): print(y)
+
+            def func_with_lambda(
+                var_5 = (
+                    named_expr_4 := lambda y = (named_expr_5 := "walrus"): y
+                    )
+                ):
+                pass
+
+            COMPREHENSION = [y for i in (1, 2) if (y := i ** 2)]
+        """
+        )
+        function = module.body[0]
+        assert function.args.frame() == function
+        assert function.args.frame(future=True) == function
+
+        function_two = module.body[1]
+        assert function_two.args.args[0].frame() == function_two
+        assert function_two.args.args[0].frame(future=True) == function_two
+        assert function_two.args.args[1].frame() == function_two
+        assert function_two.args.args[1].frame(future=True) == function_two
+        assert function_two.args.defaults[0].frame() == module
+        assert function_two.args.defaults[0].frame(future=True) == module
+
+        inherited_class = module.body[3]
+        assert inherited_class.keywords[0].frame() == inherited_class
+        assert inherited_class.keywords[0].frame(future=True) == inherited_class
+        assert inherited_class.keywords[0].value.frame() == module
+        assert inherited_class.keywords[0].value.frame(future=True) == module
+
+        lambda_assignment = module.body[4].value
+        assert lambda_assignment.args.args[0].frame() == lambda_assignment
+        assert lambda_assignment.args.args[0].frame(future=True) == lambda_assignment
+        assert lambda_assignment.args.defaults[0].frame() == module
+        assert lambda_assignment.args.defaults[0].frame(future=True) == module
+
+        lambda_named_expr = module.body[5].args.defaults[0]
+        assert lambda_named_expr.value.args.defaults[0].frame() == module
+        assert lambda_named_expr.value.args.defaults[0].frame(future=True) == module
+
+        comprehension = module.body[6].value
+        assert comprehension.generators[0].ifs[0].frame() == module
+        assert comprehension.generators[0].ifs[0].frame(future=True) == module
+
+    @staticmethod
+    def test_scope() -> None:
+        """Test if the scope of NamedExpr is correctly set for certain types
+        of parent nodes.
+        """
+        module = builder.parse(
+            """
+            def func(var_1):
+                pass
+
+            def func_two(var_2, var_2 = (named_expr_1 := "walrus")):
+                pass
+
+            class MyBaseClass:
+                pass
+
+            class MyInheritedClass(MyBaseClass, var_3=(named_expr_2 := "walrus")):
+                pass
+
+            VAR = lambda y = (named_expr_3 := "walrus"): print(y)
+
+            def func_with_lambda(
+                var_5 = (
+                    named_expr_4 := lambda y = (named_expr_5 := "walrus"): y
+                    )
+                ):
+                pass
+
+            COMPREHENSION = [y for i in (1, 2) if (y := i ** 2)]
+        """
+        )
+        function = module.body[0]
+        assert function.args.scope() == function
+
+        function_two = module.body[1]
+        assert function_two.args.args[0].scope() == function_two
+        assert function_two.args.args[1].scope() == function_two
+        assert function_two.args.defaults[0].scope() == module
+
+        inherited_class = module.body[3]
+        assert inherited_class.keywords[0].scope() == inherited_class
+        assert inherited_class.keywords[0].value.scope() == module
+
+        lambda_assignment = module.body[4].value
+        assert lambda_assignment.args.args[0].scope() == lambda_assignment
+        assert lambda_assignment.args.defaults[0].scope()
+
+        lambda_named_expr = module.body[5].args.defaults[0]
+        assert lambda_named_expr.value.args.defaults[0].scope() == module
+
+        comprehension = module.body[6].value
+        assert comprehension.generators[0].ifs[0].scope() == module
+
+
 class AnnAssignNodeTest(unittest.TestCase):
     def test_primitive(self) -> None:
         code = textwrap.dedent(
@@ -733,10 +878,10 @@ class AnnAssignNodeTest(unittest.TestCase):
         self.assertEqual(ast.as_string().strip(), code.strip())
 
 
-@pytest.mark.skip(
-    "FIXME  http://bugs.python.org/issue10445 (no line number on function args)"
-)
 class ArgumentsNodeTC(unittest.TestCase):
+    @pytest.mark.skip(
+        "FIXME  http://bugs.python.org/issue10445 (no line number on function args)"
+    )
     def test_linenumbering(self) -> None:
         ast = builder.parse(
             """
@@ -1374,6 +1519,81 @@ def test_assignment_expression() -> None:
     assert second.as_string() == "b := test"
 
 
+@pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
+def test_assignment_expression_in_functiondef() -> None:
+    code = """
+    def function(param = (assignment := "walrus")):
+        def inner_function(inner_param = (inner_assign := "walrus")):
+            pass
+        pass
+
+    class MyClass(attr = (assignment_two := "walrus")):
+        pass
+
+    VAR = lambda y = (assignment_three := "walrus"): print(y)
+
+    def func_with_lambda(
+        param=(named_expr_four := lambda y=(assignment_four := "walrus"): y),
+    ):
+        pass
+
+    COMPREHENSION = [y for i in (1, 2) if (assignment_five := i ** 2)]
+
+    def func():
+        var = lambda y = (assignment_six := 2): print(y)
+
+    VAR_TWO = [
+        func(assignment_seven := 2)
+        for _ in (1,)
+    ]
+
+    LAMBDA = lambda x: print(assignment_eight := x ** 2)
+
+    class SomeClass:
+        (assignment_nine := 2**2)
+    """
+    module = astroid.parse(code)
+
+    assert "assignment" in module.locals
+    assert isinstance(module.locals.get("assignment")[0], nodes.AssignName)
+    function = module.body[0]
+    assert "inner_assign" in function.locals
+    assert "inner_assign" not in module.locals
+    assert isinstance(function.locals.get("inner_assign")[0], nodes.AssignName)
+
+    assert "assignment_two" in module.locals
+    assert isinstance(module.locals.get("assignment_two")[0], nodes.AssignName)
+
+    assert "assignment_three" in module.locals
+    assert isinstance(module.locals.get("assignment_three")[0], nodes.AssignName)
+
+    assert "assignment_four" in module.locals
+    assert isinstance(module.locals.get("assignment_four")[0], nodes.AssignName)
+
+    assert "assignment_five" in module.locals
+    assert isinstance(module.locals.get("assignment_five")[0], nodes.AssignName)
+
+    func = module.body[5]
+    assert "assignment_six" in func.locals
+    assert "assignment_six" not in module.locals
+    assert isinstance(func.locals.get("assignment_six")[0], nodes.AssignName)
+
+    assert "assignment_seven" in module.locals
+    assert isinstance(module.locals.get("assignment_seven")[0], nodes.AssignName)
+
+    lambda_assign = module.body[7]
+    assert "assignment_eight" in lambda_assign.value.locals
+    assert "assignment_eight" not in module.locals
+    assert isinstance(
+        lambda_assign.value.locals.get("assignment_eight")[0], nodes.AssignName
+    )
+
+    class_assign = module.body[8]
+    assert "assignment_nine" in class_assign.locals
+    assert "assignment_nine" not in module.locals
+    assert isinstance(class_assign.locals.get("assignment_nine")[0], nodes.AssignName)
+
+
 def test_get_doc() -> None:
     node = astroid.extract_node(
         """
@@ -1517,12 +1737,12 @@ class TestPatternMatching:
 
         assert isinstance(case2.pattern, nodes.MatchSingleton)
         assert case2.pattern.value is None
-        assert list(case2.pattern.get_children()) == []
+        assert not list(case2.pattern.get_children())
 
         assert isinstance(case3.pattern, nodes.MatchAs)
         assert case3.pattern.name is None
         assert case3.pattern.pattern is None
-        assert list(case3.pattern.get_children()) == []
+        assert not list(case3.pattern.get_children())
 
     @staticmethod
     def test_match_sequence():
