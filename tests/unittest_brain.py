@@ -39,6 +39,9 @@
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 Artsiom Kaval <lezeroq@gmail.com>
 # Copyright (c) 2021 Damien Baty <damien@damienbaty.com>
+# Copyright (c) 2022 Jacob Walls <jacobtylerwalls@gmail.com>
+# Copyright (c) 2022 Jacob Bogdanov <jacob@bogdanov.dev>
+# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
@@ -57,7 +60,11 @@ import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
 from astroid.const import PY37_PLUS
-from astroid.exceptions import AttributeInferenceError, InferenceError
+from astroid.exceptions import (
+    AttributeInferenceError,
+    InferenceError,
+    UseInferenceDefault,
+)
 from astroid.nodes.node_classes import Const
 from astroid.nodes.scoped_nodes import ClassDef
 
@@ -1659,6 +1666,19 @@ class TypingBrain(unittest.TestCase):
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
+
+    def test_typing_type_without_tip(self):
+        """Regression test for https://github.com/PyCQA/pylint/issues/5770"""
+        node = builder.extract_node(
+            """
+        from typing import NewType
+
+        def make_new_type(t):
+            new_type = NewType(f'IntRange_{t}', t) #@
+        """
+        )
+        with self.assertRaises(UseInferenceDefault):
+            astroid.brain.brain_typing.infer_typing_typevar_or_newtype(node.value)
 
     def test_namedtuple_nested_class(self):
         result = builder.extract_node(

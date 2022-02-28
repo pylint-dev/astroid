@@ -26,17 +26,18 @@
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2020 Karthikeyan Singaravelan <tir.karthi@gmail.com>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
+# Copyright (c) 2021-2022 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
 # Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
 # Copyright (c) 2021 Jacob Walls <jacobtylerwalls@gmail.com>
 # Copyright (c) 2021 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2021 Dmitry Shachnev <mitya57@users.noreply.github.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 doranid <ddandd@gmail.com>
 # Copyright (c) 2021 Francis Charette Migneault <francis.charette.migneault@gmail.com>
+# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
@@ -6619,6 +6620,44 @@ def test_inference_of_items_on_module_dict() -> None:
     Originally reported in https://github.com/PyCQA/astroid/issues/1085
     """
     builder.file_build(str(DATA_DIR / "module_dict_items_call" / "test.py"), "models")
+
+
+def test_recursion_on_inference_tip() -> None:
+    """Regression test for recursion in inference tip.
+
+    Originally reported in https://github.com/PyCQA/pylint/issues/5408.
+    """
+    code = """
+    class MyInnerClass:
+        ...
+
+
+    class MySubClass:
+        inner_class = MyInnerClass
+
+
+    class MyClass:
+        sub_class = MySubClass()
+
+
+    def get_unpatched_class(cls):
+        return cls
+
+
+    def get_unpatched(item):
+        lookup = get_unpatched_class if isinstance(item, type) else lambda item: None
+        return lookup(item)
+
+
+    _Child = get_unpatched(MyClass.sub_class.inner_class)
+
+
+    class Child(_Child):
+        def patch(cls):
+            MyClass.sub_class.inner_class = cls
+    """
+    module = parse(code)
+    assert module
 
 
 if __name__ == "__main__":

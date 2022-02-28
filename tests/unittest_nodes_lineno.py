@@ -784,7 +784,7 @@ class TestLinenoColOffset:
         assert (t3.lineno, t3.col_offset) == (10, 0)
         assert (t3.end_lineno, t3.end_col_offset) == (17, 8)
         assert (t3.body[0].lineno, t3.body[0].col_offset) == (10, 0)
-        assert (t3.body[0].end_lineno, t3.body[0].end_col_offset) == (17, 8)
+        assert (t3.body[0].end_lineno, t3.body[0].end_col_offset) == (15, 8)
         assert (t3.finalbody[0].lineno, t3.finalbody[0].col_offset) == (17, 4)
         assert (t3.finalbody[0].end_lineno, t3.finalbody[0].end_col_offset) == (17, 8)
 

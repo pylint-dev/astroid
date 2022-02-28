@@ -5,12 +5,14 @@
 # Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2017 David Euresti <github@euresti.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2021-2022 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Redoubts <Redoubts@users.noreply.github.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Tim Martin <tim@asymptotic.co.uk>
 # Copyright (c) 2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2022 Jacob Walls <jacobtylerwalls@gmail.com>
+# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
 
 """Astroid hooks for typing.py support."""
 import typing
@@ -31,6 +33,7 @@ from astroid.nodes.node_classes import (
     Attribute,
     Call,
     Const,
+    JoinedStr,
     Name,
     NodeNG,
     Subscript,
@@ -127,6 +130,9 @@ def infer_typing_typevar_or_newtype(node, context_itton=None):
     if func.qname() not in TYPING_TYPEVARS_QUALIFIED:
         raise UseInferenceDefault
     if not node.args:
+        raise UseInferenceDefault
+    # Cannot infer from a dynamic class name (f-string)
+    if isinstance(node.args[0], JoinedStr):
         raise UseInferenceDefault
 
     typename = node.args[0].as_string().strip("'")

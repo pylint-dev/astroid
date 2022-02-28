@@ -12,13 +12,16 @@
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2021-2022 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
 # Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
+# Copyright (c) 2022 Sergei Lebedev <185856+superbobry@users.noreply.github.com>
+# Copyright (c) 2022 Jacob Walls <jacobtylerwalls@gmail.com>
+# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
@@ -38,6 +41,7 @@ import subprocess
 import sys
 import tempfile
 import types
+import textwrap
 import unittest
 from pathlib import Path
 from typing import Iterator
@@ -82,11 +86,14 @@ class FromToLineNoTest(unittest.TestCase):
         strarg = callfunc.args[0]
         self.assertIsInstance(strarg, nodes.Const)
         if hasattr(sys, "pypy_version_info"):
-            lineno = 4
+            self.assertEqual(strarg.fromlineno, 4)
+            self.assertEqual(strarg.tolineno, 4)
         else:
-            lineno = 5 if not PY38_PLUS else 4
-        self.assertEqual(strarg.fromlineno, lineno)
-        self.assertEqual(strarg.tolineno, lineno)
+            if not PY38_PLUS:
+                self.assertEqual(strarg.fromlineno, 5)
+            else:
+                self.assertEqual(strarg.fromlineno, 4)
+            self.assertEqual(strarg.tolineno, 5)
         namearg = callfunc.args[1]
         self.assertIsInstance(namearg, nodes.Name)
         self.assertEqual(namearg.fromlineno, 5)
@@ -143,11 +150,53 @@ class FromToLineNoTest(unittest.TestCase):
             __name__,
         )
         function = astroid["function"]
-        # XXX discussable, but that's what is expected by pylint right now
+        # XXX discussable, but that's what is expected by pylint right now, similar to ClassDef
         self.assertEqual(function.fromlineno, 3)
         self.assertEqual(function.tolineno, 5)
         self.assertEqual(function.decorators.fromlineno, 2)
         self.assertEqual(function.decorators.tolineno, 2)
+
+    @staticmethod
+    def test_decorated_class_lineno() -> None:
+        code = textwrap.dedent(
+            """
+        class A:
+            ...
+
+        @decorator
+        class B:
+            ...
+
+        @deco1
+        @deco2(
+            var=42
+        )
+        class C:
+            ...
+        """
+        )
+
+        ast_module: nodes.Module = builder.parse(code)  # type: ignore[assignment]
+
+        a = ast_module.body[0]
+        assert isinstance(a, nodes.ClassDef)
+        assert a.fromlineno == 2
+        assert a.tolineno == 3
+
+        b = ast_module.body[1]
+        assert isinstance(b, nodes.ClassDef)
+        assert b.fromlineno == 6
+        assert b.tolineno == 7
+
+        c = ast_module.body[2]
+        assert isinstance(c, nodes.ClassDef)
+        if not PY38_PLUS:
+            # Not perfect, but best we can do for Python 3.7
+            # Can't detect closing bracket on new line.
+            assert c.fromlineno == 12
+        else:
+            assert c.fromlineno == 13
+        assert c.tolineno == 14
 
     def test_class_lineno(self) -> None:
         stmts = self.astroid.body

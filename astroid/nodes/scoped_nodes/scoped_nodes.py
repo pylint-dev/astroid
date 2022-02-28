@@ -23,16 +23,18 @@
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2020 Tim Martin <tim@asymptotic.co.uk>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
+# Copyright (c) 2021-2022 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021-2022 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
 # Copyright (c) 2021 Dmitry Shachnev <mitya57@users.noreply.github.com>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
 # Copyright (c) 2021 doranid <ddandd@gmail.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
+# Copyright (c) 2022 Jacob Walls <jacobtylerwalls@gmail.com>
+# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
@@ -55,7 +57,7 @@ from typing import Dict, List, Optional, Set, TypeVar, Union, overload
 from astroid import bases
 from astroid import decorators as decorators_mod
 from astroid import mixins, util
-from astroid.const import PY39_PLUS
+from astroid.const import PY38_PLUS, PY39_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -78,6 +80,7 @@ from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
 from astroid.nodes import Arguments, Const, node_classes
+from astroid.nodes.utils import Position
 
 if sys.version_info >= (3, 6, 2):
     from typing import NoReturn
@@ -1490,7 +1493,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     type_comment_returns = None
     """If present, this will contain the return type annotation, passed by a type comment"""
     # attributes below are set by the builder module or by raw factories
-    _other_fields = ("name", "doc")
+    _other_fields = ("name", "doc", "position")
     _other_other_fields = (
         "locals",
         "_type",
@@ -1567,6 +1570,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         returns=None,
         type_comment_returns=None,
         type_comment_args=None,
+        *,
+        position: Optional[Position] = None,
     ):
         """Do some setup after initialisation.
 
@@ -1582,6 +1587,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             The return type annotation passed via a type comment.
         :params type_comment_args:
             The args type annotation passed via a type comment.
+        :params position:
+            Position of function keyword(s) and name.
         """
         self.args = args
         self.body = body
@@ -1589,6 +1596,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         self.returns = returns
         self.type_comment_returns = type_comment_returns
         self.type_comment_args = type_comment_args
+        self.position = position
 
     @decorators_mod.cachedproperty
     def extra_decorators(self) -> List[node_classes.Call]:
@@ -1706,13 +1714,10 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         return type_name
 
     @decorators_mod.cachedproperty
-    def fromlineno(self):
-        """The first line that this node appears on in the source code.
-
-        :type: int or None
-        """
+    def fromlineno(self) -> Optional[int]:
+        """The first line that this node appears on in the source code."""
         # lineno is the line number of the first decorator, we want the def
-        # statement lineno
+        # statement lineno. Similar to 'ClassDef.fromlineno'
         lineno = self.lineno
         if self.decorators is not None:
             lineno += sum(
@@ -2134,7 +2139,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             ":type: str"
         ),
     )
-    _other_fields = ("name", "doc", "is_dataclass")
+    _other_fields = ("name", "doc", "is_dataclass", "position")
     _other_other_fields = ("locals", "_newstyle")
     _newstyle = None
 
@@ -2244,7 +2249,15 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
     # pylint: disable=redefined-outer-name
     def postinit(
-        self, bases, body, decorators, newstyle=None, metaclass=None, keywords=None
+        self,
+        bases,
+        body,
+        decorators,
+        newstyle=None,
+        metaclass=None,
+        keywords=None,
+        *,
+        position: Optional[Position] = None,
     ):
         """Do some setup after initialisation.
 
@@ -2265,6 +2278,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         :param keywords: The keywords given to the class definition.
         :type keywords: list(Keyword) or None
+
+        :param position: Position of class keyword and name.
         """
         if keywords is not None:
             self.keywords = keywords
@@ -2275,6 +2290,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             self._newstyle = newstyle
         if metaclass is not None:
             self._metaclass = metaclass
+        self.position = position
 
     def _newstyle_impl(self, context=None):
         if context is None:
@@ -2299,6 +2315,21 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         _newstyle_impl,
         doc=("Whether this is a new style class or not\n\n" ":type: bool or None"),
     )
+
+    @decorators_mod.cachedproperty
+    def fromlineno(self) -> Optional[int]:
+        """The first line that this node appears on in the source code."""
+        if not PY38_PLUS:
+            # For Python < 3.8 the lineno is the line number of the first decorator.
+            # We want the class statement lineno. Similar to 'FunctionDef.fromlineno'
+            lineno = self.lineno
+            if self.decorators is not None:
+                lineno += sum(
+                    node.tolineno - node.lineno + 1 for node in self.decorators.nodes
+                )
+
+            return lineno
+        return super().fromlineno
 
     @decorators_mod.cachedproperty
     def blockstart_tolineno(self):
