@@ -43,6 +43,7 @@ from typing import (
     Generator,
     List,
     Optional,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -225,11 +226,12 @@ class TreeRebuilder:
         end_range: Optional[int] = node.doc_node.lineno
         if IMPLEMENTATION_PYPY:
             end_range = None
+        # pylint: disable-next=unsubscriptable-object
         data = "\n".join(self._data[lineno - 1 : end_range])
 
         found_start, found_end = False, False
         open_brackets = 0
-        skip_token: set[int] = {token.NEWLINE, token.INDENT}
+        skip_token: Set[int] = {token.NEWLINE, token.INDENT}
         if PY36:
             skip_token.update((tokenize.NL, tokenize.COMMENT))
         else:
@@ -263,6 +265,7 @@ class TreeRebuilder:
         else:
             return
 
+        # pylint: disable=undefined-loop-variable
         node.doc_node.lineno = lineno + t.start[0] - 1
         node.doc_node.col_offset = t.start[1]
         node.doc_node.end_lineno = lineno + t.end[0] - 1
