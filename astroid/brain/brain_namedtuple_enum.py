@@ -31,10 +31,12 @@
 import functools
 import keyword
 from textwrap import dedent
+from typing import Iterator, List, Optional, Tuple
 
 import astroid
 from astroid import arguments, inference_tip, nodes, util
 from astroid.builder import AstroidBuilder, extract_node
+from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
     AstroidValueError,
@@ -90,7 +92,12 @@ def _find_func_form_arguments(node, context):
     raise UseInferenceDefault()
 
 
-def infer_func_form(node, base_type, context=None, enum=False):
+def infer_func_form(
+    node: nodes.Call,
+    base_type: nodes.NodeNG,
+    context: Optional[InferenceContext] = None,
+    enum: bool = False,
+) -> Tuple[nodes.ClassDef, str, List[str]]:
     """Specific inference function for namedtuple or Python 3 enum."""
     # node is a Call node, class name as first argument and generated class
     # attributes as second argument
@@ -102,10 +109,13 @@ def infer_func_form(node, base_type, context=None, enum=False):
         try:
             attributes = names.value.replace(",", " ").split()
         except AttributeError as exc:
+            # Handle attributes of NamedTuples
             if not enum:
                 attributes = [
                     _infer_first(const, context).value for const in names.elts
                 ]
+
+            # Handle attributes of Enums
             else:
                 # Enums supports either iterator of (name, value) pairs
                 # or mappings.
@@ -183,7 +193,9 @@ _looks_like_enum = functools.partial(_looks_like, name="Enum")
 _looks_like_typing_namedtuple = functools.partial(_looks_like, name="NamedTuple")
 
 
-def infer_named_tuple(node, context=None):
+def infer_named_tuple(
+    node: nodes.Call, context: Optional[InferenceContext] = None
+) -> Iterator[nodes.ClassDef]:
     """Specific inference function for namedtuple Call node"""
     tuple_base_name = nodes.Name(name="tuple", parent=node.root())
     class_node, name, attributes = infer_func_form(
@@ -507,7 +519,9 @@ def infer_typing_namedtuple_function(node, context=None):
     return klass.infer(context)
 
 
-def infer_typing_namedtuple(node, context=None):
+def infer_typing_namedtuple(
+    node: nodes.Call, context: Optional[InferenceContext] = None
+) -> Iterator[nodes.ClassDef]:
     """Infer a typing.NamedTuple(...) call."""
     # This is essentially a namedtuple with different arguments
     # so we extract the args and infer a named tuple.
