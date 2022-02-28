@@ -31,6 +31,7 @@
 order to get a single Astroid representation
 """
 
+import platform
 import sys
 import token
 from io import StringIO
@@ -86,6 +87,7 @@ T_Doc = TypeVar(
 T_Function = TypeVar("T_Function", nodes.FunctionDef, nodes.AsyncFunctionDef)
 T_For = TypeVar("T_For", nodes.For, nodes.AsyncFor)
 T_With = TypeVar("T_With", nodes.With, nodes.AsyncWith)
+NodesWithDocsType = Union[nodes.Module, nodes.ClassDef, nodes.FunctionDef]
 
 
 # noinspection PyMethodMayBeStatic
@@ -212,6 +214,55 @@ class TreeRebuilder:
             end_col_offset=t.end[1],
         )
 
+    def _fix_doc_node_position(self, node: NodesWithDocsType) -> None:
+        """Fix start and end position of doc nodes for Python < 3.8."""
+        if not (self._data and node.doc_node and node.lineno):
+            return
+        if sys.version_info >= (3, 8):
+            return
+
+        end_range: Optional[int] = node.doc_node.lineno
+        if platform.python_implementation() == "Pypy":
+            end_range = None
+        data = "\n".join(self._data[node.lineno - 1 : end_range])
+
+        found_start: bool = False
+        found_end: bool = False
+        skip_token: set[int] = {token.NEWLINE, token.INDENT}
+        open_brackets: int = 0
+
+        if isinstance(node, nodes.Module):
+            found_end = True
+            skip_token.add(token.COMMENT)
+
+        for t in generate_tokens(StringIO(data).readline):
+            if found_end is False:
+                if (
+                    found_start is False
+                    and t.type == token.NAME
+                    and t.string in {"def", "class"}
+                ):
+                    found_start = True
+                elif found_start is True and t.type == token.OP:
+                    if t.exact_type == token.COLON and open_brackets == 0:
+                        found_end = True
+                    elif t.exact_type == token.LPAR:
+                        open_brackets += 1
+                    elif t.exact_type == token.RPAR:
+                        open_brackets -= 1
+                continue
+            if t.type in skip_token:
+                continue
+            if t.type == token.STRING:
+                break
+        else:
+            return
+
+        node.doc_node.lineno = node.lineno - 1 + t.start[0]
+        node.doc_node.col_offset = t.start[1]
+        node.doc_node.end_lineno = node.lineno - 1 + t.end[0]
+        node.doc_node.end_col_offset = t.end[1]
+
     def visit_module(
         self, node: "ast.Module", modname: str, modpath: str, package: bool
     ) -> nodes.Module:
@@ -232,6 +283,7 @@ class TreeRebuilder:
             [self.visit(child, newnode) for child in node.body],
             doc_node=self.visit(doc_ast_node, newnode),
         )
+        self._fix_doc_node_position(newnode)
         return newnode
 
     if sys.version_info >= (3, 10):
@@ -1288,6 +1340,7 @@ class TreeRebuilder:
             position=self._get_position_info(node, newnode),
             doc_node=self.visit(doc_ast_node, newnode),
         )
+        self._fix_doc_node_position(newnode)
         return newnode
 
     def visit_continue(self, node: "ast.Continue", parent: NodeNG) -> nodes.Continue:
@@ -1638,6 +1691,7 @@ class TreeRebuilder:
             position=self._get_position_info(node, newnode),
             doc_node=self.visit(doc_ast_node, newnode),
         )
+        self._fix_doc_node_position(newnode)
         self._global_names.pop()
         return newnode
 
