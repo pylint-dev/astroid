@@ -296,7 +296,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
                 self.assertEqual(stream.read(), file_io.read())
 
     @staticmethod
-    def test_with_singleline_docstring() -> None:
+    def test_singleline_docstring() -> None:
         data = textwrap.dedent(
             """\
             '''Hello World'''
@@ -311,7 +311,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         assert module.doc_node.end_col_offset == 17
 
     @staticmethod
-    def test_with_multiline_docstring() -> None:
+    def test_multiline_docstring() -> None:
         data = textwrap.dedent(
             """\
             '''Hello World
@@ -330,7 +330,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         assert module.doc_node.end_col_offset == 3
 
     @staticmethod
-    def test_with_comment_before_docstring() -> None:
+    def test_comment_before_docstring() -> None:
         data = textwrap.dedent(
             """\
             # Some comment
@@ -2219,7 +2219,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         builder.parse(data)
 
     @staticmethod
-    def test_with_singleline_docstring() -> None:
+    def test_singleline_docstring() -> None:
         code = textwrap.dedent(
             """\
             class Foo:
@@ -2235,7 +2235,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         assert node.doc_node.end_col_offset == 21
 
     @staticmethod
-    def test_with_multiline_docstring() -> None:
+    def test_multiline_docstring() -> None:
         code = textwrap.dedent(
             """\
             class Foo:

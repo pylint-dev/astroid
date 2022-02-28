@@ -216,15 +216,16 @@ class TreeRebuilder:
 
     def _fix_doc_node_position(self, node: NodesWithDocsType) -> None:
         """Fix start and end position of doc nodes for Python < 3.8."""
-        if not (self._data and node.doc_node and node.lineno):
+        if not self._data or not node.doc_node or node.lineno is None:
             return
         if sys.version_info >= (3, 8):
             return
 
+        lineno = node.lineno or 1  # lineno of modules is 0
         end_range: Optional[int] = node.doc_node.lineno
         if platform.python_implementation() == "Pypy":
             end_range = None
-        data = "\n".join(self._data[node.lineno - 1 : end_range])
+        data = "\n".join(self._data[lineno - 1 : end_range])
 
         found_start: bool = False
         found_end: bool = False
@@ -258,9 +259,9 @@ class TreeRebuilder:
         else:
             return
 
-        node.doc_node.lineno = node.lineno - 1 + t.start[0]
+        node.doc_node.lineno = lineno - 1 + t.start[0]
         node.doc_node.col_offset = t.start[1]
-        node.doc_node.end_lineno = node.lineno - 1 + t.end[0]
+        node.doc_node.end_lineno = lineno - 1 + t.end[0]
         node.doc_node.end_col_offset = t.end[1]
 
     def visit_module(
