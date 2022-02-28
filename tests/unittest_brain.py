@@ -39,6 +39,9 @@
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 Artsiom Kaval <lezeroq@gmail.com>
 # Copyright (c) 2021 Damien Baty <damien@damienbaty.com>
+# Copyright (c) 2022 Jacob Walls <jacobtylerwalls@gmail.com>
+# Copyright (c) 2022 Jacob Bogdanov <jacob@bogdanov.dev>
+# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE

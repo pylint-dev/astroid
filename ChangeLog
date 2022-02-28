@@ -2,9 +2,21 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.10.0?
+What's New in astroid 2.11.0?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.10.1?
+=============================
+Release date: TBA
+
+
+
+What's New in astroid 2.10.0?
+=============================
+Release date: 2022-02-27
 
 
 * Fixed inference of ``self`` in binary operations in which ``self``
@@ -12,7 +24,7 @@ Release date: TBA
 
   Closes PyCQA/pylint#4826
 
-* Fixed builtin inferenence on `property` calls not calling the `postinit` of the new node, which
+* Fixed builtin inference on `property` calls not calling the `postinit` of the new node, which
   resulted in instance arguments missing on these nodes.
 
 * Fixed a crash on ``Super.getattr`` when the attribute was previously uninferable due to a cache
@@ -34,6 +46,11 @@ Release date: TBA
 
   Closes #1330
 
+* Use the ``end_lineno`` attribute for the ``NodeNG.tolineno`` property
+  when it is available.
+
+  Closes #1350
+
 * Add ``is_dataclass`` attribute to ``ClassDef`` nodes.
 
 * Use ``sysconfig`` instead of ``distutils`` to determine the location of
@@ -53,13 +70,18 @@ Release date: TBA
 
   Closes #1085
 
+* Add optional ``NodeNG.position`` attribute.
+  Used for block nodes to highlight position of keyword(s) and name
+  in cases where the AST doesn't provide good enough positional information.
+  E.g. ``nodes.ClassDef``, ``nodes.FunctionDef``.
+
 * Fix ``ClassDef.fromlineno``. For Python < 3.8 the ``lineno`` attribute includes decorators.
   ``fromlineno`` should return the line of the ``class`` statement itself.
 
-What's New in astroid 2.9.4?
-============================
-Release date: TBA
+* Performance improvements. Only run expensive decorator functions when
+  non-default Deprecation warnings are enabled, eg. during a Pytest run.
 
+  Closes #1383
 
 
 What's New in astroid 2.9.3?
@@ -100,6 +122,10 @@ Release date: 2021-12-31
 
   Ref #1321
 
+* Restore custom ``distutils`` handling for resolving paths to submodules.
+
+  Closes PyCQA/pylint#5645
+
 * Fix ``deque.insert()`` signature in ``collections`` brain.
 
   Closes #1260
@@ -109,7 +135,7 @@ Release date: 2021-12-31
 
 * Fix typing and update explanation for ``Arguments.args`` being ``None``.
 
-* Fix crash if a variable named ``type`` is subscripted in a generator expression.
+* Fix crash if a variable named ``type`` is subscribed in a generator expression.
 
   Closes PyCQA/pylint#5461
 
@@ -390,11 +416,11 @@ Release date: 2021-08-03
 
 * Added support to infer return type of ``typing.cast()``
 
-* Fix variable lookup's handling of exclusive statements
+* Fix variable lookup handling of exclusive statements
 
   Closes PyCQA/pylint#3711
 
-* Fix variable lookup's handling of function parameters
+* Fix variable lookup handling of function parameters
 
   Closes PyCQA/astroid#180
 
@@ -434,7 +460,7 @@ Release date: 2021-07-19
 
 * Added ``If.is_sys_guard`` and ``If.is_typing_guard`` helper methods
 
-* Fix a bad inferenece type for yield values inside of a derived class.
+* Fix a bad inference type for yield values inside of a derived class.
 
   Closes PyCQA/astroid#1090
 
@@ -1469,7 +1495,7 @@ Release date: 2018-07-15
 
    * Fix missing __module__ and __qualname__ from class definition locals
 
-     Close PYCQA/pylint#1753
+     Close PyCQA/pylint#1753
 
    * Fix a crash when __annotations__ access a parent's __init__ that does not have arguments
 
@@ -1556,7 +1582,7 @@ Release date: 2017-12-15
 
    * Add brain tip for attrs library to prevent unsupported-assignment-operation false positives
 
-	 Close PYCQA/pylint#1698
+	 Close PyCQA/pylint#1698
 
    * file_stream was removed, since it was deprecated for three releases
 
@@ -1974,7 +2000,7 @@ Release date: 2015-11-29
     * Add basic support for understanding context managers.
 
       Currently, there's no way to understand whatever __enter__ returns in a
-      context manager and what it is binded using the ``as`` keyword. With these changes,
+      context manager and what it is bound using the ``as`` keyword. With these changes,
       we can understand ``bar`` in ``with foo() as bar``, which will be the result of __enter__.
 
     * Add a new type of node, called *inference objects*. Inference objects are similar with

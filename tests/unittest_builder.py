@@ -12,13 +12,16 @@
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2021-2022 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
 # Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
+# Copyright (c) 2022 Sergei Lebedev <185856+superbobry@users.noreply.github.com>
+# Copyright (c) 2022 Jacob Walls <jacobtylerwalls@gmail.com>
+# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
@@ -76,11 +79,14 @@ class FromToLineNoTest(unittest.TestCase):
         strarg = callfunc.args[0]
         self.assertIsInstance(strarg, nodes.Const)
         if hasattr(sys, "pypy_version_info"):
-            lineno = 4
+            self.assertEqual(strarg.fromlineno, 4)
+            self.assertEqual(strarg.tolineno, 4)
         else:
-            lineno = 5 if not PY38_PLUS else 4
-        self.assertEqual(strarg.fromlineno, lineno)
-        self.assertEqual(strarg.tolineno, lineno)
+            if not PY38_PLUS:
+                self.assertEqual(strarg.fromlineno, 5)
+            else:
+                self.assertEqual(strarg.fromlineno, 4)
+            self.assertEqual(strarg.tolineno, 5)
         namearg = callfunc.args[1]
         self.assertIsInstance(namearg, nodes.Name)
         self.assertEqual(namearg.fromlineno, 5)
