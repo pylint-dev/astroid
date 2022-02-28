@@ -40,8 +40,8 @@ import socket
 import subprocess
 import sys
 import tempfile
-import types
 import textwrap
+import types
 import unittest
 from pathlib import Path
 from typing import Iterator
