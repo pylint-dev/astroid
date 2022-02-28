@@ -113,7 +113,9 @@ class TreeRebuilder:
             self._parser_module = parser_module
         self._module = self._parser_module.module
 
-    def _get_doc(self, node: T_Doc) -> Tuple[Optional[str], Optional[nodes.Const]]:
+    def _get_doc(
+        self, node: T_Doc
+    ) -> Tuple[T_Doc, Optional["ast.Constant | ast.Str"], Optional[str]]:
         """Returns the docstring of a node both in str and nodes.Const."""
         try:
             if node.body and isinstance(node.body[0], self._module.Expr):
@@ -123,16 +125,17 @@ class TreeRebuilder:
                     and isinstance(first_value, self._module.Constant)
                     and isinstance(first_value.value, str)
                 ):
-                    doc_node = self.visit(node.body[0], node)
+                    doc_ast_node = first_value
+                    doc = first_value.value if PY38_PLUS else first_value.s
                     node.body = node.body[1:]
                     # The ast parser of python < 3.8 sets col_offset of multi-line strings to -1
                     # as it is unable to determine the value correctly. We reset this to None.
-                    if doc_node.value.col_offset == -1:
-                        doc_node.value.col_offset = None
-                    return doc_node.value.value, doc_node.value
+                    if doc_ast_node.col_offset == -1:
+                        doc_ast_node.col_offset = None
+                    return node, doc_ast_node, doc
         except IndexError:
             pass  # ast built from scratch
-        return None, None
+        return node, None, None
 
     def _get_context(
         self,
@@ -216,7 +219,7 @@ class TreeRebuilder:
 
         Note: Method not called by 'visit'
         """
-        doc, doc_node = self._get_doc(node)
+        node, doc_ast_node, doc = self._get_doc(node)
         newnode = nodes.Module(
             name=modname,
             doc=doc,
@@ -224,9 +227,11 @@ class TreeRebuilder:
             path=[modpath],
             package=package,
             parent=None,
-            doc_node=doc_node,
         )
-        newnode.postinit([self.visit(child, newnode) for child in node.body])
+        newnode.postinit(
+            [self.visit(child, newnode) for child in node.body],
+            doc_node=self.visit(doc_ast_node, newnode),
+        )
         return newnode
 
     if sys.version_info >= (3, 10):
@@ -1248,7 +1253,7 @@ class TreeRebuilder:
         self, node: "ast.ClassDef", parent: NodeNG, newstyle: bool = True
     ) -> nodes.ClassDef:
         """visit a ClassDef node to become astroid"""
-        doc, doc_node = self._get_doc(node)
+        node, doc_ast_node, doc = self._get_doc(node)
         if sys.version_info >= (3, 8):
             newnode = nodes.ClassDef(
                 name=node.name,
@@ -1258,11 +1263,10 @@ class TreeRebuilder:
                 end_lineno=node.end_lineno,
                 end_col_offset=node.end_col_offset,
                 parent=parent,
-                doc_node=doc_node,
             )
         else:
             newnode = nodes.ClassDef(
-                node.name, doc, node.lineno, node.col_offset, parent, doc_node=doc_node
+                node.name, doc, node.lineno, node.col_offset, parent
             )
         metaclass = None
         for keyword in node.keywords:
@@ -1282,6 +1286,7 @@ class TreeRebuilder:
                 if kwd.arg != "metaclass"
             ],
             position=self._get_position_info(node, newnode),
+            doc_node=self.visit(doc_ast_node, newnode),
         )
         return newnode
 
@@ -1587,7 +1592,7 @@ class TreeRebuilder:
     ) -> T_Function:
         """visit an FunctionDef node to become astroid"""
         self._global_names.append({})
-        doc, doc_node = self._get_doc(node)
+        node, doc_ast_node, doc = self._get_doc(node)
 
         lineno = node.lineno
         if PY38_PLUS and node.decorator_list:
@@ -1609,12 +1614,9 @@ class TreeRebuilder:
                 end_lineno=node.end_lineno,
                 end_col_offset=node.end_col_offset,
                 parent=parent,
-                doc_node=doc_node,
             )
         else:
-            newnode = cls(
-                node.name, doc, lineno, node.col_offset, parent, doc_node=doc_node
-            )
+            newnode = cls(node.name, doc, lineno, node.col_offset, parent)
         decorators = self.visit_decorators(node, newnode)
         returns: Optional[NodeNG]
         if node.returns:
@@ -1634,6 +1636,7 @@ class TreeRebuilder:
             type_comment_returns=type_comment_returns,
             type_comment_args=type_comment_args,
             position=self._get_position_info(node, newnode),
+            doc_node=self.visit(doc_ast_node, newnode),
         )
         self._global_names.pop()
         return newnode

@@ -438,8 +438,6 @@ class Module(LocalsDictNodeNG):
         package: Optional[bool] = None,
         parent: Literal[None] = None,
         pure_python: Optional[bool] = True,
-        *,
-        doc_node: Optional[Const] = None,
     ) -> None:
         """
         :param name: The name of the module.
@@ -455,8 +453,6 @@ class Module(LocalsDictNodeNG):
         :param parent: The parent node in the syntax tree.
 
         :param pure_python: Whether the ast was built from source.
-
-        :param doc_node: The doc node associated with this node.
         """
         self.name = name
         """The name of the module."""
@@ -485,10 +481,11 @@ class Module(LocalsDictNodeNG):
         self.locals = self.globals = {}
         """A map of the name of a local variable to the node defining the local."""
 
-        self.doc_node = doc_node
-
         self.body: Optional[List[node_classes.NodeNG]] = []
         """The contents of the module."""
+
+        self.doc_node: Optional[Const] = None
+        """The doc node associated with this node."""
 
         self.future_imports: Set[str] = set()
         """The imports from ``__future__``."""
@@ -497,13 +494,15 @@ class Module(LocalsDictNodeNG):
 
     # pylint: enable=redefined-builtin
 
-    def postinit(self, body=None):
+    def postinit(self, body=None, *, doc_node: Optional[Const] = None):
         """Do some setup after initialisation.
 
         :param body: The contents of the module.
         :type body: list(NodeNG) or None
+        :param doc_node: The doc node associated with this node.
         """
         self.body = body
+        self.doc_node = doc_node
 
     def _get_stream(self):
         if self.file_bytes is not None:
@@ -1519,7 +1518,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         *,
         end_lineno=None,
         end_col_offset=None,
-        doc_node: Optional[Const] = None,
     ):
         """
         :param name: The name of the function.
@@ -1544,8 +1542,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         :type end_col_offset: Optional[int]
-
-        :param doc_node: The doc node associated with this node.
         """
         self.name = name
         """The name of the function.
@@ -1559,8 +1555,10 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :type doc: str or None
         """
 
+        self.doc_node: Optional[Const] = None
+        """The doc node associated with this node."""
+
         self.instance_attrs = {}
-        self.doc_node = doc_node
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -1583,6 +1581,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         type_comment_args=None,
         *,
         position: Optional[Position] = None,
+        doc_node: Optional[Const] = None,
     ):
         """Do some setup after initialisation.
 
@@ -1600,6 +1599,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             The args type annotation passed via a type comment.
         :params position:
             Position of function keyword(s) and name.
+        :param doc_node:
+            The doc node associated with this node.
         """
         self.args = args
         self.body = body
@@ -1608,6 +1609,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         self.type_comment_returns = type_comment_returns
         self.type_comment_args = type_comment_args
         self.position = position
+        self.doc_node = doc_node
 
     @decorators_mod.cachedproperty
     def extra_decorators(self) -> List[node_classes.Call]:
@@ -2109,6 +2111,7 @@ def get_wrapping_class(node):
     return klass
 
 
+# pylint: disable=too-many-instance-attributes
 class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement):
     """Class representing an :class:`ast.ClassDef` node.
 
@@ -2164,7 +2167,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         *,
         end_lineno=None,
         end_col_offset=None,
-        doc_node: Optional[Const] = None,
     ):
         """
         :param name: The name of the class.
@@ -2189,8 +2191,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         :type end_col_offset: Optional[int]
-
-        :param doc_node: The doc node associated with this node.
         """
         self.instance_attrs = {}
         self.locals = {}
@@ -2231,7 +2231,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type doc: str or None
         """
 
-        self.doc_node = doc_node
+        self.doc_node: Optional[Const] = None
+        """The doc node associated with this node."""
 
         self.is_dataclass: bool = False
         """Whether this class is a dataclass."""
@@ -2274,6 +2275,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         keywords=None,
         *,
         position: Optional[Position] = None,
+        doc_node: Optional[Const] = None,
     ):
         """Do some setup after initialisation.
 
@@ -2296,6 +2298,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type keywords: list(Keyword) or None
 
         :param position: Position of class keyword and name.
+
+        :param doc_node: The doc node associated with this node.
         """
         if keywords is not None:
             self.keywords = keywords
@@ -2307,6 +2311,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         if metaclass is not None:
             self._metaclass = metaclass
         self.position = position
+        self.doc_node = doc_node
 
     def _newstyle_impl(self, context=None):
         if context is None:
