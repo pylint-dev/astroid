@@ -33,6 +33,7 @@ order to get a single Astroid representation
 
 import sys
 import token
+import tokenize
 from io import StringIO
 from tokenize import TokenInfo, generate_tokens
 from typing import (
@@ -42,6 +43,7 @@ from typing import (
     Generator,
     List,
     Optional,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -52,7 +54,7 @@ from typing import (
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import PY36, PY38, PY38_PLUS, Context
+from astroid.const import IMPLEMENTATION_PYPY, PY36, PY38, PY38_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 from astroid.nodes.utils import Position
@@ -86,6 +88,7 @@ T_Doc = TypeVar(
 T_Function = TypeVar("T_Function", nodes.FunctionDef, nodes.AsyncFunctionDef)
 T_For = TypeVar("T_For", nodes.For, nodes.AsyncFor)
 T_With = TypeVar("T_With", nodes.With, nodes.AsyncWith)
+NodesWithDocsType = Union[nodes.Module, nodes.ClassDef, nodes.FunctionDef]
 
 
 # noinspection PyMethodMayBeStatic
@@ -113,7 +116,10 @@ class TreeRebuilder:
             self._parser_module = parser_module
         self._module = self._parser_module.module
 
-    def _get_doc(self, node: T_Doc) -> Tuple[T_Doc, Optional[str]]:
+    def _get_doc(
+        self, node: T_Doc
+    ) -> Tuple[T_Doc, Optional["ast.Constant | ast.Str"], Optional[str]]:
+        """Return the doc ast node and the actual docstring."""
         try:
             if node.body and isinstance(node.body[0], self._module.Expr):
                 first_value = node.body[0].value
@@ -122,12 +128,17 @@ class TreeRebuilder:
                     and isinstance(first_value, self._module.Constant)
                     and isinstance(first_value.value, str)
                 ):
+                    doc_ast_node = first_value
                     doc = first_value.value if PY38_PLUS else first_value.s
                     node.body = node.body[1:]
-                    return node, doc
+                    # The ast parser of python < 3.8 sets col_offset of multi-line strings to -1
+                    # as it is unable to determine the value correctly. We reset this to None.
+                    if doc_ast_node.col_offset == -1:
+                        doc_ast_node.col_offset = None
+                    return node, doc_ast_node, doc
         except IndexError:
             pass  # ast built from scratch
-        return node, None
+        return node, None, None
 
     def _get_context(
         self,
@@ -198,11 +209,67 @@ class TreeRebuilder:
 
         # pylint: disable=undefined-loop-variable
         return Position(
-            lineno=node.lineno - 1 + start_token.start[0],
+            lineno=node.lineno + start_token.start[0] - 1,
             col_offset=start_token.start[1],
-            end_lineno=node.lineno - 1 + t.end[0],
+            end_lineno=node.lineno + t.end[0] - 1,
             end_col_offset=t.end[1],
         )
+
+    def _fix_doc_node_position(self, node: NodesWithDocsType) -> None:
+        """Fix start and end position of doc nodes for Python < 3.8."""
+        if not self._data or not node.doc_node or node.lineno is None:
+            return
+        if PY38_PLUS:
+            return
+
+        lineno = node.lineno or 1  # lineno of modules is 0
+        end_range: Optional[int] = node.doc_node.lineno
+        if IMPLEMENTATION_PYPY:
+            end_range = None
+        # pylint: disable-next=unsubscriptable-object
+        data = "\n".join(self._data[lineno - 1 : end_range])
+
+        found_start, found_end = False, False
+        open_brackets = 0
+        skip_token: Set[int] = {token.NEWLINE, token.INDENT}
+        if PY36:
+            skip_token.update((tokenize.NL, tokenize.COMMENT))
+        else:
+            # token.NL and token.COMMENT were added in 3.7
+            skip_token.update((token.NL, token.COMMENT))
+
+        if isinstance(node, nodes.Module):
+            found_end = True
+
+        for t in generate_tokens(StringIO(data).readline):
+            if found_end is False:
+                if (
+                    found_start is False
+                    and t.type == token.NAME
+                    and t.string in {"def", "class"}
+                ):
+                    found_start = True
+                elif found_start is True and t.type == token.OP:
+                    if t.exact_type == token.COLON and open_brackets == 0:
+                        found_end = True
+                    elif t.exact_type == token.LPAR:
+                        open_brackets += 1
+                    elif t.exact_type == token.RPAR:
+                        open_brackets -= 1
+                continue
+            if t.type in skip_token:
+                continue
+            if t.type == token.STRING:
+                break
+            return
+        else:
+            return
+
+        # pylint: disable=undefined-loop-variable
+        node.doc_node.lineno = lineno + t.start[0] - 1
+        node.doc_node.col_offset = t.start[1]
+        node.doc_node.end_lineno = lineno + t.end[0] - 1
+        node.doc_node.end_col_offset = t.end[1]
 
     def visit_module(
         self, node: "ast.Module", modname: str, modpath: str, package: bool
@@ -211,7 +278,7 @@ class TreeRebuilder:
 
         Note: Method not called by 'visit'
         """
-        node, doc = self._get_doc(node)
+        node, doc_ast_node, doc = self._get_doc(node)
         newnode = nodes.Module(
             name=modname,
             doc=doc,
@@ -220,7 +287,11 @@ class TreeRebuilder:
             package=package,
             parent=None,
         )
-        newnode.postinit([self.visit(child, newnode) for child in node.body])
+        newnode.postinit(
+            [self.visit(child, newnode) for child in node.body],
+            doc_node=self.visit(doc_ast_node, newnode),
+        )
+        self._fix_doc_node_position(newnode)
         return newnode
 
     if sys.version_info >= (3, 10):
@@ -1242,7 +1313,7 @@ class TreeRebuilder:
         self, node: "ast.ClassDef", parent: NodeNG, newstyle: bool = True
     ) -> nodes.ClassDef:
         """visit a ClassDef node to become astroid"""
-        node, doc = self._get_doc(node)
+        node, doc_ast_node, doc = self._get_doc(node)
         if sys.version_info >= (3, 8):
             newnode = nodes.ClassDef(
                 name=node.name,
@@ -1275,7 +1346,9 @@ class TreeRebuilder:
                 if kwd.arg != "metaclass"
             ],
             position=self._get_position_info(node, newnode),
+            doc_node=self.visit(doc_ast_node, newnode),
         )
+        self._fix_doc_node_position(newnode)
         return newnode
 
     def visit_continue(self, node: "ast.Continue", parent: NodeNG) -> nodes.Continue:
@@ -1580,7 +1653,7 @@ class TreeRebuilder:
     ) -> T_Function:
         """visit an FunctionDef node to become astroid"""
         self._global_names.append({})
-        node, doc = self._get_doc(node)
+        node, doc_ast_node, doc = self._get_doc(node)
 
         lineno = node.lineno
         if PY38_PLUS and node.decorator_list:
@@ -1624,7 +1697,9 @@ class TreeRebuilder:
             type_comment_returns=type_comment_returns,
             type_comment_args=type_comment_args,
             position=self._get_position_info(node, newnode),
+            doc_node=self.visit(doc_ast_node, newnode),
         )
+        self._fix_doc_node_position(newnode)
         self._global_names.pop()
         return newnode
 

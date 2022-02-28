@@ -1596,23 +1596,32 @@ def test_assignment_expression_in_functiondef() -> None:
 
 
 def test_get_doc() -> None:
-    node = astroid.extract_node(
-        """
+    code = textwrap.dedent(
+        """\
     def func():
         "Docstring"
         return 1
     """
     )
+    node: nodes.FunctionDef = astroid.extract_node(code)  # type: ignore[assignment]
     assert node.doc == "Docstring"
+    assert isinstance(node.doc_node, nodes.Const)
+    assert node.doc_node.value == "Docstring"
+    assert node.doc_node.lineno == 2
+    assert node.doc_node.col_offset == 4
+    assert node.doc_node.end_lineno == 2
+    assert node.doc_node.end_col_offset == 15
 
-    node = astroid.extract_node(
-        """
+    code = textwrap.dedent(
+        """\
     def func():
         ...
         return 1
     """
     )
+    node = astroid.extract_node(code)
     assert node.doc is None
+    assert node.doc_node is None
 
 
 @test_utils.require_version(minver="3.8")

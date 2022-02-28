@@ -295,6 +295,69 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
             with open(path, "rb") as file_io:
                 self.assertEqual(stream.read(), file_io.read())
 
+    @staticmethod
+    def test_singleline_docstring() -> None:
+        data = textwrap.dedent(
+            """\
+            '''Hello World'''
+            foo = 1
+        """
+        )
+        module = builder.parse(data, __name__)
+        assert isinstance(module.doc_node, nodes.Const)
+        assert module.doc_node.lineno == 1
+        assert module.doc_node.col_offset == 0
+        assert module.doc_node.end_lineno == 1
+        assert module.doc_node.end_col_offset == 17
+
+    @staticmethod
+    def test_multiline_docstring() -> None:
+        data = textwrap.dedent(
+            """\
+            '''Hello World
+
+            Also on this line.
+            '''
+            foo = 1
+        """
+        )
+        module = builder.parse(data, __name__)
+
+        assert isinstance(module.doc_node, nodes.Const)
+        assert module.doc_node.lineno == 1
+        assert module.doc_node.col_offset == 0
+        assert module.doc_node.end_lineno == 4
+        assert module.doc_node.end_col_offset == 3
+
+    @staticmethod
+    def test_comment_before_docstring() -> None:
+        data = textwrap.dedent(
+            """\
+            # Some comment
+            '''This is
+
+            a multiline docstring.
+            '''
+        """
+        )
+        module = builder.parse(data, __name__)
+
+        assert isinstance(module.doc_node, nodes.Const)
+        assert module.doc_node.lineno == 2
+        assert module.doc_node.col_offset == 0
+        assert module.doc_node.end_lineno == 5
+        assert module.doc_node.end_col_offset == 3
+
+    @staticmethod
+    def test_without_docstring() -> None:
+        data = textwrap.dedent(
+            """\
+            foo = 1
+        """
+        )
+        module = builder.parse(data, __name__)
+        assert module.doc_node is None
+
 
 class FunctionNodeTest(ModuleLoader, unittest.TestCase):
     def test_special_attributes(self) -> None:
@@ -751,6 +814,118 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "MyClass")
+
+    @staticmethod
+    def test_singleline_docstring() -> None:
+        code = textwrap.dedent(
+            """\
+            def foo():
+                '''Hello World'''
+                bar = 1
+        """
+        )
+        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
+
+        assert isinstance(func.doc_node, nodes.Const)
+        assert func.doc_node.lineno == 2
+        assert func.doc_node.col_offset == 4
+        assert func.doc_node.end_lineno == 2
+        assert func.doc_node.end_col_offset == 21
+
+    @staticmethod
+    def test_multiline_docstring() -> None:
+        code = textwrap.dedent(
+            """\
+            def foo():
+                '''Hello World
+
+                Also on this line.
+                '''
+                bar = 1
+        """
+        )
+        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
+
+        assert isinstance(func.doc_node, nodes.Const)
+        assert func.doc_node.lineno == 2
+        assert func.doc_node.col_offset == 4
+        assert func.doc_node.end_lineno == 5
+        assert func.doc_node.end_col_offset == 7
+
+    @staticmethod
+    def test_multiline_docstring_async() -> None:
+        code = textwrap.dedent(
+            """\
+            async def foo(var: tuple = ()):
+                '''Hello
+
+                World
+                '''
+        """
+        )
+        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
+
+        assert isinstance(func.doc_node, nodes.Const)
+        assert func.doc_node.lineno == 2
+        assert func.doc_node.col_offset == 4
+        assert func.doc_node.end_lineno == 5
+        assert func.doc_node.end_col_offset == 7
+
+    @staticmethod
+    def test_docstring_special_cases() -> None:
+        code = textwrap.dedent(
+            """\
+        def f1(var: tuple = ()):  #@
+            'Hello World'
+
+        def f2() -> "just some comment with an open bracket(":  #@
+            'Hello World'
+
+        def f3() -> "Another comment with a colon: ":  #@
+            'Hello World'
+
+        def f4():  #@
+            # It should work with comments too
+            'Hello World'
+        """
+        )
+        ast_nodes: List[nodes.FunctionDef] = builder.extract_node(code)  # type: ignore[assignment]
+        assert len(ast_nodes) == 4
+
+        assert isinstance(ast_nodes[0].doc_node, nodes.Const)
+        assert ast_nodes[0].doc_node.lineno == 2
+        assert ast_nodes[0].doc_node.col_offset == 4
+        assert ast_nodes[0].doc_node.end_lineno == 2
+        assert ast_nodes[0].doc_node.end_col_offset == 17
+
+        assert isinstance(ast_nodes[1].doc_node, nodes.Const)
+        assert ast_nodes[1].doc_node.lineno == 5
+        assert ast_nodes[1].doc_node.col_offset == 4
+        assert ast_nodes[1].doc_node.end_lineno == 5
+        assert ast_nodes[1].doc_node.end_col_offset == 17
+
+        assert isinstance(ast_nodes[2].doc_node, nodes.Const)
+        assert ast_nodes[2].doc_node.lineno == 8
+        assert ast_nodes[2].doc_node.col_offset == 4
+        assert ast_nodes[2].doc_node.end_lineno == 8
+        assert ast_nodes[2].doc_node.end_col_offset == 17
+
+        assert isinstance(ast_nodes[3].doc_node, nodes.Const)
+        assert ast_nodes[3].doc_node.lineno == 12
+        assert ast_nodes[3].doc_node.col_offset == 4
+        assert ast_nodes[3].doc_node.end_lineno == 12
+        assert ast_nodes[3].doc_node.end_col_offset == 17
+
+    @staticmethod
+    def test_without_docstring() -> None:
+        code = textwrap.dedent(
+            """\
+            def foo():
+                bar = 1
+        """
+        )
+        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
+        assert func.doc_node is None
 
 
 class ClassNodeTest(ModuleLoader, unittest.TestCase):
@@ -2087,6 +2262,52 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """
         # Should not crash
         builder.parse(data)
+
+    @staticmethod
+    def test_singleline_docstring() -> None:
+        code = textwrap.dedent(
+            """\
+            class Foo:
+                '''Hello World'''
+                bar = 1
+        """
+        )
+        node: nodes.ClassDef = builder.extract_node(code)  # type: ignore[assignment]
+        assert isinstance(node.doc_node, nodes.Const)
+        assert node.doc_node.lineno == 2
+        assert node.doc_node.col_offset == 4
+        assert node.doc_node.end_lineno == 2
+        assert node.doc_node.end_col_offset == 21
+
+    @staticmethod
+    def test_multiline_docstring() -> None:
+        code = textwrap.dedent(
+            """\
+            class Foo:
+                '''Hello World
+
+                Also on this line.
+                '''
+                bar = 1
+        """
+        )
+        node: nodes.ClassDef = builder.extract_node(code)  # type: ignore[assignment]
+        assert isinstance(node.doc_node, nodes.Const)
+        assert node.doc_node.lineno == 2
+        assert node.doc_node.col_offset == 4
+        assert node.doc_node.end_lineno == 5
+        assert node.doc_node.end_col_offset == 7
+
+    @staticmethod
+    def test_without_docstring() -> None:
+        code = textwrap.dedent(
+            """\
+            class Foo:
+                bar = 1
+        """
+        )
+        node: nodes.ClassDef = builder.extract_node(code)  # type: ignore[assignment]
+        assert node.doc_node is None
 
 
 def test_issue940_metaclass_subclass_property() -> None:
