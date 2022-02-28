@@ -34,6 +34,7 @@ order to get a single Astroid representation
 import platform
 import sys
 import token
+import tokenize
 from io import StringIO
 from tokenize import TokenInfo, generate_tokens
 from typing import (
@@ -223,18 +224,27 @@ class TreeRebuilder:
 
         lineno = node.lineno or 1  # lineno of modules is 0
         end_range: Optional[int] = node.doc_node.lineno
-        if platform.python_implementation() == "Pypy":
+        if platform.python_implementation() == "PyPy":
             end_range = None
         data = "\n".join(self._data[lineno - 1 : end_range])
 
         found_start: bool = False
         found_end: bool = False
-        skip_token: set[int] = {token.NEWLINE, token.NL, token.INDENT}
+        skip_token: set[int] = {token.NEWLINE, token.INDENT}
+        if PY36:
+            skip_token.add(tokenize.NL)
+        else:
+            # token.NL was added in 3.7
+            skip_token.add(token.NL)
         open_brackets: int = 0
 
         if isinstance(node, nodes.Module):
             found_end = True
-            skip_token.add(token.COMMENT)
+            if PY36:
+                skip_token.add(tokenize.COMMENT)
+            else:
+                # token.COMMENT was added in 3.7
+                skip_token.add(token.COMMENT)
 
         for t in generate_tokens(StringIO(data).readline):
             if found_end is False:
