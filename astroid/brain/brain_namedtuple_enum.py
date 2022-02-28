@@ -114,6 +114,7 @@ def infer_func_form(
                 attributes = [
                     _infer_first(const, context).value for const in names.elts
                 ]
+
             # Handle attributes of Enums
             else:
                 # Enums supports either iterator of (name, value) pairs
