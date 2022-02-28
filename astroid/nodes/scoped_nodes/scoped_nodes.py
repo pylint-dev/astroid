@@ -386,7 +386,7 @@ class Module(LocalsDictNodeNG):
     <Module l.0 at 0x7f23b2e4eda0>
     """
 
-    _astroid_fields = ("body", "doc_node")
+    _astroid_fields = ("doc_node", "body")
 
     fromlineno: Literal[0] = 0
     """The first line that this node appears on in the source code."""
@@ -1469,7 +1469,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     <FunctionDef.my_func l.2 at 0x7f23b2e71e10>
     """
 
-    _astroid_fields = ("decorators", "args", "returns", "body", "doc_node")
+    _astroid_fields = ("decorators", "args", "returns", "doc_node", "body")
     _multi_line_block_fields = ("body",)
     returns = None
     decorators: Optional[node_classes.Decorators] = None
@@ -2129,7 +2129,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     # by a raw factories
 
     # a dictionary of class instances attributes
-    _astroid_fields = ("decorators", "bases", "keywords", "body", "doc_node")  # name
+    _astroid_fields = ("decorators", "bases", "keywords", "doc_node", "body")  # name
 
     decorators = None
     """The decorators that are applied to this class.
