@@ -218,7 +218,7 @@ class TreeRebuilder:
         """Fix start and end position of doc nodes for Python < 3.8."""
         if not self._data or not node.doc_node or node.lineno is None:
             return
-        if sys.version_info >= (3, 8):
+        if PY38_PLUS:
             return
 
         lineno = node.lineno or 1  # lineno of modules is 0
@@ -229,7 +229,7 @@ class TreeRebuilder:
 
         found_start: bool = False
         found_end: bool = False
-        skip_token: set[int] = {token.NEWLINE, token.INDENT}
+        skip_token: set[int] = {token.NEWLINE, token.NL, token.INDENT}
         open_brackets: int = 0
 
         if isinstance(node, nodes.Module):
@@ -256,6 +256,7 @@ class TreeRebuilder:
                 continue
             if t.type == token.STRING:
                 break
+            return
         else:
             return
 
