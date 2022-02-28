@@ -31,7 +31,6 @@
 order to get a single Astroid representation
 """
 
-import platform
 import sys
 import token
 import tokenize
@@ -54,7 +53,7 @@ from typing import (
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import PY36, PY38, PY38_PLUS, Context
+from astroid.const import IMPLEMENTATION_PYPY, PY36, PY38, PY38_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 from astroid.nodes.utils import Position
@@ -224,19 +223,18 @@ class TreeRebuilder:
 
         lineno = node.lineno or 1  # lineno of modules is 0
         end_range: Optional[int] = node.doc_node.lineno
-        if platform.python_implementation() == "PyPy":
+        if IMPLEMENTATION_PYPY:
             end_range = None
         data = "\n".join(self._data[lineno - 1 : end_range])
 
-        found_start: bool = False
-        found_end: bool = False
+        found_start, found_end = False, False
+        open_brackets = 0
         skip_token: set[int] = {token.NEWLINE, token.INDENT}
         if PY36:
             skip_token.add(tokenize.NL)
         else:
             # token.NL was added in 3.7
             skip_token.add(token.NL)
-        open_brackets: int = 0
 
         if isinstance(node, nodes.Module):
             found_end = True
