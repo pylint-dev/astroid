@@ -89,9 +89,13 @@ def infer_func_form(
         except AttributeError as exc:
             # Handle attributes of NamedTuples
             if not enum:
-                attributes = [
-                    _infer_first(const, context).value for const in names.elts
-                ]
+                attributes: List[str] = []
+                fields = _get_namedtuple_fields(node)
+                if fields:
+                    fields_node = extract_node(fields)
+                    attributes = [
+                        _infer_first(const, context).value for const in fields_node.elts
+                    ]
 
             # Handle attributes of Enums
             else:
@@ -522,21 +526,32 @@ def infer_typing_namedtuple(
     if not isinstance(node.args[1], (nodes.List, nodes.Tuple)):
         raise UseInferenceDefault
 
+    return infer_named_tuple(node, context)
+
+
+def _get_namedtuple_fields(node: nodes.Call) -> str:
+    """Get and return fields of a NamedTuple in code-as-a-string.
+
+    Because the fields are represented in their code form we can
+    extract a node from them later on.
+    """
     names = []
-    for elt in node.args[1].elts:
+    fields = node.args[1]
+    for elt in next(fields.infer()).elts:
+        if isinstance(elt, nodes.Const):
+            names.append(elt.as_string())
+            continue
         if not isinstance(elt, (nodes.List, nodes.Tuple)):
             raise UseInferenceDefault
         if len(elt.elts) != 2:
             raise UseInferenceDefault
         names.append(elt.elts[0].as_string())
 
-    typename = node.args[0].as_string()
     if names:
         field_names = f"({','.join(names)},)"
     else:
-        field_names = "''"
-    node = extract_node(f"namedtuple({typename}, {field_names})")
-    return infer_named_tuple(node, context)
+        field_names = ""
+    return field_names
 
 
 def _is_enum_subclass(cls: astroid.ClassDef) -> bool:
