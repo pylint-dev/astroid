@@ -872,6 +872,51 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         assert func.doc_node.end_col_offset == 7
 
     @staticmethod
+    def test_docstring_special_cases() -> None:
+        code = textwrap.dedent(
+            """\
+        def f1(var: tuple = ()):  #@
+            'Hello World'
+
+        def f2() -> "just some comment with an open bracket(":  #@
+            'Hello World'
+
+        def f3() -> "Another comment with a colon: ":  #@
+            'Hello World'
+
+        def f4():  #@
+            # It should work with comments too
+            'Hello World'
+        """
+        )
+        ast_nodes: List[nodes.FunctionDef] = builder.extract_node(code)  # type: ignore[assignment]
+        assert len(ast_nodes) == 4
+
+        assert isinstance(ast_nodes[0].doc_node, nodes.Const)
+        assert ast_nodes[0].doc_node.lineno == 2
+        assert ast_nodes[0].doc_node.col_offset == 4
+        assert ast_nodes[0].doc_node.end_lineno == 2
+        assert ast_nodes[0].doc_node.end_col_offset == 17
+
+        assert isinstance(ast_nodes[1].doc_node, nodes.Const)
+        assert ast_nodes[1].doc_node.lineno == 5
+        assert ast_nodes[1].doc_node.col_offset == 4
+        assert ast_nodes[1].doc_node.end_lineno == 5
+        assert ast_nodes[1].doc_node.end_col_offset == 17
+
+        assert isinstance(ast_nodes[2].doc_node, nodes.Const)
+        assert ast_nodes[2].doc_node.lineno == 8
+        assert ast_nodes[2].doc_node.col_offset == 4
+        assert ast_nodes[2].doc_node.end_lineno == 8
+        assert ast_nodes[2].doc_node.end_col_offset == 17
+
+        assert isinstance(ast_nodes[3].doc_node, nodes.Const)
+        assert ast_nodes[3].doc_node.lineno == 12
+        assert ast_nodes[3].doc_node.col_offset == 4
+        assert ast_nodes[3].doc_node.end_lineno == 12
+        assert ast_nodes[3].doc_node.end_col_offset == 17
+
+    @staticmethod
     def test_without_docstring() -> None:
         code = textwrap.dedent(
             """\

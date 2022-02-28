@@ -118,7 +118,7 @@ class TreeRebuilder:
     def _get_doc(
         self, node: T_Doc
     ) -> Tuple[T_Doc, Optional["ast.Constant | ast.Str"], Optional[str]]:
-        """Returns the docstring of a node both in str and nodes.Const."""
+        """Return the doc ast node and the actual docstring."""
         try:
             if node.body and isinstance(node.body[0], self._module.Expr):
                 first_value = node.body[0].value
@@ -208,9 +208,9 @@ class TreeRebuilder:
 
         # pylint: disable=undefined-loop-variable
         return Position(
-            lineno=node.lineno - 1 + start_token.start[0],
+            lineno=node.lineno + start_token.start[0] - 1,
             col_offset=start_token.start[1],
-            end_lineno=node.lineno - 1 + t.end[0],
+            end_lineno=node.lineno + t.end[0] - 1,
             end_col_offset=t.end[1],
         )
 
@@ -231,18 +231,13 @@ class TreeRebuilder:
         open_brackets = 0
         skip_token: set[int] = {token.NEWLINE, token.INDENT}
         if PY36:
-            skip_token.add(tokenize.NL)
+            skip_token.update((tokenize.NL, tokenize.COMMENT))
         else:
-            # token.NL was added in 3.7
-            skip_token.add(token.NL)
+            # token.NL and token.COMMENT were added in 3.7
+            skip_token.update((token.NL, token.COMMENT))
 
         if isinstance(node, nodes.Module):
             found_end = True
-            if PY36:
-                skip_token.add(tokenize.COMMENT)
-            else:
-                # token.COMMENT was added in 3.7
-                skip_token.add(token.COMMENT)
 
         for t in generate_tokens(StringIO(data).readline):
             if found_end is False:
@@ -268,9 +263,9 @@ class TreeRebuilder:
         else:
             return
 
-        node.doc_node.lineno = lineno - 1 + t.start[0]
+        node.doc_node.lineno = lineno + t.start[0] - 1
         node.doc_node.col_offset = t.start[1]
-        node.doc_node.end_lineno = lineno - 1 + t.end[0]
+        node.doc_node.end_lineno = lineno + t.end[0] - 1
         node.doc_node.end_col_offset = t.end[1]
 
     def visit_module(
