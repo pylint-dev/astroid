@@ -94,7 +94,7 @@ def _find_func_form_arguments(node, context):
 
 def infer_func_form(
     node: nodes.Call,
-    base_type: List[nodes.NodeNG],
+    base_type: nodes.NodeNG,
     context: Optional[InferenceContext] = None,
     enum: bool = False,
 ) -> Tuple[nodes.ClassDef, str, List[str]]:
