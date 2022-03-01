@@ -34,7 +34,7 @@ import ast
 import functools
 import itertools
 import operator
-from typing import Any, Callable, Dict, Iterable, Optional
+from typing import Any, Callable, Dict, Iterable, Iterator, Optional, Union
 
 import wrapt
 
@@ -824,7 +824,7 @@ def _to_literal(node: nodes.NodeNG) -> Any:
 
 def _do_compare(
     left_iter: Iterable[nodes.NodeNG], op: str, right_iter: Iterable[nodes.NodeNG]
-) -> "bool | type[util.Uninferable]":
+) -> Union[bool, util.Uninferable]:
     """
     If all possible combinations are either True or False, return that:
     >>> _do_compare([1, 2], '<=', [3, 4])
@@ -839,17 +839,17 @@ def _do_compare(
     """
     retval = None
     if op in UNINFERABLE_OPS:
-        return util.Uninferable
+        return util.Uninferable  # type: ignore[return-value]
     op_func = COMPARE_OPS[op]
 
     for left, right in itertools.product(left_iter, right_iter):
         if left is util.Uninferable or right is util.Uninferable:
-            return util.Uninferable
+            return util.Uninferable  # type: ignore[return-value]
 
         try:
             left, right = _to_literal(left), _to_literal(right)
         except (SyntaxError, ValueError, AttributeError):
-            return util.Uninferable
+            return util.Uninferable  # type: ignore[return-value]
 
         try:
             expr = op_func(left, right)
@@ -859,17 +859,18 @@ def _do_compare(
         if retval is None:
             retval = expr
         elif retval != expr:
-            return util.Uninferable
+            return util.Uninferable  # type: ignore[return-value]
             # (or both, but "True | False" is basically the same)
 
+    assert retval is not None
     return retval  # it was all the same value
 
 
 def _infer_compare(
     self: nodes.Compare, context: Optional[InferenceContext] = None
-) -> Any:
+) -> Iterator[Union[nodes.Const, util.Uninferable]]:
     """Chained comparison inference logic."""
-    retval = True
+    retval: Union[bool, util.Uninferable] = True
 
     ops = self.ops
     left_node = self.left
@@ -881,13 +882,13 @@ def _infer_compare(
         try:
             retval = _do_compare(lhs, op, rhs)
         except AstroidTypeError:
-            retval = util.Uninferable
+            retval = util.Uninferable  # type: ignore[assignment]
             break
         if retval is not True:
             break  # short-circuit
         lhs = rhs  # continue
     if retval is util.Uninferable:
-        yield retval
+        yield retval  # type: ignore[misc]
     else:
         yield nodes.Const(retval)
 
