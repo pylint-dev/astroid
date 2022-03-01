@@ -2,6 +2,7 @@ import textwrap
 
 import pytest
 
+import astroid
 from astroid import builder, nodes
 from astroid.const import PY38_PLUS, PY39_PLUS, PY310_PLUS
 
@@ -783,7 +784,7 @@ class TestLinenoColOffset:
         assert (t3.lineno, t3.col_offset) == (10, 0)
         assert (t3.end_lineno, t3.end_col_offset) == (17, 8)
         assert (t3.body[0].lineno, t3.body[0].col_offset) == (10, 0)
-        assert (t3.body[0].end_lineno, t3.body[0].end_col_offset) == (17, 8)
+        assert (t3.body[0].end_lineno, t3.body[0].end_col_offset) == (15, 8)
         assert (t3.finalbody[0].lineno, t3.finalbody[0].col_offset) == (17, 4)
         assert (t3.finalbody[0].end_lineno, t3.finalbody[0].end_col_offset) == (17, 8)
 
@@ -1221,3 +1222,14 @@ class TestLinenoColOffset:
         assert (c1.body[0].lineno, c1.body[0].col_offset) == (4, 4)
         assert (c1.body[0].end_lineno, c1.body[0].end_col_offset) == (4, 8)
         # fmt: on
+
+    @staticmethod
+    def test_end_lineno_module() -> None:
+        """Tests for Module"""
+        code = """print()"""
+        module = astroid.parse(code)
+        assert isinstance(module, nodes.Module)
+        assert module.lineno == 0
+        assert module.col_offset is None
+        assert module.end_lineno is None
+        assert module.end_col_offset is None

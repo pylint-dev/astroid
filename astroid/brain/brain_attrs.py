@@ -10,7 +10,9 @@ from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import AnnAssign, Assign, AssignName, Call, Unknown
 from astroid.nodes.scoped_nodes import ClassDef
 
-ATTRIB_NAMES = frozenset(("attr.ib", "attrib", "attr.attrib", "attr.field", "field"))
+ATTRIB_NAMES = frozenset(
+    ("attr.ib", "attrib", "attr.attrib", "attr.field", "attrs.field", "field")
+)
 ATTRS_NAMES = frozenset(
     (
         "attr.s",
@@ -20,6 +22,9 @@ ATTRS_NAMES = frozenset(
         "attr.define",
         "attr.mutable",
         "attr.frozen",
+        "attrs.define",
+        "attrs.mutable",
+        "attrs.frozen",
     )
 )
 

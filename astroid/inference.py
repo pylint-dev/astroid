@@ -16,11 +16,13 @@
 # Copyright (c) 2018 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
 # Copyright (c) 2020 Leandro T. C. Melo <ltcmelo@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
+# Copyright (c) 2021-2022 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
+# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
@@ -316,6 +318,8 @@ def infer_attribute(self, context=None):
 
         if not context:
             context = InferenceContext()
+        else:
+            context = copy_context(context)
 
         old_boundnode = context.boundnode
         try:
@@ -1054,7 +1058,7 @@ def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
 
 # When inferring a property, we instantiate a new `objects.Property` object,
 # which in turn, because it inherits from `FunctionDef`, sets itself in the locals
-# of the wrapping frame. This means that everytime we infer a property, the locals
+# of the wrapping frame. This means that every time we infer a property, the locals
 # are mutated with a new instance of the property. This is why we cache the result
 # of the function's inference.
 @_cached_generator

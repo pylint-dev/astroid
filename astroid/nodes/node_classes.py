@@ -23,13 +23,16 @@
 # Copyright (c) 2019 kavins14 <kavinsingh@hotmail.com>
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2021-2022 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
+# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
 # Copyright (c) 2021 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 Federico Bond <federicobond@gmail.com>
+# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
@@ -42,7 +45,16 @@ import sys
 import typing
 import warnings
 from functools import lru_cache
-from typing import TYPE_CHECKING, Callable, Generator, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Generator,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from astroid import decorators, mixins, util
 from astroid.bases import Instance, _infer_stmts
@@ -65,11 +77,26 @@ else:
     from typing_extensions import Literal
 
 if TYPE_CHECKING:
+    from astroid import nodes
     from astroid.nodes import LocalsDictNodeNG
 
 
 def _is_const(value):
     return isinstance(value, tuple(CONST_CLS))
+
+
+T_Nodes = TypeVar("T_Nodes", bound=NodeNG)
+
+AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
+AssignedStmtsCall = Callable[
+    [
+        T_Nodes,
+        AssignedStmtsPossibleNode,
+        Optional[InferenceContext],
+        Optional[typing.List[int]],
+    ],
+    Any,
+]
 
 
 @decorators.raise_if_nothing_inferred
@@ -400,208 +427,6 @@ class LookupMixIn:
         context = InferenceContext()
         return _infer_stmts(stmts, context, frame)
 
-    def _get_filtered_node_statements(self, nodes):
-        statements = [(node, node.statement()) for node in nodes]
-        # Next we check if we have ExceptHandlers that are parent
-        # of the underlying variable, in which case the last one survives
-        if len(statements) > 1 and all(
-            isinstance(stmt, ExceptHandler) for _, stmt in statements
-        ):
-            statements = [
-                (node, stmt) for node, stmt in statements if stmt.parent_of(self)
-            ]
-        return statements
-
-    def _filter_stmts(self, stmts, frame, offset):
-        """Filter the given list of statements to remove ignorable statements.
-
-        If self is not a frame itself and the name is found in the inner
-        frame locals, statements will be filtered to remove ignorable
-        statements according to self's location.
-
-        :param stmts: The statements to filter.
-        :type stmts: list(NodeNG)
-
-        :param frame: The frame that all of the given statements belong to.
-        :type frame: NodeNG
-
-        :param offset: The line offset to filter statements up to.
-        :type offset: int
-
-        :returns: The filtered statements.
-        :rtype: list(NodeNG)
-        """
-        # if offset == -1, my actual frame is not the inner frame but its parent
-        #
-        # class A(B): pass
-        #
-        # we need this to resolve B correctly
-        if offset == -1:
-            myframe = self.frame().parent.frame()
-        else:
-            myframe = self.frame()
-            # If the frame of this node is the same as the statement
-            # of this node, then the node is part of a class or
-            # a function definition and the frame of this node should be the
-            # the upper frame, not the frame of the definition.
-            # For more information why this is important,
-            # see Pylint issue #295.
-            # For example, for 'b', the statement is the same
-            # as the frame / scope:
-            #
-            # def test(b=1):
-            #     ...
-
-            if self.statement() is myframe and myframe.parent:
-                myframe = myframe.parent.frame()
-        mystmt = self.statement()
-        # line filtering if we are in the same frame
-        #
-        # take care node may be missing lineno information (this is the case for
-        # nodes inserted for living objects)
-        if myframe is frame and mystmt.fromlineno is not None:
-            assert mystmt.fromlineno is not None, mystmt
-            mylineno = mystmt.fromlineno + offset
-        else:
-            # disabling lineno filtering
-            mylineno = 0
-
-        _stmts = []
-        _stmt_parents = []
-        statements = self._get_filtered_node_statements(stmts)
-        for node, stmt in statements:
-            # line filtering is on and we have reached our location, break
-            if stmt.fromlineno and stmt.fromlineno > mylineno > 0:
-                break
-            # Ignore decorators with the same name as the
-            # decorated function
-            # Fixes issue #375
-            if mystmt is stmt and is_from_decorator(self):
-                continue
-            assert hasattr(node, "assign_type"), (
-                node,
-                node.scope(),
-                node.scope().locals,
-            )
-            assign_type = node.assign_type()
-            if node.has_base(self):
-                break
-
-            _stmts, done = assign_type._get_filtered_stmts(self, node, _stmts, mystmt)
-            if done:
-                break
-
-            optional_assign = assign_type.optional_assign
-            if optional_assign and assign_type.parent_of(self):
-                # we are inside a loop, loop var assignment is hiding previous
-                # assignment
-                _stmts = [node]
-                _stmt_parents = [stmt.parent]
-                continue
-
-            if isinstance(assign_type, NamedExpr):
-                # If the NamedExpr is in an if statement we do some basic control flow inference
-                if_parent = _get_if_statement_ancestor(assign_type)
-                if if_parent:
-                    # If the if statement is within another if statement we append the node
-                    # to possible statements
-                    if _get_if_statement_ancestor(if_parent):
-                        optional_assign = False
-                        _stmts.append(node)
-                        _stmt_parents.append(stmt.parent)
-                    # If the if statement is first-level and not within an orelse block
-                    # we know that it will be evaluated
-                    elif not if_parent.is_orelse:
-                        _stmts = [node]
-                        _stmt_parents = [stmt.parent]
-                    # Else we do not known enough about the control flow to be 100% certain
-                    # and we append to possible statements
-                    else:
-                        _stmts.append(node)
-                        _stmt_parents.append(stmt.parent)
-                else:
-                    _stmts = [node]
-                    _stmt_parents = [stmt.parent]
-
-            # XXX comment various branches below!!!
-            try:
-                pindex = _stmt_parents.index(stmt.parent)
-            except ValueError:
-                pass
-            else:
-                # we got a parent index, this means the currently visited node
-                # is at the same block level as a previously visited node
-                if _stmts[pindex].assign_type().parent_of(assign_type):
-                    # both statements are not at the same block level
-                    continue
-                # if currently visited node is following previously considered
-                # assignment and both are not exclusive, we can drop the
-                # previous one. For instance in the following code ::
-                #
-                #   if a:
-                #     x = 1
-                #   else:
-                #     x = 2
-                #   print x
-                #
-                # we can't remove neither x = 1 nor x = 2 when looking for 'x'
-                # of 'print x'; while in the following ::
-                #
-                #   x = 1
-                #   x = 2
-                #   print x
-                #
-                # we can remove x = 1 when we see x = 2
-                #
-                # moreover, on loop assignment types, assignment won't
-                # necessarily be done if the loop has no iteration, so we don't
-                # want to clear previous assignments if any (hence the test on
-                # optional_assign)
-                if not (optional_assign or are_exclusive(_stmts[pindex], node)):
-                    del _stmt_parents[pindex]
-                    del _stmts[pindex]
-
-            # If self and node are exclusive, then we can ignore node
-            if are_exclusive(self, node):
-                continue
-
-            # An AssignName node overrides previous assignments if:
-            #   1. node's statement always assigns
-            #   2. node and self are in the same block (i.e., has the same parent as self)
-            if isinstance(node, (NamedExpr, AssignName)):
-                if isinstance(stmt, ExceptHandler):
-                    # If node's statement is an ExceptHandler, then it is the variable
-                    # bound to the caught exception. If self is not contained within
-                    # the exception handler block, node should override previous assignments;
-                    # otherwise, node should be ignored, as an exception variable
-                    # is local to the handler block.
-                    if stmt.parent_of(self):
-                        _stmts = []
-                        _stmt_parents = []
-                    else:
-                        continue
-                elif not optional_assign and stmt.parent is mystmt.parent:
-                    _stmts = []
-                    _stmt_parents = []
-            elif isinstance(node, DelName):
-                # Remove all previously stored assignments
-                _stmts = []
-                _stmt_parents = []
-                continue
-            # Add the new assignment
-            _stmts.append(node)
-            if isinstance(node, Arguments) or isinstance(node.parent, Arguments):
-                # Special case for _stmt_parents when node is a function parameter;
-                # in this case, stmt is the enclosing FunctionDef, which is what we
-                # want to add to _stmt_parents, not stmt.parent. This case occurs when
-                # node is an Arguments node (representing varargs or kwargs parameter),
-                # and when node.parent is an Arguments node (other parameters).
-                # See issue #180.
-                _stmt_parents.append(stmt)
-            else:
-                _stmt_parents.append(stmt.parent)
-        return _stmts
-
 
 # Name classes
 
@@ -662,6 +487,11 @@ class AssignName(
             end_col_offset=end_col_offset,
             parent=parent,
         )
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["AssignName"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
 
 class DelName(
@@ -849,8 +679,13 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.kwarg: Optional[str] = kwarg  # can be None
         """The name of the variable length keyword arguments."""
 
-        self.args: typing.List[AssignName]
-        """The names of the required arguments."""
+        self.args: typing.Optional[typing.List[AssignName]]
+        """The names of the required arguments.
+
+        Can be None if the associated function does not have a retrievable
+        signature and the arguments are therefore unknown.
+        This happens with builtin functions implemented in C.
+        """
 
         self.defaults: typing.List[NodeNG]
         """The default values for arguments that can be passed positionally."""
@@ -978,6 +813,11 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
             self.type_comment_kwonlyargs = type_comment_kwonlyargs
         if type_comment_posonlyargs is not None:
             self.type_comment_posonlyargs = type_comment_posonlyargs
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["Arguments"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def _infer_name(self, frame, name):
         if self.parent is frame:
@@ -1232,6 +1072,11 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
         """
         self.expr = expr
 
+    assigned_stmts: ClassVar[AssignedStmtsCall["AssignAttr"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def get_children(self):
         yield self.expr
 
@@ -1375,6 +1220,11 @@ class Assign(mixins.AssignTypeMixin, Statement):
         self.value = value
         self.type_annotation = type_annotation
 
+    assigned_stmts: ClassVar[AssignedStmtsCall["Assign"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def get_children(self):
         yield from self.targets
 
@@ -1467,6 +1317,11 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
         self.value = value
         self.simple = simple
 
+    assigned_stmts: ClassVar[AssignedStmtsCall["AnnAssign"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def get_children(self):
         yield self.target
         yield self.annotation
@@ -1547,6 +1402,11 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
         """
         self.target = target
         self.value = value
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["AugAssign"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     # This is set by inference.py
     def _infer_augassign(self, context=None):
@@ -2014,6 +1874,11 @@ class Comprehension(NodeNG):
             self.ifs = ifs
         self.is_async = is_async
 
+    assigned_stmts: ClassVar[AssignedStmtsCall["Comprehension"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def assign_type(self):
         """The type of assignment that this node performs.
 
@@ -2022,13 +1887,15 @@ class Comprehension(NodeNG):
         """
         return self
 
-    def _get_filtered_stmts(self, lookup_node, node, stmts, mystmt):
+    def _get_filtered_stmts(
+        self, lookup_node, node, stmts, mystmt: Optional[Statement]
+    ):
         """method used in filter_stmts"""
         if self is mystmt:
             if isinstance(lookup_node, (Const, Name)):
                 return [lookup_node], True
 
-        elif self.statement() is mystmt:
+        elif self.statement(future=True) is mystmt:
             # original node's statement is the assignment, only keeps
             # current node (gen exp, list comp)
 
@@ -2699,6 +2566,11 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
             parent=parent,
         )
 
+    assigned_stmts: ClassVar[AssignedStmtsCall["ExceptHandler"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def get_children(self):
         if self.type is not None:
             yield self.type
@@ -2748,10 +2620,7 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
         """
         if self.type is None or exceptions is None:
             return True
-        for node in self.type._get_name_nodes():
-            if node.name in exceptions:
-                return True
-        return False
+        return any(node.name in exceptions for node in self.type._get_name_nodes())
 
 
 class ExtSlice(NodeNG):
@@ -2859,6 +2728,11 @@ class For(
         if orelse is not None:
             self.orelse = orelse
         self.type_annotation = type_annotation
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["For"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -3505,7 +3379,7 @@ class Keyword(NodeNG):
     def postinit(self, value: Optional[NodeNG] = None) -> None:
         """Do some setup after initialisation.
 
-        :param value: The value being assigned to the ketword argument.
+        :param value: The value being assigned to the keyword argument.
         """
         self.value = value
 
@@ -3559,6 +3433,11 @@ class List(BaseContainer):
             end_col_offset=end_col_offset,
             parent=parent,
         )
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["List"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def pytype(self):
         """Get the name of the type that this node represents.
@@ -3713,10 +3592,9 @@ class Raise(Statement):
         """
         if not self.exc:
             return False
-        for name in self.exc._get_name_nodes():
-            if name.name == "NotImplementedError":
-                return True
-        return False
+        return any(
+            name.name == "NotImplementedError" for name in self.exc._get_name_nodes()
+        )
 
     def get_children(self):
         if self.exc is not None:
@@ -3986,6 +3864,11 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
         :param value: What is being unpacked.
         """
         self.value = value
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["Starred"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     def get_children(self):
         yield self.value
@@ -4313,6 +4196,11 @@ class Tuple(BaseContainer):
             parent=parent,
         )
 
+    assigned_stmts: ClassVar[AssignedStmtsCall["Tuple"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
     def pytype(self):
         """Get the name of the type that this node represents.
 
@@ -4606,6 +4494,11 @@ class With(
         if body is not None:
             self.body = body
         self.type_annotation = type_annotation
+
+    assigned_stmts: ClassVar[AssignedStmtsCall["With"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -4910,7 +4803,14 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
         self.target = target
         self.value = value
 
-    def frame(self):
+    assigned_stmts: ClassVar[AssignedStmtsCall["NamedExpr"]]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
+    def frame(
+        self, *, future: Literal[None, True] = None
+    ) -> Union["nodes.FunctionDef", "nodes.Module", "nodes.ClassDef", "nodes.Lambda"]:
         """The first parent frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -4927,9 +4827,9 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
                 raise ParentMissingError(target=self.parent)
             if not self.parent.parent.parent:
                 raise ParentMissingError(target=self.parent.parent)
-            return self.parent.parent.parent.frame()
+            return self.parent.parent.parent.frame(future=True)
 
-        return self.parent.frame()
+        return self.parent.frame(future=True)
 
     def scope(self) -> "LocalsDictNodeNG":
         """The first parent node defining a new scope.
@@ -4961,7 +4861,7 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
 
         :param stmt: The statement that defines the given name.
         """
-        self.frame().set_local(name, stmt)
+        self.frame(future=True).set_local(name, stmt)
 
 
 class Unknown(mixins.AssignTypeMixin, NodeNG):
@@ -5173,7 +5073,7 @@ class MatchSingleton(Pattern):
         end_col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
     ) -> None:
-        self.value: Literal[True, False, None] = value
+        self.value = value
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -5270,15 +5170,20 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
         self.patterns = patterns
         self.rest = rest
 
-    assigned_stmts: Callable[
-        [
-            "MatchMapping",
-            AssignName,
-            Optional[InferenceContext],
-            Literal[None],
-        ],
-        Generator[NodeNG, None, None],
+    assigned_stmts: ClassVar[
+        Callable[
+            [
+                "MatchMapping",
+                AssignName,
+                Optional[InferenceContext],
+                Literal[None],
+            ],
+            Generator[NodeNG, None, None],
+        ]
     ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
 
 class MatchClass(Pattern):
@@ -5372,15 +5277,20 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
     def postinit(self, *, name: Optional[AssignName]) -> None:
         self.name = name
 
-    assigned_stmts: Callable[
-        [
-            "MatchStar",
-            AssignName,
-            Optional[InferenceContext],
-            Literal[None],
-        ],
-        Generator[NodeNG, None, None],
+    assigned_stmts: ClassVar[
+        Callable[
+            [
+                "MatchStar",
+                AssignName,
+                Optional[InferenceContext],
+                Literal[None],
+            ],
+            Generator[NodeNG, None, None],
+        ]
     ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
 
 class MatchAs(mixins.AssignTypeMixin, Pattern):
@@ -5438,15 +5348,20 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
         self.pattern = pattern
         self.name = name
 
-    assigned_stmts: Callable[
-        [
-            "MatchAs",
-            AssignName,
-            Optional[InferenceContext],
-            Literal[None],
-        ],
-        Generator[NodeNG, None, None],
+    assigned_stmts: ClassVar[
+        Callable[
+            [
+                "MatchAs",
+                AssignName,
+                Optional[InferenceContext],
+                Literal[None],
+            ],
+            Generator[NodeNG, None, None],
+        ]
     ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
 
 class MatchOr(Pattern):
@@ -5556,19 +5471,3 @@ def const_factory(value):
         node = EmptyNode()
         node.object = value
         return node
-
-
-def is_from_decorator(node):
-    """Return True if the given node is the child of a decorator"""
-    for parent in node.node_ancestors():
-        if isinstance(parent, Decorators):
-            return True
-    return False
-
-
-def _get_if_statement_ancestor(node: NodeNG) -> Optional[If]:
-    """Return the first parent node that is an If node (or None)"""
-    for parent in node.node_ancestors():
-        if isinstance(parent, If):
-            return parent
-    return None

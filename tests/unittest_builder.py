@@ -12,11 +12,16 @@
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2021-2022 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
+# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
+# Copyright (c) 2022 Sergei Lebedev <185856+superbobry@users.noreply.github.com>
+# Copyright (c) 2022 Jacob Walls <jacobtylerwalls@gmail.com>
+# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
@@ -24,9 +29,14 @@
 """tests for the astroid builder and rebuilder module"""
 
 import collections
+import importlib
 import os
+import pathlib
+import py_compile
 import socket
 import sys
+import tempfile
+import textwrap
 import unittest
 
 import pytest
@@ -69,11 +79,14 @@ class FromToLineNoTest(unittest.TestCase):
         strarg = callfunc.args[0]
         self.assertIsInstance(strarg, nodes.Const)
         if hasattr(sys, "pypy_version_info"):
-            lineno = 4
+            self.assertEqual(strarg.fromlineno, 4)
+            self.assertEqual(strarg.tolineno, 4)
         else:
-            lineno = 5 if not PY38_PLUS else 4
-        self.assertEqual(strarg.fromlineno, lineno)
-        self.assertEqual(strarg.tolineno, lineno)
+            if not PY38_PLUS:
+                self.assertEqual(strarg.fromlineno, 5)
+            else:
+                self.assertEqual(strarg.fromlineno, 4)
+            self.assertEqual(strarg.tolineno, 5)
         namearg = callfunc.args[1]
         self.assertIsInstance(namearg, nodes.Name)
         self.assertEqual(namearg.fromlineno, 5)
@@ -130,11 +143,53 @@ class FromToLineNoTest(unittest.TestCase):
             __name__,
         )
         function = astroid["function"]
-        # XXX discussable, but that's what is expected by pylint right now
+        # XXX discussable, but that's what is expected by pylint right now, similar to ClassDef
         self.assertEqual(function.fromlineno, 3)
         self.assertEqual(function.tolineno, 5)
         self.assertEqual(function.decorators.fromlineno, 2)
         self.assertEqual(function.decorators.tolineno, 2)
+
+    @staticmethod
+    def test_decorated_class_lineno() -> None:
+        code = textwrap.dedent(
+            """
+        class A:
+            ...
+
+        @decorator
+        class B:
+            ...
+
+        @deco1
+        @deco2(
+            var=42
+        )
+        class C:
+            ...
+        """
+        )
+
+        ast_module: nodes.Module = builder.parse(code)  # type: ignore[assignment]
+
+        a = ast_module.body[0]
+        assert isinstance(a, nodes.ClassDef)
+        assert a.fromlineno == 2
+        assert a.tolineno == 3
+
+        b = ast_module.body[1]
+        assert isinstance(b, nodes.ClassDef)
+        assert b.fromlineno == 6
+        assert b.tolineno == 7
+
+        c = ast_module.body[2]
+        assert isinstance(c, nodes.ClassDef)
+        if not PY38_PLUS:
+            # Not perfect, but best we can do for Python 3.7
+            # Can't detect closing bracket on new line.
+            assert c.fromlineno == 12
+        else:
+            assert c.fromlineno == 13
+        assert c.tolineno == 14
 
     def test_class_lineno(self) -> None:
         stmts = self.astroid.body
@@ -285,7 +340,7 @@ class BuilderTest(unittest.TestCase):
 
     def test_missing_file(self) -> None:
         with self.assertRaises(AstroidBuildingError):
-            resources.build_file("data/inexistant.py")
+            resources.build_file("data/inexistent.py")
 
     def test_inspect_build0(self) -> None:
         """test astroid tree build from a living object"""
@@ -609,14 +664,14 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(module.fromlineno, 0)
         self.assertIsNone(module.parent)
         self.assertEqual(module.frame(), module)
+        self.assertEqual(module.frame(future=True), module)
         self.assertEqual(module.root(), module)
         self.assertEqual(module.file, os.path.abspath(resources.find("data/module.py")))
         self.assertEqual(module.pure_python, 1)
         self.assertEqual(module.package, 0)
         self.assertFalse(module.is_statement)
-        self.assertEqual(module.statement(), module)
         with pytest.warns(DeprecationWarning) as records:
-            module.statement()
+            self.assertEqual(module.statement(), module)
             assert len(records) == 1
         with self.assertRaises(StatementMissing):
             module.statement(future=True)
@@ -652,6 +707,8 @@ class FileBuildTest(unittest.TestCase):
         self.assertTrue(function.parent)
         self.assertEqual(function.frame(), function)
         self.assertEqual(function.parent.frame(), module)
+        self.assertEqual(function.frame(future=True), function)
+        self.assertEqual(function.parent.frame(future=True), module)
         self.assertEqual(function.root(), module)
         self.assertEqual([n.name for n in function.args.args], ["key", "val"])
         self.assertEqual(function.type, "function")
@@ -673,6 +730,8 @@ class FileBuildTest(unittest.TestCase):
         self.assertTrue(klass.parent)
         self.assertEqual(klass.frame(), klass)
         self.assertEqual(klass.parent.frame(), module)
+        self.assertEqual(klass.frame(future=True), klass)
+        self.assertEqual(klass.parent.frame(future=True), module)
         self.assertEqual(klass.root(), module)
         self.assertEqual(klass.basenames, [])
         self.assertTrue(klass.newstyle)
@@ -782,6 +841,68 @@ def test_parse_module_with_invalid_type_comments_does_not_crash():
     """
     )
     assert isinstance(node, nodes.Module)
+
+
+class HermeticInterpreterTest(unittest.TestCase):
+    """Modeled on https://github.com/PyCQA/astroid/pull/1207#issuecomment-951455588"""
+
+    @classmethod
+    def setUpClass(cls):
+        """Simulate a hermetic interpreter environment having no code on the filesystem."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            sys.path.append(tmp_dir)
+
+            # Write a python file and compile it to .pyc
+            # To make this test have even more value, we would need to come up with some
+            # code that gets inferred differently when we get its "partial representation".
+            # This code is too simple for that. But we can't use builtins either, because we would
+            # have to delete builtins from the filesystem.  But even if we engineered that,
+            # the difference might evaporate over time as inference changes.
+            cls.code_snippet = "def func():  return 42"
+            with tempfile.NamedTemporaryFile(
+                mode="w", dir=tmp_dir, suffix=".py", delete=False
+            ) as tmp:
+                tmp.write(cls.code_snippet)
+                pyc_file = py_compile.compile(tmp.name)
+                cls.pyc_name = tmp.name.replace(".py", ".pyc")
+            os.remove(tmp.name)
+            os.rename(pyc_file, cls.pyc_name)
+
+            # Import the module
+            cls.imported_module_path = pathlib.Path(cls.pyc_name)
+            cls.imported_module = importlib.import_module(cls.imported_module_path.stem)
+
+            # Delete source code from module object, filesystem, and path
+            del cls.imported_module.__file__
+            os.remove(cls.imported_module_path)
+            sys.path.remove(tmp_dir)
+
+    def test_build_from_live_module_without_source_file(self) -> None:
+        """Assert that inspect_build() is not called.
+        See comment in module_build() before the call to inspect_build():
+            "get a partial representation by introspection"
+
+        This "partial representation" was presumably causing unexpected behavior.
+        """
+        # Sanity check
+        self.assertIsNone(
+            self.imported_module.__loader__.get_source(self.imported_module_path.stem)
+        )
+        with self.assertRaises(AttributeError):
+            _ = self.imported_module.__file__
+
+        my_builder = builder.AstroidBuilder()
+        with unittest.mock.patch.object(
+            self.imported_module.__loader__,
+            "get_source",
+            return_value=self.code_snippet,
+        ):
+            with unittest.mock.patch.object(
+                my_builder, "inspect_build", side_effect=AssertionError
+            ):
+                my_builder.module_build(
+                    self.imported_module, modname=self.imported_module_path.stem
+                )
 
 
 if __name__ == "__main__":

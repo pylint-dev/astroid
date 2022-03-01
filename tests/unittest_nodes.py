@@ -16,12 +16,15 @@
 # Copyright (c) 2019 Alex Hall <alex.mojaki@gmail.com>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
+# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
+# Copyright (c) 2021 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 René Fritze <47802+renefritze@users.noreply.github.com>
 # Copyright (c) 2021 Federico Bond <federicobond@gmail.com>
 # Copyright (c) 2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
@@ -55,6 +58,7 @@ from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
     AttributeInferenceError,
+    ParentMissingError,
     StatementMissing,
 )
 from astroid.nodes.node_classes import (
@@ -641,6 +645,13 @@ class ConstNodeTest(unittest.TestCase):
         with self.assertRaises(StatementMissing):
             node.statement(future=True)
 
+        with self.assertRaises(AttributeError):
+            with pytest.warns(DeprecationWarning) as records:
+                node.frame()
+                assert len(records) == 1
+        with self.assertRaises(ParentMissingError):
+            node.frame(future=True)
+
     def test_none(self) -> None:
         self._test(None)
 
@@ -733,25 +744,35 @@ class TestNamedExprNode:
         )
         function = module.body[0]
         assert function.args.frame() == function
+        assert function.args.frame(future=True) == function
 
         function_two = module.body[1]
         assert function_two.args.args[0].frame() == function_two
+        assert function_two.args.args[0].frame(future=True) == function_two
         assert function_two.args.args[1].frame() == function_two
+        assert function_two.args.args[1].frame(future=True) == function_two
         assert function_two.args.defaults[0].frame() == module
+        assert function_two.args.defaults[0].frame(future=True) == module
 
         inherited_class = module.body[3]
         assert inherited_class.keywords[0].frame() == inherited_class
+        assert inherited_class.keywords[0].frame(future=True) == inherited_class
         assert inherited_class.keywords[0].value.frame() == module
+        assert inherited_class.keywords[0].value.frame(future=True) == module
 
         lambda_assignment = module.body[4].value
         assert lambda_assignment.args.args[0].frame() == lambda_assignment
+        assert lambda_assignment.args.args[0].frame(future=True) == lambda_assignment
         assert lambda_assignment.args.defaults[0].frame() == module
+        assert lambda_assignment.args.defaults[0].frame(future=True) == module
 
         lambda_named_expr = module.body[5].args.defaults[0]
         assert lambda_named_expr.value.args.defaults[0].frame() == module
+        assert lambda_named_expr.value.args.defaults[0].frame(future=True) == module
 
         comprehension = module.body[6].value
         assert comprehension.generators[0].ifs[0].frame() == module
+        assert comprehension.generators[0].ifs[0].frame(future=True) == module
 
     @staticmethod
     def test_scope() -> None:
@@ -1575,23 +1596,32 @@ def test_assignment_expression_in_functiondef() -> None:
 
 
 def test_get_doc() -> None:
-    node = astroid.extract_node(
-        """
+    code = textwrap.dedent(
+        """\
     def func():
         "Docstring"
         return 1
     """
     )
+    node: nodes.FunctionDef = astroid.extract_node(code)  # type: ignore[assignment]
     assert node.doc == "Docstring"
+    assert isinstance(node.doc_node, nodes.Const)
+    assert node.doc_node.value == "Docstring"
+    assert node.doc_node.lineno == 2
+    assert node.doc_node.col_offset == 4
+    assert node.doc_node.end_lineno == 2
+    assert node.doc_node.end_col_offset == 15
 
-    node = astroid.extract_node(
-        """
+    code = textwrap.dedent(
+        """\
     def func():
         ...
         return 1
     """
     )
+    node = astroid.extract_node(code)
     assert node.doc is None
+    assert node.doc_node is None
 
 
 @test_utils.require_version(minver="3.8")
@@ -1717,12 +1747,12 @@ class TestPatternMatching:
 
         assert isinstance(case2.pattern, nodes.MatchSingleton)
         assert case2.pattern.value is None
-        assert list(case2.pattern.get_children()) == []
+        assert not list(case2.pattern.get_children())
 
         assert isinstance(case3.pattern, nodes.MatchAs)
         assert case3.pattern.name is None
         assert case3.pattern.pattern is None
-        assert list(case3.pattern.get_children()) == []
+        assert not list(case3.pattern.get_children())
 
     @staticmethod
     def test_match_sequence():

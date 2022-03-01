@@ -28,15 +28,10 @@ from astroid.exceptions import (
 from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
+from astroid.nodes.utils import Position
 
 if TYPE_CHECKING:
     from astroid import nodes
-
-    if sys.version_info >= (3, 6, 2):
-        # To be fixed with https://github.com/PyCQA/pylint/pull/5316
-        from typing import NoReturn  # pylint: disable=unused-import
-    else:
-        from typing_extensions import NoReturn
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -124,6 +119,12 @@ class NodeNG:
         Note: This is after the last symbol.
         """
 
+        self.position: Optional[Position] = None
+        """Position of keyword(s) and name. Used as fallback for block nodes
+        which might not provide good enough positional information.
+        E.g. ClassDef, FunctionDef.
+        """
+
     def infer(self, context=None, **kwargs):
         """Get a generator of the inferred values.
 
@@ -169,7 +170,9 @@ class NodeNG:
         limit = AstroidManager().max_inferable_values
         for i, result in enumerate(generator):
             if i >= limit or (context.nodes_inferred > context.max_inferred):
-                yield util.Uninferable
+                uninferable = util.Uninferable
+                results.append(uninferable)
+                yield uninferable
                 break
             results.append(result)
             yield result
@@ -180,7 +183,7 @@ class NodeNG:
         context.inferred[key] = tuple(results)
         return
 
-    def _repr_name(self):
+    def _repr_name(self) -> str:
         """Get a name for nice representation.
 
         This is either :attr:`name`, :attr:`attrname`, or the empty string.
@@ -192,7 +195,7 @@ class NodeNG:
             return getattr(self, "name", "") or getattr(self, "attrname", "")
         return ""
 
-    def __str__(self):
+    def __str__(self) -> str:
         rname = self._repr_name()
         cname = type(self).__name__
         if rname:
@@ -218,7 +221,7 @@ class NodeNG:
             "fields": (",\n" + " " * alignment).join(result),
         }
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         rname = self._repr_name()
         if rname:
             string = "<%(cname)s.%(rname)s l.%(lineno)s at 0x%(id)x>"
@@ -276,10 +279,7 @@ class NodeNG:
             False otherwise.
         :rtype: bool
         """
-        for parent in node.node_ancestors():
-            if self is parent:
-                return True
-        return False
+        return any(self is parent for parent in node.node_ancestors())
 
     @overload
     def statement(
@@ -293,7 +293,7 @@ class NodeNG:
 
     def statement(
         self, *, future: Literal[None, True] = None
-    ) -> Union["nodes.Statement", "nodes.Module", "NoReturn"]:
+    ) -> Union["nodes.Statement", "nodes.Module"]:
         """The first parent node, including self, marked as statement node.
 
         TODO: Deprecate the future parameter and only raise StatementMissing and return
@@ -318,7 +318,7 @@ class NodeNG:
         return self.parent.statement(future=future)
 
     def frame(
-        self,
+        self, *, future: Literal[None, True] = None
     ) -> Union["nodes.FunctionDef", "nodes.Module", "nodes.ClassDef", "nodes.Lambda"]:
         """The first parent frame node.
 
@@ -327,7 +327,19 @@ class NodeNG:
 
         :returns: The first parent frame node.
         """
-        return self.parent.frame()
+        if self.parent is None:
+            if future:
+                raise ParentMissingError(target=self)
+            warnings.warn(
+                "In astroid 3.0.0 NodeNG.frame() will return either a Frame node, "
+                "or raise ParentMissingError. AttributeError will no longer be raised. "
+                "This behaviour can already be triggered "
+                "by passing 'future=True' to a frame() call.",
+                DeprecationWarning,
+            )
+            raise AttributeError(f"{self} object has no attribute 'parent'")
+
+        return self.parent.frame(future=future)
 
     def scope(self) -> "nodes.LocalsDictNodeNG":
         """The first parent node defining a new scope.
@@ -433,6 +445,8 @@ class NodeNG:
     @decorators.cachedproperty
     def tolineno(self) -> Optional[int]:
         """The last line that this node appears on in the source code."""
+        if self.end_lineno is not None:
+            return self.end_lineno
         if not self._astroid_fields:
             # can't have children
             last_child = None

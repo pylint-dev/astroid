@@ -18,11 +18,12 @@
 # Copyright (c) 2020 Konrad Weihmann <kweihmann@outlook.com>
 # Copyright (c) 2020 Felix Mölder <felix.moelder@uni-due.de>
 # Copyright (c) 2020 Michael <michael-k@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021-2022 Pierre Sassoulas <pierre.sassoulas@gmail.com>
 # Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
-__version__ = "2.9.1-dev0"
+__version__ = "2.10.1-dev0"
 version = __version__

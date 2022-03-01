@@ -10,10 +10,10 @@
 # Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2017 David Euresti <github@euresti.com>
 # Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
+# Copyright (c) 2018, 2021 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Tomas Gavenciak <gavento@ucw.cz>
 # Copyright (c) 2018 David Poirier <david-poirier-csn@users.noreply.github.com>
 # Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
 # Copyright (c) 2018 Ioana Tagirta <ioana.tagirta@gmail.com>
 # Copyright (c) 2018 Ahmed Azzaoui <ahmed.azzaoui@engie.com>
@@ -25,6 +25,7 @@
 # Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
+# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
 # Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 # Copyright (c) 2021 Joshua Cannon <joshua.cannon@ni.com>
 # Copyright (c) 2021 Craig Franklin <craigjfranklin@gmail.com>
@@ -38,6 +39,9 @@
 # Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
 # Copyright (c) 2021 Artsiom Kaval <lezeroq@gmail.com>
 # Copyright (c) 2021 Damien Baty <damien@damienbaty.com>
+# Copyright (c) 2022 Jacob Walls <jacobtylerwalls@gmail.com>
+# Copyright (c) 2022 Jacob Bogdanov <jacob@bogdanov.dev>
+# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
@@ -56,7 +60,11 @@ import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
 from astroid.const import PY37_PLUS
-from astroid.exceptions import AttributeInferenceError, InferenceError
+from astroid.exceptions import (
+    AttributeInferenceError,
+    InferenceError,
+    UseInferenceDefault,
+)
 from astroid.nodes.node_classes import Const
 from astroid.nodes.scoped_nodes import ClassDef
 
@@ -1238,10 +1246,7 @@ def streams_are_fine():
 
     PY3 only
     """
-    for stream in (sys.stdout, sys.stderr, sys.stdin):
-        if not isinstance(stream, io.IOBase):
-            return False
-    return True
+    return all(isinstance(s, io.IOBase) for s in (sys.stdout, sys.stderr, sys.stdin))
 
 
 class IOBrainTest(unittest.TestCase):
@@ -1661,6 +1666,19 @@ class TypingBrain(unittest.TestCase):
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
+
+    def test_typing_type_without_tip(self):
+        """Regression test for https://github.com/PyCQA/pylint/issues/5770"""
+        node = builder.extract_node(
+            """
+        from typing import NewType
+
+        def make_new_type(t):
+            new_type = NewType(f'IntRange_{t}', t) #@
+        """
+        )
+        with self.assertRaises(UseInferenceDefault):
+            astroid.brain.brain_typing.infer_typing_typevar_or_newtype(node.value)
 
     def test_namedtuple_nested_class(self):
         result = builder.extract_node(
@@ -2213,6 +2231,73 @@ class AttrsTest(unittest.TestCase):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
             self.assertIsInstance(should_be_unknown, astroid.Unknown)
 
+    def test_attrs_transform(self) -> None:
+        """Test brain for decorators of the 'attrs' package.
+
+        Package added support for 'attrs' a long side 'attr' in v21.3.0.
+        See: https://github.com/python-attrs/attrs/releases/tag/21.3.0
+        """
+        module = astroid.parse(
+            """
+        import attrs
+        from attrs import field, mutable, frozen
+
+        @attrs.define
+        class Foo:
+
+            d = attrs.field(attrs.Factory(dict))
+
+        f = Foo()
+        f.d['answer'] = 42
+
+        @attrs.define(slots=True)
+        class Bar:
+            d = field(attrs.Factory(dict))
+
+        g = Bar()
+        g.d['answer'] = 42
+
+        @attrs.mutable
+        class Bah:
+            d = field(attrs.Factory(dict))
+
+        h = Bah()
+        h.d['answer'] = 42
+
+        @attrs.frozen
+        class Bai:
+            d = attrs.field(attrs.Factory(dict))
+
+        i = Bai()
+        i.d['answer'] = 42
+
+        @attrs.define
+        class Spam:
+            d = field(default=attrs.Factory(dict))
+
+        j = Spam(d=1)
+        j.d['answer'] = 42
+
+        @attrs.mutable
+        class Eggs:
+            d = attrs.field(default=attrs.Factory(dict))
+
+        k = Eggs(d=1)
+        k.d['answer'] = 42
+
+        @attrs.frozen
+        class Eggs:
+            d = attrs.field(default=attrs.Factory(dict))
+
+        l = Eggs(d=1)
+        l.d['answer'] = 42
+        """
+        )
+
+        for name in ("f", "g", "h", "i", "j", "k", "l"):
+            should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
+            self.assertIsInstance(should_be_unknown, astroid.Unknown)
+
     def test_special_attributes(self) -> None:
         """Make sure special attrs attributes exist"""
 
@@ -2389,7 +2474,7 @@ class TestIsinstanceInference:
         )
 
     def test_isinstance_str_true(self) -> None:
-        """Make sure isinstance can check bultin str types"""
+        """Make sure isinstance can check builtin str types"""
         assert _get_result("isinstance('a', str)") == "True"
 
     def test_isinstance_str_false(self) -> None:
@@ -2850,7 +2935,7 @@ def test_infer_dict_from_keys() -> None:
         assert isinstance(inferred, astroid.Dict)
         assert inferred.items == []
 
-    # Test inferrable values
+    # Test inferable values
 
     # from a dictionary's keys
     from_dict = astroid.extract_node(

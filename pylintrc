@@ -28,6 +28,7 @@ load-plugins=
     pylint.extensions.code_style,
     pylint.extensions.set_membership,
     pylint.extensions.redefined_variable_type,
+    pylint.extensions.for_any_all,
 
 # Use multiple processes to speed up Pylint.
 jobs=1
@@ -40,6 +41,9 @@ unsafe-load-any-extension=no
 # be loaded. Extensions are loading into the active Python interpreter and may
 # run arbitrary code
 extension-pkg-whitelist=
+
+# Minimum supported python version
+py-version = 3.6.2
 
 
 [REPORTS]
@@ -80,7 +84,7 @@ confidence=
 # can either give multiple identifiers separated by comma (,) or put this
 # option multiple times (only on the command line, not in the configuration
 # file where it should appear only once).You can also use "--disable=all" to
-# disable everything first and then reenable specific checks. For example, if
+# disable everything first and then re-enable specific checks. For example, if
 # you want to run only the similarities checker, you can use "--disable=all
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
@@ -300,6 +304,9 @@ ignored-modules=typed_ast.ast3
 # (useful for classes with attributes dynamically set).
 ignored-classes=SQLObject
 
+# Regex pattern to define which classes are considered mixins.
+mixin-class-rgx=.*Mix[Ii]n
+
 # List of members which are set dynamically and missed by pylint inference
 # system, and so shouldn't trigger E0201 when accessed. Python regular
 # expressions are accepted.
@@ -401,9 +408,6 @@ overgeneral-exceptions=Exception
 
 
 [TYPING]
-
-# Minimum supported python version (used for typing only!)
-py-version = 3.6
 
 # Annotations are used exclusively for type checking
 runtime-typing = no
