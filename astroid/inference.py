@@ -862,7 +862,7 @@ def _do_compare(
             return util.Uninferable  # type: ignore[return-value]
             # (or both, but "True | False" is basically the same)
 
-    assert retval
+    assert retval is not None
     return retval  # it was all the same value
 
 
