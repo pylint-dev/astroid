@@ -9,6 +9,9 @@ Release date: TBA
 * Add new (optional) ``doc_node`` attribute to ``nodes.Module``, ``nodes.ClassDef``,
   and ``nodes.FunctionDef``.
 
+* On Python 3.8+ we now use ``functools.cached_property`` instead of our own implementation.
+
+  Closes #1410
 
 What's New in astroid 2.10.1?
 =============================

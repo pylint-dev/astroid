@@ -22,7 +22,7 @@ import functools
 import inspect
 import sys
 import warnings
-from typing import Callable, TypeVar
+from typing import TYPE_CHECKING, Callable, TypeVar
 
 import wrapt
 
@@ -52,43 +52,49 @@ def cached(func, instance, args, kwargs):
         return result
 
 
-class cachedproperty:
-    """Provides a cached property equivalent to the stacking of
-    @cached and @property, but more efficient.
+if sys.version_info >= (3, 8) or TYPE_CHECKING:
+    from functools import cached_property
 
-    After first usage, the <property_name> becomes part of the object's
-    __dict__. Doing:
+    cachedproperty = cached_property
+else:
 
-      del obj.<property_name> empties the cache.
+    class cachedproperty:
+        """Provides a cached property equivalent to the stacking of
+        @cached and @property, but more efficient.
 
-    Idea taken from the pyramid_ framework and the mercurial_ project.
+        After first usage, the <property_name> becomes part of the object's
+        __dict__. Doing:
 
-    .. _pyramid: http://pypi.python.org/pypi/pyramid
-    .. _mercurial: http://pypi.python.org/pypi/Mercurial
-    """
+        del obj.<property_name> empties the cache.
 
-    __slots__ = ("wrapped",)
+        Idea taken from the pyramid_ framework and the mercurial_ project.
 
-    def __init__(self, wrapped):
-        try:
-            wrapped.__name__
-        except AttributeError as exc:
-            raise TypeError(f"{wrapped} must have a __name__ attribute") from exc
-        self.wrapped = wrapped
+        .. _pyramid: http://pypi.python.org/pypi/pyramid
+        .. _mercurial: http://pypi.python.org/pypi/Mercurial
+        """
 
-    @property
-    def __doc__(self):
-        doc = getattr(self.wrapped, "__doc__", None)
-        return "<wrapped by the cachedproperty decorator>%s" % (
-            "\n%s" % doc if doc else ""
-        )
+        __slots__ = ("wrapped",)
 
-    def __get__(self, inst, objtype=None):
-        if inst is None:
-            return self
-        val = self.wrapped(inst)
-        setattr(inst, self.wrapped.__name__, val)
-        return val
+        def __init__(self, wrapped):
+            try:
+                wrapped.__name__
+            except AttributeError as exc:
+                raise TypeError(f"{wrapped} must have a __name__ attribute") from exc
+            self.wrapped = wrapped
+
+        @property
+        def __doc__(self):
+            doc = getattr(self.wrapped, "__doc__", None)
+            return "<wrapped by the cachedproperty decorator>%s" % (
+                "\n%s" % doc if doc else ""
+            )
+
+        def __get__(self, inst, objtype=None):
+            if inst is None:
+                return self
+            val = self.wrapped(inst)
+            setattr(inst, self.wrapped.__name__, val)
+            return val
 
 
 def path_wrapper(func):
