@@ -81,7 +81,8 @@ if TYPE_CHECKING:
     from astroid.nodes import LocalsDictNodeNG
 
 if sys.version_info >= (3, 8) or TYPE_CHECKING:
-    from functools import cached_property  # pylint: disable=ungrouped-imports
+    # pylint: disable-next=ungrouped-imports
+    from functools import cached_property
 else:
     from astroid.decorators import cachedproperty as cached_property
 

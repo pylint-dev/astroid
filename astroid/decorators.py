@@ -52,6 +52,7 @@ def cached(func, instance, args, kwargs):
         return result
 
 
+# TODO: Remove when support for 3.7 is dropped
 class cachedproperty:
     """Provides a cached property equivalent to the stacking of
     @cached and @property, but more efficient.
@@ -72,9 +73,8 @@ class cachedproperty:
     def __init__(self, wrapped):
         if sys.version_info >= (3, 8):
             warnings.warn(
-                "The cachedproperty class is functionally the same as functools.cached_property "
-                "and will be removed after support for Python < 3.8 has been dropped. "
-                "Consider importing the functools variant on >= 3.8.",
+                "cachedproperty has been deprecated and will be removed in astroid 3.0 for Python 3.8+. "
+                "Use functools.cached_property instead.",
                 DeprecationWarning,
             )
         try:

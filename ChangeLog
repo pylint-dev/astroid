@@ -9,8 +9,8 @@ Release date: TBA
 * Add new (optional) ``doc_node`` attribute to ``nodes.Module``, ``nodes.ClassDef``,
   and ``nodes.FunctionDef``.
 
-* On Python 3.8+ we now use ``functools.cached_property`` instead of our own implementation.
-  At the same time, ``cachedproperty`` has been deprecated for Python 3.8+.
+* Replace custom ``cachedproperty`` with ``functools.cached_property`` and deprecate it
+  for Python 3.8+.
 
   Closes #1410
 

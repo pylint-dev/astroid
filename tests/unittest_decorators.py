@@ -1,8 +1,7 @@
-import sys
-
 import pytest
 from _pytest.recwarn import WarningsRecorder
 
+from astroid.const import PY38_PLUS
 from astroid.decorators import cachedproperty, deprecate_default_argument_values
 
 
@@ -101,7 +100,7 @@ class TestDeprecationDecorators:
         assert len(recwarn) == 0
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="Requires Python 3.8 or higher")
+@pytest.mark.skipif(not PY38_PLUS, reason="Requires Python 3.8 or higher")
 def test_deprecation_warning_on_cachedproperty() -> None:
     """Check the DeprecationWarning on cachedproperty."""
 
