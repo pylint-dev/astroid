@@ -195,7 +195,7 @@ class FromToLineNoTest(unittest.TestCase):
     def test_class_with_docstring() -> None:
         """Test class nodes which only have docstrings."""
         code = textwrap.dedent(
-            '''
+            '''\
         class A:
             """My docstring"""
             var = 1
@@ -217,7 +217,7 @@ class FromToLineNoTest(unittest.TestCase):
         '''
         )
 
-        ast_module: nodes.Module = builder.parse(code)  # type: ignore[assignment]
+        ast_module = builder.parse(code)
 
         a = ast_module.body[0]
         assert isinstance(a, nodes.ClassDef)
@@ -248,7 +248,7 @@ class FromToLineNoTest(unittest.TestCase):
     def test_function_with_docstring() -> None:
         """Test function defintions with only docstrings."""
         code = textwrap.dedent(
-            '''
+            '''\
         def a():
             """My docstring"""
             var = 1
@@ -272,7 +272,7 @@ class FromToLineNoTest(unittest.TestCase):
         '''
         )
 
-        ast_module: nodes.Module = builder.parse(code)  # type: ignore[assignment]
+        ast_module = builder.parse(code)
 
         a = ast_module.body[0]
         assert isinstance(a, nodes.FunctionDef)
