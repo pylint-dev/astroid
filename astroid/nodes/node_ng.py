@@ -757,6 +757,9 @@ class NodeNG:
                 result.append("\n")
                 result.append(cur_indent)
                 for field in fields[:-1]:
+                    # TODO: Remove this after removal of the 'doc' attribute
+                    if field == "doc":
+                        continue
                     result.append(f"{field}=")
                     _repr_tree(getattr(node, field), result, done, cur_indent, depth)
                     result.append(",\n")

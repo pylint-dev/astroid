@@ -1070,12 +1070,12 @@ def infer_functiondef(self, context=None):
     prop_func = objects.Property(
         function=self,
         name=self.name,
-        doc=self.doc,
+        doc=self.doc_node.value if self.doc_node else None,
         lineno=self.lineno,
         parent=self.parent,
         col_offset=self.col_offset,
     )
-    prop_func.postinit(body=[], args=self.args)
+    prop_func.postinit(body=[], args=self.args, doc_node=self.doc_node)
     yield prop_func
     return dict(node=self, context=context)
 

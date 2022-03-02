@@ -119,6 +119,13 @@ def build_module(name: str, doc: Optional[str] = None) -> nodes.Module:
 def build_class(name, basenames=(), doc=None):
     """create and initialize an astroid ClassDef node"""
     node = nodes.ClassDef(name, doc)
+    node.postinit(
+        [],
+        [],
+        None,
+        doc_node=nodes.Const(value=doc) if doc else None,
+    )
+    # TODO: Use the actual postinit method instead of appending manually
     for base in basenames:
         basenode = nodes.Name(name=base)
         node.bases.append(basenode)
