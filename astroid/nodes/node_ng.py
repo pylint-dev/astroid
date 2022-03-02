@@ -38,6 +38,11 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
+if sys.version_info >= (3, 8) or TYPE_CHECKING:
+    from functools import cached_property  # pylint: disable=ungrouped-imports
+else:
+    # pylint: disable-next=ungrouped-imports
+    from astroid.decorators import cachedproperty as cached_property
 
 # Types for 'NodeNG.nodes_of_class()'
 T_Nodes = TypeVar("T_Nodes", bound="NodeNG")
@@ -435,14 +440,14 @@ class NodeNG:
     # these are lazy because they're relatively expensive to compute for every
     # single node, and they rarely get looked at
 
-    @decorators.cachedproperty
+    @cached_property
     def fromlineno(self) -> Optional[int]:
         """The first line that this node appears on in the source code."""
         if self.lineno is None:
             return self._fixed_source_line()
         return self.lineno
 
-    @decorators.cachedproperty
+    @cached_property
     def tolineno(self) -> Optional[int]:
         """The last line that this node appears on in the source code."""
         if self.end_lineno is not None:

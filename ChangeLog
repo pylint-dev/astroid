@@ -10,6 +10,7 @@ Release date: TBA
   and ``nodes.FunctionDef``.
 
 * On Python 3.8+ we now use ``functools.cached_property`` instead of our own implementation.
+  At the same time, ``cachedproperty`` has been deprecated for Python 3.8+.
 
   Closes #1410
 

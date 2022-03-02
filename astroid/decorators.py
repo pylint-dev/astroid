@@ -22,7 +22,7 @@ import functools
 import inspect
 import sys
 import warnings
-from typing import TYPE_CHECKING, Callable, TypeVar
+from typing import Callable, TypeVar
 
 import wrapt
 
@@ -52,49 +52,50 @@ def cached(func, instance, args, kwargs):
         return result
 
 
-if sys.version_info >= (3, 8) or TYPE_CHECKING:
-    from functools import cached_property
+class cachedproperty:
+    """Provides a cached property equivalent to the stacking of
+    @cached and @property, but more efficient.
 
-    cachedproperty = cached_property
-else:
+    After first usage, the <property_name> becomes part of the object's
+    __dict__. Doing:
 
-    class cachedproperty:
-        """Provides a cached property equivalent to the stacking of
-        @cached and @property, but more efficient.
+    del obj.<property_name> empties the cache.
 
-        After first usage, the <property_name> becomes part of the object's
-        __dict__. Doing:
+    Idea taken from the pyramid_ framework and the mercurial_ project.
 
-        del obj.<property_name> empties the cache.
+    .. _pyramid: http://pypi.python.org/pypi/pyramid
+    .. _mercurial: http://pypi.python.org/pypi/Mercurial
+    """
 
-        Idea taken from the pyramid_ framework and the mercurial_ project.
+    __slots__ = ("wrapped",)
 
-        .. _pyramid: http://pypi.python.org/pypi/pyramid
-        .. _mercurial: http://pypi.python.org/pypi/Mercurial
-        """
-
-        __slots__ = ("wrapped",)
-
-        def __init__(self, wrapped):
-            try:
-                wrapped.__name__
-            except AttributeError as exc:
-                raise TypeError(f"{wrapped} must have a __name__ attribute") from exc
-            self.wrapped = wrapped
-
-        @property
-        def __doc__(self):
-            doc = getattr(self.wrapped, "__doc__", None)
-            return "<wrapped by the cachedproperty decorator>%s" % (
-                "\n%s" % doc if doc else ""
+    def __init__(self, wrapped):
+        if sys.version_info >= (3, 8):
+            warnings.warn(
+                "The cachedproperty class is functionally the same as functools.cached_property "
+                "and will be removed after support for Python < 3.8 has been dropped. "
+                "Consider importing the functools variant on >= 3.8.",
+                DeprecationWarning,
             )
+        try:
+            wrapped.__name__
+        except AttributeError as exc:
+            raise TypeError(f"{wrapped} must have a __name__ attribute") from exc
+        self.wrapped = wrapped
 
-        def __get__(self, inst, objtype=None):
-            if inst is None:
-                return self
-            val = self.wrapped(inst)
-            setattr(inst, self.wrapped.__name__, val)
-            return val
+    @property
+    def __doc__(self):
+        doc = getattr(self.wrapped, "__doc__", None)
+        return "<wrapped by the cachedproperty decorator>%s" % (
+            "\n%s" % doc if doc else ""
+        )
+
+    def __get__(self, inst, objtype=None):
+        if inst is None:
+            return self
+        val = self.wrapped(inst)
+        setattr(inst, self.wrapped.__name__, val)
+        return val
 
 
 def path_wrapper(func):

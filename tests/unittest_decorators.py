@@ -1,7 +1,9 @@
+import sys
+
 import pytest
 from _pytest.recwarn import WarningsRecorder
 
-from astroid.decorators import deprecate_default_argument_values
+from astroid.decorators import cachedproperty, deprecate_default_argument_values
 
 
 class SomeClass:
@@ -97,3 +99,18 @@ class TestDeprecationDecorators:
         instance = SomeClass(name="some_name")
         instance.func(name="", var=42)
         assert len(recwarn) == 0
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="Requires Python 3.8 or higher")
+def test_deprecation_warning_on_cachedproperty() -> None:
+    """Check the DeprecationWarning on cachedproperty."""
+
+    with pytest.warns(DeprecationWarning) as records:
+
+        class MyClass:  # pylint: disable=unused-variable
+            @cachedproperty
+            def my_property(self):
+                return 1
+
+        assert len(records) == 1
+        assert "functools.cached_property" in records[0].message.args[0]
