@@ -60,7 +60,7 @@ class cachedproperty:
     After first usage, the <property_name> becomes part of the object's
     __dict__. Doing:
 
-    del obj.<property_name> empties the cache.
+      del obj.<property_name> empties the cache.
 
     Idea taken from the pyramid_ framework and the mercurial_ project.
 
