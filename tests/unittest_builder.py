@@ -221,28 +221,28 @@ class FromToLineNoTest(unittest.TestCase):
 
         a = ast_module.body[0]
         assert isinstance(a, nodes.ClassDef)
-        assert a.fromlineno == 2
-        assert a.tolineno == 4
+        assert a.fromlineno == 1
+        assert a.tolineno == 3
 
         b = ast_module.body[1]
         assert isinstance(b, nodes.ClassDef)
-        assert b.fromlineno == 6
-        assert b.tolineno == 7
+        assert b.fromlineno == 5
+        assert b.tolineno == 6
 
         c = ast_module.body[2]
         assert isinstance(c, nodes.ClassDef)
-        assert c.fromlineno == 9
-        assert c.tolineno == 11
+        assert c.fromlineno == 8
+        assert c.tolineno == 10
 
         d = ast_module.body[3]
         assert isinstance(d, nodes.ClassDef)
-        assert d.fromlineno == 13
-        assert d.tolineno == 16
+        assert d.fromlineno == 12
+        assert d.tolineno == 15
 
         e = ast_module.body[4]
         assert isinstance(d, nodes.ClassDef)
-        assert e.fromlineno == 18
-        assert e.tolineno == 19
+        assert e.fromlineno == 17
+        assert e.tolineno == 18
 
     @staticmethod
     def test_function_with_docstring() -> None:
@@ -276,28 +276,28 @@ class FromToLineNoTest(unittest.TestCase):
 
         a = ast_module.body[0]
         assert isinstance(a, nodes.FunctionDef)
-        assert a.fromlineno == 2
-        assert a.tolineno == 4
+        assert a.fromlineno == 1
+        assert a.tolineno == 3
 
         b = ast_module.body[1]
         assert isinstance(b, nodes.FunctionDef)
-        assert b.fromlineno == 6
-        assert b.tolineno == 7
+        assert b.fromlineno == 5
+        assert b.tolineno == 6
 
         c = ast_module.body[2]
         assert isinstance(c, nodes.FunctionDef)
-        assert c.fromlineno == 9
-        assert c.tolineno == 11
+        assert c.fromlineno == 8
+        assert c.tolineno == 10
 
         d = ast_module.body[3]
         assert isinstance(d, nodes.FunctionDef)
-        assert d.fromlineno == 13
-        assert d.tolineno == 16
+        assert d.fromlineno == 12
+        assert d.tolineno == 15
 
         e = ast_module.body[4]
         assert isinstance(e, nodes.FunctionDef)
-        assert e.fromlineno == 18
-        assert e.tolineno == 21
+        assert e.fromlineno == 17
+        assert e.tolineno == 20
 
     def test_class_lineno(self) -> None:
         stmts = self.astroid.body
