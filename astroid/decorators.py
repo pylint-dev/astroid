@@ -53,6 +53,7 @@ def cached(func, instance, args, kwargs):
 
 
 # TODO: Remove when support for 3.7 is dropped
+# TODO: astroid 3.0 -> move class behind sys.version_info < (3, 8) guard
 class cachedproperty:
     """Provides a cached property equivalent to the stacking of
     @cached and @property, but more efficient.
