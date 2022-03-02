@@ -956,7 +956,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertEqual(
                 len(cls.getattr("__doc__")), 1, (cls, cls.getattr("__doc__"))
             )
-            self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc)
+            with pytest.warns(DeprecationWarning) as records:
+                self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc)
+                assert len(records) == 1
+            self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc_node.value)
             self.assertEqual(len(cls.getattr("__module__")), 4)
             self.assertEqual(len(cls.getattr("__dict__")), 1)
             self.assertEqual(len(cls.getattr("__mro__")), 1)

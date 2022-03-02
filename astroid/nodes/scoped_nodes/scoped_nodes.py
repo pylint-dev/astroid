@@ -457,8 +457,8 @@ class Module(LocalsDictNodeNG):
         self.name = name
         """The name of the module."""
 
-        self.doc = doc
-        """The module docstring."""
+        # TODO: Remove this attribute
+        self._doc = doc
 
         self.file = file
         """The path to the file that this ast has been extracted from.
@@ -512,6 +512,16 @@ class Module(LocalsDictNodeNG):
             stream = open(self.file, "rb")
             return stream
         return None
+
+    @property
+    def doc(self) -> Optional[str]:
+        """The module docstring."""
+        warnings.warn(
+            "Module.doc has been deprecated and will be removed in astroid 3.0. "
+            "You can use Module.doc_node.value for the same effect.",
+            DeprecationWarning,
+        )
+        return self._doc
 
     def stream(self):
         """Get a stream to the underlying file or bytes.
@@ -1549,11 +1559,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :type name: str or None
         """
 
-        self.doc = doc
-        """The function's docstring.
-
-        :type doc: str or None
-        """
+        self._doc = doc
 
         self.doc_node: Optional[Const] = None
         """The doc node associated with this node."""
@@ -1757,6 +1763,16 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :rtype: tuple(int, int)
         """
         return self.fromlineno, self.tolineno
+
+    @property
+    def doc(self) -> Optional[str]:
+        """The function's docstring."""
+        warnings.warn(
+            "FunctionDef.doc has been deprecated and will be removed in astroid 3.0. "
+            "You can use FunctionDef.doc_node.value for the same effect.",
+            DeprecationWarning,
+        )
+        return self._doc
 
     def getattr(self, name, context=None):
         """this method doesn't look in the instance_attrs dictionary since it's
@@ -2225,11 +2241,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type name: str or None
         """
 
-        self.doc = doc
-        """The class' docstring.
-
-        :type doc: str or None
-        """
+        self._doc = doc
 
         self.doc_node: Optional[Const] = None
         """The doc node associated with this node."""
@@ -2263,6 +2275,16 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # __qualname__ is defined in PEP3155
         locals_ += (("__qualname__", self.special_attributes.attr___qualname__),)
         return locals_
+
+    @property
+    def doc(self) -> Optional[str]:
+        """The class' docstring."""
+        warnings.warn(
+            "ClassDef.doc has been deprecated and will be removed in astroid 3.0. "
+            "You can use ClassDef.doc_node.value for the same effect.",
+            DeprecationWarning,
+        )
+        return self._doc
 
     # pylint: disable=redefined-outer-name
     def postinit(

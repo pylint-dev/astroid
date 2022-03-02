@@ -9,6 +9,13 @@ Release date: TBA
 * Add new (optional) ``doc_node`` attribute to ``nodes.Module``, ``nodes.ClassDef``,
   and ``nodes.FunctionDef``.
 
+  Closes #1340
+
+* The ``doc`` attribute of ``nodes.Module``, ``nodes.ClassDef``, and ``nodes.FunctionDef`` has been
+  deprecated in favour of the ``doc_node.value`` attribute.
+
+  Closes #1414
+
 
 What's New in astroid 2.10.1?
 =============================
