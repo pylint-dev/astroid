@@ -824,7 +824,7 @@ def _to_literal(node: nodes.NodeNG) -> Any:
 
 def _do_compare(
     left_iter: Iterable[nodes.NodeNG], op: str, right_iter: Iterable[nodes.NodeNG]
-) -> Union[bool, util.Uninferable]:
+) -> "bool | type[util.Uninferable]":
     """
     If all possible combinations are either True or False, return that:
     >>> _do_compare([1, 2], '<=', [3, 4])
@@ -839,17 +839,17 @@ def _do_compare(
     """
     retval = None
     if op in UNINFERABLE_OPS:
-        return util.Uninferable  # type: ignore[return-value]
+        return util.Uninferable
     op_func = COMPARE_OPS[op]
 
     for left, right in itertools.product(left_iter, right_iter):
         if left is util.Uninferable or right is util.Uninferable:
-            return util.Uninferable  # type: ignore[return-value]
+            return util.Uninferable
 
         try:
             left, right = _to_literal(left), _to_literal(right)
         except (SyntaxError, ValueError, AttributeError):
-            return util.Uninferable  # type: ignore[return-value]
+            return util.Uninferable
 
         try:
             expr = op_func(left, right)
@@ -859,7 +859,7 @@ def _do_compare(
         if retval is None:
             retval = expr
         elif retval != expr:
-            return util.Uninferable  # type: ignore[return-value]
+            return util.Uninferable
             # (or both, but "True | False" is basically the same)
 
     assert retval is not None
