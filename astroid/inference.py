@@ -894,7 +894,7 @@ def _infer_compare(
             break  # short-circuit
         lhs = rhs  # continue
     if retval is util.Uninferable:
-        yield retval
+        yield retval  # type: ignore[misc]
     else:
         yield nodes.Const(retval)
 
