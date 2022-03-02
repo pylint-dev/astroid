@@ -34,7 +34,7 @@ import ast
 import functools
 import itertools
 import operator
-from typing import Any, Callable, Dict, Iterable, Iterator, Optional, Union
+from typing import Any, Callable, Dict, Iterable, Iterator, Optional, Type, Union
 
 import wrapt
 
@@ -868,9 +868,9 @@ def _do_compare(
 
 def _infer_compare(
     self: nodes.Compare, context: Optional[InferenceContext] = None
-) -> Iterator[Union[nodes.Const, util.Uninferable]]:
+) -> Iterator[Union[nodes.Const, Type[util.Uninferable]]]:
     """Chained comparison inference logic."""
-    retval: Union[bool, util.Uninferable] = True
+    retval: Union[bool, Type[util.Uninferable]] = True
 
     ops = self.ops
     left_node = self.left
@@ -882,13 +882,13 @@ def _infer_compare(
         try:
             retval = _do_compare(lhs, op, rhs)
         except AstroidTypeError:
-            retval = util.Uninferable  # type: ignore[assignment]
+            retval = util.Uninferable
             break
         if retval is not True:
             break  # short-circuit
         lhs = rhs  # continue
     if retval is util.Uninferable:
-        yield retval  # type: ignore[misc]
+        yield retval
     else:
         yield nodes.Const(retval)
 
