@@ -843,7 +843,7 @@ def _do_compare(
     >>> _do_compare([1, 3], '<=', [2, 4])
     util.Uninferable
     """
-    retval: Union[Literal[None], bool, Type[util.util.Uninferable]] = None
+    retval: Union[Literal[None], bool, Type[util.Uninferable]] = None
     if op in UNINFERABLE_OPS:
         return util.Uninferable
     op_func = COMPARE_OPS[op]
