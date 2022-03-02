@@ -34,6 +34,7 @@ import ast
 import functools
 import itertools
 import operator
+import sys
 from typing import Any, Callable, Dict, Iterable, Iterator, Optional, Type, Union
 
 import wrapt
@@ -57,6 +58,11 @@ from astroid.exceptions import (
 )
 from astroid.interpreter import dunder_lookup
 from astroid.manager import AstroidManager
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 # Prevents circular imports
 objects = util.lazy_import("objects")
@@ -837,7 +843,7 @@ def _do_compare(
     >>> _do_compare([1, 3], '<=', [2, 4])
     util.Uninferable
     """
-    retval = None
+    retval: Union[Literal[None], bool, Type[util.util.Uninferable]] = None
     if op in UNINFERABLE_OPS:
         return util.Uninferable
     op_func = COMPARE_OPS[op]
