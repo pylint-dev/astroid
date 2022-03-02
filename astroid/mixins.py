@@ -18,6 +18,7 @@
 """This module contains some mixins for the different nodes.
 """
 import itertools
+import sys
 from typing import TYPE_CHECKING, Optional
 
 from astroid import decorators
@@ -26,11 +27,16 @@ from astroid.exceptions import AttributeInferenceError
 if TYPE_CHECKING:
     from astroid import nodes
 
+if sys.version_info >= (3, 8) or TYPE_CHECKING:
+    from functools import cached_property
+else:
+    from astroid.decorators import cachedproperty as cached_property
+
 
 class BlockRangeMixIn:
     """override block range"""
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         return self.lineno
 
@@ -135,7 +141,7 @@ class MultiLineBlockMixin:
     Assign nodes, etc.
     """
 
-    @decorators.cachedproperty
+    @cached_property
     def _multi_line_blocks(self):
         return tuple(getattr(self, field) for field in self._multi_line_block_fields)
 

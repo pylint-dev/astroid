@@ -52,6 +52,8 @@ def cached(func, instance, args, kwargs):
         return result
 
 
+# TODO: Remove when support for 3.7 is dropped
+# TODO: astroid 3.0 -> move class behind sys.version_info < (3, 8) guard
 class cachedproperty:
     """Provides a cached property equivalent to the stacking of
     @cached and @property, but more efficient.
@@ -70,6 +72,12 @@ class cachedproperty:
     __slots__ = ("wrapped",)
 
     def __init__(self, wrapped):
+        if sys.version_info >= (3, 8):
+            warnings.warn(
+                "cachedproperty has been deprecated and will be removed in astroid 3.0 for Python 3.8+. "
+                "Use functools.cached_property instead.",
+                DeprecationWarning,
+            )
         try:
             wrapped.__name__
         except AttributeError as exc:
