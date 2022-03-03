@@ -17,6 +17,7 @@ import platform
 import unittest
 
 import _io
+import pytest
 
 from astroid.builder import AstroidBuilder
 from astroid.raw_building import (
@@ -44,12 +45,18 @@ class RawBuildingTC(unittest.TestCase):
     def test_build_class(self) -> None:
         node = build_class("MyClass")
         self.assertEqual(node.name, "MyClass")
-        self.assertEqual(node.doc, None)
+        with pytest.warns(DeprecationWarning) as records:
+            self.assertEqual(node.doc, None)
+            assert len(records) == 1
+        self.assertEqual(node.doc_node, None)
 
     def test_build_function(self) -> None:
         node = build_function("MyFunction")
         self.assertEqual(node.name, "MyFunction")
-        self.assertEqual(node.doc, None)
+        with pytest.warns(DeprecationWarning) as records:
+            self.assertEqual(node.doc, None)
+            assert len(records) == 1
+        self.assertEqual(node.doc_node, None)
 
     def test_build_function_args(self) -> None:
         args = ["myArgs1", "myArgs2"]

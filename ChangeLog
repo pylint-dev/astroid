@@ -9,6 +9,9 @@ Release date: TBA
 * Add new (optional) ``doc_node`` attribute to ``nodes.Module``, ``nodes.ClassDef``,
   and ``nodes.FunctionDef``.
 
+* Accessing the ``doc`` attribute of ``nodes.Module``, ``nodes.ClassDef``, and
+  ``nodes.FunctionDef`` has been deprecated in favour of the ``doc_node.value`` attribute.
+
 * Replace custom ``cachedproperty`` with ``functools.cached_property`` and deprecate it
   for Python 3.8+.
 
