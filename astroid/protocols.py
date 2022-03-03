@@ -35,7 +35,6 @@ where it makes sense.
 import collections
 import itertools
 import operator as operator_mod
-import sys
 from typing import Any, Generator, List, Optional, Union
 
 from astroid import arguments, bases, decorators, helpers, nodes, util
@@ -49,11 +48,6 @@ from astroid.exceptions import (
     NoDefault,
 )
 from astroid.nodes import node_classes
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
 
 raw_building = util.lazy_import("raw_building")
 objects = util.lazy_import("objects")
@@ -873,7 +867,7 @@ def match_mapping_assigned_stmts(
     self: nodes.MatchMapping,
     node: nodes.AssignName,
     context: Optional[InferenceContext] = None,
-    assign_path: Literal[None] = None,
+    assign_path: None = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Return empty generator (return -> raises StopIteration) so inferred value
     is Uninferable.
@@ -890,7 +884,7 @@ def match_star_assigned_stmts(
     self: nodes.MatchStar,
     node: nodes.AssignName,
     context: Optional[InferenceContext] = None,
-    assign_path: Literal[None] = None,
+    assign_path: None = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Return empty generator (return -> raises StopIteration) so inferred value
     is Uninferable.
@@ -907,7 +901,7 @@ def match_as_assigned_stmts(
     self: nodes.MatchAs,
     node: nodes.AssignName,
     context: Optional[InferenceContext] = None,
-    assign_path: Literal[None] = None,
+    assign_path: None = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Infer MatchAs as the Match subject if it's the only MatchCase pattern
     else raise StopIteration to yield Uninferable.
