@@ -442,7 +442,7 @@ class Module(LocalsDictNodeNG):
         file: Optional[str] = None,
         path: Optional[List[str]] = None,
         package: Optional[bool] = None,
-        parent: Literal[None] = None,
+        parent: None = None,
         pure_python: Optional[bool] = True,
     ) -> None:
         """
@@ -633,7 +633,7 @@ class Module(LocalsDictNodeNG):
         return self.file is not None and self.file.endswith(".py")
 
     @overload
-    def statement(self, *, future: Literal[None] = ...) -> "Module":
+    def statement(self, *, future: None = ...) -> "Module":
         ...
 
     @overload

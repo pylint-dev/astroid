@@ -2317,7 +2317,7 @@ class TreeRebuilder:
                 )
             else:
                 newnode = nodes.TryFinally(node.lineno, node.col_offset, parent)
-            body: Union[List[nodes.TryExcept], List[NodeNG]]
+            body: List[Union[NodeNG, nodes.TryExcept]]
             if node.handlers:
                 body = [self.visit_tryexcept(node, newnode)]
             else:
