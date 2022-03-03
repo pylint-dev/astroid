@@ -34,7 +34,7 @@ import ast
 import functools
 import itertools
 import operator
-from typing import Any, Callable, Dict, Iterable, Iterator, Optional, Union
+from typing import Any, Callable, Dict, Iterable, Iterator, Optional, Type, Union
 
 import wrapt
 
@@ -837,7 +837,7 @@ def _do_compare(
     >>> _do_compare([1, 3], '<=', [2, 4])
     util.Uninferable
     """
-    retval = None
+    retval: Union[None, bool] = None
     if op in UNINFERABLE_OPS:
         return util.Uninferable  # type: ignore[return-value]
     op_func = COMPARE_OPS[op]
@@ -868,9 +868,9 @@ def _do_compare(
 
 def _infer_compare(
     self: nodes.Compare, context: Optional[InferenceContext] = None
-) -> Iterator[Union[nodes.Const, util.Uninferable]]:
+) -> Iterator[Union[nodes.Const, Type[util.Uninferable]]]:
     """Chained comparison inference logic."""
-    retval: Union[bool, util.Uninferable] = True
+    retval: Union[bool, Type[util.Uninferable]] = True
 
     ops = self.ops
     left_node = self.left

@@ -80,6 +80,12 @@ if TYPE_CHECKING:
     from astroid import nodes
     from astroid.nodes import LocalsDictNodeNG
 
+if sys.version_info >= (3, 8) or TYPE_CHECKING:
+    # pylint: disable-next=ungrouped-imports
+    from functools import cached_property
+else:
+    from astroid.decorators import cachedproperty as cached_property
+
 
 def _is_const(value):
     return isinstance(value, tuple(CONST_CLS))
@@ -824,7 +830,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
             return name
         return None
 
-    @decorators.cachedproperty
+    @cached_property
     def fromlineno(self):
         """The first line that this node appears on in the source code.
 
@@ -833,7 +839,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         lineno = super().fromlineno
         return max(lineno, self.parent.fromlineno or 0)
 
-    @decorators.cachedproperty
+    @cached_property
     def arguments(self):
         """Get all the arguments for this node, including positional only and positional and keyword"""
         return list(itertools.chain((self.posonlyargs or ()), self.args or ()))
@@ -2601,7 +2607,7 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
         if body is not None:
             self.body = body
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -2734,7 +2740,7 @@ class For(
     See astroid/protocols.py for actual implementation.
     """
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -3093,7 +3099,7 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         if isinstance(self.parent, If) and self in self.parent.orelse:
             self.is_orelse = True
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -3762,7 +3768,7 @@ class Slice(NodeNG):
             return const
         return attr
 
-    @decorators.cachedproperty
+    @cached_property
     def _proxied(self):
         builtins = AstroidManager().builtins_module
         return builtins.getattr("slice")[0]
@@ -4384,7 +4390,7 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         if orelse is not None:
             self.orelse = orelse
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -4500,7 +4506,7 @@ class With(
     See astroid/protocols.py for actual implementation.
     """
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 

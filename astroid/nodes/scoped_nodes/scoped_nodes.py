@@ -52,7 +52,7 @@ import os
 import sys
 import typing
 import warnings
-from typing import Dict, List, Optional, Set, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, TypeVar, Union, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
@@ -92,6 +92,12 @@ if sys.version_info >= (3, 8):
     from typing import Literal
 else:
     from typing_extensions import Literal
+
+if sys.version_info >= (3, 8) or TYPE_CHECKING:
+    from functools import cached_property
+else:
+    # pylint: disable-next=ungrouped-imports
+    from astroid.decorators import cachedproperty as cached_property
 
 
 ITER_METHODS = ("__iter__", "__getitem__")
@@ -1609,7 +1615,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         self.position = position
         self.doc_node = doc_node
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def extra_decorators(self) -> List[node_classes.Call]:
         """The extra decorators that this function can have.
 
@@ -1650,7 +1656,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                             decorators.append(assign.value)
         return decorators
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def type(
         self,
     ):  # pylint: disable=invalid-overridden-method,too-many-return-statements
@@ -1724,7 +1730,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 pass
         return type_name
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def fromlineno(self) -> Optional[int]:
         """The first line that this node appears on in the source code."""
         # lineno is the line number of the first decorator, we want the def
@@ -1737,7 +1743,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         return lineno
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -2335,7 +2341,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         doc=("Whether this is a new style class or not\n\n" ":type: bool or None"),
     )
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def fromlineno(self) -> Optional[int]:
         """The first line that this node appears on in the source code."""
         if not PY38_PLUS:
@@ -2350,7 +2356,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             return lineno
         return super().fromlineno
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 

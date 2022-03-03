@@ -9,6 +9,11 @@ Release date: TBA
 * Add new (optional) ``doc_node`` attribute to ``nodes.Module``, ``nodes.ClassDef``,
   and ``nodes.FunctionDef``.
 
+* Replace custom ``cachedproperty`` with ``functools.cached_property`` and deprecate it
+  for Python 3.8+.
+
+  Closes #1410
+
 
 What's New in astroid 2.10.1?
 =============================
@@ -136,7 +141,8 @@ Release date: 2021-12-31
 
 * Fix typing and update explanation for ``Arguments.args`` being ``None``.
 
-* Fix crash if a variable named ``type`` is subscribed in a generator expression.
+* Fix crash if a variable named ``type`` is accessed with an index operator (``[]``)
+  in a generator expression.
 
   Closes PyCQA/pylint#5461
 

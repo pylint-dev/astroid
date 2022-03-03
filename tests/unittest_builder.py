@@ -191,6 +191,114 @@ class FromToLineNoTest(unittest.TestCase):
             assert c.fromlineno == 13
         assert c.tolineno == 14
 
+    @staticmethod
+    def test_class_with_docstring() -> None:
+        """Test class nodes which only have docstrings."""
+        code = textwrap.dedent(
+            '''\
+        class A:
+            """My docstring"""
+            var = 1
+
+        class B:
+            """My docstring"""
+
+        class C:
+            """My docstring
+            is long."""
+
+        class D:
+            """My docstring
+            is long.
+            """
+
+        class E:
+            ...
+        '''
+        )
+
+        ast_module = builder.parse(code)
+
+        a = ast_module.body[0]
+        assert isinstance(a, nodes.ClassDef)
+        assert a.fromlineno == 1
+        assert a.tolineno == 3
+
+        b = ast_module.body[1]
+        assert isinstance(b, nodes.ClassDef)
+        assert b.fromlineno == 5
+        assert b.tolineno == 6
+
+        c = ast_module.body[2]
+        assert isinstance(c, nodes.ClassDef)
+        assert c.fromlineno == 8
+        assert c.tolineno == 10
+
+        d = ast_module.body[3]
+        assert isinstance(d, nodes.ClassDef)
+        assert d.fromlineno == 12
+        assert d.tolineno == 15
+
+        e = ast_module.body[4]
+        assert isinstance(d, nodes.ClassDef)
+        assert e.fromlineno == 17
+        assert e.tolineno == 18
+
+    @staticmethod
+    def test_function_with_docstring() -> None:
+        """Test function defintions with only docstrings."""
+        code = textwrap.dedent(
+            '''\
+        def a():
+            """My docstring"""
+            var = 1
+
+        def b():
+            """My docstring"""
+
+        def c():
+            """My docstring
+            is long."""
+
+        def d():
+            """My docstring
+            is long.
+            """
+
+        def e(a, b):
+            """My docstring
+            is long.
+            """
+        '''
+        )
+
+        ast_module = builder.parse(code)
+
+        a = ast_module.body[0]
+        assert isinstance(a, nodes.FunctionDef)
+        assert a.fromlineno == 1
+        assert a.tolineno == 3
+
+        b = ast_module.body[1]
+        assert isinstance(b, nodes.FunctionDef)
+        assert b.fromlineno == 5
+        assert b.tolineno == 6
+
+        c = ast_module.body[2]
+        assert isinstance(c, nodes.FunctionDef)
+        assert c.fromlineno == 8
+        assert c.tolineno == 10
+
+        d = ast_module.body[3]
+        assert isinstance(d, nodes.FunctionDef)
+        assert d.fromlineno == 12
+        assert d.tolineno == 15
+
+        e = ast_module.body[4]
+        assert isinstance(e, nodes.FunctionDef)
+        assert e.fromlineno == 17
+        assert e.tolineno == 20
+
     def test_class_lineno(self) -> None:
         stmts = self.astroid.body
         # on line 20:
