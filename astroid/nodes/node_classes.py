@@ -4899,12 +4899,12 @@ class EvaluatedObject(NodeNG):
     _other_fields = ("value",)
 
     def __init__(
-        self, original: NodeNG, value: Union[NodeNG, type[util.Uninferable]]
+        self, original: NodeNG, value: Union[NodeNG, typing.Type[util.Uninferable]]
     ) -> None:
         self.original: NodeNG = original
         """The original node that has already been evaluated"""
 
-        self.value: Union[NodeNG, type[util.Uninferable]] = value
+        self.value: Union[NodeNG, typing.Type[util.Uninferable]] = value
         """The inferred value"""
 
         super().__init__(
