@@ -1,50 +1,6 @@
-# Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2015 raylu <lurayl@gmail.com>
-# Copyright (c) 2015 Philip Lorenz <philip@bithub.de>
-# Copyright (c) 2016 Florian Bruhin <me@the-compiler.org>
-# Copyright (c) 2017-2018, 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2017-2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2017 David Euresti <github@euresti.com>
-# Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2018, 2021 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2018 Tomas Gavenciak <gavento@ucw.cz>
-# Copyright (c) 2018 David Poirier <david-poirier-csn@users.noreply.github.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
-# Copyright (c) 2018 Ioana Tagirta <ioana.tagirta@gmail.com>
-# Copyright (c) 2018 Ahmed Azzaoui <ahmed.azzaoui@engie.com>
-# Copyright (c) 2019-2020 Bryce Guinta <bryce.guinta@protonmail.com>
-# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2019 Tomas Novak <ext.Tomas.Novak@skoda-auto.cz>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2019 Grygorii Iermolenko <gyermolenko@gmail.com>
-# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Joshua Cannon <joshua.cannon@ni.com>
-# Copyright (c) 2021 Craig Franklin <craigjfranklin@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Jonathan Striebel <jstriebel@users.noreply.github.com>
-# Copyright (c) 2021 Dimitri Prybysh <dmand@yandex.ru>
-# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
-# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
-# Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
-# Copyright (c) 2021 Tim Martin <tim@asymptotic.co.uk>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-# Copyright (c) 2021 Artsiom Kaval <lezeroq@gmail.com>
-# Copyright (c) 2021 Damien Baty <damien@damienbaty.com>
-# Copyright (c) 2022 Jacob Walls <jacobtylerwalls@gmail.com>
-# Copyright (c) 2022 Jacob Bogdanov <jacob@bogdanov.dev>
-# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/graphs/contributors
 
 """Tests for basic functionality in astroid.brain."""
 import io

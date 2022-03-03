@@ -1,9 +1,3 @@
-# Copyright (c) 2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2018 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
-
 """Astroid hooks for understanding functools library module."""
 from functools import partial
 from itertools import chain
