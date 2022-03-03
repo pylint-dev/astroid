@@ -10,11 +10,17 @@ So, you want to release the `X.Y.Z` version of astroid ?
 2. Check the result (Do `git diff vX.Y.Z-1 ChangeLog` in particular).
 3. Install the release dependencies `pip3 install -r requirements_test.txt`
 4. Bump the version and release by using `tbump X.Y.Z --no-push`.
-5. Push the tag.
+5. Push the tag, push a `X.Y` branch.
 6. Release the version on GitHub with the same name as the tag and copy and paste the
    appropriate changelog in the description. This trigger the pypi release.
 
 ## Post release
+
+### Backport fixes from main
+
+When a crash or a bug is fixed on the main branch, and it needs backport, make sure that
+the changelog is for the patch version `X.Y-1.Z'` then after the PR is merged
+cherry-pick the commit on the `X.Y-1` branch and do a release for `X.Y-1.Z`.
 
 ### Back to a dev version
 
