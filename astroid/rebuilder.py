@@ -1750,6 +1750,7 @@ class TreeRebuilder:
                 newnode = nodes.DelAttr(node.attr, node.lineno, node.col_offset, parent)
         elif context == Context.Store:
             if sys.version_info >= (3, 8):
+                # pylint: disable=redefined-variable-type
                 newnode = nodes.AssignAttr(
                     attrname=node.attr,
                     lineno=node.lineno,
@@ -2018,6 +2019,7 @@ class TreeRebuilder:
                 newnode = nodes.DelName(node.id, node.lineno, node.col_offset, parent)
         elif context == Context.Store:
             if sys.version_info >= (3, 8):
+                # pylint: disable=redefined-variable-type
                 newnode = nodes.AssignName(
                     name=node.id,
                     lineno=node.lineno,
