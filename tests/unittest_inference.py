@@ -6146,6 +6146,26 @@ def test_property_callable_inference() -> None:
     assert inferred.value == 42
 
 
+def test_property_docstring() -> None:
+    code = """
+    class A:
+        @property
+        def test(self):
+            '''Docstring'''
+            return 42
+
+    A.test #@
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, objects.Property)
+    assert inferred.doc_node
+    assert inferred.doc_node.value == "Docstring"
+    with pytest.warns(DeprecationWarning) as records:
+        assert inferred.doc == "Docstring"
+        assert len(records) == 1
+
+
 def test_recursion_error_inferring_builtin_containers() -> None:
     node = extract_node(
         """
