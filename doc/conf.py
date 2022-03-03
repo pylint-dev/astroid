@@ -1,3 +1,6 @@
+# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/graphs/contributors
 #
 # Astroid documentation build configuration file, created by
 # sphinx-quickstart on Wed Jun 26 15:00:40 2013.

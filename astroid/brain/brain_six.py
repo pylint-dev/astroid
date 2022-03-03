@@ -2,7 +2,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/graphs/contributors
 
-
 """Astroid hooks for six module."""
 
 from textwrap import dedent

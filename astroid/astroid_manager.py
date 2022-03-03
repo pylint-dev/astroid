@@ -10,7 +10,6 @@ AstroidManager() directly.
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/graphs/contributors
 
-
 from astroid.manager import AstroidManager
 
 MANAGER = AstroidManager()

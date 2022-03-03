@@ -2,7 +2,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/graphs/contributors
 
-
 """Astroid hooks for numpy ndarray class."""
 from astroid.brain.brain_numpy_utils import numpy_supports_type_hints
 from astroid.builder import extract_node

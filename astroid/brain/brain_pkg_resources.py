@@ -2,7 +2,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/graphs/contributors
 
-
 from astroid import parse
 from astroid.brain.helpers import register_module_extender
 from astroid.manager import AstroidManager

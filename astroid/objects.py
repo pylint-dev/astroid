@@ -2,7 +2,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/graphs/contributors
 
-
 """
 Inference objects are a way to represent composite AST nodes,
 which are used only as inference results, so they can't be found in the
