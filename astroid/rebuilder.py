@@ -425,9 +425,11 @@ class TreeRebuilder:
     def visit(self, node: "ast.FormattedValue", parent: NodeNG) -> nodes.FormattedValue:
         ...
 
-    @overload
-    def visit(self, node: "ast.NamedExpr", parent: NodeNG) -> nodes.NamedExpr:
-        ...
+    if sys.version_info >= (3, 8):
+
+        @overload
+        def visit(self, node: "ast.NamedExpr", parent: NodeNG) -> nodes.NamedExpr:
+            ...
 
     if sys.version_info < (3, 9):
         # Not used in Python 3.9+
@@ -1462,19 +1464,23 @@ class TreeRebuilder:
         )
         return newnode
 
-    def visit_namedexpr(self, node: "ast.NamedExpr", parent: NodeNG) -> nodes.NamedExpr:
-        newnode = nodes.NamedExpr(
-            lineno=node.lineno,
-            col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
-            parent=parent,
-        )
-        newnode.postinit(
-            self.visit(node.target, newnode), self.visit(node.value, newnode)
-        )
-        return newnode
+    if sys.version_info >= (3, 8):
+
+        def visit_namedexpr(
+            self, node: "ast.NamedExpr", parent: NodeNG
+        ) -> nodes.NamedExpr:
+            newnode = nodes.NamedExpr(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                # end_lineno and end_col_offset added in 3.8
+                end_lineno=getattr(node, "end_lineno", None),
+                end_col_offset=getattr(node, "end_col_offset", None),
+                parent=parent,
+            )
+            newnode.postinit(
+                self.visit(node.target, newnode), self.visit(node.value, newnode)
+            )
+            return newnode
 
     if sys.version_info < (3, 9):
         # Not used in Python 3.9+.
