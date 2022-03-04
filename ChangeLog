@@ -13,6 +13,10 @@ Release date: TBA
   for Python 3.8+.
 
   Closes #1410
+  
+* Add ``pathlib`` brain to handle ``pathlib.PurePath.parents`` inference in Python 3.10+.
+
+  Closes PyCQA/pylint#5783
 
 
 What's New in astroid 2.10.1?
