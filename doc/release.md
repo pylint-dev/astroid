@@ -37,17 +37,3 @@ Check the result and then upgrade the main branch
 
 We move issue that were not done in the next milestone and block release only if it's an
 issue labelled as blocker.
-
-## Post release
-
-### Merge tags in main for pre-commit
-
-If the tag you just made is not part of the main branch, merge the tag `vX.Y.Z` in the
-main branch by doing a history only merge. It's done in order to signal that this is an
-official release tag, and for `pre-commit autoupdate` to works.
-
-```bash
-git checkout main
-git merge --no-edit --strategy=ours vX.Y.Z
-git push
-```
