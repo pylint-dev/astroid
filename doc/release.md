@@ -17,9 +17,6 @@ So, you want to release the `X.Y.Z` version of astroid ?
    appropriate changelog in the description. This trigger the pypi release.
 8. (If you just released a minor (`X.Y.0`), also release what was not yet released on
    the `X.Y-1` branch then delete it.)
-9. (If you just released a patch from a maintenance branch, cherry-pick the version
-   bumping commit on the main branch so the main branch has the changelog for
-   `X.Y.Z+1`.)
 
 ## Post release
 
@@ -31,6 +28,8 @@ When a crash or a bug is fixed on the main branch, and it needs backport:
 - (Create a `X.Y-1` branch from the `X.Y-1.0` tag if it does not already exist.)
 - After the PR is merged cherry-pick the commit on the `X.Y-1` branch
 - Do a release for `X.Y-1.Z`.
+- Cherry-pick the version bumping commit on the main branch so the main branch has the
+  changelog for `X.Y-1.Z+1`.
 
 ### Back to a dev version
 
