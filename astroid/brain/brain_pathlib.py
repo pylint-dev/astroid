@@ -3,9 +3,9 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
-from typing import Iterator
+from typing import Iterator, Optional
 
-from astroid import bases, inference_tip
+from astroid import bases, context, inference_tip
 from astroid.const import PY310_PLUS
 from astroid.exceptions import UseInferenceDefault
 from astroid.manager import AstroidManager
@@ -22,12 +22,12 @@ def _looks_like_parents_subscript(node: NodeNG) -> bool:
 
 
 def infer_parents_subscript(
-    subscript_node: Subscript, context: Optional[context.InferenceContext] = None
+    subscript_node: Subscript, ctx: Optional[context.InferenceContext] = None
 ) -> Iterator[bases.Instance]:
     if isinstance(subscript_node.slice, Slice):
         raise UseInferenceDefault
 
-    yield from subscript_node.value.expr.infer(context=context)
+    yield from subscript_node.value.expr.infer(context=ctx)
 
 
 if PY310_PLUS:
