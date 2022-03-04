@@ -1,5 +1,13 @@
+import pytest
+
 import astroid
 from astroid import bases
+from astroid.const import PY310_PLUS
+
+if not PY310_PLUS:
+    pytest.skip(
+        "The parents sequence supports slices since 3.10", allow_module_level=True
+    )
 
 
 def test_inference_parents_subscript_index():
