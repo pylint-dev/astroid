@@ -1,8 +1,5 @@
-import pytest
-
 import astroid
 from astroid import bases
-from astroid.const import PY310_PLUS
 
 
 def test_inference_parents_subscript_index():
