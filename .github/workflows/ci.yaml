@@ -334,7 +334,6 @@ jobs:
     name: Prepare tests for Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: pytest-linux
     strategy:
       matrix:
         python-version: ["pypy-3.6"]
