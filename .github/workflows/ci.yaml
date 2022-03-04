@@ -250,6 +250,7 @@ jobs:
     name: Prepare tests for Python ${{ matrix.python-version }} (Windows)
     runs-on: windows-latest
     timeout-minutes: 5
+    needs: pytest-linux
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9, "3.10"]
@@ -333,6 +334,7 @@ jobs:
     name: Prepare tests for Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    needs: pytest-linux
     strategy:
       matrix:
         python-version: ["pypy-3.6"]
