@@ -249,7 +249,7 @@ jobs:
   prepare-tests-windows:
     name: Prepare tests for Python ${{ matrix.python-version }} (Windows)
     runs-on: windows-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     needs: pytest-linux
     strategy:
       matrix:
