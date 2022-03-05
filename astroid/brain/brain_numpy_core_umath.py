@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/graphs/contributors
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 # Note: starting with version 1.18 numpy module has `__getattr__` method which prevent
 # `pylint` to emit `no-member` message for all numpy's attributes. (see pylint's module
