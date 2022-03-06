@@ -438,7 +438,7 @@ class Module(LocalsDictNodeNG):
     def __init__(
         self,
         name: str,
-        doc: Optional[str],
+        doc: Optional[str] = None,
         file: Optional[str] = None,
         path: Optional[List[str]] = None,
         package: Optional[bool] = None,
@@ -463,7 +463,7 @@ class Module(LocalsDictNodeNG):
         self.name = name
         """The name of the module."""
 
-        self.doc = doc
+        self._doc = doc
         """The module docstring."""
 
         self.file = file
@@ -509,6 +509,27 @@ class Module(LocalsDictNodeNG):
         """
         self.body = body
         self.doc_node = doc_node
+        if doc_node:
+            self._doc = doc_node.value
+
+    @property
+    def doc(self) -> Optional[str]:
+        """The module docstring."""
+        warnings.warn(
+            "The 'Module.doc' attribute is deprecated, "
+            "use 'Module.doc_node' instead.",
+            DeprecationWarning,
+        )
+        return self._doc
+
+    @doc.setter
+    def doc(self, value: Optional[str]) -> None:
+        warnings.warn(
+            "Setting the 'Module.doc' attribute is deprecated, "
+            "use 'Module.doc_node' instead.",
+            DeprecationWarning,
+        )
+        self._doc = value
 
     def _get_stream(self):
         if self.file_bytes is not None:
@@ -1515,7 +1536,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     def __init__(
         self,
         name=None,
-        doc=None,
+        doc: Optional[str] = None,
         lineno=None,
         col_offset=None,
         parent=None,
@@ -1527,8 +1548,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :param name: The name of the function.
         :type name: str or None
 
-        :param doc: The function's docstring.
-        :type doc: str or None
+        :param doc: The function docstring.
 
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -1553,11 +1573,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :type name: str or None
         """
 
-        self.doc = doc
-        """The function's docstring.
-
-        :type doc: str or None
-        """
+        self._doc = doc
+        """The function docstring."""
 
         self.doc_node: Optional[Const] = None
         """The doc node associated with this node."""
@@ -1614,6 +1631,27 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         self.type_comment_args = type_comment_args
         self.position = position
         self.doc_node = doc_node
+        if doc_node:
+            self._doc = doc_node.value
+
+    @property
+    def doc(self) -> Optional[str]:
+        """The function docstring."""
+        warnings.warn(
+            "The 'FunctionDef.doc' attribute is deprecated, "
+            "use 'FunctionDef.doc_node' instead.",
+            DeprecationWarning,
+        )
+        return self._doc
+
+    @doc.setter
+    def doc(self, value: Optional[str]) -> None:
+        warnings.warn(
+            "Setting the 'FunctionDef.doc' attribute is deprecated, "
+            "use 'FunctionDef.doc_node' instead.",
+            DeprecationWarning,
+        )
+        self._doc = value
 
     @cached_property
     def extra_decorators(self) -> List[node_classes.Call]:
@@ -2164,7 +2202,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     def __init__(
         self,
         name=None,
-        doc=None,
+        doc: Optional[str] = None,
         lineno=None,
         col_offset=None,
         parent=None,
@@ -2176,8 +2214,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :param name: The name of the class.
         :type name: str or None
 
-        :param doc: The function's docstring.
-        :type doc: str or None
+        :param doc: The class docstring.
 
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -2229,11 +2266,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type name: str or None
         """
 
-        self.doc = doc
-        """The class' docstring.
-
-        :type doc: str or None
-        """
+        self._doc = doc
+        """The class docstring."""
 
         self.doc_node: Optional[Const] = None
         """The doc node associated with this node."""
@@ -2253,6 +2287,25 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)
+
+    @property
+    def doc(self) -> Optional[str]:
+        """The class docstring."""
+        warnings.warn(
+            "The 'ClassDef.doc' attribute is deprecated, "
+            "use 'ClassDef.doc_node' instead.",
+            DeprecationWarning,
+        )
+        return self._doc
+
+    @doc.setter
+    def doc(self, value: Optional[str]) -> None:
+        warnings.warn(
+            "Setting the 'ClassDef.doc' attribute is deprecated, "
+            "use 'ClassDef.doc_node.value' instead.",
+            DeprecationWarning,
+        )
+        self._doc = value
 
     def implicit_parameters(self):
         return 1
@@ -2316,6 +2369,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             self._metaclass = metaclass
         self.position = position
         self.doc_node = doc_node
+        if doc_node:
+            self._doc = doc_node.value
 
     def _newstyle_impl(self, context=None):
         if context is None:
