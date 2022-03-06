@@ -570,16 +570,12 @@ def infer_property(node, context=None):
     prop_func = objects.Property(
         function=inferred,
         name=inferred.name,
-        doc=getattr(inferred, "doc_node.value", None),
+        doc=getattr(inferred, "doc", None),
         lineno=node.lineno,
         parent=node,
         col_offset=node.col_offset,
     )
-    prop_func.postinit(
-        body=[],
-        args=inferred.args,
-        doc_node=getattr(inferred, "doc_node", None),
-    )
+    prop_func.postinit(body=[], args=inferred.args)
     return prop_func
 
 
