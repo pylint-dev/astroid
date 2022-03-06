@@ -41,12 +41,22 @@ import os
 import sys
 import textwrap
 import unittest
+import warnings
 from functools import partial
 from typing import Any, List, Union
 
 import pytest
 
-from astroid import MANAGER, builder, nodes, objects, parse, test_utils, util
+from astroid import (
+    MANAGER,
+    builder,
+    extract_node,
+    nodes,
+    objects,
+    parse,
+    test_utils,
+    util,
+)
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
 from astroid.const import PY38_PLUS, PY310_PLUS, WIN32
 from astroid.exceptions import (
@@ -956,7 +966,12 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertEqual(
                 len(cls.getattr("__doc__")), 1, (cls, cls.getattr("__doc__"))
             )
-            self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc)
+            with pytest.warns(DeprecationWarning) as records:
+                self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc)
+                # TODO: This should be 1 once we update the use of 'doc' internally
+                assert len(records) == 2
+            # TODO: The doc_node attribute needs to be set in the raw_building process
+            # self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc_node.value)
             self.assertEqual(len(cls.getattr("__module__")), 4)
             self.assertEqual(len(cls.getattr("__dict__")), 1)
             self.assertEqual(len(cls.getattr("__mro__")), 1)
@@ -2635,6 +2650,77 @@ class TestFrameNodes:
 
         assert module.body[1].value.locals["x"][0].frame() == module
         assert module.body[1].value.locals["x"][0].frame(future=True) == module
+
+
+def test_deprecation_of_doc_attribute() -> None:
+    code = textwrap.dedent(
+        """\
+    def func():
+        "Docstring"
+        return 1
+    """
+    )
+    node: nodes.FunctionDef = extract_node(code)  # type: ignore[assignment]
+    with pytest.warns(DeprecationWarning) as records:
+        assert node.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        node.doc = None
+        assert len(records) == 1
+
+    code = textwrap.dedent(
+        """\
+    class MyClass():
+        '''Docstring'''
+    """
+    )
+    node: nodes.ClassDef = extract_node(code)  # type: ignore[assignment]
+    with pytest.warns(DeprecationWarning) as records:
+        assert node.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        node.doc = None
+        assert len(records) == 1
+
+    code = textwrap.dedent(
+        """\
+    '''Docstring'''
+    """
+    )
+    node = parse(code)
+    with pytest.warns(DeprecationWarning) as records:
+        assert node.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        node.doc = None
+        assert len(records) == 1
+
+    # If 'doc' isn't passed to Module, ClassDef, FunctionDef,
+    # no DeprecationWarning should be raised
+    doc_node = nodes.Const("Docstring")
+    with warnings.catch_warnings():
+        # Modify warnings filter to raise error for DeprecationWarning
+        warnings.simplefilter("error", DeprecationWarning)
+        node_module = nodes.Module(name="MyModule")
+        node_module.postinit(body=[], doc_node=doc_node)
+        assert node_module.doc_node == doc_node
+        node_class = nodes.ClassDef(name="MyClass")
+        node_class.postinit(bases=[], body=[], decorators=[], doc_node=doc_node)
+        assert node_class.doc_node == doc_node
+        node_func = nodes.FunctionDef(name="MyFunction")
+        node_func.postinit(args=nodes.Arguments(), body=[], doc_node=doc_node)
+        assert node_func.doc_node == doc_node
+
+    # Test 'doc' attribute if only 'doc_node' is passed
+    with pytest.warns(DeprecationWarning) as records:
+        assert node_module.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        assert node_class.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        assert node_func.doc == "Docstring"
+        assert len(records) == 1
 
 
 if __name__ == "__main__":
