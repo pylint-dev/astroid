@@ -2711,6 +2711,17 @@ def test_deprecation_of_doc_attribute() -> None:
         node_func.postinit(args=nodes.Arguments(), body=[], doc_node=doc_node)
         assert node_func.doc_node == doc_node
 
+    # Test 'doc' attribute if only 'doc_node' is passed
+    with pytest.warns(DeprecationWarning) as records:
+        assert node_module.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        assert node_class.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        assert node_func.doc == "Docstring"
+        assert len(records) == 1
+
 
 if __name__ == "__main__":
     unittest.main()
