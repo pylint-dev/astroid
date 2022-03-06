@@ -34,6 +34,7 @@ import ast
 import functools
 import itertools
 import operator
+import sys
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -76,7 +77,18 @@ if TYPE_CHECKING:
 # Prevents circular imports
 objects = util.lazy_import("objects")
 
+if sys.version_info >= (3, 8):
+    from typing import TypedDict
+else:
+    from typing_extensions import TypedDict
+
 T_FunctionDefSelf = TypeVar("T_FunctionDefSelf", bound=nodes.FunctionDef)
+
+
+class NodeContextPair(TypedDict):
+    node: nodes.NodeNG
+    context: Optional[InferenceContext]
+
 
 # .infer method ###############################################################
 
@@ -1081,14 +1093,10 @@ def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
 @_cached_generator
 def infer_functiondef(
     self: T_FunctionDefSelf, context: Optional[InferenceContext] = None
-) -> Generator[
-    Union["Property", T_FunctionDefSelf],
-    None,
-    Dict[str, Union[T_FunctionDefSelf, InferenceContext, None]],
-]:
+) -> Generator[Union["Property", T_FunctionDefSelf], None, NodeContextPair]:
     if not self.decorators or not bases._is_property(self):
         yield self
-        return dict(node=self, context=context)
+        return NodeContextPair(node=self, context=context)
 
     prop_func = objects.Property(
         function=self,
@@ -1099,7 +1107,7 @@ def infer_functiondef(
     )
     prop_func.postinit(body=[], args=self.args, doc_node=self.doc_node)
     yield prop_func
-    return dict(node=self, context=context)
+    return NodeContextPair(node=self, context=context)
 
 
 nodes.FunctionDef._infer = infer_functiondef  # type: ignore[assignment]
