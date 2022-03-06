@@ -164,7 +164,7 @@ class ModuleModel(ObjectModel):
     @property
     def attr___doc__(self):
         return node_classes.Const(
-            value=self._instance.doc_node.value if self._instance.doc_node else None,
+            value=getattr(self._instance.doc_node, "value", None),
             parent=self._instance,
         )
 
