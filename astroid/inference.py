@@ -1093,7 +1093,6 @@ def infer_functiondef(
     prop_func = objects.Property(
         function=self,
         name=self.name,
-        doc=self.doc_node.value if self.doc_node else None,
         lineno=self.lineno,
         parent=self.parent,
         col_offset=self.col_offset,
