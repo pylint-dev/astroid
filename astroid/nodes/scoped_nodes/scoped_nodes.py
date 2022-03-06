@@ -509,6 +509,8 @@ class Module(LocalsDictNodeNG):
         """
         self.body = body
         self.doc_node = doc_node
+        if doc_node:
+            self._doc = doc_node.value
 
     @property
     def doc(self) -> Optional[str]:
@@ -1631,6 +1633,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         self.type_comment_args = type_comment_args
         self.position = position
         self.doc_node = doc_node
+        if doc_node:
+            self._doc = doc_node.value
 
     @property
     def doc(self) -> Optional[str]:
@@ -2367,6 +2371,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             self._metaclass = metaclass
         self.position = position
         self.doc_node = doc_node
+        if doc_node:
+            self._doc = doc_node.value
 
     def _newstyle_impl(self, context=None):
         if context is None:

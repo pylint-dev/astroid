@@ -41,6 +41,7 @@ import os
 import sys
 import textwrap
 import unittest
+import warnings
 from functools import partial
 from typing import Any, List, Union
 
@@ -2693,6 +2694,22 @@ def test_deprecation_of_doc_attribute() -> None:
     with pytest.warns(DeprecationWarning) as records:
         node.doc = None
         assert len(records) == 1
+
+    # If 'doc' isn't passed to Module, ClassDef, FunctionDef,
+    # no DeprecationWarning should be raised
+    doc_node = nodes.Const("Docstring")
+    with warnings.catch_warnings():
+        # Modify warnings filter to raise error for DeprecationWarning
+        warnings.simplefilter("error", DeprecationWarning)
+        node_module = nodes.Module(name="MyModule")
+        node_module.postinit(body=[], doc_node=doc_node)
+        assert node_module.doc_node == doc_node
+        node_class = nodes.ClassDef(name="MyClass")
+        node_class.postinit(bases=[], body=[], decorators=[], doc_node=doc_node)
+        assert node_class.doc_node == doc_node
+        node_func = nodes.FunctionDef(name="MyFunction")
+        node_func.postinit(args=nodes.Arguments(), body=[], doc_node=doc_node)
+        assert node_func.doc_node == doc_node
 
 
 if __name__ == "__main__":
