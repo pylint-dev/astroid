@@ -514,7 +514,7 @@ class Module(LocalsDictNodeNG):
 
     @property
     def doc(self) -> Optional[str]:
-        """The module's docstring."""
+        """The module docstring."""
         warnings.warn(
             "The 'Module.doc' attribute is deprecated, "
             "use 'Module.doc_node' instead.",
@@ -1550,7 +1550,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :param name: The name of the function.
         :type name: str or None
 
-        :param doc: The function's docstring.
+        :param doc: The function docstring.
 
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -1638,7 +1638,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
     @property
     def doc(self) -> Optional[str]:
-        """The function's docstring."""
+        """The function docstring."""
         warnings.warn(
             "The 'FunctionDef.doc' attribute is deprecated, "
             "use 'FunctionDef.doc_node' instead.",
@@ -2292,7 +2292,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
     @property
     def doc(self) -> Optional[str]:
-        """The class' docstring."""
+        """The class docstring."""
         warnings.warn(
             "The 'ClassDef.doc' attribute is deprecated, "
             "use 'ClassDef.doc_node' instead.",
