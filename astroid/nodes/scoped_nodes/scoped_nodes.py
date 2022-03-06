@@ -515,7 +515,7 @@ class Module(LocalsDictNodeNG):
         """The module's docstring."""
         warnings.warn(
             "The 'Module.doc' attribute is deprecated, "
-            "use 'Module.doc_node.value' instead.",
+            "use 'Module.doc_node' instead.",
             DeprecationWarning,
         )
         return self._doc
@@ -1574,7 +1574,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
 
         self._doc = doc
-        """The function's docstring."""
+        """The function docstring."""
 
         self.doc_node: Optional[Const] = None
         """The doc node associated with this node."""
@@ -1637,7 +1637,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """The function's docstring."""
         warnings.warn(
             "The 'FunctionDef.doc' attribute is deprecated, "
-            "use 'FunctionDef.doc_node.value' instead.",
+            "use 'FunctionDef.doc_node' instead.",
             DeprecationWarning,
         )
         return self._doc
@@ -2212,7 +2212,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :param name: The name of the class.
         :type name: str or None
 
-        :param doc: The class' docstring.
+        :param doc: The class docstring.
 
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -2265,7 +2265,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
 
         self._doc = doc
-        """The class' docstring."""
+        """The class docstring."""
 
         self.doc_node: Optional[Const] = None
         """The doc node associated with this node."""
@@ -2291,7 +2291,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """The class' docstring."""
         warnings.warn(
             "The 'ClassDef.doc' attribute is deprecated, "
-            "use 'ClassDef.doc_node.value' instead.",
+            "use 'ClassDef.doc_node' instead.",
             DeprecationWarning,
         )
         return self._doc
