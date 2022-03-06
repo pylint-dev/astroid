@@ -70,7 +70,7 @@ from astroid.interpreter import dunder_lookup
 from astroid.manager import AstroidManager
 
 if TYPE_CHECKING:
-    from astroid import objects as astroid_objects
+    from astroid.objects import Property
 
 # Prevents circular imports
 objects = util.lazy_import("objects")
@@ -1080,7 +1080,7 @@ def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
 def infer_functiondef(
     self: nodes.FunctionDef, context: Optional[InferenceContext] = None
 ) -> Generator[
-    Union["astroid_objects.Property", nodes.FunctionDef],
+    Union["Property", nodes.FunctionDef],
     None,
     Dict[str, Union[nodes.FunctionDef, InferenceContext, None]],
 ]:

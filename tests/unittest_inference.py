@@ -6159,7 +6159,7 @@ def test_property_docstring() -> None:
     node = extract_node(code)
     inferred = next(node.infer())
     assert isinstance(inferred, objects.Property)
-    assert inferred.doc_node
+    assert isinstance(inferred.doc_node, nodes.Const)
     assert inferred.doc_node.value == "Docstring"
     with pytest.warns(DeprecationWarning) as records:
         assert inferred.doc == "Docstring"
