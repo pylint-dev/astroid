@@ -113,7 +113,6 @@ def _functools_partial_inference(node, context=None):
         returns=inferred_wrapped_function.returns,
         type_comment_returns=inferred_wrapped_function.type_comment_returns,
         type_comment_args=inferred_wrapped_function.type_comment_args,
-        doc_node=inferred_wrapped_function.doc_node,
     )
     return iter((partial_function,))
 
