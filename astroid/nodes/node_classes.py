@@ -52,6 +52,7 @@ from typing import (
     ClassVar,
     Generator,
     Optional,
+    Type,
     TypeVar,
     Union,
 )
@@ -79,6 +80,12 @@ else:
 if TYPE_CHECKING:
     from astroid import nodes
     from astroid.nodes import LocalsDictNodeNG
+
+if sys.version_info >= (3, 8) or TYPE_CHECKING:
+    # pylint: disable-next=ungrouped-imports
+    from functools import cached_property
+else:
+    from astroid.decorators import cachedproperty as cached_property
 
 
 def _is_const(value):
@@ -679,7 +686,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.kwarg: Optional[str] = kwarg  # can be None
         """The name of the variable length keyword arguments."""
 
-        self.args: typing.Optional[typing.List[AssignName]]
+        self.args: Optional[typing.List[AssignName]]
         """The names of the required arguments.
 
         Can be None if the associated function does not have a retrievable
@@ -824,7 +831,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
             return name
         return None
 
-    @decorators.cachedproperty
+    @cached_property
     def fromlineno(self):
         """The first line that this node appears on in the source code.
 
@@ -833,7 +840,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         lineno = super().fromlineno
         return max(lineno, self.parent.fromlineno or 0)
 
-    @decorators.cachedproperty
+    @cached_property
     def arguments(self):
         """Get all the arguments for this node, including positional only and positional and keyword"""
         return list(itertools.chain((self.posonlyargs or ()), self.args or ()))
@@ -1929,7 +1936,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
 
     def __init__(
         self,
-        value: typing.Any,
+        value: Any,
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
@@ -1955,7 +1962,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.value: typing.Any = value
+        self.value: Any = value
         """The value that the constant represents."""
 
         self.kind: Optional[str] = kind  # can be None
@@ -2601,7 +2608,7 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
         if body is not None:
             self.body = body
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -2734,7 +2741,7 @@ class For(
     See astroid/protocols.py for actual implementation.
     """
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -3093,7 +3100,7 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         if isinstance(self.parent, If) and self in self.parent.orelse:
             self.is_orelse = True
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -3762,7 +3769,7 @@ class Slice(NodeNG):
             return const
         return attr
 
-    @decorators.cachedproperty
+    @cached_property
     def _proxied(self):
         builtins = AstroidManager().builtins_module
         return builtins.getattr("slice")[0]
@@ -4094,7 +4101,7 @@ class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.body: typing.Union[typing.List[TryExcept], typing.List[NodeNG]] = []
+        self.body: typing.List[Union[NodeNG, TryExcept]] = []
         """The try-except that the finally is attached to."""
 
         self.finalbody: typing.List[NodeNG] = []
@@ -4110,7 +4117,7 @@ class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
 
     def postinit(
         self,
-        body: typing.Union[typing.List[TryExcept], typing.List[NodeNG], None] = None,
+        body: Optional[typing.List[Union[NodeNG, TryExcept]]] = None,
         finalbody: Optional[typing.List[NodeNG]] = None,
     ) -> None:
         """Do some setup after initialisation.
@@ -4384,7 +4391,7 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         if orelse is not None:
             self.orelse = orelse
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -4500,7 +4507,7 @@ class With(
     See astroid/protocols.py for actual implementation.
     """
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -4893,12 +4900,12 @@ class EvaluatedObject(NodeNG):
     _other_fields = ("value",)
 
     def __init__(
-        self, original: NodeNG, value: typing.Union[NodeNG, util.Uninferable]
+        self, original: NodeNG, value: Union[NodeNG, Type[util.Uninferable]]
     ) -> None:
         self.original: NodeNG = original
         """The original node that has already been evaluated"""
 
-        self.value: typing.Union[NodeNG, util.Uninferable] = value
+        self.value: Union[NodeNG, Type[util.Uninferable]] = value
         """The inferred value"""
 
         super().__init__(
@@ -5176,7 +5183,7 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
                 "MatchMapping",
                 AssignName,
                 Optional[InferenceContext],
-                Literal[None],
+                None,
             ],
             Generator[NodeNG, None, None],
         ]
@@ -5283,7 +5290,7 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
                 "MatchStar",
                 AssignName,
                 Optional[InferenceContext],
-                Literal[None],
+                None,
             ],
             Generator[NodeNG, None, None],
         ]
@@ -5354,7 +5361,7 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
                 "MatchAs",
                 AssignName,
                 Optional[InferenceContext],
-                Literal[None],
+                None,
             ],
             Generator[NodeNG, None, None],
         ]

@@ -52,7 +52,7 @@ import os
 import sys
 import typing
 import warnings
-from typing import Dict, List, Optional, Set, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, TypeVar, Union, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
@@ -92,6 +92,12 @@ if sys.version_info >= (3, 8):
     from typing import Literal
 else:
     from typing_extensions import Literal
+
+if sys.version_info >= (3, 8) or TYPE_CHECKING:
+    from functools import cached_property
+else:
+    # pylint: disable-next=ungrouped-imports
+    from astroid.decorators import cachedproperty as cached_property
 
 
 ITER_METHODS = ("__iter__", "__getitem__")
@@ -432,11 +438,11 @@ class Module(LocalsDictNodeNG):
     def __init__(
         self,
         name: str,
-        doc: Optional[str],
+        doc: Optional[str] = None,
         file: Optional[str] = None,
         path: Optional[List[str]] = None,
         package: Optional[bool] = None,
-        parent: Literal[None] = None,
+        parent: None = None,
         pure_python: Optional[bool] = True,
     ) -> None:
         """
@@ -457,7 +463,7 @@ class Module(LocalsDictNodeNG):
         self.name = name
         """The name of the module."""
 
-        self.doc = doc
+        self._doc = doc
         """The module docstring."""
 
         self.file = file
@@ -503,6 +509,27 @@ class Module(LocalsDictNodeNG):
         """
         self.body = body
         self.doc_node = doc_node
+        if doc_node:
+            self._doc = doc_node.value
+
+    @property
+    def doc(self) -> Optional[str]:
+        """The module docstring."""
+        warnings.warn(
+            "The 'Module.doc' attribute is deprecated, "
+            "use 'Module.doc_node' instead.",
+            DeprecationWarning,
+        )
+        return self._doc
+
+    @doc.setter
+    def doc(self, value: Optional[str]) -> None:
+        warnings.warn(
+            "Setting the 'Module.doc' attribute is deprecated, "
+            "use 'Module.doc_node' instead.",
+            DeprecationWarning,
+        )
+        self._doc = value
 
     def _get_stream(self):
         if self.file_bytes is not None:
@@ -627,11 +654,9 @@ class Module(LocalsDictNodeNG):
         return self.file is not None and self.file.endswith(".py")
 
     @overload
-    def statement(self, *, future: Literal[None] = ...) -> "Module":
+    def statement(self, *, future: None = ...) -> "Module":
         ...
 
-    # pylint: disable-next=arguments-differ
-    # https://github.com/PyCQA/pylint/issues/5264
     @overload
     def statement(self, *, future: Literal[True]) -> NoReturn:
         ...
@@ -1511,7 +1536,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     def __init__(
         self,
         name=None,
-        doc=None,
+        doc: Optional[str] = None,
         lineno=None,
         col_offset=None,
         parent=None,
@@ -1523,8 +1548,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :param name: The name of the function.
         :type name: str or None
 
-        :param doc: The function's docstring.
-        :type doc: str or None
+        :param doc: The function docstring.
 
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -1549,11 +1573,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :type name: str or None
         """
 
-        self.doc = doc
-        """The function's docstring.
-
-        :type doc: str or None
-        """
+        self._doc = doc
+        """The function docstring."""
 
         self.doc_node: Optional[Const] = None
         """The doc node associated with this node."""
@@ -1610,8 +1631,29 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         self.type_comment_args = type_comment_args
         self.position = position
         self.doc_node = doc_node
+        if doc_node:
+            self._doc = doc_node.value
 
-    @decorators_mod.cachedproperty
+    @property
+    def doc(self) -> Optional[str]:
+        """The function docstring."""
+        warnings.warn(
+            "The 'FunctionDef.doc' attribute is deprecated, "
+            "use 'FunctionDef.doc_node' instead.",
+            DeprecationWarning,
+        )
+        return self._doc
+
+    @doc.setter
+    def doc(self, value: Optional[str]) -> None:
+        warnings.warn(
+            "Setting the 'FunctionDef.doc' attribute is deprecated, "
+            "use 'FunctionDef.doc_node' instead.",
+            DeprecationWarning,
+        )
+        self._doc = value
+
+    @cached_property
     def extra_decorators(self) -> List[node_classes.Call]:
         """The extra decorators that this function can have.
 
@@ -1652,7 +1694,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                             decorators.append(assign.value)
         return decorators
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def type(
         self,
     ):  # pylint: disable=invalid-overridden-method,too-many-return-statements
@@ -1726,7 +1768,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 pass
         return type_name
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def fromlineno(self) -> Optional[int]:
         """The first line that this node appears on in the source code."""
         # lineno is the line number of the first decorator, we want the def
@@ -1739,7 +1781,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         return lineno
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -2160,7 +2202,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     def __init__(
         self,
         name=None,
-        doc=None,
+        doc: Optional[str] = None,
         lineno=None,
         col_offset=None,
         parent=None,
@@ -2172,8 +2214,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :param name: The name of the class.
         :type name: str or None
 
-        :param doc: The function's docstring.
-        :type doc: str or None
+        :param doc: The class docstring.
 
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -2225,11 +2266,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type name: str or None
         """
 
-        self.doc = doc
-        """The class' docstring.
-
-        :type doc: str or None
-        """
+        self._doc = doc
+        """The class docstring."""
 
         self.doc_node: Optional[Const] = None
         """The doc node associated with this node."""
@@ -2249,6 +2287,25 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)
+
+    @property
+    def doc(self) -> Optional[str]:
+        """The class docstring."""
+        warnings.warn(
+            "The 'ClassDef.doc' attribute is deprecated, "
+            "use 'ClassDef.doc_node' instead.",
+            DeprecationWarning,
+        )
+        return self._doc
+
+    @doc.setter
+    def doc(self, value: Optional[str]) -> None:
+        warnings.warn(
+            "Setting the 'ClassDef.doc' attribute is deprecated, "
+            "use 'ClassDef.doc_node.value' instead.",
+            DeprecationWarning,
+        )
+        self._doc = value
 
     def implicit_parameters(self):
         return 1
@@ -2312,6 +2369,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             self._metaclass = metaclass
         self.position = position
         self.doc_node = doc_node
+        if doc_node:
+            self._doc = doc_node.value
 
     def _newstyle_impl(self, context=None):
         if context is None:
@@ -2337,7 +2396,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         doc=("Whether this is a new style class or not\n\n" ":type: bool or None"),
     )
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def fromlineno(self) -> Optional[int]:
         """The first line that this node appears on in the source code."""
         if not PY38_PLUS:
@@ -2352,7 +2411,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             return lineno
         return super().fromlineno
 
-    @decorators_mod.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 

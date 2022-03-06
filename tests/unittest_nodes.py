@@ -633,6 +633,7 @@ class CmpNodeTest(unittest.TestCase):
 class ConstNodeTest(unittest.TestCase):
     def _test(self, value: Any) -> None:
         node = nodes.const_factory(value)
+        # pylint: disable=no-member
         self.assertIsInstance(node._proxied, nodes.ClassDef)
         self.assertEqual(node._proxied.name, value.__class__.__name__)
         self.assertIs(node.value, value)
@@ -1604,7 +1605,9 @@ def test_get_doc() -> None:
     """
     )
     node: nodes.FunctionDef = astroid.extract_node(code)  # type: ignore[assignment]
-    assert node.doc == "Docstring"
+    with pytest.warns(DeprecationWarning) as records:
+        assert node.doc == "Docstring"
+        assert len(records) == 1
     assert isinstance(node.doc_node, nodes.Const)
     assert node.doc_node.value == "Docstring"
     assert node.doc_node.lineno == 2
@@ -1620,7 +1623,9 @@ def test_get_doc() -> None:
     """
     )
     node = astroid.extract_node(code)
-    assert node.doc is None
+    with pytest.warns(DeprecationWarning) as records:
+        assert node.doc is None
+        assert len(records) == 1
     assert node.doc_node is None
 
 
