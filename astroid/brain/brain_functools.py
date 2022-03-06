@@ -105,7 +105,6 @@ def _functools_partial_inference(
     partial_function = objects.PartialFunction(
         call,
         name=inferred_wrapped_function.name,
-        doc=getattr(inferred_wrapped_function.doc_node, "value", None),
         lineno=inferred_wrapped_function.lineno,
         col_offset=inferred_wrapped_function.col_offset,
         parent=node.parent,
