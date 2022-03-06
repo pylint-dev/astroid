@@ -183,7 +183,7 @@ class AsStringVisitor:
             args.append("metaclass=" + node._metaclass.accept(self))
         args += [n.accept(self) for n in node.keywords]
         args = f"({', '.join(args)})" if args else ""
-        docs = self._docs_dedent(node.doc_node.value) if node.doc_node else ""
+        docs = self._docs_dedent(node.doc) if node.doc else ""
         return "\n\n{}class {}{}:{}\n{}\n".format(
             decorate, node.name, args, docs, self._stmt_list(node.body)
         )
@@ -328,7 +328,7 @@ class AsStringVisitor:
     def handle_functiondef(self, node, keyword):
         """return a (possibly async) function definition node as string"""
         decorate = node.decorators.accept(self) if node.decorators else ""
-        docs = self._docs_dedent(node.doc_node.value) if node.doc_node else ""
+        docs = self._docs_dedent(node.doc) if node.doc else ""
         trailer = ":"
         if node.returns:
             return_annotation = " -> " + node.returns.as_string()
@@ -417,7 +417,7 @@ class AsStringVisitor:
 
     def visit_module(self, node):
         """return an astroid.Module node as string"""
-        docs = f'"""{node.doc_node.value}"""\n\n' if node.doc_node else ""
+        docs = f'"""{node.doc}"""\n\n' if node.doc else ""
         return docs + "\n".join(n.accept(self) for n in node.body) + "\n\n"
 
     def visit_name(self, node):
