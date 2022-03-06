@@ -574,7 +574,6 @@ def infer_property(
     prop_func = objects.Property(
         function=inferred,
         name=inferred.name,
-        doc=getattr(inferred, "doc_node.value", None),
         lineno=node.lineno,
         parent=node,
         col_offset=node.col_offset,
