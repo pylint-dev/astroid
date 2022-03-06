@@ -120,9 +120,9 @@ def build_class(name, basenames=(), doc=None):
     """create and initialize an astroid ClassDef node"""
     node = nodes.ClassDef(name)
     node.postinit(
-        [],
-        [],
-        None,
+        bases=[],
+        body=[],
+        decorators=None,
         doc_node=nodes.Const(value=doc) if doc else None,
     )
     # TODO: Use the actual postinit method instead of appending manually
