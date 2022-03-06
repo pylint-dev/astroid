@@ -771,6 +771,7 @@ class FileBuildTest(unittest.TestCase):
         with pytest.warns(DeprecationWarning) as records:
             self.assertEqual(module.doc, "test module for astroid\n")
             assert len(records) == 1
+        assert isinstance(module.doc_node, nodes.Const)
         self.assertEqual(module.doc_node.value, "test module for astroid\n")
         self.assertEqual(module.fromlineno, 0)
         self.assertIsNone(module.parent)
@@ -816,6 +817,7 @@ class FileBuildTest(unittest.TestCase):
         with pytest.warns(DeprecationWarning) as records:
             self.assertEqual(function.doc, "function test")
             assert len(records)
+        assert isinstance(function.doc_node, nodes.Const)
         self.assertEqual(function.doc_node.value, "function test")
         self.assertEqual(function.fromlineno, 11)
         self.assertTrue(function.parent)
@@ -842,6 +844,7 @@ class FileBuildTest(unittest.TestCase):
         with pytest.warns(DeprecationWarning) as records:
             self.assertEqual(klass.doc, "hehe\n    haha")
             assert len(records) == 1
+        assert isinstance(klass.doc_node, nodes.Const)
         self.assertEqual(klass.doc_node.value, "hehe\n    haha")
         self.assertEqual(klass.fromlineno, 25)
         self.assertTrue(klass.parent)
@@ -899,6 +902,7 @@ class FileBuildTest(unittest.TestCase):
         with pytest.warns(DeprecationWarning) as records:
             self.assertEqual(method.doc, "method\n        test")
             assert len(records) == 1
+        assert isinstance(method.doc_node, nodes.Const)
         self.assertEqual(method.doc_node.value, "method\n        test")
         self.assertEqual(method.fromlineno, 48)
         self.assertEqual(method.type, "method")

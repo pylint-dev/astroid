@@ -1607,7 +1607,6 @@ def test_get_doc() -> None:
     with pytest.warns(DeprecationWarning) as records:
         assert node.doc == "Docstring"
         assert len(records) == 1
-    assert node.doc_node.value == "Docstring"
     assert isinstance(node.doc_node, nodes.Const)
     assert node.doc_node.value == "Docstring"
     assert node.doc_node.lineno == 2
