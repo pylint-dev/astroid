@@ -1092,8 +1092,8 @@ def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
 # of the function's inference.
 @_cached_generator
 def infer_functiondef(
-    self: T_FunctionDefSelf, context: Optional[InferenceContext] = None
-) -> Generator[Union["Property", T_FunctionDefSelf], None, NodeContextPair]:
+    self: FunctionDefT, context: Optional[InferenceContext] = None
+) -> Generator[Union["Property", FunctionDefT], None, NodeContextPair]:
     if not self.decorators or not bases._is_property(self):
         yield self
         return NodeContextPair(node=self, context=context)
