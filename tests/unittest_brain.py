@@ -2994,7 +2994,8 @@ def test_infer_dict_from_keys() -> None:
 
 
 class TestFunctoolsPartial:
-    def test_infer_partial(self) -> None:
+    @staticmethod
+    def test_infer_partial() -> None:
         ast_node = astroid.extract_node(
             """
         from functools import partial
@@ -3009,7 +3010,7 @@ class TestFunctoolsPartial:
         assert len(inferred) == 1
         partial = inferred[0]
         assert isinstance(partial, objects.PartialFunction)
-        assert partial.doc_node
+        assert isinstance(partial.doc_node, nodes.Const)
         assert partial.doc_node.value == "Docstring"
         with pytest.warns(DeprecationWarning) as records:
             assert partial.doc == "Docstring"
