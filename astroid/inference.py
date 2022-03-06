@@ -44,6 +44,7 @@ from typing import (
     Iterator,
     Optional,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -75,6 +76,7 @@ if TYPE_CHECKING:
 # Prevents circular imports
 objects = util.lazy_import("objects")
 
+T_FunctionDefSelf = TypeVar("T_FunctionDefSelf", bound=nodes.FunctionDef)
 
 # .infer method ###############################################################
 
@@ -1078,11 +1080,11 @@ def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
 # of the function's inference.
 @_cached_generator
 def infer_functiondef(
-    self: nodes.FunctionDef, context: Optional[InferenceContext] = None
+    self: T_FunctionDefSelf, context: Optional[InferenceContext] = None
 ) -> Generator[
-    Union["Property", nodes.FunctionDef],
+    Union["Property", T_FunctionDefSelf],
     None,
-    Dict[str, Union[nodes.FunctionDef, InferenceContext, None]],
+    Dict[str, Union[T_FunctionDefSelf, InferenceContext, None]],
 ]:
     if not self.decorators or not bases._is_property(self):
         yield self
