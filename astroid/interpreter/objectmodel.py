@@ -213,7 +213,7 @@ class FunctionModel(ObjectModel):
     @property
     def attr___doc__(self):
         return node_classes.Const(
-            value=self._instance.doc_node.value if self._instance.doc_node else None,
+            value=getattr(self._instance.doc_node, "value", None),
             parent=self._instance,
         )
 
@@ -338,7 +338,6 @@ class FunctionModel(ObjectModel):
                 # class where it will be bound.
                 new_func = func.__class__(
                     name=func.name,
-                    doc=func.doc_node.value if func.doc_node else None,
                     lineno=func.lineno,
                     col_offset=func.col_offset,
                     parent=func.parent,
@@ -436,9 +435,7 @@ class ClassModel(ObjectModel):
 
     @property
     def attr___doc__(self):
-        return node_classes.Const(
-            self._instance.doc_node.value if self._instance.doc_node else None
-        )
+        return node_classes.Const(getattr(self._instance.doc_node, "value", None))
 
     @property
     def attr___mro__(self):
@@ -635,9 +632,7 @@ class InstanceModel(ObjectModel):
 
     @property
     def attr___doc__(self):
-        return node_classes.Const(
-            self._instance.doc_node.value if self._instance.doc_node else None
-        )
+        return node_classes.Const(getattr(self._instance.doc_node, "value", None))
 
     @property
     def attr___dict__(self):
