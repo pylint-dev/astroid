@@ -598,9 +598,7 @@ class GeneratorModel(FunctionModel):
     @property
     def attr___doc__(self):
         return node_classes.Const(
-            value=self._instance.parent.doc_node.value
-            if self._instance.parent.doc_node
-            else None,
+            value=getattr(self._instance.parent.doc_node, "value", None),
             parent=self._instance,
         )
 
