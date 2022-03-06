@@ -82,7 +82,7 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import TypedDict
 
-T_FunctionDefSelf = TypeVar("T_FunctionDefSelf", bound=nodes.FunctionDef)
+FunctionDefT = TypeVar("FunctionDefT", bound=nodes.FunctionDef)
 
 
 class NodeContextPair(TypedDict):
