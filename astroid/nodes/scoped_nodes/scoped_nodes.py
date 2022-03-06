@@ -523,8 +523,8 @@ class Module(LocalsDictNodeNG):
     @doc.setter
     def doc(self, value: Optional[str]) -> None:
         warnings.warn(
-            "The 'Module.doc' attribute is deprecated, "
-            "use 'Module.doc_node.value' instead.",
+            "Setting the 'Module.doc' attribute is deprecated, "
+            "use 'Module.doc_node' instead.",
             DeprecationWarning,
         )
         self._doc = value
@@ -1645,8 +1645,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     @doc.setter
     def doc(self, value: Optional[str]) -> None:
         warnings.warn(
-            "The 'FunctionDef.doc' attribute is deprecated, "
-            "use 'FunctionDef.doc_node.value' instead.",
+            "Setting the 'FunctionDef.doc' attribute is deprecated, "
+            "use 'FunctionDef.doc_node' instead.",
             DeprecationWarning,
         )
         self._doc = value
@@ -2299,7 +2299,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     @doc.setter
     def doc(self, value: Optional[str]) -> None:
         warnings.warn(
-            "The 'ClassDef.doc' attribute is deprecated, "
+            "Setting the 'ClassDef.doc' attribute is deprecated, "
             "use 'ClassDef.doc_node.value' instead.",
             DeprecationWarning,
         )
