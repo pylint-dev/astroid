@@ -14,6 +14,7 @@ from astroid import context, extract_node, inference_tip, nodes
 from astroid.builder import _extract_single_node
 from astroid.const import PY38_PLUS, PY39_PLUS
 from astroid.exceptions import (
+    AstroidImportError,
     AttributeInferenceError,
     InferenceError,
     UseInferenceDefault,
@@ -171,25 +172,107 @@ def infer_typing_newtype(
     )
     new_node.parent = node.parent
 
-    # Base type arg is a normal reference, so no need to do special lookups
-    if not isinstance(base, nodes.Const):
-        new_node.postinit(
-            bases=[base], body=new_node.body, decorators=new_node.decorators
-        )
+    new_bases: list[NodeNG] = []
 
-    # If the base type is given as a string (e.g. for a forward reference),
-    # make a naive attempt to find the corresponding node.
-    # Note that this will not work with imported types.
-    if isinstance(base, nodes.Const) and isinstance(base.value, str):
+    if not isinstance(base, nodes.Const):
+        # Base type arg is a normal reference, so no need to do special lookups
+        new_bases = [base]
+    elif isinstance(base, nodes.Const) and isinstance(base.value, str):
+        # If the base type is given as a string (e.g. for a forward reference),
+        # make a naive attempt to find the corresponding node.
         _, resolved_base = node.frame().lookup(base_name)
         if resolved_base:
-            new_node.postinit(
-                bases=[resolved_base[0]],
-                body=new_node.body,
-                decorators=new_node.decorators,
-            )
+            base_node = resolved_base[0]
+
+            # If the value is from an "import from" statement, follow the import chain
+            if isinstance(base_node, nodes.ImportFrom):
+                ctx = ctx.clone() if ctx else context.InferenceContext()
+                ctx.lookupname = base_name
+                base_node = next(base_node.infer(context=ctx))
+
+            new_bases = [base_node]
+        elif "." in base.value:
+            possible_base = _try_find_imported_object_from_str(node, base.value, ctx)
+            if possible_base:
+                new_bases = [possible_base]
+
+    if new_bases:
+        new_node.postinit(
+            bases=new_bases, body=new_node.body, decorators=new_node.decorators
+        )
 
     return new_node.infer(context=ctx)
+
+
+def _try_find_imported_object_from_str(
+    node: nodes.Call,
+    name: str,
+    ctx: context.InferenceContext | None,
+) -> nodes.NodeNG | None:
+    for statement_mod_name, _ in _possible_module_object_splits(name):
+        # Find import statements that may pull in the appropriate modules
+        # The name used to find this statement may not correspond to the name of the module actually being imported
+        # For example, "import email.charset" is found by lookup("email")
+        _, resolved_bases = node.frame().lookup(statement_mod_name)
+        if not resolved_bases:
+            continue
+
+        resolved_base = resolved_bases[0]
+        if isinstance(resolved_base, nodes.Import):
+            # Extract the names of the module as they are accessed from actual code
+            scope_names = {(alias or name) for (name, alias) in resolved_base.names}
+            aliases = {alias: name for (name, alias) in resolved_base.names if alias}
+
+            # Find potential mod_name, obj_name splits that work with the available names
+            # for the module in this scope
+            import_targets = [
+                (mod_name, obj_name)
+                for (mod_name, obj_name) in _possible_module_object_splits(name)
+                if mod_name in scope_names
+            ]
+            if not import_targets:
+                continue
+
+            import_target, name_in_mod = import_targets[0]
+            import_target = aliases.get(import_target, import_target)
+
+            # Try to import the module and find the object in it
+            try:
+                resolved_mod: nodes.Module = resolved_base.do_import_module(
+                    import_target
+                )
+            except AstroidImportError:
+                # If the module doesn't actually exist, try the next option
+                continue
+
+            # Try to find the appropriate ClassDef or other such node in the target module
+            _, object_results_in_mod = resolved_mod.lookup(name_in_mod)
+            if not object_results_in_mod:
+                continue
+
+            base_node = object_results_in_mod[0]
+
+            # If the value is from an "import from" statement, follow the import chain
+            if isinstance(base_node, nodes.ImportFrom):
+                ctx = ctx.clone() if ctx else context.InferenceContext()
+                ctx.lookupname = name_in_mod
+                base_node = next(base_node.infer(context=ctx))
+
+            return base_node
+
+    return None
+
+
+def _possible_module_object_splits(
+    dot_str: str,
+) -> Iterator[tuple[str, str]]:
+    components = dot_str.split(".")
+    popped = []
+
+    while components:
+        popped.append(components.pop())
+
+        yield ".".join(components), ".".join(reversed(popped))
 
 
 def _looks_like_typing_subscript(node):

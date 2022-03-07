@@ -1837,6 +1837,172 @@ class TypingBrain(unittest.TestCase):
         with self.assertRaises(AttributeInferenceError):
             inferred.getattr("bad_attr")
 
+    def test_typing_newtype_forward_reference_imported(self) -> None:
+        all_ast_nodes = builder.extract_node(
+            """
+        from typing import NewType
+
+        A = NewType("A", "decimal.Decimal")
+        B = NewType("B", "decimal_mod_alias.Decimal")
+        C = NewType("C", "Decimal")
+        D = NewType("D", "DecimalAlias")
+
+        import decimal
+        import decimal as decimal_mod_alias
+        from decimal import Decimal
+        from decimal import Decimal as DecimalAlias
+
+        Decimal #@
+
+        a = A(decimal.Decimal(2))
+        a #@
+        b = B(decimal_mod_alias.Decimal(2))
+        b #@
+        c = C(Decimal(2))
+        c #@
+        d = D(DecimalAlias(2))
+        d #@
+        """
+        )
+        assert isinstance(all_ast_nodes, list)
+
+        real_dec, *ast_nodes = all_ast_nodes
+
+        real_quantize = next(real_dec.infer()).getattr("quantize")
+
+        for node in ast_nodes:
+            all_inferred = list(node.infer())
+            assert len(all_inferred) == 1
+            inferred = all_inferred[0]
+            assert isinstance(inferred, astroid.Instance)
+
+            assert inferred.getattr("quantize") == real_quantize
+
+    def test_typing_newtype_forward_ref_bad_base(self) -> None:
+        ast_nodes = builder.extract_node(
+            """
+        from typing import NewType
+
+        A = NewType("A", "DoesntExist")
+
+        a = A()
+        a #@
+
+        # Valid name, but not actually imported
+        B = NewType("B", "decimal.Decimal")
+
+        b = B()
+        b #@
+
+        # AST works out, but can't import the module
+        import not_a_real_module
+
+        C = NewType("C", "not_a_real_module.SomeClass")
+        c = C()
+        c #@
+
+        # Real module, fake base class name
+        import email.charset
+
+        D = NewType("D", "email.charset.BadClassRef")
+        d = D()
+        d #@
+
+        # Real module, but aliased differently than used
+        import email.header as header_mod
+
+        E = NewType("E", "email.header.Header")
+        e = E(header_mod.Header())
+        e #@
+        """
+        )
+        assert isinstance(ast_nodes, list)
+
+        for ast_node in ast_nodes:
+            inferred = next(ast_node.infer())
+
+            with self.assertRaises(astroid.AttributeInferenceError):
+                inferred.getattr("value")
+
+    def test_typing_newtype_forward_ref_nested_module(self) -> None:
+        ast_nodes = builder.extract_node(
+            """
+        from typing import NewType
+
+        A = NewType("A", "email.charset.Charset")
+        B = NewType("B", "charset.Charset")
+
+        # header is unused in both cases, but verifies that module name is properly checked
+        import email.header, email.charset
+        from email import header, charset
+
+        real = charset.Charset()
+        real #@
+
+        a = A(email.charset.Charset())
+        a #@
+
+        b = B(charset.Charset())
+        """
+        )
+        assert isinstance(ast_nodes, list)
+
+        real, *newtypes = ast_nodes
+
+        real_inferred_all = list(real.infer())
+        assert len(real_inferred_all) == 1
+        real_inferred = real_inferred_all[0]
+
+        real_method = real_inferred.getattr("get_body_encoding")
+
+        for newtype_node in newtypes:
+            newtype_inferred_all = list(newtype_node.infer())
+            assert len(newtype_inferred_all) == 1
+            newtype_inferred = newtype_inferred_all[0]
+
+            newtype_method = newtype_inferred.getattr("get_body_encoding")
+
+            assert real_method == newtype_method
+
+    def test_typing_newtype_forward_ref_nested_class(self) -> None:
+        ast_nodes = builder.extract_node(
+            """
+        from typing import NewType
+
+        A = NewType("A", "SomeClass.Nested")
+
+        class SomeClass:
+            class Nested:
+                def method(self) -> None:
+                    pass
+
+        real = SomeClass.Nested()
+        real #@
+
+        a = A(SomeClass.Nested())
+        a #@
+        """
+        )
+        assert isinstance(ast_nodes, list)
+
+        real, newtype = ast_nodes
+
+        real_all_inferred = list(real.infer())
+        assert len(real_all_inferred) == 1
+        real_inferred = real_all_inferred[0]
+        real_method = real_inferred.getattr("method")
+
+        newtype_all_inferred = list(newtype.infer())
+        assert len(newtype_all_inferred) == 1
+        newtype_inferred = newtype_all_inferred[0]
+
+        # This could theoretically work, but for now just here to check that
+        # the "forward-declared module" inference doesn't totally break things
+        with self.assertRaises(astroid.AttributeInferenceError):
+            newtype_method = newtype_inferred.getattr("method")
+
+            assert real_method == newtype_method
+
     def test_namedtuple_nested_class(self):
         result = builder.extract_node(
             """
