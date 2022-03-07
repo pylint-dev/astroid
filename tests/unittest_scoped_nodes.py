@@ -968,10 +968,8 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             )
             with pytest.warns(DeprecationWarning) as records:
                 self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc)
-                # TODO: This should be 1 once we update the use of 'doc' internally
-                assert len(records) == 2
-            # TODO: The doc_node attribute needs to be set in the raw_building process
-            # self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc_node.value)
+                assert len(records) == 1
+            self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc_node.value)
             self.assertEqual(len(cls.getattr("__module__")), 4)
             self.assertEqual(len(cls.getattr("__dict__")), 1)
             self.assertEqual(len(cls.getattr("__mro__")), 1)

@@ -84,18 +84,18 @@ if os.name == "nt":
         except AttributeError:
             pass
 
-if platform.python_implementation() == "PyPy":
+if platform.python_implementation() == "PyPy" and sys.version_info < (3, 8):
     # PyPy stores the stdlib in two places: sys.prefix/lib_pypy and sys.prefix/lib-python/3
     # sysconfig.get_path on PyPy returns the first, but without an underscore so we patch this manually.
+    # Beginning with 3.8 the stdlib is only stored in: sys.prefix/pypy{py_version_short}
     STD_LIB_DIRS.add(str(Path(sysconfig.get_path("stdlib")).parent / "lib_pypy"))
-    STD_LIB_DIRS.add(
-        sysconfig.get_path("stdlib", vars={"implementation_lower": "python/3"})
-    )
+    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("stdlib")).parent / "lib-python/3"))
+
     # TODO: This is a fix for a workaround in virtualenv. At some point we should revisit
     # whether this is still necessary. See https://github.com/PyCQA/astroid/pull/1324.
     STD_LIB_DIRS.add(str(Path(sysconfig.get_path("platstdlib")).parent / "lib_pypy"))
     STD_LIB_DIRS.add(
-        sysconfig.get_path("platstdlib", vars={"implementation_lower": "python/3"})
+        str(Path(sysconfig.get_path("platstdlib")).parent / "lib-python/3")
     )
 
 if os.name == "posix":

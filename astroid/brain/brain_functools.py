@@ -7,8 +7,10 @@
 """Astroid hooks for understanding functools library module."""
 from functools import partial
 from itertools import chain
+from typing import Iterator, Optional
 
-from astroid import BoundMethod, arguments, extract_node, helpers, objects
+from astroid import BoundMethod, arguments, extract_node, helpers, nodes, objects
+from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.interpreter import objectmodel
@@ -62,7 +64,9 @@ def _transform_lru_cache(node, context=None) -> None:
     node.special_attributes = LruWrappedModel()(node)
 
 
-def _functools_partial_inference(node, context=None):
+def _functools_partial_inference(
+    node: nodes.Call, context: Optional[InferenceContext] = None
+) -> Iterator[objects.PartialFunction]:
     call = arguments.CallSite.from_call(node, context=context)
     number_of_positional = len(call.positional_arguments)
     if number_of_positional < 1:
@@ -101,7 +105,6 @@ def _functools_partial_inference(node, context=None):
     partial_function = objects.PartialFunction(
         call,
         name=inferred_wrapped_function.name,
-        doc=inferred_wrapped_function.doc,
         lineno=inferred_wrapped_function.lineno,
         col_offset=inferred_wrapped_function.col_offset,
         parent=node.parent,
@@ -113,6 +116,7 @@ def _functools_partial_inference(node, context=None):
         returns=inferred_wrapped_function.returns,
         type_comment_returns=inferred_wrapped_function.type_comment_returns,
         type_comment_args=inferred_wrapped_function.type_comment_args,
+        doc_node=inferred_wrapped_function.doc_node,
     )
     return iter((partial_function,))
 

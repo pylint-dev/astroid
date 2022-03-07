@@ -269,6 +269,7 @@ class PartialFunction(scoped_nodes.FunctionDef):
     def __init__(
         self, call, name=None, doc=None, lineno=None, col_offset=None, parent=None
     ):
+        # TODO: Pass end_lineno and end_col_offset as well
         super().__init__(name, doc, lineno, col_offset, parent=None)
         # A typical FunctionDef automatically adds its name to the parent scope,
         # but a partial should not, so defer setting parent until after init
