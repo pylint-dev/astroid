@@ -85,7 +85,7 @@ else:
 FunctionDefT = TypeVar("FunctionDefT", bound=nodes.FunctionDef)
 
 
-class NodeContextPair(TypedDict):
+class _InferenceErrorTD(TypedDict):
     node: nodes.NodeNG
     context: Optional[InferenceContext]
 
@@ -1093,10 +1093,10 @@ def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
 @_cached_generator
 def infer_functiondef(
     self: FunctionDefT, context: Optional[InferenceContext] = None
-) -> Generator[Union["Property", FunctionDefT], None, NodeContextPair]:
+) -> Generator[Union["Property", FunctionDefT], None, _InferenceErrorTD]:
     if not self.decorators or not bases._is_property(self):
         yield self
-        return NodeContextPair(node=self, context=context)
+        return _InferenceErrorTD(node=self, context=context)
 
     prop_func = objects.Property(
         function=self,
@@ -1107,7 +1107,7 @@ def infer_functiondef(
     )
     prop_func.postinit(body=[], args=self.args, doc_node=self.doc_node)
     yield prop_func
-    return NodeContextPair(node=self, context=context)
+    return _InferenceErrorTD(node=self, context=context)
 
 
 nodes.FunctionDef._infer = infer_functiondef  # type: ignore[assignment]
