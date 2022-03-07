@@ -18,6 +18,10 @@ Release date: TBA
 
   Closes #1410
 
+* Fix false positive for ``shape`` parameter of ``numpy.zeros_like`` method.
+
+  Closes PyCQA/pylint#5871
+
 
 What's New in astroid 2.10.1?
 =============================
