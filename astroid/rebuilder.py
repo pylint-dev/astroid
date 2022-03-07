@@ -278,10 +278,9 @@ class TreeRebuilder:
 
         Note: Method not called by 'visit'
         """
-        node, doc_ast_node, doc = self._get_doc(node)
+        node, doc_ast_node, _ = self._get_doc(node)
         newnode = nodes.Module(
             name=modname,
-            doc=doc,
             file=modpath,
             path=[modpath],
             package=package,
@@ -1274,10 +1273,9 @@ class TreeRebuilder:
         self, node: "ast.ClassDef", parent: NodeNG, newstyle: bool = True
     ) -> nodes.ClassDef:
         """visit a ClassDef node to become astroid"""
-        node, doc_ast_node, doc = self._get_doc(node)
+        node, doc_ast_node, _ = self._get_doc(node)
         newnode = nodes.ClassDef(
             name=node.name,
-            doc=doc,
             lineno=node.lineno,
             col_offset=node.col_offset,
             # end_lineno and end_col_offset added in 3.8
@@ -1582,7 +1580,7 @@ class TreeRebuilder:
     ) -> T_Function:
         """visit an FunctionDef node to become astroid"""
         self._global_names.append({})
-        node, doc_ast_node, doc = self._get_doc(node)
+        node, doc_ast_node, _ = self._get_doc(node)
 
         lineno = node.lineno
         if PY38_PLUS and node.decorator_list:
@@ -1597,7 +1595,6 @@ class TreeRebuilder:
 
         newnode = cls(
             name=node.name,
-            doc=doc,
             lineno=lineno,
             col_offset=node.col_offset,
             # end_lineno and end_col_offset added in 3.8

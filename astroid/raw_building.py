@@ -110,7 +110,11 @@ def attach_import_node(node, modname, membername):
 
 def build_module(name: str, doc: Optional[str] = None) -> nodes.Module:
     """create and initialize an astroid Module node"""
-    node = nodes.Module(name, doc, pure_python=False)
+    node = nodes.Module(name, pure_python=False)
+    node.postinit(
+        body=[],
+        doc_node=nodes.Const(value=doc) if doc else None,
+    )
     node.package = False
     node.parent = None
     return node
@@ -138,13 +142,13 @@ def build_function(
     args: Optional[List[str]] = None,
     posonlyargs: Optional[List[str]] = None,
     defaults=None,
-    doc=None,
+    doc: Optional[str] = None,
     kwonlyargs: Optional[List[str]] = None,
 ) -> nodes.FunctionDef:
     """create and initialize an astroid FunctionDef node"""
     # first argument is now a list of decorators
-    func = nodes.FunctionDef(name, doc)
-    func.args = argsnode = nodes.Arguments(parent=func)
+    func = nodes.FunctionDef(name)
+    argsnode = nodes.Arguments(parent=func)
     argsnode.postinit(
         args=[nodes.AssignName(name=arg, parent=argsnode) for arg in args or ()],
         defaults=[],
@@ -156,6 +160,11 @@ def build_function(
         posonlyargs=[
             nodes.AssignName(name=arg, parent=argsnode) for arg in posonlyargs or ()
         ],
+    )
+    func.postinit(
+        args=argsnode,
+        body=[],
+        doc_node=nodes.Const(value=doc) if doc else None,
     )
     for default in defaults or ():
         argsnode.defaults.append(nodes.const_factory(default))
