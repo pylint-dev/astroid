@@ -18,7 +18,7 @@ from typing import TypeVar, Union, cast, overload
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS, Context
+from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS, TREE_REV, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 from astroid.nodes.utils import Position
@@ -61,9 +61,12 @@ class TreeRebuilder:
         manager: AstroidManager,
         parser_module: ParserModule | None = None,
         data: str | None = None,
+        *,
+        tree_rev: int = TREE_REV,
     ) -> None:
         self._manager = manager
         self._data = data.split("\n") if data else None
+        self._tree_rev = tree_rev
         self._global_names: list[dict[str, list[nodes.Global]]] = []
         self._import_from_nodes: list[nodes.ImportFrom] = []
         self._delayed_assattr: list[nodes.AssignAttr] = []
