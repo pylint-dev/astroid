@@ -54,7 +54,7 @@ from typing import (
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import IMPLEMENTATION_PYPY, PY36, PY38, PY38_PLUS, Context
+from astroid.const import IMPLEMENTATION_PYPY, PY36, PY38, PY38_PLUS, PY39_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 from astroid.nodes.utils import Position
@@ -224,7 +224,7 @@ class TreeRebuilder:
 
         lineno = node.lineno or 1  # lineno of modules is 0
         end_range: Optional[int] = node.doc_node.lineno
-        if IMPLEMENTATION_PYPY:
+        if IMPLEMENTATION_PYPY and not PY39_PLUS:
             end_range = None
         # pylint: disable-next=unsubscriptable-object
         data = "\n".join(self._data[lineno - 1 : end_range])
@@ -271,6 +271,26 @@ class TreeRebuilder:
         node.doc_node.end_lineno = lineno + t.end[0] - 1
         node.doc_node.end_col_offset = t.end[1]
 
+    def _reset_end_lineno(self, newnode: nodes.NodeNG) -> None:
+        """Reset end_lineno and end_col_offset attributes for PyPy 3.8.
+
+        For some nodes, these are either set to -1 or only partially assigned.
+        To keep consistency across astroid and pylint, reset all.
+
+        This has been fixed in PyPy 3.9.
+        For reference, an (incomplete) list of nodes with issues:
+            - ClassDef          - For
+            - FunctionDef       - While
+            - Call              - If
+            - Decorators        - TryExcept
+            - With              - TryFinally
+            - Assign
+        """
+        newnode.end_lineno = None
+        newnode.end_col_offset = None
+        for child_node in newnode.get_children():
+            self._reset_end_lineno(child_node)
+
     def visit_module(
         self, node: "ast.Module", modname: str, modpath: str, package: bool
     ) -> nodes.Module:
@@ -292,6 +312,8 @@ class TreeRebuilder:
             doc_node=self.visit(doc_ast_node, newnode),
         )
         self._fix_doc_node_position(newnode)
+        if IMPLEMENTATION_PYPY and PY38:
+            self._reset_end_lineno(newnode)
         return newnode
 
     if sys.version_info >= (3, 10):
