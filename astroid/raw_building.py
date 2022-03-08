@@ -117,7 +117,7 @@ def build_module(name: str, doc: Optional[str] = None) -> nodes.Module:
 
 
 def build_class(
-    name: str, basenames: Sequence[str] = (), doc: Optional[str] = None
+    name: str, basenames: Iterable[str] = (), doc: Optional[str] = None
 ) -> nodes.ClassDef:
     """Create and initialize an astroid ClassDef node."""
     node = nodes.ClassDef(name)
