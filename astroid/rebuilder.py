@@ -116,9 +116,7 @@ class TreeRebuilder:
             self._parser_module = parser_module
         self._module = self._parser_module.module
 
-    def _get_doc(
-        self, node: T_Doc
-    ) -> Tuple[T_Doc, Optional["ast.Constant | ast.Str"], Optional[str]]:
+    def _get_doc(self, node: T_Doc) -> Tuple[T_Doc, Optional["ast.Constant | ast.Str"]]:
         """Return the doc ast node and the actual docstring."""
         try:
             if node.body and isinstance(node.body[0], self._module.Expr):
@@ -129,16 +127,15 @@ class TreeRebuilder:
                     and isinstance(first_value.value, str)
                 ):
                     doc_ast_node = first_value
-                    doc = first_value.value if PY38_PLUS else first_value.s
                     node.body = node.body[1:]
                     # The ast parser of python < 3.8 sets col_offset of multi-line strings to -1
                     # as it is unable to determine the value correctly. We reset this to None.
                     if doc_ast_node.col_offset == -1:
                         doc_ast_node.col_offset = None
-                    return node, doc_ast_node, doc
+                    return node, doc_ast_node
         except IndexError:
             pass  # ast built from scratch
-        return node, None, None
+        return node, None
 
     def _get_context(
         self,
@@ -278,7 +275,7 @@ class TreeRebuilder:
 
         Note: Method not called by 'visit'
         """
-        node, doc_ast_node, _ = self._get_doc(node)
+        node, doc_ast_node = self._get_doc(node)
         newnode = nodes.Module(
             name=modname,
             file=modpath,
@@ -1273,7 +1270,7 @@ class TreeRebuilder:
         self, node: "ast.ClassDef", parent: NodeNG, newstyle: bool = True
     ) -> nodes.ClassDef:
         """visit a ClassDef node to become astroid"""
-        node, doc_ast_node, _ = self._get_doc(node)
+        node, doc_ast_node = self._get_doc(node)
         newnode = nodes.ClassDef(
             name=node.name,
             lineno=node.lineno,
@@ -1580,7 +1577,7 @@ class TreeRebuilder:
     ) -> T_Function:
         """visit an FunctionDef node to become astroid"""
         self._global_names.append({})
-        node, doc_ast_node, _ = self._get_doc(node)
+        node, doc_ast_node = self._get_doc(node)
 
         lineno = node.lineno
         if PY38_PLUS and node.decorator_list:
