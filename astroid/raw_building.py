@@ -32,7 +32,7 @@ import os
 import sys
 import types
 import warnings
-from typing import Iterable, List, Optional
+from typing import List, Optional
 
 from astroid import bases, nodes
 from astroid.manager import AstroidManager
