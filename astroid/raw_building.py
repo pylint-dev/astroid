@@ -32,7 +32,7 @@ import os
 import sys
 import types
 import warnings
-from typing import List, Optional
+from typing import Iterable, List, Optional
 
 from astroid import bases, nodes
 from astroid.manager import AstroidManager
@@ -116,20 +116,17 @@ def build_module(name: str, doc: Optional[str] = None) -> nodes.Module:
     return node
 
 
-def build_class(name, basenames=(), doc=None):
-    """create and initialize an astroid ClassDef node"""
+def build_class(
+    name: str, basenames: Iterable[str] = (), doc: Optional[str] = None
+) -> nodes.ClassDef:
+    """Create and initialize an astroid ClassDef node."""
     node = nodes.ClassDef(name)
     node.postinit(
-        bases=[],
+        bases=[nodes.Name(name=base, parent=node) for base in basenames],
         body=[],
         decorators=None,
         doc_node=nodes.Const(value=doc) if doc else None,
     )
-    # TODO: Use the actual postinit method instead of appending manually
-    for base in basenames:
-        basenode = nodes.Name(name=base)
-        node.bases.append(basenode)
-        basenode.parent = node
     return node
 
 
