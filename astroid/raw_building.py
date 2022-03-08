@@ -121,11 +121,6 @@ def build_class(
 ) -> nodes.ClassDef:
     """Create and initialize an astroid ClassDef node."""
     node = nodes.ClassDef(name)
-    basenodes: List[nodes.Name] = []
-    for base in basenames:
-        basenode = nodes.Name(name=base)
-        basenode.parent = node
-        basenodes.append(basenode)
     node.postinit(
         bases=basenodes,
         body=[],
