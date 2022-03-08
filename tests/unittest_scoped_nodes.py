@@ -2720,7 +2720,7 @@ def test_deprecation_of_doc_attribute() -> None:
         assert node_func.doc == "Docstring"
         assert len(records) == 1
 
-    # If 'doc' is passed Module, ClassDef, FunctionDef,
+    # If 'doc' is passed to Module, ClassDef, FunctionDef,
     # a DeprecationWarning should be raised
     doc_node = nodes.Const("Docstring")
     with pytest.warns(DeprecationWarning) as records:
