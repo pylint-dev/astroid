@@ -1,20 +1,58 @@
-[
-  {
-    "mails": ["thenault@gmail.com", "sylvain.thenault@logilab.fr"],
-    "authoritative_mail": "thenault@gmail.com",
-    "name": "Sylvain Thénault"
+{
+  "Ashley Whetter": {
+    "authoritative_mail": "ashley@awhetter.co.uk",
+    "mails": [
+      "ashley@awhetter.co.uk",
+      "awhetter.2011@my.bristol.ac.uk",
+      "asw@dneg.com",
+      "AWhetter@users.noreply.github.com"
+    ]
   },
-  {
-    "mails": ["cpopa@cloudbasesolutions.com", "pcmanticore@gmail.com"],
+  "Bryce Guinta": {
+    "authoritative_mail": "bryce.paul.guinta@gmail.com",
+    "mails": ["bryce.paul.guinta@gmail.com", "bryce.guinta@protonmail.com"]
+  },
+  "Calen Pennington": {
+    "authoritative_mail": "calen.pennington@gmail.com",
+    "mails": ["cale@edx.org", "calen.pennington@gmail.com"]
+  },
+  "Claudiu Popa": {
     "authoritative_mail": "pcmanticore@gmail.com",
-    "name": "Claudiu Popa"
+    "mails": ["cpopa@cloudbasesolutions.com", "pcmanticore@gmail.com"]
   },
-  {
-    "mails": ["pierre.sassoulas@gmail.com", "pierre.sassoulas@cea.fr"],
-    "authoritative_mail": "pierre.sassoulas@gmail.com",
-    "name": "Pierre Sassoulas"
+  "David Euresti": {
+    "authoritative_mail": "github@euresti.com",
+    "mails": ["david@dropbox.com", "github@euresti.com"]
   },
-  {
+  "Google, Inc.": {
+    "authoritative_mail": null,
+    "mails": [
+      "nathaniel@google.com",
+      "mbp@google.com",
+      "tmarek@google.com",
+      "shlomme@gmail.com",
+      "balparda@google.com",
+      "dlindquist@google.com"
+    ]
+  },
+  "Jacob Bogdanov": {
+    "authoritative_mail": "jacob@bogdanov.dev",
+    "mails": ["jacob@bogdanov.dev", "jbogdanov@128technology.com"]
+  },
+  "Joshua Cannon": {
+    "authoritative_mail": "joshdcannon@gmail.com",
+    "mails": ["joshdcannon@gmail.com", "joshua.cannon@ni.com"]
+  },
+  "Kavins Singh": {
+    "authoritative_mail": "kavinsingh@hotmail.com",
+    "mails": ["kavin.singh@mail.utoronto.ca", "kavinsingh@hotmail.com"]
+  },
+  "Keichi Takahashi": {
+    "authoritative_mail": "keichi.t@me.com",
+    "mails": ["hello@keichi.dev", "keichi.t@me.com"]
+  },
+  "LOGILAB S.A. (Paris, FRANCE)": {
+    "authoritative_mail": "contact@logilab.fr",
     "mails": [
       "alexandre.fayolle@logilab.fr",
       "emile.anclin@logilab.fr",
@@ -30,102 +68,41 @@
       "afayolle.ml@free.fr",
       "aurelien.campeas@logilab.fr",
       "lmedioni@logilab.fr"
-    ],
-    "authoritative_mail": "contact@logilab.fr",
-    "name": "LOGILAB S.A. (Paris, FRANCE)"
+    ]
   },
-  {
-    "mails": ["moylop260@vauxoo.com"],
-    "name": "Moises Lopez",
-    "authoritative_mail": "moylop260@vauxoo.com"
-  },
-  {
-    "mails": [
-      "nathaniel@google.com",
-      "mbp@google.com",
-      "tmarek@google.com",
-      "shlomme@gmail.com",
-      "balparda@google.com",
-      "dlindquist@google.com"
-    ],
-    "name": "Google, Inc."
-  },
-  {
-    "mails": [
-      "ashley@awhetter.co.uk",
-      "awhetter.2011@my.bristol.ac.uk",
-      "asw@dneg.com",
-      "AWhetter@users.noreply.github.com"
-    ],
-    "name": "Ashley Whetter",
-    "authoritative_mail": "ashley@awhetter.co.uk"
-  },
-  {
-    "mails": ["ville.skytta@iki.fi", "ville.skytta@upcloud.com"],
-    "authoritative_mail": "ville.skytta@iki.fi",
-    "name": "Ville Skyttä"
-  },
-  {
-    "mails": ["bryce.paul.guinta@gmail.com", "bryce.guinta@protonmail.com"],
-    "authoritative_mail": "bryce.paul.guinta@gmail.com",
-    "name": "Bryce Guinta"
-  },
-  {
-    "mails": ["cale@edx.org", "calen.pennington@gmail.com"],
-    "authoritative_mail": "calen.pennington@gmail.com",
-    "name": "Calen Pennington"
-  },
-  {
-    "mails": ["david@dropbox.com", "github@euresti.com"],
-    "authoritative_mail": "github@euresti.com",
-    "name": "David Euresti"
-  },
-  {
-    "mails": ["jacob@bogdanov.dev", "jbogdanov@128technology.com"],
-    "authoritative_mail": "jacob@bogdanov.dev",
-    "name": "Jacob Bogdanov"
-  },
-  {
-    "mails": ["joshdcannon@gmail.com", "joshua.cannon@ni.com"],
-    "authoritative_mail": "joshdcannon@gmail.com",
-    "name": "Joshua Cannon"
-  },
-  {
-    "mails": ["hello@keichi.dev", "keichi.t@me.com"],
-    "authoritative_mail": "keichi.t@me.com",
-    "name": "Keichi Takahashi"
-  },
-  {
-    "mails": ["mcorcherojim@bloomberg.net", "mariocj89@gmail.com"],
+  "Mario Corchero": {
     "authoritative_mail": "mariocj89@gmail.com",
-    "name": "Mario Corchero"
+    "mails": ["mcorcherojim@bloomberg.net", "mariocj89@gmail.com"]
   },
-  {
-    "mails": ["raphael@rtpg.co", "raphael@makeleaps.com"],
+  "Moises Lopez": {
+    "authoritative_mail": "moylop260@vauxoo.com",
+    "mails": ["moylop260@vauxoo.com"]
+  },
+  "Pierre Sassoulas": {
+    "authoritative_mail": "pierre.sassoulas@gmail.com",
+    "mails": ["pierre.sassoulas@gmail.com", "pierre.sassoulas@cea.fr"]
+  },
+  "Raphael Gaschignard": {
     "authoritative_mail": "raphael@makeleaps.com",
-    "name": "Raphael Gaschignard"
+    "mails": ["raphael@rtpg.co", "raphael@makeleaps.com"]
   },
-  {
-    "mails": ["stefan.scherfke@energymeteo.de", "stefan@sofa-rockers.org"],
+  "Stefan Scherfke": {
     "authoritative_mail": "stefan@sofa-rockers.org",
-    "name": "Stefan Scherfke"
+    "mails": ["stefan.scherfke@energymeteo.de", "stefan@sofa-rockers.org"]
   },
-  {
+  "Sylvain Th\u00e9nault": {
+    "authoritative_mail": "thenault@gmail.com",
+    "mails": ["thenault@gmail.com", "sylvain.thenault@logilab.fr"]
+  },
+  "Ville Skytt\u00e4": {
+    "authoritative_mail": "ville.skytta@iki.fi",
+    "mails": ["ville.skytta@iki.fi", "ville.skytta@upcloud.com"]
+  },
+  "bot": {
+    "authoritative_mail": "bot@noreply.github.com",
     "mails": [
       "66853113+pre-commit-ci[bot]@users.noreply.github.com",
       "49699333+dependabot[bot]@users.noreply.github.com"
-    ],
-    "authoritative_mail": "bot@noreply.github.com",
-    "name": "bot"
-  },
-  {
-    "mails": ["kavin.singh@mail.utoronto.ca", "kavinsingh@hotmail.com"],
-    "authoritative_mail": "kavinsingh@hotmail.com",
-    "name": "Kavins Singh"
-  },
-  {
-    "mails": ["66853113+pre-commit-ci[bot]@users.noreply.github.com"],
-    "authoritative_mail": "bot@noreply.github.com",
-    "name": "pre-commit-ci[bot]"
+    ]
   }
-]
+}

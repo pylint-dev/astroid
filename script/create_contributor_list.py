@@ -12,7 +12,9 @@ DEFAULT_CONTRIBUTOR_PATH = ASTROID_BASE_DIRECTORY / "CONTRIBUTORS.txt"
 
 
 def main():
-    create_contributors_txt(aliases_file=ALIASES_FILE, output=DEFAULT_CONTRIBUTOR_PATH)
+    create_contributors_txt(
+        aliases_file=ALIASES_FILE, output=DEFAULT_CONTRIBUTOR_PATH, verbose=True
+    )
 
 
 if __name__ == "__main__":
