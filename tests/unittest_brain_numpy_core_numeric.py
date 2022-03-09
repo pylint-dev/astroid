@@ -7,7 +7,11 @@
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+
 import unittest
+from typing import List
+
+import pytest
 
 try:
     import numpy  # pylint: disable=unused-import
@@ -60,6 +64,27 @@ class BrainNumpyCoreNumericTest(unittest.TestCase):
                         func_[0], inferred_values[-1].pytype()
                     ),
                 )
+
+
+@pytest.mark.skipif(not HAS_NUMPY, reason="This test requires the numpy library.")
+@pytest.mark.parametrize(
+    "method, expected_args",
+    [
+        ("zeros_like", ["a", "dtype", "order", "subok", "shape"]),
+        ("full_like", ["a", "fill_value", "dtype", "order", "subok", "shape"]),
+        ("ones_like", ["a", "dtype", "order", "subok", "shape"]),
+        ("ones", ["shape", "dtype", "order"]),
+    ],
+)
+def test_function_parameters(method: str, expected_args: List[str]) -> None:
+    instance = builder.extract_node(
+        f"""
+    import numpy
+    numpy.{method} #@
+    """
+    )
+    actual_args = instance.inferred()[0].args.args
+    assert [arg.name for arg in actual_args] == expected_args
 
 
 if __name__ == "__main__":

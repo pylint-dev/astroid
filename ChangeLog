@@ -27,6 +27,11 @@ Release date: TBA
   to unexpected errors. Overwriting them with ``None`` will cause a fallback
   to the already supported way of PyPy 3.7.
 
+* Add missing ``shape`` parameter to numpy ``zeros_like``, ``ones_like``,
+  and ``full_like`` methods.
+
+  Closes PyCQA/pylint#5871
+
 
 What's New in astroid 2.10.1?
 =============================
