@@ -1144,7 +1144,7 @@ class SetComp(ComprehensionScope):
         yield from self.generators
 
 
-class _ListComp(node_classes.NodeNG):
+class ListComp(ComprehensionScope):
     """Class representing an :class:`ast.ListComp` node.
 
     >>> import astroid
@@ -1154,16 +1154,42 @@ class _ListComp(node_classes.NodeNG):
     """
 
     _astroid_fields = ("elt", "generators")
+    _other_other_fields = ("locals",)
+
     elt = None
     """The element that forms the output of the expression.
 
     :type: NodeNG or None
     """
+
     generators = None
     """The generators that are looped through.
 
     :type: list(Comprehension) or None
     """
+
+    def __init__(
+        self,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
+        self.locals = {}
+        """A map of the name of a local variable to the node defining it.
+
+        :type: dict(str, NodeNG)
+        """
+
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, elt=None, generators=None):
         """Do some setup after initialisation.
@@ -1190,41 +1216,6 @@ class _ListComp(node_classes.NodeNG):
         yield self.elt
 
         yield from self.generators
-
-
-class ListComp(_ListComp, ComprehensionScope):
-    """Class representing an :class:`ast.ListComp` node.
-
-    >>> import astroid
-    >>> node = astroid.extract_node('[thing for thing in things if thing]')
-    >>> node
-    <ListComp l.1 at 0x7f23b2e418d0>
-    """
-
-    _other_other_fields = ("locals",)
-
-    def __init__(
-        self,
-        lineno=None,
-        col_offset=None,
-        parent=None,
-        *,
-        end_lineno=None,
-        end_col_offset=None,
-    ):
-        self.locals = {}
-        """A map of the name of a local variable to the node defining it.
-
-        :type: dict(str, NodeNG)
-        """
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
 
 
 def _infer_decorator_callchain(node):
