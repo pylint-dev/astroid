@@ -507,13 +507,12 @@ def _astroid_bootstrapping():
         if _type.__name__ not in astroid_builtin:
             klass = nodes.ClassDef(_type.__name__)
             klass.parent = astroid_builtin
-            if _type.__doc__:
-                klass.postinit(
-                    bases=[],
-                    body=[],
-                    decorators=None,
-                    doc_node=nodes.Const(value=_type.__doc__),
-                )
+            klass.postinit(
+                bases=[],
+                body=[],
+                decorators=None,
+                doc_node=nodes.Const(value=_type.__doc__) if _type.__doc__ else None,
+            )
             builder.object_build(klass, _type)
             astroid_builtin[_type.__name__] = klass
 
