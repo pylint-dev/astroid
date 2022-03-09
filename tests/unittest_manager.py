@@ -24,7 +24,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 import os
-import platform
 import site
 import sys
 import time
@@ -36,13 +35,14 @@ import pkg_resources
 
 import astroid
 from astroid import manager, test_utils
+from astroid.const import IS_JYTHON
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 
 from . import resources
 
 
 def _get_file_from_object(obj) -> str:
-    if platform.python_implementation() == "Jython":
+    if IS_JYTHON:
         return obj.__file__.split("$py.class")[0] + ".py"
     return obj.__file__
 

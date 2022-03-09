@@ -46,14 +46,13 @@ import importlib.machinery
 import importlib.util
 import itertools
 import os
-import platform
 import sys
 import sysconfig
 import types
 from pathlib import Path
 from typing import Dict, Set
 
-from astroid.const import IS_PYPY
+from astroid.const import IS_JYTHON, IS_PYPY
 from astroid.interpreter._import import spec, util
 
 if sys.platform.startswith("win"):
@@ -125,7 +124,6 @@ if os.name == "posix":
         STD_LIB_DIRS.add(_posix_path("lib64"))
 
 EXT_LIB_DIRS = {sysconfig.get_path("purelib"), sysconfig.get_path("platlib")}
-IS_JYTHON = platform.python_implementation() == "Jython"
 BUILTIN_MODULES = dict.fromkeys(sys.builtin_module_names, True)
 
 

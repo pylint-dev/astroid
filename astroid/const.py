@@ -13,6 +13,7 @@ BUILTINS = "builtins"  # TODO Remove in 2.8
 WIN32 = sys.platform == "win32"
 
 IS_PYPY = platform.python_implementation() == "PyPy"
+IS_JYTHON = platform.python_implementation() == "Jython"
 
 
 class Context(enum.Enum):
