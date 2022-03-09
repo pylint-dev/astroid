@@ -6,7 +6,7 @@ This module contains utility functions for scoped nodes.
 """
 
 import builtins
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
 from astroid.manager import AstroidManager
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from astroid import nodes
 
 
-BUILTINS_AST: Optional["nodes.Module"] = None
+_builtin_astroid: "nodes.Module | None" = None
 
 
 def builtin_lookup(name: str) -> Tuple["nodes.Module", List["nodes.NodeNG"]]:
@@ -23,13 +23,13 @@ def builtin_lookup(name: str) -> Tuple["nodes.Module", List["nodes.NodeNG"]]:
     Return the list of matching statements and the ast for the builtin module
     """
     # pylint: disable-next=global-statement
-    global BUILTINS_AST
-    if not BUILTINS_AST:
-        BUILTINS_AST = AstroidManager().ast_from_module(builtins)
+    global _builtin_astroid
+    if _builtin_astroid is None:
+        _builtin_astroid = AstroidManager().ast_from_module(builtins)
     if name == "__dict__":
-        return BUILTINS_AST, ()
+        return _builtin_astroid, ()
     try:
-        stmts = BUILTINS_AST.locals[name]
+        stmts = _builtin_astroid.locals[name]
     except KeyError:
         stmts = ()
-    return BUILTINS_AST, stmts
+    return _builtin_astroid, stmts
