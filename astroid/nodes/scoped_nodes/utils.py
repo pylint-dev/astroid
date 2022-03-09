@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 _builtin_astroid: "nodes.Module | None" = None
 
 
-def builtin_lookup(name: str) -> Tuple["nodes.Module", List["nodes.NodeNG"]]:
+def builtin_lookup(name: str) -> Tuple["nodes.Module", Sequence["nodes.NodeNG"]]:
     """Lookup a name in the builtin module.
 
     Return the list of matching statements and the ast for the builtin module
@@ -29,7 +29,7 @@ def builtin_lookup(name: str) -> Tuple["nodes.Module", List["nodes.NodeNG"]]:
     if name == "__dict__":
         return _builtin_astroid, ()
     try:
-        stmts = _builtin_astroid.locals[name]
+        stmts: Sequence["nodes.NodeNG"] = _builtin_astroid.locals[name]
     except KeyError:
         stmts = ()
     return _builtin_astroid, stmts
