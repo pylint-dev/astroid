@@ -15,8 +15,8 @@ So, you want to release the `X.Y.Z` version of astroid ?
 6. Check the result and push the tag.
 7. Release the version on GitHub with the same name as the tag and copy and paste the
    appropriate changelog in the description. This trigger the pypi release.
-8. (If you just released a minor (`X.Y.0`), also release what was not yet released on
-   the `X.Y-1` branch then delete it.)
+8. (If you're going to release a minor (`X.Y.0`), first release what was not yet
+   released on the `X.Y-1` branch then delete it.)
 
 ## Post release
 
