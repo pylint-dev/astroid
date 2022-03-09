@@ -45,7 +45,6 @@ This module contains the classes for "scoped" node, i.e. which are opening a
 new local scope in the language definition : Module, ClassDef, FunctionDef (and
 Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
-import builtins
 import io
 import itertools
 import os
@@ -80,6 +79,7 @@ from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
 from astroid.nodes import Arguments, Const, node_classes
+from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
 
 if sys.version_info >= (3, 6, 2):
@@ -213,21 +213,6 @@ def function_to_method(n, klass):
         if n.type != "staticmethod":
             return bases.UnboundMethod(n)
     return n
-
-
-def builtin_lookup(name):
-    """lookup a name into the builtin module
-    return the list of matching statements and the astroid for the builtin
-    module
-    """
-    builtin_astroid = AstroidManager().ast_from_module(builtins)
-    if name == "__dict__":
-        return builtin_astroid, ()
-    try:
-        stmts = builtin_astroid.locals[name]
-    except KeyError:
-        stmts = ()
-    return builtin_astroid, stmts
 
 
 # TODO move this Mixin to mixins.py; problem: 'FunctionDef' in _scope_lookup

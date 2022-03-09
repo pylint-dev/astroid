@@ -19,10 +19,10 @@ from astroid.nodes.scoped_nodes.scoped_nodes import (
     Module,
     SetComp,
     _is_metaclass,
-    builtin_lookup,
     function_to_method,
     get_wrapping_class,
 )
+from astroid.nodes.scoped_nodes.utils import builtin_lookup
 
 __all__ = (
     "AsyncFunctionDef",
