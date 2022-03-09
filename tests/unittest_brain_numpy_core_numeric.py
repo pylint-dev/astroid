@@ -83,7 +83,7 @@ def test_function_parameters(method: str, expected_args: List[str]) -> None:
     numpy.{method} #@
     """
     )
-    actual_args = list(instance.infer())[0].args.args
+    actual_args = instance.inferred()[0].args.args
     assert [arg.name for arg in actual_args] == expected_args
 
 
