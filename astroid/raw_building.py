@@ -476,26 +476,34 @@ def _astroid_bootstrapping():
 
     _GeneratorType = nodes.ClassDef(types.GeneratorType.__name__)
     _GeneratorType.parent = astroid_builtin
-    if types.GeneratorType.__doc__:
-        _GeneratorType.postinit(
-            bases=[],
-            body=[],
-            decorators=None,
-            doc_node=nodes.Const(value=types.GeneratorType.__doc__),
-        )
+    generator_doc_node = (
+        nodes.Const(value=types.GeneratorType.__doc__)
+        if types.GeneratorType.__doc__
+        else None
+    )
+    _GeneratorType.postinit(
+        bases=[],
+        body=[],
+        decorators=None,
+        doc_node=generator_doc_node,
+    )
     bases.Generator._proxied = _GeneratorType
     builder.object_build(bases.Generator._proxied, types.GeneratorType)
 
     if hasattr(types, "AsyncGeneratorType"):
         _AsyncGeneratorType = nodes.ClassDef(types.AsyncGeneratorType.__name__)
         _AsyncGeneratorType.parent = astroid_builtin
-        if types.AsyncGeneratorType.__doc__:
-            _AsyncGeneratorType.postinit(
-                bases=[],
-                body=[],
-                decorators=None,
-                doc_node=nodes.Const(value=types.AsyncGeneratorType.__doc__),
-            )
+        async_generator_doc_node = (
+            nodes.Const(value=types.AsyncGeneratorType.__doc__)
+            if types.AsyncGeneratorType.__doc__
+            else None
+        )
+        _AsyncGeneratorType.postinit(
+            bases=[],
+            body=[],
+            decorators=None,
+            doc_node=async_generator_doc_node,
+        )
         bases.AsyncGenerator._proxied = _AsyncGeneratorType
         builder.object_build(bases.AsyncGenerator._proxied, types.AsyncGeneratorType)
     builtin_types = (
