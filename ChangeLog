@@ -13,10 +13,19 @@ Release date: TBA
   ``nodes.FunctionDef`` has been deprecated in favour of the ``doc_node`` attribute.
   Note: ``doc_node`` is an (optional) ``nodes.Const`` whereas ``doc`` was an (optional) ``str``.
 
+* Passing the ``doc`` argument to the ``__init__`` of ``nodes.Module``, ``nodes.ClassDef``,
+  and ``nodes.FunctionDef`` has been deprecated in favour of the ``postinit`` ``doc_node`` attribute.
+  Note: ``doc_node`` is an (optional) ``nodes.Const`` whereas ``doc`` was an (optional) ``str``.
+
 * Replace custom ``cachedproperty`` with ``functools.cached_property`` and deprecate it
   for Python 3.8+.
 
   Closes #1410
+
+* Set ``end_lineno`` and ``end_col_offset`` attributes to ``None`` for all nodes
+  with PyPy 3.8. PyPy 3.8 assigns these attributes inconsistently which could lead
+  to unexpected errors. Overwriting them with ``None`` will cause a fallback
+  to the already supported way of PyPy 3.7.
 
 
 What's New in astroid 2.10.1?
