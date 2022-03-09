@@ -58,7 +58,7 @@ from astroid import (
     util,
 )
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import PY38_PLUS, PY310_PLUS, WIN32
+from astroid.const import IMPLEMENTATION_PYPY, PY38, PY38_PLUS, PY310_PLUS, WIN32
 from astroid.exceptions import (
     AttributeInferenceError,
     DuplicateBasesError,
@@ -1291,7 +1291,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         astroid = builder.parse(data)
         self.assertEqual(astroid["g1"].fromlineno, 4)
         self.assertEqual(astroid["g1"].tolineno, 5)
-        if not PY38_PLUS:
+        if not PY38_PLUS or PY38 and IMPLEMENTATION_PYPY:
             self.assertEqual(astroid["g2"].fromlineno, 9)
         else:
             self.assertEqual(astroid["g2"].fromlineno, 10)
