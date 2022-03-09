@@ -22,6 +22,11 @@ Release date: TBA
 
   Closes PyCQA/pylint#5871
 
+* Set ``end_lineno`` and ``end_col_offset`` attributes to ``None`` for all nodes
+  with PyPy 3.8. PyPy 3.8 assigns these attributes inconsistently which could lead
+  to unexpected errors. Overwriting them with ``None`` will cause a fallback
+  to the already supported way of PyPy 3.7.
+
 
 What's New in astroid 2.10.1?
 =============================

@@ -163,7 +163,10 @@ class ModuleModel(ObjectModel):
 
     @property
     def attr___doc__(self):
-        return node_classes.Const(value=self._instance.doc, parent=self._instance)
+        return node_classes.Const(
+            value=getattr(self._instance.doc_node, "value", None),
+            parent=self._instance,
+        )
 
     @property
     def attr___file__(self):
@@ -209,7 +212,10 @@ class FunctionModel(ObjectModel):
 
     @property
     def attr___doc__(self):
-        return node_classes.Const(value=self._instance.doc, parent=self._instance)
+        return node_classes.Const(
+            value=getattr(self._instance.doc_node, "value", None),
+            parent=self._instance,
+        )
 
     @property
     def attr___qualname__(self):
@@ -332,13 +338,18 @@ class FunctionModel(ObjectModel):
                 # class where it will be bound.
                 new_func = func.__class__(
                     name=func.name,
-                    doc=func.doc,
                     lineno=func.lineno,
                     col_offset=func.col_offset,
                     parent=func.parent,
                 )
                 # pylint: disable=no-member
-                new_func.postinit(func.args, func.body, func.decorators, func.returns)
+                new_func.postinit(
+                    func.args,
+                    func.body,
+                    func.decorators,
+                    func.returns,
+                    doc_node=func.doc_node,
+                )
 
                 # Build a proper bound method that points to our newly built function.
                 proxy = bases.UnboundMethod(new_func)
@@ -424,7 +435,7 @@ class ClassModel(ObjectModel):
 
     @property
     def attr___doc__(self):
-        return node_classes.Const(self._instance.doc)
+        return node_classes.Const(getattr(self._instance.doc_node, "value", None))
 
     @property
     def attr___mro__(self):
@@ -584,7 +595,8 @@ class GeneratorModel(FunctionModel):
     @property
     def attr___doc__(self):
         return node_classes.Const(
-            value=self._instance.parent.doc, parent=self._instance
+            value=getattr(self._instance.parent.doc_node, "value", None),
+            parent=self._instance,
         )
 
 
@@ -620,7 +632,7 @@ class InstanceModel(ObjectModel):
 
     @property
     def attr___doc__(self):
-        return node_classes.Const(self._instance.doc)
+        return node_classes.Const(getattr(self._instance.doc_node, "value", None))
 
     @property
     def attr___dict__(self):

@@ -58,7 +58,7 @@ from astroid import (
     util,
 )
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import PY38_PLUS, PY310_PLUS, WIN32
+from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY310_PLUS, WIN32
 from astroid.exceptions import (
     AttributeInferenceError,
     DuplicateBasesError,
@@ -215,8 +215,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_relative_to_absolute_name(self) -> None:
         # package
-        mod = nodes.Module("very.multi.package", "doc")
-        mod.package = True
+        mod = nodes.Module("very.multi.package", package=True)
         modname = mod.relative_to_absolute_name("utils", 1)
         self.assertEqual(modname, "very.multi.package.utils")
         modname = mod.relative_to_absolute_name("utils", 2)
@@ -226,8 +225,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         modname = mod.relative_to_absolute_name("", 1)
         self.assertEqual(modname, "very.multi.package")
         # non package
-        mod = nodes.Module("very.multi.module", "doc")
-        mod.package = False
+        mod = nodes.Module("very.multi.module", package=False)
         modname = mod.relative_to_absolute_name("utils", 0)
         self.assertEqual(modname, "very.multi.utils")
         modname = mod.relative_to_absolute_name("utils", 1)
@@ -238,8 +236,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(modname, "very.multi")
 
     def test_relative_to_absolute_name_beyond_top_level(self) -> None:
-        mod = nodes.Module("a.b.c", "")
-        mod.package = True
+        mod = nodes.Module("a.b.c", package=True)
         for level in (5, 4):
             with self.assertRaises(TooManyLevelsError) as cm:
                 mod.relative_to_absolute_name("test", level)
@@ -968,10 +965,8 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             )
             with pytest.warns(DeprecationWarning) as records:
                 self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc)
-                # TODO: This should be 1 once we update the use of 'doc' internally
-                assert len(records) == 2
-            # TODO: The doc_node attribute needs to be set in the raw_building process
-            # self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc_node.value)
+                assert len(records) == 1
+            self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc_node.value)
             self.assertEqual(len(cls.getattr("__module__")), 4)
             self.assertEqual(len(cls.getattr("__dict__")), 1)
             self.assertEqual(len(cls.getattr("__mro__")), 1)
@@ -1293,7 +1288,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         astroid = builder.parse(data)
         self.assertEqual(astroid["g1"].fromlineno, 4)
         self.assertEqual(astroid["g1"].tolineno, 5)
-        if not PY38_PLUS:
+        if not PY38_PLUS or PY38 and IS_PYPY:
             self.assertEqual(astroid["g2"].fromlineno, 9)
         else:
             self.assertEqual(astroid["g2"].fromlineno, 10)

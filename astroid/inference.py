@@ -34,7 +34,19 @@ import ast
 import functools
 import itertools
 import operator
-from typing import Any, Callable, Dict, Iterable, Iterator, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    Iterator,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import wrapt
 
@@ -57,9 +69,16 @@ from astroid.exceptions import (
 )
 from astroid.interpreter import dunder_lookup
 from astroid.manager import AstroidManager
+from astroid.typing import InferenceErrorInfo
+
+if TYPE_CHECKING:
+    from astroid.objects import Property
 
 # Prevents circular imports
 objects = util.lazy_import("objects")
+
+
+_FunctionDefT = TypeVar("_FunctionDefT", bound=nodes.FunctionDef)
 
 
 # .infer method ###############################################################
@@ -1063,22 +1082,23 @@ def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
 # are mutated with a new instance of the property. This is why we cache the result
 # of the function's inference.
 @_cached_generator
-def infer_functiondef(self, context=None):
+def infer_functiondef(
+    self: _FunctionDefT, context: Optional[InferenceContext] = None
+) -> Generator[Union["Property", _FunctionDefT], None, InferenceErrorInfo]:
     if not self.decorators or not bases._is_property(self):
         yield self
-        return dict(node=self, context=context)
+        return InferenceErrorInfo(node=self, context=context)
 
     prop_func = objects.Property(
         function=self,
         name=self.name,
-        doc=self.doc,
         lineno=self.lineno,
         parent=self.parent,
         col_offset=self.col_offset,
     )
-    prop_func.postinit(body=[], args=self.args)
+    prop_func.postinit(body=[], args=self.args, doc_node=self.doc_node)
     yield prop_func
-    return dict(node=self, context=context)
+    return InferenceErrorInfo(node=self, context=context)
 
 
 nodes.FunctionDef._infer = infer_functiondef  # type: ignore[assignment]

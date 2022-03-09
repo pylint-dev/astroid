@@ -45,7 +45,6 @@ This module contains the classes for "scoped" node, i.e. which are opening a
 new local scope in the language definition : Module, ClassDef, FunctionDef (and
 Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
-import builtins
 import io
 import itertools
 import os
@@ -57,7 +56,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, TypeVar, Union, ove
 from astroid import bases
 from astroid import decorators as decorators_mod
 from astroid import mixins, util
-from astroid.const import PY38_PLUS, PY39_PLUS
+from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -80,6 +79,7 @@ from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
 from astroid.nodes import Arguments, Const, node_classes
+from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
 
 if sys.version_info >= (3, 6, 2):
@@ -213,21 +213,6 @@ def function_to_method(n, klass):
         if n.type != "staticmethod":
             return bases.UnboundMethod(n)
     return n
-
-
-def builtin_lookup(name):
-    """lookup a name into the builtin module
-    return the list of matching statements and the astroid for the builtin
-    module
-    """
-    builtin_astroid = AstroidManager().ast_from_module(builtins)
-    if name == "__dict__":
-        return builtin_astroid, ()
-    try:
-        stmts = builtin_astroid.locals[name]
-    except KeyError:
-        stmts = ()
-    return builtin_astroid, stmts
 
 
 # TODO move this Mixin to mixins.py; problem: 'FunctionDef' in _scope_lookup
@@ -2399,7 +2384,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     @cached_property
     def fromlineno(self) -> Optional[int]:
         """The first line that this node appears on in the source code."""
-        if not PY38_PLUS:
+        if not PY38_PLUS or PY38 and IS_PYPY:
             # For Python < 3.8 the lineno is the line number of the first decorator.
             # We want the class statement lineno. Similar to 'FunctionDef.fromlineno'
             lineno = self.lineno
@@ -2488,7 +2473,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         else:
             return util.Uninferable
 
-        result = ClassDef(name, None)
+        result = ClassDef(name)
 
         # Get the bases of the class.
         try:
