@@ -51,7 +51,7 @@ from astroid import (
     transforms,
     util,
 )
-from astroid.const import IS_PYPY, PY38_PLUS, PY310_PLUS, Context
+from astroid.const import PY38_PLUS, PY310_PLUS, Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -289,9 +289,6 @@ def func(param: Tuple):
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string().strip(), code.strip())
 
-    # This test is disabled on PyPy because we cannot get a release that has proper
-    # support for f-strings (we need 7.2 at least)
-    @pytest.mark.skipif(IS_PYPY, reason="Needs f-string support.")
     def test_f_strings(self):
         code = r'''
 a = f"{'a'}"
