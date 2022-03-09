@@ -206,6 +206,8 @@ if (
 ):
     tokenize._compile = functools.lru_cache()(tokenize._compile)  # type: ignore[attr-defined]
 
+"B"
+
 # load brain plugins
 ASTROID_INSTALL_DIRECTORY = Path(__file__).parent
 BRAIN_MODULES_DIRECTORY = ASTROID_INSTALL_DIRECTORY / "brain"
