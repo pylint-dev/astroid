@@ -8,7 +8,7 @@ So, you want to release the `X.Y.Z` version of astroid ?
 
 1. Check if the dependencies of the package are correct
 2. (If you're releasing a minor (`X.Y.0`), remove the empty changelog for the last
-   unreleased `X.Y-1.Z'` version.)
+   unreleased patch version `X.Y-1.Z'`.)
 3. Check the result of `git diff vX.Y.Z-1 ChangeLog` or `git diff vX.Y-1.Z' ChangeLog`.
 4. Install the release dependencies `pip3 install -r requirements_test.txt`
 5. Bump the version and release by using `tbump X.Y.Z --no-push`.
@@ -26,10 +26,13 @@ When a crash or a bug is fixed on the main branch, and it needs backport:
 
 - Make sure that the changelog is for the patch version `X.Y-1.Z'`.
 - (Create a `X.Y-1` branch from the `X.Y-1.0` tag if it does not already exist.)
-- After the PR is merged cherry-pick the commit on the `X.Y-1` branch
+- After the PR is merged cherry-pick the commits on the `X.Y-1` branch
 - Do a release for `X.Y-1.Z`.
-- Cherry-pick the version bumping commit on the main branch so the main branch has the
-  changelog for `X.Y-1.Z+1`.
+- Bump `X.Y-1.Z` branch to `X.Y-1.Z+1-dev0`
+- Merge the `X.Y-1` branch on the main branch. The main branch should have the changelog
+  for `X.Y-1.Z+1`. (You need to merge so `pre-commit autoupdate` works.)
+- Fix version conflicts properly, or bump the version to `X.Y.0-devZ` before pushing on
+  the main branch
 
 ### Back to a dev version
 
