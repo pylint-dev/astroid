@@ -10,11 +10,14 @@ from typing import TYPE_CHECKING, List, MutableMapping, Optional, Sequence, Tupl
 if TYPE_CHECKING:
     from astroid.nodes.node_classes import Keyword, NodeNG
 
+_InferenceCache = MutableMapping[
+    Tuple["NodeNG", Optional[str], Optional[str], Optional[str]], Sequence["NodeNG"]
+]
 
-_INFERENCE_CACHE = {}
+_INFERENCE_CACHE: _InferenceCache = {}
 
 
-def _invalidate_cache():
+def _invalidate_cache() -> None:
     _INFERENCE_CACHE.clear()
 
 
@@ -96,11 +99,7 @@ class InferenceContext:
         self._nodes_inferred[0] = value
 
     @property
-    def inferred(
-        self,
-    ) -> MutableMapping[
-        Tuple["NodeNG", Optional[str], Optional[str], Optional[str]], Sequence["NodeNG"]
-    ]:
+    def inferred(self) -> _InferenceCache:
         """
         Inferred node contexts to their mapped results
 
@@ -164,10 +163,10 @@ class CallContext:
     ):
         self.args = args  # Call positional arguments
         if keywords:
-            keywords = [(arg.arg, arg.value) for arg in keywords]
+            keywords_list = [(arg.arg, arg.value) for arg in keywords]
         else:
-            keywords = []
-        self.keywords = keywords  # Call keyword arguments
+            keywords_list = []
+        self.keywords = keywords_list  # Call keyword arguments
         self.callee = callee  # Function being called
 
 
