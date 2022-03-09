@@ -1,5 +1,4 @@
 import enum
-import platform
 import sys
 
 PY36 = sys.version_info[:2] == (3, 6)
@@ -12,8 +11,8 @@ BUILTINS = "builtins"  # TODO Remove in 2.8
 
 WIN32 = sys.platform == "win32"
 
-IS_PYPY = platform.python_implementation() == "PyPy"
-IS_JYTHON = platform.python_implementation() == "Jython"
+IS_PYPY = sys.implementation.name == "pypy"
+IS_JYTHON = sys.implementation.name == "jython"
 
 
 class Context(enum.Enum):
