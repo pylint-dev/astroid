@@ -110,13 +110,11 @@ def attach_import_node(node, modname, membername):
 
 def build_module(name: str, doc: Optional[str] = None) -> nodes.Module:
     """create and initialize an astroid Module node"""
-    node = nodes.Module(name, pure_python=False)
+    node = nodes.Module(name, pure_python=False, package=False)
     node.postinit(
         body=[],
         doc_node=nodes.Const(value=doc) if doc else None,
     )
-    node.package = False
-    node.parent = None
     return node
 
 
