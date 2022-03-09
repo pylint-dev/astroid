@@ -1,7 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
-
 """This module contains mixin classes for scoped nodes."""
 
 from typing import TYPE_CHECKING, Dict, List, TypeVar
@@ -13,7 +12,7 @@ from astroid.nodes.scoped_nodes.utils import builtin_lookup
 if TYPE_CHECKING:
     from astroid import nodes
 
-T = TypeVar("T")
+_T = TypeVar("_T")
 
 
 class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
@@ -40,7 +39,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
             return self.name
         return f"{self.parent.frame(future=True).qname()}.{self.name}"
 
-    def scope(self: T) -> T:
+    def scope(self: _T) -> _T:
         """The first parent node defining a new scope.
 
         :returns: The first parent scope node.
