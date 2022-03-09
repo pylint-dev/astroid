@@ -57,7 +57,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, TypeVar, Union, ove
 from astroid import bases
 from astroid import decorators as decorators_mod
 from astroid import mixins, util
-from astroid.const import IMPLEMENTATION_PYPY, PY38, PY38_PLUS, PY39_PLUS
+from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -2399,7 +2399,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     @cached_property
     def fromlineno(self) -> Optional[int]:
         """The first line that this node appears on in the source code."""
-        if not PY38_PLUS or PY38 and IMPLEMENTATION_PYPY:
+        if not PY38_PLUS or PY38 and IS_PYPY:
             # For Python < 3.8 the lineno is the line number of the first decorator.
             # We want the class statement lineno. Similar to 'FunctionDef.fromlineno'
             lineno = self.lineno

@@ -54,7 +54,7 @@ from typing import (
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import IMPLEMENTATION_PYPY, PY36, PY38, PY38_PLUS, PY39_PLUS, Context
+from astroid.const import IS_PYPY, PY36, PY38, PY38_PLUS, PY39_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 from astroid.nodes.utils import Position
@@ -224,7 +224,7 @@ class TreeRebuilder:
 
         lineno = node.lineno or 1  # lineno of modules is 0
         end_range: Optional[int] = node.doc_node.lineno
-        if IMPLEMENTATION_PYPY and not PY39_PLUS:
+        if IS_PYPY and not PY39_PLUS:
             end_range = None
         # pylint: disable-next=unsubscriptable-object
         data = "\n".join(self._data[lineno - 1 : end_range])
@@ -312,7 +312,7 @@ class TreeRebuilder:
             doc_node=self.visit(doc_ast_node, newnode),
         )
         self._fix_doc_node_position(newnode)
-        if IMPLEMENTATION_PYPY and PY38:
+        if IS_PYPY and PY38:
             self._reset_end_lineno(newnode)
         return newnode
 
