@@ -117,7 +117,7 @@ class TreeRebuilder:
         self._module = self._parser_module.module
 
     def _get_doc(self, node: T_Doc) -> Tuple[T_Doc, Optional["ast.Constant | ast.Str"]]:
-        """Return the doc ast node and the actual docstring."""
+        """Return the doc ast node."""
         try:
             if node.body and isinstance(node.body[0], self._module.Expr):
                 first_value = node.body[0].value
