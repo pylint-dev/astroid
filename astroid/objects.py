@@ -25,7 +25,7 @@ leads to an inferred FrozenSet:
 import sys
 from typing import TYPE_CHECKING
 
-from astroid import bases, util
+from astroid import bases, decorators, util
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
