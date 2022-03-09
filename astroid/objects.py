@@ -25,7 +25,7 @@ leads to an inferred FrozenSet:
 import sys
 from typing import TYPE_CHECKING
 
-from astroid import bases, util
+from astroid import bases, decorators, util
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -266,11 +266,13 @@ class DictValues(bases.Proxy):
 class PartialFunction(scoped_nodes.FunctionDef):
     """A class representing partial function obtained via functools.partial"""
 
+    @decorators.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
         self, call, name=None, doc=None, lineno=None, col_offset=None, parent=None
     ):
         # TODO: Pass end_lineno and end_col_offset as well
-        super().__init__(name, doc, lineno, col_offset, parent=None)
+        super().__init__(name, lineno=lineno, col_offset=col_offset, parent=None)
+        self._doc = doc
         # A typical FunctionDef automatically adds its name to the parent scope,
         # but a partial should not, so defer setting parent until after init
         self.parent = parent
