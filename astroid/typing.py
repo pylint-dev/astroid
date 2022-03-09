@@ -2,17 +2,22 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 import sys
-from typing import Optional
+from typing import TYPE_CHECKING
 
-from astroid import nodes
-from astroid.context import InferenceContext
+if TYPE_CHECKING:
+    from astroid import nodes
+    from astroid.context import InferenceContext
 
-if sys.version_info >= (3, 10):
+if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
     from typing_extensions import TypedDict
 
 
 class InferenceErrorInfo(TypedDict):
-    node: nodes.NodeNG
-    context: Optional[InferenceContext]
+    """Store additional Inference error information
+    raised with StopIteration exception.
+    """
+
+    node: "nodes.NodeNG"
+    context: "InferenceContext | None"
