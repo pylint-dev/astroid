@@ -2717,6 +2717,15 @@ def test_deprecation_of_doc_attribute() -> None:
         assert node_func.doc == "Docstring"
         assert len(records) == 1
 
+    # If 'doc' is passed to Module, ClassDef, FunctionDef,
+    # a DeprecationWarning should be raised
+    doc_node = nodes.Const("Docstring")
+    with pytest.warns(DeprecationWarning) as records:
+        node_module = nodes.Module(name="MyModule", doc="Docstring")
+        node_class = nodes.ClassDef(name="MyClass", doc="Docstring")
+        node_func = nodes.FunctionDef(name="MyFunction", doc="Docstring")
+        assert len(records) == 3
+
 
 if __name__ == "__main__":
     unittest.main()

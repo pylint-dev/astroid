@@ -269,6 +269,7 @@ class Module(LocalsDictNodeNG):
     end_col_offset: None
     parent: None
 
+    @decorators_mod.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
         self,
         name: str,
@@ -1352,6 +1353,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     )
     _type = None
 
+    @decorators_mod.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
         self,
         name=None,
@@ -2018,6 +2020,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     _other_other_fields = ("locals", "_newstyle")
     _newstyle = None
 
+    @decorators_mod.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
         self,
         name=None,
