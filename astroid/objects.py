@@ -320,6 +320,8 @@ class Property(scoped_nodes.FunctionDef):
     ):
         self.function = function
         super().__init__(name, lineno=lineno, col_offset=col_offset, parent=parent)
+        # TODO: Set directly in order not to trigger DeprecationWarning. Remove
+        # when '.doc' is removed.
         self._doc = doc
 
     # pylint: disable=unnecessary-lambda
