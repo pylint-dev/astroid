@@ -280,7 +280,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
 
 def build_namespace_package_module(name: str, path: List[str]) -> nodes.Module:
-    return nodes.Module(name, doc="", path=path, package=True)
+    return nodes.Module(name, path=path, package=True)
 
 
 def parse(code, module_name="", path=None, apply_transforms=True):
