@@ -2488,7 +2488,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         else:
             return util.Uninferable
 
-        result = ClassDef(name, None)
+        result = ClassDef(name)
 
         # Get the bases of the class.
         try:

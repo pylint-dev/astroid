@@ -474,18 +474,36 @@ def _astroid_bootstrapping():
     # Set the builtin module as parent for some builtins.
     nodes.Const._proxied = property(_set_proxied)
 
-    _GeneratorType = nodes.ClassDef(
-        types.GeneratorType.__name__, types.GeneratorType.__doc__
-    )
+    _GeneratorType = nodes.ClassDef(types.GeneratorType.__name__)
     _GeneratorType.parent = astroid_builtin
+    generator_doc_node = (
+        nodes.Const(value=types.GeneratorType.__doc__)
+        if types.GeneratorType.__doc__
+        else None
+    )
+    _GeneratorType.postinit(
+        bases=[],
+        body=[],
+        decorators=None,
+        doc_node=generator_doc_node,
+    )
     bases.Generator._proxied = _GeneratorType
     builder.object_build(bases.Generator._proxied, types.GeneratorType)
 
     if hasattr(types, "AsyncGeneratorType"):
-        _AsyncGeneratorType = nodes.ClassDef(
-            types.AsyncGeneratorType.__name__, types.AsyncGeneratorType.__doc__
-        )
+        _AsyncGeneratorType = nodes.ClassDef(types.AsyncGeneratorType.__name__)
         _AsyncGeneratorType.parent = astroid_builtin
+        async_generator_doc_node = (
+            nodes.Const(value=types.AsyncGeneratorType.__doc__)
+            if types.AsyncGeneratorType.__doc__
+            else None
+        )
+        _AsyncGeneratorType.postinit(
+            bases=[],
+            body=[],
+            decorators=None,
+            doc_node=async_generator_doc_node,
+        )
         bases.AsyncGenerator._proxied = _AsyncGeneratorType
         builder.object_build(bases.AsyncGenerator._proxied, types.AsyncGeneratorType)
     builtin_types = (
@@ -502,10 +520,16 @@ def _astroid_bootstrapping():
     )
     for _type in builtin_types:
         if _type.__name__ not in astroid_builtin:
-            cls = nodes.ClassDef(_type.__name__, _type.__doc__)
-            cls.parent = astroid_builtin
-            builder.object_build(cls, _type)
-            astroid_builtin[_type.__name__] = cls
+            klass = nodes.ClassDef(_type.__name__)
+            klass.parent = astroid_builtin
+            klass.postinit(
+                bases=[],
+                body=[],
+                decorators=None,
+                doc_node=nodes.Const(value=_type.__doc__) if _type.__doc__ else None,
+            )
+            builder.object_build(klass, _type)
+            astroid_builtin[_type.__name__] = klass
 
 
 _astroid_bootstrapping()
