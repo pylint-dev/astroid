@@ -22,7 +22,7 @@ So, you want to release the `X.Y.Z` version of astroid ?
 
 ### Backport fixes from main
 
-When a crash or a bug is fixed on the main branch, and it needs backport:
+When a crash or a bug is fixed on the main branch, and it needs to be backported:
 
 - Make sure that the changelog is for the patch version `X.Y-1.Z'`.
 - (Create a `X.Y-1` branch from the `X.Y-1.0` tag if it does not already exist.)
