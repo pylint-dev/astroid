@@ -6,7 +6,7 @@ This module contains utility functions for scoped nodes.
 """
 
 import builtins
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, Tuple
 
 from astroid.manager import AstroidManager
 
