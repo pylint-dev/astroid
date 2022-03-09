@@ -13,13 +13,13 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
-import platform
 import unittest
 
 import _io
 import pytest
 
 from astroid.builder import AstroidBuilder
+from astroid.const import IS_PYPY
 from astroid.raw_building import (
     attach_dummy_node,
     build_class,
@@ -85,7 +85,7 @@ class RawBuildingTC(unittest.TestCase):
         node = build_from_import("astroid", names)
         self.assertEqual(len(names), len(node.names))
 
-    @unittest.skipIf(platform.python_implementation() == "PyPy", "Only affects CPython")
+    @unittest.skipIf(IS_PYPY, "Only affects CPython")
     def test_io_is__io(self):
         # _io module calls itself io. This leads
         # to cyclic dependencies when astroid tries to resolve

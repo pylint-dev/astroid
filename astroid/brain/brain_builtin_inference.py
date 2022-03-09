@@ -23,9 +23,11 @@
 """Astroid hooks for various builtins."""
 
 from functools import partial
+from typing import Optional
 
 from astroid import arguments, helpers, inference_tip, nodes, objects, util
 from astroid.builder import AstroidBuilder
+from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
@@ -548,7 +550,9 @@ def infer_callable(node, context=None):
     return nodes.Const(inferred.callable())
 
 
-def infer_property(node, context=None):
+def infer_property(
+    node: nodes.Call, context: Optional[InferenceContext] = None
+) -> objects.Property:
     """Understand `property` class
 
     This only infers the output of `property`
@@ -570,12 +574,15 @@ def infer_property(node, context=None):
     prop_func = objects.Property(
         function=inferred,
         name=inferred.name,
-        doc=getattr(inferred, "doc", None),
         lineno=node.lineno,
         parent=node,
         col_offset=node.col_offset,
     )
-    prop_func.postinit(body=[], args=inferred.args)
+    prop_func.postinit(
+        body=[],
+        args=inferred.args,
+        doc_node=getattr(inferred, "doc_node", None),
+    )
     return prop_func
 
 

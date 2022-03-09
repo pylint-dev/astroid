@@ -488,7 +488,7 @@ class ModuleExtenderTest(unittest.TestCase):
     def test_extension_modules(self) -> None:
         transformer = MANAGER._transform
         for extender, _ in transformer.transforms[nodes.Module]:
-            n = nodes.Module("__main__", None)
+            n = nodes.Module("__main__")
             extender(n)
 
 

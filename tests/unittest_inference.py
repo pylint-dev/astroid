@@ -44,7 +44,6 @@
 
 """Tests for the astroid inference capabilities"""
 
-import platform
 import textwrap
 import unittest
 from abc import ABCMeta
@@ -61,7 +60,7 @@ from astroid import helpers, nodes, objects, test_utils, util
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod
 from astroid.builder import AstroidBuilder, extract_node, parse
-from astroid.const import PY38_PLUS, PY39_PLUS
+from astroid.const import IS_PYPY, PY38_PLUS, PY39_PLUS
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -858,7 +857,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
         self.assertEqual(inferred[0].name, "open")
 
-    if platform.python_implementation() == "PyPy":
+    if IS_PYPY:
         test_builtin_open = unittest.expectedFailure(test_builtin_open)
 
     def test_callfunc_context_func(self) -> None:
@@ -6144,6 +6143,26 @@ def test_property_callable_inference() -> None:
     inferred = next(property_call.infer())
     assert isinstance(inferred, nodes.Const)
     assert inferred.value == 42
+
+
+def test_property_docstring() -> None:
+    code = """
+    class A:
+        @property
+        def test(self):
+            '''Docstring'''
+            return 42
+
+    A.test #@
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, objects.Property)
+    assert isinstance(inferred.doc_node, nodes.Const)
+    assert inferred.doc_node.value == "Docstring"
+    with pytest.warns(DeprecationWarning) as records:
+        assert inferred.doc == "Docstring"
+        assert len(records) == 1
 
 
 def test_recursion_error_inferring_builtin_containers() -> None:
