@@ -261,7 +261,7 @@ class NodeNG:
         """An optimized version of list(get_children())[-1]"""
         for field in self._astroid_fields[::-1]:
             attr = getattr(self, field)
-            if not attr:  # None or empty listy / tuple
+            if not attr:  # None or empty list / tuple
                 continue
             if isinstance(attr, (list, tuple)):
                 return attr[-1]

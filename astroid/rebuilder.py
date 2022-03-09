@@ -2330,7 +2330,7 @@ class TreeRebuilder:
             self, node: "ast.MatchSingleton", parent: NodeNG
         ) -> nodes.MatchSingleton:
             return nodes.MatchSingleton(
-                value=node.value,  # type: ignore[arg-type] # See https://github.com/python/mypy/pull/10389
+                value=node.value,
                 lineno=node.lineno,
                 col_offset=node.col_offset,
                 end_lineno=node.end_lineno,
