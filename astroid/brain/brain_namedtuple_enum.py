@@ -157,10 +157,13 @@ def infer_func_form(
     # we know it is a namedtuple anyway.
     name = name or "Uninferable"
     # we want to return a Class node instance with proper attributes set
-    class_node = nodes.ClassDef(name, "docstring")
-    class_node.parent = node.parent
-    # set base class=tuple
-    class_node.bases.append(base_type)
+    class_node = nodes.ClassDef(name, parent=node.parent)
+    class_node.postinit(
+        # set base class=tuple
+        bases=[base_type],
+        body=[],
+        decorators=None,
+    )
     # XXX add __init__(*attributes) method
     for attr in attributes:
         fake_node = nodes.EmptyNode()

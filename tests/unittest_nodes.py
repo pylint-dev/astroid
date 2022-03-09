@@ -33,7 +33,6 @@
 """
 import copy
 import os
-import platform
 import sys
 import textwrap
 import unittest
@@ -290,12 +289,6 @@ def func(param: Tuple):
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string().strip(), code.strip())
 
-    # This test is disabled on PyPy because we cannot get a release that has proper
-    # support for f-strings (we need 7.2 at least)
-    @pytest.mark.skipif(
-        platform.python_implementation() == "PyPy",
-        reason="Needs f-string support.",
-    )
     def test_f_strings(self):
         code = r'''
 a = f"{'a'}"

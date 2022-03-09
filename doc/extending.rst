@@ -95,7 +95,6 @@ Instantiating a new node might look as in::
 
     new_node = FunctionDef(
         name='my_new_function',
-        doc='the docstring of this function',
         lineno=3,
         col_offset=0,
         parent=the_parent_of_this_function,
@@ -104,6 +103,7 @@ Instantiating a new node might look as in::
         args=args,
         body=body,
         returns=returns,
+        doc_node=nodes.Const(value='the docstring of this function'),
     )
 
 
