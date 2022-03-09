@@ -215,8 +215,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_relative_to_absolute_name(self) -> None:
         # package
-        mod = nodes.Module("very.multi.package")
-        mod.package = True
+        mod = nodes.Module("very.multi.package", package=True)
         modname = mod.relative_to_absolute_name("utils", 1)
         self.assertEqual(modname, "very.multi.package.utils")
         modname = mod.relative_to_absolute_name("utils", 2)
@@ -226,8 +225,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         modname = mod.relative_to_absolute_name("", 1)
         self.assertEqual(modname, "very.multi.package")
         # non package
-        mod = nodes.Module("very.multi.module")
-        mod.package = False
+        mod = nodes.Module("very.multi.module", package=False)
         modname = mod.relative_to_absolute_name("utils", 0)
         self.assertEqual(modname, "very.multi.utils")
         modname = mod.relative_to_absolute_name("utils", 1)
@@ -238,8 +236,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(modname, "very.multi")
 
     def test_relative_to_absolute_name_beyond_top_level(self) -> None:
-        mod = nodes.Module("a.b.c")
-        mod.package = True
+        mod = nodes.Module("a.b.c", package=True)
         for level in (5, 4):
             with self.assertRaises(TooManyLevelsError) as cm:
                 mod.relative_to_absolute_name("test", level)
