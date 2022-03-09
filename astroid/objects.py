@@ -314,11 +314,13 @@ node_classes.Dict.__bases__ = (node_classes.NodeNG, DictInstance)
 class Property(scoped_nodes.FunctionDef):
     """Class representing a Python property"""
 
+    @decorators.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
         self, function, name=None, doc=None, lineno=None, col_offset=None, parent=None
     ):
         self.function = function
-        super().__init__(name, doc, lineno, col_offset, parent)
+        super().__init__(name, lineno=lineno, col_offset=col_offset, parent=parent)
+        self._doc = doc
 
     # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.PropertyModel())
