@@ -163,7 +163,6 @@ def infer_func_form(
         bases=[base_type],
         body=[],
         decorators=None,
-        doc_node=nodes.Const(value="docstring"),
     )
     # XXX add __init__(*attributes) method
     for attr in attributes:
