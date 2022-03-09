@@ -78,7 +78,7 @@ if TYPE_CHECKING:
 objects = util.lazy_import("objects")
 
 
-FunctionDefT = TypeVar("FunctionDefT", bound=nodes.FunctionDef)
+_FunctionDefT = TypeVar("_FunctionDefT", bound=nodes.FunctionDef)
 
 
 # .infer method ###############################################################
@@ -1083,8 +1083,8 @@ def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
 # of the function's inference.
 @_cached_generator
 def infer_functiondef(
-    self: FunctionDefT, context: Optional[InferenceContext] = None
-) -> Generator[Union["Property", FunctionDefT], None, InferenceErrorInfo]:
+    self: _FunctionDefT, context: Optional[InferenceContext] = None
+) -> Generator[Union["Property", _FunctionDefT], None, InferenceErrorInfo]:
     if not self.decorators or not bases._is_property(self):
         yield self
         return InferenceErrorInfo(node=self, context=context)
