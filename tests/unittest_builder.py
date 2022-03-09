@@ -43,7 +43,7 @@ import unittest.mock
 import pytest
 
 from astroid import Instance, builder, nodes, test_utils, util
-from astroid.const import IMPLEMENTATION_PYPY, PY38, PY38_PLUS, PY39_PLUS
+from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -79,7 +79,7 @@ class FromToLineNoTest(unittest.TestCase):
         self.assertEqual(name.tolineno, 4)
         strarg = callfunc.args[0]
         self.assertIsInstance(strarg, nodes.Const)
-        if IMPLEMENTATION_PYPY:
+        if IS_PYPY:
             self.assertEqual(strarg.fromlineno, 4)
             if not PY39_PLUS:
                 self.assertEqual(strarg.tolineno, 4)
@@ -187,7 +187,7 @@ class FromToLineNoTest(unittest.TestCase):
 
         c = ast_module.body[2]
         assert isinstance(c, nodes.ClassDef)
-        if not PY38_PLUS or PY38 and IMPLEMENTATION_PYPY:
+        if not PY38_PLUS or PY38 and IS_PYPY:
             # Not perfect, but best we can do for Python 3.7 and PyPy 3.8
             # Can't detect closing bracket on new line.
             assert c.fromlineno == 12
