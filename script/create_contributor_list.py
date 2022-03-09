@@ -7,7 +7,7 @@ from pathlib import Path
 from contributors_txt import create_contributors_txt
 
 ASTROID_BASE_DIRECTORY = Path(__file__).parent.parent
-ALIASES_FILE = ASTROID_BASE_DIRECTORY / ".contributors_aliases.json"
+ALIASES_FILE = ASTROID_BASE_DIRECTORY / "script/.contributors_aliases.json"
 DEFAULT_CONTRIBUTOR_PATH = ASTROID_BASE_DIRECTORY / "CONTRIBUTORS.txt"
 
 

@@ -24,7 +24,7 @@ repos:
     rev: 6f5a59c3e1cb0f20731eb1ff32622c9a2fc72d9a
     hooks:
       - id: copyright-notice
-        args: ["--notice=copyright.txt", "--enforce-all", "--autofix"]
+        args: ["--notice=script/copyright.txt", "--enforce-all", "--autofix"]
         exclude: tests/testdata
         types: [python]
   - repo: https://github.com/asottile/pyupgrade
