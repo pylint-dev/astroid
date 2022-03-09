@@ -53,6 +53,7 @@ import types
 from pathlib import Path
 from typing import Dict, Set
 
+from astroid.const import IS_PYPY
 from astroid.interpreter._import import spec, util
 
 if sys.platform.startswith("win"):
@@ -84,7 +85,7 @@ if os.name == "nt":
         except AttributeError:
             pass
 
-if platform.python_implementation() == "PyPy" and sys.version_info < (3, 8):
+if IS_PYPY and sys.version_info < (3, 8):
     # PyPy stores the stdlib in two places: sys.prefix/lib_pypy and sys.prefix/lib-python/3
     # sysconfig.get_path on PyPy returns the first, but without an underscore so we patch this manually.
     # Beginning with 3.8 the stdlib is only stored in: sys.prefix/pypy{py_version_short}

@@ -33,7 +33,6 @@
 """
 import copy
 import os
-import platform
 import sys
 import textwrap
 import unittest
@@ -52,7 +51,7 @@ from astroid import (
     transforms,
     util,
 )
-from astroid.const import PY38_PLUS, PY310_PLUS, Context
+from astroid.const import IS_PYPY, PY38_PLUS, PY310_PLUS, Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -292,10 +291,7 @@ def func(param: Tuple):
 
     # This test is disabled on PyPy because we cannot get a release that has proper
     # support for f-strings (we need 7.2 at least)
-    @pytest.mark.skipif(
-        platform.python_implementation() == "PyPy",
-        reason="Needs f-string support.",
-    )
+    @pytest.mark.skipif(IS_PYPY, reason="Needs f-string support.")
     def test_f_strings(self):
         code = r'''
 a = f"{'a'}"
