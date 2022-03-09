@@ -9,8 +9,13 @@ def infer_namespace(node, context=None):
         # Cannot make sense of it.
         raise UseInferenceDefault()
 
-    class_node = nodes.ClassDef("Namespace", "docstring")
-    class_node.parent = node.parent
+    class_node = nodes.ClassDef("Namespace", parent=node.parent)
+    class_node.postinit(
+        bases=[],
+        body=[],
+        decorators=None,
+        doc_node=nodes.Const(value="docstring"),
+    )
     for attr in set(callsite.keyword_arguments):
         fake_node = nodes.EmptyNode()
         fake_node.parent = class_node
