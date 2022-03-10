@@ -14,8 +14,7 @@ from astroid import nodes
 
 def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
     return (
-        isinstance(node, nodes.Subscript)
-        and isinstance(node.value, nodes.Attribute)
+        isinstance(node.value, nodes.Attribute)
         and node.value.attrname == "parents"
     )
 
