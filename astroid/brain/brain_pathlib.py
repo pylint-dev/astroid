@@ -9,22 +9,21 @@ from astroid import bases, context, inference_tip
 from astroid.const import PY310_PLUS
 from astroid.exceptions import UseInferenceDefault
 from astroid.manager import AstroidManager
-from astroid.nodes.node_classes import Attribute, Slice, Subscript
-from astroid.nodes.node_ng import NodeNG
+from astroid import nodes
 
 
-def _looks_like_parents_subscript(node: NodeNG) -> bool:
+def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
     return (
-        isinstance(node, Subscript)
-        and isinstance(node.value, Attribute)
+        isinstance(node, nodes.Subscript)
+        and isinstance(node.value, nodes.Attribute)
         and node.value.attrname == "parents"
     )
 
 
 def infer_parents_subscript(
-    subscript_node: Subscript, ctx: Optional[context.InferenceContext] = None
+    subscript_node: nodes.Subscript, ctx: Optional[context.InferenceContext] = None
 ) -> Iterator[bases.Instance]:
-    if isinstance(subscript_node.slice, Slice):
+    if isinstance(subscript_node.slice, nodes.Slice):
         raise UseInferenceDefault
 
     yield from subscript_node.value.expr.infer(context=ctx)
@@ -32,5 +31,7 @@ def infer_parents_subscript(
 
 if PY310_PLUS:
     AstroidManager().register_transform(
-        Subscript, inference_tip(infer_parents_subscript), _looks_like_parents_subscript
+        nodes.Subscript,
+        inference_tip(infer_parents_subscript),
+        _looks_like_parents_subscript,
     )
