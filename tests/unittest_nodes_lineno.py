@@ -1153,7 +1153,7 @@ class TestLinenoColOffset:
         c1 = ast_nodes[0]
         assert isinstance(c1, nodes.ListComp)
         assert isinstance(c1.elt, nodes.Name)
-        assert isinstance(c1.generators[0], nodes.Comprehension) # type: ignore[index]
+        assert isinstance(c1.generators[0], nodes.Comprehension)  # type: ignore[index]
         assert (c1.lineno, c1.col_offset) == (1, 0)
         assert (c1.end_lineno, c1.end_col_offset) == (1, 16)
         assert (c1.elt.lineno, c1.elt.col_offset) == (1, 1)
