@@ -42,6 +42,11 @@
     "mails": ["13665637+DanielNoord@users.noreply.github.com"],
     "team": "true"
   },
+  "Dimitri Prybysh": {
+    "authoritative_mail": "dmand@yandex.ru",
+    "mails": ["dmand@yandex.ru"],
+    "team": "true"
+  },
   "Florian Bruhin": {
     "authoritative_mail": "me@the-compiler.org",
     "mails": ["me@the-compiler.org"],

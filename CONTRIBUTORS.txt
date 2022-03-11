@@ -16,6 +16,7 @@ Maintainers
 - Florian Bruhin <me@the-compiler.org>
 - Ashley Whetter <ashley@awhetter.co.uk>
 - Jacob Walls <jacobtylerwalls@gmail.com>
+- Dimitri Prybysh <dmand@yandex.ru>
 - Areveny <areveny@protonmail.com>
 
 
@@ -31,7 +32,6 @@ Contributors
 - Julien Jehannet <julien.jehannet@logilab.fr>
 - Calen Pennington <calen.pennington@gmail.com>
 - Phil Schaf <flying-sheep@web.de>
-- Dmitry Pribysh <dmand@yandex.ru>
 - Alex Hall <alex.mojaki@gmail.com>
 - jarradhope
 - Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
@@ -138,7 +138,6 @@ Contributors
 - Federico Bond <federicobond@gmail.com>
 - DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
 - Dmitry Shachnev <mitya57@users.noreply.github.com>
-- Dimitri Prybysh <dmand@yandex.ru>
 - Denis Laxalde <denis.laxalde@logilab.fr>
 - David Poirier <david-poirier-csn@users.noreply.github.com>
 - Dave Baum <dbaum@google.com>
