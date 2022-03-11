@@ -1222,7 +1222,7 @@ def test_type_comments_with() -> None:
         """
     with a as b: # type: int
         pass
-    with a as b: # type: ignore
+    with a as b: # type: ignore[misc]
         pass
     """
     )
@@ -1239,7 +1239,7 @@ def test_type_comments_for() -> None:
         """
     for a, b in [1, 2, 3]: # type: List[int]
         pass
-    for a, b in [1, 2, 3]: # type: ignore
+    for a, b in [1, 2, 3]: # type: ignore[misc]
         pass
     """
     )
@@ -1256,7 +1256,7 @@ def test_type_coments_assign() -> None:
     module = builder.parse(
         """
     a, b = [1, 2, 3] # type: List[int]
-    a, b = [1, 2, 3] # type: ignore
+    a, b = [1, 2, 3] # type: ignore[misc]
     """
     )
     node = module.body[0]
