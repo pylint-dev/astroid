@@ -5,16 +5,21 @@
 
 from typing import Iterator, Optional
 
-from astroid import bases, context, inference_tip
+from astroid import bases, context, inference_tip, nodes
 from astroid.const import PY310_PLUS
-from astroid.exceptions import UseInferenceDefault
+from astroid.exceptions import InferenceError, UseInferenceDefault
 from astroid.manager import AstroidManager
-from astroid import nodes
 
 
 def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
+    try:
+        value = next(node.value.infer())
+    except (InferenceError, StopIteration) as exc:
+        raise UseInferenceDefault from exc
+
     return (
-        isinstance(node.value, nodes.Attribute)
+        value.qname() == "pathlib._PathParents"
+        and isinstance(node.value, nodes.Attribute)
         and node.value.attrname == "parents"
     )
 
