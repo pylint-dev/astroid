@@ -16,7 +16,7 @@ Maintainers
 - Florian Bruhin <me@the-compiler.org>
 - Ashley Whetter <ashley@awhetter.co.uk>
 - Jacob Walls <jacobtylerwalls@gmail.com>
-- areveny <areveny@protonmail.com>
+- Areveny <areveny@protonmail.com>
 
 
 Contributors
@@ -158,7 +158,6 @@ Contributors
 - Azeem Bande-Ali <A.BandeAli@gmail.com>
 - Aru Sahni <arusahni@gmail.com>
 - Artsiom Kaval <lezeroq@gmail.com>
-- Arianna <self@areveny.com>
 - Anubhav <35621759+anubh-v@users.noreply.github.com>
 - Antoine Boellinger <aboellinger@hotmail.com>
 - Alphadelta14 <alpha@alphaservcomputing.solutions>

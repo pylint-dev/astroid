@@ -1,7 +1,7 @@
 {
-  "areveny": {
+  "Areveny": {
     "authoritative_mail": "areveny@protonmail.com",
-    "mails": ["areveny@protonmail.com"],
+    "mails": ["areveny@protonmail.com", "self@areveny.com"],
     "team": "true"
   },
   "Ashley Whetter": {
