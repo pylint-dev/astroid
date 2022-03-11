@@ -70,7 +70,7 @@ repos:
         entry: mypy
         language: python
         types: [python]
-        args: [--enable-error-code ignore-without-code]
+        args: []
         require_serial: true
         additional_dependencies:
           [
