@@ -90,11 +90,12 @@
     "authoritative_mail": "stefan@sofa-rockers.org",
     "mails": ["stefan.scherfke@energymeteo.de", "stefan@sofa-rockers.org"]
   },
-  "Sylvain Th\u00e9nault": {
+  "Sylvain Thénault": {
     "authoritative_mail": "thenault@gmail.com",
-    "mails": ["thenault@gmail.com", "sylvain.thenault@logilab.fr"]
+    "mails": ["thenault@gmail.com", "sylvain.thenault@logilab.fr"],
+    "team": "true"
   },
-  "Ville Skytt\u00e4": {
+  "Ville Skyttä": {
     "authoritative_mail": "ville.skytta@iki.fi",
     "mails": ["ville.skytta@iki.fi", "ville.skytta@upcloud.com"]
   },
