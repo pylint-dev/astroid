@@ -2,8 +2,8 @@
 # using the configuration in 'script/.contributors_aliases.json'
 # please do not modify manually
 
-Mainteners
-----------
+Maintainers
+-----------
 - Claudiu Popa <pcmanticore@gmail.com>
 - Sylvain Thénault <thenault@gmail.com>
 - Pierre Sassoulas <pierre.sassoulas@gmail.com>
