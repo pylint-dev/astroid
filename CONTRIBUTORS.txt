@@ -13,7 +13,6 @@ Contributors
 - Google, Inc. <None>
 - Bryce Guinta <bryce.paul.guinta@gmail.com>
 - Ceridwen <ceridwenv@gmail.com>
-- bot <bot@noreply.github.com>
 - Nick Drozd <nicholasdrozd@gmail.com>
 - Andrew Haigh <hello@nelf.in>
 - Łukasz Rogalski <rogalski.91@gmail.com>
