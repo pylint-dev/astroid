@@ -10,7 +10,7 @@ Contributors
 - hippo91 <guillaume.peillex@gmail.com>
 - Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 - Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-- Google, Inc. <None>
+- Google, Inc.
 - Bryce Guinta <bryce.paul.guinta@gmail.com>
 - Ceridwen <ceridwenv@gmail.com>
 - Nick Drozd <nicholasdrozd@gmail.com>
@@ -27,7 +27,7 @@ Contributors
 - Phil Schaf <flying-sheep@web.de>
 - Dmitry Pribysh <dmand@yandex.ru>
 - Alex Hall <alex.mojaki@gmail.com>
-- jarradhope <None>
+- jarradhope
 - Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Raphael Gaschignard <raphael@makeleaps.com>
@@ -64,7 +64,7 @@ Contributors
 - Joshua Cannon <joshdcannon@gmail.com>
 - John Vandenberg <jayvdb@gmail.com>
 - Jacob Bogdanov <jacob@bogdanov.dev>
-- François Mockers <None>
+- François Mockers
 - David Euresti <github@euresti.com>
 - David Cain <davidjosephcain@gmail.com>
 - Anthony Sottile <asottile@umich.edu>
@@ -73,14 +73,14 @@ Contributors
 - tristanlatr <19967168+tristanlatr@users.noreply.github.com>
 - rr- <rr-@sakuya.pl>
 - raylu <lurayl@gmail.com>
-- platings <None>
+- platings
 - mathieui <mathieui@users.noreply.github.com>
 - markmcclain <markmcclain@users.noreply.github.com>
 - kasium <15907922+kasium@users.noreply.github.com>
 - ioanatia <ioanatia@users.noreply.github.com>
 - grayjk <grayjk@gmail.com>
-- carl <None>
-- alain lefroy <None>
+- carl
+- alain lefroy
 - Zbigniew Jędrzejewski-Szmek <zbyszek@in.waw.pl>
 - Zac Hatfield-Dodds <Zac-HD@users.noreply.github.com>
 - Vilnis Termanis <vilnis.termanis@iotics.com>
@@ -106,7 +106,7 @@ Contributors
 - Michał Masłowski <m.maslowski@clearcode.cc>
 - Michael K <michael-k@users.noreply.github.com>
 - Mateusz Bysiek <mb@mbdev.pl>
-- Mark Gius <None>
+- Mark Gius
 - Mark Byrne <31762852+mbyrnepr2@users.noreply.github.com>
 - Leandro T. C. Melo <ltcmelo@gmail.com>
 - Konrad Weihmann <kweihmann@outlook.com>
