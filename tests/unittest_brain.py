@@ -488,7 +488,7 @@ class ModuleExtenderTest(unittest.TestCase):
     def test_extension_modules(self) -> None:
         transformer = MANAGER._transform
         for extender, _ in transformer.transforms[nodes.Module]:
-            n = nodes.Module("__main__", None)
+            n = nodes.Module("__main__")
             extender(n)
 
 
@@ -2994,6 +2994,30 @@ def test_infer_dict_from_keys() -> None:
 
 
 class TestFunctoolsPartial:
+    @staticmethod
+    def test_infer_partial() -> None:
+        ast_node = astroid.extract_node(
+            """
+        from functools import partial
+        def test(a, b):
+            '''Docstring'''
+            return a + b
+        partial(test, 1)(3) #@
+        """
+        )
+        assert isinstance(ast_node.func, nodes.Call)
+        inferred = ast_node.func.inferred()
+        assert len(inferred) == 1
+        partial = inferred[0]
+        assert isinstance(partial, objects.PartialFunction)
+        assert isinstance(partial.doc_node, nodes.Const)
+        assert partial.doc_node.value == "Docstring"
+        with pytest.warns(DeprecationWarning) as records:
+            assert partial.doc == "Docstring"
+            assert len(records) == 1
+        assert partial.lineno == 3
+        assert partial.col_offset == 0
+
     def test_invalid_functools_partial_calls(self) -> None:
         ast_nodes = astroid.extract_node(
             """

@@ -6,23 +6,23 @@
 A scope node is a node that opens a new local scope in the language definition:
 Module, ClassDef, FunctionDef (and Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
+
+from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.scoped_nodes import (
     AsyncFunctionDef,
     ClassDef,
-    ComprehensionScope,
     DictComp,
     FunctionDef,
     GeneratorExp,
     Lambda,
     ListComp,
-    LocalsDictNodeNG,
     Module,
     SetComp,
     _is_metaclass,
-    builtin_lookup,
     function_to_method,
     get_wrapping_class,
 )
+from astroid.nodes.scoped_nodes.utils import builtin_lookup
 
 __all__ = (
     "AsyncFunctionDef",

@@ -38,11 +38,12 @@ import sys
 import tempfile
 import textwrap
 import unittest
+import unittest.mock
 
 import pytest
 
 from astroid import Instance, builder, nodes, test_utils, util
-from astroid.const import PY38_PLUS
+from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -78,9 +79,12 @@ class FromToLineNoTest(unittest.TestCase):
         self.assertEqual(name.tolineno, 4)
         strarg = callfunc.args[0]
         self.assertIsInstance(strarg, nodes.Const)
-        if hasattr(sys, "pypy_version_info"):
+        if IS_PYPY:
             self.assertEqual(strarg.fromlineno, 4)
-            self.assertEqual(strarg.tolineno, 4)
+            if not PY39_PLUS:
+                self.assertEqual(strarg.tolineno, 4)
+            else:
+                self.assertEqual(strarg.tolineno, 5)
         else:
             if not PY38_PLUS:
                 self.assertEqual(strarg.fromlineno, 5)
@@ -183,8 +187,8 @@ class FromToLineNoTest(unittest.TestCase):
 
         c = ast_module.body[2]
         assert isinstance(c, nodes.ClassDef)
-        if not PY38_PLUS:
-            # Not perfect, but best we can do for Python 3.7
+        if not PY38_PLUS or PY38 and IS_PYPY:
+            # Not perfect, but best we can do for Python 3.7 and PyPy 3.8
             # Can't detect closing bracket on new line.
             assert c.fromlineno == 12
         else:
@@ -769,7 +773,11 @@ class FileBuildTest(unittest.TestCase):
         """test base properties and method of an astroid module"""
         module = self.module
         self.assertEqual(module.name, "data.module")
-        self.assertEqual(module.doc, "test module for astroid\n")
+        with pytest.warns(DeprecationWarning) as records:
+            self.assertEqual(module.doc, "test module for astroid\n")
+            assert len(records) == 1
+        assert isinstance(module.doc_node, nodes.Const)
+        self.assertEqual(module.doc_node.value, "test module for astroid\n")
         self.assertEqual(module.fromlineno, 0)
         self.assertIsNone(module.parent)
         self.assertEqual(module.frame(), module)
@@ -811,7 +819,11 @@ class FileBuildTest(unittest.TestCase):
         module = self.module
         function = module["global_access"]
         self.assertEqual(function.name, "global_access")
-        self.assertEqual(function.doc, "function test")
+        with pytest.warns(DeprecationWarning) as records:
+            self.assertEqual(function.doc, "function test")
+            assert len(records)
+        assert isinstance(function.doc_node, nodes.Const)
+        self.assertEqual(function.doc_node.value, "function test")
         self.assertEqual(function.fromlineno, 11)
         self.assertTrue(function.parent)
         self.assertEqual(function.frame(), function)
@@ -834,7 +846,11 @@ class FileBuildTest(unittest.TestCase):
         module = self.module
         klass = module["YO"]
         self.assertEqual(klass.name, "YO")
-        self.assertEqual(klass.doc, "hehe\n    haha")
+        with pytest.warns(DeprecationWarning) as records:
+            self.assertEqual(klass.doc, "hehe\n    haha")
+            assert len(records) == 1
+        assert isinstance(klass.doc_node, nodes.Const)
+        self.assertEqual(klass.doc_node.value, "hehe\n    haha")
         self.assertEqual(klass.fromlineno, 25)
         self.assertTrue(klass.parent)
         self.assertEqual(klass.frame(), klass)
@@ -888,7 +904,11 @@ class FileBuildTest(unittest.TestCase):
         method = klass2["method"]
         self.assertEqual(method.name, "method")
         self.assertEqual([n.name for n in method.args.args], ["self"])
-        self.assertEqual(method.doc, "method\n        test")
+        with pytest.warns(DeprecationWarning) as records:
+            self.assertEqual(method.doc, "method\n        test")
+            assert len(records) == 1
+        assert isinstance(method.doc_node, nodes.Const)
+        self.assertEqual(method.doc_node.value, "method\n        test")
         self.assertEqual(method.fromlineno, 48)
         self.assertEqual(method.type, "method")
         # class method

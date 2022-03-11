@@ -25,7 +25,7 @@ leads to an inferred FrozenSet:
 import sys
 from typing import TYPE_CHECKING
 
-from astroid import bases, util
+from astroid import bases, decorators, util
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -266,10 +266,14 @@ class DictValues(bases.Proxy):
 class PartialFunction(scoped_nodes.FunctionDef):
     """A class representing partial function obtained via functools.partial"""
 
+    @decorators.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
         self, call, name=None, doc=None, lineno=None, col_offset=None, parent=None
     ):
-        super().__init__(name, doc, lineno, col_offset, parent=None)
+        # TODO: Pass end_lineno and end_col_offset as well
+        super().__init__(name, lineno=lineno, col_offset=col_offset, parent=None)
+        # Assigned directly to prevent triggering the DeprecationWarning.
+        self._doc = doc
         # A typical FunctionDef automatically adds its name to the parent scope,
         # but a partial should not, so defer setting parent until after init
         self.parent = parent
@@ -313,11 +317,14 @@ node_classes.Dict.__bases__ = (node_classes.NodeNG, DictInstance)
 class Property(scoped_nodes.FunctionDef):
     """Class representing a Python property"""
 
+    @decorators.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
         self, function, name=None, doc=None, lineno=None, col_offset=None, parent=None
     ):
         self.function = function
-        super().__init__(name, doc, lineno, col_offset, parent)
+        super().__init__(name, lineno=lineno, col_offset=col_offset, parent=parent)
+        # Assigned directly to prevent triggering the DeprecationWarning.
+        self._doc = doc
 
     # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.PropertyModel())

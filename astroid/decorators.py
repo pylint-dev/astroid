@@ -224,9 +224,58 @@ if util.check_warnings_filter():
 
         return deco
 
+    def deprecate_arguments(
+        astroid_version: str = "3.0", **arguments: str
+    ) -> Callable[[Callable[P, R]], Callable[P, R]]:
+        """Decorator which emits a DeprecationWarning if any arguments specified
+        are passed.
+
+        Arguments should be a key-value mapping, with the key being the argument to check
+        and the value being a string that explains what to do instead of passing the argument.
+
+        To improve performance, only used when DeprecationWarnings other than
+        the default one are enabled.
+        """
+
+        def deco(func: Callable[P, R]) -> Callable[P, R]:
+            @functools.wraps(func)
+            def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+
+                keys = list(inspect.signature(func).parameters.keys())
+                for arg, note in arguments.items():
+                    try:
+                        index = keys.index(arg)
+                    except ValueError:
+                        raise Exception(
+                            f"Can't find argument '{arg}' for '{args[0].__class__.__qualname__}'"
+                        ) from None
+                    if arg in kwargs or len(args) > index:
+                        warnings.warn(
+                            f"The argument '{arg}' for "
+                            f"'{args[0].__class__.__qualname__}.{func.__name__}' is deprecated "
+                            f"and will be removed in astroid {astroid_version} ({note})",
+                            DeprecationWarning,
+                        )
+                return func(*args, **kwargs)
+
+            return wrapper
+
+        return deco
+
 else:
 
     def deprecate_default_argument_values(
+        astroid_version: str = "3.0", **arguments: str
+    ) -> Callable[[Callable[P, R]], Callable[P, R]]:
+        """Passthrough decorator to improve performance if DeprecationWarnings are disabled."""
+
+        def deco(func: Callable[P, R]) -> Callable[P, R]:
+            """Decorator function."""
+            return func
+
+        return deco
+
+    def deprecate_arguments(
         astroid_version: str = "3.0", **arguments: str
     ) -> Callable[[Callable[P, R]], Callable[P, R]]:
         """Passthrough decorator to improve performance if DeprecationWarnings are disabled."""

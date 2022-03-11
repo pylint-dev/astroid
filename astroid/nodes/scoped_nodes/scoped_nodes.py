@@ -45,7 +45,6 @@ This module contains the classes for "scoped" node, i.e. which are opening a
 new local scope in the language definition : Module, ClassDef, FunctionDef (and
 Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
-import builtins
 import io
 import itertools
 import os
@@ -57,7 +56,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, TypeVar, Union, ove
 from astroid import bases
 from astroid import decorators as decorators_mod
 from astroid import mixins, util
-from astroid.const import PY38_PLUS, PY39_PLUS
+from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -75,11 +74,12 @@ from astroid.exceptions import (
     StatementMissing,
     TooManyLevelsError,
 )
-from astroid.filter_statements import _filter_stmts
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
 from astroid.nodes import Arguments, Const, node_classes
+from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
+from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
 
 if sys.version_info >= (3, 6, 2):
@@ -215,172 +215,6 @@ def function_to_method(n, klass):
     return n
 
 
-def builtin_lookup(name):
-    """lookup a name into the builtin module
-    return the list of matching statements and the astroid for the builtin
-    module
-    """
-    builtin_astroid = AstroidManager().ast_from_module(builtins)
-    if name == "__dict__":
-        return builtin_astroid, ()
-    try:
-        stmts = builtin_astroid.locals[name]
-    except KeyError:
-        stmts = ()
-    return builtin_astroid, stmts
-
-
-# TODO move this Mixin to mixins.py; problem: 'FunctionDef' in _scope_lookup
-class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
-    """this class provides locals handling common to Module, FunctionDef
-    and ClassDef nodes, including a dict like interface for direct access
-    to locals information
-    """
-
-    # attributes below are set by the builder module or by raw factories
-
-    locals: Dict[str, List[node_classes.NodeNG]] = {}
-    """A map of the name of a local variable to the node defining the local."""
-
-    def qname(self):
-        """Get the 'qualified' name of the node.
-
-        For example: module.name, module.class.name ...
-
-        :returns: The qualified name.
-        :rtype: str
-        """
-        # pylint: disable=no-member; github.com/pycqa/astroid/issues/278
-        if self.parent is None:
-            return self.name
-        return f"{self.parent.frame(future=True).qname()}.{self.name}"
-
-    def scope(self: T) -> T:
-        """The first parent node defining a new scope.
-
-        :returns: The first parent scope node.
-        :rtype: Module or FunctionDef or ClassDef or Lambda or GenExpr
-        """
-        return self
-
-    def _scope_lookup(self, node, name, offset=0):
-        """XXX method for interfacing the scope lookup"""
-        try:
-            stmts = _filter_stmts(node, self.locals[name], self, offset)
-        except KeyError:
-            stmts = ()
-        if stmts:
-            return self, stmts
-
-        # Handle nested scopes: since class names do not extend to nested
-        # scopes (e.g., methods), we find the next enclosing non-class scope
-        pscope = self.parent and self.parent.scope()
-        while pscope is not None:
-            if not isinstance(pscope, ClassDef):
-                return pscope.scope_lookup(node, name)
-            pscope = pscope.parent and pscope.parent.scope()
-
-        # self is at the top level of a module, or is enclosed only by ClassDefs
-        return builtin_lookup(name)
-
-    def set_local(self, name, stmt):
-        """Define that the given name is declared in the given statement node.
-
-        .. seealso:: :meth:`scope`
-
-        :param name: The name that is being defined.
-        :type name: str
-
-        :param stmt: The statement that defines the given name.
-        :type stmt: NodeNG
-        """
-        # assert not stmt in self.locals.get(name, ()), (self, stmt)
-        self.locals.setdefault(name, []).append(stmt)
-
-    __setitem__ = set_local
-
-    def _append_node(self, child):
-        """append a child, linking it in the tree"""
-        # pylint: disable=no-member; depending by the class
-        # which uses the current class as a mixin or base class.
-        # It's rewritten in 2.0, so it makes no sense for now
-        # to spend development time on it.
-        self.body.append(child)
-        child.parent = self
-
-    def add_local_node(self, child_node, name=None):
-        """Append a child that should alter the locals of this scope node.
-
-        :param child_node: The child node that will alter locals.
-        :type child_node: NodeNG
-
-        :param name: The name of the local that will be altered by
-            the given child node.
-        :type name: str or None
-        """
-        if name != "__class__":
-            # add __class__ node as a child will cause infinite recursion later!
-            self._append_node(child_node)
-        self.set_local(name or child_node.name, child_node)
-
-    def __getitem__(self, item):
-        """The first node the defines the given local.
-
-        :param item: The name of the locally defined object.
-        :type item: str
-
-        :raises KeyError: If the name is not defined.
-        """
-        return self.locals[item][0]
-
-    def __iter__(self):
-        """Iterate over the names of locals defined in this scoped node.
-
-        :returns: The names of the defined locals.
-        :rtype: iterable(str)
-        """
-        return iter(self.keys())
-
-    def keys(self):
-        """The names of locals defined in this scoped node.
-
-        :returns: The names of the defined locals.
-        :rtype: list(str)
-        """
-        return list(self.locals.keys())
-
-    def values(self):
-        """The nodes that define the locals in this scoped node.
-
-        :returns: The nodes that define locals.
-        :rtype: list(NodeNG)
-        """
-        # pylint: disable=consider-using-dict-items
-        # It look like this class override items/keys/values,
-        # probably not worth the headache
-        return [self[key] for key in self.keys()]
-
-    def items(self):
-        """Get the names of the locals and the node that defines the local.
-
-        :returns: The names of locals and their associated node.
-        :rtype: list(tuple(str, NodeNG))
-        """
-        return list(zip(self.keys(), self.values()))
-
-    def __contains__(self, name):
-        """Check if a local is defined in this scope.
-
-        :param name: The name of the local to check for.
-        :type name: str
-
-        :returns: True if this node has a local of the given name,
-            False otherwise.
-        :rtype: bool
-        """
-        return name in self.locals
-
-
 class Module(LocalsDictNodeNG):
     """Class representing an :class:`ast.Module` node.
 
@@ -435,10 +269,11 @@ class Module(LocalsDictNodeNG):
     end_col_offset: None
     parent: None
 
+    @decorators_mod.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
         self,
         name: str,
-        doc: Optional[str],
+        doc: Optional[str] = None,
         file: Optional[str] = None,
         path: Optional[List[str]] = None,
         package: Optional[bool] = None,
@@ -463,7 +298,7 @@ class Module(LocalsDictNodeNG):
         self.name = name
         """The name of the module."""
 
-        self.doc = doc
+        self._doc = doc
         """The module docstring."""
 
         self.file = file
@@ -509,6 +344,27 @@ class Module(LocalsDictNodeNG):
         """
         self.body = body
         self.doc_node = doc_node
+        if doc_node:
+            self._doc = doc_node.value
+
+    @property
+    def doc(self) -> Optional[str]:
+        """The module docstring."""
+        warnings.warn(
+            "The 'Module.doc' attribute is deprecated, "
+            "use 'Module.doc_node' instead.",
+            DeprecationWarning,
+        )
+        return self._doc
+
+    @doc.setter
+    def doc(self, value: Optional[str]) -> None:
+        warnings.warn(
+            "Setting the 'Module.doc' attribute is deprecated, "
+            "use 'Module.doc_node' instead.",
+            DeprecationWarning,
+        )
+        self._doc = value
 
     def _get_stream(self):
         if self.file_bytes is not None:
@@ -843,12 +699,6 @@ class Module(LocalsDictNodeNG):
         return self
 
 
-class ComprehensionScope(LocalsDictNodeNG):
-    """Scoping for different types of comprehensions."""
-
-    scope_lookup = LocalsDictNodeNG._scope_lookup
-
-
 class GeneratorExp(ComprehensionScope):
     """Class representing an :class:`ast.GeneratorExp` node.
 
@@ -1138,7 +988,7 @@ class SetComp(ComprehensionScope):
         yield from self.generators
 
 
-class _ListComp(node_classes.NodeNG):
+class ListComp(ComprehensionScope):
     """Class representing an :class:`ast.ListComp` node.
 
     >>> import astroid
@@ -1148,16 +998,42 @@ class _ListComp(node_classes.NodeNG):
     """
 
     _astroid_fields = ("elt", "generators")
+    _other_other_fields = ("locals",)
+
     elt = None
     """The element that forms the output of the expression.
 
     :type: NodeNG or None
     """
+
     generators = None
     """The generators that are looped through.
 
     :type: list(Comprehension) or None
     """
+
+    def __init__(
+        self,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+    ):
+        self.locals = {}
+        """A map of the name of a local variable to the node defining it.
+
+        :type: dict(str, NodeNG)
+        """
+
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
 
     def postinit(self, elt=None, generators=None):
         """Do some setup after initialisation.
@@ -1184,41 +1060,6 @@ class _ListComp(node_classes.NodeNG):
         yield self.elt
 
         yield from self.generators
-
-
-class ListComp(_ListComp, ComprehensionScope):
-    """Class representing an :class:`ast.ListComp` node.
-
-    >>> import astroid
-    >>> node = astroid.extract_node('[thing for thing in things if thing]')
-    >>> node
-    <ListComp l.1 at 0x7f23b2e418d0>
-    """
-
-    _other_other_fields = ("locals",)
-
-    def __init__(
-        self,
-        lineno=None,
-        col_offset=None,
-        parent=None,
-        *,
-        end_lineno=None,
-        end_col_offset=None,
-    ):
-        self.locals = {}
-        """A map of the name of a local variable to the node defining it.
-
-        :type: dict(str, NodeNG)
-        """
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
 
 
 def _infer_decorator_callchain(node):
@@ -1512,10 +1353,11 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     )
     _type = None
 
+    @decorators_mod.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
         self,
         name=None,
-        doc=None,
+        doc: Optional[str] = None,
         lineno=None,
         col_offset=None,
         parent=None,
@@ -1527,8 +1369,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :param name: The name of the function.
         :type name: str or None
 
-        :param doc: The function's docstring.
-        :type doc: str or None
+        :param doc: The function docstring.
 
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -1553,11 +1394,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :type name: str or None
         """
 
-        self.doc = doc
-        """The function's docstring.
-
-        :type doc: str or None
-        """
+        self._doc = doc
+        """The function docstring."""
 
         self.doc_node: Optional[Const] = None
         """The doc node associated with this node."""
@@ -1614,6 +1452,27 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         self.type_comment_args = type_comment_args
         self.position = position
         self.doc_node = doc_node
+        if doc_node:
+            self._doc = doc_node.value
+
+    @property
+    def doc(self) -> Optional[str]:
+        """The function docstring."""
+        warnings.warn(
+            "The 'FunctionDef.doc' attribute is deprecated, "
+            "use 'FunctionDef.doc_node' instead.",
+            DeprecationWarning,
+        )
+        return self._doc
+
+    @doc.setter
+    def doc(self, value: Optional[str]) -> None:
+        warnings.warn(
+            "Setting the 'FunctionDef.doc' attribute is deprecated, "
+            "use 'FunctionDef.doc_node' instead.",
+            DeprecationWarning,
+        )
+        self._doc = value
 
     @cached_property
     def extra_decorators(self) -> List[node_classes.Call]:
@@ -2161,10 +2020,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     _other_other_fields = ("locals", "_newstyle")
     _newstyle = None
 
+    @decorators_mod.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
         self,
         name=None,
-        doc=None,
+        doc: Optional[str] = None,
         lineno=None,
         col_offset=None,
         parent=None,
@@ -2176,8 +2036,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :param name: The name of the class.
         :type name: str or None
 
-        :param doc: The function's docstring.
-        :type doc: str or None
+        :param doc: The class docstring.
 
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -2229,11 +2088,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type name: str or None
         """
 
-        self.doc = doc
-        """The class' docstring.
-
-        :type doc: str or None
-        """
+        self._doc = doc
+        """The class docstring."""
 
         self.doc_node: Optional[Const] = None
         """The doc node associated with this node."""
@@ -2253,6 +2109,25 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)
+
+    @property
+    def doc(self) -> Optional[str]:
+        """The class docstring."""
+        warnings.warn(
+            "The 'ClassDef.doc' attribute is deprecated, "
+            "use 'ClassDef.doc_node' instead.",
+            DeprecationWarning,
+        )
+        return self._doc
+
+    @doc.setter
+    def doc(self, value: Optional[str]) -> None:
+        warnings.warn(
+            "Setting the 'ClassDef.doc' attribute is deprecated, "
+            "use 'ClassDef.doc_node.value' instead.",
+            DeprecationWarning,
+        )
+        self._doc = value
 
     def implicit_parameters(self):
         return 1
@@ -2316,6 +2191,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             self._metaclass = metaclass
         self.position = position
         self.doc_node = doc_node
+        if doc_node:
+            self._doc = doc_node.value
 
     def _newstyle_impl(self, context=None):
         if context is None:
@@ -2344,7 +2221,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     @cached_property
     def fromlineno(self) -> Optional[int]:
         """The first line that this node appears on in the source code."""
-        if not PY38_PLUS:
+        if not PY38_PLUS or PY38 and IS_PYPY:
             # For Python < 3.8 the lineno is the line number of the first decorator.
             # We want the class statement lineno. Similar to 'FunctionDef.fromlineno'
             lineno = self.lineno
@@ -2433,7 +2310,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         else:
             return util.Uninferable
 
-        result = ClassDef(name, None)
+        result = ClassDef(name)
 
         # Get the bases of the class.
         try:

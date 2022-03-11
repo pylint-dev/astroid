@@ -23,9 +23,10 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 """This module renders Astroid nodes as string"""
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
+    from astroid.nodes import Const
     from astroid.nodes.node_classes import (
         Match,
         MatchAs,
@@ -57,9 +58,14 @@ class AsStringVisitor:
         """Makes this visitor behave as a simple function"""
         return node.accept(self).replace(DOC_NEWLINE, "\n")
 
-    def _docs_dedent(self, doc):
+    def _docs_dedent(self, doc_node: Optional["Const"]) -> str:
         """Stop newlines in docs being indented by self._stmt_list"""
-        return '\n{}"""{}"""'.format(self.indent, doc.replace("\n", DOC_NEWLINE))
+        if not doc_node:
+            return ""
+
+        return '\n{}"""{}"""'.format(
+            self.indent, doc_node.value.replace("\n", DOC_NEWLINE)
+        )
 
     def _stmt_list(self, stmts, indent=True):
         """return a list of nodes to string"""
@@ -183,7 +189,7 @@ class AsStringVisitor:
             args.append("metaclass=" + node._metaclass.accept(self))
         args += [n.accept(self) for n in node.keywords]
         args = f"({', '.join(args)})" if args else ""
-        docs = self._docs_dedent(node.doc) if node.doc else ""
+        docs = self._docs_dedent(node.doc_node)
         return "\n\n{}class {}{}:{}\n{}\n".format(
             decorate, node.name, args, docs, self._stmt_list(node.body)
         )
@@ -328,7 +334,7 @@ class AsStringVisitor:
     def handle_functiondef(self, node, keyword):
         """return a (possibly async) function definition node as string"""
         decorate = node.decorators.accept(self) if node.decorators else ""
-        docs = self._docs_dedent(node.doc) if node.doc else ""
+        docs = self._docs_dedent(node.doc_node)
         trailer = ":"
         if node.returns:
             return_annotation = " -> " + node.returns.as_string()
@@ -417,7 +423,7 @@ class AsStringVisitor:
 
     def visit_module(self, node):
         """return an astroid.Module node as string"""
-        docs = f'"""{node.doc}"""\n\n' if node.doc else ""
+        docs = f'"""{node.doc_node.value}"""\n\n' if node.doc_node else ""
         return docs + "\n".join(n.accept(self) for n in node.body) + "\n\n"
 
     def visit_name(self, node):

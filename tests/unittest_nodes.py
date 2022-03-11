@@ -33,7 +33,6 @@
 """
 import copy
 import os
-import platform
 import sys
 import textwrap
 import unittest
@@ -290,12 +289,6 @@ def func(param: Tuple):
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string().strip(), code.strip())
 
-    # This test is disabled on PyPy because we cannot get a release that has proper
-    # support for f-strings (we need 7.2 at least)
-    @pytest.mark.skipif(
-        platform.python_implementation() == "PyPy",
-        reason="Needs f-string support.",
-    )
     def test_f_strings(self):
         code = r'''
 a = f"{'a'}"
@@ -1605,7 +1598,9 @@ def test_get_doc() -> None:
     """
     )
     node: nodes.FunctionDef = astroid.extract_node(code)  # type: ignore[assignment]
-    assert node.doc == "Docstring"
+    with pytest.warns(DeprecationWarning) as records:
+        assert node.doc == "Docstring"
+        assert len(records) == 1
     assert isinstance(node.doc_node, nodes.Const)
     assert node.doc_node.value == "Docstring"
     assert node.doc_node.lineno == 2
@@ -1621,7 +1616,9 @@ def test_get_doc() -> None:
     """
     )
     node = astroid.extract_node(code)
-    assert node.doc is None
+    with pytest.warns(DeprecationWarning) as records:
+        assert node.doc is None
+        assert len(records) == 1
     assert node.doc_node is None
 
 

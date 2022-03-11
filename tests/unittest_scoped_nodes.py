@@ -41,14 +41,24 @@ import os
 import sys
 import textwrap
 import unittest
+import warnings
 from functools import partial
 from typing import Any, List, Union
 
 import pytest
 
-from astroid import MANAGER, builder, nodes, objects, parse, test_utils, util
+from astroid import (
+    MANAGER,
+    builder,
+    extract_node,
+    nodes,
+    objects,
+    parse,
+    test_utils,
+    util,
+)
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import PY38_PLUS, PY310_PLUS, WIN32
+from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY310_PLUS, WIN32
 from astroid.exceptions import (
     AttributeInferenceError,
     DuplicateBasesError,
@@ -205,8 +215,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_relative_to_absolute_name(self) -> None:
         # package
-        mod = nodes.Module("very.multi.package", "doc")
-        mod.package = True
+        mod = nodes.Module("very.multi.package", package=True)
         modname = mod.relative_to_absolute_name("utils", 1)
         self.assertEqual(modname, "very.multi.package.utils")
         modname = mod.relative_to_absolute_name("utils", 2)
@@ -216,8 +225,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         modname = mod.relative_to_absolute_name("", 1)
         self.assertEqual(modname, "very.multi.package")
         # non package
-        mod = nodes.Module("very.multi.module", "doc")
-        mod.package = False
+        mod = nodes.Module("very.multi.module", package=False)
         modname = mod.relative_to_absolute_name("utils", 0)
         self.assertEqual(modname, "very.multi.utils")
         modname = mod.relative_to_absolute_name("utils", 1)
@@ -228,8 +236,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(modname, "very.multi")
 
     def test_relative_to_absolute_name_beyond_top_level(self) -> None:
-        mod = nodes.Module("a.b.c", "")
-        mod.package = True
+        mod = nodes.Module("a.b.c", package=True)
         for level in (5, 4):
             with self.assertRaises(TooManyLevelsError) as cm:
                 mod.relative_to_absolute_name("test", level)
@@ -956,7 +963,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertEqual(
                 len(cls.getattr("__doc__")), 1, (cls, cls.getattr("__doc__"))
             )
-            self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc)
+            with pytest.warns(DeprecationWarning) as records:
+                self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc)
+                assert len(records) == 1
+            self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc_node.value)
             self.assertEqual(len(cls.getattr("__module__")), 4)
             self.assertEqual(len(cls.getattr("__dict__")), 1)
             self.assertEqual(len(cls.getattr("__mro__")), 1)
@@ -1278,7 +1288,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         astroid = builder.parse(data)
         self.assertEqual(astroid["g1"].fromlineno, 4)
         self.assertEqual(astroid["g1"].tolineno, 5)
-        if not PY38_PLUS:
+        if not PY38_PLUS or PY38 and IS_PYPY:
             self.assertEqual(astroid["g2"].fromlineno, 9)
         else:
             self.assertEqual(astroid["g2"].fromlineno, 10)
@@ -2635,6 +2645,86 @@ class TestFrameNodes:
 
         assert module.body[1].value.locals["x"][0].frame() == module
         assert module.body[1].value.locals["x"][0].frame(future=True) == module
+
+
+def test_deprecation_of_doc_attribute() -> None:
+    code = textwrap.dedent(
+        """\
+    def func():
+        "Docstring"
+        return 1
+    """
+    )
+    node: nodes.FunctionDef = extract_node(code)  # type: ignore[assignment]
+    with pytest.warns(DeprecationWarning) as records:
+        assert node.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        node.doc = None
+        assert len(records) == 1
+
+    code = textwrap.dedent(
+        """\
+    class MyClass():
+        '''Docstring'''
+    """
+    )
+    node: nodes.ClassDef = extract_node(code)  # type: ignore[assignment]
+    with pytest.warns(DeprecationWarning) as records:
+        assert node.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        node.doc = None
+        assert len(records) == 1
+
+    code = textwrap.dedent(
+        """\
+    '''Docstring'''
+    """
+    )
+    node = parse(code)
+    with pytest.warns(DeprecationWarning) as records:
+        assert node.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        node.doc = None
+        assert len(records) == 1
+
+    # If 'doc' isn't passed to Module, ClassDef, FunctionDef,
+    # no DeprecationWarning should be raised
+    doc_node = nodes.Const("Docstring")
+    with warnings.catch_warnings():
+        # Modify warnings filter to raise error for DeprecationWarning
+        warnings.simplefilter("error", DeprecationWarning)
+        node_module = nodes.Module(name="MyModule")
+        node_module.postinit(body=[], doc_node=doc_node)
+        assert node_module.doc_node == doc_node
+        node_class = nodes.ClassDef(name="MyClass")
+        node_class.postinit(bases=[], body=[], decorators=[], doc_node=doc_node)
+        assert node_class.doc_node == doc_node
+        node_func = nodes.FunctionDef(name="MyFunction")
+        node_func.postinit(args=nodes.Arguments(), body=[], doc_node=doc_node)
+        assert node_func.doc_node == doc_node
+
+    # Test 'doc' attribute if only 'doc_node' is passed
+    with pytest.warns(DeprecationWarning) as records:
+        assert node_module.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        assert node_class.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        assert node_func.doc == "Docstring"
+        assert len(records) == 1
+
+    # If 'doc' is passed to Module, ClassDef, FunctionDef,
+    # a DeprecationWarning should be raised
+    doc_node = nodes.Const("Docstring")
+    with pytest.warns(DeprecationWarning) as records:
+        node_module = nodes.Module(name="MyModule", doc="Docstring")
+        node_class = nodes.ClassDef(name="MyClass", doc="Docstring")
+        node_func = nodes.FunctionDef(name="MyFunction", doc="Docstring")
+        assert len(records) == 3
 
 
 if __name__ == "__main__":

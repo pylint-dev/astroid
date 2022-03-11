@@ -9,6 +9,14 @@ Release date: TBA
 * Add new (optional) ``doc_node`` attribute to ``nodes.Module``, ``nodes.ClassDef``,
   and ``nodes.FunctionDef``.
 
+* Accessing the ``doc`` attribute of ``nodes.Module``, ``nodes.ClassDef``, and
+  ``nodes.FunctionDef`` has been deprecated in favour of the ``doc_node`` attribute.
+  Note: ``doc_node`` is an (optional) ``nodes.Const`` whereas ``doc`` was an (optional) ``str``.
+
+* Passing the ``doc`` argument to the ``__init__`` of ``nodes.Module``, ``nodes.ClassDef``,
+  and ``nodes.FunctionDef`` has been deprecated in favour of the ``postinit`` ``doc_node`` attribute.
+  Note: ``doc_node`` is an (optional) ``nodes.Const`` whereas ``doc`` was an (optional) ``str``.
+
 * Replace custom ``cachedproperty`` with ``functools.cached_property`` and deprecate it
   for Python 3.8+.
 
@@ -17,6 +25,16 @@ Release date: TBA
 * Add ``pathlib`` brain to handle ``pathlib.PurePath.parents`` inference in Python 3.10+.
 
   Closes PyCQA/pylint#5783
+
+* Set ``end_lineno`` and ``end_col_offset`` attributes to ``None`` for all nodes
+  with PyPy 3.8. PyPy 3.8 assigns these attributes inconsistently which could lead
+  to unexpected errors. Overwriting them with ``None`` will cause a fallback
+  to the already supported way of PyPy 3.7.
+
+* Add missing ``shape`` parameter to numpy ``zeros_like``, ``ones_like``,
+  and ``full_like`` methods.
+
+  Closes PyCQA/pylint#5871
 
 
 What's New in astroid 2.10.1?

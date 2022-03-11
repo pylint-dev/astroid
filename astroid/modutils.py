@@ -46,13 +46,13 @@ import importlib.machinery
 import importlib.util
 import itertools
 import os
-import platform
 import sys
 import sysconfig
 import types
 from pathlib import Path
 from typing import Dict, Set
 
+from astroid.const import IS_JYTHON, IS_PYPY
 from astroid.interpreter._import import spec, util
 
 if sys.platform.startswith("win"):
@@ -84,18 +84,18 @@ if os.name == "nt":
         except AttributeError:
             pass
 
-if platform.python_implementation() == "PyPy":
+if IS_PYPY and sys.version_info < (3, 8):
     # PyPy stores the stdlib in two places: sys.prefix/lib_pypy and sys.prefix/lib-python/3
     # sysconfig.get_path on PyPy returns the first, but without an underscore so we patch this manually.
+    # Beginning with 3.8 the stdlib is only stored in: sys.prefix/pypy{py_version_short}
     STD_LIB_DIRS.add(str(Path(sysconfig.get_path("stdlib")).parent / "lib_pypy"))
-    STD_LIB_DIRS.add(
-        sysconfig.get_path("stdlib", vars={"implementation_lower": "python/3"})
-    )
+    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("stdlib")).parent / "lib-python/3"))
+
     # TODO: This is a fix for a workaround in virtualenv. At some point we should revisit
     # whether this is still necessary. See https://github.com/PyCQA/astroid/pull/1324.
     STD_LIB_DIRS.add(str(Path(sysconfig.get_path("platstdlib")).parent / "lib_pypy"))
     STD_LIB_DIRS.add(
-        sysconfig.get_path("platstdlib", vars={"implementation_lower": "python/3"})
+        str(Path(sysconfig.get_path("platstdlib")).parent / "lib-python/3")
     )
 
 if os.name == "posix":
@@ -124,7 +124,6 @@ if os.name == "posix":
         STD_LIB_DIRS.add(_posix_path("lib64"))
 
 EXT_LIB_DIRS = {sysconfig.get_path("purelib"), sysconfig.get_path("platlib")}
-IS_JYTHON = platform.python_implementation() == "Jython"
 BUILTIN_MODULES = dict.fromkeys(sys.builtin_module_names, True)
 
 

@@ -261,7 +261,7 @@ class NodeNG:
         """An optimized version of list(get_children())[-1]"""
         for field in self._astroid_fields[::-1]:
             attr = getattr(self, field)
-            if not attr:  # None or empty listy / tuple
+            if not attr:  # None or empty list / tuple
                 continue
             if isinstance(attr, (list, tuple)):
                 return attr[-1]
@@ -763,6 +763,9 @@ class NodeNG:
                 result.append("\n")
                 result.append(cur_indent)
                 for field in fields[:-1]:
+                    # TODO: Remove this after removal of the 'doc' attribute
+                    if field == "doc":
+                        continue
                     result.append(f"{field}=")
                     _repr_tree(getattr(node, field), result, done, cur_indent, depth)
                     result.append(",\n")

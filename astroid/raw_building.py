@@ -32,7 +32,7 @@ import os
 import sys
 import types
 import warnings
-from typing import List, Optional
+from typing import Iterable, List, Optional
 
 from astroid import bases, nodes
 from astroid.manager import AstroidManager
@@ -110,19 +110,25 @@ def attach_import_node(node, modname, membername):
 
 def build_module(name: str, doc: Optional[str] = None) -> nodes.Module:
     """create and initialize an astroid Module node"""
-    node = nodes.Module(name, doc, pure_python=False)
-    node.package = False
-    node.parent = None
+    node = nodes.Module(name, pure_python=False, package=False)
+    node.postinit(
+        body=[],
+        doc_node=nodes.Const(value=doc) if doc else None,
+    )
     return node
 
 
-def build_class(name, basenames=(), doc=None):
-    """create and initialize an astroid ClassDef node"""
-    node = nodes.ClassDef(name, doc)
-    for base in basenames:
-        basenode = nodes.Name(name=base)
-        node.bases.append(basenode)
-        basenode.parent = node
+def build_class(
+    name: str, basenames: Iterable[str] = (), doc: Optional[str] = None
+) -> nodes.ClassDef:
+    """Create and initialize an astroid ClassDef node."""
+    node = nodes.ClassDef(name)
+    node.postinit(
+        bases=[nodes.Name(name=base, parent=node) for base in basenames],
+        body=[],
+        decorators=None,
+        doc_node=nodes.Const(value=doc) if doc else None,
+    )
     return node
 
 
@@ -131,13 +137,13 @@ def build_function(
     args: Optional[List[str]] = None,
     posonlyargs: Optional[List[str]] = None,
     defaults=None,
-    doc=None,
+    doc: Optional[str] = None,
     kwonlyargs: Optional[List[str]] = None,
 ) -> nodes.FunctionDef:
     """create and initialize an astroid FunctionDef node"""
     # first argument is now a list of decorators
-    func = nodes.FunctionDef(name, doc)
-    func.args = argsnode = nodes.Arguments(parent=func)
+    func = nodes.FunctionDef(name)
+    argsnode = nodes.Arguments(parent=func)
     argsnode.postinit(
         args=[nodes.AssignName(name=arg, parent=argsnode) for arg in args or ()],
         defaults=[],
@@ -149,6 +155,11 @@ def build_function(
         posonlyargs=[
             nodes.AssignName(name=arg, parent=argsnode) for arg in posonlyargs or ()
         ],
+    )
+    func.postinit(
+        args=argsnode,
+        body=[],
+        doc_node=nodes.Const(value=doc) if doc else None,
     )
     for default in defaults or ():
         argsnode.defaults.append(nodes.const_factory(default))
@@ -463,18 +474,36 @@ def _astroid_bootstrapping():
     # Set the builtin module as parent for some builtins.
     nodes.Const._proxied = property(_set_proxied)
 
-    _GeneratorType = nodes.ClassDef(
-        types.GeneratorType.__name__, types.GeneratorType.__doc__
-    )
+    _GeneratorType = nodes.ClassDef(types.GeneratorType.__name__)
     _GeneratorType.parent = astroid_builtin
+    generator_doc_node = (
+        nodes.Const(value=types.GeneratorType.__doc__)
+        if types.GeneratorType.__doc__
+        else None
+    )
+    _GeneratorType.postinit(
+        bases=[],
+        body=[],
+        decorators=None,
+        doc_node=generator_doc_node,
+    )
     bases.Generator._proxied = _GeneratorType
     builder.object_build(bases.Generator._proxied, types.GeneratorType)
 
     if hasattr(types, "AsyncGeneratorType"):
-        _AsyncGeneratorType = nodes.ClassDef(
-            types.AsyncGeneratorType.__name__, types.AsyncGeneratorType.__doc__
-        )
+        _AsyncGeneratorType = nodes.ClassDef(types.AsyncGeneratorType.__name__)
         _AsyncGeneratorType.parent = astroid_builtin
+        async_generator_doc_node = (
+            nodes.Const(value=types.AsyncGeneratorType.__doc__)
+            if types.AsyncGeneratorType.__doc__
+            else None
+        )
+        _AsyncGeneratorType.postinit(
+            bases=[],
+            body=[],
+            decorators=None,
+            doc_node=async_generator_doc_node,
+        )
         bases.AsyncGenerator._proxied = _AsyncGeneratorType
         builder.object_build(bases.AsyncGenerator._proxied, types.AsyncGeneratorType)
     builtin_types = (
@@ -491,10 +520,16 @@ def _astroid_bootstrapping():
     )
     for _type in builtin_types:
         if _type.__name__ not in astroid_builtin:
-            cls = nodes.ClassDef(_type.__name__, _type.__doc__)
-            cls.parent = astroid_builtin
-            builder.object_build(cls, _type)
-            astroid_builtin[_type.__name__] = cls
+            klass = nodes.ClassDef(_type.__name__)
+            klass.parent = astroid_builtin
+            klass.postinit(
+                bases=[],
+                body=[],
+                decorators=None,
+                doc_node=nodes.Const(value=_type.__doc__) if _type.__doc__ else None,
+            )
+            builder.object_build(klass, _type)
+            astroid_builtin[_type.__name__] = klass
 
 
 _astroid_bootstrapping()
