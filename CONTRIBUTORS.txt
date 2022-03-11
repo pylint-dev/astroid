@@ -15,6 +15,7 @@ Mainteners
 - Łukasz Rogalski <rogalski.91@gmail.com>
 - Florian Bruhin <me@the-compiler.org>
 - Ashley Whetter <ashley@awhetter.co.uk>
+- Jacob Walls <jacobtylerwalls@gmail.com>
 - areveny <areveny@protonmail.com>
 
 
@@ -26,7 +27,6 @@ Contributors
 - Andrew Haigh <hello@nelf.in>
 - David Liu <david@cs.toronto.edu>
 - Eevee (Alex Munroe) <amunroe@yelp.com>
-- Jacob Walls <jacobtylerwalls@gmail.com>
 - David Gilman <davidgilman1@gmail.com>
 - Julien Jehannet <julien.jehannet@logilab.fr>
 - Calen Pennington <calen.pennington@gmail.com>

@@ -63,6 +63,11 @@
     "mails": ["guillaume.peillex@gmail.com"],
     "team": "true"
   },
+  "Jacob Walls": {
+    "authoritative_mail": "jacobtylerwalls@gmail.com",
+    "mails": ["jacobtylerwalls@gmail.com"],
+    "team": "true"
+  },
   "Jacob Bogdanov": {
     "authoritative_mail": "jacob@bogdanov.dev",
     "mails": ["jacob@bogdanov.dev", "jbogdanov@128technology.com"]
