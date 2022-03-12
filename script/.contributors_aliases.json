@@ -33,14 +33,14 @@
     "mails": ["cpopa@cloudbasesolutions.com", "pcmanticore@gmail.com"],
     "team": "Maintainers"
   },
-  "David Euresti": {
-    "authoritative_mail": "github@euresti.com",
-    "mails": ["david@dropbox.com", "github@euresti.com"]
-  },
   "Daniël van Noord": {
     "authoritative_mail": "13665637+DanielNoord@users.noreply.github.com",
     "mails": ["13665637+DanielNoord@users.noreply.github.com"],
     "team": "Maintainers"
+  },
+  "David Euresti": {
+    "authoritative_mail": "github@euresti.com",
+    "mails": ["david@dropbox.com", "github@euresti.com"]
   },
   "Dimitri Prybysh": {
     "authoritative_mail": "dmand@yandex.ru",
@@ -63,19 +63,19 @@
       "dlindquist@google.com"
     ]
   },
-  "hippo91": {
+  "Hippo91": {
     "authoritative_mail": "guillaume.peillex@gmail.com",
     "mails": ["guillaume.peillex@gmail.com"],
-    "team": "Maintainers"
-  },
-  "Jacob Walls": {
-    "authoritative_mail": "jacobtylerwalls@gmail.com",
-    "mails": ["jacobtylerwalls@gmail.com"],
     "team": "Maintainers"
   },
   "Jacob Bogdanov": {
     "authoritative_mail": "jacob@bogdanov.dev",
     "mails": ["jacob@bogdanov.dev", "jbogdanov@128technology.com"]
+  },
+  "Jacob Walls": {
+    "authoritative_mail": "jacobtylerwalls@gmail.com",
+    "mails": ["jacobtylerwalls@gmail.com"],
+    "team": "Maintainers"
   },
   "Joshua Cannon": {
     "authoritative_mail": "joshdcannon@gmail.com",
@@ -107,11 +107,6 @@
       "aurelien.campeas@logilab.fr",
       "lmedioni@logilab.fr"
     ]
-  },
-  "Łukasz Rogalski": {
-    "authoritative_mail": "rogalski.91@gmail.com",
-    "mails": ["rogalski.91@gmail.com"],
-    "team": "Maintainers"
   },
   "Marc Mueller": {
     "authoritative_mail": "30130371+cdce8p@users.noreply.github.com",
@@ -154,5 +149,10 @@
       "66853113+pre-commit-ci[bot]@users.noreply.github.com",
       "49699333+dependabot[bot]@users.noreply.github.com"
     ]
+  },
+  "Łukasz Rogalski": {
+    "authoritative_mail": "rogalski.91@gmail.com",
+    "mails": ["rogalski.91@gmail.com"],
+    "team": "Maintainers"
   }
 }
