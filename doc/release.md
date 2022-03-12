@@ -37,6 +37,7 @@ git commit -am "Upgrade the version to 2.5.0-dev0 following 2.4.0 release"
 Check the result and then upgrade the main branch
 
 - Delete the `maintenance/X.Y-1.x` branch. (For example: `maintenance/2.3.x`)
+- Create a `maintenance/X.Y.x` (For example: `maintenance/2.4.x` from the `v2.4.0` tag.)
 
 ## Backporting a fix from `main` to the maintenance branch
 
@@ -45,8 +46,6 @@ maintenance branch we cherry-pick the commit from `main`.
 
 - During the merge request on `main`, make sure that the changelog is for the patch
   version `X.Y-1.Z'`. (For example: `v2.3.5`)
-- Create a `maintenance/X.Y.x` branch on Github --if it does not already exist-- from
-  the `X.Y-1.0` tag . (For example: `maintenance/2.3.x` from the `v2.3.0` tag.)
 - After the PR is merged on `main` cherry-pick the commits on the `maintenance/X.Y.x`
   branch (For example: from `maintenance/2.4.x` cherry-pick a commit from `main`)
 - Release a patch version
