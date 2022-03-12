@@ -1,11 +1,6 @@
-# Copyright (c) 2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 from astroid import parse
 from astroid.brain.helpers import register_module_extender

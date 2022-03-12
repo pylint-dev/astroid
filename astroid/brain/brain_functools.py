@@ -1,8 +1,6 @@
-# Copyright (c) 2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2018 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
+# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid hooks for understanding functools library module."""
 from functools import partial

@@ -20,6 +20,13 @@ repos:
           - --expand-star-imports
           - --remove-duplicate-keys
           - --remove-unused-variables
+  - repo: https://github.com/Pierre-Sassoulas/copyright_notice_precommit
+    rev: 6f5a59c3e1cb0f20731eb1ff32622c9a2fc72d9a
+    hooks:
+      - id: copyright-notice
+        args: ["--notice=script/copyright.txt", "--enforce-all", "--autofix"]
+        exclude: tests/testdata|setup.py
+        types: [python]
   - repo: https://github.com/asottile/pyupgrade
     rev: v2.31.0
     hooks:

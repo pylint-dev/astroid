@@ -8,7 +8,7 @@ So, you want to release the `X.Y.Z` version of astroid ?
 
 1. Check if the dependencies of the package are correct
 2. Check the result (Do `git diff vX.Y.Z-1 ChangeLog` in particular).
-3. Install the release dependencies `pip3 install pre-commit tbump`
+3. Install the release dependencies `pip3 install -r requirements_test.txt`
 4. Bump the version and release by using `tbump X.Y.Z --no-push`.
 5. Push the tag.
 6. Release the version on GitHub with the same name as the tag and copy and paste the
@@ -21,7 +21,7 @@ So, you want to release the `X.Y.Z` version of astroid ?
 Move back to a dev version with `tbump`:
 
 ```bash
-tbump X.Y.Z+1-dev0 --no-tag --no-push # You can interrupt during copyrite
+tbump X.Y.Z+1-dev0 --no-tag --no-push # You can interrupt after the first step
 git commit -am "Upgrade the version to x.y.z+1-dev0 following x.y.z release"
 ```
 
