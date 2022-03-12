@@ -52,7 +52,7 @@ maintenance branch we cherry-pick the commit from `main`.
 
 ## Releasing a patch version
 
-We release patch version when a crash or a bug is fixed on the main branch and has been
+We release patch versions when a crash or a bug is fixed on the main branch and has been
 cherry-picked on the maintenance branch.
 
 - Check the result of `git diff vX.Y-1.Z-1 ChangeLog`. (For example:
