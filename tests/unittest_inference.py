@@ -4389,6 +4389,7 @@ class HasattrTest(unittest.TestCase):
         )
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Const)
+        self.assertIs(inferred.value, False)
 
 
 class BoolOpTest(unittest.TestCase):
