@@ -13,13 +13,9 @@ the maintenance branch. If so, release a last patch release first. See
 - Check the result of `git diff vX.Y-1.Z' ChangeLog`. (For example:
   `git diff v2.3.4 ChangeLog`)
 - Install the release dependencies: `pip3 install -r requirements_test.txt`
-- Bump the version and release by using `tbump X.Y.0 --no-push`. (For example:
-  `tbump 2.4.0 --no-push`)
-- Check the result visually and then by triggering the "release tests" workflow in
-  GitHub Actions first.
-- Push the tag.
-- Release the version on GitHub with the same name as the tag and copy and paste the
-  appropriate changelog in the description. This triggers the PyPI release.
+- Bump the version and release by using `tbump X.Y.0 --no-push --no-tag`. (For example:
+  `tbump 2.4.0 --no-push --no-tag`)
+- Check the commit created with `git show` amend the commit if required.
 - Move the `main` branch up to a dev version with `tbump`:
 
 ```bash
@@ -34,8 +30,15 @@ tbump 2.5.0-dev0 --no-tag --no-push
 git commit -am "Upgrade the version to 2.5.0-dev0 following 2.4.0 release"
 ```
 
-Check the result and then upgrade the main branch
+Check the commit and then push to a release branch
 
+- Open a merge request with the two commits (no one can push directly on `main`)
+- Trigger the "release tests" workflow in GitHub Actions.
+- After the merge, recover the merged commits on `main` and tag the first one (the
+  version should be `X.Y.Z`) as `vX.Y.Z` (For example: `v2.4.0`)
+- Push the tag.
+- Release the version on GitHub with the same name as the tag and copy and paste the
+  appropriate changelog in the description. This triggers the PyPI release.
 - Delete the `maintenance/X.Y-1.x` branch. (For example: `maintenance/2.3.x`)
 - Create a `maintenance/X.Y.x` (For example: `maintenance/2.4.x` from the `v2.4.0` tag.)
 

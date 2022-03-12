@@ -7,7 +7,7 @@ Maintainers
 - Claudiu Popa <pcmanticore@gmail.com>
 - Sylvain Thénault <thenault@gmail.com>
 - Pierre Sassoulas <pierre.sassoulas@gmail.com>
-- hippo91 <guillaume.peillex@gmail.com>
+- Hippo91 <guillaume.peillex@gmail.com>
 - Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 - Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 - Bryce Guinta <bryce.paul.guinta@gmail.com>
@@ -140,6 +140,7 @@ Contributors
 - Dmitry Shachnev <mitya57@users.noreply.github.com>
 - Denis Laxalde <denis.laxalde@logilab.fr>
 - David Poirier <david-poirier-csn@users.noreply.github.com>
+- Dave Hirschfeld <dave.hirschfeld@gmail.com>
 - Dave Baum <dbaum@google.com>
 - Daniel Martin <daniel.martin@crowdstrike.com>
 - Daniel Colascione <dancol@dancol.org>

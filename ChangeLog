@@ -2,9 +2,21 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.11.0?
+What's New in astroid 2.12.0?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.11.1?
+=============================
+Release date: TBA
+
+
+
+What's New in astroid 2.11.0?
+=============================
+Release date: 2022-03-12
 
 * Add new (optional) ``doc_node`` attribute to ``nodes.Module``, ``nodes.ClassDef``,
   and ``nodes.FunctionDef``.
@@ -33,11 +45,6 @@ Release date: TBA
   Closes PyCQA/pylint#5871
 
 * Only pin ``wrapt`` on the major version.
-
-
-What's New in astroid 2.10.1?
-=============================
-Release date: TBA
 
 
 What's New in astroid 2.10.0?
