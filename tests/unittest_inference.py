@@ -4388,7 +4388,7 @@ class HasattrTest(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        self.assertEqual(inferred, util.Uninferable)
+        self.assertIsInstance(inferred, nodes.Const)
 
 
 class BoolOpTest(unittest.TestCase):

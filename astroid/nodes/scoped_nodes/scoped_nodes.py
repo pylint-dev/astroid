@@ -1074,6 +1074,11 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     _other_other_fields = ("locals",)
     name = "<lambda>"
     is_lambda = True
+    special_attributes = FunctionModel()
+    """The names of special attributes that this function has.
+
+    :type: objectmodel.FunctionModel
+    """
 
     def implicit_parameters(self):
         return 0
@@ -1132,6 +1137,8 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 
         :type: list(NodeNG)
         """
+
+        self.instance_attrs = {}
 
         super().__init__(
             lineno=lineno,
@@ -1263,6 +1270,19 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         """
         return self
 
+    def getattr(self, name, context=None):
+        if not name:
+            raise AttributeInferenceError(target=self, attribute=name, context=context)
+
+        found_attrs = []
+        if name in self.instance_attrs:
+            found_attrs = self.instance_attrs[name]
+        if name in self.special_attributes:
+            found_attrs.append(self.special_attributes.lookup(name))
+        if found_attrs:
+            return found_attrs
+        raise AttributeInferenceError(target=self, attribute=name)
+
 
 class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     """Class representing an :class:`ast.FunctionDef`.
@@ -1281,11 +1301,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     returns = None
     decorators: Optional[node_classes.Decorators] = None
     """The decorators that are applied to this method or function."""
-    special_attributes = FunctionModel()
-    """The names of special attributes that this function has.
 
-    :type: objectmodel.FunctionModel
-    """
     is_function = True
     """Whether this node indicates a function.
 
@@ -1582,22 +1598,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :rtype: tuple(int, int)
         """
         return self.fromlineno, self.tolineno
-
-    def getattr(self, name, context=None):
-        """this method doesn't look in the instance_attrs dictionary since it's
-        done by an Instance proxy at inference time.
-        """
-        if not name:
-            raise AttributeInferenceError(target=self, attribute=name, context=context)
-
-        found_attrs = []
-        if name in self.instance_attrs:
-            found_attrs = self.instance_attrs[name]
-        if name in self.special_attributes:
-            found_attrs.append(self.special_attributes.lookup(name))
-        if found_attrs:
-            return found_attrs
-        raise AttributeInferenceError(target=self, attribute=name)
 
     def igetattr(self, name, context=None):
         """Inferred getattr, which returns an iterator of inferred statements."""

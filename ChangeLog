@@ -6,6 +6,8 @@ What's New in astroid 2.12.0?
 =============================
 Release date: TBA
 
+* Promoted ``getattr()`` from ``astroid.scoped_nodes.FunctionDef`` to its parent
+  ``astroid.scoped_nodes.Lambda``.
 
 
 What's New in astroid 2.11.1?
