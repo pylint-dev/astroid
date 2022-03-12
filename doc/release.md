@@ -6,7 +6,7 @@ So, you want to release the `X.Y.Z` version of astroid ?
 
 **Before releasing a major or minor version check if there are any unreleased commits on
 the maintenance branch. If so, release a last patch release first. See
-`Release a patch version`.**
+`Releasing a patch version`.**
 
 - Remove the empty changelog for the last unreleased patch version `X.Y-1.Z'`. (For
   example: `v2.3.5`)
@@ -19,7 +19,7 @@ the maintenance branch. If so, release a last patch release first. See
   GitHub Actions first.
 - Push the tag.
 - Release the version on GitHub with the same name as the tag and copy and paste the
-  appropriate changelog in the description. This trigger the pypi release.
+  appropriate changelog in the description. This triggers the PyPI release.
 - Move the `main` branch up to a dev version with `tbump`:
 
 ```bash
@@ -64,7 +64,7 @@ cherry-picked on the maintenance branch.
   GitHub Actions first.
 - Push the tag.
 - Release the version on GitHub with the same name as the tag and copy and paste the
-  appropriate changelog in the description. This trigger the pypi release.
+  appropriate changelog in the description. This triggers the PyPI release.
 - Merge the `maintenance/X.Y.x` branch on the main branch. The main branch should have
   the changelog for `X.Y-1.Z+1` (For example `v2.3.6`). This merge is required so
   `pre-commit autoupdate` works for pylint.
