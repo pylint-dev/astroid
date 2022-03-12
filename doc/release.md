@@ -73,8 +73,10 @@ tbump X.Y.Z+1-dev0 --no-tag --no-push  # You can interrupt after the first step
 git commit -am "Upgrade the version to x.y.z+1-dev0 following x.y.z release"
 ```
 
+For example:
+
 ```bash
-tbump X.3.6-dev0 --no-tag --no-push
+tbump 2.3.6-dev0 --no-tag --no-push
 git commit -am "Upgrade the version to 2.3.6-dev0 following 2.3.5 release"
 ```
 
