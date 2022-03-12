@@ -3,7 +3,7 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -22,3 +22,6 @@ class InferenceErrorInfo(TypedDict):
 
     node: "nodes.NodeNG"
     context: "InferenceContext | None"
+
+
+InferFn = Callable[..., Any]

@@ -11,8 +11,8 @@ import wrapt
 from astroid import bases, util
 from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
 from astroid.nodes import NodeNG
+from astroid.typing import InferFn
 
-InferFn = typing.Callable[..., typing.Any]
 InferOptions = typing.Union[
     NodeNG, bases.Instance, bases.UnboundMethod, typing.Type[util.Uninferable]
 ]
