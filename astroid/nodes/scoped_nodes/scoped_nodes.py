@@ -39,7 +39,7 @@ from astroid.exceptions import (
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
-from astroid.nodes import Arguments, Const, node_classes
+from astroid.nodes import Arguments, Const, NodeNG, node_classes
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
@@ -1135,7 +1135,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :type: list(NodeNG)
         """
 
-        self.instance_attrs: Dict[str, List[nodes.NodeNG]] = {}
+        self.instance_attrs: Dict[str, List[NodeNG]] = {}
 
         super().__init__(
             lineno=lineno,
@@ -1269,7 +1269,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 
     def getattr(
         self, name: str, context: Optional[InferenceContext] = None
-    ) -> List[nodes.NodeNG]:
+    ) -> List[NodeNG]:
         if not name:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
