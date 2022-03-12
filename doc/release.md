@@ -65,22 +65,6 @@ cherry-picked on the maintenance branch.
 - Push the tag.
 - Release the version on GitHub with the same name as the tag and copy and paste the
   appropriate changelog in the description. This trigger the pypi release.
-- Move the `main` branch up to a dev version with `tbump`:
-
-```bash
-tbump X.Y.Z+1-dev0 --no-tag --no-push  # You can interrupt after the first step
-git commit -am "Upgrade the version to x.y.z+1-dev0 following x.y.z release"
-```
-
-For example:
-
-```bash
-tbump 2.3.6-dev0 --no-tag --no-push
-git commit -am "Upgrade the version to 2.3.6-dev0 following 2.3.5 release"
-```
-
-Check the result and then upgrade the `maintenance/X.Y.x` branch
-
 - Merge the `maintenance/X.Y.x` branch on the main branch. The main branch should have
   the changelog for `X.Y-1.Z+1` (For example `v2.3.6`). This merge is required so
   `pre-commit autoupdate` works for pylint.
