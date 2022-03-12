@@ -1075,10 +1075,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     name = "<lambda>"
     is_lambda = True
     special_attributes = FunctionModel()
-    """The names of special attributes that this function has.
-
-    :type: objectmodel.FunctionModel
-    """
+    """The names of special attributes that this function has."""
 
     def implicit_parameters(self):
         return 0
@@ -1138,7 +1135,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :type: list(NodeNG)
         """
 
-        self.instance_attrs = {}
+        self.instance_attrs: Dict[str, List[nodes.NodeNG]] = {}
 
         super().__init__(
             lineno=lineno,
@@ -1270,7 +1267,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         """
         return self
 
-    def getattr(self, name, context=None):
+    def getattr(self, name: str, context: Optional[InferenceContext]=None) -> List[nodes.NodeNG]:
         if not name:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
