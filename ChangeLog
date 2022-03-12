@@ -32,12 +32,12 @@ Release date: TBA
 
   Closes PyCQA/pylint#5871
 
+* Only pin ``wrapt`` on the major version.
+
 
 What's New in astroid 2.10.1?
 =============================
 Release date: TBA
-
-* Add support for wrapt 1.14
 
 
 What's New in astroid 2.10.0?
