@@ -5,12 +5,12 @@
 """Various context related utilities, including inference and call contexts."""
 import contextlib
 import pprint
-from typing import TYPE_CHECKING, List, MutableMapping, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, List, Dict, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
     from astroid.nodes.node_classes import Keyword, NodeNG
 
-_InferenceCache = MutableMapping[
+_InferenceCache = Dict[
     Tuple["NodeNG", Optional[str], Optional[str], Optional[str]], Sequence["NodeNG"]
 ]
 
