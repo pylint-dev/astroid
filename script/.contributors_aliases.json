@@ -2,7 +2,7 @@
   "Areveny": {
     "authoritative_mail": "areveny@protonmail.com",
     "mails": ["areveny@protonmail.com", "self@areveny.com"],
-    "team": "true"
+    "team": "Maintainers"
   },
   "Ashley Whetter": {
     "authoritative_mail": "ashley@awhetter.co.uk",
@@ -12,12 +12,12 @@
       "asw@dneg.com",
       "AWhetter@users.noreply.github.com"
     ],
-    "team": "true"
+    "team": "Maintainers"
   },
   "Bryce Guinta": {
     "authoritative_mail": "bryce.paul.guinta@gmail.com",
     "mails": ["bryce.paul.guinta@gmail.com", "bryce.guinta@protonmail.com"],
-    "team": "true"
+    "team": "Maintainers"
   },
   "Calen Pennington": {
     "authoritative_mail": "calen.pennington@gmail.com",
@@ -26,12 +26,12 @@
   "Ceridwen": {
     "authoritative_mail": "ceridwenv@gmail.com",
     "mails": ["ceridwenv@gmail.com"],
-    "team": "true"
+    "team": "Maintainers"
   },
   "Claudiu Popa": {
     "authoritative_mail": "pcmanticore@gmail.com",
     "mails": ["cpopa@cloudbasesolutions.com", "pcmanticore@gmail.com"],
-    "team": "true"
+    "team": "Maintainers"
   },
   "David Euresti": {
     "authoritative_mail": "github@euresti.com",
@@ -40,17 +40,17 @@
   "Daniël van Noord": {
     "authoritative_mail": "13665637+DanielNoord@users.noreply.github.com",
     "mails": ["13665637+DanielNoord@users.noreply.github.com"],
-    "team": "true"
+    "team": "Maintainers"
   },
   "Dimitri Prybysh": {
     "authoritative_mail": "dmand@yandex.ru",
     "mails": ["dmand@yandex.ru"],
-    "team": "true"
+    "team": "Maintainers"
   },
   "Florian Bruhin": {
     "authoritative_mail": "me@the-compiler.org",
     "mails": ["me@the-compiler.org"],
-    "team": "true"
+    "team": "Maintainers"
   },
   "Google, Inc.": {
     "authoritative_mail": null,
@@ -66,12 +66,12 @@
   "hippo91": {
     "authoritative_mail": "guillaume.peillex@gmail.com",
     "mails": ["guillaume.peillex@gmail.com"],
-    "team": "true"
+    "team": "Maintainers"
   },
   "Jacob Walls": {
     "authoritative_mail": "jacobtylerwalls@gmail.com",
     "mails": ["jacobtylerwalls@gmail.com"],
-    "team": "true"
+    "team": "Maintainers"
   },
   "Jacob Bogdanov": {
     "authoritative_mail": "jacob@bogdanov.dev",
@@ -111,12 +111,12 @@
   "Łukasz Rogalski": {
     "authoritative_mail": "rogalski.91@gmail.com",
     "mails": ["rogalski.91@gmail.com"],
-    "team": "true"
+    "team": "Maintainers"
   },
   "Marc Mueller": {
     "authoritative_mail": "30130371+cdce8p@users.noreply.github.com",
     "mails": ["30130371+cdce8p@users.noreply.github.com"],
-    "team": "true"
+    "team": "Maintainers"
   },
   "Mario Corchero": {
     "authoritative_mail": "mariocj89@gmail.com",
@@ -129,7 +129,7 @@
   "Pierre Sassoulas": {
     "authoritative_mail": "pierre.sassoulas@gmail.com",
     "mails": ["pierre.sassoulas@gmail.com", "pierre.sassoulas@cea.fr"],
-    "team": "true"
+    "team": "Maintainers"
   },
   "Raphael Gaschignard": {
     "authoritative_mail": "raphael@makeleaps.com",
@@ -142,7 +142,7 @@
   "Sylvain Thénault": {
     "authoritative_mail": "thenault@gmail.com",
     "mails": ["thenault@gmail.com", "sylvain.thenault@logilab.fr"],
-    "team": "true"
+    "team": "Maintainers"
   },
   "Ville Skyttä": {
     "authoritative_mail": "ville.skytta@iki.fi",
