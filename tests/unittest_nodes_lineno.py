@@ -1157,7 +1157,7 @@ class TestLinenoColOffset:
         c1 = ast_nodes[0]
         assert isinstance(c1, nodes.ListComp)
         assert isinstance(c1.elt, nodes.Name)
-        assert isinstance(c1.generators[0], nodes.Comprehension)  # type: ignore
+        assert isinstance(c1.generators[0], nodes.Comprehension)  # type: ignore[index]
         assert (c1.lineno, c1.col_offset) == (1, 0)
         assert (c1.end_lineno, c1.end_col_offset) == (1, 16)
         assert (c1.elt.lineno, c1.elt.col_offset) == (1, 1)
@@ -1166,7 +1166,7 @@ class TestLinenoColOffset:
         c2 = ast_nodes[1]
         assert isinstance(c2, nodes.SetComp)
         assert isinstance(c2.elt, nodes.Name)
-        assert isinstance(c2.generators[0], nodes.Comprehension)  # type: ignore
+        assert isinstance(c2.generators[0], nodes.Comprehension)  # type: ignore[index]
         assert (c2.lineno, c2.col_offset) == (2, 0)
         assert (c2.end_lineno, c2.end_col_offset) == (2, 16)
         assert (c2.elt.lineno, c2.elt.col_offset) == (2, 1)
@@ -1176,7 +1176,7 @@ class TestLinenoColOffset:
         assert isinstance(c3, nodes.DictComp)
         assert isinstance(c3.key, nodes.Name)
         assert isinstance(c3.value, nodes.Name)
-        assert isinstance(c3.generators[0], nodes.Comprehension)  # type: ignore
+        assert isinstance(c3.generators[0], nodes.Comprehension)  # type: ignore[index]
         assert (c3.lineno, c3.col_offset) == (3, 0)
         assert (c3.end_lineno, c3.end_col_offset) == (3, 22)
         assert (c3.key.lineno, c3.key.col_offset) == (3, 1)
@@ -1187,7 +1187,7 @@ class TestLinenoColOffset:
         c4 = ast_nodes[3]
         assert isinstance(c4, nodes.GeneratorExp)
         assert isinstance(c4.elt, nodes.Name)
-        assert isinstance(c4.generators[0], nodes.Comprehension)  # type: ignore
+        assert isinstance(c4.generators[0], nodes.Comprehension)  # type: ignore[index]
         assert (c4.lineno, c4.col_offset) == (4, 0)
         assert (c4.end_lineno, c4.end_col_offset) == (4, 16)
         assert (c4.elt.lineno, c4.elt.col_offset) == (4, 1)
