@@ -163,10 +163,10 @@ class CallContext:
     ):
         self.args = args  # Call positional arguments
         if keywords:
-            keywords_tuples = [(arg.arg, arg.value) for arg in keywords]
+            arg_value_pairs = [(arg.arg, arg.value) for arg in keywords]
         else:
-            keywords_tuples = []
-        self.keywords = keywords_tuples  # Call keyword arguments
+            arg_value_pairs = []
+        self.keywords = arg_value_pairs  # Call keyword arguments
         self.callee = callee  # Function being called
 
 
