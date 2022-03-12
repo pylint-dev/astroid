@@ -5,7 +5,7 @@
 """Various context related utilities, including inference and call contexts."""
 import contextlib
 import pprint
-from typing import TYPE_CHECKING, List, Dict, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
     from astroid.nodes.node_classes import Keyword, NodeNG
