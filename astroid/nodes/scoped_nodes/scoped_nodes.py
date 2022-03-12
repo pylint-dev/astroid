@@ -1267,7 +1267,9 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         """
         return self
 
-    def getattr(self, name: str, context: Optional[InferenceContext]=None) -> List[nodes.NodeNG]:
+    def getattr(
+        self, name: str, context: Optional[InferenceContext] = None
+    ) -> List[nodes.NodeNG]:
         if not name:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
