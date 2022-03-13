@@ -1,10 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
-# Copyright (c) 2022 Deepyaman Datta <deepyaman.datta@utexas.edu>
-
-# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 
 from typing import Iterator, Optional
 
@@ -22,7 +18,7 @@ def infer_parents_subscript(
     subscript_node: nodes.Subscript, ctx: Optional[context.InferenceContext] = None
 ) -> Iterator[bases.Instance]:
     try:
-        next(node.value.infer())
+        next(subscript_node.value.infer())
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
