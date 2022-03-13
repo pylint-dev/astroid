@@ -1,3 +1,6 @@
+# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 # Copyright (c) 2022 Deepyaman Datta <deepyaman.datta@utexas.edu>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
@@ -12,17 +15,14 @@ from astroid.manager import AstroidManager
 
 
 def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
-    return (
-        isinstance(node.value, nodes.Attribute)
-        and node.value.attrname == "parents"
-    )
+    return isinstance(node.value, nodes.Attribute) and node.value.attrname == "parents"
 
 
 def infer_parents_subscript(
     subscript_node: nodes.Subscript, ctx: Optional[context.InferenceContext] = None
 ) -> Iterator[bases.Instance]:
     try:
-        value = next(node.value.infer())
+        next(node.value.infer())
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
