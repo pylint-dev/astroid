@@ -22,8 +22,8 @@ def infer_parents_subscript(
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
-    # if value.qname() != "pathlib._PathParents"
-    #     raise UseInferenceDefault
+    if value.qname() != "pathlib._PathParents"
+        raise UseInferenceDefault
 
     if isinstance(subscript_node.slice, nodes.Slice):
         raise UseInferenceDefault
