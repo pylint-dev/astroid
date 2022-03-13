@@ -18,7 +18,7 @@ def infer_parents_subscript(
     subscript_node: nodes.Subscript, ctx: Optional[context.InferenceContext] = None
 ) -> Iterator[bases.Instance]:
     try:
-        next(subscript_node.value.infer())
+        value = next(subscript_node.value.infer())
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
