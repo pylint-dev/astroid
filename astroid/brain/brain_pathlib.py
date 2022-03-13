@@ -12,14 +12,8 @@ from astroid.manager import AstroidManager
 
 
 def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
-    try:
-        value = next(node.value.infer())
-    except (InferenceError, StopIteration) as exc:
-        raise UseInferenceDefault from exc
-
     return (
-        value.qname() == "pathlib._PathParents"
-        and isinstance(node.value, nodes.Attribute)
+        isinstance(node.value, nodes.Attribute)
         and node.value.attrname == "parents"
     )
 
@@ -27,6 +21,14 @@ def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
 def infer_parents_subscript(
     subscript_node: nodes.Subscript, ctx: Optional[context.InferenceContext] = None
 ) -> Iterator[bases.Instance]:
+    try:
+        value = next(node.value.infer())
+    except (InferenceError, StopIteration) as exc:
+        raise UseInferenceDefault from exc
+
+    # if value.qname() != "pathlib._PathParents"
+    #     raise UseInferenceDefault
+
     if isinstance(subscript_node.slice, nodes.Slice):
         raise UseInferenceDefault
 
