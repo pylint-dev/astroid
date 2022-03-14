@@ -43,11 +43,9 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-if sys.version_info >= (3, 8) or TYPE_CHECKING:
-    # pylint: disable-next=ungrouped-imports
+if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
-    # pylint: disable-next=ungrouped-imports
     from astroid.decorators import cachedproperty as cached_property
 
 # Types for 'NodeNG.nodes_of_class()'
