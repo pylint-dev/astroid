@@ -5,16 +5,19 @@
 """Various context related utilities, including inference and call contexts."""
 import contextlib
 import pprint
-from typing import TYPE_CHECKING, List, MutableMapping, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
     from astroid.nodes.node_classes import Keyword, NodeNG
 
+_InferenceCache = Dict[
+    Tuple["NodeNG", Optional[str], Optional[str], Optional[str]], Sequence["NodeNG"]
+]
 
-_INFERENCE_CACHE = {}
+_INFERENCE_CACHE: _InferenceCache = {}
 
 
-def _invalidate_cache():
+def _invalidate_cache() -> None:
     _INFERENCE_CACHE.clear()
 
 
@@ -96,11 +99,7 @@ class InferenceContext:
         self._nodes_inferred[0] = value
 
     @property
-    def inferred(
-        self,
-    ) -> MutableMapping[
-        Tuple["NodeNG", Optional[str], Optional[str], Optional[str]], Sequence["NodeNG"]
-    ]:
+    def inferred(self) -> _InferenceCache:
         """
         Inferred node contexts to their mapped results
 
@@ -164,10 +163,10 @@ class CallContext:
     ):
         self.args = args  # Call positional arguments
         if keywords:
-            keywords = [(arg.arg, arg.value) for arg in keywords]
+            arg_value_pairs = [(arg.arg, arg.value) for arg in keywords]
         else:
-            keywords = []
-        self.keywords = keywords  # Call keyword arguments
+            arg_value_pairs = []
+        self.keywords = arg_value_pairs  # Call keyword arguments
         self.callee = callee  # Function being called
 
 
