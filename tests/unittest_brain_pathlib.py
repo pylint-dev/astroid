@@ -15,7 +15,7 @@ if not PY310_PLUS:
     )
 
 
-def test_inference_parents_subscript_index():
+def test_inference_parents_subscript_index() -> None:
     """Test inference of ``pathlib.Path.parents``, accessed by index."""
     name_node = astroid.extract_node(
         """
@@ -32,7 +32,7 @@ def test_inference_parents_subscript_index():
     assert inferred[0].qname() == "pathlib.Path"
 
 
-def test_inference_parents_subscript_slice():
+def test_inference_parents_subscript_slice() -> None:
     """Test inference of ``pathlib.Path.parents``, accessed by slice."""
     name_node = astroid.extract_node(
         """
@@ -49,7 +49,7 @@ def test_inference_parents_subscript_slice():
     assert inferred[0].qname() == "builtins.tuple"
 
 
-def test_inference_parents_subscript_not_path():
+def test_inference_parents_subscript_not_path() -> None:
     """Test inference of other ``.parents`` subscripts is unaffected."""
     name_node = astroid.extract_node(
         """
