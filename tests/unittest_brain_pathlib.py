@@ -26,9 +26,10 @@ def test_inference_parents_subscript_index():
     parent_path
     """
     )
-    inferred = next(name_node.infer())
-    assert isinstance(inferred, bases.Instance)
-    assert inferred.qname() == "pathlib.Path"
+    inferred = name_node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].qname() == "pathlib.Path"
 
 
 def test_inference_parents_subscript_slice():
@@ -42,9 +43,10 @@ def test_inference_parents_subscript_slice():
     parent_path
     """
     )
-    inferred = next(name_node.infer())
-    assert isinstance(inferred, bases.Instance)
-    assert inferred.qname() == "builtins.tuple"
+    inferred = name_node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].qname() == "builtins.tuple"
 
 
 def test_inference_parents_subscript_not_path():
@@ -59,5 +61,6 @@ def test_inference_parents_subscript_not_path():
     error
     """
     )
-    inferred = next(name_node.infer())
-    assert inferred is Uninferable
+    inferred = name_node.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
