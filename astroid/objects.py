@@ -12,7 +12,6 @@ leads to an inferred FrozenSet:
 """
 
 import sys
-from typing import TYPE_CHECKING
 
 from astroid import bases, decorators, util
 from astroid.exceptions import (
@@ -26,7 +25,7 @@ from astroid.nodes import node_classes, scoped_nodes
 
 objectmodel = util.lazy_import("interpreter.objectmodel")
 
-if sys.version_info >= (3, 8) or TYPE_CHECKING:
+if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
     from astroid.decorators import cachedproperty as cached_property

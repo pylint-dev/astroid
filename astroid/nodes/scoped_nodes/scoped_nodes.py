@@ -13,7 +13,7 @@ import os
 import sys
 import typing
 import warnings
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, TypeVar, Union, overload
+from typing import Dict, List, Optional, Set, TypeVar, Union, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
@@ -51,14 +51,11 @@ else:
 
 
 if sys.version_info >= (3, 8):
+    from functools import cached_property
     from typing import Literal
 else:
     from typing_extensions import Literal
 
-if sys.version_info >= (3, 8) or TYPE_CHECKING:
-    from functools import cached_property
-else:
-    # pylint: disable-next=ungrouped-imports
     from astroid.decorators import cachedproperty as cached_property
 
 
