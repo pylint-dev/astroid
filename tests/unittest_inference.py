@@ -2645,11 +2645,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         klass = module["Class"]
         self.assertTrue(klass.bool_value())
         dict_comp = next(module["dict_comp"].infer())
-        self.assertEqual(dict_comp, util.Uninferable)
+        assert isinstance(dict_comp, nodes.DictComp)
         set_comp = next(module["set_comp"].infer())
-        self.assertEqual(set_comp, util.Uninferable)
+        assert isinstance(set_comp, nodes.SetComp)
         list_comp = next(module["list_comp"].infer())
-        self.assertEqual(list_comp, util.Uninferable)
+        assert isinstance(list_comp, nodes.ListComp)
         lambda_func = next(module["lambda_func"].infer())
         self.assertTrue(lambda_func)
         unbound_method = next(module["unbound_method"].infer())
@@ -4198,8 +4198,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_uninferable_type_subscript(self) -> None:
         node = extract_node("[type for type in [] if type['id']]")
-        with self.assertRaises(InferenceError):
-            _ = next(node.infer())
+        assert isinstance(node.inferred()[0], nodes.ListComp)
 
 
 class GetattrTest(unittest.TestCase):
