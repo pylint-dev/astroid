@@ -6,6 +6,9 @@ What's New in astroid 2.12.0?
 =============================
 Release date: TBA
 
+* Fixed crash on direct inference via ``nodes.FunctionDef._infer``.
+
+  Closes #817
 
 
 What's New in astroid 2.11.1?

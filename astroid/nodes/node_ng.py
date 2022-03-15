@@ -165,7 +165,7 @@ class NodeNG:
 
         if not context:
             # nodes_inferred?
-            yield from self._infer(context, **kwargs)
+            yield from self._infer(context=context, **kwargs)
             return
 
         key = (self, context.lookupname, context.callcontext, context.boundnode)
@@ -173,7 +173,7 @@ class NodeNG:
             yield from context.inferred[key]
             return
 
-        generator = self._infer(context, **kwargs)
+        generator = self._infer(context=context, **kwargs)
         results = []
 
         # Limit inference amount to help with performance issues with

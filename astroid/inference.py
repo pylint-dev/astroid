@@ -1039,8 +1039,10 @@ nodes.IfExp._infer = infer_ifexp  # type: ignore[assignment]
 
 # pylint: disable=dangerous-default-value
 @wrapt.decorator
-def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
-    node = args[0]
+def _cached_generator(
+    func, instance: _FunctionDefT, args, kwargs, _cache={}  # noqa: B006
+):
+    node = instance
     try:
         return iter(_cache[func, id(node)])
     except KeyError:
