@@ -170,3 +170,6 @@ class ComprehensionScope(LocalsDictNodeNG):
     """Scoping for different types of comprehensions."""
 
     scope_lookup = LocalsDictNodeNG._scope_lookup
+
+    generators: List["nodes.Comprehension"]
+    """The generators that are looped through."""
