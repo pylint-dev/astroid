@@ -15,6 +15,9 @@ Release date: TBA
 * Promoted ``getattr()`` from ``astroid.scoped_nodes.FunctionDef`` to its parent
   ``astroid.scoped_nodes.Lambda``.
 
+* Fixed crash on direct inference via ``nodes.FunctionDef._infer``.
+
+  Closes #817
 
 
 What's New in astroid 2.11.0?
