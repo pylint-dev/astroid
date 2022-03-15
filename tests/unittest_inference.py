@@ -6640,5 +6640,11 @@ def test_recursion_on_inference_tip() -> None:
     assert module
 
 
+def test_function_def_cached_generator() -> None:
+    """Regression test for https://github.com/PyCQA/astroid/issues/817."""
+    funcdef: nodes.FunctionDef = extract_node("def func(): pass")
+    next(funcdef._infer())
+
+
 if __name__ == "__main__":
     unittest.main()
