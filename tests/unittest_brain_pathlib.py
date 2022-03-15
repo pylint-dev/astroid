@@ -9,11 +9,6 @@ from astroid import bases
 from astroid.const import PY310_PLUS
 from astroid.util import Uninferable
 
-if not PY310_PLUS:
-    pytest.skip(
-        "The parents sequence supports slices since 3.10", allow_module_level=True
-    )
-
 
 def test_inference_parents_subscript_index() -> None:
     """Test inference of ``pathlib.Path.parents``, accessed by index."""
@@ -28,10 +23,16 @@ def test_inference_parents_subscript_index() -> None:
     )
     inferred = name_node.inferred()
     assert len(inferred) == 1
-    assert isinstance(inferred[0], bases.Instance)
-    assert inferred[0].qname() == "pathlib.Path"
+    if PY310_PLUS:
+        assert isinstance(inferred[0], bases.Instance)
+        assert inferred[0].qname() == "pathlib.Path"
+    else:
+        assert inferred[0] is Uninferable
 
 
+@pytest.mark.skipif(
+    not PY310_PLUS, reason="The parents sequence supports slices since Python 3.10."
+)
 def test_inference_parents_subscript_slice() -> None:
     """Test inference of ``pathlib.Path.parents``, accessed by slice."""
     name_node = astroid.extract_node(
