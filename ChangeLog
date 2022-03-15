@@ -6,6 +6,10 @@ What's New in astroid 2.12.0?
 =============================
 Release date: TBA
 
+* Infer comprehensions and generators as their respective nodes instead of
+  as ``Uninferable``.
+
+  Closes #135, #1404
 
 
 What's New in astroid 2.11.1?
