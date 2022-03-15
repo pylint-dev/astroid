@@ -4,6 +4,7 @@
 
 """This module contains mixin classes for scoped nodes."""
 
+import abc
 from typing import TYPE_CHECKING, Dict, List, TypeVar
 
 from astroid.filter_statements import _filter_stmts
@@ -173,3 +174,7 @@ class ComprehensionScope(LocalsDictNodeNG):
 
     generators: List["nodes.Comprehension"]
     """The generators that are looped through."""
+
+    @abc.abstractmethod
+    def pytype(self) -> str:
+        pass

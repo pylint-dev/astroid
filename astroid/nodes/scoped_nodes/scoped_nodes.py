@@ -750,6 +750,9 @@ class GeneratorExp(ComprehensionScope):
 
         yield from self.generators
 
+    def pytype(self) -> str:
+        return "builtins.generator"
+
 
 class DictComp(ComprehensionScope):
     """Class representing an :class:`ast.DictComp` node.
@@ -849,6 +852,9 @@ class DictComp(ComprehensionScope):
 
         yield from self.generators
 
+    def pytype(self) -> str:
+        return "builtins.dict"
+
 
 class SetComp(ComprehensionScope):
     """Class representing an :class:`ast.SetComp` node.
@@ -936,6 +942,9 @@ class SetComp(ComprehensionScope):
 
         yield from self.generators
 
+    def pytype(self) -> str:
+        return "builtins.set"
+
 
 class ListComp(ComprehensionScope):
     """Class representing an :class:`ast.ListComp` node.
@@ -1006,6 +1015,9 @@ class ListComp(ComprehensionScope):
         yield self.elt
 
         yield from self.generators
+
+    def pytype(self) -> str:
+        return "builtins.list"
 
 
 def _infer_decorator_callchain(node):
