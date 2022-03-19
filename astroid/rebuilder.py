@@ -1382,6 +1382,20 @@ class TreeRebuilder:
                 self._global_names[-1].setdefault(name, []).append(newnode)
         return newnode
 
+    def _find_else_keyword(self, node: "ast.If") -> Tuple[Optional[int], Optional[int]]:
+        """Get the line number and column offset of the `else` keyword."""
+        if not self._data or not node.orelse:
+            return None, None
+
+        end_lineno = node.orelse[0].lineno - 1
+
+        # pylint: disable-next=unsubscriptable-object
+        data = "\n".join(self._data[node.lineno - 1 : end_lineno])
+        for t in generate_tokens(StringIO(data).readline):
+            if t.type == token.NAME and t.string == "else":
+                return node.lineno + t.start[0] - 1, t.start[1]
+        return None, None
+
     def visit_if(self, node: "ast.If", parent: NodeNG) -> nodes.If:
         """visit an If node by returning a fresh instance of it"""
         newnode = nodes.If(
@@ -1392,10 +1406,15 @@ class TreeRebuilder:
             end_col_offset=getattr(node, "end_col_offset", None),
             parent=parent,
         )
+
+        orelse_lineno, orelse_col_offset = self._find_else_keyword(node)
+
         newnode.postinit(
             self.visit(node.test, newnode),
             [self.visit(child, newnode) for child in node.body],
             [self.visit(child, newnode) for child in node.orelse],
+            orelse_lineno=orelse_lineno,
+            orelse_col_offset=orelse_col_offset,
         )
         return newnode
 

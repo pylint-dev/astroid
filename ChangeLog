@@ -6,7 +6,7 @@ What's New in astroid 2.12.0?
 =============================
 Release date: TBA
 
-
+* Add ``orelse_lineno`` and ``orelse_col_offset`` attributes to ``nodes.If``.
 
 What's New in astroid 2.11.1?
 =============================

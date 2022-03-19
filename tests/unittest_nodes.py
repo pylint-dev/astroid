@@ -343,6 +343,17 @@ class IfNodeTest(_NodeTest):
         self.assertEqual(self.astroid.body[1].orelse[0].block_range(7), (7, 8))
         self.assertEqual(self.astroid.body[1].orelse[0].block_range(8), (8, 8))
 
+    def test_orelse_line_numbering(self) -> None:
+        """Test the position info for the `else` keyword."""
+        assert self.astroid.body[0].orelse_lineno is None
+        assert self.astroid.body[0].orelse_col_offset is None
+        assert self.astroid.body[1].orelse_lineno == 7
+        assert self.astroid.body[1].orelse_col_offset == 0
+        assert self.astroid.body[2].orelse_lineno is None
+        assert self.astroid.body[2].orelse_col_offset is None
+        assert self.astroid.body[3].orelse[0].orelse[0].orelse_lineno == 21
+        assert self.astroid.body[3].orelse[0].orelse[0].orelse_col_offset == 0
+
     @staticmethod
     @pytest.mark.filterwarnings("ignore:.*is_sys_guard:DeprecationWarning")
     def test_if_sys_guard() -> None:

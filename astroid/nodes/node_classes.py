@@ -3034,6 +3034,12 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         self.is_orelse: bool = False
         """Whether the if-statement is the orelse-block of another if statement."""
 
+        self.orelse_lineno: Optional[int] = None
+        """The line number of the ``else`` keyword."""
+
+        self.orelse_col_offset: Optional[int] = None
+        """The column offset of the ``else`` keyword."""
+
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -3047,6 +3053,9 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         test: Optional[NodeNG] = None,
         body: Optional[typing.List[NodeNG]] = None,
         orelse: Optional[typing.List[NodeNG]] = None,
+        *,
+        orelse_lineno: Optional[int] = None,
+        orelse_col_offset: Optional[int] = None,
     ) -> None:
         """Do some setup after initialisation.
 
@@ -3055,6 +3064,10 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         :param body: The contents of the block.
 
         :param orelse: The contents of the ``else`` block.
+
+        :param orelse_lineno: The line number of the ``else`` keyword.
+
+        :param orelse_lineno: The column offset of the ``else`` keyword.
         """
         self.test = test
         if body is not None:
@@ -3063,6 +3076,8 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
             self.orelse = orelse
         if isinstance(self.parent, If) and self in self.parent.orelse:
             self.is_orelse = True
+        self.orelse_lineno = orelse_lineno
+        self.orelse_col_offset = orelse_col_offset
 
     @cached_property
     def blockstart_tolineno(self):
