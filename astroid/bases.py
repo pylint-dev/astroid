@@ -7,6 +7,7 @@ inference utils.
 """
 
 import collections
+from typing import Optional
 
 from astroid import decorators
 from astroid.const import PY310_PLUS
@@ -114,7 +115,7 @@ class Proxy:
         yield self
 
 
-def _infer_stmts(stmts, context, frame=None):
+def _infer_stmts(stmts, context: Optional[InferenceContext], frame=None):
     """Return an iterator on statements inferred by each statement in *stmts*."""
     inferred = False
     constraint_failed = False
