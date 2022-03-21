@@ -8,6 +8,7 @@ import pprint
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
+    from astroid import constraint
     from astroid.nodes.node_classes import Keyword, NodeNG
 
 _InferenceCache = Dict[
@@ -85,12 +86,8 @@ class InferenceContext:
         for call arguments
         """
 
-        self.constraints = {}
-        """
-        :type: dict
-
-        The constraints on nodes
-        """
+        self.constraints: Dict[str, Dict["NodeNG", "constraint.Constraint"]] = {}
+        """The constraints on nodes."""
 
     @property
     def nodes_inferred(self):
