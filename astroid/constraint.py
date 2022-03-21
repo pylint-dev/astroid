@@ -4,6 +4,7 @@
 
 """Classes representing different types of constraints on inference values."""
 
+from abc import abstractmethod
 from typing import Dict, Optional, Type, TypeVar, Union
 
 from astroid import nodes, util
@@ -22,6 +23,7 @@ class Constraint:
         """True if this constraint is negated. E.g., "is not" instead of "is"."""
 
     @classmethod
+    @abstractmethod
     def match(
         cls: ConstraintT, node: NameNodes, expr: nodes.NodeNG, negate: bool = False
     ) -> Optional[ConstraintT]:
@@ -31,11 +33,11 @@ class Constraint:
         If negate is True, negate the constraint.
         """
 
+    @abstractmethod
     def satisfied_by(
         self, inferred: Union[nodes.NodeNG, Type[util.Uninferable]]
     ) -> bool:
         """Return True if this constraint is satisfied by the given inferred value."""
-        return True
 
 
 class NoneConstraint(Constraint):
