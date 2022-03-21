@@ -1,20 +1,19 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
-# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+
 """Classes representing different types of constraints on inference values."""
 
-from typing import Any, Dict, Optional
+from typing import Dict, Optional, Type, TypeVar, Union
 
 from astroid import nodes, util
+
+NameNodes = Union[nodes.AssignAttr, nodes.Attribute, nodes.AssignName, nodes.Name]
+ConstraintT = TypeVar("ConstraintT", bound="Constraint")
 
 
 class Constraint:
     """Represents a single constraint on a variable."""
-
-    node: nodes.NodeNG
-    negate: bool
 
     def __init__(self, node: nodes.NodeNG, negate: bool) -> None:
         self.node = node
@@ -22,21 +21,19 @@ class Constraint:
         self.negate = negate
         """True if this constraint is negated. E.g., "is not" instead of "is"."""
 
-    def invert(self) -> None:
-        """Invert this constraint."""
-        self.negate = not self.negate
-
     @classmethod
     def match(
-        cls, node: nodes.NodeNG, expr: nodes.NodeNG, negate: bool = False
-    ) -> Optional["Constraint"]:
+        cls: ConstraintT, node: NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Optional[ConstraintT]:
         """Return a new constraint for node matched from expr, if expr matches
         the constraint pattern.
 
         If negate is True, negate the constraint.
         """
 
-    def satisfied_by(self, inferred: Any) -> bool:
+    def satisfied_by(
+        self, inferred: Union[nodes.NodeNG, Type[util.Uninferable]]
+    ) -> bool:
         """Return True if this constraint is satisfied by the given inferred value."""
         return True
 
@@ -46,8 +43,8 @@ class NoneConstraint(Constraint):
 
     @classmethod
     def match(
-        cls, node: nodes.NodeNG, expr: nodes.NodeNG, negate: bool = False
-    ) -> Optional[Constraint]:
+        cls: ConstraintT, node: NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Optional[ConstraintT]:
         """Return a new constraint for node matched from expr, if expr matches
         the constraint pattern.
 
@@ -68,8 +65,11 @@ class NoneConstraint(Constraint):
 
         return None
 
-    def satisfied_by(self, inferred: Any) -> bool:
+    def satisfied_by(
+        self, inferred: Union[nodes.NodeNG, Type[util.Uninferable]]
+    ) -> bool:
         """Return True if this constraint is satisfied by the given inferred value."""
+        # Assume true if uninferable
         if inferred is util.Uninferable:
             return True
 
@@ -94,8 +94,8 @@ def matches(node1: nodes.NodeNG, node2: nodes.NodeNG) -> bool:
 
 
 def get_constraints(
-    expr: nodes.NodeNG, frame: nodes.NodeNG
-) -> Dict[nodes.NodeNG, Constraint]:
+    expr: NameNodes, frame: nodes.LocalsDictNodeNG
+) -> Dict[nodes.If, Constraint]:
     """Returns the constraints for the given expression.
 
     The returned dictionary maps the node where the constraint was generated to the
@@ -104,7 +104,7 @@ def get_constraints(
     Constraints are computed statically by analysing the code surrounding expr.
     Currently this only supports constraints generated from if conditions.
     """
-    current_node = expr
+    current_node: nodes.NodeNG = expr
     constraints = {}
     while current_node is not None and current_node is not frame:
         parent = current_node.parent
@@ -129,7 +129,7 @@ ALL_CONSTRAINTS = (NoneConstraint,)
 
 
 def match_constraint(
-    node: nodes.NodeNG, expr: nodes.NodeNG, invert: bool = False
+    node: NameNodes, expr: nodes.NodeNG, invert: bool = False
 ) -> Optional[Constraint]:
     """Returns a constraint pattern for node, if one matches."""
     for constraint_cls in ALL_CONSTRAINTS:

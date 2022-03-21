@@ -8,7 +8,7 @@ import pprint
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
-    from astroid import constraint
+    from astroid import constraint, nodes
     from astroid.nodes.node_classes import Keyword, NodeNG
 
 _InferenceCache = Dict[
@@ -86,7 +86,7 @@ class InferenceContext:
         for call arguments
         """
 
-        self.constraints: Dict[str, Dict["NodeNG", "constraint.Constraint"]] = {}
+        self.constraints: Dict[str, Dict["nodes.If", "constraint.Constraint"]] = {}
         """The constraints on nodes."""
 
     @property
