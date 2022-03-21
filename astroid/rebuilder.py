@@ -6,13 +6,13 @@
 order to get a single Astroid representation
 """
 
+import ast
 import sys
 import token
 import tokenize
 from io import StringIO
 from tokenize import TokenInfo, generate_tokens
 from typing import (
-    TYPE_CHECKING,
     Callable,
     Dict,
     Generator,
@@ -38,9 +38,6 @@ if sys.version_info >= (3, 8):
     from typing import Final
 else:
     from typing_extensions import Final
-
-if TYPE_CHECKING:
-    import ast
 
 
 REDIRECT: Final[Dict[str, str]] = {
@@ -1382,10 +1379,16 @@ class TreeRebuilder:
                 self._global_names[-1].setdefault(name, []).append(newnode)
         return newnode
 
-    def _find_else_keyword(self, node: "ast.If") -> Tuple[Optional[int], Optional[int]]:
-        """Get the line number and column offset of the `else` keyword."""
+    def _find_orelse_keyword(
+        self, node: "ast.If"
+    ) -> Tuple[Optional[int], Optional[int]]:
+        """Get the line number and column offset of the `else` or `elif` keyword."""
         if not self._data or not node.orelse:
             return None, None
+
+        # If the first child in orelse is an If node the orelse is an elif block
+        if isinstance(node.orelse[0], ast.If):
+            return node.orelse[0].lineno, node.orelse[0].col_offset
 
         end_lineno = node.orelse[0].lineno - 1
 
@@ -1407,7 +1410,7 @@ class TreeRebuilder:
             parent=parent,
         )
 
-        orelse_lineno, orelse_col_offset = self._find_else_keyword(node)
+        orelse_lineno, orelse_col_offset = self._find_orelse_keyword(node)
 
         newnode.postinit(
             self.visit(node.test, newnode),

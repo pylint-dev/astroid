@@ -3035,10 +3035,10 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         """Whether the if-statement is the orelse-block of another if statement."""
 
         self.orelse_lineno: Optional[int] = None
-        """The line number of the ``else`` keyword."""
+        """The line number of the ``else`` or ``elif`` keyword."""
 
         self.orelse_col_offset: Optional[int] = None
-        """The column offset of the ``else`` keyword."""
+        """The column offset of the ``else`` or ``elif`` keyword."""
 
         super().__init__(
             lineno=lineno,
@@ -3065,9 +3065,9 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
 
         :param orelse: The contents of the ``else`` block.
 
-        :param orelse_lineno: The line number of the ``else`` keyword.
+        :param orelse_lineno: The line number of the ``else`` or ``elif`` keyword.
 
-        :param orelse_lineno: The column offset of the ``else`` keyword.
+        :param orelse_lineno: The column offset of the ``else`` or ``elif`` keyword.
         """
         self.test = test
         if body is not None:

@@ -349,8 +349,12 @@ class IfNodeTest(_NodeTest):
         assert self.astroid.body[0].orelse_col_offset is None
         assert self.astroid.body[1].orelse_lineno == 7
         assert self.astroid.body[1].orelse_col_offset == 0
-        assert self.astroid.body[2].orelse_lineno is None
-        assert self.astroid.body[2].orelse_col_offset is None
+        assert self.astroid.body[2].orelse_lineno == 12
+        assert self.astroid.body[2].orelse_col_offset == 0
+        assert self.astroid.body[3].orelse_lineno == 17
+        assert self.astroid.body[3].orelse_col_offset == 0
+        assert self.astroid.body[3].orelse[0].orelse_lineno == 19
+        assert self.astroid.body[3].orelse[0].orelse_col_offset == 0
         assert self.astroid.body[3].orelse[0].orelse[0].orelse_lineno == 21
         assert self.astroid.body[3].orelse[0].orelse[0].orelse_col_offset == 0
 
