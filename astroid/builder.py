@@ -1,20 +1,6 @@
-# Copyright (c) 2006-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2013 Phil Schaf <flying-sheep@web.de>
-# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014-2015 Google, Inc.
-# Copyright (c) 2014 Alexander Presnyakov <flagist0@gmail.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """The AstroidBuilder makes astroid from living object and / or from _ast
 
@@ -25,7 +11,7 @@ import os
 import textwrap
 import types
 from tokenize import detect_encoding
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import get_parser_module
@@ -144,27 +130,29 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 except ImportError:
                     modname = os.path.splitext(os.path.basename(path))[0]
             # build astroid representation
-            module = self._data_build(data, modname, path)
-            return self._post_build(module, encoding)
+            module, builder = self._data_build(data, modname, path)
+            return self._post_build(module, builder, encoding)
 
     def string_build(self, data, modname="", path=None):
         """Build astroid from source code string."""
-        module = self._data_build(data, modname, path)
+        module, builder = self._data_build(data, modname, path)
         module.file_bytes = data.encode("utf-8")
-        return self._post_build(module, "utf-8")
+        return self._post_build(module, builder, "utf-8")
 
-    def _post_build(self, module, encoding):
+    def _post_build(
+        self, module: nodes.Module, builder: rebuilder.TreeRebuilder, encoding: str
+    ) -> nodes.Module:
         """Handles encoding and delayed nodes after a module has been built"""
         module.file_encoding = encoding
         self._manager.cache_module(module)
         # post tree building steps after we stored the module in the cache:
-        for from_node in module._import_from_nodes:
+        for from_node in builder._import_from_nodes:
             if from_node.modname == "__future__":
                 for symbol, _ in from_node.names:
                     module.future_imports.add(symbol)
             self.add_from_names_to_locals(from_node)
         # handle delayed assattr nodes
-        for delayed in module._delayed_assattr:
+        for delayed in builder._delayed_assattr:
             self.delayed_assattr(delayed)
 
         # Visit the transforms
@@ -172,8 +160,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
             module = self._manager.visit_transforms(module)
         return module
 
-    def _data_build(self, data, modname, path):
-        """Build tree node from data and add some information"""
+    def _data_build(
+        self, data: str, modname, path
+    ) -> Tuple[nodes.Module, rebuilder.TreeRebuilder]:
+        """Build tree node from data and add some informations"""
         try:
             node, parser_module = _parse_string(data, type_comments=True)
         except (TypeError, ValueError, SyntaxError) as exc:
@@ -197,11 +187,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 path is not None
                 and os.path.splitext(os.path.basename(path))[0] == "__init__"
             )
-        builder = rebuilder.TreeRebuilder(self._manager, parser_module)
+        builder = rebuilder.TreeRebuilder(self._manager, parser_module, data)
         module = builder.visit_module(node, modname, node_file, package)
-        module._import_from_nodes = builder._import_from_nodes
-        module._delayed_assattr = builder._delayed_assattr
-        return module
+        return module, builder
 
     def add_from_names_to_locals(self, node):
         """Store imported names to the locals
@@ -234,7 +222,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         This adds name to locals and handle members definition.
         """
         try:
-            frame = node.frame()
+            frame = node.frame(future=True)
             for inferred in node.expr.infer():
                 if inferred is util.Uninferable:
                     continue
@@ -263,7 +251,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 if (
                     frame.name == "__init__"
                     and values
-                    and values[0].frame().name != "__init__"
+                    and values[0].frame(future=True).name != "__init__"
                 ):
                     values.insert(0, node)
                 else:
@@ -273,7 +261,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
 
 def build_namespace_package_module(name: str, path: List[str]) -> nodes.Module:
-    return nodes.Module(name, doc="", path=path, package=True)
+    return nodes.Module(name, path=path, package=True)
 
 
 def parse(code, module_name="", path=None, apply_transforms=True):
@@ -450,6 +438,14 @@ def extract_node(code: str, module_name: str = "") -> Union[NodeNG, List[NodeNG]
     if len(extracted) == 1:
         return extracted[0]
     return extracted
+
+
+def _extract_single_node(code: str, module_name: str = "") -> NodeNG:
+    """Call extract_node while making sure that only one value is returned."""
+    ret = extract_node(code, module_name)
+    if isinstance(ret, list):
+        return ret[0]
+    return ret
 
 
 def _parse_string(data, type_comments=True):

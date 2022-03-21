@@ -1,28 +1,6 @@
-# Copyright (c) 2014-2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Google, Inc.
-# Copyright (c) 2014 Denis Laxalde <denis.laxalde@logilab.fr>
-# Copyright (c) 2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
-# Copyright (c) 2015 Radosław Ganczarek <radoslaw@ganczarek.in>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Mario Corchero <mcorcherojim@bloomberg.net>
-# Copyright (c) 2018 Mario Corchero <mariocj89@gmail.com>
-# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2019 markmcclain <markmcclain@users.noreply.github.com>
-# Copyright (c) 2019 BasPH <BasPH@users.noreply.github.com>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Python modules manipulation utility functions.
 
@@ -36,27 +14,19 @@
 :var BUILTIN_MODULES: dictionary with builtin module names has key
 """
 
-# We disable the import-error so pylint can work without distutils installed.
-# pylint: disable=no-name-in-module,useless-suppression
-
 import importlib
 import importlib.machinery
 import importlib.util
 import itertools
 import os
-import platform
 import sys
+import sysconfig
 import types
-from distutils.errors import DistutilsPlatformError  # pylint: disable=import-error
-from distutils.sysconfig import get_python_lib  # pylint: disable=import-error
+from pathlib import Path
 from typing import Dict, Set
 
+from astroid.const import IS_JYTHON, IS_PYPY
 from astroid.interpreter._import import spec, util
-
-# distutils is replaced by virtualenv with a module that does
-# weird path manipulations in order to get to the
-# real distutils module.
-
 
 if sys.platform.startswith("win"):
     PY_SOURCE_EXTS = ("py", "pyw")
@@ -66,22 +36,9 @@ else:
     PY_COMPILED_EXTS = ("so",)
 
 
-try:
-    # The explicit sys.prefix is to work around a patch in virtualenv that
-    # replaces the 'real' sys.prefix (i.e. the location of the binary)
-    # with the prefix from which the virtualenv was created. This throws
-    # off the detection logic for standard library modules, thus the
-    # workaround.
-    STD_LIB_DIRS = {
-        get_python_lib(standard_lib=True, prefix=sys.prefix),
-        # Take care of installations where exec_prefix != prefix.
-        get_python_lib(standard_lib=True, prefix=sys.exec_prefix),
-        get_python_lib(standard_lib=True),
-    }
-# get_python_lib(standard_lib=1) is not available on pypy, set STD_LIB_DIR to
-# non-valid path, see https://bugs.pypy.org/issue1164
-except DistutilsPlatformError:
-    STD_LIB_DIRS = set()
+# TODO: Adding `platstdlib` is a fix for a workaround in virtualenv. At some point we should
+# revisit whether this is still necessary. See https://github.com/PyCQA/astroid/pull/1323.
+STD_LIB_DIRS = {sysconfig.get_path("stdlib"), sysconfig.get_path("platstdlib")}
 
 if os.name == "nt":
     STD_LIB_DIRS.add(os.path.join(sys.prefix, "dlls"))
@@ -100,27 +57,20 @@ if os.name == "nt":
         except AttributeError:
             pass
 
-if platform.python_implementation() == "PyPy":
-    # The get_python_lib(standard_lib=True) function does not give valid
-    # result with pypy in a virtualenv.
-    # In a virtual environment, with CPython implementation the call to this function returns a path toward
-    # the binary (its libraries) which has been used to create the virtual environment.
-    # Not with pypy implementation.
-    # The only way to retrieve such information is to use the sys.base_prefix hint.
-    # It's worth noticing that under CPython implementation the return values of
-    # get_python_lib(standard_lib=True) and get_python_lib(santdard_lib=True, prefix=sys.base_prefix)
-    # are the same.
-    # In the lines above, we could have replace the call to get_python_lib(standard=True)
-    # with the one using prefix=sys.base_prefix but we prefer modifying only what deals with pypy.
-    STD_LIB_DIRS.add(get_python_lib(standard_lib=True, prefix=sys.base_prefix))
-    _root = os.path.join(sys.prefix, "lib_pypy")
-    STD_LIB_DIRS.add(_root)
-    try:
-        # real_prefix is defined when running inside virtualenv.
-        STD_LIB_DIRS.add(os.path.join(sys.base_prefix, "lib_pypy"))
-    except AttributeError:
-        pass
-    del _root
+if IS_PYPY and sys.version_info < (3, 8):
+    # PyPy stores the stdlib in two places: sys.prefix/lib_pypy and sys.prefix/lib-python/3
+    # sysconfig.get_path on PyPy returns the first, but without an underscore so we patch this manually.
+    # Beginning with 3.8 the stdlib is only stored in: sys.prefix/pypy{py_version_short}
+    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("stdlib")).parent / "lib_pypy"))
+    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("stdlib")).parent / "lib-python/3"))
+
+    # TODO: This is a fix for a workaround in virtualenv. At some point we should revisit
+    # whether this is still necessary. See https://github.com/PyCQA/astroid/pull/1324.
+    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("platstdlib")).parent / "lib_pypy"))
+    STD_LIB_DIRS.add(
+        str(Path(sysconfig.get_path("platstdlib")).parent / "lib-python/3")
+    )
+
 if os.name == "posix":
     # Need the real prefix if we're in a virtualenv, otherwise
     # the usual one will do.
@@ -136,7 +86,7 @@ if os.name == "posix":
         return os.path.join(prefix, path, base_python)
 
     STD_LIB_DIRS.add(_posix_path("lib"))
-    if sys.maxsize > 2 ** 32:
+    if sys.maxsize > 2**32:
         # This tries to fix a problem with /usr/lib64 builds,
         # where systems are running both 32-bit and 64-bit code
         # on the same machine, which reflects into the places where
@@ -146,8 +96,7 @@ if os.name == "posix":
         # https://github.com/PyCQA/pylint/issues/712#issuecomment-163178753
         STD_LIB_DIRS.add(_posix_path("lib64"))
 
-EXT_LIB_DIRS = {get_python_lib(), get_python_lib(True)}
-IS_JYTHON = platform.python_implementation() == "Jython"
+EXT_LIB_DIRS = {sysconfig.get_path("purelib"), sysconfig.get_path("platlib")}
 BUILTIN_MODULES = dict.fromkeys(sys.builtin_module_names, True)
 
 
@@ -294,6 +243,9 @@ def _get_relative_base_path(filename, path_to_check):
     if os.path.normcase(real_filename).startswith(path_to_check):
         importable_path = real_filename
 
+    # if "var" in path_to_check:
+    #     breakpoint()
+
     if importable_path:
         base_path = os.path.splitext(importable_path)[0]
         relative_base_path = base_path[len(path_to_check) :]
@@ -304,8 +256,11 @@ def _get_relative_base_path(filename, path_to_check):
 
 def modpath_from_file_with_callback(filename, path=None, is_package_cb=None):
     filename = os.path.expanduser(_path_from_filename(filename))
+    paths_to_check = sys.path.copy()
+    if path:
+        paths_to_check += path
     for pathname in itertools.chain(
-        path or [], map(_cache_normalize_path, sys.path), sys.path
+        paths_to_check, map(_cache_normalize_path, paths_to_check)
     ):
         if not pathname:
             continue

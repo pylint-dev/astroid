@@ -1,29 +1,17 @@
-# Copyright (c) 2016-2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2017 Chris Philip <chrisp533@gmail.com>
-# Copyright (c) 2017 Hugo <hugovk@users.noreply.github.com>
-# Copyright (c) 2017 ioanatia <ioanatia@users.noreply.github.com>
-# Copyright (c) 2017 Calen Pennington <cale@edx.org>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
-# Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 import abc
 import collections
-import distutils
 import enum
 import importlib.machinery
+import importlib.util
 import os
 import sys
 import zipimport
 from functools import lru_cache
+from pathlib import Path
 
 from . import util
 
@@ -161,12 +149,21 @@ class ImportlibFinder(Finder):
                 for p in sys.path
                 if os.path.isdir(os.path.join(p, *processed))
             ]
-        # We already import distutils elsewhere in astroid,
-        # so if it is the same module, we can use it directly.
-        elif spec.name == "distutils" and spec.location in distutils.__path__:
-            # distutils is patched inside virtualenvs to pick up submodules
-            # from the original Python, not from the virtualenv itself.
-            path = list(distutils.__path__)
+        elif spec.name == "distutils":
+            # virtualenv below 20.0 patches distutils in an unexpected way
+            # so we just find the location of distutils that will be
+            # imported to avoid spurious import-error messages
+            # https://github.com/PyCQA/pylint/issues/5645
+            # A regression test to create this scenario exists in release-tests.yml
+            # and can be triggered manually from GitHub Actions
+            distutils_spec = importlib.util.find_spec("distutils")
+            if distutils_spec and distutils_spec.origin:
+                origin_path = Path(
+                    distutils_spec.origin
+                )  # e.g. .../distutils/__init__.py
+                path = [str(origin_path.parent)]  # e.g. .../distutils
+            else:
+                path = [spec.location]
         else:
             path = [spec.location]
         return path

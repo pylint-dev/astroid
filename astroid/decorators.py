@@ -1,20 +1,6 @@
-# Copyright (c) 2015-2016, 2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2018, 2021 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2018 Tomas Gavenciak <gavento@ucw.cz>
-# Copyright (c) 2018 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2020 Ram Rachum <ram@rachum.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """ A few useful function/method decorators."""
 
@@ -52,6 +38,8 @@ def cached(func, instance, args, kwargs):
         return result
 
 
+# TODO: Remove when support for 3.7 is dropped
+# TODO: astroid 3.0 -> move class behind sys.version_info < (3, 8) guard
 class cachedproperty:
     """Provides a cached property equivalent to the stacking of
     @cached and @property, but more efficient.
@@ -70,6 +58,12 @@ class cachedproperty:
     __slots__ = ("wrapped",)
 
     def __init__(self, wrapped):
+        if sys.version_info >= (3, 8):
+            warnings.warn(
+                "cachedproperty has been deprecated and will be removed in astroid 3.0 for Python 3.8+. "
+                "Use functools.cached_property instead.",
+                DeprecationWarning,
+            )
         try:
             wrapped.__name__
         except AttributeError as exc:
@@ -152,58 +146,128 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
     yield from generator
 
 
-def deprecate_default_argument_values(
-    astroid_version: str = "3.0", **arguments: str
-) -> Callable[[Callable[P, R]], Callable[P, R]]:
-    """Decorator which emitts a DeprecationWarning if any arguments specified
-    are None or not passed at all.
+# Expensive decorators only used to emit Deprecation warnings.
+# If no other than the default DeprecationWarning are enabled,
+# fall back to passthrough implementations.
+if util.check_warnings_filter():
 
-    Arguments should be a key-value mapping, with the key being the argument to check
-    and the value being a type annotation as string for the value of the argument.
-    """
-    # Helpful links
-    # Decorator for DeprecationWarning: https://stackoverflow.com/a/49802489
-    # Typing of stacked decorators: https://stackoverflow.com/a/68290080
+    def deprecate_default_argument_values(
+        astroid_version: str = "3.0", **arguments: str
+    ) -> Callable[[Callable[P, R]], Callable[P, R]]:
+        """Decorator which emits a DeprecationWarning if any arguments specified
+        are None or not passed at all.
 
-    def deco(func: Callable[P, R]) -> Callable[P, R]:
-        """Decorator function."""
+        Arguments should be a key-value mapping, with the key being the argument to check
+        and the value being a type annotation as string for the value of the argument.
 
-        @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            """Emit DeprecationWarnings if conditions are met."""
+        To improve performance, only used when DeprecationWarnings other than
+        the default one are enabled.
+        """
+        # Helpful links
+        # Decorator for DeprecationWarning: https://stackoverflow.com/a/49802489
+        # Typing of stacked decorators: https://stackoverflow.com/a/68290080
 
-            keys = list(inspect.signature(func).parameters.keys())
-            for arg, type_annotation in arguments.items():
-                try:
-                    index = keys.index(arg)
-                except ValueError:
-                    raise Exception(
-                        f"Can't find argument '{arg}' for '{args[0].__class__.__qualname__}'"
-                    ) from None
-                if (
-                    # Check kwargs
-                    # - if found, check it's not None
-                    (arg in kwargs and kwargs[arg] is None)
-                    # Check args
-                    # - make sure not in kwargs
-                    # - len(args) needs to be long enough, if too short
-                    #   arg can't be in args either
-                    # - args[index] should not be None
-                    or arg not in kwargs
-                    and (
-                        index == -1
-                        or len(args) <= index
-                        or (len(args) > index and args[index] is None)
-                    )
-                ):
-                    warnings.warn(
-                        f"'{arg}' will be a required argument for "
-                        f"'{args[0].__class__.__qualname__}.{func.__name__}' in astroid {astroid_version} "
-                        f"('{arg}' should be of type: '{type_annotation}')",
-                        DeprecationWarning,
-                    )
-            return func(*args, **kwargs)
+        def deco(func: Callable[P, R]) -> Callable[P, R]:
+            """Decorator function."""
 
-        return wrapper
+            @functools.wraps(func)
+            def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                """Emit DeprecationWarnings if conditions are met."""
 
-    return deco
+                keys = list(inspect.signature(func).parameters.keys())
+                for arg, type_annotation in arguments.items():
+                    try:
+                        index = keys.index(arg)
+                    except ValueError:
+                        raise Exception(
+                            f"Can't find argument '{arg}' for '{args[0].__class__.__qualname__}'"
+                        ) from None
+                    if (
+                        # Check kwargs
+                        # - if found, check it's not None
+                        (arg in kwargs and kwargs[arg] is None)
+                        # Check args
+                        # - make sure not in kwargs
+                        # - len(args) needs to be long enough, if too short
+                        #   arg can't be in args either
+                        # - args[index] should not be None
+                        or arg not in kwargs
+                        and (
+                            index == -1
+                            or len(args) <= index
+                            or (len(args) > index and args[index] is None)
+                        )
+                    ):
+                        warnings.warn(
+                            f"'{arg}' will be a required argument for "
+                            f"'{args[0].__class__.__qualname__}.{func.__name__}' in astroid {astroid_version} "
+                            f"('{arg}' should be of type: '{type_annotation}')",
+                            DeprecationWarning,
+                        )
+                return func(*args, **kwargs)
+
+            return wrapper
+
+        return deco
+
+    def deprecate_arguments(
+        astroid_version: str = "3.0", **arguments: str
+    ) -> Callable[[Callable[P, R]], Callable[P, R]]:
+        """Decorator which emits a DeprecationWarning if any arguments specified
+        are passed.
+
+        Arguments should be a key-value mapping, with the key being the argument to check
+        and the value being a string that explains what to do instead of passing the argument.
+
+        To improve performance, only used when DeprecationWarnings other than
+        the default one are enabled.
+        """
+
+        def deco(func: Callable[P, R]) -> Callable[P, R]:
+            @functools.wraps(func)
+            def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+
+                keys = list(inspect.signature(func).parameters.keys())
+                for arg, note in arguments.items():
+                    try:
+                        index = keys.index(arg)
+                    except ValueError:
+                        raise Exception(
+                            f"Can't find argument '{arg}' for '{args[0].__class__.__qualname__}'"
+                        ) from None
+                    if arg in kwargs or len(args) > index:
+                        warnings.warn(
+                            f"The argument '{arg}' for "
+                            f"'{args[0].__class__.__qualname__}.{func.__name__}' is deprecated "
+                            f"and will be removed in astroid {astroid_version} ({note})",
+                            DeprecationWarning,
+                        )
+                return func(*args, **kwargs)
+
+            return wrapper
+
+        return deco
+
+else:
+
+    def deprecate_default_argument_values(
+        astroid_version: str = "3.0", **arguments: str
+    ) -> Callable[[Callable[P, R]], Callable[P, R]]:
+        """Passthrough decorator to improve performance if DeprecationWarnings are disabled."""
+
+        def deco(func: Callable[P, R]) -> Callable[P, R]:
+            """Decorator function."""
+            return func
+
+        return deco
+
+    def deprecate_arguments(
+        astroid_version: str = "3.0", **arguments: str
+    ) -> Callable[[Callable[P, R]], Callable[P, R]]:
+        """Passthrough decorator to improve performance if DeprecationWarnings are disabled."""
+
+        def deco(func: Callable[P, R]) -> Callable[P, R]:
+            """Decorator function."""
+            return func
+
+        return deco

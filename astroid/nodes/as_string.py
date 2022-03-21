@@ -1,30 +1,12 @@
-# Copyright (c) 2009-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2010 Daniel Harding <dharding@gmail.com>
-# Copyright (c) 2013-2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2016 Jared Garst <jgarst@users.noreply.github.com>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2017, 2019 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2017 rr- <rr-@sakuya.pl>
-# Copyright (c) 2018 Serhiy Storchaka <storchaka@gmail.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 brendanator <brendan.maginnis@gmail.com>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2019 Alex Hall <alex.mojaki@gmail.com>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """This module renders Astroid nodes as string"""
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
+    from astroid.nodes import Const
     from astroid.nodes.node_classes import (
         Match,
         MatchAs,
@@ -56,9 +38,14 @@ class AsStringVisitor:
         """Makes this visitor behave as a simple function"""
         return node.accept(self).replace(DOC_NEWLINE, "\n")
 
-    def _docs_dedent(self, doc):
+    def _docs_dedent(self, doc_node: Optional["Const"]) -> str:
         """Stop newlines in docs being indented by self._stmt_list"""
-        return '\n{}"""{}"""'.format(self.indent, doc.replace("\n", DOC_NEWLINE))
+        if not doc_node:
+            return ""
+
+        return '\n{}"""{}"""'.format(
+            self.indent, doc_node.value.replace("\n", DOC_NEWLINE)
+        )
 
     def _stmt_list(self, stmts, indent=True):
         """return a list of nodes to string"""
@@ -182,7 +169,7 @@ class AsStringVisitor:
             args.append("metaclass=" + node._metaclass.accept(self))
         args += [n.accept(self) for n in node.keywords]
         args = f"({', '.join(args)})" if args else ""
-        docs = self._docs_dedent(node.doc) if node.doc else ""
+        docs = self._docs_dedent(node.doc_node)
         return "\n\n{}class {}{}:{}\n{}\n".format(
             decorate, node.name, args, docs, self._stmt_list(node.body)
         )
@@ -327,7 +314,7 @@ class AsStringVisitor:
     def handle_functiondef(self, node, keyword):
         """return a (possibly async) function definition node as string"""
         decorate = node.decorators.accept(self) if node.decorators else ""
-        docs = self._docs_dedent(node.doc) if node.doc else ""
+        docs = self._docs_dedent(node.doc_node)
         trailer = ":"
         if node.returns:
             return_annotation = " -> " + node.returns.as_string()
@@ -416,7 +403,7 @@ class AsStringVisitor:
 
     def visit_module(self, node):
         """return an astroid.Module node as string"""
-        docs = f'"""{node.doc}"""\n\n' if node.doc else ""
+        docs = f'"""{node.doc_node.value}"""\n\n' if node.doc_node else ""
         return docs + "\n".join(n.accept(self) for n in node.body) + "\n\n"
 
     def visit_name(self, node):

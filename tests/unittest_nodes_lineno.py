@@ -1,14 +1,19 @@
+# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+
 import textwrap
 
 import pytest
 
 import astroid
 from astroid import builder, nodes
-from astroid.const import PY38_PLUS, PY39_PLUS, PY310_PLUS
+from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS, PY310_PLUS
 
 
 @pytest.mark.skipif(
-    PY38_PLUS, reason="end_lineno and end_col_offset were added in PY38"
+    PY38_PLUS and not (PY38 and IS_PYPY),
+    reason="end_lineno and end_col_offset were added in PY38",
 )
 class TestEndLinenoNotSet:
     """Test 'end_lineno' and 'end_col_offset' are initialized as 'None' for Python < 3.8."""
@@ -36,7 +41,8 @@ class TestEndLinenoNotSet:
 
 
 @pytest.mark.skipif(
-    not PY38_PLUS, reason="end_lineno and end_col_offset were added in PY38"
+    not PY38_PLUS or PY38 and IS_PYPY,
+    reason="end_lineno and end_col_offset were added in PY38",
 )
 class TestLinenoColOffset:
     """Test 'lineno', 'col_offset', 'end_lineno', and 'end_col_offset' for all nodes."""
@@ -784,7 +790,7 @@ class TestLinenoColOffset:
         assert (t3.lineno, t3.col_offset) == (10, 0)
         assert (t3.end_lineno, t3.end_col_offset) == (17, 8)
         assert (t3.body[0].lineno, t3.body[0].col_offset) == (10, 0)
-        assert (t3.body[0].end_lineno, t3.body[0].end_col_offset) == (17, 8)
+        assert (t3.body[0].end_lineno, t3.body[0].end_col_offset) == (15, 8)
         assert (t3.finalbody[0].lineno, t3.finalbody[0].col_offset) == (17, 4)
         assert (t3.finalbody[0].end_lineno, t3.finalbody[0].end_col_offset) == (17, 8)
 
@@ -1151,7 +1157,7 @@ class TestLinenoColOffset:
         c1 = ast_nodes[0]
         assert isinstance(c1, nodes.ListComp)
         assert isinstance(c1.elt, nodes.Name)
-        assert isinstance(c1.generators[0], nodes.Comprehension)  # type: ignore
+        assert isinstance(c1.generators[0], nodes.Comprehension)  # type: ignore[index]
         assert (c1.lineno, c1.col_offset) == (1, 0)
         assert (c1.end_lineno, c1.end_col_offset) == (1, 16)
         assert (c1.elt.lineno, c1.elt.col_offset) == (1, 1)
@@ -1160,7 +1166,7 @@ class TestLinenoColOffset:
         c2 = ast_nodes[1]
         assert isinstance(c2, nodes.SetComp)
         assert isinstance(c2.elt, nodes.Name)
-        assert isinstance(c2.generators[0], nodes.Comprehension)  # type: ignore
+        assert isinstance(c2.generators[0], nodes.Comprehension)  # type: ignore[index]
         assert (c2.lineno, c2.col_offset) == (2, 0)
         assert (c2.end_lineno, c2.end_col_offset) == (2, 16)
         assert (c2.elt.lineno, c2.elt.col_offset) == (2, 1)
@@ -1170,7 +1176,7 @@ class TestLinenoColOffset:
         assert isinstance(c3, nodes.DictComp)
         assert isinstance(c3.key, nodes.Name)
         assert isinstance(c3.value, nodes.Name)
-        assert isinstance(c3.generators[0], nodes.Comprehension)  # type: ignore
+        assert isinstance(c3.generators[0], nodes.Comprehension)  # type: ignore[index]
         assert (c3.lineno, c3.col_offset) == (3, 0)
         assert (c3.end_lineno, c3.end_col_offset) == (3, 22)
         assert (c3.key.lineno, c3.key.col_offset) == (3, 1)
@@ -1181,7 +1187,7 @@ class TestLinenoColOffset:
         c4 = ast_nodes[3]
         assert isinstance(c4, nodes.GeneratorExp)
         assert isinstance(c4.elt, nodes.Name)
-        assert isinstance(c4.generators[0], nodes.Comprehension)  # type: ignore
+        assert isinstance(c4.generators[0], nodes.Comprehension)  # type: ignore[index]
         assert (c4.lineno, c4.col_offset) == (4, 0)
         assert (c4.end_lineno, c4.end_col_offset) == (4, 16)
         assert (c4.elt.lineno, c4.elt.col_offset) == (4, 1)

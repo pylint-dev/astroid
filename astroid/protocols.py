@@ -1,28 +1,6 @@
-# Copyright (c) 2009-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Google, Inc.
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Dmitry Pribysh <dmand@yandex.ru>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2017-2018 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2017 rr- <rr-@sakuya.pl>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2020 Vilnis Termanis <vilnis.termanis@iotics.com>
-# Copyright (c) 2020 Ram Rachum <ram@rachum.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 doranid <ddandd@gmail.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """this module contains a set of functions to handle python protocols for nodes
 where it makes sense.
@@ -31,7 +9,6 @@ where it makes sense.
 import collections
 import itertools
 import operator as operator_mod
-import sys
 from typing import Any, Generator, List, Optional, Union
 
 from astroid import arguments, bases, decorators, helpers, nodes, util
@@ -45,11 +22,6 @@ from astroid.exceptions import (
     NoDefault,
 )
 from astroid.nodes import node_classes
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
 
 raw_building = util.lazy_import("raw_building")
 objects = util.lazy_import("objects")
@@ -121,7 +93,7 @@ BIN_OP_IMPL = {
     "/": lambda a, b: a / b,
     "//": lambda a, b: a // b,
     "*": lambda a, b: a * b,
-    "**": lambda a, b: a ** b,
+    "**": lambda a, b: a**b,
     "%": lambda a, b: a % b,
     "&": lambda a, b: a & b,
     "|": lambda a, b: a | b,
@@ -183,7 +155,22 @@ def _filter_uninferable_nodes(elts, context):
 
 
 @decorators.yes_if_nothing_inferred
-def tl_infer_binary_op(self, opnode, operator, other, context, method):
+def tl_infer_binary_op(
+    self,
+    opnode: nodes.BinOp,
+    operator: str,
+    other: nodes.NodeNG,
+    context: InferenceContext,
+    method: nodes.FunctionDef,
+) -> Generator[nodes.NodeNG, None, None]:
+    """Infer a binary operation on a tuple or list.
+
+    The instance on which the binary operation is performed is a tuple
+    or list. This refers to the left-hand side of the operation, so:
+    'tuple() + 1' or '[] + A()'
+    """
+    # For tuples and list the boundnode is no longer the tuple or list instance
+    context.boundnode = None
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, self.__class__) and operator == "+":
         node = self.__class__(parent=opnode)
@@ -411,7 +398,7 @@ def arguments_assigned_stmts(
     if (
         context.callcontext
         and node
-        and getattr(callee, "name", None) == node.frame().name
+        and getattr(callee, "name", None) == node.frame(future=True).name
     ):
         # reset call context/name
         callcontext = context.callcontext
@@ -854,7 +841,7 @@ def match_mapping_assigned_stmts(
     self: nodes.MatchMapping,
     node: nodes.AssignName,
     context: Optional[InferenceContext] = None,
-    assign_path: Literal[None] = None,
+    assign_path: None = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Return empty generator (return -> raises StopIteration) so inferred value
     is Uninferable.
@@ -871,7 +858,7 @@ def match_star_assigned_stmts(
     self: nodes.MatchStar,
     node: nodes.AssignName,
     context: Optional[InferenceContext] = None,
-    assign_path: Literal[None] = None,
+    assign_path: None = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Return empty generator (return -> raises StopIteration) so inferred value
     is Uninferable.
@@ -888,7 +875,7 @@ def match_as_assigned_stmts(
     self: nodes.MatchAs,
     node: nodes.AssignName,
     context: Optional[InferenceContext] = None,
-    assign_path: Literal[None] = None,
+    assign_path: None = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Infer MatchAs as the Match subject if it's the only MatchCase pattern
     else raise StopIteration to yield Uninferable.

@@ -1,39 +1,18 @@
-# Copyright (c) 2012-2015 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Dmitry Pribysh <dmand@yandex.ru>
-# Copyright (c) 2015 David Shea <dshea@redhat.com>
-# Copyright (c) 2015 Philip Lorenz <philip@bithub.de>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2016 Mateusz Bysiek <mb@mbdev.pl>
-# Copyright (c) 2017 Hugo <hugovk@users.noreply.github.com>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2020 Ram Rachum <ram@rachum.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Dimitri Prybysh <dmand@yandex.ru>
-# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
-# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid hooks for the Python standard library."""
 
 import functools
 import keyword
 from textwrap import dedent
+from typing import Iterator, List, Optional, Tuple
 
 import astroid
 from astroid import arguments, inference_tip, nodes, util
 from astroid.builder import AstroidBuilder, extract_node
+from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
     AstroidValueError,
@@ -89,7 +68,12 @@ def _find_func_form_arguments(node, context):
     raise UseInferenceDefault()
 
 
-def infer_func_form(node, base_type, context=None, enum=False):
+def infer_func_form(
+    node: nodes.Call,
+    base_type: nodes.NodeNG,
+    context: Optional[InferenceContext] = None,
+    enum: bool = False,
+) -> Tuple[nodes.ClassDef, str, List[str]]:
     """Specific inference function for namedtuple or Python 3 enum."""
     # node is a Call node, class name as first argument and generated class
     # attributes as second argument
@@ -101,10 +85,13 @@ def infer_func_form(node, base_type, context=None, enum=False):
         try:
             attributes = names.value.replace(",", " ").split()
         except AttributeError as exc:
+            # Handle attributes of NamedTuples
             if not enum:
                 attributes = [
                     _infer_first(const, context).value for const in names.elts
                 ]
+
+            # Handle attributes of Enums
             else:
                 # Enums supports either iterator of (name, value) pairs
                 # or mappings.
@@ -146,10 +133,13 @@ def infer_func_form(node, base_type, context=None, enum=False):
     # we know it is a namedtuple anyway.
     name = name or "Uninferable"
     # we want to return a Class node instance with proper attributes set
-    class_node = nodes.ClassDef(name, "docstring")
-    class_node.parent = node.parent
-    # set base class=tuple
-    class_node.bases.append(base_type)
+    class_node = nodes.ClassDef(name, parent=node.parent)
+    class_node.postinit(
+        # set base class=tuple
+        bases=[base_type],
+        body=[],
+        decorators=None,
+    )
     # XXX add __init__(*attributes) method
     for attr in attributes:
         fake_node = nodes.EmptyNode()
@@ -182,7 +172,9 @@ _looks_like_enum = functools.partial(_looks_like, name="Enum")
 _looks_like_typing_namedtuple = functools.partial(_looks_like, name="NamedTuple")
 
 
-def infer_named_tuple(node, context=None):
+def infer_named_tuple(
+    node: nodes.Call, context: Optional[InferenceContext] = None
+) -> Iterator[nodes.ClassDef]:
     """Specific inference function for namedtuple Call node"""
     tuple_base_name = nodes.Name(name="tuple", parent=node.root())
     class_node, name, attributes = infer_func_form(
@@ -506,7 +498,9 @@ def infer_typing_namedtuple_function(node, context=None):
     return klass.infer(context)
 
 
-def infer_typing_namedtuple(node, context=None):
+def infer_typing_namedtuple(
+    node: nodes.Call, context: Optional[InferenceContext] = None
+) -> Iterator[nodes.ClassDef]:
     """Infer a typing.NamedTuple(...) call."""
     # This is essentially a namedtuple with different arguments
     # so we extract the args and infer a named tuple.

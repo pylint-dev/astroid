@@ -1,48 +1,14 @@
-# Copyright (c) 2006-2015 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2007 Marien Zwart <marienz@gentoo.org>
-# Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2021 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Dmitry Pribysh <dmand@yandex.ru>
-# Copyright (c) 2015 Rene Zhang <rz99@cornell.edu>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2017 Hugo <hugovk@users.noreply.github.com>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2017 Calen Pennington <cale@edx.org>
-# Copyright (c) 2017 Calen Pennington <calen.pennington@gmail.com>
-# Copyright (c) 2017 David Euresti <david@dropbox.com>
-# Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2018 Daniel Martin <daniel.martin@crowdstrike.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
-# Copyright (c) 2019, 2021 David Liu <david@cs.toronto.edu>
-# Copyright (c) 2019-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2019 Stanislav Levin <slev@altlinux.org>
-# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
-# Copyright (c) 2020 Karthikeyan Singaravelan <tir.karthi@gmail.com>
-# Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-# Copyright (c) 2021 doranid <ddandd@gmail.com>
-# Copyright (c) 2021 Francis Charette Migneault <francis.charette.migneault@gmail.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for the astroid inference capabilities"""
 
-import platform
 import textwrap
 import unittest
 from abc import ABCMeta
 from functools import partial
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple, Union
 from unittest.mock import patch
 
@@ -54,7 +20,7 @@ from astroid import helpers, nodes, objects, test_utils, util
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod
 from astroid.builder import AstroidBuilder, extract_node, parse
-from astroid.const import PY38_PLUS, PY39_PLUS
+from astroid.const import IS_PYPY, PY38_PLUS, PY39_PLUS
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -83,6 +49,7 @@ builder = AstroidBuilder()
 
 EXC_MODULE = "builtins"
 BOOL_SPECIAL_METHOD = "__bool__"
+DATA_DIR = Path(__file__).parent / "testdata" / "python3" / "data"
 
 
 class InferenceUtilsTest(unittest.TestCase):
@@ -337,6 +304,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(meth1, UnboundMethod)
         self.assertEqual(meth1.name, "meth1")
         self.assertEqual(meth1.parent.frame().name, "C")
+        self.assertEqual(meth1.parent.frame(future=True).name, "C")
         self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_bound_method_inference(self) -> None:
@@ -345,6 +313,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(meth1, BoundMethod)
         self.assertEqual(meth1.name, "meth1")
         self.assertEqual(meth1.parent.frame().name, "C")
+        self.assertEqual(meth1.parent.frame(future=True).name, "C")
         self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_args_default_inference1(self) -> None:
@@ -848,7 +817,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
         self.assertEqual(inferred[0].name, "open")
 
-    if platform.python_implementation() == "PyPy":
+    if IS_PYPY:
         test_builtin_open = unittest.expectedFailure(test_builtin_open)
 
     def test_callfunc_context_func(self) -> None:
@@ -1725,8 +1694,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         ast = extract_node(code, __name__)
         expr = ast.func.expr
-        with pytest.raises(InferenceError):
-            next(expr.infer())
+        self.assertIs(next(expr.infer()), util.Uninferable)
 
     def test_tuple_builtin_inference(self) -> None:
         code = """
@@ -3000,6 +2968,34 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         )
         for node in ast_nodes:
             self.assertEqual(next(node.infer()), util.Uninferable)
+
+    def test_binop_self_in_list(self) -> None:
+        """If 'self' is referenced within a list it should not be bound by it.
+
+        Reported in https://github.com/PyCQA/pylint/issues/4826.
+        """
+        ast_nodes = extract_node(
+            """
+        class A:
+            def __init__(self):
+                for a in [self] + []:
+                    print(a) #@
+
+        class B:
+            def __init__(self):
+                for b in [] + [self]:
+                    print(b) #@
+        """
+        )
+        inferred_a = list(ast_nodes[0].args[0].infer())
+        self.assertEqual(len(inferred_a), 1)
+        self.assertIsInstance(inferred_a[0], Instance)
+        self.assertEqual(inferred_a[0]._proxied.name, "A")
+
+        inferred_b = list(ast_nodes[1].args[0].infer())
+        self.assertEqual(len(inferred_b), 1)
+        self.assertIsInstance(inferred_b[0], Instance)
+        self.assertEqual(inferred_b[0]._proxied.name, "B")
 
     def test_metaclass__getitem__(self) -> None:
         ast_node = extract_node(
@@ -4392,7 +4388,8 @@ class HasattrTest(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        self.assertEqual(inferred, util.Uninferable)
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertIs(inferred.value, False)
 
 
 class BoolOpTest(unittest.TestCase):
@@ -6109,6 +6106,26 @@ def test_property_callable_inference() -> None:
     assert inferred.value == 42
 
 
+def test_property_docstring() -> None:
+    code = """
+    class A:
+        @property
+        def test(self):
+            '''Docstring'''
+            return 42
+
+    A.test #@
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, objects.Property)
+    assert isinstance(inferred.doc_node, nodes.Const)
+    assert inferred.doc_node.value == "Docstring"
+    with pytest.warns(DeprecationWarning) as records:
+        assert inferred.doc == "Docstring"
+        assert len(records) == 1
+
+
 def test_recursion_error_inferring_builtin_containers() -> None:
     node = extract_node(
         """
@@ -6575,6 +6592,58 @@ def test_relative_imports_init_package() -> None:
     resources.build_file(
         "data/beyond_top_level_three/module/sub_module/sub_sub_module/main.py"
     )
+
+
+def test_inference_of_items_on_module_dict() -> None:
+    """Crash test for the inference of items() on a module's dict attribute.
+
+    Originally reported in https://github.com/PyCQA/astroid/issues/1085
+    """
+    builder.file_build(str(DATA_DIR / "module_dict_items_call" / "test.py"), "models")
+
+
+def test_recursion_on_inference_tip() -> None:
+    """Regression test for recursion in inference tip.
+
+    Originally reported in https://github.com/PyCQA/pylint/issues/5408.
+    """
+    code = """
+    class MyInnerClass:
+        ...
+
+
+    class MySubClass:
+        inner_class = MyInnerClass
+
+
+    class MyClass:
+        sub_class = MySubClass()
+
+
+    def get_unpatched_class(cls):
+        return cls
+
+
+    def get_unpatched(item):
+        lookup = get_unpatched_class if isinstance(item, type) else lambda item: None
+        return lookup(item)
+
+
+    _Child = get_unpatched(MyClass.sub_class.inner_class)
+
+
+    class Child(_Child):
+        def patch(cls):
+            MyClass.sub_class.inner_class = cls
+    """
+    module = parse(code)
+    assert module
+
+
+def test_function_def_cached_generator() -> None:
+    """Regression test for https://github.com/PyCQA/astroid/issues/817."""
+    funcdef: nodes.FunctionDef = extract_node("def func(): pass")
+    next(funcdef._infer())
 
 
 if __name__ == "__main__":

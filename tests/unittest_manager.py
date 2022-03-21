@@ -1,28 +1,8 @@
-# Copyright (c) 2006, 2009-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2013 AndroWiiid <androwiiid@gmail.com>
-# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Google, Inc.
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2017 Chris Philip <chrisp533@gmail.com>
-# Copyright (c) 2017 Hugo <hugovk@users.noreply.github.com>
-# Copyright (c) 2017 ioanatia <ioanatia@users.noreply.github.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2020 Anubhav <35621759+anubh-v@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 grayjk <grayjk@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 import os
-import platform
 import site
 import sys
 import time
@@ -34,13 +14,14 @@ import pkg_resources
 
 import astroid
 from astroid import manager, test_utils
+from astroid.const import IS_JYTHON
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 
 from . import resources
 
 
 def _get_file_from_object(obj) -> str:
-    if platform.python_implementation() == "Jython":
+    if IS_JYTHON:
         return obj.__file__.split("$py.class")[0] + ".py"
     return obj.__file__
 
@@ -280,10 +261,12 @@ class AstroidManagerTest(
         ast = self.manager.ast_from_class(int)
         self.assertEqual(ast.name, "int")
         self.assertEqual(ast.parent.frame().name, "builtins")
+        self.assertEqual(ast.parent.frame(future=True).name, "builtins")
 
         ast = self.manager.ast_from_class(object)
         self.assertEqual(ast.name, "object")
         self.assertEqual(ast.parent.frame().name, "builtins")
+        self.assertEqual(ast.parent.frame(future=True).name, "builtins")
         self.assertIn("__setattr__", ast)
 
     def test_ast_from_class_with_module(self) -> None:
@@ -291,10 +274,12 @@ class AstroidManagerTest(
         ast = self.manager.ast_from_class(int, int.__module__)
         self.assertEqual(ast.name, "int")
         self.assertEqual(ast.parent.frame().name, "builtins")
+        self.assertEqual(ast.parent.frame(future=True).name, "builtins")
 
         ast = self.manager.ast_from_class(object, object.__module__)
         self.assertEqual(ast.name, "object")
         self.assertEqual(ast.parent.frame().name, "builtins")
+        self.assertEqual(ast.parent.frame(future=True).name, "builtins")
         self.assertIn("__setattr__", ast)
 
     def test_ast_from_class_attr_error(self) -> None:
