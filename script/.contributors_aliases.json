@@ -4,6 +4,10 @@
     "name": "Daniël van Noord",
     "team": "Maintainers"
   },
+  "15907922+kasium@users.noreply.github.com": {
+    "mails": ["15907922+kasium@users.noreply.github.com"],
+    "name": "Kai Mueller"
+  },
   "30130371+cdce8p@users.noreply.github.com": {
     "mails": ["30130371+cdce8p@users.noreply.github.com"],
     "name": "Marc Mueller",
@@ -116,8 +120,6 @@
     "mails": [
       "nathaniel@google.com",
       "mbp@google.com",
-      "tmarek@google.com",
-      "shlomme@gmail.com",
       "balparda@google.com",
       "dlindquist@google.com"
     ],
@@ -126,7 +128,7 @@
   "pcmanticore@gmail.com": {
     "mails": ["cpopa@cloudbasesolutions.com", "pcmanticore@gmail.com"],
     "name": "Claudiu Popa",
-    "team": "Maintainers"
+    "team": "Ex-maintainers"
   },
   "pierre.sassoulas@gmail.com": {
     "mails": ["pierre.sassoulas@gmail.com", "pierre.sassoulas@cea.fr"],
@@ -142,6 +144,11 @@
     "name": "Łukasz Rogalski",
     "team": "Maintainers"
   },
+  "shlomme@gmail.com": {
+    "mails": ["shlomme@gmail.com", "tmarek@google.com"],
+    "name": "Torsten Marek",
+    "team": "Ex-maintainers"
+  },
   "stefan@sofa-rockers.org": {
     "mails": ["stefan.scherfke@energymeteo.de", "stefan@sofa-rockers.org"],
     "name": "Stefan Scherfke"
@@ -149,7 +156,7 @@
   "thenault@gmail.com": {
     "mails": ["thenault@gmail.com", "sylvain.thenault@logilab.fr"],
     "name": "Sylvain Thénault",
-    "team": "Maintainers"
+    "team": "Ex-maintainers"
   },
   "ville.skytta@iki.fi": {
     "mails": ["ville.skytta@iki.fi", "ville.skytta@upcloud.com"],

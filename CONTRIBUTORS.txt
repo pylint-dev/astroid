@@ -4,10 +4,15 @@
 # using '-' as the line first character.
 # Please verify that your change are stable if you modify manually.
 
-Maintainers
------------
+Ex-maintainers
+--------------
 - Claudiu Popa <pcmanticore@gmail.com>
 - Sylvain Thénault <thenault@gmail.com>
+- Torsten Marek <shlomme@gmail.com>
+
+
+Maintainers
+-----------
 - Pierre Sassoulas <pierre.sassoulas@gmail.com>
 - Hippo91 <guillaume.peillex@gmail.com>
 - Marc Mueller <30130371+cdce8p@users.noreply.github.com>
@@ -25,7 +30,6 @@ Maintainers
 Contributors
 ------------
 - LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-- Google, Inc. <no-reply@google.com>
 - Nick Drozd <nicholasdrozd@gmail.com>
 - Andrew Haigh <hello@nelf.in>
 - David Liu <david@cs.toronto.edu>
@@ -70,6 +74,7 @@ Contributors
 - Joshua Cannon <joshdcannon@gmail.com>
 - John Vandenberg <jayvdb@gmail.com>
 - Jacob Bogdanov <jacob@bogdanov.dev>
+- Google, Inc. <no-reply@google.com>
 - David Euresti <github@euresti.com>
 - David Cain <davidjosephcain@gmail.com>
 - Anthony Sottile <asottile@umich.edu>
@@ -80,7 +85,6 @@ Contributors
 - raylu <lurayl@gmail.com>
 - mathieui <mathieui@users.noreply.github.com>
 - markmcclain <markmcclain@users.noreply.github.com>
-- kasium <15907922+kasium@users.noreply.github.com>
 - ioanatia <ioanatia@users.noreply.github.com>
 - grayjk <grayjk@gmail.com>
 - Zbigniew Jędrzejewski-Szmek <zbyszek@in.waw.pl>
@@ -112,6 +116,7 @@ Contributors
 - Leandro T. C. Melo <ltcmelo@gmail.com>
 - Konrad Weihmann <kweihmann@outlook.com>
 - Kian Meng, Ang <kianmeng.ang@gmail.com>
+- Kai Mueller <15907922+kasium@users.noreply.github.com>
 - Jörg Thalheim <Mic92@users.noreply.github.com>
 - Jonathan Striebel <jstriebel@users.noreply.github.com>
 - John Belmonte <john@neggie.net>
