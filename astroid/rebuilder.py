@@ -6,13 +6,13 @@
 order to get a single Astroid representation
 """
 
-import ast
 import sys
 import token
 import tokenize
 from io import StringIO
 from tokenize import TokenInfo, generate_tokens
 from typing import (
+    TYPE_CHECKING,
     Callable,
     Dict,
     Generator,
@@ -38,6 +38,9 @@ if sys.version_info >= (3, 8):
     from typing import Final
 else:
     from typing_extensions import Final
+
+if TYPE_CHECKING:
+    import ast
 
 
 REDIRECT: Final[Dict[str, str]] = {
@@ -1386,18 +1389,25 @@ class TreeRebuilder:
         if not self._data or not node.orelse:
             return None, None
 
-        # If the first child in orelse is an If node the orelse is an elif block
-        if isinstance(node.orelse[0], ast.If):
-            return node.orelse[0].lineno, node.orelse[0].col_offset
+        end_lineno = node.orelse[0].lineno
 
-        end_lineno = node.orelse[0].lineno - 1
+        def find_keyword(begin: int, end: int) -> Tuple[Optional[int], Optional[int]]:
+            # pylint: disable-next=unsubscriptable-object
+            data = "\n".join(self._data[begin:end])
 
-        # pylint: disable-next=unsubscriptable-object
-        data = "\n".join(self._data[node.lineno - 1 : end_lineno])
-        for t in generate_tokens(StringIO(data).readline):
-            if t.type == token.NAME and t.string == "else":
-                return node.lineno + t.start[0] - 1, t.start[1]
-        return None, None
+            try:
+                tokens = list(generate_tokens(StringIO(data).readline))
+            except tokenize.TokenError:
+                # If we cut-off in the middle of multi-line if statements we
+                # generate a TokenError here. We just keep trying
+                # until the multi-line statement is closed.
+                return find_keyword(begin, end + 1)
+            for t in tokens[::-1]:
+                if t.type == token.NAME and t.string in {"else", "elif"}:
+                    return node.lineno + t.start[0] - 1, t.start[1]
+            return None, None
+
+        return find_keyword(node.lineno - 1, end_lineno)
 
     def visit_if(self, node: "ast.If", parent: NodeNG) -> nodes.If:
         """visit an If node by returning a fresh instance of it"""
