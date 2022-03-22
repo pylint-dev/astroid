@@ -1405,7 +1405,7 @@ class TreeRebuilder:
             for t in tokens[::-1]:
                 if t.type == token.NAME and t.string in {"else", "elif"}:
                     return node.lineno + t.start[0] - 1, t.start[1]
-            return None, None
+            raise AssertionError()  # pragma: no cover # Shouldn't be reached.
 
         return find_keyword(node.lineno - 1, end_lineno)
 
