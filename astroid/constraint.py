@@ -75,12 +75,7 @@ class NoneConstraint(Constraint):
         if inferred is util.Uninferable:
             return True
 
-        if self.negate and matches(inferred, nodes.Const(None)):
-            return False
-        if not self.negate and not matches(inferred, nodes.Const(None)):
-            return False
-
-        return True
+        return self.negate ^ matches(inferred, nodes.Const(None))
 
 
 def matches(node1: nodes.NodeNG, node2: nodes.NodeNG) -> bool:
