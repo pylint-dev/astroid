@@ -4056,10 +4056,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 25)
 
-    @pytest.mark.xfail(reason="Cannot reuse inner value due to inference context reuse")
-    def test_inner_value_redefined_by_subclass_with_mro(self):
-        # This might work, but it currently doesn't due to not being able
-        # to reuse inference contexts.
+    def test_inner_value_redefined_by_subclass_with_mro(self) -> None:
         ast_node = extract_node(
             """
         class X(object):
@@ -4079,8 +4076,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         )
         inferred = next(ast_node.infer())
-        self.assertIsInstance(inferred, nodes.Const)
-        self.assertEqual(inferred.value, 25)
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 26
 
     def test_getitem_of_class_raised_type_error(self) -> None:
         # Test that we wrap an AttributeInferenceError
