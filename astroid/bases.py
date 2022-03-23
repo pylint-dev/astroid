@@ -319,7 +319,6 @@ class Instance(BaseInstance):
         return result
 
     def getitem(self, index, context=None):
-        # TODO: Rewrap index to Const for this case
         new_context = bind_context_to_node(context, self)
         if not context:
             context = new_context
