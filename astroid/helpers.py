@@ -7,6 +7,8 @@ Various helper utilities.
 """
 
 
+from typing import Sequence
+
 from astroid import bases, manager, nodes, raw_building, util
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
@@ -83,7 +85,7 @@ def object_type(node, context=None):
 
 def _object_type_is_subclass(obj_type, class_or_seq, context=None):
     if not isinstance(class_or_seq, (tuple, list)):
-        class_seq = (class_or_seq,)
+        class_seq: Sequence = (class_or_seq,)
     else:
         class_seq = class_or_seq
 
