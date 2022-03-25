@@ -1338,7 +1338,6 @@ class TreeRebuilder:
                 parent=parent,
             )
         elif context == Context.Store:
-            # pylint: disable=redefined-variable-type
             newnode = nodes.AssignAttr(
                 attrname=node.attr,
                 lineno=node.lineno,
@@ -1572,7 +1571,6 @@ class TreeRebuilder:
                 parent=parent,
             )
         elif context == Context.Store:
-            # pylint: disable=redefined-variable-type
             newnode = nodes.AssignName(
                 name=node.id,
                 lineno=node.lineno,

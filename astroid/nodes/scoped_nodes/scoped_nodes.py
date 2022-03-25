@@ -1386,7 +1386,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             frame = parent.frame(future=True)
             frame.set_local(name, self)
 
-    # pylint: disable=arguments-differ; different than Lambdas
     def postinit(
         self,
         args: Arguments,
@@ -1490,9 +1489,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         return decorators
 
     @cached_property
-    def type(
-        self,
-    ):  # pylint: disable=invalid-overridden-method,too-many-return-statements
+    def type(self):  # pylint: disable=too-many-return-statements
         """The function type for this node.
 
         Possible values are: method, function, staticmethod, classmethod.

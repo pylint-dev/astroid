@@ -1,5 +1,6 @@
 -r requirements_test_min.txt
 -r requirements_test_pre_commit.txt
+contributors-txt>=0.7.3
 coveralls~=3.3
 coverage~=5.5
 pre-commit~=2.17
