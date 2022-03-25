@@ -14,7 +14,7 @@ from astroid.exceptions import AttributeInferenceError
 if TYPE_CHECKING:
     from astroid import nodes
 
-if sys.version_info >= (3, 8) or TYPE_CHECKING:
+if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
     from astroid.decorators import cachedproperty as cached_property

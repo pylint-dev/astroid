@@ -43,11 +43,9 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-if sys.version_info >= (3, 8) or TYPE_CHECKING:
-    # pylint: disable-next=ungrouped-imports
+if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
-    # pylint: disable-next=ungrouped-imports
     from astroid.decorators import cachedproperty as cached_property
 
 # Types for 'NodeNG.nodes_of_class()'
@@ -165,7 +163,7 @@ class NodeNG:
 
         if not context:
             # nodes_inferred?
-            yield from self._infer(context, **kwargs)
+            yield from self._infer(context=context, **kwargs)
             return
 
         key = (self, context.lookupname, context.callcontext, context.boundnode)
@@ -173,7 +171,7 @@ class NodeNG:
             yield from context.inferred[key]
             return
 
-        generator = self._infer(context, **kwargs)
+        generator = self._infer(context=context, **kwargs)
         results = []
 
         # Limit inference amount to help with performance issues with

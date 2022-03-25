@@ -12,13 +12,22 @@ Release date: TBA
   Closes #135, #1404
 
 
-What's New in astroid 2.11.1?
+What's New in astroid 2.11.2?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.11.1?
+=============================
+Release date: 2022-03-22
 
 * Promoted ``getattr()`` from ``astroid.scoped_nodes.FunctionDef`` to its parent
   ``astroid.scoped_nodes.Lambda``.
 
+* Fixed crash on direct inference via ``nodes.FunctionDef._infer``.
+
+  Closes #817
 
 
 What's New in astroid 2.11.0?

@@ -1,96 +1,55 @@
 {
-  "Areveny": {
-    "authoritative_mail": "areveny@protonmail.com",
-    "mails": ["areveny@protonmail.com", "self@areveny.com"],
+  "13665637+DanielNoord@users.noreply.github.com": {
+    "mails": ["13665637+DanielNoord@users.noreply.github.com"],
+    "name": "Daniël van Noord",
     "team": "Maintainers"
   },
-  "Ashley Whetter": {
-    "authoritative_mail": "ashley@awhetter.co.uk",
+  "15907922+kasium@users.noreply.github.com": {
+    "mails": ["15907922+kasium@users.noreply.github.com"],
+    "name": "Kai Mueller"
+  },
+  "30130371+cdce8p@users.noreply.github.com": {
+    "mails": ["30130371+cdce8p@users.noreply.github.com"],
+    "name": "Marc Mueller",
+    "team": "Maintainers"
+  },
+  "areveny@protonmail.com": {
+    "mails": ["areveny@protonmail.com", "self@areveny.com"],
+    "name": "Areveny",
+    "team": "Maintainers"
+  },
+  "ashley@awhetter.co.uk": {
     "mails": [
       "ashley@awhetter.co.uk",
       "awhetter.2011@my.bristol.ac.uk",
       "asw@dneg.com",
       "AWhetter@users.noreply.github.com"
     ],
+    "name": "Ashley Whetter",
     "team": "Maintainers"
   },
-  "Bryce Guinta": {
-    "authoritative_mail": "bryce.paul.guinta@gmail.com",
-    "mails": ["bryce.paul.guinta@gmail.com", "bryce.guinta@protonmail.com"],
-    "team": "Maintainers"
-  },
-  "Calen Pennington": {
-    "authoritative_mail": "calen.pennington@gmail.com",
-    "mails": ["cale@edx.org", "calen.pennington@gmail.com"]
-  },
-  "Ceridwen": {
-    "authoritative_mail": "ceridwenv@gmail.com",
-    "mails": ["ceridwenv@gmail.com"],
-    "team": "Maintainers"
-  },
-  "Claudiu Popa": {
-    "authoritative_mail": "pcmanticore@gmail.com",
-    "mails": ["cpopa@cloudbasesolutions.com", "pcmanticore@gmail.com"],
-    "team": "Maintainers"
-  },
-  "Daniël van Noord": {
-    "authoritative_mail": "13665637+DanielNoord@users.noreply.github.com",
-    "mails": ["13665637+DanielNoord@users.noreply.github.com"],
-    "team": "Maintainers"
-  },
-  "David Euresti": {
-    "authoritative_mail": "github@euresti.com",
-    "mails": ["david@dropbox.com", "github@euresti.com"]
-  },
-  "Dimitri Prybysh": {
-    "authoritative_mail": "dmand@yandex.ru",
-    "mails": ["dmand@yandex.ru"],
-    "team": "Maintainers"
-  },
-  "Florian Bruhin": {
-    "authoritative_mail": "me@the-compiler.org",
-    "mails": ["me@the-compiler.org"],
-    "team": "Maintainers"
-  },
-  "Google, Inc.": {
-    "authoritative_mail": null,
+  "bot@noreply.github.com": {
     "mails": [
-      "nathaniel@google.com",
-      "mbp@google.com",
-      "tmarek@google.com",
-      "shlomme@gmail.com",
-      "balparda@google.com",
-      "dlindquist@google.com"
-    ]
+      "66853113+pre-commit-ci[bot]@users.noreply.github.com",
+      "49699333+dependabot[bot]@users.noreply.github.com"
+    ],
+    "name": "bot"
   },
-  "Hippo91": {
-    "authoritative_mail": "guillaume.peillex@gmail.com",
-    "mails": ["guillaume.peillex@gmail.com"],
+  "bryce.paul.guinta@gmail.com": {
+    "mails": ["bryce.paul.guinta@gmail.com", "bryce.guinta@protonmail.com"],
+    "name": "Bryce Guinta",
     "team": "Maintainers"
   },
-  "Jacob Bogdanov": {
-    "authoritative_mail": "jacob@bogdanov.dev",
-    "mails": ["jacob@bogdanov.dev", "jbogdanov@128technology.com"]
+  "calen.pennington@gmail.com": {
+    "mails": ["cale@edx.org", "calen.pennington@gmail.com"],
+    "name": "Calen Pennington"
   },
-  "Jacob Walls": {
-    "authoritative_mail": "jacobtylerwalls@gmail.com",
-    "mails": ["jacobtylerwalls@gmail.com"],
+  "ceridwenv@gmail.com": {
+    "mails": ["ceridwenv@gmail.com"],
+    "name": "Ceridwen",
     "team": "Maintainers"
   },
-  "Joshua Cannon": {
-    "authoritative_mail": "joshdcannon@gmail.com",
-    "mails": ["joshdcannon@gmail.com", "joshua.cannon@ni.com"]
-  },
-  "Kavins Singh": {
-    "authoritative_mail": "kavinsingh@hotmail.com",
-    "mails": ["kavin.singh@mail.utoronto.ca", "kavinsingh@hotmail.com"]
-  },
-  "Keichi Takahashi": {
-    "authoritative_mail": "keichi.t@me.com",
-    "mails": ["hello@keichi.dev", "keichi.t@me.com"]
-  },
-  "LOGILAB S.A. (Paris, FRANCE)": {
-    "authoritative_mail": "contact@logilab.fr",
+  "contact@logilab.fr": {
     "mails": [
       "alexandre.fayolle@logilab.fr",
       "emile.anclin@logilab.fr",
@@ -106,53 +65,101 @@
       "afayolle.ml@free.fr",
       "aurelien.campeas@logilab.fr",
       "lmedioni@logilab.fr"
-    ]
+    ],
+    "name": "LOGILAB S.A. (Paris, FRANCE)"
   },
-  "Marc Mueller": {
-    "authoritative_mail": "30130371+cdce8p@users.noreply.github.com",
-    "mails": ["30130371+cdce8p@users.noreply.github.com"],
+  "dmand@yandex.ru": {
+    "mails": ["dmand@yandex.ru"],
+    "name": "Dimitri Prybysh",
     "team": "Maintainers"
   },
-  "Mario Corchero": {
-    "authoritative_mail": "mariocj89@gmail.com",
-    "mails": ["mcorcherojim@bloomberg.net", "mariocj89@gmail.com"]
+  "github@euresti.com": {
+    "mails": ["david@dropbox.com", "github@euresti.com"],
+    "name": "David Euresti"
   },
-  "Moises Lopez": {
-    "authoritative_mail": "moylop260@vauxoo.com",
-    "mails": ["moylop260@vauxoo.com"]
-  },
-  "Pierre Sassoulas": {
-    "authoritative_mail": "pierre.sassoulas@gmail.com",
-    "mails": ["pierre.sassoulas@gmail.com", "pierre.sassoulas@cea.fr"],
+  "guillaume.peillex@gmail.com": {
+    "mails": ["guillaume.peillex@gmail.com"],
+    "name": "Hippo91",
     "team": "Maintainers"
   },
-  "Raphael Gaschignard": {
-    "authoritative_mail": "raphael@makeleaps.com",
-    "mails": ["raphael@rtpg.co", "raphael@makeleaps.com"]
+  "jacob@bogdanov.dev": {
+    "mails": ["jacob@bogdanov.dev", "jbogdanov@128technology.com"],
+    "name": "Jacob Bogdanov"
   },
-  "Stefan Scherfke": {
-    "authoritative_mail": "stefan@sofa-rockers.org",
-    "mails": ["stefan.scherfke@energymeteo.de", "stefan@sofa-rockers.org"]
-  },
-  "Sylvain Thénault": {
-    "authoritative_mail": "thenault@gmail.com",
-    "mails": ["thenault@gmail.com", "sylvain.thenault@logilab.fr"],
+  "jacobtylerwalls@gmail.com": {
+    "mails": ["jacobtylerwalls@gmail.com"],
+    "name": "Jacob Walls",
     "team": "Maintainers"
   },
-  "Ville Skyttä": {
-    "authoritative_mail": "ville.skytta@iki.fi",
-    "mails": ["ville.skytta@iki.fi", "ville.skytta@upcloud.com"]
+  "joshdcannon@gmail.com": {
+    "mails": ["joshdcannon@gmail.com", "joshua.cannon@ni.com"],
+    "name": "Joshua Cannon"
   },
-  "bot": {
-    "authoritative_mail": "bot@noreply.github.com",
+  "kavinsingh@hotmail.com": {
+    "mails": ["kavin.singh@mail.utoronto.ca", "kavinsingh@hotmail.com"],
+    "name": "Kavins Singh"
+  },
+  "keichi.t@me.com": {
+    "mails": ["hello@keichi.dev", "keichi.t@me.com"],
+    "name": "Keichi Takahashi"
+  },
+  "mariocj89@gmail.com": {
+    "mails": ["mcorcherojim@bloomberg.net", "mariocj89@gmail.com"],
+    "name": "Mario Corchero"
+  },
+  "me@the-compiler.org": {
+    "mails": ["me@the-compiler.org"],
+    "name": "Florian Bruhin",
+    "team": "Maintainers"
+  },
+  "moylop260@vauxoo.com": {
+    "mails": ["moylop260@vauxoo.com"],
+    "name": "Moises Lopez"
+  },
+  "no-reply@google.com": {
     "mails": [
-      "66853113+pre-commit-ci[bot]@users.noreply.github.com",
-      "49699333+dependabot[bot]@users.noreply.github.com"
-    ]
+      "nathaniel@google.com",
+      "mbp@google.com",
+      "balparda@google.com",
+      "dlindquist@google.com"
+    ],
+    "name": "Google, Inc."
   },
-  "Łukasz Rogalski": {
-    "authoritative_mail": "rogalski.91@gmail.com",
-    "mails": ["rogalski.91@gmail.com"],
+  "pcmanticore@gmail.com": {
+    "mails": ["cpopa@cloudbasesolutions.com", "pcmanticore@gmail.com"],
+    "name": "Claudiu Popa",
+    "team": "Ex-maintainers"
+  },
+  "pierre.sassoulas@gmail.com": {
+    "mails": ["pierre.sassoulas@gmail.com", "pierre.sassoulas@cea.fr"],
+    "name": "Pierre Sassoulas",
     "team": "Maintainers"
+  },
+  "raphael@makeleaps.com": {
+    "mails": ["raphael@rtpg.co", "raphael@makeleaps.com"],
+    "name": "Raphael Gaschignard"
+  },
+  "rogalski.91@gmail.com": {
+    "mails": ["rogalski.91@gmail.com"],
+    "name": "Łukasz Rogalski",
+    "team": "Maintainers"
+  },
+  "shlomme@gmail.com": {
+    "mails": ["shlomme@gmail.com", "tmarek@google.com"],
+    "name": "Torsten Marek",
+    "team": "Ex-maintainers"
+  },
+  "stefan@sofa-rockers.org": {
+    "mails": ["stefan.scherfke@energymeteo.de", "stefan@sofa-rockers.org"],
+    "name": "Stefan Scherfke"
+  },
+  "thenault@gmail.com": {
+    "mails": ["thenault@gmail.com", "sylvain.thenault@logilab.fr"],
+    "name": "Sylvain Thénault",
+    "team": "Ex-maintainers"
+  },
+  "ville.skytta@iki.fi": {
+    "mails": ["ville.skytta@iki.fi", "ville.skytta@upcloud.com"],
+    "name": "Ville Skyttä"
   }
 }
