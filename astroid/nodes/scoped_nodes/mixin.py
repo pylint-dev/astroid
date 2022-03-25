@@ -177,7 +177,7 @@ class ComprehensionScope(LocalsDictNodeNG):
     generators: List["nodes.Comprehension"]
     """The generators that are looped through."""
 
-    def qname(self):
+    def qname(self) -> str:
         """Get the 'qualified' name of the node."""
         return self.pytype()
 
