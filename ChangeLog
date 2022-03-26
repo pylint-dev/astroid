@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.11.2?
+What's New in astroid 2.11.3?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.11.2?
+=============================
+Release date: 2022-03-26
 
 * Avoided adding the name of a parent namedtuple to its child's locals.
 
