@@ -719,7 +719,9 @@ class GeneratorExp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(self, elt=None, generators: Optional["nodes.Comprehension"] = None):
+    def postinit(
+        self, elt=None, generators: Optional[List["nodes.Comprehension"]] = None
+    ):
         """Do some setup after initialisation.
 
         :param elt: The element that forms the output of the expression.
@@ -815,7 +817,10 @@ class DictComp(ComprehensionScope):
         )
 
     def postinit(
-        self, key=None, value=None, generators: Optional["nodes.Comprehension"] = None
+        self,
+        key=None,
+        value=None,
+        generators: Optional[List["nodes.Comprehension"]] = None,
     ):
         """Do some setup after initialisation.
 
@@ -911,7 +916,9 @@ class SetComp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(self, elt=None, generators: Optional["nodes.Comprehension"] = None):
+    def postinit(
+        self, elt=None, generators: Optional[List["nodes.Comprehension"]] = None
+    ):
         """Do some setup after initialisation.
 
         :param elt: The element that forms the output of the expression.
@@ -984,14 +991,15 @@ class ListComp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(self, elt=None, generators: Optional["nodes.Comprehension"] = None):
+    def postinit(
+        self, elt=None, generators: Optional[List["nodes.Comprehension"]] = None
+    ):
         """Do some setup after initialisation.
 
         :param elt: The element that forms the output of the expression.
         :type elt: NodeNG or None
 
         :param generators: The generators that are looped through.
-        :type generators: list(Comprehension) or None
         """
         self.elt = elt
         if generators is None:
