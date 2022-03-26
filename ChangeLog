@@ -12,6 +12,9 @@ What's New in astroid 2.11.2?
 =============================
 Release date: TBA
 
+* Avoided adding the name of a parent namedtuple to its child's locals.
+
+  Refs PyCQA/pylint#5982
 
 
 What's New in astroid 2.11.1?
