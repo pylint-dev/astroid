@@ -1,30 +1,6 @@
-# Copyright (c) 2006-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014-2015 Google, Inc.
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2017 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 brendanator <brendan.maginnis@gmail.com>
-# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
-# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2021-2022 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
-# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
-# Copyright (c) 2022 Sergei Lebedev <185856+superbobry@users.noreply.github.com>
-# Copyright (c) 2022 Jacob Walls <jacobtylerwalls@gmail.com>
-# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """tests for the astroid builder and rebuilder module"""
 
@@ -42,14 +18,14 @@ import sys
 import tempfile
 import textwrap
 import types
-import unittest
 from pathlib import Path
 from typing import Iterator
 
+import unittest.mock
 import pytest
 
 from astroid import Instance, builder, nodes, test_utils, util
-from astroid.const import PY38_PLUS
+from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -85,9 +61,12 @@ class FromToLineNoTest(unittest.TestCase):
         self.assertEqual(name.tolineno, 4)
         strarg = callfunc.args[0]
         self.assertIsInstance(strarg, nodes.Const)
-        if hasattr(sys, "pypy_version_info"):
+        if IS_PYPY:
             self.assertEqual(strarg.fromlineno, 4)
-            self.assertEqual(strarg.tolineno, 4)
+            if not PY39_PLUS:
+                self.assertEqual(strarg.tolineno, 4)
+            else:
+                self.assertEqual(strarg.tolineno, 5)
         else:
             if not PY38_PLUS:
                 self.assertEqual(strarg.fromlineno, 5)
@@ -190,13 +169,121 @@ class FromToLineNoTest(unittest.TestCase):
 
         c = ast_module.body[2]
         assert isinstance(c, nodes.ClassDef)
-        if not PY38_PLUS:
-            # Not perfect, but best we can do for Python 3.7
+        if not PY38_PLUS or PY38 and IS_PYPY:
+            # Not perfect, but best we can do for Python 3.7 and PyPy 3.8
             # Can't detect closing bracket on new line.
             assert c.fromlineno == 12
         else:
             assert c.fromlineno == 13
         assert c.tolineno == 14
+
+    @staticmethod
+    def test_class_with_docstring() -> None:
+        """Test class nodes which only have docstrings."""
+        code = textwrap.dedent(
+            '''\
+        class A:
+            """My docstring"""
+            var = 1
+
+        class B:
+            """My docstring"""
+
+        class C:
+            """My docstring
+            is long."""
+
+        class D:
+            """My docstring
+            is long.
+            """
+
+        class E:
+            ...
+        '''
+        )
+
+        ast_module = builder.parse(code)
+
+        a = ast_module.body[0]
+        assert isinstance(a, nodes.ClassDef)
+        assert a.fromlineno == 1
+        assert a.tolineno == 3
+
+        b = ast_module.body[1]
+        assert isinstance(b, nodes.ClassDef)
+        assert b.fromlineno == 5
+        assert b.tolineno == 6
+
+        c = ast_module.body[2]
+        assert isinstance(c, nodes.ClassDef)
+        assert c.fromlineno == 8
+        assert c.tolineno == 10
+
+        d = ast_module.body[3]
+        assert isinstance(d, nodes.ClassDef)
+        assert d.fromlineno == 12
+        assert d.tolineno == 15
+
+        e = ast_module.body[4]
+        assert isinstance(d, nodes.ClassDef)
+        assert e.fromlineno == 17
+        assert e.tolineno == 18
+
+    @staticmethod
+    def test_function_with_docstring() -> None:
+        """Test function defintions with only docstrings."""
+        code = textwrap.dedent(
+            '''\
+        def a():
+            """My docstring"""
+            var = 1
+
+        def b():
+            """My docstring"""
+
+        def c():
+            """My docstring
+            is long."""
+
+        def d():
+            """My docstring
+            is long.
+            """
+
+        def e(a, b):
+            """My docstring
+            is long.
+            """
+        '''
+        )
+
+        ast_module = builder.parse(code)
+
+        a = ast_module.body[0]
+        assert isinstance(a, nodes.FunctionDef)
+        assert a.fromlineno == 1
+        assert a.tolineno == 3
+
+        b = ast_module.body[1]
+        assert isinstance(b, nodes.FunctionDef)
+        assert b.fromlineno == 5
+        assert b.tolineno == 6
+
+        c = ast_module.body[2]
+        assert isinstance(c, nodes.FunctionDef)
+        assert c.fromlineno == 8
+        assert c.tolineno == 10
+
+        d = ast_module.body[3]
+        assert isinstance(d, nodes.FunctionDef)
+        assert d.fromlineno == 12
+        assert d.tolineno == 15
+
+        e = ast_module.body[4]
+        assert isinstance(e, nodes.FunctionDef)
+        assert e.fromlineno == 17
+        assert e.tolineno == 20
 
     def test_class_lineno(self) -> None:
         stmts = self.astroid.body
@@ -614,6 +701,7 @@ class BuilderTest(unittest.TestCase):
                 a.custom_attr = 0
             """
         builder.parse(code)
+        # pylint: disable=no-member
         nonetype = nodes.const_factory(None)
         self.assertNotIn("custom_attr", nonetype.locals)
         self.assertNotIn("custom_attr", nonetype.instance_attrs)
@@ -667,7 +755,11 @@ class FileBuildTest(unittest.TestCase):
         """test base properties and method of an astroid module"""
         module = self.module
         self.assertEqual(module.name, "data.module")
-        self.assertEqual(module.doc, "test module for astroid\n")
+        with pytest.warns(DeprecationWarning) as records:
+            self.assertEqual(module.doc, "test module for astroid\n")
+            assert len(records) == 1
+        assert isinstance(module.doc_node, nodes.Const)
+        self.assertEqual(module.doc_node.value, "test module for astroid\n")
         self.assertEqual(module.fromlineno, 0)
         self.assertIsNone(module.parent)
         self.assertEqual(module.frame(), module)
@@ -709,7 +801,11 @@ class FileBuildTest(unittest.TestCase):
         module = self.module
         function = module["global_access"]
         self.assertEqual(function.name, "global_access")
-        self.assertEqual(function.doc, "function test")
+        with pytest.warns(DeprecationWarning) as records:
+            self.assertEqual(function.doc, "function test")
+            assert len(records)
+        assert isinstance(function.doc_node, nodes.Const)
+        self.assertEqual(function.doc_node.value, "function test")
         self.assertEqual(function.fromlineno, 11)
         self.assertTrue(function.parent)
         self.assertEqual(function.frame(), function)
@@ -732,7 +828,11 @@ class FileBuildTest(unittest.TestCase):
         module = self.module
         klass = module["YO"]
         self.assertEqual(klass.name, "YO")
-        self.assertEqual(klass.doc, "hehe\n    haha")
+        with pytest.warns(DeprecationWarning) as records:
+            self.assertEqual(klass.doc, "hehe\n    haha")
+            assert len(records) == 1
+        assert isinstance(klass.doc_node, nodes.Const)
+        self.assertEqual(klass.doc_node.value, "hehe\n    haha")
         self.assertEqual(klass.fromlineno, 25)
         self.assertTrue(klass.parent)
         self.assertEqual(klass.frame(), klass)
@@ -786,7 +886,11 @@ class FileBuildTest(unittest.TestCase):
         method = klass2["method"]
         self.assertEqual(method.name, "method")
         self.assertEqual([n.name for n in method.args.args], ["self"])
-        self.assertEqual(method.doc, "method\n        test")
+        with pytest.warns(DeprecationWarning) as records:
+            self.assertEqual(method.doc, "method\n        test")
+            assert len(records) == 1
+        assert isinstance(method.doc_node, nodes.Const)
+        self.assertEqual(method.doc_node.value, "method\n        test")
         self.assertEqual(method.fromlineno, 48)
         self.assertEqual(method.type, "method")
         # class method

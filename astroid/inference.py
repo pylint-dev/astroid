@@ -1,31 +1,6 @@
-# Copyright (c) 2006-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2012 FELD Boris <lothiraldan@gmail.com>
-# Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Dmitry Pribysh <dmand@yandex.ru>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2017 Michał Masłowski <m.maslowski@clearcode.cc>
-# Copyright (c) 2017 Calen Pennington <cale@edx.org>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2018-2019 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2018 Daniel Martin <daniel.martin@crowdstrike.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2018 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
-# Copyright (c) 2020 Leandro T. C. Melo <ltcmelo@gmail.com>
-# Copyright (c) 2021-2022 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
-# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """this module contains a set of functions to handle inference on astroid trees
 """
@@ -34,7 +9,19 @@ import ast
 import functools
 import itertools
 import operator
-from typing import Any, Callable, Dict, Iterable, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    Iterator,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import wrapt
 
@@ -57,9 +44,16 @@ from astroid.exceptions import (
 )
 from astroid.interpreter import dunder_lookup
 from astroid.manager import AstroidManager
+from astroid.typing import InferenceErrorInfo
+
+if TYPE_CHECKING:
+    from astroid.objects import Property
 
 # Prevents circular imports
 objects = util.lazy_import("objects")
+
+
+_FunctionDefT = TypeVar("_FunctionDefT", bound=nodes.FunctionDef)
 
 
 # .infer method ###############################################################
@@ -543,9 +537,9 @@ def _infer_unaryop(self, context=None):
                         yield operand
                     else:
                         yield result
-                except AttributeInferenceError as exc:
+                except AttributeInferenceError as inner_exc:
                     # The unary operation special method was not found.
-                    yield util.BadUnaryOperationMessage(operand, self.op, exc)
+                    yield util.BadUnaryOperationMessage(operand, self.op, inner_exc)
                 except InferenceError:
                     yield util.Uninferable
 
@@ -837,7 +831,7 @@ def _do_compare(
     >>> _do_compare([1, 3], '<=', [2, 4])
     util.Uninferable
     """
-    retval = None
+    retval: Union[None, bool] = None
     if op in UNINFERABLE_OPS:
         return util.Uninferable
     op_func = COMPARE_OPS[op]
@@ -862,14 +856,15 @@ def _do_compare(
             return util.Uninferable
             # (or both, but "True | False" is basically the same)
 
+    assert retval is not None
     return retval  # it was all the same value
 
 
 def _infer_compare(
     self: nodes.Compare, context: Optional[InferenceContext] = None
-) -> Any:
+) -> Iterator[Union[nodes.Const, Type[util.Uninferable]]]:
     """Chained comparison inference logic."""
-    retval = True
+    retval: Union[bool, Type[util.Uninferable]] = True
 
     ops = self.ops
     left_node = self.left
@@ -887,7 +882,7 @@ def _infer_compare(
             break  # short-circuit
         lhs = rhs  # continue
     if retval is util.Uninferable:
-        yield retval
+        yield retval  # type: ignore[misc]
     else:
         yield nodes.Const(retval)
 
@@ -1044,8 +1039,10 @@ nodes.IfExp._infer = infer_ifexp  # type: ignore[assignment]
 
 # pylint: disable=dangerous-default-value
 @wrapt.decorator
-def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
-    node = args[0]
+def _cached_generator(
+    func, instance: _FunctionDefT, args, kwargs, _cache={}  # noqa: B006
+):
+    node = instance
     try:
         return iter(_cache[func, id(node)])
     except KeyError:
@@ -1062,22 +1059,23 @@ def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
 # are mutated with a new instance of the property. This is why we cache the result
 # of the function's inference.
 @_cached_generator
-def infer_functiondef(self, context=None):
+def infer_functiondef(
+    self: _FunctionDefT, context: Optional[InferenceContext] = None
+) -> Generator[Union["Property", _FunctionDefT], None, InferenceErrorInfo]:
     if not self.decorators or not bases._is_property(self):
         yield self
-        return dict(node=self, context=context)
+        return InferenceErrorInfo(node=self, context=context)
 
     prop_func = objects.Property(
         function=self,
         name=self.name,
-        doc=self.doc,
         lineno=self.lineno,
         parent=self.parent,
         col_offset=self.col_offset,
     )
-    prop_func.postinit(body=[], args=self.args)
+    prop_func.postinit(body=[], args=self.args, doc_node=self.doc_node)
     yield prop_func
-    return dict(node=self, context=context)
+    return InferenceErrorInfo(node=self, context=context)
 
 
 nodes.FunctionDef._infer = infer_functiondef  # type: ignore[assignment]

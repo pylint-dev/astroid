@@ -1,39 +1,11 @@
-# Copyright (c) 2006-2007, 2009-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2012 FELD Boris <lothiraldan@gmail.com>
-# Copyright (c) 2013-2021 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Google, Inc.
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2017 rr- <rr-@sakuya.pl>
-# Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2018 Serhiy Storchaka <storchaka@gmail.com>
-# Copyright (c) 2018 brendanator <brendan.maginnis@gmail.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
-# Copyright (c) 2019-2021 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2019 Alex Hall <alex.mojaki@gmail.com>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
-# Copyright (c) 2021 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 René Fritze <47802+renefritze@users.noreply.github.com>
-# Copyright (c) 2021 Federico Bond <federicobond@gmail.com>
-# Copyright (c) 2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """tests for specific behaviour of astroid nodes
 """
 import copy
 import os
-import platform
 import sys
 import textwrap
 import unittest
@@ -290,12 +262,6 @@ def func(param: Tuple):
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string().strip(), code.strip())
 
-    # This test is disabled on PyPy because we cannot get a release that has proper
-    # support for f-strings (we need 7.2 at least)
-    @pytest.mark.skipif(
-        platform.python_implementation() == "PyPy",
-        reason="Needs f-string support.",
-    )
     def test_f_strings(self):
         code = r'''
 a = f"{'a'}"
@@ -633,6 +599,7 @@ class CmpNodeTest(unittest.TestCase):
 class ConstNodeTest(unittest.TestCase):
     def _test(self, value: Any) -> None:
         node = nodes.const_factory(value)
+        # pylint: disable=no-member
         self.assertIsInstance(node._proxied, nodes.ClassDef)
         self.assertEqual(node._proxied.name, value.__class__.__name__)
         self.assertIs(node.value, value)
@@ -1228,7 +1195,7 @@ def test_type_comments_with() -> None:
         """
     with a as b: # type: int
         pass
-    with a as b: # type: ignore
+    with a as b: # type: ignore[name-defined]
         pass
     """
     )
@@ -1245,7 +1212,7 @@ def test_type_comments_for() -> None:
         """
     for a, b in [1, 2, 3]: # type: List[int]
         pass
-    for a, b in [1, 2, 3]: # type: ignore
+    for a, b in [1, 2, 3]: # type: ignore[name-defined]
         pass
     """
     )
@@ -1262,7 +1229,7 @@ def test_type_coments_assign() -> None:
     module = builder.parse(
         """
     a, b = [1, 2, 3] # type: List[int]
-    a, b = [1, 2, 3] # type: ignore
+    a, b = [1, 2, 3] # type: ignore[name-defined]
     """
     )
     node = module.body[0]
@@ -1596,23 +1563,36 @@ def test_assignment_expression_in_functiondef() -> None:
 
 
 def test_get_doc() -> None:
-    node = astroid.extract_node(
-        """
+    code = textwrap.dedent(
+        """\
     def func():
         "Docstring"
         return 1
     """
     )
-    assert node.doc == "Docstring"
+    node: nodes.FunctionDef = astroid.extract_node(code)  # type: ignore[assignment]
+    with pytest.warns(DeprecationWarning) as records:
+        assert node.doc == "Docstring"
+        assert len(records) == 1
+    assert isinstance(node.doc_node, nodes.Const)
+    assert node.doc_node.value == "Docstring"
+    assert node.doc_node.lineno == 2
+    assert node.doc_node.col_offset == 4
+    assert node.doc_node.end_lineno == 2
+    assert node.doc_node.end_col_offset == 15
 
-    node = astroid.extract_node(
-        """
+    code = textwrap.dedent(
+        """\
     def func():
         ...
         return 1
     """
     )
-    assert node.doc is None
+    node = astroid.extract_node(code)
+    with pytest.warns(DeprecationWarning) as records:
+        assert node.doc is None
+        assert len(records) == 1
+    assert node.doc_node is None
 
 
 @test_utils.require_version(minver="3.8")

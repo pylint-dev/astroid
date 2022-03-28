@@ -1,37 +1,6 @@
-# Copyright (c) 2006-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2011, 2013-2015 Google, Inc.
-# Copyright (c) 2013-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2013 Phil Schaf <flying-sheep@web.de>
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Rene Zhang <rz99@cornell.edu>
-# Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
-# Copyright (c) 2015 Philip Lorenz <philip@bithub.de>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2017, 2019 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2017-2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2018-2019 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 brendanator <brendan.maginnis@gmail.com>
-# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
-# Copyright (c) 2019-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2019 Peter de Blanc <peter@standard.ai>
-# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2020 Tim Martin <tim@asymptotic.co.uk>
-# Copyright (c) 2021-2022 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
-# Copyright (c) 2021 doranid <ddandd@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-# Copyright (c) 2022 Sergei Lebedev <185856+superbobry@users.noreply.github.com>
-# Copyright (c) 2022 Jacob Walls <jacobtylerwalls@gmail.com>
-# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """tests for specific behaviour of astroid scoped nodes (i.e. module, class and
 function)
@@ -41,14 +10,24 @@ import os
 import sys
 import textwrap
 import unittest
+import warnings
 from functools import partial
 from typing import Any, List, Union
 
 import pytest
 
-from astroid import MANAGER, builder, nodes, objects, parse, test_utils, util
+from astroid import (
+    MANAGER,
+    builder,
+    extract_node,
+    nodes,
+    objects,
+    parse,
+    test_utils,
+    util,
+)
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import PY38_PLUS, PY310_PLUS, WIN32
+from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY310_PLUS, WIN32
 from astroid.exceptions import (
     AttributeInferenceError,
     DuplicateBasesError,
@@ -205,8 +184,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_relative_to_absolute_name(self) -> None:
         # package
-        mod = nodes.Module("very.multi.package", "doc")
-        mod.package = True
+        mod = nodes.Module("very.multi.package", package=True)
         modname = mod.relative_to_absolute_name("utils", 1)
         self.assertEqual(modname, "very.multi.package.utils")
         modname = mod.relative_to_absolute_name("utils", 2)
@@ -216,8 +194,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         modname = mod.relative_to_absolute_name("", 1)
         self.assertEqual(modname, "very.multi.package")
         # non package
-        mod = nodes.Module("very.multi.module", "doc")
-        mod.package = False
+        mod = nodes.Module("very.multi.module", package=False)
         modname = mod.relative_to_absolute_name("utils", 0)
         self.assertEqual(modname, "very.multi.utils")
         modname = mod.relative_to_absolute_name("utils", 1)
@@ -228,8 +205,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(modname, "very.multi")
 
     def test_relative_to_absolute_name_beyond_top_level(self) -> None:
-        mod = nodes.Module("a.b.c", "")
-        mod.package = True
+        mod = nodes.Module("a.b.c", package=True)
         for level in (5, 4):
             with self.assertRaises(TooManyLevelsError) as cm:
                 mod.relative_to_absolute_name("test", level)
@@ -283,7 +259,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         path = resources.find("data/all.py")
         file_build = builder.AstroidBuilder().file_build(path, "all")
         with self.assertRaises(AttributeError):
-            # pylint: disable=pointless-statement
+            # pylint: disable=pointless-statement, no-member
             file_build.file_stream
 
     def test_stream_api(self) -> None:
@@ -294,6 +270,69 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         with stream:
             with open(path, "rb") as file_io:
                 self.assertEqual(stream.read(), file_io.read())
+
+    @staticmethod
+    def test_singleline_docstring() -> None:
+        data = textwrap.dedent(
+            """\
+            '''Hello World'''
+            foo = 1
+        """
+        )
+        module = builder.parse(data, __name__)
+        assert isinstance(module.doc_node, nodes.Const)
+        assert module.doc_node.lineno == 1
+        assert module.doc_node.col_offset == 0
+        assert module.doc_node.end_lineno == 1
+        assert module.doc_node.end_col_offset == 17
+
+    @staticmethod
+    def test_multiline_docstring() -> None:
+        data = textwrap.dedent(
+            """\
+            '''Hello World
+
+            Also on this line.
+            '''
+            foo = 1
+        """
+        )
+        module = builder.parse(data, __name__)
+
+        assert isinstance(module.doc_node, nodes.Const)
+        assert module.doc_node.lineno == 1
+        assert module.doc_node.col_offset == 0
+        assert module.doc_node.end_lineno == 4
+        assert module.doc_node.end_col_offset == 3
+
+    @staticmethod
+    def test_comment_before_docstring() -> None:
+        data = textwrap.dedent(
+            """\
+            # Some comment
+            '''This is
+
+            a multiline docstring.
+            '''
+        """
+        )
+        module = builder.parse(data, __name__)
+
+        assert isinstance(module.doc_node, nodes.Const)
+        assert module.doc_node.lineno == 2
+        assert module.doc_node.col_offset == 0
+        assert module.doc_node.end_lineno == 5
+        assert module.doc_node.end_col_offset == 3
+
+    @staticmethod
+    def test_without_docstring() -> None:
+        data = textwrap.dedent(
+            """\
+            foo = 1
+        """
+        )
+        module = builder.parse(data, __name__)
+        assert module.doc_node is None
 
 
 class FunctionNodeTest(ModuleLoader, unittest.TestCase):
@@ -444,6 +483,12 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
     def test_lambda_qname(self) -> None:
         astroid = builder.parse("lmbd = lambda: None", __name__)
         self.assertEqual(f"{__name__}.<lambda>", astroid["lmbd"].parent.value.qname())
+
+    def test_lambda_getattr(self) -> None:
+        astroid = builder.parse("lmbd = lambda: None")
+        self.assertIsInstance(
+            astroid["lmbd"].parent.value.getattr("__code__")[0], nodes.Unknown
+        )
 
     def test_is_method(self) -> None:
         data = """
@@ -752,6 +797,118 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "MyClass")
 
+    @staticmethod
+    def test_singleline_docstring() -> None:
+        code = textwrap.dedent(
+            """\
+            def foo():
+                '''Hello World'''
+                bar = 1
+        """
+        )
+        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
+
+        assert isinstance(func.doc_node, nodes.Const)
+        assert func.doc_node.lineno == 2
+        assert func.doc_node.col_offset == 4
+        assert func.doc_node.end_lineno == 2
+        assert func.doc_node.end_col_offset == 21
+
+    @staticmethod
+    def test_multiline_docstring() -> None:
+        code = textwrap.dedent(
+            """\
+            def foo():
+                '''Hello World
+
+                Also on this line.
+                '''
+                bar = 1
+        """
+        )
+        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
+
+        assert isinstance(func.doc_node, nodes.Const)
+        assert func.doc_node.lineno == 2
+        assert func.doc_node.col_offset == 4
+        assert func.doc_node.end_lineno == 5
+        assert func.doc_node.end_col_offset == 7
+
+    @staticmethod
+    def test_multiline_docstring_async() -> None:
+        code = textwrap.dedent(
+            """\
+            async def foo(var: tuple = ()):
+                '''Hello
+
+                World
+                '''
+        """
+        )
+        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
+
+        assert isinstance(func.doc_node, nodes.Const)
+        assert func.doc_node.lineno == 2
+        assert func.doc_node.col_offset == 4
+        assert func.doc_node.end_lineno == 5
+        assert func.doc_node.end_col_offset == 7
+
+    @staticmethod
+    def test_docstring_special_cases() -> None:
+        code = textwrap.dedent(
+            """\
+        def f1(var: tuple = ()):  #@
+            'Hello World'
+
+        def f2() -> "just some comment with an open bracket(":  #@
+            'Hello World'
+
+        def f3() -> "Another comment with a colon: ":  #@
+            'Hello World'
+
+        def f4():  #@
+            # It should work with comments too
+            'Hello World'
+        """
+        )
+        ast_nodes: List[nodes.FunctionDef] = builder.extract_node(code)  # type: ignore[assignment]
+        assert len(ast_nodes) == 4
+
+        assert isinstance(ast_nodes[0].doc_node, nodes.Const)
+        assert ast_nodes[0].doc_node.lineno == 2
+        assert ast_nodes[0].doc_node.col_offset == 4
+        assert ast_nodes[0].doc_node.end_lineno == 2
+        assert ast_nodes[0].doc_node.end_col_offset == 17
+
+        assert isinstance(ast_nodes[1].doc_node, nodes.Const)
+        assert ast_nodes[1].doc_node.lineno == 5
+        assert ast_nodes[1].doc_node.col_offset == 4
+        assert ast_nodes[1].doc_node.end_lineno == 5
+        assert ast_nodes[1].doc_node.end_col_offset == 17
+
+        assert isinstance(ast_nodes[2].doc_node, nodes.Const)
+        assert ast_nodes[2].doc_node.lineno == 8
+        assert ast_nodes[2].doc_node.col_offset == 4
+        assert ast_nodes[2].doc_node.end_lineno == 8
+        assert ast_nodes[2].doc_node.end_col_offset == 17
+
+        assert isinstance(ast_nodes[3].doc_node, nodes.Const)
+        assert ast_nodes[3].doc_node.lineno == 12
+        assert ast_nodes[3].doc_node.col_offset == 4
+        assert ast_nodes[3].doc_node.end_lineno == 12
+        assert ast_nodes[3].doc_node.end_col_offset == 17
+
+    @staticmethod
+    def test_without_docstring() -> None:
+        code = textwrap.dedent(
+            """\
+            def foo():
+                bar = 1
+        """
+        )
+        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
+        assert func.doc_node is None
+
 
 class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_dict_interface(self) -> None:
@@ -781,7 +938,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertEqual(
                 len(cls.getattr("__doc__")), 1, (cls, cls.getattr("__doc__"))
             )
-            self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc)
+            with pytest.warns(DeprecationWarning) as records:
+                self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc)
+                assert len(records) == 1
+            self.assertEqual(cls.getattr("__doc__")[0].value, cls.doc_node.value)
             self.assertEqual(len(cls.getattr("__module__")), 4)
             self.assertEqual(len(cls.getattr("__dict__")), 1)
             self.assertEqual(len(cls.getattr("__mro__")), 1)
@@ -1103,7 +1263,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         astroid = builder.parse(data)
         self.assertEqual(astroid["g1"].fromlineno, 4)
         self.assertEqual(astroid["g1"].tolineno, 5)
-        if not PY38_PLUS:
+        if not PY38_PLUS or PY38 and IS_PYPY:
             self.assertEqual(astroid["g2"].fromlineno, 9)
         else:
             self.assertEqual(astroid["g2"].fromlineno, 10)
@@ -2088,6 +2248,52 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         # Should not crash
         builder.parse(data)
 
+    @staticmethod
+    def test_singleline_docstring() -> None:
+        code = textwrap.dedent(
+            """\
+            class Foo:
+                '''Hello World'''
+                bar = 1
+        """
+        )
+        node: nodes.ClassDef = builder.extract_node(code)  # type: ignore[assignment]
+        assert isinstance(node.doc_node, nodes.Const)
+        assert node.doc_node.lineno == 2
+        assert node.doc_node.col_offset == 4
+        assert node.doc_node.end_lineno == 2
+        assert node.doc_node.end_col_offset == 21
+
+    @staticmethod
+    def test_multiline_docstring() -> None:
+        code = textwrap.dedent(
+            """\
+            class Foo:
+                '''Hello World
+
+                Also on this line.
+                '''
+                bar = 1
+        """
+        )
+        node: nodes.ClassDef = builder.extract_node(code)  # type: ignore[assignment]
+        assert isinstance(node.doc_node, nodes.Const)
+        assert node.doc_node.lineno == 2
+        assert node.doc_node.col_offset == 4
+        assert node.doc_node.end_lineno == 5
+        assert node.doc_node.end_col_offset == 7
+
+    @staticmethod
+    def test_without_docstring() -> None:
+        code = textwrap.dedent(
+            """\
+            class Foo:
+                bar = 1
+        """
+        )
+        node: nodes.ClassDef = builder.extract_node(code)  # type: ignore[assignment]
+        assert node.doc_node is None
+
 
 def test_issue940_metaclass_subclass_property() -> None:
     node = builder.extract_node(
@@ -2414,6 +2620,86 @@ class TestFrameNodes:
 
         assert module.body[1].value.locals["x"][0].frame() == module
         assert module.body[1].value.locals["x"][0].frame(future=True) == module
+
+
+def test_deprecation_of_doc_attribute() -> None:
+    code = textwrap.dedent(
+        """\
+    def func():
+        "Docstring"
+        return 1
+    """
+    )
+    node: nodes.FunctionDef = extract_node(code)  # type: ignore[assignment]
+    with pytest.warns(DeprecationWarning) as records:
+        assert node.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        node.doc = None
+        assert len(records) == 1
+
+    code = textwrap.dedent(
+        """\
+    class MyClass():
+        '''Docstring'''
+    """
+    )
+    node: nodes.ClassDef = extract_node(code)  # type: ignore[assignment]
+    with pytest.warns(DeprecationWarning) as records:
+        assert node.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        node.doc = None
+        assert len(records) == 1
+
+    code = textwrap.dedent(
+        """\
+    '''Docstring'''
+    """
+    )
+    node = parse(code)
+    with pytest.warns(DeprecationWarning) as records:
+        assert node.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        node.doc = None
+        assert len(records) == 1
+
+    # If 'doc' isn't passed to Module, ClassDef, FunctionDef,
+    # no DeprecationWarning should be raised
+    doc_node = nodes.Const("Docstring")
+    with warnings.catch_warnings():
+        # Modify warnings filter to raise error for DeprecationWarning
+        warnings.simplefilter("error", DeprecationWarning)
+        node_module = nodes.Module(name="MyModule")
+        node_module.postinit(body=[], doc_node=doc_node)
+        assert node_module.doc_node == doc_node
+        node_class = nodes.ClassDef(name="MyClass")
+        node_class.postinit(bases=[], body=[], decorators=[], doc_node=doc_node)
+        assert node_class.doc_node == doc_node
+        node_func = nodes.FunctionDef(name="MyFunction")
+        node_func.postinit(args=nodes.Arguments(), body=[], doc_node=doc_node)
+        assert node_func.doc_node == doc_node
+
+    # Test 'doc' attribute if only 'doc_node' is passed
+    with pytest.warns(DeprecationWarning) as records:
+        assert node_module.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        assert node_class.doc == "Docstring"
+        assert len(records) == 1
+    with pytest.warns(DeprecationWarning) as records:
+        assert node_func.doc == "Docstring"
+        assert len(records) == 1
+
+    # If 'doc' is passed to Module, ClassDef, FunctionDef,
+    # a DeprecationWarning should be raised
+    doc_node = nodes.Const("Docstring")
+    with pytest.warns(DeprecationWarning) as records:
+        node_module = nodes.Module(name="MyModule", doc="Docstring")
+        node_class = nodes.ClassDef(name="MyClass", doc="Docstring")
+        node_func = nodes.FunctionDef(name="MyFunction", doc="Docstring")
+        assert len(records) == 3
 
 
 if __name__ == "__main__":

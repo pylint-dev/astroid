@@ -8,7 +8,7 @@ on:
   pull_request: ~
 
 env:
-  CACHE_VERSION: 4
+  CACHE_VERSION: 5
   DEFAULT_PYTHON: 3.8
   PRE_COMMIT_CACHE: ~/.cache/pre-commit
 
@@ -16,18 +16,18 @@ jobs:
   prepare-base:
     name: Prepare base dependencies
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     outputs:
       python-key: ${{ steps.generate-python-key.outputs.key }}
       pre-commit-key: ${{ steps.generate-pre-commit-key.outputs.key }}
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3.0.0
         with:
           fetch-depth: 0
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         id: python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v3.0.0
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - name: Generate partial Python venv restore key
@@ -38,7 +38,7 @@ jobs:
           'requirements_test_brain.txt', 'requirements_test_pre_commit.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v3.0.0
         with:
           path: venv
           key: >-
@@ -61,7 +61,7 @@ jobs:
             hashFiles('.pre-commit-config.yaml') }}"
       - name: Restore pre-commit environment
         id: cache-precommit
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v3.0.0
         with:
           path: ${{ env.PRE_COMMIT_CACHE }}
           key: >-
@@ -77,19 +77,19 @@ jobs:
   formatting:
     name: Run pre-commit checks
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     needs: prepare-base
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3.0.0
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         id: python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v3.0.0
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v3.0.0
         with:
           path: venv
           key:
@@ -102,7 +102,7 @@ jobs:
           exit 1
       - name: Restore pre-commit environment
         id: cache-precommit
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v3.0.0
         with:
           path: ${{ env.PRE_COMMIT_CACHE }}
           key: ${{ runner.os }}-${{ needs.prepare-base.outputs.pre-commit-key }}
@@ -120,7 +120,7 @@ jobs:
   prepare-tests-linux:
     name: Prepare tests for Python ${{ matrix.python-version }} (Linux)
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9, "3.10"]
@@ -128,12 +128,12 @@ jobs:
       python-key: ${{ steps.generate-python-key.outputs.key }}
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3.0.0
         with:
           fetch-depth: 0
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v3.0.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Generate partial Python venv restore key
@@ -144,7 +144,7 @@ jobs:
           'requirements_test_brain.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v3.0.0
         with:
           path: venv
           key: >-
@@ -172,15 +172,15 @@ jobs:
         python-version: [3.6, 3.7, 3.8, 3.9, "3.10"]
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3.0.0
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v3.0.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v3.0.0
         with:
           path: venv
           key:
@@ -196,7 +196,7 @@ jobs:
           . venv/bin/activate
           pytest --cov --cov-report= tests/
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v2.2.3
+        uses: actions/upload-artifact@v3.0.0
         with:
           name: coverage-${{ matrix.python-version }}
           path: .coverage
@@ -213,15 +213,15 @@ jobs:
       COVERAGERC_FILE: .coveragerc
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3.0.0
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v3.0.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v3.0.0
         with:
           path: venv
           key:
@@ -233,7 +233,7 @@ jobs:
           echo "Failed to restore Python venv from cache"
           exit 1
       - name: Download all coverage artifacts
-        uses: actions/download-artifact@v2.0.9
+        uses: actions/download-artifact@v3.0.0
       - name: Combine coverage results
         run: |
           . venv/bin/activate
@@ -249,7 +249,8 @@ jobs:
   prepare-tests-windows:
     name: Prepare tests for Python ${{ matrix.python-version }} (Windows)
     runs-on: windows-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
+    needs: pytest-linux
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9, "3.10"]
@@ -257,12 +258,12 @@ jobs:
       python-key: ${{ steps.generate-python-key.outputs.key }}
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3.0.0
         with:
           fetch-depth: 0
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v3.0.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Generate partial Python venv restore key
@@ -273,7 +274,7 @@ jobs:
           'requirements_test_brain.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v3.0.0
         with:
           path: venv
           key: >-
@@ -305,15 +306,15 @@ jobs:
         # Workaround to set correct temp directory on Windows
         # https://github.com/actions/virtual-environments/issues/712
       - name: Check out code from GitHub
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3.0.0
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v3.0.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v3.0.0
         with:
           path: venv
           key:
@@ -332,20 +333,20 @@ jobs:
   prepare-tests-pypy:
     name: Prepare tests for Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     strategy:
       matrix:
-        python-version: ["pypy3"]
+        python-version: ["pypy-3.6", "pypy-3.7", "pypy-3.8"]
     outputs:
       python-key: ${{ steps.generate-python-key.outputs.key }}
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3.0.0
         with:
           fetch-depth: 0
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v3.0.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Generate partial Python venv restore key
@@ -355,14 +356,14 @@ jobs:
             hashFiles('setup.cfg', 'requirements_test_min.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v3.0.0
         with:
           path: venv
           key: >-
-            ${{ runner.os }}-${{ steps.python.outputs.python-version }}-${{
+            ${{ runner.os }}-${{ matrix.python-version }}-${{
             steps.generate-python-key.outputs.key }}
           restore-keys: |
-            ${{ runner.os }}-${{ steps.python.outputs.python-version }}-venv-${{ env.CACHE_VERSION }}-
+            ${{ runner.os }}-${{ matrix.python-version }}-venv-${{ env.CACHE_VERSION }}-
       - name: Create Python virtual environment
         if: steps.cache-venv.outputs.cache-hit != 'true'
         run: |
@@ -380,22 +381,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["pypy3"]
+        python-version: ["pypy-3.6", "pypy-3.7", "pypy-3.8"]
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3.0.0
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v3.0.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v3.0.0
         with:
           path: venv
           key:
-            ${{ runner.os }}-${{ steps.python.outputs.python-version }}-${{
+            ${{ runner.os }}-${{ matrix.python-version }}-${{
             needs.prepare-tests-pypy.outputs.python-key }}
       - name: Fail job if Python cache restore failed
         if: steps.cache-venv.outputs.cache-hit != 'true'

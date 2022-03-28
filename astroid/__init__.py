@@ -1,20 +1,6 @@
-# Copyright (c) 2006-2013, 2015 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2014 Google, Inc.
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016, 2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2016 Moises Lopez <moylop260@vauxoo.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2019 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2021-2022 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2022 tristanlatr <19967168+tristanlatr@users.noreply.github.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Python Abstract Syntax Tree New Generation
 
@@ -64,7 +50,36 @@ from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
 from astroid.const import PY310_PLUS, Context, Del, Load, Store
-from astroid.exceptions import *
+from astroid.exceptions import (
+    AstroidBuildingError,
+    AstroidBuildingException,
+    AstroidError,
+    AstroidImportError,
+    AstroidIndexError,
+    AstroidSyntaxError,
+    AstroidTypeError,
+    AstroidValueError,
+    AttributeInferenceError,
+    BinaryOperationError,
+    DuplicateBasesError,
+    InconsistentMroError,
+    InferenceError,
+    InferenceOverwriteError,
+    MroError,
+    NameInferenceError,
+    NoDefault,
+    NotFoundError,
+    OperationError,
+    ParentMissingError,
+    ResolveError,
+    StatementMissing,
+    SuperArgumentTypeError,
+    SuperError,
+    TooManyLevelsError,
+    UnaryOperationError,
+    UnresolvableName,
+    UseInferenceDefault,
+)
 from astroid.inference_tip import _inference_tip_cached, inference_tip
 from astroid.objects import ExceptionInstance
 

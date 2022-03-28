@@ -1,7 +1,7 @@
 attrs
 types-attrs
 nose
-numpy
+numpy>=1.17.0
 python-dateutil
 types-python-dateutil
 six

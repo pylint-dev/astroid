@@ -1,16 +1,7 @@
-# Copyright (c) 2016-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2017-2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2017 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2017 Calen Pennington <cale@edx.org>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+
 """
 Data object model, as per https://docs.python.org/3/reference/datamodel.html.
 
@@ -163,7 +154,10 @@ class ModuleModel(ObjectModel):
 
     @property
     def attr___doc__(self):
-        return node_classes.Const(value=self._instance.doc, parent=self._instance)
+        return node_classes.Const(
+            value=getattr(self._instance.doc_node, "value", None),
+            parent=self._instance,
+        )
 
     @property
     def attr___file__(self):
@@ -209,7 +203,10 @@ class FunctionModel(ObjectModel):
 
     @property
     def attr___doc__(self):
-        return node_classes.Const(value=self._instance.doc, parent=self._instance)
+        return node_classes.Const(
+            value=getattr(self._instance.doc_node, "value", None),
+            parent=self._instance,
+        )
 
     @property
     def attr___qualname__(self):
@@ -332,13 +329,18 @@ class FunctionModel(ObjectModel):
                 # class where it will be bound.
                 new_func = func.__class__(
                     name=func.name,
-                    doc=func.doc,
                     lineno=func.lineno,
                     col_offset=func.col_offset,
                     parent=func.parent,
                 )
                 # pylint: disable=no-member
-                new_func.postinit(func.args, func.body, func.decorators, func.returns)
+                new_func.postinit(
+                    func.args,
+                    func.body,
+                    func.decorators,
+                    func.returns,
+                    doc_node=func.doc_node,
+                )
 
                 # Build a proper bound method that points to our newly built function.
                 proxy = bases.UnboundMethod(new_func)
@@ -424,7 +426,7 @@ class ClassModel(ObjectModel):
 
     @property
     def attr___doc__(self):
-        return node_classes.Const(self._instance.doc)
+        return node_classes.Const(getattr(self._instance.doc_node, "value", None))
 
     @property
     def attr___mro__(self):
@@ -584,7 +586,8 @@ class GeneratorModel(FunctionModel):
     @property
     def attr___doc__(self):
         return node_classes.Const(
-            value=self._instance.parent.doc, parent=self._instance
+            value=getattr(self._instance.parent.doc_node, "value", None),
+            parent=self._instance,
         )
 
 
@@ -620,7 +623,7 @@ class InstanceModel(ObjectModel):
 
     @property
     def attr___doc__(self):
-        return node_classes.Const(self._instance.doc)
+        return node_classes.Const(getattr(self._instance.doc_node, "value", None))
 
     @property
     def attr___dict__(self):
