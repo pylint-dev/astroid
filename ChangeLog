@@ -22,7 +22,7 @@ Release date: TBA
 
   Closes #1410
 
-* Add ``pathlib`` brain to handle ``pathlib.PurePath.parents`` inference in Python 3.10+.
+* Add ``pathlib`` brain to handle ``pathlib.PurePath.parents`` inference.
 
   Closes PyCQA/pylint#5783
 
