@@ -40,11 +40,8 @@ def test_inference_parents_subscript_index() -> None:
     )
     inferred = name_node.inferred()
     assert len(inferred) == 1
-    if PY310_PLUS:
-        assert isinstance(inferred[0], bases.Instance)
-        assert inferred[0].qname() == "pathlib.Path"
-    else:
-        assert inferred[0] is Uninferable
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].qname() == "pathlib.Path"
 
 
 @pytest.mark.skipif(

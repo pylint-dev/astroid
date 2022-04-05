@@ -31,12 +31,8 @@ def infer_parents_subscript(
     yield from subscript_node.value.expr.infer(context=ctx)
 
 
-if PY310_PLUS:
-    # Before adding support for slices to the parents sequence in Python
-    # 3.10, the return value for ``pathlib._PathParents.__getitem__`` is
-    # always ``Uninferable``, so we only apply the brain tip since 3.10.
-    AstroidManager().register_transform(
-        nodes.Subscript,
-        inference_tip(infer_parents_subscript),
-        _looks_like_parents_subscript,
-    )
+AstroidManager().register_transform(
+    nodes.Subscript,
+    inference_tip(infer_parents_subscript),
+    _looks_like_parents_subscript,
+)
