@@ -12,6 +12,9 @@ What's New in astroid 2.11.3?
 =============================
 Release date: TBA
 
+* Add ``pathlib`` brain to handle ``pathlib.PurePath.parents`` inference.
+
+  Closes PyCQA/pylint#5783
 
 
 What's New in astroid 2.11.2?
@@ -54,10 +57,6 @@ Release date: 2022-03-12
   for Python 3.8+.
 
   Closes #1410
-
-* Add ``pathlib`` brain to handle ``pathlib.PurePath.parents`` inference.
-
-  Closes PyCQA/pylint#5783
 
 * Set ``end_lineno`` and ``end_col_offset`` attributes to ``None`` for all nodes
   with PyPy 3.8. PyPy 3.8 assigns these attributes inconsistently which could lead
