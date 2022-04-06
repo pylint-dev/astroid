@@ -1,28 +1,6 @@
-# Copyright (c) 2006-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 BioGeek <jeroen.vangoey@gmail.com>
-# Copyright (c) 2014 Google, Inc.
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2017 Iva Miholic <ivamiho@gmail.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2019 Raphael Gaschignard <raphael@makeleaps.com>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
-# Copyright (c) 2020 Anubhav <35621759+anubh-v@users.noreply.github.com>
-# Copyright (c) 2020 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 grayjk <grayjk@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-# Copyright (c) 2021 DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
-# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """astroid manager: avoid multiple astroid build of a same module when
 possible by providing a class responsible to get astroid representation
@@ -47,6 +25,7 @@ from astroid.modutils import (
     modpath_from_file,
 )
 from astroid.transforms import TransformVisitor
+from astroid.typing import AstroidManagerBrain
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -68,20 +47,28 @@ class AstroidManager:
     """
 
     name = "astroid loader"
-    brain = {}
+    brain: AstroidManagerBrain = {
+        "astroid_cache": {},
+        "_mod_file_cache": {},
+        "_failed_import_hooks": [],
+        "always_load_extensions": False,
+        "optimize_ast": False,
+        "extension_package_whitelist": set(),
+        "_transform": TransformVisitor(),
+    }
     max_inferable_values: ClassVar[int] = 100
 
     def __init__(self):
-        self.__dict__ = AstroidManager.brain
-        if not self.__dict__:
-            # NOTE: cache entries are added by the [re]builder
-            self.astroid_cache = {}
-            self._mod_file_cache = {}
-            self._failed_import_hooks = []
-            self.always_load_extensions = False
-            self.optimize_ast = False
-            self.extension_package_whitelist = set()
-            self._transform = TransformVisitor()
+        # NOTE: cache entries are added by the [re]builder
+        self.astroid_cache = AstroidManager.brain["astroid_cache"]
+        self._mod_file_cache = AstroidManager.brain["_mod_file_cache"]
+        self._failed_import_hooks = AstroidManager.brain["_failed_import_hooks"]
+        self.always_load_extensions = AstroidManager.brain["always_load_extensions"]
+        self.optimize_ast = AstroidManager.brain["optimize_ast"]
+        self.extension_package_whitelist = AstroidManager.brain[
+            "extension_package_whitelist"
+        ]
+        self._transform = AstroidManager.brain["_transform"]
 
     @property
     def register_transform(self):

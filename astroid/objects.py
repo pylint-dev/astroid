@@ -1,17 +1,6 @@
-# Copyright (c) 2015-2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2018 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Craig Franklin <craigjfranklin@gmail.com>
-# Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """
 Inference objects are a way to represent composite AST nodes,
@@ -23,7 +12,6 @@ leads to an inferred FrozenSet:
 """
 
 import sys
-from typing import TYPE_CHECKING
 
 from astroid import bases, decorators, util
 from astroid.exceptions import (
@@ -37,7 +25,7 @@ from astroid.nodes import node_classes, scoped_nodes
 
 objectmodel = util.lazy_import("interpreter.objectmodel")
 
-if sys.version_info >= (3, 8) or TYPE_CHECKING:
+if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
     from astroid.decorators import cachedproperty as cached_property

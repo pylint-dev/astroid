@@ -2,9 +2,42 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.11.0?
+What's New in astroid 2.12.0?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.11.3?
+=============================
+Release date: TBA
+
+
+
+What's New in astroid 2.11.2?
+=============================
+Release date: 2022-03-26
+
+* Avoided adding the name of a parent namedtuple to its child's locals.
+
+  Refs PyCQA/pylint#5982
+
+
+What's New in astroid 2.11.1?
+=============================
+Release date: 2022-03-22
+
+* Promoted ``getattr()`` from ``astroid.scoped_nodes.FunctionDef`` to its parent
+  ``astroid.scoped_nodes.Lambda``.
+
+* Fixed crash on direct inference via ``nodes.FunctionDef._infer``.
+
+  Closes #817
+
+
+What's New in astroid 2.11.0?
+=============================
+Release date: 2022-03-12
 
 * Add new (optional) ``doc_node`` attribute to ``nodes.Module``, ``nodes.ClassDef``,
   and ``nodes.FunctionDef``.
@@ -36,10 +69,7 @@ Release date: TBA
 
   Closes PyCQA/pylint#5871
 
-
-What's New in astroid 2.10.1?
-=============================
-Release date: TBA
+* Only pin ``wrapt`` on the major version.
 
 
 What's New in astroid 2.10.0?

@@ -1,3 +1,7 @@
+# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+
 import pprint
 import sys
 import typing
@@ -29,6 +33,7 @@ from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.utils import Position
+from astroid.typing import InferFn
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -38,11 +43,9 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-if sys.version_info >= (3, 8) or TYPE_CHECKING:
-    # pylint: disable-next=ungrouped-imports
+if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
-    # pylint: disable-next=ungrouped-imports
     from astroid.decorators import cachedproperty as cached_property
 
 # Types for 'NodeNG.nodes_of_class()'
@@ -84,7 +87,7 @@ class NodeNG:
     _other_other_fields: ClassVar[typing.Tuple[str, ...]] = ()
     """Attributes that contain AST-dependent fields."""
     # instance specific inference function infer(node, context)
-    _explicit_inference = None
+    _explicit_inference: Optional[InferFn] = None
 
     def __init__(
         self,
@@ -160,7 +163,7 @@ class NodeNG:
 
         if not context:
             # nodes_inferred?
-            yield from self._infer(context, **kwargs)
+            yield from self._infer(context=context, **kwargs)
             return
 
         key = (self, context.lookupname, context.callcontext, context.boundnode)
@@ -168,7 +171,7 @@ class NodeNG:
             yield from context.inferred[key]
             return
 
-        generator = self._infer(context, **kwargs)
+        generator = self._infer(context=context, **kwargs)
         results = []
 
         # Limit inference amount to help with performance issues with

@@ -1,44 +1,6 @@
-# Copyright (c) 2006-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2010 Daniel Harding <dharding@gmail.com>
-# Copyright (c) 2011, 2013-2015 Google, Inc.
-# Copyright (c) 2013-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2013 Phil Schaf <flying-sheep@web.de>
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016 Florian Bruhin <me@the-compiler.org>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Rene Zhang <rz99@cornell.edu>
-# Copyright (c) 2015 Philip Lorenz <philip@bithub.de>
-# Copyright (c) 2016-2017 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2017-2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2017-2018 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2017 David Euresti <david@dropbox.com>
-# Copyright (c) 2018-2019, 2021 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
-# Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2019 Peter de Blanc <peter@standard.ai>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
-# Copyright (c) 2020 Tim Martin <tim@asymptotic.co.uk>
-# Copyright (c) 2020 Ram Rachum <ram@rachum.com>
-# Copyright (c) 2021-2022 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021-2022 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
-# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
-# Copyright (c) 2021 Dmitry Shachnev <mitya57@users.noreply.github.com>
-# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
-# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
-# Copyright (c) 2021 doranid <ddandd@gmail.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-# Copyright (c) 2022 Jacob Walls <jacobtylerwalls@gmail.com>
-# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """
 This module contains the classes for "scoped" node, i.e. which are opening a
@@ -51,7 +13,7 @@ import os
 import sys
 import typing
 import warnings
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, TypeVar, Union, overload
+from typing import Dict, List, Optional, Set, TypeVar, Union, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
@@ -77,7 +39,7 @@ from astroid.exceptions import (
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
-from astroid.nodes import Arguments, Const, node_classes
+from astroid.nodes import Arguments, Const, NodeNG, node_classes
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
@@ -89,14 +51,11 @@ else:
 
 
 if sys.version_info >= (3, 8):
+    from functools import cached_property
     from typing import Literal
 else:
     from typing_extensions import Literal
 
-if sys.version_info >= (3, 8) or TYPE_CHECKING:
-    from functools import cached_property
-else:
-    # pylint: disable-next=ungrouped-imports
     from astroid.decorators import cachedproperty as cached_property
 
 
@@ -1112,6 +1071,8 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     _other_other_fields = ("locals",)
     name = "<lambda>"
     is_lambda = True
+    special_attributes = FunctionModel()
+    """The names of special attributes that this function has."""
 
     def implicit_parameters(self):
         return 0
@@ -1170,6 +1131,8 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 
         :type: list(NodeNG)
         """
+
+        self.instance_attrs: Dict[str, List[NodeNG]] = {}
 
         super().__init__(
             lineno=lineno,
@@ -1301,6 +1264,21 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         """
         return self
 
+    def getattr(
+        self, name: str, context: Optional[InferenceContext] = None
+    ) -> List[NodeNG]:
+        if not name:
+            raise AttributeInferenceError(target=self, attribute=name, context=context)
+
+        found_attrs = []
+        if name in self.instance_attrs:
+            found_attrs = self.instance_attrs[name]
+        if name in self.special_attributes:
+            found_attrs.append(self.special_attributes.lookup(name))
+        if found_attrs:
+            return found_attrs
+        raise AttributeInferenceError(target=self, attribute=name)
+
 
 class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     """Class representing an :class:`ast.FunctionDef`.
@@ -1319,11 +1297,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     returns = None
     decorators: Optional[node_classes.Decorators] = None
     """The decorators that are applied to this method or function."""
-    special_attributes = FunctionModel()
-    """The names of special attributes that this function has.
 
-    :type: objectmodel.FunctionModel
-    """
     is_function = True
     """Whether this node indicates a function.
 
@@ -1412,7 +1386,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             frame = parent.frame(future=True)
             frame.set_local(name, self)
 
-    # pylint: disable=arguments-differ; different than Lambdas
     def postinit(
         self,
         args: Arguments,
@@ -1516,9 +1489,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         return decorators
 
     @cached_property
-    def type(
-        self,
-    ):  # pylint: disable=invalid-overridden-method,too-many-return-statements
+    def type(self):  # pylint: disable=too-many-return-statements
         """The function type for this node.
 
         Possible values are: method, function, staticmethod, classmethod.
@@ -1620,22 +1591,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :rtype: tuple(int, int)
         """
         return self.fromlineno, self.tolineno
-
-    def getattr(self, name, context=None):
-        """this method doesn't look in the instance_attrs dictionary since it's
-        done by an Instance proxy at inference time.
-        """
-        if not name:
-            raise AttributeInferenceError(target=self, attribute=name, context=context)
-
-        found_attrs = []
-        if name in self.instance_attrs:
-            found_attrs = self.instance_attrs[name]
-        if name in self.special_attributes:
-            found_attrs.append(self.special_attributes.lookup(name))
-        if found_attrs:
-            return found_attrs
-        raise AttributeInferenceError(target=self, attribute=name)
 
     def igetattr(self, name, context=None):
         """Inferred getattr, which returns an iterator of inferred statements."""

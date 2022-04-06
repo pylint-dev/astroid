@@ -1,5 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Transform utilities (filters and decorator)"""
 
@@ -10,8 +11,8 @@ import wrapt
 from astroid import bases, util
 from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
 from astroid.nodes import NodeNG
+from astroid.typing import InferFn
 
-InferFn = typing.Callable[..., typing.Any]
 InferOptions = typing.Union[
     NodeNG, bases.Instance, bases.UnboundMethod, typing.Type[util.Uninferable]
 ]
