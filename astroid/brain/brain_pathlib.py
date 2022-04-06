@@ -5,7 +5,6 @@
 from typing import Iterator, Optional
 
 from astroid import bases, context, inference_tip, nodes
-from astroid.const import PY310_PLUS
 from astroid.exceptions import InferenceError, UseInferenceDefault
 from astroid.manager import AstroidManager
 
