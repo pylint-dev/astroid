@@ -367,8 +367,8 @@ class BaseContainer(
 class LookupMixIn:
     """Mixin to look up a name in the right scope."""
 
-    @lru_cache(maxsize=None)
-    def lookup(self, name):
+    @lru_cache(maxsize=None)  # pylint: disable=cache-max-size-none  # noqa
+    def lookup(self, name: str) -> typing.Tuple[str, typing.List[NodeNG]]:
         """Lookup where the given variable is assigned.
 
         The lookup starts from self's scope. If self is not a frame itself
@@ -376,12 +376,10 @@ class LookupMixIn:
         filtered to remove ignorable statements according to self's location.
 
         :param name: The name of the variable to find assignments for.
-        :type name: str
 
         :returns: The scope node and the list of assignments associated to the
             given name according to the scope where it has been found (locals,
             globals or builtin).
-        :rtype: tuple(str, list(NodeNG))
         """
         return self.scope().scope_lookup(self, name)
 
