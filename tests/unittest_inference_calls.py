@@ -522,8 +522,8 @@ def test_instance_method_inherited() -> None:
     A.method(B())  #@
     """
     )
-    expected = ["A", "A", "B", "B", "B"]
-    for node, expected in zip(nodes_, expected):
+    expected_names = ["A", "A", "B", "B", "B"]
+    for node, expected in zip(nodes_, expected_names):
         assert isinstance(node, nodes.NodeNG)
         inferred = node.inferred()
         assert len(inferred) == 1
@@ -553,8 +553,8 @@ def test_class_method_inherited() -> None:
     B.method()  #@
     """
     )
-    expected = ["A", "A", "B", "B"]
-    for node, expected in zip(nodes_, expected):
+    expected_names = ["A", "A", "B", "B"]
+    for node, expected in zip(nodes_, expected_names):
         assert isinstance(node, nodes.NodeNG)
         inferred = node.inferred()
         assert len(inferred) == 1
