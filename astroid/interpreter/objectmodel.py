@@ -25,8 +25,7 @@ import itertools
 import os
 import pprint
 import types
-from functools import lru_cache
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 import astroid
 from astroid import util
@@ -41,6 +40,7 @@ if TYPE_CHECKING:
     from astroid.objects import Property
 
 IMPL_PREFIX = "attr_"
+LEN_OF_IMPL_PREFIX = len(IMPL_PREFIX)
 
 
 def _dunder_dict(instance, attributes):
@@ -100,12 +100,9 @@ class ObjectModel:
     def __contains__(self, name):
         return name in self.attributes()
 
-    @lru_cache(maxsize=None)
-    def attributes(self):
+    def attributes(self) -> List[str]:
         """Get the attributes which are exported by this object model."""
-        return [
-            obj[len(IMPL_PREFIX) :] for obj in dir(self) if obj.startswith(IMPL_PREFIX)
-        ]
+        return [o[LEN_OF_IMPL_PREFIX:] for o in dir(self) if o.startswith(IMPL_PREFIX)]
 
     def lookup(self, name):
         """Look up the given *name* in the current model
@@ -113,7 +110,6 @@ class ObjectModel:
         It should return an AST or an interpreter object,
         but if the name is not found, then an AttributeInferenceError will be raised.
         """
-
         if name in self.attributes():
             return getattr(self, IMPL_PREFIX + name)
         raise AttributeInferenceError(target=self._instance, attribute=name)
