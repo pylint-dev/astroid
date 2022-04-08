@@ -34,9 +34,9 @@ def transform_pyqt_signal(node):
     """
     )
     signal_cls = module["pyqtSignal"]
-    node.instance_attrs["emit"] = signal_cls["emit"]
-    node.instance_attrs["disconnect"] = signal_cls["disconnect"]
-    node.instance_attrs["connect"] = signal_cls["connect"]
+    node.instance_attrs["emit"] = [signal_cls["emit"]]
+    node.instance_attrs["disconnect"] = [signal_cls["disconnect"]]
+    node.instance_attrs["connect"] = [signal_cls["connect"]]
 
 
 def transform_pyside_signal(node):
@@ -52,9 +52,9 @@ def transform_pyside_signal(node):
     """
     )
     signal_cls = module["NotPySideSignal"]
-    node.instance_attrs["connect"] = signal_cls["connect"]
-    node.instance_attrs["disconnect"] = signal_cls["disconnect"]
-    node.instance_attrs["emit"] = signal_cls["emit"]
+    node.instance_attrs["connect"] = [signal_cls["connect"]]
+    node.instance_attrs["disconnect"] = [signal_cls["disconnect"]]
+    node.instance_attrs["emit"] = [signal_cls["emit"]]
 
 
 def pyqt4_qtcore_transform():
