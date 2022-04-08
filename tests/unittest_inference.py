@@ -838,13 +838,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     def test_for_dict(self) -> None:
         code = """
             for a, b in {1: 2, 3: 4}.items():
-                print (a)
-                print (b)
+                print(a)
+                print(b)
 
             for c, (d, e) in {1: (2, 3), 4: (5, 6)}.items():
-                print (c)
-                print (d)
-                print (e)
+                print(c)
+                print(d)
+                print(e)
 
             print([(f, g, h) for f, (g, h) in {1: (2, 3), 4: (5, 6)}.items()])
         """
