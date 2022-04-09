@@ -31,8 +31,8 @@ class TestBrainQt:
         AstroidManager.brain["extension_package_whitelist"] = {"PyQt6.QtPrintSupport"}
         node = extract_node(src)
         attribute_node = node.inferred()[0]
-        # scoped_nodes.Lambda.instance_attrs is typed as Dict[str, List[NodeNG]]
         if attribute_node is Uninferable:
             pytest.skip("PyQt6 C bindings may not be installed?")
         assert isinstance(attribute_node, UnboundMethod)
+        # scoped_nodes.Lambda.instance_attrs is typed as Dict[str, List[NodeNG]]
         assert isinstance(attribute_node.instance_attrs["connect"][0], FunctionDef)
