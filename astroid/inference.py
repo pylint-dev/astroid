@@ -26,6 +26,7 @@ from typing import (
 import wrapt
 
 from astroid import bases, decorators, helpers, nodes, protocols, util
+from astroid.cache import LRUCache
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -1037,19 +1038,19 @@ def infer_ifexp(self, context=None):
 nodes.IfExp._infer = infer_ifexp  # type: ignore[assignment]
 
 
-# pylint: disable=dangerous-default-value
+_GENERATOR_CACHE: LRUCache = LRUCache()
+
+
 @wrapt.decorator
-def _cached_generator(
-    func, instance: _FunctionDefT, args, kwargs, _cache={}  # noqa: B006
-):
+def _cached_generator(func, instance: _FunctionDefT, args, kwargs):
     node = instance
     try:
-        return iter(_cache[func, id(node)])
+        return iter(_GENERATOR_CACHE[func, id(node)])
     except KeyError:
         result = func(*args, **kwargs)
         # Need to keep an iterator around
         original, copy = itertools.tee(result)
-        _cache[func, id(node)] = list(copy)
+        _GENERATOR_CACHE[func, id(node)] = list(copy)
         return original
 
 

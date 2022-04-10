@@ -83,37 +83,6 @@ def lru_cache_astroid(arg: typing.Optional[F] = None) -> F:
     return typing.cast(F, decorator)
 
 
-_GENERATOR_CACHE: LRUCache[typing.Any, typing.Any] = LRUCache()
-
-
-def cached_generator(arg: typing.Optional[F] = None) -> F:
-    """A decorator to cache the elements returned by a generator. The input
-    generator is consumed and cached as a list.
-    """
-
-    @wrapt.decorator  # type: ignore[misc] # wrapt.decorator is untyped
-    def decorator(
-        func: F,
-        instance: typing.Any,
-        args: typing.Tuple[typing.Any, ...],
-        kwargs: typing.Dict[str, typing.Any],
-    ) -> typing.Any:
-        key = func, args[0]
-
-        if key in _GENERATOR_CACHE:
-            result = _GENERATOR_CACHE[key]
-        else:
-            result = _GENERATOR_CACHE[key] = list(func(*args, **kwargs))
-
-        return iter(result)
-
-    if callable(arg):
-        # pylint: disable=no-value-for-parameter
-        return typing.cast(F, decorator(arg))
-
-    return typing.cast(F, decorator)
-
-
 def clear_caches() -> None:
     """Clears all caches."""
     LRUCache.clear_all()
