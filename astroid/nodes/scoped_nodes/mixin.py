@@ -112,7 +112,6 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
         """The first node the defines the given local.
 
         :param item: The name of the locally defined object.
-        :type item: str
 
         :raises KeyError: If the name is not defined.
         """
