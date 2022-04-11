@@ -108,7 +108,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
             self._append_node(child_node)
         self.set_local(name or child_node.name, child_node)
 
-    def __getitem__(self, item) -> "nodes.NodeNG":
+    def __getitem__(self, item: str) -> "nodes.NodeNG":
         """The first node the defines the given local.
 
         :param item: The name of the locally defined object.

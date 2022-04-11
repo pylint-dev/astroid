@@ -21,7 +21,7 @@ def _looks_like_signal(node, signal_name="pyqtSignal"):
     return False
 
 
-def transform_pyqt_signal(node: nodes.FunctionDef):
+def transform_pyqt_signal(node: nodes.FunctionDef) -> None:
     module = parse(
         """
     class pyqtSignal(object):
@@ -39,7 +39,7 @@ def transform_pyqt_signal(node: nodes.FunctionDef):
     node.instance_attrs["connect"] = [signal_cls["connect"]]
 
 
-def transform_pyside_signal(node: nodes.FunctionDef):
+def transform_pyside_signal(node: nodes.FunctionDef) -> None:
     module = parse(
         """
     class NotPySideSignal(object):
