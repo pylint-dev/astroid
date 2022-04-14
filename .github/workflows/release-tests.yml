@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v3.0.0
       - name: Set up Python
         id: python
-        uses: actions/setup-python@v3.1.0
+        uses: actions/setup-python@v3.1.2
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - name: Create Python virtual environment with virtualenv==15.1.0
@@ -31,3 +31,31 @@ jobs:
           . venv2\scripts\activate
           echo "import distutils.util  # pylint: disable=unused-import" > test.py
           pylint test.py
+
+  additional-dependencies-linux-tests:
+    name: Regression tests w/ additional dependencies (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v3.0.0
+      - name: Set up Python
+        id: python
+        uses: actions/setup-python@v3.1.0
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+      - name: Install Qt
+        run: |
+          sudo apt-get install build-essential libgl1-mesa-dev
+      - name: Create Python virtual environment
+        run: |
+          python -m venv venv
+          . venv/bin/activate
+          python -m pip install -U pip setuptools wheel
+          pip install -U -r requirements_test.txt -r requirements_test_brain.txt
+          pip install -e .
+      - name: Run brain_qt tests
+        # Regression test added in https://github.com/PyCQA/astroid/pull/1505
+        run: |
+          . venv/bin/activate
+          pytest tests/unittest_brain_qt.py
