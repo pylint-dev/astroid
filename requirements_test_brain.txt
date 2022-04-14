@@ -3,6 +3,7 @@ types-attrs
 nose
 numpy>=1.17.0
 python-dateutil
+PyQt6
 types-python-dateutil
 six
 types-six

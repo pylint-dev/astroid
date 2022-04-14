@@ -12,6 +12,9 @@ What's New in astroid 2.11.3?
 =============================
 Release date: TBA
 
+* Fixed an error in the Qt brain when building ``instance_attrs``.
+
+  Closes PyCQA/pylint#6221
 
 
 What's New in astroid 2.11.2?
