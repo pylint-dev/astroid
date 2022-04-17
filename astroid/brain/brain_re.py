@@ -18,7 +18,7 @@ def _re_transform() -> nodes.Module:
         import_compiler = "import re._compiler as _compiler"
     # In 3.6-3.10 all flags come from sre_compile
     else:
-        import_compiler = "import sre_compiler as _compiler"
+        import_compiler = "import sre_compile as _compiler"
     return parse(
         f"""
     {import_compiler}
