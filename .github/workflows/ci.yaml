@@ -179,6 +179,7 @@ jobs:
     name: tests / run / ${{ matrix.python-version }} / Windows
     runs-on: windows-latest
     timeout-minutes: 20
+    if: ${{ always() }}
     needs: tests-linux
     strategy:
       fail-fast: true
