@@ -5,6 +5,7 @@
 import abc
 import collections
 import enum
+import importlib
 import importlib.machinery
 import importlib.util
 import os
@@ -12,6 +13,7 @@ import sys
 import zipimport
 from functools import lru_cache
 from pathlib import Path
+from typing import List, Optional
 
 from . import util
 
@@ -60,7 +62,13 @@ class Finder:
         self._path = path or sys.path
 
     @abc.abstractmethod
-    def find_module(self, modname, module_parts, processed, submodule_path):
+    def find_module(
+        self,
+        modname: str,
+        module_parts: List[str],
+        processed: List[str],
+        submodule_path: Optional[List[str]],
+    ) -> Optional[ModuleSpec]:
         """Find the given module
 
         Each finder is responsible for each protocol of finding, as long as
@@ -91,9 +99,13 @@ class ImportlibFinder(Finder):
         + [(s, ModuleType.PY_COMPILED) for s in importlib.machinery.BYTECODE_SUFFIXES]
     )
 
-    def find_module(self, modname, module_parts, processed, submodule_path):
-        if not isinstance(modname, str):
-            raise TypeError(f"'modname' must be a str, not {type(modname)}")
+    def find_module(
+        self,
+        modname: str,
+        module_parts: List[str],
+        processed: List[str],
+        submodule_path: Optional[List[str]],
+    ) -> Optional[ModuleSpec]:
         if submodule_path is not None:
             submodule_path = list(submodule_path)
         else:
@@ -109,7 +121,7 @@ class ImportlibFinder(Finder):
                     if spec.loader is importlib.machinery.FrozenImporter:
                         return ModuleSpec(
                             name=modname,
-                            location=None,
+                            location=getattr(spec.loader_state, "filename", None),
                             module_type=ModuleType.PY_FROZEN,
                         )
             except ValueError:

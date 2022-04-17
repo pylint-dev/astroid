@@ -7,6 +7,7 @@ possible by providing a class responsible to get astroid representation
 from various source and using a cache of built modules)
 """
 
+
 import os
 import types
 import zipimport
@@ -188,7 +189,11 @@ class AstroidManager:
                     modname, found_spec.submodule_search_locations
                 )
             elif found_spec.type == spec.ModuleType.PY_FROZEN:
-                return self._build_stub_module(modname)
+                if found_spec.location is None:
+                    return self._build_stub_module(modname)
+                # For stdlib frozen modules we can determine the location and
+                # can therefore create a module from the source file
+                return self.ast_from_file(found_spec.location, modname, fallback=False)
 
             if found_spec.location is None:
                 raise AstroidImportError(
