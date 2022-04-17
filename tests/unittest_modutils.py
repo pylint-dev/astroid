@@ -57,7 +57,7 @@ class ModuleFileTest(unittest.TestCase):
 
 
 class LoadModuleFromNameTest(unittest.TestCase):
-    """load a python module from it's name"""
+    """load a python module from its name"""
 
     def test_known_values_load_module_from_name_1(self) -> None:
         self.assertEqual(modutils.load_module_from_name("sys"), sys)
