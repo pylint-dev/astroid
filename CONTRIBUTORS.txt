@@ -38,13 +38,14 @@ Contributors
 - Julien Jehannet <julien.jehannet@logilab.fr>
 - Calen Pennington <calen.pennington@gmail.com>
 - Phil Schaf <flying-sheep@web.de>
+- Hugo van Kemenade <hugovk@users.noreply.github.com>
 - Alex Hall <alex.mojaki@gmail.com>
 - Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Raphael Gaschignard <raphael@makeleaps.com>
 - Radosław Ganczarek <radoslaw@ganczarek.in>
+- Paligot Gérard <androwiiid@gmail.com>
 - Ioana Tagirta <ioana.tagirta@gmail.com>
-- Hugo <hugovk@users.noreply.github.com>
 - Derek Gustafson <degustaf@gmail.com>
 - David Shea <dshea@redhat.com>
 - Daniel Harding <dharding@gmail.com>
@@ -55,7 +56,6 @@ Contributors
 - Marien Zwart <marienz@gentoo.org>
 - FELD Boris <lothiraldan@gmail.com>
 - Enji Cooper <yaneurabeya@gmail.com>
-- AndroWiiid <androwiiid@gmail.com>
 - doranid <ddandd@gmail.com>
 - brendanator <brendan.maginnis@gmail.com>
 - Tomas Gavenciak <gavento@ucw.cz>
@@ -105,7 +105,6 @@ Contributors
 - Philipp Hörist <philipp@hoerist.com>
 - Peter de Blanc <peter@standard.ai>
 - Peter Talley <peterctalley@gmail.com>
-- Paligot Gérard <androwiiid@gmail.com>
 - Ovidiu Sabou <ovidiu@sabou.org>
 - Nicolas Noirbent <nicolas@noirbent.fr>
 - Neil Girdhar <mistersheik@gmail.com>
@@ -127,7 +126,6 @@ Contributors
 - Jakub Wilk <jwilk@jwilk.net>
 - Iva Miholic <ivamiho@gmail.com>
 - Ionel Maries Cristian <contact@ionelmc.ro>
-- Hugo van Kemenade <hugovk@users.noreply.github.com>
 - HoverHell <hoverhell@gmail.com>
 - HQupgradeHQ <18361586+HQupgradeHQ@users.noreply.github.com>
 - Grygorii Iermolenko <gyermolenko@gmail.com>

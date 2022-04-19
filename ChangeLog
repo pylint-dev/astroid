@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.11.3?
+What's New in astroid 2.11.4?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.11.3?
+=============================
+Release date: 2022-04-19
 
 * Fixed an error in the Qt brain when building ``instance_attrs``.
 
