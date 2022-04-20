@@ -366,7 +366,7 @@ class BaseContainer(
 class LookupMixIn:
     """Mixin to look up a name in the right scope."""
 
-    @lru_cache()  # pylint: disable=cache-max-size-none  # noqa
+    @lru_cache()  # noqa
     def lookup(self, name: str) -> typing.Tuple[str, typing.List[NodeNG]]:
         """Lookup where the given variable is assigned.
 

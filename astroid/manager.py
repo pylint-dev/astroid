@@ -59,8 +59,7 @@ class AstroidManager:
     }
     max_inferable_values: ClassVar[int] = 100
 
-    def __init__(self):
-        # pylint: disable=import-outside-top-level
+    def __init__(self):  # pylint: disable=import-outside-top-level
         from astroid.interpreter.objectmodel import ObjectModel
         from astroid.nodes.node_classes import LookupMixIn
 
