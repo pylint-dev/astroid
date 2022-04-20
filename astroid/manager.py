@@ -369,9 +369,9 @@ class AstroidManager:
 
     def clear_cache(self):
         """Clear the underlying caches. Also bootstraps the builtins module."""
-        from astroid.inference_tip import (
+        from astroid.inference_tip import (  # pylint: disable=import-outside-toplevel
             clear_inference_tip_cache,
-        )  # pylint: disable=import-outside-toplevel
+        )
 
         clear_inference_tip_cache()
 
