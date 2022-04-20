@@ -318,7 +318,7 @@ class BorgAstroidManagerTC(unittest.TestCase):
         self.assertIs(built, second_built)
 
 
-class ClearCacheTest(unittest.TestCase):
+class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
     def test_clear_cache(self) -> None:
         # Get a baseline for the size of the cache after simply calling bootstrap()
         baseline_cache_infos = [lru.cache_info() for lru in astroid.MANAGER._lru_caches]
