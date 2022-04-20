@@ -17,7 +17,7 @@ from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec
 from astroid.modutils import (
     NoSourceFile,
-    _cache_normalize_path,
+    _cache_normalize_path_,
     file_info_from_modpath,
     get_source_file,
     is_module_name_part_of_extension_package_whitelist,
@@ -66,7 +66,7 @@ class AstroidManager:
 
         self._lru_caches: List[_lru_cache_wrapper] = [
             LookupMixIn.lookup,
-            _cache_normalize_path,
+            _cache_normalize_path_,
             ObjectModel.attributes,
         ]
 
