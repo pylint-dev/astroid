@@ -10,6 +10,7 @@ from various source and using a cache of built modules)
 import os
 import types
 import zipimport
+from functools import _lru_cache_wrapper
 from typing import TYPE_CHECKING, ClassVar, List, Optional
 
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
@@ -63,7 +64,7 @@ class AstroidManager:
         from astroid.interpreter.objectmodel import ObjectModel
         from astroid.nodes.node_classes import LookupMixIn
 
-        self._lru_caches = [
+        self._lru_caches: List[_lru_cache_wrapper] = [
             LookupMixIn.lookup,
             _cache_normalize_path,
             ObjectModel.attributes,
@@ -377,7 +378,6 @@ class AstroidManager:
         self.astroid_cache.clear()
 
         for lru_cache in self._lru_caches:
-            assert hasattr(lru_cache, "cache_clear"), lru_cache
             lru_cache.cache_clear()
 
         self.bootstrap()
