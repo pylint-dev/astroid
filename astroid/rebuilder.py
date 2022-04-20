@@ -6,13 +6,13 @@
 order to get a single Astroid representation
 """
 
+import ast
 import sys
 import token
 import tokenize
 from io import StringIO
 from tokenize import TokenInfo, generate_tokens
 from typing import (
-    TYPE_CHECKING,
     Callable,
     Dict,
     Generator,
@@ -38,9 +38,6 @@ if sys.version_info >= (3, 8):
     from typing import Final
 else:
     from typing_extensions import Final
-
-if TYPE_CHECKING:
-    import ast
 
 
 REDIRECT: Final[Dict[str, str]] = {
@@ -1185,9 +1182,15 @@ class TreeRebuilder:
         self, cls: Type[T_For], node: Union["ast.For", "ast.AsyncFor"], parent: NodeNG
     ) -> T_For:
         """visit a For node by returning a fresh instance of it"""
+        col_offset = node.col_offset
+        if isinstance(node, ast.AsyncFor) and IS_PYPY and not PY39_PLUS:
+            if self._data:
+                # pylint: disable-next=unsubscriptable-object
+                col_offset = self._data[node.lineno - 1].index("async")
+
         newnode = cls(
             lineno=node.lineno,
-            col_offset=node.col_offset,
+            col_offset=col_offset,
             # end_lineno and end_col_offset added in 3.8
             end_lineno=getattr(node, "end_lineno", None),
             end_col_offset=getattr(node, "end_col_offset", None),
@@ -1903,9 +1906,15 @@ class TreeRebuilder:
         node: Union["ast.With", "ast.AsyncWith"],
         parent: NodeNG,
     ) -> T_With:
+        col_offset = node.col_offset
+        if isinstance(node, ast.AsyncWith) and IS_PYPY and not PY39_PLUS:
+            if self._data:
+                # pylint: disable-next=unsubscriptable-object
+                col_offset = self._data[node.lineno - 1].index("async")
+
         newnode = cls(
             lineno=node.lineno,
-            col_offset=node.col_offset,
+            col_offset=col_offset,
             # end_lineno and end_col_offset added in 3.8
             end_lineno=getattr(node, "end_lineno", None),
             end_col_offset=getattr(node, "end_col_offset", None),

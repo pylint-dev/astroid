@@ -1083,11 +1083,22 @@ class Python35AsyncTest(unittest.TestCase):
                 pass
         """
         )
-        self.assertIsInstance(async_def, nodes.AsyncFunctionDef)
-        self.assertIsInstance(async_for, nodes.AsyncFor)
-        self.assertIsInstance(async_with, nodes.AsyncWith)
-        self.assertIsInstance(await_node, nodes.Await)
-        self.assertIsInstance(await_node.value, nodes.Name)
+        assert isinstance(async_def, nodes.AsyncFunctionDef)
+        assert async_def.lineno == 2
+        assert async_def.col_offset == 0
+
+        assert isinstance(async_for, nodes.AsyncFor)
+        assert async_for.lineno == 3
+        assert async_for.col_offset == 4
+
+        assert isinstance(async_with, nodes.AsyncWith)
+        assert async_with.lineno == 5
+        assert async_with.col_offset == 4
+
+        assert isinstance(await_node, nodes.Await)
+        assert isinstance(await_node.value, nodes.Name)
+        assert await_node.lineno == 4
+        assert await_node.col_offset == 15
 
     def _test_await_async_as_string(self, code: str) -> None:
         ast_node = parse(code)
