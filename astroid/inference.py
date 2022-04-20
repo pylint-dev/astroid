@@ -1047,8 +1047,9 @@ def infer_functiondef(
     # of the wrapping frame. This means that every time we infer a property, the locals
     # are mutated with a new instance of the property. To avoid this, we detect this
     # scenario and avoid passing the `parent` argument to the constructor.
-    property_already_in_parent_locals = self.name in self.parent.locals and any(
-        isinstance(val, objects.Property) for val in self.parent.locals[self.name]
+    parent_frame = self.parent.frame(future=True)
+    property_already_in_parent_locals = self.name in parent_frame.locals and any(
+        isinstance(val, objects.Property) for val in parent_frame.locals[self.name]
     )
 
     prop_func = objects.Property(
