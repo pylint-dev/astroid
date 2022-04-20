@@ -24,7 +24,7 @@ import sysconfig
 import types
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Set
+from typing import Set
 
 from astroid.const import IS_JYTHON, IS_PYPY
 from astroid.interpreter._import import spec, util
@@ -137,9 +137,6 @@ def _handle_blacklist(blacklist, dirnames, filenames):
             dirnames.remove(norecurs)
         elif norecurs in filenames:
             filenames.remove(norecurs)
-
-
-_NORM_PATH_CACHE: Dict[str, str] = {}
 
 
 @lru_cache()

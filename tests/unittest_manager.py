@@ -16,7 +16,9 @@ import astroid
 from astroid import manager, test_utils
 from astroid.const import IS_JYTHON
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
+from astroid.interpreter.objectmodel import ObjectModel
 from astroid.modutils import is_standard_module
+from astroid.nodes.scoped_nodes import ClassDef
 
 from . import resources
 
@@ -322,34 +324,33 @@ class ClearCacheTest(unittest.TestCase):
         baseline_cache_infos = [lru.cache_info() for lru in astroid.MANAGER._lru_caches]
 
         # Generate some hits and misses
-        # Exercise LookupMixIn.lookup()
-        astroid.nodes.scoped_nodes.ClassDef().lookup("garbage")
-        # Exercise _cache_normalize_path()
+        ClassDef().lookup("garbage")
         is_standard_module("unittest", std_path=["garbage_path"])
-        # Exercise ObjectModel.attributes()
-        astroid.MANAGER.bootstrap()
+        ObjectModel().attributes()
 
         # Did the hits or misses actually happen?
-        for lru_cache, baseline_cache in zip(
-            astroid.MANAGER._lru_caches, baseline_cache_infos
+        incremented_cache_infos = [
+            lru.cache_info() for lru in astroid.MANAGER._lru_caches
+        ]
+        for incremented_cache, baseline_cache in zip(
+            incremented_cache_infos, baseline_cache_infos
         ):
-            with self.subTest(lru_cache=lru_cache):
-                cache_info = lru_cache.cache_info()
-                self.assertTrue(
-                    cache_info.hits > baseline_cache.hits
-                    or cache_info.misses > baseline_cache.misses
+            with self.subTest(incremented_cache=incremented_cache):
+                self.assertGreater(
+                    incremented_cache.hits + incremented_cache.misses,
+                    baseline_cache.hits + baseline_cache.misses,
                 )
 
         astroid.MANAGER.clear_cache()  # also calls bootstrap()
 
         # The cache sizes are now as low or lower than the original baseline
-        for lru_cache, baseline_cache in zip(
-            astroid.MANAGER._lru_caches, baseline_cache_infos
+        cleared_cache_infos = [lru.cache_info() for lru in astroid.MANAGER._lru_caches]
+        for cleared_cache, baseline_cache in zip(
+            cleared_cache_infos, baseline_cache_infos
         ):
-            with self.subTest(lru_cache=lru_cache):
-                cache_info = lru_cache.cache_info()
+            with self.subTest(cleared_cache=cleared_cache):
                 # less equal because the "baseline" might have had multiple calls to bootstrap()
-                self.assertLessEqual(cache_info.currsize, baseline_cache.currsize)
+                self.assertLessEqual(cleared_cache.currsize, baseline_cache.currsize)
 
 
 if __name__ == "__main__":
