@@ -23,8 +23,6 @@ from typing import (
     Union,
 )
 
-import wrapt
-
 from astroid import bases, decorators, helpers, nodes, protocols, util
 from astroid.context import (
     CallContext,
@@ -1037,28 +1035,6 @@ def infer_ifexp(self, context=None):
 nodes.IfExp._infer = infer_ifexp  # type: ignore[assignment]
 
 
-# pylint: disable=dangerous-default-value
-@wrapt.decorator
-def _cached_generator(
-    func, instance: _FunctionDefT, args, kwargs, _cache={}  # noqa: B006
-):
-    node = instance
-    try:
-        return iter(_cache[func, id(node)])
-    except KeyError:
-        result = func(*args, **kwargs)
-        # Need to keep an iterator around
-        original, copy = itertools.tee(result)
-        _cache[func, id(node)] = list(copy)
-        return original
-
-
-# When inferring a property, we instantiate a new `objects.Property` object,
-# which in turn, because it inherits from `FunctionDef`, sets itself in the locals
-# of the wrapping frame. This means that every time we infer a property, the locals
-# are mutated with a new instance of the property. This is why we cache the result
-# of the function's inference.
-@_cached_generator
 def infer_functiondef(
     self: _FunctionDefT, context: Optional[InferenceContext] = None
 ) -> Generator[Union["Property", _FunctionDefT], None, InferenceErrorInfo]:
@@ -1066,13 +1042,24 @@ def infer_functiondef(
         yield self
         return InferenceErrorInfo(node=self, context=context)
 
+    # When inferring a property, we instantiate a new `objects.Property` object,
+    # which in turn, because it inherits from `FunctionDef`, sets itself in the locals
+    # of the wrapping frame. This means that every time we infer a property, the locals
+    # are mutated with a new instance of the property. To avoid this, we detect this
+    # scenario and avoid passing the `parent` argument to the constructor.
+    property_already_in_parent_locals = self.name in self.parent.locals and any(
+        isinstance(val, objects.Property) for val in self.parent.locals[self.name]
+    )
+
     prop_func = objects.Property(
         function=self,
         name=self.name,
         lineno=self.lineno,
-        parent=self.parent,
+        parent=self.parent if not property_already_in_parent_locals else None,
         col_offset=self.col_offset,
     )
+    if property_already_in_parent_locals:
+        prop_func.parent = self.parent
     prop_func.postinit(body=[], args=self.args, doc_node=self.doc_node)
     yield prop_func
     return InferenceErrorInfo(node=self, context=context)

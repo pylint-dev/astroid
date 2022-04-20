@@ -16,6 +16,7 @@ from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec
 from astroid.modutils import (
     NoSourceFile,
+    _cache_normalize_path,
     file_info_from_modpath,
     get_source_file,
     is_module_name_part_of_extension_package_whitelist,
@@ -59,6 +60,16 @@ class AstroidManager:
     max_inferable_values: ClassVar[int] = 100
 
     def __init__(self):
+        # pylint: disable=import-outside-top-level
+        from astroid.interpreter.objectmodel import ObjectModel
+        from astroid.nodes.node_classes import LookupMixIn
+
+        self._lru_caches = [
+            LookupMixIn.lookup,
+            _cache_normalize_path,
+            ObjectModel.attributes,
+        ]
+
         # NOTE: cache entries are added by the [re]builder
         self.astroid_cache = AstroidManager.brain["astroid_cache"]
         self._mod_file_cache = AstroidManager.brain["_mod_file_cache"]
@@ -357,6 +368,17 @@ class AstroidManager:
         raw_building._astroid_bootstrapping()
 
     def clear_cache(self):
-        """Clear the underlying cache. Also bootstraps the builtins module."""
+        """Clear the underlying caches. Also bootstraps the builtins module."""
+        from astroid.inference_tip import (
+            clear_inference_tip_cache,
+        )  # pylint: disable=import-outside-toplevel
+
+        clear_inference_tip_cache()
+
         self.astroid_cache.clear()
+
+        for lru_cache in self._lru_caches:
+            assert hasattr(lru_cache, "cache_clear"), lru_cache
+            lru_cache.cache_clear()
+
         self.bootstrap()
