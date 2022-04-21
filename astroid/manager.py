@@ -10,7 +10,6 @@ from various source and using a cache of built modules)
 import os
 import types
 import zipimport
-from functools import _lru_cache_wrapper
 from typing import TYPE_CHECKING, ClassVar, List, Optional
 
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
@@ -61,16 +60,6 @@ class AstroidManager:
     max_inferable_values: ClassVar[int] = 100
 
     def __init__(self):
-        # pylint: disable=import-outside-toplevel
-        from astroid.interpreter.objectmodel import ObjectModel
-        from astroid.nodes.node_classes import LookupMixIn
-
-        self._lru_caches: List[_lru_cache_wrapper] = [
-            LookupMixIn.lookup,
-            _cache_normalize_path_,
-            ObjectModel.attributes,
-        ]
-
         # NOTE: cache entries are added by the [re]builder
         self.astroid_cache = AstroidManager.brain["astroid_cache"]
         self._mod_file_cache = AstroidManager.brain["_mod_file_cache"]
@@ -370,15 +359,20 @@ class AstroidManager:
 
     def clear_cache(self):
         """Clear the underlying caches. Also bootstraps the builtins module."""
-        from astroid.inference_tip import (  # pylint: disable=import-outside-toplevel
-            clear_inference_tip_cache,
-        )
+        # pylint: disable=import-outside-toplevel
+        from astroid.inference_tip import clear_inference_tip_cache
+        from astroid.interpreter.objectmodel import ObjectModel
+        from astroid.nodes.node_classes import LookupMixIn
 
         clear_inference_tip_cache()
 
         self.astroid_cache.clear()
 
-        for lru_cache in self._lru_caches:
+        for lru_cache in [
+            LookupMixIn.lookup,
+            _cache_normalize_path_,
+            ObjectModel.attributes,
+        ]:
             lru_cache.cache_clear()
 
         self.bootstrap()

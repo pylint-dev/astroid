@@ -16,7 +16,6 @@ import astroid
 from astroid import manager, test_utils
 from astroid.const import IS_JYTHON
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
-from astroid.interpreter.objectmodel import ObjectModel
 from astroid.modutils import is_standard_module
 from astroid.nodes.scoped_nodes import ClassDef
 
@@ -320,8 +319,14 @@ class BorgAstroidManagerTC(unittest.TestCase):
 
 class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
     def test_clear_cache(self) -> None:
+        from astroid.interpreter.objectmodel import ObjectModel
+        from astroid.modutils import _cache_normalize_path_
+        from astroid.nodes.node_classes import LookupMixIn
+
+        lrus = [LookupMixIn.lookup, _cache_normalize_path_, ObjectModel.attributes]
+
         # Get a baseline for the size of the cache after simply calling bootstrap()
-        baseline_cache_infos = [lru.cache_info() for lru in astroid.MANAGER._lru_caches]
+        baseline_cache_infos = [lru.cache_info() for lru in lrus]
 
         # Generate some hits and misses
         ClassDef().lookup("garbage")
@@ -329,9 +334,7 @@ class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
         ObjectModel().attributes()
 
         # Did the hits or misses actually happen?
-        incremented_cache_infos = [
-            lru.cache_info() for lru in astroid.MANAGER._lru_caches
-        ]
+        incremented_cache_infos = [lru.cache_info() for lru in lrus]
         for incremented_cache, baseline_cache in zip(
             incremented_cache_infos, baseline_cache_infos
         ):
@@ -344,7 +347,7 @@ class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
         astroid.MANAGER.clear_cache()  # also calls bootstrap()
 
         # The cache sizes are now as low or lower than the original baseline
-        cleared_cache_infos = [lru.cache_info() for lru in astroid.MANAGER._lru_caches]
+        cleared_cache_infos = [lru.cache_info() for lru in lrus]
         for cleared_cache, baseline_cache in zip(
             cleared_cache_infos, baseline_cache_infos
         ):
