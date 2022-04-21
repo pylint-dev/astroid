@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3.0.1
+        uses: actions/checkout@v3.0.2
       - name: Set up Python
         id: python
         uses: actions/setup-python@v3.1.2
@@ -38,7 +38,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3.0.1
+        uses: actions/checkout@v3.0.2
       - name: Set up Python
         id: python
         uses: actions/setup-python@v3.1.0
