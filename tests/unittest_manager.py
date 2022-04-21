@@ -319,11 +319,12 @@ class BorgAstroidManagerTC(unittest.TestCase):
 
 class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
     def test_clear_cache(self) -> None:
+        # pylint: disable=import-outside-toplevel
         from astroid.interpreter.objectmodel import ObjectModel
         from astroid.modutils import _cache_normalize_path_
         from astroid.nodes.node_classes import LookupMixIn
 
-        lrus = [LookupMixIn.lookup, _cache_normalize_path_, ObjectModel.attributes]
+        lrus = (LookupMixIn.lookup, _cache_normalize_path_, ObjectModel.attributes)
 
         # Get a baseline for the size of the cache after simply calling bootstrap()
         baseline_cache_infos = [lru.cache_info() for lru in lrus]
