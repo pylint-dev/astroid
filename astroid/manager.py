@@ -360,6 +360,7 @@ class AstroidManager:
     def clear_cache(self):
         """Clear the underlying caches. Also bootstraps the builtins module."""
         # pylint: disable=import-outside-toplevel
+        # import here because of cyclic imports
         from astroid.inference_tip import clear_inference_tip_cache
         from astroid.interpreter.objectmodel import ObjectModel
         from astroid.nodes.node_classes import LookupMixIn
