@@ -130,7 +130,7 @@ jobs:
           name: coverage-${{ matrix.python-version }}
           path: .coverage
 
-  tests-linux-alpha:
+  tests-linux-dev:
     name: tests / run / ${{ matrix.python-version }} / Linux
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -139,7 +139,7 @@ jobs:
         python-version: ["3.11-dev"]
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3.0.1
+        uses: actions/checkout@v3.0.2
       - name: Set up Python ${{ matrix.python-version }}
         id: python
         uses: actions/setup-python@v3.1.2
@@ -183,8 +183,8 @@ jobs:
     name: tests / process / coverage
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: ["tests-linux", "tests-linux-alpha"]
-    if: ${{ always() }}
+    needs: ["tests-linux", "tests-linux-dev"]
+    if: always()
     strategy:
       matrix:
         python-version: [3.8]
