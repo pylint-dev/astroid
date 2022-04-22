@@ -13,10 +13,10 @@ from astroid.manager import AstroidManager
 
 def _re_transform() -> nodes.Module:
     # The RegexFlag enum exposes all its entries by updating globals()
+    # In 3.6-3.10 all flags come from sre_compile
     # On 3.11+ all flags come from re._compiler
     if PY311_PLUS:
         import_compiler = "import re._compiler as _compiler"
-    # In 3.6-3.10 all flags come from sre_compile
     else:
         import_compiler = "import sre_compile as _compiler"
     return parse(
