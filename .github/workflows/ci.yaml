@@ -184,7 +184,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: ["tests-linux", "tests-linux-dev"]
-    if: always()
+    if: always() # remove together with tests-linux-dev
     strategy:
       matrix:
         python-version: [3.8]
