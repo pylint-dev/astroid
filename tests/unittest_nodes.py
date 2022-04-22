@@ -1074,12 +1074,25 @@ class AliasesTest(unittest.TestCase):
 
 class Python35AsyncTest(unittest.TestCase):
     def test_async_await_keywords(self) -> None:
-        async_def, async_for, async_with, await_node = builder.extract_node(
+        (
+            async_def,
+            async_for,
+            async_with,
+            async_for2,
+            async_with2,
+            await_node,
+        ) = builder.extract_node(
             """
         async def func(): #@
             async for i in range(10): #@
                 f = __(await i)
             async with test(): #@
+                pass
+            async for i \
+                    in range(10):  #@
+                pass
+            async with test(), \
+                    test2():  #@
                 pass
         """
         )
@@ -1094,6 +1107,14 @@ class Python35AsyncTest(unittest.TestCase):
         assert isinstance(async_with, nodes.AsyncWith)
         assert async_with.lineno == 5
         assert async_with.col_offset == 4
+
+        assert isinstance(async_for2, nodes.AsyncFor)
+        assert async_for2.lineno == 7
+        assert async_for2.col_offset == 4
+
+        assert isinstance(async_with2, nodes.AsyncWith)
+        assert async_with2.lineno == 9
+        assert async_with2.col_offset == 4
 
         assert isinstance(await_node, nodes.Await)
         assert isinstance(await_node.value, nodes.Name)

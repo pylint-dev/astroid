@@ -1294,6 +1294,10 @@ class TreeRebuilder:
             position=self._get_position_info(node, newnode),
             doc_node=self.visit(doc_ast_node, newnode),
         )
+        if IS_PYPY and PY36 and newnode.position:
+            # PyPy: col_offset in Python 3.6 doesn't include 'async',
+            # use position.col_offset instead.
+            newnode.col_offset = newnode.position.col_offset
         self._fix_doc_node_position(newnode)
         self._global_names.pop()
         return newnode
