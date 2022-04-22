@@ -91,11 +91,11 @@ class TreeRebuilder:
     def _get_doc(self, node: T_Doc) -> Tuple[T_Doc, Optional["ast.Constant | ast.Str"]]:
         """Return the doc ast node."""
         try:
-            if node.body and isinstance(node.body[0], self._module.Expr):
+            if node.body and isinstance(node.body[0], ast.Expr):
                 first_value = node.body[0].value
-                if isinstance(first_value, self._module.Str) or (
+                if isinstance(first_value, ast.Str) or (
                     PY38_PLUS
-                    and isinstance(first_value, self._module.Constant)
+                    and isinstance(first_value, ast.Constant)
                     and isinstance(first_value.value, str)
                 ):
                     doc_ast_node = first_value
@@ -103,7 +103,7 @@ class TreeRebuilder:
                     # The ast parser of python < 3.8 sets col_offset of multi-line strings to -1
                     # as it is unable to determine the value correctly. We reset this to None.
                     if doc_ast_node.col_offset == -1:
-                        doc_ast_node.col_offset = None
+                        doc_ast_node.col_offset = None  # type: ignore[assignment]
                     return node, doc_ast_node
         except IndexError:
             pass  # ast built from scratch
