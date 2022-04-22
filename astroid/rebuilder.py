@@ -6,13 +6,13 @@
 order to get a single Astroid representation
 """
 
+import ast
 import sys
 import token
 import tokenize
 from io import StringIO
 from tokenize import TokenInfo, generate_tokens
 from typing import (
-    TYPE_CHECKING,
     Callable,
     Dict,
     Generator,
@@ -38,9 +38,6 @@ if sys.version_info >= (3, 8):
     from typing import Final
 else:
     from typing_extensions import Final
-
-if TYPE_CHECKING:
-    import ast
 
 
 REDIRECT: Final[Dict[str, str]] = {
@@ -1185,9 +1182,14 @@ class TreeRebuilder:
         self, cls: Type[T_For], node: Union["ast.For", "ast.AsyncFor"], parent: NodeNG
     ) -> T_For:
         """visit a For node by returning a fresh instance of it"""
+        col_offset = node.col_offset
+        if IS_PYPY and not PY39_PLUS and isinstance(node, ast.AsyncFor) and self._data:
+            # pylint: disable-next=unsubscriptable-object
+            col_offset = self._data[node.lineno - 1].index("async")
+
         newnode = cls(
             lineno=node.lineno,
-            col_offset=node.col_offset,
+            col_offset=col_offset,
             # end_lineno and end_col_offset added in 3.8
             end_lineno=getattr(node, "end_lineno", None),
             end_col_offset=getattr(node, "end_col_offset", None),
@@ -1292,6 +1294,10 @@ class TreeRebuilder:
             position=self._get_position_info(node, newnode),
             doc_node=self.visit(doc_ast_node, newnode),
         )
+        if IS_PYPY and PY36 and newnode.position:
+            # PyPy: col_offset in Python 3.6 doesn't include 'async',
+            # use position.col_offset instead.
+            newnode.col_offset = newnode.position.col_offset
         self._fix_doc_node_position(newnode)
         self._global_names.pop()
         return newnode
@@ -1905,9 +1911,14 @@ class TreeRebuilder:
         node: Union["ast.With", "ast.AsyncWith"],
         parent: NodeNG,
     ) -> T_With:
+        col_offset = node.col_offset
+        if IS_PYPY and not PY39_PLUS and isinstance(node, ast.AsyncWith) and self._data:
+            # pylint: disable-next=unsubscriptable-object
+            col_offset = self._data[node.lineno - 1].index("async")
+
         newnode = cls(
             lineno=node.lineno,
-            col_offset=node.col_offset,
+            col_offset=col_offset,
             # end_lineno and end_col_offset added in 3.8
             end_lineno=getattr(node, "end_lineno", None),
             end_col_offset=getattr(node, "end_col_offset", None),
