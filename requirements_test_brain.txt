@@ -1,7 +1,7 @@
 attrs
 types-attrs
 nose
-numpy>=1.17.0
+numpy>=1.17.0; python_version<"3.11"
 python-dateutil
 PyQt6
 types-python-dateutil
