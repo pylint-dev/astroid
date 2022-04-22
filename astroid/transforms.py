@@ -3,9 +3,12 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 import collections
-from functools import lru_cache
+from typing import TYPE_CHECKING
 
 from astroid.context import _invalidate_cache
+
+if TYPE_CHECKING:
+    from astroid import NodeNG
 
 
 class TransformVisitor:
@@ -17,13 +20,10 @@ class TransformVisitor:
     transforms for each encountered node.
     """
 
-    TRANSFORM_MAX_CACHE_SIZE = 10000
-
     def __init__(self):
         self.transforms = collections.defaultdict(list)
 
-    @lru_cache(maxsize=TRANSFORM_MAX_CACHE_SIZE)
-    def _transform(self, node):
+    def _transform(self, node: "NodeNG") -> "NodeNG":
         """Call matching transforms for the given node if any and return the
         transformed node.
         """
