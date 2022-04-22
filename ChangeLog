@@ -15,6 +15,7 @@ Release date: TBA
 
 * Fix ``col_offset`` attribute for nodes involving ``with`` on ``PyPy``.
 
+
 What's New in astroid 2.11.3?
 =============================
 Release date: 2022-04-19

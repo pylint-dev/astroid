@@ -1183,10 +1183,9 @@ class TreeRebuilder:
     ) -> T_For:
         """visit a For node by returning a fresh instance of it"""
         col_offset = node.col_offset
-        if isinstance(node, ast.AsyncFor) and IS_PYPY and not PY39_PLUS:
-            if self._data:
-                # pylint: disable-next=unsubscriptable-object
-                col_offset = self._data[node.lineno - 1].index("async")
+        if IS_PYPY and not PY39_PLUS and isinstance(node, ast.AsyncFor) and self._data:
+            # pylint: disable-next=unsubscriptable-object
+            col_offset = self._data[node.lineno - 1].index("async")
 
         newnode = cls(
             lineno=node.lineno,
@@ -1907,10 +1906,9 @@ class TreeRebuilder:
         parent: NodeNG,
     ) -> T_With:
         col_offset = node.col_offset
-        if isinstance(node, ast.AsyncWith) and IS_PYPY and not PY39_PLUS:
-            if self._data:
-                # pylint: disable-next=unsubscriptable-object
-                col_offset = self._data[node.lineno - 1].index("async")
+        if IS_PYPY and not PY39_PLUS and isinstance(node, ast.AsyncWith) and self._data:
+            # pylint: disable-next=unsubscriptable-object
+            col_offset = self._data[node.lineno - 1].index("async")
 
         newnode = cls(
             lineno=node.lineno,
