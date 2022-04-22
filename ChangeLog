@@ -8,6 +8,11 @@ Release date: TBA
 
 * Fix ``re`` brain on Python ``3.11``. The flags now come from ``re._compile``.
 
+* Build ``nodes.Module`` for frozen modules which have location information in their
+  ``ModuleSpec``.
+
+  Closes #1512
+
 
 What's New in astroid 2.11.4?
 =============================
