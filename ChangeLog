@@ -6,6 +6,7 @@ What's New in astroid 2.12.0?
 =============================
 Release date: TBA
 
+* Fix ``re`` brain on Python ``3.11``. The flags now come from ``re._compile``.
 
 
 What's New in astroid 2.11.4?
