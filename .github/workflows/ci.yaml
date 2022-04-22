@@ -20,8 +20,6 @@ jobs:
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v3.0.2
-        with:
-          fetch-depth: 0
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         id: python
         uses: actions/setup-python@v3.1.2
@@ -89,8 +87,6 @@ jobs:
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v3.0.2
-        with:
-          fetch-depth: 0
       - name: Set up Python ${{ matrix.python-version }}
         id: python
         uses: actions/setup-python@v3.1.2
@@ -191,8 +187,6 @@ jobs:
         # https://github.com/actions/virtual-environments/issues/712
       - name: Check out code from GitHub
         uses: actions/checkout@v3.0.2
-        with:
-          fetch-depth: 0
       - name: Set up Python ${{ matrix.python-version }}
         id: python
         uses: actions/setup-python@v3.1.2
@@ -238,8 +232,6 @@ jobs:
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v3.0.2
-        with:
-          fetch-depth: 0
       - name: Set up Python ${{ matrix.python-version }}
         id: python
         uses: actions/setup-python@v3.1.2
