@@ -369,11 +369,11 @@ class AstroidManager:
 
         self.astroid_cache.clear()
 
-        for lru_cache in [
+        for lru_cache in (
             LookupMixIn.lookup,
             _cache_normalize_path_,
             ObjectModel.attributes,
-        ]:
+        ):
             lru_cache.cache_clear()
 
         self.bootstrap()
