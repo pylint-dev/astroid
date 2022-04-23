@@ -10,6 +10,7 @@ from various source and using a cache of built modules)
 import os
 import types
 import zipimport
+from importlib.util import find_spec, module_from_spec
 from typing import TYPE_CHECKING, ClassVar, List, Optional
 
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
@@ -362,5 +363,17 @@ class AstroidManager:
 
     def clear_cache(self):
         """Clear the underlying cache. Also bootstraps the builtins module."""
+        # import here because of cyclic imports
+        # pylint: disable=import-outside-toplevel
+
+        from astroid import BRAIN_MODULES_DIRECTORY
+
         self.astroid_cache.clear()
         self.bootstrap()
+
+        # Load brain plugins: currently done in astroid.__init__.py
+        for module in BRAIN_MODULES_DIRECTORY.iterdir():
+            if module.suffix == ".py":
+                module_spec = find_spec(f"astroid.brain.{module.stem}")
+                module_object = module_from_spec(module_spec)
+                module_spec.loader.exec_module(module_object)
