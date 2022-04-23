@@ -66,7 +66,7 @@ BUILTIN_DESCRIPTORS = frozenset(
     {"classmethod", "staticmethod", "builtins.classmethod", "builtins.staticmethod"}
 )
 
-T = TypeVar("T")
+_T = TypeVar("_T")
 
 
 def _c3_merge(sequences, cls, context):
@@ -647,7 +647,7 @@ class Module(LocalsDictNodeNG):
     def get_children(self):
         yield from self.body
 
-    def frame(self: T, *, future: Literal[None, True] = None) -> T:
+    def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -1254,7 +1254,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         yield self.args
         yield self.body
 
-    def frame(self: T, *, future: Literal[None, True] = None) -> T:
+    def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -1800,7 +1800,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 return self, [frame]
         return super().scope_lookup(node, name, offset)
 
-    def frame(self: T, *, future: Literal[None, True] = None) -> T:
+    def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -3102,7 +3102,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         )
         return list(itertools.chain.from_iterable(children_assign_nodes))
 
-    def frame(self: T, *, future: Literal[None, True] = None) -> T:
+    def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,

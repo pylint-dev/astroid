@@ -57,9 +57,9 @@ T_Doc = TypeVar(
     "ast.ClassDef",
     Union["ast.FunctionDef", "ast.AsyncFunctionDef"],
 )
-T_Function = TypeVar("T_Function", nodes.FunctionDef, nodes.AsyncFunctionDef)
-T_For = TypeVar("T_For", nodes.For, nodes.AsyncFor)
-T_With = TypeVar("T_With", nodes.With, nodes.AsyncWith)
+_FunctionT = TypeVar("_FunctionT", nodes.FunctionDef, nodes.AsyncFunctionDef)
+_ForT = TypeVar("_ForT", nodes.For, nodes.AsyncFor)
+_WithT = TypeVar("_WithT", nodes.With, nodes.AsyncWith)
 NodesWithDocsType = Union[nodes.Module, nodes.ClassDef, nodes.FunctionDef]
 
 
@@ -1179,8 +1179,8 @@ class TreeRebuilder:
         ...
 
     def _visit_for(
-        self, cls: Type[T_For], node: Union["ast.For", "ast.AsyncFor"], parent: NodeNG
-    ) -> T_For:
+        self, cls: Type[_ForT], node: Union["ast.For", "ast.AsyncFor"], parent: NodeNG
+    ) -> _ForT:
         """visit a For node by returning a fresh instance of it"""
         col_offset = node.col_offset
         if IS_PYPY and not PY39_PLUS and isinstance(node, ast.AsyncFor) and self._data:
@@ -1245,10 +1245,10 @@ class TreeRebuilder:
 
     def _visit_functiondef(
         self,
-        cls: Type[T_Function],
+        cls: Type[_FunctionT],
         node: Union["ast.FunctionDef", "ast.AsyncFunctionDef"],
         parent: NodeNG,
-    ) -> T_Function:
+    ) -> _FunctionT:
         """visit an FunctionDef node to become astroid"""
         self._global_names.append({})
         node, doc_ast_node = self._get_doc(node)
@@ -1905,10 +1905,10 @@ class TreeRebuilder:
 
     def _visit_with(
         self,
-        cls: Type[T_With],
+        cls: Type[_WithT],
         node: Union["ast.With", "ast.AsyncWith"],
         parent: NodeNG,
-    ) -> T_With:
+    ) -> _WithT:
         col_offset = node.col_offset
         if IS_PYPY and not PY39_PLUS and isinstance(node, ast.AsyncWith) and self._data:
             # pylint: disable-next=unsubscriptable-object
