@@ -21,8 +21,8 @@ if sys.version_info >= (3, 10):
 else:
     from typing_extensions import ParamSpec
 
-R = TypeVar("R")
-P = ParamSpec("P")
+_R = TypeVar("_R")
+_P = ParamSpec("_P")
 
 
 @wrapt.decorator
@@ -153,7 +153,7 @@ if util.check_warnings_filter():
 
     def deprecate_default_argument_values(
         astroid_version: str = "3.0", **arguments: str
-    ) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
         """Decorator which emits a DeprecationWarning if any arguments specified
         are None or not passed at all.
 
@@ -167,11 +167,11 @@ if util.check_warnings_filter():
         # Decorator for DeprecationWarning: https://stackoverflow.com/a/49802489
         # Typing of stacked decorators: https://stackoverflow.com/a/68290080
 
-        def deco(func: Callable[P, R]) -> Callable[P, R]:
+        def deco(func: Callable[_P, _R]) -> Callable[_P, _R]:
             """Decorator function."""
 
             @functools.wraps(func)
-            def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 """Emit DeprecationWarnings if conditions are met."""
 
                 keys = list(inspect.signature(func).parameters.keys())
@@ -212,7 +212,7 @@ if util.check_warnings_filter():
 
     def deprecate_arguments(
         astroid_version: str = "3.0", **arguments: str
-    ) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
         """Decorator which emits a DeprecationWarning if any arguments specified
         are passed.
 
@@ -223,9 +223,9 @@ if util.check_warnings_filter():
         the default one are enabled.
         """
 
-        def deco(func: Callable[P, R]) -> Callable[P, R]:
+        def deco(func: Callable[_P, _R]) -> Callable[_P, _R]:
             @functools.wraps(func)
-            def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
 
                 keys = list(inspect.signature(func).parameters.keys())
                 for arg, note in arguments.items():
@@ -252,10 +252,10 @@ else:
 
     def deprecate_default_argument_values(
         astroid_version: str = "3.0", **arguments: str
-    ) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
         """Passthrough decorator to improve performance if DeprecationWarnings are disabled."""
 
-        def deco(func: Callable[P, R]) -> Callable[P, R]:
+        def deco(func: Callable[_P, _R]) -> Callable[_P, _R]:
             """Decorator function."""
             return func
 
@@ -263,10 +263,10 @@ else:
 
     def deprecate_arguments(
         astroid_version: str = "3.0", **arguments: str
-    ) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
         """Passthrough decorator to improve performance if DeprecationWarnings are disabled."""
 
-        def deco(func: Callable[P, R]) -> Callable[P, R]:
+        def deco(func: Callable[_P, _R]) -> Callable[_P, _R]:
             """Decorator function."""
             return func
 

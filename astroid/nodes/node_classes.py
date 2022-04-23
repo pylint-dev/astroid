@@ -56,12 +56,12 @@ def _is_const(value):
     return isinstance(value, tuple(CONST_CLS))
 
 
-T_Nodes = TypeVar("T_Nodes", bound=NodeNG)
+_NodesT = TypeVar("_NodesT", bound=NodeNG)
 
 AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
 AssignedStmtsCall = Callable[
     [
-        T_Nodes,
+        _NodesT,
         AssignedStmtsPossibleNode,
         Optional[InferenceContext],
         Optional[typing.List[int]],

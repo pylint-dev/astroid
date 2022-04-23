@@ -49,9 +49,9 @@ else:
     from astroid.decorators import cachedproperty as cached_property
 
 # Types for 'NodeNG.nodes_of_class()'
-T_Nodes = TypeVar("T_Nodes", bound="NodeNG")
-T_Nodes2 = TypeVar("T_Nodes2", bound="NodeNG")
-T_Nodes3 = TypeVar("T_Nodes3", bound="NodeNG")
+_NodesT = TypeVar("_NodesT", bound="NodeNG")
+_NodesT2 = TypeVar("_NodesT2", bound="NodeNG")
+_NodesT3 = TypeVar("_NodesT3", bound="NodeNG")
 SkipKlassT = Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]]
 
 
@@ -513,45 +513,45 @@ class NodeNG:
     @overload
     def nodes_of_class(
         self,
-        klass: Type[T_Nodes],
+        klass: Type[_NodesT],
         skip_klass: SkipKlassT = None,
-    ) -> Iterator[T_Nodes]:
+    ) -> Iterator[_NodesT]:
         ...
 
     @overload
     def nodes_of_class(
         self,
-        klass: Tuple[Type[T_Nodes], Type[T_Nodes2]],
+        klass: Tuple[Type[_NodesT], Type[_NodesT2]],
         skip_klass: SkipKlassT = None,
-    ) -> Union[Iterator[T_Nodes], Iterator[T_Nodes2]]:
+    ) -> Union[Iterator[_NodesT], Iterator[_NodesT2]]:
         ...
 
     @overload
     def nodes_of_class(
         self,
-        klass: Tuple[Type[T_Nodes], Type[T_Nodes2], Type[T_Nodes3]],
+        klass: Tuple[Type[_NodesT], Type[_NodesT2], Type[_NodesT3]],
         skip_klass: SkipKlassT = None,
-    ) -> Union[Iterator[T_Nodes], Iterator[T_Nodes2], Iterator[T_Nodes3]]:
+    ) -> Union[Iterator[_NodesT], Iterator[_NodesT2], Iterator[_NodesT3]]:
         ...
 
     @overload
     def nodes_of_class(
         self,
-        klass: Tuple[Type[T_Nodes], ...],
+        klass: Tuple[Type[_NodesT], ...],
         skip_klass: SkipKlassT = None,
-    ) -> Iterator[T_Nodes]:
+    ) -> Iterator[_NodesT]:
         ...
 
     def nodes_of_class(  # type: ignore[misc] # mypy doesn't correctly recognize the overloads
         self,
         klass: Union[
-            Type[T_Nodes],
-            Tuple[Type[T_Nodes], Type[T_Nodes2]],
-            Tuple[Type[T_Nodes], Type[T_Nodes2], Type[T_Nodes3]],
-            Tuple[Type[T_Nodes], ...],
+            Type[_NodesT],
+            Tuple[Type[_NodesT], Type[_NodesT2]],
+            Tuple[Type[_NodesT], Type[_NodesT2], Type[_NodesT3]],
+            Tuple[Type[_NodesT], ...],
         ],
         skip_klass: SkipKlassT = None,
-    ) -> Union[Iterator[T_Nodes], Iterator[T_Nodes2], Iterator[T_Nodes3]]:
+    ) -> Union[Iterator[_NodesT], Iterator[_NodesT2], Iterator[_NodesT3]]:
         """Get the nodes (including this one or below) of the given types.
 
         :param klass: The types of node to search for.
