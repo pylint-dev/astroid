@@ -502,7 +502,7 @@ class NodeNG:
     def nodes_of_class(
         self,
         klass: type[_NodesT],
-        skip_klass: SkipKlassT = None,
+        skip_klass: SkipKlassT = ...,
     ) -> Iterator[_NodesT]:
         ...
 
@@ -510,7 +510,7 @@ class NodeNG:
     def nodes_of_class(
         self,
         klass: tuple[type[_NodesT], type[_NodesT2]],
-        skip_klass: SkipKlassT = None,
+        skip_klass: SkipKlassT = ...,
     ) -> Iterator[_NodesT] | Iterator[_NodesT2]:
         ...
 
@@ -518,7 +518,7 @@ class NodeNG:
     def nodes_of_class(
         self,
         klass: tuple[type[_NodesT], type[_NodesT2], type[_NodesT3]],
-        skip_klass: SkipKlassT = None,
+        skip_klass: SkipKlassT = ...,
     ) -> Iterator[_NodesT] | Iterator[_NodesT2] | Iterator[_NodesT3]:
         ...
 
@@ -526,7 +526,7 @@ class NodeNG:
     def nodes_of_class(
         self,
         klass: tuple[type[_NodesT], ...],
-        skip_klass: SkipKlassT = None,
+        skip_klass: SkipKlassT = ...,
     ) -> Iterator[_NodesT]:
         ...
 
