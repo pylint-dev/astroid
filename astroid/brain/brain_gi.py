@@ -74,7 +74,9 @@ def _gi_build_stub(parent):
 
         try:
             obj = getattr(parent, name)
-        except AttributeError:
+        except Exception:  # pylint: disable=broad-except
+            # gi.module.IntrospectionModule.__getattr__() can raise all kinds of things
+            # like ValueError, TypeError, NotImplementedError, RepositoryError, etc
             continue
 
         if inspect.isclass(obj):

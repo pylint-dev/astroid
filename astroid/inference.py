@@ -537,9 +537,9 @@ def _infer_unaryop(self, context=None):
                         yield operand
                     else:
                         yield result
-                except AttributeInferenceError as exc:
+                except AttributeInferenceError as inner_exc:
                     # The unary operation special method was not found.
-                    yield util.BadUnaryOperationMessage(operand, self.op, exc)
+                    yield util.BadUnaryOperationMessage(operand, self.op, inner_exc)
                 except InferenceError:
                     yield util.Uninferable
 

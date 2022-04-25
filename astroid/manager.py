@@ -25,6 +25,7 @@ from astroid.modutils import (
     modpath_from_file,
 )
 from astroid.transforms import TransformVisitor
+from astroid.typing import AstroidManagerBrain
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -46,20 +47,28 @@ class AstroidManager:
     """
 
     name = "astroid loader"
-    brain = {}
+    brain: AstroidManagerBrain = {
+        "astroid_cache": {},
+        "_mod_file_cache": {},
+        "_failed_import_hooks": [],
+        "always_load_extensions": False,
+        "optimize_ast": False,
+        "extension_package_whitelist": set(),
+        "_transform": TransformVisitor(),
+    }
     max_inferable_values: ClassVar[int] = 100
 
     def __init__(self):
-        self.__dict__ = AstroidManager.brain
-        if not self.__dict__:
-            # NOTE: cache entries are added by the [re]builder
-            self.astroid_cache = {}
-            self._mod_file_cache = {}
-            self._failed_import_hooks = []
-            self.always_load_extensions = False
-            self.optimize_ast = False
-            self.extension_package_whitelist = set()
-            self._transform = TransformVisitor()
+        # NOTE: cache entries are added by the [re]builder
+        self.astroid_cache = AstroidManager.brain["astroid_cache"]
+        self._mod_file_cache = AstroidManager.brain["_mod_file_cache"]
+        self._failed_import_hooks = AstroidManager.brain["_failed_import_hooks"]
+        self.always_load_extensions = AstroidManager.brain["always_load_extensions"]
+        self.optimize_ast = AstroidManager.brain["optimize_ast"]
+        self.extension_package_whitelist = AstroidManager.brain[
+            "extension_package_whitelist"
+        ]
+        self._transform = AstroidManager.brain["_transform"]
 
     @property
     def register_transform(self):
@@ -179,7 +188,11 @@ class AstroidManager:
                     modname, found_spec.submodule_search_locations
                 )
             elif found_spec.type == spec.ModuleType.PY_FROZEN:
-                return self._build_stub_module(modname)
+                if found_spec.location is None:
+                    return self._build_stub_module(modname)
+                # For stdlib frozen modules we can determine the location and
+                # can therefore create a module from the source file
+                return self.ast_from_file(found_spec.location, modname, fallback=False)
 
             if found_spec.location is None:
                 raise AstroidImportError(

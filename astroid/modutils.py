@@ -345,7 +345,7 @@ def file_info_from_modpath(modpath, path=None, context_file=None):
         return spec.ModuleSpec(
             name="os.path",
             location=os.path.__file__,
-            module_type=spec.ModuleType.PY_SOURCE,
+            type=spec.ModuleType.PY_SOURCE,
         )
     return _spec_from_modpath(modpath, path, context)
 
