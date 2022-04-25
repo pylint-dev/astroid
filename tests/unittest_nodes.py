@@ -338,7 +338,7 @@ class IfNodeTest(_NodeTest):
 
     def test_if_elif_else_node(self) -> None:
         """test transformation for If node"""
-        self.assertEqual(len(self.astroid.body), 4)
+        self.assertEqual(len(self.astroid.body), 5)
         for stmt in self.astroid.body:
             self.assertIsInstance(stmt, nodes.If)
         self.assertFalse(self.astroid.body[0].orelse)  # simple If
@@ -348,8 +348,8 @@ class IfNodeTest(_NodeTest):
 
     def test_block_range(self) -> None:
         # XXX ensure expected values
-        self.assertEqual(self.astroid.block_range(1), (0, 22))
-        self.assertEqual(self.astroid.block_range(10), (0, 22))  # XXX (10, 22) ?
+        self.assertEqual(self.astroid.block_range(1), (0, 33))
+        self.assertEqual(self.astroid.block_range(10), (0, 33))  # XXX (10, 33) ?
         self.assertEqual(self.astroid.body[1].block_range(5), (5, 6))
         self.assertEqual(self.astroid.body[1].block_range(6), (6, 6))
         self.assertEqual(self.astroid.body[1].orelse[0].block_range(7), (7, 8))
