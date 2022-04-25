@@ -322,6 +322,18 @@ class IfNodeTest(_NodeTest):
             pass
         else:
             raise
+
+        if 1:
+            print()
+        elif (
+            2
+            and 3
+        ):
+            print()
+        else:
+            # This is using else in a comment
+            raise
+
     """
 
     def test_if_elif_else_node(self) -> None:
@@ -357,6 +369,10 @@ class IfNodeTest(_NodeTest):
         assert self.astroid.body[3].orelse[0].orelse_col_offset == 0
         assert self.astroid.body[3].orelse[0].orelse[0].orelse_lineno == 21
         assert self.astroid.body[3].orelse[0].orelse[0].orelse_col_offset == 0
+        assert self.astroid.body[4].orelse_lineno == 26
+        assert self.astroid.body[4].orelse_col_offset == 0
+        assert self.astroid.body[4].orelse[0].orelse_lineno == 31
+        assert self.astroid.body[4].orelse[0].orelse_col_offset == 0
 
     @staticmethod
     @pytest.mark.filterwarnings("ignore:.*is_sys_guard:DeprecationWarning")

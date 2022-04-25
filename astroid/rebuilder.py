@@ -1389,25 +1389,16 @@ class TreeRebuilder:
         if not self._data or not node.orelse:
             return None, None
 
-        end_lineno = node.orelse[0].lineno
+        start = node.orelse[0].lineno
 
-        def find_keyword(begin: int, end: int) -> Tuple[Optional[int], Optional[int]]:
-            # pylint: disable-next=unsubscriptable-object
-            data = "\n".join(self._data[begin:end])
+        # pylint: disable-next=unsubscriptable-object
+        for index, line in enumerate(self._data[start::-1]):
+            if line.rstrip().startswith("else"):
+                return start - index + 1, line.index("else")
+            if line.rstrip().startswith("elif"):
+                return start - index + 1, line.index("elif")
 
-            try:
-                tokens = list(generate_tokens(StringIO(data).readline))
-            except tokenize.TokenError:
-                # If we cut-off in the middle of multi-line if statements we
-                # generate a TokenError here. We just keep trying
-                # until the multi-line statement is closed.
-                return find_keyword(begin, end + 1)
-            for t in tokens[::-1]:
-                if t.type == token.NAME and t.string in {"else", "elif"}:
-                    return node.lineno + t.start[0] - 1, t.start[1]
-            raise AssertionError()  # pragma: no cover # Shouldn't be reached.
-
-        return find_keyword(node.lineno - 1, end_lineno)
+        return None, None
 
     def visit_if(self, node: "ast.If", parent: NodeNG) -> nodes.If:
         """visit an If node by returning a fresh instance of it"""
