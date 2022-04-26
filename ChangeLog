@@ -23,6 +23,11 @@ Release date: TBA
 
 * Fix ``col_offset`` attribute for nodes involving ``with`` on ``PyPy``.
 
+* Made ``FunctionDef.implicit_parameters`` return 1 for instance methods by making
+  ``FunctionDef.is_bound`` return ``True``, as it does for class methods.
+
+  Closes PyCQA/pylint#6464
+
 
 What's New in astroid 2.11.3?
 =============================
