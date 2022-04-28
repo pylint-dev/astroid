@@ -369,6 +369,7 @@ class AstroidManager:
         from astroid import BRAIN_MODULES_DIRECTORY
 
         self.astroid_cache.clear()
+        AstroidManager.brain["_transform"] = TransformVisitor()
         self.bootstrap()
 
         # Load brain plugins: currently done in astroid.__init__.py
