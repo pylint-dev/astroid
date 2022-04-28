@@ -13,6 +13,7 @@ import zipimport
 from importlib.util import find_spec, module_from_spec
 from typing import TYPE_CHECKING, ClassVar, List, Optional
 
+from astroid.const import BRAIN_MODULES_DIRECTORY
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec
 from astroid.modutils import (
@@ -364,11 +365,6 @@ class AstroidManager:
     def clear_cache(self):
         """Clear the underlying cache. Also bootstraps the builtins module and
         re-registers transforms."""
-        # import here because of cyclic imports
-        # pylint: disable=import-outside-toplevel
-
-        from astroid import BRAIN_MODULES_DIRECTORY
-
         self.astroid_cache.clear()
         AstroidManager.brain["_transform"] = TransformVisitor()
         self.bootstrap()
