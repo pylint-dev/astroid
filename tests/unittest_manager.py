@@ -318,7 +318,7 @@ class BorgAstroidManagerTC(unittest.TestCase):
 
 
 class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
-    def test_clear_cache(self) -> None:
+    def test_clear_cache_clears_other_lru_caches(self) -> None:
         # pylint: disable=import-outside-toplevel
         from astroid.interpreter.objectmodel import ObjectModel
         from astroid.modutils import _cache_normalize_path_
