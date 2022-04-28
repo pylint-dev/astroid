@@ -362,7 +362,8 @@ class AstroidManager:
         raw_building._astroid_bootstrapping()
 
     def clear_cache(self):
-        """Clear the underlying cache. Also bootstraps the builtins module."""
+        """Clear the underlying cache. Also bootstraps the builtins module and
+        re-registers transforms."""
         # import here because of cyclic imports
         # pylint: disable=import-outside-toplevel
 
