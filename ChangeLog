@@ -23,6 +23,9 @@ Release date: TBA
 
 * Fix ``col_offset`` attribute for nodes involving ``with`` on ``PyPy``.
 
+* Fixed a crash when ``_filter_stmts`` encounters an ``EmptyNode``.
+
+  Closes #6438
 
 What's New in astroid 2.11.3?
 =============================
