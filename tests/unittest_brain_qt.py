@@ -39,7 +39,7 @@ class TestBrainQt:
         assert isinstance(attribute_node.instance_attrs["connect"][0], FunctionDef)
 
     @staticmethod
-    def test_implicit_parameters():
+    def test_implicit_parameters() -> None:
         """Regression test for https://github.com/PyCQA/pylint/issues/6464"""
         src = """
         from PyQt6.QtCore import QTimer

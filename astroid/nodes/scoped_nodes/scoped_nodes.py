@@ -1581,7 +1581,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
         return self.args.tolineno
 
-    def implicit_parameters(self):
+    def implicit_parameters(self) -> Literal[0, 1]:
         return 1 if self.is_bound() else 0
 
     def block_range(self, lineno):
