@@ -36,13 +36,13 @@ class SysPathSetup:
 
 
 class AstroidCacheSetupMixin:
-    """Mixin for handling the astroid cache problems.
+    """Mixin for handling test isolation issues with the astroid cache.
 
-    When clearing the astroid cache, some tests fails due to
+    When clearing the astroid cache, some tests fail due to
     cache inconsistencies, where some objects had a different
     builtins object referenced.
-    This saves the builtins module and makes sure to add it
-    back to the astroid_cache after the tests finishes.
+    This saves the builtins module and TransformVisitor and
+    replaces them after the tests finish.
     The builtins module is special, since some of the
     transforms for a couple of its objects (str, bytes etc)
     are executed only once, so astroid_bootstrapping will be
@@ -52,8 +52,11 @@ class AstroidCacheSetupMixin:
     @classmethod
     def setup_class(cls):
         cls._builtins = AstroidManager().astroid_cache.get("builtins")
+        cls._transforms = AstroidManager.brain["_transform"]
 
     @classmethod
     def teardown_class(cls):
         if cls._builtins:
             AstroidManager().astroid_cache["builtins"] = cls._builtins
+        if cls._transforms:
+            AstroidManager.brain["_transform"] = cls._transforms
