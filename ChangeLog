@@ -28,6 +28,15 @@ Release date: TBA
 
   Refs PyCQA/pylint#6372
 
+* Made ``FunctionDef.implicit_parameters`` return 1 for methods by making
+  ``FunctionDef.is_bound`` return ``True``, as it does for class methods.
+
+  Closes PyCQA/pylint#6464
+
+* Fixed a crash when ``_filter_stmts`` encounters an ``EmptyNode``.
+
+  Closes PyCQA/pylint#6438
+
 
 What's New in astroid 2.11.3?
 =============================

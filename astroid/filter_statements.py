@@ -112,15 +112,15 @@ def _filter_stmts(base_node: nodes.NodeNG, stmts, frame, offset):
         # Fixes issue #375
         if mystmt is stmt and _is_from_decorator(base_node):
             continue
-        assert hasattr(node, "assign_type"), (
-            node,
-            node.scope(),
-            node.scope().locals,
-        )
-        assign_type = node.assign_type()
         if node.has_base(base_node):
             break
 
+        if isinstance(node, nodes.EmptyNode):
+            # EmptyNode does not have assign_type(), so just add it and move on
+            _stmts.append(node)
+            continue
+
+        assign_type = node.assign_type()
         _stmts, done = assign_type._get_filtered_stmts(base_node, node, _stmts, mystmt)
         if done:
             break
