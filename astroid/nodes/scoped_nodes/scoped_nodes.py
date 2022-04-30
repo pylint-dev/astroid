@@ -1587,6 +1587,9 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
         return self.args.tolineno
 
+    def implicit_parameters(self) -> Literal[0, 1]:
+        return 1 if self.is_bound() else 0
+
     def block_range(self, lineno):
         """Get a range from the given line number to where this node ends.
 
@@ -1648,7 +1651,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             False otherwise.
         :rtype: bool
         """
-        return self.type == "classmethod"
+        return self.type in {"method", "classmethod"}
 
     def is_abstract(self, pass_is_abstract=True, any_raise_is_abstract=False):
         """Check if the method is abstract.

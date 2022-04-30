@@ -617,6 +617,24 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(one, nodes.Const)
         self.assertEqual(one.value, 1)
 
+    def test_func_is_bound(self) -> None:
+        data = """
+        class MyClass:
+            def bound():  #@
+                pass
+        """
+        func = builder.extract_node(data)
+        self.assertIs(func.is_bound(), True)
+        self.assertEqual(func.implicit_parameters(), 1)
+
+        data2 = """
+        def not_bound():  #@
+            pass
+        """
+        func2 = builder.extract_node(data2)
+        self.assertIs(func2.is_bound(), False)
+        self.assertEqual(func2.implicit_parameters(), 0)
+
     def test_type_builtin_descriptor_subclasses(self) -> None:
         astroid = builder.parse(
             """
