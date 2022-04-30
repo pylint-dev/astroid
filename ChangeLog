@@ -23,6 +23,11 @@ Release date: TBA
 
 * Fix ``col_offset`` attribute for nodes involving ``with`` on ``PyPy``.
 
+* Fixed a crash involving two starred expressions: one inside a comprehension,
+  both inside a call.
+
+  Refs PyCQA/pylint#6372
+
 
 What's New in astroid 2.11.3?
 =============================
