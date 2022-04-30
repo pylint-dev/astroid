@@ -124,11 +124,17 @@ class ProtocolTests(unittest.TestCase):
         self._helper_starred_expected(
             "a, (*b, c), d = (1, (2, 3, 4), 5) #@", Uninferable
         )
-        # Regression test for https://github.com/PyCQA/pylint/issues/6372
-        self._helper_starred_expected(
-            "string_twos = ''.join(str(*y) for _, *y in [[1, 2], [1, 2]]) #@",
-            Uninferable,
-        )
+
+    def test_assigned_stmts_starred_inside_call(self) -> None:
+        """Regression test for https://github.com/PyCQA/pylint/issues/6372"""
+        code = "string_twos = ''.join(str(*y) for _, *y in [[1, 2], [1, 2]]) #@"
+        stmt = extract_node(code)
+        starred = next(stmt.nodes_of_class(nodes.Starred))
+        starred_stmts = starred.assigned_stmts()
+        self.assertIs(next(starred_stmts), Uninferable)
+        # Generator exhausted after one call
+        with self.assertRaises(StopIteration):
+            next(starred_stmts)
 
     def test_assign_stmts_starred_fails(self) -> None:
         # Too many starred
