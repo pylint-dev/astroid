@@ -28,6 +28,10 @@ Release date: TBA
 
   Closes PyCQA/pylint#6464
 
+* Fixed a crash when ``_filter_stmts`` encounters an ``EmptyNode``.
+
+  Closes PyCQA/pylint#6438
+
 
 What's New in astroid 2.11.3?
 =============================
