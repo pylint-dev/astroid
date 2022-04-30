@@ -14,6 +14,11 @@ Release date: TBA
 
 * Fix ``col_offset`` attribute for nodes involving ``with`` on ``PyPy``.
 
+* Fixed a crash involving two starred expressions: one inside a comprehension,
+  both inside a call.
+
+  Refs PyCQA/pylint#6372
+
 * Made ``FunctionDef.implicit_parameters`` return 1 for methods by making
   ``FunctionDef.is_bound`` return ``True``, as it does for class methods.
 
