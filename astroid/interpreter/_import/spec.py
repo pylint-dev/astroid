@@ -171,7 +171,7 @@ class ImportlibFinder(Finder):
 
 
 class ExplicitNamespacePackageFinder(ImportlibFinder):
-    """A finder for the explicit namespace packages, generated through pkg_resources."""
+    """A finder for the explicit namespace packages."""
 
     def find_module(self, modname, module_parts, processed, submodule_path):
         if processed:

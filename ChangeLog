@@ -13,6 +13,10 @@ Release date: TBA
 
   Closes #1512
 
+* Remove dependency on ``pkg_resources`` from ``setuptools``.
+
+  Closes #1103
+
 * Rename ``ModuleSpec`` -> ``module_type`` constructor parameter to match attribute
   name and improve typing. Use ``type`` instead.
 

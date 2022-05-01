@@ -10,8 +10,6 @@ import unittest
 from contextlib import contextmanager
 from typing import Iterator
 
-import pkg_resources
-
 import astroid
 from astroid import manager, test_utils
 from astroid.const import IS_JYTHON
@@ -128,7 +126,6 @@ class AstroidManagerTest(
     def test_namespace_package_pth_support(self) -> None:
         pth = "foogle_fax-0.12.5-py2.7-nspkg.pth"
         site.addpackage(resources.RESOURCE_PATH, pth, [])
-        pkg_resources._namespace_packages["foogle"] = []
 
         try:
             module = self.manager.ast_from_module_name("foogle.fax")
@@ -138,18 +135,14 @@ class AstroidManagerTest(
             with self.assertRaises(AstroidImportError):
                 self.manager.ast_from_module_name("foogle.moogle")
         finally:
-            del pkg_resources._namespace_packages["foogle"]
             sys.modules.pop("foogle")
 
     def test_nested_namespace_import(self) -> None:
         pth = "foogle_fax-0.12.5-py2.7-nspkg.pth"
         site.addpackage(resources.RESOURCE_PATH, pth, [])
-        pkg_resources._namespace_packages["foogle"] = ["foogle.crank"]
-        pkg_resources._namespace_packages["foogle.crank"] = []
         try:
             self.manager.ast_from_module_name("foogle.crank")
         finally:
-            del pkg_resources._namespace_packages["foogle"]
             sys.modules.pop("foogle")
 
     def test_namespace_and_file_mismatch(self) -> None:
@@ -158,12 +151,10 @@ class AstroidManagerTest(
         self.assertEqual(ast.name, "unittest")
         pth = "foogle_fax-0.12.5-py2.7-nspkg.pth"
         site.addpackage(resources.RESOURCE_PATH, pth, [])
-        pkg_resources._namespace_packages["foogle"] = []
         try:
             with self.assertRaises(AstroidImportError):
                 self.manager.ast_from_module_name("unittest.foogle.fax")
         finally:
-            del pkg_resources._namespace_packages["foogle"]
             sys.modules.pop("foogle")
 
     def _test_ast_from_zip(self, archive: str) -> None:
