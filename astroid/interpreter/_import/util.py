@@ -31,7 +31,7 @@ def is_namespace(modname: str) -> bool:
         last_parent = working_modname
 
     if found_spec is None:
-        return
+        return False
     # origin can be either a string on older Python versions
     # or None in case it is a namespace package:
     # https://github.com/python/cpython/pull/5481
