@@ -67,7 +67,6 @@ Contributors
 - Peter Kolbus <peter.kolbus@gmail.com>
 - Omer Katz <omer.drow@gmail.com>
 - Moises Lopez <moylop260@vauxoo.com>
-- Michael <michael-k@users.noreply.github.com>
 - Keichi Takahashi <keichi.t@me.com>
 - Kavins Singh <kavinsingh@hotmail.com>
 - Karthikeyan Singaravelan <tir.karthi@gmail.com>
