@@ -20,7 +20,7 @@ from astroid import helpers, nodes, objects, test_utils, util
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod
 from astroid.builder import AstroidBuilder, extract_node, parse
-from astroid.const import IS_PYPY, PY38_PLUS, PY39_PLUS
+from astroid.const import PY38_PLUS, PY39_PLUS
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -816,9 +816,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
         self.assertEqual(inferred[0].name, "open")
-
-    if IS_PYPY:
-        test_builtin_open = unittest.expectedFailure(test_builtin_open)
 
     def test_callfunc_context_func(self) -> None:
         code = """

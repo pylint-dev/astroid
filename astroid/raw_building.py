@@ -26,17 +26,6 @@ TYPE_NOTIMPLEMENTED = type(NotImplemented)
 TYPE_ELLIPSIS = type(...)
 
 
-def _io_discrepancy(member):
-    # _io module names itself `io`: http://bugs.python.org/issue18602
-    member_self = getattr(member, "__self__", None)
-    return (
-        member_self
-        and inspect.ismodule(member_self)
-        and member_self.__name__ == "_io"
-        and member.__module__ == "io"
-    )
-
-
 def _attach_local_node(parent, node, name):
     node.name = name  # needed by add_local_node
     parent.add_local_node(node)
@@ -343,9 +332,7 @@ class InspectBuilder:
             if inspect.isfunction(member):
                 _build_from_function(node, name, member, self._module)
             elif inspect.isbuiltin(member):
-                if not _io_discrepancy(member) and self.imported_member(
-                    node, member, name
-                ):
+                if self.imported_member(node, member, name):
                     continue
                 object_build_methoddescriptor(node, member, name)
             elif inspect.isclass(member):
@@ -383,7 +370,7 @@ class InspectBuilder:
                 attach_dummy_node(node, name, member)
         return None
 
-    def imported_member(self, node, member, name):
+    def imported_member(self, node, member, name: str) -> bool:
         """verify this is not an imported class or handle it"""
         # /!\ some classes like ExtensionClass doesn't have a __module__
         # attribute ! Also, this may trigger an exception on badly built module
@@ -402,7 +389,13 @@ class InspectBuilder:
                 attach_dummy_node(node, name, member)
                 return True
 
-        real_name = {"gtk": "gtk_gtk", "_io": "io"}.get(modname, modname)
+        # On PyPy during bootstrapping we infer _io while _module is
+        # builtins. In CPython _io names itself io, see http://bugs.python.org/issue18602
+        # Therefore, this basically checks whether we are not in PyPy.
+        if modname == "_io" and not self._module.__name__ == "builtins":
+            return False
+
+        real_name = {"gtk": "gtk_gtk"}.get(modname, modname)
 
         if real_name != self._module.__name__:
             # check if it sounds valid and then add an import node, else use a
