@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.11.4?
+What's New in astroid 2.11.5?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.11.4?
+=============================
+Release date: 2022-05-02
 
 * Fix ``col_offset`` attribute for nodes involving ``with`` on ``PyPy``.
 
