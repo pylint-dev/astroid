@@ -3,16 +3,16 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 import sys
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, List, Set
 
 if TYPE_CHECKING:
     from astroid import nodes, transforms
     from astroid.context import InferenceContext
 
 if sys.version_info >= (3, 8):
-    from typing import TypedDict
+    from typing import Protocol, TypedDict
 else:
-    from typing_extensions import TypedDict
+    from typing_extensions import Protocol, TypedDict
 
 
 class InferenceErrorInfo(TypedDict):
@@ -37,3 +37,10 @@ class AstroidManagerBrain(TypedDict):
     optimize_ast: bool
     extension_package_whitelist: Set
     _transform: "transforms.TransformVisitor"
+
+
+class InferMethod(Protocol):
+    def __call__(  # pylint: disable=no-self-argument
+        self_, self: "nodes.NodeNG", context: "InferenceContext | None" = None
+    ) -> Iterator["nodes.NodeNG"]:
+        ...

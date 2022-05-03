@@ -22,6 +22,7 @@ from typing import (
 )
 
 from astroid import decorators, util
+from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidError,
     InferenceError,
@@ -33,7 +34,7 @@ from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.utils import Position
-from astroid.typing import InferFn
+from astroid.typing import InferFn, InferMethod
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -88,6 +89,9 @@ class NodeNG:
     """Attributes that contain AST-dependent fields."""
     # instance specific inference function infer(node, context)
     _explicit_inference: Optional[InferFn] = None
+
+    _infer: ClassVar[InferMethod]
+    """Returns an interator of inference result for the node."""
 
     def __init__(
         self,
@@ -593,7 +597,9 @@ class NodeNG:
         # overridden for ImportFrom, Import, Global, TryExcept and Arguments
         pass
 
-    def _infer(self, context=None):
+    # We redefine here as defining _infer as a ClassVar first allows
+    # redefinition in subclasses in inference.py
+    def _infer(self, context: Optional[InferenceContext] = None) -> Iterator["NodeNG"]:  # type: ignore[redef]
         """we don't know how to resolve a statement by default"""
         # this method is overridden by most concrete classes
         raise InferenceError(

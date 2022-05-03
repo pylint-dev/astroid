@@ -59,7 +59,15 @@ _FunctionDefT = TypeVar("_FunctionDefT", bound=nodes.FunctionDef)
 # .infer method ###############################################################
 
 
-def infer_end(self, context=None):
+_InferEndNodeT = TypeVar(
+    "_InferEndNodeT",
+    bound=Union[nodes.Module, nodes.ClassDef, nodes.Lambda, nodes.Const, nodes.Slice],
+)
+
+
+def infer_end(
+    self: _InferEndNodeT, context: Optional[InferenceContext] = None
+) -> Iterator[_InferEndNodeT]:
     """Inference's end for nodes that yield themselves on inference
 
     These are objects for which inference does not have any semantic,
@@ -68,13 +76,11 @@ def infer_end(self, context=None):
     yield self
 
 
-# We add ignores to all these assignments in this file
-# See https://github.com/python/mypy/issues/2427
-nodes.Module._infer = infer_end  # type: ignore[assignment]
-nodes.ClassDef._infer = infer_end  # type: ignore[assignment]
-nodes.Lambda._infer = infer_end  # type: ignore[assignment]
-nodes.Const._infer = infer_end  # type: ignore[assignment]
-nodes.Slice._infer = infer_end  # type: ignore[assignment]
+nodes.Module._infer = infer_end
+nodes.ClassDef._infer = infer_end
+nodes.Lambda._infer = infer_end
+nodes.Const._infer = infer_end
+nodes.Slice._infer = infer_end
 
 
 def _infer_sequence_helper(node, context=None):
@@ -99,8 +105,15 @@ def _infer_sequence_helper(node, context=None):
     return values
 
 
+_InferSequenceNodeT = TypeVar(
+    "_InferSequenceNodeT", bound=Union[nodes.List, nodes.Tuple, nodes.Set]
+)
+
+
 @decorators.raise_if_nothing_inferred
-def infer_sequence(self, context=None):
+def infer_sequence(
+    self: _InferSequenceNodeT, context: Optional[InferenceContext] = None
+) -> Iterator[Union[nodes.List, nodes.Tuple, nodes.Set]]:
     has_starred_named_expr = any(
         isinstance(e, (nodes.Starred, nodes.NamedExpr)) for e in self.elts
     )
@@ -116,9 +129,9 @@ def infer_sequence(self, context=None):
         yield self
 
 
-nodes.List._infer = infer_sequence  # type: ignore[assignment]
-nodes.Tuple._infer = infer_sequence  # type: ignore[assignment]
-nodes.Set._infer = infer_sequence  # type: ignore[assignment]
+nodes.List._infer = infer_sequence
+nodes.Tuple._infer = infer_sequence
+nodes.Set._infer = infer_sequence
 
 
 def infer_map(self, context=None):
