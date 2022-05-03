@@ -892,6 +892,26 @@ def infer_dict_fromkeys(node, context=None):
     return _build_dict_with_elements([])
 
 
+def _looks_like_copy_method(node):
+    func = node.func
+    return isinstance(func, nodes.Attribute) and func.attrname == 'copy'
+
+
+def _has_copy_method(node):
+    return any(
+        isinstance(node, klass)
+        for klass in [nodes.Dict, nodes.List, nodes.Set, objects.FrozenSet]
+    )
+
+
+def _infer_copy_method(node, context=None):
+    inferred = list(node.func.expr.infer(context=context))
+    if all(_has_copy_method(x) for x in inferred):
+        return iter(inferred)
+
+    raise UseInferenceDefault()
+
+
 # Builtins inference
 register_builtin_transform(infer_bool, "bool")
 register_builtin_transform(infer_super, "super")
@@ -919,4 +939,10 @@ AstroidManager().register_transform(
     nodes.ClassDef,
     inference_tip(_infer_object__new__decorator),
     _infer_object__new__decorator_check,
+)
+
+AstroidManager().register_transform(
+    nodes.Call,
+    inference_tip(_infer_copy_method),
+    _looks_like_copy_method,
 )
