@@ -894,7 +894,7 @@ def infer_dict_fromkeys(node, context=None):
 
 def _looks_like_copy_method(node):
     func = node.func
-    return isinstance(func, nodes.Attribute) and func.attrname == 'copy'
+    return isinstance(func, nodes.Attribute) and func.attrname == "copy"
 
 
 def _has_copy_method(node):
