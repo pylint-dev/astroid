@@ -22,17 +22,12 @@ def is_namespace(modname: str) -> bool:
             working_modname = component
         try:
             found_spec = _find_spec_from_path(working_modname, last_parent)
-        except (
-            AttributeError,  # TODO: remove AttributeError when 3.7+ is min
-            ValueError,
-        ):
+        except ValueError:
             # executed .pth files may not have __spec__
             return True
         last_parent = working_modname
 
     if found_spec is None:
         return False
-    # origin can be either a string on older Python versions
-    # or None in case it is a namespace package:
-    # https://github.com/python/cpython/pull/5481
-    return found_spec.origin in {None, "namespace"}
+
+    return found_spec.origin == "namespace"
