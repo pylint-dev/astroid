@@ -105,14 +105,10 @@ def _infer_sequence_helper(node, context=None):
     return values
 
 
-_InferSequenceNodeT = TypeVar(
-    "_InferSequenceNodeT", bound=Union[nodes.List, nodes.Tuple, nodes.Set]
-)
-
-
 @decorators.raise_if_nothing_inferred
 def infer_sequence(
-    self: _InferSequenceNodeT, context: Optional[InferenceContext] = None
+    self: Union[nodes.List, nodes.Tuple, nodes.Set],
+    context: Optional[InferenceContext] = None,
 ) -> Iterator[Union[nodes.List, nodes.Tuple, nodes.Set]]:
     has_starred_named_expr = any(
         isinstance(e, (nodes.Starred, nodes.NamedExpr)) for e in self.elts
