@@ -87,7 +87,7 @@ multiply([1, 2], [3, 4])
         with numpy.distutils.
 
         PY312_PLUS -- This test will likely become unnecessary when Python 3.12 is
-        numypy's minimum version. (numpy.distutils will be removed then.)
+        numpy's minimum version. (numpy.distutils will be removed then.)
         """
         node = extract_node(
             """
