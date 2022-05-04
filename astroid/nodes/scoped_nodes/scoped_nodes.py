@@ -13,7 +13,7 @@ import os
 import sys
 import typing
 import warnings
-from typing import Dict, List, Optional, Set, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, TypeVar, Union, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
