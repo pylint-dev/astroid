@@ -13,7 +13,7 @@ import os
 import sys
 import typing
 import warnings
-from typing import Dict, List, Optional, Set, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, TypeVar, Union, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
@@ -57,6 +57,9 @@ else:
     from typing_extensions import Literal
 
     from astroid.decorators import cachedproperty as cached_property
+
+if TYPE_CHECKING:
+    from astroid import nodes
 
 
 ITER_METHODS = ("__iter__", "__getitem__")
@@ -674,11 +677,6 @@ class GeneratorExp(ComprehensionScope):
 
     :type: NodeNG or None
     """
-    generators = None
-    """The generators that are looped through.
-
-    :type: list(Comprehension) or None
-    """
 
     def __init__(
         self,
@@ -721,14 +719,15 @@ class GeneratorExp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(self, elt=None, generators=None):
+    def postinit(
+        self, elt=None, generators: Optional[List["nodes.Comprehension"]] = None
+    ):
         """Do some setup after initialisation.
 
         :param elt: The element that forms the output of the expression.
         :type elt: NodeNG or None
 
         :param generators: The generators that are looped through.
-        :type generators: list(Comprehension) or None
         """
         self.elt = elt
         if generators is None:
@@ -772,11 +771,6 @@ class DictComp(ComprehensionScope):
 
     :type: NodeNG or None
     """
-    generators = None
-    """The generators that are looped through.
-
-    :type: list(Comprehension) or None
-    """
 
     def __init__(
         self,
@@ -819,7 +813,12 @@ class DictComp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(self, key=None, value=None, generators=None):
+    def postinit(
+        self,
+        key=None,
+        value=None,
+        generators: Optional[List["nodes.Comprehension"]] = None,
+    ):
         """Do some setup after initialisation.
 
         :param key: What produces the keys.
@@ -829,7 +828,6 @@ class DictComp(ComprehensionScope):
         :type value: NodeNG or None
 
         :param generators: The generators that are looped through.
-        :type generators: list(Comprehension) or None
         """
         self.key = key
         self.value = value
@@ -870,11 +868,6 @@ class SetComp(ComprehensionScope):
 
     :type: NodeNG or None
     """
-    generators = None
-    """The generators that are looped through.
-
-    :type: list(Comprehension) or None
-    """
 
     def __init__(
         self,
@@ -917,14 +910,15 @@ class SetComp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(self, elt=None, generators=None):
+    def postinit(
+        self, elt=None, generators: Optional[List["nodes.Comprehension"]] = None
+    ):
         """Do some setup after initialisation.
 
         :param elt: The element that forms the output of the expression.
         :type elt: NodeNG or None
 
         :param generators: The generators that are looped through.
-        :type generators: list(Comprehension) or None
         """
         self.elt = elt
         if generators is None:
@@ -965,12 +959,6 @@ class ListComp(ComprehensionScope):
     :type: NodeNG or None
     """
 
-    generators = None
-    """The generators that are looped through.
-
-    :type: list(Comprehension) or None
-    """
-
     def __init__(
         self,
         lineno=None,
@@ -994,7 +982,9 @@ class ListComp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(self, elt=None, generators=None):
+    def postinit(
+        self, elt=None, generators: Optional[List["nodes.Comprehension"]] = None
+    ):
         """Do some setup after initialisation.
 
         :param elt: The element that forms the output of the expression.
@@ -1004,7 +994,10 @@ class ListComp(ComprehensionScope):
         :type generators: list(Comprehension) or None
         """
         self.elt = elt
-        self.generators = generators
+        if generators is None:
+            self.generators = []
+        else:
+            self.generators = generators
 
     def bool_value(self, context=None):
         """Determine the boolean value of this node.
