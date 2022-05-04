@@ -46,8 +46,7 @@ if TYPE_CHECKING:
     from astroid import nodes
     from astroid.nodes import LocalsDictNodeNG
 
-if sys.version_info >= (3, 8) or TYPE_CHECKING:
-    # pylint: disable-next=ungrouped-imports
+if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
     from astroid.decorators import cachedproperty as cached_property
@@ -57,12 +56,12 @@ def _is_const(value):
     return isinstance(value, tuple(CONST_CLS))
 
 
-T_Nodes = TypeVar("T_Nodes", bound=NodeNG)
+_NodesT = TypeVar("_NodesT", bound=NodeNG)
 
 AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
 AssignedStmtsCall = Callable[
     [
-        T_Nodes,
+        _NodesT,
         AssignedStmtsPossibleNode,
         Optional[InferenceContext],
         Optional[typing.List[int]],
@@ -367,8 +366,8 @@ class BaseContainer(
 class LookupMixIn:
     """Mixin to look up a name in the right scope."""
 
-    @lru_cache(maxsize=None)
-    def lookup(self, name):
+    @lru_cache(maxsize=None)  # pylint: disable=cache-max-size-none  # noqa
+    def lookup(self, name: str) -> typing.Tuple[str, typing.List[NodeNG]]:
         """Lookup where the given variable is assigned.
 
         The lookup starts from self's scope. If self is not a frame itself
@@ -376,12 +375,10 @@ class LookupMixIn:
         filtered to remove ignorable statements according to self's location.
 
         :param name: The name of the variable to find assignments for.
-        :type name: str
 
         :returns: The scope node and the list of assignments associated to the
             given name according to the scope where it has been found (locals,
             globals or builtin).
-        :rtype: tuple(str, list(NodeNG))
         """
         return self.scope().scope_lookup(self, name)
 

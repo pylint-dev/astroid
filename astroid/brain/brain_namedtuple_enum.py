@@ -133,7 +133,11 @@ def infer_func_form(
     # we know it is a namedtuple anyway.
     name = name or "Uninferable"
     # we want to return a Class node instance with proper attributes set
-    class_node = nodes.ClassDef(name, parent=node.parent)
+    class_node = nodes.ClassDef(name)
+    # A typical ClassDef automatically adds its name to the parent scope,
+    # but doing so causes problems, so defer setting parent until after init
+    # see: https://github.com/PyCQA/pylint/issues/5982
+    class_node.parent = node.parent
     class_node.postinit(
         # set base class=tuple
         bases=[base_type],

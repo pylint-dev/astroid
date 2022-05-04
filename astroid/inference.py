@@ -537,9 +537,9 @@ def _infer_unaryop(self, context=None):
                         yield operand
                     else:
                         yield result
-                except AttributeInferenceError as exc:
+                except AttributeInferenceError as inner_exc:
                     # The unary operation special method was not found.
-                    yield util.BadUnaryOperationMessage(operand, self.op, exc)
+                    yield util.BadUnaryOperationMessage(operand, self.op, inner_exc)
                 except InferenceError:
                     yield util.Uninferable
 
@@ -1039,8 +1039,10 @@ nodes.IfExp._infer = infer_ifexp  # type: ignore[assignment]
 
 # pylint: disable=dangerous-default-value
 @wrapt.decorator
-def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
-    node = args[0]
+def _cached_generator(
+    func, instance: _FunctionDefT, args, kwargs, _cache={}  # noqa: B006
+):
+    node = instance
     try:
         return iter(_cache[func, id(node)])
     except KeyError:

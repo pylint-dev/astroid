@@ -20,7 +20,7 @@ from astroid import helpers, nodes, objects, test_utils, util
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod
 from astroid.builder import AstroidBuilder, extract_node, parse
-from astroid.const import IS_PYPY, PY38_PLUS, PY39_PLUS
+from astroid.const import PY38_PLUS, PY39_PLUS
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -816,9 +816,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
         self.assertEqual(inferred[0].name, "open")
-
-    if IS_PYPY:
-        test_builtin_open = unittest.expectedFailure(test_builtin_open)
 
     def test_callfunc_context_func(self) -> None:
         code = """
@@ -4056,10 +4053,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 25)
 
-    @pytest.mark.xfail(reason="Cannot reuse inner value due to inference context reuse")
-    def test_inner_value_redefined_by_subclass_with_mro(self):
-        # This might work, but it currently doesn't due to not being able
-        # to reuse inference contexts.
+    def test_inner_value_redefined_by_subclass_with_mro(self) -> None:
         ast_node = extract_node(
             """
         class X(object):
@@ -4079,8 +4073,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         )
         inferred = next(ast_node.infer())
-        self.assertIsInstance(inferred, nodes.Const)
-        self.assertEqual(inferred.value, 25)
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 26
 
     def test_getitem_of_class_raised_type_error(self) -> None:
         # Test that we wrap an AttributeInferenceError
@@ -6638,6 +6632,12 @@ def test_recursion_on_inference_tip() -> None:
     """
     module = parse(code)
     assert module
+
+
+def test_function_def_cached_generator() -> None:
+    """Regression test for https://github.com/PyCQA/astroid/issues/817."""
+    funcdef: nodes.FunctionDef = extract_node("def func(): pass")
+    next(funcdef._infer())
 
 
 if __name__ == "__main__":

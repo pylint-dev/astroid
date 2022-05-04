@@ -3,7 +3,7 @@ ci:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
+    rev: v4.2.0
     hooks:
       - id: trailing-whitespace
         exclude: .github/|tests/testdata
@@ -21,14 +21,14 @@ repos:
           - --remove-duplicate-keys
           - --remove-unused-variables
   - repo: https://github.com/Pierre-Sassoulas/copyright_notice_precommit
-    rev: 6f5a59c3e1cb0f20731eb1ff32622c9a2fc72d9a
+    rev: 0.1.2
     hooks:
       - id: copyright-notice
         args: ["--notice=script/copyright.txt", "--enforce-all", "--autofix"]
         exclude: tests/testdata|setup.py
         types: [python]
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.31.0
+    rev: v2.32.0
     hooks:
       - id: pyupgrade
         exclude: tests/testdata
@@ -44,7 +44,7 @@ repos:
       - id: black-disable-checker
         exclude: tests/unittest_nodes_lineno.py
   - repo: https://github.com/psf/black
-    rev: 22.1.0
+    rev: 22.3.0
     hooks:
       - id: black
         args: [--safe, --quiet]
@@ -53,7 +53,8 @@ repos:
     rev: 4.0.1
     hooks:
       - id: flake8
-        additional_dependencies: [flake8-bugbear, flake8-typing-imports==1.12.0]
+        additional_dependencies:
+          [flake8-bugbear==22.3.23, flake8-typing-imports==1.12.0]
         exclude: tests/testdata|doc/conf.py
   - repo: local
     hooks:
@@ -70,7 +71,7 @@ repos:
           ]
         exclude: tests/testdata|conf.py
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.940
+    rev: v0.950
     hooks:
       - id: mypy
         name: mypy
@@ -89,7 +90,7 @@ repos:
           ]
         exclude: tests/testdata| # exclude everything, we're not ready
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.5.1
+    rev: v2.6.2
     hooks:
       - id: prettier
         args: [--prose-wrap=always, --print-width=88]
