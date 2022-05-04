@@ -43,7 +43,7 @@ unsafe-load-any-extension=no
 extension-pkg-whitelist=
 
 # Minimum supported python version
-py-version = 3.7.2
+py-version = 3.6.2
 
 
 [REPORTS]
