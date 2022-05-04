@@ -16,6 +16,7 @@ import astroid
 from astroid import manager, test_utils
 from astroid.const import IS_JYTHON
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
+from astroid.nodes import Const
 
 from . import resources
 
@@ -313,6 +314,14 @@ class BorgAstroidManagerTC(unittest.TestCase):
         second_manager = manager.AstroidManager()
         second_built = second_manager.ast_from_module_name("builtins")
         self.assertIs(built, second_built)
+
+
+class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
+    def test_brain_plugins_reloaded_after_clearing_cache(self) -> None:
+        astroid.MANAGER.clear_cache()
+        format_call = astroid.extract_node("''.format()")
+        inferred = next(format_call.infer())
+        self.assertIsInstance(inferred, Const)
 
 
 if __name__ == "__main__":
