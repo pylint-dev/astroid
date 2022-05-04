@@ -180,7 +180,7 @@ class ComprehensionScope(LocalsDictNodeNG):
         """Get the 'qualified' name of the node."""
         return self.pytype()
 
-    def infer(
+    def _infer(
         self: _T, context: Optional["InferenceContext"] = None, **kwargs: Any
     ) -> Iterator[_T]:
         yield self
