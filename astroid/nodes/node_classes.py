@@ -16,6 +16,7 @@ from typing import (
     Callable,
     ClassVar,
     Generator,
+    Iterator,
     Optional,
     Type,
     TypeVar,
@@ -4876,7 +4877,9 @@ class EvaluatedObject(NodeNG):
             parent=self.original.parent,
         )
 
-    def infer(self, context=None, **kwargs):
+    def _infer(
+        self, context: Optional[InferenceContext] = None
+    ) -> Iterator[Union[NodeNG, Type[util.Uninferable]]]:
         yield self.value
 
 
