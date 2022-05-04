@@ -56,7 +56,5 @@ class AstroidCacheSetupMixin:
 
     @classmethod
     def teardown_class(cls):
-        if cls._builtins:
-            AstroidManager().astroid_cache["builtins"] = cls._builtins
-        if cls._transforms:
-            AstroidManager.brain["_transform"] = cls._transforms
+        AstroidManager().astroid_cache["builtins"] = cls._builtins
+        AstroidManager.brain["_transform"] = cls._transforms
