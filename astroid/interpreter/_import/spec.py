@@ -14,6 +14,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import List, NamedTuple, Optional, Sequence, Tuple
 
+from astroid.modutils import EXT_LIB_DIRS
+
 from . import util
 
 
@@ -150,7 +152,9 @@ class ImportlibFinder(Finder):
                 for p in sys.path
                 if os.path.isdir(os.path.join(p, *processed))
             ]
-        elif spec.name == "distutils":
+        elif spec.name == "distutils" and not any(
+            spec.location.startswith(ext_lib_dir) for ext_lib_dir in EXT_LIB_DIRS
+        ):
             # virtualenv below 20.0 patches distutils in an unexpected way
             # so we just find the location of distutils that will be
             # imported to avoid spurious import-error messages

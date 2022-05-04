@@ -81,6 +81,19 @@ multiply([1, 2], [3, 4])
         inferred = callfunc.inferred()
         self.assertEqual(len(inferred), 1)
 
+    @unittest.skipUnless(HAS_NUMPY, "Needs numpy")
+    def test_numpy_distutils(self):
+        """Special handling of virtualenv's patching of distutils shouldn't interfere
+        with numpy.distutils"""
+        node = extract_node(
+            """
+from numpy.distutils.misc_util import is_sequence
+is_sequence("ABC") #@
+"""
+        )
+        inferred = node.inferred()
+        self.assertIsInstance(inferred[0], nodes.Const)
+
     def test_nameconstant(self) -> None:
         # used to fail for Python 3.4
         builder = AstroidBuilder()
