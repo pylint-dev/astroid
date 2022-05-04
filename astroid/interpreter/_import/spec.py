@@ -153,7 +153,8 @@ class ImportlibFinder(Finder):
                 if os.path.isdir(os.path.join(p, *processed))
             ]
         elif spec.name == "distutils" and not any(
-            spec.location.startswith(ext_lib_dir) for ext_lib_dir in EXT_LIB_DIRS
+            spec.location.startswith(ext_lib_dir.lower())
+            for ext_lib_dir in EXT_LIB_DIRS
         ):
             # virtualenv below 20.0 patches distutils in an unexpected way
             # so we just find the location of distutils that will be
