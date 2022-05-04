@@ -362,14 +362,14 @@ class AstroidManager:
 
         raw_building._astroid_bootstrapping()
 
-    def clear_cache(self):
-        """Clear the underlying cache. Also bootstraps the builtins module and
-        re-registers transforms."""
+    def clear_cache(self) -> None:
+        """Clear the underlying cache, bootstrap the builtins module and
+        re-register transforms."""
         self.astroid_cache.clear()
         AstroidManager.brain["_transform"] = TransformVisitor()
         self.bootstrap()
 
-        # Load brain plugins: currently done in astroid.__init__.py
+        # Reload brain plugins. During initialisation this is done in astroid.__init__.py
         for module in BRAIN_MODULES_DIRECTORY.iterdir():
             if module.suffix == ".py":
                 module_spec = find_spec(f"astroid.brain.{module.stem}")
