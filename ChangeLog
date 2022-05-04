@@ -6,16 +6,70 @@ What's New in astroid 2.12.0?
 =============================
 Release date: TBA
 
+* Fix ``re`` brain on Python ``3.11``. The flags now come from ``re._compile``.
+
 * Infer comprehensions and generators as their respective nodes instead of
   as ``Uninferable``.
 
   Closes #135, #1404
 
+* Build ``nodes.Module`` for frozen modules which have location information in their
+  ``ModuleSpec``.
 
-What's New in astroid 2.11.2?
+  Closes #1512
+
+* Rename ``ModuleSpec`` -> ``module_type`` constructor parameter to match attribute
+  name and improve typing. Use ``type`` instead.
+
+
+What's New in astroid 2.11.5?
 =============================
 Release date: TBA
 
+
+
+
+What's New in astroid 2.11.4?
+=============================
+Release date: 2022-05-02
+
+* Fix ``col_offset`` attribute for nodes involving ``with`` on ``PyPy``.
+
+* Fixed a crash involving two starred expressions: one inside a comprehension,
+  both inside a call.
+
+  Refs PyCQA/pylint#6372
+
+* Made ``FunctionDef.implicit_parameters`` return 1 for methods by making
+  ``FunctionDef.is_bound`` return ``True``, as it does for class methods.
+
+  Closes PyCQA/pylint#6464
+
+* Fixed a crash when ``_filter_stmts`` encounters an ``EmptyNode``.
+
+  Closes PyCQA/pylint#6438
+
+
+What's New in astroid 2.11.3?
+=============================
+Release date: 2022-04-19
+
+* Fixed an error in the Qt brain when building ``instance_attrs``.
+
+  Closes PyCQA/pylint#6221
+
+* Fixed a crash in the ``gi`` brain.
+
+  Closes PyCQA/pylint#6371
+
+
+What's New in astroid 2.11.2?
+=============================
+Release date: 2022-03-26
+
+* Avoided adding the name of a parent namedtuple to its child's locals.
+
+  Refs PyCQA/pylint#5982
 
 
 What's New in astroid 2.11.1?

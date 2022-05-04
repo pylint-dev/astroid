@@ -159,6 +159,8 @@ class NamedTupleTest(unittest.TestCase):
         self.assertEqual(
             [anc.name for anc in klass.ancestors()], ["X", "tuple", "object"]
         )
+        # See: https://github.com/PyCQA/pylint/issues/5982
+        self.assertNotIn("X", klass.locals)
         for anc in klass.ancestors():
             self.assertFalse(anc.parent is None)
 
