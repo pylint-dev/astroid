@@ -13,6 +13,10 @@
     "name": "Marc Mueller",
     "team": "Maintainers"
   },
+  "androwiiid@gmail.com": {
+    "mails": ["androwiiid@gmail.com"],
+    "name": "Paligot Gérard"
+  },
   "areveny@protonmail.com": {
     "mails": ["areveny@protonmail.com", "self@areveny.com"],
     "name": "Areveny",
@@ -81,6 +85,10 @@
     "mails": ["guillaume.peillex@gmail.com"],
     "name": "Hippo91",
     "team": "Maintainers"
+  },
+  "hugovk@users.noreply.github.com": {
+    "mails": ["hugovk@users.noreply.github.com"],
+    "name": "Hugo van Kemenade"
   },
   "jacob@bogdanov.dev": {
     "mails": ["jacob@bogdanov.dev", "jbogdanov@128technology.com"],

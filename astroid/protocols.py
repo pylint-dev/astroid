@@ -690,6 +690,9 @@ def starred_assigned_stmts(
     if isinstance(stmt, nodes.Assign):
         value = stmt.value
         lhs = stmt.targets[0]
+        if not isinstance(lhs, nodes.BaseContainer):
+            yield util.Uninferable
+            return
 
         if sum(1 for _ in lhs.nodes_of_class(nodes.Starred)) > 1:
             raise InferenceError(

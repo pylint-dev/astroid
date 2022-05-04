@@ -17,6 +17,7 @@ from astroid import manager, test_utils
 from astroid.const import IS_JYTHON
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.modutils import is_standard_module
+from astroid.nodes import Const
 from astroid.nodes.scoped_nodes import ClassDef
 
 from . import resources
@@ -355,6 +356,12 @@ class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
             with self.subTest(cleared_cache=cleared_cache):
                 # less equal because the "baseline" might have had multiple calls to bootstrap()
                 self.assertLessEqual(cleared_cache.currsize, baseline_cache.currsize)
+
+    def test_brain_plugins_reloaded_after_clearing_cache(self) -> None:
+        astroid.MANAGER.clear_cache()
+        format_call = astroid.extract_node("''.format()")
+        inferred = next(format_call.infer())
+        self.assertIsInstance(inferred, Const)
 
 
 if __name__ == "__main__":

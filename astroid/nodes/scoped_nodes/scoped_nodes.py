@@ -13,7 +13,7 @@ import os
 import sys
 import typing
 import warnings
-from typing import Dict, List, Optional, Set, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, TypeVar, Union, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
@@ -58,6 +58,9 @@ else:
 
     from astroid.decorators import cachedproperty as cached_property
 
+if TYPE_CHECKING:
+    from astroid import nodes
+
 
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
@@ -66,7 +69,7 @@ BUILTIN_DESCRIPTORS = frozenset(
     {"classmethod", "staticmethod", "builtins.classmethod", "builtins.staticmethod"}
 )
 
-T = TypeVar("T")
+_T = TypeVar("_T")
 
 
 def _c3_merge(sequences, cls, context):
@@ -647,7 +650,7 @@ class Module(LocalsDictNodeNG):
     def get_children(self):
         yield from self.body
 
-    def frame(self: T, *, future: Literal[None, True] = None) -> T:
+    def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -673,11 +676,6 @@ class GeneratorExp(ComprehensionScope):
     """The element that forms the output of the expression.
 
     :type: NodeNG or None
-    """
-    generators = None
-    """The generators that are looped through.
-
-    :type: list(Comprehension) or None
     """
 
     def __init__(
@@ -721,14 +719,15 @@ class GeneratorExp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(self, elt=None, generators=None):
+    def postinit(
+        self, elt=None, generators: Optional[List["nodes.Comprehension"]] = None
+    ):
         """Do some setup after initialisation.
 
         :param elt: The element that forms the output of the expression.
         :type elt: NodeNG or None
 
         :param generators: The generators that are looped through.
-        :type generators: list(Comprehension) or None
         """
         self.elt = elt
         if generators is None:
@@ -772,11 +771,6 @@ class DictComp(ComprehensionScope):
 
     :type: NodeNG or None
     """
-    generators = None
-    """The generators that are looped through.
-
-    :type: list(Comprehension) or None
-    """
 
     def __init__(
         self,
@@ -819,7 +813,12 @@ class DictComp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(self, key=None, value=None, generators=None):
+    def postinit(
+        self,
+        key=None,
+        value=None,
+        generators: Optional[List["nodes.Comprehension"]] = None,
+    ):
         """Do some setup after initialisation.
 
         :param key: What produces the keys.
@@ -829,7 +828,6 @@ class DictComp(ComprehensionScope):
         :type value: NodeNG or None
 
         :param generators: The generators that are looped through.
-        :type generators: list(Comprehension) or None
         """
         self.key = key
         self.value = value
@@ -870,11 +868,6 @@ class SetComp(ComprehensionScope):
 
     :type: NodeNG or None
     """
-    generators = None
-    """The generators that are looped through.
-
-    :type: list(Comprehension) or None
-    """
 
     def __init__(
         self,
@@ -917,14 +910,15 @@ class SetComp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(self, elt=None, generators=None):
+    def postinit(
+        self, elt=None, generators: Optional[List["nodes.Comprehension"]] = None
+    ):
         """Do some setup after initialisation.
 
         :param elt: The element that forms the output of the expression.
         :type elt: NodeNG or None
 
         :param generators: The generators that are looped through.
-        :type generators: list(Comprehension) or None
         """
         self.elt = elt
         if generators is None:
@@ -965,12 +959,6 @@ class ListComp(ComprehensionScope):
     :type: NodeNG or None
     """
 
-    generators = None
-    """The generators that are looped through.
-
-    :type: list(Comprehension) or None
-    """
-
     def __init__(
         self,
         lineno=None,
@@ -994,7 +982,9 @@ class ListComp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(self, elt=None, generators=None):
+    def postinit(
+        self, elt=None, generators: Optional[List["nodes.Comprehension"]] = None
+    ):
         """Do some setup after initialisation.
 
         :param elt: The element that forms the output of the expression.
@@ -1004,7 +994,10 @@ class ListComp(ComprehensionScope):
         :type generators: list(Comprehension) or None
         """
         self.elt = elt
-        self.generators = generators
+        if generators is None:
+            self.generators = []
+        else:
+            self.generators = generators
 
     def bool_value(self, context=None):
         """Determine the boolean value of this node.
@@ -1254,7 +1247,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         yield self.args
         yield self.body
 
-    def frame(self: T, *, future: Literal[None, True] = None) -> T:
+    def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -1581,6 +1574,9 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
         return self.args.tolineno
 
+    def implicit_parameters(self) -> Literal[0, 1]:
+        return 1 if self.is_bound() else 0
+
     def block_range(self, lineno):
         """Get a range from the given line number to where this node ends.
 
@@ -1642,7 +1638,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             False otherwise.
         :rtype: bool
         """
-        return self.type == "classmethod"
+        return self.type in {"method", "classmethod"}
 
     def is_abstract(self, pass_is_abstract=True, any_raise_is_abstract=False):
         """Check if the method is abstract.
@@ -1800,7 +1796,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 return self, [frame]
         return super().scope_lookup(node, name, offset)
 
-    def frame(self: T, *, future: Literal[None, True] = None) -> T:
+    def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -3102,7 +3098,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         )
         return list(itertools.chain.from_iterable(children_assign_nodes))
 
-    def frame(self: T, *, future: Literal[None, True] = None) -> T:
+    def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
