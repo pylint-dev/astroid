@@ -1,40 +1,6 @@
-# Copyright (c) 2009-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2010 Daniel Harding <dharding@gmail.com>
-# Copyright (c) 2012 FELD Boris <lothiraldan@gmail.com>
-# Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2021 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
-# Copyright (c) 2016-2017 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2016 Jared Garst <jgarst@users.noreply.github.com>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2016 Dave Baum <dbaum@google.com>
-# Copyright (c) 2017-2020 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2017, 2019 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2017 rr- <rr-@sakuya.pl>
-# Copyright (c) 2018, 2021 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2018-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 brendanator <brendan.maginnis@gmail.com>
-# Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
-# Copyright (c) 2019 kavins14 <kavin.singh@mail.utoronto.ca>
-# Copyright (c) 2019 kavins14 <kavinsingh@hotmail.com>
-# Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
-# Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
-# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
-# Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-# Copyright (c) 2021 Federico Bond <federicobond@gmail.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Module for some node classes. More nodes in scoped_nodes.py"""
 
@@ -50,7 +16,9 @@ from typing import (
     Callable,
     ClassVar,
     Generator,
+    Iterator,
     Optional,
+    Type,
     TypeVar,
     Union,
 )
@@ -79,17 +47,22 @@ if TYPE_CHECKING:
     from astroid import nodes
     from astroid.nodes import LocalsDictNodeNG
 
+if sys.version_info >= (3, 8):
+    from functools import cached_property
+else:
+    from astroid.decorators import cachedproperty as cached_property
+
 
 def _is_const(value):
     return isinstance(value, tuple(CONST_CLS))
 
 
-T_Nodes = TypeVar("T_Nodes", bound=NodeNG)
+_NodesT = TypeVar("_NodesT", bound=NodeNG)
 
 AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
 AssignedStmtsCall = Callable[
     [
-        T_Nodes,
+        _NodesT,
         AssignedStmtsPossibleNode,
         Optional[InferenceContext],
         Optional[typing.List[int]],
@@ -394,8 +367,8 @@ class BaseContainer(
 class LookupMixIn:
     """Mixin to look up a name in the right scope."""
 
-    @lru_cache(maxsize=None)
-    def lookup(self, name):
+    @lru_cache(maxsize=None)  # pylint: disable=cache-max-size-none  # noqa
+    def lookup(self, name: str) -> typing.Tuple[str, typing.List[NodeNG]]:
         """Lookup where the given variable is assigned.
 
         The lookup starts from self's scope. If self is not a frame itself
@@ -403,12 +376,10 @@ class LookupMixIn:
         filtered to remove ignorable statements according to self's location.
 
         :param name: The name of the variable to find assignments for.
-        :type name: str
 
         :returns: The scope node and the list of assignments associated to the
             given name according to the scope where it has been found (locals,
             globals or builtin).
-        :rtype: tuple(str, list(NodeNG))
         """
         return self.scope().scope_lookup(self, name)
 
@@ -678,7 +649,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.kwarg: Optional[str] = kwarg  # can be None
         """The name of the variable length keyword arguments."""
 
-        self.args: typing.Optional[typing.List[AssignName]]
+        self.args: Optional[typing.List[AssignName]]
         """The names of the required arguments.
 
         Can be None if the associated function does not have a retrievable
@@ -823,7 +794,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
             return name
         return None
 
-    @decorators.cachedproperty
+    @cached_property
     def fromlineno(self):
         """The first line that this node appears on in the source code.
 
@@ -832,7 +803,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         lineno = super().fromlineno
         return max(lineno, self.parent.fromlineno or 0)
 
-    @decorators.cachedproperty
+    @cached_property
     def arguments(self):
         """Get all the arguments for this node, including positional only and positional and keyword"""
         return list(itertools.chain((self.posonlyargs or ()), self.args or ()))
@@ -1928,7 +1899,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
 
     def __init__(
         self,
-        value: typing.Any,
+        value: Any,
         lineno: Optional[int] = None,
         col_offset: Optional[int] = None,
         parent: Optional[NodeNG] = None,
@@ -1954,7 +1925,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.value: typing.Any = value
+        self.value: Any = value
         """The value that the constant represents."""
 
         self.kind: Optional[str] = kind  # can be None
@@ -2600,7 +2571,7 @@ class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statemen
         if body is not None:
             self.body = body
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -2733,7 +2704,7 @@ class For(
     See astroid/protocols.py for actual implementation.
     """
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -3092,7 +3063,7 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         if isinstance(self.parent, If) and self in self.parent.orelse:
             self.is_orelse = True
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -3761,7 +3732,7 @@ class Slice(NodeNG):
             return const
         return attr
 
-    @decorators.cachedproperty
+    @cached_property
     def _proxied(self):
         builtins = AstroidManager().builtins_module
         return builtins.getattr("slice")[0]
@@ -4093,7 +4064,7 @@ class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.body: typing.Union[typing.List[TryExcept], typing.List[NodeNG]] = []
+        self.body: typing.List[Union[NodeNG, TryExcept]] = []
         """The try-except that the finally is attached to."""
 
         self.finalbody: typing.List[NodeNG] = []
@@ -4109,7 +4080,7 @@ class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
 
     def postinit(
         self,
-        body: typing.Union[typing.List[TryExcept], typing.List[NodeNG], None] = None,
+        body: Optional[typing.List[Union[NodeNG, TryExcept]]] = None,
         finalbody: Optional[typing.List[NodeNG]] = None,
     ) -> None:
         """Do some setup after initialisation.
@@ -4383,7 +4354,7 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         if orelse is not None:
             self.orelse = orelse
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -4499,7 +4470,7 @@ class With(
     See astroid/protocols.py for actual implementation.
     """
 
-    @decorators.cachedproperty
+    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -4892,12 +4863,12 @@ class EvaluatedObject(NodeNG):
     _other_fields = ("value",)
 
     def __init__(
-        self, original: NodeNG, value: typing.Union[NodeNG, util.Uninferable]
+        self, original: NodeNG, value: Union[NodeNG, Type[util.Uninferable]]
     ) -> None:
         self.original: NodeNG = original
         """The original node that has already been evaluated"""
 
-        self.value: typing.Union[NodeNG, util.Uninferable] = value
+        self.value: Union[NodeNG, Type[util.Uninferable]] = value
         """The inferred value"""
 
         super().__init__(
@@ -4906,7 +4877,9 @@ class EvaluatedObject(NodeNG):
             parent=self.original.parent,
         )
 
-    def infer(self, context=None, **kwargs):
+    def _infer(
+        self, context: Optional[InferenceContext] = None
+    ) -> Iterator[Union[NodeNG, Type[util.Uninferable]]]:
         yield self.value
 
 
@@ -5175,7 +5148,7 @@ class MatchMapping(mixins.AssignTypeMixin, Pattern):
                 "MatchMapping",
                 AssignName,
                 Optional[InferenceContext],
-                Literal[None],
+                None,
             ],
             Generator[NodeNG, None, None],
         ]
@@ -5282,7 +5255,7 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
                 "MatchStar",
                 AssignName,
                 Optional[InferenceContext],
-                Literal[None],
+                None,
             ],
             Generator[NodeNG, None, None],
         ]
@@ -5353,7 +5326,7 @@ class MatchAs(mixins.AssignTypeMixin, Pattern):
                 "MatchAs",
                 AssignName,
                 Optional[InferenceContext],
-                Literal[None],
+                None,
             ],
             Generator[NodeNG, None, None],
         ]

@@ -1,67 +1,51 @@
-# Copyright (c) 2016-2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2017 Chris Philip <chrisp533@gmail.com>
-# Copyright (c) 2017 Hugo <hugovk@users.noreply.github.com>
-# Copyright (c) 2017 ioanatia <ioanatia@users.noreply.github.com>
-# Copyright (c) 2017 Calen Pennington <cale@edx.org>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
-# Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 import abc
-import collections
 import enum
+import importlib
 import importlib.machinery
+import importlib.util
 import os
 import sys
 import zipimport
 from functools import lru_cache
+from pathlib import Path
+from typing import List, NamedTuple, Optional, Sequence, Tuple
+
+from astroid.modutils import EXT_LIB_DIRS
 
 from . import util
 
-ModuleType = enum.Enum(
-    "ModuleType",
-    "C_BUILTIN C_EXTENSION PKG_DIRECTORY "
-    "PY_CODERESOURCE PY_COMPILED PY_FROZEN PY_RESOURCE "
-    "PY_SOURCE PY_ZIPMODULE PY_NAMESPACE",
-)
+
+class ModuleType(enum.Enum):
+    """Python module types used for ModuleSpec."""
+
+    C_BUILTIN = enum.auto()
+    C_EXTENSION = enum.auto()
+    PKG_DIRECTORY = enum.auto()
+    PY_CODERESOURCE = enum.auto()
+    PY_COMPILED = enum.auto()
+    PY_FROZEN = enum.auto()
+    PY_RESOURCE = enum.auto()
+    PY_SOURCE = enum.auto()
+    PY_ZIPMODULE = enum.auto()
+    PY_NAMESPACE = enum.auto()
 
 
-_ModuleSpec = collections.namedtuple(
-    "_ModuleSpec", "name type location " "origin submodule_search_locations"
-)
-
-
-class ModuleSpec(_ModuleSpec):
+class ModuleSpec(NamedTuple):
     """Defines a class similar to PEP 420's ModuleSpec
 
     A module spec defines a name of a module, its type, location
     and where submodules can be found, if the module is a package.
     """
 
-    def __new__(
-        cls,
-        name,
-        module_type,
-        location=None,
-        origin=None,
-        submodule_search_locations=None,
-    ):
-        return _ModuleSpec.__new__(
-            cls,
-            name=name,
-            type=module_type,
-            location=location,
-            origin=origin,
-            submodule_search_locations=submodule_search_locations,
-        )
+    name: str
+    type: ModuleType
+    location: "str | None" = None
+    origin: "str | None" = None
+    submodule_search_locations: "Sequence[str] | None" = None
 
 
 class Finder:
@@ -71,7 +55,13 @@ class Finder:
         self._path = path or sys.path
 
     @abc.abstractmethod
-    def find_module(self, modname, module_parts, processed, submodule_path):
+    def find_module(
+        self,
+        modname: str,
+        module_parts: List[str],
+        processed: List[str],
+        submodule_path: Optional[List[str]],
+    ) -> Optional[ModuleSpec]:
         """Find the given module
 
         Each finder is responsible for each protocol of finding, as long as
@@ -96,15 +86,19 @@ class Finder:
 class ImportlibFinder(Finder):
     """A finder based on the importlib module."""
 
-    _SUFFIXES = (
+    _SUFFIXES: Sequence[Tuple[str, ModuleType]] = (
         [(s, ModuleType.C_EXTENSION) for s in importlib.machinery.EXTENSION_SUFFIXES]
         + [(s, ModuleType.PY_SOURCE) for s in importlib.machinery.SOURCE_SUFFIXES]
         + [(s, ModuleType.PY_COMPILED) for s in importlib.machinery.BYTECODE_SUFFIXES]
     )
 
-    def find_module(self, modname, module_parts, processed, submodule_path):
-        if not isinstance(modname, str):
-            raise TypeError(f"'modname' must be a str, not {type(modname)}")
+    def find_module(
+        self,
+        modname: str,
+        module_parts: List[str],
+        processed: List[str],
+        submodule_path: Optional[List[str]],
+    ) -> Optional[ModuleSpec]:
         if submodule_path is not None:
             submodule_path = list(submodule_path)
         else:
@@ -115,13 +109,13 @@ class ImportlibFinder(Finder):
                         return ModuleSpec(
                             name=modname,
                             location=None,
-                            module_type=ModuleType.C_BUILTIN,
+                            type=ModuleType.C_BUILTIN,
                         )
                     if spec.loader is importlib.machinery.FrozenImporter:
                         return ModuleSpec(
                             name=modname,
-                            location=None,
-                            module_type=ModuleType.PY_FROZEN,
+                            location=getattr(spec.loader_state, "filename", None),
+                            type=ModuleType.PY_FROZEN,
                         )
             except ValueError:
                 pass
@@ -136,15 +130,13 @@ class ImportlibFinder(Finder):
                     return ModuleSpec(
                         name=modname,
                         location=package_directory,
-                        module_type=ModuleType.PKG_DIRECTORY,
+                        type=ModuleType.PKG_DIRECTORY,
                     )
             for suffix, type_ in ImportlibFinder._SUFFIXES:
                 file_name = modname + suffix
                 file_path = os.path.join(entry, file_name)
                 if os.path.isfile(file_path):
-                    return ModuleSpec(
-                        name=modname, location=file_path, module_type=type_
-                    )
+                    return ModuleSpec(name=modname, location=file_path, type=type_)
         return None
 
     def contribute_to_path(self, spec, processed):
@@ -160,6 +152,24 @@ class ImportlibFinder(Finder):
                 for p in sys.path
                 if os.path.isdir(os.path.join(p, *processed))
             ]
+        elif spec.name == "distutils" and not any(
+            spec.location.lower().startswith(ext_lib_dir.lower())
+            for ext_lib_dir in EXT_LIB_DIRS
+        ):
+            # virtualenv below 20.0 patches distutils in an unexpected way
+            # so we just find the location of distutils that will be
+            # imported to avoid spurious import-error messages
+            # https://github.com/PyCQA/pylint/issues/5645
+            # A regression test to create this scenario exists in release-tests.yml
+            # and can be triggered manually from GitHub Actions
+            distutils_spec = importlib.util.find_spec("distutils")
+            if distutils_spec and distutils_spec.origin:
+                origin_path = Path(
+                    distutils_spec.origin
+                )  # e.g. .../distutils/__init__.py
+                path = [str(origin_path.parent)]  # e.g. .../distutils
+            else:
+                path = [spec.location]
         else:
             path = [spec.location]
         return path
@@ -177,7 +187,7 @@ class ExplicitNamespacePackageFinder(ImportlibFinder):
                 name=modname,
                 location="",
                 origin="namespace",
-                module_type=ModuleType.PY_NAMESPACE,
+                type=ModuleType.PY_NAMESPACE,
                 submodule_search_locations=submodule_path,
             )
         return None
@@ -203,7 +213,7 @@ class ZipFinder(Finder):
             name=modname,
             location=filename,
             origin="egg",
-            module_type=file_type,
+            type=file_type,
             submodule_search_locations=path,
         )
 
@@ -224,7 +234,7 @@ class PathSpecFinder(Finder):
                 name=spec.name,
                 location=location,
                 origin=spec.origin,
-                module_type=module_type,
+                type=module_type,
                 submodule_search_locations=list(spec.submodule_search_locations or []),
             )
         return spec

@@ -1,5 +1,7 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+
 """
 Astroid hook for the dataclasses library
 
@@ -67,6 +69,7 @@ def is_decorated_with_dataclass(node, decorator_names=DATACLASSES_DECORATORS):
 
 def dataclass_transform(node: ClassDef) -> None:
     """Rewrite a dataclass to be easily understood by pylint"""
+    node.is_dataclass = True
 
     for assign_node in _get_dataclass_attributes(node):
         name = assign_node.target.name
