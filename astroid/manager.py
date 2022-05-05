@@ -10,8 +10,10 @@ from various source and using a cache of built modules)
 import os
 import types
 import zipimport
+from importlib.util import find_spec, module_from_spec
 from typing import TYPE_CHECKING, ClassVar, List, Optional
 
+from astroid.const import BRAIN_MODULES_DIRECTORY
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec
 from astroid.modutils import (
@@ -360,7 +362,16 @@ class AstroidManager:
 
         raw_building._astroid_bootstrapping()
 
-    def clear_cache(self):
-        """Clear the underlying cache. Also bootstraps the builtins module."""
+    def clear_cache(self) -> None:
+        """Clear the underlying cache, bootstrap the builtins module and
+        re-register transforms."""
         self.astroid_cache.clear()
+        AstroidManager.brain["_transform"] = TransformVisitor()
         self.bootstrap()
+
+        # Reload brain plugins. During initialisation this is done in astroid.__init__.py
+        for module in BRAIN_MODULES_DIRECTORY.iterdir():
+            if module.suffix == ".py":
+                module_spec = find_spec(f"astroid.brain.{module.stem}")
+                module_object = module_from_spec(module_spec)
+                module_spec.loader.exec_module(module_object)

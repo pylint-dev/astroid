@@ -33,7 +33,6 @@ Main modules are:
 import functools
 import tokenize
 from importlib import import_module
-from pathlib import Path
 
 # isort: off
 # We have an isort: off on '__version__' because the packaging need to access
@@ -49,7 +48,7 @@ from astroid.astroid_manager import MANAGER
 from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
-from astroid.const import PY310_PLUS, Context, Del, Load, Store
+from astroid.const import BRAIN_MODULES_DIRECTORY, PY310_PLUS, Context, Del, Load, Store
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidBuildingException,
@@ -193,8 +192,6 @@ if (
     tokenize._compile = functools.lru_cache()(tokenize._compile)  # type: ignore[attr-defined]
 
 # load brain plugins
-ASTROID_INSTALL_DIRECTORY = Path(__file__).parent
-BRAIN_MODULES_DIRECTORY = ASTROID_INSTALL_DIRECTORY / "brain"
 for module in BRAIN_MODULES_DIRECTORY.iterdir():
     if module.suffix == ".py":
         import_module(f"astroid.brain.{module.stem}")
