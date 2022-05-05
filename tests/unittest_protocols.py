@@ -88,22 +88,26 @@ class ProtocolTests(unittest.TestCase):
     def test_assigned_stmts_nested_for_dict(self) -> None:
         assign_stmts = extract_node(
             """
-        for a, (b, c) in {1: (2, 3), 4: (5, 6)}.items():  #@
+        for a, (b, c) in {1: ("a", str), 2: ("b", bytes)}.items():  #@
             pass
         """
         )
         assign_nodes = assign_stmts.nodes_of_class(nodes.AssignName)
+
+        # assigned: [1, 2]
         for1_assnode = next(assign_nodes)
         assigned = list(for1_assnode.assigned_stmts())
-        self.assertConstNodesEqual([1, 4], assigned)
+        self.assertConstNodesEqual([1, 2], assigned)
 
+        # assigned2: ["a", "b"]
         for2_assnode = next(assign_nodes)
         assigned2 = list(for2_assnode.assigned_stmts())
-        self.assertConstNodesEqual([2, 5], assigned2)
+        self.assertConstNodesEqual(["a", "b"], assigned2)
 
+        # assigned3: [str, bytes]
         for3_assnode = next(assign_nodes)
         assigned3 = list(for3_assnode.assigned_stmts())
-        self.assertConstNodesEqual([3, 6], assigned3)
+        self.assertNameNodesEqual(["str", "bytes"], assigned3)
 
     def test_assigned_stmts_starred_for(self) -> None:
         assign_stmts = extract_node(
