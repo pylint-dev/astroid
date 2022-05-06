@@ -288,6 +288,7 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
         self.assertTrue(
             modutils.is_standard_module("data.module", (os.path.abspath(datadir),))
         )
+        self.assertTrue(modutils.is_standard_module("data.module", ("",)))
 
     def test_failing_edge_cases(self) -> None:
         # using a subpackage/submodule path as std_path argument
