@@ -320,12 +320,11 @@ class BorgAstroidManagerTC(unittest.TestCase):
 
 class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
     def test_clear_cache_clears_other_lru_caches(self) -> None:
-        # pylint: disable=import-outside-toplevel
-        from astroid.interpreter.objectmodel import ObjectModel
-        from astroid.modutils import _cache_normalize_path_
-        from astroid.nodes.node_classes import LookupMixIn
-
-        lrus = (LookupMixIn.lookup, _cache_normalize_path_, ObjectModel.attributes)
+        lrus = (
+            astroid.nodes.node_classes.LookupMixIn.lookup,
+            astroid.modutils._cache_normalize_path_,
+            astroid.interpreter.objectmodel.ObjectModel.attributes,
+        )
 
         # Get a baseline for the size of the cache after simply calling bootstrap()
         baseline_cache_infos = [lru.cache_info() for lru in lrus]
@@ -333,7 +332,7 @@ class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
         # Generate some hits and misses
         ClassDef().lookup("garbage")
         is_standard_module("unittest", std_path=["garbage_path"])
-        ObjectModel().attributes()
+        astroid.interpreter.objectmodel.ObjectModel().attributes()
 
         # Did the hits or misses actually happen?
         incremented_cache_infos = [lru.cache_info() for lru in lrus]
