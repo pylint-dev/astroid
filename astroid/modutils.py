@@ -22,8 +22,9 @@ import os
 import sys
 import sysconfig
 import types
+from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Set
+from typing import Set
 
 from astroid.const import IS_JYTHON, IS_PYPY
 from astroid.interpreter._import import spec, util
@@ -138,7 +139,9 @@ def _handle_blacklist(blacklist, dirnames, filenames):
             filenames.remove(norecurs)
 
 
-_NORM_PATH_CACHE: Dict[str, str] = {}
+@lru_cache()
+def _cache_normalize_path_(path: str) -> str:
+    return _normalize_path(path)
 
 
 def _cache_normalize_path(path: str) -> str:
@@ -146,13 +149,9 @@ def _cache_normalize_path(path: str) -> str:
     # _module_file calls abspath on every path in sys.path every time it's
     # called; on a larger codebase this easily adds up to half a second just
     # assembling path components. This cache alleviates that.
-    try:
-        return _NORM_PATH_CACHE[path]
-    except KeyError:
-        if not path:  # don't cache result for ''
-            return _normalize_path(path)
-        result = _NORM_PATH_CACHE[path] = _normalize_path(path)
-        return result
+    if not path:  # don't cache result for ''
+        return _normalize_path(path)
+    return _cache_normalize_path_(path)
 
 
 def load_module_from_name(dotted_name: str) -> types.ModuleType:

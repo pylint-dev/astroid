@@ -25,6 +25,7 @@ import itertools
 import os
 import pprint
 import types
+from functools import lru_cache
 from typing import TYPE_CHECKING, List, Optional
 
 import astroid
@@ -100,6 +101,7 @@ class ObjectModel:
     def __contains__(self, name):
         return name in self.attributes()
 
+    @lru_cache()  # noqa
     def attributes(self) -> List[str]:
         """Get the attributes which are exported by this object model."""
         return [o[LEN_OF_IMPL_PREFIX:] for o in dir(self) if o.startswith(IMPL_PREFIX)]

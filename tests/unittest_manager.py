@@ -16,7 +16,9 @@ import astroid
 from astroid import manager, test_utils
 from astroid.const import IS_JYTHON
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
+from astroid.modutils import is_standard_module
 from astroid.nodes import Const
+from astroid.nodes.scoped_nodes import ClassDef
 
 from . import resources
 
@@ -317,6 +319,43 @@ class BorgAstroidManagerTC(unittest.TestCase):
 
 
 class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
+    def test_clear_cache_clears_other_lru_caches(self) -> None:
+        lrus = (
+            astroid.nodes.node_classes.LookupMixIn.lookup,
+            astroid.modutils._cache_normalize_path_,
+            astroid.interpreter.objectmodel.ObjectModel.attributes,
+        )
+
+        # Get a baseline for the size of the cache after simply calling bootstrap()
+        baseline_cache_infos = [lru.cache_info() for lru in lrus]
+
+        # Generate some hits and misses
+        ClassDef().lookup("garbage")
+        is_standard_module("unittest", std_path=["garbage_path"])
+        astroid.interpreter.objectmodel.ObjectModel().attributes()
+
+        # Did the hits or misses actually happen?
+        incremented_cache_infos = [lru.cache_info() for lru in lrus]
+        for incremented_cache, baseline_cache in zip(
+            incremented_cache_infos, baseline_cache_infos
+        ):
+            with self.subTest(incremented_cache=incremented_cache):
+                self.assertGreater(
+                    incremented_cache.hits + incremented_cache.misses,
+                    baseline_cache.hits + baseline_cache.misses,
+                )
+
+        astroid.MANAGER.clear_cache()  # also calls bootstrap()
+
+        # The cache sizes are now as low or lower than the original baseline
+        cleared_cache_infos = [lru.cache_info() for lru in lrus]
+        for cleared_cache, baseline_cache in zip(
+            cleared_cache_infos, baseline_cache_infos
+        ):
+            with self.subTest(cleared_cache=cleared_cache):
+                # less equal because the "baseline" might have had multiple calls to bootstrap()
+                self.assertLessEqual(cleared_cache.currsize, baseline_cache.currsize)
+
     def test_brain_plugins_reloaded_after_clearing_cache(self) -> None:
         astroid.MANAGER.clear_cache()
         format_call = astroid.extract_node("''.format()")
