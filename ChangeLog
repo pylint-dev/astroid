@@ -28,7 +28,9 @@ What's New in astroid 2.11.5?
 =============================
 Release date: TBA
 
+* Fix crash while obtaining ``object_type()`` of an ``Unknown`` node.
 
+  Refs PyCQA/pylint#6539
 
 
 What's New in astroid 2.11.4?
