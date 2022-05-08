@@ -5,7 +5,7 @@
 """Astroid hooks for various builtins."""
 
 from functools import partial
-from typing import Optional
+from typing import Iterator, Optional, Union
 
 from astroid import arguments, helpers, inference_tip, nodes, objects, util
 from astroid.builder import AstroidBuilder
@@ -892,12 +892,15 @@ def infer_dict_fromkeys(node, context=None):
     return _build_dict_with_elements([])
 
 
-def _looks_like_copy_method(node):
+def _looks_like_copy_method(node: nodes.Call) -> bool:
     func = node.func
     return isinstance(func, nodes.Attribute) and func.attrname == "copy"
 
 
-def _infer_copy_method(node, context=None):
+def _infer_copy_method(
+    node: nodes.Call,
+    context: Optional[InferenceContext]=None
+) -> Iterator[Union[nodes.Dict, nodes.List, nodes.Set, objects.FrozenSet]]:
     inferred = list(node.func.expr.infer(context=context))
     if all(
         isinstance(inferred_node, (nodes.Dict, nodes.List, nodes.Set, objects.FrozenSet))
