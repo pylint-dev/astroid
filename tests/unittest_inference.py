@@ -2053,27 +2053,34 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_copy_method_inference(self) -> None:
         code = """
-        a = {"b": 1, "c": 2}
-        b = a.copy()
-        b #@
+        a_dict = {"b": 1, "c": 2}
+        b_dict = a_dict.copy()
+        b_dict #@
 
-        a = [1, 2, 3]
-        b = a.copy()
-        b #@
+        a_list = [1, 2, 3]
+        b_list = a_list.copy()
+        b_list #@
 
-        a = set([1, 2, 3])
-        b = a.copy()
-        b #@
+        a_set = set([1, 2, 3])
+        b_set = a_set.copy()
+        b_set #@
 
-        a = frozenset([1, 2, 3])
-        b = a.copy()
-        b #@
+        a_frozenset = frozenset([1, 2, 3])
+        b_frozenset = a_frozenset.copy()
+        b_frozenset #@
+
+        a_unknown = unknown()
+        b_unknown = a_unknown.copy()
+        b_unknown #@
         """
         ast = extract_node(code, __name__)
         self.assertInferDict(ast[0], {"b": 1, "c": 2})
         self.assertInferList(ast[1], [1, 2, 3])
         self.assertInferSet(ast[2], [1, 2, 3])
         self.assertInferFrozenSet(ast[3], [1, 2, 3])
+
+        inferred_unknown = next(ast[4].infer())
+        self.assertEqual(util.Uninferable, inferred_unknown)
 
     def test_str_methods(self) -> None:
         code = """
