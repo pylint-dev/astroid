@@ -892,11 +892,6 @@ def infer_dict_fromkeys(node, context=None):
     return _build_dict_with_elements([])
 
 
-def _looks_like_copy_method(node: nodes.Call) -> bool:
-    func = node.func
-    return isinstance(func, nodes.Attribute) and func.attrname == "copy"
-
-
 def _infer_copy_method(
     node: nodes.Call,
     context: Optional[InferenceContext]=None
@@ -943,5 +938,6 @@ AstroidManager().register_transform(
 AstroidManager().register_transform(
     nodes.Call,
     inference_tip(_infer_copy_method),
-    _looks_like_copy_method,
+    lambda node: isinstance(node.func, nodes.Attribute)
+    and node.func.attrname == 'copy',
 )
