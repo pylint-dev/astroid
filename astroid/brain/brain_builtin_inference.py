@@ -4,6 +4,7 @@
 
 """Astroid hooks for various builtins."""
 
+import itertools
 from functools import partial
 from typing import Iterator, Optional, Union
 
@@ -896,12 +897,12 @@ def _infer_copy_method(
     node: nodes.Call,
     context: Optional[InferenceContext]=None
 ) -> Iterator[Union[nodes.Dict, nodes.List, nodes.Set, objects.FrozenSet]]:
-    inferred = list(node.func.expr.infer(context=context))
+    inferred_orig, inferred_copy = itertools.tee(node.func.expr.infer(context=context))
     if all(
         isinstance(inferred_node, (nodes.Dict, nodes.List, nodes.Set, objects.FrozenSet))
-        for inferred_node in inferred
+        for inferred_node in inferred_orig
     ):
-        return iter(inferred)
+        return inferred_copy
 
     raise UseInferenceDefault()
 
