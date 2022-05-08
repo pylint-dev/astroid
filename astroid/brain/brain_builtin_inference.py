@@ -894,12 +894,13 @@ def infer_dict_fromkeys(node, context=None):
 
 
 def _infer_copy_method(
-    node: nodes.Call,
-    context: Optional[InferenceContext]=None
+    node: nodes.Call, context: Optional[InferenceContext] = None
 ) -> Iterator[Union[nodes.Dict, nodes.List, nodes.Set, objects.FrozenSet]]:
     inferred_orig, inferred_copy = itertools.tee(node.func.expr.infer(context=context))
     if all(
-        isinstance(inferred_node, (nodes.Dict, nodes.List, nodes.Set, objects.FrozenSet))
+        isinstance(
+            inferred_node, (nodes.Dict, nodes.List, nodes.Set, objects.FrozenSet)
+        )
         for inferred_node in inferred_orig
     ):
         return inferred_copy
@@ -940,5 +941,5 @@ AstroidManager().register_transform(
     nodes.Call,
     inference_tip(_infer_copy_method),
     lambda node: isinstance(node.func, nodes.Attribute)
-    and node.func.attrname == 'copy',
+    and node.func.attrname == "copy",
 )
