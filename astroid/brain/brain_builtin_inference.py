@@ -897,16 +897,12 @@ def _looks_like_copy_method(node):
     return isinstance(func, nodes.Attribute) and func.attrname == "copy"
 
 
-def _has_copy_method(node):
-    return any(
-        isinstance(node, klass)
-        for klass in [nodes.Dict, nodes.List, nodes.Set, objects.FrozenSet]
-    )
-
-
 def _infer_copy_method(node, context=None):
     inferred = list(node.func.expr.infer(context=context))
-    if all(_has_copy_method(x) for x in inferred):
+    if all(
+        isinstance(inferred_node, (nodes.Dict, nodes.List, nodes.Set, objects.FrozenSet))
+        for inferred_node in inferred
+    ):
         return iter(inferred)
 
     raise UseInferenceDefault()
