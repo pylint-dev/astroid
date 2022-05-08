@@ -16,6 +16,7 @@ from typing import (
     Callable,
     ClassVar,
     Generator,
+    Iterator,
     Optional,
     Type,
     TypeVar,
@@ -366,7 +367,7 @@ class BaseContainer(
 class LookupMixIn:
     """Mixin to look up a name in the right scope."""
 
-    @lru_cache(maxsize=None)  # pylint: disable=cache-max-size-none  # noqa
+    @lru_cache()  # noqa
     def lookup(self, name: str) -> typing.Tuple[str, typing.List[NodeNG]]:
         """Lookup where the given variable is assigned.
 
@@ -4876,7 +4877,9 @@ class EvaluatedObject(NodeNG):
             parent=self.original.parent,
         )
 
-    def infer(self, context=None, **kwargs):
+    def _infer(
+        self, context: Optional[InferenceContext] = None
+    ) -> Iterator[Union[NodeNG, Type[util.Uninferable]]]:
         yield self.value
 
 

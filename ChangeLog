@@ -13,6 +13,8 @@ Release date: TBA
 
   Closes #1512
 
+* Allowed ``AstroidManager.clear_cache`` to reload necessary brain plugins.
+
 * Rename ``ModuleSpec`` -> ``module_type`` constructor parameter to match attribute
   name and improve typing. Use ``type`` instead.
 
@@ -21,11 +23,19 @@ Release date: TBA
 
   Closes #1403
 
+* Fix a bug where in attempting to handle the patching of ``distutils`` by ``virtualenv``,
+  library submodules called ``distutils`` (e.g. ``numpy.distutils``) were included also.
+
+  Refs PyCQA/pylint#6497
+
+
 What's New in astroid 2.11.5?
 =============================
 Release date: TBA
 
+* Fix crash while obtaining ``object_type()`` of an ``Unknown`` node.
 
+  Refs PyCQA/pylint#6539
 
 
 What's New in astroid 2.11.4?

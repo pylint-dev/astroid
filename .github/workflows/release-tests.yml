@@ -5,6 +5,9 @@ on: workflow_dispatch
 env:
   DEFAULT_PYTHON: 3.8
 
+permissions:
+  contents: read
+
 jobs:
   virtualenv-15-windows-test:
     # Regression test added in https://github.com/PyCQA/astroid/pull/1386
