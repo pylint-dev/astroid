@@ -27,7 +27,7 @@ def transform_pyqt_signal(node: nodes.FunctionDef) -> None:
     class pyqtSignal(object):
         def connect(self, slot, type=None, no_receiver_check=False):
             pass
-        def disconnect(self, slot):
+        def disconnect(self, slot=None):
             pass
         def emit(self, *args):
             pass
