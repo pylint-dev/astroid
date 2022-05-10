@@ -895,7 +895,7 @@ def infer_dict_fromkeys(node, context=None):
 
 def _infer_copy_method(
     node: nodes.Call, context: Optional[InferenceContext] = None
-) -> Iterator[nodes.nodeNG]:
+) -> Iterator[nodes.NodeNG]:
     assert isinstance(node.func, nodes.Attribute)
     inferred_orig, inferred_copy = itertools.tee(node.func.expr.infer(context=context))
     if all(
