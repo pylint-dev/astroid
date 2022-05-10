@@ -17,7 +17,7 @@ from typing import FrozenSet, Generator, List, Optional, Tuple, Union
 
 from astroid import context, inference_tip
 from astroid.builder import parse
-from astroid.const import PY37_PLUS, PY39_PLUS
+from astroid.const import PY39_PLUS
 from astroid.exceptions import (
     AstroidSyntaxError,
     InferenceError,
@@ -449,19 +449,18 @@ def _infer_instance_from_annotation(
         yield klass.instantiate_class()
 
 
-if PY37_PLUS:
-    AstroidManager().register_transform(
-        ClassDef, dataclass_transform, is_decorated_with_dataclass
-    )
+AstroidManager().register_transform(
+    ClassDef, dataclass_transform, is_decorated_with_dataclass
+)
 
-    AstroidManager().register_transform(
-        Call,
-        inference_tip(infer_dataclass_field_call, raise_on_overwrite=True),
-        _looks_like_dataclass_field_call,
-    )
+AstroidManager().register_transform(
+    Call,
+    inference_tip(infer_dataclass_field_call, raise_on_overwrite=True),
+    _looks_like_dataclass_field_call,
+)
 
-    AstroidManager().register_transform(
-        Unknown,
-        inference_tip(infer_dataclass_attribute, raise_on_overwrite=True),
-        _looks_like_dataclass_attribute,
-    )
+AstroidManager().register_transform(
+    Unknown,
+    inference_tip(infer_dataclass_attribute, raise_on_overwrite=True),
+    _looks_like_dataclass_attribute,
+)

@@ -6,6 +6,8 @@ What's New in astroid 2.12.0?
 =============================
 Release date: TBA
 
+* ``astroid`` now requires Python 3.7.2 to run.
+
 * Fix ``re`` brain on Python ``3.11``. The flags now come from ``re._compile``.
 
 * Build ``nodes.Module`` for frozen modules which have location information in their
@@ -23,20 +25,23 @@ Release date: TBA
 
   Closes #1403
 
-* Fix a bug where in attempting to handle the patching of ``distutils`` by ``virtualenv``,
-  library submodules called ``distutils`` (e.g. ``numpy.distutils``) were included also.
-
-  Refs PyCQA/pylint#6497
+What's New in astroid 2.11.6?
+=============================
+Release date: TBA
 
 
 What's New in astroid 2.11.5?
 =============================
-Release date: TBA
+Release date: 2022-05-09
 
 * Fix crash while obtaining ``object_type()`` of an ``Unknown`` node.
 
   Refs PyCQA/pylint#6539
 
+* Fix a bug where in attempting to handle the patching of ``distutils`` by ``virtualenv``,
+  library submodules called ``distutils`` (e.g. ``numpy.distutils``) were included also.
+
+  Refs PyCQA/pylint#6497
 
 What's New in astroid 2.11.4?
 =============================

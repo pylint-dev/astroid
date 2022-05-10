@@ -7,7 +7,7 @@ from typing import Optional
 from astroid import context, inference_tip, nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import _extract_single_node, parse
-from astroid.const import PY37_PLUS, PY39_PLUS, PY311_PLUS
+from astroid.const import PY39_PLUS, PY311_PLUS
 from astroid.manager import AstroidManager
 
 
@@ -90,7 +90,6 @@ def infer_pattern_match(
     return iter([class_def])
 
 
-if PY37_PLUS:
-    AstroidManager().register_transform(
-        nodes.Call, inference_tip(infer_pattern_match), _looks_like_pattern_or_match
-    )
+AstroidManager().register_transform(
+    nodes.Call, inference_tip(infer_pattern_match), _looks_like_pattern_or_match
+)
