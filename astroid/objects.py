@@ -12,8 +12,10 @@ leads to an inferred FrozenSet:
 """
 
 import sys
+from typing import Iterator, Optional, TypeVar
 
 from astroid import bases, decorators, util
+from astroid.context import InferenceContext
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -29,6 +31,8 @@ if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
     from astroid.decorators import cachedproperty as cached_property
+
+_T = TypeVar("_T")
 
 
 class FrozenSet(node_classes.BaseContainer):
@@ -324,5 +328,5 @@ class Property(scoped_nodes.FunctionDef):
     def infer_call_result(self, caller=None, context=None):
         raise InferenceError("Properties are not callable")
 
-    def infer(self, context=None, **kwargs):
-        return iter((self,))
+    def _infer(self: _T, context: Optional[InferenceContext] = None) -> Iterator[_T]:
+        yield self
