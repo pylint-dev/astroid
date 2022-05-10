@@ -2080,7 +2080,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertInferFrozenSet(ast[3], [1, 2, 3])
 
         inferred_unknown = next(ast[4].infer())
-        self.assertEqual(util.Uninferable, inferred_unknown)
+        assert inferred_unknown == util.Uninferable
 
     def test_str_methods(self) -> None:
         code = """
