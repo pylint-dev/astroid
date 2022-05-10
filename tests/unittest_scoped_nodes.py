@@ -1724,7 +1724,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         assert isinstance(cls, nodes.ClassDef)
         self.assertEqualMro(cls, ["C", "A", "B", "object"])
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_1(self):
         cls = builder.extract_node(
             """
@@ -1740,7 +1739,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls, [".C", ".A", "typing.Generic", ".B", "builtins.object"]
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_2(self):
         cls = builder.extract_node(
             """
@@ -1756,7 +1754,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls, [".C", ".A", ".B", "typing.Generic", "builtins.object"]
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_3(self):
         cls = builder.extract_node(
             """
@@ -1773,7 +1770,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls, [".D", ".B", ".A", ".C", "typing.Generic", "builtins.object"]
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_4(self):
         cls = builder.extract_node(
             """
@@ -1789,7 +1785,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls, [".C", ".A", ".B", "typing.Generic", "builtins.object"]
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_5(self):
         cls = builder.extract_node(
             """
@@ -1806,7 +1801,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls, [".C", ".A", ".B", "typing.Generic", "builtins.object"]
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_6(self):
         cls = builder.extract_node(
             """
@@ -1823,7 +1817,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls, [".C", ".A", ".Generic", ".B", "typing.Generic", "builtins.object"]
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_7(self):
         cls = builder.extract_node(
             """
@@ -1841,7 +1834,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls, [".E", ".C", ".A", ".B", "typing.Generic", ".D", "builtins.object"]
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_error_1(self):
         cls = builder.extract_node(
             """
@@ -1855,7 +1847,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         with self.assertRaises(DuplicateBasesError):
             cls.mro()
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_error_2(self):
         cls = builder.extract_node(
             """
@@ -1869,7 +1860,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         with self.assertRaises(DuplicateBasesError):
             cls.mro()
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_typing_extensions(self):
         """Regression test for mro() inference on typing_extesnions.
 
@@ -2544,7 +2534,6 @@ def test_posonlyargs_default_value() -> None:
     assert first_param.value == 1
 
 
-@test_utils.require_version(minver="3.7")
 def test_ancestor_with_generic() -> None:
     # https://github.com/PyCQA/astroid/issues/942
     tree = builder.parse(

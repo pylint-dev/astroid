@@ -6,13 +6,8 @@ import pytest
 
 import astroid
 from astroid import bases, nodes
-from astroid.const import PY37_PLUS
 from astroid.exceptions import InferenceError
 from astroid.util import Uninferable
-
-if not PY37_PLUS:
-    pytest.skip("Dataclasses were added in 3.7", allow_module_level=True)
-
 
 parametrize_module = pytest.mark.parametrize(
     ("module",), (["dataclasses"], ["pydantic.dataclasses"], ["marshmallow_dataclass"])

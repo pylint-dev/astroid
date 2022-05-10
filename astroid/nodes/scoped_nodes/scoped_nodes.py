@@ -13,7 +13,17 @@ import os
 import sys
 import typing
 import warnings
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    List,
+    NoReturn,
+    Optional,
+    Set,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from astroid import bases
 from astroid import decorators as decorators_mod
@@ -43,12 +53,6 @@ from astroid.nodes import Arguments, Const, NodeNG, node_classes
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
-
-if sys.version_info >= (3, 6, 2):
-    from typing import NoReturn
-else:
-    from typing_extensions import NoReturn
-
 
 if sys.version_info >= (3, 8):
     from functools import cached_property

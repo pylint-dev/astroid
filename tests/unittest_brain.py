@@ -15,7 +15,6 @@ import pytest
 import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
-from astroid.const import PY37_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -1659,7 +1658,6 @@ class TypingBrain(unittest.TestCase):
         attr = next(attr_def.infer())
         self.assertEqual(attr.value, "bar")
 
-    @test_utils.require_version(minver="3.7")
     def test_tuple_type(self):
         node = builder.extract_node(
             """
@@ -1672,7 +1670,6 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
         assert inferred.qname() == "typing.Tuple"
 
-    @test_utils.require_version(minver="3.7")
     def test_callable_type(self):
         node = builder.extract_node(
             """
@@ -1685,7 +1682,6 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
         assert inferred.qname() == "typing.Callable"
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_generic_subscriptable(self):
         """Test typing.Generic is subscriptable with __class_getitem__ (added in PY37)"""
         node = builder.extract_node(
@@ -1712,7 +1708,6 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(inferred, nodes.ClassDef)
         assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_generic_slots(self):
         """Test slots for Generic subclass."""
         node = builder.extract_node(
@@ -1779,7 +1774,6 @@ class TypingBrain(unittest.TestCase):
         # Test TypedDict instance is callable
         assert next(code[1].infer()).callable() is True
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_alias_type(self):
         """
         Test that the type aliased thanks to typing._alias function are
@@ -1813,7 +1807,6 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
-    @test_utils.require_version(minver="3.7.2")
     def test_typing_alias_type_2(self):
         """
         Test that the type aliased thanks to typing._alias function are
@@ -1840,7 +1833,6 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_not_subscriptable(self):
         """Hashable is not subscriptable"""
         wrong_node = builder.extract_node(
@@ -1869,7 +1861,6 @@ class TypingBrain(unittest.TestCase):
         with self.assertRaises(AttributeInferenceError):
             inferred.getattr("__class_getitem__")
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_subscriptable(self):
         """Test that MutableSet is subscriptable"""
         right_node = builder.extract_node(
@@ -1896,7 +1887,6 @@ class TypingBrain(unittest.TestCase):
             inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_subscriptable_2(self):
         """Multiple inheritance with subscriptable typing alias"""
         node = builder.extract_node(
@@ -1920,7 +1910,6 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_notsubscriptable_3(self):
         """Until python39 ByteString class of the typing module is not subscritable (whereas it is in the collections module)"""
         right_node = builder.extract_node(
@@ -2006,11 +1995,10 @@ class ReBrainTest(unittest.TestCase):
             self.assertIn(name, re_ast)
             self.assertEqual(next(re_ast[name].infer()).value, getattr(re, name))
 
-    @test_utils.require_version(minver="3.7", maxver="3.9")
+    @test_utils.require_version(maxver="3.9")
     def test_re_pattern_unsubscriptable(self):
         """
         re.Pattern and re.Match are unsubscriptable until PY39.
-        re.Pattern and re.Match were added in PY37.
         """
         right_node1 = builder.extract_node(
             """
@@ -3110,7 +3098,6 @@ def test_http_client_brain() -> None:
     assert isinstance(inferred, astroid.Instance)
 
 
-@pytest.mark.skipif(not PY37_PLUS, reason="Needs 3.7+")
 def test_http_status_brain() -> None:
     node = astroid.extract_node(
         """
@@ -3147,7 +3134,6 @@ def test_oserror_model() -> None:
     assert strerror.value == ""
 
 
-@pytest.mark.skipif(not PY37_PLUS, reason="Dynamic module attributes since Python 3.7")
 def test_crypt_brain() -> None:
     module = MANAGER.ast_from_module_name("crypt")
     dynamic_attrs = [

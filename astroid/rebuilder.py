@@ -9,7 +9,6 @@ order to get a single Astroid representation
 import ast
 import sys
 import token
-import tokenize
 from io import StringIO
 from tokenize import TokenInfo, generate_tokens
 from typing import (
@@ -29,7 +28,7 @@ from typing import (
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import IS_PYPY, PY36, PY38, PY38_PLUS, PY39_PLUS, Context
+from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 from astroid.nodes.utils import Position
@@ -148,12 +147,6 @@ class TreeRebuilder:
         keyword_tokens: Tuple[int, ...] = (token.NAME,)
         if isinstance(parent, nodes.AsyncFunctionDef):
             search_token = "async"
-            if PY36:
-                # In Python 3.6, the token type for 'async' was 'ASYNC'
-                # In Python 3.7, the type was changed to 'NAME' and 'ASYNC' removed
-                # Python 3.8 added it back. However, if we use it unconditionally
-                # we would break 3.7.
-                keyword_tokens = (token.NAME, token.ASYNC)
         elif isinstance(parent, nodes.FunctionDef):
             search_token = "def"
         else:
@@ -200,12 +193,7 @@ class TreeRebuilder:
 
         found_start, found_end = False, False
         open_brackets = 0
-        skip_token: Set[int] = {token.NEWLINE, token.INDENT}
-        if PY36:
-            skip_token.update((tokenize.NL, tokenize.COMMENT))
-        else:
-            # token.NL and token.COMMENT were added in 3.7
-            skip_token.update((token.NL, token.COMMENT))
+        skip_token: Set[int] = {token.NEWLINE, token.INDENT, token.NL, token.COMMENT}
 
         if isinstance(node, nodes.Module):
             found_end = True
@@ -1294,10 +1282,6 @@ class TreeRebuilder:
             position=self._get_position_info(node, newnode),
             doc_node=self.visit(doc_ast_node, newnode),
         )
-        if IS_PYPY and PY36 and newnode.position:
-            # PyPy: col_offset in Python 3.6 doesn't include 'async',
-            # use position.col_offset instead.
-            newnode.col_offset = newnode.position.col_offset
         self._fix_doc_node_position(newnode)
         self._global_names.pop()
         return newnode
