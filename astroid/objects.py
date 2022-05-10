@@ -1,17 +1,6 @@
-# Copyright (c) 2015-2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2018 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Craig Franklin <craigjfranklin@gmail.com>
-# Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """
 Inference objects are a way to represent composite AST nodes,
@@ -22,8 +11,11 @@ leads to an inferred FrozenSet:
     Call(func=Name('frozenset'), args=Tuple(...))
 """
 
+import sys
+from typing import Iterator, Optional, TypeVar
 
 from astroid import bases, decorators, util
+from astroid.context import InferenceContext
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -35,6 +27,13 @@ from astroid.nodes import node_classes, scoped_nodes
 
 objectmodel = util.lazy_import("interpreter.objectmodel")
 
+if sys.version_info >= (3, 8):
+    from functools import cached_property
+else:
+    from astroid.decorators import cachedproperty as cached_property
+
+_T = TypeVar("_T")
+
 
 class FrozenSet(node_classes.BaseContainer):
     """class representing a FrozenSet composite node"""
@@ -45,7 +44,7 @@ class FrozenSet(node_classes.BaseContainer):
     def _infer(self, context=None):
         yield self
 
-    @decorators.cachedproperty
+    @cached_property
     def _proxied(self):  # pylint: disable=method-hidden
         ast_builtins = AstroidManager().builtins_module
         return ast_builtins.getattr("frozenset")[0]
@@ -114,7 +113,7 @@ class Super(node_classes.NodeNG):
         index = mro.index(self.mro_pointer)
         return mro[index + 1 :]
 
-    @decorators.cachedproperty
+    @cached_property
     def _proxied(self):
         ast_builtins = AstroidManager().builtins_module
         return ast_builtins.getattr("super")[0]
@@ -218,7 +217,7 @@ class ExceptionInstance(bases.Instance):
     the case of .args.
     """
 
-    @decorators.cachedproperty
+    @cached_property
     def special_attributes(self):
         qname = self.qname()
         instance = objectmodel.BUILTIN_EXCEPTIONS.get(
@@ -259,10 +258,14 @@ class DictValues(bases.Proxy):
 class PartialFunction(scoped_nodes.FunctionDef):
     """A class representing partial function obtained via functools.partial"""
 
+    @decorators.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
         self, call, name=None, doc=None, lineno=None, col_offset=None, parent=None
     ):
-        super().__init__(name, doc, lineno, col_offset, parent=None)
+        # TODO: Pass end_lineno and end_col_offset as well
+        super().__init__(name, lineno=lineno, col_offset=col_offset, parent=None)
+        # Assigned directly to prevent triggering the DeprecationWarning.
+        self._doc = doc
         # A typical FunctionDef automatically adds its name to the parent scope,
         # but a partial should not, so defer setting parent until after init
         self.parent = parent
@@ -306,11 +309,14 @@ node_classes.Dict.__bases__ = (node_classes.NodeNG, DictInstance)
 class Property(scoped_nodes.FunctionDef):
     """Class representing a Python property"""
 
+    @decorators.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
         self, function, name=None, doc=None, lineno=None, col_offset=None, parent=None
     ):
         self.function = function
-        super().__init__(name, doc, lineno, col_offset, parent)
+        super().__init__(name, lineno=lineno, col_offset=col_offset, parent=parent)
+        # Assigned directly to prevent triggering the DeprecationWarning.
+        self._doc = doc
 
     # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.PropertyModel())
@@ -322,5 +328,5 @@ class Property(scoped_nodes.FunctionDef):
     def infer_call_result(self, caller=None, context=None):
         raise InferenceError("Properties are not callable")
 
-    def infer(self, context=None, **kwargs):
-        return iter((self,))
+    def _infer(self: _T, context: Optional[InferenceContext] = None) -> Iterator[_T]:
+        yield self

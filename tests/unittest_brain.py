@@ -1,47 +1,6 @@
-# Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2015 raylu <lurayl@gmail.com>
-# Copyright (c) 2015 Philip Lorenz <philip@bithub.de>
-# Copyright (c) 2016 Florian Bruhin <me@the-compiler.org>
-# Copyright (c) 2017-2018, 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2017-2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2017 David Euresti <github@euresti.com>
-# Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2018, 2021 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2018 Tomas Gavenciak <gavento@ucw.cz>
-# Copyright (c) 2018 David Poirier <david-poirier-csn@users.noreply.github.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
-# Copyright (c) 2018 Ioana Tagirta <ioana.tagirta@gmail.com>
-# Copyright (c) 2018 Ahmed Azzaoui <ahmed.azzaoui@engie.com>
-# Copyright (c) 2019-2020 Bryce Guinta <bryce.guinta@protonmail.com>
-# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2019 Tomas Novak <ext.Tomas.Novak@skoda-auto.cz>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2019 Grygorii Iermolenko <gyermolenko@gmail.com>
-# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Joshua Cannon <joshua.cannon@ni.com>
-# Copyright (c) 2021 Craig Franklin <craigjfranklin@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Jonathan Striebel <jstriebel@users.noreply.github.com>
-# Copyright (c) 2021 Dimitri Prybysh <dmand@yandex.ru>
-# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
-# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
-# Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
-# Copyright (c) 2021 Tim Martin <tim@asymptotic.co.uk>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-# Copyright (c) 2021 Artsiom Kaval <lezeroq@gmail.com>
-# Copyright (c) 2021 Damien Baty <damien@damienbaty.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for basic functionality in astroid.brain."""
 import io
@@ -56,8 +15,11 @@ import pytest
 import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
-from astroid.const import PY37_PLUS
-from astroid.exceptions import AttributeInferenceError, InferenceError
+from astroid.exceptions import (
+    AttributeInferenceError,
+    InferenceError,
+    UseInferenceDefault,
+)
 from astroid.nodes.node_classes import Const
 from astroid.nodes.scoped_nodes import ClassDef
 
@@ -196,6 +158,8 @@ class NamedTupleTest(unittest.TestCase):
         self.assertEqual(
             [anc.name for anc in klass.ancestors()], ["X", "tuple", "object"]
         )
+        # See: https://github.com/PyCQA/pylint/issues/5982
+        self.assertNotIn("X", klass.locals)
         for anc in klass.ancestors():
             self.assertFalse(anc.parent is None)
 
@@ -481,7 +445,7 @@ class ModuleExtenderTest(unittest.TestCase):
     def test_extension_modules(self) -> None:
         transformer = MANAGER._transform
         for extender, _ in transformer.transforms[nodes.Module]:
-            n = nodes.Module("__main__", None)
+            n = nodes.Module("__main__")
             extender(n)
 
 
@@ -1660,6 +1624,19 @@ class TypingBrain(unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
 
+    def test_typing_type_without_tip(self):
+        """Regression test for https://github.com/PyCQA/pylint/issues/5770"""
+        node = builder.extract_node(
+            """
+        from typing import NewType
+
+        def make_new_type(t):
+            new_type = NewType(f'IntRange_{t}', t) #@
+        """
+        )
+        with self.assertRaises(UseInferenceDefault):
+            astroid.brain.brain_typing.infer_typing_typevar_or_newtype(node.value)
+
     def test_namedtuple_nested_class(self):
         result = builder.extract_node(
             """
@@ -1681,7 +1658,6 @@ class TypingBrain(unittest.TestCase):
         attr = next(attr_def.infer())
         self.assertEqual(attr.value, "bar")
 
-    @test_utils.require_version(minver="3.7")
     def test_tuple_type(self):
         node = builder.extract_node(
             """
@@ -1694,7 +1670,6 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
         assert inferred.qname() == "typing.Tuple"
 
-    @test_utils.require_version(minver="3.7")
     def test_callable_type(self):
         node = builder.extract_node(
             """
@@ -1707,7 +1682,6 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
         assert inferred.qname() == "typing.Callable"
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_generic_subscriptable(self):
         """Test typing.Generic is subscriptable with __class_getitem__ (added in PY37)"""
         node = builder.extract_node(
@@ -1734,7 +1708,6 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(inferred, nodes.ClassDef)
         assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_generic_slots(self):
         """Test slots for Generic subclass."""
         node = builder.extract_node(
@@ -1801,7 +1774,6 @@ class TypingBrain(unittest.TestCase):
         # Test TypedDict instance is callable
         assert next(code[1].infer()).callable() is True
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_alias_type(self):
         """
         Test that the type aliased thanks to typing._alias function are
@@ -1835,7 +1807,6 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
-    @test_utils.require_version(minver="3.7.2")
     def test_typing_alias_type_2(self):
         """
         Test that the type aliased thanks to typing._alias function are
@@ -1862,7 +1833,6 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_not_subscriptable(self):
         """Hashable is not subscriptable"""
         wrong_node = builder.extract_node(
@@ -1891,7 +1861,6 @@ class TypingBrain(unittest.TestCase):
         with self.assertRaises(AttributeInferenceError):
             inferred.getattr("__class_getitem__")
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_subscriptable(self):
         """Test that MutableSet is subscriptable"""
         right_node = builder.extract_node(
@@ -1918,7 +1887,6 @@ class TypingBrain(unittest.TestCase):
             inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_subscriptable_2(self):
         """Multiple inheritance with subscriptable typing alias"""
         node = builder.extract_node(
@@ -1942,7 +1910,6 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_notsubscriptable_3(self):
         """Until python39 ByteString class of the typing module is not subscritable (whereas it is in the collections module)"""
         right_node = builder.extract_node(
@@ -2028,11 +1995,10 @@ class ReBrainTest(unittest.TestCase):
             self.assertIn(name, re_ast)
             self.assertEqual(next(re_ast[name].infer()).value, getattr(re, name))
 
-    @test_utils.require_version(minver="3.7", maxver="3.9")
+    @test_utils.require_version(maxver="3.9")
     def test_re_pattern_unsubscriptable(self):
         """
         re.Pattern and re.Match are unsubscriptable until PY39.
-        re.Pattern and re.Match were added in PY37.
         """
         right_node1 = builder.extract_node(
             """
@@ -2974,6 +2940,30 @@ def test_infer_dict_from_keys() -> None:
 
 
 class TestFunctoolsPartial:
+    @staticmethod
+    def test_infer_partial() -> None:
+        ast_node = astroid.extract_node(
+            """
+        from functools import partial
+        def test(a, b):
+            '''Docstring'''
+            return a + b
+        partial(test, 1)(3) #@
+        """
+        )
+        assert isinstance(ast_node.func, nodes.Call)
+        inferred = ast_node.func.inferred()
+        assert len(inferred) == 1
+        partial = inferred[0]
+        assert isinstance(partial, objects.PartialFunction)
+        assert isinstance(partial.doc_node, nodes.Const)
+        assert partial.doc_node.value == "Docstring"
+        with pytest.warns(DeprecationWarning) as records:
+            assert partial.doc == "Docstring"
+            assert len(records) == 1
+        assert partial.lineno == 3
+        assert partial.col_offset == 0
+
     def test_invalid_functools_partial_calls(self) -> None:
         ast_nodes = astroid.extract_node(
             """
@@ -3108,7 +3098,6 @@ def test_http_client_brain() -> None:
     assert isinstance(inferred, astroid.Instance)
 
 
-@pytest.mark.skipif(not PY37_PLUS, reason="Needs 3.7+")
 def test_http_status_brain() -> None:
     node = astroid.extract_node(
         """
@@ -3145,7 +3134,6 @@ def test_oserror_model() -> None:
     assert strerror.value == ""
 
 
-@pytest.mark.skipif(not PY37_PLUS, reason="Dynamic module attributes since Python 3.7")
 def test_crypt_brain() -> None:
     module = MANAGER.ast_from_module_name("crypt")
     dynamic_attrs = [

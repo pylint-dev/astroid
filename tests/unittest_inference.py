@@ -1,49 +1,9 @@
-# Copyright (c) 2006-2015 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2007 Marien Zwart <marienz@gentoo.org>
-# Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2021 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Dmitry Pribysh <dmand@yandex.ru>
-# Copyright (c) 2015 Rene Zhang <rz99@cornell.edu>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2017 Hugo <hugovk@users.noreply.github.com>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2017 Calen Pennington <cale@edx.org>
-# Copyright (c) 2017 Calen Pennington <calen.pennington@gmail.com>
-# Copyright (c) 2017 David Euresti <david@dropbox.com>
-# Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2018 Daniel Martin <daniel.martin@crowdstrike.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
-# Copyright (c) 2019, 2021 David Liu <david@cs.toronto.edu>
-# Copyright (c) 2019-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2019 Stanislav Levin <slev@altlinux.org>
-# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
-# Copyright (c) 2020 Karthikeyan Singaravelan <tir.karthi@gmail.com>
-# Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
-# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
-# Copyright (c) 2021 Jacob Walls <jacobtylerwalls@gmail.com>
-# Copyright (c) 2021 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2021 Dmitry Shachnev <mitya57@users.noreply.github.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-# Copyright (c) 2021 doranid <ddandd@gmail.com>
-# Copyright (c) 2021 Francis Charette Migneault <francis.charette.migneault@gmail.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for the astroid inference capabilities"""
 
-import platform
 import textwrap
 import unittest
 from abc import ABCMeta
@@ -857,9 +817,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
         self.assertEqual(inferred[0].name, "open")
-
-    if platform.python_implementation() == "PyPy":
-        test_builtin_open = unittest.expectedFailure(test_builtin_open)
 
     def test_callfunc_context_func(self) -> None:
         code = """
@@ -2094,6 +2051,37 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(ast_node.infer())
             self.assertIsInstance(inferred, Instance)
             self.assertEqual(inferred.qname(), "builtins.dict")
+
+    def test_copy_method_inference(self) -> None:
+        code = """
+        a_dict = {"b": 1, "c": 2}
+        b_dict = a_dict.copy()
+        b_dict #@
+
+        a_list = [1, 2, 3]
+        b_list = a_list.copy()
+        b_list #@
+
+        a_set = set([1, 2, 3])
+        b_set = a_set.copy()
+        b_set #@
+
+        a_frozenset = frozenset([1, 2, 3])
+        b_frozenset = a_frozenset.copy()
+        b_frozenset #@
+
+        a_unknown = unknown()
+        b_unknown = a_unknown.copy()
+        b_unknown #@
+        """
+        ast = extract_node(code, __name__)
+        self.assertInferDict(ast[0], {"b": 1, "c": 2})
+        self.assertInferList(ast[1], [1, 2, 3])
+        self.assertInferSet(ast[2], [1, 2, 3])
+        self.assertInferFrozenSet(ast[3], [1, 2, 3])
+
+        inferred_unknown = next(ast[4].infer())
+        assert inferred_unknown == util.Uninferable
 
     def test_str_methods(self) -> None:
         code = """
@@ -4097,10 +4085,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 25)
 
-    @pytest.mark.xfail(reason="Cannot reuse inner value due to inference context reuse")
-    def test_inner_value_redefined_by_subclass_with_mro(self):
-        # This might work, but it currently doesn't due to not being able
-        # to reuse inference contexts.
+    def test_inner_value_redefined_by_subclass_with_mro(self) -> None:
         ast_node = extract_node(
             """
         class X(object):
@@ -4120,8 +4105,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         )
         inferred = next(ast_node.infer())
-        self.assertIsInstance(inferred, nodes.Const)
-        self.assertEqual(inferred.value, 25)
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 26
 
     def test_getitem_of_class_raised_type_error(self) -> None:
         # Test that we wrap an AttributeInferenceError
@@ -4429,7 +4414,8 @@ class HasattrTest(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        self.assertEqual(inferred, util.Uninferable)
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertIs(inferred.value, False)
 
 
 class BoolOpTest(unittest.TestCase):
@@ -6146,6 +6132,26 @@ def test_property_callable_inference() -> None:
     assert inferred.value == 42
 
 
+def test_property_docstring() -> None:
+    code = """
+    class A:
+        @property
+        def test(self):
+            '''Docstring'''
+            return 42
+
+    A.test #@
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, objects.Property)
+    assert isinstance(inferred.doc_node, nodes.Const)
+    assert inferred.doc_node.value == "Docstring"
+    with pytest.warns(DeprecationWarning) as records:
+        assert inferred.doc == "Docstring"
+        assert len(records) == 1
+
+
 def test_recursion_error_inferring_builtin_containers() -> None:
     node = extract_node(
         """
@@ -6622,6 +6628,7 @@ def test_inference_of_items_on_module_dict() -> None:
     builder.file_build(str(DATA_DIR / "module_dict_items_call" / "test.py"), "models")
 
 
+
 def test_imported_module_var_inferable():
     """
     Module variables can be imported and inferred successfully as part of binary operators.
@@ -6676,6 +6683,50 @@ def test_imported_module_var_inferable3():
         assert i_w_val.as_string() == "['w', 'v']"
     finally:
         AstroidManager().astroid_cache = cache_init
+
+def test_recursion_on_inference_tip() -> None:
+    """Regression test for recursion in inference tip.
+
+    Originally reported in https://github.com/PyCQA/pylint/issues/5408.
+    """
+    code = """
+    class MyInnerClass:
+        ...
+
+
+    class MySubClass:
+        inner_class = MyInnerClass
+
+
+    class MyClass:
+        sub_class = MySubClass()
+
+
+    def get_unpatched_class(cls):
+        return cls
+
+
+    def get_unpatched(item):
+        lookup = get_unpatched_class if isinstance(item, type) else lambda item: None
+        return lookup(item)
+
+
+    _Child = get_unpatched(MyClass.sub_class.inner_class)
+
+
+    class Child(_Child):
+        def patch(cls):
+            MyClass.sub_class.inner_class = cls
+    """
+    module = parse(code)
+    assert module
+
+
+def test_function_def_cached_generator() -> None:
+    """Regression test for https://github.com/PyCQA/astroid/issues/817."""
+    funcdef: nodes.FunctionDef = extract_node("def func(): pass")
+    next(funcdef._infer())
+
 
 
 if __name__ == "__main__":
