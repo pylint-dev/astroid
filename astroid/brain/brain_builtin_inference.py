@@ -6,7 +6,7 @@
 
 import itertools
 from functools import partial
-from typing import Iterator, Optional, Union
+from typing import Iterator, Optional
 
 from astroid import arguments, helpers, inference_tip, nodes, objects, util
 from astroid.builder import AstroidBuilder
@@ -895,7 +895,7 @@ def infer_dict_fromkeys(node, context=None):
 
 def _infer_copy_method(
     node: nodes.Call, context: Optional[InferenceContext] = None
-) -> Iterator[Union[nodes.Dict, nodes.List, nodes.Set, objects.FrozenSet]]:
+) -> Iterator[nodes.nodeNG]:
     inferred_orig, inferred_copy = itertools.tee(node.func.expr.infer(context=context))
     if all(
         isinstance(
