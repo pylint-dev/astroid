@@ -6628,7 +6628,6 @@ def test_inference_of_items_on_module_dict() -> None:
     builder.file_build(str(DATA_DIR / "module_dict_items_call" / "test.py"), "models")
 
 
-
 def test_imported_module_var_inferable():
     """
     Module variables can be imported and inferred successfully as part of binary operators.
@@ -6684,6 +6683,7 @@ def test_imported_module_var_inferable3():
     finally:
         AstroidManager().astroid_cache = cache_init
 
+
 def test_recursion_on_inference_tip() -> None:
     """Regression test for recursion in inference tip.
 
@@ -6726,7 +6726,6 @@ def test_function_def_cached_generator() -> None:
     """Regression test for https://github.com/PyCQA/astroid/issues/817."""
     funcdef: nodes.FunctionDef = extract_node("def func(): pass")
     next(funcdef._infer())
-
 
 
 if __name__ == "__main__":
