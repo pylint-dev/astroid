@@ -6628,7 +6628,7 @@ def test_inference_of_items_on_module_dict() -> None:
 
 
 class ImportedModuleTests(resources.AstroidCacheSetupMixin):
-    def test_imported_module_var_inferable():
+    def test_imported_module_var_inferable(self) -> None:
         """
         Module variables can be imported and inferred successfully as part of binary operators.
         """
@@ -6639,7 +6639,7 @@ class ImportedModuleTests(resources.AstroidCacheSetupMixin):
         assert i_w_val != util.Uninferable
         assert i_w_val.as_string() == "[1, 2]"
 
-    def test_imported_module_var_inferable2():
+    def test_imported_module_var_inferable2(self) -> None:
         """Version list of strings."""
         mod1 = parse(
             ("from top.mod import v as z\n" "w = ['1'] + z"), module_name="top"
@@ -6650,7 +6650,7 @@ class ImportedModuleTests(resources.AstroidCacheSetupMixin):
         assert i_w_val != util.Uninferable
         assert i_w_val.as_string() == "['1', '2']"
 
-    def test_imported_module_var_inferable3():
+    def test_imported_module_var_inferable3(self) -> None:
         """Version list of strings with a __dunder__ name."""
         mod1 = parse(
             ("from top.mod import __dunder_var__ as v\n" "__dunder_var__ = ['w'] + v"),
