@@ -248,6 +248,26 @@ class TreeRebuilder:
         for child_node in newnode.get_children():
             self._reset_end_lineno(child_node)
 
+    def _find_orelse_keyword(
+        self, node: Union["ast.If", "ast.Try", "ast.For", "ast.AsyncFor", "ast.While"]
+    ) -> Tuple[Optional[int], Optional[int]]:
+        """Get the line number and column offset of the `else` or `elif` keyword."""
+        if not self._data or not node.orelse:
+            return None, None
+
+        start = node.orelse[0].lineno
+
+        # pylint: disable-next=unsubscriptable-object
+        for index, line in enumerate(self._data[start - 1 :: -1]):
+            if line.lstrip().startswith("else"):
+                # if start - index == 37:
+                # breakpoint()
+                return start - index, line.index("else")
+            if line.lstrip().startswith("elif"):
+                return start - index, line.index("elif")
+
+        return None, None
+
     def visit_module(
         self, node: "ast.Module", modname: str, modpath: str, package: bool
     ) -> nodes.Module:
@@ -1175,6 +1195,8 @@ class TreeRebuilder:
             # pylint: disable-next=unsubscriptable-object
             col_offset = self._data[node.lineno - 1].index("async")
 
+        orelse_lineno, orelse_col_offset = self._find_orelse_keyword(node)
+
         newnode = cls(
             lineno=node.lineno,
             col_offset=col_offset,
@@ -1190,6 +1212,8 @@ class TreeRebuilder:
             body=[self.visit(child, newnode) for child in node.body],
             orelse=[self.visit(child, newnode) for child in node.orelse],
             type_annotation=type_annotation,
+            orelse_lineno=orelse_lineno,
+            orelse_col_offset=orelse_col_offset,
         )
         return newnode
 
@@ -1370,24 +1394,6 @@ class TreeRebuilder:
             for name in node.names:
                 self._global_names[-1].setdefault(name, []).append(newnode)
         return newnode
-
-    def _find_orelse_keyword(
-        self, node: "ast.If"
-    ) -> Tuple[Optional[int], Optional[int]]:
-        """Get the line number and column offset of the `else` or `elif` keyword."""
-        if not self._data or not node.orelse:
-            return None, None
-
-        start = node.orelse[0].lineno
-
-        # pylint: disable-next=unsubscriptable-object
-        for index, line in enumerate(self._data[start:node.lineno:-1]):
-            if line.rstrip().startswith("else"):
-                return start - index + 1, line.index("else")
-            if line.rstrip().startswith("elif"):
-                return start - index + 1, line.index("elif")
-
-        return None, None
 
     def visit_if(self, node: "ast.If", parent: NodeNG) -> nodes.If:
         """visit an If node by returning a fresh instance of it"""
@@ -1820,10 +1826,15 @@ class TreeRebuilder:
             )
         else:
             newnode = nodes.TryExcept(node.lineno, node.col_offset, parent)
+
+        orelse_lineno, orelse_col_offset = self._find_orelse_keyword(node)
+
         newnode.postinit(
             [self.visit(child, newnode) for child in node.body],
             [self.visit(child, newnode) for child in node.handlers],
             [self.visit(child, newnode) for child in node.orelse],
+            orelse_lineno=orelse_lineno,
+            orelse_col_offset=orelse_col_offset,
         )
         return newnode
 
@@ -1891,10 +1902,15 @@ class TreeRebuilder:
             end_col_offset=getattr(node, "end_col_offset", None),
             parent=parent,
         )
+
+        orelse_lineno, orelse_col_offset = self._find_orelse_keyword(node)
+
         newnode.postinit(
             self.visit(node.test, newnode),
             [self.visit(child, newnode) for child in node.body],
             [self.visit(child, newnode) for child in node.orelse],
+            orelse_lineno=orelse_lineno,
+            orelse_col_offset=orelse_col_offset,
         )
         return newnode
 

@@ -2661,6 +2661,12 @@ class For(
         self.orelse: typing.List[NodeNG] = []
         """The contents of the ``else`` block of the loop."""
 
+        self.orelse_lineno: Optional[int] = None
+        """The line number of the ``else`` keyword."""
+
+        self.orelse_col_offset: Optional[int] = None
+        """The column offset of the ``else`` keyword."""
+
         self.type_annotation: Optional[NodeNG] = None  # can be None
         """If present, this will contain the type annotation passed by a type comment"""
 
@@ -2680,6 +2686,9 @@ class For(
         body: Optional[typing.List[NodeNG]] = None,
         orelse: Optional[typing.List[NodeNG]] = None,
         type_annotation: Optional[NodeNG] = None,
+        *,
+        orelse_lineno: Optional[int] = None,
+        orelse_col_offset: Optional[int] = None,
     ) -> None:
         """Do some setup after initialisation.
 
@@ -2690,6 +2699,10 @@ class For(
         :param body: The contents of the body of the loop.
 
         :param orelse: The contents of the ``else`` block of the loop.
+
+        :param orelse_lineno: The line number of the ``else`` keyword.
+
+        :param orelse_lineno: The column offset of the ``else`` keyword.
         """
         self.target = target
         self.iter = iter
@@ -2697,6 +2710,8 @@ class For(
             self.body = body
         if orelse is not None:
             self.orelse = orelse
+        self.orelse_lineno = orelse_lineno
+        self.orelse_col_offset = orelse_col_offset
         self.type_annotation = type_annotation
 
     assigned_stmts: ClassVar[AssignedStmtsCall["For"]]
@@ -3979,6 +3994,12 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         self.orelse: typing.List[NodeNG] = []
         """The contents of the ``else`` block."""
 
+        self.orelse_lineno: Optional[int] = None
+        """The line number of the ``else`` or ``elif`` keyword."""
+
+        self.orelse_col_offset: Optional[int] = None
+        """The column offset of the ``else`` or ``elif`` keyword."""
+
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -3992,6 +4013,9 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         body: Optional[typing.List[NodeNG]] = None,
         handlers: Optional[typing.List[ExceptHandler]] = None,
         orelse: Optional[typing.List[NodeNG]] = None,
+        *,
+        orelse_lineno: Optional[int] = None,
+        orelse_col_offset: Optional[int] = None,
     ) -> None:
         """Do some setup after initialisation.
 
@@ -4000,6 +4024,10 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         :param handlers: The exception handlers.
 
         :param orelse: The contents of the ``else`` block.
+
+        :param orelse_lineno: The line number of the ``else`` keyword.
+
+        :param orelse_lineno: The column offset of the ``else`` keyword.
         """
         if body is not None:
             self.body = body
@@ -4007,6 +4035,8 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
             self.handlers = handlers
         if orelse is not None:
             self.orelse = orelse
+        self.orelse_lineno = orelse_lineno
+        self.orelse_col_offset = orelse_col_offset
 
     def _infer_name(self, frame, name):
         return name
@@ -4341,6 +4371,12 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         self.orelse: typing.List[NodeNG] = []
         """The contents of the ``else`` block."""
 
+        self.orelse_lineno: Optional[int] = None
+        """The line number of the ``else`` or ``elif`` keyword."""
+
+        self.orelse_col_offset: Optional[int] = None
+        """The column offset of the ``else`` or ``elif`` keyword."""
+
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -4354,6 +4390,9 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         test: Optional[NodeNG] = None,
         body: Optional[typing.List[NodeNG]] = None,
         orelse: Optional[typing.List[NodeNG]] = None,
+        *,
+        orelse_lineno: Optional[int] = None,
+        orelse_col_offset: Optional[int] = None,
     ) -> None:
         """Do some setup after initialisation.
 
@@ -4362,12 +4401,18 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         :param body: The contents of the loop.
 
         :param orelse: The contents of the ``else`` block.
+
+        :param orelse_lineno: The line number of the ``else`` keyword.
+
+        :param orelse_lineno: The column offset of the ``else`` keyword.
         """
         self.test = test
         if body is not None:
             self.body = body
         if orelse is not None:
             self.orelse = orelse
+        self.orelse_lineno = orelse_lineno
+        self.orelse_col_offset = orelse_col_offset
 
     @cached_property
     def blockstart_tolineno(self):

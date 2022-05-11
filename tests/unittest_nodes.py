@@ -334,12 +334,52 @@ class IfNodeTest(_NodeTest):
             # This is using else in a comment
             raise
 
+        for x in range(3):
+            print()
+        else:
+            print()
+
+        for x in range(3):
+            print()
+            if x == 3:
+                break
+            else:
+                print()
+        else:
+            print()
+
+        while True:
+            print()
+        else:
+            print()
+
+        try:
+            1 / 0
+        except ZeroDivisionError:
+            print()
+        else:
+            print()
+        finally:
+            print()
+
+        try:
+            1 / 0
+        except ZeroDivisionError:
+            try:
+                1 / 0
+            except:
+                print()
+            else:
+                print()
+        else:
+            print()
+
     """
 
     def test_if_elif_else_node(self) -> None:
         """test transformation for If node"""
-        self.assertEqual(len(self.astroid.body), 5)
-        for stmt in self.astroid.body:
+        self.assertEqual(len(self.astroid.body), 10)
+        for stmt in self.astroid.body[:5]:
             self.assertIsInstance(stmt, nodes.If)
         self.assertFalse(self.astroid.body[0].orelse)  # simple If
         self.assertIsInstance(self.astroid.body[1].orelse[0], nodes.Pass)  # If / else
@@ -348,8 +388,8 @@ class IfNodeTest(_NodeTest):
 
     def test_block_range(self) -> None:
         # XXX ensure expected values
-        self.assertEqual(self.astroid.block_range(1), (0, 33))
-        self.assertEqual(self.astroid.block_range(10), (0, 33))  # XXX (10, 33) ?
+        self.assertEqual(self.astroid.block_range(1), (0, 73))
+        self.assertEqual(self.astroid.block_range(10), (0, 73))  # XXX (10, 73) ?
         self.assertEqual(self.astroid.body[1].block_range(5), (5, 6))
         self.assertEqual(self.astroid.body[1].block_range(6), (6, 6))
         self.assertEqual(self.astroid.body[1].orelse[0].block_range(7), (7, 8))
@@ -373,6 +413,20 @@ class IfNodeTest(_NodeTest):
         assert self.astroid.body[4].orelse_col_offset == 0
         assert self.astroid.body[4].orelse[0].orelse_lineno == 31
         assert self.astroid.body[4].orelse[0].orelse_col_offset == 0
+        assert self.astroid.body[5].orelse_lineno == 37
+        assert self.astroid.body[5].orelse_col_offset == 0
+        assert self.astroid.body[6].orelse_lineno == 46
+        assert self.astroid.body[6].orelse_col_offset == 0
+        assert self.astroid.body[6].body[1].orelse_lineno == 44
+        assert self.astroid.body[6].body[1].orelse_col_offset == 4
+        assert self.astroid.body[7].orelse_lineno == 51
+        assert self.astroid.body[7].orelse_col_offset == 0
+        assert self.astroid.body[8].body[0].orelse_lineno == 58
+        assert self.astroid.body[8].body[0].orelse_col_offset == 0
+        assert self.astroid.body[9].orelse_lineno == 72
+        assert self.astroid.body[9].orelse_col_offset == 0
+        assert self.astroid.body[9].handlers[0].body[0].orelse_lineno == 70
+        assert self.astroid.body[9].handlers[0].body[0].orelse_col_offset == 4
 
     @staticmethod
     @pytest.mark.filterwarnings("ignore:.*is_sys_guard:DeprecationWarning")
