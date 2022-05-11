@@ -617,6 +617,24 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(one, nodes.Const)
         self.assertEqual(one.value, 1)
 
+    def test_func_is_bound(self) -> None:
+        data = """
+        class MyClass:
+            def bound():  #@
+                pass
+        """
+        func = builder.extract_node(data)
+        self.assertIs(func.is_bound(), True)
+        self.assertEqual(func.implicit_parameters(), 1)
+
+        data2 = """
+        def not_bound():  #@
+            pass
+        """
+        func2 = builder.extract_node(data2)
+        self.assertIs(func2.is_bound(), False)
+        self.assertEqual(func2.implicit_parameters(), 0)
+
     def test_type_builtin_descriptor_subclasses(self) -> None:
         astroid = builder.parse(
             """
@@ -1706,7 +1724,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         assert isinstance(cls, nodes.ClassDef)
         self.assertEqualMro(cls, ["C", "A", "B", "object"])
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_1(self):
         cls = builder.extract_node(
             """
@@ -1722,7 +1739,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls, [".C", ".A", "typing.Generic", ".B", "builtins.object"]
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_2(self):
         cls = builder.extract_node(
             """
@@ -1738,7 +1754,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls, [".C", ".A", ".B", "typing.Generic", "builtins.object"]
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_3(self):
         cls = builder.extract_node(
             """
@@ -1755,7 +1770,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls, [".D", ".B", ".A", ".C", "typing.Generic", "builtins.object"]
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_4(self):
         cls = builder.extract_node(
             """
@@ -1771,7 +1785,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls, [".C", ".A", ".B", "typing.Generic", "builtins.object"]
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_5(self):
         cls = builder.extract_node(
             """
@@ -1788,7 +1801,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls, [".C", ".A", ".B", "typing.Generic", "builtins.object"]
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_6(self):
         cls = builder.extract_node(
             """
@@ -1805,7 +1817,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls, [".C", ".A", ".Generic", ".B", "typing.Generic", "builtins.object"]
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_7(self):
         cls = builder.extract_node(
             """
@@ -1823,7 +1834,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls, [".E", ".C", ".A", ".B", "typing.Generic", ".D", "builtins.object"]
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_error_1(self):
         cls = builder.extract_node(
             """
@@ -1837,7 +1847,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         with self.assertRaises(DuplicateBasesError):
             cls.mro()
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_generic_error_2(self):
         cls = builder.extract_node(
             """
@@ -1851,7 +1860,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         with self.assertRaises(DuplicateBasesError):
             cls.mro()
 
-    @test_utils.require_version(minver="3.7")
     def test_mro_typing_extensions(self):
         """Regression test for mro() inference on typing_extesnions.
 
@@ -2526,7 +2534,6 @@ def test_posonlyargs_default_value() -> None:
     assert first_param.value == 1
 
 
-@test_utils.require_version(minver="3.7")
 def test_ancestor_with_generic() -> None:
     # https://github.com/PyCQA/astroid/issues/942
     tree = builder.parse(

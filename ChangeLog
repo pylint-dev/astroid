@@ -6,6 +6,8 @@ What's New in astroid 2.12.0?
 =============================
 Release date: TBA
 
+* ``astroid`` now requires Python 3.7.2 to run.
+
 * Add ``orelse_lineno`` and ``orelse_col_offset`` attributes to ``nodes.If``.
 
 * Fix ``re`` brain on Python ``3.11``. The flags now come from ``re._compile``.
@@ -15,15 +17,53 @@ Release date: TBA
 
   Closes #1512
 
+* Allowed ``AstroidManager.clear_cache`` to reload necessary brain plugins.
+
 * Rename ``ModuleSpec`` -> ``module_type`` constructor parameter to match attribute
   name and improve typing. Use ``type`` instead.
 
+* Infer the return value of the ``.copy()`` method on ``dict``, ``list``, ``set``,
+  and ``frozenset``.
 
-What's New in astroid 2.11.4?
+  Closes #1403
+
+What's New in astroid 2.11.6?
 =============================
 Release date: TBA
 
+
+What's New in astroid 2.11.5?
+=============================
+Release date: 2022-05-09
+
+* Fix crash while obtaining ``object_type()`` of an ``Unknown`` node.
+
+  Refs PyCQA/pylint#6539
+
+* Fix a bug where in attempting to handle the patching of ``distutils`` by ``virtualenv``,
+  library submodules called ``distutils`` (e.g. ``numpy.distutils``) were included also.
+
+  Refs PyCQA/pylint#6497
+
+What's New in astroid 2.11.4?
+=============================
+Release date: 2022-05-02
+
 * Fix ``col_offset`` attribute for nodes involving ``with`` on ``PyPy``.
+
+* Fixed a crash involving two starred expressions: one inside a comprehension,
+  both inside a call.
+
+  Refs PyCQA/pylint#6372
+
+* Made ``FunctionDef.implicit_parameters`` return 1 for methods by making
+  ``FunctionDef.is_bound`` return ``True``, as it does for class methods.
+
+  Closes PyCQA/pylint#6464
+
+* Fixed a crash when ``_filter_stmts`` encounters an ``EmptyNode``.
+
+  Closes PyCQA/pylint#6438
 
 
 What's New in astroid 2.11.3?

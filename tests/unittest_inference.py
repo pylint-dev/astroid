@@ -20,7 +20,7 @@ from astroid import helpers, nodes, objects, test_utils, util
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod
 from astroid.builder import AstroidBuilder, extract_node, parse
-from astroid.const import IS_PYPY, PY38_PLUS, PY39_PLUS
+from astroid.const import PY38_PLUS, PY39_PLUS
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -816,9 +816,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
         self.assertEqual(inferred[0].name, "open")
-
-    if IS_PYPY:
-        test_builtin_open = unittest.expectedFailure(test_builtin_open)
 
     def test_callfunc_context_func(self) -> None:
         code = """
@@ -2053,6 +2050,37 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(ast_node.infer())
             self.assertIsInstance(inferred, Instance)
             self.assertEqual(inferred.qname(), "builtins.dict")
+
+    def test_copy_method_inference(self) -> None:
+        code = """
+        a_dict = {"b": 1, "c": 2}
+        b_dict = a_dict.copy()
+        b_dict #@
+
+        a_list = [1, 2, 3]
+        b_list = a_list.copy()
+        b_list #@
+
+        a_set = set([1, 2, 3])
+        b_set = a_set.copy()
+        b_set #@
+
+        a_frozenset = frozenset([1, 2, 3])
+        b_frozenset = a_frozenset.copy()
+        b_frozenset #@
+
+        a_unknown = unknown()
+        b_unknown = a_unknown.copy()
+        b_unknown #@
+        """
+        ast = extract_node(code, __name__)
+        self.assertInferDict(ast[0], {"b": 1, "c": 2})
+        self.assertInferList(ast[1], [1, 2, 3])
+        self.assertInferSet(ast[2], [1, 2, 3])
+        self.assertInferFrozenSet(ast[3], [1, 2, 3])
+
+        inferred_unknown = next(ast[4].infer())
+        assert inferred_unknown == util.Uninferable
 
     def test_str_methods(self) -> None:
         code = """
