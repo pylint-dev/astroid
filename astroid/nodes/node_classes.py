@@ -3995,10 +3995,10 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         """The contents of the ``else`` block."""
 
         self.orelse_lineno: Optional[int] = None
-        """The line number of the ``else`` or ``elif`` keyword."""
+        """The line number of the ``else`` keyword."""
 
         self.orelse_col_offset: Optional[int] = None
-        """The column offset of the ``else`` or ``elif`` keyword."""
+        """The column offset of the ``else`` keyword."""
 
         super().__init__(
             lineno=lineno,
@@ -4372,10 +4372,10 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         """The contents of the ``else`` block."""
 
         self.orelse_lineno: Optional[int] = None
-        """The line number of the ``else`` or ``elif`` keyword."""
+        """The line number of the ``else`` keyword."""
 
         self.orelse_col_offset: Optional[int] = None
-        """The column offset of the ``else`` or ``elif`` keyword."""
+        """The column offset of the ``else`` keyword."""
 
         super().__init__(
             lineno=lineno,
