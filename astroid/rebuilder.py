@@ -260,8 +260,6 @@ class TreeRebuilder:
         # pylint: disable-next=unsubscriptable-object
         for index, line in enumerate(self._data[start - 1 : node.lineno : -1]):
             if line.lstrip().startswith("else"):
-                # if start - index == 37:
-                # breakpoint()
                 return start - index, line.index("else")
             if line.lstrip().startswith("elif"):
                 return start - index, line.index("elif")
