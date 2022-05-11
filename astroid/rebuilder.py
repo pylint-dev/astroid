@@ -1381,7 +1381,7 @@ class TreeRebuilder:
         start = node.orelse[0].lineno
 
         # pylint: disable-next=unsubscriptable-object
-        for index, line in enumerate(self._data[start::-1]):
+        for index, line in enumerate(self._data[start:node.lineno:-1]):
             if line.rstrip().startswith("else"):
                 return start - index + 1, line.index("else")
             if line.rstrip().startswith("elif"):
