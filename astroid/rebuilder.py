@@ -258,7 +258,7 @@ class TreeRebuilder:
         start = node.orelse[0].lineno
 
         # pylint: disable-next=unsubscriptable-object
-        for index, line in enumerate(self._data[start - 1 :: -1]):
+        for index, line in enumerate(self._data[start - 1 : node.lineno : -1]):
             if line.lstrip().startswith("else"):
                 # if start - index == 37:
                 # breakpoint()
