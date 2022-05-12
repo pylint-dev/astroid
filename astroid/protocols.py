@@ -11,7 +11,8 @@ from __future__ import annotations
 import collections
 import itertools
 import operator as operator_mod
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 
 from astroid import arguments, bases, decorators, helpers, nodes, util
 from astroid.const import Context

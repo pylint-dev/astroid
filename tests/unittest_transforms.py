@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import time
 import unittest
-from typing import Callable, Iterator
+from collections.abc import Callable, Iterator
 
 from astroid import MANAGER, builder, nodes, parse, transforms
 from astroid.manager import AstroidManager

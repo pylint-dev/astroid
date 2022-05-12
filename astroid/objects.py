@@ -14,7 +14,8 @@ leads to an inferred FrozenSet:
 from __future__ import annotations
 
 import sys
-from typing import Iterator, TypeVar
+from collections.abc import Iterator
+from typing import TypeVar
 
 from astroid import bases, decorators, util
 from astroid.context import InferenceContext

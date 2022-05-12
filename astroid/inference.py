@@ -11,7 +11,8 @@ import ast
 import functools
 import itertools
 import operator
-from typing import TYPE_CHECKING, Any, Callable, Generator, Iterable, Iterator, TypeVar
+from collections.abc import Callable, Generator, Iterable, Iterator
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from astroid import bases, decorators, helpers, nodes, protocols, util
 from astroid.context import (

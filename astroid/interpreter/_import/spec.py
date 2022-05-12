@@ -12,9 +12,10 @@ import importlib.util
 import os
 import sys
 import zipimport
+from collections.abc import Sequence
 from functools import lru_cache
 from pathlib import Path
-from typing import NamedTuple, Sequence
+from typing import NamedTuple
 
 from astroid.modutils import EXT_LIB_DIRS
 

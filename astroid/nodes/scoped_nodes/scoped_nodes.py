@@ -14,8 +14,8 @@ import io
 import itertools
 import os
 import sys
-import typing
 import warnings
+from collections.abc import Iterator
 from typing import TYPE_CHECKING, NoReturn, TypeVar, overload
 
 from astroid import bases
@@ -2959,7 +2959,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         def grouped_slots(
             mro: list[ClassDef],
-        ) -> typing.Iterator[node_classes.NodeNG | None]:
+        ) -> Iterator[node_classes.NodeNG | None]:
             # Not interested in object, since it can't have slots.
             for cls in mro[:-1]:
                 try:

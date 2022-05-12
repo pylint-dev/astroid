@@ -9,7 +9,8 @@ This module contains utility functions for scoped nodes.
 from __future__ import annotations
 
 import builtins
-from typing import TYPE_CHECKING, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from astroid.manager import AstroidManager
 

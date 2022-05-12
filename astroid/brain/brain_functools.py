@@ -6,9 +6,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from functools import partial
 from itertools import chain
-from typing import Iterator
 
 from astroid import BoundMethod, arguments, extract_node, helpers, nodes, objects
 from astroid.context import InferenceContext

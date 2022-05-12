@@ -11,9 +11,10 @@ from __future__ import annotations
 import ast
 import sys
 import token
+from collections.abc import Callable, Generator
 from io import StringIO
 from tokenize import TokenInfo, generate_tokens
-from typing import Callable, Generator, TypeVar, Union, cast, overload
+from typing import TypeVar, Union, cast, overload
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment

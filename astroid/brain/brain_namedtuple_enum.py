@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import functools
 import keyword
+from collections.abc import Iterator
 from textwrap import dedent
-from typing import Iterator
 
 import astroid
 from astroid import arguments, inference_tip, nodes, util
