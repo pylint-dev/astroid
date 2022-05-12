@@ -11,18 +11,9 @@ import itertools
 import sys
 import typing
 import warnings
+from collections.abc import Generator, Iterator
 from functools import lru_cache
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    ClassVar,
-    Generator,
-    Iterator,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Union
 
 from astroid import decorators, mixins, util
 from astroid.bases import Instance, _infer_stmts

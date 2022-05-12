@@ -7,8 +7,8 @@
 from __future__ import annotations
 
 import itertools
+from collections.abc import Iterator
 from functools import partial
-from typing import Iterator
 
 from astroid import arguments, helpers, inference_tip, nodes, objects, util
 from astroid.builder import AstroidBuilder

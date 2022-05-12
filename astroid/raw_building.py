@@ -14,7 +14,7 @@ import os
 import sys
 import types
 import warnings
-from typing import Iterable
+from collections.abc import Iterable
 
 from astroid import bases, nodes
 from astroid.manager import AstroidManager

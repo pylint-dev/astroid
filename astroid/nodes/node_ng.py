@@ -7,18 +7,9 @@ from __future__ import annotations
 import pprint
 import sys
 import warnings
+from collections.abc import Iterator
 from functools import singledispatch as _singledispatch
-from typing import (
-    TYPE_CHECKING,
-    ClassVar,
-    Iterator,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, ClassVar, Tuple, Type, TypeVar, Union, cast, overload
 
 from astroid import decorators, util
 from astroid.exceptions import (

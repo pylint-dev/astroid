@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import typing
+from collections.abc import Iterator
 
 import wrapt
 
@@ -30,7 +31,7 @@ def clear_inference_tip_cache():
 @wrapt.decorator
 def _inference_tip_cached(
     func: InferFn, instance: None, args: typing.Any, kwargs: typing.Any
-) -> typing.Iterator[InferOptions]:
+) -> Iterator[InferOptions]:
     """Cache decorator used for inference tips"""
     node = args[0]
     try:

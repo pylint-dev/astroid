@@ -16,7 +16,8 @@ dataclasses. References:
 from __future__ import annotations
 
 import sys
-from typing import Generator, Tuple, Union
+from collections.abc import Generator
+from typing import Tuple, Union
 
 from astroid import context, inference_tip
 from astroid.builder import parse

@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import typing
+from collections.abc import Iterator
 from functools import partial
 
 from astroid import context, extract_node, inference_tip
@@ -144,7 +145,7 @@ def _looks_like_typing_subscript(node):
 
 def infer_typing_attr(
     node: Subscript, ctx: context.InferenceContext | None = None
-) -> typing.Iterator[ClassDef]:
+) -> Iterator[ClassDef]:
     """Infer a typing.X[...] subscript"""
     try:
         value = next(node.value.infer())  # type: ignore[union-attr] # value shouldn't be None for Subscript.
@@ -190,7 +191,7 @@ def _looks_like_typedDict(  # pylint: disable=invalid-name
 
 def infer_old_typedDict(  # pylint: disable=invalid-name
     node: ClassDef, ctx: context.InferenceContext | None = None
-) -> typing.Iterator[ClassDef]:
+) -> Iterator[ClassDef]:
     func_to_add = _extract_single_node("dict")
     node.locals["__call__"] = [func_to_add]
     return iter([node])
@@ -198,7 +199,7 @@ def infer_old_typedDict(  # pylint: disable=invalid-name
 
 def infer_typedDict(  # pylint: disable=invalid-name
     node: FunctionDef, ctx: context.InferenceContext | None = None
-) -> typing.Iterator[ClassDef]:
+) -> Iterator[ClassDef]:
     """Replace TypedDict FunctionDef with ClassDef."""
     class_def = ClassDef(
         name="TypedDict",
@@ -258,7 +259,7 @@ def _forbid_class_getitem_access(node: ClassDef) -> None:
 
 def infer_typing_alias(
     node: Call, ctx: context.InferenceContext | None = None
-) -> typing.Iterator[ClassDef]:
+) -> Iterator[ClassDef]:
     """
     Infers the call to _alias function
     Insert ClassDef, with same name as aliased class,
@@ -346,7 +347,7 @@ def _looks_like_special_alias(node: Call) -> bool:
 
 def infer_special_alias(
     node: Call, ctx: context.InferenceContext | None = None
-) -> typing.Iterator[ClassDef]:
+) -> Iterator[ClassDef]:
     """Infer call to tuple alias as new subscriptable class typing.Tuple."""
     if not (
         isinstance(node.parent, Assign)
@@ -381,7 +382,7 @@ def _looks_like_typing_cast(node: Call) -> bool:
 
 def infer_typing_cast(
     node: Call, ctx: context.InferenceContext | None = None
-) -> typing.Iterator[NodeNG]:
+) -> Iterator[NodeNG]:
     """Infer call to cast() returning same type as casted-from var"""
     if not isinstance(node.func, (Name, Attribute)):
         raise UseInferenceDefault
