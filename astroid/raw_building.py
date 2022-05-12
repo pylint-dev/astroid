@@ -5,6 +5,7 @@
 """this module contains a set of functions to create astroid trees from scratch
 (build_* functions) or from living object (object_build_* functions)
 """
+
 from __future__ import annotations
 
 import builtins

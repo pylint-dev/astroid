@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Different utilities for the numpy brains"""
+
 from __future__ import annotations
 
 from astroid.builder import extract_node

@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for the astroid inference capabilities"""
+
 from __future__ import annotations
 
 import textwrap

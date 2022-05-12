@@ -5,6 +5,7 @@
 """this module contains a set of functions to handle python protocols for nodes
 where it makes sense.
 """
+
 from __future__ import annotations
 
 import collections

@@ -4,6 +4,7 @@
 
 """this module contains a set of functions to handle inference on astroid trees
 """
+
 from __future__ import annotations
 
 import ast

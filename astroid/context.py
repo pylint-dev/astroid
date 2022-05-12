@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Various context related utilities, including inference and call contexts."""
+
 from __future__ import annotations
 
 import contextlib

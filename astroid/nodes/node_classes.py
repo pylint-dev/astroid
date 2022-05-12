@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Module for some node classes. More nodes in scoped_nodes.py"""
+
 from __future__ import annotations
 
 import abc

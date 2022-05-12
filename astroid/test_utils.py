@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Utility functions for test code that uses astroid ASTs as input."""
+
 from __future__ import annotations
 
 import contextlib

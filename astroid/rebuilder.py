@@ -5,6 +5,7 @@
 """this module contains utilities for rebuilding an _ast tree in
 order to get a single Astroid representation
 """
+
 from __future__ import annotations
 
 import ast

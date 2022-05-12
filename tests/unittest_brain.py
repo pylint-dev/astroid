@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for basic functionality in astroid.brain."""
+
 from __future__ import annotations
 
 import io

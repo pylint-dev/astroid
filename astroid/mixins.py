@@ -4,6 +4,7 @@
 
 """This module contains some mixins for the different nodes.
 """
+
 from __future__ import annotations
 
 import itertools

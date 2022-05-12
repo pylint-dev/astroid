@@ -10,6 +10,7 @@ leads to an inferred FrozenSet:
 
     Call(func=Name('frozenset'), args=Tuple(...))
 """
+
 from __future__ import annotations
 
 import sys

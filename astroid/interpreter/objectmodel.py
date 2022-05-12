@@ -20,6 +20,7 @@ the model will be requested to return the corresponding value of that
 attribute. Thus the model can be viewed as a special part of the lookup
 mechanism.
 """
+
 from __future__ import annotations
 
 import itertools

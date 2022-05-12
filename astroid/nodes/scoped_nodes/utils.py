@@ -5,6 +5,7 @@
 """
 This module contains utility functions for scoped nodes.
 """
+
 from __future__ import annotations
 
 import builtins

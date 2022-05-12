@@ -6,6 +6,7 @@
 This script permits to upgrade the changelog in astroid or pylint when releasing a version.
 """
 # pylint: disable=logging-fstring-interpolation
+
 from __future__ import annotations
 
 import argparse

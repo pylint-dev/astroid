@@ -5,6 +5,7 @@
 """tests for specific behaviour of astroid scoped nodes (i.e. module, class and
 function)
 """
+
 from __future__ import annotations
 
 import datetime

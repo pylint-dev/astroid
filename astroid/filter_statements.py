@@ -5,6 +5,7 @@
 """_filter_stmts and helper functions. This method gets used in LocalsDictnodes.NodeNG._scope_lookup.
 It is not considered public.
 """
+
 from __future__ import annotations
 
 from astroid import nodes

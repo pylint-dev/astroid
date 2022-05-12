@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """This module renders Astroid nodes as string"""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

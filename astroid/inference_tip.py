@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Transform utilities (filters and decorator)"""
+
 from __future__ import annotations
 
 import typing

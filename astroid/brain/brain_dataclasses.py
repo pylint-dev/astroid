@@ -12,6 +12,7 @@ dataclasses. References:
 - https://lovasoa.github.io/marshmallow_dataclass/
 
 """
+
 from __future__ import annotations
 
 import sys
