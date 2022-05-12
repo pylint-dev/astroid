@@ -13,6 +13,8 @@ What's New in astroid 2.11.6?
 =============================
 Release date: TBA
 
+* The Qt brain now correctly treats calling ``.disconnect()`` (with no
+  arguments) on a slot as valid.
 
 
 What's New in astroid 2.11.5?
