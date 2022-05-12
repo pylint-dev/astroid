@@ -62,7 +62,6 @@ class AstroidBuilder(raw_building.InspectBuilder):
     by default being True.
     """
 
-    # pylint: disable=redefined-outer-name
     def __init__(self, manager=None, apply_transforms=True):
         super().__init__(manager)
         self._apply_transforms = apply_transforms

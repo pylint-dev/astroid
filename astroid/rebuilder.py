@@ -169,7 +169,6 @@ class TreeRebuilder:
         else:
             return None
 
-        # pylint: disable=undefined-loop-variable
         return Position(
             lineno=node.lineno + start_token.start[0] - 1,
             col_offset=start_token.start[1],
@@ -222,7 +221,6 @@ class TreeRebuilder:
         else:
             return
 
-        # pylint: disable=undefined-loop-variable
         node.doc_node.lineno = lineno + t.start[0] - 1
         node.doc_node.col_offset = t.start[1]
         node.doc_node.end_lineno = lineno + t.end[0] - 1

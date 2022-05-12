@@ -326,7 +326,7 @@ class AstroidManager:
             ) from exc
         except Exception as exc:
             raise AstroidImportError(
-                "Unexpected error while retrieving name for {class_repr}:\n" "{error}",
+                "Unexpected error while retrieving name for {class_repr}:\n{error}",
                 cls=klass,
                 class_repr=safe_repr(klass),
             ) from exc

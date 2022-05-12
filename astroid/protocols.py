@@ -608,7 +608,7 @@ def with_assigned_stmts(
                     ) from exc
                 except TypeError as exc:
                     raise InferenceError(
-                        "Tried to unpack a non-iterable value " "in {node!r}.",
+                        "Tried to unpack a non-iterable value in {node!r}.",
                         node=self,
                         targets=node,
                         assign_path=assign_path,
@@ -677,7 +677,7 @@ def starred_assigned_stmts(
     stmt = self.statement(future=True)
     if not isinstance(stmt, (nodes.Assign, nodes.For)):
         raise InferenceError(
-            "Statement {stmt!r} enclosing {node!r} " "must be an Assign or For node.",
+            "Statement {stmt!r} enclosing {node!r} must be an Assign or For node.",
             node=self,
             stmt=stmt,
             unknown=node,
@@ -696,7 +696,7 @@ def starred_assigned_stmts(
 
         if sum(1 for _ in lhs.nodes_of_class(nodes.Starred)) > 1:
             raise InferenceError(
-                "Too many starred arguments in the " " assignment targets {lhs!r}.",
+                "Too many starred arguments in the assignment targets {lhs!r}.",
                 node=self,
                 targets=lhs,
                 unknown=node,
