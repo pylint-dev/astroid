@@ -2,6 +2,8 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import collections
 from typing import TYPE_CHECKING
 
@@ -23,7 +25,7 @@ class TransformVisitor:
     def __init__(self):
         self.transforms = collections.defaultdict(list)
 
-    def _transform(self, node: "NodeNG") -> "NodeNG":
+    def _transform(self, node: NodeNG) -> NodeNG:
         """Call matching transforms for the given node if any and return the
         transformed node.
         """

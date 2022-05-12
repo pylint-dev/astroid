@@ -265,7 +265,8 @@ mixin-class-rgx=.*Mix[Ii]n
 # List of members which are set dynamically and missed by pylint inference
 # system, and so shouldn't trigger E0201 when accessed. Python regular
 # expressions are accepted.
-generated-members=REQUEST,acl_users,aq_parent,argparse.Namespace
+# TODO: Remove ast.Match pattern once https://github.com/PyCQA/pylint/issues/6594 is fixed
+generated-members=REQUEST,acl_users,aq_parent,argparse.Namespace,ast\.([mM]atch.*|pattern)
 
 
 [VARIABLES]

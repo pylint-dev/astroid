@@ -11,8 +11,10 @@ leads to an inferred FrozenSet:
     Call(func=Name('frozenset'), args=Tuple(...))
 """
 
+from __future__ import annotations
+
 import sys
-from typing import Iterator, Optional, TypeVar
+from typing import Iterator, TypeVar
 
 from astroid import bases, decorators, util
 from astroid.context import InferenceContext
@@ -328,5 +330,5 @@ class Property(scoped_nodes.FunctionDef):
     def infer_call_result(self, caller=None, context=None):
         raise InferenceError("Properties are not callable")
 
-    def _infer(self: _T, context: Optional[InferenceContext] = None) -> Iterator[_T]:
+    def _infer(self: _T, context: InferenceContext | None = None) -> Iterator[_T]:
         yield self

@@ -2,17 +2,19 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import ast
 import sys
 import types
 from functools import partial
-from typing import Dict, List, NamedTuple, Optional, Type
+from typing import NamedTuple
 
 from astroid.const import PY38_PLUS, Context
 
 if sys.version_info >= (3, 8):
     # On Python 3.8, typed_ast was merged back into `ast`
-    _ast_py3: Optional[types.ModuleType] = ast
+    _ast_py3: types.ModuleType | None = ast
 else:
     try:
         import typed_ast.ast3 as _ast_py3
@@ -21,17 +23,17 @@ else:
 
 
 class FunctionType(NamedTuple):
-    argtypes: List[ast.expr]
+    argtypes: list[ast.expr]
     returns: ast.expr
 
 
 class ParserModule(NamedTuple):
     module: types.ModuleType
-    unary_op_classes: Dict[Type[ast.unaryop], str]
-    cmp_op_classes: Dict[Type[ast.cmpop], str]
-    bool_op_classes: Dict[Type[ast.boolop], str]
-    bin_op_classes: Dict[Type[ast.operator], str]
-    context_classes: Dict[Type[ast.expr_context], Context]
+    unary_op_classes: dict[type[ast.unaryop], str]
+    cmp_op_classes: dict[type[ast.cmpop], str]
+    bool_op_classes: dict[type[ast.boolop], str]
+    bin_op_classes: dict[type[ast.operator], str]
+    context_classes: dict[type[ast.expr_context], Context]
 
     def parse(self, string: str, type_comments: bool = True) -> ast.Module:
         if self.module is _ast_py3:
@@ -46,7 +48,7 @@ class ParserModule(NamedTuple):
         return parse_func(string)
 
 
-def parse_function_type_comment(type_comment: str) -> Optional[FunctionType]:
+def parse_function_type_comment(type_comment: str) -> FunctionType | None:
     """Given a correct type comment, obtain a FunctionType object"""
     if _ast_py3 is None:
         return None
@@ -78,13 +80,13 @@ def get_parser_module(type_comments: bool = True) -> ParserModule:
 
 def _unary_operators_from_module(
     module: types.ModuleType,
-) -> Dict[Type[ast.unaryop], str]:
+) -> dict[type[ast.unaryop], str]:
     return {module.UAdd: "+", module.USub: "-", module.Not: "not", module.Invert: "~"}
 
 
 def _binary_operators_from_module(
     module: types.ModuleType,
-) -> Dict[Type[ast.operator], str]:
+) -> dict[type[ast.operator], str]:
     binary_operators = {
         module.Add: "+",
         module.BitAnd: "&",
@@ -105,13 +107,13 @@ def _binary_operators_from_module(
 
 def _bool_operators_from_module(
     module: types.ModuleType,
-) -> Dict[Type[ast.boolop], str]:
+) -> dict[type[ast.boolop], str]:
     return {module.And: "and", module.Or: "or"}
 
 
 def _compare_operators_from_module(
     module: types.ModuleType,
-) -> Dict[Type[ast.cmpop], str]:
+) -> dict[type[ast.cmpop], str]:
     return {
         module.Eq: "==",
         module.Gt: ">",
@@ -128,7 +130,7 @@ def _compare_operators_from_module(
 
 def _contexts_from_module(
     module: types.ModuleType,
-) -> Dict[Type[ast.expr_context], Context]:
+) -> dict[type[ast.expr_context], Context]:
     return {
         module.Load: Context.Load,
         module.Store: Context.Store,

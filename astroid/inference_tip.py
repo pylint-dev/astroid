@@ -4,6 +4,8 @@
 
 """Transform utilities (filters and decorator)"""
 
+from __future__ import annotations
+
 import typing
 
 import wrapt
@@ -17,9 +19,7 @@ InferOptions = typing.Union[
     NodeNG, bases.Instance, bases.UnboundMethod, typing.Type[util.Uninferable]
 ]
 
-_cache: typing.Dict[
-    typing.Tuple[InferFn, NodeNG], typing.Optional[typing.List[InferOptions]]
-] = {}
+_cache: dict[tuple[InferFn, NodeNG], list[InferOptions] | None] = {}
 
 
 def clear_inference_tip_cache():

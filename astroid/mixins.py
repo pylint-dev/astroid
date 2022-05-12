@@ -4,9 +4,12 @@
 
 """This module contains some mixins for the different nodes.
 """
+
+from __future__ import annotations
+
 import itertools
 import sys
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from astroid import decorators
 from astroid.exceptions import AttributeInferenceError
@@ -43,7 +46,7 @@ class BlockRangeMixIn:
 class FilterStmtsMixin:
     """Mixin for statement filtering and assignment type"""
 
-    def _get_filtered_stmts(self, _, node, _stmts, mystmt: Optional["nodes.Statement"]):
+    def _get_filtered_stmts(self, _, node, _stmts, mystmt: nodes.Statement | None):
         """method used in _filter_stmts to get statements and trigger break"""
         if self.statement(future=True) is mystmt:
             # original node's statement is the assignment, only keep
@@ -60,7 +63,7 @@ class AssignTypeMixin:
         return self
 
     def _get_filtered_stmts(
-        self, lookup_node, node, _stmts, mystmt: Optional["nodes.Statement"]
+        self, lookup_node, node, _stmts, mystmt: nodes.Statement | None
     ):
         """method used in filter_stmts"""
         if self is mystmt:

@@ -2,6 +2,8 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import abc
 import enum
 import importlib
@@ -12,7 +14,7 @@ import sys
 import zipimport
 from functools import lru_cache
 from pathlib import Path
-from typing import List, NamedTuple, Optional, Sequence, Tuple
+from typing import NamedTuple, Sequence
 
 from astroid.modutils import EXT_LIB_DIRS
 
@@ -43,9 +45,9 @@ class ModuleSpec(NamedTuple):
 
     name: str
     type: ModuleType
-    location: "str | None" = None
-    origin: "str | None" = None
-    submodule_search_locations: "Sequence[str] | None" = None
+    location: str | None = None
+    origin: str | None = None
+    submodule_search_locations: Sequence[str] | None = None
 
 
 class Finder:
@@ -58,10 +60,10 @@ class Finder:
     def find_module(
         self,
         modname: str,
-        module_parts: List[str],
-        processed: List[str],
-        submodule_path: Optional[List[str]],
-    ) -> Optional[ModuleSpec]:
+        module_parts: list[str],
+        processed: list[str],
+        submodule_path: list[str] | None,
+    ) -> ModuleSpec | None:
         """Find the given module
 
         Each finder is responsible for each protocol of finding, as long as
@@ -86,7 +88,7 @@ class Finder:
 class ImportlibFinder(Finder):
     """A finder based on the importlib module."""
 
-    _SUFFIXES: Sequence[Tuple[str, ModuleType]] = (
+    _SUFFIXES: Sequence[tuple[str, ModuleType]] = (
         [(s, ModuleType.C_EXTENSION) for s in importlib.machinery.EXTENSION_SUFFIXES]
         + [(s, ModuleType.PY_SOURCE) for s in importlib.machinery.SOURCE_SUFFIXES]
         + [(s, ModuleType.PY_COMPILED) for s in importlib.machinery.BYTECODE_SUFFIXES]
@@ -95,10 +97,10 @@ class ImportlibFinder(Finder):
     def find_module(
         self,
         modname: str,
-        module_parts: List[str],
-        processed: List[str],
-        submodule_path: Optional[List[str]],
-    ) -> Optional[ModuleSpec]:
+        module_parts: list[str],
+        processed: list[str],
+        submodule_path: list[str] | None,
+    ) -> ModuleSpec | None:
         if submodule_path is not None:
             submodule_path = list(submodule_path)
         else:
