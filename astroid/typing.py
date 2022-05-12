@@ -2,8 +2,10 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import sys
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set
+from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
     from astroid import nodes, transforms
@@ -20,8 +22,8 @@ class InferenceErrorInfo(TypedDict):
     raised with StopIteration exception.
     """
 
-    node: "nodes.NodeNG"
-    context: "InferenceContext | None"
+    node: nodes.NodeNG
+    context: InferenceContext | None
 
 
 InferFn = Callable[..., Any]
@@ -30,10 +32,10 @@ InferFn = Callable[..., Any]
 class AstroidManagerBrain(TypedDict):
     """Dictionary to store relevant information for a AstroidManager class."""
 
-    astroid_cache: Dict
-    _mod_file_cache: Dict
-    _failed_import_hooks: List
+    astroid_cache: dict
+    _mod_file_cache: dict
+    _failed_import_hooks: list
     always_load_extensions: bool
     optimize_ast: bool
-    extension_package_whitelist: Set
-    _transform: "transforms.TransformVisitor"
+    extension_package_whitelist: set
+    _transform: transforms.TransformVisitor

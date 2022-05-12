@@ -12,8 +12,10 @@ dataclasses. References:
 - https://lovasoa.github.io/marshmallow_dataclass/
 
 """
+from __future__ import annotations
+
 import sys
-from typing import FrozenSet, Generator, List, Optional, Tuple, Union
+from typing import Generator, Tuple, Union
 
 from astroid import context, inference_tip
 from astroid.builder import parse
@@ -179,7 +181,7 @@ def _check_generate_dataclass_init(node: ClassDef) -> bool:
     )
 
 
-def _generate_dataclass_init(assigns: List[AnnAssign]) -> str:
+def _generate_dataclass_init(assigns: list[AnnAssign]) -> str:
     """Return an init method for a dataclass given the targets."""
     target_names = []
     params = []
@@ -234,7 +236,7 @@ def _generate_dataclass_init(assigns: List[AnnAssign]) -> str:
 
 
 def infer_dataclass_attribute(
-    node: Unknown, ctx: Optional[context.InferenceContext] = None
+    node: Unknown, ctx: context.InferenceContext | None = None
 ) -> Generator:
     """Inference tip for an Unknown node that was dynamically generated to
     represent a dataclass attribute.
@@ -257,7 +259,7 @@ def infer_dataclass_attribute(
 
 
 def infer_dataclass_field_call(
-    node: Call, ctx: Optional[context.InferenceContext] = None
+    node: Call, ctx: context.InferenceContext | None = None
 ) -> Generator:
     """Inference tip for dataclass field calls."""
     if not isinstance(node.parent, (AnnAssign, Assign)):
@@ -276,7 +278,7 @@ def infer_dataclass_field_call(
 
 
 def _looks_like_dataclass_decorator(
-    node: NodeNG, decorator_names: FrozenSet[str] = DATACLASSES_DECORATORS
+    node: NodeNG, decorator_names: frozenset[str] = DATACLASSES_DECORATORS
 ) -> bool:
     """Return True if node looks like a dataclass decorator.
 
@@ -423,7 +425,7 @@ _INFERABLE_TYPING_TYPES = frozenset(
 
 
 def _infer_instance_from_annotation(
-    node: NodeNG, ctx: Optional[context.InferenceContext] = None
+    node: NodeNG, ctx: context.InferenceContext | None = None
 ) -> Generator:
     """Infer an instance corresponding to the type annotation represented by node.
 

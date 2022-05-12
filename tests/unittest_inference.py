@@ -3,13 +3,14 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for the astroid inference capabilities"""
+from __future__ import annotations
 
 import textwrap
 import unittest
 from abc import ABCMeta
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable
 from unittest.mock import patch
 
 import pytest
@@ -66,9 +67,9 @@ class InferenceUtilsTest(unittest.TestCase):
 
 def _assertInferElts(
     node_type: ABCMeta,
-    self: "InferenceTest",
+    self: InferenceTest,
     node: Any,
-    elts: Union[List[int], List[str]],
+    elts: list[int] | list[str],
 ) -> None:
     inferred = next(node.infer())
     self.assertIsInstance(inferred, node_type)
@@ -92,7 +93,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.value, expected)
 
     def assertInferDict(
-        self, node: Union[nodes.Call, nodes.Dict, nodes.NodeNG], expected: Any
+        self, node: nodes.Call | nodes.Dict | nodes.NodeNG, expected: Any
     ) -> None:
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Dict)
@@ -943,9 +944,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
         self.assertEqual(inferred[0].name, "exists")
 
-    def _test_const_inferred(
-        self, node: nodes.AssignName, value: Union[float, str]
-    ) -> None:
+    def _test_const_inferred(self, node: nodes.AssignName, value: float | str) -> None:
         inferred = list(node.infer())
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.Const)
@@ -3451,19 +3450,19 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def _slicing_test_helper(
         self,
-        pairs: Tuple[
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
+        pairs: tuple[
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
         ],
-        cls: Union[ABCMeta, type],
+        cls: ABCMeta | type,
         get_elts: Callable,
     ) -> None:
         for code, expected in pairs:
@@ -4668,13 +4667,13 @@ class TestType(unittest.TestCase):
 class ArgumentsTest(unittest.TestCase):
     @staticmethod
     def _get_dict_value(
-        inferred: Dict,
-    ) -> Union[List[Tuple[str, int]], List[Tuple[str, str]]]:
+        inferred: dict,
+    ) -> list[tuple[str, int]] | list[tuple[str, str]]:
         items = inferred.items
         return sorted((key.value, value.value) for key, value in items)
 
     @staticmethod
-    def _get_tuple_value(inferred: Tuple) -> Tuple[int, ...]:
+    def _get_tuple_value(inferred: tuple) -> tuple[int, ...]:
         elts = inferred.elts
         return tuple(elt.value for elt in elts)
 
@@ -4996,7 +4995,7 @@ class CallSiteTest(unittest.TestCase):
         return arguments.CallSite.from_call(call)
 
     def _test_call_site_pair(
-        self, code: str, expected_args: List[int], expected_keywords: Dict[str, int]
+        self, code: str, expected_args: list[int], expected_keywords: dict[str, int]
     ) -> None:
         ast_node = extract_node(code)
         call_site = self._call_site_from_call(ast_node)
@@ -5010,7 +5009,7 @@ class CallSiteTest(unittest.TestCase):
             self.assertEqual(call_site.keyword_arguments[keyword].value, value)
 
     def _test_call_site(
-        self, pairs: List[Tuple[str, List[int], Dict[str, int]]]
+        self, pairs: list[tuple[str, list[int], dict[str, int]]]
     ) -> None:
         for pair in pairs:
             self._test_call_site_pair(*pair)
@@ -5040,7 +5039,7 @@ class CallSiteTest(unittest.TestCase):
         ]
         self._test_call_site(pairs)
 
-    def _test_call_site_valid_arguments(self, values: List[str], invalid: bool) -> None:
+    def _test_call_site_valid_arguments(self, values: list[str], invalid: bool) -> None:
         for value in values:
             ast_node = extract_node(value)
             call_site = self._call_site_from_call(ast_node)

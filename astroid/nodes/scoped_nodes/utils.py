@@ -5,9 +5,10 @@
 """
 This module contains utility functions for scoped nodes.
 """
+from __future__ import annotations
 
 import builtins
-from typing import TYPE_CHECKING, Sequence, Tuple
+from typing import TYPE_CHECKING, Sequence
 
 from astroid.manager import AstroidManager
 
@@ -15,10 +16,10 @@ if TYPE_CHECKING:
     from astroid import nodes
 
 
-_builtin_astroid: "nodes.Module | None" = None
+_builtin_astroid: nodes.Module | None = None
 
 
-def builtin_lookup(name: str) -> Tuple["nodes.Module", Sequence["nodes.NodeNG"]]:
+def builtin_lookup(name: str) -> tuple[nodes.Module, Sequence[nodes.NodeNG]]:
     """Lookup a name in the builtin module.
 
     Return the list of matching statements and the ast for the builtin module
@@ -30,7 +31,7 @@ def builtin_lookup(name: str) -> Tuple["nodes.Module", Sequence["nodes.NodeNG"]]
     if name == "__dict__":
         return _builtin_astroid, ()
     try:
-        stmts: Sequence["nodes.NodeNG"] = _builtin_astroid.locals[name]
+        stmts: Sequence[nodes.NodeNG] = _builtin_astroid.locals[name]
     except KeyError:
         stmts = ()
     return _builtin_astroid, stmts

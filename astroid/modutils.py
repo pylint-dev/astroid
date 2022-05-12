@@ -13,6 +13,7 @@
 :type BUILTIN_MODULES: dict
 :var BUILTIN_MODULES: dictionary with builtin module names has key
 """
+from __future__ import annotations
 
 import importlib
 import importlib.machinery
@@ -24,7 +25,6 @@ import sysconfig
 import types
 from functools import lru_cache
 from pathlib import Path
-from typing import Set
 
 from astroid.const import IS_JYTHON, IS_PYPY
 from astroid.interpreter._import import spec, util
@@ -611,7 +611,7 @@ def is_directory(specobj):
 
 
 def is_module_name_part_of_extension_package_whitelist(
-    module_name: str, package_whitelist: Set[str]
+    module_name: str, package_whitelist: set[str]
 ) -> bool:
     """
     Returns True if one part of the module name is in the package whitelist

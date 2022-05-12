@@ -20,13 +20,14 @@ the model will be requested to return the corresponding value of that
 attribute. Thus the model can be viewed as a special part of the lookup
 mechanism.
 """
+from __future__ import annotations
 
 import itertools
 import os
 import pprint
 import types
 from functools import lru_cache
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 import astroid
 from astroid import util
@@ -102,7 +103,7 @@ class ObjectModel:
         return name in self.attributes()
 
     @lru_cache()  # noqa
-    def attributes(self) -> List[str]:
+    def attributes(self) -> list[str]:
         """Get the attributes which are exported by this object model."""
         return [o[LEN_OF_IMPL_PREFIX:] for o in dir(self) if o.startswith(IMPL_PREFIX)]
 
@@ -809,7 +810,7 @@ class PropertyModel(ObjectModel):
 
         func = self._instance
 
-        def find_setter(func: "Property") -> Optional[astroid.FunctionDef]:
+        def find_setter(func: Property) -> astroid.FunctionDef | None:
             """
             Given a property, find the corresponding setter function and returns it.
 

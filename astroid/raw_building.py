@@ -5,6 +5,7 @@
 """this module contains a set of functions to create astroid trees from scratch
 (build_* functions) or from living object (object_build_* functions)
 """
+from __future__ import annotations
 
 import builtins
 import inspect
@@ -12,7 +13,7 @@ import os
 import sys
 import types
 import warnings
-from typing import Iterable, List, Optional
+from typing import Iterable
 
 from astroid import bases, nodes
 from astroid.manager import AstroidManager
@@ -77,7 +78,7 @@ def attach_import_node(node, modname, membername):
     _attach_local_node(node, from_node, membername)
 
 
-def build_module(name: str, doc: Optional[str] = None) -> nodes.Module:
+def build_module(name: str, doc: str | None = None) -> nodes.Module:
     """create and initialize an astroid Module node"""
     node = nodes.Module(name, pure_python=False, package=False)
     node.postinit(
@@ -88,7 +89,7 @@ def build_module(name: str, doc: Optional[str] = None) -> nodes.Module:
 
 
 def build_class(
-    name: str, basenames: Iterable[str] = (), doc: Optional[str] = None
+    name: str, basenames: Iterable[str] = (), doc: str | None = None
 ) -> nodes.ClassDef:
     """Create and initialize an astroid ClassDef node."""
     node = nodes.ClassDef(name)
@@ -103,11 +104,11 @@ def build_class(
 
 def build_function(
     name,
-    args: Optional[List[str]] = None,
-    posonlyargs: Optional[List[str]] = None,
+    args: list[str] | None = None,
+    posonlyargs: list[str] | None = None,
     defaults=None,
-    doc: Optional[str] = None,
-    kwonlyargs: Optional[List[str]] = None,
+    doc: str | None = None,
+    kwonlyargs: list[str] | None = None,
 ) -> nodes.FunctionDef:
     """create and initialize an astroid FunctionDef node"""
     # first argument is now a list of decorators
@@ -288,8 +289,8 @@ class InspectBuilder:
     def inspect_build(
         self,
         module: types.ModuleType,
-        modname: Optional[str] = None,
-        path: Optional[str] = None,
+        modname: str | None = None,
+        path: str | None = None,
     ) -> nodes.Module:
         """build astroid from a living module (i.e. using inspect)
         this is used when there is no python source code available (either

@@ -2,8 +2,9 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import unittest
-from typing import List
 
 from astroid import bases, builder, nodes, objects
 from astroid.exceptions import AttributeInferenceError, InferenceError, SuperError
@@ -435,7 +436,7 @@ class SuperTests(unittest.TestCase):
         selfclass = third.getattr("__self_class__")[0]
         self.assertEqual(selfclass.name, "A")
 
-    def assertEqualMro(self, klass: Super, expected_mro: List[str]) -> None:
+    def assertEqualMro(self, klass: Super, expected_mro: list[str]) -> None:
         self.assertEqual([member.name for member in klass.super_mro()], expected_mro)
 
     def test_super_mro(self) -> None:

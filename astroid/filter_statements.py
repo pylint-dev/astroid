@@ -5,15 +5,14 @@
 """_filter_stmts and helper functions. This method gets used in LocalsDictnodes.NodeNG._scope_lookup.
 It is not considered public.
 """
-
-from typing import List, Optional, Tuple
+from __future__ import annotations
 
 from astroid import nodes
 
 
 def _get_filtered_node_statements(
-    base_node: nodes.NodeNG, stmt_nodes: List[nodes.NodeNG]
-) -> List[Tuple[nodes.NodeNG, nodes.Statement]]:
+    base_node: nodes.NodeNG, stmt_nodes: list[nodes.NodeNG]
+) -> list[tuple[nodes.NodeNG, nodes.Statement]]:
     statements = [(node, node.statement(future=True)) for node in stmt_nodes]
     # Next we check if we have ExceptHandlers that are parent
     # of the underlying variable, in which case the last one survives
@@ -31,7 +30,7 @@ def _is_from_decorator(node):
     return any(isinstance(parent, nodes.Decorators) for parent in node.node_ancestors())
 
 
-def _get_if_statement_ancestor(node: nodes.NodeNG) -> Optional[nodes.If]:
+def _get_if_statement_ancestor(node: nodes.NodeNG) -> nodes.If | None:
     """Return the first parent node that is an If node (or None)"""
     for parent in node.node_ancestors():
         if isinstance(parent, nodes.If):
@@ -85,7 +84,7 @@ def _filter_stmts(base_node: nodes.NodeNG, stmts, frame, offset):
         ):
             myframe = myframe.parent.frame()
 
-    mystmt: Optional[nodes.Statement] = None
+    mystmt: nodes.Statement | None = None
     if base_node.parent:
         mystmt = base_node.statement(future=True)
 

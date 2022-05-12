@@ -5,6 +5,8 @@
 """tests for specific behaviour of astroid scoped nodes (i.e. module, class and
 function)
 """
+from __future__ import annotations
+
 import datetime
 import os
 import sys
@@ -12,7 +14,7 @@ import textwrap
 import unittest
 import warnings
 from functools import partial
-from typing import Any, List, Union
+from typing import Any
 
 import pytest
 
@@ -53,7 +55,7 @@ except ImportError:
 
 def _test_dict_interface(
     self: Any,
-    node: Union[nodes.ClassDef, nodes.FunctionDef, nodes.Module],
+    node: nodes.ClassDef | nodes.FunctionDef | nodes.Module,
     test_attr: str,
 ) -> None:
     self.assertIs(node[test_attr], node[test_attr])
@@ -889,7 +891,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             'Hello World'
         """
         )
-        ast_nodes: List[nodes.FunctionDef] = builder.extract_node(code)  # type: ignore[assignment]
+        ast_nodes: list[nodes.FunctionDef] = builder.extract_node(code)  # type: ignore[assignment]
         assert len(ast_nodes) == 4
 
         assert isinstance(ast_nodes[0].doc_node, nodes.Const)
@@ -1549,11 +1551,11 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         assert len(slots) == 3, slots
         assert [slot.value for slot in slots] == ["a", "b", "c"]
 
-    def assertEqualMro(self, klass: nodes.ClassDef, expected_mro: List[str]) -> None:
+    def assertEqualMro(self, klass: nodes.ClassDef, expected_mro: list[str]) -> None:
         self.assertEqual([member.name for member in klass.mro()], expected_mro)
 
     def assertEqualMroQName(
-        self, klass: nodes.ClassDef, expected_mro: List[str]
+        self, klass: nodes.ClassDef, expected_mro: list[str]
     ) -> None:
         self.assertEqual([member.qname() for member in klass.mro()], expected_mro)
 

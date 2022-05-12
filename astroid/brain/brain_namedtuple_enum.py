@@ -3,11 +3,12 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid hooks for the Python standard library."""
+from __future__ import annotations
 
 import functools
 import keyword
 from textwrap import dedent
-from typing import Iterator, List, Optional, Tuple
+from typing import Iterator
 
 import astroid
 from astroid import arguments, inference_tip, nodes, util
@@ -71,9 +72,9 @@ def _find_func_form_arguments(node, context):
 def infer_func_form(
     node: nodes.Call,
     base_type: nodes.NodeNG,
-    context: Optional[InferenceContext] = None,
+    context: InferenceContext | None = None,
     enum: bool = False,
-) -> Tuple[nodes.ClassDef, str, List[str]]:
+) -> tuple[nodes.ClassDef, str, list[str]]:
     """Specific inference function for namedtuple or Python 3 enum."""
     # node is a Call node, class name as first argument and generated class
     # attributes as second argument
@@ -177,7 +178,7 @@ _looks_like_typing_namedtuple = functools.partial(_looks_like, name="NamedTuple"
 
 
 def infer_named_tuple(
-    node: nodes.Call, context: Optional[InferenceContext] = None
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[nodes.ClassDef]:
     """Specific inference function for namedtuple Call node"""
     tuple_base_name = nodes.Name(name="tuple", parent=node.root())
@@ -503,7 +504,7 @@ def infer_typing_namedtuple_function(node, context=None):
 
 
 def infer_typing_namedtuple(
-    node: nodes.Call, context: Optional[InferenceContext] = None
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[nodes.ClassDef]:
     """Infer a typing.NamedTuple(...) call."""
     # This is essentially a namedtuple with different arguments

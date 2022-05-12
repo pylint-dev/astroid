@@ -3,8 +3,9 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """This module contains mixin classes for scoped nodes."""
+from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, List, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from astroid.filter_statements import _filter_stmts
 from astroid.nodes import node_classes, scoped_nodes
@@ -24,7 +25,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
 
     # attributes below are set by the builder module or by raw factories
 
-    locals: Dict[str, List["nodes.NodeNG"]] = {}
+    locals: dict[str, list[nodes.NodeNG]] = {}
     """A map of the name of a local variable to the node defining the local."""
 
     def qname(self):
@@ -108,7 +109,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
             self._append_node(child_node)
         self.set_local(name or child_node.name, child_node)
 
-    def __getitem__(self, item: str) -> "nodes.NodeNG":
+    def __getitem__(self, item: str) -> nodes.NodeNG:
         """The first node the defines the given local.
 
         :param item: The name of the locally defined object.
@@ -170,5 +171,5 @@ class ComprehensionScope(LocalsDictNodeNG):
 
     scope_lookup = LocalsDictNodeNG._scope_lookup
 
-    generators: List["nodes.Comprehension"]
+    generators: list[nodes.Comprehension]
     """The generators that are looped through."""
