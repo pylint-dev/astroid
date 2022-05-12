@@ -6628,38 +6628,60 @@ def test_inference_of_items_on_module_dict() -> None:
     builder.file_build(str(DATA_DIR / "module_dict_items_call" / "test.py"), "models")
 
 
-class ImportedModuleTests(resources.AstroidCacheSetupMixin):
-    def test_imported_module_var_inferable(self) -> None:
-        """
-        Module variables can be imported and inferred successfully as part of binary operators.
-        """
-        mod1 = parse("from top.mod import v as z\nw = [1] + z", module_name="top")
-        parse("v = [2]", module_name="top.mod")
-        w_val = mod1.body[-1].value
-        i_w_val = next(w_val.infer())
-        assert i_w_val != util.Uninferable
-        assert i_w_val.as_string() == "[1, 2]"
+def test_imported_module_var_inferable() -> None:
+    """
+    Module variables can be imported and inferred successfully as part of binary operators.
+    """
+    mod1 = parse(
+        textwrap.dedent(
+            """
+    from top1.mod import v as z
+    w = [1] + z
+    """
+        ),
+        module_name="top1",
+    )
+    parse("v = [2]", module_name="top1.mod")
+    w_val = mod1.body[-1].value
+    i_w_val = next(w_val.infer())
+    assert i_w_val is not util.Uninferable
+    assert i_w_val.as_string() == "[1, 2]"
 
-    def test_imported_module_var_inferable2(self) -> None:
-        """Version list of strings."""
-        mod1 = parse("from top.mod import v as z\nw = ['1'] + z", module_name="top")
-        parse("v = ['2']", module_name="top.mod")
-        w_val = mod1.body[-1].value
-        i_w_val = next(w_val.infer())
-        assert i_w_val != util.Uninferable
-        assert i_w_val.as_string() == "['1', '2']"
 
-    def test_imported_module_var_inferable3(self) -> None:
-        """Version list of strings with a __dunder__ name."""
-        mod1 = parse(
-            "from top.mod import __dunder_var__ as v\n__dunder_var__ = ['w'] + v",
-            module_name="top",
-        )
-        parse("__dunder_var__ = ['v']", module_name="top.mod")
-        w_val = mod1.body[-1].value
-        i_w_val = next(w_val.infer())
-        assert i_w_val != util.Uninferable
-        assert i_w_val.as_string() == "['w', 'v']"
+def test_imported_module_var_inferable2() -> None:
+    """Version list of strings."""
+    mod2 = parse(
+        textwrap.dedent(
+            """
+    from top2.mod import v as z
+    w = ['1'] + z
+    """
+        ),
+        module_name="top2",
+    )
+    parse("v = ['2']", module_name="top2.mod")
+    w_val = mod2.body[-1].value
+    i_w_val = next(w_val.infer())
+    assert i_w_val is not util.Uninferable
+    assert i_w_val.as_string() == "['1', '2']"
+
+
+def test_imported_module_var_inferable3() -> None:
+    """Version list of strings with a __dunder__ name."""
+    mod3 = parse(
+        textwrap.dedent(
+            """
+    from top3.mod import __dunder_var__ as v
+    __dunder_var__ = ['w'] + v
+    """
+        ),
+        module_name="top",
+    )
+    parse("__dunder_var__ = ['v']", module_name="top3.mod")
+    w_val = mod3.body[-1].value
+    i_w_val = next(w_val.infer())
+    assert i_w_val is not util.Uninferable
+    assert i_w_val.as_string() == "['w', 'v']"
 
 
 def test_recursion_on_inference_tip() -> None:
