@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """ A few useful function/method decorators."""
+
 from __future__ import annotations
 
 import functools
