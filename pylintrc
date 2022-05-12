@@ -95,10 +95,6 @@ disable=fixme,
         # Requires major redesign for fixing this (and private
         # access in the same project is fine)
         protected-access,
-        # Most of them are conforming to an API. Putting staticmethod
-        # all over the place changes the aesthetics when these methods
-        # are following a local pattern (visit methods for instance).
-        no-self-use,
         # API requirements in most of the occurrences
         unused-argument,
         # black handles these
