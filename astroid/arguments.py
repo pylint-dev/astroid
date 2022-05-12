@@ -160,7 +160,7 @@ class CallSite:
         """
         if name in self.duplicated_keywords:
             raise InferenceError(
-                "The arguments passed to {func!r} " " have duplicate keywords.",
+                "The arguments passed to {func!r} have duplicate keywords.",
                 call_site=self,
                 func=funcnode,
                 arg=name,
