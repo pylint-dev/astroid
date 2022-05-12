@@ -6641,9 +6641,7 @@ class ImportedModuleTests(resources.AstroidCacheSetupMixin):
 
     def test_imported_module_var_inferable2(self) -> None:
         """Version list of strings."""
-        mod1 = parse(
-            "from top.mod import v as z\nw = ['1'] + z", module_name="top"
-        )
+        mod1 = parse("from top.mod import v as z\nw = ['1'] + z", module_name="top")
         parse("v = ['2']", module_name="top.mod")
         w_val = mod1.body[-1].value
         i_w_val = next(w_val.infer())
