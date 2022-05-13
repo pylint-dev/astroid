@@ -25,6 +25,9 @@ Release date: TBA
 
   Closes #1403
 
+* Fix test for Python ``3.11``. In some instances ``err.__traceback__`` will
+  be uninferable now.
+
 What's New in astroid 2.11.6?
 =============================
 Release date: TBA
