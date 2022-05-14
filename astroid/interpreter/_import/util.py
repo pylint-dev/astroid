@@ -49,7 +49,7 @@ def is_namespace(modname: str) -> bool:
     if found_spec.submodule_search_locations and any(
         _is_setuptools_namespace(directory)
         for directory in pathlib.Path(
-            found_spec.submodule_search_locations._path[0]
+            found_spec.submodule_search_locations[0]
         ).iterdir()
         if directory.is_dir()
     ):
