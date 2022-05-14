@@ -8,7 +8,6 @@ This module contains utility functions for scoped nodes.
 
 from __future__ import annotations
 
-import builtins
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
@@ -23,10 +22,13 @@ def builtin_lookup(name: str) -> tuple[nodes.Module, Sequence[nodes.NodeNG]]:
 
     Return the list of matching statements and the ast for the builtin module
     """
+    manager = AstroidManager()
     try:
-        _builtin_astroid = AstroidManager().builtins_module
+        _builtin_astroid = manager.builtins_module
     except KeyError:
-        _builtin_astroid = AstroidManager().ast_from_module(builtins)
+        # User manipulated the astroid cache directly! Rebuild everything.
+        manager.clear_cache()
+        _builtin_astroid = manager.builtins_module
     if name == "__dict__":
         return _builtin_astroid, ()
     try:
