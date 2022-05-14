@@ -113,7 +113,8 @@ class AstroidManagerTest(
     def test_identify_old_namespace_package_protocol(self) -> None:
         # Like the above cases, this package follows the old namespace package protocol
         # astroid currently assumes such packages are in sys.modules, so import it
-        import tests.testdata.python3.data.path_pkg_resources_1.package.foo  # noqa
+        # pylint: disable-next=import-outside-toplevel
+        import tests.testdata.python3.data.path_pkg_resources_1.package.foo as _  # noqa
 
         self.assertTrue(
             util.is_namespace("tests.testdata.python3.data.path_pkg_resources_1")
