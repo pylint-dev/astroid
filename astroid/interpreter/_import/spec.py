@@ -144,7 +144,7 @@ class ImportlibFinder(Finder):
             # Builtin.
             return None
 
-        if _is_setuptools_namespace(spec.location):
+        if util._is_setuptools_namespace(spec.location):
             # extend_path is called, search sys.path for module/packages
             # of this name see pkgutil.extend_path documentation
             path = [
@@ -251,20 +251,6 @@ _SPEC_FINDERS = (
     PathSpecFinder,
     ExplicitNamespacePackageFinder,
 )
-
-
-def _is_setuptools_namespace(location):
-    try:
-        with open(os.path.join(location, "__init__.py"), "rb") as stream:
-            data = stream.read(4096)
-    except OSError:
-        return None
-    else:
-        extend_path = b"pkgutil" in data and b"extend_path" in data
-        declare_namespace = (
-            b"pkg_resources" in data and b"declare_namespace(__name__)" in data
-        )
-        return extend_path or declare_namespace
 
 
 @lru_cache()

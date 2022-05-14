@@ -14,6 +14,7 @@ import astroid
 from astroid import manager, test_utils
 from astroid.const import IS_JYTHON
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
+from astroid.interpreter._import import util
 from astroid.nodes import Const
 
 from . import resources
@@ -106,6 +107,11 @@ class AstroidManagerTest(
 
     def test_ast_from_namespace_pkg_resources(self) -> None:
         self._test_ast_from_old_namespace_package_protocol("pkg_resources")
+
+    def test_identify_old_namespace_package_protocol(self) -> None:
+        self.assertTrue(
+            util.is_namespace("tests.testdata.python3.data.path_pkg_resources_1")
+        )
 
     def test_implicit_namespace_package(self) -> None:
         data_dir = os.path.dirname(resources.find("data/namespace_pep_420"))

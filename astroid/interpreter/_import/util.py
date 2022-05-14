@@ -2,7 +2,23 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+import os
+import pathlib
 from importlib.util import _find_spec_from_path
+
+
+def _is_setuptools_namespace(location):
+    try:
+        with open(os.path.join(location, "__init__.py"), "rb") as stream:
+            data = stream.read(4096)
+    except OSError:
+        return None
+    else:
+        extend_path = b"pkgutil" in data and b"extend_path" in data
+        declare_namespace = (
+            b"pkg_resources" in data and b"declare_namespace(__name__)" in data
+        )
+        return extend_path or declare_namespace
 
 
 def is_namespace(modname: str) -> bool:
@@ -29,5 +45,14 @@ def is_namespace(modname: str) -> bool:
 
     if found_spec is None:
         return False
+
+    if found_spec.submodule_search_locations and any(
+        _is_setuptools_namespace(directory)
+        for directory in pathlib.Path(
+            found_spec.submodule_search_locations._path[0]
+        ).iterdir()
+        if directory.is_dir()
+    ):
+        return True
 
     return found_spec.origin == "namespace"
