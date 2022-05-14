@@ -7,17 +7,20 @@ possible by providing a class responsible to get astroid representation
 from various source and using a cache of built modules)
 """
 
+from __future__ import annotations
+
 import os
 import types
 import zipimport
 from importlib.util import find_spec, module_from_spec
-from typing import TYPE_CHECKING, ClassVar, List, Optional
+from typing import TYPE_CHECKING, ClassVar
 
 from astroid.const import BRAIN_MODULES_DIRECTORY
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec
 from astroid.modutils import (
     NoSourceFile,
+    _cache_normalize_path_,
     file_info_from_modpath,
     get_source_file,
     is_module_name_part_of_extension_package_whitelist,
@@ -128,7 +131,7 @@ class AstroidManager:
 
         return AstroidBuilder(self).string_build("", modname)
 
-    def _build_namespace_module(self, modname: str, path: List[str]) -> "nodes.Module":
+    def _build_namespace_module(self, modname: str, path: list[str]) -> nodes.Module:
         # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import build_namespace_package_module
 
@@ -261,7 +264,7 @@ class AstroidManager:
             raise value.with_traceback(None)
         return value
 
-    def ast_from_module(self, module: types.ModuleType, modname: Optional[str] = None):
+    def ast_from_module(self, module: types.ModuleType, modname: str | None = None):
         """given an imported module, return the astroid object"""
         modname = modname or module.__name__
         if modname in self.astroid_cache:
@@ -325,7 +328,7 @@ class AstroidManager:
             ) from exc
         except Exception as exc:
             raise AstroidImportError(
-                "Unexpected error while retrieving name for {class_repr}:\n" "{error}",
+                "Unexpected error while retrieving name for {class_repr}:\n{error}",
                 cls=klass,
                 class_repr=safe_repr(klass),
             ) from exc
@@ -365,8 +368,24 @@ class AstroidManager:
     def clear_cache(self) -> None:
         """Clear the underlying cache, bootstrap the builtins module and
         re-register transforms."""
+        # import here because of cyclic imports
+        # pylint: disable=import-outside-toplevel
+        from astroid.inference_tip import clear_inference_tip_cache
+        from astroid.interpreter.objectmodel import ObjectModel
+        from astroid.nodes.node_classes import LookupMixIn
+
+        clear_inference_tip_cache()
+
         self.astroid_cache.clear()
         AstroidManager.brain["_transform"] = TransformVisitor()
+
+        for lru_cache in (
+            LookupMixIn.lookup,
+            _cache_normalize_path_,
+            ObjectModel.attributes,
+        ):
+            lru_cache.cache_clear()
+
         self.bootstrap()
 
         # Reload brain plugins. During initialisation this is done in astroid.__init__.py

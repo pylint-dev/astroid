@@ -2,8 +2,9 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import unittest
-from typing import List
 
 import pytest
 
@@ -70,7 +71,7 @@ class BrainNumpyCoreNumericTest(unittest.TestCase):
         ("ones", ["shape", "dtype", "order"]),
     ],
 )
-def test_function_parameters(method: str, expected_args: List[str]) -> None:
+def test_function_parameters(method: str, expected_args: list[str]) -> None:
     instance = builder.extract_node(
         f"""
     import numpy

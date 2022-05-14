@@ -6,10 +6,13 @@
 where it makes sense.
 """
 
+from __future__ import annotations
+
 import collections
 import itertools
 import operator as operator_mod
-from typing import Any, Generator, List, Optional, Union
+from collections.abc import Generator
+from typing import Any
 
 from astroid import arguments, bases, decorators, helpers, nodes, util
 from astroid.const import Context
@@ -262,10 +265,10 @@ def _resolve_looppart(parts, assign_path, context):
 
 @decorators.raise_if_nothing_inferred
 def for_assigned_stmts(
-    self: Union[nodes.For, nodes.Comprehension],
+    self: nodes.For | nodes.Comprehension,
     node: node_classes.AssignedStmtsPossibleNode = None,
-    context: Optional[InferenceContext] = None,
-    assign_path: Optional[List[int]] = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
 ) -> Any:
     if isinstance(self, nodes.AsyncFor) or getattr(self, "is_async", False):
         # Skip inferring of async code for now
@@ -284,10 +287,10 @@ nodes.Comprehension.assigned_stmts = for_assigned_stmts
 
 
 def sequence_assigned_stmts(
-    self: Union[nodes.Tuple, nodes.List],
+    self: nodes.Tuple | nodes.List,
     node: node_classes.AssignedStmtsPossibleNode = None,
-    context: Optional[InferenceContext] = None,
-    assign_path: Optional[List[int]] = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
 ) -> Any:
     if assign_path is None:
         assign_path = []
@@ -312,10 +315,10 @@ nodes.List.assigned_stmts = sequence_assigned_stmts
 
 
 def assend_assigned_stmts(
-    self: Union[nodes.AssignName, nodes.AssignAttr],
+    self: nodes.AssignName | nodes.AssignAttr,
     node: node_classes.AssignedStmtsPossibleNode = None,
-    context: Optional[InferenceContext] = None,
-    assign_path: Optional[List[int]] = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
 ) -> Any:
     return self.parent.assigned_stmts(node=self, context=context)
 
@@ -386,8 +389,8 @@ def _arguments_infer_argname(self, name, context):
 def arguments_assigned_stmts(
     self: nodes.Arguments,
     node: node_classes.AssignedStmtsPossibleNode = None,
-    context: Optional[InferenceContext] = None,
-    assign_path: Optional[List[int]] = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
 ) -> Any:
     if context.callcontext:
         callee = context.callcontext.callee
@@ -414,10 +417,10 @@ nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 
 @decorators.raise_if_nothing_inferred
 def assign_assigned_stmts(
-    self: Union[nodes.AugAssign, nodes.Assign, nodes.AnnAssign],
+    self: nodes.AugAssign | nodes.Assign | nodes.AnnAssign,
     node: node_classes.AssignedStmtsPossibleNode = None,
-    context: Optional[InferenceContext] = None,
-    assign_path: Optional[List[int]] = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
 ) -> Any:
     if not assign_path:
         yield self.value
@@ -432,8 +435,8 @@ def assign_assigned_stmts(
 def assign_annassigned_stmts(
     self: nodes.AnnAssign,
     node: node_classes.AssignedStmtsPossibleNode = None,
-    context: Optional[InferenceContext] = None,
-    assign_path: Optional[List[int]] = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
 ) -> Any:
     for inferred in assign_assigned_stmts(self, node, context, assign_path):
         if inferred is None:
@@ -491,8 +494,8 @@ def _resolve_assignment_parts(parts, assign_path, context):
 def excepthandler_assigned_stmts(
     self: nodes.ExceptHandler,
     node: node_classes.AssignedStmtsPossibleNode = None,
-    context: Optional[InferenceContext] = None,
-    assign_path: Optional[List[int]] = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
 ) -> Any:
     for assigned in node_classes.unpack_infer(self.type):
         if isinstance(assigned, nodes.ClassDef):
@@ -547,8 +550,8 @@ def _infer_context_manager(self, mgr, context):
 def with_assigned_stmts(
     self: nodes.With,
     node: node_classes.AssignedStmtsPossibleNode = None,
-    context: Optional[InferenceContext] = None,
-    assign_path: Optional[List[int]] = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
 ) -> Any:
     """Infer names and other nodes from a *with* statement.
 
@@ -608,7 +611,7 @@ def with_assigned_stmts(
                     ) from exc
                 except TypeError as exc:
                     raise InferenceError(
-                        "Tried to unpack a non-iterable value " "in {node!r}.",
+                        "Tried to unpack a non-iterable value in {node!r}.",
                         node=self,
                         targets=node,
                         assign_path=assign_path,
@@ -625,8 +628,8 @@ nodes.With.assigned_stmts = with_assigned_stmts
 def named_expr_assigned_stmts(
     self: nodes.NamedExpr,
     node: node_classes.AssignedStmtsPossibleNode,
-    context: Optional[InferenceContext] = None,
-    assign_path: Optional[List[int]] = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
 ) -> Any:
     """Infer names and other nodes from an assignment expression"""
     if self.target == node:
@@ -647,8 +650,8 @@ nodes.NamedExpr.assigned_stmts = named_expr_assigned_stmts
 def starred_assigned_stmts(
     self: nodes.Starred,
     node: node_classes.AssignedStmtsPossibleNode = None,
-    context: Optional[InferenceContext] = None,
-    assign_path: Optional[List[int]] = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
 ) -> Any:
     """
     Arguments:
@@ -677,7 +680,7 @@ def starred_assigned_stmts(
     stmt = self.statement(future=True)
     if not isinstance(stmt, (nodes.Assign, nodes.For)):
         raise InferenceError(
-            "Statement {stmt!r} enclosing {node!r} " "must be an Assign or For node.",
+            "Statement {stmt!r} enclosing {node!r} must be an Assign or For node.",
             node=self,
             stmt=stmt,
             unknown=node,
@@ -696,7 +699,7 @@ def starred_assigned_stmts(
 
         if sum(1 for _ in lhs.nodes_of_class(nodes.Starred)) > 1:
             raise InferenceError(
-                "Too many starred arguments in the " " assignment targets {lhs!r}.",
+                "Too many starred arguments in the assignment targets {lhs!r}.",
                 node=self,
                 targets=lhs,
                 unknown=node,
@@ -843,7 +846,7 @@ nodes.Starred.assigned_stmts = starred_assigned_stmts
 def match_mapping_assigned_stmts(
     self: nodes.MatchMapping,
     node: nodes.AssignName,
-    context: Optional[InferenceContext] = None,
+    context: InferenceContext | None = None,
     assign_path: None = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Return empty generator (return -> raises StopIteration) so inferred value
@@ -860,7 +863,7 @@ nodes.MatchMapping.assigned_stmts = match_mapping_assigned_stmts
 def match_star_assigned_stmts(
     self: nodes.MatchStar,
     node: nodes.AssignName,
-    context: Optional[InferenceContext] = None,
+    context: InferenceContext | None = None,
     assign_path: None = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Return empty generator (return -> raises StopIteration) so inferred value
@@ -877,7 +880,7 @@ nodes.MatchStar.assigned_stmts = match_star_assigned_stmts
 def match_as_assigned_stmts(
     self: nodes.MatchAs,
     node: nodes.AssignName,
-    context: Optional[InferenceContext] = None,
+    context: InferenceContext | None = None,
     assign_path: None = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Infer MatchAs as the Match subject if it's the only MatchCase pattern

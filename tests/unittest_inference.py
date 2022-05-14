@@ -4,12 +4,15 @@
 
 """Tests for the astroid inference capabilities"""
 
+from __future__ import annotations
+
 import textwrap
 import unittest
 from abc import ABCMeta
+from collections.abc import Callable
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -66,9 +69,9 @@ class InferenceUtilsTest(unittest.TestCase):
 
 def _assertInferElts(
     node_type: ABCMeta,
-    self: "InferenceTest",
+    self: InferenceTest,
     node: Any,
-    elts: Union[List[int], List[str]],
+    elts: list[int] | list[str],
 ) -> None:
     inferred = next(node.infer())
     self.assertIsInstance(inferred, node_type)
@@ -92,7 +95,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.value, expected)
 
     def assertInferDict(
-        self, node: Union[nodes.Call, nodes.Dict, nodes.NodeNG], expected: Any
+        self, node: nodes.Call | nodes.Dict | nodes.NodeNG, expected: Any
     ) -> None:
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Dict)
@@ -943,9 +946,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
         self.assertEqual(inferred[0].name, "exists")
 
-    def _test_const_inferred(
-        self, node: nodes.AssignName, value: Union[float, str]
-    ) -> None:
+    def _test_const_inferred(self, node: nodes.AssignName, value: float | str) -> None:
         inferred = list(node.infer())
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.Const)
@@ -2050,6 +2051,37 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(ast_node.infer())
             self.assertIsInstance(inferred, Instance)
             self.assertEqual(inferred.qname(), "builtins.dict")
+
+    def test_copy_method_inference(self) -> None:
+        code = """
+        a_dict = {"b": 1, "c": 2}
+        b_dict = a_dict.copy()
+        b_dict #@
+
+        a_list = [1, 2, 3]
+        b_list = a_list.copy()
+        b_list #@
+
+        a_set = set([1, 2, 3])
+        b_set = a_set.copy()
+        b_set #@
+
+        a_frozenset = frozenset([1, 2, 3])
+        b_frozenset = a_frozenset.copy()
+        b_frozenset #@
+
+        a_unknown = unknown()
+        b_unknown = a_unknown.copy()
+        b_unknown #@
+        """
+        ast = extract_node(code, __name__)
+        self.assertInferDict(ast[0], {"b": 1, "c": 2})
+        self.assertInferList(ast[1], [1, 2, 3])
+        self.assertInferSet(ast[2], [1, 2, 3])
+        self.assertInferFrozenSet(ast[3], [1, 2, 3])
+
+        inferred_unknown = next(ast[4].infer())
+        assert inferred_unknown == util.Uninferable
 
     def test_str_methods(self) -> None:
         code = """
@@ -3420,19 +3452,19 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def _slicing_test_helper(
         self,
-        pairs: Tuple[
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
+        pairs: tuple[
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
         ],
-        cls: Union[ABCMeta, type],
+        cls: ABCMeta | type,
         get_elts: Callable,
     ) -> None:
         for code, expected in pairs:
@@ -4637,13 +4669,13 @@ class TestType(unittest.TestCase):
 class ArgumentsTest(unittest.TestCase):
     @staticmethod
     def _get_dict_value(
-        inferred: Dict,
-    ) -> Union[List[Tuple[str, int]], List[Tuple[str, str]]]:
+        inferred: dict,
+    ) -> list[tuple[str, int]] | list[tuple[str, str]]:
         items = inferred.items
         return sorted((key.value, value.value) for key, value in items)
 
     @staticmethod
-    def _get_tuple_value(inferred: Tuple) -> Tuple[int, ...]:
+    def _get_tuple_value(inferred: tuple) -> tuple[int, ...]:
         elts = inferred.elts
         return tuple(elt.value for elt in elts)
 
@@ -4965,7 +4997,7 @@ class CallSiteTest(unittest.TestCase):
         return arguments.CallSite.from_call(call)
 
     def _test_call_site_pair(
-        self, code: str, expected_args: List[int], expected_keywords: Dict[str, int]
+        self, code: str, expected_args: list[int], expected_keywords: dict[str, int]
     ) -> None:
         ast_node = extract_node(code)
         call_site = self._call_site_from_call(ast_node)
@@ -4979,7 +5011,7 @@ class CallSiteTest(unittest.TestCase):
             self.assertEqual(call_site.keyword_arguments[keyword].value, value)
 
     def _test_call_site(
-        self, pairs: List[Tuple[str, List[int], Dict[str, int]]]
+        self, pairs: list[tuple[str, list[int], dict[str, int]]]
     ) -> None:
         for pair in pairs:
             self._test_call_site_pair(*pair)
@@ -5009,7 +5041,7 @@ class CallSiteTest(unittest.TestCase):
         ]
         self._test_call_site(pairs)
 
-    def _test_call_site_valid_arguments(self, values: List[str], invalid: bool) -> None:
+    def _test_call_site_valid_arguments(self, values: list[str], invalid: bool) -> None:
         for value in values:
             ast_node = extract_node(value)
             call_site = self._call_site_from_call(ast_node)
@@ -6594,6 +6626,62 @@ def test_inference_of_items_on_module_dict() -> None:
     Originally reported in https://github.com/PyCQA/astroid/issues/1085
     """
     builder.file_build(str(DATA_DIR / "module_dict_items_call" / "test.py"), "models")
+
+
+def test_imported_module_var_inferable() -> None:
+    """
+    Module variables can be imported and inferred successfully as part of binary operators.
+    """
+    mod1 = parse(
+        textwrap.dedent(
+            """
+    from top1.mod import v as z
+    w = [1] + z
+    """
+        ),
+        module_name="top1",
+    )
+    parse("v = [2]", module_name="top1.mod")
+    w_val = mod1.body[-1].value
+    i_w_val = next(w_val.infer())
+    assert i_w_val is not util.Uninferable
+    assert i_w_val.as_string() == "[1, 2]"
+
+
+def test_imported_module_var_inferable2() -> None:
+    """Version list of strings."""
+    mod2 = parse(
+        textwrap.dedent(
+            """
+    from top2.mod import v as z
+    w = ['1'] + z
+    """
+        ),
+        module_name="top2",
+    )
+    parse("v = ['2']", module_name="top2.mod")
+    w_val = mod2.body[-1].value
+    i_w_val = next(w_val.infer())
+    assert i_w_val is not util.Uninferable
+    assert i_w_val.as_string() == "['1', '2']"
+
+
+def test_imported_module_var_inferable3() -> None:
+    """Version list of strings with a __dunder__ name."""
+    mod3 = parse(
+        textwrap.dedent(
+            """
+    from top3.mod import __dunder_var__ as v
+    __dunder_var__ = ['w'] + v
+    """
+        ),
+        module_name="top",
+    )
+    parse("__dunder_var__ = ['v']", module_name="top3.mod")
+    w_val = mod3.body[-1].value
+    i_w_val = next(w_val.infer())
+    assert i_w_val is not util.Uninferable
+    assert i_w_val.as_string() == "['w', 'v']"
 
 
 def test_recursion_on_inference_tip() -> None:

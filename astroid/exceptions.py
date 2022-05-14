@@ -4,6 +4,9 @@
 
 """this module contains exceptions used in the astroid library
 """
+
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from astroid import util
@@ -258,7 +261,7 @@ class ParentMissingError(AstroidError):
         target: The node for which the parent lookup failed.
     """
 
-    def __init__(self, target: "nodes.NodeNG") -> None:
+    def __init__(self, target: nodes.NodeNG) -> None:
         self.target = target
         super().__init__(message=f"Parent not found on {target!r}.")
 
@@ -272,7 +275,7 @@ class StatementMissing(ParentMissingError):
         target: The node for which the parent lookup failed.
     """
 
-    def __init__(self, target: "nodes.NodeNG") -> None:
+    def __init__(self, target: nodes.NodeNG) -> None:
         # pylint: disable-next=bad-super-call
         # https://github.com/PyCQA/pylint/issues/2903
         # https://github.com/PyCQA/astroid/pull/1217#discussion_r744149027
