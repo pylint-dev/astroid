@@ -17,6 +17,11 @@ Release date: TBA
 
 * Allowed ``AstroidManager.clear_cache`` to reload necessary brain plugins.
 
+* Fixed incorrect inferences after rebuilding the builtins module, e.g. by calling
+  ``AstroidManager.clear_cache``.
+
+  Closes #1559
+
 * Rename ``ModuleSpec`` -> ``module_type`` constructor parameter to match attribute
   name and improve typing. Use ``type`` instead.
 

@@ -318,7 +318,7 @@ class BorgAstroidManagerTC(unittest.TestCase):
         self.assertIs(built, second_built)
 
 
-class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
+class ClearCacheTest(unittest.TestCase):
     def test_clear_cache_clears_other_lru_caches(self) -> None:
         lrus = (
             astroid.nodes.node_classes.LookupMixIn.lookup,

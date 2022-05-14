@@ -20,6 +20,8 @@ class TransformVisitor:
     :meth:`~visit` with an *astroid* module and the class
     will take care of the rest, walking the tree and running the
     transforms for each encountered node.
+
+    Based on its usage in AstroidManager.brain, it should not be reinstantiated.
     """
 
     def __init__(self):

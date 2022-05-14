@@ -18,17 +18,14 @@ if TYPE_CHECKING:
     from astroid import nodes
 
 
-_builtin_astroid: nodes.Module | None = None
-
-
 def builtin_lookup(name: str) -> tuple[nodes.Module, Sequence[nodes.NodeNG]]:
     """Lookup a name in the builtin module.
 
     Return the list of matching statements and the ast for the builtin module
     """
-    # pylint: disable-next=global-statement
-    global _builtin_astroid
-    if _builtin_astroid is None:
+    try:
+        _builtin_astroid = AstroidManager().builtins_module
+    except KeyError:
         _builtin_astroid = AstroidManager().ast_from_module(builtins)
     if name == "__dict__":
         return _builtin_astroid, ()

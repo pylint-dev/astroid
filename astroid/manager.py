@@ -9,6 +9,7 @@ from various source and using a cache of built modules)
 
 from __future__ import annotations
 
+import collections
 import os
 import types
 import zipimport
@@ -377,7 +378,8 @@ class AstroidManager:
         clear_inference_tip_cache()
 
         self.astroid_cache.clear()
-        AstroidManager.brain["_transform"] = TransformVisitor()
+        # NB: not a new TransformVisitor()
+        AstroidManager.brain["_transform"].transforms = collections.defaultdict(list)
 
         for lru_cache in (
             LookupMixIn.lookup,
