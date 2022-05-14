@@ -7,12 +7,12 @@ import pathlib
 from importlib.util import _find_spec_from_path
 
 
-def _is_setuptools_namespace(location):
+def _is_setuptools_namespace(location) -> bool:
     try:
         with open(os.path.join(location, "__init__.py"), "rb") as stream:
             data = stream.read(4096)
     except OSError:
-        return None
+        return False
     else:
         extend_path = b"pkgutil" in data and b"extend_path" in data
         declare_namespace = (
