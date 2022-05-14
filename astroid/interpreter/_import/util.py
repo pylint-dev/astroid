@@ -46,13 +46,13 @@ def is_namespace(modname: str) -> bool:
     if found_spec is None:
         return False
 
-    if found_spec.submodule_search_locations and any(
-        _is_setuptools_namespace(directory)
-        for directory in pathlib.Path(
-            found_spec.submodule_search_locations[0]
-        ).iterdir()
-        if directory.is_dir()
-    ):
-        return True
+    if found_spec.submodule_search_locations is not None:
+        for search_location in found_spec.submodule_search_locations:
+            if any(
+                _is_setuptools_namespace(directory)
+                for directory in pathlib.Path(search_location).iterdir()
+                if directory.is_dir()
+            ):
+                return True
 
     return found_spec.origin == "namespace"
