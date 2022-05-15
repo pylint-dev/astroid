@@ -51,16 +51,4 @@ def is_namespace(modname: str) -> bool:
         # TODO(Py39): remove, since found_spec.origin will be "built-in"
         return False
 
-    if found_spec.origin is None:
-        return True
-
-    if found_spec.submodule_search_locations is not None:
-        for search_location in found_spec.submodule_search_locations:
-            if any(
-                _is_setuptools_namespace(directory)
-                for directory in pathlib.Path(search_location).iterdir()
-                if directory.is_dir()
-            ):
-                return True
-
-    return False
+    return found_spec.origin is None
