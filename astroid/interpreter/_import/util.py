@@ -4,6 +4,7 @@
 
 import os
 import pathlib
+from functools import lru_cache
 from importlib.util import _find_spec_from_path
 
 
@@ -21,6 +22,7 @@ def _is_setuptools_namespace(location) -> bool:
         return extend_path or declare_namespace
 
 
+@lru_cache(maxsize=4096)
 def is_namespace(modname: str) -> bool:
     found_spec = None
 

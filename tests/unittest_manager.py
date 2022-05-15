@@ -325,6 +325,7 @@ class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
         lrus = (
             astroid.nodes.node_classes.LookupMixIn.lookup,
             astroid.modutils._cache_normalize_path_,
+            util.is_namespace,
             astroid.interpreter.objectmodel.ObjectModel.attributes,
         )
 
@@ -334,6 +335,7 @@ class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
         # Generate some hits and misses
         ClassDef().lookup("garbage")
         is_standard_module("unittest", std_path=["garbage_path"])
+        util.is_namespace("unittest")
         astroid.interpreter.objectmodel.ObjectModel().attributes()
 
         # Did the hits or misses actually happen?
