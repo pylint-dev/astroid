@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 import pathlib
+import sys
 from functools import lru_cache
-from importlib.machinery import BuiltinImporter
 from importlib.util import _find_spec_from_path
 
 
@@ -26,6 +26,9 @@ def _is_setuptools_namespace(location: pathlib.Path) -> bool:
 
 @lru_cache(maxsize=4096)
 def is_namespace(modname: str) -> bool:
+    if modname in sys.builtin_module_names:
+        return False
+
     found_spec = None
 
     # find_spec() attempts to import parent packages when given dotted paths.
@@ -45,10 +48,6 @@ def is_namespace(modname: str) -> bool:
         last_parent = working_modname
 
     if found_spec is None:
-        return False
-
-    if found_spec.loader is BuiltinImporter:
-        # TODO(Py39): remove, since found_spec.origin will be "built-in"
         return False
 
     return found_spec.origin is None
