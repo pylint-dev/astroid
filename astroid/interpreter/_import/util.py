@@ -31,14 +31,11 @@ def is_namespace(modname: str) -> bool:
     # That's unacceptable here, so we fallback to _find_spec_from_path(), which does
     # not, but requires instead that each single parent ('astroid', 'nodes', etc.)
     # be specced from left to right.
-    working_modname = ""
+    processed_components = []
     last_parent = None
     for component in modname.split("."):
-        if working_modname:
-            working_modname += "." + component
-        else:
-            # First component
-            working_modname = component
+        processed_components.append(component)
+        working_modname = ".".join(processed_components)
         try:
             found_spec = _find_spec_from_path(working_modname, last_parent)
         except ValueError:
