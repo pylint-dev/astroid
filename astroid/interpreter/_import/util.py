@@ -4,15 +4,14 @@
 
 from __future__ import annotations
 
-import os
 import pathlib
 from functools import lru_cache
 from importlib.util import _find_spec_from_path
 
 
-def _is_setuptools_namespace(location: str | pathlib.Path) -> bool:
+def _is_setuptools_namespace(location: pathlib.Path) -> bool:
     try:
-        with open(os.path.join(location, "__init__.py"), "rb") as stream:
+        with open(location / "__init__.py", "rb") as stream:
             data = stream.read(4096)
     except OSError:
         return False

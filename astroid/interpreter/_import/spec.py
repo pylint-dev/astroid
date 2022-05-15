@@ -147,7 +147,7 @@ class ImportlibFinder(Finder):
             # Builtin.
             return None
 
-        if util._is_setuptools_namespace(spec.location):
+        if util._is_setuptools_namespace(Path(spec.location)):
             # extend_path is called, search sys.path for module/packages
             # of this name see pkgutil.extend_path documentation
             path = [
