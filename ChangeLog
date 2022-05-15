@@ -20,7 +20,7 @@ Release date: TBA
 * Rename ``ModuleSpec`` -> ``module_type`` constructor parameter to match attribute
   name and improve typing. Use ``type`` instead.
 
-* Fixed pylint `not-callable` false positive with nested-tuple assignment in a for-loop.
+* Fixed pylint ``not-callable`` false positive with nested-tuple assignment in a for-loop.
 
   Refs PyCQA/pylint#5113
 
