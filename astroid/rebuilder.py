@@ -226,9 +226,9 @@ class TreeRebuilder:
             - ClassDef          - For
             - FunctionDef       - While
             - Call              - If
-            - Decorators        - TryExcept
-            - With              - TryFinally
-            - Assign
+            - Decorators        - Try
+            - With              - TryExcept
+            - Assign            - TryFinally
         """
         newnode.end_lineno = None
         newnode.end_col_offset = None
@@ -1825,6 +1825,11 @@ class TreeRebuilder:
                 end_col_offset=getattr(node, "end_col_offset", None),
                 parent=parent,
             )
+            if IS_PYPY and PY38:
+                # Reset end_* attributes manually since try_node isn't part
+                # of the final tree yet.
+                try_node.end_lineno = None
+                try_node.end_col_offset = None
             if try_except:
                 try_node.postinit(
                     body=[*try_except.body],
@@ -1850,6 +1855,11 @@ class TreeRebuilder:
                 end_col_offset=getattr(node, "end_col_offset", None),
                 parent=parent,
             )
+            if IS_PYPY and PY38:
+                # Reset end_* attributes manually since try_node isn't part
+                # of the final tree yet.
+                try_node.end_lineno = None
+                try_node.end_col_offset = None
             try_node.postinit(
                 body=[*newnode.body],
                 handlers=[*newnode.handlers],
