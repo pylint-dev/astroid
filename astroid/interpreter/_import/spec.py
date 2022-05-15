@@ -238,6 +238,16 @@ class PathSpecFinder(Finder):
                 type=module_type,
                 submodule_search_locations=list(spec.submodule_search_locations or []),
             )
+        elif modname in sys.builtin_module_names:
+            # PyPy does not necessarily supply a __spec__
+            # https://foss.heptapod.net/pypy/pypy/-/issues/3736#note_184637
+            spec = ModuleSpec(
+                name=modname,
+                location=None,
+                origin="built-in",
+                type=ModuleType.C_BUILTIN,  # sic: not a "C" builtin in this case
+                submodule_search_locations=[],
+            )
         return spec
 
     def contribute_to_path(self, spec, processed):
