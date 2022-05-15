@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import pathlib
 from functools import lru_cache
+from importlib.machinery import BuiltinImporter
 from importlib.util import _find_spec_from_path
 
 
@@ -44,6 +45,10 @@ def is_namespace(modname: str) -> bool:
         last_parent = working_modname
 
     if found_spec is None:
+        return False
+
+    if found_spec.loader is BuiltinImporter:
+        # TODO(Py39): remove, since found_spec.origin will be "built-in"
         return False
 
     if found_spec.origin is None:
