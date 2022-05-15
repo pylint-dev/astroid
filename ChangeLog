@@ -20,6 +20,10 @@ Release date: TBA
 * Rename ``ModuleSpec`` -> ``module_type`` constructor parameter to match attribute
   name and improve typing. Use ``type`` instead.
 
+* Add a bound to the inference tips cache.
+
+  Closes #1150
+
 * Infer the return value of the ``.copy()`` method on ``dict``, ``list``, ``set``,
   and ``frozenset``.
 
