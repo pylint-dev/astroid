@@ -24,10 +24,12 @@ def _looks_like_signal(node, signal_name="pyqtSignal"):
 def transform_pyqt_signal(node: nodes.FunctionDef) -> None:
     module = parse(
         """
+    _UNSET = object()
+
     class pyqtSignal(object):
         def connect(self, slot, type=None, no_receiver_check=False):
             pass
-        def disconnect(self, slot):
+        def disconnect(self, slot=_UNSET):
             pass
         def emit(self, *args):
             pass

@@ -6,9 +6,7 @@ import enum
 import sys
 from pathlib import Path
 
-PY36 = sys.version_info[:2] == (3, 6)
 PY38 = sys.version_info[:2] == (3, 8)
-PY37_PLUS = sys.version_info >= (3, 7)
 PY38_PLUS = sys.version_info >= (3, 8)
 PY39_PLUS = sys.version_info >= (3, 9)
 PY310_PLUS = sys.version_info >= (3, 10)

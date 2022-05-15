@@ -7,9 +7,6 @@
 # pygtk.require().
 #init-hook=
 
-# Profiled execution.
-profile=no
-
 # Add files or directories to the blacklist. They should be base names, not
 # paths.
 ignore=CVS
@@ -43,7 +40,7 @@ unsafe-load-any-extension=no
 extension-pkg-whitelist=
 
 # Minimum supported python version
-py-version = 3.6.2
+py-version = 3.7.2
 
 
 [REPORTS]
@@ -52,11 +49,6 @@ py-version = 3.6.2
 # (visual studio) and html. You can also give a reporter class, eg
 # mypackage.mymodule.MyReporterClass.
 output-format=text
-
-# Put messages in a separate file for each module / package specified on the
-# command line instead of printing them on stdout. Reports (if any) will be
-# written in a file name "pylint_global.[txt|html]".
-files-output=no
 
 # Tells whether to display a full report or only the messages
 reports=no
@@ -103,10 +95,6 @@ disable=fixme,
         # Requires major redesign for fixing this (and private
         # access in the same project is fine)
         protected-access,
-        # Most of them are conforming to an API. Putting staticmethod
-        # all over the place changes the aesthetics when these methods
-        # are following a local pattern (visit methods for instance).
-        no-self-use,
         # API requirements in most of the occurrences
         unused-argument,
         # black handles these
@@ -144,62 +132,32 @@ include-naming-hint=no
 # Regular expression matching correct attribute names
 attr-rgx=[a-z_][a-z0-9_]{2,30}$
 
-# Naming hint for attribute names
-attr-name-hint=[a-z_][a-z0-9_]{2,30}$
-
 # Regular expression matching correct constant names
 const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
-
-# Naming hint for constant names
-const-name-hint=(([A-Z_][A-Z0-9_]*)|(__.*__))$
 
 # Regular expression matching correct method names
 method-rgx=[a-z_][a-z0-9_]{2,30}$
 
-# Naming hint for method names
-method-name-hint=[a-z_][a-z0-9_]{2,30}$
-
 # Regular expression matching correct inline iteration names
 inlinevar-rgx=[A-Za-z_][A-Za-z0-9_]*$
-
-# Naming hint for inline iteration names
-inlinevar-name-hint=[A-Za-z_][A-Za-z0-9_]*$
 
 # Regular expression matching correct class names
 class-rgx=[A-Z_][a-zA-Z0-9]+$
 
-# Naming hint for class names
-class-name-hint=[A-Z_][a-zA-Z0-9]+$
-
 # Regular expression matching correct argument names
 argument-rgx=[a-z_][a-z0-9_]{2,30}$
-
-# Naming hint for argument names
-argument-name-hint=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression matching correct module names
 module-rgx=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
 
-# Naming hint for module names
-module-name-hint=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
-
 # Regular expression matching correct function names
 function-rgx=[a-z_][a-z0-9_]{2,30}$
-
-# Naming hint for function names
-function-name-hint=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression matching correct variable names
 variable-rgx=[a-z_][a-z0-9_]{2,30}$
 
-# Naming hint for variable names
-variable-name-hint=[a-z_][a-z0-9_]{2,30}$
-
 # Regular expression matching correct class attribute names
 class-attribute-rgx=([A-Za-z_][A-Za-z0-9_]{2,30}|(__.*__))$
-
-# Naming hint for class attribute names
-class-attribute-name-hint=([A-Za-z_][A-Za-z0-9_]{2,30}|(__.*__))$
 
 # Regular expression which should only match function or class names that do
 
@@ -222,9 +180,6 @@ ignore-long-lines=^\s*(# )?<?https?://\S+>?$
 # Allow the body of an if to be on the same line as the test if there is no
 # else.
 single-line-if-stmt=no
-
-# List of optional constructs for which whitespace checking is disabled
-no-space-check=trailing-comma,dict-separator
 
 # Maximum number of lines in a module
 max-module-lines=3000
@@ -310,7 +265,8 @@ mixin-class-rgx=.*Mix[Ii]n
 # List of members which are set dynamically and missed by pylint inference
 # system, and so shouldn't trigger E0201 when accessed. Python regular
 # expressions are accepted.
-generated-members=REQUEST,acl_users,aq_parent,argparse.Namespace
+# TODO: Remove ast.Match pattern once https://github.com/PyCQA/pylint/issues/6594 is fixed
+generated-members=REQUEST,acl_users,aq_parent,argparse.Namespace,ast\.([mM]atch.*|pattern)
 
 
 [VARIABLES]

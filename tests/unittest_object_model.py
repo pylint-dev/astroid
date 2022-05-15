@@ -9,6 +9,7 @@ import pytest
 
 import astroid
 from astroid import builder, nodes, objects, test_utils, util
+from astroid.const import PY311_PLUS
 from astroid.exceptions import InferenceError
 
 try:
@@ -530,7 +531,8 @@ class GeneratorModelTest(unittest.TestCase):
 
 
 class ExceptionModelTest(unittest.TestCase):
-    def test_valueerror_py3(self) -> None:
+    @staticmethod
+    def test_valueerror_py3() -> None:
         ast_nodes = builder.extract_node(
             """
         try:
@@ -544,12 +546,21 @@ class ExceptionModelTest(unittest.TestCase):
         )
         assert isinstance(ast_nodes, list)
         args = next(ast_nodes[0].infer())
-        self.assertIsInstance(args, astroid.Tuple)
+        assert isinstance(args, astroid.Tuple)
         tb = next(ast_nodes[1].infer())
-        self.assertIsInstance(tb, astroid.Instance)
-        self.assertEqual(tb.name, "traceback")
+        # Python 3.11: If 'contextlib' is loaded, '__traceback__'
+        # could be set inside '__exit__' method in
+        # which case 'err.__traceback__' will be 'Uninferable'
+        try:
+            assert isinstance(tb, astroid.Instance)
+            assert tb.name == "traceback"
+        except AssertionError:
+            if PY311_PLUS:
+                assert tb == util.Uninferable
+            else:
+                raise
 
-        with self.assertRaises(InferenceError):
+        with pytest.raises(InferenceError):
             next(ast_nodes[2].infer())
 
     def test_syntax_error(self) -> None:

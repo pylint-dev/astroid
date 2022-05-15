@@ -52,3 +52,21 @@ class TestBrainQt:
             pytest.skip("PyQt6 C bindings may not be installed?")
         assert isinstance(attribute_node, FunctionDef)
         assert attribute_node.implicit_parameters() == 1
+
+    @staticmethod
+    def test_slot_disconnect_no_args() -> None:
+        """Test calling .disconnect() on a signal.
+
+        See https://github.com/PyCQA/astroid/pull/1531#issuecomment-1111963792
+        """
+        src = """
+        from PyQt6.QtCore import QTimer
+        timer = QTimer()
+        timer.timeout.disconnect  #@
+        """
+        node = extract_node(src)
+        attribute_node = node.inferred()[0]
+        if attribute_node is Uninferable:
+            pytest.skip("PyQt6 C bindings may not be installed?")
+        assert isinstance(attribute_node, FunctionDef)
+        assert attribute_node.args.defaults

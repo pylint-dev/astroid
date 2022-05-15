@@ -7,11 +7,13 @@
 The builder is not thread safe and can't be used to parse different sources
 at the same time.
 """
+
+from __future__ import annotations
+
 import os
 import textwrap
 import types
 from tokenize import detect_encoding
-from typing import List, Optional, Tuple, Union
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import get_parser_module
@@ -62,13 +64,12 @@ class AstroidBuilder(raw_building.InspectBuilder):
     by default being True.
     """
 
-    # pylint: disable=redefined-outer-name
     def __init__(self, manager=None, apply_transforms=True):
         super().__init__(manager)
         self._apply_transforms = apply_transforms
 
     def module_build(
-        self, module: types.ModuleType, modname: Optional[str] = None
+        self, module: types.ModuleType, modname: str | None = None
     ) -> nodes.Module:
         """Build an astroid from a living module instance."""
         node = None
@@ -162,7 +163,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
     def _data_build(
         self, data: str, modname, path
-    ) -> Tuple[nodes.Module, rebuilder.TreeRebuilder]:
+    ) -> tuple[nodes.Module, rebuilder.TreeRebuilder]:
         """Build tree node from data and add some informations"""
         try:
             node, parser_module = _parse_string(data, type_comments=True)
@@ -260,7 +261,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             pass
 
 
-def build_namespace_package_module(name: str, path: List[str]) -> nodes.Module:
+def build_namespace_package_module(name: str, path: list[str]) -> nodes.Module:
     return nodes.Module(name, path=path, package=True)
 
 
@@ -355,7 +356,7 @@ def _find_statement_by_line(node, line):
     return None
 
 
-def extract_node(code: str, module_name: str = "") -> Union[NodeNG, List[NodeNG]]:
+def extract_node(code: str, module_name: str = "") -> NodeNG | list[NodeNG]:
     """Parses some Python code as a module and extracts a designated AST node.
 
     Statements:

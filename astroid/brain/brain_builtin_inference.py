@@ -4,8 +4,11 @@
 
 """Astroid hooks for various builtins."""
 
+from __future__ import annotations
+
+import itertools
+from collections.abc import Iterator
 from functools import partial
-from typing import Optional
 
 from astroid import arguments, helpers, inference_tip, nodes, objects, util
 from astroid.builder import AstroidBuilder
@@ -533,7 +536,7 @@ def infer_callable(node, context=None):
 
 
 def infer_property(
-    node: nodes.Call, context: Optional[InferenceContext] = None
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> objects.Property:
     """Understand `property` class
 
@@ -892,6 +895,22 @@ def infer_dict_fromkeys(node, context=None):
     return _build_dict_with_elements([])
 
 
+def _infer_copy_method(
+    node: nodes.Call, context: InferenceContext | None = None
+) -> Iterator[nodes.NodeNG]:
+    assert isinstance(node.func, nodes.Attribute)
+    inferred_orig, inferred_copy = itertools.tee(node.func.expr.infer(context=context))
+    if all(
+        isinstance(
+            inferred_node, (nodes.Dict, nodes.List, nodes.Set, objects.FrozenSet)
+        )
+        for inferred_node in inferred_orig
+    ):
+        return inferred_copy
+
+    raise UseInferenceDefault()
+
+
 # Builtins inference
 register_builtin_transform(infer_bool, "bool")
 register_builtin_transform(infer_super, "super")
@@ -919,4 +938,11 @@ AstroidManager().register_transform(
     nodes.ClassDef,
     inference_tip(_infer_object__new__decorator),
     _infer_object__new__decorator_check,
+)
+
+AstroidManager().register_transform(
+    nodes.Call,
+    inference_tip(_infer_copy_method),
+    lambda node: isinstance(node.func, nodes.Attribute)
+    and node.func.attrname == "copy",
 )

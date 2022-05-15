@@ -2,7 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-from typing import Optional, Set
+from __future__ import annotations
 
 from astroid import nodes
 from astroid.bases import Instance
@@ -36,7 +36,7 @@ class CallSite:
         self.argument_context_map = argument_context_map
         args = callcontext.args
         keywords = callcontext.keywords
-        self.duplicated_keywords: Set[str] = set()
+        self.duplicated_keywords: set[str] = set()
         self._unpacked_args = self._unpack_args(args, context=context)
         self._unpacked_kwargs = self._unpack_keywords(keywords, context=context)
 
@@ -50,7 +50,7 @@ class CallSite:
         }
 
     @classmethod
-    def from_call(cls, call_node, context: Optional[InferenceContext] = None):
+    def from_call(cls, call_node, context: InferenceContext | None = None):
         """Get a CallSite object from the given Call node.
 
         context will be used to force a single inference path.
@@ -160,7 +160,7 @@ class CallSite:
         """
         if name in self.duplicated_keywords:
             raise InferenceError(
-                "The arguments passed to {func!r} " " have duplicate keywords.",
+                "The arguments passed to {func!r} have duplicate keywords.",
                 call_site=self,
                 func=funcnode,
                 arg=name,
