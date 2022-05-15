@@ -2,13 +2,15 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import os
 import pathlib
 from functools import lru_cache
 from importlib.util import _find_spec_from_path
 
 
-def _is_setuptools_namespace(location) -> bool:
+def _is_setuptools_namespace(location: str | pathlib.Path) -> bool:
     try:
         with open(os.path.join(location, "__init__.py"), "rb") as stream:
             data = stream.read(4096)
@@ -48,6 +50,9 @@ def is_namespace(modname: str) -> bool:
     if found_spec is None:
         return False
 
+    if found_spec.origin == "namespace":
+        return True
+
     if found_spec.submodule_search_locations is not None:
         for search_location in found_spec.submodule_search_locations:
             if any(
@@ -57,4 +62,4 @@ def is_namespace(modname: str) -> bool:
             ):
                 return True
 
-    return found_spec.origin == "namespace"
+    return False
