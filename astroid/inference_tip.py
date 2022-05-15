@@ -41,12 +41,11 @@ def _inference_tip_cached(
         if result is None:
             raise UseInferenceDefault()
     except KeyError:
+        if len(_cache) > 127:
+            clear_inference_tip_cache()
         _cache[func, node] = None
         result = _cache[func, node] = list(func(*args, **kwargs))
         assert result
-        # Django can be linted without exceeding this value; next value is 9296
-        if _cache.__sizeof__() > 4680:
-            clear_inference_tip_cache()
     return iter(result)
 
 
