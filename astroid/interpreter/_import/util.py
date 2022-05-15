@@ -46,7 +46,7 @@ def is_namespace(modname: str) -> bool:
     if found_spec is None:
         return False
 
-    if found_spec.origin == "namespace":
+    if found_spec.origin is None:
         return True
 
     if found_spec.submodule_search_locations is not None:
