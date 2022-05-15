@@ -407,6 +407,35 @@ class IfNodeTest(_NodeTest):
         assert code[3].is_typing_guard() is False
 
 
+class TryNodeTest(_NodeTest):
+    CODE = """
+        try:  # L2
+            print("Hello")
+        except IOError:
+            pass
+        except UnicodeError:
+            pass
+        else:
+            print()
+        finally:
+            print()
+    """
+
+    def test_block_range(self) -> None:
+        try_node = self.astroid.body[0].try_node
+        assert try_node.block_range(1) == (1, 11)
+        assert try_node.block_range(2) == (2, 2)
+        assert try_node.block_range(3) == (3, 3)
+        assert try_node.block_range(4) == (4, 4)
+        assert try_node.block_range(5) == (5, 5)
+        assert try_node.block_range(6) == (6, 6)
+        assert try_node.block_range(7) == (7, 7)
+        assert try_node.block_range(8) == (8, 8)
+        assert try_node.block_range(9) == (9, 9)
+        assert try_node.block_range(10) == (10, 10)
+        assert try_node.block_range(11) == (11, 11)
+
+
 class TryExceptNodeTest(_NodeTest):
     CODE = """
         try:

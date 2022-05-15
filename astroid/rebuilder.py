@@ -1810,15 +1810,53 @@ class TreeRebuilder:
                 end_col_offset=getattr(node, "end_col_offset", None),
                 parent=parent,
             )
-            body: list[NodeNG | nodes.TryExcept]
-            if node.handlers:
-                body = [self.visit_tryexcept(node, newnode)]
+            try_except = self.visit_tryexcept(node, newnode) if node.handlers else None
+            newnode.postinit(
+                body=[try_except]
+                if try_except
+                else [self.visit(child, newnode) for child in node.body],
+                finalbody=[self.visit(n, newnode) for n in node.finalbody],
+            )
+            try_node = nodes.Try(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                # end_lineno and end_col_offset added in 3.8
+                end_lineno=getattr(node, "end_lineno", None),
+                end_col_offset=getattr(node, "end_col_offset", None),
+                parent=parent,
+            )
+            if try_except:
+                try_node.postinit(
+                    body=[*try_except.body],
+                    handlers=[*try_except.handlers],
+                    orelse=[*try_except.orelse],
+                    finalbody=[*newnode.finalbody],
+                )
             else:
-                body = [self.visit(child, newnode) for child in node.body]
-            newnode.postinit(body, [self.visit(n, newnode) for n in node.finalbody])
+                try_node.postinit(
+                    body=[*newnode.body],
+                    finalbody=[*newnode.finalbody],
+                )
+            newnode.try_node = try_node
             return newnode
         if node.handlers:
-            return self.visit_tryexcept(node, parent)
+            # pylint: disable-next=redefined-variable-type
+            newnode = self.visit_tryexcept(node, parent)
+            try_node = nodes.Try(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                # end_lineno and end_col_offset added in 3.8
+                end_lineno=getattr(node, "end_lineno", None),
+                end_col_offset=getattr(node, "end_col_offset", None),
+                parent=parent,
+            )
+            try_node.postinit(
+                body=[*newnode.body],
+                handlers=[*newnode.handlers],
+                orelse=[*newnode.orelse],
+            )
+            newnode.try_node = try_node
+            return newnode
         return None
 
     def visit_tuple(self, node: ast.Tuple, parent: NodeNG) -> nodes.Tuple:

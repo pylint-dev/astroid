@@ -74,6 +74,7 @@ from astroid.nodes.node_classes import (  # pylint: disable=redefined-builtin (E
     Slice,
     Starred,
     Subscript,
+    Try,
     TryExcept,
     TryFinally,
     Tuple,
