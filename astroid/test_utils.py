@@ -3,11 +3,14 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Utility functions for test code that uses astroid ASTs as input."""
+
+from __future__ import annotations
+
 import contextlib
 import functools
 import sys
 import warnings
-from typing import Callable, Tuple
+from collections.abc import Callable
 
 import pytest
 
@@ -19,7 +22,7 @@ def require_version(minver: str = "0.0.0", maxver: str = "4.0.0") -> Callable:
     Skip the test if older.
     """
 
-    def parse(python_version: str) -> Tuple[int, ...]:
+    def parse(python_version: str) -> tuple[int, ...]:
         try:
             return tuple(int(v) for v in python_version.split("."))
         except ValueError as e:
@@ -30,7 +33,7 @@ def require_version(minver: str = "0.0.0", maxver: str = "4.0.0") -> Callable:
     max_version = parse(maxver)
 
     def check_require_version(f):
-        current: Tuple[int, int, int] = sys.version_info[:3]
+        current: tuple[int, int, int] = sys.version_info[:3]
         if min_version < current <= max_version:
             return f
 

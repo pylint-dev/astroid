@@ -179,7 +179,7 @@ class ModPathFromFileTest(unittest.TestCase):
         https://github.com/PyCQA/astroid/issues/1327
         """
         tmp_dir = Path(tempfile.gettempdir())
-        self.addCleanup(os.chdir, os.curdir)
+        self.addCleanup(os.chdir, os.getcwd())
         os.chdir(tmp_dir)
 
         self.addCleanup(shutil.rmtree, tmp_dir / "src")
@@ -288,6 +288,8 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
         self.assertTrue(
             modutils.is_standard_module("data.module", (os.path.abspath(datadir),))
         )
+        # "" will evaluate to cwd
+        self.assertTrue(modutils.is_standard_module("data.module", ("",)))
 
     def test_failing_edge_cases(self) -> None:
         # using a subpackage/submodule path as std_path argument

@@ -2,8 +2,9 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import textwrap
-from typing import List
 
 from astroid import builder, nodes
 
@@ -41,7 +42,7 @@ class TestNodePosition:
             ...
         """
         ).strip()
-        ast_nodes: List[nodes.NodeNG] = builder.extract_node(code)  # type: ignore[assignment]
+        ast_nodes: list[nodes.NodeNG] = builder.extract_node(code)  # type: ignore[assignment]
 
         a = ast_nodes[0]
         assert isinstance(a, nodes.ClassDef)
@@ -93,7 +94,7 @@ class TestNodePosition:
             ...
         """
         ).strip()
-        ast_nodes: List[nodes.NodeNG] = builder.extract_node(code)  # type: ignore[assignment]
+        ast_nodes: list[nodes.NodeNG] = builder.extract_node(code)  # type: ignore[assignment]
 
         a = ast_nodes[0]
         assert isinstance(a, nodes.FunctionDef)
@@ -141,7 +142,7 @@ class TestNodePosition:
             ...
         """
         ).strip()
-        ast_nodes: List[nodes.NodeNG] = builder.extract_node(code)  # type: ignore[assignment]
+        ast_nodes: list[nodes.NodeNG] = builder.extract_node(code)  # type: ignore[assignment]
 
         a = ast_nodes[0]
         assert isinstance(a, nodes.FunctionDef)
