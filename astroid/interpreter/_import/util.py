@@ -2,8 +2,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-from __future__ import annotations
-
 import sys
 from functools import lru_cache
 from importlib.util import _find_spec_from_path
