@@ -24,10 +24,6 @@ Release date: TBA
 
   Refs PyCQA/pylint#5113
 
-* Add a bound to the inference tips cache.
-
-  Closes #1150
-
 * Infer the return value of the ``.copy()`` method on ``dict``, ``list``, ``set``,
   and ``frozenset``.
 
