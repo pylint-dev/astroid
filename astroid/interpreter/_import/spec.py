@@ -227,10 +227,7 @@ class PathSpecFinder(Finder):
     def find_module(self, modname, module_parts, processed, submodule_path):
         spec = importlib.machinery.PathFinder.find_spec(modname, path=submodule_path)
         if spec:
-            # origin can be either a string on older Python versions
-            # or None in case it is a namespace package:
-            # https://github.com/python/cpython/pull/5481
-            is_namespace_pkg = spec.origin in {"namespace", None}
+            is_namespace_pkg = spec.origin is None
             location = spec.origin if not is_namespace_pkg else None
             module_type = ModuleType.PY_NAMESPACE if is_namespace_pkg else None
             spec = ModuleSpec(
