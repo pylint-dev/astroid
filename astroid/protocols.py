@@ -240,6 +240,11 @@ def _resolve_looppart(parts, assign_path, context):
             itered = part.itered()
         except TypeError:
             continue
+        try:
+            if isinstance(itered[index], (nodes.Const, nodes.Name)):
+                itered = [part]
+        except IndexError:
+            pass
         for stmt in itered:
             index_node = nodes.Const(index)
             try:
