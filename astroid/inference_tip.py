@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 import typing
-from collections import OrderedDict
 from collections.abc import Iterator
 
 import wrapt
@@ -21,7 +20,7 @@ InferOptions = typing.Union[
     NodeNG, bases.Instance, bases.UnboundMethod, typing.Type[util.Uninferable]
 ]
 
-_cache: OrderedDict[tuple[InferFn, NodeNG], list[InferOptions] | None] = OrderedDict()
+_cache: dict[tuple[InferFn, NodeNG], list[InferOptions] | None] = {}
 
 
 def clear_inference_tip_cache():
@@ -37,14 +36,11 @@ def _inference_tip_cached(
     node = args[0]
     try:
         result = _cache[func, node]
-        _cache.move_to_end((func, node))
         # If through recursion we end up trying to infer the same
         # func + node we raise here.
         if result is None:
             raise UseInferenceDefault()
     except KeyError:
-        if len(_cache) > 127:
-            _cache.popitem(last=False)
         _cache[func, node] = None
         result = _cache[func, node] = list(func(*args, **kwargs))
         assert result
