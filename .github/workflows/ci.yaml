@@ -125,7 +125,7 @@ jobs:
           . venv/bin/activate
           pytest --cov --cov-report= tests/
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v3.0.0
+        uses: actions/upload-artifact@v3.1.0
         with:
           name: coverage-${{ matrix.python-version }}
           path: .coverage
@@ -174,7 +174,7 @@ jobs:
           . venv/bin/activate
           pytest --cov --cov-report= tests/
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v3.0.0
+        uses: actions/upload-artifact@v3.1.0
         with:
           name: coverage-${{ matrix.python-version }}
           path: .coverage
