@@ -318,7 +318,7 @@ class BorgAstroidManagerTC(unittest.TestCase):
         self.assertIs(built, second_built)
 
 
-class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
+class ClearCacheTest(unittest.TestCase):
     def test_clear_cache_clears_other_lru_caches(self) -> None:
         lrus = (
             astroid.nodes.node_classes.LookupMixIn.lookup,
@@ -361,6 +361,19 @@ class ClearCacheTest(unittest.TestCase, resources.AstroidCacheSetupMixin):
         format_call = astroid.extract_node("''.format()")
         inferred = next(format_call.infer())
         self.assertIsInstance(inferred, Const)
+
+    def test_builtins_inference_after_clearing_cache(self) -> None:
+        astroid.MANAGER.clear_cache()
+        isinstance_call = astroid.extract_node("isinstance(1, int)")
+        inferred = next(isinstance_call.infer())
+        self.assertIs(inferred.value, True)
+
+    def test_builtins_inference_after_clearing_cache_manually(self) -> None:
+        # Not recommended to manipulate this, so we detect it and call clear_cache() instead
+        astroid.MANAGER.brain["astroid_cache"].clear()
+        isinstance_call = astroid.extract_node("isinstance(1, int)")
+        inferred = next(isinstance_call.infer())
+        self.assertIs(inferred.value, True)
 
 
 if __name__ == "__main__":
