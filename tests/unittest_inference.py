@@ -3579,12 +3579,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             node = extract_node(code)
             self.assertRaises(InferenceError, next, node.infer())
 
-    @test_utils.require_version(minver="3.9")
-    def test_subscripting_builtin(self) -> None:
-        subscript_node = extract_node("enumerate[2]")
-        subscript_inferred = next(subscript_node.infer())
-        self.assertIsInstance(subscript_inferred, nodes.ClassDef)
-
     def test_instance_slicing(self) -> None:
         ast_nodes = extract_node(
             """
