@@ -2763,7 +2763,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             # AttributeError
             if (
                 isinstance(method, node_classes.EmptyNode)
-                and self.name in {"list", "dict", "set", "tuple", "frozenset"}
+                and self.pytype() == "builtins.type"
                 and PY39_PLUS
             ):
                 return self
