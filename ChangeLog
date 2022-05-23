@@ -15,6 +15,10 @@ Release date: TBA
 
   Closes #1512
 
+* Remove dependency on ``pkg_resources`` from ``setuptools``.
+
+  Closes #1103
+
 * Allowed ``AstroidManager.clear_cache`` to reload necessary brain plugins.
 
 * Fixed incorrect inferences after rebuilding the builtins module, e.g. by calling

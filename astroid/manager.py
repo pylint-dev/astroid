@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from astroid.const import BRAIN_MODULES_DIRECTORY
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
-from astroid.interpreter._import import spec
+from astroid.interpreter._import import spec, util
 from astroid.modutils import (
     NoSourceFile,
     _cache_normalize_path_,
@@ -384,6 +384,7 @@ class AstroidManager:
         for lru_cache in (
             LookupMixIn.lookup,
             _cache_normalize_path_,
+            util.is_namespace,
             ObjectModel.attributes,
         ):
             lru_cache.cache_clear()

@@ -10,6 +10,7 @@ import importlib
 import importlib.machinery
 import importlib.util
 import os
+import pathlib
 import sys
 import zipimport
 from collections.abc import Sequence
@@ -147,7 +148,7 @@ class ImportlibFinder(Finder):
             # Builtin.
             return None
 
-        if _is_setuptools_namespace(spec.location):
+        if _is_setuptools_namespace(Path(spec.location)):
             # extend_path is called, search sys.path for module/packages
             # of this name see pkgutil.extend_path documentation
             path = [
@@ -179,7 +180,7 @@ class ImportlibFinder(Finder):
 
 
 class ExplicitNamespacePackageFinder(ImportlibFinder):
-    """A finder for the explicit namespace packages, generated through pkg_resources."""
+    """A finder for the explicit namespace packages."""
 
     def find_module(self, modname, module_parts, processed, submodule_path):
         if processed:
@@ -253,12 +254,12 @@ _SPEC_FINDERS = (
 )
 
 
-def _is_setuptools_namespace(location):
+def _is_setuptools_namespace(location: pathlib.Path) -> bool:
     try:
-        with open(os.path.join(location, "__init__.py"), "rb") as stream:
+        with open(location / "__init__.py", "rb") as stream:
             data = stream.read(4096)
     except OSError:
-        return None
+        return False
     else:
         extend_path = b"pkgutil" in data and b"extend_path" in data
         declare_namespace = (
