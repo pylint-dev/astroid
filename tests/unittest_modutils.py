@@ -6,6 +6,7 @@
 unit tests for module modutils (module manipulation utilities)
 """
 import email
+import logging
 import os
 import shutil
 import sys
@@ -15,6 +16,8 @@ import xml
 from pathlib import Path
 from xml import etree
 from xml.etree import ElementTree
+
+from pytest import CaptureFixture, LogCaptureFixture
 
 import astroid
 from astroid import modutils
@@ -69,6 +72,35 @@ class LoadModuleFromNameTest(unittest.TestCase):
         self.assertRaises(
             ImportError, modutils.load_module_from_name, "_this_module_does_not_exist_"
         )
+
+
+def test_import_dotted_library(
+    capsys: CaptureFixture,
+    caplog: LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.INFO)
+    del sys.modules["xml.etree.ElementTree"]
+    expected_out = "INFO (TEST): Welcome to cElementTree!"
+    expected_err = "WARNING (TEST): Monkey-patched version of cElementTree"
+
+    def function_with_stdout_and_stderr(expected_out, expected_err):
+        def mocked_function(*args, **kwargs):
+            print(f"{expected_out} args={args} kwargs={kwargs}")
+            print(expected_err, file=sys.stderr)
+
+        return mocked_function
+
+    with unittest.mock.patch(
+        "importlib.import_module",
+        side_effect=function_with_stdout_and_stderr(expected_out, expected_err),
+    ):
+        modutils.load_module_from_name("xml.etree.ElementTree")
+
+    out, err = capsys.readouterr()
+    assert expected_out in caplog.text
+    assert expected_err in caplog.text
+    assert not out
+    assert not err
 
 
 class GetModulePartTest(unittest.TestCase):
