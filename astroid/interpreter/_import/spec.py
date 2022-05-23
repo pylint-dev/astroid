@@ -105,6 +105,12 @@ class ImportlibFinder(Finder):
     ) -> ModuleSpec | None:
         if submodule_path is not None:
             submodule_path = list(submodule_path)
+        elif modname in sys.builtin_module_names:
+            return ModuleSpec(
+                name=modname,
+                location=None,
+                type=ModuleType.C_BUILTIN,
+            )
         else:
             try:
                 spec = importlib.util.find_spec(modname)
@@ -237,16 +243,6 @@ class PathSpecFinder(Finder):
                 origin=spec.origin,
                 type=module_type,
                 submodule_search_locations=list(spec.submodule_search_locations or []),
-            )
-        elif modname in sys.builtin_module_names:
-            # PyPy does not necessarily supply a __spec__
-            # https://foss.heptapod.net/pypy/pypy/-/issues/3736#note_184637
-            spec = ModuleSpec(
-                name=modname,
-                location=None,
-                origin="built-in",
-                type=ModuleType.C_BUILTIN,  # sic: not a "C" builtin in this case
-                submodule_search_locations=[],
             )
         return spec
 
