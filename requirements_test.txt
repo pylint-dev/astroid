@@ -2,7 +2,7 @@
 -r requirements_test_pre_commit.txt
 contributors-txt>=0.7.4
 coveralls~=3.3
-coverage~=6.3.3
+coverage~=6.4
 pre-commit~=2.19
 pytest-cov~=3.0
 contributors-txt>=0.7.3
