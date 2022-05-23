@@ -1272,7 +1272,7 @@ class TypeBrain(unittest.TestCase):
     @test_utils.require_version(minver="3.9")
     def test_builtin_subscriptable(self):
         """Starting with python3.9 builtin types such as list are subscriptable.
-        Builtins such as "enumerate" and "staticmethod" also work, although dubious."""
+        Any builtin class such as "enumerate" or "staticmethod" also works."""
         for typename in ("tuple", "list", "dict", "set", "frozenset", "enumerate"):
             src = f"""
             {typename:s}[int]

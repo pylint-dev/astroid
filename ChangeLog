@@ -22,7 +22,7 @@ Release date: TBA
 
   Closes #1559
 
-* On Python versions >= 3.9, ``astroid`` now understands (dubiously) subscripting
+* On Python versions >= 3.9, ``astroid`` now understands subscripting
   builtin classes such as ``enumerate`` or ``staticmethod``.
 
 * Rename ``ModuleSpec`` -> ``module_type`` constructor parameter to match attribute
