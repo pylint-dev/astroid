@@ -79,7 +79,7 @@ def test_import_dotted_library(
     caplog: LogCaptureFixture,
 ) -> None:
     caplog.set_level(logging.INFO)
-    del sys.modules["xml.etree.ElementTree"]
+    original_module = sys.modules.pop("xml.etree.ElementTree")
     expected_out = "INFO (TEST): Welcome to cElementTree!"
     expected_err = "WARNING (TEST): Monkey-patched version of cElementTree"
 
@@ -90,17 +90,20 @@ def test_import_dotted_library(
 
         return mocked_function
 
-    with unittest.mock.patch(
-        "importlib.import_module",
-        side_effect=function_with_stdout_and_stderr(expected_out, expected_err),
-    ):
-        modutils.load_module_from_name("xml.etree.ElementTree")
+    try:
+        with unittest.mock.patch(
+            "importlib.import_module",
+            side_effect=function_with_stdout_and_stderr(expected_out, expected_err),
+        ):
+            modutils.load_module_from_name("xml.etree.ElementTree")
 
-    out, err = capsys.readouterr()
-    assert expected_out in caplog.text
-    assert expected_err in caplog.text
-    assert not out
-    assert not err
+        out, err = capsys.readouterr()
+        assert expected_out in caplog.text
+        assert expected_err in caplog.text
+        assert not out
+        assert not err
+    finally:
+        sys.modules["xml.etree.ElementTree"] = original_module
 
 
 class GetModulePartTest(unittest.TestCase):
