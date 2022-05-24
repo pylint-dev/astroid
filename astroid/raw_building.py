@@ -323,7 +323,7 @@ class InspectBuilder:
         self._done[obj] = node
         for name in dir(obj):
             # inspect.ismethod() and inspect.isbuiltin() in PyPy return
-            # the opposite of what they do in CPython. Thus, special case it.
+            # the opposite of what they do in CPython for __class_getitem__.
             pypy__class_getitem__ = IS_PYPY and name == "__class_getitem__"
             try:
                 with warnings.catch_warnings():
