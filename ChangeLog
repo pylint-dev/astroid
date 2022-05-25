@@ -8,6 +8,8 @@ Release date: TBA
 
 * ``astroid`` now requires Python 3.7.2 to run.
 
+* Fix detection of builtins on ``PyPy`` 3.9.
+
 * Fix ``re`` brain on Python ``3.11``. The flags now come from ``re._compile``.
 
 * Build ``nodes.Module`` for frozen modules which have location information in their

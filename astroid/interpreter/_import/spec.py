@@ -105,22 +105,22 @@ class ImportlibFinder(Finder):
     ) -> ModuleSpec | None:
         if submodule_path is not None:
             submodule_path = list(submodule_path)
+        elif modname in sys.builtin_module_names:
+            return ModuleSpec(
+                name=modname,
+                location=None,
+                type=ModuleType.C_BUILTIN,
+            )
         else:
             try:
                 spec = importlib.util.find_spec(modname)
-                if spec:
-                    if spec.loader is importlib.machinery.BuiltinImporter:
-                        return ModuleSpec(
-                            name=modname,
-                            location=None,
-                            type=ModuleType.C_BUILTIN,
-                        )
-                    if spec.loader is importlib.machinery.FrozenImporter:
-                        return ModuleSpec(
-                            name=modname,
-                            location=getattr(spec.loader_state, "filename", None),
-                            type=ModuleType.PY_FROZEN,
-                        )
+                if spec and spec.loader is importlib.machinery.FrozenImporter:
+                    # No need for BuiltinImporter; builtins handled above
+                    return ModuleSpec(
+                        name=modname,
+                        location=getattr(spec.loader_state, "filename", None),
+                        type=ModuleType.PY_FROZEN,
+                    )
             except ValueError:
                 pass
             submodule_path = sys.path

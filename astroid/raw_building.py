@@ -17,6 +17,7 @@ import warnings
 from collections.abc import Iterable
 
 from astroid import bases, nodes
+from astroid.const import IS_PYPY
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
 
@@ -321,6 +322,9 @@ class InspectBuilder:
             return self._done[obj]
         self._done[obj] = node
         for name in dir(obj):
+            # inspect.ismethod() and inspect.isbuiltin() in PyPy return
+            # the opposite of what they do in CPython for __class_getitem__.
+            pypy__class_getitem__ = IS_PYPY and name == "__class_getitem__"
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("error")
@@ -329,11 +333,11 @@ class InspectBuilder:
                 # damned ExtensionClass.Base, I know you're there !
                 attach_dummy_node(node, name)
                 continue
-            if inspect.ismethod(member):
+            if inspect.ismethod(member) and not pypy__class_getitem__:
                 member = member.__func__
             if inspect.isfunction(member):
                 _build_from_function(node, name, member, self._module)
-            elif inspect.isbuiltin(member):
+            elif inspect.isbuiltin(member) or pypy__class_getitem__:
                 if self.imported_member(node, member, name):
                     continue
                 object_build_methoddescriptor(node, member, name)
