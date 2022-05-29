@@ -120,6 +120,11 @@ class AstroidManagerTest(
             util.is_namespace("tests.testdata.python3.data.path_pkg_resources_1")
         )
 
+    def test_homonoym_with_non_module(self) -> None:
+        self.assertFalse(
+            util.is_namespace("tests.testdata.python3.data.parent_of_homonym.doc")
+        )
+
     def test_implicit_namespace_package(self) -> None:
         data_dir = os.path.dirname(resources.find("data/namespace_pep_420"))
         contribute = os.path.join(data_dir, "contribute_to_namespace")

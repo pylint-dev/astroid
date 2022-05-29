@@ -18,14 +18,20 @@ def is_namespace(modname: str) -> bool:
     # That's unacceptable here, so we fallback to _find_spec_from_path(), which does
     # not, but requires instead that each single parent ('astroid', 'nodes', etc.)
     # be specced from left to right.
-    components = modname.split(".")
-    for i in range(1, len(components) + 1):
-        working_modname = ".".join(components[:i])
+    processed_components = []
+    last_parent = None
+    for component in modname.split("."):
+        processed_components.append(component)
+        working_modname = ".".join(processed_components)
         try:
-            found_spec = _find_spec_from_path(working_modname, components[0])
+            found_spec = _find_spec_from_path(working_modname, last_parent)
         except ValueError:
             # executed .pth files may not have __spec__
             return True
+        except KeyError:
+            # https://github.com/python/cpython/issues/93334
+            return False
+        last_parent = working_modname
 
     if found_spec is None:
         return False
