@@ -28,8 +28,8 @@ def is_namespace(modname: str) -> bool:
         processed_components.append(component)
         working_modname = ".".join(processed_components)
         try:
-            # the path search is not recursive, so that's why we are iterating
-            # to incorporate each submodule search path, e.g. a, a/b, a/b/c
+            # Both the modname and the path are built iteratively, with the
+            # path (e.g. ['a', 'a/b', 'a/b/c']) lagging the modname by one
             found_spec = _find_spec_from_path(
                 working_modname, path=last_submodule_search_locations
             )
