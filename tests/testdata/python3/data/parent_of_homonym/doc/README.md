@@ -1,2 +1,2 @@
-This submodule should have the same name as a module in the root of the project
+This submodule should have the same name as a directory in the root of the project
 directory that is _NOT_ a python module. For this reason, it's currently called "doc".
