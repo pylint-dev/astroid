@@ -29,9 +29,9 @@ def is_namespace(modname: str) -> bool:
         working_modname = ".".join(processed_components)
         try:
             # the path search is not recursive, so that's why we are iterating
-            # and using the last parent path
+            # to incorporate each submodule search path, e.g. a, a/b, a/b/c
             found_spec = _find_spec_from_path(
-                working_modname, last_submodule_search_locations
+                working_modname, path=last_submodule_search_locations
             )
         except ValueError:
             # executed .pth files may not have __spec__
@@ -53,6 +53,8 @@ def is_namespace(modname: str) -> bool:
                     last_item = last_submodule_search_locations[-1]
                 except TypeError:
                     last_item = last_submodule_search_locations._recalculate()[-1]
+                # e.g. for failure example above, add 'a/b' and keep going
+                # so that find_spec('a.b.c', path=['a', 'a/b']) succeeds
                 assumed_location = pathlib.Path(last_item) / component
                 last_submodule_search_locations.append(str(assumed_location))
             continue
