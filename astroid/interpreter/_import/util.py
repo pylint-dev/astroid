@@ -49,7 +49,8 @@ def is_namespace(modname: str) -> bool:
             if last_submodule_search_locations:
                 assumed_location = (
                     # pylint: disable=unsubscriptable-object
-                    pathlib.Path(last_submodule_search_locations[-1])
+                    # TODO: py38: directly access last_submodule_search_locations
+                    pathlib.Path(last_submodule_search_locations._path[-1])
                     / component
                 )
                 last_submodule_search_locations.append(str(assumed_location))
