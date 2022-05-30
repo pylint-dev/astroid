@@ -47,12 +47,13 @@ def is_namespace(modname: str) -> bool:
 
             # Repair last_submodule_search_locations
             if last_submodule_search_locations:
-                assumed_location = (
+                # TODO: py38: remove except
+                try:
                     # pylint: disable=unsubscriptable-object
-                    # TODO: py38: directly access last_submodule_search_locations
-                    pathlib.Path(last_submodule_search_locations._path[-1])
-                    / component
-                )
+                    last_item = last_submodule_search_locations[-1]
+                except TypeError:
+                    last_item = last_submodule_search_locations._recalculate()[-1]
+                assumed_location = pathlib.Path(last_item) / component
                 last_submodule_search_locations.append(str(assumed_location))
             continue
 
