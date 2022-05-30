@@ -120,7 +120,7 @@ class AstroidManagerTest(
             util.is_namespace("tests.testdata.python3.data.path_pkg_resources_1")
         )
 
-    def test_homonoym_with_non_module(self) -> None:
+    def test_submodule_homonym_with_non_module(self) -> None:
         self.assertFalse(
             util.is_namespace("tests.testdata.python3.data.parent_of_homonym.doc")
         )
