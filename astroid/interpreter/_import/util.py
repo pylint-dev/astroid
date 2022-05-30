@@ -30,6 +30,7 @@ def is_namespace(modname: str) -> bool:
             return True
         except KeyError:
             # https://github.com/python/cpython/issues/93334
+            # TODO: remove when minimum python version has the fix
             return False
         last_parent = working_modname
 
