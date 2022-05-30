@@ -18,18 +18,28 @@ def is_namespace(modname: str) -> bool:
     # That's unacceptable here, so we fallback to _find_spec_from_path(), which does
     # not, but requires instead that each single parent ('astroid', 'nodes', etc.)
     # be specced from left to right.
-    components = modname.split(".")
-    for i in range(1, len(components) + 1):
-        working_modname = ".".join(components[:i])
+    processed_components = []
+    last_parent = None
+    for component in modname.split("."):
+        processed_components.append(component)
+        working_modname = ".".join(processed_components)
         try:
-            # Search under the highest package name
-            # Only relevant if package not already on sys.path
-            # See https://github.com/python/cpython/issues/89754 for reasoning
-            # Otherwise can raise bare KeyError: https://github.com/python/cpython/issues/93334
-            found_spec = _find_spec_from_path(working_modname, components[0])
+            # the path search is not recursive, so that's why we are iterating
+            # and using the last parent path
+            found_spec = _find_spec_from_path(working_modname, last_parent)
         except ValueError:
             # executed .pth files may not have __spec__
             return True
+        except KeyError:
+            # Some homonyms might raise KeyErrors
+            # https://github.com/python/cpython/issues/93334
+            # TODO: update if fixed in importlib
+            # For a tree a > b > a.py
+            # >>> from importlib.machinery import PathFinder
+            # >>> PathFinder.find_spec('a.b.a')  # same result with path='a' or 'a.b'
+            # KeyError: 'a.b'
+            return False
+        last_parent = working_modname
 
     if found_spec is None:
         return False
