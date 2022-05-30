@@ -39,7 +39,7 @@ repos:
       - id: isort
         exclude: tests/testdata
   - repo: https://github.com/Pierre-Sassoulas/black-disable-checker/
-    rev: 1.0.1
+    rev: v1.1.0
     hooks:
       - id: black-disable-checker
         exclude: tests/unittest_nodes_lineno.py
@@ -71,7 +71,7 @@ repos:
           ]
         exclude: tests/testdata|conf.py
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.950
+    rev: v0.960
     hooks:
       - id: mypy
         name: mypy
