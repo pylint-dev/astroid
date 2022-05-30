@@ -2,8 +2,12 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
+import pathlib
 import sys
 from functools import lru_cache
+from importlib._bootstrap_external import _NamespacePath
 from importlib.util import _find_spec_from_path
 
 
@@ -19,27 +23,41 @@ def is_namespace(modname: str) -> bool:
     # not, but requires instead that each single parent ('astroid', 'nodes', etc.)
     # be specced from left to right.
     processed_components = []
-    last_parent = None
+    last_submodule_search_locations: _NamespacePath | None = None
     for component in modname.split("."):
         processed_components.append(component)
         working_modname = ".".join(processed_components)
         try:
             # the path search is not recursive, so that's why we are iterating
             # and using the last parent path
-            found_spec = _find_spec_from_path(working_modname, last_parent)
+            found_spec = _find_spec_from_path(
+                working_modname, last_submodule_search_locations
+            )
         except ValueError:
             # executed .pth files may not have __spec__
             return True
         except KeyError:
-            # Some homonyms might raise KeyErrors
+            # Intermediate steps might raise KeyErrors
             # https://github.com/python/cpython/issues/93334
             # TODO: update if fixed in importlib
-            # For a tree a > b > a.py
+            # For tree a > b > c.py
             # >>> from importlib.machinery import PathFinder
-            # >>> PathFinder.find_spec('a.b.a')  # same result with path='a' or 'a.b'
-            # KeyError: 'a.b'
-            return False
-        last_parent = working_modname
+            # >>> PathFinder.find_spec('a.b', ['a'])
+            # KeyError: 'a'
+
+            # Repair last_submodule_search_locations
+            if last_submodule_search_locations:
+                assumed_location = (
+                    # pylint: disable=unsubscriptable-object
+                    pathlib.Path(last_submodule_search_locations[-1])
+                    / component
+                )
+                last_submodule_search_locations.append(str(assumed_location))
+            continue
+
+        # Update last_submodule_search_locations
+        if found_spec and found_spec.submodule_search_locations:
+            last_submodule_search_locations = found_spec.submodule_search_locations
 
     if found_spec is None:
         return False
