@@ -129,6 +129,15 @@ class AstroidManagerTest(
         self.assertFalse(util.is_namespace("tests.testdata.python3.data.all"))
         self.assertFalse(util.is_namespace("__main__"))
 
+    def test_module_unexpectedly_missing_spec(self) -> None:
+        astroid_module = sys.modules["astroid"]
+        original_spec = astroid_module.__spec__
+        del astroid_module.__spec__
+        try:
+            self.assertFalse(util.is_namespace("astroid"))
+        finally:
+            astroid_module.__spec__ = original_spec
+
     def test_implicit_namespace_package(self) -> None:
         data_dir = os.path.dirname(resources.find("data/namespace_pep_420"))
         contribute = os.path.join(data_dir, "contribute_to_namespace")
