@@ -34,8 +34,8 @@ def is_namespace(modname: str) -> bool:
                 working_modname, path=last_submodule_search_locations
             )
         except ValueError:
-            # executed .pth files may not have __spec__
-            return True
+            # Assume it's a .pth file, unless it's __main__
+            return modname != "__main__"
         except KeyError:
             # Intermediate steps might raise KeyErrors
             # https://github.com/python/cpython/issues/93334
