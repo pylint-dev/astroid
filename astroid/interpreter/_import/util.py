@@ -34,8 +34,17 @@ def is_namespace(modname: str) -> bool:
                 working_modname, path=last_submodule_search_locations
             )
         except ValueError:
-            # Assume it's a .pth file, unless it's __main__
-            return modname != "__main__"
+            if modname == "__main__":
+                return False
+            try:
+                # .pth files will be on sys.modules
+                return sys.modules[modname].__spec__ is None
+            except KeyError:
+                return False
+            except AttributeError:
+                # Workaround for "py" module
+                # https://github.com/pytest-dev/apipkg/issues/13
+                return False
         except KeyError:
             # Intermediate steps might raise KeyErrors
             # https://github.com/python/cpython/issues/93334
