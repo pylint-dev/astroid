@@ -1,23 +1,16 @@
-# Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2015-2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Utility functions for test code that uses astroid ASTs as input."""
+
+from __future__ import annotations
+
 import contextlib
 import functools
 import sys
 import warnings
-from typing import Callable, Tuple
+from collections.abc import Callable
 
 import pytest
 
@@ -29,7 +22,7 @@ def require_version(minver: str = "0.0.0", maxver: str = "4.0.0") -> Callable:
     Skip the test if older.
     """
 
-    def parse(python_version: str) -> Tuple[int, ...]:
+    def parse(python_version: str) -> tuple[int, ...]:
         try:
             return tuple(int(v) for v in python_version.split("."))
         except ValueError as e:
@@ -40,7 +33,7 @@ def require_version(minver: str = "0.0.0", maxver: str = "4.0.0") -> Callable:
     max_version = parse(maxver)
 
     def check_require_version(f):
-        current: Tuple[int, int, int] = sys.version_info[:3]
+        current: tuple[int, int, int] = sys.version_info[:3]
         if min_version < current <= max_version:
             return f
 
@@ -48,9 +41,9 @@ def require_version(minver: str = "0.0.0", maxver: str = "4.0.0") -> Callable:
 
         @functools.wraps(f)
         def new_f(*args, **kwargs):
-            if minver != "0.0.0":
+            if current <= min_version:
                 pytest.skip(f"Needs Python > {minver}. Current version is {version}.")
-            elif maxver != "4.0.0":
+            elif current > max_version:
                 pytest.skip(f"Needs Python <= {maxver}. Current version is {version}.")
 
         return new_f

@@ -1,54 +1,18 @@
-# Copyright (c) 2006-2015 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2007 Marien Zwart <marienz@gentoo.org>
-# Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2021 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Dmitry Pribysh <dmand@yandex.ru>
-# Copyright (c) 2015 Rene Zhang <rz99@cornell.edu>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2017 Hugo <hugovk@users.noreply.github.com>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2017 Calen Pennington <cale@edx.org>
-# Copyright (c) 2017 Calen Pennington <calen.pennington@gmail.com>
-# Copyright (c) 2017 David Euresti <david@dropbox.com>
-# Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2018 Daniel Martin <daniel.martin@crowdstrike.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
-# Copyright (c) 2019, 2021 David Liu <david@cs.toronto.edu>
-# Copyright (c) 2019-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2019 Stanislav Levin <slev@altlinux.org>
-# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
-# Copyright (c) 2020 Karthikeyan Singaravelan <tir.karthi@gmail.com>
-# Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
-# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
-# Copyright (c) 2021 Jacob Walls <jacobtylerwalls@gmail.com>
-# Copyright (c) 2021 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2021 Dmitry Shachnev <mitya57@users.noreply.github.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-# Copyright (c) 2021 doranid <ddandd@gmail.com>
-# Copyright (c) 2021 Francis Charette Migneault <francis.charette.migneault@gmail.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for the astroid inference capabilities"""
 
-import platform
+from __future__ import annotations
+
 import textwrap
 import unittest
 from abc import ABCMeta
+from collections.abc import Callable
 from functools import partial
-from typing import Any, Callable, Dict, List, Tuple, Union
+from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -88,6 +52,7 @@ builder = AstroidBuilder()
 
 EXC_MODULE = "builtins"
 BOOL_SPECIAL_METHOD = "__bool__"
+DATA_DIR = Path(__file__).parent / "testdata" / "python3" / "data"
 
 
 class InferenceUtilsTest(unittest.TestCase):
@@ -104,9 +69,9 @@ class InferenceUtilsTest(unittest.TestCase):
 
 def _assertInferElts(
     node_type: ABCMeta,
-    self: "InferenceTest",
+    self: InferenceTest,
     node: Any,
-    elts: Union[List[int], List[str]],
+    elts: list[int] | list[str],
 ) -> None:
     inferred = next(node.infer())
     self.assertIsInstance(inferred, node_type)
@@ -130,7 +95,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.value, expected)
 
     def assertInferDict(
-        self, node: Union[nodes.Call, nodes.Dict, nodes.NodeNG], expected: Any
+        self, node: nodes.Call | nodes.Dict | nodes.NodeNG, expected: Any
     ) -> None:
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Dict)
@@ -833,6 +798,45 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             [i.value for i in test_utils.get_name_node(ast, "e", -1).infer()], [1, 3]
         )
 
+    def test_for_dict(self) -> None:
+        code = """
+            for a, b in {1: 2, 3: 4}.items():
+                print(a)
+                print(b)
+
+            for c, (d, e) in {1: (2, 3), 4: (5, 6)}.items():
+                print(c)
+                print(d)
+                print(e)
+
+            print([(f, g, h) for f, (g, h) in {1: (2, 3), 4: (5, 6)}.items()])
+        """
+        ast = parse(code, __name__)
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "a", -1).infer()], [1, 3]
+        )
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "b", -1).infer()], [2, 4]
+        )
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "c", -1).infer()], [1, 4]
+        )
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "d", -1).infer()], [2, 5]
+        )
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "e", -1).infer()], [3, 6]
+        )
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "f", -1).infer()], [1, 4]
+        )
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "g", -1).infer()], [2, 5]
+        )
+        self.assertEqual(
+            [i.value for i in test_utils.get_name_node(ast, "h", -1).infer()], [3, 6]
+        )
+
     def test_builtin_help(self) -> None:
         code = """
             help()
@@ -854,9 +858,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
         self.assertEqual(inferred[0].name, "open")
-
-    if platform.python_implementation() == "PyPy":
-        test_builtin_open = unittest.expectedFailure(test_builtin_open)
 
     def test_callfunc_context_func(self) -> None:
         code = """
@@ -984,9 +985,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
         self.assertEqual(inferred[0].name, "exists")
 
-    def _test_const_inferred(
-        self, node: nodes.AssignName, value: Union[float, str]
-    ) -> None:
+    def _test_const_inferred(self, node: nodes.AssignName, value: float | str) -> None:
         inferred = list(node.infer())
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.Const)
@@ -1732,8 +1731,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         ast = extract_node(code, __name__)
         expr = ast.func.expr
-        with pytest.raises(InferenceError):
-            next(expr.infer())
+        self.assertIs(next(expr.infer()), util.Uninferable)
 
     def test_tuple_builtin_inference(self) -> None:
         code = """
@@ -2092,6 +2090,37 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(ast_node.infer())
             self.assertIsInstance(inferred, Instance)
             self.assertEqual(inferred.qname(), "builtins.dict")
+
+    def test_copy_method_inference(self) -> None:
+        code = """
+        a_dict = {"b": 1, "c": 2}
+        b_dict = a_dict.copy()
+        b_dict #@
+
+        a_list = [1, 2, 3]
+        b_list = a_list.copy()
+        b_list #@
+
+        a_set = set([1, 2, 3])
+        b_set = a_set.copy()
+        b_set #@
+
+        a_frozenset = frozenset([1, 2, 3])
+        b_frozenset = a_frozenset.copy()
+        b_frozenset #@
+
+        a_unknown = unknown()
+        b_unknown = a_unknown.copy()
+        b_unknown #@
+        """
+        ast = extract_node(code, __name__)
+        self.assertInferDict(ast[0], {"b": 1, "c": 2})
+        self.assertInferList(ast[1], [1, 2, 3])
+        self.assertInferSet(ast[2], [1, 2, 3])
+        self.assertInferFrozenSet(ast[3], [1, 2, 3])
+
+        inferred_unknown = next(ast[4].infer())
+        assert inferred_unknown == util.Uninferable
 
     def test_str_methods(self) -> None:
         code = """
@@ -3008,6 +3037,34 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast_nodes:
             self.assertEqual(next(node.infer()), util.Uninferable)
 
+    def test_binop_self_in_list(self) -> None:
+        """If 'self' is referenced within a list it should not be bound by it.
+
+        Reported in https://github.com/PyCQA/pylint/issues/4826.
+        """
+        ast_nodes = extract_node(
+            """
+        class A:
+            def __init__(self):
+                for a in [self] + []:
+                    print(a) #@
+
+        class B:
+            def __init__(self):
+                for b in [] + [self]:
+                    print(b) #@
+        """
+        )
+        inferred_a = list(ast_nodes[0].args[0].infer())
+        self.assertEqual(len(inferred_a), 1)
+        self.assertIsInstance(inferred_a[0], Instance)
+        self.assertEqual(inferred_a[0]._proxied.name, "A")
+
+        inferred_b = list(ast_nodes[1].args[0].infer())
+        self.assertEqual(len(inferred_b), 1)
+        self.assertIsInstance(inferred_b[0], Instance)
+        self.assertEqual(inferred_b[0]._proxied.name, "B")
+
     def test_metaclass__getitem__(self) -> None:
         ast_node = extract_node(
             """
@@ -3434,19 +3491,19 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def _slicing_test_helper(
         self,
-        pairs: Tuple[
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
-            Tuple[str, Union[List[int], str]],
+        pairs: tuple[
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
+            tuple[str, list[int] | str],
         ],
-        cls: Union[ABCMeta, type],
+        cls: ABCMeta | type,
         get_elts: Callable,
     ) -> None:
         for code, expected in pairs:
@@ -3517,7 +3574,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             "(1, 2, 3)[a:]",
             "(1, 2, 3)[object:object]",
             "(1, 2, 3)[1:object]",
-            "enumerate[2]",
         ]
         for code in examples:
             node = extract_node(code)
@@ -4067,10 +4123,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 25)
 
-    @pytest.mark.xfail(reason="Cannot reuse inner value due to inference context reuse")
-    def test_inner_value_redefined_by_subclass_with_mro(self):
-        # This might work, but it currently doesn't due to not being able
-        # to reuse inference contexts.
+    def test_inner_value_redefined_by_subclass_with_mro(self) -> None:
         ast_node = extract_node(
             """
         class X(object):
@@ -4090,8 +4143,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         )
         inferred = next(ast_node.infer())
-        self.assertIsInstance(inferred, nodes.Const)
-        self.assertEqual(inferred.value, 25)
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 26
 
     def test_getitem_of_class_raised_type_error(self) -> None:
         # Test that we wrap an AttributeInferenceError
@@ -4399,7 +4452,8 @@ class HasattrTest(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        self.assertEqual(inferred, util.Uninferable)
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertIs(inferred.value, False)
 
 
 class BoolOpTest(unittest.TestCase):
@@ -4653,13 +4707,13 @@ class TestType(unittest.TestCase):
 class ArgumentsTest(unittest.TestCase):
     @staticmethod
     def _get_dict_value(
-        inferred: Dict,
-    ) -> Union[List[Tuple[str, int]], List[Tuple[str, str]]]:
+        inferred: dict,
+    ) -> list[tuple[str, int]] | list[tuple[str, str]]:
         items = inferred.items
         return sorted((key.value, value.value) for key, value in items)
 
     @staticmethod
-    def _get_tuple_value(inferred: Tuple) -> Tuple[int, ...]:
+    def _get_tuple_value(inferred: tuple) -> tuple[int, ...]:
         elts = inferred.elts
         return tuple(elt.value for elt in elts)
 
@@ -4981,7 +5035,7 @@ class CallSiteTest(unittest.TestCase):
         return arguments.CallSite.from_call(call)
 
     def _test_call_site_pair(
-        self, code: str, expected_args: List[int], expected_keywords: Dict[str, int]
+        self, code: str, expected_args: list[int], expected_keywords: dict[str, int]
     ) -> None:
         ast_node = extract_node(code)
         call_site = self._call_site_from_call(ast_node)
@@ -4995,7 +5049,7 @@ class CallSiteTest(unittest.TestCase):
             self.assertEqual(call_site.keyword_arguments[keyword].value, value)
 
     def _test_call_site(
-        self, pairs: List[Tuple[str, List[int], Dict[str, int]]]
+        self, pairs: list[tuple[str, list[int], dict[str, int]]]
     ) -> None:
         for pair in pairs:
             self._test_call_site_pair(*pair)
@@ -5025,7 +5079,7 @@ class CallSiteTest(unittest.TestCase):
         ]
         self._test_call_site(pairs)
 
-    def _test_call_site_valid_arguments(self, values: List[str], invalid: bool) -> None:
+    def _test_call_site_valid_arguments(self, values: list[str], invalid: bool) -> None:
         for value in values:
             ast_node = extract_node(value)
             call_site = self._call_site_from_call(ast_node)
@@ -6116,6 +6170,26 @@ def test_property_callable_inference() -> None:
     assert inferred.value == 42
 
 
+def test_property_docstring() -> None:
+    code = """
+    class A:
+        @property
+        def test(self):
+            '''Docstring'''
+            return 42
+
+    A.test #@
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, objects.Property)
+    assert isinstance(inferred.doc_node, nodes.Const)
+    assert inferred.doc_node.value == "Docstring"
+    with pytest.warns(DeprecationWarning) as records:
+        assert inferred.doc == "Docstring"
+        assert len(records) == 1
+
+
 def test_recursion_error_inferring_builtin_containers() -> None:
     node = extract_node(
         """
@@ -6582,6 +6656,114 @@ def test_relative_imports_init_package() -> None:
     resources.build_file(
         "data/beyond_top_level_three/module/sub_module/sub_sub_module/main.py"
     )
+
+
+def test_inference_of_items_on_module_dict() -> None:
+    """Crash test for the inference of items() on a module's dict attribute.
+
+    Originally reported in https://github.com/PyCQA/astroid/issues/1085
+    """
+    builder.file_build(str(DATA_DIR / "module_dict_items_call" / "test.py"), "models")
+
+
+def test_imported_module_var_inferable() -> None:
+    """
+    Module variables can be imported and inferred successfully as part of binary operators.
+    """
+    mod1 = parse(
+        textwrap.dedent(
+            """
+    from top1.mod import v as z
+    w = [1] + z
+    """
+        ),
+        module_name="top1",
+    )
+    parse("v = [2]", module_name="top1.mod")
+    w_val = mod1.body[-1].value
+    i_w_val = next(w_val.infer())
+    assert i_w_val is not util.Uninferable
+    assert i_w_val.as_string() == "[1, 2]"
+
+
+def test_imported_module_var_inferable2() -> None:
+    """Version list of strings."""
+    mod2 = parse(
+        textwrap.dedent(
+            """
+    from top2.mod import v as z
+    w = ['1'] + z
+    """
+        ),
+        module_name="top2",
+    )
+    parse("v = ['2']", module_name="top2.mod")
+    w_val = mod2.body[-1].value
+    i_w_val = next(w_val.infer())
+    assert i_w_val is not util.Uninferable
+    assert i_w_val.as_string() == "['1', '2']"
+
+
+def test_imported_module_var_inferable3() -> None:
+    """Version list of strings with a __dunder__ name."""
+    mod3 = parse(
+        textwrap.dedent(
+            """
+    from top3.mod import __dunder_var__ as v
+    __dunder_var__ = ['w'] + v
+    """
+        ),
+        module_name="top",
+    )
+    parse("__dunder_var__ = ['v']", module_name="top3.mod")
+    w_val = mod3.body[-1].value
+    i_w_val = next(w_val.infer())
+    assert i_w_val is not util.Uninferable
+    assert i_w_val.as_string() == "['w', 'v']"
+
+
+def test_recursion_on_inference_tip() -> None:
+    """Regression test for recursion in inference tip.
+
+    Originally reported in https://github.com/PyCQA/pylint/issues/5408.
+    """
+    code = """
+    class MyInnerClass:
+        ...
+
+
+    class MySubClass:
+        inner_class = MyInnerClass
+
+
+    class MyClass:
+        sub_class = MySubClass()
+
+
+    def get_unpatched_class(cls):
+        return cls
+
+
+    def get_unpatched(item):
+        lookup = get_unpatched_class if isinstance(item, type) else lambda item: None
+        return lookup(item)
+
+
+    _Child = get_unpatched(MyClass.sub_class.inner_class)
+
+
+    class Child(_Child):
+        def patch(cls):
+            MyClass.sub_class.inner_class = cls
+    """
+    module = parse(code)
+    assert module
+
+
+def test_function_def_cached_generator() -> None:
+    """Regression test for https://github.com/PyCQA/astroid/issues/817."""
+    funcdef: nodes.FunctionDef = extract_node("def func(): pass")
+    next(funcdef._infer())
 
 
 if __name__ == "__main__":

@@ -1,20 +1,12 @@
-# Copyright (c) 2007, 2009-2010, 2013 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2014 Google, Inc.
-# Copyright (c) 2015-2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """this module contains exceptions used in the astroid library
 """
+
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from astroid import util
@@ -42,7 +34,9 @@ __all__ = (
     "NoDefault",
     "NotFoundError",
     "OperationError",
+    "ParentMissingError",
     "ResolveError",
+    "StatementMissing",
     "SuperArgumentTypeError",
     "SuperError",
     "TooManyLevelsError",
@@ -267,7 +261,7 @@ class ParentMissingError(AstroidError):
         target: The node for which the parent lookup failed.
     """
 
-    def __init__(self, target: "nodes.NodeNG") -> None:
+    def __init__(self, target: nodes.NodeNG) -> None:
         self.target = target
         super().__init__(message=f"Parent not found on {target!r}.")
 
@@ -281,7 +275,7 @@ class StatementMissing(ParentMissingError):
         target: The node for which the parent lookup failed.
     """
 
-    def __init__(self, target: "nodes.NodeNG") -> None:
+    def __init__(self, target: nodes.NodeNG) -> None:
         # pylint: disable-next=bad-super-call
         # https://github.com/PyCQA/pylint/issues/2903
         # https://github.com/PyCQA/astroid/pull/1217#discussion_r744149027

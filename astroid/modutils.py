@@ -1,31 +1,6 @@
-# Copyright (c) 2014-2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Google, Inc.
-# Copyright (c) 2014 Denis Laxalde <denis.laxalde@logilab.fr>
-# Copyright (c) 2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
-# Copyright (c) 2015 Radosław Ganczarek <radoslaw@ganczarek.in>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Mario Corchero <mcorcherojim@bloomberg.net>
-# Copyright (c) 2018 Mario Corchero <mariocj89@gmail.com>
-# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2019 markmcclain <markmcclain@users.noreply.github.com>
-# Copyright (c) 2019 BasPH <BasPH@users.noreply.github.com>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Keichi Takahashi <hello@keichi.dev>
-# Copyright (c) 2021 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Python modules manipulation utility functions.
 
@@ -39,19 +14,27 @@
 :var BUILTIN_MODULES: dictionary with builtin module names has key
 """
 
+from __future__ import annotations
+
 import importlib
 import importlib.machinery
 import importlib.util
+import io
 import itertools
+import logging
 import os
-import platform
 import sys
 import sysconfig
 import types
+from contextlib import redirect_stderr, redirect_stdout
+from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Set
 
+from astroid.const import IS_JYTHON, IS_PYPY
 from astroid.interpreter._import import spec, util
+
+logger = logging.getLogger(__name__)
+
 
 if sys.platform.startswith("win"):
     PY_SOURCE_EXTS = ("py", "pyw")
@@ -82,18 +65,18 @@ if os.name == "nt":
         except AttributeError:
             pass
 
-if platform.python_implementation() == "PyPy":
+if IS_PYPY and sys.version_info < (3, 8):
     # PyPy stores the stdlib in two places: sys.prefix/lib_pypy and sys.prefix/lib-python/3
     # sysconfig.get_path on PyPy returns the first, but without an underscore so we patch this manually.
+    # Beginning with 3.8 the stdlib is only stored in: sys.prefix/pypy{py_version_short}
     STD_LIB_DIRS.add(str(Path(sysconfig.get_path("stdlib")).parent / "lib_pypy"))
-    STD_LIB_DIRS.add(
-        sysconfig.get_path("stdlib", vars={"implementation_lower": "python/3"})
-    )
+    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("stdlib")).parent / "lib-python/3"))
+
     # TODO: This is a fix for a workaround in virtualenv. At some point we should revisit
     # whether this is still necessary. See https://github.com/PyCQA/astroid/pull/1324.
     STD_LIB_DIRS.add(str(Path(sysconfig.get_path("platstdlib")).parent / "lib_pypy"))
     STD_LIB_DIRS.add(
-        sysconfig.get_path("platstdlib", vars={"implementation_lower": "python/3"})
+        str(Path(sysconfig.get_path("platstdlib")).parent / "lib-python/3")
     )
 
 if os.name == "posix":
@@ -122,7 +105,6 @@ if os.name == "posix":
         STD_LIB_DIRS.add(_posix_path("lib64"))
 
 EXT_LIB_DIRS = {sysconfig.get_path("purelib"), sysconfig.get_path("platlib")}
-IS_JYTHON = platform.python_implementation() == "Jython"
 BUILTIN_MODULES = dict.fromkeys(sys.builtin_module_names, True)
 
 
@@ -164,7 +146,9 @@ def _handle_blacklist(blacklist, dirnames, filenames):
             filenames.remove(norecurs)
 
 
-_NORM_PATH_CACHE: Dict[str, str] = {}
+@lru_cache()
+def _cache_normalize_path_(path: str) -> str:
+    return _normalize_path(path)
 
 
 def _cache_normalize_path(path: str) -> str:
@@ -172,13 +156,9 @@ def _cache_normalize_path(path: str) -> str:
     # _module_file calls abspath on every path in sys.path every time it's
     # called; on a larger codebase this easily adds up to half a second just
     # assembling path components. This cache alleviates that.
-    try:
-        return _NORM_PATH_CACHE[path]
-    except KeyError:
-        if not path:  # don't cache result for ''
-            return _normalize_path(path)
-        result = _NORM_PATH_CACHE[path] = _normalize_path(path)
-        return result
+    if not path:  # don't cache result for ''
+        return _normalize_path(path)
+    return _cache_normalize_path_(path)
 
 
 def load_module_from_name(dotted_name: str) -> types.ModuleType:
@@ -197,7 +177,25 @@ def load_module_from_name(dotted_name: str) -> types.ModuleType:
     except KeyError:
         pass
 
-    return importlib.import_module(dotted_name)
+    # Capture and log anything emitted during import to avoid
+    # contaminating JSON reports in pylint
+    with redirect_stderr(io.StringIO()) as stderr, redirect_stdout(
+        io.StringIO()
+    ) as stdout:
+        module = importlib.import_module(dotted_name)
+
+    stderr_value = stderr.getvalue()
+    if stderr_value:
+        logger.error(
+            "Captured stderr while importing %s:\n%s", dotted_name, stderr_value
+        )
+    stdout_value = stdout.getvalue()
+    if stdout_value:
+        logger.info(
+            "Captured stdout while importing %s:\n%s", dotted_name, stdout_value
+        )
+
+    return module
 
 
 def load_module_from_modpath(parts):
@@ -371,7 +369,7 @@ def file_info_from_modpath(modpath, path=None, context_file=None):
         return spec.ModuleSpec(
             name="os.path",
             location=os.path.__file__,
-            module_type=spec.ModuleType.PY_SOURCE,
+            type=spec.ModuleType.PY_SOURCE,
         )
     return _spec_from_modpath(modpath, path, context)
 
@@ -638,7 +636,7 @@ def is_directory(specobj):
 
 
 def is_module_name_part_of_extension_package_whitelist(
-    module_name: str, package_whitelist: Set[str]
+    module_name: str, package_whitelist: set[str]
 ) -> bool:
     """
     Returns True if one part of the module name is in the package whitelist

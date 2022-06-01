@@ -1,24 +1,18 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-
-# Copyright (c) 2017-2018 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2017 David Euresti <github@euresti.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Redoubts <Redoubts@users.noreply.github.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Tim Martin <tim@asymptotic.co.uk>
-# Copyright (c) 2021 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid hooks for typing.py support."""
+
+from __future__ import annotations
+
 import typing
+from collections.abc import Iterator
 from functools import partial
 
 from astroid import context, extract_node, inference_tip
 from astroid.builder import _extract_single_node
-from astroid.const import PY37_PLUS, PY38_PLUS, PY39_PLUS
+from astroid.const import PY38_PLUS, PY39_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -31,6 +25,7 @@ from astroid.nodes.node_classes import (
     Attribute,
     Call,
     Const,
+    JoinedStr,
     Name,
     NodeNG,
     Subscript,
@@ -128,6 +123,9 @@ def infer_typing_typevar_or_newtype(node, context_itton=None):
         raise UseInferenceDefault
     if not node.args:
         raise UseInferenceDefault
+    # Cannot infer from a dynamic class name (f-string)
+    if isinstance(node.args[0], JoinedStr):
+        raise UseInferenceDefault
 
     typename = node.args[0].as_string().strip("'")
     node = extract_node(TYPING_TYPE_TEMPLATE.format(typename))
@@ -146,30 +144,24 @@ def _looks_like_typing_subscript(node):
 
 
 def infer_typing_attr(
-    node: Subscript, ctx: typing.Optional[context.InferenceContext] = None
-) -> typing.Iterator[ClassDef]:
+    node: Subscript, ctx: context.InferenceContext | None = None
+) -> Iterator[ClassDef]:
     """Infer a typing.X[...] subscript"""
     try:
         value = next(node.value.infer())  # type: ignore[union-attr] # value shouldn't be None for Subscript.
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
-    if (
-        not value.qname().startswith("typing.")
-        or PY37_PLUS
-        and value.qname() in TYPING_ALIAS
-    ):
-        # If typing subscript belongs to an alias
-        # (PY37+) handle it separately.
+    if not value.qname().startswith("typing.") or value.qname() in TYPING_ALIAS:
+        # If typing subscript belongs to an alias handle it separately.
         raise UseInferenceDefault
 
-    if (
-        PY37_PLUS
-        and isinstance(value, ClassDef)
-        and value.qname()
-        in {"typing.Generic", "typing.Annotated", "typing_extensions.Annotated"}
-    ):
-        # With PY37+ typing.Generic and typing.Annotated (PY39) are subscriptable
+    if isinstance(value, ClassDef) and value.qname() in {
+        "typing.Generic",
+        "typing.Annotated",
+        "typing_extensions.Annotated",
+    }:
+        # typing.Generic and typing.Annotated (PY39) are subscriptable
         # through __class_getitem__. Since astroid can't easily
         # infer the native methods, replace them for an easy inference tip
         func_to_add = _extract_single_node(CLASS_GETITEM_TEMPLATE)
@@ -191,23 +183,23 @@ def infer_typing_attr(
 
 
 def _looks_like_typedDict(  # pylint: disable=invalid-name
-    node: typing.Union[FunctionDef, ClassDef],
+    node: FunctionDef | ClassDef,
 ) -> bool:
     """Check if node is TypedDict FunctionDef."""
     return node.qname() in {"typing.TypedDict", "typing_extensions.TypedDict"}
 
 
 def infer_old_typedDict(  # pylint: disable=invalid-name
-    node: ClassDef, ctx: typing.Optional[context.InferenceContext] = None
-) -> typing.Iterator[ClassDef]:
+    node: ClassDef, ctx: context.InferenceContext | None = None
+) -> Iterator[ClassDef]:
     func_to_add = _extract_single_node("dict")
     node.locals["__call__"] = [func_to_add]
     return iter([node])
 
 
 def infer_typedDict(  # pylint: disable=invalid-name
-    node: FunctionDef, ctx: typing.Optional[context.InferenceContext] = None
-) -> typing.Iterator[ClassDef]:
+    node: FunctionDef, ctx: context.InferenceContext | None = None
+) -> Iterator[ClassDef]:
     """Replace TypedDict FunctionDef with ClassDef."""
     class_def = ClassDef(
         name="TypedDict",
@@ -266,8 +258,8 @@ def _forbid_class_getitem_access(node: ClassDef) -> None:
 
 
 def infer_typing_alias(
-    node: Call, ctx: typing.Optional[context.InferenceContext] = None
-) -> typing.Iterator[ClassDef]:
+    node: Call, ctx: context.InferenceContext | None = None
+) -> Iterator[ClassDef]:
     """
     Infers the call to _alias function
     Insert ClassDef, with same name as aliased class,
@@ -354,8 +346,8 @@ def _looks_like_special_alias(node: Call) -> bool:
 
 
 def infer_special_alias(
-    node: Call, ctx: typing.Optional[context.InferenceContext] = None
-) -> typing.Iterator[ClassDef]:
+    node: Call, ctx: context.InferenceContext | None = None
+) -> Iterator[ClassDef]:
     """Infer call to tuple alias as new subscriptable class typing.Tuple."""
     if not (
         isinstance(node.parent, Assign)
@@ -389,8 +381,8 @@ def _looks_like_typing_cast(node: Call) -> bool:
 
 
 def infer_typing_cast(
-    node: Call, ctx: typing.Optional[context.InferenceContext] = None
-) -> typing.Iterator[NodeNG]:
+    node: Call, ctx: context.InferenceContext | None = None
+) -> Iterator[NodeNG]:
     """Infer call to cast() returning same type as casted-from var"""
     if not isinstance(node.func, (Name, Attribute)):
         raise UseInferenceDefault
@@ -430,10 +422,9 @@ elif PY38_PLUS:
         ClassDef, inference_tip(infer_old_typedDict), _looks_like_typedDict
     )
 
-if PY37_PLUS:
-    AstroidManager().register_transform(
-        Call, inference_tip(infer_typing_alias), _looks_like_typing_alias
-    )
-    AstroidManager().register_transform(
-        Call, inference_tip(infer_special_alias), _looks_like_special_alias
-    )
+AstroidManager().register_transform(
+    Call, inference_tip(infer_typing_alias), _looks_like_typing_alias
+)
+AstroidManager().register_transform(
+    Call, inference_tip(infer_special_alias), _looks_like_special_alias
+)

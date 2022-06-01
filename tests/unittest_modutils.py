@@ -1,30 +1,12 @@
-# Copyright (c) 2014-2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Google, Inc.
-# Copyright (c) 2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
-# Copyright (c) 2015 Radosław Ganczarek <radoslaw@ganczarek.in>
-# Copyright (c) 2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2018 Mario Corchero <mcorcherojim@bloomberg.net>
-# Copyright (c) 2018 Mario Corchero <mariocj89@gmail.com>
-# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2019 markmcclain <markmcclain@users.noreply.github.com>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
-# Copyright (c) 2021-2022 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
-# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
-# Copyright (c) 2022 Alexander Shadchin <alexandr.shadchin@gmail.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """
 unit tests for module modutils (module manipulation utilities)
 """
 import email
+import logging
 import os
 import shutil
 import sys
@@ -34,6 +16,8 @@ import xml
 from pathlib import Path
 from xml import etree
 from xml.etree import ElementTree
+
+from pytest import CaptureFixture, LogCaptureFixture
 
 import astroid
 from astroid import modutils
@@ -76,7 +60,7 @@ class ModuleFileTest(unittest.TestCase):
 
 
 class LoadModuleFromNameTest(unittest.TestCase):
-    """load a python module from it's name"""
+    """load a python module from its name"""
 
     def test_known_values_load_module_from_name_1(self) -> None:
         self.assertEqual(modutils.load_module_from_name("sys"), sys)
@@ -88,6 +72,38 @@ class LoadModuleFromNameTest(unittest.TestCase):
         self.assertRaises(
             ImportError, modutils.load_module_from_name, "_this_module_does_not_exist_"
         )
+
+
+def test_import_dotted_library(
+    capsys: CaptureFixture,
+    caplog: LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.INFO)
+    original_module = sys.modules.pop("xml.etree.ElementTree")
+    expected_out = "INFO (TEST): Welcome to cElementTree!"
+    expected_err = "WARNING (TEST): Monkey-patched version of cElementTree"
+
+    def function_with_stdout_and_stderr(expected_out, expected_err):
+        def mocked_function(*args, **kwargs):
+            print(f"{expected_out} args={args} kwargs={kwargs}")
+            print(expected_err, file=sys.stderr)
+
+        return mocked_function
+
+    try:
+        with unittest.mock.patch(
+            "importlib.import_module",
+            side_effect=function_with_stdout_and_stderr(expected_out, expected_err),
+        ):
+            modutils.load_module_from_name("xml.etree.ElementTree")
+
+        out, err = capsys.readouterr()
+        assert expected_out in caplog.text
+        assert expected_err in caplog.text
+        assert not out
+        assert not err
+    finally:
+        sys.modules["xml.etree.ElementTree"] = original_module
 
 
 class GetModulePartTest(unittest.TestCase):
@@ -198,7 +214,7 @@ class ModPathFromFileTest(unittest.TestCase):
         https://github.com/PyCQA/astroid/issues/1327
         """
         tmp_dir = Path(tempfile.gettempdir())
-        self.addCleanup(os.chdir, os.curdir)
+        self.addCleanup(os.chdir, os.getcwd())
         os.chdir(tmp_dir)
 
         self.addCleanup(shutil.rmtree, tmp_dir / "src")
@@ -307,6 +323,8 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
         self.assertTrue(
             modutils.is_standard_module("data.module", (os.path.abspath(datadir),))
         )
+        # "" will evaluate to cwd
+        self.assertTrue(modutils.is_standard_module("data.module", ("",)))
 
     def test_failing_edge_cases(self) -> None:
         # using a subpackage/submodule path as std_path argument

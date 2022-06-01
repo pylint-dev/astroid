@@ -1,3 +1,7 @@
+# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+
 """Tests for function call inference"""
 
 from astroid import bases, builder, nodes
@@ -518,8 +522,8 @@ def test_instance_method_inherited() -> None:
     A.method(B())  #@
     """
     )
-    expected = ["A", "A", "B", "B", "B"]
-    for node, expected in zip(nodes_, expected):
+    expected_names = ["A", "A", "B", "B", "B"]
+    for node, expected in zip(nodes_, expected_names):
         assert isinstance(node, nodes.NodeNG)
         inferred = node.inferred()
         assert len(inferred) == 1
@@ -549,8 +553,8 @@ def test_class_method_inherited() -> None:
     B.method()  #@
     """
     )
-    expected = ["A", "A", "B", "B"]
-    for node, expected in zip(nodes_, expected):
+    expected_names = ["A", "A", "B", "B"]
+    for node, expected in zip(nodes_, expected_names):
         assert isinstance(node, nodes.NodeNG)
         inferred = node.inferred()
         assert len(inferred) == 1

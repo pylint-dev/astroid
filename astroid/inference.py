@@ -1,41 +1,18 @@
-# Copyright (c) 2006-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2012 FELD Boris <lothiraldan@gmail.com>
-# Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Dmitry Pribysh <dmand@yandex.ru>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2017 Michał Masłowski <m.maslowski@clearcode.cc>
-# Copyright (c) 2017 Calen Pennington <cale@edx.org>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2018-2019 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2018 Daniel Martin <daniel.martin@crowdstrike.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2018 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
-# Copyright (c) 2020 Leandro T. C. Melo <ltcmelo@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Kian Meng, Ang <kianmeng.ang@gmail.com>
-# Copyright (c) 2021 Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """this module contains a set of functions to handle inference on astroid trees
 """
+
+from __future__ import annotations
 
 import ast
 import functools
 import itertools
 import operator
-from typing import Any, Callable, Dict, Iterable, Optional
-
-import wrapt
+from collections.abc import Callable, Generator, Iterable, Iterator
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from astroid import bases, decorators, helpers, nodes, protocols, util
 from astroid.context import (
@@ -56,9 +33,16 @@ from astroid.exceptions import (
 )
 from astroid.interpreter import dunder_lookup
 from astroid.manager import AstroidManager
+from astroid.typing import InferenceErrorInfo
+
+if TYPE_CHECKING:
+    from astroid.objects import Property
 
 # Prevents circular imports
 objects = util.lazy_import("objects")
+
+
+_FunctionDefT = TypeVar("_FunctionDefT", bound=nodes.FunctionDef)
 
 
 # .infer method ###############################################################
@@ -317,6 +301,8 @@ def infer_attribute(self, context=None):
 
         if not context:
             context = InferenceContext()
+        else:
+            context = copy_context(context)
 
         old_boundnode = context.boundnode
         try:
@@ -540,9 +526,9 @@ def _infer_unaryop(self, context=None):
                         yield operand
                     else:
                         yield result
-                except AttributeInferenceError as exc:
+                except AttributeInferenceError as inner_exc:
                     # The unary operation special method was not found.
-                    yield util.BadUnaryOperationMessage(operand, self.op, exc)
+                    yield util.BadUnaryOperationMessage(operand, self.op, inner_exc)
                 except InferenceError:
                     yield util.Uninferable
 
@@ -796,7 +782,7 @@ def infer_binop(self, context=None):
 nodes.BinOp._infer_binop = _infer_binop
 nodes.BinOp._infer = infer_binop
 
-COMPARE_OPS: Dict[str, Callable[[Any, Any], bool]] = {
+COMPARE_OPS: dict[str, Callable[[Any, Any], bool]] = {
     "==": operator.eq,
     "!=": operator.ne,
     "<": operator.lt,
@@ -821,7 +807,7 @@ def _to_literal(node: nodes.NodeNG) -> Any:
 
 def _do_compare(
     left_iter: Iterable[nodes.NodeNG], op: str, right_iter: Iterable[nodes.NodeNG]
-) -> "bool | type[util.Uninferable]":
+) -> bool | type[util.Uninferable]:
     """
     If all possible combinations are either True or False, return that:
     >>> _do_compare([1, 2], '<=', [3, 4])
@@ -834,7 +820,7 @@ def _do_compare(
     >>> _do_compare([1, 3], '<=', [2, 4])
     util.Uninferable
     """
-    retval = None
+    retval: bool | None = None
     if op in UNINFERABLE_OPS:
         return util.Uninferable
     op_func = COMPARE_OPS[op]
@@ -859,14 +845,15 @@ def _do_compare(
             return util.Uninferable
             # (or both, but "True | False" is basically the same)
 
+    assert retval is not None
     return retval  # it was all the same value
 
 
 def _infer_compare(
-    self: nodes.Compare, context: Optional[InferenceContext] = None
-) -> Any:
+    self: nodes.Compare, context: InferenceContext | None = None
+) -> Iterator[nodes.Const | type[util.Uninferable]]:
     """Chained comparison inference logic."""
-    retval = True
+    retval: bool | type[util.Uninferable] = True
 
     ops = self.ops
     left_node = self.left
@@ -884,7 +871,7 @@ def _infer_compare(
             break  # short-circuit
         lhs = rhs  # continue
     if retval is util.Uninferable:
-        yield retval
+        yield retval  # type: ignore[misc]
     else:
         yield nodes.Const(retval)
 
@@ -1039,42 +1026,35 @@ def infer_ifexp(self, context=None):
 nodes.IfExp._infer = infer_ifexp  # type: ignore[assignment]
 
 
-# pylint: disable=dangerous-default-value
-@wrapt.decorator
-def _cached_generator(func, instance, args, kwargs, _cache={}):  # noqa: B006
-    node = args[0]
-    try:
-        return iter(_cache[func, id(node)])
-    except KeyError:
-        result = func(*args, **kwargs)
-        # Need to keep an iterator around
-        original, copy = itertools.tee(result)
-        _cache[func, id(node)] = list(copy)
-        return original
-
-
-# When inferring a property, we instantiate a new `objects.Property` object,
-# which in turn, because it inherits from `FunctionDef`, sets itself in the locals
-# of the wrapping frame. This means that every time we infer a property, the locals
-# are mutated with a new instance of the property. This is why we cache the result
-# of the function's inference.
-@_cached_generator
-def infer_functiondef(self, context=None):
+def infer_functiondef(
+    self: _FunctionDefT, context: InferenceContext | None = None
+) -> Generator[Property | _FunctionDefT, None, InferenceErrorInfo]:
     if not self.decorators or not bases._is_property(self):
         yield self
-        return dict(node=self, context=context)
+        return InferenceErrorInfo(node=self, context=context)
+
+    # When inferring a property, we instantiate a new `objects.Property` object,
+    # which in turn, because it inherits from `FunctionDef`, sets itself in the locals
+    # of the wrapping frame. This means that every time we infer a property, the locals
+    # are mutated with a new instance of the property. To avoid this, we detect this
+    # scenario and avoid passing the `parent` argument to the constructor.
+    parent_frame = self.parent.frame(future=True)
+    property_already_in_parent_locals = self.name in parent_frame.locals and any(
+        isinstance(val, objects.Property) for val in parent_frame.locals[self.name]
+    )
 
     prop_func = objects.Property(
         function=self,
         name=self.name,
-        doc=self.doc,
         lineno=self.lineno,
-        parent=self.parent,
+        parent=self.parent if not property_already_in_parent_locals else None,
         col_offset=self.col_offset,
     )
-    prop_func.postinit(body=[], args=self.args)
+    if property_already_in_parent_locals:
+        prop_func.parent = self.parent
+    prop_func.postinit(body=[], args=self.args, doc_node=self.doc_node)
     yield prop_func
-    return dict(node=self, context=context)
+    return InferenceErrorInfo(node=self, context=context)
 
 
 nodes.FunctionDef._infer = infer_functiondef  # type: ignore[assignment]
