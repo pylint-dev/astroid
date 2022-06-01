@@ -333,53 +333,12 @@ class IfNodeTest(_NodeTest):
         else:
             # This is using else in a comment
             raise
-
-        for x in range(3):
-            print()
-        else:
-            print()
-
-        for x in range(3):
-            print()
-            if x == 3:
-                break
-            else:
-                print()
-        else:
-            print()
-
-        while True:
-            print()
-        else:
-            print()
-
-        try:
-            1 / 0
-        except ZeroDivisionError:
-            print()
-        else:
-            print()
-        finally:
-            print()
-
-        try:
-            1 / 0
-        except ZeroDivisionError:
-            try:
-                1 / 0
-            except:
-                print()
-            else:
-                print()
-        else:
-            print()
-
     """
 
     def test_if_elif_else_node(self) -> None:
         """test transformation for If node"""
-        self.assertEqual(len(self.astroid.body), 10)
-        for stmt in self.astroid.body[:5]:
+        self.assertEqual(len(self.astroid.body), 5)
+        for stmt in self.astroid.body:
             self.assertIsInstance(stmt, nodes.If)
         self.assertFalse(self.astroid.body[0].orelse)  # simple If
         self.assertIsInstance(self.astroid.body[1].orelse[0], nodes.Pass)  # If / else
@@ -387,46 +346,49 @@ class IfNodeTest(_NodeTest):
         self.assertIsInstance(self.astroid.body[3].orelse[0].orelse[0], nodes.If)
 
     def test_block_range(self) -> None:
+        """Test block_range of various scope constructs"""
         # XXX ensure expected values
-        self.assertEqual(self.astroid.block_range(1), (0, 73))
-        self.assertEqual(self.astroid.block_range(10), (0, 73))  # XXX (10, 73) ?
+        # Module
+        self.assertEqual(self.astroid.block_range(1), (0, 33))
+        self.assertEqual(self.astroid.block_range(10), (0, 33))  # XXX (10, 33) ?
+
+        # if
+        self.assertEqual(self.astroid.body[0].block_range(2), (2, 3))
+        self.assertEqual(self.astroid.body[0].block_range(3), (3, 3))
+
+        # if ... else
         self.assertEqual(self.astroid.body[1].block_range(5), (5, 6))
         self.assertEqual(self.astroid.body[1].block_range(6), (6, 6))
-        self.assertEqual(self.astroid.body[1].orelse[0].block_range(7), (7, 8))
-        self.assertEqual(self.astroid.body[1].orelse[0].block_range(8), (8, 8))
+        self.assertEqual(self.astroid.body[1].block_range(7), (7, 8))
+        self.assertEqual(self.astroid.body[1].block_range(8), (8, 8))
 
-    def test_orelse_line_numbering(self) -> None:
-        """Test the position info for the `else` keyword."""
-        assert self.astroid.body[0].orelse_lineno is None
-        assert self.astroid.body[0].orelse_col_offset is None
-        assert self.astroid.body[1].orelse_lineno == 7
-        assert self.astroid.body[1].orelse_col_offset == 0
-        assert self.astroid.body[2].orelse_lineno == 12
-        assert self.astroid.body[2].orelse_col_offset == 0
-        assert self.astroid.body[3].orelse_lineno == 17
-        assert self.astroid.body[3].orelse_col_offset == 0
-        assert self.astroid.body[3].orelse[0].orelse_lineno == 19
-        assert self.astroid.body[3].orelse[0].orelse_col_offset == 0
-        assert self.astroid.body[3].orelse[0].orelse[0].orelse_lineno == 21
-        assert self.astroid.body[3].orelse[0].orelse[0].orelse_col_offset == 0
-        assert self.astroid.body[4].orelse_lineno == 26
-        assert self.astroid.body[4].orelse_col_offset == 0
-        assert self.astroid.body[4].orelse[0].orelse_lineno == 31
-        assert self.astroid.body[4].orelse[0].orelse_col_offset == 0
-        assert self.astroid.body[5].orelse_lineno == 37
-        assert self.astroid.body[5].orelse_col_offset == 0
-        assert self.astroid.body[6].orelse_lineno == 46
-        assert self.astroid.body[6].orelse_col_offset == 0
-        assert self.astroid.body[6].body[1].orelse_lineno == 44
-        assert self.astroid.body[6].body[1].orelse_col_offset == 4
-        assert self.astroid.body[7].orelse_lineno == 51
-        assert self.astroid.body[7].orelse_col_offset == 0
-        assert self.astroid.body[8].body[0].orelse_lineno == 58
-        assert self.astroid.body[8].body[0].orelse_col_offset == 0
-        assert self.astroid.body[9].orelse_lineno == 72
-        assert self.astroid.body[9].orelse_col_offset == 0
-        assert self.astroid.body[9].handlers[0].body[0].orelse_lineno == 70
-        assert self.astroid.body[9].handlers[0].body[0].orelse_col_offset == 4
+        # if ... elif
+        self.assertEqual(self.astroid.body[2].block_range(10), (10, 11))
+        self.assertEqual(self.astroid.body[2].block_range(11), (11, 11))
+        self.assertEqual(self.astroid.body[2].block_range(12), (12, 13))
+        self.assertEqual(self.astroid.body[2].block_range(13), (13, 13))
+
+        # if ... elif ... elif ... else
+        self.assertEqual(self.astroid.body[3].block_range(15), (15, 16))
+        self.assertEqual(self.astroid.body[3].block_range(16), (16, 16))
+        self.assertEqual(self.astroid.body[3].block_range(17), (17, 18))
+        self.assertEqual(self.astroid.body[3].block_range(18), (18, 18))
+        self.assertEqual(self.astroid.body[3].block_range(19), (19, 20))
+        self.assertEqual(self.astroid.body[3].block_range(20), (20, 20))
+        self.assertEqual(self.astroid.body[3].block_range(21), (21, 22))
+        self.assertEqual(self.astroid.body[3].block_range(22), (22, 22))
+
+        # if ... elif ... else
+        self.assertEqual(self.astroid.body[4].block_range(24), (24, 25))
+        self.assertEqual(self.astroid.body[4].block_range(25), (25, 25))
+        self.assertEqual(self.astroid.body[4].block_range(26), (26, 30))
+        self.assertEqual(self.astroid.body[4].block_range(27), (27, 30))
+        self.assertEqual(self.astroid.body[4].block_range(28), (28, 30))
+        self.assertEqual(self.astroid.body[4].block_range(29), (29, 30))
+        self.assertEqual(self.astroid.body[4].block_range(30), (30, 30))
+        self.assertEqual(self.astroid.body[4].block_range(31), (31, 33))
+        self.assertEqual(self.astroid.body[4].block_range(32), (32, 33))
+        self.assertEqual(self.astroid.body[4].block_range(33), (33, 33))
 
     @staticmethod
     @pytest.mark.filterwarnings("ignore:.*is_sys_guard:DeprecationWarning")

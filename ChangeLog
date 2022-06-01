@@ -8,8 +8,8 @@ Release date: TBA
 
 * ``astroid`` now requires Python 3.7.2 to run.
 
-* Add ``orelse_lineno`` and ``orelse_col_offset`` attributes to ``nodes.If``,
-  ``nodes.For``, ``nodes.While``, and ``nodes.TryExcept``.
+* Made ``block_range`` of ``nodes.If``, ``nodes.For``, ``nodes.While``,
+  and ``nodes.TryExcept`` respect ``else`` and ``finally``.
 
 * Fix ``re`` brain on Python ``3.11``. The flags now come from ``re._compile``.
 
