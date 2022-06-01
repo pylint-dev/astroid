@@ -1358,7 +1358,6 @@ class TreeRebuilder:
             end_col_offset=getattr(node, "end_col_offset", None),
             parent=parent,
         )
-
         newnode.postinit(
             self.visit(node.test, newnode),
             [self.visit(child, newnode) for child in node.body],
@@ -1773,7 +1772,6 @@ class TreeRebuilder:
             )
         else:
             newnode = nodes.TryExcept(node.lineno, node.col_offset, parent)
-
         newnode.postinit(
             [self.visit(child, newnode) for child in node.body],
             [self.visit(child, newnode) for child in node.handlers],
@@ -1845,7 +1843,6 @@ class TreeRebuilder:
             end_col_offset=getattr(node, "end_col_offset", None),
             parent=parent,
         )
-
         newnode.postinit(
             self.visit(node.test, newnode),
             [self.visit(child, newnode) for child in node.body],
