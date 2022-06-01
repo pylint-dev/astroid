@@ -33,7 +33,7 @@ jobs:
           'requirements_test_brain.txt', 'requirements_test_pre_commit.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v3.0.2
+        uses: actions/cache@v3.0.3
         with:
           path: venv
           key: >-
@@ -56,7 +56,7 @@ jobs:
             hashFiles('.pre-commit-config.yaml') }}"
       - name: Restore pre-commit environment
         id: cache-precommit
-        uses: actions/cache@v3.0.2
+        uses: actions/cache@v3.0.3
         with:
           path: ${{ env.PRE_COMMIT_CACHE }}
           key: >-
@@ -79,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         python-version: [3.7, 3.8, 3.9, "3.10"]
     outputs:
@@ -104,7 +104,7 @@ jobs:
           'requirements_test_brain.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v3.0.2
+        uses: actions/cache@v3.0.3
         with:
           path: venv
           key: >-
@@ -125,7 +125,7 @@ jobs:
           . venv/bin/activate
           pytest --cov --cov-report= tests/
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v3.0.0
+        uses: actions/upload-artifact@v3.1.0
         with:
           name: coverage-${{ matrix.python-version }}
           path: .coverage
@@ -153,7 +153,7 @@ jobs:
           'requirements_test_brain.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v3.0.2
+        uses: actions/cache@v3.0.3
         with:
           path: venv
           key: >-
@@ -174,7 +174,7 @@ jobs:
           . venv/bin/activate
           pytest --cov --cov-report= tests/
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v3.0.0
+        uses: actions/upload-artifact@v3.1.0
         with:
           name: coverage-${{ matrix.python-version }}
           path: .coverage
@@ -200,7 +200,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v3.0.2
+        uses: actions/cache@v3.0.3
         with:
           path: venv
           key:
@@ -231,9 +231,9 @@ jobs:
     timeout-minutes: 20
     needs: tests-linux
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9, "3.10"]
+        python-version: [3.7, 3.8, 3.9, "3.10", "3.11-dev"]
     steps:
       - name: Set temp directory
         run: echo "TEMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
@@ -254,7 +254,7 @@ jobs:
           'requirements_test_brain.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v3.0.2
+        uses: actions/cache@v3.0.3
         with:
           path: venv
           key: >-
@@ -282,7 +282,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["pypy-3.7", "pypy-3.8"]
+        python-version: ["pypy-3.7", "pypy-3.8", "pypy-3.9"]
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v3.0.2
@@ -298,7 +298,7 @@ jobs:
             hashFiles('setup.cfg', 'requirements_test_min.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v3.0.2
+        uses: actions/cache@v3.0.3
         with:
           path: venv
           key: >-

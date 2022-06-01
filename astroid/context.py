@@ -3,9 +3,12 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Various context related utilities, including inference and call contexts."""
+
+from __future__ import annotations
+
 import contextlib
 import pprint
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
     from astroid.nodes.node_classes import Keyword, NodeNG
@@ -157,9 +160,9 @@ class CallContext:
 
     def __init__(
         self,
-        args: List["NodeNG"],
-        keywords: Optional[List["Keyword"]] = None,
-        callee: Optional["NodeNG"] = None,
+        args: list[NodeNG],
+        keywords: list[Keyword] | None = None,
+        callee: NodeNG | None = None,
     ):
         self.args = args  # Call positional arguments
         if keywords:
@@ -170,7 +173,7 @@ class CallContext:
         self.callee = callee  # Function being called
 
 
-def copy_context(context: Optional[InferenceContext]) -> InferenceContext:
+def copy_context(context: InferenceContext | None) -> InferenceContext:
     """Clone a context if given, or return a fresh contexxt"""
     if context is not None:
         return context.clone()

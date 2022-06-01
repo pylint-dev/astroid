@@ -2,7 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-from typing import Optional
+from __future__ import annotations
 
 from astroid import context, inference_tip, nodes
 from astroid.brain.helpers import register_module_extender
@@ -74,9 +74,7 @@ def _looks_like_pattern_or_match(node: nodes.Call) -> bool:
     )
 
 
-def infer_pattern_match(
-    node: nodes.Call, ctx: Optional[context.InferenceContext] = None
-):
+def infer_pattern_match(node: nodes.Call, ctx: context.InferenceContext | None = None):
     """Infer re.Pattern and re.Match as classes. For PY39+ add `__class_getitem__`."""
     class_def = nodes.ClassDef(
         name=node.parent.targets[0].name,

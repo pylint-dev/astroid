@@ -4,7 +4,10 @@
 
 """Transform utilities (filters and decorator)"""
 
+from __future__ import annotations
+
 import typing
+from collections.abc import Iterator
 
 import wrapt
 
@@ -17,9 +20,7 @@ InferOptions = typing.Union[
     NodeNG, bases.Instance, bases.UnboundMethod, typing.Type[util.Uninferable]
 ]
 
-_cache: typing.Dict[
-    typing.Tuple[InferFn, NodeNG], typing.Optional[typing.List[InferOptions]]
-] = {}
+_cache: dict[tuple[InferFn, NodeNG], list[InferOptions] | None] = {}
 
 
 def clear_inference_tip_cache():
@@ -30,7 +31,7 @@ def clear_inference_tip_cache():
 @wrapt.decorator
 def _inference_tip_cached(
     func: InferFn, instance: None, args: typing.Any, kwargs: typing.Any
-) -> typing.Iterator[InferOptions]:
+) -> Iterator[InferOptions]:
     """Cache decorator used for inference tips"""
     node = args[0]
     try:

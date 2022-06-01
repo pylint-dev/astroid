@@ -3,12 +3,15 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for basic functionality in astroid.brain."""
+
+from __future__ import annotations
+
 import io
 import queue
 import re
 import sys
 import unittest
-from typing import Any, List
+from typing import Any
 
 import pytest
 
@@ -60,7 +63,7 @@ except ImportError:
     HAS_SIX = False
 
 
-def assertEqualMro(klass: ClassDef, expected_mro: List[str]) -> None:
+def assertEqualMro(klass: ClassDef, expected_mro: list[str]) -> None:
     """Check mro names."""
     assert [member.qname() for member in klass.mro()] == expected_mro
 
@@ -1268,10 +1271,9 @@ class TypeBrain(unittest.TestCase):
 
     @test_utils.require_version(minver="3.9")
     def test_builtin_subscriptable(self):
-        """
-        Starting with python3.9 builtin type such as list are subscriptable
-        """
-        for typename in ("tuple", "list", "dict", "set", "frozenset"):
+        """Starting with python3.9 builtin types such as list are subscriptable.
+        Any builtin class such as "enumerate" or "staticmethod" also works."""
+        for typename in ("tuple", "list", "dict", "set", "frozenset", "enumerate"):
             src = f"""
             {typename:s}[int]
             """

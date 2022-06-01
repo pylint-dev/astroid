@@ -4,11 +4,14 @@
 
 """ A few useful function/method decorators."""
 
+from __future__ import annotations
+
 import functools
 import inspect
 import sys
 import warnings
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
 import wrapt
 

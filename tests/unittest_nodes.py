@@ -4,12 +4,15 @@
 
 """tests for specific behaviour of astroid nodes
 """
+
+from __future__ import annotations
+
 import copy
 import os
 import sys
 import textwrap
 import unittest
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 
@@ -894,9 +897,6 @@ class AnnAssignNodeTest(unittest.TestCase):
 
 
 class ArgumentsNodeTC(unittest.TestCase):
-    @pytest.mark.skip(
-        "FIXME  http://bugs.python.org/issue10445 (no line number on function args)"
-    )
     def test_linenumbering(self) -> None:
         ast = builder.parse(
             """
@@ -1045,13 +1045,13 @@ class AliasesTest(unittest.TestCase):
             node.name = "another_test"
             return node
 
-        def test_callfunc(node: Call) -> Optional[Call]:
+        def test_callfunc(node: Call) -> Call | None:
             if node.func.name == "Foo":
                 node.func.name = "Bar"
                 return node
             return None
 
-        def test_assname(node: AssignName) -> Optional[AssignName]:
+        def test_assname(node: AssignName) -> AssignName | None:
             if node.name == "foo":
                 return nodes.AssignName(
                     "bar", node.lineno, node.col_offset, node.parent

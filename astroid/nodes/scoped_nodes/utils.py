@@ -6,8 +6,10 @@
 This module contains utility functions for scoped nodes.
 """
 
-import builtins
-from typing import TYPE_CHECKING, Sequence, Tuple
+from __future__ import annotations
+
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from astroid.manager import AstroidManager
 
@@ -15,22 +17,22 @@ if TYPE_CHECKING:
     from astroid import nodes
 
 
-_builtin_astroid: "nodes.Module | None" = None
-
-
-def builtin_lookup(name: str) -> Tuple["nodes.Module", Sequence["nodes.NodeNG"]]:
+def builtin_lookup(name: str) -> tuple[nodes.Module, Sequence[nodes.NodeNG]]:
     """Lookup a name in the builtin module.
 
     Return the list of matching statements and the ast for the builtin module
     """
-    # pylint: disable-next=global-statement
-    global _builtin_astroid
-    if _builtin_astroid is None:
-        _builtin_astroid = AstroidManager().ast_from_module(builtins)
+    manager = AstroidManager()
+    try:
+        _builtin_astroid = manager.builtins_module
+    except KeyError:
+        # User manipulated the astroid cache directly! Rebuild everything.
+        manager.clear_cache()
+        _builtin_astroid = manager.builtins_module
     if name == "__dict__":
         return _builtin_astroid, ()
     try:
-        stmts: Sequence["nodes.NodeNG"] = _builtin_astroid.locals[name]
+        stmts: Sequence[nodes.NodeNG] = _builtin_astroid.locals[name]
     except KeyError:
         stmts = ()
     return _builtin_astroid, stmts

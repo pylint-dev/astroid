@@ -2,10 +2,12 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import contextlib
 import time
 import unittest
-from typing import Callable, Iterator, Optional
+from collections.abc import Callable, Iterator
 
 from astroid import MANAGER, builder, nodes, parse, transforms
 from astroid.manager import AstroidManager
@@ -18,7 +20,7 @@ def add_transform(
     manager: AstroidManager,
     node: type,
     transform: Callable,
-    predicate: Optional[Callable] = None,
+    predicate: Callable | None = None,
 ) -> Iterator:
     manager.register_transform(node, transform, predicate)
     try:

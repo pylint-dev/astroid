@@ -4,9 +4,11 @@
 
 """Astroid hooks for various builtins."""
 
+from __future__ import annotations
+
 import itertools
+from collections.abc import Iterator
 from functools import partial
-from typing import Iterator, Optional
 
 from astroid import arguments, helpers, inference_tip, nodes, objects, util
 from astroid.builder import AstroidBuilder
@@ -534,7 +536,7 @@ def infer_callable(node, context=None):
 
 
 def infer_property(
-    node: nodes.Call, context: Optional[InferenceContext] = None
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> objects.Property:
     """Understand `property` class
 
@@ -894,7 +896,7 @@ def infer_dict_fromkeys(node, context=None):
 
 
 def _infer_copy_method(
-    node: nodes.Call, context: Optional[InferenceContext] = None
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[nodes.NodeNG]:
     assert isinstance(node.func, nodes.Attribute)
     inferred_orig, inferred_copy = itertools.tee(node.func.expr.infer(context=context))

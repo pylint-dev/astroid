@@ -93,9 +93,6 @@ class FromToLineNoTest(unittest.TestCase):
             self.assertEqual(arg.fromlineno, 10 + i)
             self.assertEqual(arg.tolineno, 10 + i)
 
-    @pytest.mark.skip(
-        "FIXME  http://bugs.python.org/issue10445 (no line number on function args)"
-    )
     def test_function_lineno(self) -> None:
         stmts = self.astroid.body
         # on line 15:

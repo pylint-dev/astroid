@@ -5,23 +5,14 @@
 """this module contains a set of functions to handle inference on astroid trees
 """
 
+from __future__ import annotations
+
 import ast
 import functools
 import itertools
 import operator
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Generator,
-    Iterable,
-    Iterator,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-)
+from collections.abc import Callable, Generator, Iterable, Iterator
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from astroid import bases, decorators, helpers, nodes, protocols, util
 from astroid.context import (
@@ -791,7 +782,7 @@ def infer_binop(self, context=None):
 nodes.BinOp._infer_binop = _infer_binop
 nodes.BinOp._infer = infer_binop
 
-COMPARE_OPS: Dict[str, Callable[[Any, Any], bool]] = {
+COMPARE_OPS: dict[str, Callable[[Any, Any], bool]] = {
     "==": operator.eq,
     "!=": operator.ne,
     "<": operator.lt,
@@ -816,7 +807,7 @@ def _to_literal(node: nodes.NodeNG) -> Any:
 
 def _do_compare(
     left_iter: Iterable[nodes.NodeNG], op: str, right_iter: Iterable[nodes.NodeNG]
-) -> "bool | type[util.Uninferable]":
+) -> bool | type[util.Uninferable]:
     """
     If all possible combinations are either True or False, return that:
     >>> _do_compare([1, 2], '<=', [3, 4])
@@ -829,7 +820,7 @@ def _do_compare(
     >>> _do_compare([1, 3], '<=', [2, 4])
     util.Uninferable
     """
-    retval: Union[None, bool] = None
+    retval: bool | None = None
     if op in UNINFERABLE_OPS:
         return util.Uninferable
     op_func = COMPARE_OPS[op]
@@ -859,10 +850,10 @@ def _do_compare(
 
 
 def _infer_compare(
-    self: nodes.Compare, context: Optional[InferenceContext] = None
-) -> Iterator[Union[nodes.Const, Type[util.Uninferable]]]:
+    self: nodes.Compare, context: InferenceContext | None = None
+) -> Iterator[nodes.Const | type[util.Uninferable]]:
     """Chained comparison inference logic."""
-    retval: Union[bool, Type[util.Uninferable]] = True
+    retval: bool | type[util.Uninferable] = True
 
     ops = self.ops
     left_node = self.left
@@ -1036,8 +1027,8 @@ nodes.IfExp._infer = infer_ifexp  # type: ignore[assignment]
 
 
 def infer_functiondef(
-    self: _FunctionDefT, context: Optional[InferenceContext] = None
-) -> Generator[Union["Property", _FunctionDefT], None, InferenceErrorInfo]:
+    self: _FunctionDefT, context: InferenceContext | None = None
+) -> Generator[Property | _FunctionDefT, None, InferenceErrorInfo]:
     if not self.decorators or not bases._is_property(self):
         yield self
         return InferenceErrorInfo(node=self, context=context)

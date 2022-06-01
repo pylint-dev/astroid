@@ -2,6 +2,8 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import collections
 from typing import TYPE_CHECKING
 
@@ -18,12 +20,14 @@ class TransformVisitor:
     :meth:`~visit` with an *astroid* module and the class
     will take care of the rest, walking the tree and running the
     transforms for each encountered node.
+
+    Based on its usage in AstroidManager.brain, it should not be reinstantiated.
     """
 
     def __init__(self):
         self.transforms = collections.defaultdict(list)
 
-    def _transform(self, node: "NodeNG") -> "NodeNG":
+    def _transform(self, node: NodeNG) -> NodeNG:
         """Call matching transforms for the given node if any and return the
         transformed node.
         """
