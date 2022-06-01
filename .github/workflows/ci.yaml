@@ -81,7 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9, "3.10"]
+        python-version: [3.7, 3.8, 3.9, "3.10", "3.11-dev"]
     outputs:
       python-key: ${{ steps.generate-python-key.outputs.key }}
     steps:
@@ -96,55 +96,6 @@ jobs:
         if: ${{ matrix.python-version == '3.10' }}
         run: |
           sudo apt-get install build-essential libgl1-mesa-dev
-      - name: Generate partial Python venv restore key
-        id: generate-python-key
-        run: >-
-          echo "::set-output name=key::venv-${{ env.CACHE_VERSION }}-${{
-            hashFiles('setup.cfg', 'requirements_test.txt', 'requirements_test_min.txt',
-          'requirements_test_brain.txt') }}"
-      - name: Restore Python virtual environment
-        id: cache-venv
-        uses: actions/cache@v3.0.3
-        with:
-          path: venv
-          key: >-
-            ${{ runner.os }}-${{ steps.python.outputs.python-version }}-${{
-            steps.generate-python-key.outputs.key }}
-          restore-keys: |
-            ${{ runner.os }}-${{ steps.python.outputs.python-version }}-venv-${{ env.CACHE_VERSION }}-
-      - name: Create Python virtual environment
-        if: steps.cache-venv.outputs.cache-hit != 'true'
-        run: |
-          python -m venv venv
-          . venv/bin/activate
-          python -m pip install -U pip setuptools wheel
-          pip install -U -r requirements_test.txt -r requirements_test_brain.txt
-          pip install -e .
-      - name: Run pytest
-        run: |
-          . venv/bin/activate
-          pytest --cov --cov-report= tests/
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v3.1.0
-        with:
-          name: coverage-${{ matrix.python-version }}
-          path: .coverage
-
-  tests-linux-dev:
-    name: tests / run / ${{ matrix.python-version }} / Linux
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      matrix:
-        python-version: ["3.11-dev"]
-    steps:
-      - name: Check out code from GitHub
-        uses: actions/checkout@v3.0.2
-      - name: Set up Python ${{ matrix.python-version }}
-        id: python
-        uses: actions/setup-python@v3.1.2
-        with:
-          python-version: ${{ matrix.python-version }}
       - name: Generate partial Python venv restore key
         id: generate-python-key
         run: >-
