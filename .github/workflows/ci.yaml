@@ -134,8 +134,7 @@ jobs:
     name: tests / process / coverage
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: ["tests-linux", "tests-linux-dev"]
-    if: always() # remove together with tests-linux-dev
+    needs: ["tests-linux"]
     strategy:
       matrix:
         python-version: [3.8]
