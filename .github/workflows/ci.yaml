@@ -120,11 +120,10 @@ jobs:
           python -m pip install -U pip setuptools wheel
           pip install -U -r requirements_test.txt -r requirements_test_brain.txt
           pip install -e .
-      # TODO: py3.11: Remove the --assert=plain argument
       - name: Run pytest
         run: |
           . venv/bin/activate
-          pytest --cov --cov-report= tests/ --assert=plain
+          pytest --cov --cov-report= tests/
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v3.1.0
         with:
@@ -221,11 +220,10 @@ jobs:
           python -m pip install -U pip setuptools wheel
           pip install -U -r requirements_test_min.txt -r requirements_test_brain.txt
           pip install -e .
-      # TODO: py3.11: Remove the --assert=plain argument
       - name: Run pytest
         run: |
           . venv\\Scripts\\activate
-          pytest tests/ --assert=plain
+          pytest tests/
 
   tests-pypy:
     name: tests / run / ${{ matrix.python-version }} / Linux
