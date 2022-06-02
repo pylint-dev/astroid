@@ -36,6 +36,10 @@ Release date: TBA
 * On Python versions >= 3.9, ``astroid`` now understands subscripting
   builtin classes such as ``enumerate`` or ``staticmethod``.
 
+* Fixed inference of ``Enums`` when they are imported under an alias.
+
+  Closes PyCQA/pylint#5776
+
 * Rename ``ModuleSpec`` -> ``module_type`` constructor parameter to match attribute
   name and improve typing. Use ``type`` instead.
 

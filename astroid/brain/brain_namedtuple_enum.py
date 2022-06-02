@@ -349,7 +349,7 @@ INT_FLAG_ADDITION_METHODS = """
 """
 
 
-def infer_enum_class(node):
+def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
     """Specific inference for enums."""
     for basename in (b for cls in node.mro() for b in cls.basenames):
         if basename not in ENUM_BASE_NAMES:
