@@ -1156,6 +1156,20 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(inferred, astroid.Dict)
         self.assertTrue(inferred.locals)
 
+    def test_enum_as_renamed_import(self) -> None:
+        """Originally reported in https://github.com/PyCQA/pylint/issues/5776."""
+        ast_node: nodes.Attribute = builder.extract_node(
+            """
+        from enum import Enum as PyEnum
+        class MyEnum(PyEnum):
+            ENUM_KEY = "enum_value"
+        MyEnum.ENUM_KEY
+        """
+        )
+        inferred = next(ast_node.infer())
+        assert isinstance(inferred, bases.Instance)
+        assert inferred._proxied.name == "ENUM_KEY"
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
