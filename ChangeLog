@@ -43,6 +43,8 @@ Release date: TBA
 
   Refs PyCQA/pylint#5113
 
+* Instances of builtins created with ``__new__(cls, value)`` are now inferred.
+
 * Infer the return value of the ``.copy()`` method on ``dict``, ``list``, ``set``,
   and ``frozenset``.
 
