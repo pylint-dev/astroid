@@ -383,27 +383,32 @@ class UnboundMethod(Proxy):
             qname = self._proxied.parent.frame(future=True).qname()
             # Avoid checking builtins.type: _infer_type_new_call() does more validation
             if qname.startswith("builtins.") and qname != "builtins.type":
-                if caller.args:
-                    # pylint: disable-next=import-outside-toplevel; circular import
-                    from astroid.nodes import Const, const_factory
-
-                    # Attempt to create a constant
-                    if len(caller.args) > 1:
-                        value = None
-                        if isinstance(caller.args[1], Const):
-                            value = caller.args[1].value
-                        inferred_arg = next(caller.args[1].infer(), None)
-                        if isinstance(inferred_arg, Const):
-                            value = inferred_arg.value
-                        if value is not None:
-                            return (const_factory(value),)
-
-                    node_context = context.extra_context.get(caller.args[0])
-                    infer = caller.args[0].infer(context=node_context)
-                else:
-                    infer = []
-                return (Instance(x) if x is not Uninferable else x for x in infer)
+                return self._infer_builtin_new(caller, context)
         return self._proxied.infer_call_result(caller, context)
+
+    def _infer_builtin_new(self, caller, context):
+        # pylint: disable-next=import-outside-toplevel; circular import
+        from astroid.nodes import Const, const_factory
+
+        if not caller.args:
+            yield from []
+            return
+        # Attempt to create a constant
+        if len(caller.args) > 1:
+            value = None
+            if isinstance(caller.args[1], Const):
+                value = caller.args[1].value
+            else:
+                inferred_arg = next(caller.args[1].infer(), None)
+                if isinstance(inferred_arg, Const):
+                    value = inferred_arg.value
+            if value is not None:
+                yield const_factory(value)
+
+        node_context = context.extra_context.get(caller.args[0])
+        infer = caller.args[0].infer(context=node_context)
+
+        yield from (Instance(x) if x is not Uninferable else x for x in infer)
 
     def bool_value(self, context=None):
         return True

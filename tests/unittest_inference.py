@@ -3768,7 +3768,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ]
         self.assertEqual(titles, ["Catch 22", "Ubik", "Grimus"])
 
-    def test_builtin_new(self):
+    def test_builtin_new(self) -> None:
         ast_node = extract_node("int.__new__(int, 42)")
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
