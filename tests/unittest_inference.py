@@ -3790,6 +3790,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred3, nodes.Const)
         self.assertEqual(inferred3.value, 43)
 
+        ast_node4 = extract_node("int.__new__()")  # invalid
+        with self.assertRaises(InferenceError):
+            next(ast_node4.infer())
+
     @pytest.mark.xfail(reason="Does not support function metaclasses")
     def test_function_metaclasses(self):
         # These are not supported right now, although
