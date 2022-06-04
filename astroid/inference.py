@@ -48,15 +48,11 @@ _FunctionDefT = TypeVar("_FunctionDefT", bound=nodes.FunctionDef)
 # .infer method ###############################################################
 
 
-_InferEndNodeT = TypeVar(
-    "_InferEndNodeT",
-    bound=nodes.Module | nodes.ClassDef | nodes.Lambda | nodes.Const | nodes.Slice,
-)
+_T = TypeVar("_T")
+_BaseContainerT = TypeVar("_BaseContainerT", bound=nodes.BaseContainer)
 
 
-def infer_end(
-    self: _InferEndNodeT, context: InferenceContext | None = None
-) -> Iterator[_InferEndNodeT]:
+def infer_end(self: _T, context: InferenceContext | None = None) -> Iterator[_T]:
     """Inference's end for nodes that yield themselves on inference
 
     These are objects for which inference does not have any semantic,
@@ -96,9 +92,9 @@ def _infer_sequence_helper(node, context=None):
 
 @decorators.raise_if_nothing_inferred
 def infer_sequence(
-    self: nodes.List | nodes.Tuple | nodes.Set,
+    self: _BaseContainerT,
     context: InferenceContext | None = None,
-) -> Iterator[nodes.List | nodes.Tuple | nodes.Set]:
+) -> Iterator[_BaseContainerT]:
     has_starred_named_expr = any(
         isinstance(e, (nodes.Starred, nodes.NamedExpr)) for e in self.elts
     )

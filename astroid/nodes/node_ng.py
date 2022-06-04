@@ -9,9 +9,19 @@ import sys
 import warnings
 from collections.abc import Iterator
 from functools import singledispatch as _singledispatch
-from typing import TYPE_CHECKING, ClassVar, Tuple, Type, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
-from astroid import decorators, util
+from astroid import bases, decorators, util
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidError,
@@ -24,7 +34,7 @@ from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.utils import Position
-from astroid.typing import InferFn, InferMethod
+from astroid.typing import InferFn
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -38,6 +48,13 @@ if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
     from astroid.decorators import cachedproperty as cached_property
+
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
 
 # Types for 'NodeNG.nodes_of_class()'
 _NodesT = TypeVar("_NodesT", bound="NodeNG")
@@ -79,9 +96,6 @@ class NodeNG:
     """Attributes that contain AST-dependent fields."""
     # instance specific inference function infer(node, context)
     _explicit_inference: InferFn | None = None
-
-    _infer: ClassVar[InferMethod]
-    """Returns an interator of inference result for the node."""
 
     def __init__(
         self,
@@ -585,9 +599,9 @@ class NodeNG:
         # overridden for ImportFrom, Import, Global, TryExcept and Arguments
         pass
 
-    # We redefine here as defining _infer as a ClassVar first allows
-    # redefinition in subclasses in inference.py
-    def _infer(self, context: Optional[InferenceContext] = None) -> Iterator[NodeNG]:  # type: ignore[redef]
+    def _infer(
+        self: Self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Iterator[NodeNG | type[util.Uninferable] | bases.Instance]:
         """we don't know how to resolve a statement by default"""
         # this method is overridden by most concrete classes
         raise InferenceError(
