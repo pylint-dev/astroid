@@ -52,7 +52,9 @@ _T = TypeVar("_T")
 _BaseContainerT = TypeVar("_BaseContainerT", bound=nodes.BaseContainer)
 
 
-def infer_end(self: _T, context: InferenceContext | None = None) -> Iterator[_T]:
+def infer_end(
+    self: _T, context: InferenceContext | None = None, **kwargs: Any
+) -> Iterator[_T]:
     """Inference's end for nodes that yield themselves on inference
 
     These are objects for which inference does not have any semantic,
@@ -94,6 +96,7 @@ def _infer_sequence_helper(node, context=None):
 def infer_sequence(
     self: _BaseContainerT,
     context: InferenceContext | None = None,
+    **kwargs: Any,
 ) -> Iterator[_BaseContainerT]:
     has_starred_named_expr = any(
         isinstance(e, (nodes.Starred, nodes.NamedExpr)) for e in self.elts

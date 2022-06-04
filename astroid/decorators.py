@@ -10,8 +10,8 @@ import functools
 import inspect
 import sys
 import warnings
-from collections.abc import Callable, Iterator
-from typing import Any, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
 import wrapt
 
@@ -133,9 +133,7 @@ def yes_if_nothing_inferred(func, instance, args, kwargs):
 
 
 @wrapt.decorator
-def raise_if_nothing_inferred(
-    func: Callable[_P, Iterator[_R]], instance: Any, args: Any, kwargs: Any
-) -> Iterator[_R]:
+def raise_if_nothing_inferred(func, instance, args, kwargs):
     generator = func(*args, **kwargs)
     try:
         yield next(generator)
