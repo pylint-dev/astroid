@@ -28,15 +28,11 @@ def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
         value = next(node.value.infer())
     except (InferenceError, StopIteration):
         return False
-
-    if not (
+    return (
         isinstance(value, bases.Instance)
         and isinstance(value._proxied, nodes.ClassDef)
         and value.qname() == "pathlib._PathParents"
-    ):
-        return False
-
-    return True
+    )
 
 
 def infer_parents_subscript(
