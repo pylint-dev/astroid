@@ -3,7 +3,8 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Different utilities for the numpy brains"""
-from typing import Tuple
+
+from __future__ import annotations
 
 from astroid.builder import extract_node
 from astroid.nodes.node_classes import Attribute, Import, Name, NodeNG
@@ -20,7 +21,7 @@ def numpy_supports_type_hints() -> bool:
     return np_ver and np_ver > NUMPY_VERSION_TYPE_HINTS_SUPPORT
 
 
-def _get_numpy_version() -> Tuple[str, str, str]:
+def _get_numpy_version() -> tuple[str, str, str]:
     """
     Return the numpy version number if numpy can be imported. Otherwise returns
     ('0', '0', '0')

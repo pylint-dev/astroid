@@ -2,17 +2,23 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import abc
 import enum
 import importlib
 import importlib.machinery
 import importlib.util
 import os
+import pathlib
 import sys
 import zipimport
+from collections.abc import Sequence
 from functools import lru_cache
 from pathlib import Path
-from typing import List, NamedTuple, Optional, Sequence, Tuple
+from typing import NamedTuple
+
+from astroid.modutils import EXT_LIB_DIRS
 
 from . import util
 
@@ -41,9 +47,9 @@ class ModuleSpec(NamedTuple):
 
     name: str
     type: ModuleType
-    location: "str | None" = None
-    origin: "str | None" = None
-    submodule_search_locations: "Sequence[str] | None" = None
+    location: str | None = None
+    origin: str | None = None
+    submodule_search_locations: Sequence[str] | None = None
 
 
 class Finder:
@@ -56,10 +62,10 @@ class Finder:
     def find_module(
         self,
         modname: str,
-        module_parts: List[str],
-        processed: List[str],
-        submodule_path: Optional[List[str]],
-    ) -> Optional[ModuleSpec]:
+        module_parts: list[str],
+        processed: list[str],
+        submodule_path: list[str] | None,
+    ) -> ModuleSpec | None:
         """Find the given module
 
         Each finder is responsible for each protocol of finding, as long as
@@ -84,7 +90,7 @@ class Finder:
 class ImportlibFinder(Finder):
     """A finder based on the importlib module."""
 
-    _SUFFIXES: Sequence[Tuple[str, ModuleType]] = (
+    _SUFFIXES: Sequence[tuple[str, ModuleType]] = (
         [(s, ModuleType.C_EXTENSION) for s in importlib.machinery.EXTENSION_SUFFIXES]
         + [(s, ModuleType.PY_SOURCE) for s in importlib.machinery.SOURCE_SUFFIXES]
         + [(s, ModuleType.PY_COMPILED) for s in importlib.machinery.BYTECODE_SUFFIXES]
@@ -93,28 +99,28 @@ class ImportlibFinder(Finder):
     def find_module(
         self,
         modname: str,
-        module_parts: List[str],
-        processed: List[str],
-        submodule_path: Optional[List[str]],
-    ) -> Optional[ModuleSpec]:
+        module_parts: list[str],
+        processed: list[str],
+        submodule_path: list[str] | None,
+    ) -> ModuleSpec | None:
         if submodule_path is not None:
             submodule_path = list(submodule_path)
+        elif modname in sys.builtin_module_names:
+            return ModuleSpec(
+                name=modname,
+                location=None,
+                type=ModuleType.C_BUILTIN,
+            )
         else:
             try:
                 spec = importlib.util.find_spec(modname)
-                if spec:
-                    if spec.loader is importlib.machinery.BuiltinImporter:
-                        return ModuleSpec(
-                            name=modname,
-                            location=None,
-                            type=ModuleType.C_BUILTIN,
-                        )
-                    if spec.loader is importlib.machinery.FrozenImporter:
-                        return ModuleSpec(
-                            name=modname,
-                            location=getattr(spec.loader_state, "filename", None),
-                            type=ModuleType.PY_FROZEN,
-                        )
+                if spec and spec.loader is importlib.machinery.FrozenImporter:
+                    # No need for BuiltinImporter; builtins handled above
+                    return ModuleSpec(
+                        name=modname,
+                        location=getattr(spec.loader_state, "filename", None),
+                        type=ModuleType.PY_FROZEN,
+                    )
             except ValueError:
                 pass
             submodule_path = sys.path
@@ -142,7 +148,7 @@ class ImportlibFinder(Finder):
             # Builtin.
             return None
 
-        if _is_setuptools_namespace(spec.location):
+        if _is_setuptools_namespace(Path(spec.location)):
             # extend_path is called, search sys.path for module/packages
             # of this name see pkgutil.extend_path documentation
             path = [
@@ -150,7 +156,10 @@ class ImportlibFinder(Finder):
                 for p in sys.path
                 if os.path.isdir(os.path.join(p, *processed))
             ]
-        elif spec.name == "distutils":
+        elif spec.name == "distutils" and not any(
+            spec.location.lower().startswith(ext_lib_dir.lower())
+            for ext_lib_dir in EXT_LIB_DIRS
+        ):
             # virtualenv below 20.0 patches distutils in an unexpected way
             # so we just find the location of distutils that will be
             # imported to avoid spurious import-error messages
@@ -171,7 +180,7 @@ class ImportlibFinder(Finder):
 
 
 class ExplicitNamespacePackageFinder(ImportlibFinder):
-    """A finder for the explicit namespace packages, generated through pkg_resources."""
+    """A finder for the explicit namespace packages."""
 
     def find_module(self, modname, module_parts, processed, submodule_path):
         if processed:
@@ -219,10 +228,7 @@ class PathSpecFinder(Finder):
     def find_module(self, modname, module_parts, processed, submodule_path):
         spec = importlib.machinery.PathFinder.find_spec(modname, path=submodule_path)
         if spec:
-            # origin can be either a string on older Python versions
-            # or None in case it is a namespace package:
-            # https://github.com/python/cpython/pull/5481
-            is_namespace_pkg = spec.origin in {"namespace", None}
+            is_namespace_pkg = spec.origin is None
             location = spec.origin if not is_namespace_pkg else None
             module_type = ModuleType.PY_NAMESPACE if is_namespace_pkg else None
             spec = ModuleSpec(
@@ -248,12 +254,12 @@ _SPEC_FINDERS = (
 )
 
 
-def _is_setuptools_namespace(location):
+def _is_setuptools_namespace(location: pathlib.Path) -> bool:
     try:
-        with open(os.path.join(location, "__init__.py"), "rb") as stream:
+        with open(location / "__init__.py", "rb") as stream:
             data = stream.read(4096)
     except OSError:
-        return None
+        return False
     else:
         extend_path = b"pkgutil" in data and b"extend_path" in data
         declare_namespace = (

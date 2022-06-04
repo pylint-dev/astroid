@@ -6,15 +6,18 @@
 (build_* functions) or from living object (object_build_* functions)
 """
 
+from __future__ import annotations
+
 import builtins
 import inspect
 import os
 import sys
 import types
 import warnings
-from typing import Iterable, List, Optional
+from collections.abc import Iterable
 
 from astroid import bases, nodes
+from astroid.const import IS_PYPY
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
 
@@ -77,7 +80,7 @@ def attach_import_node(node, modname, membername):
     _attach_local_node(node, from_node, membername)
 
 
-def build_module(name: str, doc: Optional[str] = None) -> nodes.Module:
+def build_module(name: str, doc: str | None = None) -> nodes.Module:
     """create and initialize an astroid Module node"""
     node = nodes.Module(name, pure_python=False, package=False)
     node.postinit(
@@ -88,7 +91,7 @@ def build_module(name: str, doc: Optional[str] = None) -> nodes.Module:
 
 
 def build_class(
-    name: str, basenames: Iterable[str] = (), doc: Optional[str] = None
+    name: str, basenames: Iterable[str] = (), doc: str | None = None
 ) -> nodes.ClassDef:
     """Create and initialize an astroid ClassDef node."""
     node = nodes.ClassDef(name)
@@ -103,11 +106,11 @@ def build_class(
 
 def build_function(
     name,
-    args: Optional[List[str]] = None,
-    posonlyargs: Optional[List[str]] = None,
+    args: list[str] | None = None,
+    posonlyargs: list[str] | None = None,
     defaults=None,
-    doc: Optional[str] = None,
-    kwonlyargs: Optional[List[str]] = None,
+    doc: str | None = None,
+    kwonlyargs: list[str] | None = None,
 ) -> nodes.FunctionDef:
     """create and initialize an astroid FunctionDef node"""
     # first argument is now a list of decorators
@@ -162,7 +165,9 @@ def register_arguments(func, args=None):
             register_arguments(func, arg.elts)
 
 
-def object_build_class(node, member, localname):
+def object_build_class(
+    node: nodes.Module | nodes.ClassDef, member: type, localname: str
+) -> nodes.ClassDef:
     """create astroid for a living class object"""
     basenames = [base.__name__ for base in member.__bases__]
     return _base_class_object_build(node, member, basenames, localname=localname)
@@ -198,12 +203,18 @@ def object_build_function(node, member, localname):
     node.add_local_node(func, localname)
 
 
-def object_build_datadescriptor(node, member, name):
+def object_build_datadescriptor(
+    node: nodes.Module | nodes.ClassDef, member: type, name: str
+) -> nodes.ClassDef:
     """create astroid for a living data descriptor object"""
     return _base_class_object_build(node, member, [], name)
 
 
-def object_build_methoddescriptor(node, member, localname):
+def object_build_methoddescriptor(
+    node: nodes.Module | nodes.ClassDef,
+    member,
+    localname: str,
+) -> None:
     """create astroid for a living method descriptor object"""
     # FIXME get arguments ?
     func = build_function(
@@ -216,12 +227,20 @@ def object_build_methoddescriptor(node, member, localname):
     _add_dunder_class(func, member)
 
 
-def _base_class_object_build(node, member, basenames, name=None, localname=None):
+def _base_class_object_build(
+    node: nodes.Module | nodes.ClassDef,
+    member: type,
+    basenames: list[str],
+    name: str | None = None,
+    localname: str | None = None,
+) -> nodes.ClassDef:
     """create astroid for a living class object, with a given set of base names
     (e.g. ancestors)
     """
+    class_name = name or getattr(member, "__name__", None) or localname
+    assert isinstance(class_name, str)
     klass = build_class(
-        name or getattr(member, "__name__", None) or localname,
+        class_name,
         basenames,
         member.__doc__,
     )
@@ -282,14 +301,14 @@ class InspectBuilder:
 
     def __init__(self, manager_instance=None):
         self._manager = manager_instance or AstroidManager()
-        self._done = {}
+        self._done: dict[types.ModuleType | type, nodes.Module | nodes.ClassDef] = {}
         self._module = None
 
     def inspect_build(
         self,
         module: types.ModuleType,
-        modname: Optional[str] = None,
-        path: Optional[str] = None,
+        modname: str | None = None,
+        path: str | None = None,
     ) -> nodes.Module:
         """build astroid from a living module (i.e. using inspect)
         this is used when there is no python source code available (either
@@ -311,14 +330,19 @@ class InspectBuilder:
         self.object_build(node, module)
         return node
 
-    def object_build(self, node, obj):
+    def object_build(
+        self, node: nodes.Module | nodes.ClassDef, obj: types.ModuleType | type
+    ) -> None:
         """recursive method which create a partial ast from real objects
         (only function, class, and method are handled)
         """
         if obj in self._done:
-            return self._done[obj]
+            return None
         self._done[obj] = node
         for name in dir(obj):
+            # inspect.ismethod() and inspect.isbuiltin() in PyPy return
+            # the opposite of what they do in CPython for __class_getitem__.
+            pypy__class_getitem__ = IS_PYPY and name == "__class_getitem__"
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("error")
@@ -327,11 +351,11 @@ class InspectBuilder:
                 # damned ExtensionClass.Base, I know you're there !
                 attach_dummy_node(node, name)
                 continue
-            if inspect.ismethod(member):
+            if inspect.ismethod(member) and not pypy__class_getitem__:
                 member = member.__func__
             if inspect.isfunction(member):
                 _build_from_function(node, name, member, self._module)
-            elif inspect.isbuiltin(member):
+            elif inspect.isbuiltin(member) or pypy__class_getitem__:
                 if self.imported_member(node, member, name):
                     continue
                 object_build_methoddescriptor(node, member, name)
@@ -340,6 +364,7 @@ class InspectBuilder:
                     continue
                 if member in self._done:
                     class_node = self._done[member]
+                    assert isinstance(class_node, nodes.ClassDef)
                     if class_node not in node.locals.get(name, ()):
                         node.add_local_node(class_node, name)
                 else:
@@ -349,10 +374,8 @@ class InspectBuilder:
                 if name == "__class__" and class_node.parent is None:
                     class_node.parent = self._done[self._module]
             elif inspect.ismethoddescriptor(member):
-                assert isinstance(member, object)
                 object_build_methoddescriptor(node, member, name)
             elif inspect.isdatadescriptor(member):
-                assert isinstance(member, object)
                 object_build_datadescriptor(node, member, name)
             elif isinstance(member, _CONSTANTS):
                 attach_const_node(node, name, member)
