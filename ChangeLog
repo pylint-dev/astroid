@@ -55,6 +55,10 @@ Release date: TBA
 * Fix test for Python ``3.11``. In some instances ``err.__traceback__`` will
   be uninferable now.
 
+* Infer the ``DictUnpack`` value for ``Dict.getitem`` calls.
+
+  Closes #1195
+
 What's New in astroid 2.11.6?
 =============================
 Release date: TBA
