@@ -4,7 +4,6 @@
 
 """Astroid hooks for the ssl library."""
 
-
 from astroid import parse
 from astroid.brain.helpers import register_module_extender
 from astroid.const import PY38_PLUS, PY310_PLUS
