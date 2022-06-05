@@ -5,8 +5,11 @@
 """This module contains base classes and functions for the nodes and some
 inference utils.
 """
+from __future__ import annotations
 
 import collections
+import collections.abc
+from typing import TYPE_CHECKING
 
 from astroid import decorators
 from astroid.const import PY310_PLUS
@@ -27,6 +30,9 @@ from astroid.util import Uninferable, lazy_descriptor, lazy_import
 objectmodel = lazy_import("interpreter.objectmodel")
 helpers = lazy_import("helpers")
 manager = lazy_import("manager")
+
+if TYPE_CHECKING:
+    from astroid import nodes
 
 
 # TODO: check if needs special treatment
@@ -372,24 +378,49 @@ class UnboundMethod(Proxy):
         on ``object.__new__`` will be of type ``object``,
         which is incorrect for the argument in general.
         If no context is given the ``object.__new__`` call argument will
-        correctly inferred except when inside a call that requires
+        be correctly inferred except when inside a call that requires
         the additional context (such as a classmethod) of the boundnode
         to determine which class the method was called from
         """
 
-        # If we're unbound method __new__ of builtin object, the result is an
+        # If we're unbound method __new__ of a builtin, the result is an
         # instance of the class given as first argument.
-        if (
-            self._proxied.name == "__new__"
-            and self._proxied.parent.frame(future=True).qname() == "builtins.object"
-        ):
-            if caller.args:
-                node_context = context.extra_context.get(caller.args[0])
-                infer = caller.args[0].infer(context=node_context)
-            else:
-                infer = []
-            return (Instance(x) if x is not Uninferable else x for x in infer)
+        if self._proxied.name == "__new__":
+            qname = self._proxied.parent.frame(future=True).qname()
+            # Avoid checking builtins.type: _infer_type_new_call() does more validation
+            if qname.startswith("builtins.") and qname != "builtins.type":
+                return self._infer_builtin_new(caller, context)
         return self._proxied.infer_call_result(caller, context)
+
+    def _infer_builtin_new(
+        self,
+        caller: nodes.Call,
+        context: InferenceContext,
+    ) -> collections.abc.Generator[
+        nodes.Const | Instance | type[Uninferable], None, None
+    ]:
+        # pylint: disable-next=import-outside-toplevel; circular import
+        from astroid import nodes
+
+        if not caller.args:
+            return
+        # Attempt to create a constant
+        if len(caller.args) > 1:
+            value = None
+            if isinstance(caller.args[1], nodes.Const):
+                value = caller.args[1].value
+            else:
+                inferred_arg = next(caller.args[1].infer(), None)
+                if isinstance(inferred_arg, nodes.Const):
+                    value = inferred_arg.value
+            if value is not None:
+                yield nodes.const_factory(value)
+                return
+
+        node_context = context.extra_context.get(caller.args[0])
+        infer = caller.args[0].infer(context=node_context)
+
+        yield from (Instance(x) if x is not Uninferable else x for x in infer)
 
     def bool_value(self, context=None):
         return True

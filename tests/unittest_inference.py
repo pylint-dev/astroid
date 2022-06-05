@@ -3768,6 +3768,33 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ]
         self.assertEqual(titles, ["Catch 22", "Ubik", "Grimus"])
 
+    @staticmethod
+    def test_builtin_new() -> None:
+        ast_node = extract_node("int.__new__(int, 42)")
+        inferred = next(ast_node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 42
+
+        ast_node2 = extract_node("int.__new__(int)")
+        inferred2 = next(ast_node2.infer())
+        assert isinstance(inferred2, Instance)
+        assert not isinstance(inferred2, nodes.Const)
+        assert inferred2._proxied is inferred._proxied
+
+        ast_node3 = extract_node(
+            """
+        x = 43
+        int.__new__(int, x)  #@
+        """
+        )
+        inferred3 = next(ast_node3.infer())
+        assert isinstance(inferred3, nodes.Const)
+        assert inferred3.value == 43
+
+        ast_node4 = extract_node("int.__new__()")
+        with pytest.raises(InferenceError):
+            next(ast_node4.infer())
+
     @pytest.mark.xfail(reason="Does not support function metaclasses")
     def test_function_metaclasses(self):
         # These are not supported right now, although

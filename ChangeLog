@@ -40,12 +40,18 @@ Release date: TBA
 * On Python versions >= 3.9, ``astroid`` now understands subscripting
   builtin classes such as ``enumerate`` or ``staticmethod``.
 
+* Fixed inference of ``Enums`` when they are imported under an alias.
+
+  Closes PyCQA/pylint#5776
+
 * Rename ``ModuleSpec`` -> ``module_type`` constructor parameter to match attribute
   name and improve typing. Use ``type`` instead.
 
 * Fixed pylint ``not-callable`` false positive with nested-tuple assignment in a for-loop.
 
   Refs PyCQA/pylint#5113
+
+* Instances of builtins created with ``__new__(cls, value)`` are now inferred.
 
 * Infer the return value of the ``.copy()`` method on ``dict``, ``list``, ``set``,
   and ``frozenset``.
@@ -54,6 +60,10 @@ Release date: TBA
 
 * Fix test for Python ``3.11``. In some instances ``err.__traceback__`` will
   be uninferable now.
+
+* Infer the ``DictUnpack`` value for ``Dict.getitem`` calls.
+
+  Closes #1195
 
 What's New in astroid 2.11.6?
 =============================

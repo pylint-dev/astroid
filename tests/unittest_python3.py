@@ -5,7 +5,9 @@
 import unittest
 from textwrap import dedent
 
-from astroid import nodes
+import pytest
+
+from astroid import exceptions, nodes
 from astroid.builder import AstroidBuilder, extract_node
 from astroid.test_utils import require_version
 
@@ -284,6 +286,33 @@ class Python3TC(unittest.TestCase):
             value = node.getitem(nodes.Const(key))
             self.assertIsInstance(value, nodes.Const)
             self.assertEqual(value.value, expected)
+
+    @staticmethod
+    def test_unpacking_in_dict_getitem_with_ref() -> None:
+        node = extract_node(
+            """
+        a = {1: 2}
+        {**a, 2: 3}  #@
+        """
+        )
+        assert isinstance(node, nodes.Dict)
+
+        for key, expected in ((1, 2), (2, 3)):
+            value = node.getitem(nodes.Const(key))
+            assert isinstance(value, nodes.Const)
+            assert value.value == expected
+
+    @staticmethod
+    def test_unpacking_in_dict_getitem_uninferable() -> None:
+        node = extract_node("{**a, 2: 3}")
+        assert isinstance(node, nodes.Dict)
+
+        with pytest.raises(exceptions.AstroidIndexError):
+            node.getitem(nodes.Const(1))
+
+        value = node.getitem(nodes.Const(2))
+        assert isinstance(value, nodes.Const)
+        assert value.value == 3
 
     def test_format_string(self) -> None:
         code = "f'{greetings} {person}'"

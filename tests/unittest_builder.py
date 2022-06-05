@@ -945,6 +945,13 @@ def test_parse_module_with_invalid_type_comments_does_not_crash():
     assert isinstance(node, nodes.Module)
 
 
+def test_arguments_of_signature() -> None:
+    """Test that arguments is None for function without an inferable signature."""
+    node = builder.extract_node("int")
+    classdef: nodes.ClassDef = next(node.infer())
+    assert all(i.args.args is None for i in classdef.getattr("__dir__"))
+
+
 class HermeticInterpreterTest(unittest.TestCase):
     """Modeled on https://github.com/PyCQA/astroid/pull/1207#issuecomment-951455588"""
 
