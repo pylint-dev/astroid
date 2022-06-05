@@ -646,8 +646,11 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
 
         Can be None if the associated function does not have a retrievable
         signature and the arguments are therefore unknown.
-        This happens with builtin functions implemented in C.
+        This can happen with (builtin) functions implemented in C that have
+        incomplete signature information.
         """
+        # TODO: Check if other attributes should also be None when
+        # .args is None.
 
         self.defaults: list[NodeNG]
         """The default values for arguments that can be passed positionally."""
@@ -700,7 +703,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
     # pylint: disable=too-many-arguments
     def postinit(
         self,
-        args: list[AssignName],
+        args: list[AssignName] | None,
         defaults: list[NodeNG],
         kwonlyargs: list[AssignName],
         kw_defaults: list[NodeNG | None],
