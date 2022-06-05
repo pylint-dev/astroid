@@ -15,11 +15,21 @@ import sys
 import types
 import warnings
 from collections.abc import Iterable
+from typing import Any, Union
 
 from astroid import bases, nodes
 from astroid.const import IS_PYPY
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
+
+_FunctionTypes = Union[
+    types.FunctionType,
+    types.MethodType,
+    types.BuiltinFunctionType,
+    types.WrapperDescriptorType,
+    types.MethodDescriptorType,
+    types.ClassMethodDescriptorType,
+]
 
 # the keys of CONST_CLS eg python builtin types
 _CONSTANTS = tuple(node_classes.CONST_CLS)
@@ -105,10 +115,10 @@ def build_class(
 
 
 def build_function(
-    name,
+    name: str,
     args: list[str] | None = None,
     posonlyargs: list[str] | None = None,
-    defaults=None,
+    defaults: list[Any] | None = None,
     doc: str | None = None,
     kwonlyargs: list[str] | None = None,
 ) -> nodes.FunctionDef:
@@ -173,13 +183,15 @@ def object_build_class(
     return _base_class_object_build(node, member, basenames, localname=localname)
 
 
-def object_build_function(node, member, localname):
+def object_build_function(
+    node: nodes.Module | nodes.ClassDef, member: _FunctionTypes, localname: str
+) -> None:
     """create astroid for a living function object"""
     signature = inspect.signature(member)
-    args = []
-    defaults = []
-    posonlyargs = []
-    kwonlyargs = []
+    args: list[str] = []
+    defaults: list[Any] = []
+    posonlyargs: list[str] = []
+    kwonlyargs: list[str] = []
     for param_name, param in signature.parameters.items():
         if param.kind == inspect.Parameter.POSITIONAL_ONLY:
             posonlyargs.append(param_name)
@@ -212,7 +224,7 @@ def object_build_datadescriptor(
 
 def object_build_methoddescriptor(
     node: nodes.Module | nodes.ClassDef,
-    member,
+    member: _FunctionTypes,
     localname: str,
 ) -> None:
     """create astroid for a living method descriptor object"""
@@ -267,10 +279,15 @@ def _base_class_object_build(
     return klass
 
 
-def _build_from_function(node, name, member, module):
+def _build_from_function(
+    node: nodes.Module | nodes.ClassDef,
+    name: str,
+    member: _FunctionTypes,
+    module: types.ModuleType,
+) -> None:
     # verify this is not an imported function
     try:
-        code = member.__code__
+        code = member.__code__  # type: ignore[union-attr]
     except AttributeError:
         # Some implementations don't provide the code object,
         # such as Jython.
@@ -302,7 +319,7 @@ class InspectBuilder:
     def __init__(self, manager_instance=None):
         self._manager = manager_instance or AstroidManager()
         self._done: dict[types.ModuleType | type, nodes.Module | nodes.ClassDef] = {}
-        self._module = None
+        self._module: types.ModuleType
 
     def inspect_build(
         self,
