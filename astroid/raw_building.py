@@ -138,10 +138,7 @@ def build_function(
     default_nodes: list[nodes.NodeNG] | None = []
     if defaults is not None:
         for default in defaults:
-            if isinstance(default, nodes.NodeNG):
-                default_node = default
-            else:
-                default_node = nodes.const_factory(default)
+            default_node = nodes.const_factory(default)
             default_node.parent = argsnode
             default_nodes.append(default_node)
     else:
