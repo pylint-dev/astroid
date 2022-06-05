@@ -5,8 +5,12 @@
 """This module contains base classes and functions for the nodes and some
 inference utils.
 """
+from __future__ import annotations
 
 import collections
+from typing import TYPE_CHECKING
+from typing import Generator as GenT  # Generator is a class in this module
+from typing import Type, TypeVar
 
 from astroid import decorators
 from astroid.const import PY310_PLUS
@@ -338,6 +342,12 @@ class Instance(BaseInstance):
         return next(method.infer_call_result(self, new_context), None)
 
 
+if TYPE_CHECKING:
+    from astroid.nodes import Call, Const
+
+    _BuiltinNewT = TypeVar("_BuiltinNewT", Type[Uninferable], Const, Instance)
+
+
 class UnboundMethod(Proxy):
     """a special node representing a method not bound to an instance"""
 
@@ -386,7 +396,9 @@ class UnboundMethod(Proxy):
                 return self._infer_builtin_new(caller, context)
         return self._proxied.infer_call_result(caller, context)
 
-    def _infer_builtin_new(self, caller, context):
+    def _infer_builtin_new(
+        self, caller: Call, context: InferenceContext
+    ) -> GenT[_BuiltinNewT, None, None]:
         # pylint: disable-next=import-outside-toplevel; circular import
         from astroid.nodes import Const, const_factory
 
