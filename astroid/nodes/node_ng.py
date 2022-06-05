@@ -594,7 +594,9 @@ class NodeNG:
         # overridden for ImportFrom, Import, Global, TryExcept and Arguments
         pass
 
-    def _infer(self, context=None):
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Iterator[NodeNG | type[util.Uninferable] | bases.Instance]:
         """we don't know how to resolve a statement by default"""
         # this method is overridden by most concrete classes
         raise InferenceError(

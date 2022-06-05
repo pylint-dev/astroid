@@ -48,7 +48,13 @@ _FunctionDefT = TypeVar("_FunctionDefT", bound=nodes.FunctionDef)
 # .infer method ###############################################################
 
 
-def infer_end(self, context=None):
+_T = TypeVar("_T")
+_BaseContainerT = TypeVar("_BaseContainerT", bound=nodes.BaseContainer)
+
+
+def infer_end(
+    self: _T, context: InferenceContext | None = None, **kwargs: Any
+) -> Iterator[_T]:
     """Inference's end for nodes that yield themselves on inference
 
     These are objects for which inference does not have any semantic,
@@ -57,7 +63,7 @@ def infer_end(self, context=None):
     yield self
 
 
-# We add ignores to all these assignments in this file
+# We add ignores to all assignments to methods
 # See https://github.com/python/mypy/issues/2427
 nodes.Module._infer = infer_end  # type: ignore[assignment]
 nodes.ClassDef._infer = infer_end  # type: ignore[assignment]
@@ -89,7 +95,11 @@ def _infer_sequence_helper(node, context=None):
 
 
 @decorators.raise_if_nothing_inferred
-def infer_sequence(self, context=None):
+def infer_sequence(
+    self: _BaseContainerT,
+    context: InferenceContext | None = None,
+    **kwargs: Any,
+) -> Iterator[_BaseContainerT]:
     has_starred_named_expr = any(
         isinstance(e, (nodes.Starred, nodes.NamedExpr)) for e in self.elts
     )
