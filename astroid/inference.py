@@ -63,11 +63,13 @@ def infer_end(
     yield self
 
 
-nodes.Module._infer = infer_end
-nodes.ClassDef._infer = infer_end
-nodes.Lambda._infer = infer_end
-nodes.Const._infer = infer_end
-nodes.Slice._infer = infer_end
+# We add ignores to all assignments to methods
+# See https://github.com/python/mypy/issues/2427
+nodes.Module._infer = infer_end  # type: ignore[assignment]
+nodes.ClassDef._infer = infer_end  # type: ignore[assignment]
+nodes.Lambda._infer = infer_end  # type: ignore[assignment]
+nodes.Const._infer = infer_end  # type: ignore[assignment]
+nodes.Slice._infer = infer_end  # type: ignore[assignment]
 
 
 def _infer_sequence_helper(node, context=None):
@@ -113,9 +115,9 @@ def infer_sequence(
         yield self
 
 
-nodes.List._infer = infer_sequence
-nodes.Tuple._infer = infer_sequence
-nodes.Set._infer = infer_sequence
+nodes.List._infer = infer_sequence  # type: ignore[assignment]
+nodes.Tuple._infer = infer_sequence  # type: ignore[assignment]
+nodes.Set._infer = infer_sequence  # type: ignore[assignment]
 
 
 def infer_map(self, context=None):

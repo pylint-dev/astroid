@@ -50,12 +50,6 @@ else:
     from astroid.decorators import cachedproperty as cached_property
 
 
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
-
-
 # Types for 'NodeNG.nodes_of_class()'
 _NodesT = TypeVar("_NodesT", bound="NodeNG")
 _NodesT2 = TypeVar("_NodesT2", bound="NodeNG")
@@ -600,7 +594,7 @@ class NodeNG:
         pass
 
     def _infer(
-        self: Self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Iterator[NodeNG | type[util.Uninferable] | bases.Instance]:
         """we don't know how to resolve a statement by default"""
         # this method is overridden by most concrete classes
