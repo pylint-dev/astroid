@@ -4864,7 +4864,7 @@ class EvaluatedObject(NodeNG):
         )
 
     def _infer(
-        self, context: InferenceContext | None = None
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Iterator[NodeNG | type[util.Uninferable]]:
         yield self.value
 
