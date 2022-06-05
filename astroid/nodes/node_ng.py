@@ -9,7 +9,17 @@ import sys
 import warnings
 from collections.abc import Generator, Iterator
 from functools import singledispatch as _singledispatch
-from typing import TYPE_CHECKING, ClassVar, Tuple, Type, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from astroid import bases, decorators, util
 from astroid.context import InferenceContext
@@ -126,7 +136,7 @@ class NodeNG:
         """
 
     def infer(
-        self, context: InferenceContext | None = None, **kwargs
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[nodes.NodeNG | type[util.Uninferable] | bases.Instance, None, None]:
         """Get a generator of the inferred values.
 
