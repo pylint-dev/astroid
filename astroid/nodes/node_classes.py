@@ -2346,31 +2346,30 @@ class Dict(NodeNG, Instance):
         """
         return [key for (key, _) in self.items]
 
-    def getitem(self, index, context=None):
+    def getitem(
+        self, index: Const | Slice, context: InferenceContext | None = None
+    ) -> NodeNG:
         """Get an item from this node.
 
         :param index: The node to use as a subscript index.
-        :type index: Const or Slice
 
         :raises AstroidTypeError: When the given index cannot be used as a
             subscript index, or if this node is not subscriptable.
         :raises AstroidIndexError: If the given index does not exist in the
             dictionary.
         """
-
-        from astroid.helpers import (  # pylint: disable=import-outside-toplevel; circular import
-            safe_infer,
-        )
+        # pylint: disable-next=import-outside-toplevel; circular import
+        from astroid.helpers import safe_infer
 
         for key, value in self.items:
             # TODO(cpopa): no support for overriding yet, {1:2, **{1: 3}}.
             if isinstance(key, DictUnpack):
-                inferred_value = safe_infer(value)
-                if inferred_value is None or not hasattr(inferred_value, "getitem"):
+                inferred_value = safe_infer(value, context)
+                if not isinstance(inferred_value, Dict):
                     continue
 
                 try:
-                    return safe_infer(value).getitem(index, context)
+                    return inferred_value.getitem(index, context)
                 except (AstroidTypeError, AstroidIndexError):
                     continue
 
