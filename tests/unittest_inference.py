@@ -3779,7 +3779,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred2 = next(ast_node2.infer())
         assert isinstance(inferred2, Instance)
         assert not isinstance(inferred2, nodes.Const)
-        assert inferred._proxied is inferred._proxied
+        assert inferred2._proxied is inferred._proxied
 
         ast_node3 = extract_node(
             """
