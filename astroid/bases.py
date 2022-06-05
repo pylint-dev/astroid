@@ -8,6 +8,7 @@ inference utils.
 from __future__ import annotations
 
 import collections
+import collections.abc
 from typing import TYPE_CHECKING
 
 from astroid import decorators
@@ -399,21 +400,21 @@ class UnboundMethod(Proxy):
         nodes.Const | Instance | type[Uninferable], None, None
     ]:
         # pylint: disable-next=import-outside-toplevel; circular import
-        from astroid.nodes import Const, const_factory
+        from astroid import nodes
 
         if not caller.args:
             return
         # Attempt to create a constant
         if len(caller.args) > 1:
             value = None
-            if isinstance(caller.args[1], Const):
+            if isinstance(caller.args[1], nodes.Const):
                 value = caller.args[1].value
             else:
                 inferred_arg = next(caller.args[1].infer(), None)
-                if isinstance(inferred_arg, Const):
+                if isinstance(inferred_arg, nodes.Const):
                     value = inferred_arg.value
             if value is not None:
-                yield const_factory(value)
+                yield nodes.const_factory(value)
                 return
 
         node_context = context.extra_context.get(caller.args[0])
