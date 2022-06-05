@@ -7,11 +7,22 @@ from __future__ import annotations
 import pprint
 import sys
 import warnings
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
 from functools import singledispatch as _singledispatch
-from typing import TYPE_CHECKING, ClassVar, Tuple, Type, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
-from astroid import decorators, util
+from astroid import bases, decorators, util
+from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidError,
     InferenceError,
@@ -124,7 +135,9 @@ class NodeNG:
         E.g. ClassDef, FunctionDef.
         """
 
-    def infer(self, context=None, **kwargs):
+    def infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[nodes.NodeNG | type[util.Uninferable] | bases.Instance, None, None]:
         """Get a generator of the inferred values.
 
         This is the main entry point to the inference system.
