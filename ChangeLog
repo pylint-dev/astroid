@@ -22,7 +22,7 @@ Release date: TBA
 
   Closes PyCQA/pylint#3518
 
-* Adds missing enums from ``ssl`` module
+* Adds missing enums from ``ssl`` module.
 
   Closes PyCQA/pylint#3691
 
