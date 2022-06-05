@@ -126,8 +126,17 @@ def build_function(
     # first argument is now a list of decorators
     func = nodes.FunctionDef(name)
     argsnode = nodes.Arguments(parent=func)
+
+    # If args is None we don't have any information about the signature
+    # (in contrast to when there are no arguments and args == []). We pass
+    # this to the builder to indicate this.
+    if args is not None:
+        arguments = [nodes.AssignName(name=arg, parent=argsnode) for arg in args]
+    else:
+        arguments = None
+
     argsnode.postinit(
-        args=[nodes.AssignName(name=arg, parent=argsnode) for arg in args or ()],
+        args=arguments,
         defaults=[],
         kwonlyargs=[
             nodes.AssignName(name=arg, parent=argsnode) for arg in kwonlyargs or ()
@@ -248,9 +257,6 @@ def object_build_methoddescriptor(
     func = build_function(
         getattr(member, "__name__", None) or localname, doc=member.__doc__
     )
-    # set node's arguments to None to notice that we have no information, not
-    # and empty argument list
-    func.args.args = None
     node.add_local_node(func, localname)
     _add_dunder_class(func, member)
 
