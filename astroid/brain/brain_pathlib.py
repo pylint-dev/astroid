@@ -19,8 +19,10 @@ PATH_CLASSDEF: nodes.ClassDef = next(PATH.infer())
 
 
 def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
-    if not isinstance(node.value, nodes.Name) and not (
-        isinstance(node.value, nodes.Attribute) and node.value.attrname == "parents"
+    if not (
+        isinstance(node.value, nodes.Name)
+        or isinstance(node.value, nodes.Attribute)
+        and node.value.attrname == "parents"
     ):
         return False
 
