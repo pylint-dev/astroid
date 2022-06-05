@@ -183,15 +183,19 @@ def object_build_class(
     return _base_class_object_build(node, member, basenames, localname=localname)
 
 
-def object_build_function(
-    node: nodes.Module | nodes.ClassDef, member: _FunctionTypes, localname: str
-) -> None:
-    """create astroid for a living function object"""
+def _get_args_info_from_callable(
+    member: _FunctionTypes,
+) -> tuple[list[str], list[Any], list[str], list[str]]:
+    """Returns args, posonlyargs, defaults, kwonlyargs.
+
+    :note: currently ignores the return annotation.
+    """
     signature = inspect.signature(member)
     args: list[str] = []
     defaults: list[Any] = []
     posonlyargs: list[str] = []
     kwonlyargs: list[str] = []
+
     for param_name, param in signature.parameters.items():
         if param.kind == inspect.Parameter.POSITIONAL_ONLY:
             posonlyargs.append(param_name)
@@ -205,13 +209,25 @@ def object_build_function(
             kwonlyargs.append(param_name)
         if param.default is not inspect._empty:
             defaults.append(param.default)
+
+    return args, posonlyargs, defaults, kwonlyargs
+
+
+def object_build_function(
+    node: nodes.Module | nodes.ClassDef, member: _FunctionTypes, localname: str
+) -> None:
+    """create astroid for a living function object"""
+    args, posonlyargs, defaults, kwonlyargs = _get_args_info_from_callable(member)
+
     func = build_function(
         getattr(member, "__name__", None) or localname,
         args,
         posonlyargs,
         defaults,
         member.__doc__,
+        kwonlyargs=kwonlyargs,
     )
+
     node.add_local_node(func, localname)
 
 
