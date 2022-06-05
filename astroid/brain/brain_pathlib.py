@@ -15,7 +15,6 @@ PATH = extract_node(
 Path
 """
 )
-PATH_CLASSDEF: nodes.ClassDef = next(PATH.infer())
 
 
 def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
@@ -39,7 +38,7 @@ def infer_parents_subscript(
     subscript_node: nodes.Subscript, ctx: context.InferenceContext | None = None
 ) -> Iterator[bases.Instance]:
     if isinstance(subscript_node.slice, nodes.Const):
-        return iter((PATH_CLASSDEF.instantiate_class(),))
+        return iter((next(PATH.infer()).instantiate_class(),))
 
     raise UseInferenceDefault
 
