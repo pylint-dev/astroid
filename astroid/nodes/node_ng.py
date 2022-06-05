@@ -49,7 +49,6 @@ if sys.version_info >= (3, 8):
 else:
     from astroid.decorators import cachedproperty as cached_property
 
-
 # Types for 'NodeNG.nodes_of_class()'
 _NodesT = TypeVar("_NodesT", bound="NodeNG")
 _NodesT2 = TypeVar("_NodesT2", bound="NodeNG")
