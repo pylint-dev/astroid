@@ -4,14 +4,15 @@
 
 """Astroid hooks for the ssl library."""
 
+
 from astroid import parse
 from astroid.brain.helpers import register_module_extender
+from astroid.const import PY38_PLUS, PY310_PLUS
 from astroid.manager import AstroidManager
 
 
 def ssl_transform():
-    return parse(
-        """
+    ssl_module = """
     # Import necessary for conversion of objects defined in C into enums
     from enum import IntEnum as _IntEnum, IntFlag as _IntFlag
 
@@ -68,23 +69,6 @@ def ssl_transform():
     from _ssl import PROTOCOL_SSLv23, PROTOCOL_TLSv1, PROTOCOL_TLSv1_1, PROTOCOL_TLSv1_2
     from _ssl import PROTOCOL_TLS, PROTOCOL_TLS_CLIENT, PROTOCOL_TLS_SERVER
 
-    class Options(_IntFlag):
-        OP_ALL = 1
-        OP_NO_SSLv2 = 2
-        OP_NO_SSLv3 = 3
-        OP_NO_TLSv1 = 4
-        OP_NO_TLSv1_1 = 5
-        OP_NO_TLSv1_2 = 6
-        OP_NO_TLSv1_3 = 7
-        OP_CIPHER_SERVER_PREFERENCE = 8
-        OP_SINGLE_DH_USE = 9
-        OP_SINGLE_ECDH_USE = 10
-        OP_NO_COMPRESSION = 11
-        OP_NO_TICKET = 12
-        OP_NO_RENEGOTIATION = 13
-        if sys.version_info >= (3, 8):
-            OP_ENABLE_MIDDLEBOX_COMPAT = 14
-
     class AlertDescription(_IntEnum):
         ALERT_DESCRIPTION_ACCESS_DENIED = 0
         ALERT_DESCRIPTION_BAD_CERTIFICATE = 1
@@ -125,22 +109,60 @@ def ssl_transform():
         SSL_ERROR_WANT_X509_LOOKUP = 7
         SSL_ERROR_ZERO_RETURN = 8
 
+    class VerifyMode(_IntEnum):
+        CERT_NONE = 0
+        CERT_OPTIONAL = 1
+        CERT_REQUIRED = 2
+    """
+
+    def options_enum() -> str:
+        enum = """
+    class Options(_IntFlag):
+        OP_ALL = 1
+        OP_NO_SSLv2 = 2
+        OP_NO_SSLv3 = 3
+        OP_NO_TLSv1 = 4
+        OP_NO_TLSv1_1 = 5
+        OP_NO_TLSv1_2 = 6
+        OP_NO_TLSv1_3 = 7
+        OP_CIPHER_SERVER_PREFERENCE = 8
+        OP_SINGLE_DH_USE = 9
+        OP_SINGLE_ECDH_USE = 10
+        OP_NO_COMPRESSION = 11
+        OP_NO_TICKET = 12
+        OP_NO_RENEGOTIATION = 13
+        """
+
+        if PY38_PLUS:
+            enum += """
+        OP_ENABLE_MIDDLEBOX_COMPAT = 14
+        """
+
+        return enum
+
+    ssl_module += options_enum()
+
+    def verifyflags_enum() -> str:
+        enum = """
     class VerifyFlags(_IntFlag):
         VERIFY_DEFAULT = 0
         VERIFY_CRL_CHECK_LEAF = 1
         VERIFY_CRL_CHECK_CHAIN = 2
         VERIFY_X509_STRICT = 3
         VERIFY_X509_TRUSTED_FIRST = 4
-        if sys.version_info >= (3, 10):
-            VERIFY_ALLOW_PROXY_CERTS = 5
-            VERIFY_X509_PARTIAL_CHAIN = 6
+        """
 
-    class VerifyMode(_IntEnum):
-        CERT_NONE = 0
-        CERT_OPTIONAL = 1
-        CERT_REQUIRED = 2
-    """
-    )
+        if PY310_PLUS:
+            enum += """
+        VERIFY_ALLOW_PROXY_CERTS = 5
+        VERIFY_X509_PARTIAL_CHAIN = 6
+        """
+
+        return enum
+
+    ssl_module += verifyflags_enum()
+
+    return parse(ssl_module)
 
 
 register_module_extender(AstroidManager(), "ssl", ssl_transform)
