@@ -652,7 +652,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         # TODO: Check if other attributes should also be None when
         # .args is None.
 
-        self.defaults: list[NodeNG]
+        self.defaults: list[NodeNG] | None
         """The default values for arguments that can be passed positionally."""
 
         self.kwonlyargs: list[AssignName]
@@ -704,7 +704,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
     def postinit(
         self,
         args: list[AssignName] | None,
-        defaults: list[NodeNG],
+        defaults: list[NodeNG] | None,
         kwonlyargs: list[AssignName],
         kw_defaults: list[NodeNG | None],
         annotations: list[NodeNG | None],
@@ -914,7 +914,8 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
 
         yield from self.args or ()
 
-        yield from self.defaults
+        if self.defaults is not None:
+            yield from self.defaults
         yield from self.kwonlyargs
 
         for elt in self.kw_defaults:

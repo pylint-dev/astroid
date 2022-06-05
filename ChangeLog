@@ -33,6 +33,8 @@ Release date: TBA
 
   Closes #1559
 
+* ``Arguments.defaults`` is now ``None`` for uninferable signatures.
+
 * On Python versions >= 3.9, ``astroid`` now understands subscripting
   builtin classes such as ``enumerate`` or ``staticmethod``.
 
