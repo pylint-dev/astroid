@@ -4,7 +4,7 @@
 
 """Tests for the ssl brain."""
 
-from astroid import nodes, parse
+from astroid import bases, nodes, parse
 
 
 def test_ssl_brain() -> None:
@@ -15,6 +15,7 @@ def test_ssl_brain() -> None:
     ssl.PROTOCOL_TLSv1
     ssl.VerifyMode
     ssl.TLSVersion
+    ssl.VerifyMode.CERT_REQUIRED
     """
     )
     inferred_protocol = next(module.body[1].value.infer())
@@ -35,3 +36,8 @@ def test_ssl_brain() -> None:
     inferred_tlsversion = next(module.body[3].value.infer())
     assert isinstance(inferred_tlsversion, nodes.ClassDef)
     assert inferred_tlsversion.name == "TLSVersion"
+
+    # TLSVersion is inferred from the main module, not from the brain
+    inferred_cert_required = next(module.body[4].value.infer())
+    assert isinstance(inferred_cert_required, bases.Instance)
+    assert inferred_cert_required._proxied.name == "CERT_REQUIRED"
