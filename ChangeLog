@@ -54,6 +54,10 @@ Release date: TBA
 
   Closes #1403
 
+* Add ``pathlib`` brain to handle ``pathlib.PurePath.parents`` inference.
+
+  Closes PyCQA/pylint#5783
+
 * Fix test for Python ``3.11``. In some instances ``err.__traceback__`` will
   be uninferable now.
 
