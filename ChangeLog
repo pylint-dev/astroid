@@ -29,6 +29,10 @@ Release date: TBA
 
   Closes #1403
 
+* Add ``pathlib`` brain to handle ``pathlib.PurePath.parents`` inference.
+
+  Closes PyCQA/pylint#5783
+
 * Fix test for Python ``3.11``. In some instances ``err.__traceback__`` will
   be uninferable now.
 
@@ -39,9 +43,6 @@ Release date: TBA
 * The Qt brain now correctly treats calling ``.disconnect()`` (with no
   arguments) on a slot as valid.
 
-* Add ``pathlib`` brain to handle ``pathlib.PurePath.parents`` inference.
-
-  Closes PyCQA/pylint#5783
 
 What's New in astroid 2.11.5?
 =============================
