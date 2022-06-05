@@ -22,6 +22,10 @@ Release date: TBA
 
   Closes PyCQA/pylint#3518
 
+* Adds missing enums from ``ssl`` module.
+
+  Closes PyCQA/pylint#3691
+
 * Remove dependency on ``pkg_resources`` from ``setuptools``.
 
   Closes #1103

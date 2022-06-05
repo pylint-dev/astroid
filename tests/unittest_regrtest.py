@@ -304,16 +304,6 @@ def test(val):
         inferred = next(node.infer())
         self.assertEqual(inferred.decoratornames(), {".Parent.foo.getter"})
 
-    def test_ssl_protocol(self) -> None:
-        node = extract_node(
-            """
-        import ssl
-        ssl.PROTOCOL_TLSv1
-        """
-        )
-        inferred = next(node.infer())
-        self.assertIsInstance(inferred, nodes.Const)
-
     def test_recursive_property_method(self) -> None:
         node = extract_node(
             """
