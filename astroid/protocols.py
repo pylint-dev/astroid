@@ -1,38 +1,18 @@
-# Copyright (c) 2009-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Google, Inc.
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Dmitry Pribysh <dmand@yandex.ru>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2017-2018 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2017 rr- <rr-@sakuya.pl>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2020 Vilnis Termanis <vilnis.termanis@iotics.com>
-# Copyright (c) 2020 Ram Rachum <ram@rachum.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 doranid <ddandd@gmail.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """this module contains a set of functions to handle python protocols for nodes
 where it makes sense.
 """
 
+from __future__ import annotations
+
 import collections
 import itertools
 import operator as operator_mod
-import sys
-from typing import Generator, Optional
+from collections.abc import Generator
+from typing import Any
 
 from astroid import arguments, bases, decorators, helpers, nodes, util
 from astroid.const import Context
@@ -45,11 +25,6 @@ from astroid.exceptions import (
     NoDefault,
 )
 from astroid.nodes import node_classes
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
 
 raw_building = util.lazy_import("raw_building")
 objects = util.lazy_import("objects")
@@ -121,7 +96,7 @@ BIN_OP_IMPL = {
     "/": lambda a, b: a / b,
     "//": lambda a, b: a // b,
     "*": lambda a, b: a * b,
-    "**": lambda a, b: a ** b,
+    "**": lambda a, b: a**b,
     "%": lambda a, b: a % b,
     "&": lambda a, b: a & b,
     "|": lambda a, b: a | b,
@@ -183,7 +158,22 @@ def _filter_uninferable_nodes(elts, context):
 
 
 @decorators.yes_if_nothing_inferred
-def tl_infer_binary_op(self, opnode, operator, other, context, method):
+def tl_infer_binary_op(
+    self,
+    opnode: nodes.BinOp,
+    operator: str,
+    other: nodes.NodeNG,
+    context: InferenceContext,
+    method: nodes.FunctionDef,
+) -> Generator[nodes.NodeNG, None, None]:
+    """Infer a binary operation on a tuple or list.
+
+    The instance on which the binary operation is performed is a tuple
+    or list. This refers to the left-hand side of the operation, so:
+    'tuple() + 1' or '[] + A()'
+    """
+    # For tuples and list the boundnode is no longer the tuple or list instance
+    context.boundnode = None
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, self.__class__) and operator == "+":
         node = self.__class__(parent=opnode)
@@ -250,6 +240,11 @@ def _resolve_looppart(parts, assign_path, context):
             itered = part.itered()
         except TypeError:
             continue
+        try:
+            if isinstance(itered[index], (nodes.Const, nodes.Name)):
+                itered = [part]
+        except IndexError:
+            pass
         for stmt in itered:
             index_node = nodes.Const(index)
             try:
@@ -274,7 +269,12 @@ def _resolve_looppart(parts, assign_path, context):
 
 
 @decorators.raise_if_nothing_inferred
-def for_assigned_stmts(self, node=None, context=None, assign_path=None):
+def for_assigned_stmts(
+    self: nodes.For | nodes.Comprehension,
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
+) -> Any:
     if isinstance(self, nodes.AsyncFor) or getattr(self, "is_async", False):
         # Skip inferring of async code for now
         return dict(node=self, unknown=node, assign_path=assign_path, context=context)
@@ -291,7 +291,12 @@ nodes.For.assigned_stmts = for_assigned_stmts
 nodes.Comprehension.assigned_stmts = for_assigned_stmts
 
 
-def sequence_assigned_stmts(self, node=None, context=None, assign_path=None):
+def sequence_assigned_stmts(
+    self: nodes.Tuple | nodes.List,
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
+) -> Any:
     if assign_path is None:
         assign_path = []
     try:
@@ -314,7 +319,12 @@ nodes.Tuple.assigned_stmts = sequence_assigned_stmts
 nodes.List.assigned_stmts = sequence_assigned_stmts
 
 
-def assend_assigned_stmts(self, node=None, context=None, assign_path=None):
+def assend_assigned_stmts(
+    self: nodes.AssignName | nodes.AssignAttr,
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
+) -> Any:
     return self.parent.assigned_stmts(node=self, context=context)
 
 
@@ -381,7 +391,12 @@ def _arguments_infer_argname(self, name, context):
         yield util.Uninferable
 
 
-def arguments_assigned_stmts(self, node=None, context=None, assign_path=None):
+def arguments_assigned_stmts(
+    self: nodes.Arguments,
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
+) -> Any:
     if context.callcontext:
         callee = context.callcontext.callee
         while hasattr(callee, "_proxied"):
@@ -391,7 +406,7 @@ def arguments_assigned_stmts(self, node=None, context=None, assign_path=None):
     if (
         context.callcontext
         and node
-        and getattr(callee, "name", None) == node.frame().name
+        and getattr(callee, "name", None) == node.frame(future=True).name
     ):
         # reset call context/name
         callcontext = context.callcontext
@@ -406,7 +421,12 @@ nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 
 
 @decorators.raise_if_nothing_inferred
-def assign_assigned_stmts(self, node=None, context=None, assign_path=None):
+def assign_assigned_stmts(
+    self: nodes.AugAssign | nodes.Assign | nodes.AnnAssign,
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
+) -> Any:
     if not assign_path:
         yield self.value
         return None
@@ -417,7 +437,12 @@ def assign_assigned_stmts(self, node=None, context=None, assign_path=None):
     return dict(node=self, unknown=node, assign_path=assign_path, context=context)
 
 
-def assign_annassigned_stmts(self, node=None, context=None, assign_path=None):
+def assign_annassigned_stmts(
+    self: nodes.AnnAssign,
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
+) -> Any:
     for inferred in assign_assigned_stmts(self, node, context, assign_path):
         if inferred is None:
             yield util.Uninferable
@@ -471,7 +496,12 @@ def _resolve_assignment_parts(parts, assign_path, context):
 
 
 @decorators.raise_if_nothing_inferred
-def excepthandler_assigned_stmts(self, node=None, context=None, assign_path=None):
+def excepthandler_assigned_stmts(
+    self: nodes.ExceptHandler,
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
+) -> Any:
     for assigned in node_classes.unpack_infer(self.type):
         if isinstance(assigned, nodes.ClassDef):
             assigned = objects.ExceptionInstance(assigned)
@@ -522,7 +552,12 @@ def _infer_context_manager(self, mgr, context):
 
 
 @decorators.raise_if_nothing_inferred
-def with_assigned_stmts(self, node=None, context=None, assign_path=None):
+def with_assigned_stmts(
+    self: nodes.With,
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
+) -> Any:
     """Infer names and other nodes from a *with* statement.
 
     This enables only inference for name binding in a *with* statement.
@@ -581,7 +616,7 @@ def with_assigned_stmts(self, node=None, context=None, assign_path=None):
                     ) from exc
                 except TypeError as exc:
                     raise InferenceError(
-                        "Tried to unpack a non-iterable value " "in {node!r}.",
+                        "Tried to unpack a non-iterable value in {node!r}.",
                         node=self,
                         targets=node,
                         assign_path=assign_path,
@@ -595,7 +630,12 @@ nodes.With.assigned_stmts = with_assigned_stmts
 
 
 @decorators.raise_if_nothing_inferred
-def named_expr_assigned_stmts(self, node, context=None, assign_path=None):
+def named_expr_assigned_stmts(
+    self: nodes.NamedExpr,
+    node: node_classes.AssignedStmtsPossibleNode,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
+) -> Any:
     """Infer names and other nodes from an assignment expression"""
     if self.target == node:
         yield from self.value.infer(context=context)
@@ -612,7 +652,12 @@ nodes.NamedExpr.assigned_stmts = named_expr_assigned_stmts
 
 
 @decorators.yes_if_nothing_inferred
-def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
+def starred_assigned_stmts(
+    self: nodes.Starred,
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
+) -> Any:
     """
     Arguments:
         self: nodes.Starred
@@ -637,10 +682,10 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
                 lookups.append((index, len(element.itered())))
                 _determine_starred_iteration_lookups(starred, element, lookups)
 
-    stmt = self.statement()
+    stmt = self.statement(future=True)
     if not isinstance(stmt, (nodes.Assign, nodes.For)):
         raise InferenceError(
-            "Statement {stmt!r} enclosing {node!r} " "must be an Assign or For node.",
+            "Statement {stmt!r} enclosing {node!r} must be an Assign or For node.",
             node=self,
             stmt=stmt,
             unknown=node,
@@ -653,10 +698,13 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
     if isinstance(stmt, nodes.Assign):
         value = stmt.value
         lhs = stmt.targets[0]
+        if not isinstance(lhs, nodes.BaseContainer):
+            yield util.Uninferable
+            return
 
         if sum(1 for _ in lhs.nodes_of_class(nodes.Starred)) > 1:
             raise InferenceError(
-                "Too many starred arguments in the " " assignment targets {lhs!r}.",
+                "Too many starred arguments in the assignment targets {lhs!r}.",
                 node=self,
                 targets=lhs,
                 unknown=node,
@@ -803,8 +851,8 @@ nodes.Starred.assigned_stmts = starred_assigned_stmts
 def match_mapping_assigned_stmts(
     self: nodes.MatchMapping,
     node: nodes.AssignName,
-    context: Optional[InferenceContext] = None,
-    assign_path: Literal[None] = None,
+    context: InferenceContext | None = None,
+    assign_path: None = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Return empty generator (return -> raises StopIteration) so inferred value
     is Uninferable.
@@ -820,8 +868,8 @@ nodes.MatchMapping.assigned_stmts = match_mapping_assigned_stmts
 def match_star_assigned_stmts(
     self: nodes.MatchStar,
     node: nodes.AssignName,
-    context: Optional[InferenceContext] = None,
-    assign_path: Literal[None] = None,
+    context: InferenceContext | None = None,
+    assign_path: None = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Return empty generator (return -> raises StopIteration) so inferred value
     is Uninferable.
@@ -837,8 +885,8 @@ nodes.MatchStar.assigned_stmts = match_star_assigned_stmts
 def match_as_assigned_stmts(
     self: nodes.MatchAs,
     node: nodes.AssignName,
-    context: Optional[InferenceContext] = None,
-    assign_path: Literal[None] = None,
+    context: InferenceContext | None = None,
+    assign_path: None = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Infer MatchAs as the Match subject if it's the only MatchCase pattern
     else raise StopIteration to yield Uninferable.

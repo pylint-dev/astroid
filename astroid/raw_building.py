@@ -1,28 +1,12 @@
-# Copyright (c) 2006-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2012 FELD Boris <lothiraldan@gmail.com>
-# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Google, Inc.
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
-# Copyright (c) 2015 Ovidiu Sabou <ovidiu@sabou.org>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2020 Becker Awqatty <bawqatty@mide.com>
-# Copyright (c) 2020 Robin Jarry <robin.jarry@6wind.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """this module contains a set of functions to create astroid trees from scratch
 (build_* functions) or from living object (object_build_* functions)
 """
+
+from __future__ import annotations
 
 import builtins
 import inspect
@@ -30,11 +14,22 @@ import os
 import sys
 import types
 import warnings
-from typing import List, Optional
+from collections.abc import Iterable
+from typing import Any, Union
 
 from astroid import bases, nodes
+from astroid.const import IS_PYPY
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
+
+_FunctionTypes = Union[
+    types.FunctionType,
+    types.MethodType,
+    types.BuiltinFunctionType,
+    types.WrapperDescriptorType,
+    types.MethodDescriptorType,
+    types.ClassMethodDescriptorType,
+]
 
 # the keys of CONST_CLS eg python builtin types
 _CONSTANTS = tuple(node_classes.CONST_CLS)
@@ -42,17 +37,6 @@ _BUILTINS = vars(builtins)
 TYPE_NONE = type(None)
 TYPE_NOTIMPLEMENTED = type(NotImplemented)
 TYPE_ELLIPSIS = type(...)
-
-
-def _io_discrepancy(member):
-    # _io module names itself `io`: http://bugs.python.org/issue18602
-    member_self = getattr(member, "__self__", None)
-    return (
-        member_self
-        and inspect.ismodule(member_self)
-        and member_self.__name__ == "_io"
-        and member.__module__ == "io"
-    )
 
 
 def _attach_local_node(parent, node, name):
@@ -106,38 +90,53 @@ def attach_import_node(node, modname, membername):
     _attach_local_node(node, from_node, membername)
 
 
-def build_module(name: str, doc: str = None) -> nodes.Module:
+def build_module(name: str, doc: str | None = None) -> nodes.Module:
     """create and initialize an astroid Module node"""
-    node = nodes.Module(name, doc, pure_python=False)
-    node.package = False
-    node.parent = None
+    node = nodes.Module(name, pure_python=False, package=False)
+    node.postinit(
+        body=[],
+        doc_node=nodes.Const(value=doc) if doc else None,
+    )
     return node
 
 
-def build_class(name, basenames=(), doc=None):
-    """create and initialize an astroid ClassDef node"""
-    node = nodes.ClassDef(name, doc)
-    for base in basenames:
-        basenode = nodes.Name(name=base)
-        node.bases.append(basenode)
-        basenode.parent = node
+def build_class(
+    name: str, basenames: Iterable[str] = (), doc: str | None = None
+) -> nodes.ClassDef:
+    """Create and initialize an astroid ClassDef node."""
+    node = nodes.ClassDef(name)
+    node.postinit(
+        bases=[nodes.Name(name=base, parent=node) for base in basenames],
+        body=[],
+        decorators=None,
+        doc_node=nodes.Const(value=doc) if doc else None,
+    )
     return node
 
 
 def build_function(
-    name,
-    args: Optional[List[str]] = None,
-    posonlyargs: Optional[List[str]] = None,
-    defaults=None,
-    doc=None,
-    kwonlyargs: Optional[List[str]] = None,
+    name: str,
+    args: list[str] | None = None,
+    posonlyargs: list[str] | None = None,
+    defaults: list[Any] | None = None,
+    doc: str | None = None,
+    kwonlyargs: list[str] | None = None,
 ) -> nodes.FunctionDef:
     """create and initialize an astroid FunctionDef node"""
     # first argument is now a list of decorators
-    func = nodes.FunctionDef(name, doc)
-    func.args = argsnode = nodes.Arguments(parent=func)
+    func = nodes.FunctionDef(name)
+    argsnode = nodes.Arguments(parent=func)
+
+    # If args is None we don't have any information about the signature
+    # (in contrast to when there are no arguments and args == []). We pass
+    # this to the builder to indicate this.
+    if args is not None:
+        arguments = [nodes.AssignName(name=arg, parent=argsnode) for arg in args]
+    else:
+        arguments = None
+
     argsnode.postinit(
-        args=[nodes.AssignName(name=arg, parent=argsnode) for arg in args or ()],
+        args=arguments,
         defaults=[],
         kwonlyargs=[
             nodes.AssignName(name=arg, parent=argsnode) for arg in kwonlyargs or ()
@@ -147,6 +146,11 @@ def build_function(
         posonlyargs=[
             nodes.AssignName(name=arg, parent=argsnode) for arg in posonlyargs or ()
         ],
+    )
+    func.postinit(
+        args=argsnode,
+        body=[],
+        doc_node=nodes.Const(value=doc) if doc else None,
     )
     for default in defaults or ():
         argsnode.defaults.append(nodes.const_factory(default))
@@ -180,19 +184,27 @@ def register_arguments(func, args=None):
             register_arguments(func, arg.elts)
 
 
-def object_build_class(node, member, localname):
+def object_build_class(
+    node: nodes.Module | nodes.ClassDef, member: type, localname: str
+) -> nodes.ClassDef:
     """create astroid for a living class object"""
     basenames = [base.__name__ for base in member.__bases__]
     return _base_class_object_build(node, member, basenames, localname=localname)
 
 
-def object_build_function(node, member, localname):
-    """create astroid for a living function object"""
+def _get_args_info_from_callable(
+    member: _FunctionTypes,
+) -> tuple[list[str], list[Any], list[str], list[str]]:
+    """Returns args, posonlyargs, defaults, kwonlyargs.
+
+    :note: currently ignores the return annotation.
+    """
     signature = inspect.signature(member)
-    args = []
-    defaults = []
-    posonlyargs = []
-    kwonlyargs = []
+    args: list[str] = []
+    defaults: list[Any] = []
+    posonlyargs: list[str] = []
+    kwonlyargs: list[str] = []
+
     for param_name, param in signature.parameters.items():
         if param.kind == inspect.Parameter.POSITIONAL_ONLY:
             posonlyargs.append(param_name)
@@ -206,40 +218,63 @@ def object_build_function(node, member, localname):
             kwonlyargs.append(param_name)
         if param.default is not inspect._empty:
             defaults.append(param.default)
+
+    return args, posonlyargs, defaults, kwonlyargs
+
+
+def object_build_function(
+    node: nodes.Module | nodes.ClassDef, member: _FunctionTypes, localname: str
+) -> None:
+    """create astroid for a living function object"""
+    args, posonlyargs, defaults, kwonlyargs = _get_args_info_from_callable(member)
+
     func = build_function(
         getattr(member, "__name__", None) or localname,
         args,
         posonlyargs,
         defaults,
         member.__doc__,
+        kwonlyargs=kwonlyargs,
     )
+
     node.add_local_node(func, localname)
 
 
-def object_build_datadescriptor(node, member, name):
+def object_build_datadescriptor(
+    node: nodes.Module | nodes.ClassDef, member: type, name: str
+) -> nodes.ClassDef:
     """create astroid for a living data descriptor object"""
     return _base_class_object_build(node, member, [], name)
 
 
-def object_build_methoddescriptor(node, member, localname):
+def object_build_methoddescriptor(
+    node: nodes.Module | nodes.ClassDef,
+    member: _FunctionTypes,
+    localname: str,
+) -> None:
     """create astroid for a living method descriptor object"""
     # FIXME get arguments ?
     func = build_function(
         getattr(member, "__name__", None) or localname, doc=member.__doc__
     )
-    # set node's arguments to None to notice that we have no information, not
-    # and empty argument list
-    func.args.args = None
     node.add_local_node(func, localname)
     _add_dunder_class(func, member)
 
 
-def _base_class_object_build(node, member, basenames, name=None, localname=None):
+def _base_class_object_build(
+    node: nodes.Module | nodes.ClassDef,
+    member: type,
+    basenames: list[str],
+    name: str | None = None,
+    localname: str | None = None,
+) -> nodes.ClassDef:
     """create astroid for a living class object, with a given set of base names
     (e.g. ancestors)
     """
+    class_name = name or getattr(member, "__name__", None) or localname
+    assert isinstance(class_name, str)
     klass = build_class(
-        name or getattr(member, "__name__", None) or localname,
+        class_name,
         basenames,
         member.__doc__,
     )
@@ -266,10 +301,15 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
     return klass
 
 
-def _build_from_function(node, name, member, module):
+def _build_from_function(
+    node: nodes.Module | nodes.ClassDef,
+    name: str,
+    member: _FunctionTypes,
+    module: types.ModuleType,
+) -> None:
     # verify this is not an imported function
     try:
-        code = member.__code__
+        code = member.__code__  # type: ignore[union-attr]
     except AttributeError:
         # Some implementations don't provide the code object,
         # such as Jython.
@@ -300,11 +340,14 @@ class InspectBuilder:
 
     def __init__(self, manager_instance=None):
         self._manager = manager_instance or AstroidManager()
-        self._done = {}
-        self._module = None
+        self._done: dict[types.ModuleType | type, nodes.Module | nodes.ClassDef] = {}
+        self._module: types.ModuleType
 
     def inspect_build(
-        self, module: types.ModuleType, modname: str = None, path: str = None
+        self,
+        module: types.ModuleType,
+        modname: str | None = None,
+        path: str | None = None,
     ) -> nodes.Module:
         """build astroid from a living module (i.e. using inspect)
         this is used when there is no python source code available (either
@@ -326,30 +369,33 @@ class InspectBuilder:
         self.object_build(node, module)
         return node
 
-    def object_build(self, node, obj):
+    def object_build(
+        self, node: nodes.Module | nodes.ClassDef, obj: types.ModuleType | type
+    ) -> None:
         """recursive method which create a partial ast from real objects
         (only function, class, and method are handled)
         """
         if obj in self._done:
-            return self._done[obj]
+            return None
         self._done[obj] = node
         for name in dir(obj):
+            # inspect.ismethod() and inspect.isbuiltin() in PyPy return
+            # the opposite of what they do in CPython for __class_getitem__.
+            pypy__class_getitem__ = IS_PYPY and name == "__class_getitem__"
             try:
                 with warnings.catch_warnings():
-                    warnings.filterwarnings("error")
+                    warnings.simplefilter("error")
                     member = getattr(obj, name)
             except (AttributeError, DeprecationWarning):
                 # damned ExtensionClass.Base, I know you're there !
                 attach_dummy_node(node, name)
                 continue
-            if inspect.ismethod(member):
+            if inspect.ismethod(member) and not pypy__class_getitem__:
                 member = member.__func__
             if inspect.isfunction(member):
                 _build_from_function(node, name, member, self._module)
-            elif inspect.isbuiltin(member):
-                if not _io_discrepancy(member) and self.imported_member(
-                    node, member, name
-                ):
+            elif inspect.isbuiltin(member) or pypy__class_getitem__:
+                if self.imported_member(node, member, name):
                     continue
                 object_build_methoddescriptor(node, member, name)
             elif inspect.isclass(member):
@@ -357,6 +403,7 @@ class InspectBuilder:
                     continue
                 if member in self._done:
                     class_node = self._done[member]
+                    assert isinstance(class_node, nodes.ClassDef)
                     if class_node not in node.locals.get(name, ()):
                         node.add_local_node(class_node, name)
                 else:
@@ -366,10 +413,8 @@ class InspectBuilder:
                 if name == "__class__" and class_node.parent is None:
                     class_node.parent = self._done[self._module]
             elif inspect.ismethoddescriptor(member):
-                assert isinstance(member, object)
                 object_build_methoddescriptor(node, member, name)
             elif inspect.isdatadescriptor(member):
-                assert isinstance(member, object)
                 object_build_datadescriptor(node, member, name)
             elif isinstance(member, _CONSTANTS):
                 attach_const_node(node, name, member)
@@ -387,7 +432,7 @@ class InspectBuilder:
                 attach_dummy_node(node, name, member)
         return None
 
-    def imported_member(self, node, member, name):
+    def imported_member(self, node, member, name: str) -> bool:
         """verify this is not an imported class or handle it"""
         # /!\ some classes like ExtensionClass doesn't have a __module__
         # attribute ! Also, this may trigger an exception on badly built module
@@ -406,7 +451,13 @@ class InspectBuilder:
                 attach_dummy_node(node, name, member)
                 return True
 
-        real_name = {"gtk": "gtk_gtk", "_io": "io"}.get(modname, modname)
+        # On PyPy during bootstrapping we infer _io while _module is
+        # builtins. In CPython _io names itself io, see http://bugs.python.org/issue18602
+        # Therefore, this basically checks whether we are not in PyPy.
+        if modname == "_io" and not self._module.__name__ == "builtins":
+            return False
+
+        real_name = {"gtk": "gtk_gtk"}.get(modname, modname)
 
         if real_name != self._module.__name__:
             # check if it sounds valid and then add an import node, else use a
@@ -458,18 +509,36 @@ def _astroid_bootstrapping():
     # Set the builtin module as parent for some builtins.
     nodes.Const._proxied = property(_set_proxied)
 
-    _GeneratorType = nodes.ClassDef(
-        types.GeneratorType.__name__, types.GeneratorType.__doc__
-    )
+    _GeneratorType = nodes.ClassDef(types.GeneratorType.__name__)
     _GeneratorType.parent = astroid_builtin
+    generator_doc_node = (
+        nodes.Const(value=types.GeneratorType.__doc__)
+        if types.GeneratorType.__doc__
+        else None
+    )
+    _GeneratorType.postinit(
+        bases=[],
+        body=[],
+        decorators=None,
+        doc_node=generator_doc_node,
+    )
     bases.Generator._proxied = _GeneratorType
     builder.object_build(bases.Generator._proxied, types.GeneratorType)
 
     if hasattr(types, "AsyncGeneratorType"):
-        _AsyncGeneratorType = nodes.ClassDef(
-            types.AsyncGeneratorType.__name__, types.AsyncGeneratorType.__doc__
-        )
+        _AsyncGeneratorType = nodes.ClassDef(types.AsyncGeneratorType.__name__)
         _AsyncGeneratorType.parent = astroid_builtin
+        async_generator_doc_node = (
+            nodes.Const(value=types.AsyncGeneratorType.__doc__)
+            if types.AsyncGeneratorType.__doc__
+            else None
+        )
+        _AsyncGeneratorType.postinit(
+            bases=[],
+            body=[],
+            decorators=None,
+            doc_node=async_generator_doc_node,
+        )
         bases.AsyncGenerator._proxied = _AsyncGeneratorType
         builder.object_build(bases.AsyncGenerator._proxied, types.AsyncGeneratorType)
     builtin_types = (
@@ -486,10 +555,16 @@ def _astroid_bootstrapping():
     )
     for _type in builtin_types:
         if _type.__name__ not in astroid_builtin:
-            cls = nodes.ClassDef(_type.__name__, _type.__doc__)
-            cls.parent = astroid_builtin
-            builder.object_build(cls, _type)
-            astroid_builtin[_type.__name__] = cls
+            klass = nodes.ClassDef(_type.__name__)
+            klass.parent = astroid_builtin
+            klass.postinit(
+                bases=[],
+                body=[],
+                decorators=None,
+                doc_node=nodes.Const(value=_type.__doc__) if _type.__doc__ else None,
+            )
+            builder.object_build(klass, _type)
+            astroid_builtin[_type.__name__] = klass
 
 
 _astroid_bootstrapping()

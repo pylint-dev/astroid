@@ -1,29 +1,15 @@
-# Copyright (c) 2009-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2010 Daniel Harding <dharding@gmail.com>
-# Copyright (c) 2013-2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2016 Jared Garst <jgarst@users.noreply.github.com>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2017, 2019 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2017 rr- <rr-@sakuya.pl>
-# Copyright (c) 2018 Serhiy Storchaka <storchaka@gmail.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 brendanator <brendan.maginnis@gmail.com>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2019 Alex Hall <alex.mojaki@gmail.com>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """This module renders Astroid nodes as string"""
+
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from astroid.nodes import Const
     from astroid.nodes.node_classes import (
         Match,
         MatchAs,
@@ -35,6 +21,7 @@ if TYPE_CHECKING:
         MatchSingleton,
         MatchStar,
         MatchValue,
+        Unknown,
     )
 
 # pylint: disable=unused-argument
@@ -54,9 +41,14 @@ class AsStringVisitor:
         """Makes this visitor behave as a simple function"""
         return node.accept(self).replace(DOC_NEWLINE, "\n")
 
-    def _docs_dedent(self, doc):
+    def _docs_dedent(self, doc_node: Const | None) -> str:
         """Stop newlines in docs being indented by self._stmt_list"""
-        return '\n{}"""{}"""'.format(self.indent, doc.replace("\n", DOC_NEWLINE))
+        if not doc_node:
+            return ""
+
+        return '\n{}"""{}"""'.format(
+            self.indent, doc_node.value.replace("\n", DOC_NEWLINE)
+        )
 
     def _stmt_list(self, stmts, indent=True):
         """return a list of nodes to string"""
@@ -180,7 +172,7 @@ class AsStringVisitor:
             args.append("metaclass=" + node._metaclass.accept(self))
         args += [n.accept(self) for n in node.keywords]
         args = f"({', '.join(args)})" if args else ""
-        docs = self._docs_dedent(node.doc) if node.doc else ""
+        docs = self._docs_dedent(node.doc_node)
         return "\n\n{}class {}{}:{}\n{}\n".format(
             decorate, node.name, args, docs, self._stmt_list(node.body)
         )
@@ -325,7 +317,7 @@ class AsStringVisitor:
     def handle_functiondef(self, node, keyword):
         """return a (possibly async) function definition node as string"""
         decorate = node.decorators.accept(self) if node.decorators else ""
-        docs = self._docs_dedent(node.doc) if node.doc else ""
+        docs = self._docs_dedent(node.doc_node)
         trailer = ":"
         if node.returns:
             return_annotation = " -> " + node.returns.as_string()
@@ -414,7 +406,7 @@ class AsStringVisitor:
 
     def visit_module(self, node):
         """return an astroid.Module node as string"""
-        docs = f'"""{node.doc}"""\n\n' if node.doc else ""
+        docs = f'"""{node.doc_node.value}"""\n\n' if node.doc_node else ""
         return docs + "\n".join(n.accept(self) for n in node.body) + "\n\n"
 
     def visit_name(self, node):
@@ -551,11 +543,11 @@ class AsStringVisitor:
         """return Starred node as string"""
         return "*" + node.value.accept(self)
 
-    def visit_match(self, node: "Match") -> str:
+    def visit_match(self, node: Match) -> str:
         """Return an astroid.Match node as string."""
         return f"match {node.subject.accept(self)}:\n{self._stmt_list(node.cases)}"
 
-    def visit_matchcase(self, node: "MatchCase") -> str:
+    def visit_matchcase(self, node: MatchCase) -> str:
         """Return an astroid.MatchCase node as string."""
         guard_str = f" if {node.guard.accept(self)}" if node.guard else ""
         return (
@@ -563,24 +555,24 @@ class AsStringVisitor:
             f"{self._stmt_list(node.body)}"
         )
 
-    def visit_matchvalue(self, node: "MatchValue") -> str:
+    def visit_matchvalue(self, node: MatchValue) -> str:
         """Return an astroid.MatchValue node as string."""
         return node.value.accept(self)
 
     @staticmethod
-    def visit_matchsingleton(node: "MatchSingleton") -> str:
+    def visit_matchsingleton(node: MatchSingleton) -> str:
         """Return an astroid.MatchSingleton node as string."""
         return str(node.value)
 
-    def visit_matchsequence(self, node: "MatchSequence") -> str:
+    def visit_matchsequence(self, node: MatchSequence) -> str:
         """Return an astroid.MatchSequence node as string."""
         if node.patterns is None:
             return "[]"
         return f"[{', '.join(p.accept(self) for p in node.patterns)}]"
 
-    def visit_matchmapping(self, node: "MatchMapping") -> str:
+    def visit_matchmapping(self, node: MatchMapping) -> str:
         """Return an astroid.MatchMapping node as string."""
-        mapping_strings = []
+        mapping_strings: list[str] = []
         if node.keys and node.patterns:
             mapping_strings.extend(
                 f"{key.accept(self)}: {p.accept(self)}"
@@ -590,11 +582,11 @@ class AsStringVisitor:
             mapping_strings.append(f"**{node.rest.accept(self)}")
         return f"{'{'}{', '.join(mapping_strings)}{'}'}"
 
-    def visit_matchclass(self, node: "MatchClass") -> str:
+    def visit_matchclass(self, node: MatchClass) -> str:
         """Return an astroid.MatchClass node as string."""
         if node.cls is None:
             raise Exception(f"{node} does not have a 'cls' node")
-        class_strings = []
+        class_strings: list[str] = []
         if node.patterns:
             class_strings.extend(p.accept(self) for p in node.patterns)
         if node.kwd_attrs and node.kwd_patterns:
@@ -602,11 +594,11 @@ class AsStringVisitor:
                 class_strings.append(f"{attr}={pattern.accept(self)}")
         return f"{node.cls.accept(self)}({', '.join(class_strings)})"
 
-    def visit_matchstar(self, node: "MatchStar") -> str:
+    def visit_matchstar(self, node: MatchStar) -> str:
         """Return an astroid.MatchStar node as string."""
         return f"*{node.name.accept(self) if node.name else '_'}"
 
-    def visit_matchas(self, node: "MatchAs") -> str:
+    def visit_matchas(self, node: MatchAs) -> str:
         """Return an astroid.MatchAs node as string."""
         # pylint: disable=import-outside-toplevel
         # Prevent circular dependency
@@ -619,7 +611,7 @@ class AsStringVisitor:
             f"{f' as {node.name.accept(self)}' if node.name else ''}"
         )
 
-    def visit_matchor(self, node: "MatchOr") -> str:
+    def visit_matchor(self, node: MatchOr) -> str:
         """Return an astroid.MatchOr node as string."""
         if node.patterns is None:
             raise Exception(f"{node} does not have pattern nodes")
@@ -641,6 +633,9 @@ class AsStringVisitor:
 
     def visit_evaluatedobject(self, node):
         return node.original.accept(self)
+
+    def visit_unknown(self, node: Unknown) -> str:
+        return str(node)
 
 
 def _import_string(names):

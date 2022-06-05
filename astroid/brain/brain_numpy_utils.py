@@ -1,15 +1,37 @@
-# Copyright (c) 2019-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2019-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Different utilities for the numpy brains"""
+
+from __future__ import annotations
+
 from astroid.builder import extract_node
 from astroid.nodes.node_classes import Attribute, Import, Name, NodeNG
+
+# Class subscript is available in numpy starting with version 1.20.0
+NUMPY_VERSION_TYPE_HINTS_SUPPORT = ("1", "20", "0")
+
+
+def numpy_supports_type_hints() -> bool:
+    """
+    Returns True if numpy supports type hints
+    """
+    np_ver = _get_numpy_version()
+    return np_ver and np_ver > NUMPY_VERSION_TYPE_HINTS_SUPPORT
+
+
+def _get_numpy_version() -> tuple[str, str, str]:
+    """
+    Return the numpy version number if numpy can be imported. Otherwise returns
+    ('0', '0', '0')
+    """
+    try:
+        import numpy  # pylint: disable=import-outside-toplevel
+
+        return tuple(numpy.version.version.split("."))
+    except ImportError:
+        return ("0", "0", "0")
 
 
 def infer_numpy_member(src, node, context=None):
@@ -33,13 +55,10 @@ def _is_a_numpy_module(node: Name) -> bool:
     potential_import_target = [
         x for x in node.lookup(module_nickname)[1] if isinstance(x, Import)
     ]
-    for target in potential_import_target:
-        if ("numpy", module_nickname) in target.names or (
-            "numpy",
-            None,
-        ) in target.names:
-            return True
-    return False
+    return any(
+        ("numpy", module_nickname) in target.names or ("numpy", None) in target.names
+        for target in potential_import_target
+    )
 
 
 def looks_like_numpy_member(member_name: str, node: NodeNG) -> bool:

@@ -1,15 +1,7 @@
-# Copyright (c) 2016-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2017-2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2017 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2017 Calen Pennington <cale@edx.org>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+
 """
 Data object model, as per https://docs.python.org/3/reference/datamodel.html.
 
@@ -29,12 +21,14 @@ attribute. Thus the model can be viewed as a special part of the lookup
 mechanism.
 """
 
+from __future__ import annotations
+
 import itertools
 import os
 import pprint
 import types
 from functools import lru_cache
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import astroid
 from astroid import util
@@ -49,6 +43,7 @@ if TYPE_CHECKING:
     from astroid.objects import Property
 
 IMPL_PREFIX = "attr_"
+LEN_OF_IMPL_PREFIX = len(IMPL_PREFIX)
 
 
 def _dunder_dict(instance, attributes):
@@ -108,12 +103,10 @@ class ObjectModel:
     def __contains__(self, name):
         return name in self.attributes()
 
-    @lru_cache(maxsize=None)
-    def attributes(self):
+    @lru_cache()  # noqa
+    def attributes(self) -> list[str]:
         """Get the attributes which are exported by this object model."""
-        return [
-            obj[len(IMPL_PREFIX) :] for obj in dir(self) if obj.startswith(IMPL_PREFIX)
-        ]
+        return [o[LEN_OF_IMPL_PREFIX:] for o in dir(self) if o.startswith(IMPL_PREFIX)]
 
     def lookup(self, name):
         """Look up the given *name* in the current model
@@ -121,7 +114,6 @@ class ObjectModel:
         It should return an AST or an interpreter object,
         but if the name is not found, then an AttributeInferenceError will be raised.
         """
-
         if name in self.attributes():
             return getattr(self, IMPL_PREFIX + name)
         raise AttributeInferenceError(target=self._instance, attribute=name)
@@ -162,7 +154,10 @@ class ModuleModel(ObjectModel):
 
     @property
     def attr___doc__(self):
-        return node_classes.Const(value=self._instance.doc, parent=self._instance)
+        return node_classes.Const(
+            value=getattr(self._instance.doc_node, "value", None),
+            parent=self._instance,
+        )
 
     @property
     def attr___file__(self):
@@ -208,7 +203,10 @@ class FunctionModel(ObjectModel):
 
     @property
     def attr___doc__(self):
-        return node_classes.Const(value=self._instance.doc, parent=self._instance)
+        return node_classes.Const(
+            value=getattr(self._instance.doc_node, "value", None),
+            parent=self._instance,
+        )
 
     @property
     def attr___qualname__(self):
@@ -331,13 +329,18 @@ class FunctionModel(ObjectModel):
                 # class where it will be bound.
                 new_func = func.__class__(
                     name=func.name,
-                    doc=func.doc,
                     lineno=func.lineno,
                     col_offset=func.col_offset,
                     parent=func.parent,
                 )
                 # pylint: disable=no-member
-                new_func.postinit(func.args, func.body, func.decorators, func.returns)
+                new_func.postinit(
+                    func.args,
+                    func.body,
+                    func.decorators,
+                    func.returns,
+                    doc_node=func.doc_node,
+                )
 
                 # Build a proper bound method that points to our newly built function.
                 proxy = bases.UnboundMethod(new_func)
@@ -403,6 +406,12 @@ class FunctionModel(ObjectModel):
 
 
 class ClassModel(ObjectModel):
+    def __init__(self):
+        # Add a context so that inferences called from an instance don't recurse endlessly
+        self.context = InferenceContext()
+
+        super().__init__()
+
     @property
     def attr___module__(self):
         return node_classes.Const(self._instance.root().qname())
@@ -417,7 +426,7 @@ class ClassModel(ObjectModel):
 
     @property
     def attr___doc__(self):
-        return node_classes.Const(self._instance.doc)
+        return node_classes.Const(getattr(self._instance.doc_node, "value", None))
 
     @property
     def attr___mro__(self):
@@ -485,7 +494,7 @@ class ClassModel(ObjectModel):
         classes = [
             cls
             for cls in root.nodes_of_class(scoped_nodes.ClassDef)
-            if cls != self._instance and cls.is_subtype_of(qname)
+            if cls != self._instance and cls.is_subtype_of(qname, context=self.context)
         ]
 
         obj = node_classes.List(parent=self._instance)
@@ -577,7 +586,8 @@ class GeneratorModel(FunctionModel):
     @property
     def attr___doc__(self):
         return node_classes.Const(
-            value=self._instance.parent.doc, parent=self._instance
+            value=getattr(self._instance.parent.doc_node, "value", None),
+            parent=self._instance,
         )
 
 
@@ -613,7 +623,7 @@ class InstanceModel(ObjectModel):
 
     @property
     def attr___doc__(self):
-        return node_classes.Const(self._instance.doc)
+        return node_classes.Const(getattr(self._instance.doc_node, "value", None))
 
     @property
     def attr___dict__(self):
@@ -801,7 +811,7 @@ class PropertyModel(ObjectModel):
 
         func = self._instance
 
-        def find_setter(func: "Property") -> Optional[astroid.FunctionDef]:
+        def find_setter(func: Property) -> astroid.FunctionDef | None:
             """
             Given a property, find the corresponding setter function and returns it.
 

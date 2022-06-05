@@ -1,2 +1,2 @@
--e .
 pytest
+typing-extensions>=3.10

@@ -1,30 +1,20 @@
-# Copyright (c) 2006-2008, 2010-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2007 Marien Zwart <marienz@gentoo.org>
-# Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
-# Copyright (c) 2019, 2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 import sys
 import textwrap
 import unittest
 
-from astroid import MANAGER, Instance, nodes, test_utils
+import pytest
+
+from astroid import MANAGER, Instance, bases, nodes, parse, test_utils
 from astroid.builder import AstroidBuilder, extract_node
+from astroid.const import PY38_PLUS
+from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
 from astroid.raw_building import build_module
+from astroid.util import Uninferable
 
 from . import resources
 
@@ -91,6 +81,23 @@ multiply([1, 2], [3, 4])
         inferred = callfunc.inferred()
         self.assertEqual(len(inferred), 1)
 
+    @unittest.skipUnless(HAS_NUMPY, "Needs numpy")
+    def test_numpy_distutils(self):
+        """Special handling of virtualenv's patching of distutils shouldn't interfere
+        with numpy.distutils.
+
+        PY312_PLUS -- This test will likely become unnecessary when Python 3.12 is
+        numpy's minimum version. (numpy.distutils will be removed then.)
+        """
+        node = extract_node(
+            """
+from numpy.distutils.misc_util import is_sequence
+is_sequence("ABC") #@
+"""
+        )
+        inferred = node.inferred()
+        self.assertIsInstance(inferred[0], nodes.Const)
+
     def test_nameconstant(self) -> None:
         # used to fail for Python 3.4
         builder = AstroidBuilder()
@@ -154,6 +161,38 @@ def test():
         self.assertIsInstance(result, Instance)
         base = next(result._proxied.bases[0].infer())
         self.assertEqual(base.name, "int")
+
+    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
+    def test_filter_stmts_nested_if(self) -> None:
+        builder = AstroidBuilder()
+        data = """
+def test(val):
+    variable = None
+
+    if val == 1:
+        variable = "value"
+        if variable := "value":
+            pass
+
+    elif val == 2:
+        variable = "value_two"
+        variable = "value_two"
+
+    return variable
+"""
+        module = builder.string_build(data, __name__, __file__)
+        test_func = module["test"]
+        result = list(test_func.infer_call_result(module))
+        assert len(result) == 3
+        assert isinstance(result[0], nodes.Const)
+        assert result[0].value is None
+        assert result[0].lineno == 3
+        assert isinstance(result[1], nodes.Const)
+        assert result[1].value == "value"
+        assert result[1].lineno == 7
+        assert isinstance(result[1], nodes.Const)
+        assert result[2].value == "value_two"
+        assert result[2].lineno == 12
 
     def test_ancestors_patching_class_recursion(self) -> None:
         node = AstroidBuilder().string_build(
@@ -310,7 +349,7 @@ def test():
 
 
 class Whatever:
-    a = property(lambda x: x, lambda x: x)  # type: ignore
+    a = property(lambda x: x, lambda x: x)  # type: ignore[misc]
 
 
 def test_ancestor_looking_up_redefined_function() -> None:
@@ -341,6 +380,54 @@ def test_crash_in_dunder_inference_prevented() -> None:
     """
     inferred = next(extract_node(code).infer())
     assert inferred.qname() == "builtins.dict.__delitem__"
+
+
+def test_regression_crash_classmethod() -> None:
+    """Regression test for a crash reported in https://github.com/PyCQA/pylint/issues/4982"""
+    code = """
+    class Base:
+        @classmethod
+        def get_first_subclass(cls):
+            for subclass in cls.__subclasses__():
+                return subclass
+            return object
+
+
+    subclass = Base.get_first_subclass()
+
+
+    class Another(subclass):
+        pass
+    """
+    parse(code)
+
+
+def test_max_inferred_for_complicated_class_hierarchy() -> None:
+    """Regression test for a crash reported in https://github.com/PyCQA/pylint/issues/5679.
+
+    The class hierarchy of 'sqlalchemy' is so intricate that it becomes uninferable with
+    the standard max_inferred of 100. We used to crash when this happened.
+    """
+    # Create module and get relevant nodes
+    module = resources.build_file(
+        str(resources.RESOURCE_PATH / "max_inferable_limit_for_classes" / "main.py")
+    )
+    init_attr_node = module.body[-1].body[0].body[0].value.func
+    init_object_node = module.body[-1].mro()[-1]["__init__"]
+    super_node = next(init_attr_node.expr.infer())
+
+    # Arbitrarily limit the max number of infered nodes per context
+    InferenceContext.max_inferred = -1
+    context = InferenceContext()
+
+    # Try to infer 'object.__init__' > because of limit is impossible
+    for inferred in bases._infer_stmts([init_object_node], context, frame=super):
+        assert inferred == Uninferable
+
+    # Reset inference limit
+    InferenceContext.max_inferred = 100
+    # Check that we don't crash on a previously uninferable node
+    assert super_node.getattr("__init__", context=context)[0] == Uninferable
 
 
 if __name__ == "__main__":

@@ -1,18 +1,10 @@
-# Copyright (c) 2015-2016, 2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 hippo91 <guillaume.peillex@gmail.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
 
 import unittest
-from typing import List
 
 from astroid import bases, builder, nodes, objects
 from astroid.exceptions import AttributeInferenceError, InferenceError, SuperError
@@ -444,7 +436,7 @@ class SuperTests(unittest.TestCase):
         selfclass = third.getattr("__self_class__")[0]
         self.assertEqual(selfclass.name, "A")
 
-    def assertEqualMro(self, klass: Super, expected_mro: List[str]) -> None:
+    def assertEqualMro(self, klass: Super, expected_mro: list[str]) -> None:
         self.assertEqual([member.name for member in klass.super_mro()], expected_mro)
 
     def test_super_mro(self) -> None:

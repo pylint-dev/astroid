@@ -1,11 +1,22 @@
+# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+
 import enum
 import sys
+from pathlib import Path
 
-PY37_PLUS = sys.version_info >= (3, 7)
+PY38 = sys.version_info[:2] == (3, 8)
 PY38_PLUS = sys.version_info >= (3, 8)
 PY39_PLUS = sys.version_info >= (3, 9)
 PY310_PLUS = sys.version_info >= (3, 10)
+PY311_PLUS = sys.version_info >= (3, 11)
 BUILTINS = "builtins"  # TODO Remove in 2.8
+
+WIN32 = sys.platform == "win32"
+
+IS_PYPY = sys.implementation.name == "pypy"
+IS_JYTHON = sys.implementation.name == "jython"
 
 
 class Context(enum.Enum):
@@ -18,3 +29,7 @@ class Context(enum.Enum):
 Load = Context.Load
 Store = Context.Store
 Del = Context.Del
+
+
+ASTROID_INSTALL_DIRECTORY = Path(__file__).parent
+BRAIN_MODULES_DIRECTORY = ASTROID_INSTALL_DIRECTORY / "brain"

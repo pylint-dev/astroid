@@ -1,13 +1,19 @@
+# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+
 """
 This script permits to upgrade the changelog in astroid or pylint when releasing a version.
 """
 # pylint: disable=logging-fstring-interpolation
+
+from __future__ import annotations
+
 import argparse
 import enum
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import List
 
 DEFAULT_CHANGELOG_PATH = Path("ChangeLog")
 
@@ -54,7 +60,7 @@ def get_next_version(version: str, version_type: VersionType) -> str:
     return ".".join(new_version)
 
 
-def get_next_versions(version: str, version_type: VersionType) -> List[str]:
+def get_next_versions(version: str, version_type: VersionType) -> list[str]:
     if version_type == VersionType.PATCH:
         # "2.6.1" => ["2.6.2"]
         return [get_next_version(version, VersionType.PATCH)]

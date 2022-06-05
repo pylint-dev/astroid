@@ -1,58 +1,28 @@
-# Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
-# Copyright (c) 2015 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2015 raylu <lurayl@gmail.com>
-# Copyright (c) 2015 Philip Lorenz <philip@bithub.de>
-# Copyright (c) 2016 Florian Bruhin <me@the-compiler.org>
-# Copyright (c) 2017-2018, 2020-2021 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2017-2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
-# Copyright (c) 2017 David Euresti <github@euresti.com>
-# Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
-# Copyright (c) 2018 Tomas Gavenciak <gavento@ucw.cz>
-# Copyright (c) 2018 David Poirier <david-poirier-csn@users.noreply.github.com>
-# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
-# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
-# Copyright (c) 2018 Ioana Tagirta <ioana.tagirta@gmail.com>
-# Copyright (c) 2018 Ahmed Azzaoui <ahmed.azzaoui@engie.com>
-# Copyright (c) 2019-2020 Bryce Guinta <bryce.guinta@protonmail.com>
-# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2019 Tomas Novak <ext.Tomas.Novak@skoda-auto.cz>
-# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
-# Copyright (c) 2019 Grygorii Iermolenko <gyermolenko@gmail.com>
-# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
-# Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
-# Copyright (c) 2021 Pierre Sassoulas <pierre.sassoulas@gmail.com>
-# Copyright (c) 2021 Dimitri Prybysh <dmand@yandex.ru>
-# Copyright (c) 2021 David Liu <david@cs.toronto.edu>
-# Copyright (c) 2021 pre-commit-ci[bot] <bot@noreply.github.com>
-# Copyright (c) 2021 Alphadelta14 <alpha@alphaservcomputing.solutions>
-# Copyright (c) 2021 Tim Martin <tim@asymptotic.co.uk>
-# Copyright (c) 2021 Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-# Copyright (c) 2021 Andrew Haigh <hello@nelf.in>
-# Copyright (c) 2021 Artsiom Kaval <lezeroq@gmail.com>
-# Copyright (c) 2021 Damien Baty <damien@damienbaty.com>
-
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for basic functionality in astroid.brain."""
+
+from __future__ import annotations
+
 import io
 import queue
 import re
 import sys
 import unittest
-from typing import Any, List
+from typing import Any
 
 import pytest
 
 import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
-from astroid.const import PY37_PLUS
-from astroid.exceptions import AttributeInferenceError, InferenceError
+from astroid.exceptions import (
+    AttributeInferenceError,
+    InferenceError,
+    UseInferenceDefault,
+)
 from astroid.nodes.node_classes import Const
 from astroid.nodes.scoped_nodes import ClassDef
 
@@ -93,7 +63,7 @@ except ImportError:
     HAS_SIX = False
 
 
-def assertEqualMro(klass: ClassDef, expected_mro: List[str]) -> None:
+def assertEqualMro(klass: ClassDef, expected_mro: list[str]) -> None:
     """Check mro names."""
     assert [member.qname() for member in klass.mro()] == expected_mro
 
@@ -191,6 +161,8 @@ class NamedTupleTest(unittest.TestCase):
         self.assertEqual(
             [anc.name for anc in klass.ancestors()], ["X", "tuple", "object"]
         )
+        # See: https://github.com/PyCQA/pylint/issues/5982
+        self.assertNotIn("X", klass.locals)
         for anc in klass.ancestors():
             self.assertFalse(anc.parent is None)
 
@@ -476,7 +448,7 @@ class ModuleExtenderTest(unittest.TestCase):
     def test_extension_modules(self) -> None:
         transformer = MANAGER._transform
         for extender, _ in transformer.transforms[nodes.Module]:
-            n = nodes.Module("__main__", None)
+            n = nodes.Module("__main__")
             extender(n)
 
 
@@ -1169,6 +1141,35 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(inferred[0], astroid.Const)
         self.assertEqual(inferred[0].value, 1)
 
+    def test_members_member_ignored(self) -> None:
+        ast_node = builder.extract_node(
+            """
+        from enum import Enum
+        class Animal(Enum):
+            a = 1
+            __members__ = {}
+        Animal.__members__ #@
+        """
+        )
+
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, astroid.Dict)
+        self.assertTrue(inferred.locals)
+
+    def test_enum_as_renamed_import(self) -> None:
+        """Originally reported in https://github.com/PyCQA/pylint/issues/5776."""
+        ast_node: nodes.Attribute = builder.extract_node(
+            """
+        from enum import Enum as PyEnum
+        class MyEnum(PyEnum):
+            ENUM_KEY = "enum_value"
+        MyEnum.ENUM_KEY
+        """
+        )
+        inferred = next(ast_node.infer())
+        assert isinstance(inferred, bases.Instance)
+        assert inferred._proxied.name == "ENUM_KEY"
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
@@ -1219,10 +1220,7 @@ def streams_are_fine():
 
     PY3 only
     """
-    for stream in (sys.stdout, sys.stderr, sys.stdin):
-        if not isinstance(stream, io.IOBase):
-            return False
-    return True
+    return all(isinstance(s, io.IOBase) for s in (sys.stdout, sys.stderr, sys.stdin))
 
 
 class IOBrainTest(unittest.TestCase):
@@ -1287,10 +1285,9 @@ class TypeBrain(unittest.TestCase):
 
     @test_utils.require_version(minver="3.9")
     def test_builtin_subscriptable(self):
-        """
-        Starting with python3.9 builtin type such as list are subscriptable
-        """
-        for typename in ("tuple", "list", "dict", "set", "frozenset"):
+        """Starting with python3.9 builtin types such as list are subscriptable.
+        Any builtin class such as "enumerate" or "staticmethod" also works."""
+        for typename in ("tuple", "list", "dict", "set", "frozenset", "enumerate"):
             src = f"""
             {typename:s}[int]
             """
@@ -1643,6 +1640,19 @@ class TypingBrain(unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
 
+    def test_typing_type_without_tip(self):
+        """Regression test for https://github.com/PyCQA/pylint/issues/5770"""
+        node = builder.extract_node(
+            """
+        from typing import NewType
+
+        def make_new_type(t):
+            new_type = NewType(f'IntRange_{t}', t) #@
+        """
+        )
+        with self.assertRaises(UseInferenceDefault):
+            astroid.brain.brain_typing.infer_typing_typevar_or_newtype(node.value)
+
     def test_namedtuple_nested_class(self):
         result = builder.extract_node(
             """
@@ -1664,7 +1674,6 @@ class TypingBrain(unittest.TestCase):
         attr = next(attr_def.infer())
         self.assertEqual(attr.value, "bar")
 
-    @test_utils.require_version(minver="3.7")
     def test_tuple_type(self):
         node = builder.extract_node(
             """
@@ -1677,7 +1686,6 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
         assert inferred.qname() == "typing.Tuple"
 
-    @test_utils.require_version(minver="3.7")
     def test_callable_type(self):
         node = builder.extract_node(
             """
@@ -1690,7 +1698,6 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
         assert inferred.qname() == "typing.Callable"
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_generic_subscriptable(self):
         """Test typing.Generic is subscriptable with __class_getitem__ (added in PY37)"""
         node = builder.extract_node(
@@ -1717,7 +1724,6 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(inferred, nodes.ClassDef)
         assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_generic_slots(self):
         """Test slots for Generic subclass."""
         node = builder.extract_node(
@@ -1784,7 +1790,6 @@ class TypingBrain(unittest.TestCase):
         # Test TypedDict instance is callable
         assert next(code[1].infer()).callable() is True
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_alias_type(self):
         """
         Test that the type aliased thanks to typing._alias function are
@@ -1818,7 +1823,6 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
-    @test_utils.require_version(minver="3.7.2")
     def test_typing_alias_type_2(self):
         """
         Test that the type aliased thanks to typing._alias function are
@@ -1845,7 +1849,6 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_not_subscriptable(self):
         """Hashable is not subscriptable"""
         wrong_node = builder.extract_node(
@@ -1874,7 +1877,6 @@ class TypingBrain(unittest.TestCase):
         with self.assertRaises(AttributeInferenceError):
             inferred.getattr("__class_getitem__")
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_subscriptable(self):
         """Test that MutableSet is subscriptable"""
         right_node = builder.extract_node(
@@ -1901,7 +1903,6 @@ class TypingBrain(unittest.TestCase):
             inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_subscriptable_2(self):
         """Multiple inheritance with subscriptable typing alias"""
         node = builder.extract_node(
@@ -1925,7 +1926,6 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_notsubscriptable_3(self):
         """Until python39 ByteString class of the typing module is not subscritable (whereas it is in the collections module)"""
         right_node = builder.extract_node(
@@ -2011,11 +2011,10 @@ class ReBrainTest(unittest.TestCase):
             self.assertIn(name, re_ast)
             self.assertEqual(next(re_ast[name].infer()).value, getattr(re, name))
 
-    @test_utils.require_version(minver="3.7", maxver="3.9")
+    @test_utils.require_version(maxver="3.9")
     def test_re_pattern_unsubscriptable(self):
         """
         re.Pattern and re.Match are unsubscriptable until PY39.
-        re.Pattern and re.Match were added in PY37.
         """
         right_node1 = builder.extract_node(
             """
@@ -2184,6 +2183,73 @@ class AttrsTest(unittest.TestCase):
         @attr.frozen
         class Eggs:
             d = attr.field(default=attr.Factory(dict))
+
+        l = Eggs(d=1)
+        l.d['answer'] = 42
+        """
+        )
+
+        for name in ("f", "g", "h", "i", "j", "k", "l"):
+            should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
+            self.assertIsInstance(should_be_unknown, astroid.Unknown)
+
+    def test_attrs_transform(self) -> None:
+        """Test brain for decorators of the 'attrs' package.
+
+        Package added support for 'attrs' a long side 'attr' in v21.3.0.
+        See: https://github.com/python-attrs/attrs/releases/tag/21.3.0
+        """
+        module = astroid.parse(
+            """
+        import attrs
+        from attrs import field, mutable, frozen
+
+        @attrs.define
+        class Foo:
+
+            d = attrs.field(attrs.Factory(dict))
+
+        f = Foo()
+        f.d['answer'] = 42
+
+        @attrs.define(slots=True)
+        class Bar:
+            d = field(attrs.Factory(dict))
+
+        g = Bar()
+        g.d['answer'] = 42
+
+        @attrs.mutable
+        class Bah:
+            d = field(attrs.Factory(dict))
+
+        h = Bah()
+        h.d['answer'] = 42
+
+        @attrs.frozen
+        class Bai:
+            d = attrs.field(attrs.Factory(dict))
+
+        i = Bai()
+        i.d['answer'] = 42
+
+        @attrs.define
+        class Spam:
+            d = field(default=attrs.Factory(dict))
+
+        j = Spam(d=1)
+        j.d['answer'] = 42
+
+        @attrs.mutable
+        class Eggs:
+            d = attrs.field(default=attrs.Factory(dict))
+
+        k = Eggs(d=1)
+        k.d['answer'] = 42
+
+        @attrs.frozen
+        class Eggs:
+            d = attrs.field(default=attrs.Factory(dict))
 
         l = Eggs(d=1)
         l.d['answer'] = 42
@@ -2370,7 +2436,7 @@ class TestIsinstanceInference:
         )
 
     def test_isinstance_str_true(self) -> None:
-        """Make sure isinstance can check bultin str types"""
+        """Make sure isinstance can check builtin str types"""
         assert _get_result("isinstance('a', str)") == "True"
 
     def test_isinstance_str_false(self) -> None:
@@ -2831,7 +2897,7 @@ def test_infer_dict_from_keys() -> None:
         assert isinstance(inferred, astroid.Dict)
         assert inferred.items == []
 
-    # Test inferrable values
+    # Test inferable values
 
     # from a dictionary's keys
     from_dict = astroid.extract_node(
@@ -2890,6 +2956,30 @@ def test_infer_dict_from_keys() -> None:
 
 
 class TestFunctoolsPartial:
+    @staticmethod
+    def test_infer_partial() -> None:
+        ast_node = astroid.extract_node(
+            """
+        from functools import partial
+        def test(a, b):
+            '''Docstring'''
+            return a + b
+        partial(test, 1)(3) #@
+        """
+        )
+        assert isinstance(ast_node.func, nodes.Call)
+        inferred = ast_node.func.inferred()
+        assert len(inferred) == 1
+        partial = inferred[0]
+        assert isinstance(partial, objects.PartialFunction)
+        assert isinstance(partial.doc_node, nodes.Const)
+        assert partial.doc_node.value == "Docstring"
+        with pytest.warns(DeprecationWarning) as records:
+            assert partial.doc == "Docstring"
+            assert len(records) == 1
+        assert partial.lineno == 3
+        assert partial.col_offset == 0
+
     def test_invalid_functools_partial_calls(self) -> None:
         ast_nodes = astroid.extract_node(
             """
@@ -2984,6 +3074,34 @@ class TestFunctoolsPartial:
         assert set(mod_scope) == {"test", "scope", "partial"}
         assert set(scope) == {"test2"}
 
+    def test_multiple_partial_args(self) -> None:
+        "Make sure partials remember locked-in args."
+        ast_node = astroid.extract_node(
+            """
+        from functools import partial
+        def test(a, b, c, d, e=5):
+            return a + b + c + d + e
+        test1 = partial(test, 1)
+        test2 = partial(test1, 2)
+        test3 = partial(test2, 3)
+        test3(4, e=6) #@
+        """
+        )
+        expected_args = [1, 2, 3, 4]
+        expected_keywords = {"e": 6}
+
+        call_site = astroid.arguments.CallSite.from_call(ast_node)
+        called_func = next(ast_node.func.infer())
+        called_args = called_func.filled_args + call_site.positional_arguments
+        called_keywords = {**called_func.filled_keywords, **call_site.keyword_arguments}
+        assert len(called_args) == len(expected_args)
+        assert [arg.value for arg in called_args] == expected_args
+        assert len(called_keywords) == len(expected_keywords)
+
+        for keyword, value in expected_keywords.items():
+            assert keyword in called_keywords
+            assert called_keywords[keyword].value == value
+
 
 def test_http_client_brain() -> None:
     node = astroid.extract_node(
@@ -2996,7 +3114,6 @@ def test_http_client_brain() -> None:
     assert isinstance(inferred, astroid.Instance)
 
 
-@pytest.mark.skipif(not PY37_PLUS, reason="Needs 3.7+")
 def test_http_status_brain() -> None:
     node = astroid.extract_node(
         """
@@ -3033,7 +3150,6 @@ def test_oserror_model() -> None:
     assert strerror.value == ""
 
 
-@pytest.mark.skipif(not PY37_PLUS, reason="Dynamic module attributes since Python 3.7")
 def test_crypt_brain() -> None:
     module = MANAGER.ast_from_module_name("crypt")
     dynamic_attrs = [
@@ -3065,6 +3181,8 @@ def test_str_and_bytes(code, expected_class, expected_value):
 def test_no_recursionerror_on_self_referential_length_check() -> None:
     """
     Regression test for https://github.com/PyCQA/astroid/issues/777
+
+    This test should only raise an InferenceError and no RecursionError.
     """
     with pytest.raises(InferenceError):
         node = astroid.extract_node(
@@ -3073,6 +3191,57 @@ def test_no_recursionerror_on_self_referential_length_check() -> None:
             def __len__(self) -> int:
                 return len(self)
         len(Crash()) #@
+        """
+        )
+        assert isinstance(node, nodes.NodeNG)
+        node.inferred()
+
+
+def test_inference_on_outer_referential_length_check() -> None:
+    """
+    Regression test for https://github.com/PyCQA/pylint/issues/5244
+    See also https://github.com/PyCQA/astroid/pull/1234
+
+    This test should succeed without any error.
+    """
+    node = astroid.extract_node(
+        """
+    class A:
+        def __len__(self) -> int:
+            return 42
+
+    class Crash:
+        def __len__(self) -> int:
+            a = A()
+            return len(a)
+
+    len(Crash()) #@
+    """
+    )
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 42
+
+
+def test_no_attributeerror_on_self_referential_length_check() -> None:
+    """
+    Regression test for https://github.com/PyCQA/pylint/issues/5244
+    See also https://github.com/PyCQA/astroid/pull/1234
+
+    This test should only raise an InferenceError and no AttributeError.
+    """
+    with pytest.raises(InferenceError):
+        node = astroid.extract_node(
+            """
+        class MyClass:
+            def some_func(self):
+                return lambda: 42
+
+            def __len__(self):
+                return len(self.some_func())
+
+        len(MyClass()) #@
         """
         )
         assert isinstance(node, nodes.NodeNG)

@@ -1,36 +1,47 @@
+# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+
+from __future__ import annotations
+
 import pprint
-import typing
+import sys
+import warnings
+from collections.abc import Iterator
 from functools import singledispatch as _singledispatch
-from typing import (
-    TYPE_CHECKING,
-    ClassVar,
-    Iterator,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, ClassVar, Tuple, Type, TypeVar, Union, cast, overload
 
 from astroid import decorators, util
 from astroid.exceptions import (
     AstroidError,
     InferenceError,
     ParentMissingError,
+    StatementMissing,
     UseInferenceDefault,
 )
 from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
+from astroid.nodes.utils import Position
+from astroid.typing import InferFn
 
 if TYPE_CHECKING:
-    from astroid.nodes import LocalsDictNodeNG
+    from astroid import nodes
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
+
+if sys.version_info >= (3, 8):
+    from functools import cached_property
+else:
+    from astroid.decorators import cachedproperty as cached_property
 
 # Types for 'NodeNG.nodes_of_class()'
-T_Nodes = TypeVar("T_Nodes", bound="NodeNG")
-T_Nodes2 = TypeVar("T_Nodes2", bound="NodeNG")
-T_Nodes3 = TypeVar("T_Nodes3", bound="NodeNG")
+_NodesT = TypeVar("_NodesT", bound="NodeNG")
+_NodesT2 = TypeVar("_NodesT2", bound="NodeNG")
+_NodesT3 = TypeVar("_NodesT3", bound="NodeNG")
 SkipKlassT = Union[None, Type["NodeNG"], Tuple[Type["NodeNG"], ...]]
 
 
@@ -56,23 +67,26 @@ class NodeNG:
     is_lambda: ClassVar[bool] = False
 
     # Attributes below are set by the builder module or by raw factories
-    _astroid_fields: ClassVar[typing.Tuple[str, ...]] = ()
+    _astroid_fields: ClassVar[tuple[str, ...]] = ()
     """Node attributes that contain child nodes.
 
     This is redefined in most concrete classes.
     """
-    _other_fields: ClassVar[typing.Tuple[str, ...]] = ()
+    _other_fields: ClassVar[tuple[str, ...]] = ()
     """Node attributes that do not contain child nodes."""
-    _other_other_fields: ClassVar[typing.Tuple[str, ...]] = ()
+    _other_other_fields: ClassVar[tuple[str, ...]] = ()
     """Attributes that contain AST-dependent fields."""
     # instance specific inference function infer(node, context)
-    _explicit_inference = None
+    _explicit_inference: InferFn | None = None
 
     def __init__(
         self,
-        lineno: Optional[int] = None,
-        col_offset: Optional[int] = None,
-        parent: Optional["NodeNG"] = None,
+        lineno: int | None = None,
+        col_offset: int | None = None,
+        parent: NodeNG | None = None,
+        *,
+        end_lineno: int | None = None,
+        end_col_offset: int | None = None,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -81,15 +95,34 @@ class NodeNG:
             source code.
 
         :param parent: The parent node in the syntax tree.
+
+        :param end_lineno: The last line this node appears on in the source code.
+
+        :param end_col_offset: The end column this node appears on in the
+            source code. Note: This is after the last symbol.
         """
-        self.lineno: Optional[int] = lineno
+        self.lineno: int | None = lineno
         """The line that this node appears on in the source code."""
 
-        self.col_offset: Optional[int] = col_offset
+        self.col_offset: int | None = col_offset
         """The column that this node appears on in the source code."""
 
-        self.parent: Optional["NodeNG"] = parent
+        self.parent: NodeNG | None = parent
         """The parent node in the syntax tree."""
+
+        self.end_lineno: int | None = end_lineno
+        """The last line this node appears on in the source code."""
+
+        self.end_col_offset: int | None = end_col_offset
+        """The end column this node appears on in the source code.
+        Note: This is after the last symbol.
+        """
+
+        self.position: Position | None = None
+        """Position of keyword(s) and name. Used as fallback for block nodes
+        which might not provide good enough positional information.
+        E.g. ClassDef, FunctionDef.
+        """
 
     def infer(self, context=None, **kwargs):
         """Get a generator of the inferred values.
@@ -110,7 +143,7 @@ class NodeNG:
             # explicit_inference is not bound, give it self explicitly
             try:
                 # pylint: disable=not-callable
-                results = tuple(self._explicit_inference(self, context, **kwargs))
+                results = list(self._explicit_inference(self, context, **kwargs))
                 if context is not None:
                     context.nodes_inferred += len(results)
                 yield from results
@@ -120,7 +153,7 @@ class NodeNG:
 
         if not context:
             # nodes_inferred?
-            yield from self._infer(context, **kwargs)
+            yield from self._infer(context=context, **kwargs)
             return
 
         key = (self, context.lookupname, context.callcontext, context.boundnode)
@@ -128,7 +161,7 @@ class NodeNG:
             yield from context.inferred[key]
             return
 
-        generator = self._infer(context, **kwargs)
+        generator = self._infer(context=context, **kwargs)
         results = []
 
         # Limit inference amount to help with performance issues with
@@ -136,7 +169,9 @@ class NodeNG:
         limit = AstroidManager().max_inferable_values
         for i, result in enumerate(generator):
             if i >= limit or (context.nodes_inferred > context.max_inferred):
-                yield util.Uninferable
+                uninferable = util.Uninferable
+                results.append(uninferable)
+                yield uninferable
                 break
             results.append(result)
             yield result
@@ -147,7 +182,7 @@ class NodeNG:
         context.inferred[key] = tuple(results)
         return
 
-    def _repr_name(self):
+    def _repr_name(self) -> str:
         """Get a name for nice representation.
 
         This is either :attr:`name`, :attr:`attrname`, or the empty string.
@@ -159,7 +194,7 @@ class NodeNG:
             return getattr(self, "name", "") or getattr(self, "attrname", "")
         return ""
 
-    def __str__(self):
+    def __str__(self) -> str:
         rname = self._repr_name()
         cname = type(self).__name__
         if rname:
@@ -185,7 +220,7 @@ class NodeNG:
             "fields": (",\n" + " " * alignment).join(result),
         }
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         rname = self._repr_name()
         if rname:
             string = "<%(cname)s.%(rname)s l.%(lineno)s at 0x%(id)x>"
@@ -203,7 +238,7 @@ class NodeNG:
         func = getattr(visitor, "visit_" + self.__class__.__name__.lower())
         return func(self)
 
-    def get_children(self) -> Iterator["NodeNG"]:
+    def get_children(self) -> Iterator[NodeNG]:
         """Get the child nodes below this node."""
         for field in self._astroid_fields:
             attr = getattr(self, field)
@@ -215,18 +250,18 @@ class NodeNG:
                 yield attr
         yield from ()
 
-    def last_child(self) -> Optional["NodeNG"]:
+    def last_child(self) -> NodeNG | None:
         """An optimized version of list(get_children())[-1]"""
         for field in self._astroid_fields[::-1]:
             attr = getattr(self, field)
-            if not attr:  # None or empty listy / tuple
+            if not attr:  # None or empty list / tuple
                 continue
             if isinstance(attr, (list, tuple)):
                 return attr[-1]
             return attr
         return None
 
-    def node_ancestors(self) -> Iterator["NodeNG"]:
+    def node_ancestors(self) -> Iterator[NodeNG]:
         """Yield parent, grandparent, etc until there are no more."""
         parent = self.parent
         while parent is not None:
@@ -243,33 +278,67 @@ class NodeNG:
             False otherwise.
         :rtype: bool
         """
-        for parent in node.node_ancestors():
-            if self is parent:
-                return True
-        return False
+        return any(self is parent for parent in node.node_ancestors())
 
-    def statement(self):
+    @overload
+    def statement(self, *, future: None = ...) -> nodes.Statement | nodes.Module:
+        ...
+
+    @overload
+    def statement(self, *, future: Literal[True]) -> nodes.Statement:
+        ...
+
+    def statement(
+        self, *, future: Literal[None, True] = None
+    ) -> nodes.Statement | nodes.Module:
         """The first parent node, including self, marked as statement node.
 
-        :returns: The first parent statement.
-        :rtype: NodeNG
+        TODO: Deprecate the future parameter and only raise StatementMissing and return
+        nodes.Statement
+
+        :raises AttributeError: If self has no parent attribute
+        :raises StatementMissing: If self has no parent attribute and future is True
         """
         if self.is_statement:
-            return self
-        return self.parent.statement()
+            return cast("nodes.Statement", self)
+        if not self.parent:
+            if future:
+                raise StatementMissing(target=self)
+            warnings.warn(
+                "In astroid 3.0.0 NodeNG.statement() will return either a nodes.Statement "
+                "or raise a StatementMissing exception. AttributeError will no longer be raised. "
+                "This behaviour can already be triggered "
+                "by passing 'future=True' to a statement() call.",
+                DeprecationWarning,
+            )
+            raise AttributeError(f"{self} object has no attribute 'parent'")
+        return self.parent.statement(future=future)
 
-    def frame(self):
+    def frame(
+        self, *, future: Literal[None, True] = None
+    ) -> nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda:
         """The first parent frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
-        or :class:`ClassDef`.
+        :class:`ClassDef` or :class:`Lambda`.
 
         :returns: The first parent frame node.
-        :rtype: Module or FunctionDef or ClassDef
         """
-        return self.parent.frame()
+        if self.parent is None:
+            if future:
+                raise ParentMissingError(target=self)
+            warnings.warn(
+                "In astroid 3.0.0 NodeNG.frame() will return either a Frame node, "
+                "or raise ParentMissingError. AttributeError will no longer be raised. "
+                "This behaviour can already be triggered "
+                "by passing 'future=True' to a frame() call.",
+                DeprecationWarning,
+            )
+            raise AttributeError(f"{self} object has no attribute 'parent'")
 
-    def scope(self) -> "LocalsDictNodeNG":
+        return self.parent.frame(future=future)
+
+    def scope(self) -> nodes.LocalsDictNodeNG:
         """The first parent node defining a new scope.
         These can be Module, FunctionDef, ClassDef, Lambda, or GeneratorExp nodes.
 
@@ -363,16 +432,18 @@ class NodeNG:
     # these are lazy because they're relatively expensive to compute for every
     # single node, and they rarely get looked at
 
-    @decorators.cachedproperty
-    def fromlineno(self) -> Optional[int]:
+    @cached_property
+    def fromlineno(self) -> int | None:
         """The first line that this node appears on in the source code."""
         if self.lineno is None:
             return self._fixed_source_line()
         return self.lineno
 
-    @decorators.cachedproperty
-    def tolineno(self) -> Optional[int]:
+    @cached_property
+    def tolineno(self) -> int | None:
         """The last line that this node appears on in the source code."""
+        if self.end_lineno is not None:
+            return self.end_lineno
         if not self._astroid_fields:
             # can't have children
             last_child = None
@@ -382,13 +453,13 @@ class NodeNG:
             return self.fromlineno
         return last_child.tolineno
 
-    def _fixed_source_line(self) -> Optional[int]:
+    def _fixed_source_line(self) -> int | None:
         """Attempt to find the line that this node appears on.
 
         We need this method since not all nodes have :attr:`lineno` set.
         """
         line = self.lineno
-        _node = self
+        _node: NodeNG | None = self
         try:
             while line is None:
                 _node = next(_node.get_children())
@@ -430,45 +501,45 @@ class NodeNG:
     @overload
     def nodes_of_class(
         self,
-        klass: Type[T_Nodes],
-        skip_klass: SkipKlassT = None,
-    ) -> Iterator[T_Nodes]:
+        klass: type[_NodesT],
+        skip_klass: SkipKlassT = ...,
+    ) -> Iterator[_NodesT]:
         ...
 
     @overload
     def nodes_of_class(
         self,
-        klass: Tuple[Type[T_Nodes], Type[T_Nodes2]],
-        skip_klass: SkipKlassT = None,
-    ) -> Union[Iterator[T_Nodes], Iterator[T_Nodes2]]:
+        klass: tuple[type[_NodesT], type[_NodesT2]],
+        skip_klass: SkipKlassT = ...,
+    ) -> Iterator[_NodesT] | Iterator[_NodesT2]:
         ...
 
     @overload
     def nodes_of_class(
         self,
-        klass: Tuple[Type[T_Nodes], Type[T_Nodes2], Type[T_Nodes3]],
-        skip_klass: SkipKlassT = None,
-    ) -> Union[Iterator[T_Nodes], Iterator[T_Nodes2], Iterator[T_Nodes3]]:
+        klass: tuple[type[_NodesT], type[_NodesT2], type[_NodesT3]],
+        skip_klass: SkipKlassT = ...,
+    ) -> Iterator[_NodesT] | Iterator[_NodesT2] | Iterator[_NodesT3]:
         ...
 
     @overload
     def nodes_of_class(
         self,
-        klass: Tuple[Type[T_Nodes], ...],
-        skip_klass: SkipKlassT = None,
-    ) -> Iterator[T_Nodes]:
+        klass: tuple[type[_NodesT], ...],
+        skip_klass: SkipKlassT = ...,
+    ) -> Iterator[_NodesT]:
         ...
 
-    def nodes_of_class(  # type: ignore # mypy doesn't correctly recognize the overloads
+    def nodes_of_class(  # type: ignore[misc] # mypy doesn't correctly recognize the overloads
         self,
-        klass: Union[
-            Type[T_Nodes],
-            Tuple[Type[T_Nodes], Type[T_Nodes2]],
-            Tuple[Type[T_Nodes], Type[T_Nodes2], Type[T_Nodes3]],
-            Tuple[Type[T_Nodes], ...],
-        ],
+        klass: (
+            type[_NodesT]
+            | tuple[type[_NodesT], type[_NodesT2]]
+            | tuple[type[_NodesT], type[_NodesT2], type[_NodesT3]]
+            | tuple[type[_NodesT], ...]
+        ),
         skip_klass: SkipKlassT = None,
-    ) -> Union[Iterator[T_Nodes], Iterator[T_Nodes2], Iterator[T_Nodes3]]:
+    ) -> Iterator[_NodesT] | Iterator[_NodesT2] | Iterator[_NodesT3]:
         """Get the nodes (including this one or below) of the given types.
 
         :param klass: The types of node to search for.
@@ -683,6 +754,9 @@ class NodeNG:
                 result.append("\n")
                 result.append(cur_indent)
                 for field in fields[:-1]:
+                    # TODO: Remove this after removal of the 'doc' attribute
+                    if field == "doc":
+                        continue
                     result.append(f"{field}=")
                     _repr_tree(getattr(node, field), result, done, cur_indent, depth)
                     result.append(",\n")
@@ -693,7 +767,7 @@ class NodeNG:
             result.append(")")
             return broken
 
-        result = []
+        result: list[str] = []
         _repr_tree(self, result, set())
         return "".join(result)
 
