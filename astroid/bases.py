@@ -9,8 +9,6 @@ from __future__ import annotations
 
 import collections
 from typing import TYPE_CHECKING
-from typing import Generator as GenT  # Generator is a class in this module
-from typing import Type, TypeVar
 
 from astroid import decorators
 from astroid.const import PY310_PLUS
@@ -31,6 +29,9 @@ from astroid.util import Uninferable, lazy_descriptor, lazy_import
 objectmodel = lazy_import("interpreter.objectmodel")
 helpers = lazy_import("helpers")
 manager = lazy_import("manager")
+
+if TYPE_CHECKING:
+    from astroid import nodes
 
 
 # TODO: check if needs special treatment
@@ -342,12 +343,6 @@ class Instance(BaseInstance):
         return next(method.infer_call_result(self, new_context), None)
 
 
-if TYPE_CHECKING:
-    from astroid.nodes import Call, Const
-
-    _BuiltinNewT = TypeVar("_BuiltinNewT", Type[Uninferable], Const, Instance)
-
-
 class UnboundMethod(Proxy):
     """a special node representing a method not bound to an instance"""
 
@@ -397,13 +392,16 @@ class UnboundMethod(Proxy):
         return self._proxied.infer_call_result(caller, context)
 
     def _infer_builtin_new(
-        self, caller: Call, context: InferenceContext
-    ) -> GenT[_BuiltinNewT, None, None]:
+        self,
+        caller: nodes.Call,
+        context: InferenceContext,
+    ) -> collections.abc.Generator[
+        nodes.Const | Instance | type[Uninferable], None, None
+    ]:
         # pylint: disable-next=import-outside-toplevel; circular import
         from astroid.nodes import Const, const_factory
 
         if not caller.args:
-            yield from []
             return
         # Attempt to create a constant
         if len(caller.args) > 1:
@@ -416,6 +414,7 @@ class UnboundMethod(Proxy):
                     value = inferred_arg.value
             if value is not None:
                 yield const_factory(value)
+                return
 
         node_context = context.extra_context.get(caller.args[0])
         infer = caller.args[0].infer(context=node_context)
