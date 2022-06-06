@@ -18,9 +18,15 @@ from functools import lru_cache
 from pathlib import Path
 from typing import NamedTuple
 
+from astroid.const import PY310_PLUS
 from astroid.modutils import EXT_LIB_DIRS
 
 from . import util
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 
 class ModuleType(enum.Enum):
@@ -55,7 +61,7 @@ class ModuleSpec(NamedTuple):
 class Finder:
     """A finder is a class which knows how to find a particular module."""
 
-    def __init__(self, path=None):
+    def __init__(self, path: Sequence[str] | None = None) -> None:
         self._path = path or sys.path
 
     @abc.abstractmethod
@@ -203,11 +209,13 @@ class ExplicitNamespacePackageFinder(ImportlibFinder):
 class ZipFinder(Finder):
     """Finder that knows how to find a module inside zip files."""
 
-    def __init__(self, path):
+    def __init__(self, path: Sequence[str]) -> None:
         super().__init__(path)
         self._zipimporters = _precache_zipimporters(path)
 
-    def find_module(self, modname, module_parts, processed, submodule_path):
+    def find_module(
+        self, modname, module_parts: Sequence[str], processed, submodule_path
+    ):
         try:
             file_type, filename, path = _search_zip(module_parts, self._zipimporters)
         except ImportError:
@@ -275,7 +283,9 @@ def _cached_set_diff(left, right):
     return result
 
 
-def _precache_zipimporters(path=None):
+def _precache_zipimporters(
+    path: Sequence[str] | None = None,
+) -> dict[str, zipimport.zipimporter]:
     """
     For each path that has not been already cached
     in the sys.path_importer_cache, create a new zipimporter
@@ -309,12 +319,23 @@ def _precache_zipimporters(path=None):
     }
 
 
-def _search_zip(modpath, pic):
+def _search_zip(
+    modpath: Sequence[str], pic: dict[str, zipimport.zipimporter]
+) -> tuple[Literal[ModuleType.PY_ZIPMODULE], str, str]:
     for filepath, importer in list(pic.items()):
         if importer is not None:
-            found = importer.find_module(modpath[0])
+            if PY310_PLUS:
+                found = importer.find_spec(modpath[0])
+            else:
+                found = importer.find_module(modpath[0])
             if found:
-                if not importer.find_module(os.path.sep.join(modpath)):
+                if PY310_PLUS:
+                    if not importer.find_spec(os.path.sep.join(modpath)):
+                        raise ImportError(
+                            "No module named %s in %s/%s"
+                            % (".".join(modpath[1:]), filepath, modpath)
+                        )
+                elif not importer.find_module(os.path.sep.join(modpath)):
                     raise ImportError(
                         "No module named %s in %s/%s"
                         % (".".join(modpath[1:]), filepath, modpath)
