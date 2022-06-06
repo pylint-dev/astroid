@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import collections
 import collections.abc
-from collections.abc import Iterator
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from astroid import decorators
@@ -34,7 +34,7 @@ helpers = lazy_import("helpers")
 manager = lazy_import("manager")
 
 if TYPE_CHECKING:
-    from astroid import nodes
+    from astroid import nodes, util
 
 
 # TODO: check if needs special treatment
@@ -123,10 +123,10 @@ class Proxy:
 
 
 def _infer_stmts(
-    stmts: list[InferenceResult],
+    stmts: Sequence[nodes.NodeNG | type[util.Uninferable] | Instance],
     context: InferenceContext | None,
-    frame: nodes.LocalsDictNodeNG | None = None,
-) -> Iterator[InferenceResult]:
+    frame: nodes.NodeNG | Instance | None = None,
+) -> collections.abc.Generator[InferenceResult, None, None]:
     """Return an iterator on statements inferred by each statement in *stmts*."""
     inferred = False
     if context is not None:

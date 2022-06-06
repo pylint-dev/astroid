@@ -596,7 +596,7 @@ class NodeNG:
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator[InferenceResult]:
+    ) -> Generator[InferenceResult, None, None]:
         """we don't know how to resolve a statement by default"""
         # this method is overridden by most concrete classes
         raise InferenceError(
