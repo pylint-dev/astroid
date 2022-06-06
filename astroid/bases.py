@@ -34,7 +34,7 @@ helpers = lazy_import("helpers")
 manager = lazy_import("manager")
 
 if TYPE_CHECKING:
-    from astroid import nodes, util
+    from astroid import nodes
 
 
 # TODO: check if needs special treatment
@@ -123,7 +123,7 @@ class Proxy:
 
 
 def _infer_stmts(
-    stmts: Sequence[nodes.NodeNG | type[util.Uninferable] | Instance],
+    stmts: Sequence[nodes.NodeNG | type[Uninferable] | Instance],
     context: InferenceContext | None,
     frame: nodes.NodeNG | Instance | None = None,
 ) -> collections.abc.Generator[InferenceResult, None, None]:
