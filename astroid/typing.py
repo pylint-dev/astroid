@@ -5,10 +5,10 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Union
 
 if TYPE_CHECKING:
-    from astroid import nodes, transforms
+    from astroid import bases, nodes, transforms, util
     from astroid.context import InferenceContext
 
 if sys.version_info >= (3, 8):
@@ -39,3 +39,6 @@ class AstroidManagerBrain(TypedDict):
     optimize_ast: bool
     extension_package_whitelist: set
     _transform: transforms.TransformVisitor
+
+
+InferenceResult = Union["nodes.NodeNG", "type[util.Uninferable]", "bases.Instance"]
