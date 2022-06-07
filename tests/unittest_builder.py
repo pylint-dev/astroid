@@ -952,6 +952,17 @@ def test_arguments_of_signature() -> None:
     assert all(i.args.args is None for i in classdef.getattr("__dir__"))
 
 
+@staticmethod
+def test_infer_stdout():
+    n = builder.extract_node(
+        """
+    import sys
+    sys.stdout
+    """
+    )
+    assert isinstance(next(n.infer()), Instance)
+
+
 class HermeticInterpreterTest(unittest.TestCase):
     """Modeled on https://github.com/PyCQA/astroid/pull/1207#issuecomment-951455588"""
 
