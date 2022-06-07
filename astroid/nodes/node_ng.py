@@ -21,7 +21,7 @@ from typing import (
     overload,
 )
 
-from astroid import bases, decorators, util
+from astroid import decorators, util
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidError,
@@ -34,7 +34,7 @@ from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.utils import Position
-from astroid.typing import InferFn
+from astroid.typing import InferenceResult, InferFn
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -137,7 +137,7 @@ class NodeNG:
 
     def infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[nodes.NodeNG | type[util.Uninferable] | bases.Instance, None, None]:
+    ) -> Generator[InferenceResult, None, None]:
         """Get a generator of the inferred values.
 
         This is the main entry point to the inference system.
@@ -596,7 +596,7 @@ class NodeNG:
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator[NodeNG | type[util.Uninferable] | bases.Instance]:
+    ) -> Generator[InferenceResult, None, None]:
         """we don't know how to resolve a statement by default"""
         # this method is overridden by most concrete classes
         raise InferenceError(

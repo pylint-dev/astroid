@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import collections
 import collections.abc
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from astroid import decorators
@@ -25,6 +26,7 @@ from astroid.exceptions import (
     InferenceError,
     NameInferenceError,
 )
+from astroid.typing import InferenceResult
 from astroid.util import Uninferable, lazy_descriptor, lazy_import
 
 objectmodel = lazy_import("interpreter.objectmodel")
@@ -120,7 +122,11 @@ class Proxy:
         yield self
 
 
-def _infer_stmts(stmts, context, frame=None):
+def _infer_stmts(
+    stmts: Sequence[nodes.NodeNG | type[Uninferable] | Instance],
+    context: InferenceContext | None,
+    frame: nodes.NodeNG | Instance | None = None,
+) -> collections.abc.Generator[InferenceResult, None, None]:
     """Return an iterator on statements inferred by each statement in *stmts*."""
     inferred = False
     if context is not None:
