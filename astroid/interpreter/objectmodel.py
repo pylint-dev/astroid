@@ -118,6 +118,19 @@ class ObjectModel:
             return getattr(self, IMPL_PREFIX + name)
         raise AttributeInferenceError(target=self._instance, attribute=name)
 
+    @property
+    def attr___new__(self):
+        """Calling cls.__new__(cls) on an object returns an instance of that object.
+
+        Instance is either an instance or a class definition of the instance to be
+        created.
+        """
+        # TODO: Use isinstance instead of try ... except after _instance has typing
+        try:
+            return self._instance._proxied.instantiate_class()
+        except AttributeError:
+            return self._instance.instantiate_class()
+
 
 class ModuleModel(ObjectModel):
     def _builtins(self):
@@ -389,7 +402,6 @@ class FunctionModel(ObjectModel):
     attr___repr__ = attr___ne__
     attr___reduce__ = attr___ne__
     attr___reduce_ex__ = attr___ne__
-    attr___new__ = attr___ne__
     attr___lt__ = attr___ne__
     attr___eq__ = attr___ne__
     attr___gt__ = attr___ne__
@@ -511,6 +523,11 @@ class ClassModel(ObjectModel):
     @property
     def attr___dict__(self):
         return node_classes.Dict(parent=self._instance)
+
+    @property
+    def attr___call__(self):
+        """Calling a class A() returns an instance of A."""
+        return self._instance.instantiate_class()
 
 
 class SuperModel(ObjectModel):

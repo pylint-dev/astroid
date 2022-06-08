@@ -32,6 +32,7 @@ from astroid.util import Uninferable, lazy_descriptor, lazy_import
 objectmodel = lazy_import("interpreter.objectmodel")
 helpers = lazy_import("helpers")
 manager = lazy_import("manager")
+nodes = lazy_import("nodes")
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -263,10 +264,20 @@ class BaseInstance(Proxy):
             else:
                 yield attr
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(
+        self, caller: nodes.Call | BaseInstance, context: InferenceContext | None = None
+    ):
         """infer what a class instance is returning when called"""
         context = bind_context_to_node(context, self)
         inferred = False
+
+        # If the call is an attribute on the instance, we infer the attribute itself
+        if isinstance(caller, nodes.Call) and isinstance(caller.func, nodes.Attribute):
+            for res in self.igetattr(caller.func.attrname, context):
+                inferred = True
+                yield res
+
+        # Otherwise we infer the call to the __call__ dunder normally
         for node in self._proxied.igetattr("__call__", context):
             if node is Uninferable or not node.callable():
                 continue
