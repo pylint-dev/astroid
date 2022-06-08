@@ -6,6 +6,8 @@
 
 import unittest
 
+import pytest
+
 from astroid import nodes, objects
 from astroid.builder import _extract_single_node
 
@@ -26,64 +28,39 @@ class BuiltinsTest(unittest.TestCase):
 
 
 class TestStringNodes:
-    def test_string_format(self) -> None:
-        node: nodes.Call = _extract_single_node(
-            """"My name is {}, I'm {}".format("Daniel", 12)"""
-        )
+    @pytest.mark.parametrize(
+        "format_string",
+        [
+            """"My name is {}, I'm {}".format("Daniel", 12)""",
+            """"My name is {0}, I'm {1}".format("Daniel", 12)""",
+            """"My name is {fname}, I'm {age}".format(fname = "Daniel", age = 12)""",
+            """
+            name = "Daniel"
+            age = 12
+            "My name is {0}, I'm {1}".format(name, age)
+            """,
+            """
+            name = "Daniel"
+            age = 12
+            "My name is {fname}, I'm {age}".format(fname = name, age = age)
+            """,
+            """
+            name = "Daniel"
+            age = 12
+            "My name is {0}, I'm {age}".format(name, age = age)
+            """,
+        ],
+    )
+    def test_string_format(self, format_string: str) -> None:
+        node: nodes.Call = _extract_single_node(format_string)
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "My name is Daniel, I'm 12"
 
+    def test_string_format_with_specs(self) -> None:
         node: nodes.Call = _extract_single_node(
             """"My name is {}, I'm {:.2f}".format("Daniel", 12)"""
         )
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "My name is Daniel, I'm 12.00"
-
-        node: nodes.Call = _extract_single_node(
-            """"My name is {0}, I'm {1}".format("Daniel", 12)"""
-        )
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.Const)
-        assert inferred.value == "My name is Daniel, I'm 12"
-
-        node: nodes.Call = _extract_single_node(
-            """"My name is {fname}, I'm {age}".format(fname = "Daniel", age = 12)"""
-        )
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.Const)
-        assert inferred.value == "My name is Daniel, I'm 12"
-
-        node: nodes.Call = _extract_single_node(
-            """
-            name = "Daniel"
-            age = 12
-            "My name is {0}, I'm {1}".format(name, age)
-            """
-        )
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.Const)
-        assert inferred.value == "My name is Daniel, I'm 12"
-
-        node: nodes.Call = _extract_single_node(
-            """
-            name = "Daniel"
-            age = 12
-            "My name is {fname}, I'm {age}".format(fname = name, age = age)
-            """
-        )
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.Const)
-        assert inferred.value == "My name is Daniel, I'm 12"
-
-        node: nodes.Call = _extract_single_node(
-            """
-            name = "Daniel"
-            age = 12
-            "My name is {0}, I'm {age}".format(name, age = age)
-            """
-        )
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.Const)
-        assert inferred.value == "My name is Daniel, I'm 12"
