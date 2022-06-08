@@ -8,7 +8,7 @@ import unittest
 
 import pytest
 
-from astroid import nodes, objects
+from astroid import nodes, objects, util
 from astroid.builder import _extract_single_node
 
 
@@ -56,6 +56,31 @@ class TestStringNodes:
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "My name is Daniel, I'm 12"
+
+    @pytest.mark.parametrize(
+        "format_string",
+        [
+            """
+            from missing import Unknown
+            name = Unknown
+            age = 12
+            "My name is {fname}, I'm {age}".format(fname = name, age = age)
+            """,
+            """
+            from missing import Unknown
+            age = 12
+            "My name is {fname}, I'm {age}".format(fname = Unknown, age = age)
+            """,
+            """
+            from missing import Unknown
+            "My name is {}, I'm {}".format(Unknown, 12)
+            """,
+        ],
+    )
+    def test_string_format_uninferable(self, format_string: str) -> None:
+        node: nodes.Call = _extract_single_node(format_string)
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
 
     def test_string_format_with_specs(self) -> None:
         node: nodes.Call = _extract_single_node(

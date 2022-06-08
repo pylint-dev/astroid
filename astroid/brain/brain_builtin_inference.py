@@ -923,23 +923,25 @@ def _is_str_format_call(node: nodes.Call) -> bool:
 
 def _infer_str_format_call(
     node: nodes.Call, context: InferenceContext | None = None
-) -> Iterator[nodes.Const]:
+) -> Iterator[nodes.Const | type[util.Uninferable]]:
     """Return a Const node based on the template and passed arguments."""
     call = arguments.CallSite.from_call(node, context=context)
     format_template: str = node.func.expr.value
 
     # Get the positional arguments passed
-    inferred_positional = [helpers.safe_infer(i) for i in call.positional_arguments]
+    inferred_positional = [
+        helpers.safe_infer(i, context) for i in call.positional_arguments
+    ]
     if not all(isinstance(i, nodes.Const) for i in inferred_positional):
-        raise UseInferenceDefault
+        return iter([util.Uninferable])
     pos_values: list[str] = [i.value for i in inferred_positional]
 
     # Get the keyword arguments passed
     inferred_keyword = {
-        k: helpers.safe_infer(v) for k, v in call.keyword_arguments.items()
+        k: helpers.safe_infer(v, context) for k, v in call.keyword_arguments.items()
     }
     if not all(isinstance(i, nodes.Const) for i in inferred_keyword.values()):
-        raise UseInferenceDefault
+        return iter([util.Uninferable])
     keyword_values: dict[str, str] = {k: v.value for k, v in inferred_keyword.items()}
 
     formatted_string = format_template.format(*pos_values, **keyword_values)
