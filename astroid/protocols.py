@@ -113,6 +113,13 @@ for _KEY, _IMPL in list(BIN_OP_IMPL.items()):
 def const_infer_binary_op(self, opnode, operator, other, context, _):
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, nodes.Const):
+        if (
+            operator == "**"
+            and isinstance(self, nodes.Const)
+            and (self.value > 1e5 or other.value > 1e5)
+        ):
+            yield not_implemented
+            return
         try:
             impl = BIN_OP_IMPL[operator]
             try:
