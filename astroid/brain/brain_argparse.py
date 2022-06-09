@@ -13,7 +13,10 @@ def infer_namespace(node, context=None):
         # Cannot make sense of it.
         raise UseInferenceDefault()
 
-    class_node = nodes.ClassDef("Namespace", parent=node.parent)
+    class_node = nodes.ClassDef("Namespace")
+    # Set parent manually until ClassDef constructor fixed:
+    # https://github.com/PyCQA/astroid/issues/1490
+    class_node.parent = node.parent
     for attr in set(callsite.keyword_arguments):
         fake_node = nodes.EmptyNode()
         fake_node.parent = class_node

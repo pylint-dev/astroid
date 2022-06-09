@@ -76,6 +76,11 @@ Release date: TBA
 * The Qt brain now correctly treats calling ``.disconnect()`` (with no
   arguments) on a slot as valid.
 
+* The argparse brain no longer incorrectly adds ``"Namespace"`` to the locals
+  of functions that return an ``argparse.Namespace`` object.
+
+  Refs PyCQA/pylint#6895
+
 What's New in astroid 2.11.5?
 =============================
 Release date: 2022-05-09
