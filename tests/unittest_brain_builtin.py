@@ -75,6 +75,7 @@ class TestStringNodes:
             from missing import Unknown
             "My name is {}, I'm {}".format(Unknown, 12)
             """,
+            """"I am {}".format()""",
         ],
     )
     def test_string_format_uninferable(self, format_string: str) -> None:

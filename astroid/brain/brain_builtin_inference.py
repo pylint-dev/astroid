@@ -944,7 +944,11 @@ def _infer_str_format_call(
         return iter([util.Uninferable])
     keyword_values: dict[str, str] = {k: v.value for k, v in inferred_keyword.items()}
 
-    formatted_string = format_template.format(*pos_values, **keyword_values)
+    try:
+        formatted_string = format_template.format(*pos_values, **keyword_values)
+    except IndexError:
+        # If there is an IndexError there are too few arguments to interpolate
+        return iter([util.Uninferable])
 
     return iter([nodes.const_factory(formatted_string)])
 
