@@ -1457,7 +1457,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred[0], nodes.List)
         self.assertEqual(len(inferred[0].elts), 2)
         self.assertEqual(inferred[0].elts[1].value, 1)
-        self.assertEqual(inferred[0].elts[2].value, 1)
+        self.assertEqual(inferred[0].elts[0].value, 1)
 
     def test_nonregr_func_arg(self) -> None:
         code = """
