@@ -1428,6 +1428,36 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.Const)
         self.assertEqual(inferred[0].value, 3)
+    
+    def test_augassign_multi_expr(self) -> None:
+        code = """
+            a = 1
+            a += 1
+            a += 1
+            a
+        """
+        ast = astroid.parse(code, __name__)
+        inferred = list(ast.body[1].infer())
+
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.Const)
+        self.assertEqual(inferred[0].value, 3)
+    
+    def test_augassign_multi_list(self) -> None:
+        code = """
+            a = []
+            a += [1]
+            a += [1]
+            print (a)
+        """
+        ast = parse(code, __name__)
+        inferred = list(test_utils.get_name_node(ast, "a").infer())
+
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.List)
+        self.assertEqual(len(inferred[0].elts[1]), 2)
+        self.assertEqual(inferred[0].elts[1].value, 1)
+        self.assertEqual(inferred[0].elts[2].value, 1)
 
     def test_nonregr_func_arg(self) -> None:
         code = """
