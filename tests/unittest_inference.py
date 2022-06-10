@@ -1428,7 +1428,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.Const)
         self.assertEqual(inferred[0].value, 3)
-    
+
     def test_augassign_multi_expr(self) -> None:
         code = """
             a = 1
@@ -1442,7 +1442,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.Const)
         self.assertEqual(inferred[0].value, 3)
-    
+
     def test_augassign_multi_list(self) -> None:
         code = """
             a = []
