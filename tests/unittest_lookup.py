@@ -1009,6 +1009,45 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 1)
         self.assertEqual(stmts[0].lineno, 8)
 
+   
+    def test_except_assign_exclusive_branches_getattr(self) -> None:
+        """When a variable is assigned in exlcusive branches, both are returned
+        """
+        code = """
+            try:
+                1 / 0
+            except ZeroDivisionError:
+                x = 10
+            except NameError:
+                x = 100
+            print(x)
+        """
+        astroid = builder.parse(code)
+        stmts = astroid.getattr('x')
+        self.assertEqual(len(stmts), 2)
+        
+        self.assertEqual(stmts[0].lineno, 5)
+        self.assertEqual(stmts[1].lineno, 7)
+    
+    def test_except_assign_after_block_overwritten_getattr(self) -> None:
+        """When a variable is assigned in an except clause, it is not returned
+        when it is reassigned and used after the except block.
+        """
+        code = """
+            try:
+                1 / 0
+            except ZeroDivisionError:
+                x = 10
+            except NameError:
+                x = 100
+            x = 1000
+            print(x)
+        """
+        astroid = builder.parse(code)
+        stmts = astroid.getattr('x')
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].lineno, 8)
+
 
 if __name__ == "__main__":
     unittest.main()
