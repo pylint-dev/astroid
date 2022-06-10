@@ -1414,7 +1414,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.Const)
         self.assertEqual(inferred[0].value, 3)
-    
+
     def test_augassign_multi(self) -> None:
         code = """
             a = 1
