@@ -31,24 +31,41 @@ class TestStringNodes:
     @pytest.mark.parametrize(
         "format_string",
         [
-            """"My name is {}, I'm {}".format("Daniel", 12)""",
-            """"My name is {0}, I'm {1}".format("Daniel", 12)""",
-            """"My name is {fname}, I'm {age}".format(fname = "Daniel", age = 12)""",
-            """
-            name = "Daniel"
-            age = 12
-            "My name is {0}, I'm {1}".format(name, age)
-            """,
-            """
-            name = "Daniel"
-            age = 12
-            "My name is {fname}, I'm {age}".format(fname = name, age = age)
-            """,
-            """
-            name = "Daniel"
-            age = 12
-            "My name is {0}, I'm {age}".format(name, age = age)
-            """,
+            pytest.param(
+                """"My name is {}, I'm {}".format("Daniel", 12)""", id="empty-indexes"
+            ),
+            pytest.param(
+                """"My name is {0}, I'm {1}".format("Daniel", 12)""",
+                id="numbered-indexes",
+            ),
+            pytest.param(
+                """"My name is {fname}, I'm {age}".format(fname = "Daniel", age = 12)""",
+                id="named-indexes",
+            ),
+            pytest.param(
+                """
+        name = "Daniel"
+        age = 12
+        "My name is {0}, I'm {1}".format(name, age)
+        """,
+                id="numbered-indexes-from-positional",
+            ),
+            pytest.param(
+                """
+        name = "Daniel"
+        age = 12
+        "My name is {fname}, I'm {age}".format(fname = name, age = age)
+        """,
+                id="named-indexes-from-keyword",
+            ),
+            pytest.param(
+                """
+        name = "Daniel"
+        age = 12
+        "My name is {0}, I'm {age}".format(name, age = age)
+        """,
+                id="mixed-indexes-from-mixed",
+            ),
         ],
     )
     def test_string_format(self, format_string: str) -> None:
