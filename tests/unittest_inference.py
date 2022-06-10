@@ -1437,7 +1437,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             a
         """
         ast = parse(code, __name__)
-        inferred = list(ast.body[-1].infer())
+        # No inference function for Expr
+        inferred = list(ast.body[-1].value.infer())
 
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.Const)
