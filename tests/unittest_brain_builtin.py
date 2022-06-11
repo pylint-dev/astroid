@@ -93,6 +93,9 @@ class TestStringNodes:
             "My name is {}, I'm {}".format(Unknown, 12)
             """,
             """"I am {}".format()""",
+            """
+            "My name is {fname}, I'm {age}".format(fsname = "Daniel", age = 12)
+            """,
         ],
     )
     def test_string_format_uninferable(self, format_string: str) -> None:

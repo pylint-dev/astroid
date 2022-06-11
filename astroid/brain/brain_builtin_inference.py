@@ -946,7 +946,7 @@ def _infer_str_format_call(
 
     try:
         formatted_string = format_template.format(*pos_values, **keyword_values)
-    except IndexError:
+    except (IndexError, KeyError):
         # If there is an IndexError there are too few arguments to interpolate
         return iter([util.Uninferable])
 
