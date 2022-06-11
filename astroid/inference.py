@@ -43,6 +43,7 @@ objects = util.lazy_import("objects")
 
 
 _FunctionDefT = TypeVar("_FunctionDefT", bound=nodes.FunctionDef)
+_GeneratorExpT = TypeVar("_GeneratorExpT", bound=nodes.GeneratorExp)
 
 
 # .infer method ###############################################################
@@ -1068,3 +1069,12 @@ def infer_functiondef(
 
 
 nodes.FunctionDef._infer = infer_functiondef  # type: ignore[assignment]
+
+
+def infer_generator_exp(
+    self: _GeneratorExpT, context: InferenceContext | None = None
+) -> Generator[Property | _GeneratorExpT, None, InferenceErrorInfo]:
+    yield self
+
+
+nodes.GeneratorExp._infer = infer_generator_exp
