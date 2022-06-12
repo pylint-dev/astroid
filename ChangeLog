@@ -26,6 +26,10 @@ Release date: TBA
 
   Closes #104
 
+* Module (``%``) operations on strings are now correctly inferred.
+
+  Closes #151
+
 * Adds missing enums from ``ssl`` module.
 
   Closes PyCQA/pylint#3691
