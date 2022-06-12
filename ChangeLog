@@ -24,7 +24,7 @@ Release date: TBA
 
 * Calls to ``str.format`` are now correctly inferred.
 
-  Closes #104
+  Closes #104, Closes #1611
 
 * Adds missing enums from ``ssl`` module.
 
