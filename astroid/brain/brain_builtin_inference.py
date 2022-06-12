@@ -928,14 +928,13 @@ def _infer_str_format_call(
     node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[nodes.Const | type[util.Uninferable]]:
     """Return a Const node based on the template and passed arguments."""
-    print("CALLED")
     call = arguments.CallSite.from_call(node, context=context)
     if isinstance(node.func.expr, nodes.Name):
         value: nodes.Const = helpers.safe_infer(node.func.expr)
     else:
         value = node.func.expr
 
-    format_template: str = value.value
+    format_template = value.value
 
     # Get the positional arguments passed
     inferred_positional = [
