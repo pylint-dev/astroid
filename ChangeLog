@@ -73,9 +73,15 @@ Release date: TBA
 
   Closes #1195
 
-What's New in astroid 2.11.6?
+What's New in astroid 2.11.7?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.11.6?
+=============================
+Release date: 2022-06-13
 
 * The Qt brain now correctly treats calling ``.disconnect()`` (with no
   arguments) on a slot as valid.
