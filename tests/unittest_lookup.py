@@ -1045,7 +1045,7 @@ class LookupControlFlowTest(unittest.TestCase):
         stmts = astroid.getattr("x")
         self.assertEqual(len(stmts), 1)
         self.assertEqual(stmts[0].lineno, 8)
-    
+
     def test_except_assign_after_block_overwritten_getattr_class(self) -> None:
         """When a variable is assigned in an except clause, it is not returned
         when it is reassigned and used after the except block.
