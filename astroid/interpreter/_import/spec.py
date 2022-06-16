@@ -13,8 +13,7 @@ import os
 import pathlib
 import sys
 import zipimport
-from collections.abc import Sequence
-from functools import lru_cache
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import NamedTuple
 
@@ -223,7 +222,15 @@ class ZipFinder(Finder):
 
     def __init__(self, path: Sequence[str]) -> None:
         super().__init__(path)
-        self._zipimporters = _precache_zipimporters(path)
+        for entry_path in path:
+            if entry_path not in sys.path_importer_cache:
+                # pylint: disable=no-member
+                try:
+                    sys.path_importer_cache[entry_path] = zipimport.zipimporter(
+                        entry_path
+                    )
+                except zipimport.ZipImportError:
+                    continue
 
     def find_module(
         self,
@@ -233,7 +240,7 @@ class ZipFinder(Finder):
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
         try:
-            file_type, filename, path = _search_zip(module_parts, self._zipimporters)
+            file_type, filename, path = _search_zip(module_parts)
         except ImportError:
             return None
 
@@ -300,78 +307,38 @@ def _is_setuptools_namespace(location: pathlib.Path) -> bool:
         return extend_path or declare_namespace
 
 
-@lru_cache()
-def _cached_set_diff(left, right):  # type: ignore[no-untyped-def]
-    result = set(left)
-    result.difference_update(right)
-    return result
-
-
-def _precache_zipimporters(
-    path: Sequence[str] | None = None,
-) -> dict[str, zipimport.zipimporter]:
-    """
-    For each path that has not been already cached
-    in the sys.path_importer_cache, create a new zipimporter
-    instance and add it into the cache.
-    Return a dict associating all paths, stored in the cache, to corresponding
-    zipimporter instances.
-
-    :param path: paths that has to be added into the cache
-    :return: association between paths stored in the cache and zipimporter instances
-    """
-    pic = sys.path_importer_cache
-
-    # When measured, despite having the same complexity (O(n)),
-    # converting to tuples and then caching the conversion to sets
-    # and the set difference is faster than converting to sets
-    # and then only caching the set difference.
-
-    req_paths = tuple(path or sys.path)
-    cached_paths = tuple(pic)
-    new_paths = _cached_set_diff(req_paths, cached_paths)
-    # pylint: disable=no-member
-    for entry_path in new_paths:
-        try:
-            pic[entry_path] = zipimport.zipimporter(entry_path)  # type: ignore[assignment]
-        except zipimport.ZipImportError:
-            continue
-    return {
-        key: value  # type: ignore[misc]
-        for key, value in pic.items()
-        if isinstance(value, zipimport.zipimporter)
-    }
+def _get_zipimporters() -> Iterator[str, zipimport.zipimporter]:
+    for filepath, importer in sys.path_importer_cache.items():
+        # pylint: disable-next=no-member
+        if isinstance(importer, zipimport.zipimporter):
+            yield filepath, importer
 
 
 def _search_zip(
-    modpath: Sequence[str], pic: dict[str, zipimport.zipimporter]
+    modpath: Sequence[str],
 ) -> tuple[Literal[ModuleType.PY_ZIPMODULE], str, str]:
-    for filepath, importer in list(pic.items()):
-        if importer is not None:
+    for filepath, importer in _get_zipimporters():
+        if PY310_PLUS:
+            found = importer.find_spec(modpath[0])
+        else:
+            found = importer.find_module(modpath[0])
+        if found:
             if PY310_PLUS:
-                found: importlib.machinery.ModuleSpec | zipimport.zipimporter | None = (
-                    importer.find_spec(modpath[0])
-                )
-            else:
-                found = importer.find_module(modpath[0])
-            if found:
-                if PY310_PLUS:
-                    if not importer.find_spec(os.path.sep.join(modpath)):
-                        raise ImportError(
-                            "No module named %s in %s/%s"
-                            % (".".join(modpath[1:]), filepath, modpath)
-                        )
-                elif not importer.find_module(os.path.sep.join(modpath)):
+                if not importer.find_spec(os.path.sep.join(modpath)):
                     raise ImportError(
                         "No module named %s in %s/%s"
                         % (".".join(modpath[1:]), filepath, modpath)
                     )
-                # import code; code.interact(local=locals())
-                return (
-                    ModuleType.PY_ZIPMODULE,
-                    os.path.abspath(filepath) + os.path.sep + os.path.sep.join(modpath),
-                    filepath,
+            elif not importer.find_module(os.path.sep.join(modpath)):
+                raise ImportError(
+                    "No module named %s in %s/%s"
+                    % (".".join(modpath[1:]), filepath, modpath)
                 )
+            return (
+                ModuleType.PY_ZIPMODULE,
+                os.path.abspath(filepath) + os.path.sep + os.path.sep.join(modpath),
+                filepath,
+            )
     raise ImportError(f"No module named {'.'.join(modpath)}")
 
 
@@ -382,12 +349,14 @@ def _find_spec_with_path(
     processed: list[str],
     submodule_path: Sequence[str] | None,
 ) -> tuple[Finder, ModuleSpec]:
-    finders = [finder(search_path) for finder in _SPEC_FINDERS]
-    for finder in finders:
-        spec = finder.find_module(modname, module_parts, processed, submodule_path)
+    for finder in _SPEC_FINDERS:
+        finder_instance = finder(search_path)
+        spec = finder_instance.find_module(
+            modname, module_parts, processed, submodule_path
+        )
         if spec is None:
             continue
-        return finder, spec
+        return finder_instance, spec
 
     raise ImportError(f"No module named {'.'.join(module_parts)}")
 
