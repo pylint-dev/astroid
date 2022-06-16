@@ -290,7 +290,6 @@ def _cached_set_diff(left, right):
     return result
 
 
-# @lru_cache
 def _get_zipimporters():
     for filepath, importer in sys.path_importer_cache.items():
         if isinstance(importer, zipimport.zipimporter):
