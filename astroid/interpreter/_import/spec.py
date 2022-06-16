@@ -15,7 +15,7 @@ import sys
 import zipimport
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 from astroid.const import PY310_PLUS
 from astroid.modutils import EXT_LIB_DIRS
@@ -226,7 +226,7 @@ class ZipFinder(Finder):
             if entry_path not in sys.path_importer_cache:
                 # pylint: disable=no-member
                 try:
-                    sys.path_importer_cache[entry_path] = zipimport.zipimporter(
+                    sys.path_importer_cache[entry_path] = zipimport.zipimporter(  # type: ignore[assignment]
                         entry_path
                     )
                 except zipimport.ZipImportError:
@@ -307,7 +307,7 @@ def _is_setuptools_namespace(location: pathlib.Path) -> bool:
         return extend_path or declare_namespace
 
 
-def _get_zipimporters() -> Iterator[str, zipimport.zipimporter]:
+def _get_zipimporters() -> Iterator[tuple[str, zipimport.zipimporter]]:
     for filepath, importer in sys.path_importer_cache.items():
         # pylint: disable-next=no-member
         if isinstance(importer, zipimport.zipimporter):
@@ -319,7 +319,7 @@ def _search_zip(
 ) -> tuple[Literal[ModuleType.PY_ZIPMODULE], str, str]:
     for filepath, importer in _get_zipimporters():
         if PY310_PLUS:
-            found = importer.find_spec(modpath[0])
+            found: Any = importer.find_spec(modpath[0])
         else:
             found = importer.find_module(modpath[0])
         if found:
