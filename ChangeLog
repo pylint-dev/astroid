@@ -44,6 +44,8 @@ Release date: TBA
 * On Python versions >= 3.9, ``astroid`` now understands subscripting
   builtin classes such as ``enumerate`` or ``staticmethod``.
 
+* Speed up discovery of modules by initializing importers only when they are required.
+
 * Fixed inference of ``Enums`` when they are imported under an alias.
 
   Closes PyCQA/pylint#5776
