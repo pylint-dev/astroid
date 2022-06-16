@@ -26,6 +26,7 @@ import os
 import sys
 import sysconfig
 import types
+from collections.abc import Callable, Iterable, Sequence
 from contextlib import redirect_stderr, redirect_stdout
 from functools import lru_cache
 from pathlib import Path
@@ -85,11 +86,11 @@ if os.name == "posix":
     # Deprecated in virtualenv==16.7.9
     # See: https://github.com/pypa/virtualenv/issues/1622
     try:
-        prefix = sys.real_prefix  # type: ignore[attr-defined]
+        prefix: str = sys.real_prefix  # type: ignore[attr-defined]
     except AttributeError:
         prefix = sys.prefix
 
-    def _posix_path(path):
+    def _posix_path(path: str) -> str:
         base_python = "python%d.%d" % sys.version_info[:2]
         return os.path.join(prefix, path, base_python)
 
@@ -125,7 +126,7 @@ def _normalize_path(path: str) -> str:
     return os.path.normcase(os.path.realpath(path))
 
 
-def _path_from_filename(filename, is_jython=IS_JYTHON):
+def _path_from_filename(filename: str, is_jython: bool = IS_JYTHON) -> str:
     if not is_jython:
         return filename
     head, has_pyclass, _ = filename.partition("$py.class")
@@ -134,7 +135,9 @@ def _path_from_filename(filename, is_jython=IS_JYTHON):
     return filename
 
 
-def _handle_blacklist(blacklist, dirnames, filenames):
+def _handle_blacklist(
+    blacklist: Sequence[str], dirnames: list[str], filenames: list[str]
+) -> None:
     """remove files/directories in the black list
 
     dirnames/filenames are usually from os.walk
@@ -198,22 +201,20 @@ def load_module_from_name(dotted_name: str) -> types.ModuleType:
     return module
 
 
-def load_module_from_modpath(parts):
+def load_module_from_modpath(parts: Sequence[str]) -> types.ModuleType:
     """Load a python module from its split name.
 
-    :type parts: list(str) or tuple(str)
     :param parts:
       python name of a module or package split on '.'
 
     :raise ImportError: if the module or package is not found
 
-    :rtype: module
     :return: the loaded module
     """
     return load_module_from_name(".".join(parts))
 
 
-def load_module_from_file(filepath: str):
+def load_module_from_file(filepath: str) -> types.ModuleType:
     """Load a Python module from it's path.
 
     :type filepath: str
@@ -228,9 +229,9 @@ def load_module_from_file(filepath: str):
     return load_module_from_modpath(modpath)
 
 
-def check_modpath_has_init(path, mod_path):
+def check_modpath_has_init(path: str, mod_path: list[str]) -> bool:
     """check there are some __init__.py all along the way"""
-    modpath = []
+    modpath: list[str] = []
     for part in mod_path:
         modpath.append(part)
         path = os.path.join(path, part)
@@ -241,7 +242,7 @@ def check_modpath_has_init(path, mod_path):
     return True
 
 
-def _get_relative_base_path(filename, path_to_check):
+def _get_relative_base_path(filename: str, path_to_check: str) -> list[str] | None:
     """Extracts the relative mod path of the file to import from
 
     Check if a file is within the passed in path and if so, returns the
@@ -278,7 +279,11 @@ def _get_relative_base_path(filename, path_to_check):
     return None
 
 
-def modpath_from_file_with_callback(filename, path=None, is_package_cb=None):
+def modpath_from_file_with_callback(
+    filename: str,
+    path: Sequence[str] | None = None,
+    is_package_cb: Callable[[str, list[str]], bool] | None = None,
+) -> list[str]:
     filename = os.path.expanduser(_path_from_filename(filename))
     paths_to_check = sys.path.copy()
     if path:
@@ -291,6 +296,7 @@ def modpath_from_file_with_callback(filename, path=None, is_package_cb=None):
         modpath = _get_relative_base_path(filename, pathname)
         if not modpath:
             continue
+        assert is_package_cb is not None
         if is_package_cb(pathname, modpath[:-1]):
             return modpath
 
@@ -299,7 +305,7 @@ def modpath_from_file_with_callback(filename, path=None, is_package_cb=None):
     )
 
 
-def modpath_from_file(filename, path=None):
+def modpath_from_file(filename: str, path: Sequence[str] | None = None) -> list[str]:
     """Get the corresponding split module's name from a filename
 
     This function will return the name of a module or package split on `.`.
@@ -320,28 +326,33 @@ def modpath_from_file(filename, path=None):
     return modpath_from_file_with_callback(filename, path, check_modpath_has_init)
 
 
-def file_from_modpath(modpath, path=None, context_file=None):
+def file_from_modpath(
+    modpath: list[str],
+    path: Sequence[str] | None = None,
+    context_file: str | None = None,
+) -> str | None:
     return file_info_from_modpath(modpath, path, context_file).location
 
 
-def file_info_from_modpath(modpath, path=None, context_file=None):
+def file_info_from_modpath(
+    modpath: list[str],
+    path: Sequence[str] | None = None,
+    context_file: str | None = None,
+) -> spec.ModuleSpec:
     """given a mod path (i.e. split module / package name), return the
     corresponding file, giving priority to source file over precompiled
     file if it exists
 
-    :type modpath: list or tuple
     :param modpath:
       split module's name (i.e name of a module or package split
       on '.')
       (this means explicit relative imports that start with dots have
       empty strings in this list!)
 
-    :type path: list or None
     :param path:
       optional list of path where the module or package should be
       searched (use sys.path if nothing or None is given)
 
-    :type context_file: str or None
     :param context_file:
       context file to consider, necessary if the identifier has been
       introduced using a relative import unresolvable in the actual
@@ -349,13 +360,12 @@ def file_info_from_modpath(modpath, path=None, context_file=None):
 
     :raise ImportError: if there is no such module in the directory
 
-    :rtype: (str or None, import type)
     :return:
       the path to the module's file or None if it's an integrated
       builtin module such as 'sys'
     """
     if context_file is not None:
-        context = os.path.dirname(context_file)
+        context: str | None = os.path.dirname(context_file)
     else:
         context = context_file
     if modpath[0] == "xml":
@@ -374,16 +384,14 @@ def file_info_from_modpath(modpath, path=None, context_file=None):
     return _spec_from_modpath(modpath, path, context)
 
 
-def get_module_part(dotted_name, context_file=None):
+def get_module_part(dotted_name: str, context_file: str | None = None) -> str:
     """given a dotted name return the module part of the name :
 
     >>> get_module_part('astroid.as_string.dump')
     'astroid.as_string'
 
-    :type dotted_name: str
     :param dotted_name: full name of the identifier we are interested in
 
-    :type context_file: str or None
     :param context_file:
       context file to consider, necessary if the identifier has been
       introduced using a relative import unresolvable in the actual
@@ -392,7 +400,6 @@ def get_module_part(dotted_name, context_file=None):
 
     :raise ImportError: if there is no such module in the directory
 
-    :rtype: str or None
     :return:
       the module part of the name or None if we have not been able at
       all to import the given name
@@ -412,7 +419,7 @@ def get_module_part(dotted_name, context_file=None):
                 raise ImportError(dotted_name)
             return parts[0]
         # don't use += or insert, we want a new list to be created !
-    path = None
+    path: list[str] | None = None
     starti = 0
     if parts[0] == "":
         assert (
@@ -422,6 +429,9 @@ def get_module_part(dotted_name, context_file=None):
         starti = 1
     while parts[starti] == "":  # for all further dots: change context
         starti += 1
+        assert (
+            context_file is not None
+        ), "explicit relative import, but no context_file?"
         context_file = os.path.dirname(context_file)
     for i in range(starti, len(parts)):
         try:
@@ -435,28 +445,26 @@ def get_module_part(dotted_name, context_file=None):
     return dotted_name
 
 
-def get_module_files(src_directory, blacklist, list_all=False):
+def get_module_files(
+    src_directory: str, blacklist: Sequence[str], list_all: bool = False
+) -> list[str]:
     """given a package directory return a list of all available python
     module's files in the package and its subpackages
 
-    :type src_directory: str
     :param src_directory:
       path of the directory corresponding to the package
 
-    :type blacklist: list or tuple
     :param blacklist: iterable
       list of files or directories to ignore.
 
-    :type list_all: bool
     :param list_all:
         get files from all paths, including ones without __init__.py
 
-    :rtype: list
     :return:
       the list of all available python module's files in the package and
       its subpackages
     """
-    files = []
+    files: list[str] = []
     for directory, dirnames, filenames in os.walk(src_directory):
         if directory in blacklist:
             continue
@@ -472,18 +480,15 @@ def get_module_files(src_directory, blacklist, list_all=False):
     return files
 
 
-def get_source_file(filename, include_no_ext=False):
+def get_source_file(filename: str, include_no_ext: bool = False) -> str:
     """given a python module's file name return the matching source file
     name (the filename will be returned identically if it's already an
     absolute path to a python source file...)
 
-    :type filename: str
     :param filename: python module's file name
-
 
     :raise NoSourceFile: if no source file exists on the file system
 
-    :rtype: str
     :return: the absolute path of the source file if it exists
     """
     filename = os.path.abspath(_path_from_filename(filename))
@@ -497,26 +502,21 @@ def get_source_file(filename, include_no_ext=False):
     raise NoSourceFile(filename)
 
 
-def is_python_source(filename):
+def is_python_source(filename: str) -> bool:
     """
-    rtype: bool
     return: True if the filename is a python source file
     """
     return os.path.splitext(filename)[1][1:] in PY_SOURCE_EXTS
 
 
-def is_standard_module(modname, std_path=None):
+def is_standard_module(modname: str, std_path: Iterable[str] | None = None) -> bool:
     """try to guess if a module is a standard python module (by default,
     see `std_path` parameter's description)
 
-    :type modname: str
     :param modname: name of the module we are interested in
 
-    :type std_path: list(str) or tuple(str)
     :param std_path: list of path considered has standard
 
-
-    :rtype: bool
     :return:
       true if the module:
       - is located on the path listed in one of the directory in `std_path`
@@ -544,18 +544,15 @@ def is_standard_module(modname, std_path=None):
     return any(filename.startswith(_cache_normalize_path(path)) for path in std_path)
 
 
-def is_relative(modname, from_file):
+def is_relative(modname: str, from_file: str) -> bool:
     """return true if the given module name is relative to the given
     file name
 
-    :type modname: str
     :param modname: name of the module we are interested in
 
-    :type from_file: str
     :param from_file:
       path of the module from which modname has been imported
 
-    :rtype: bool
     :return:
       true if the module has been imported relatively to `from_file`
     """
@@ -573,7 +570,11 @@ def is_relative(modname, from_file):
 # internal only functions #####################################################
 
 
-def _spec_from_modpath(modpath, path=None, context=None):
+def _spec_from_modpath(
+    modpath: list[str],
+    path: Sequence[str] | None = None,
+    context: str | None = None,
+) -> spec.ModuleSpec:
     """given a mod path (i.e. split module / package name), return the
     corresponding spec
 
@@ -593,6 +594,7 @@ def _spec_from_modpath(modpath, path=None, context=None):
         found_spec = spec.find_spec(modpath, path)
     if found_spec.type == spec.ModuleType.PY_COMPILED:
         try:
+            assert found_spec.location is not None
             location = get_source_file(found_spec.location)
             return found_spec._replace(
                 location=location, type=spec.ModuleType.PY_SOURCE
@@ -603,12 +605,13 @@ def _spec_from_modpath(modpath, path=None, context=None):
         # integrated builtin module
         return found_spec._replace(location=None)
     elif found_spec.type == spec.ModuleType.PKG_DIRECTORY:
+        assert found_spec.location is not None
         location = _has_init(found_spec.location)
         return found_spec._replace(location=location, type=spec.ModuleType.PY_SOURCE)
     return found_spec
 
 
-def _is_python_file(filename):
+def _is_python_file(filename: str) -> bool:
     """return true if the given filename should be considered as a python file
 
     .pyc and .pyo are ignored
@@ -616,7 +619,7 @@ def _is_python_file(filename):
     return filename.endswith((".py", ".so", ".pyd", ".pyw"))
 
 
-def _has_init(directory):
+def _has_init(directory: str) -> str | None:
     """if the given directory has a valid __init__ file, return its path,
     else return None
     """
@@ -627,11 +630,11 @@ def _has_init(directory):
     return None
 
 
-def is_namespace(specobj):
+def is_namespace(specobj: spec.ModuleSpec) -> bool:
     return specobj.type == spec.ModuleType.PY_NAMESPACE
 
 
-def is_directory(specobj):
+def is_directory(specobj: spec.ModuleSpec) -> bool:
     return specobj.type == spec.ModuleType.PKG_DIRECTORY
 
 
