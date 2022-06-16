@@ -13,8 +13,7 @@ import os
 import pathlib
 import sys
 import zipimport
-from collections.abc import Sequence
-from functools import lru_cache
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import NamedTuple
 
@@ -213,6 +212,7 @@ class ZipFinder(Finder):
         super().__init__(path)
         for entry_path in path:
             if entry_path not in sys.path_importer_cache:
+                # pylint: disable=no-member
                 try:
                     sys.path_importer_cache[entry_path] = zipimport.zipimporter(
                         entry_path
@@ -283,15 +283,9 @@ def _is_setuptools_namespace(location: pathlib.Path) -> bool:
         return extend_path or declare_namespace
 
 
-@lru_cache()
-def _cached_set_diff(left, right):
-    result = set(left)
-    result.difference_update(right)
-    return result
-
-
-def _get_zipimporters():
+def _get_zipimporters() -> Iterator[str, zipimport.zipimporter]:
     for filepath, importer in sys.path_importer_cache.items():
+        # pylint: disable-next=no-member
         if isinstance(importer, zipimport.zipimporter):
             yield filepath, importer
 

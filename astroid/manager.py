@@ -253,6 +253,7 @@ class AstroidManager:
                     modname.split("."), context_file=contextfile
                 )
             except ImportError as e:
+                # pylint: disable-next=redefined-variable-type
                 value = AstroidImportError(
                     "Failed to import module {modname} with error:\n{error}.",
                     modname=modname,
@@ -262,7 +263,7 @@ class AstroidManager:
             self._mod_file_cache[(modname, contextfile)] = value
         if isinstance(value, AstroidBuildingError):
             # we remove the traceback here to save on memory usage (since these exceptions are cached)
-            raise value.with_traceback(None)
+            raise value.with_traceback(None)  # pylint: disable=no-member
         return value
 
     def ast_from_module(self, module: types.ModuleType, modname: str | None = None):
