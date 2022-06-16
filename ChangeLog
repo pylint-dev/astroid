@@ -69,6 +69,10 @@ Release date: TBA
 * Fix test for Python ``3.11``. In some instances ``err.__traceback__`` will
   be uninferable now.
 
+* Add brain for numpy core module ``einsumfunc``.
+
+  Refs PyCQA/pylint#5821
+
 * Infer the ``DictUnpack`` value for ``Dict.getitem`` calls.
 
   Closes #1195
