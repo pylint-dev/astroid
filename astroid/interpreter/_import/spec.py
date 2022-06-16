@@ -334,7 +334,6 @@ def _search_zip(
                     "No module named %s in %s/%s"
                     % (".".join(modpath[1:]), filepath, modpath)
                 )
-            # import code; code.interact(local=locals())
             return (
                 ModuleType.PY_ZIPMODULE,
                 os.path.abspath(filepath) + os.path.sep + os.path.sep.join(modpath),
