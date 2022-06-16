@@ -8,7 +8,7 @@ import pathlib
 import sys
 from functools import lru_cache
 from importlib._bootstrap_external import _NamespacePath
-from importlib.util import _find_spec_from_path
+from importlib.util import _find_spec_from_path  # type: ignore[attr-defined]
 
 
 @lru_cache(maxsize=4096)
