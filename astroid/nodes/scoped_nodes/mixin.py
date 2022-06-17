@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 
 
-class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
+class LocalsDictNodeNG(node_classes.LookupMixIn):
     """this class provides locals handling common to Module, FunctionDef
     and ClassDef nodes, including a dict like interface for direct access
     to locals information
@@ -49,6 +49,24 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
         :rtype: Module or FunctionDef or ClassDef or Lambda or GenExpr
         """
         return self
+
+    def scope_lookup(self, node, name: str, offset: int = 0):
+        """Lookup where the given variable is assigned.
+
+        :param node: The node to look for assignments up to.
+            Any assignments after the given node are ignored.
+        :type node: NodeNG
+
+        :param name: The name of the variable to find assignments for.
+
+        :param offset: The line offset to filter statements up to.
+
+        :returns: This scope node and the list of assignments associated to the
+            given name according to the scope where it has been found (locals,
+            globals or builtin).
+        :rtype: tuple(str, list(NodeNG))
+        """
+        raise NotImplementedError
 
     def _scope_lookup(self, node, name, offset=0):
         """XXX method for interfacing the scope lookup"""

@@ -356,7 +356,7 @@ class BaseContainer(
         yield from self.elts
 
 
-class LookupMixIn:
+class LookupMixIn(NodeNG):
     """Mixin to look up a name in the right scope."""
 
     @lru_cache()  # noqa
@@ -393,9 +393,7 @@ class LookupMixIn:
 # Name classes
 
 
-class AssignName(
-    mixins.NoChildrenMixin, LookupMixIn, mixins.ParentAssignTypeMixin, NodeNG
-):
+class AssignName(mixins.NoChildrenMixin, LookupMixIn, mixins.ParentAssignTypeMixin):
     """Variation of :class:`ast.Assign` representing assignment to a name.
 
     An :class:`AssignName` is the name of something that is assigned to.
@@ -456,9 +454,7 @@ class AssignName(
     """
 
 
-class DelName(
-    mixins.NoChildrenMixin, LookupMixIn, mixins.ParentAssignTypeMixin, NodeNG
-):
+class DelName(mixins.NoChildrenMixin, LookupMixIn, mixins.ParentAssignTypeMixin):
     """Variation of :class:`ast.Delete` representing deletion of a name.
 
     A :class:`DelName` is the name of something that is deleted.
@@ -511,7 +507,7 @@ class DelName(
         )
 
 
-class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
+class Name(mixins.NoChildrenMixin, LookupMixIn):
     """Class representing an :class:`ast.Name` node.
 
     A :class:`Name` node is something that is named, but not covered by
