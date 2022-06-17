@@ -6797,7 +6797,7 @@ def test_function_def_cached_generator() -> None:
     next(funcdef._infer())
 
 
-class TestStringModulation:
+class TestOldStyleStringFormatting:
     @pytest.mark.parametrize(
         "format_string",
         [
@@ -6851,7 +6851,7 @@ class TestStringModulation:
             ),
         ],
     )
-    def test_string_modulation(self, format_string: str) -> None:
+    def test_old_style_string_formatting(self, format_string: str) -> None:
         node: nodes.Call = _extract_single_node(format_string)
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
@@ -6891,12 +6891,12 @@ class TestStringModulation:
             """,
         ],
     )
-    def test_string_modulation_uninferable(self, format_string: str) -> None:
+    def test_old_style_string_formatting_uninferable(self, format_string: str) -> None:
         node: nodes.Call = _extract_single_node(format_string)
         inferred = next(node.infer())
         assert inferred is util.Uninferable
 
-    def test_string_modulation_with_specs(self) -> None:
+    def test_old_style_string_formatting_with_specs(self) -> None:
         node: nodes.Call = _extract_single_node(
             """"My name is %s, I'm %.2f" % ("Daniel", 12)"""
         )

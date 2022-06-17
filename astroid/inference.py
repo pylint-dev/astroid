@@ -562,7 +562,7 @@ def _is_not_implemented(const):
     return isinstance(const, nodes.Const) and const.value is NotImplemented
 
 
-def _infer_string_modulo(
+def _infer_old_style_string_formatting(
     instance: nodes.Const, other: nodes.NodeNG, context: InferenceContext
 ) -> tuple[type[util.Uninferable] | nodes.Const]:
     """Infer the result of '"string" % ...'."""
@@ -602,7 +602,7 @@ def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     context.callcontext.callee = method
 
     if isinstance(instance, nodes.Const) and op == "%":
-        return iter(_infer_string_modulo(instance, other, context))
+        return iter(_infer_old_style_string_formatting(instance, other, context))
 
     try:
         inferred = next(method.infer(context=context))
