@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for inference involving constraints"""
+from __future__ import annotations
 
 import pytest
 
@@ -10,7 +11,7 @@ from astroid import builder, nodes
 from astroid.util import Uninferable
 
 
-def common_params(node: str) -> "pytest.MarkDecorator":
+def common_params(node: str) -> pytest.MarkDecorator:
     return pytest.mark.parametrize(
         ("condition", "satisfy_val", "fail_val"),
         (
