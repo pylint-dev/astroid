@@ -4,8 +4,6 @@
 
 """Tests for inference involving constraints"""
 
-from typing import Optional
-
 import pytest
 
 from astroid import builder, nodes
@@ -24,7 +22,7 @@ def common_params(node: str) -> "pytest.MarkDecorator":
 
 @common_params(node="x")
 def test_if_single_statement(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test constraint for a variable that is used in the first statement of an if body."""
     node1, node2 = builder.extract_node(
@@ -57,7 +55,7 @@ def test_if_single_statement(
 
 @common_params(node="x")
 def test_if_multiple_statements(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test constraint for a variable that is used in an if body with multiple statements."""
     node1, node2 = builder.extract_node(
@@ -92,7 +90,7 @@ def test_if_multiple_statements(
 
 @common_params(node="x")
 def test_if_irrelevant_condition(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint for a different variable doesn't apply."""
     nodes_ = builder.extract_node(
@@ -121,7 +119,7 @@ def test_if_irrelevant_condition(
 
 @common_params(node="x")
 def test_outside_if(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if condition doesn't apply outside of the if."""
     nodes_ = builder.extract_node(
@@ -153,7 +151,7 @@ def test_outside_if(
 
 @common_params(node="x")
 def test_nested_if(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if condition applies within inner if statements."""
     node1, node2 = builder.extract_node(
@@ -213,7 +211,7 @@ def test_if_uninferable() -> None:
 
 @common_params(node="x")
 def test_if_reassignment_in_body(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if condition doesn't apply when the variable
     is assigned to a failing value inside the if body.
@@ -239,7 +237,7 @@ def test_if_reassignment_in_body(
 
 @common_params(node="x")
 def test_if_elif_else_negates(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if condition is negated when the variable
     is used in the elif and else branches.
@@ -287,7 +285,7 @@ def test_if_elif_else_negates(
 
 @common_params(node="x")
 def test_if_reassignment_in_else(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if condition doesn't apply when the variable
     is assigned to a failing value inside the else branch.
@@ -315,7 +313,7 @@ def test_if_reassignment_in_else(
 
 @common_params(node="x")
 def test_if_comprehension_shadow(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if condition doesn't apply when the variable
     is shadowed by an inner comprehension scope.
@@ -344,7 +342,7 @@ def test_if_comprehension_shadow(
 
 @common_params(node="x")
 def test_if_function_shadow(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if condition doesn't apply when the variable
     is shadowed by an inner function scope.
@@ -369,7 +367,7 @@ def test_if_function_shadow(
 
 @common_params(node="x")
 def test_if_function_call(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if condition doesn't apply for a parameter
     a different function call, but with the same name.
@@ -392,7 +390,7 @@ def test_if_function_call(
 
 @common_params(node="self.x")
 def test_if_instance_attr(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test constraint for an instance attribute in an if statement."""
     node1, node2 = builder.extract_node(
@@ -429,7 +427,7 @@ def test_if_instance_attr(
 
 @common_params(node="self.x")
 def test_if_instance_attr_reassignment_in_body(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if condition doesn't apply to an instance attribute
     when it is assigned inside the if body.
@@ -472,7 +470,7 @@ def test_if_instance_attr_reassignment_in_body(
 
 @common_params(node="x")
 def test_if_instance_attr_varname_collision1(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if condition doesn't apply to an instance attribute
     when the constraint refers to a variable with the same name.
@@ -504,7 +502,7 @@ def test_if_instance_attr_varname_collision1(
 
 @common_params(node="self.x")
 def test_if_instance_attr_varname_collision2(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if condition doesn't apply to a variable with the same name."""
     node1, node2 = builder.extract_node(
@@ -534,7 +532,7 @@ def test_if_instance_attr_varname_collision2(
 
 @common_params(node="self.x")
 def test_if_instance_attr_varname_collision3(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if condition doesn't apply to an instance attribute
     for an object of a different class.
@@ -564,7 +562,7 @@ def test_if_instance_attr_varname_collision3(
 
 @common_params(node="self.x")
 def test_if_instance_attr_varname_collision4(
-    condition: str, satisfy_val: Optional[int], fail_val: Optional[int]
+    condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if condition doesn't apply to a variable of the same name,
     when that variable is used to infer the value of the instance attribute.
