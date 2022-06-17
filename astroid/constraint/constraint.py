@@ -10,7 +10,7 @@ from typing import TypeVar
 
 from astroid import nodes, util
 
-__all__ = ["get_constraints"]
+__all__ = ("get_constraints",)
 
 
 NameNodes = nodes.AssignAttr | nodes.Attribute | nodes.AssignName | nodes.Name

@@ -4,3 +4,7 @@
 
 """Representations of logical constraints on values used during inference.
 """
+
+from .constraint import get_constraints
+
+__all__ = ("get_constraints",)
