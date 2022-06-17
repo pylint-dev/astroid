@@ -470,16 +470,16 @@ class NodeNG:
         We need this method since not all nodes have :attr:`lineno` set.
         """
         line = self.lineno
-        _node: NodeNG | None = self
+        _node = self
         try:
             while line is None:
                 _node = next(_node.get_children())
                 line = _node.lineno
         except StopIteration:
-            _node = self.parent
-            while _node and line is None:
-                line = _node.lineno
-                _node = _node.parent
+            parent = self.parent
+            while parent and line is None:
+                line = parent.lineno
+                parent = parent.parent
         return line
 
     def block_range(self, lineno):
