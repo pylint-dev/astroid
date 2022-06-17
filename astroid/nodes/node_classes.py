@@ -11,7 +11,7 @@ import itertools
 import sys
 import typing
 import warnings
-from collections.abc import Generator, Iterator
+from collections.abc import Generator
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Union
 
@@ -4877,7 +4877,7 @@ class EvaluatedObject(NodeNG):
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator[NodeNG | type[util.Uninferable]]:
+    ) -> Generator[NodeNG | type[util.Uninferable], None, None]:
         yield self.value
 
 
