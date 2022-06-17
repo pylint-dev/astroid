@@ -6,18 +6,159 @@ What's New in astroid 2.12.0?
 =============================
 Release date: TBA
 
+* ``astroid`` now requires Python 3.7.2 to run.
+
+* Fix detection of builtins on ``PyPy`` 3.9.
+
+* Fix ``re`` brain on Python ``3.11``. The flags now come from ``re._compile``.
+
+* Build ``nodes.Module`` for frozen modules which have location information in their
+  ``ModuleSpec``.
+
+  Closes #1512
+
+* Capture and log messages emitted by C extensions when importing them.
+  This prevents contaminating programmatic output, e.g. pylint's JSON reporter.
+
+  Closes PyCQA/pylint#3518
+
+* Calls to ``str.format`` are now correctly inferred.
+
+  Closes #104, Closes #1611
+
+* Adds missing enums from ``ssl`` module.
+
+  Closes PyCQA/pylint#3691
+
+* Remove dependency on ``pkg_resources`` from ``setuptools``.
+
+  Closes #1103
+
+* Allowed ``AstroidManager.clear_cache`` to reload necessary brain plugins.
+
+* Fixed incorrect inferences after rebuilding the builtins module, e.g. by calling
+  ``AstroidManager.clear_cache``.
+
+  Closes #1559
+
+* On Python versions >= 3.9, ``astroid`` now understands subscripting
+  builtin classes such as ``enumerate`` or ``staticmethod``.
+
+* Fixed inference of ``Enums`` when they are imported under an alias.
+
+  Closes PyCQA/pylint#5776
+
+* Rename ``ModuleSpec`` -> ``module_type`` constructor parameter to match attribute
+  name and improve typing. Use ``type`` instead.
+
+* Fixed pylint ``not-callable`` false positive with nested-tuple assignment in a for-loop.
+
+  Refs PyCQA/pylint#5113
+
+* Instances of builtins created with ``__new__(cls, value)`` are now inferred.
+
+* Infer the return value of the ``.copy()`` method on ``dict``, ``list``, ``set``,
+  and ``frozenset``.
+
+  Closes #1403
+
+* Add ``pathlib`` brain to handle ``pathlib.PurePath.parents`` inference.
+
+  Closes PyCQA/pylint#5783
+
+* Fix test for Python ``3.11``. In some instances ``err.__traceback__`` will
+  be uninferable now.
+
+* Infer the ``DictUnpack`` value for ``Dict.getitem`` calls.
+
+  Closes #1195
+
 * Support "is None" constraints from if statements during inference.
 
-  Closes #791
-  Closes PyCQA/pylint#157
-  Closes PyCQA/pylint#1472
-  Closes PyCQA/pylint#2016
-  Closes PyCQA/pylint#2631
-  Closes PyCQA/pylint#2880
+  Ref #791
+  Ref PyCQA/pylint#157
+  Ref PyCQA/pylint#1472
+  Ref PyCQA/pylint#2016
+  Ref PyCQA/pylint#2631
+  Ref PyCQA/pylint#2880
+
+What's New in astroid 2.11.7?
+=============================
+Release date: TBA
+
+
+
+What's New in astroid 2.11.6?
+=============================
+Release date: 2022-06-13
+
+* The Qt brain now correctly treats calling ``.disconnect()`` (with no
+  arguments) on a slot as valid.
+
+* The argparse brain no longer incorrectly adds ``"Namespace"`` to the locals
+  of functions that return an ``argparse.Namespace`` object.
+
+  Refs PyCQA/pylint#6895
+
+What's New in astroid 2.11.5?
+=============================
+Release date: 2022-05-09
+
+* Fix crash while obtaining ``object_type()`` of an ``Unknown`` node.
+
+  Refs PyCQA/pylint#6539
+
+* Fix a bug where in attempting to handle the patching of ``distutils`` by ``virtualenv``,
+  library submodules called ``distutils`` (e.g. ``numpy.distutils``) were included also.
+
+  Refs PyCQA/pylint#6497
+
+What's New in astroid 2.11.4?
+=============================
+Release date: 2022-05-02
+
+* Fix ``col_offset`` attribute for nodes involving ``with`` on ``PyPy``.
+
+* Fixed a crash involving two starred expressions: one inside a comprehension,
+  both inside a call.
+
+  Refs PyCQA/pylint#6372
+
+* Made ``FunctionDef.implicit_parameters`` return 1 for methods by making
+  ``FunctionDef.is_bound`` return ``True``, as it does for class methods.
+
+  Closes PyCQA/pylint#6464
+
+* Fixed a crash when ``_filter_stmts`` encounters an ``EmptyNode``.
+
+  Closes PyCQA/pylint#6438
+
+
+What's New in astroid 2.11.3?
+=============================
+Release date: 2022-04-19
+
+* Fixed an error in the Qt brain when building ``instance_attrs``.
+
+  Closes PyCQA/pylint#6221
+
+* Fixed a crash in the ``gi`` brain.
+
+  Closes PyCQA/pylint#6371
+
+
+What's New in astroid 2.11.2?
+=============================
+Release date: 2022-03-26
+
+* Avoided adding the name of a parent namedtuple to its child's locals.
+
+  Refs PyCQA/pylint#5982
+
 
 What's New in astroid 2.11.1?
 =============================
-Release date: TBA
+Release date: 2022-03-22
 
 * Promoted ``getattr()`` from ``astroid.scoped_nodes.FunctionDef`` to its parent
   ``astroid.scoped_nodes.Lambda``.

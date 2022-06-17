@@ -11,9 +11,14 @@ leads to an inferred FrozenSet:
     Call(func=Name('frozenset'), args=Tuple(...))
 """
 
+from __future__ import annotations
+
 import sys
+from collections.abc import Iterator
+from typing import Any, TypeVar
 
 from astroid import bases, decorators, util
+from astroid.context import InferenceContext
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -30,6 +35,8 @@ if sys.version_info >= (3, 8):
 else:
     from astroid.decorators import cachedproperty as cached_property
 
+_T = TypeVar("_T")
+
 
 class FrozenSet(node_classes.BaseContainer):
     """class representing a FrozenSet composite node"""
@@ -37,7 +44,7 @@ class FrozenSet(node_classes.BaseContainer):
     def pytype(self):
         return "builtins.frozenset"
 
-    def _infer(self, context=None):
+    def _infer(self, context=None, **kwargs: Any):
         yield self
 
     @cached_property
@@ -70,7 +77,7 @@ class Super(node_classes.NodeNG):
         self._scope = scope
         super().__init__()
 
-    def _infer(self, context=None):
+    def _infer(self, context=None, **kwargs: Any):
         yield self
 
     def super_mro(self):
@@ -324,5 +331,7 @@ class Property(scoped_nodes.FunctionDef):
     def infer_call_result(self, caller=None, context=None):
         raise InferenceError("Properties are not callable")
 
-    def infer(self, context=None, **kwargs):
-        return iter((self,))
+    def _infer(
+        self: _T, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Iterator[_T]:
+        yield self

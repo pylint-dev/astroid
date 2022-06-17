@@ -4,10 +4,12 @@
 
 """Astroid hooks for the Python standard library."""
 
+from __future__ import annotations
+
 import functools
 import keyword
+from collections.abc import Iterator
 from textwrap import dedent
-from typing import Iterator, List, Optional, Tuple
 
 import astroid
 from astroid import arguments, inference_tip, nodes, util
@@ -71,9 +73,9 @@ def _find_func_form_arguments(node, context):
 def infer_func_form(
     node: nodes.Call,
     base_type: nodes.NodeNG,
-    context: Optional[InferenceContext] = None,
+    context: InferenceContext | None = None,
     enum: bool = False,
-) -> Tuple[nodes.ClassDef, str, List[str]]:
+) -> tuple[nodes.ClassDef, str, list[str]]:
     """Specific inference function for namedtuple or Python 3 enum."""
     # node is a Call node, class name as first argument and generated class
     # attributes as second argument
@@ -133,7 +135,11 @@ def infer_func_form(
     # we know it is a namedtuple anyway.
     name = name or "Uninferable"
     # we want to return a Class node instance with proper attributes set
-    class_node = nodes.ClassDef(name, parent=node.parent)
+    class_node = nodes.ClassDef(name)
+    # A typical ClassDef automatically adds its name to the parent scope,
+    # but doing so causes problems, so defer setting parent until after init
+    # see: https://github.com/PyCQA/pylint/issues/5982
+    class_node.parent = node.parent
     class_node.postinit(
         # set base class=tuple
         bases=[base_type],
@@ -173,7 +179,7 @@ _looks_like_typing_namedtuple = functools.partial(_looks_like, name="NamedTuple"
 
 
 def infer_named_tuple(
-    node: nodes.Call, context: Optional[InferenceContext] = None
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[nodes.ClassDef]:
     """Specific inference function for namedtuple Call node"""
     tuple_base_name = nodes.Name(name="tuple", parent=node.root())
@@ -343,11 +349,9 @@ INT_FLAG_ADDITION_METHODS = """
 """
 
 
-def infer_enum_class(node):
+def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
     """Specific inference for enums."""
     for basename in (b for cls in node.mro() for b in cls.basenames):
-        if basename not in ENUM_BASE_NAMES:
-            continue
         if node.root().name == "enum":
             # Skip if the class is directly from enum module.
             break
@@ -499,7 +503,7 @@ def infer_typing_namedtuple_function(node, context=None):
 
 
 def infer_typing_namedtuple(
-    node: nodes.Call, context: Optional[InferenceContext] = None
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[nodes.ClassDef]:
     """Infer a typing.NamedTuple(...) call."""
     # This is essentially a namedtuple with different arguments

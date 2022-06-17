@@ -4,8 +4,11 @@
 
 """Astroid hooks for various builtins."""
 
+from __future__ import annotations
+
+import itertools
+from collections.abc import Iterator
 from functools import partial
-from typing import Optional
 
 from astroid import arguments, helpers, inference_tip, nodes, objects, util
 from astroid.builder import AstroidBuilder
@@ -533,7 +536,7 @@ def infer_callable(node, context=None):
 
 
 def infer_property(
-    node: nodes.Call, context: Optional[InferenceContext] = None
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> objects.Property:
     """Understand `property` class
 
@@ -892,6 +895,72 @@ def infer_dict_fromkeys(node, context=None):
     return _build_dict_with_elements([])
 
 
+def _infer_copy_method(
+    node: nodes.Call, context: InferenceContext | None = None
+) -> Iterator[nodes.NodeNG]:
+    assert isinstance(node.func, nodes.Attribute)
+    inferred_orig, inferred_copy = itertools.tee(node.func.expr.infer(context=context))
+    if all(
+        isinstance(
+            inferred_node, (nodes.Dict, nodes.List, nodes.Set, objects.FrozenSet)
+        )
+        for inferred_node in inferred_orig
+    ):
+        return inferred_copy
+
+    raise UseInferenceDefault()
+
+
+def _is_str_format_call(node: nodes.Call) -> bool:
+    """Catch calls to str.format()."""
+    if not isinstance(node.func, nodes.Attribute) or not node.func.attrname == "format":
+        return False
+
+    if isinstance(node.func.expr, nodes.Name):
+        value = helpers.safe_infer(node.func.expr)
+    else:
+        value = node.func.expr
+
+    return isinstance(value, nodes.Const) and isinstance(value.value, str)
+
+
+def _infer_str_format_call(
+    node: nodes.Call, context: InferenceContext | None = None
+) -> Iterator[nodes.Const | type[util.Uninferable]]:
+    """Return a Const node based on the template and passed arguments."""
+    call = arguments.CallSite.from_call(node, context=context)
+    if isinstance(node.func.expr, nodes.Name):
+        value: nodes.Const = helpers.safe_infer(node.func.expr)
+    else:
+        value = node.func.expr
+
+    format_template = value.value
+
+    # Get the positional arguments passed
+    inferred_positional = [
+        helpers.safe_infer(i, context) for i in call.positional_arguments
+    ]
+    if not all(isinstance(i, nodes.Const) for i in inferred_positional):
+        return iter([util.Uninferable])
+    pos_values: list[str] = [i.value for i in inferred_positional]
+
+    # Get the keyword arguments passed
+    inferred_keyword = {
+        k: helpers.safe_infer(v, context) for k, v in call.keyword_arguments.items()
+    }
+    if not all(isinstance(i, nodes.Const) for i in inferred_keyword.values()):
+        return iter([util.Uninferable])
+    keyword_values: dict[str, str] = {k: v.value for k, v in inferred_keyword.items()}
+
+    try:
+        formatted_string = format_template.format(*pos_values, **keyword_values)
+    except (IndexError, KeyError):
+        # If there is an IndexError there are too few arguments to interpolate
+        return iter([util.Uninferable])
+
+    return iter([nodes.const_factory(formatted_string)])
+
+
 # Builtins inference
 register_builtin_transform(infer_bool, "bool")
 register_builtin_transform(infer_super, "super")
@@ -919,4 +988,15 @@ AstroidManager().register_transform(
     nodes.ClassDef,
     inference_tip(_infer_object__new__decorator),
     _infer_object__new__decorator_check,
+)
+
+AstroidManager().register_transform(
+    nodes.Call,
+    inference_tip(_infer_copy_method),
+    lambda node: isinstance(node.func, nodes.Attribute)
+    and node.func.attrname == "copy",
+)
+
+AstroidManager().register_transform(
+    nodes.Call, inference_tip(_infer_str_format_call), _is_str_format_call
 )

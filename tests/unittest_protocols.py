@@ -2,9 +2,12 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import contextlib
 import unittest
-from typing import Any, Callable, Iterator, List, Optional, Union
+from collections.abc import Callable, Iterator
+from typing import Any
 
 import pytest
 
@@ -21,7 +24,7 @@ def _add_transform(
     manager: AstroidManager,
     node: type,
     transform: Callable,
-    predicate: Optional[Any] = None,
+    predicate: Any | None = None,
 ) -> Iterator:
     manager.register_transform(node, transform, predicate)
     try:
@@ -32,7 +35,7 @@ def _add_transform(
 
 class ProtocolTests(unittest.TestCase):
     def assertConstNodesEqual(
-        self, nodes_list_expected: List[int], nodes_list_got: List[nodes.Const]
+        self, nodes_list_expected: list[int], nodes_list_got: list[nodes.Const]
     ) -> None:
         self.assertEqual(len(nodes_list_expected), len(nodes_list_got))
         for node in nodes_list_got:
@@ -41,7 +44,7 @@ class ProtocolTests(unittest.TestCase):
             self.assertEqual(expected_value, node.value)
 
     def assertNameNodesEqual(
-        self, nodes_list_expected: List[str], nodes_list_got: List[nodes.Name]
+        self, nodes_list_expected: list[str], nodes_list_got: list[nodes.Name]
     ) -> None:
         self.assertEqual(len(nodes_list_expected), len(nodes_list_got))
         for node in nodes_list_got:
@@ -67,6 +70,48 @@ class ProtocolTests(unittest.TestCase):
         for2_assnode = next(assign_stmts[1].nodes_of_class(nodes.AssignName))
         self.assertRaises(InferenceError, list, for2_assnode.assigned_stmts())
 
+    def test_assigned_stmts_nested_for_tuple(self) -> None:
+        assign_stmts = extract_node(
+            """
+        for a, (b, c) in [(1, (2, 3))]:  #@
+          pass
+        """
+        )
+
+        assign_nodes = assign_stmts.nodes_of_class(nodes.AssignName)
+
+        for1_assnode = next(assign_nodes)
+        assigned = list(for1_assnode.assigned_stmts())
+        self.assertConstNodesEqual([1], assigned)
+
+        for2_assnode = next(assign_nodes)
+        assigned2 = list(for2_assnode.assigned_stmts())
+        self.assertConstNodesEqual([2], assigned2)
+
+    def test_assigned_stmts_nested_for_dict(self) -> None:
+        assign_stmts = extract_node(
+            """
+        for a, (b, c) in {1: ("a", str), 2: ("b", bytes)}.items():  #@
+            pass
+        """
+        )
+        assign_nodes = assign_stmts.nodes_of_class(nodes.AssignName)
+
+        # assigned: [1, 2]
+        for1_assnode = next(assign_nodes)
+        assigned = list(for1_assnode.assigned_stmts())
+        self.assertConstNodesEqual([1, 2], assigned)
+
+        # assigned2: ["a", "b"]
+        for2_assnode = next(assign_nodes)
+        assigned2 = list(for2_assnode.assigned_stmts())
+        self.assertConstNodesEqual(["a", "b"], assigned2)
+
+        # assigned3: [str, bytes]
+        for3_assnode = next(assign_nodes)
+        assigned3 = list(for3_assnode.assigned_stmts())
+        self.assertNameNodesEqual(["str", "bytes"], assigned3)
+
     def test_assigned_stmts_starred_for(self) -> None:
         assign_stmts = extract_node(
             """
@@ -80,12 +125,12 @@ class ProtocolTests(unittest.TestCase):
         assert isinstance(assigned, astroid.List)
         assert assigned.as_string() == "[1, 2]"
 
-    def _get_starred_stmts(self, code: str) -> Union[List, Uninferable]:
+    def _get_starred_stmts(self, code: str) -> list | Uninferable:
         assign_stmt = extract_node(f"{code} #@")
         starred = next(assign_stmt.nodes_of_class(nodes.Starred))
         return next(starred.assigned_stmts())
 
-    def _helper_starred_expected_const(self, code: str, expected: List[int]) -> None:
+    def _helper_starred_expected_const(self, code: str, expected: list[int]) -> None:
         stmts = self._get_starred_stmts(code)
         self.assertIsInstance(stmts, nodes.List)
         stmts = stmts.elts
@@ -124,6 +169,17 @@ class ProtocolTests(unittest.TestCase):
         self._helper_starred_expected(
             "a, (*b, c), d = (1, (2, 3, 4), 5) #@", Uninferable
         )
+
+    def test_assigned_stmts_starred_inside_call(self) -> None:
+        """Regression test for https://github.com/PyCQA/pylint/issues/6372"""
+        code = "string_twos = ''.join(str(*y) for _, *y in [[1, 2], [1, 2]]) #@"
+        stmt = extract_node(code)
+        starred = next(stmt.nodes_of_class(nodes.Starred))
+        starred_stmts = starred.assigned_stmts()
+        self.assertIs(next(starred_stmts), Uninferable)
+        # Generator exhausted after one call
+        with self.assertRaises(StopIteration):
+            next(starred_stmts)
 
     def test_assign_stmts_starred_fails(self) -> None:
         # Too many starred
@@ -190,7 +246,7 @@ class ProtocolTests(unittest.TestCase):
 
     def test_not_passing_uninferable_in_seq_inference(self) -> None:
         class Visitor:
-            def visit(self, node: Union[nodes.Assign, nodes.BinOp, nodes.List]) -> Any:
+            def visit(self, node: nodes.Assign | nodes.BinOp | nodes.List) -> Any:
                 for child in node.get_children():
                     child.accept(self)
 

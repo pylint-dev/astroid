@@ -93,9 +93,6 @@ class FromToLineNoTest(unittest.TestCase):
             self.assertEqual(arg.fromlineno, 10 + i)
             self.assertEqual(arg.tolineno, 10 + i)
 
-    @pytest.mark.skip(
-        "FIXME  http://bugs.python.org/issue10445 (no line number on function args)"
-    )
     def test_function_lineno(self) -> None:
         stmts = self.astroid.body
         # on line 15:
@@ -946,6 +943,13 @@ def test_parse_module_with_invalid_type_comments_does_not_crash():
     """
     )
     assert isinstance(node, nodes.Module)
+
+
+def test_arguments_of_signature() -> None:
+    """Test that arguments is None for function without an inferable signature."""
+    node = builder.extract_node("int")
+    classdef: nodes.ClassDef = next(node.infer())
+    assert all(i.args.args is None for i in classdef.getattr("__dir__"))
 
 
 class HermeticInterpreterTest(unittest.TestCase):

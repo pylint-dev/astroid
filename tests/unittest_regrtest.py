@@ -81,6 +81,23 @@ multiply([1, 2], [3, 4])
         inferred = callfunc.inferred()
         self.assertEqual(len(inferred), 1)
 
+    @unittest.skipUnless(HAS_NUMPY, "Needs numpy")
+    def test_numpy_distutils(self):
+        """Special handling of virtualenv's patching of distutils shouldn't interfere
+        with numpy.distutils.
+
+        PY312_PLUS -- This test will likely become unnecessary when Python 3.12 is
+        numpy's minimum version. (numpy.distutils will be removed then.)
+        """
+        node = extract_node(
+            """
+from numpy.distutils.misc_util import is_sequence
+is_sequence("ABC") #@
+"""
+        )
+        inferred = node.inferred()
+        self.assertIsInstance(inferred[0], nodes.Const)
+
     def test_nameconstant(self) -> None:
         # used to fail for Python 3.4
         builder = AstroidBuilder()
@@ -286,16 +303,6 @@ def test(val):
         )
         inferred = next(node.infer())
         self.assertEqual(inferred.decoratornames(), {".Parent.foo.getter"})
-
-    def test_ssl_protocol(self) -> None:
-        node = extract_node(
-            """
-        import ssl
-        ssl.PROTOCOL_TLSv1
-        """
-        )
-        inferred = next(node.infer())
-        self.assertIsInstance(inferred, nodes.Const)
 
     def test_recursive_property_method(self) -> None:
         node = extract_node(

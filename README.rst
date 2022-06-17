@@ -17,8 +17,7 @@ Astroid
    :alt: pre-commit.ci status
 
 .. |tidelift_logo| image:: https://raw.githubusercontent.com/PyCQA/astroid/main/doc/media/Tidelift_Logos_RGB_Tidelift_Shorthand_On-White.png
-   :width: 75
-   :height: 60
+   :width: 200
    :alt: Tidelift
 
 .. list-table::

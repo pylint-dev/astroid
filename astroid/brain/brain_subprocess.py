@@ -6,7 +6,7 @@ import textwrap
 
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
-from astroid.const import PY37_PLUS, PY39_PLUS
+from astroid.const import PY39_PLUS
 from astroid.manager import AstroidManager
 
 
@@ -17,9 +17,7 @@ def _subprocess_transform():
         self, args, bufsize=0, executable=None, stdin=None, stdout=None, stderr=None,
         preexec_fn=None, close_fds=False, shell=False, cwd=None, env=None,
         universal_newlines=False, startupinfo=None, creationflags=0, restore_signals=True,
-        start_new_session=False, pass_fds=(), *, encoding=None, errors=None"""
-    if PY37_PLUS:
-        args += ", text=None"
+        start_new_session=False, pass_fds=(), *, encoding=None, errors=None, text=None"""
     init = f"""
         def __init__({args}):
             pass"""
@@ -30,57 +28,31 @@ def _subprocess_transform():
     """
     py3_args = "args = []"
 
-    if PY37_PLUS:
-        check_output_signature = """
-        check_output(
-            args, *,
-            stdin=None,
-            stderr=None,
-            shell=False,
-            cwd=None,
-            encoding=None,
-            errors=None,
-            universal_newlines=False,
-            timeout=None,
-            env=None,
-            text=None,
-            restore_signals=True,
-            preexec_fn=None,
-            pass_fds=(),
-            input=None,
-            bufsize=0,
-            executable=None,
-            close_fds=False,
-            startupinfo=None,
-            creationflags=0,
-            start_new_session=False
-        ):
-        """.strip()
-    else:
-        check_output_signature = """
-        check_output(
-            args, *,
-            stdin=None,
-            stderr=None,
-            shell=False,
-            cwd=None,
-            encoding=None,
-            errors=None,
-            universal_newlines=False,
-            timeout=None,
-            env=None,
-            restore_signals=True,
-            preexec_fn=None,
-            pass_fds=(),
-            input=None,
-            bufsize=0,
-            executable=None,
-            close_fds=False,
-            startupinfo=None,
-            creationflags=0,
-            start_new_session=False
-        ):
-        """.strip()
+    check_output_signature = """
+    check_output(
+        args, *,
+        stdin=None,
+        stderr=None,
+        shell=False,
+        cwd=None,
+        encoding=None,
+        errors=None,
+        universal_newlines=False,
+        timeout=None,
+        env=None,
+        text=None,
+        restore_signals=True,
+        preexec_fn=None,
+        pass_fds=(),
+        input=None,
+        bufsize=0,
+        executable=None,
+        close_fds=False,
+        startupinfo=None,
+        creationflags=0,
+        start_new_session=False
+    ):
+    """.strip()
 
     code = textwrap.dedent(
         f"""

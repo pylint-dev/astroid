@@ -5,7 +5,10 @@
 import builtins
 import unittest
 
+import pytest
+
 from astroid import builder, helpers, manager, nodes, raw_building, util
+from astroid.const import IS_PYPY
 from astroid.exceptions import _NonDeducibleTypeHierarchy
 from astroid.nodes.scoped_nodes import ClassDef
 
@@ -143,6 +146,11 @@ class TestHelpers(unittest.TestCase):
         """
         )
         self.assertEqual(helpers.object_type(node), util.Uninferable)
+
+    @pytest.mark.skipif(IS_PYPY, reason="__code__ will not be Unknown on PyPy")
+    def test_inference_errors_2(self) -> None:
+        node = builder.extract_node("type(float.__new__.__code__)")
+        self.assertIs(helpers.object_type(node), util.Uninferable)
 
     def test_object_type_too_many_types(self) -> None:
         node = builder.extract_node(

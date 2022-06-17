@@ -55,6 +55,8 @@ def _object_type(node, context=None):
             yield _function_type(inferred, builtins)
         elif isinstance(inferred, scoped_nodes.Module):
             yield _build_proxy_class("module", builtins)
+        elif isinstance(inferred, nodes.Unknown):
+            raise InferenceError
         else:
             yield inferred._proxied
 

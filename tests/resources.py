@@ -2,10 +2,11 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 
 from astroid import builder
 from astroid.manager import AstroidManager
@@ -19,7 +20,7 @@ def find(name: str) -> str:
     return os.path.normpath(os.path.join(os.path.dirname(__file__), DATA_DIR, name))
 
 
-def build_file(path: str, modname: Optional[str] = None) -> Module:
+def build_file(path: str, modname: str | None = None) -> Module:
     return builder.AstroidBuilder().file_build(find(path), modname)
 
 
@@ -36,13 +37,13 @@ class SysPathSetup:
 
 
 class AstroidCacheSetupMixin:
-    """Mixin for handling the astroid cache problems.
+    """Mixin for handling test isolation issues with the astroid cache.
 
-    When clearing the astroid cache, some tests fails due to
+    When clearing the astroid cache, some tests fail due to
     cache inconsistencies, where some objects had a different
     builtins object referenced.
-    This saves the builtins module and makes sure to add it
-    back to the astroid_cache after the tests finishes.
+    This saves the builtins module and TransformVisitor and
+    replaces them after the tests finish.
     The builtins module is special, since some of the
     transforms for a couple of its objects (str, bytes etc)
     are executed only once, so astroid_bootstrapping will be
@@ -52,8 +53,9 @@ class AstroidCacheSetupMixin:
     @classmethod
     def setup_class(cls):
         cls._builtins = AstroidManager().astroid_cache.get("builtins")
+        cls._transforms = AstroidManager.brain["_transform"]
 
     @classmethod
     def teardown_class(cls):
-        if cls._builtins:
-            AstroidManager().astroid_cache["builtins"] = cls._builtins
+        AstroidManager().astroid_cache["builtins"] = cls._builtins
+        AstroidManager.brain["_transform"] = cls._transforms

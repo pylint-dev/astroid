@@ -5,25 +5,14 @@
 """this module contains a set of functions to handle inference on astroid trees
 """
 
+from __future__ import annotations
+
 import ast
 import functools
 import itertools
 import operator
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Generator,
-    Iterable,
-    Iterator,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-)
-
-import wrapt
+from collections.abc import Callable, Generator, Iterable, Iterator
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from astroid import bases, constraint, decorators, helpers, nodes, protocols, util
 from astroid.context import (
@@ -59,7 +48,13 @@ _FunctionDefT = TypeVar("_FunctionDefT", bound=nodes.FunctionDef)
 # .infer method ###############################################################
 
 
-def infer_end(self, context=None):
+_T = TypeVar("_T")
+_BaseContainerT = TypeVar("_BaseContainerT", bound=nodes.BaseContainer)
+
+
+def infer_end(
+    self: _T, context: InferenceContext | None = None, **kwargs: Any
+) -> Iterator[_T]:
     """Inference's end for nodes that yield themselves on inference
 
     These are objects for which inference does not have any semantic,
@@ -68,7 +63,7 @@ def infer_end(self, context=None):
     yield self
 
 
-# We add ignores to all these assignments in this file
+# We add ignores to all assignments to methods
 # See https://github.com/python/mypy/issues/2427
 nodes.Module._infer = infer_end  # type: ignore[assignment]
 nodes.ClassDef._infer = infer_end  # type: ignore[assignment]
@@ -100,7 +95,11 @@ def _infer_sequence_helper(node, context=None):
 
 
 @decorators.raise_if_nothing_inferred
-def infer_sequence(self, context=None):
+def infer_sequence(
+    self: _BaseContainerT,
+    context: InferenceContext | None = None,
+    **kwargs: Any,
+) -> Iterator[_BaseContainerT]:
     has_starred_named_expr = any(
         isinstance(e, (nodes.Starred, nodes.NamedExpr)) for e in self.elts
     )
@@ -544,9 +543,9 @@ def _infer_unaryop(self, context=None):
                         yield operand
                     else:
                         yield result
-                except AttributeInferenceError as exc:
+                except AttributeInferenceError as inner_exc:
                     # The unary operation special method was not found.
-                    yield util.BadUnaryOperationMessage(operand, self.op, exc)
+                    yield util.BadUnaryOperationMessage(operand, self.op, inner_exc)
                 except InferenceError:
                     yield util.Uninferable
 
@@ -800,7 +799,7 @@ def infer_binop(self, context=None):
 nodes.BinOp._infer_binop = _infer_binop
 nodes.BinOp._infer = infer_binop
 
-COMPARE_OPS: Dict[str, Callable[[Any, Any], bool]] = {
+COMPARE_OPS: dict[str, Callable[[Any, Any], bool]] = {
     "==": operator.eq,
     "!=": operator.ne,
     "<": operator.lt,
@@ -825,7 +824,7 @@ def _to_literal(node: nodes.NodeNG) -> Any:
 
 def _do_compare(
     left_iter: Iterable[nodes.NodeNG], op: str, right_iter: Iterable[nodes.NodeNG]
-) -> "bool | type[util.Uninferable]":
+) -> bool | type[util.Uninferable]:
     """
     If all possible combinations are either True or False, return that:
     >>> _do_compare([1, 2], '<=', [3, 4])
@@ -838,7 +837,7 @@ def _do_compare(
     >>> _do_compare([1, 3], '<=', [2, 4])
     util.Uninferable
     """
-    retval: Union[None, bool] = None
+    retval: bool | None = None
     if op in UNINFERABLE_OPS:
         return util.Uninferable
     op_func = COMPARE_OPS[op]
@@ -868,10 +867,10 @@ def _do_compare(
 
 
 def _infer_compare(
-    self: nodes.Compare, context: Optional[InferenceContext] = None
-) -> Iterator[Union[nodes.Const, Type[util.Uninferable]]]:
+    self: nodes.Compare, context: InferenceContext | None = None
+) -> Iterator[nodes.Const | type[util.Uninferable]]:
     """Chained comparison inference logic."""
-    retval: Union[bool, Type[util.Uninferable]] = True
+    retval: bool | type[util.Uninferable] = True
 
     ops = self.ops
     left_node = self.left
@@ -1044,42 +1043,32 @@ def infer_ifexp(self, context=None):
 nodes.IfExp._infer = infer_ifexp  # type: ignore[assignment]
 
 
-# pylint: disable=dangerous-default-value
-@wrapt.decorator
-def _cached_generator(
-    func, instance: _FunctionDefT, args, kwargs, _cache={}  # noqa: B006
-):
-    node = instance
-    try:
-        return iter(_cache[func, id(node)])
-    except KeyError:
-        result = func(*args, **kwargs)
-        # Need to keep an iterator around
-        original, copy = itertools.tee(result)
-        _cache[func, id(node)] = list(copy)
-        return original
-
-
-# When inferring a property, we instantiate a new `objects.Property` object,
-# which in turn, because it inherits from `FunctionDef`, sets itself in the locals
-# of the wrapping frame. This means that every time we infer a property, the locals
-# are mutated with a new instance of the property. This is why we cache the result
-# of the function's inference.
-@_cached_generator
 def infer_functiondef(
-    self: _FunctionDefT, context: Optional[InferenceContext] = None
-) -> Generator[Union["Property", _FunctionDefT], None, InferenceErrorInfo]:
+    self: _FunctionDefT, context: InferenceContext | None = None
+) -> Generator[Property | _FunctionDefT, None, InferenceErrorInfo]:
     if not self.decorators or not bases._is_property(self):
         yield self
         return InferenceErrorInfo(node=self, context=context)
+
+    # When inferring a property, we instantiate a new `objects.Property` object,
+    # which in turn, because it inherits from `FunctionDef`, sets itself in the locals
+    # of the wrapping frame. This means that every time we infer a property, the locals
+    # are mutated with a new instance of the property. To avoid this, we detect this
+    # scenario and avoid passing the `parent` argument to the constructor.
+    parent_frame = self.parent.frame(future=True)
+    property_already_in_parent_locals = self.name in parent_frame.locals and any(
+        isinstance(val, objects.Property) for val in parent_frame.locals[self.name]
+    )
 
     prop_func = objects.Property(
         function=self,
         name=self.name,
         lineno=self.lineno,
-        parent=self.parent,
+        parent=self.parent if not property_already_in_parent_locals else None,
         col_offset=self.col_offset,
     )
+    if property_already_in_parent_locals:
+        prop_func.parent = self.parent
     prop_func.postinit(body=[], args=self.args, doc_node=self.doc_node)
     yield prop_func
     return InferenceErrorInfo(node=self, context=context)

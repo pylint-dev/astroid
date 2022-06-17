@@ -7,15 +7,17 @@ import site
 import sys
 import time
 import unittest
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
-
-import pkg_resources
 
 import astroid
 from astroid import manager, test_utils
 from astroid.const import IS_JYTHON
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
+from astroid.interpreter._import import util
+from astroid.modutils import is_standard_module
+from astroid.nodes import Const
+from astroid.nodes.scoped_nodes import ClassDef
 
 from . import resources
 
@@ -108,6 +110,34 @@ class AstroidManagerTest(
     def test_ast_from_namespace_pkg_resources(self) -> None:
         self._test_ast_from_old_namespace_package_protocol("pkg_resources")
 
+    def test_identify_old_namespace_package_protocol(self) -> None:
+        # Like the above cases, this package follows the old namespace package protocol
+        # astroid currently assumes such packages are in sys.modules, so import it
+        # pylint: disable-next=import-outside-toplevel
+        import tests.testdata.python3.data.path_pkg_resources_1.package.foo as _  # noqa
+
+        self.assertTrue(
+            util.is_namespace("tests.testdata.python3.data.path_pkg_resources_1")
+        )
+
+    def test_submodule_homonym_with_non_module(self) -> None:
+        self.assertFalse(
+            util.is_namespace("tests.testdata.python3.data.parent_of_homonym.doc")
+        )
+
+    def test_module_is_not_namespace(self) -> None:
+        self.assertFalse(util.is_namespace("tests.testdata.python3.data.all"))
+        self.assertFalse(util.is_namespace("__main__"))
+
+    def test_module_unexpectedly_missing_spec(self) -> None:
+        astroid_module = sys.modules["astroid"]
+        original_spec = astroid_module.__spec__
+        del astroid_module.__spec__
+        try:
+            self.assertFalse(util.is_namespace("astroid"))
+        finally:
+            astroid_module.__spec__ = original_spec
+
     def test_implicit_namespace_package(self) -> None:
         data_dir = os.path.dirname(resources.find("data/namespace_pep_420"))
         contribute = os.path.join(data_dir, "contribute_to_namespace")
@@ -128,7 +158,6 @@ class AstroidManagerTest(
     def test_namespace_package_pth_support(self) -> None:
         pth = "foogle_fax-0.12.5-py2.7-nspkg.pth"
         site.addpackage(resources.RESOURCE_PATH, pth, [])
-        pkg_resources._namespace_packages["foogle"] = []
 
         try:
             module = self.manager.ast_from_module_name("foogle.fax")
@@ -138,18 +167,14 @@ class AstroidManagerTest(
             with self.assertRaises(AstroidImportError):
                 self.manager.ast_from_module_name("foogle.moogle")
         finally:
-            del pkg_resources._namespace_packages["foogle"]
             sys.modules.pop("foogle")
 
     def test_nested_namespace_import(self) -> None:
         pth = "foogle_fax-0.12.5-py2.7-nspkg.pth"
         site.addpackage(resources.RESOURCE_PATH, pth, [])
-        pkg_resources._namespace_packages["foogle"] = ["foogle.crank"]
-        pkg_resources._namespace_packages["foogle.crank"] = []
         try:
             self.manager.ast_from_module_name("foogle.crank")
         finally:
-            del pkg_resources._namespace_packages["foogle"]
             sys.modules.pop("foogle")
 
     def test_namespace_and_file_mismatch(self) -> None:
@@ -158,12 +183,10 @@ class AstroidManagerTest(
         self.assertEqual(ast.name, "unittest")
         pth = "foogle_fax-0.12.5-py2.7-nspkg.pth"
         site.addpackage(resources.RESOURCE_PATH, pth, [])
-        pkg_resources._namespace_packages["foogle"] = []
         try:
             with self.assertRaises(AstroidImportError):
                 self.manager.ast_from_module_name("unittest.foogle.fax")
         finally:
-            del pkg_resources._namespace_packages["foogle"]
             sys.modules.pop("foogle")
 
     def _test_ast_from_zip(self, archive: str) -> None:
@@ -313,6 +336,66 @@ class BorgAstroidManagerTC(unittest.TestCase):
         second_manager = manager.AstroidManager()
         second_built = second_manager.ast_from_module_name("builtins")
         self.assertIs(built, second_built)
+
+
+class ClearCacheTest(unittest.TestCase):
+    def test_clear_cache_clears_other_lru_caches(self) -> None:
+        lrus = (
+            astroid.nodes.node_classes.LookupMixIn.lookup,
+            astroid.modutils._cache_normalize_path_,
+            util.is_namespace,
+            astroid.interpreter.objectmodel.ObjectModel.attributes,
+        )
+
+        # Get a baseline for the size of the cache after simply calling bootstrap()
+        baseline_cache_infos = [lru.cache_info() for lru in lrus]
+
+        # Generate some hits and misses
+        ClassDef().lookup("garbage")
+        is_standard_module("unittest", std_path=["garbage_path"])
+        util.is_namespace("unittest")
+        astroid.interpreter.objectmodel.ObjectModel().attributes()
+
+        # Did the hits or misses actually happen?
+        incremented_cache_infos = [lru.cache_info() for lru in lrus]
+        for incremented_cache, baseline_cache in zip(
+            incremented_cache_infos, baseline_cache_infos
+        ):
+            with self.subTest(incremented_cache=incremented_cache):
+                self.assertGreater(
+                    incremented_cache.hits + incremented_cache.misses,
+                    baseline_cache.hits + baseline_cache.misses,
+                )
+
+        astroid.MANAGER.clear_cache()  # also calls bootstrap()
+
+        # The cache sizes are now as low or lower than the original baseline
+        cleared_cache_infos = [lru.cache_info() for lru in lrus]
+        for cleared_cache, baseline_cache in zip(
+            cleared_cache_infos, baseline_cache_infos
+        ):
+            with self.subTest(cleared_cache=cleared_cache):
+                # less equal because the "baseline" might have had multiple calls to bootstrap()
+                self.assertLessEqual(cleared_cache.currsize, baseline_cache.currsize)
+
+    def test_brain_plugins_reloaded_after_clearing_cache(self) -> None:
+        astroid.MANAGER.clear_cache()
+        format_call = astroid.extract_node("''.format()")
+        inferred = next(format_call.infer())
+        self.assertIsInstance(inferred, Const)
+
+    def test_builtins_inference_after_clearing_cache(self) -> None:
+        astroid.MANAGER.clear_cache()
+        isinstance_call = astroid.extract_node("isinstance(1, int)")
+        inferred = next(isinstance_call.infer())
+        self.assertIs(inferred.value, True)
+
+    def test_builtins_inference_after_clearing_cache_manually(self) -> None:
+        # Not recommended to manipulate this, so we detect it and call clear_cache() instead
+        astroid.MANAGER.brain["astroid_cache"].clear()
+        isinstance_call = astroid.extract_node("isinstance(1, int)")
+        inferred = next(isinstance_call.infer())
+        self.assertIs(inferred.value, True)
 
 
 if __name__ == "__main__":

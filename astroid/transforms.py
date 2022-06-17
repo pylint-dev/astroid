@@ -2,10 +2,15 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import collections
-from functools import lru_cache
+from typing import TYPE_CHECKING
 
 from astroid.context import _invalidate_cache
+
+if TYPE_CHECKING:
+    from astroid import NodeNG
 
 
 class TransformVisitor:
@@ -15,22 +20,18 @@ class TransformVisitor:
     :meth:`~visit` with an *astroid* module and the class
     will take care of the rest, walking the tree and running the
     transforms for each encountered node.
-    """
 
-    TRANSFORM_MAX_CACHE_SIZE = 10000
+    Based on its usage in AstroidManager.brain, it should not be reinstantiated.
+    """
 
     def __init__(self):
         self.transforms = collections.defaultdict(list)
 
-    @lru_cache(maxsize=TRANSFORM_MAX_CACHE_SIZE)
-    def _transform(self, node):
+    def _transform(self, node: NodeNG) -> NodeNG:
         """Call matching transforms for the given node if any and return the
         transformed node.
         """
         cls = node.__class__
-        if cls not in self.transforms:
-            # no transform registered for this class of node
-            return node
 
         transforms = self.transforms[cls]
         for transform_func, predicate in transforms:

@@ -3,19 +3,21 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for basic functionality in astroid.brain."""
+
+from __future__ import annotations
+
 import io
 import queue
 import re
 import sys
 import unittest
-from typing import Any, List
+from typing import Any
 
 import pytest
 
 import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
-from astroid.const import PY37_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -61,7 +63,7 @@ except ImportError:
     HAS_SIX = False
 
 
-def assertEqualMro(klass: ClassDef, expected_mro: List[str]) -> None:
+def assertEqualMro(klass: ClassDef, expected_mro: list[str]) -> None:
     """Check mro names."""
     assert [member.qname() for member in klass.mro()] == expected_mro
 
@@ -159,6 +161,8 @@ class NamedTupleTest(unittest.TestCase):
         self.assertEqual(
             [anc.name for anc in klass.ancestors()], ["X", "tuple", "object"]
         )
+        # See: https://github.com/PyCQA/pylint/issues/5982
+        self.assertNotIn("X", klass.locals)
         for anc in klass.ancestors():
             self.assertFalse(anc.parent is None)
 
@@ -1152,6 +1156,20 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(inferred, astroid.Dict)
         self.assertTrue(inferred.locals)
 
+    def test_enum_as_renamed_import(self) -> None:
+        """Originally reported in https://github.com/PyCQA/pylint/issues/5776."""
+        ast_node: nodes.Attribute = builder.extract_node(
+            """
+        from enum import Enum as PyEnum
+        class MyEnum(PyEnum):
+            ENUM_KEY = "enum_value"
+        MyEnum.ENUM_KEY
+        """
+        )
+        inferred = next(ast_node.infer())
+        assert isinstance(inferred, bases.Instance)
+        assert inferred._proxied.name == "ENUM_KEY"
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
@@ -1267,10 +1285,9 @@ class TypeBrain(unittest.TestCase):
 
     @test_utils.require_version(minver="3.9")
     def test_builtin_subscriptable(self):
-        """
-        Starting with python3.9 builtin type such as list are subscriptable
-        """
-        for typename in ("tuple", "list", "dict", "set", "frozenset"):
+        """Starting with python3.9 builtin types such as list are subscriptable.
+        Any builtin class such as "enumerate" or "staticmethod" also works."""
+        for typename in ("tuple", "list", "dict", "set", "frozenset", "enumerate"):
             src = f"""
             {typename:s}[int]
             """
@@ -1657,7 +1674,6 @@ class TypingBrain(unittest.TestCase):
         attr = next(attr_def.infer())
         self.assertEqual(attr.value, "bar")
 
-    @test_utils.require_version(minver="3.7")
     def test_tuple_type(self):
         node = builder.extract_node(
             """
@@ -1670,7 +1686,6 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
         assert inferred.qname() == "typing.Tuple"
 
-    @test_utils.require_version(minver="3.7")
     def test_callable_type(self):
         node = builder.extract_node(
             """
@@ -1683,7 +1698,6 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
         assert inferred.qname() == "typing.Callable"
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_generic_subscriptable(self):
         """Test typing.Generic is subscriptable with __class_getitem__ (added in PY37)"""
         node = builder.extract_node(
@@ -1710,7 +1724,6 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(inferred, nodes.ClassDef)
         assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_generic_slots(self):
         """Test slots for Generic subclass."""
         node = builder.extract_node(
@@ -1777,7 +1790,6 @@ class TypingBrain(unittest.TestCase):
         # Test TypedDict instance is callable
         assert next(code[1].infer()).callable() is True
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_alias_type(self):
         """
         Test that the type aliased thanks to typing._alias function are
@@ -1811,7 +1823,6 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
-    @test_utils.require_version(minver="3.7.2")
     def test_typing_alias_type_2(self):
         """
         Test that the type aliased thanks to typing._alias function are
@@ -1838,7 +1849,6 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_not_subscriptable(self):
         """Hashable is not subscriptable"""
         wrong_node = builder.extract_node(
@@ -1867,7 +1877,6 @@ class TypingBrain(unittest.TestCase):
         with self.assertRaises(AttributeInferenceError):
             inferred.getattr("__class_getitem__")
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_subscriptable(self):
         """Test that MutableSet is subscriptable"""
         right_node = builder.extract_node(
@@ -1894,7 +1903,6 @@ class TypingBrain(unittest.TestCase):
             inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_subscriptable_2(self):
         """Multiple inheritance with subscriptable typing alias"""
         node = builder.extract_node(
@@ -1918,7 +1926,6 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
-    @test_utils.require_version(minver="3.7")
     def test_typing_object_notsubscriptable_3(self):
         """Until python39 ByteString class of the typing module is not subscritable (whereas it is in the collections module)"""
         right_node = builder.extract_node(
@@ -2004,11 +2011,10 @@ class ReBrainTest(unittest.TestCase):
             self.assertIn(name, re_ast)
             self.assertEqual(next(re_ast[name].infer()).value, getattr(re, name))
 
-    @test_utils.require_version(minver="3.7", maxver="3.9")
+    @test_utils.require_version(maxver="3.9")
     def test_re_pattern_unsubscriptable(self):
         """
         re.Pattern and re.Match are unsubscriptable until PY39.
-        re.Pattern and re.Match were added in PY37.
         """
         right_node1 = builder.extract_node(
             """
@@ -3108,7 +3114,6 @@ def test_http_client_brain() -> None:
     assert isinstance(inferred, astroid.Instance)
 
 
-@pytest.mark.skipif(not PY37_PLUS, reason="Needs 3.7+")
 def test_http_status_brain() -> None:
     node = astroid.extract_node(
         """
@@ -3145,7 +3150,6 @@ def test_oserror_model() -> None:
     assert strerror.value == ""
 
 
-@pytest.mark.skipif(not PY37_PLUS, reason="Dynamic module attributes since Python 3.7")
 def test_crypt_brain() -> None:
     module = MANAGER.ast_from_module_name("crypt")
     dynamic_attrs = [
