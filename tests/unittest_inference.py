@@ -6885,6 +6885,9 @@ class TestOldStyleStringFormatting:
             "My name is %(fname)s, I'm %(age)s" % {"fsname": fsname, "age": age}
             """,
             """
+            "My name is %(fname)s, I'm %(age)s" % {Exception(): "Daniel", "age": age}
+            """,
+            """
             fname = "Daniel"
             age = 12
             "My name is %0s, I'm %(age)s" % (fname, age)

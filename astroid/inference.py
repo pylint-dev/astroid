@@ -565,7 +565,11 @@ def _is_not_implemented(const):
 def _infer_old_style_string_formatting(
     instance: nodes.Const, other: nodes.NodeNG, context: InferenceContext
 ) -> tuple[type[util.Uninferable] | nodes.Const]:
-    """Infer the result of '"string" % ...'."""
+    """Infer the result of '"string" % ...'.
+
+    TODO: Instead of returning Uninferable we should rely
+    on the call to '%' to see if the result is actually uninferable.
+    """
     values = None
     if isinstance(other, nodes.Tuple):
         inferred_positional = [helpers.safe_infer(i, context) for i in other.elts]
@@ -587,11 +591,9 @@ def _infer_old_style_string_formatting(
         return (util.Uninferable,)
 
     try:
-        const_node = nodes.const_factory(instance.value % values)
+        return (nodes.const_factory(instance.value % values),)
     except (TypeError, KeyError):
         return (util.Uninferable,)
-
-    return (const_node,)
 
 
 def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
