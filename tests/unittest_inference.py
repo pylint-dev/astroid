@@ -6879,7 +6879,7 @@ class TestOldStyleStringFormatting:
             "My name is %0s, I'm %1s" % ("Daniel")
             """,
             """"I am %s" % ()""",
-            """"I am %s" % i for i in (12,)""",
+            """"I am %s" % Exception()""",
             """
             fsname = "Daniel"
             "My name is %(fname)s, I'm %(age)s" % {"fsname": fsname, "age": age}
