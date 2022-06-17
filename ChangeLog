@@ -24,7 +24,7 @@ Release date: TBA
 
 * Calls to ``str.format`` are now correctly inferred.
 
-  Closes #104
+  Closes #104, Closes #1611
 
 * Old style string formatting (using ``%`` operators) is now correctly inferred.
 
@@ -77,9 +77,15 @@ Release date: TBA
 
   Closes #1195
 
-What's New in astroid 2.11.6?
+What's New in astroid 2.11.7?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.11.6?
+=============================
+Release date: 2022-06-13
 
 * The Qt brain now correctly treats calling ``.disconnect()`` (with no
   arguments) on a slot as valid.

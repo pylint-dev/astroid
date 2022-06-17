@@ -174,17 +174,15 @@ class NodeNG:
             yield from context.inferred[key]
             return
 
-        generator = self._infer(context=context, **kwargs)
         results = []
 
         # Limit inference amount to help with performance issues with
         # exponentially exploding possible results.
-        limit = AstroidManager().max_inferable_values
-        for i, result in enumerate(generator):
+        limit = AstroidManager.max_inferable_values
+        for i, result in enumerate(self._infer(context=context, **kwargs)):
             if i >= limit or (context.nodes_inferred > context.max_inferred):
-                uninferable = util.Uninferable
-                results.append(uninferable)
-                yield uninferable
+                results.append(util.Uninferable)
+                yield util.Uninferable
                 break
             results.append(result)
             yield result

@@ -66,6 +66,13 @@ class TestStringNodes:
         """,
                 id="mixed-indexes-from-mixed",
             ),
+            pytest.param(
+                """
+        string = "My name is {}, I'm {}"
+        string.format("Daniel", 12)
+        """,
+                id="empty-indexes-on-variable",
+            ),
         ],
     )
     def test_string_format(self, format_string: str) -> None:

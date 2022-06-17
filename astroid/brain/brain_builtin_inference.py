@@ -913,12 +913,15 @@ def _infer_copy_method(
 
 def _is_str_format_call(node: nodes.Call) -> bool:
     """Catch calls to str.format()."""
-    return (
-        isinstance(node.func, nodes.Attribute)
-        and node.func.attrname == "format"
-        and isinstance(node.func.expr, nodes.Const)
-        and isinstance(node.func.expr.value, str)
-    )
+    if not isinstance(node.func, nodes.Attribute) or not node.func.attrname == "format":
+        return False
+
+    if isinstance(node.func.expr, nodes.Name):
+        value = helpers.safe_infer(node.func.expr)
+    else:
+        value = node.func.expr
+
+    return isinstance(value, nodes.Const) and isinstance(value.value, str)
 
 
 def _infer_str_format_call(
@@ -926,7 +929,12 @@ def _infer_str_format_call(
 ) -> Iterator[nodes.Const | type[util.Uninferable]]:
     """Return a Const node based on the template and passed arguments."""
     call = arguments.CallSite.from_call(node, context=context)
-    format_template: str = node.func.expr.value
+    if isinstance(node.func.expr, nodes.Name):
+        value: nodes.Const = helpers.safe_infer(node.func.expr)
+    else:
+        value = node.func.expr
+
+    format_template = value.value
 
     # Get the positional arguments passed
     inferred_positional = [
