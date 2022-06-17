@@ -41,15 +41,13 @@ if TYPE_CHECKING:
 # Prevents circular imports
 objects = util.lazy_import("objects")
 
-
+_T = TypeVar("_T")
+_BaseContainerT = TypeVar("_BaseContainerT", bound=nodes.BaseContainer)
+_NodesDictT = TypeVar("_NodesDictT", bound=nodes.Dict)
 _FunctionDefT = TypeVar("_FunctionDefT", bound=nodes.FunctionDef)
 
 
 # .infer method ###############################################################
-
-
-_T = TypeVar("_T")
-_BaseContainerT = TypeVar("_BaseContainerT", bound=nodes.BaseContainer)
 
 
 def infer_end(
@@ -120,7 +118,9 @@ nodes.Tuple._infer = infer_sequence  # type: ignore[assignment]
 nodes.Set._infer = infer_sequence  # type: ignore[assignment]
 
 
-def infer_map(self, context=None):
+def infer_map(
+    self: _NodesDictT, context: InferenceContext | None = None
+) -> Iterator[_NodesDictT | nodes.Dict]:
     if not any(isinstance(k, nodes.DictUnpack) for k, _ in self.items):
         yield self
     else:
