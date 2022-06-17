@@ -502,10 +502,12 @@ def get_source_file(filename: str, include_no_ext: bool = False) -> str:
     raise NoSourceFile(filename)
 
 
-def is_python_source(filename: str) -> bool:
+def is_python_source(filename: str | None) -> bool:
     """
     return: True if the filename is a python source file
     """
+    if not filename:
+        return False
     return os.path.splitext(filename)[1][1:] in PY_SOURCE_EXTS
 
 
