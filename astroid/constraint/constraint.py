@@ -6,14 +6,14 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TypeVar
+from typing import TypeVar, Union
 
 from astroid import nodes, util
 
 __all__ = ("get_constraints",)
 
 
-NameNodes = nodes.AssignAttr | nodes.Attribute | nodes.AssignName | nodes.Name
+NameNodes = Union[nodes.AssignAttr, nodes.Attribute, nodes.AssignName, nodes.Name]
 ConstraintT = TypeVar("ConstraintT", bound="Constraint")
 
 
