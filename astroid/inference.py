@@ -47,6 +47,7 @@ _FunctionDefT = TypeVar("_FunctionDefT", bound=nodes.FunctionDef)
 
 # .infer method ###############################################################
 
+
 _T = TypeVar("_T")
 _BaseContainerT = TypeVar("_BaseContainerT", bound=nodes.BaseContainer)
 
