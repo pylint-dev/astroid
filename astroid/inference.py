@@ -566,12 +566,50 @@ def _is_not_implemented(const):
     return isinstance(const, nodes.Const) and const.value is NotImplemented
 
 
+def _infer_old_style_string_formatting(
+    instance: nodes.Const, other: nodes.NodeNG, context: InferenceContext
+) -> tuple[type[util.Uninferable] | nodes.Const]:
+    """Infer the result of '"string" % ...'.
+
+    TODO: Instead of returning Uninferable we should rely
+    on the call to '%' to see if the result is actually uninferable.
+    """
+    values = None
+    if isinstance(other, nodes.Tuple):
+        inferred_positional = [helpers.safe_infer(i, context) for i in other.elts]
+        if all(isinstance(i, nodes.Const) for i in inferred_positional):
+            values = tuple(i.value for i in inferred_positional)
+    elif isinstance(other, nodes.Dict):
+        values: dict[Any, Any] = {}
+        for pair in other.items:
+            key = helpers.safe_infer(pair[0], context)
+            if not isinstance(key, nodes.Const):
+                return (util.Uninferable,)
+            value = helpers.safe_infer(pair[1], context)
+            if not isinstance(value, nodes.Const):
+                return (util.Uninferable,)
+            values[key.value] = value.value
+    elif isinstance(other, nodes.Const):
+        values = other.value
+    else:
+        return (util.Uninferable,)
+
+    try:
+        return (nodes.const_factory(instance.value % values),)
+    except (TypeError, KeyError):
+        return (util.Uninferable,)
+
+
 def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     """Invoke binary operation inference on the given instance."""
     methods = dunder_lookup.lookup(instance, method_name)
     context = bind_context_to_node(context, instance)
     method = methods[0]
     context.callcontext.callee = method
+
+    if isinstance(instance, nodes.Const) and op == "%":
+        return iter(_infer_old_style_string_formatting(instance, other, context))
+
     try:
         inferred = next(method.infer(context=context))
     except StopIteration as e:

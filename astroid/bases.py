@@ -141,9 +141,11 @@ def _infer_stmts(
             yield stmt
             inferred = True
             continue
-        context.lookupname = stmt._infer_name(frame, name)
+        # 'context' is always InferenceContext and Instances get '_infer_name' from ClassDef
+        context.lookupname = stmt._infer_name(frame, name)  # type: ignore[union-attr]
         try:
-            for inf in stmt.infer(context=context):
+            # Mypy doesn't recognize that 'stmt' can't be Uninferable
+            for inf in stmt.infer(context=context):  # type: ignore[union-attr]
                 yield inf
                 inferred = True
         except NameInferenceError:
@@ -426,7 +428,7 @@ class UnboundMethod(Proxy):
         node_context = context.extra_context.get(caller.args[0])
         infer = caller.args[0].infer(context=node_context)
 
-        yield from (Instance(x) if x is not Uninferable else x for x in infer)
+        yield from (Instance(x) if x is not Uninferable else x for x in infer)  # type: ignore[misc]
 
     def bool_value(self, context=None):
         return True
