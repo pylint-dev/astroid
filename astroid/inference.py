@@ -41,12 +41,14 @@ if TYPE_CHECKING:
 # Prevents circular imports
 objects = util.lazy_import("objects")
 
-_T = TypeVar("_T")
-_BaseContainerT = TypeVar("_BaseContainerT", bound=nodes.BaseContainer)
+
 _FunctionDefT = TypeVar("_FunctionDefT", bound=nodes.FunctionDef)
 
 
 # .infer method ###############################################################
+
+_T = TypeVar("_T")
+_BaseContainerT = TypeVar("_BaseContainerT", bound=nodes.BaseContainer)
 
 
 def infer_end(
