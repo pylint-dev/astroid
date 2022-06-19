@@ -10,7 +10,7 @@ from __future__ import annotations
 import collections
 import collections.abc
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from astroid import decorators
 from astroid.const import PY310_PLUS
@@ -118,7 +118,9 @@ class Proxy:
             return self.__dict__[name]
         return getattr(self._proxied, name)
 
-    def infer(self, context=None):
+    def infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> collections.abc.Generator[InferenceResult, None, None]:
         yield self
 
 
