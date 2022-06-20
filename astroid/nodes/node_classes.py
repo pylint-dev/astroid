@@ -15,7 +15,7 @@ from collections.abc import Generator
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Union
 
-from astroid import decorators, mixins, util
+from astroid import decorators, util
 from astroid.bases import Instance, _infer_stmts
 from astroid.const import Context
 from astroid.context import InferenceContext
@@ -233,9 +233,7 @@ def _container_getitem(instance, elts, index, context=None):
     raise AstroidTypeError(f"Could not use {index} as subscript index")
 
 
-class BaseContainer(
-    mixins.ParentAssignTypeMixin, NodeNG, Instance, metaclass=abc.ABCMeta
-):
+class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMeta):
     """Base class for Set, FrozenSet, Tuple and List."""
 
     _astroid_fields = ("elts",)
@@ -362,7 +360,7 @@ class LookupMixIn(NodeNG):
 # Name classes
 
 
-class AssignName(_base_nodes.NoChildrenNode, LookupMixIn, mixins.ParentAssignTypeMixin):
+class AssignName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssignNode):
     """Variation of :class:`ast.Assign` representing assignment to a name.
 
     An :class:`AssignName` is the name of something that is assigned to.
@@ -423,7 +421,7 @@ class AssignName(_base_nodes.NoChildrenNode, LookupMixIn, mixins.ParentAssignTyp
     """
 
 
-class DelName(_base_nodes.NoChildrenNode, LookupMixIn, mixins.ParentAssignTypeMixin):
+class DelName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssignNode):
     """Variation of :class:`ast.Delete` representing deletion of a name.
 
     A :class:`DelName` is the name of something that is deleted.
@@ -538,7 +536,7 @@ class Name(_base_nodes.NoChildrenNode, LookupMixIn):
             yield from child_node._get_name_nodes()
 
 
-class Arguments(mixins.AssignTypeMixin, NodeNG):
+class Arguments(_base_nodes.AssignTypeNode):
     """Class representing an :class:`ast.arguments` node.
 
     An :class:`Arguments` node represents that arguments in a
@@ -939,7 +937,7 @@ def _format_args(args, defaults=None, annotations=None):
     return ", ".join(values)
 
 
-class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
+class AssignAttr(_base_nodes.ParentAssignNode):
     """Variation of :class:`ast.Assign` representing assignment to an attribute.
 
     >>> import astroid
@@ -1077,7 +1075,7 @@ class Assert(_base_nodes.Statement):
             yield self.fail
 
 
-class Assign(mixins.AssignTypeMixin, _base_nodes.Statement):
+class Assign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Assign` node.
 
     An :class:`Assign` is a statement where something is explicitly
@@ -1166,7 +1164,7 @@ class Assign(mixins.AssignTypeMixin, _base_nodes.Statement):
         yield from self.value._get_yield_nodes_skip_lambdas()
 
 
-class AnnAssign(mixins.AssignTypeMixin, _base_nodes.Statement):
+class AnnAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """Class representing an :class:`ast.AnnAssign` node.
 
     An :class:`AnnAssign` is an assignment with a type annotation.
@@ -1258,7 +1256,7 @@ class AnnAssign(mixins.AssignTypeMixin, _base_nodes.Statement):
             yield self.value
 
 
-class AugAssign(mixins.AssignTypeMixin, _base_nodes.Statement):
+class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """Class representing an :class:`ast.AugAssign` node.
 
     An :class:`AugAssign` is an assignment paired with an operator.
@@ -2072,7 +2070,7 @@ class Decorators(NodeNG):
         yield from self.nodes
 
 
-class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
+class DelAttr(_base_nodes.ParentAssignNode):
     """Variation of :class:`ast.Delete` representing deletion of an attribute.
 
     >>> import astroid
@@ -2141,7 +2139,7 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
         yield self.expr
 
 
-class Delete(mixins.AssignTypeMixin, _base_nodes.Statement):
+class Delete(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Delete` node.
 
     A :class:`Delete` is a ``del`` statement this is deleting something.
@@ -2439,7 +2437,7 @@ class EmptyNode(_base_nodes.NoChildrenNode):
 
 
 class ExceptHandler(
-    _base_nodes.MultiLineBlockNode, mixins.AssignTypeMixin, _base_nodes.Statement
+    _base_nodes.MultiLineBlockNode, _base_nodes.AssignTypeNode, _base_nodes.Statement
 ):
     """Class representing an :class:`ast.ExceptHandler`. node.
 
@@ -2572,7 +2570,7 @@ class ExtSlice(NodeNG):
 
 class For(
     _base_nodes.MultiLineWithElseBlockNode,
-    mixins.AssignTypeMixin,
+    _base_nodes.AssignTypeNode,
     _base_nodes.Statement,
 ):
     """Class representing an :class:`ast.For` node.
@@ -3743,7 +3741,7 @@ class Slice(NodeNG):
             yield self.step
 
 
-class Starred(mixins.ParentAssignTypeMixin, NodeNG):
+class Starred(_base_nodes.ParentAssignNode):
     """Class representing an :class:`ast.Starred` node.
 
     >>> import astroid
@@ -4354,7 +4352,7 @@ class While(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
 
 class With(
     _base_nodes.MultiLineWithElseBlockNode,
-    mixins.AssignTypeMixin,
+    _base_nodes.AssignTypeNode,
     _base_nodes.Statement,
 ):
     """Class representing an :class:`ast.With` node.
@@ -4679,7 +4677,7 @@ class JoinedStr(NodeNG):
         yield from self.values
 
 
-class NamedExpr(mixins.AssignTypeMixin, NodeNG):
+class NamedExpr(_base_nodes.AssignTypeNode):
     """Represents the assignment from the assignment expression
 
     >>> import astroid
@@ -4799,7 +4797,7 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
         self.frame(future=True).set_local(name, stmt)
 
 
-class Unknown(mixins.AssignTypeMixin, NodeNG):
+class Unknown(_base_nodes.AssignTypeNode):
     """This node represents a node in a constructed AST where
     introspection is not possible.  At the moment, it's only used in
     the args attribute of FunctionDef nodes where function signature
@@ -5061,7 +5059,7 @@ class MatchSequence(Pattern):
         self.patterns = patterns
 
 
-class MatchMapping(mixins.AssignTypeMixin, Pattern):
+class MatchMapping(_base_nodes.AssignTypeNode, Pattern):
     """Class representing a :class:`ast.MatchMapping` node.
 
     >>> import astroid
@@ -5178,7 +5176,7 @@ class MatchClass(Pattern):
         self.kwd_patterns = kwd_patterns
 
 
-class MatchStar(mixins.AssignTypeMixin, Pattern):
+class MatchStar(_base_nodes.AssignTypeNode, Pattern):
     """Class representing a :class:`ast.MatchStar` node.
 
     >>> import astroid
@@ -5230,7 +5228,7 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
     """
 
 
-class MatchAs(mixins.AssignTypeMixin, Pattern):
+class MatchAs(_base_nodes.AssignTypeNode, Pattern):
     """Class representing a :class:`ast.MatchAs` node.
 
     >>> import astroid
