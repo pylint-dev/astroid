@@ -26,10 +26,45 @@ else:
     from astroid.decorators import cachedproperty as cached_property
 
 
+class Statement(NodeNG):
+    """Statement node adding a few attributes
+
+    NOTE: This class is part of the public API of 'astroid.nodes'.
+    """
+
+    is_statement = True
+    """Whether this node indicates a statement."""
+
+    def next_sibling(self):
+        """The next sibling statement node.
+
+        :returns: The next sibling statement node.
+        :rtype: NodeNG or None
+        """
+        stmts = self.parent.child_sequence(self)
+        index = stmts.index(self)
+        try:
+            return stmts[index + 1]
+        except IndexError:
+            return None
+
+    def previous_sibling(self):
+        """The previous sibling statement.
+
+        :returns: The previous sibling statement node.
+        :rtype: NodeNG or None
+        """
+        stmts = self.parent.child_sequence(self)
+        index = stmts.index(self)
+        if index >= 1:
+            return stmts[index - 1]
+        return None
+
+
 class FilterStmtsMixin:
     """Mixin for statement filtering and assignment type"""
 
-    def _get_filtered_stmts(self, _, node, _stmts, mystmt: nodes.Statement | None):
+    def _get_filtered_stmts(self, _, node, _stmts, mystmt: Statement | None):
         """method used in _filter_stmts to get statements and trigger break"""
         if self.statement(future=True) is mystmt:
             # original node's statement is the assignment, only keep
@@ -45,9 +80,7 @@ class AssignTypeMixin:
     def assign_type(self):
         return self
 
-    def _get_filtered_stmts(
-        self, lookup_node, node, _stmts, mystmt: nodes.Statement | None
-    ):
+    def _get_filtered_stmts(self, lookup_node, node, _stmts, mystmt: Statement | None):
         """method used in filter_stmts"""
         if self is mystmt:
             return _stmts, True
