@@ -362,7 +362,7 @@ class LookupMixIn(NodeNG):
 # Name classes
 
 
-class AssignName(mixins.NoChildrenMixin, LookupMixIn, mixins.ParentAssignTypeMixin):
+class AssignName(_base_nodes.NoChildrenNode, LookupMixIn, mixins.ParentAssignTypeMixin):
     """Variation of :class:`ast.Assign` representing assignment to a name.
 
     An :class:`AssignName` is the name of something that is assigned to.
@@ -423,7 +423,7 @@ class AssignName(mixins.NoChildrenMixin, LookupMixIn, mixins.ParentAssignTypeMix
     """
 
 
-class DelName(mixins.NoChildrenMixin, LookupMixIn, mixins.ParentAssignTypeMixin):
+class DelName(_base_nodes.NoChildrenNode, LookupMixIn, mixins.ParentAssignTypeMixin):
     """Variation of :class:`ast.Delete` representing deletion of a name.
 
     A :class:`DelName` is the name of something that is deleted.
@@ -476,7 +476,7 @@ class DelName(mixins.NoChildrenMixin, LookupMixIn, mixins.ParentAssignTypeMixin)
         )
 
 
-class Name(mixins.NoChildrenMixin, LookupMixIn):
+class Name(_base_nodes.NoChildrenNode, LookupMixIn):
     """Class representing an :class:`ast.Name` node.
 
     A :class:`Name` node is something that is named, but not covered by
@@ -1540,7 +1540,7 @@ class BoolOp(NodeNG):
         return OP_PRECEDENCE[self.op]
 
 
-class Break(mixins.NoChildrenMixin, _base_nodes.Statement):
+class Break(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Break` node.
 
     >>> import astroid
@@ -1836,7 +1836,7 @@ class Comprehension(NodeNG):
         yield from self.ifs
 
 
-class Const(mixins.NoChildrenMixin, NodeNG, Instance):
+class Const(_base_nodes.NoChildrenNode, Instance):
     """Class representing any constant including num, str, bool, None, bytes.
 
     >>> import astroid
@@ -1981,7 +1981,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
         return bool(self.value)
 
 
-class Continue(mixins.NoChildrenMixin, _base_nodes.Statement):
+class Continue(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Continue` node.
 
     >>> import astroid
@@ -2422,7 +2422,7 @@ class Expr(_base_nodes.Statement):
             yield from self.value._get_yield_nodes_skip_lambdas()
 
 
-class Ellipsis(mixins.NoChildrenMixin, NodeNG):  # pylint: disable=redefined-builtin
+class Ellipsis(_base_nodes.NoChildrenNode):  # pylint: disable=redefined-builtin
     """Class representing an :class:`ast.Ellipsis` node.
 
     An :class:`Ellipsis` is the ``...`` syntax.
@@ -2432,7 +2432,7 @@ class Ellipsis(mixins.NoChildrenMixin, NodeNG):  # pylint: disable=redefined-bui
     """
 
 
-class EmptyNode(mixins.NoChildrenMixin, NodeNG):
+class EmptyNode(_base_nodes.NoChildrenNode):
     """Holds an arbitrary object in the :attr:`LocalsDictNodeNG.locals`."""
 
     object = None
@@ -2769,7 +2769,7 @@ class Await(NodeNG):
         yield self.value
 
 
-class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, _base_nodes.Statement):
+class ImportFrom(_base_nodes.ImportNode):
     """Class representing an :class:`ast.ImportFrom` node.
 
     >>> import astroid
@@ -2902,7 +2902,7 @@ class Attribute(NodeNG):
         yield self.expr
 
 
-class Global(mixins.NoChildrenMixin, _base_nodes.Statement):
+class Global(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Global` node.
 
     >>> import astroid
@@ -3197,7 +3197,7 @@ class IfExp(NodeNG):
         return False
 
 
-class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, _base_nodes.Statement):
+class Import(_base_nodes.ImportNode):
     """Class representing an :class:`ast.Import` node.
     >>> import astroid
     >>> node = astroid.extract_node('import astroid')
@@ -3392,7 +3392,7 @@ class List(BaseContainer):
         return _container_getitem(self, self.elts, index, context=context)
 
 
-class Nonlocal(mixins.NoChildrenMixin, _base_nodes.Statement):
+class Nonlocal(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Nonlocal` node.
 
     >>> import astroid
@@ -3448,7 +3448,7 @@ class Nonlocal(mixins.NoChildrenMixin, _base_nodes.Statement):
         return name
 
 
-class Pass(mixins.NoChildrenMixin, _base_nodes.Statement):
+class Pass(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Pass` node.
 
     >>> import astroid
@@ -4523,7 +4523,7 @@ class YieldFrom(Yield):  # TODO value is required, not optional
     """Class representing an :class:`ast.YieldFrom` node."""
 
 
-class DictUnpack(mixins.NoChildrenMixin, NodeNG):
+class DictUnpack(_base_nodes.NoChildrenNode):
     """Represents the unpacking of dicts into dicts using :pep:`448`."""
 
 

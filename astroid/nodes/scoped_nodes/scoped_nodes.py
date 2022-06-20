@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, NoReturn, TypeVar, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
-from astroid import mixins, util
+from astroid import util
 from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS
 from astroid.context import (
     CallContext,
@@ -1042,7 +1042,7 @@ def _infer_decorator_callchain(node):
     return None
 
 
-class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
+class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
     """Class representing an :class:`ast.Lambda` node.
 
     >>> import astroid
@@ -1917,7 +1917,9 @@ def get_wrapping_class(node):
 
 
 # pylint: disable=too-many-instance-attributes
-class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, _base_nodes.Statement):
+class ClassDef(
+    _base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG, _base_nodes.Statement
+):
     """Class representing an :class:`ast.ClassDef` node.
 
     >>> import astroid

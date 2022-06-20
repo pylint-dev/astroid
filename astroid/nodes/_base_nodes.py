@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import itertools
 import sys
+from collections.abc import Iterator
 from typing import TYPE_CHECKING, ClassVar
 
 from astroid import decorators
@@ -61,8 +62,15 @@ class Statement(NodeNG):
         return None
 
 
-class FilterStmtsMixin:
-    """Mixin for statement filtering and assignment type"""
+class NoChildrenNode(NodeNG):
+    """Base nodes for nodes with no children, e.g. Pass."""
+
+    def get_children(self) -> Iterator[NodeNG]:
+        yield from ()
+
+
+class FilterStmtsBaseNode(NodeNG):
+    """Base node for statement filtering and assignment type"""
 
     def _get_filtered_stmts(self, _, node, _stmts, mystmt: Statement | None):
         """method used in _filter_stmts to get statements and trigger break"""
@@ -96,8 +104,21 @@ class ParentAssignTypeMixin(AssignTypeMixin):
         return self.parent.assign_type()
 
 
-class ImportFromMixin(FilterStmtsMixin):
-    """MixIn for From and Import Nodes"""
+class ImportNode(FilterStmtsBaseNode, NoChildrenNode, Statement):
+    """Base node for From and Import Nodes"""
+
+    modname: str | None
+    """The module that is being imported from.
+
+    This is ``None`` for relative imports.
+    """
+
+    names: list[tuple[str, str | None]]
+    """What is being imported from the module.
+
+    Each entry is a :class:`tuple` of the name being imported,
+    and the alias that the name is assigned to (if any).
+    """
 
     def _infer_name(self, frame, name):
         return name
@@ -114,10 +135,12 @@ class ImportFromMixin(FilterStmtsMixin):
             modname = self.modname
         # XXX we should investigate deeper if we really want to check
         # importing itself: modname and mymodule.name be relative or absolute
+        # pylint: disable-next=no-member # pylint doesn't recognize type of mymodule
         if mymodule.relative_to_absolute_name(modname, level) == mymodule.name:
             # FIXME: we used to raise InferenceError here, but why ?
             return mymodule
 
+        # pylint: disable-next=no-member # pylint doesn't recognize type of mymodule
         return mymodule.import_module(
             modname, level=level, relative_only=level and level >= 1
         )
@@ -195,10 +218,3 @@ class MultiLineWithElseBlockNode(MultiLineBlockNode):
                 return lineno, orelse[-1].tolineno
             return lineno, orelse[0].fromlineno - 1
         return lineno, last or self.tolineno
-
-
-class NoChildrenMixin:
-    """Mixin for nodes with no children, e.g. Pass."""
-
-    def get_children(self):
-        yield from ()
