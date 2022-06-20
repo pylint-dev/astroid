@@ -1264,7 +1264,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         raise AttributeInferenceError(target=self, attribute=name)
 
 
-class FunctionDef(_base_nodes.MultiLineBlockNode, node_classes.Statement, Lambda):
+class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda):
     """Class representing an :class:`ast.FunctionDef`.
 
     >>> import astroid
@@ -1917,7 +1917,7 @@ def get_wrapping_class(node):
 
 
 # pylint: disable=too-many-instance-attributes
-class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement):
+class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, _base_nodes.Statement):
     """Class representing an :class:`ast.ClassDef` node.
 
     >>> import astroid
