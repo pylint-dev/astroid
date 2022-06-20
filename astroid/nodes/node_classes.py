@@ -323,6 +323,7 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         yield from self.elts
 
 
+# TODO: Move into _base_nodes. Blocked by import of _infer_stmts from bases.
 class LookupMixIn(NodeNG):
     """Mixin to look up a name in the right scope."""
 
