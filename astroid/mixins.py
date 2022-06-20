@@ -7,15 +7,10 @@
 
 import warnings
 
-from astroid.nodes._base_nodes import (
-    AssignTypeMixin,
-    BlockRangeMixIn,
-    FilterStmtsMixin,
-    ImportFromMixin,
-    MultiLineBlockMixin,
-    NoChildrenMixin,
-    ParentAssignTypeMixin,
-)
+from astroid.nodes._base_nodes import AssignTypeMixin, FilterStmtsMixin, ImportFromMixin
+from astroid.nodes._base_nodes import MultiLineBlockNode as MultiLineBlockMixin
+from astroid.nodes._base_nodes import MultiLineWithElseBlockNode as BlockRangeMixIn
+from astroid.nodes._base_nodes import NoChildrenMixin, ParentAssignTypeMixin
 
 __all__ = (
     "AssignTypeMixin",

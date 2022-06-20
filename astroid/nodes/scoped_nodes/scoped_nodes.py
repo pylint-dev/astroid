@@ -42,7 +42,7 @@ from astroid.exceptions import (
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
-from astroid.nodes import Arguments, Const, NodeNG, node_classes
+from astroid.nodes import Arguments, Const, NodeNG, _base_nodes, node_classes
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
@@ -1264,7 +1264,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         raise AttributeInferenceError(target=self, attribute=name)
 
 
-class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
+class FunctionDef(_base_nodes.MultiLineBlockNode, node_classes.Statement, Lambda):
     """Class representing an :class:`ast.FunctionDef`.
 
     >>> import astroid

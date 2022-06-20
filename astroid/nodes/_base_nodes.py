@@ -11,10 +11,11 @@ from __future__ import annotations
 
 import itertools
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from astroid import decorators
 from astroid.exceptions import AttributeInferenceError
+from astroid.nodes.node_ng import NodeNG
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -23,26 +24,6 @@ if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
     from astroid.decorators import cachedproperty as cached_property
-
-
-class BlockRangeMixIn:
-    """override block range"""
-
-    @cached_property
-    def blockstart_tolineno(self):
-        return self.lineno
-
-    def _elsed_block_range(self, lineno, orelse, last=None):
-        """handle block line numbers range for try/finally, for, if and while
-        statements
-        """
-        if lineno == self.fromlineno:
-            return lineno, lineno
-        if orelse:
-            if lineno >= orelse[0].fromlineno:
-                return lineno, orelse[-1].tolineno
-            return lineno, orelse[0].fromlineno - 1
-        return lineno, last or self.tolineno
 
 
 class FilterStmtsMixin:
@@ -125,13 +106,15 @@ class ImportFromMixin(FilterStmtsMixin):
         )
 
 
-class MultiLineBlockMixin:
-    """Mixin for nodes with multi-line blocks, e.g. For and FunctionDef.
+class MultiLineBlockNode(NodeNG):
+    """Base node for multi-line blocks, e.g. For and FunctionDef.
     Note that this does not apply to every node with a `body` field.
     For instance, an If node has a multi-line body, but the body of an
     IfExpr is not multi-line, and hence cannot contain Return nodes,
     Assign nodes, etc.
     """
+
+    _multi_line_block_fields: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
     def _multi_line_blocks(self):
@@ -159,6 +142,26 @@ class MultiLineBlockMixin:
             for child_node in block
         )
         return list(itertools.chain.from_iterable(children_assign_nodes))
+
+
+class MultiLineWithElseBlockNode(MultiLineBlockNode):
+    """Base node for multi-line blocks that can have else statements."""
+
+    @cached_property
+    def blockstart_tolineno(self):
+        return self.lineno
+
+    def _elsed_block_range(self, lineno, orelse, last=None):
+        """handle block line numbers range for try/finally, for, if and while
+        statements
+        """
+        if lineno == self.fromlineno:
+            return lineno, lineno
+        if orelse:
+            if lineno >= orelse[0].fromlineno:
+                return lineno, orelse[-1].tolineno
+            return lineno, orelse[0].fromlineno - 1
+        return lineno, last or self.tolineno
 
 
 class NoChildrenMixin:

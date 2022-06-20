@@ -27,6 +27,7 @@ from astroid.exceptions import (
     ParentMissingError,
 )
 from astroid.manager import AstroidManager
+from astroid.nodes import _base_nodes
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
 
@@ -2467,7 +2468,7 @@ class EmptyNode(mixins.NoChildrenMixin, NodeNG):
     object = None
 
 
-class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statement):
+class ExceptHandler(_base_nodes.MultiLineBlockNode, mixins.AssignTypeMixin, Statement):
     """Class representing an :class:`ast.ExceptHandler`. node.
 
     An :class:`ExceptHandler` is an ``except`` block on a try-except.
@@ -2597,12 +2598,7 @@ class ExtSlice(NodeNG):
     """
 
 
-class For(
-    mixins.MultiLineBlockMixin,
-    mixins.BlockRangeMixIn,
-    mixins.AssignTypeMixin,
-    Statement,
-):
+class For(_base_nodes.MultiLineWithElseBlockNode, mixins.AssignTypeMixin, Statement):
     """Class representing an :class:`ast.For` node.
 
     >>> import astroid
@@ -2981,7 +2977,7 @@ class Global(mixins.NoChildrenMixin, Statement):
         return name
 
 
-class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
+class If(_base_nodes.MultiLineWithElseBlockNode, Statement):
     """Class representing an :class:`ast.If` node.
 
     >>> import astroid
@@ -3910,7 +3906,7 @@ class Subscript(NodeNG):
         yield self.slice
 
 
-class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
+class TryExcept(_base_nodes.MultiLineWithElseBlockNode, Statement):
     """Class representing an :class:`ast.TryExcept` node.
 
     >>> import astroid
@@ -4017,7 +4013,7 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         yield from self.orelse or ()
 
 
-class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
+class TryFinally(_base_nodes.MultiLineWithElseBlockNode, Statement):
     """Class representing an :class:`ast.TryFinally` node.
 
     >>> import astroid
@@ -4274,7 +4270,7 @@ class UnaryOp(NodeNG):
         return super().op_precedence()
 
 
-class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
+class While(_base_nodes.MultiLineWithElseBlockNode, Statement):
     """Class representing an :class:`ast.While` node.
 
     >>> import astroid
@@ -4380,12 +4376,7 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         yield from super()._get_yield_nodes_skip_lambdas()
 
 
-class With(
-    mixins.MultiLineBlockMixin,
-    mixins.BlockRangeMixIn,
-    mixins.AssignTypeMixin,
-    Statement,
-):
+class With(_base_nodes.MultiLineWithElseBlockNode, mixins.AssignTypeMixin, Statement):
     """Class representing an :class:`ast.With` node.
 
     >>> import astroid
@@ -4930,7 +4921,7 @@ class Pattern(NodeNG):
     """Base class for all Pattern nodes."""
 
 
-class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
+class MatchCase(_base_nodes.MultiLineBlockNode):
     """Class representing a :class:`ast.match_case` node.
 
     >>> import astroid
