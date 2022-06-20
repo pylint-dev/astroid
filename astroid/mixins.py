@@ -92,7 +92,7 @@ class ImportFromMixin(FilterStmtsMixin):
         # using the same name as the package, which may end in an infinite loop
         # on relative imports
         # XXX: no more needed ?
-        mymodule: nodes.Module = self.root()
+        mymodule = self.root()
         level = getattr(self, "level", None)  # Import as no level
         if modname is None:
             modname = self.modname
