@@ -527,7 +527,9 @@ class Module(LocalsDictNodeNG):
                 raise
         return AstroidManager().ast_from_module_name(modname)
 
-    def relative_to_absolute_name(self, modname: str, level: int) -> str:
+    def relative_to_absolute_name(
+        self, modname: str | None, level: int | None
+    ) -> str | None:
         """Get the absolute module name for a relative import.
 
         The relative import can be implicit or explicit.

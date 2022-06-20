@@ -359,15 +359,14 @@ class NodeNG:
             raise ParentMissingError(target=self)
         return self.parent.scope()
 
-    def root(self):
+    def root(self) -> nodes.Module:
         """Return the root node of the syntax tree.
 
         :returns: The root node.
-        :rtype: Module
         """
         if self.parent:
             return self.parent.root()
-        return self
+        return self  # type: ignore[return-value] # Only 'Module' does not have a parent node.
 
     def child_sequence(self, child):
         """Search for the sequence that contains this child.
