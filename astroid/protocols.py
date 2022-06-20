@@ -400,7 +400,9 @@ def arguments_assigned_stmts(
     try:
         node_name = node.name  # type: ignore[union-attr]
     except AttributeError:
-        node_name = None
+        # Added to handle edge cases where node.name is not defined.
+        # https://github.com/PyCQA/astroid/pull/1644#discussion_r901545816
+        node_name = None  # pragma: no cover
 
     if context and context.callcontext:
         callee = context.callcontext.callee
