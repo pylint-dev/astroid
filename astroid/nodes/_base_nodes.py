@@ -84,7 +84,9 @@ class FilterStmtsBaseNode(NodeNG):
         return self
 
 
-class AssignTypeMixin:
+class AssignTypeNode(NodeNG):
+    """Base node for nodes that can 'assign' such as AnnAssign."""
+
     def assign_type(self):
         return self
 
@@ -99,7 +101,9 @@ class AssignTypeMixin:
         return _stmts, False
 
 
-class ParentAssignTypeMixin(AssignTypeMixin):
+class ParentAssignNode(AssignTypeNode):
+    """Base node for nodes whose assign_type is determined by the parent node."""
+
     def assign_type(self):
         return self.parent.assign_type()
 
