@@ -86,13 +86,13 @@ class ImportFromMixin(FilterStmtsMixin):
     def _infer_name(self, frame, name):
         return name
 
-    def do_import_module(self, modname=None):
+    def do_import_module(self, modname: str | None = None) -> nodes.Module:
         """return the ast for a module whose name is <modname> imported by <self>"""
         # handle special case where we are on a package node importing a module
         # using the same name as the package, which may end in an infinite loop
         # on relative imports
         # XXX: no more needed ?
-        mymodule = self.root()
+        mymodule: nodes.Module = self.root()
         level = getattr(self, "level", None)  # Import as no level
         if modname is None:
             modname = self.modname
