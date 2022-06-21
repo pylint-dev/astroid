@@ -33,7 +33,7 @@ from astroid.exceptions import (
 )
 from astroid.interpreter import dunder_lookup
 from astroid.manager import AstroidManager
-from astroid.typing import InferenceErrorInfo
+from astroid.typing import InferenceErrorInfo, InferenceResult
 
 if TYPE_CHECKING:
     from astroid.objects import Property
@@ -120,7 +120,9 @@ nodes.Tuple._infer = infer_sequence  # type: ignore[assignment]
 nodes.Set._infer = infer_sequence  # type: ignore[assignment]
 
 
-def infer_map(self, context=None):
+def infer_map(
+    self: nodes.Dict, context: InferenceContext | None = None
+) -> Iterator[nodes.Dict]:
     if not any(isinstance(k, nodes.DictUnpack) for k, _ in self.items):
         yield self
     else:
@@ -130,7 +132,10 @@ def infer_map(self, context=None):
         yield new_seq
 
 
-def _update_with_replacement(lhs_dict, rhs_dict):
+def _update_with_replacement(
+    lhs_dict: dict[InferenceResult, InferenceResult],
+    rhs_dict: dict[InferenceResult, InferenceResult],
+) -> dict[InferenceResult, InferenceResult]:
     """Delete nodes that equate to duplicate keys
 
     Since an astroid node doesn't 'equal' another node with the same value,
@@ -139,12 +144,12 @@ def _update_with_replacement(lhs_dict, rhs_dict):
 
     Note that both the key and the value are astroid nodes
 
-    Fixes issue with DictUnpack causing duplicte keys
+    Fixes issue with DictUnpack causing duplicate keys
     in inferred Dict items
 
-    :param dict(nodes.NodeNG, nodes.NodeNG) lhs_dict: Dictionary to 'merge' nodes into
-    :param dict(nodes.NodeNG, nodes.NodeNG) rhs_dict: Dictionary with nodes to pull from
-    :return dict(nodes.NodeNG, nodes.NodeNG): merged dictionary of nodes
+    :param lhs_dict: Dictionary to 'merge' nodes into
+    :param rhs_dict: Dictionary with nodes to pull from
+    :return : merged dictionary of nodes
     """
     combined_dict = itertools.chain(lhs_dict.items(), rhs_dict.items())
     # Overwrite keys which have the same string values
@@ -153,9 +158,11 @@ def _update_with_replacement(lhs_dict, rhs_dict):
     return dict(string_map.values())
 
 
-def _infer_map(node, context):
+def _infer_map(
+    node: nodes.Dict, context: InferenceContext | None
+) -> dict[InferenceResult, InferenceResult]:
     """Infer all values based on Dict.items"""
-    values = {}
+    values: dict[InferenceResult, InferenceResult] = {}
     for name, value in node.items:
         if isinstance(name, nodes.DictUnpack):
             double_starred = helpers.safe_infer(value, context)
