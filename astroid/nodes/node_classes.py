@@ -29,6 +29,7 @@ from astroid.exceptions import (
 from astroid.manager import AstroidManager
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
+from astroid.typing import InferenceResult
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -2263,7 +2264,7 @@ class Dict(NodeNG, Instance):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.items: list[tuple[NodeNG, NodeNG]] = []
+        self.items: list[tuple[InferenceResult, InferenceResult]] = []
         """The key-value pairs contained in the dictionary."""
 
         super().__init__(
