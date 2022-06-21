@@ -6,8 +6,7 @@
 Various helper utilities.
 """
 
-
-from typing import Optional, Union
+from __future__ import annotations
 
 from astroid import bases, manager, nodes, raw_building, util
 from astroid.context import CallContext, InferenceContext
@@ -141,11 +140,9 @@ def object_issubclass(node, class_or_seq, context=None):
     return _object_type_is_subclass(node, class_or_seq, context=context)
 
 
-# TODO: PY310: Remove the disable after InferenceResult no longer uses Union
-def safe_infer(  # pylint: disable=consider-alternative-union-syntax
-    node: Union[nodes.NodeNG, bases.Proxy],
-    context: Optional[InferenceContext] = None,
-) -> Optional[InferenceResult]:
+def safe_infer(
+    node: nodes.NodeNG | bases.Proxy, context: InferenceContext | None = None
+) -> InferenceResult | None:
     """Return the inferred value for the given node.
 
     Return None if inference failed or if there is some ambiguity (more than
