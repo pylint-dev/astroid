@@ -33,7 +33,7 @@ from astroid.exceptions import (
 )
 from astroid.interpreter import dunder_lookup
 from astroid.manager import AstroidManager
-from astroid.typing import InferenceErrorInfo, InferenceResult
+from astroid.typing import InferenceErrorInfo, SuccessfulInferenceResult
 
 if TYPE_CHECKING:
     from astroid.objects import Property
@@ -133,9 +133,9 @@ def infer_map(
 
 
 def _update_with_replacement(
-    lhs_dict: dict[InferenceResult, InferenceResult],
-    rhs_dict: dict[InferenceResult, InferenceResult],
-) -> dict[InferenceResult, InferenceResult]:
+    lhs_dict: dict[SuccessfulInferenceResult, SuccessfulInferenceResult],
+    rhs_dict: dict[SuccessfulInferenceResult, SuccessfulInferenceResult],
+) -> dict[SuccessfulInferenceResult, SuccessfulInferenceResult]:
     """Delete nodes that equate to duplicate keys
 
     Since an astroid node doesn't 'equal' another node with the same value,
@@ -160,9 +160,9 @@ def _update_with_replacement(
 
 def _infer_map(
     node: nodes.Dict, context: InferenceContext | None
-) -> dict[InferenceResult, InferenceResult]:
+) -> dict[SuccessfulInferenceResult, SuccessfulInferenceResult]:
     """Infer all values based on Dict.items"""
-    values: dict[InferenceResult, InferenceResult] = {}
+    values: dict[SuccessfulInferenceResult, SuccessfulInferenceResult] = {}
     for name, value in node.items:
         if isinstance(name, nodes.DictUnpack):
             double_starred = helpers.safe_infer(value, context)
@@ -174,10 +174,11 @@ def _infer_map(
             values = _update_with_replacement(values, unpack_items)
         else:
             key = helpers.safe_infer(name, context=context)
-            value = helpers.safe_infer(value, context=context)
-            if any(not elem for elem in (key, value)):
+            safe_value = helpers.safe_infer(value, context=context)
+            if any(not elem for elem in (key, safe_value)):
                 raise InferenceError(node=node, context=context)
-            values = _update_with_replacement(values, {key: value})
+            # safe_value is SuccessfulInferenceResult as bool(Uninferable) == False
+            values = _update_with_replacement(values, {key: safe_value})  # type: ignore[dict-item]
     return values
 
 

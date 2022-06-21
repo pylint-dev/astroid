@@ -42,3 +42,4 @@ class AstroidManagerBrain(TypedDict):
 
 
 InferenceResult = Union["nodes.NodeNG", "type[util.Uninferable]", "bases.Proxy"]
+SuccessfulInferenceResult = Union["nodes.NodeNG", "bases.Proxy"]
