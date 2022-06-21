@@ -15,7 +15,7 @@ from collections.abc import Generator
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Union
 
-from astroid import decorators, mixins, util
+from astroid import decorators, util
 from astroid.bases import Instance, _infer_stmts
 from astroid.const import Context
 from astroid.context import InferenceContext
@@ -27,6 +27,7 @@ from astroid.exceptions import (
     ParentMissingError,
 )
 from astroid.manager import AstroidManager
+from astroid.nodes import _base_nodes
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
 
@@ -232,41 +233,7 @@ def _container_getitem(instance, elts, index, context=None):
     raise AstroidTypeError(f"Could not use {index} as subscript index")
 
 
-class Statement(NodeNG):
-    """Statement node adding a few attributes"""
-
-    is_statement = True
-    """Whether this node indicates a statement."""
-
-    def next_sibling(self):
-        """The next sibling statement node.
-
-        :returns: The next sibling statement node.
-        :rtype: NodeNG or None
-        """
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        try:
-            return stmts[index + 1]
-        except IndexError:
-            return None
-
-    def previous_sibling(self):
-        """The previous sibling statement.
-
-        :returns: The previous sibling statement node.
-        :rtype: NodeNG or None
-        """
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        if index >= 1:
-            return stmts[index - 1]
-        return None
-
-
-class BaseContainer(
-    mixins.ParentAssignTypeMixin, NodeNG, Instance, metaclass=abc.ABCMeta
-):
+class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMeta):
     """Base class for Set, FrozenSet, Tuple and List."""
 
     _astroid_fields = ("elts",)
@@ -356,6 +323,7 @@ class BaseContainer(
         yield from self.elts
 
 
+# TODO: Move into _base_nodes. Blocked by import of _infer_stmts from bases.
 class LookupMixIn(NodeNG):
     """Mixin to look up a name in the right scope."""
 
@@ -393,7 +361,7 @@ class LookupMixIn(NodeNG):
 # Name classes
 
 
-class AssignName(mixins.NoChildrenMixin, LookupMixIn, mixins.ParentAssignTypeMixin):
+class AssignName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssignNode):
     """Variation of :class:`ast.Assign` representing assignment to a name.
 
     An :class:`AssignName` is the name of something that is assigned to.
@@ -454,7 +422,7 @@ class AssignName(mixins.NoChildrenMixin, LookupMixIn, mixins.ParentAssignTypeMix
     """
 
 
-class DelName(mixins.NoChildrenMixin, LookupMixIn, mixins.ParentAssignTypeMixin):
+class DelName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssignNode):
     """Variation of :class:`ast.Delete` representing deletion of a name.
 
     A :class:`DelName` is the name of something that is deleted.
@@ -507,7 +475,7 @@ class DelName(mixins.NoChildrenMixin, LookupMixIn, mixins.ParentAssignTypeMixin)
         )
 
 
-class Name(mixins.NoChildrenMixin, LookupMixIn):
+class Name(_base_nodes.NoChildrenNode, LookupMixIn):
     """Class representing an :class:`ast.Name` node.
 
     A :class:`Name` node is something that is named, but not covered by
@@ -569,7 +537,7 @@ class Name(mixins.NoChildrenMixin, LookupMixIn):
             yield from child_node._get_name_nodes()
 
 
-class Arguments(mixins.AssignTypeMixin, NodeNG):
+class Arguments(_base_nodes.AssignTypeNode):
     """Class representing an :class:`ast.arguments` node.
 
     An :class:`Arguments` node represents that arguments in a
@@ -970,7 +938,7 @@ def _format_args(args, defaults=None, annotations=None):
     return ", ".join(values)
 
 
-class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
+class AssignAttr(_base_nodes.ParentAssignNode):
     """Variation of :class:`ast.Assign` representing assignment to an attribute.
 
     >>> import astroid
@@ -1042,7 +1010,7 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
         yield self.expr
 
 
-class Assert(Statement):
+class Assert(_base_nodes.Statement):
     """Class representing an :class:`ast.Assert` node.
 
     An :class:`Assert` node represents an assert statement.
@@ -1108,7 +1076,7 @@ class Assert(Statement):
             yield self.fail
 
 
-class Assign(mixins.AssignTypeMixin, Statement):
+class Assign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Assign` node.
 
     An :class:`Assign` is a statement where something is explicitly
@@ -1197,7 +1165,7 @@ class Assign(mixins.AssignTypeMixin, Statement):
         yield from self.value._get_yield_nodes_skip_lambdas()
 
 
-class AnnAssign(mixins.AssignTypeMixin, Statement):
+class AnnAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """Class representing an :class:`ast.AnnAssign` node.
 
     An :class:`AnnAssign` is an assignment with a type annotation.
@@ -1289,7 +1257,7 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
             yield self.value
 
 
-class AugAssign(mixins.AssignTypeMixin, Statement):
+class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """Class representing an :class:`ast.AugAssign` node.
 
     An :class:`AugAssign` is an assignment paired with an operator.
@@ -1571,7 +1539,7 @@ class BoolOp(NodeNG):
         return OP_PRECEDENCE[self.op]
 
 
-class Break(mixins.NoChildrenMixin, Statement):
+class Break(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Break` node.
 
     >>> import astroid
@@ -1844,7 +1812,9 @@ class Comprehension(NodeNG):
         """
         return self
 
-    def _get_filtered_stmts(self, lookup_node, node, stmts, mystmt: Statement | None):
+    def _get_filtered_stmts(
+        self, lookup_node, node, stmts, mystmt: _base_nodes.Statement | None
+    ):
         """method used in filter_stmts"""
         if self is mystmt:
             if isinstance(lookup_node, (Const, Name)):
@@ -1865,7 +1835,7 @@ class Comprehension(NodeNG):
         yield from self.ifs
 
 
-class Const(mixins.NoChildrenMixin, NodeNG, Instance):
+class Const(_base_nodes.NoChildrenNode, Instance):
     """Class representing any constant including num, str, bool, None, bytes.
 
     >>> import astroid
@@ -2010,7 +1980,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
         return bool(self.value)
 
 
-class Continue(mixins.NoChildrenMixin, Statement):
+class Continue(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Continue` node.
 
     >>> import astroid
@@ -2101,7 +2071,7 @@ class Decorators(NodeNG):
         yield from self.nodes
 
 
-class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
+class DelAttr(_base_nodes.ParentAssignNode):
     """Variation of :class:`ast.Delete` representing deletion of an attribute.
 
     >>> import astroid
@@ -2170,7 +2140,7 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
         yield self.expr
 
 
-class Delete(mixins.AssignTypeMixin, Statement):
+class Delete(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Delete` node.
 
     A :class:`Delete` is a ``del`` statement this is deleting something.
@@ -2387,7 +2357,7 @@ class Dict(NodeNG, Instance):
         return bool(self.items)
 
 
-class Expr(Statement):
+class Expr(_base_nodes.Statement):
     """Class representing an :class:`ast.Expr` node.
 
     An :class:`Expr` is any expression that does not have its value used or
@@ -2451,7 +2421,7 @@ class Expr(Statement):
             yield from self.value._get_yield_nodes_skip_lambdas()
 
 
-class Ellipsis(mixins.NoChildrenMixin, NodeNG):  # pylint: disable=redefined-builtin
+class Ellipsis(_base_nodes.NoChildrenNode):  # pylint: disable=redefined-builtin
     """Class representing an :class:`ast.Ellipsis` node.
 
     An :class:`Ellipsis` is the ``...`` syntax.
@@ -2461,13 +2431,15 @@ class Ellipsis(mixins.NoChildrenMixin, NodeNG):  # pylint: disable=redefined-bui
     """
 
 
-class EmptyNode(mixins.NoChildrenMixin, NodeNG):
+class EmptyNode(_base_nodes.NoChildrenNode):
     """Holds an arbitrary object in the :attr:`LocalsDictNodeNG.locals`."""
 
     object = None
 
 
-class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statement):
+class ExceptHandler(
+    _base_nodes.MultiLineBlockNode, _base_nodes.AssignTypeNode, _base_nodes.Statement
+):
     """Class representing an :class:`ast.ExceptHandler`. node.
 
     An :class:`ExceptHandler` is an ``except`` block on a try-except.
@@ -2598,10 +2570,9 @@ class ExtSlice(NodeNG):
 
 
 class For(
-    mixins.MultiLineBlockMixin,
-    mixins.BlockRangeMixIn,
-    mixins.AssignTypeMixin,
-    Statement,
+    _base_nodes.MultiLineWithElseBlockNode,
+    _base_nodes.AssignTypeNode,
+    _base_nodes.Statement,
 ):
     """Class representing an :class:`ast.For` node.
 
@@ -2797,7 +2768,7 @@ class Await(NodeNG):
         yield self.value
 
 
-class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
+class ImportFrom(_base_nodes.ImportNode):
     """Class representing an :class:`ast.ImportFrom` node.
 
     >>> import astroid
@@ -2930,7 +2901,7 @@ class Attribute(NodeNG):
         yield self.expr
 
 
-class Global(mixins.NoChildrenMixin, Statement):
+class Global(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Global` node.
 
     >>> import astroid
@@ -2981,7 +2952,7 @@ class Global(mixins.NoChildrenMixin, Statement):
         return name
 
 
-class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
+class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     """Class representing an :class:`ast.If` node.
 
     >>> import astroid
@@ -3225,7 +3196,7 @@ class IfExp(NodeNG):
         return False
 
 
-class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
+class Import(_base_nodes.ImportNode):
     """Class representing an :class:`ast.Import` node.
     >>> import astroid
     >>> node = astroid.extract_node('import astroid')
@@ -3420,7 +3391,7 @@ class List(BaseContainer):
         return _container_getitem(self, self.elts, index, context=context)
 
 
-class Nonlocal(mixins.NoChildrenMixin, Statement):
+class Nonlocal(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Nonlocal` node.
 
     >>> import astroid
@@ -3476,7 +3447,7 @@ class Nonlocal(mixins.NoChildrenMixin, Statement):
         return name
 
 
-class Pass(mixins.NoChildrenMixin, Statement):
+class Pass(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Pass` node.
 
     >>> import astroid
@@ -3486,7 +3457,7 @@ class Pass(mixins.NoChildrenMixin, Statement):
     """
 
 
-class Raise(Statement):
+class Raise(_base_nodes.Statement):
     """Class representing an :class:`ast.Raise` node.
 
     >>> import astroid
@@ -3568,7 +3539,7 @@ class Raise(Statement):
             yield self.cause
 
 
-class Return(Statement):
+class Return(_base_nodes.Statement):
     """Class representing an :class:`ast.Return` node.
 
     >>> import astroid
@@ -3771,7 +3742,7 @@ class Slice(NodeNG):
             yield self.step
 
 
-class Starred(mixins.ParentAssignTypeMixin, NodeNG):
+class Starred(_base_nodes.ParentAssignNode):
     """Class representing an :class:`ast.Starred` node.
 
     >>> import astroid
@@ -3910,7 +3881,7 @@ class Subscript(NodeNG):
         yield self.slice
 
 
-class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
+class TryExcept(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     """Class representing an :class:`ast.TryExcept` node.
 
     >>> import astroid
@@ -4017,7 +3988,7 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         yield from self.orelse or ()
 
 
-class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
+class TryFinally(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     """Class representing an :class:`ast.TryFinally` node.
 
     >>> import astroid
@@ -4274,7 +4245,7 @@ class UnaryOp(NodeNG):
         return super().op_precedence()
 
 
-class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
+class While(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     """Class representing an :class:`ast.While` node.
 
     >>> import astroid
@@ -4381,10 +4352,9 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
 
 
 class With(
-    mixins.MultiLineBlockMixin,
-    mixins.BlockRangeMixIn,
-    mixins.AssignTypeMixin,
-    Statement,
+    _base_nodes.MultiLineWithElseBlockNode,
+    _base_nodes.AssignTypeNode,
+    _base_nodes.Statement,
 ):
     """Class representing an :class:`ast.With` node.
 
@@ -4552,7 +4522,7 @@ class YieldFrom(Yield):  # TODO value is required, not optional
     """Class representing an :class:`ast.YieldFrom` node."""
 
 
-class DictUnpack(mixins.NoChildrenMixin, NodeNG):
+class DictUnpack(_base_nodes.NoChildrenNode):
     """Represents the unpacking of dicts into dicts using :pep:`448`."""
 
 
@@ -4708,7 +4678,7 @@ class JoinedStr(NodeNG):
         yield from self.values
 
 
-class NamedExpr(mixins.AssignTypeMixin, NodeNG):
+class NamedExpr(_base_nodes.AssignTypeNode):
     """Represents the assignment from the assignment expression
 
     >>> import astroid
@@ -4828,7 +4798,7 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
         self.frame(future=True).set_local(name, stmt)
 
 
-class Unknown(mixins.AssignTypeMixin, NodeNG):
+class Unknown(_base_nodes.AssignTypeNode):
     """This node represents a node in a constructed AST where
     introspection is not possible.  At the moment, it's only used in
     the args attribute of FunctionDef nodes where function signature
@@ -4880,7 +4850,7 @@ class EvaluatedObject(NodeNG):
 # Pattern matching #######################################################
 
 
-class Match(Statement):
+class Match(_base_nodes.Statement):
     """Class representing a :class:`ast.Match` node.
 
     >>> import astroid
@@ -4930,7 +4900,7 @@ class Pattern(NodeNG):
     """Base class for all Pattern nodes."""
 
 
-class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
+class MatchCase(_base_nodes.MultiLineBlockNode):
     """Class representing a :class:`ast.match_case` node.
 
     >>> import astroid
@@ -5090,7 +5060,7 @@ class MatchSequence(Pattern):
         self.patterns = patterns
 
 
-class MatchMapping(mixins.AssignTypeMixin, Pattern):
+class MatchMapping(_base_nodes.AssignTypeNode, Pattern):
     """Class representing a :class:`ast.MatchMapping` node.
 
     >>> import astroid
@@ -5207,7 +5177,7 @@ class MatchClass(Pattern):
         self.kwd_patterns = kwd_patterns
 
 
-class MatchStar(mixins.AssignTypeMixin, Pattern):
+class MatchStar(_base_nodes.AssignTypeNode, Pattern):
     """Class representing a :class:`ast.MatchStar` node.
 
     >>> import astroid
@@ -5259,7 +5229,7 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
     """
 
 
-class MatchAs(mixins.AssignTypeMixin, Pattern):
+class MatchAs(_base_nodes.AssignTypeNode, Pattern):
     """Class representing a :class:`ast.MatchAs` node.
 
     >>> import astroid

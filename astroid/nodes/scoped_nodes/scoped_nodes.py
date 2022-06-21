@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, NoReturn, TypeVar, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
-from astroid import mixins, util
+from astroid import util
 from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS
 from astroid.context import (
     CallContext,
@@ -42,7 +42,7 @@ from astroid.exceptions import (
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
-from astroid.nodes import Arguments, Const, NodeNG, node_classes
+from astroid.nodes import Arguments, Const, NodeNG, _base_nodes, node_classes
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
@@ -527,7 +527,9 @@ class Module(LocalsDictNodeNG):
                 raise
         return AstroidManager().ast_from_module_name(modname)
 
-    def relative_to_absolute_name(self, modname: str, level: int) -> str:
+    def relative_to_absolute_name(
+        self, modname: str | None, level: int | None
+    ) -> str | None:
         """Get the absolute module name for a relative import.
 
         The relative import can be implicit or explicit.
@@ -1040,7 +1042,7 @@ def _infer_decorator_callchain(node):
     return None
 
 
-class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
+class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
     """Class representing an :class:`ast.Lambda` node.
 
     >>> import astroid
@@ -1262,7 +1264,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         raise AttributeInferenceError(target=self, attribute=name)
 
 
-class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
+class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda):
     """Class representing an :class:`ast.FunctionDef`.
 
     >>> import astroid
@@ -1915,7 +1917,9 @@ def get_wrapping_class(node):
 
 
 # pylint: disable=too-many-instance-attributes
-class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement):
+class ClassDef(
+    _base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG, _base_nodes.Statement
+):
     """Class representing an :class:`ast.ClassDef` node.
 
     >>> import astroid

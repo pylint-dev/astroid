@@ -531,7 +531,7 @@ from ..cave import wine\n\n"""
         """When we import PickleError from nonexistent, a call to the infer
         method of this From node will be made by unpack_infer.
         inference.infer_from will try to import this module, which will fail and
-        raise a InferenceException (by mixins.do_import_module). The infer_name
+        raise a InferenceException (by ImportNode.do_import_module). The infer_name
         will catch this exception and yield and Uninferable instead.
         """
 

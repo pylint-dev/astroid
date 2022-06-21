@@ -165,7 +165,7 @@ def tl_infer_binary_op(
     other: nodes.NodeNG,
     context: InferenceContext,
     method: nodes.FunctionDef,
-) -> Generator[nodes.NodeNG, None, None]:
+) -> Generator[nodes.NodeNG | type[util.Uninferable], None, None]:
     """Infer a binary operation on a tuple or list.
 
     The instance on which the binary operation is performed is a tuple
@@ -300,7 +300,7 @@ def sequence_assigned_stmts(
     if assign_path is None:
         assign_path = []
     try:
-        index = self.elts.index(node)
+        index = self.elts.index(node)  # type: ignore[arg-type]
     except ValueError as exc:
         raise InferenceError(
             "Tried to retrieve a node {node!r} which does not exist",
@@ -397,24 +397,27 @@ def arguments_assigned_stmts(
     context: InferenceContext | None = None,
     assign_path: list[int] | None = None,
 ) -> Any:
-    if context.callcontext:
+    try:
+        node_name = node.name  # type: ignore[union-attr]
+    except AttributeError:
+        # Added to handle edge cases where node.name is not defined.
+        # https://github.com/PyCQA/astroid/pull/1644#discussion_r901545816
+        node_name = None  # pragma: no cover
+
+    if context and context.callcontext:
         callee = context.callcontext.callee
         while hasattr(callee, "_proxied"):
             callee = callee._proxied
     else:
-        callee = None
-    if (
-        context.callcontext
-        and node
-        and getattr(callee, "name", None) == node.frame(future=True).name
-    ):
+        return _arguments_infer_argname(self, node_name, context)
+    if node and getattr(callee, "name", None) == node.frame(future=True).name:
         # reset call context/name
         callcontext = context.callcontext
         context = copy_context(context)
         context.callcontext = None
         args = arguments.CallSite(callcontext, context=context)
-        return args.infer_argument(self.parent, node.name, context)
-    return _arguments_infer_argname(self, node.name, context)
+        return args.infer_argument(self.parent, node_name, context)
+    return _arguments_infer_argname(self, node_name, context)
 
 
 nodes.Arguments.assigned_stmts = arguments_assigned_stmts
@@ -668,7 +671,9 @@ def starred_assigned_stmts(
             the inference results.
     """
     # pylint: disable=too-many-locals,too-many-statements
-    def _determine_starred_iteration_lookups(starred, target, lookups):
+    def _determine_starred_iteration_lookups(
+        starred: nodes.Starred, target: nodes.Tuple, lookups: list[tuple[int, int]]
+    ) -> None:
         # Determine the lookups for the rhs of the iteration
         itered = target.itered()
         for index, element in enumerate(itered):
@@ -721,7 +726,7 @@ def starred_assigned_stmts(
             return
 
         try:
-            elts = collections.deque(rhs.itered())
+            elts = collections.deque(rhs.itered())  # type: ignore[union-attr]
         except TypeError:
             yield util.Uninferable
             return
@@ -770,7 +775,7 @@ def starred_assigned_stmts(
             yield util.Uninferable
             return
         try:
-            itered = inferred_iterable.itered()
+            itered = inferred_iterable.itered()  # type: ignore[union-attr]
         except TypeError:
             yield util.Uninferable
             return
@@ -783,7 +788,7 @@ def starred_assigned_stmts(
                 context=context,
             )
 
-        lookups = []
+        lookups: list[tuple[int, int]] = []
         _determine_starred_iteration_lookups(self, target, lookups)
         if not lookups:
             raise InferenceError(
@@ -798,7 +803,7 @@ def starred_assigned_stmts(
             last_element_index,
             None if is_starred_last else (last_element_length - last_element_index),
         )
-        lookups[-1] = lookup_slice
+        last_lookup = lookup_slice
 
         for element in itered:
 
@@ -813,15 +818,17 @@ def starred_assigned_stmts(
             # which astroid can't know about.
 
             found_element = None
-            for lookup in lookups:
+            for index, lookup in enumerate(lookups):
                 if not hasattr(element, "itered"):
                     break
-                if not isinstance(lookup, slice):
+                if index + 1 is len(lookups):
+                    cur_lookup: slice | int = last_lookup
+                else:
                     # Grab just the index, not the whole length
-                    lookup = lookup[0]
+                    cur_lookup = lookup[0]
                 try:
                     itered_inner_element = element.itered()
-                    element = itered_inner_element[lookup]
+                    element = itered_inner_element[cur_lookup]
                 except IndexError:
                     break
                 except TypeError:

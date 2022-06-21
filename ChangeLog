@@ -17,6 +17,10 @@ Release date: TBA
 
   Closes #1512
 
+* The ``astroid.mixins`` module has been deprecated and marked for removal in 3.0.0.
+
+  Closes #1633
+
 * Capture and log messages emitted by C extensions when importing them.
   This prevents contaminating programmatic output, e.g. pylint's JSON reporter.
 
