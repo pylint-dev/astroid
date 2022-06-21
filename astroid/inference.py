@@ -162,7 +162,7 @@ def _infer_map(
     node: nodes.Dict, context: InferenceContext | None
 ) -> dict[InferenceResult, InferenceResult]:
     """Infer all values based on Dict.items"""
-    values = {}
+    values: dict[InferenceResult, InferenceResult] = {}
     for name, value in node.items:
         if isinstance(name, nodes.DictUnpack):
             double_starred = helpers.safe_infer(value, context)
