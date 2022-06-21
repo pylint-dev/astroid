@@ -33,7 +33,11 @@ from astroid.exceptions import (
 )
 from astroid.interpreter import dunder_lookup
 from astroid.manager import AstroidManager
-from astroid.typing import InferenceErrorInfo, SuccessfulInferenceResult
+from astroid.typing import (
+    InferenceErrorInfo,
+    InferenceResult,
+    SuccessfulInferenceResult,
+)
 
 if TYPE_CHECKING:
     from astroid.objects import Property
@@ -185,7 +189,7 @@ def _infer_map(
 nodes.Dict._infer = infer_map  # type: ignore[assignment]
 
 
-def _higher_function_scope(node):
+def _higher_function_scope(node: nodes.LocalsDictNodeNG) -> nodes.FunctionDef | None:
     """Search for the first function which encloses the given
     scope. This can be used for looking up in that function's
     scope, in case looking up in a lower scope for a particular
@@ -197,15 +201,19 @@ def _higher_function_scope(node):
         otherwise an instance of :class:`astroid.nodes.scoped_nodes.Function`,
         which encloses the given node.
     """
-    current = node
+    current: nodes.NodeNG = node
     while current.parent and not isinstance(current.parent, nodes.FunctionDef):
         current = current.parent
     if current and current.parent:
-        return current.parent
+        return current.parent  # type: ignore[return-value]
     return None
 
 
-def infer_name(self, context=None):
+def infer_name(
+    self: nodes.Name | nodes.AssignName,
+    context: InferenceContext | None = None,
+    **kwargs: Any,
+) -> Generator[InferenceResult, None, None]:
     """infer a Name: use name lookup rules"""
     frame, stmts = self.lookup(self.name)
     if not stmts:
@@ -225,7 +233,7 @@ def infer_name(self, context=None):
 
 
 # pylint: disable=no-value-for-parameter
-nodes.Name._infer = decorators.raise_if_nothing_inferred(
+nodes.Name._infer = decorators.raise_if_nothing_inferred(  # type: ignore[assignment]
     decorators.path_wrapper(infer_name)
 )
 nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper

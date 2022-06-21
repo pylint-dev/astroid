@@ -30,12 +30,12 @@ from astroid.manager import AstroidManager
 from astroid.nodes import _base_nodes
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
-from astroid.typing import SuccessfulInferenceResult
+from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 if sys.version_info >= (3, 8):
-    from typing import Literal
+    from typing import Literal, Protocol
 else:
-    from typing_extensions import Literal
+    from typing_extensions import Literal, Protocol
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -45,6 +45,13 @@ if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
     from astroid.decorators import cachedproperty as cached_property
+
+
+class _InferLHS(Protocol):
+    def __call__(  # pylint: disable=no-self-argument
+        _self, self: AssignName, context: InferenceContext | None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, None]:
+        ...
 
 
 def _is_const(value):
@@ -379,6 +386,8 @@ class AssignName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssi
     """
 
     _other_fields = ("name",)
+
+    infer_lhs: ClassVar[_InferLHS]
 
     @decorators.deprecate_default_argument_values(name="str")
     def __init__(

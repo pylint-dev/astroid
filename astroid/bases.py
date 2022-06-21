@@ -128,7 +128,7 @@ class Proxy:
 def _infer_stmts(
     stmts: Sequence[nodes.NodeNG | type[Uninferable] | Instance],
     context: InferenceContext | None,
-    frame: nodes.NodeNG | Instance | None = None,
+    frame: nodes.NodeNG | Instance | str | None = None,
 ) -> collections.abc.Generator[InferenceResult, None, None]:
     """Return an iterator on statements inferred by each statement in *stmts*."""
     inferred = False
