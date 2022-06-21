@@ -5392,12 +5392,9 @@ def const_factory(value: Any) -> List | Set | Tuple | Dict | Const | EmptyNode:
     # or a mapping, in order to avoid transforming
     # each element to an AST. This is fixed in 2.0
     # and this approach is a temporary hack.
-    if isinstance(value, list):
-        return _two_step_initialization(List, [])
-    if isinstance(value, set):
-        return _two_step_initialization(Set, [])
-    if isinstance(value, tuple):
-        return _two_step_initialization(Tuple, [])
-    if isinstance(value, (list, set, tuple, dict)):
-        return _dict_initialization(Dict, [])
+    initializer_cls = CONST_CLS[value.__class__]
+    if issubclass(initializer_cls, (List, Set, Tuple)):
+        return _two_step_initialization(initializer_cls, [])
+    if issubclass(initializer_cls, Dict):
+        return _dict_initialization(initializer_cls, [])
     return Const(value)
