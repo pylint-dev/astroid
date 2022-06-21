@@ -478,7 +478,7 @@ class InspectBuilder:
 
 # astroid bootstrapping ######################################################
 
-_CONST_PROXY = {}
+_CONST_PROXY: dict[type, nodes.ClassDef] = {}
 
 
 def _set_proxied(const):
@@ -505,6 +505,7 @@ def _astroid_bootstrapping():
             proxy.parent = astroid_builtin
         else:
             proxy = astroid_builtin.getattr(cls.__name__)[0]
+            assert isinstance(proxy, nodes.ClassDef)
         if cls in (dict, list, set, tuple):
             node_cls._proxied = proxy
         else:
