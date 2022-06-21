@@ -143,7 +143,7 @@ def object_issubclass(node, class_or_seq, context=None):
 
 # TODO: PY310: Remove the disable after InferenceResult no longer uses Union
 def safe_infer(  # pylint: disable=consider-alternative-union-syntax
-    node: Union[bases.Proxy, nodes.NodeNG],
+    node: Union[nodes.NodeNG, bases.Proxy],
     context: Union[InferenceContext, None] = None,
 ) -> Union[InferenceResult, None]:
     """Return the inferred value for the given node.
