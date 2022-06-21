@@ -51,9 +51,7 @@ def _is_const(value):
     return isinstance(value, tuple(CONST_CLS))
 
 
-_ContainerNodesT = TypeVar(
-    "_ContainerNodesT", bound=Union["List", "Set", "Tuple", "Dict"]
-)
+_ContainerNodesT = TypeVar("_ContainerNodesT", "List", "Set", "Tuple", "Dict")
 _NodesT = TypeVar("_NodesT", bound=NodeNG)
 
 AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
@@ -5371,7 +5369,7 @@ def _two_step_initialization(
 ) -> _ContainerNodesT:
     instance = cls()
     instance.postinit(value)
-    return instance  # type: ignore[return-value]
+    return instance
 
 
 def _dict_initialization(cls: type[Dict], value: list[Any]) -> Dict:
