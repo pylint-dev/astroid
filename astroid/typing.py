@@ -41,4 +41,4 @@ class AstroidManagerBrain(TypedDict):
     _transform: transforms.TransformVisitor
 
 
-InferenceResult = Union["nodes.NodeNG", "type[util.Uninferable]", "bases.Instance"]
+InferenceResult = Union["nodes.NodeNG", "type[util.Uninferable]", "bases.Proxy"]

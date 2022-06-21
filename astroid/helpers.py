@@ -6,6 +6,7 @@
 Various helper utilities.
 """
 
+from __future__ import annotations
 
 from astroid import bases, manager, nodes, raw_building, util
 from astroid.context import CallContext, InferenceContext
@@ -17,6 +18,7 @@ from astroid.exceptions import (
     _NonDeducibleTypeHierarchy,
 )
 from astroid.nodes import scoped_nodes
+from astroid.typing import InferenceResult
 
 
 def _build_proxy_class(cls_name, builtins):
@@ -138,7 +140,9 @@ def object_issubclass(node, class_or_seq, context=None):
     return _object_type_is_subclass(node, class_or_seq, context=context)
 
 
-def safe_infer(node, context=None):
+def safe_infer(
+    node: nodes.NodeNG | bases.Proxy, context: InferenceContext | None = None
+) -> InferenceResult | None:
     """Return the inferred value for the given node.
 
     Return None if inference failed or if there is some ambiguity (more than
