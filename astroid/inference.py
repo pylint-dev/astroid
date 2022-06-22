@@ -241,7 +241,9 @@ nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_call(self, context=None):
+def infer_call(
+    self: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
     """infer a Call node by trying to guess what the function returns"""
     callcontext = copy_context(context)
     callcontext.boundnode = None
@@ -260,7 +262,6 @@ def infer_call(self, context=None):
                 yield from callee.infer_call_result(caller=self, context=callcontext)
         except InferenceError:
             continue
-    return dict(node=self, context=context)
 
 
 nodes.Call._infer = infer_call  # type: ignore[assignment]
@@ -268,8 +269,15 @@ nodes.Call._infer = infer_call  # type: ignore[assignment]
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_import(self, context=None, asname=True):
+def infer_import(
+    self: nodes.Import,
+    context: InferenceContext | None = None,
+    asname: bool = True,
+    **kwargs: Any,
+) -> Generator[nodes.Module, None, None]:
     """infer an Import node: return the imported module/object"""
+    if not context:
+        raise InferenceError(node=self, context=context)
     name = context.lookupname
     if name is None:
         raise InferenceError(node=self, context=context)
@@ -283,13 +291,20 @@ def infer_import(self, context=None, asname=True):
         raise InferenceError(node=self, context=context) from exc
 
 
-nodes.Import._infer = infer_import
+nodes.Import._infer = infer_import  # type: ignore[assignment]
 
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_import_from(self, context=None, asname=True):
+def infer_import_from(
+    self: nodes.ImportFrom,
+    context: InferenceContext | None = None,
+    asname: bool = True,
+    **kwargs: Any,
+) -> Generator[InferenceResult, None, None]:
     """infer a ImportFrom node: return the imported module/object"""
+    if not context:
+        raise InferenceError(node=self, context=context)
     name = context.lookupname
     if name is None:
         raise InferenceError(node=self, context=context)
