@@ -33,9 +33,9 @@ from astroid.nodes.node_ng import NodeNG
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 if sys.version_info >= (3, 8):
-    from typing import Literal, Protocol
+    from typing import Literal
 else:
-    from typing_extensions import Literal, Protocol
+    from typing_extensions import Literal
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -45,13 +45,6 @@ if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
     from astroid.decorators import cachedproperty as cached_property
-
-
-class _InferLHS(Protocol):
-    def __call__(  # pylint: disable=no-self-argument
-        _self, self: AssignName, context: InferenceContext | None, **kwargs: Any
-    ) -> Generator[InferenceResult, None, None]:
-        ...
 
 
 def _is_const(value):
@@ -69,6 +62,9 @@ AssignedStmtsCall = Callable[
         Optional[typing.List[int]],
     ],
     Any,
+]
+InferLHS = Callable[
+    [_NodesT, Optional[InferenceContext]], Generator[InferenceResult, None, None]
 ]
 
 
@@ -336,7 +332,7 @@ class LookupMixIn(NodeNG):
     """Mixin to look up a name in the right scope."""
 
     @lru_cache()  # noqa
-    def lookup(self, name: str) -> tuple[str, list[NodeNG]]:
+    def lookup(self, name: str) -> tuple[LocalsDictNodeNG, list[NodeNG]]:
         """Lookup where the given variable is assigned.
 
         The lookup starts from self's scope. If self is not a frame itself
@@ -387,7 +383,7 @@ class AssignName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssi
 
     _other_fields = ("name",)
 
-    infer_lhs: ClassVar[_InferLHS]
+    infer_lhs: ClassVar[InferLHS[AssignName]]
 
     @decorators.deprecate_default_argument_values(name="str")
     def __init__(

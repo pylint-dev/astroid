@@ -189,7 +189,7 @@ def _infer_map(
 nodes.Dict._infer = infer_map  # type: ignore[assignment]
 
 
-def _higher_function_scope(node: nodes.LocalsDictNodeNG) -> nodes.FunctionDef | None:
+def _higher_function_scope(node: nodes.NodeNG) -> nodes.FunctionDef | None:
     """Search for the first function which encloses the given
     scope. This can be used for looking up in that function's
     scope, in case looking up in a lower scope for a particular
@@ -201,7 +201,7 @@ def _higher_function_scope(node: nodes.LocalsDictNodeNG) -> nodes.FunctionDef | 
         otherwise an instance of :class:`astroid.nodes.scoped_nodes.Function`,
         which encloses the given node.
     """
-    current: nodes.NodeNG = node
+    current = node
     while current.parent and not isinstance(current.parent, nodes.FunctionDef):
         current = current.parent
     if current and current.parent:
