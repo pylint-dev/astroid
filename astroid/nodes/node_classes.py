@@ -30,7 +30,7 @@ from astroid.manager import AstroidManager
 from astroid.nodes import _base_nodes
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
-from astroid.typing import SuccessfulInferenceResult
+from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -62,6 +62,10 @@ AssignedStmtsCall = Callable[
         Optional[typing.List[int]],
     ],
     Any,
+]
+InferLHS = Callable[
+    [_NodesT, Optional[InferenceContext]],
+    typing.Generator[InferenceResult, None, None],
 ]
 
 
@@ -329,7 +333,7 @@ class LookupMixIn(NodeNG):
     """Mixin to look up a name in the right scope."""
 
     @lru_cache()  # noqa
-    def lookup(self, name: str) -> tuple[str, list[NodeNG]]:
+    def lookup(self, name: str) -> tuple[LocalsDictNodeNG, list[NodeNG]]:
         """Lookup where the given variable is assigned.
 
         The lookup starts from self's scope. If self is not a frame itself
@@ -379,6 +383,8 @@ class AssignName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssi
     """
 
     _other_fields = ("name",)
+
+    infer_lhs: ClassVar[InferLHS[AssignName]]
 
     @decorators.deprecate_default_argument_values(name="str")
     def __init__(
