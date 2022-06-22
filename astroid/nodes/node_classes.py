@@ -64,7 +64,7 @@ AssignedStmtsCall = Callable[
     Any,
 ]
 InferLHS = Callable[
-    [_NodesT, Optional[InferenceContext]], Generator[InferenceResult, None, None]
+    [_NodesT, Optional[InferenceContext]], typing.Generator[InferenceResult, None, None]
 ]
 
 
