@@ -51,9 +51,6 @@ def _is_const(value):
     return isinstance(value, tuple(CONST_CLS))
 
 
-_ContainerNodesT = TypeVar(
-    "_ContainerNodesT", bound=Union["List", "Set", "Tuple", "Dict"]
-)
 _NodesT = TypeVar("_NodesT", bound=NodeNG)
 
 AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
@@ -5366,14 +5363,6 @@ CONST_CLS: dict[type, type[NodeNG]] = {
 }
 
 
-def _two_step_initialization(
-    cls: type[_ContainerNodesT], value: list[Any]
-) -> _ContainerNodesT:
-    instance = cls()
-    instance.postinit(value)
-    return instance  # type: ignore[return-value]
-
-
 def const_factory(value: Any) -> List | Set | Tuple | Dict | Const | EmptyNode:
     """Return an astroid node for a python value."""
     assert not isinstance(value, NodeNG)
@@ -5392,5 +5381,7 @@ def const_factory(value: Any) -> List | Set | Tuple | Dict | Const | EmptyNode:
     # and this approach is a temporary hack.
     initializer_cls = CONST_CLS[value.__class__]
     if issubclass(initializer_cls, (Dict, List, Set, Tuple)):
-        return _two_step_initialization(initializer_cls, [])  # type: ignore[return-value, type-var]
+        instance = initializer_cls()
+        instance.postinit([])
+        return instance
     return Const(value)
