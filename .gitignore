@@ -16,3 +16,5 @@ astroid.egg-info/
 .mypy_cache/
 venv
 .venv/
+.vscode/
+doc/_build/
