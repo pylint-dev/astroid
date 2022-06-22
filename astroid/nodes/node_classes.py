@@ -5350,7 +5350,9 @@ class MatchOr(Pattern):
 
 # constants ##############################################################
 
-CONST_CLS = {
+# The _proxied attribute of all container types (List, Tuple, etc.)
+# are set during bootstrapping by _astroid_bootstrapping().
+CONST_CLS: dict[type, type[NodeNG]] = {
     list: List,
     tuple: Tuple,
     dict: Dict,
@@ -5358,63 +5360,34 @@ CONST_CLS = {
     type(None): Const,
     type(NotImplemented): Const,
     type(...): Const,
+    bool: Const,
+    int: Const,
+    float: Const,
+    complex: Const,
+    str: Const,
+    bytes: Const,
 }
 
 
-def _update_const_classes():
-    """update constant classes, so the keys of CONST_CLS can be reused"""
-    klasses = (bool, int, float, complex, str, bytes)
-    for kls in klasses:
-        CONST_CLS[kls] = Const
-
-
-_update_const_classes()
-
-
-def _two_step_initialization(cls, value):
-    instance = cls()
-    instance.postinit(value)
-    return instance
-
-
-def _dict_initialization(cls, value):
-    if isinstance(value, dict):
-        value = tuple(value.items())
-    return _two_step_initialization(cls, value)
-
-
-_CONST_CLS_CONSTRUCTORS = {
-    List: _two_step_initialization,
-    Tuple: _two_step_initialization,
-    Dict: _dict_initialization,
-    Set: _two_step_initialization,
-    Const: lambda cls, value: cls(value),
-}
-
-
-def const_factory(value):
-    """return an astroid node for a python value"""
-    # XXX we should probably be stricter here and only consider stuff in
-    # CONST_CLS or do better treatment: in case where value is not in CONST_CLS,
-    # we should rather recall the builder on this value than returning an empty
-    # node (another option being that const_factory shouldn't be called with something
-    # not in CONST_CLS)
+def const_factory(value: Any) -> List | Set | Tuple | Dict | Const | EmptyNode:
+    """Return an astroid node for a python value."""
     assert not isinstance(value, NodeNG)
 
-    # Hack for ignoring elements of a sequence
-    # or a mapping, in order to avoid transforming
-    # each element to an AST. This is fixed in 2.0
-    # and this approach is a temporary hack.
-    if isinstance(value, (list, set, tuple, dict)):
-        elts = []
-    else:
-        elts = value
-
-    try:
-        initializer_cls = CONST_CLS[value.__class__]
-        initializer = _CONST_CLS_CONSTRUCTORS[initializer_cls]
-        return initializer(initializer_cls, elts)
-    except (KeyError, AttributeError):
+    # This only handles instances of the CONST types. Any
+    # subclasses get inferred as EmptyNode.
+    # TODO: See if we should revisit these with the normal builder.
+    if value.__class__ not in CONST_CLS:
         node = EmptyNode()
         node.object = value
         return node
+
+    # TODO: We pass an empty list as elements for a sequence
+    # or a mapping, in order to avoid transforming
+    # each element to an AST. This is fixed in 2.0
+    # and this approach is a temporary hack.
+    initializer_cls = CONST_CLS[value.__class__]
+    if issubclass(initializer_cls, (Dict, List, Set, Tuple)):
+        instance = initializer_cls()
+        instance.postinit([])
+        return instance
+    return Const(value)
