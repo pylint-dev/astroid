@@ -5374,10 +5374,6 @@ def _two_step_initialization(
     return instance  # type: ignore[return-value]
 
 
-def _dict_initialization(cls: type[Dict], value: list[Any]) -> Dict:
-    return _two_step_initialization(cls, value)
-
-
 def const_factory(value: Any) -> List | Set | Tuple | Dict | Const | EmptyNode:
     """Return an astroid node for a python value."""
     assert not isinstance(value, NodeNG)
@@ -5395,8 +5391,6 @@ def const_factory(value: Any) -> List | Set | Tuple | Dict | Const | EmptyNode:
     # each element to an AST. This is fixed in 2.0
     # and this approach is a temporary hack.
     initializer_cls = CONST_CLS[value.__class__]
-    if issubclass(initializer_cls, (List, Set, Tuple)):
+    if issubclass(initializer_cls, (Dict, List, Set, Tuple)):
         return _two_step_initialization(initializer_cls, [])  # type: ignore[return-value, type-var]
-    if issubclass(initializer_cls, Dict):
-        return _dict_initialization(initializer_cls, [])
     return Const(value)
