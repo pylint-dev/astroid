@@ -243,7 +243,7 @@ nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper
 @decorators.path_wrapper
 def infer_call(
     self: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
-) -> Generator[InferenceResult, None, None]:
+) -> Generator[InferenceResult, None, InferenceErrorInfo]:
     """infer a Call node by trying to guess what the function returns"""
     callcontext = copy_context(context)
     callcontext.boundnode = None
@@ -262,6 +262,7 @@ def infer_call(
                 yield from callee.infer_call_result(caller=self, context=callcontext)
         except InferenceError:
             continue
+    return InferenceErrorInfo(node=self, context=context)
 
 
 nodes.Call._infer = infer_call  # type: ignore[assignment]
