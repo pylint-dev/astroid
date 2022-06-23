@@ -34,7 +34,7 @@ from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.utils import Position
-from astroid.typing import InferenceResult, InferFn
+from astroid.typing import InferenceErrorInfo, InferenceResult, InferFn
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -593,7 +593,7 @@ class NodeNG:
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """we don't know how to resolve a statement by default"""
         # this method is overridden by most concrete classes
         raise InferenceError(
