@@ -4,7 +4,6 @@ astroid's ChangeLog
 
 What's New in astroid 2.12.0?
 =============================
-
 Release date: TBA
 
 * Fix signal has no ``connect`` member for PySide2 5.15.2+ and PySide6
@@ -97,12 +96,12 @@ Release date: TBA
 
 What's New in astroid 2.11.7?
 =============================
-
 Release date: TBA
+
+
 
 What's New in astroid 2.11.6?
 =============================
-
 Release date: 2022-06-13
 
 * The Qt brain now correctly treats calling ``.disconnect()`` (with no
@@ -115,7 +114,6 @@ Release date: 2022-06-13
 
 What's New in astroid 2.11.5?
 =============================
-
 Release date: 2022-05-09
 
 * Fix crash while obtaining ``object_type()`` of an ``Unknown`` node.
@@ -129,7 +127,6 @@ Release date: 2022-05-09
 
 What's New in astroid 2.11.4?
 =============================
-
 Release date: 2022-05-02
 
 * Fix ``col_offset`` attribute for nodes involving ``with`` on ``PyPy``.
@@ -148,9 +145,9 @@ Release date: 2022-05-02
 
   Closes PyCQA/pylint#6438
 
+
 What's New in astroid 2.11.3?
 =============================
-
 Release date: 2022-04-19
 
 * Fixed an error in the Qt brain when building ``instance_attrs``.
@@ -161,18 +158,18 @@ Release date: 2022-04-19
 
   Closes PyCQA/pylint#6371
 
+
 What's New in astroid 2.11.2?
 =============================
-
 Release date: 2022-03-26
 
 * Avoided adding the name of a parent namedtuple to its child's locals.
 
   Refs PyCQA/pylint#5982
 
+
 What's New in astroid 2.11.1?
 =============================
-
 Release date: 2022-03-22
 
 * Promoted ``getattr()`` from ``astroid.scoped_nodes.FunctionDef`` to its parent
@@ -182,9 +179,9 @@ Release date: 2022-03-22
 
   Closes #817
 
+
 What's New in astroid 2.11.0?
 =============================
-
 Release date: 2022-03-12
 
 * Add new (optional) ``doc_node`` attribute to ``nodes.Module``, ``nodes.ClassDef``,
@@ -215,10 +212,11 @@ Release date: 2022-03-12
 
 * Only pin ``wrapt`` on the major version.
 
+
 What's New in astroid 2.10.0?
 =============================
-
 Release date: 2022-02-27
+
 
 * Fixed inference of ``self`` in binary operations in which ``self``
   is part of a list or tuple.
@@ -284,9 +282,9 @@ Release date: 2022-02-27
 
   Closes #1383
 
+
 What's New in astroid 2.9.3?
 ============================
-
 Release date: 2022-01-09
 
 * Fixed regression where packages without a ``__init__.py`` file were
@@ -296,7 +294,6 @@ Release date: 2022-01-09
 
 What's New in astroid 2.9.2?
 ============================
-
 Release date: 2022-01-04
 
 * Fixed regression in ``astroid.scoped_nodes`` where ``_is_metaclass``
@@ -306,7 +303,6 @@ Closes #1325
 
 What's New in astroid 2.9.1?
 ============================
-
 Release date: 2021-12-31
 
 * ``NodeNG.frame()`` and ``NodeNG.statement()`` will start raising ``ParentMissingError``
@@ -358,7 +354,6 @@ Release date: 2021-12-31
 
 What's New in astroid 2.9.0?
 ============================
-
 Release date: 2021-11-21
 
 * Add ``end_lineno`` and ``end_col_offset`` attributes to astroid nodes.
@@ -369,9 +364,9 @@ Release date: 2021-11-21
 
   Closes #1264
 
+
 What's New in astroid 2.8.6?
 ============================
-
 Release date: 2021-11-21
 
 * Fix crash on inference of subclasses created from ``Class().__subclasses__``
@@ -382,9 +377,9 @@ Release date: 2021-11-21
 
   Closes #1239
 
+
 What's New in astroid 2.8.5?
 ============================
-
 Release date: 2021-11-12
 
 * Use more permissive versions for the ``typed-ast`` dependency (<2.0 instead of <1.5)
@@ -403,9 +398,9 @@ Release date: 2021-11-12
 
 * Fix incorrect filtering of assignment expressions statements
 
+
 What's New in astroid 2.8.4?
 ============================
-
 Release date: 2021-10-25
 
 * Fix the ``scope()`` and ``frame()`` methods of ``NamedExpr`` nodes.
@@ -418,9 +413,9 @@ Release date: 2021-10-25
   nodes are now correctly added to the locals of the ``FunctionDef``,
   ``ClassDef``, or ``Comprehension``.
 
+
 What's New in astroid 2.8.3?
 ============================
-
 Release date: 2021-10-17
 
 * Add support for wrapt 1.13
@@ -438,17 +433,17 @@ Release date: 2021-10-17
 
   Closes PyCQA/pylint#5153
 
+
 What's New in astroid 2.8.2?
 ============================
-
 Release date: 2021-10-07
 
 Same content than 2.8.2-dev0 / 2.8.1, released in order to fix a
 mistake when creating the tag.
 
+
 What's New in astroid 2.8.1?
 ============================
-
 Release date: 2021-10-06
 
 * Adds support of type hints inside numpy's brains.
@@ -492,9 +487,9 @@ Release date: 2021-10-06
 
   Closes PyCQA/pylint#3342
 
+
 What's New in astroid 2.8.0?
 ============================
-
 Release date: 2021-09-14
 
 * Add additional deprecation warnings in preparation for astroid 3.0
@@ -520,9 +515,9 @@ Release date: 2021-09-14
 
   Closes PyCQA/pylint#4963
 
+
 What's New in astroid 2.7.3?
 ============================
-
 Release date: 2021-08-30
 
 * The transforms related to a module are applied only if this module has not been explicitly authorized to be imported
@@ -560,9 +555,9 @@ Release date: 2021-08-30
 
   Closes PyCQA/pylint#4899
 
+
 What's New in astroid 2.7.2?
 ============================
-
 Release date: 2021-08-20
 
 * ``BaseContainer`` is now public, and will replace ``_BaseContainer`` completely in astroid 3.0.
@@ -579,7 +574,6 @@ Release date: 2021-08-20
 
 What's New in astroid 2.7.1?
 ============================
-
 Release date: 2021-08-16
 
 * When processing dataclass attributes, only do typing inference on collection types.
@@ -589,9 +583,9 @@ Release date: 2021-08-16
 
 * Fixed LookupMixIn missing from ``astroid.node_classes``.
 
+
 What's New in astroid 2.7.0?
 ============================
-
 Release date: 2021-08-15
 
 * Import from ``astroid.node_classes`` and ``astroid.scoped_nodes`` has been deprecated in favor of
@@ -615,9 +609,9 @@ Release date: 2021-08-15
 
   Closes PyCQA/pylint#4060
 
+
 What's New in astroid 2.6.6?
 ============================
-
 Release date: 2021-08-03
 
 * Added support to infer return type of ``typing.cast()``
@@ -638,7 +632,6 @@ Release date: 2021-08-03
 
 What's New in astroid 2.6.5?
 ============================
-
 Release date: 2021-07-21
 
 * Fix a crash when there would be a 'TypeError object does not support
@@ -651,9 +644,9 @@ Release date: 2021-07-21
 
   Closes PyCQA/pylint#4692
 
+
 What's New in astroid 2.6.4?
 ============================
-
 Release date: 2021-07-19
 
 * Fix a crash when a StopIteration was raised when inferring
@@ -663,7 +656,6 @@ Release date: 2021-07-19
 
 What's New in astroid 2.6.3?
 ============================
-
 Release date: 2021-07-19
 
 * Added ``If.is_sys_guard`` and ``If.is_typing_guard`` helper methods
@@ -688,9 +680,9 @@ Release date: 2021-07-19
 
 * Add dependency on setuptools and a guard to prevent related exceptions.
 
+
 What's New in astroid 2.6.2?
 ============================
-
 Release date: 2021-06-30
 
 * Fix a crash when the inference of the length of a node failed
@@ -703,18 +695,18 @@ Release date: 2021-06-30
   Closes PyCQA/pylint#4631
   Closes #1080
 
+
 What's New in astroid 2.6.1?
 ============================
-
 Release date: 2021-06-29
 
 * Fix issue with ``TypedDict`` for Python 3.9+
 
   Closes PyCQA/pylint#4610
 
+
 What's New in astroid 2.6.0?
 ============================
-
 Release date: 2021-06-22
 
 * Appveyor and travis are no longer used in the continuous integration
@@ -756,9 +748,9 @@ Release date: 2021-06-22
 
 * Add ``Pattern`` base class.
 
+
 What's New in astroid 2.5.8?
 ============================
-
 Release date: 2021-06-07
 
 * Improve support for Pattern Matching
@@ -770,9 +762,9 @@ Release date: 2021-06-07
 * Add a limit to the total number of nodes inferred indirectly as a result
   of inferring some node
 
+
 What's New in astroid 2.5.7?
 ============================
-
 Release date: 2021-05-09
 
 * Fix six.with_metaclass transformation so it doesn't break user defined transformations.
@@ -812,7 +804,7 @@ Release date: 2021-05-09
 
   Closes #940
 
-* Update enum brain to fix definition of **members** for subclass-defined Enums
+* Update enum brain to fix definition of __members__ for subclass-defined Enums
 
   Closes PyCQA/pylint#3535
   Closes PyCQA/pylint#4358
@@ -838,7 +830,6 @@ Release date: 2021-05-09
 
 What's New in astroid 2.5.6?
 ============================
-
 Release date: 2021-04-25
 
 * Fix retro-compatibility issues with old version of pylint
@@ -846,7 +837,6 @@ Release date: 2021-04-25
 
 What's New in astroid 2.5.5?
 ============================
-
 Release date: 2021-04-24
 
 * Fixes the discord link in the project urls of the package.
@@ -854,13 +844,12 @@ Release date: 2021-04-24
 
 What's New in astroid 2.5.4?
 ============================
-
 Release date: 2021-04-24
 
 * The packaging is now done via setuptools exclusively. ``doc``, ``tests``, and ``Changelog`` are
   not packaged anymore - reducing the size of the package greatly.
 
-* Debian packaging is now  (officially) done in <https://salsa.debian.org/python-team/packages/astroid>.
+* Debian packaging is now  (officially) done in https://salsa.debian.org/python-team/packages/astroid.
 
 * ``__pkginfo__`` now  only contain ``__version__`` (also accessible with ``astroid.__version__``),
   other meta-information are still accessible with ``import importlib;metadata.metadata('astroid')``.
@@ -878,10 +867,9 @@ Release date: 2021-04-24
 
 What's New in astroid 2.5.3?
 ============================
-
 Release date: 2021-04-10
 
-* Takes into account the fact that subscript inferring for a ClassDef may involve **class_getitem** method
+* Takes into account the fact that subscript inferring for a ClassDef may involve __class_getitem__ method
 
 * Reworks the ``collections`` and ``typing`` brain so that pylint`s acceptance tests are fine.
 
@@ -895,9 +883,9 @@ Release date: 2021-04-10
 
   Closes PyCQA/pylint#2822
 
+
 What's New in astroid 2.5.2?
 ============================
-
 Release date: 2021-03-28
 
 * Detects `import numpy` as a valid `numpy` import.
@@ -910,7 +898,6 @@ Release date: 2021-03-28
 
 What's New in astroid 2.5.1?
 ============================
-
 Release date: 2021-02-28
 
 * The ``context.path`` is reverted to a set because otherwise it leads to false positives
@@ -931,9 +918,9 @@ Release date: 2021-02-28
   Closes PyCQA/pylint#4131
   Closes PyCQA/pylint#4145
 
+
 What's New in astroid 2.5?
 ============================
-
 Release date: 2021-02-15
 
 * Adds `attr_fset` in the `PropertyModel` class.
@@ -961,6 +948,7 @@ Release date: 2021-02-15
 * Add ``__class_getitem__`` method to ``subprocess.Popen`` brain under Python 3.9 so that it is seen as subscriptable by pylint.
 
   Fixes PyCQA/pylint#4034
+
 
 * Adds `degrees`, `radians`, which are `numpy ufunc` functions, in the `numpy` brain. Adds `random` function in the `numpy.random` brain.
 
@@ -1070,9 +1058,9 @@ Release date: 2021-02-15
 
   Close PyCQA/astroid#851
 
+
 What's New in astroid 2.4.2?
 ============================
-
 Release date: 2020-06-08
 
 * `FunctionDef.is_generator` properly handles `yield` nodes in `While` tests
@@ -1083,9 +1071,9 @@ Release date: 2020-06-08
 
   Close PyCQA/pylint#3648
 
+
 What's New in astroid 2.4.1?
 ============================
-
 Release date: 2020-05-05
 
 * Handle the case where the raw builder fails to retrieve the ``__all__`` attribute
@@ -1109,9 +1097,9 @@ Release date: 2020-05-05
 
   Close PyCQA/pylint#3529
 
+
 What's New in astroid 2.4.0?
 ============================
-
 Release date: 2020-04-27
 
 * Expose a ast_from_string method in AstroidManager, which will accept
@@ -1304,7 +1292,6 @@ Release date: 2020-04-27
 
 What's New in astroid 2.3.2?
 ============================
-
 Release date: 2019-10-18
 
 * All type comments have as parent the corresponding `astroid` node
@@ -1313,6 +1300,7 @@ Release date: 2019-10-18
   we were operating with primitive objects instead of our own.
 
   Close PyCQA/pylint#3174
+
 
 * Pass an inference context to `metaclass()` when inferring an object type
 
@@ -1323,9 +1311,9 @@ Release date: 2019-10-18
   Close PyCQA/pylint#3152
   Close PyCQA/pylint#3159
 
+
 What's New in astroid 2.3.1?
 ============================
-
 Release date: 2019-09-30
 
 * A transform for the builtin `dataclasses` module was added.
@@ -1342,9 +1330,9 @@ Release date: 2019-09-30
 
   Close #656
 
+
 What's New in astroid 2.3.0?
 ============================
-
 Release date: 2019-09-24
 
 * Add a brain tip for ``subprocess.check_output``
@@ -1370,13 +1358,13 @@ Release date: 2019-09-24
   Numpy's fundamental type ``numpy.ndarray`` has its own brain : ``brain_numpy_ndarray`` and
   each numpy module that necessitates brain action has now its own numpy brain :
 
-  * ``numpy.core.numeric``
-  * ``numpy.core.function_base``
-  * ``numpy.core.multiarray``
-  * ``numpy.core.numeric``
-  * ``numpy.core.numerictypes``
-  * ``numpy.core.umath``
-  * ``numpy.random.mtrand``
+    - ``numpy.core.numeric``
+    - ``numpy.core.function_base``
+    - ``numpy.core.multiarray``
+    - ``numpy.core.numeric``
+    - ``numpy.core.numerictypes``
+    - ``numpy.core.umath``
+    - ``numpy.random.mtrand``
 
   Close PyCQA/pylint#2865
   Close PyCQA/pylint#2747
@@ -1433,9 +1421,11 @@ Release date: 2019-09-24
 
   Close PyCQA/pylint#2777
 
+
 * ``threading.Lock.locked()`` is properly recognized as a member of ``threading.Lock``
 
   Close PyCQA/pylint#2791
+
 
 * Fix recursion error involving ``len`` and self referential attributes
 
@@ -1457,8 +1447,8 @@ Release date: 2019-09-24
 
 What's New in astroid 2.2.0?
 ============================
-
 Release date: 2019-02-27
+
 
 * Fix a bug concerning inference of calls to numpy function that should not return Tuple or List instances.
 
@@ -1533,20 +1523,20 @@ Release date: 2019-02-27
 
 * Fix typo in description for brain_attrs
 
+
 What's New in astroid 2.1.0?
 ============================
-
 Release date: 2018-11-25
 
-* ``threading.Lock.acquire`` has the ``timeout`` parameter now.
+   * ``threading.Lock.acquire`` has the ``timeout`` parameter now.
 
      Close PyCQA/pylint#2457
 
-* Pass parameters by keyword name when inferring sequences.
+   * Pass parameters by keyword name when inferring sequences.
 
      Close PyCQA/pylint#2526
 
-* Correct line numbering for f-strings for complex embedded expressions
+   * Correct line numbering for f-strings for complex embedded expressions
 
      When a f-string contained a complex expression, such as an attribute access,
      we weren't cloning all the subtree of the f-string expression for attaching the correct
@@ -1556,29 +1546,28 @@ Release date: 2018-11-25
 
      Close PyCQA/pylint#2449
 
-* Add support for `argparse.Namespace`
+   * Add support for `argparse.Namespace`
 
      Close PyCQA/pylint#2413
 
-* `async` functions are now inferred as `AsyncGenerator` when inferring their call result.
+   * `async` functions are now inferred as `AsyncGenerator` when inferring their call result.
 
-* Filter out ``Uninferable`` when inferring the call result result of a class with an uninferable ``__call__`` method.
+   * Filter out ``Uninferable`` when inferring the call result result of a class with an uninferable ``__call__`` method.
 
      Close PyCQA/pylint#2434
 
-* Make compatible with AST changes in Python 3.8.
+   * Make compatible with AST changes in Python 3.8.
 
-* Subscript inference (e.g. "`a[i]`") now pays attention to multiple inferred values for value
+   * Subscript inference (e.g. "`a[i]`") now pays attention to multiple inferred values for value
      (e.g. "`a`") and slice (e.g. "`i`")
 
      Close #614
 
 What's New in astroid 2.0.4?
 ============================
-
 Release date: 2018-08-10
 
-* Make sure that assign nodes can find ``yield`` statements in their values
+   * Make sure that assign nodes can find ``yield`` statements in their values
 
      Close PyCQA/pylint#2400
 
@@ -1587,18 +1576,18 @@ What's New in astroid 2.0.3?
 
 Release date: 2018-08-08
 
-* The environment markers for PyPy were invalid.
+   * The environment markers for PyPy were invalid.
 
 What's New in astroid 2.0.2?
 ============================
 
 Release date: 2018-08-01
 
-* Stop repeat inference attempt causing a RuntimeError in Python3.7
+   * Stop repeat inference attempt causing a RuntimeError in Python3.7
 
      Close PyCQA/pylint#2317
 
-* infer_call_result can raise InferenceError so make sure to handle that for the call sites
+   *  infer_call_result can raise InferenceError so make sure to handle that for the call sites
       where it is used
 
      infer_call_result started recently to raise InferenceError for objects for which it
@@ -1609,211 +1598,215 @@ Release date: 2018-08-01
 
      Close PyCQA/pylint#2350
 
+
 What's New in astroid 2.0.1?
 ============================
 
 Release date: 2018-07-19
 
-* Released to clear an old wheel package on PyPI
+   * Released to clear an old wheel package on PyPI
+
 
 What's New in astroid 2.0?
 ==========================
 
 Release date: 2018-07-15
 
-* String representation of nodes takes in account precedence and associativity rules of operators.
+   * String representation of nodes takes in account precedence and associativity rules of operators.
 
-* Fix loading files with `modutils.load_from_module` when
+   * Fix loading files with `modutils.load_from_module` when
      the path that contains it in `sys.path` is a symlink and
      the file is contained in a symlinked folder.
 
      Close #583
 
-* Reworking of the numpy brain dealing with numerictypes
+   * Reworking of the numpy brain dealing with numerictypes
      (use of inspect module to determine the class hierarchy of
      numpy.core.numerictypes module)
 
      Close PyCQA/pylint#2140
 
-* Added inference support for starred nodes in for loops
+   * Added inference support for starred nodes in for loops
 
      Close #146
 
-* Support unpacking for dicts in assignments
+   * Support unpacking for dicts in assignments
 
      Close #268
 
-* Add support for inferring functools.partial
+   * Add support for inferring functools.partial
 
      Close #125
 
-* Inference support for `dict.fromkeys`
+   * Inference support for `dict.fromkeys`
 
      Close #110
 
-* `int()` builtin is inferred as returning integers.
+   * `int()` builtin is inferred as returning integers.
 
      Close #150
 
-* `str()` builtin is inferred as returning strings.
+   * `str()` builtin is inferred as returning strings.
 
      Close #148
 
-* DescriptorBoundMethod has the correct number of arguments defined.
+   * DescriptorBoundMethod has the correct number of arguments defined.
 
-* Improvement of the numpy numeric types definition.
+   * Improvement of the numpy numeric types definition.
 
      Close PyCQA/pylint#1971
 
-* Subclasses of *property* are now interpreted as properties
+   * Subclasses of *property* are now interpreted as properties
 
      Close PyCQA/pylint#1601
 
-* AsStringRegexpPredicate has been removed.
+   * AsStringRegexpPredicate has been removed.
 
      Use transform predicates instead of it.
 
-* Switched to using typed_ast for getting access to type comments
+   * Switched to using typed_ast for getting access to type comments
 
      As a side effect of this change, some nodes gained a new `type_annotation` attribute,
      which, if the type comments were correctly parsed, should contain a node object
      with the corresponding objects from the type comment.
 
-* typing.X[...] and typing.NewType are inferred as classes instead of instances.
+   * typing.X[...] and typing.NewType are inferred as classes instead of instances.
 
-* Module.**path** is now a list
+   * Module.__path__ is now a list
 
      It used to be a string containing the path, but it doesn't reflect the situation
      on Python, where it is actually a list.
 
-* Fix a bug with namespace package's **path** attribute.
+   * Fix a bug with namespace package's __path__ attribute.
 
      Close #528
 
-* Added brain tips for random.sample
+   * Added brain tips for random.sample
 
      Part of PyCQA/pylint#811
 
-* Add brain tip for `issubclass` builtin
+   * Add brain tip for `issubclass` builtin
 
      Close #101.
 
-* Fix submodule imports from six
+   * Fix submodule imports from six
 
      Close PyCQA/pylint#1640
 
-* Fix missing **module** and **qualname** from class definition locals
+   * Fix missing __module__ and __qualname__ from class definition locals
 
      Close PyCQA/pylint#1753
 
-* Fix a crash when **annotations** access a parent's **init** that does not have arguments
+   * Fix a crash when __annotations__ access a parent's __init__ that does not have arguments
 
      Close #473
 
-* Fix multiple objects sharing the same InferenceContext.path causing uninferable results
+   * Fix multiple objects sharing the same InferenceContext.path causing uninferable results
 
      Close #483
 
-* Fix improper modification of col_offset, lineno upon inference of builtin functions
+   * Fix improper modification of col_offset, lineno upon inference of builtin functions
 
      Close PyCQA/pylint#1839
 
-* Subprocess.Popen brain now knows of the args member
+   * Subprocess.Popen brain now knows of the args member
 
      Close PyCQA/pylint#1860
 
-* add move_to_end method to collections.OrderedDict brain
+   * add move_to_end method to collections.OrderedDict brain
 
      Close PyCQA/pylint#1872
 
-* Include new hashlib classes added in python 3.6
+   * Include new hashlib classes added in python 3.6
 
-* Fix RecursionError for augmented assign
+   * Fix RecursionError for augmented assign
 
      Close #437, #447, #313, PyCQA/pylint#1642, PyCQA/pylint#1805, PyCQA/pylint#1854, PyCQA/pylint#1452
 
-* Add missing attrs special attribute
+   * Add missing attrs special attribute
 
      Close PyCQA/pylint#1884
 
-* Inference now understands the 'isinstance' builtin
+   * Inference now understands the 'isinstance' builtin
 
      Close #98
 
-* Stop duplicate nodes with the same key values
+   * Stop duplicate nodes with the same key values
      from appearing in dictionaries from dictionary unpacking.
 
      Close PyCQA/pylint#1843
 
-* Fix ``contextlib.contextmanager`` inference for nested context managers
+   * Fix ``contextlib.contextmanager`` inference for nested context managers
 
      Close #1699
 
-* Implement inference for len builtin
+   * Implement inference for len builtin
 
      Close #112
 
-* Add qname method to Super object preventing potential errors in upstream
+   * Add qname method to Super object preventing potential errors in upstream
      pylint
 
      Close #533
 
-* Stop astroid from getting stuck in an infinite loop if a function shares
+   * Stop astroid from getting stuck in an infinite loop if a function shares
      its name with its decorator
 
      Close #375
 
-* Fix issue with inherited **call** improperly inferencing self
+   * Fix issue with inherited __call__ improperly inferencing self
 
      Close #PyCQA/pylint#2199
 
-* Fix **call** precedence for classes with custom metaclasses
+   * Fix __call__ precedence for classes with custom metaclasses
 
      Close PyCQA/pylint#2159
 
-* Limit the maximum amount of interable result in an NodeNG.infer() call to
+   * Limit the maximum amount of interable result in an NodeNG.infer() call to
      100 by default for performance issues with variables with large amounts of
      possible values.
 
      The max inferable value can be tuned by setting the `max_inferable_values` flag on
      astroid.MANAGER.
 
+
 What's New in astroid 1.6.0?
 ============================
 
 Release date: 2017-12-15
 
-* When verifying duplicates classes in MRO, ignore on-the-fly generated classes
+
+   * When verifying duplicates classes in MRO, ignore on-the-fly generated classes
 
      Close PyCQA/pylint#1706
 
-* Add brain tip for attrs library to prevent unsupported-assignment-operation false positives
+   * Add brain tip for attrs library to prevent unsupported-assignment-operation false positives
 
-  Close PyCQA/pylint#1698
+	 Close PyCQA/pylint#1698
 
-* file_stream was removed, since it was deprecated for three releases
+   * file_stream was removed, since it was deprecated for three releases
 
      Instead one should use the .stream() method.
 
-* Vast improvements to numpy support
+   * Vast improvements to numpy support
 
-* Add brain tips for curses
+   * Add brain tips for curses
 
      Close PyCQA/pylint#1703
 
-* Add brain tips for UUID.int
+   * Add brain tips for UUID.int
 
      Close PyCQA/pylint#961
 
-* The result of using object.**new** as class decorator is correctly inferred as instance
+   * The result of using object.__new__ as class decorator is correctly inferred as instance
 
      Close #172
 
-* Enums created with functional syntax are now iterable
+   * Enums created with functional syntax are now iterable
 
-* Enums created with functional syntax are now subscriptable
+   * Enums created with functional syntax are now subscriptable
 
-* Don't crash when getting the string representation of BadUnaryOperationMessage
+   * Don't crash when getting the string representation of BadUnaryOperationMessage
 
      In some cases, when the operand does not have a .name attribute,
      getting the string representation of a BadUnaryOperationMessage leads
@@ -1821,7 +1814,7 @@ Release date: 2017-12-15
 
      Close PyCQA/pylint#1563
 
-* Don't raise DuplicateBaseError when classes at different locations are used
+   * Don't raise DuplicateBaseError when classes at different locations are used
 
      For instance, one can implement a namedtuple base class, which gets reused
      on a class with the same name later on in the file. Until now, we considered
@@ -1831,36 +1824,39 @@ Release date: 2017-12-15
 
      Close PyCQA/pylint#1458
 
-  * The func form of namedtuples with keywords is now understood
+    * The func form of namedtuples with keywords is now understood
 
       Close PyCQA/pylint#1530
 
-  * Fix inference for nested calls
+    * Fix inference for nested calls
 
-  * Dunder class at method level is now inferred as the class of the method
+    * Dunder class at method level is now inferred as the class of the method
 
       Close PyCQA/pylint#1328
 
-  * Stop most inference tip overwrites from happening by using
-  predicates on existing inference_tip transforms.
+    * Stop most inference tip overwrites from happening by using
+		predicates on existing inference_tip transforms.
 
       Close #472
 
-  * Fix object.**new**(cls) calls in classmethods by using
+    * Fix object.__new__(cls) calls in classmethods by using
         a context which has the proper boundnode for the given
         argument
 
         Close #404
 
-  * Fix Pathlib type inference
+    * Fix Pathlib type inference
 
         Close PyCQA/pylint#224
         Close PyCQA/pylint#1660
+
+
 
 What's New in astroid 1.5.3?
 ============================
 
 Release date: 2017-06-03
+
 
     * enum34 dependency is forced to be at least version 1.1.3. Fixes spurious
       bug related to enum classes being falsy in boolean context, which caused
@@ -1876,19 +1872,24 @@ Release date: 2017-06-03
     * Lock objects from ``threading`` module are now correctly recognised
       as context managers.
 
+
 What's New in astroid 1.5.2?
 ============================
 
 Release date: 2017-04-17
 
-* Basic support for the class form of typing.NamedTuple
 
-* mro() can be computed for classes with old style classes in the hierarchy
+   * Basic support for the class form of typing.NamedTuple
+
+   * mro() can be computed for classes with old style classes in the hierarchy
+
+
 
 What's New in astroid 1.5.0?
 ============================
 
 Release date: 2017-04-13
+
 
     * Arguments node gained a new attribute, ``kwonlyargs_annotations``
 
@@ -2076,10 +2077,12 @@ Release date: 2017-04-13
 
       Fixes #399. See PEP530 for details.
 
+
 What's New in astroid 1.4.1?
 ============================
 
 Release date: 2015-11-29
+
 
     * Add support for handling Uninferable nodes when calling as_string
 
@@ -2091,10 +2094,13 @@ Release date: 2015-11-29
       method in AsString and ``accept`` on Yes / Uninferable nodes.
       Closes issue #270.
 
+
+
 What's New in astroid 1.4.0?
 ============================
 
 Release date: 2015-11-29
+
 
     * Class.getattr('__mro__') returns the actual MRO. Closes issue #128.
 
@@ -2421,10 +2427,14 @@ Release date: 2015-11-29
       which seems conceptually wrong, due to the fact the AST contains
       non-AST nodes. Closes issue #206.
 
+
+
+
 What's New in astroid 1.3.6?
 ============================
 
 Release date: 2015-03-14
+
 
     * Class.slots raises NotImplementedError for old style classes.
       Closes issue #67.
@@ -2435,10 +2445,13 @@ Release date: 2015-03-14
       wasn't called anymore with astroid 1.3.5, due to the differences
       in the resulting AST. Closes issue #82.
 
+
+
 What's New in astroid 1.3.5?
 ============================
 
 Release date: 2015-03-11
+
 
     * Add the ability to optimize small ast subtrees,
       with the first use in the optimization of multiple
@@ -2466,18 +2479,23 @@ Release date: 2015-03-11
       which was omitted when support for Python 3 was added in astroid.
       Closes issue #36.
 
+
+
 What's New in astroid 1.3.4?
 ============================
 
 Release date: 2015-01-17
 
+
     * Get the first element from the method list when obtaining
       the functions from nose.tools.trivial. Closes Pylint issue #448.
+
 
 What's New in astroid 1.3.3?
 ============================
 
 Release date: 2015-01-16
+
 
     * Restore file_stream to a property, but deprecate it in favour of
       the newly added method Module.stream. By using a method instead of a
@@ -2510,10 +2528,13 @@ Release date: 2015-01-16
 
     * Add inference tips for nose.tools.
 
+
+
 What's New in astroid 1.3.2?
 ============================
 
 Release date: 2014-11-22
+
 
     * Fixed a crash with invalid subscript index.
 
@@ -2523,17 +2544,21 @@ Release date: 2014-11-22
     * Allow more fine-grained control over C extension loading
       in the manager.
 
+
 What's New in astroid 1.3.1?
 ============================
 
 Release date: 2014-11-21
 
+
     * Fixed a crash issue with the pytest brain module.
+
 
 What's New in astroid 1.3.0?
 ============================
 
 Release date: 2014-11-20
+
 
     * Fix a maximum recursion error occurred during the inference,
       where statements with the same name weren't filtered properly.
@@ -2579,10 +2604,13 @@ Release date: 2014-11-20
     * The modules have been moved to a separate package directory,
       `setup.py develop` now works correctly.
 
+
+
 What's New in astroid 1.2.1?
 ============================
 
 Release date: 2014-08-24
+
 
     * Fix a crash occurred when inferring decorator call chain.
       Closes issue #42.
@@ -2611,10 +2639,12 @@ Release date: 2014-08-24
     * Don't crash when trying to infer unbound object.__new__ call.
       Closes issue #11.
 
+
 What's New in astroid 1.2.0?
 ============================
 
 Release date: 2014-07-25
+
 
     * Function nodes can detect decorator call chain and see if they are
       decorated with builtin descriptors (`classmethod` and `staticmethod`).
@@ -2647,6 +2677,7 @@ Release date: 2014-07-25
 
     * Add support in pylint-brain for understanding enum classes.
 
+
 What's New in astroid 1.1.1?
 ============================
 
@@ -2658,6 +2689,7 @@ Release date: 2014-04-30
     * Do not cache modules if a module with the same qname is already
       known, and only return cached modules if both name and filepath
       match. Fixes pylint Bitbucket issue #136.
+
 
 What's New in astroid 1.1.0?
 ============================
@@ -2685,6 +2717,9 @@ Release date: 2014-04-18
     * Unwrap instances found in `.ancestors()`, by using their _proxied
       class.
 
+
+
+
 What's New in astroid 1.0.1?
 ============================
 
@@ -2698,6 +2733,9 @@ Release date: 2013-10-18
 
     * fix some test failures under pypy and py3.3, though there is one remaining
       in each of these platform (2.7 tests are all green)
+
+
+
 
 What's New in astroid 1.0.0?
 =============================
@@ -2724,6 +2762,9 @@ Release date: 2013-07-29
 
     * RENAME THE PROJECT to astroid
 
+
+
+
 What's New in astroid 0.24.3?
 =============================
 
@@ -2746,6 +2787,9 @@ Release date: 2013-04-16
     * #123074: Add support for inference of subscript operations on dict
       literals.
 
+
+
+
 What's New in astroid 0.24.2?
 =============================
 
@@ -2758,6 +2802,9 @@ Release date: 2013-02-27
     * #120646 [py3]: fix for python3.3 _ast changes which may cause crash
 
     * #109988 [py3]: test fixes
+
+
+
 
 What's New in astroid 0.24.1?
 =============================
@@ -2777,6 +2824,9 @@ Release date: 2012-10-05
 
     * #46273 (pylint-brain): bad inference subprocess.Popen.communicate
 
+
+
+
 What's New in astroid 0.24.0?
 =============================
 
@@ -2789,6 +2839,9 @@ Release date: 2012-07-18
 
     * use `open` rather than `file` in scoped_nodes as 2to3 miss it
 
+
+
+
 What's New in astroid 0.23.1?
 =============================
 
@@ -2800,6 +2853,9 @@ Release date: 2011-12-08
     * Lambda nodes should have a `name` attribute
 
     * only call transformers if modname specified
+
+
+
 
 What's New in astroid 0.23.0?
 =============================
@@ -2825,6 +2881,9 @@ Release date: 2011-10-07
       called after an astng has been built and given the related module node
       as argument
 
+
+
+
 What's New in astroid 0.22.0?
 =============================
 
@@ -2842,6 +2901,9 @@ Release date: 2011-07-18
 
     * py3k: __builtin__ module renamed to builtins, we should consider this to properly
       build ast for builtin objects
+
+
+
 
 What's New in astroid 0.21.1?
 =============================
@@ -2864,6 +2926,9 @@ Release date: 2011-01-11
       trying to validate file using PyQt's PyQt4.QtCore module: we can't
       do much about it but at least catch such exception to avoid crash
 
+
+
+
 What's New in astroid 0.21.0?
 =============================
 
@@ -2874,6 +2939,9 @@ Release date: 2010-11-15
     * fix #37105: Crash on AttributeError: 'NoneType' object has no attribute '_infer_name'
 
     * python2.4: drop python < 2.5 support
+
+
+
 
 What's New in astroid 0.20.4?
 =============================
@@ -2890,6 +2958,9 @@ Release date: 2010-10-27
 
     * important progress on Py3k compatibility
 
+
+
+
 What's New in astroid 0.20.3?
 =============================
 
@@ -2900,6 +2971,9 @@ Release date: 2010-09-28
     * fix #45959: AttributeError: 'NoneType' object has no attribute 'frame', due
        to handling of __class__ when importing from living object (because of missing
        source code or C-compiled object)
+
+
+
 
 What's New in astroid 0.20.2?
 =============================
@@ -2917,6 +2991,7 @@ Release date: 2010-09-10
 
     * yield YES on multiplication of tuple/list with non valid operand
 
+
 What's New in astroid 0.20.1?
 =============================
 
@@ -2930,6 +3005,7 @@ Release date: 2010-05-11
 
     * bug fix for python < 2.5: add Delete node on Subscript nodes if we are in a
       del context
+
 
 What's New in astroid 0.20.0?
 =============================
@@ -2963,12 +3039,18 @@ Release date: 2010-03-22
     * Edward K. Ream / Tom Fleck patch closes #19641 (maximum recursion depth
       exceeded" messages w/ python 2.6), see https://bugs.launchpad.net/pylint/+bug/456870
 
+
+
+
 What's New in astroid 0.19.3?
 =============================
 
 Release date: 2009-12-18
 
     * fix name error making 0.19.2 almost useless
+
+
+
 
 What's New in astroid 0.19.2?
 =============================
@@ -2989,6 +3071,9 @@ Release date: 2009-12-18
 
     * include spelling fixes provided by Dotan Barak
 
+
+
+
 What's New in astroid 0.19.1?
 =============================
 
@@ -3004,6 +3089,9 @@ Release date: 2009-08-27
 
     * fix #9588: false positive E1101 for augmented assignment
 
+
+
+
 What's New in astroid 0.19.0?
 =============================
 
@@ -3016,6 +3104,9 @@ Release date: 2009-03-25
 
     * inference: introduce UnboundMethod / rename InstanceMethod to BoundMethod
 
+
+
+
 What's New in astroid 0.18.0?
 =============================
 
@@ -3025,6 +3116,9 @@ Release date: 2009-03-19
       python >= 2.5 _ast module
 
     * cleanup and refactoring on the way
+
+
+
 
 What's New in astroid 0.17.4?
 =============================
@@ -3038,6 +3132,9 @@ Release date: 2008-11-19
 
     * fix #5010: understand python 2.5 explicit relative imports
 
+
+
+
 What's New in astroid 0.17.3?
 =============================
 
@@ -3049,6 +3146,9 @@ Release date: 2008-09-10
 
     * apply Maarten patch fixing a crash on TryFinalaly.block_range and fixing
       'else'/'final' block line detection
+
+
+
 
 What's New in astroid 0.17.2?
 =============================
@@ -3062,6 +3162,9 @@ Release date: 2008-01-14
 
     * new InstanceMethod node introduced to wrap bound method (e.g. Function
       node), patch provided by Dave Borowitz
+
+
+
 
 What's New in astroid 0.17.1?
 =============================
@@ -3084,6 +3187,9 @@ Release date: 2007-06-07
 
     * be more error resilient when accessing living objects from external
       code in the manager
+
+
+
 
 What's New in astroid 0.17.0?
 =============================
@@ -3108,6 +3214,9 @@ Release date: 2007-02-22
 
     * fix decorator lookup bug (#3261)
 
+
+
+
 What's New in astroid 0.16.3?
 =============================
 
@@ -3115,6 +3224,9 @@ Release date: 2006-11-23
 
     * enhance inference for the subscription notation (motivated by a patch from Amaury)
       and for unary sub/add
+
+
+
 
 What's New in astroid 0.16.2?
 =============================
@@ -3128,6 +3240,9 @@ Release date: 2006-11-15
       depends so)
 
     * backported astutils module from logilab-common
+
+
+
 
 What's New in astroid 0.16.1?
 =============================
@@ -3148,6 +3263,9 @@ Release date: 2006-09-25
 
     * patch transformer to extract correct line information
 
+
+
+
 What's New in astroid 0.16.0?
 =============================
 
@@ -3161,6 +3279,9 @@ Release date: 2006-04-19
     * added some line manipulation methods to handle pylint's block messages
       control feature (Node.last_source_line(), None.block_range(lineno)
 
+
+
+
 What's New in astroid 0.15.1?
 =============================
 
@@ -3169,6 +3290,9 @@ Release date: 2006-03-10
     * fix avoiding to load everything from living objects... Thanks Amaury!
 
     * fix a possible NameError in Instance.infer_call_result
+
+
+
 
 What's New in astroid 0.15.0?
 =============================
@@ -3200,6 +3324,9 @@ Release date: 2006-03-06
 
     * builder try to instantiate builtin exceptions subclasses to get their
       instance attribute
+
+
+
 
 What's New in astroid 0.14.0?
 =============================
@@ -3238,6 +3365,9 @@ Release date: 2006-01-10
 
     * lint fixes
 
+
+
+
 What's New in astroid 0.13.1?
 =============================
 
@@ -3264,6 +3394,9 @@ Release date: 2005-11-07
       nodes
 
     * normalize parser.ParserError to SyntaxError with python 2.2
+
+
+
 
 What's New in astroid 0.13.0?
 =============================
