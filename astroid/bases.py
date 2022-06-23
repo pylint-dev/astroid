@@ -10,7 +10,7 @@ from __future__ import annotations
 import collections
 import collections.abc
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any
 
 from astroid import decorators
 from astroid.const import PY310_PLUS
@@ -26,7 +26,7 @@ from astroid.exceptions import (
     InferenceError,
     NameInferenceError,
 )
-from astroid.typing import InferenceResult
+from astroid.typing import InferenceErrorInfo, InferenceResult
 from astroid.util import Uninferable, lazy_descriptor, lazy_import
 
 objectmodel = lazy_import("interpreter.objectmodel")
@@ -36,7 +36,6 @@ manager = lazy_import("manager")
 if TYPE_CHECKING:
     from astroid import nodes
 
-_ProxyT = TypeVar("_ProxyT", bound="Proxy")
 
 # TODO: check if needs special treatment
 BOOL_SPECIAL_METHOD = "__bool__"
@@ -119,9 +118,9 @@ class Proxy:
             return self.__dict__[name]
         return getattr(self._proxied, name)
 
-    def infer(
-        self: _ProxyT, context: InferenceContext | None = None, **kwargs: Any
-    ) -> collections.abc.Generator[_ProxyT, None, None]:
+    def infer(  # type: ignore[return]
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> collections.abc.Generator[InferenceResult, None, InferenceErrorInfo | None]:
         yield self
 
 
