@@ -1005,7 +1005,7 @@ nodes.AugAssign._infer = infer_augassign
 def infer_arguments(
     self: nodes.Arguments, context: InferenceContext | None = None, **kwargs: Any
 ) -> Generator[InferenceResult, None, None]:
-    if not context or context.lookupname is None:
+    if context is None or context.lookupname is None:
         raise InferenceError(node=self, context=context)
     return protocols._arguments_infer_argname(self, context.lookupname, context)
 
@@ -1019,7 +1019,7 @@ def infer_assign(
     self: nodes.AssignName | nodes.AssignAttr,
     context: InferenceContext | None = None,
     **kwargs: Any,
-) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+) -> Generator[InferenceResult, None, None]:
     """infer a AssignName/AssignAttr: need to inspect the RHS part of the
     assign node
     """
