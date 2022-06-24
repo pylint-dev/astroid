@@ -11,10 +11,16 @@ from astroid.manager import AstroidManager
 
 
 def _looks_like_signal(node, signal_name="pyqtSignal"):
-    if "__class__" in node.instance_attrs:
+    """Detect a Signal node."""
+    klasses = node.instance_attrs.get("__class__", [])
+    # On PySide2 or PySide6 (since  Qt 5.15.2) the Signal class changed locations
+    if node.qname().partition(".")[0] in {"PySide2", "PySide6"}:
+        return any(
+            cls.qname() == "Signal" for cls in klasses
+        )
+    if klasses:
         try:
-            cls = node.instance_attrs["__class__"][0]
-            return cls.name == signal_name
+            return klasses[0].name == signal_name
         except AttributeError:
             # return False if the cls does not have a name attribute
             pass
@@ -71,20 +77,6 @@ class QObject(object):
     )
 
 
-def _looks_like_pyside2_or_6_signal(node):
-    """Detect a PySide2 or PySide6 signal.
-
-    These changed locations as of Qt 5.15.2 apparently.
-    """
-
-    is_pyside_node = node.qname().partition(".")[0] in {"PySide2", "PySide6"}
-    is_named_signal = any(
-        cls.qname() == "Signal" for cls in node.instance_attrs.get("__class__", [])
-    )
-
-    return is_pyside_node and is_named_signal
-
-
 register_module_extender(AstroidManager(), "PyQt4.QtCore", pyqt4_qtcore_transform)
 AstroidManager().register_transform(
     nodes.FunctionDef, transform_pyqt_signal, _looks_like_signal
@@ -93,7 +85,4 @@ AstroidManager().register_transform(
     nodes.ClassDef,
     transform_pyside_signal,
     lambda node: node.qname() in {"PySide.QtCore.Signal", "PySide2.QtCore.Signal"},
-)
-AstroidManager().register_transform(
-    nodes.FunctionDef, transform_pyqt_signal, _looks_like_pyside2_or_6_signal
 )
