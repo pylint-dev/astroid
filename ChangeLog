@@ -94,6 +94,9 @@ What's New in astroid 2.11.7?
 =============================
 Release date: TBA
 
+* Prevent a ``RecursionError`` involving ``from ... import *`` statements.
+
+  Closes #1646
 
 
 What's New in astroid 2.11.6?
