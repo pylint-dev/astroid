@@ -72,7 +72,10 @@ class QObject(object):
 
 
 def _looks_like_pyside2_or_6_signal(node):
-    """Detect a PySide2 or PySide6 signal.  These changed locations as of QT 5ish apparently."""
+    """Detect a PySide2 or PySide6 signal.
+
+    These changed locations as of Qt 5.15.2 apparently.
+    """
 
     is_pyside_node = node.qname().partition(".")[0] in {"PySide2", "PySide6"}
     is_named_signal = any(
