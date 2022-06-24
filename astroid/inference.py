@@ -599,7 +599,7 @@ def infer_unaryop(
     return InferenceErrorInfo(node=self, context=context)
 
 
-nodes.UnaryOp._infer_unaryop = _infer_unaryop  # type: ignore[assignment]
+nodes.UnaryOp._infer_unaryop = _infer_unaryop
 nodes.UnaryOp._infer = infer_unaryop  # type: ignore[assignment]
 
 
@@ -877,7 +877,7 @@ def infer_binop(
     )
 
 
-nodes.BinOp._infer_binop = _infer_binop  # type: ignore[assignment]
+nodes.BinOp._infer_binop = _infer_binop
 nodes.BinOp._infer = infer_binop  # type: ignore[assignment]
 
 COMPARE_OPS: dict[str, Callable[[Any, Any], bool]] = {
@@ -1016,7 +1016,7 @@ def infer_augassign(
     )
 
 
-nodes.AugAssign._infer_augassign = _infer_augassign  # type: ignore[assignment]
+nodes.AugAssign._infer_augassign = _infer_augassign
 nodes.AugAssign._infer = infer_augassign  # type: ignore[assignment]
 
 # End of binary operation inference.

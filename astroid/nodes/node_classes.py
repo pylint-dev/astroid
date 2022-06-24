@@ -52,6 +52,7 @@ def _is_const(value):
 
 
 _NodesT = TypeVar("_NodesT", bound=NodeNG)
+_BadOpMessageT = TypeVar("_BadOpMessageT", bound=util.BadOperationMessage)
 
 AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
 AssignedStmtsCall = Callable[
@@ -66,6 +67,10 @@ AssignedStmtsCall = Callable[
 InferLHS = Callable[
     [_NodesT, Optional[InferenceContext]],
     typing.Generator[InferenceResult, None, None],
+]
+InferBinaryOperation = Callable[
+    [_NodesT, Optional[InferenceContext]],
+    Generator[Union[InferenceResult, _BadOpMessageT], None, None],
 ]
 
 
@@ -1343,10 +1348,9 @@ class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """
 
     # This is set by inference.py
-    def _infer_augassign(
-        self, context: InferenceContext | None = None
-    ) -> Generator[InferenceResult | util.BadBinaryOperationMessage, None, None]:
-        raise NotImplementedError
+    _infer_augassign: ClassVar[
+        InferBinaryOperation[AugAssign, util.BadBinaryOperationMessage]
+    ]
 
     def type_errors(self, context=None):
         """Get a list of type errors which can occur during inference.
@@ -1390,6 +1394,9 @@ class BinOp(NodeNG):
 
     _astroid_fields = ("left", "right")
     _other_fields = ("op",)
+
+    # This is set by inference.py
+    _infer_binop: ClassVar[InferBinaryOperation[BinOp, util.BadBinaryOperationMessage]]
 
     @decorators.deprecate_default_argument_values(op="str")
     def __init__(
@@ -1443,12 +1450,6 @@ class BinOp(NodeNG):
         """
         self.left = left
         self.right = right
-
-    # This is set by inference.py
-    def _infer_binop(
-        self, context: InferenceContext | None = None
-    ) -> Generator[InferenceResult | util.BadBinaryOperationMessage, None, None]:
-        raise NotImplementedError
 
     def type_errors(self, context=None):
         """Get a list of type errors which can occur during inference.
@@ -4180,6 +4181,11 @@ class UnaryOp(NodeNG):
     _astroid_fields = ("operand",)
     _other_fields = ("op",)
 
+    # This is set by inference.py
+    _infer_unaryop: ClassVar[
+        InferBinaryOperation[UnaryOp, util.BadUnaryOperationMessage]
+    ]
+
     @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
@@ -4226,12 +4232,6 @@ class UnaryOp(NodeNG):
         :param operand: What the unary operator is applied to.
         """
         self.operand = operand
-
-    # This is set by inference.py
-    def _infer_unaryop(
-        self, context: InferenceContext | None = None
-    ) -> Generator[InferenceResult | util.BadUnaryOperationMessage, None, None]:
-        raise NotImplementedError
 
     def type_errors(self, context=None):
         """Get a list of type errors which can occur during inference.
