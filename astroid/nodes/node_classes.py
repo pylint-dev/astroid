@@ -70,7 +70,7 @@ InferLHS = Callable[
 ]
 InferBinaryOperation = Callable[
     [_NodesT, Optional[InferenceContext]],
-    Generator[Union[InferenceResult, _BadOpMessageT], None, None],
+    typing.Generator[Union[InferenceResult, _BadOpMessageT], None, None],
 ]
 
 
