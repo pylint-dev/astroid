@@ -1053,7 +1053,6 @@ def infer_empty_node(
 nodes.EmptyNode._infer = infer_empty_node  # type: ignore[assignment]
 
 
-
 def _populate_context_lookup(call, context):
     # Allows context to be saved for later
     # for inference inside a function
