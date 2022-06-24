@@ -451,7 +451,9 @@ nodes.Subscript.infer_lhs = decorators.raise_if_nothing_inferred(infer_subscript
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def _infer_boolop(self, context=None):
+def _infer_boolop(
+    self: nodes.BoolOp, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
     """Infer a boolean operation (and / or / not).
 
     The function will calculate the boolean operation
@@ -465,12 +467,12 @@ def _infer_boolop(self, context=None):
         predicate = operator.not_
 
     try:
-        values = [value.infer(context=context) for value in values]
+        inferred_values = [value.infer(context=context) for value in values]
     except InferenceError:
         yield util.Uninferable
         return None
 
-    for pair in itertools.product(*values):
+    for pair in itertools.product(*inferred_values):
         if any(item is util.Uninferable for item in pair):
             # Can't infer the final result, just yield Uninferable.
             yield util.Uninferable
@@ -499,10 +501,10 @@ def _infer_boolop(self, context=None):
         else:
             yield value
 
-    return dict(node=self, context=context)
+    return InferenceErrorInfo(node=self, context=context)
 
 
-nodes.BoolOp._infer = _infer_boolop
+nodes.BoolOp._infer = _infer_boolop  # type: ignore[assignment]
 
 
 # UnaryOp, BinOp and AugAssign inferences
