@@ -15,9 +15,7 @@ def _looks_like_signal(node, signal_name="pyqtSignal"):
     klasses = node.instance_attrs.get("__class__", [])
     # On PySide2 or PySide6 (since  Qt 5.15.2) the Signal class changed locations
     if node.qname().partition(".")[0] in {"PySide2", "PySide6"}:
-        return any(
-            cls.qname() == "Signal" for cls in klasses
-        )
+        return any(cls.qname() == "Signal" for cls in klasses)
     if klasses:
         try:
             return klasses[0].name == signal_name
