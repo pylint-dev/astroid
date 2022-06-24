@@ -345,7 +345,6 @@ def infer_attribute(
             continue
 
         context = copy_context(context)
-
         old_boundnode = context.boundnode
         try:
             context.boundnode = owner
@@ -371,7 +370,7 @@ nodes.AssignAttr.infer_lhs = infer_attribute
 def infer_global(
     self: nodes.Global, context: InferenceContext | None = None, **kwargs: Any
 ) -> Generator[InferenceResult, None, None]:
-    if not context or context.lookupname is None:
+    if context is None or context.lookupname is None:
         raise InferenceError(node=self, context=context)
     try:
         return bases._infer_stmts(self.root().getattr(context.lookupname), context)
