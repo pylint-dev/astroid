@@ -277,8 +277,7 @@ def infer_import(
     **kwargs: Any,
 ) -> Generator[nodes.Module, None, None]:
     """infer an Import node: return the imported module/object"""
-    if not context:
-        raise InferenceError(node=self, context=context)
+    context = context or InferenceContext()
     name = context.lookupname
     if name is None:
         raise InferenceError(node=self, context=context)
@@ -304,8 +303,7 @@ def infer_import_from(
     **kwargs: Any,
 ) -> Generator[InferenceResult, None, None]:
     """infer a ImportFrom node: return the imported module/object"""
-    if not context:
-        raise InferenceError(node=self, context=context)
+    context = context or InferenceContext()
     name = context.lookupname
     if name is None:
         raise InferenceError(node=self, context=context)
@@ -346,10 +344,7 @@ def infer_attribute(
             yield owner
             continue
 
-        if not context:
-            context = InferenceContext()
-        else:
-            context = copy_context(context)
+        context = copy_context(context)
 
         old_boundnode = context.boundnode
         try:
@@ -376,8 +371,7 @@ nodes.AssignAttr.infer_lhs = infer_attribute
 def infer_global(
     self: nodes.Global, context: InferenceContext | None = None, **kwargs: Any
 ) -> Generator[InferenceResult, None, None]:
-    context = context or InferenceContext()
-    if context.lookupname is None:
+    if not context or context.lookupname is None:
         raise InferenceError(node=self, context=context)
     try:
         return bases._infer_stmts(self.root().getattr(context.lookupname), context)
@@ -968,8 +962,7 @@ nodes.Compare._infer = _infer_compare  # type: ignore[assignment]
 
 def _infer_augassign(self, context=None):
     """Inference logic for augmented binary operations."""
-    if context is None:
-        context = InferenceContext()
+    context = context or InferenceContext()
 
     rhs_context = context.clone()
 
