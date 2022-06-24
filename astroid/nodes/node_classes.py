@@ -1343,7 +1343,9 @@ class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """
 
     # This is set by inference.py
-    def _infer_augassign(self, context=None):
+    def _infer_augassign(
+        self, context: InferenceContext | None = None
+    ) -> Generator[InferenceResult | util.BadBinaryOperationMessage, None, None]:
         raise NotImplementedError
 
     def type_errors(self, context=None):
@@ -1443,7 +1445,9 @@ class BinOp(NodeNG):
         self.right = right
 
     # This is set by inference.py
-    def _infer_binop(self, context=None):
+    def _infer_binop(
+        self, context: InferenceContext | None = None
+    ) -> Generator[InferenceResult | util.BadBinaryOperationMessage, None, None]:
         raise NotImplementedError
 
     def type_errors(self, context=None):
@@ -4224,7 +4228,9 @@ class UnaryOp(NodeNG):
         self.operand = operand
 
     # This is set by inference.py
-    def _infer_unaryop(self, context=None):
+    def _infer_unaryop(
+        self, context: InferenceContext | None = None
+    ) -> Generator[InferenceResult | util.BadUnaryOperationMessage, None, None]:
         raise NotImplementedError
 
     def type_errors(self, context=None):

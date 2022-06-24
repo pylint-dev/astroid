@@ -510,7 +510,15 @@ nodes.BoolOp._infer = _infer_boolop  # type: ignore[assignment]
 # UnaryOp, BinOp and AugAssign inferences
 
 
-def _filter_operation_errors(self, infer_callable, context, error):
+def _filter_operation_errors(
+    self: _T,
+    infer_callable: Callable[
+        [_T, InferenceContext | None],
+        Generator[InferenceResult | util.BadOperationMessage, None, None],
+    ],
+    context: InferenceContext | None,
+    error: type[util.BadOperationMessage],
+) -> Generator[InferenceResult, None, None]:
     for result in infer_callable(self, context):
         if isinstance(result, error):
             # For the sake of .infer(), we don't care about operation
@@ -518,10 +526,12 @@ def _filter_operation_errors(self, infer_callable, context, error):
             # which shows that we can't infer the result.
             yield util.Uninferable
         else:
-            yield result
+            yield result  # type: ignore[misc]
 
 
-def _infer_unaryop(self, context=None):
+def _infer_unaryop(
+    self: nodes.UnaryOp, context: InferenceContext | None = None
+) -> Generator[InferenceResult | util.BadUnaryOperationMessage, None, None]:
     """Infer what an UnaryOp should return when evaluated."""
     for operand in self.operand.infer(context):
         try:
@@ -579,16 +589,18 @@ def _infer_unaryop(self, context=None):
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_unaryop(self, context=None):
+def infer_unaryop(
+    self: nodes.UnaryOp, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, InferenceErrorInfo]:
     """Infer what an UnaryOp should return when evaluated."""
     yield from _filter_operation_errors(
         self, _infer_unaryop, context, util.BadUnaryOperationMessage
     )
-    return dict(node=self, context=context)
+    return InferenceErrorInfo(node=self, context=context)
 
 
-nodes.UnaryOp._infer_unaryop = _infer_unaryop
-nodes.UnaryOp._infer = infer_unaryop
+nodes.UnaryOp._infer_unaryop = _infer_unaryop  # type: ignore[assignment]
+nodes.UnaryOp._infer = infer_unaryop  # type: ignore[assignment]
 
 
 def _is_not_implemented(const):
@@ -828,7 +840,9 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
     yield util.BadBinaryOperationMessage(left_type, binary_opnode.op, right_type)
 
 
-def _infer_binop(self, context):
+def _infer_binop(
+    self: nodes.BinOp, context: InferenceContext | None = None
+) -> Generator[InferenceResult | util.BadBinaryOperationMessage, None, None]:
     """Binary operation inference logic."""
     left = self.left
     right = self.right
@@ -855,14 +869,16 @@ def _infer_binop(self, context):
 
 @decorators.yes_if_nothing_inferred
 @decorators.path_wrapper
-def infer_binop(self, context=None):
+def infer_binop(
+    self: nodes.BinOp, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
     return _filter_operation_errors(
         self, _infer_binop, context, util.BadBinaryOperationMessage
     )
 
 
-nodes.BinOp._infer_binop = _infer_binop
-nodes.BinOp._infer = infer_binop
+nodes.BinOp._infer_binop = _infer_binop  # type: ignore[assignment]
+nodes.BinOp._infer = infer_binop  # type: ignore[assignment]
 
 COMPARE_OPS: dict[str, Callable[[Any, Any], bool]] = {
     "==": operator.eq,
@@ -932,8 +948,8 @@ def _do_compare(
 
 
 def _infer_compare(
-    self: nodes.Compare, context: InferenceContext | None = None
-) -> Iterator[nodes.Const | type[util.Uninferable]]:
+    self: nodes.Compare, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[nodes.Const | type[util.Uninferable], None, None]:
     """Chained comparison inference logic."""
     retval: bool | type[util.Uninferable] = True
 
@@ -961,7 +977,9 @@ def _infer_compare(
 nodes.Compare._infer = _infer_compare  # type: ignore[assignment]
 
 
-def _infer_augassign(self, context=None):
+def _infer_augassign(
+    self: nodes.AugAssign, context: InferenceContext | None = None
+) -> Generator[InferenceResult | util.BadBinaryOperationMessage, None, None]:
     """Inference logic for augmented binary operations."""
     if context is None:
         context = InferenceContext()
@@ -990,14 +1008,16 @@ def _infer_augassign(self, context=None):
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_augassign(self, context=None):
+def infer_augassign(
+    self: nodes.AugAssign, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
     return _filter_operation_errors(
         self, _infer_augassign, context, util.BadBinaryOperationMessage
     )
 
 
-nodes.AugAssign._infer_augassign = _infer_augassign
-nodes.AugAssign._infer = infer_augassign
+nodes.AugAssign._infer_augassign = _infer_augassign  # type: ignore[assignment]
+nodes.AugAssign._infer = infer_augassign  # type: ignore[assignment]
 
 # End of binary operation inference.
 
