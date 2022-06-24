@@ -10,7 +10,7 @@ from astroid.builder import AstroidBuilder
 from astroid.manager import AstroidManager
 
 
-def _looks_like_signal(node, signal_name="pyqtSignal"):
+def _looks_like_signal(node: nodes.FunctionDef, signal_name: str = "pyqtSignal") -> bool:
     """Detect a Signal node."""
     klasses = node.instance_attrs.get("__class__", [])
     # On PySide2 or PySide6 (since  Qt 5.15.2) the Signal class changed locations
