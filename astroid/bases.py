@@ -265,7 +265,7 @@ class BaseInstance(Proxy):
                 yield attr
 
     def infer_call_result(
-        self, caller: nodes.Call | BaseInstance, context: InferenceContext | None = None
+        self, caller: nodes.Call | Proxy, context: InferenceContext | None = None
     ):
         """infer what a class instance is returning when called"""
         context = bind_context_to_node(context, self)
