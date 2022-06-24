@@ -30,7 +30,11 @@ from astroid.manager import AstroidManager
 from astroid.nodes import _base_nodes
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
-from astroid.typing import InferenceResult, SuccessfulInferenceResult
+from astroid.typing import (
+    InferenceErrorInfo,
+    InferenceResult,
+    SuccessfulInferenceResult,
+)
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -65,7 +69,7 @@ AssignedStmtsCall = Callable[
 ]
 InferLHS = Callable[
     [_NodesT, Optional[InferenceContext]],
-    typing.Generator[InferenceResult, None, None],
+    typing.Generator[InferenceResult, None, Union[InferenceErrorInfo, None]],
 ]
 
 
@@ -960,6 +964,8 @@ class AssignAttr(_base_nodes.ParentAssignNode):
 
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
+
+    infer_lhs: ClassVar[InferLHS[AssignAttr]]
 
     @decorators.deprecate_default_argument_values(attrname="str")
     def __init__(
@@ -3831,6 +3837,8 @@ class Subscript(NodeNG):
 
     _astroid_fields = ("value", "slice")
     _other_fields = ("ctx",)
+
+    infer_lhs: ClassVar[InferLHS[Subscript]]
 
     def __init__(
         self,

@@ -334,7 +334,12 @@ def infer_import_from(
 nodes.ImportFrom._infer = infer_import_from  # type: ignore[assignment]
 
 
-def infer_attribute(self, context=None):
+@decorators.raise_if_nothing_inferred
+def infer_attribute(
+    self: nodes.Attribute | nodes.AssignAttr,
+    context: InferenceContext | None = None,
+    **kwargs: Any,
+) -> Generator[InferenceResult, None, InferenceErrorInfo]:
     """infer an Attribute node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
         if owner is util.Uninferable:
@@ -358,19 +363,20 @@ def infer_attribute(self, context=None):
             pass
         finally:
             context.boundnode = old_boundnode
-    return dict(node=self, context=context)
+    return InferenceErrorInfo(node=self, context=context)
 
 
-nodes.Attribute._infer = decorators.raise_if_nothing_inferred(
-    decorators.path_wrapper(infer_attribute)
-)
+nodes.Attribute._infer = decorators.path_wrapper(infer_attribute)  # type: ignore[assignment]
 # won't work with a path wrapper
-nodes.AssignAttr.infer_lhs = decorators.raise_if_nothing_inferred(infer_attribute)
+nodes.AssignAttr.infer_lhs = infer_attribute
 
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_global(self, context=None):
+def infer_global(
+    self: nodes.Global, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
+    context = context or InferenceContext()
     if context.lookupname is None:
         raise InferenceError(node=self, context=context)
     try:
@@ -387,7 +393,10 @@ nodes.Global._infer = infer_global  # type: ignore[assignment]
 _SUBSCRIPT_SENTINEL = object()
 
 
-def infer_subscript(self, context=None):
+@decorators.raise_if_nothing_inferred
+def infer_subscript(
+    self: nodes.Subscript, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
     """Inference for subscripts
 
     We're understanding if the index is a Const
@@ -439,14 +448,12 @@ def infer_subscript(self, context=None):
             found_one = True
 
     if found_one:
-        return dict(node=self, context=context)
+        return InferenceErrorInfo(node=self, context=context)
     return None
 
 
-nodes.Subscript._infer = decorators.raise_if_nothing_inferred(  # type: ignore[assignment]
-    decorators.path_wrapper(infer_subscript)
-)
-nodes.Subscript.infer_lhs = decorators.raise_if_nothing_inferred(infer_subscript)
+nodes.Subscript._infer = decorators.path_wrapper(infer_subscript)  # type: ignore[assignment]
+nodes.Subscript.infer_lhs = infer_subscript
 
 
 @decorators.raise_if_nothing_inferred
