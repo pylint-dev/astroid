@@ -4,9 +4,9 @@ nose
 numpy>=1.17.0; python_version<"3.11"
 python-dateutil
 PyQt5>=5.15.2
-PySide2>=5.15.2
+PySide2>=5.15.2; python_version<"3.11"
 PyQt6
-PySide6
+PySide6; python_version<"3.11"
 types-python-dateutil
 six
 types-six

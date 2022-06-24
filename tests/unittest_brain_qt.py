@@ -93,7 +93,7 @@ class TestBrainQt:
     reason="These tests require the PyQt5, PySide2, PyQt6, and PySide6 libraries.",
 )
 @pytest.mark.skipif(
-    PY311_PLUS, reason="PySide2>=5.15.2 not yet available for Python 3.11"
+    PY311_PLUS, reason="PySide2>=5.15.2 and PySide6 not yet available for Python 3.11"
 )
 class TestBrainQt_ConnectSignalMember:
     AstroidManager.brain["extension_package_whitelist"] = {
