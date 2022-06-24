@@ -12,7 +12,7 @@ from astroid.manager import AstroidManager
 
 def _looks_like_signal(
     node: nodes.FunctionDef, signal_name: str = "pyqtSignal"
-) -> bool:
+) -> bool:  # pragma: no cover
     """Detect a Signal node."""
     klasses = node.instance_attrs.get("__class__", [])
     # On PySide2 or PySide6 (since  Qt 5.15.2) the Signal class changed locations
@@ -85,4 +85,4 @@ AstroidManager().register_transform(
     nodes.ClassDef,
     transform_pyside_signal,
     lambda node: node.qname() in {"PySide.QtCore.Signal", "PySide2.QtCore.Signal"},
-)
+)  # pragma: no cover
