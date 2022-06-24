@@ -277,8 +277,7 @@ def infer_import(
     **kwargs: Any,
 ) -> Generator[nodes.Module, None, None]:
     """infer an Import node: return the imported module/object"""
-    if not context:
-        raise InferenceError(node=self, context=context)
+    context = context or InferenceContext()
     name = context.lookupname
     if name is None:
         raise InferenceError(node=self, context=context)
@@ -304,8 +303,7 @@ def infer_import_from(
     **kwargs: Any,
 ) -> Generator[InferenceResult, None, None]:
     """infer a ImportFrom node: return the imported module/object"""
-    if not context:
-        raise InferenceError(node=self, context=context)
+    context = context or InferenceContext()
     name = context.lookupname
     if name is None:
         raise InferenceError(node=self, context=context)
@@ -334,18 +332,19 @@ def infer_import_from(
 nodes.ImportFrom._infer = infer_import_from  # type: ignore[assignment]
 
 
-def infer_attribute(self, context=None):
+@decorators.raise_if_nothing_inferred
+def infer_attribute(
+    self: nodes.Attribute | nodes.AssignAttr,
+    context: InferenceContext | None = None,
+    **kwargs: Any,
+) -> Generator[InferenceResult, None, InferenceErrorInfo]:
     """infer an Attribute node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
         if owner is util.Uninferable:
             yield owner
             continue
 
-        if not context:
-            context = InferenceContext()
-        else:
-            context = copy_context(context)
-
+        context = copy_context(context)
         old_boundnode = context.boundnode
         try:
             context.boundnode = owner
@@ -358,20 +357,20 @@ def infer_attribute(self, context=None):
             pass
         finally:
             context.boundnode = old_boundnode
-    return dict(node=self, context=context)
+    return InferenceErrorInfo(node=self, context=context)
 
 
-nodes.Attribute._infer = decorators.raise_if_nothing_inferred(
-    decorators.path_wrapper(infer_attribute)
-)
+nodes.Attribute._infer = decorators.path_wrapper(infer_attribute)  # type: ignore[assignment]
 # won't work with a path wrapper
-nodes.AssignAttr.infer_lhs = decorators.raise_if_nothing_inferred(infer_attribute)
+nodes.AssignAttr.infer_lhs = infer_attribute
 
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_global(self, context=None):
-    if context.lookupname is None:
+def infer_global(
+    self: nodes.Global, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
+    if context is None or context.lookupname is None:
         raise InferenceError(node=self, context=context)
     try:
         return bases._infer_stmts(self.root().getattr(context.lookupname), context)
@@ -387,7 +386,10 @@ nodes.Global._infer = infer_global  # type: ignore[assignment]
 _SUBSCRIPT_SENTINEL = object()
 
 
-def infer_subscript(self, context=None):
+@decorators.raise_if_nothing_inferred
+def infer_subscript(
+    self: nodes.Subscript, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
     """Inference for subscripts
 
     We're understanding if the index is a Const
@@ -439,14 +441,12 @@ def infer_subscript(self, context=None):
             found_one = True
 
     if found_one:
-        return dict(node=self, context=context)
+        return InferenceErrorInfo(node=self, context=context)
     return None
 
 
-nodes.Subscript._infer = decorators.raise_if_nothing_inferred(  # type: ignore[assignment]
-    decorators.path_wrapper(infer_subscript)
-)
-nodes.Subscript.infer_lhs = decorators.raise_if_nothing_inferred(infer_subscript)
+nodes.Subscript._infer = decorators.path_wrapper(infer_subscript)  # type: ignore[assignment]
+nodes.Subscript.infer_lhs = infer_subscript
 
 
 @decorators.raise_if_nothing_inferred
@@ -963,8 +963,7 @@ nodes.Compare._infer = _infer_compare  # type: ignore[assignment]
 
 def _infer_augassign(self, context=None):
     """Inference logic for augmented binary operations."""
-    if context is None:
-        context = InferenceContext()
+    context = context or InferenceContext()
 
     rhs_context = context.clone()
 
