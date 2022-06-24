@@ -1053,15 +1053,6 @@ def infer_empty_node(
 nodes.EmptyNode._infer = infer_empty_node  # type: ignore[assignment]
 
 
-@decorators.raise_if_nothing_inferred
-def infer_index(
-    self: nodes.Index, context: InferenceContext | None = None, **kwargs: Any
-) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-    return self.value.infer(context)
-
-
-nodes.Index._infer = infer_index  # type: ignore[assignment]
-
 
 def _populate_context_lookup(call, context):
     # Allows context to be saved for later
