@@ -18,7 +18,7 @@ HAS_PYSIDE6 = find_spec("PySide6")
 
 
 @pytest.mark.skipif(
-    HAS_PYSIDE6 is None,
+    HAS_PYQT6 is None,
     reason="These tests require the PyQt6 library.",
 )
 class TestBrainQt:
