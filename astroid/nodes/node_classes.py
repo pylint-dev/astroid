@@ -5377,7 +5377,9 @@ CONST_CLS: dict[type, type[NodeNG]] = {
 }
 
 
-def _create_basic_elements(value: Iterable[Any], node: List | Set | Tuple) -> list[NodeNG]:
+def _create_basic_elements(
+    value: Iterable[Any], node: List | Set | Tuple
+) -> list[NodeNG]:
     """Create a list of nodes to function as the elements of a new node."""
     elements: list[NodeNG] = []
     for element in value:
