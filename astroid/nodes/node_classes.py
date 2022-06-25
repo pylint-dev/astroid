@@ -1872,8 +1872,6 @@ class Const(_base_nodes.NoChildrenNode, Instance):
 
     _other_fields = ("value", "kind")
 
-    infer_unary_op: ClassVar[InferUnaryOp[Const]]
-
     def __init__(
         self,
         value: Any,
@@ -1915,6 +1913,8 @@ class Const(_base_nodes.NoChildrenNode, Instance):
             end_col_offset=end_col_offset,
             parent=parent,
         )
+
+    infer_unary_op: ClassVar[InferUnaryOp[Const]]
 
     def __getattr__(self, name):
         # This is needed because of Proxy's __getattr__ method.
@@ -2233,8 +2233,6 @@ class Dict(NodeNG, Instance):
 
     _astroid_fields = ("items",)
 
-    infer_unary_op: ClassVar[InferUnaryOp[Dict]]
-
     def __init__(
         self,
         lineno: int | None = None,
@@ -2278,6 +2276,8 @@ class Dict(NodeNG, Instance):
         :param items: The key-value pairs contained in the dictionary.
         """
         self.items = items
+
+    infer_unary_op: ClassVar[InferUnaryOp[Dict]]
 
     @classmethod
     def from_elements(cls, items=None):
@@ -3361,8 +3361,6 @@ class List(BaseContainer):
 
     _other_fields = ("ctx",)
 
-    infer_unary_op: ClassVar[InferUnaryOp[List]]
-
     def __init__(
         self,
         ctx: Context | None = None,
@@ -3403,6 +3401,8 @@ class List(BaseContainer):
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
+
+    infer_unary_op: ClassVar[InferUnaryOp[List]]
 
     def pytype(self):
         """Get the name of the type that this node represents.
@@ -4129,8 +4129,6 @@ class Tuple(BaseContainer):
 
     _other_fields = ("ctx",)
 
-    infer_unary_op: ClassVar[InferUnaryOp[Tuple]]
-
     def __init__(
         self,
         ctx: Context | None = None,
@@ -4171,6 +4169,8 @@ class Tuple(BaseContainer):
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
+
+    infer_unary_op: ClassVar[InferUnaryOp[Tuple]]
 
     def pytype(self):
         """Get the name of the type that this node represents.
