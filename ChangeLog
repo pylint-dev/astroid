@@ -78,6 +78,9 @@ Release date: TBA
 
   Closes #1403
 
+* Fixed inference of elements of living container objects such as tuples and sets in the
+  ``sys`` and ``ssl`` modules.
+
 * Add ``pathlib`` brain to handle ``pathlib.PurePath.parents`` inference.
 
   Closes PyCQA/pylint#5783
