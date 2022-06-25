@@ -30,7 +30,11 @@ from astroid.manager import AstroidManager
 from astroid.nodes import _base_nodes
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
-from astroid.typing import InferenceResult, SuccessfulInferenceResult
+from astroid.typing import (
+    ConstFactoryResult,
+    InferenceResult,
+    SuccessfulInferenceResult,
+)
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -64,14 +68,15 @@ AssignedStmtsCall = Callable[
     ],
     Any,
 ]
-InferLHS = Callable[
-    [_NodesT, Optional[InferenceContext]],
-    typing.Generator[InferenceResult, None, None],
-]
 InferBinaryOperation = Callable[
     [_NodesT, Optional[InferenceContext]],
     typing.Generator[Union[InferenceResult, _BadOpMessageT], None, None],
 ]
+InferLHS = Callable[
+    [_NodesT, Optional[InferenceContext]],
+    typing.Generator[InferenceResult, None, None],
+]
+InferUnaryOp = Callable[[_NodesT, str], ConstFactoryResult]
 
 
 @decorators.raise_if_nothing_inferred
@@ -1906,6 +1911,8 @@ class Const(_base_nodes.NoChildrenNode, Instance):
             parent=parent,
         )
 
+    infer_unary_op: ClassVar[InferUnaryOp[Const]]
+
     def __getattr__(self, name):
         # This is needed because of Proxy's __getattr__ method.
         # Calling object.__new__ on this class without calling
@@ -2266,6 +2273,8 @@ class Dict(NodeNG, Instance):
         :param items: The key-value pairs contained in the dictionary.
         """
         self.items = items
+
+    infer_unary_op: ClassVar[InferUnaryOp[Dict]]
 
     @classmethod
     def from_elements(cls, items=None):
@@ -3390,6 +3399,8 @@ class List(BaseContainer):
     See astroid/protocols.py for actual implementation.
     """
 
+    infer_unary_op: ClassVar[InferUnaryOp[List]]
+
     def pytype(self):
         """Get the name of the type that this node represents.
 
@@ -3625,6 +3636,8 @@ class Set(BaseContainer):
     >>> node
     <Set.set l.1 at 0x7f23b2e71d68>
     """
+
+    infer_unary_op: ClassVar[InferUnaryOp[Set]]
 
     def pytype(self):
         """Get the name of the type that this node represents.
@@ -4151,6 +4164,8 @@ class Tuple(BaseContainer):
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
+
+    infer_unary_op: ClassVar[InferUnaryOp[Tuple]]
 
     def pytype(self):
         """Get the name of the type that this node represents.
@@ -5401,7 +5416,7 @@ def _create_dict_items(
     return elements
 
 
-def const_factory(value: Any) -> List | Set | Tuple | Dict | Const | EmptyNode:
+def const_factory(value: Any) -> ConstFactoryResult:
     """Return an astroid node for a python value."""
     assert not isinstance(value, NodeNG)
 

@@ -11,7 +11,7 @@ from __future__ import annotations
 import collections
 import itertools
 import operator as operator_mod
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from typing import Any
 
 from astroid import arguments, bases, decorators, helpers, nodes, util
@@ -25,6 +25,7 @@ from astroid.exceptions import (
     NoDefault,
 )
 from astroid.nodes import node_classes
+from astroid.typing import ConstFactoryResult
 
 raw_building = util.lazy_import("raw_building")
 objects = util.lazy_import("objects")
@@ -68,7 +69,7 @@ UNARY_OP_METHOD = {
     "~": "__invert__",
     "not": None,  # XXX not '__nonzero__'
 }
-_UNARY_OPERATORS = {
+_UNARY_OPERATORS: dict[str, Callable[[Any], Any]] = {
     "+": operator_mod.pos,
     "-": operator_mod.neg,
     "~": operator_mod.invert,
@@ -76,7 +77,11 @@ _UNARY_OPERATORS = {
 }
 
 
-def _infer_unary_op(obj, op):
+def _infer_unary_op(obj: Any, op: str) -> ConstFactoryResult:
+    """Perform unary operation on object.
+
+    Can raise TypeError if operation is unsupported.
+    """
     func = _UNARY_OPERATORS[op]
     value = func(obj)
     return nodes.const_factory(value)
