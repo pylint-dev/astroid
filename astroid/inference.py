@@ -233,6 +233,8 @@ def infer_name(
 
 
 # pylint: disable=no-value-for-parameter
+# The order of the decorators here is important
+# See https://github.com/PyCQA/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
 nodes.Name._infer = decorators.raise_if_nothing_inferred(  # type: ignore[assignment]
     decorators.path_wrapper(infer_name)
 )
