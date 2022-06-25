@@ -11,7 +11,7 @@ import itertools
 import sys
 import typing
 import warnings
-from collections.abc import Generator
+from collections.abc import Generator, Iterable, Mapping
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Union
 
@@ -5375,6 +5375,32 @@ CONST_CLS: dict[type, type[NodeNG]] = {
 }
 
 
+def _create_basic_elements(
+    value: Iterable[Any], node: List | Set | Tuple
+) -> list[NodeNG]:
+    """Create a list of nodes to function as the elements of a new node."""
+    elements: list[NodeNG] = []
+    for element in value:
+        element_node = const_factory(element)
+        element_node.parent = node
+        elements.append(element_node)
+    return elements
+
+
+def _create_dict_items(
+    values: Mapping[Any, Any], node: Dict
+) -> list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]]:
+    """Create a list of node pairs to function as the items of a new dict node."""
+    elements: list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]] = []
+    for key, value in values.items():
+        key_node = const_factory(key)
+        key_node.parent = node
+        value_node = const_factory(value)
+        value_node.parent = node
+        elements.append((key_node, value_node))
+    return elements
+
+
 def const_factory(value: Any) -> List | Set | Tuple | Dict | Const | EmptyNode:
     """Return an astroid node for a python value."""
     assert not isinstance(value, NodeNG)
@@ -5387,13 +5413,14 @@ def const_factory(value: Any) -> List | Set | Tuple | Dict | Const | EmptyNode:
         node.object = value
         return node
 
-    # TODO: We pass an empty list as elements for a sequence
-    # or a mapping, in order to avoid transforming
-    # each element to an AST. This is fixed in 2.0
-    # and this approach is a temporary hack.
+    instance: List | Set | Tuple | Dict
     initializer_cls = CONST_CLS[value.__class__]
-    if issubclass(initializer_cls, (Dict, List, Set, Tuple)):
+    if issubclass(initializer_cls, (List, Set, Tuple)):
         instance = initializer_cls()
-        instance.postinit([])
+        instance.postinit(_create_basic_elements(value, instance))
+        return instance
+    if issubclass(initializer_cls, Dict):
+        instance = initializer_cls()
+        instance.postinit(_create_dict_items(value, instance))
         return instance
     return Const(value)
