@@ -5415,6 +5415,7 @@ def const_factory(value: Any) -> List | Set | Tuple | Dict | Const | EmptyNode:
         node.object = value
         return node
 
+    instance: List | Set | Tuple | Dict
     initializer_cls = CONST_CLS[value.__class__]
     if issubclass(initializer_cls, (List, Set, Tuple)):
         instance = initializer_cls()
