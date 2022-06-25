@@ -1395,9 +1395,6 @@ class BinOp(NodeNG):
     _astroid_fields = ("left", "right")
     _other_fields = ("op",)
 
-    # This is set by inference.py
-    _infer_binop: ClassVar[InferBinaryOperation[BinOp, util.BadBinaryOperationMessage]]
-
     @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
@@ -1450,6 +1447,9 @@ class BinOp(NodeNG):
         """
         self.left = left
         self.right = right
+
+    # This is set by inference.py
+    _infer_binop: ClassVar[InferBinaryOperation[BinOp, util.BadBinaryOperationMessage]]
 
     def type_errors(self, context=None):
         """Get a list of type errors which can occur during inference.
@@ -4181,11 +4181,6 @@ class UnaryOp(NodeNG):
     _astroid_fields = ("operand",)
     _other_fields = ("op",)
 
-    # This is set by inference.py
-    _infer_unaryop: ClassVar[
-        InferBinaryOperation[UnaryOp, util.BadUnaryOperationMessage]
-    ]
-
     @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
@@ -4232,6 +4227,11 @@ class UnaryOp(NodeNG):
         :param operand: What the unary operator is applied to.
         """
         self.operand = operand
+
+    # This is set by inference.py
+    _infer_unaryop: ClassVar[
+        InferBinaryOperation[UnaryOp, util.BadUnaryOperationMessage]
+    ]
 
     def type_errors(self, context=None):
         """Get a list of type errors which can occur during inference.
