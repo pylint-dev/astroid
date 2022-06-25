@@ -98,6 +98,9 @@ What's New in astroid 2.11.7?
 =============================
 Release date: TBA
 
+* Added support for ``usedforsecurity`` keyword to ``hashlib`` constructors.
+
+  Closes PyCQA/pylint#6017
 
 
 What's New in astroid 2.11.6?

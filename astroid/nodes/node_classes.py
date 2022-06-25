@@ -57,6 +57,7 @@ def _is_const(value):
 
 
 _NodesT = TypeVar("_NodesT", bound=NodeNG)
+_BadOpMessageT = TypeVar("_BadOpMessageT", bound=util.BadOperationMessage)
 
 AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
 AssignedStmtsCall = Callable[
@@ -67,6 +68,10 @@ AssignedStmtsCall = Callable[
         Optional[typing.List[int]],
     ],
     Any,
+]
+InferBinaryOperation = Callable[
+    [_NodesT, Optional[InferenceContext]],
+    typing.Generator[Union[InferenceResult, _BadOpMessageT], None, None],
 ]
 InferLHS = Callable[
     [_NodesT, Optional[InferenceContext]],
@@ -1351,8 +1356,9 @@ class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """
 
     # This is set by inference.py
-    def _infer_augassign(self, context=None):
-        raise NotImplementedError
+    _infer_augassign: ClassVar[
+        InferBinaryOperation[AugAssign, util.BadBinaryOperationMessage]
+    ]
 
     def type_errors(self, context=None):
         """Get a list of type errors which can occur during inference.
@@ -1451,8 +1457,7 @@ class BinOp(NodeNG):
         self.right = right
 
     # This is set by inference.py
-    def _infer_binop(self, context=None):
-        raise NotImplementedError
+    _infer_binop: ClassVar[InferBinaryOperation[BinOp, util.BadBinaryOperationMessage]]
 
     def type_errors(self, context=None):
         """Get a list of type errors which can occur during inference.
@@ -4244,8 +4249,9 @@ class UnaryOp(NodeNG):
         self.operand = operand
 
     # This is set by inference.py
-    def _infer_unaryop(self, context=None):
-        raise NotImplementedError
+    _infer_unaryop: ClassVar[
+        InferBinaryOperation[UnaryOp, util.BadUnaryOperationMessage]
+    ]
 
     def type_errors(self, context=None):
         """Get a list of type errors which can occur during inference.
