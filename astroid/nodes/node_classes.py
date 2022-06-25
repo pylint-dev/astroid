@@ -31,6 +31,7 @@ from astroid.nodes import _base_nodes
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
 from astroid.typing import (
+    ConstFactoryResult,
     InferenceErrorInfo,
     InferenceResult,
     SuccessfulInferenceResult,
@@ -71,6 +72,7 @@ InferLHS = Callable[
     [_NodesT, Optional[InferenceContext]],
     typing.Generator[InferenceResult, None, Optional[InferenceErrorInfo]],
 ]
+InferUnaryOp = Callable[[_NodesT, str], ConstFactoryResult]
 
 
 @decorators.raise_if_nothing_inferred
@@ -1865,6 +1867,8 @@ class Const(_base_nodes.NoChildrenNode, Instance):
 
     _other_fields = ("value", "kind")
 
+    infer_unary_op: ClassVar[InferUnaryOp[Const]]
+
     def __init__(
         self,
         value: Any,
@@ -2223,6 +2227,8 @@ class Dict(NodeNG, Instance):
     """
 
     _astroid_fields = ("items",)
+
+    infer_unary_op: ClassVar[InferUnaryOp[Dict]]
 
     def __init__(
         self,
@@ -3350,6 +3356,8 @@ class List(BaseContainer):
 
     _other_fields = ("ctx",)
 
+    infer_unary_op: ClassVar[InferUnaryOp[List]]
+
     def __init__(
         self,
         ctx: Context | None = None,
@@ -3626,6 +3634,8 @@ class Set(BaseContainer):
     >>> node
     <Set.set l.1 at 0x7f23b2e71d68>
     """
+
+    infer_unary_op: ClassVar[InferUnaryOp[Set]]
 
     def pytype(self):
         """Get the name of the type that this node represents.
@@ -4113,6 +4123,8 @@ class Tuple(BaseContainer):
     """
 
     _other_fields = ("ctx",)
+
+    infer_unary_op: ClassVar[InferUnaryOp[Tuple]]
 
     def __init__(
         self,
@@ -5377,7 +5389,7 @@ CONST_CLS: dict[type, type[NodeNG]] = {
 }
 
 
-def const_factory(value: Any) -> List | Set | Tuple | Dict | Const | EmptyNode:
+def const_factory(value: Any) -> ConstFactoryResult:
     """Return an astroid node for a python value."""
     assert not isinstance(value, NodeNG)
 
