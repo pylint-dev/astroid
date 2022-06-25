@@ -1002,11 +1002,12 @@ nodes.AugAssign._infer = infer_augassign
 
 
 @decorators.raise_if_nothing_inferred
-def infer_arguments(self, context=None):
-    name = context.lookupname
-    if name is None:
+def infer_arguments(
+    self: nodes.Arguments, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
+    if context is None or context.lookupname is None:
         raise InferenceError(node=self, context=context)
-    return protocols._arguments_infer_argname(self, name, context)
+    return protocols._arguments_infer_argname(self, context.lookupname, context)
 
 
 nodes.Arguments._infer = infer_arguments  # type: ignore[assignment]
@@ -1014,7 +1015,11 @@ nodes.Arguments._infer = infer_arguments  # type: ignore[assignment]
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_assign(self, context=None):
+def infer_assign(
+    self: nodes.AssignName | nodes.AssignAttr,
+    context: InferenceContext | None = None,
+    **kwargs: Any,
+) -> Generator[InferenceResult, None, None]:
     """infer a AssignName/AssignAttr: need to inspect the RHS part of the
     assign node
     """
@@ -1025,13 +1030,15 @@ def infer_assign(self, context=None):
     return bases._infer_stmts(stmts, context)
 
 
-nodes.AssignName._infer = infer_assign
-nodes.AssignAttr._infer = infer_assign
+nodes.AssignName._infer = infer_assign  # type: ignore[assignment]
+nodes.AssignAttr._infer = infer_assign  # type: ignore[assignment]
 
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_empty_node(self, context=None):
+def infer_empty_node(
+    self: nodes.EmptyNode, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
     if not self.has_underlying_object():
         yield util.Uninferable
     else:
@@ -1044,14 +1051,6 @@ def infer_empty_node(self, context=None):
 
 
 nodes.EmptyNode._infer = infer_empty_node  # type: ignore[assignment]
-
-
-@decorators.raise_if_nothing_inferred
-def infer_index(self, context=None):
-    return self.value.infer(context)
-
-
-nodes.Index._infer = infer_index  # type: ignore[assignment]
 
 
 def _populate_context_lookup(call, context):
@@ -1072,7 +1071,9 @@ def _populate_context_lookup(call, context):
 
 
 @decorators.raise_if_nothing_inferred
-def infer_ifexp(self, context=None):
+def infer_ifexp(
+    self: nodes.IfExp, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
     """Support IfExp inference
 
     If we can't infer the truthiness of the condition, we default
@@ -1108,7 +1109,7 @@ nodes.IfExp._infer = infer_ifexp  # type: ignore[assignment]
 
 
 def infer_functiondef(
-    self: _FunctionDefT, context: InferenceContext | None = None
+    self: _FunctionDefT, context: InferenceContext | None = None, **kwargs: Any
 ) -> Generator[Property | _FunctionDefT, None, InferenceErrorInfo]:
     if not self.decorators or not bases._is_property(self):
         yield self
