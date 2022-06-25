@@ -8,7 +8,7 @@ from astroid.manager import AstroidManager
 
 
 def _hashlib_transform():
-    signature = "value=''"
+    signature = "value='', usedforsecurity=True"
     template = """
     class %(name)s(object):
       def __init__(self, %(signature)s): pass
@@ -34,10 +34,10 @@ def _hashlib_transform():
     )
     blake2b_signature = "data=b'', *, digest_size=64, key=b'', salt=b'', \
             person=b'', fanout=1, depth=1, leaf_size=0, node_offset=0, \
-            node_depth=0, inner_size=0, last_node=False"
+            node_depth=0, inner_size=0, last_node=False, usedforsecurity=True"
     blake2s_signature = "data=b'', *, digest_size=32, key=b'', salt=b'', \
             person=b'', fanout=1, depth=1, leaf_size=0, node_offset=0, \
-            node_depth=0, inner_size=0, last_node=False"
+            node_depth=0, inner_size=0, last_node=False, usedforsecurity=True"
     new_algorithms = dict.fromkeys(
         ["sha3_224", "sha3_256", "sha3_384", "sha3_512", "shake_128", "shake_256"],
         signature,
