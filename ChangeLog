@@ -6,6 +6,10 @@ What's New in astroid 2.12.0?
 =============================
 Release date: TBA
 
+* Fix signal has no ``connect`` member for PySide2 5.15.2+ and PySide6
+
+  Closes #4040, #5378
+
 * ``astroid`` now requires Python 3.7.2 to run.
 
 * Avoid setting a Call as a base for classes created using ``six.with_metaclass()``.
