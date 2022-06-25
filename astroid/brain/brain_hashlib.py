@@ -4,11 +4,13 @@
 
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
+from astroid.const import PY39_PLUS
 from astroid.manager import AstroidManager
 
 
 def _hashlib_transform():
-    signature = "value=''"
+    maybe_usedforsecurity = ", usedforsecurity=True" if PY39_PLUS else ""
+    signature = f"value=''{maybe_usedforsecurity}"
     template = """
     class %(name)s(object):
       def __init__(self, %(signature)s): pass
@@ -32,12 +34,12 @@ def _hashlib_transform():
     algorithms_with_signature = dict.fromkeys(
         ["md5", "sha1", "sha224", "sha256", "sha384", "sha512"], signature
     )
-    blake2b_signature = "data=b'', *, digest_size=64, key=b'', salt=b'', \
+    blake2b_signature = f"data=b'', *, digest_size=64, key=b'', salt=b'', \
             person=b'', fanout=1, depth=1, leaf_size=0, node_offset=0, \
-            node_depth=0, inner_size=0, last_node=False"
-    blake2s_signature = "data=b'', *, digest_size=32, key=b'', salt=b'', \
+            node_depth=0, inner_size=0, last_node=False{maybe_usedforsecurity}"
+    blake2s_signature = f"data=b'', *, digest_size=32, key=b'', salt=b'', \
             person=b'', fanout=1, depth=1, leaf_size=0, node_offset=0, \
-            node_depth=0, inner_size=0, last_node=False"
+            node_depth=0, inner_size=0, last_node=False{maybe_usedforsecurity}"
     new_algorithms = dict.fromkeys(
         ["sha3_224", "sha3_256", "sha3_384", "sha3_512", "shake_128", "shake_256"],
         signature,

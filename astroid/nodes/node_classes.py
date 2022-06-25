@@ -11,7 +11,7 @@ import itertools
 import sys
 import typing
 import warnings
-from collections.abc import Generator
+from collections.abc import Generator, Iterable, Mapping
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Union
 
@@ -30,7 +30,11 @@ from astroid.manager import AstroidManager
 from astroid.nodes import _base_nodes
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
-from astroid.typing import InferenceResult, SuccessfulInferenceResult
+from astroid.typing import (
+    ConstFactoryResult,
+    InferenceResult,
+    SuccessfulInferenceResult,
+)
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -52,6 +56,7 @@ def _is_const(value):
 
 
 _NodesT = TypeVar("_NodesT", bound=NodeNG)
+_BadOpMessageT = TypeVar("_BadOpMessageT", bound=util.BadOperationMessage)
 
 AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
 AssignedStmtsCall = Callable[
@@ -63,10 +68,15 @@ AssignedStmtsCall = Callable[
     ],
     Any,
 ]
+InferBinaryOperation = Callable[
+    [_NodesT, Optional[InferenceContext]],
+    typing.Generator[Union[InferenceResult, _BadOpMessageT], None, None],
+]
 InferLHS = Callable[
     [_NodesT, Optional[InferenceContext]],
     typing.Generator[InferenceResult, None, None],
 ]
+InferUnaryOp = Callable[[_NodesT, str], ConstFactoryResult]
 
 
 @decorators.raise_if_nothing_inferred
@@ -1343,8 +1353,9 @@ class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """
 
     # This is set by inference.py
-    def _infer_augassign(self, context=None):
-        raise NotImplementedError
+    _infer_augassign: ClassVar[
+        InferBinaryOperation[AugAssign, util.BadBinaryOperationMessage]
+    ]
 
     def type_errors(self, context=None):
         """Get a list of type errors which can occur during inference.
@@ -1443,8 +1454,7 @@ class BinOp(NodeNG):
         self.right = right
 
     # This is set by inference.py
-    def _infer_binop(self, context=None):
-        raise NotImplementedError
+    _infer_binop: ClassVar[InferBinaryOperation[BinOp, util.BadBinaryOperationMessage]]
 
     def type_errors(self, context=None):
         """Get a list of type errors which can occur during inference.
@@ -1901,6 +1911,8 @@ class Const(_base_nodes.NoChildrenNode, Instance):
             parent=parent,
         )
 
+    infer_unary_op: ClassVar[InferUnaryOp[Const]]
+
     def __getattr__(self, name):
         # This is needed because of Proxy's __getattr__ method.
         # Calling object.__new__ on this class without calling
@@ -2261,6 +2273,8 @@ class Dict(NodeNG, Instance):
         :param items: The key-value pairs contained in the dictionary.
         """
         self.items = items
+
+    infer_unary_op: ClassVar[InferUnaryOp[Dict]]
 
     @classmethod
     def from_elements(cls, items=None):
@@ -3385,6 +3399,8 @@ class List(BaseContainer):
     See astroid/protocols.py for actual implementation.
     """
 
+    infer_unary_op: ClassVar[InferUnaryOp[List]]
+
     def pytype(self):
         """Get the name of the type that this node represents.
 
@@ -3620,6 +3636,8 @@ class Set(BaseContainer):
     >>> node
     <Set.set l.1 at 0x7f23b2e71d68>
     """
+
+    infer_unary_op: ClassVar[InferUnaryOp[Set]]
 
     def pytype(self):
         """Get the name of the type that this node represents.
@@ -4147,6 +4165,8 @@ class Tuple(BaseContainer):
     See astroid/protocols.py for actual implementation.
     """
 
+    infer_unary_op: ClassVar[InferUnaryOp[Tuple]]
+
     def pytype(self):
         """Get the name of the type that this node represents.
 
@@ -4224,8 +4244,9 @@ class UnaryOp(NodeNG):
         self.operand = operand
 
     # This is set by inference.py
-    def _infer_unaryop(self, context=None):
-        raise NotImplementedError
+    _infer_unaryop: ClassVar[
+        InferBinaryOperation[UnaryOp, util.BadUnaryOperationMessage]
+    ]
 
     def type_errors(self, context=None):
         """Get a list of type errors which can occur during inference.
@@ -5369,7 +5390,33 @@ CONST_CLS: dict[type, type[NodeNG]] = {
 }
 
 
-def const_factory(value: Any) -> List | Set | Tuple | Dict | Const | EmptyNode:
+def _create_basic_elements(
+    value: Iterable[Any], node: List | Set | Tuple
+) -> list[NodeNG]:
+    """Create a list of nodes to function as the elements of a new node."""
+    elements: list[NodeNG] = []
+    for element in value:
+        element_node = const_factory(element)
+        element_node.parent = node
+        elements.append(element_node)
+    return elements
+
+
+def _create_dict_items(
+    values: Mapping[Any, Any], node: Dict
+) -> list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]]:
+    """Create a list of node pairs to function as the items of a new dict node."""
+    elements: list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]] = []
+    for key, value in values.items():
+        key_node = const_factory(key)
+        key_node.parent = node
+        value_node = const_factory(value)
+        value_node.parent = node
+        elements.append((key_node, value_node))
+    return elements
+
+
+def const_factory(value: Any) -> ConstFactoryResult:
     """Return an astroid node for a python value."""
     assert not isinstance(value, NodeNG)
 
@@ -5381,13 +5428,14 @@ def const_factory(value: Any) -> List | Set | Tuple | Dict | Const | EmptyNode:
         node.object = value
         return node
 
-    # TODO: We pass an empty list as elements for a sequence
-    # or a mapping, in order to avoid transforming
-    # each element to an AST. This is fixed in 2.0
-    # and this approach is a temporary hack.
+    instance: List | Set | Tuple | Dict
     initializer_cls = CONST_CLS[value.__class__]
-    if issubclass(initializer_cls, (Dict, List, Set, Tuple)):
+    if issubclass(initializer_cls, (List, Set, Tuple)):
         instance = initializer_cls()
-        instance.postinit([])
+        instance.postinit(_create_basic_elements(value, instance))
+        return instance
+    if issubclass(initializer_cls, Dict):
+        instance = initializer_cls()
+        instance.postinit(_create_dict_items(value, instance))
         return instance
     return Const(value)

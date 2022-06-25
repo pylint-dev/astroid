@@ -18,6 +18,7 @@ import pytest
 import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
+from astroid.const import PY39_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -75,8 +76,11 @@ class HashlibTest(unittest.TestCase):
         self.assertIn("hexdigest", class_obj)
         self.assertIn("block_size", class_obj)
         self.assertIn("digest_size", class_obj)
-        self.assertEqual(len(class_obj["__init__"].args.args), 2)
-        self.assertEqual(len(class_obj["__init__"].args.defaults), 1)
+        # usedforsecurity was added in Python 3.9, see 8e7174a9
+        self.assertEqual(len(class_obj["__init__"].args.args), 3 if PY39_PLUS else 2)
+        self.assertEqual(
+            len(class_obj["__init__"].args.defaults), 2 if PY39_PLUS else 1
+        )
         self.assertEqual(len(class_obj["update"].args.args), 2)
         self.assertEqual(len(class_obj["digest"].args.args), 1)
         self.assertEqual(len(class_obj["hexdigest"].args.args), 1)
