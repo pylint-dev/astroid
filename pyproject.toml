@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools~=62.6", "wheel~=0.37.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name        = "astroid"
+license     = {text = "LGPL-2.1-or-later"}
+description = "An abstract syntax tree for Python with inference support."
+readme      = "README.rst"
+authors     = [
+    {name = "Python Code Quality Authority", email = "code-quality@python.org"}
+]
+keywords    = ["static code analysis", "python", "abstract syntax tree"]
+classifiers = [
+    "Development Status :: 6 - Mature",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Testing",
+]
+requires-python = ">=3.7.2"
+dependencies = [
+    "lazy_object_proxy>=1.4.0",
+    "wrapt>=1.11,<2",
+    "typed-ast>=1.4.0,<2.0;implementation_name=='cpython' and python_version<'3.8'",
+    "typing-extensions>=3.10;python_version<'3.10'",
+]
+dynamic = ["version"]
+
+[project.urls]
+"Docs"           = "https://pylint.pycqa.org/projects/astroid/en/latest/"
+"Source Code"    = "https://github.com/PyCQA/astroid"
+"Bug tracker"    = "https://github.com/PyCQA/astroid/issues"
+"Discord server" = "https://discord.gg/Egy6P8AMB5"
+
+[tool.setuptools]
+license-files = ["LICENSE", "CONTRIBUTORS.txt"]  # Keep in sync with setup.cfg
+
+[tool.setuptools.packages.find]
+include = ["astroid*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "astroid.__pkginfo__.__version__"}
