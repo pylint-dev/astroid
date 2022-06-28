@@ -2,8 +2,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-import pytest
-
 import astroid
 from astroid import bases
 from astroid.const import PY310_PLUS
@@ -27,7 +25,6 @@ def test_inference_parents() -> None:
     assert inferred[0].qname() == "pathlib._PathParents"
 
 
-@pytest.mark.skipif(not PY310_PLUS, reason="Brain only acts on Py310+")
 def test_inference_parents_subscript_index() -> None:
     """Test inference of ``pathlib.Path.parents``, accessed by index."""
     parents, path = astroid.extract_node(
