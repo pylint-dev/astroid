@@ -258,7 +258,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 else:
                     values.append(node)
         except (RecursionError, InferenceError):
-            # It's possible infer_import_from is already trying to import this module
+            # Genuinely deep recursion is possible involving infer_import_from()
             pass
 
 
