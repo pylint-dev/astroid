@@ -2,6 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+
 import astroid
 from astroid import bases
 from astroid.const import PY310_PLUS
