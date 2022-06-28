@@ -8,6 +8,7 @@ from collections.abc import Iterator
 
 from astroid import bases, context, inference_tip, nodes
 from astroid.builder import _extract_single_node
+from astroid.const import PY310_PLUS
 from astroid.exceptions import InferenceError, UseInferenceDefault
 from astroid.manager import AstroidManager
 
@@ -18,6 +19,9 @@ Path
 
 
 def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
+    """Infer subscripted names on Python 3.10+, which supports slicing PurePath.parents"""
+    if not PY310_PLUS:
+        return False
     if not (
         isinstance(node.value, nodes.Name)
         or isinstance(node.value, nodes.Attribute)
