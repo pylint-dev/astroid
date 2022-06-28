@@ -1,4 +1,0 @@
-[flake8]
-extend-ignore = E203,E266,E501,C901,F401
-max-complexity = 20
-select = B,C,E,F,W,T4,B9
