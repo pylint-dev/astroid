@@ -19,7 +19,6 @@ Path
 
 
 def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
-    """Infer subscripted names on Python 3.10+, which supports slicing PurePath.parents"""
     if not (
         isinstance(node.value, nodes.Name)
         or isinstance(node.value, nodes.Attribute)
