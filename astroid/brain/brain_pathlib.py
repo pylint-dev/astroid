@@ -20,8 +20,6 @@ Path
 
 def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
     """Infer subscripted names on Python 3.10+, which supports slicing PurePath.parents"""
-    if not PY310_PLUS:
-        return False
     if not (
         isinstance(node.value, nodes.Name)
         or isinstance(node.value, nodes.Attribute)
@@ -50,8 +48,9 @@ def infer_parents_subscript(
     raise UseInferenceDefault
 
 
-AstroidManager().register_transform(
-    nodes.Subscript,
-    inference_tip(infer_parents_subscript),
-    _looks_like_parents_subscript,
-)
+if PY310_PLUS:
+    AstroidManager().register_transform(
+        nodes.Subscript,
+        inference_tip(infer_parents_subscript),
+        _looks_like_parents_subscript,
+    )
