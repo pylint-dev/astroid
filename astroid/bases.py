@@ -112,7 +112,7 @@ class Proxy:
     def __init__(
         self, proxied: nodes.ClassDef | nodes.Lambda | Proxy | None = None
     ) -> None:
-        if proxied:
+        if proxied is not None:
             self._proxied = proxied
 
     def __getattr__(self, name):
