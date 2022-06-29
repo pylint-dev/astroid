@@ -32,7 +32,7 @@ InferFn = Callable[..., Any]
 class AstroidManagerBrain(TypedDict):
     """Dictionary to store relevant information for a AstroidManager class."""
 
-    astroid_cache: dict
+    astroid_cache: dict[str, nodes.Module]
     _mod_file_cache: dict
     _failed_import_hooks: list
     always_load_extensions: bool
