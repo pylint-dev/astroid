@@ -434,7 +434,7 @@ class UnboundMethod(Proxy):
         node_context = context.extra_context.get(caller.args[0])
         infer = caller.args[0].infer(context=node_context)
 
-        yield from (Instance(x) if x is not Uninferable else x for x in infer)  # type: ignore[misc]
+        yield from (Instance(x) if x is not Uninferable else x for x in infer)  # type: ignore[misc,arg-type]
 
     def bool_value(self, context=None):
         return True
