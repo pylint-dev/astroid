@@ -86,7 +86,7 @@ class AstroidManager:
         return self._transform.unregister_transform
 
     @property
-    def builtins_module(self):
+    def builtins_module(self) -> nodes.Module:
         return self.astroid_cache["builtins"]
 
     def visit_transforms(self, node):
