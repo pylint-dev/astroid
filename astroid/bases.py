@@ -105,10 +105,14 @@ class Proxy:
     if new instance attributes are created. See the Const class
     """
 
-    _proxied = None  # proxied object may be set by class or by instance
+    _proxied: nodes.ClassDef | nodes.Lambda | Proxy | None = (
+        None  # proxied object may be set by class or by instance
+    )
 
-    def __init__(self, proxied=None):
-        if proxied is not None:
+    def __init__(
+        self, proxied: nodes.ClassDef | nodes.Lambda | Proxy | None = None
+    ) -> None:
+        if proxied:
             self._proxied = proxied
 
     def __getattr__(self, name):
