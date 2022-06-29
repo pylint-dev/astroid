@@ -105,9 +105,13 @@ class Proxy:
     if new instance attributes are created. See the Const class
     """
 
-    _proxied = None  # proxied object may be set by class or by instance
+    _proxied: nodes.ClassDef | nodes.Lambda | Proxy | None = (
+        None  # proxied object may be set by class or by instance
+    )
 
-    def __init__(self, proxied=None):
+    def __init__(
+        self, proxied: nodes.ClassDef | nodes.Lambda | Proxy | None = None
+    ) -> None:
         if proxied is not None:
             self._proxied = proxied
 
@@ -430,7 +434,7 @@ class UnboundMethod(Proxy):
         node_context = context.extra_context.get(caller.args[0])
         infer = caller.args[0].infer(context=node_context)
 
-        yield from (Instance(x) if x is not Uninferable else x for x in infer)  # type: ignore[misc]
+        yield from (Instance(x) if x is not Uninferable else x for x in infer)  # type: ignore[misc,arg-type]
 
     def bool_value(self, context=None):
         return True
