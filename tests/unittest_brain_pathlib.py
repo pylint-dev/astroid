@@ -28,20 +28,14 @@ def test_inference_parents() -> None:
 
 def test_inference_parents_subscript_index() -> None:
     """Test inference of ``pathlib.Path.parents``, accessed by index."""
-    parents, path = astroid.extract_node(
+    path = astroid.extract_node(
         """
     from pathlib import Path
 
     current_path = Path().resolve()
-    path_parents = current_path.parents
-    path_parents  #@
-    path_parents[2]  #@
+    current_path.parents[2]  #@
     """
     )
-    inferred = parents.inferred()
-    assert len(inferred) == 1
-    assert isinstance(inferred[0], bases.Instance)
-    assert inferred[0].qname() == "pathlib._PathParents"
 
     inferred = path.inferred()
     assert len(inferred) == 1
