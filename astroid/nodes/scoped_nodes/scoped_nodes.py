@@ -15,7 +15,7 @@ import itertools
 import os
 import sys
 import warnings
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
 from typing import TYPE_CHECKING, NoReturn, TypeVar, overload
 
 from astroid import bases
@@ -2014,11 +2014,8 @@ class ClassDef(
         :type: list(Keyword) or None
         """
 
-        self.bases = []
-        """What the class inherits from.
-
-        :type: list(NodeNG)
-        """
+        self.bases: list[NodeNG] = []
+        """What the class inherits from."""
 
         self.body = []
         """The contents of the class body.
@@ -2375,14 +2372,14 @@ class ClassDef(
         """
         return [bnode.as_string() for bnode in self.bases]
 
-    def ancestors(self, recurs=True, context=None):
+    def ancestors(
+        self, recurs: bool = True, context: InferenceContext | None = None
+    ) -> Generator[ClassDef, None, None]:
         """Iterate over the base classes in prefixed depth first order.
 
         :param recurs: Whether to recurse or return direct ancestors only.
-        :type recurs: bool
 
         :returns: The base classes
-        :rtype: iterable(NodeNG)
         """
         # FIXME: should be possible to choose the resolution order
         # FIXME: inference make infinite loops possible here
