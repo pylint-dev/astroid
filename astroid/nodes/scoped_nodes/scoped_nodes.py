@@ -1950,6 +1950,7 @@ class ClassDef(
     """
 
     _type = None
+    _metaclass: NodeNG | None = None
     _metaclass_hack = False
     hide = False
     type = property(
@@ -2091,7 +2092,7 @@ class ClassDef(
         body,
         decorators,
         newstyle=None,
-        metaclass=None,
+        metaclass: NodeNG | None = None,
         keywords=None,
         *,
         position: Position | None = None,
@@ -2112,7 +2113,6 @@ class ClassDef(
         :type newstyle: bool or None
 
         :param metaclass: The metaclass of this class.
-        :type metaclass: NodeNG or None
 
         :param keywords: The keywords given to the class definition.
         :type keywords: list(Keyword) or None
@@ -2809,8 +2809,6 @@ class ClassDef(
         if self.newstyle:
             return builtin_lookup("type")[1][0]
         return None
-
-    _metaclass = None
 
     def declared_metaclass(self, context=None):
         """Return the explicit declared metaclass for the current class.
