@@ -19,15 +19,12 @@ def _subprocess_transform():
         universal_newlines=None, startupinfo=None, creationflags=0, restore_signals=True,
         start_new_session=False, pass_fds=(), *, encoding=None, errors=None, text=None"""
 
-    py39_args = "user=None, group=None, extra_groups=None, umask=-1"
-    py310_args = "pipesize=-1"
-    py311_args = "process_group=None"
     if PY39_PLUS:
-        args = ", ".join((args, py39_args))
+        args += ", user=None, group=None, extra_groups=None, umask=-1"
     if PY310_PLUS:
-        args = ", ".join((args, py310_args))
+        args += ", pipesize=-1"
     if PY311_PLUS:
-        args = ", ".join((args, py311_args))
+        args += ", process_group=None"
 
     init = f"""
         def __init__({args}):
