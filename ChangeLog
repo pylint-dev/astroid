@@ -105,6 +105,10 @@ Release date: TBA
 
   Closes PyCQA/pylint#6017
 
+* Updated the stdlib brain for ``subprocess.Popen`` to accommodate Python 3.9+.
+
+  Closes PyCQA/pylint#7092
+
 
 What's New in astroid 2.11.6?
 =============================
