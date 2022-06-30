@@ -46,7 +46,6 @@ from astroid.nodes import Arguments, Const, NodeNG, _base_nodes, node_classes
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
-from astroid.typing import SuccessfulInferenceResult
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
@@ -2813,7 +2812,7 @@ class ClassDef(
 
     def declared_metaclass(
         self, context: InferenceContext | None = None
-    ) -> SuccessfulInferenceResult | None:
+    ) -> NodeNG | None:
         """Return the explicit declared metaclass for the current class.
 
         An explicit declared metaclass is defined
@@ -2841,7 +2840,7 @@ class ClassDef(
                 return next(
                     node
                     for node in self._metaclass.infer(context=context)
-                    if node is not util.Uninferable
+                    if isinstance(node, NodeNG)
                 )
             except (InferenceError, StopIteration):
                 return None
@@ -2850,7 +2849,7 @@ class ClassDef(
 
     def _find_metaclass(
         self, seen: set[ClassDef] | None = None, context: InferenceContext | None = None
-    ) -> SuccessfulInferenceResult | None:
+    ) -> NodeNG | None:
         if seen is None:
             seen = set()
         seen.add(self)
@@ -2864,9 +2863,7 @@ class ClassDef(
                         break
         return klass
 
-    def metaclass(
-        self, context: InferenceContext | None = None
-    ) -> SuccessfulInferenceResult | None:
+    def metaclass(self, context: InferenceContext | None = None) -> NodeNG | None:
         """Get the metaclass of this class.
 
         If this class does not define explicitly a metaclass,
