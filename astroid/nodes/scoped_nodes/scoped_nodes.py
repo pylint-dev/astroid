@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, NoReturn, TypeVar, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
-from astroid import mixins, util
+from astroid import util
 from astroid.const import IS_PYPY, NAMEDTUPLE_BASENAMES, PY38, PY38_PLUS, PY39_PLUS
 from astroid.context import (
     CallContext,
