@@ -536,8 +536,7 @@ def _get_namedtuple_fields(node: nodes.Call) -> str:
     extract a node from them later on.
     """
     names = []
-    fields = node.args[1]
-    for elt in next(fields.infer()).elts:
+    for elt in next(node.args[1].infer()).elts:
         if isinstance(elt, nodes.Const):
             names.append(elt.as_string())
             continue
