@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 import pytest
 
-from astroid import Slice, arguments
+from astroid import Slice, arguments, bases
 from astroid import decorators as decoratorsmod
 from astroid import helpers, nodes, objects, test_utils, util
 from astroid.arguments import CallSite
@@ -2193,8 +2193,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
         """
         ast = parse(code, __name__)
-        bases = ast["Second"].bases[0]
-        inferred = next(bases.infer())
+        base_classes = ast["Second"].bases[0]
+        inferred = next(base_classes.infer())
         self.assertTrue(inferred)
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.qname(), "collections.Counter")
@@ -6249,7 +6249,7 @@ def test_inferaugassign_picking_parent_instead_of_stmt() -> None:
     # as a string.
     node = extract_node(code)
     inferred = next(node.infer())
-    assert isinstance(inferred, Instance)
+    assert isinstance(inferred, bases.NamedTuple)
     assert inferred.name == "SomeClass"
 
 

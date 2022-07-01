@@ -78,27 +78,27 @@ def _filter_stmts(base_node: nodes.NodeNG, stmts, frame, offset):
         #
         # def test(b=1):
         #     ...
+        #
+        # If the frame is already a Module we don't need to go up anymore
         if (
-            base_node.parent
+            not isinstance(myframe, nodes.Module)
+            and base_node.parent
             and base_node.statement(future=True) is myframe
             and myframe.parent
         ):
             myframe = myframe.parent.frame()
 
+    # We can use line filtering if we are in the same frame.
+    # mylineno is 0 by default to skip if we can't determine lineno
+    # or if we are at the module level. lineno information is (for example)
+    # missing for nodes inserted for living objects.
+    mylineno = 0
     mystmt: nodes.Statement | None = None
-    if base_node.parent:
+    if base_node.parent and not isinstance(base_node.parent, nodes.Module):
         mystmt = base_node.statement(future=True)
-
-    # line filtering if we are in the same frame
-    #
-    # take care node may be missing lineno information (this is the case for
-    # nodes inserted for living objects)
-    if myframe is frame and mystmt and mystmt.fromlineno is not None:
-        assert mystmt.fromlineno is not None, mystmt
-        mylineno = mystmt.fromlineno + offset
-    else:
-        # disabling lineno filtering
-        mylineno = 0
+        if myframe is frame and mystmt.fromlineno is not None:
+            assert mystmt.fromlineno is not None, mystmt
+            mylineno = mystmt.fromlineno + offset
 
     _stmts = []
     _stmt_parents = []

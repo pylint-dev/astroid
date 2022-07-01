@@ -8,7 +8,7 @@ import xml
 import pytest
 
 import astroid
-from astroid import builder, nodes, objects, test_utils, util
+from astroid import bases, builder, nodes, objects, test_utils, util
 from astroid.const import PY311_PLUS
 from astroid.exceptions import InferenceError
 
@@ -203,9 +203,9 @@ class ClassModelTest(unittest.TestCase):
         called_mro = next(ast_nodes[5].infer())
         self.assertEqual(called_mro.elts, mro.elts)
 
-        bases = next(ast_nodes[6].infer())
-        self.assertIsInstance(bases, astroid.Tuple)
-        self.assertEqual([cls.name for cls in bases.elts], ["object"])
+        bases_classes = next(ast_nodes[6].infer())
+        self.assertIsInstance(bases_classes, astroid.Tuple)
+        self.assertEqual([cls.name for cls in bases_classes.elts], ["object"])
 
         cls = next(ast_nodes[7].infer())
         self.assertIsInstance(cls, astroid.ClassDef)
@@ -694,7 +694,7 @@ class LruCacheModelTest(unittest.TestCase):
         self.assertIsInstance(wrapped, astroid.FunctionDef)
         self.assertEqual(wrapped.name, "foo")
         cache_info = next(ast_nodes[2].infer())
-        self.assertIsInstance(cache_info, astroid.Instance)
+        self.assertIsInstance(cache_info, bases.NamedTuple)
 
 
 if __name__ == "__main__":

@@ -6,6 +6,11 @@ import enum
 import sys
 from pathlib import Path
 
+if sys.version_info >= (3, 8):
+    from typing import Final
+else:
+    from typing_extensions import Final
+
 PY38 = sys.version_info[:2] == (3, 8)
 PY38_PLUS = sys.version_info >= (3, 8)
 PY39_PLUS = sys.version_info >= (3, 9)
@@ -33,3 +38,6 @@ Del = Context.Del
 
 ASTROID_INSTALL_DIRECTORY = Path(__file__).parent
 BRAIN_MODULES_DIRECTORY = ASTROID_INSTALL_DIRECTORY / "brain"
+
+NAMEDTUPLE_BASENAMES: Final[frozenset[str]] = frozenset(("namedtuple", "NamedTuple"))
+"""Const used to identify namedtuples in the basenames of subclasses"""

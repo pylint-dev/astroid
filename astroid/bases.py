@@ -621,3 +621,7 @@ class AsyncGenerator(Generator):
 
     def __str__(self):
         return f"AsyncGenerator({self._proxied.name})"
+
+
+class NamedTuple(BaseInstance):
+    """Special node representing a NamedTuple instance"""

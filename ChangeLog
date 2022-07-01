@@ -60,6 +60,9 @@ Release date: TBA
 * On Python versions >= 3.9, ``astroid`` now understands subscripting
   builtin classes such as ``enumerate`` or ``staticmethod``.
 
+* Instances of NamedTuples both from typing and collections will now be cast to a
+  NamedTuple instance. This instance proxies the definition of that NamedTuple.
+
 * Fixed inference of ``Enums`` when they are imported under an alias.
 
   Closes PyCQA/pylint#5776

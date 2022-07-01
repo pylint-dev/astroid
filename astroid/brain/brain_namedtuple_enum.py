@@ -186,20 +186,29 @@ def infer_named_tuple(
     node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[nodes.ClassDef]:
     """Specific inference function for namedtuple Call node"""
-    tuple_base_name = nodes.Name(name="tuple", parent=node.root())
-    class_node, name, attributes = infer_func_form(
-        node, tuple_base_name, context=context
-    )
-    call_site = arguments.CallSite.from_call(node, context=context)
-    node = extract_node("import collections; collections.namedtuple")
-    try:
+    # Infer which type of NamedTuple we're dealing with (typing or collections)
+    inferred_namedtuple_call = next(node.func.infer())
+    base_names = [
+        nodes.Name(name="tuple", parent=node.root()),
+        nodes.Name(
+            name=inferred_namedtuple_call.name,
+            parent=inferred_namedtuple_call.root(),
+        ),
+    ]
 
-        func = next(node.infer())
-    except StopIteration as e:
-        raise InferenceError(node=node) from e
+    class_node, name, attributes = infer_func_form(node, base_names, context=context)
+    call_site = arguments.CallSite.from_call(node, context=context)
+
     try:
-        rename = next(call_site.infer_argument(func, "rename", context)).bool_value()
+        rename = next(
+            call_site.infer_argument(inferred_namedtuple_call, "rename", context)
+        ).bool_value()
     except (InferenceError, StopIteration):
+        rename = False
+    # If inferred_namedtuple_call is the ClassDef of typing.NamedTuple
+    # infer_argument will raise AttributeError
+    # TODO: See if this exception can be prevented
+    except AttributeError:
         rename = False
 
     try:
@@ -331,7 +340,7 @@ def infer_enum(node, context=None):
         __members__ = ['']
     """
     )
-    class_node = infer_func_form(node, enum_meta, context=context, enum=True)[0]
+    class_node = infer_func_form(node, [enum_meta], context=context, enum=True)[0]
     return iter([class_node.instantiate_class()])
 
 
@@ -509,9 +518,11 @@ def infer_typing_namedtuple_function(node, context=None):
 def infer_typing_namedtuple(
     node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[nodes.ClassDef]:
-    """Infer a typing.NamedTuple(...) call."""
-    # This is essentially a namedtuple with different arguments
-    # so we extract the args and infer a named tuple.
+    """Infer a typing.NamedTuple(...) call.
+
+    We do some premature checking of the node to see if we don't run into any unexpected
+    values.
+    """
     try:
         func = next(node.func.infer())
     except (InferenceError, StopIteration) as exc:

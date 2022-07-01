@@ -1502,7 +1502,8 @@ class TypingBrain(unittest.TestCase):
         """
         )
         self.assertEqual(
-            [anc.name for anc in klass.ancestors()], ["X", "tuple", "object"]
+            [anc.name for anc in klass.ancestors()],
+            ["X", "tuple", "object", "NamedTuple"],
         )
         for anc in klass.ancestors():
             self.assertFalse(anc.parent is None)
@@ -1611,7 +1612,7 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(result.infer())
-        self.assertIsInstance(inferred, astroid.Instance)
+        self.assertIsInstance(inferred, bases.NamedTuple)
 
         class_attr = inferred.getattr("CLASS_ATTR")[0]
         self.assertIsInstance(class_attr, astroid.AssignName)
@@ -1784,7 +1785,7 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        self.assertIsInstance(inferred, astroid.Instance)
+        self.assertIsInstance(inferred, bases.NamedTuple)
 
     @test_utils.require_version("3.8")
     def test_typed_dict(self):
@@ -3131,7 +3132,7 @@ def test_http_client_brain() -> None:
     """
     )
     inferred = next(node.infer())
-    assert isinstance(inferred, astroid.Instance)
+    assert isinstance(inferred, bases.NamedTuple)
 
 
 def test_http_status_brain() -> None:
