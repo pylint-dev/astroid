@@ -2508,7 +2508,7 @@ class ClassDef(
             return values
         raise AttributeInferenceError(target=self, attribute=name, context=context)
 
-    def instantiate_class(self):
+    def instantiate_class(self) -> bases.Instance:
         """Get an :class:`Instance` of the :class:`ClassDef` node.
 
         :returns: An :class:`Instance` of the :class:`ClassDef` node,
