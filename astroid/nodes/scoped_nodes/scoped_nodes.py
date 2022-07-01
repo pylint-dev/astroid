@@ -2511,9 +2511,7 @@ class ClassDef(
     def instantiate_class(self) -> bases.Instance:
         """Get an :class:`Instance` of the :class:`ClassDef` node.
 
-        :returns: An :class:`Instance` of the :class:`ClassDef` node,
-            or self if this is not possible.
-        :rtype: Instance or ClassDef
+        :returns: An :class:`Instance` of the :class:`ClassDef` node
         """
         try:
             if any(cls.name in EXCEPTION_BASE_CLASSES for cls in self.mro()):
