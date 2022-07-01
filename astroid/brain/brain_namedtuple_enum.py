@@ -85,11 +85,11 @@ def infer_func_form(
     try:
         name, names = _find_func_form_arguments(node, context)
         try:
-            attributes = names.value.replace(",", " ").split()
+            attributes: list[str] = names.value.replace(",", " ").split()
         except AttributeError as exc:
             # Handle attributes of NamedTuples
             if not enum:
-                attributes: List[str] = []
+                attributes = []
                 fields = _get_namedtuple_fields(node)
                 if fields:
                     fields_node = extract_node(fields)
