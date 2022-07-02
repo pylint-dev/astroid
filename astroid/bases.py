@@ -437,11 +437,9 @@ class UnboundMethod(Proxy):
         infer = caller.args[0].infer(context=node_context)
 
         for inferred in infer:
-            if isinstance(inferred, type(Uninferable)):  # isinstance helps mypy
+            if inferred is Uninferable:
                 yield inferred
-            if isinstance(inferred, Instance):
-                raise InferenceError
-            if isinstance(inferred, (nodes.ClassDef, nodes.Lambda, Proxy)):
+            if isinstance(inferred, nodes.ClassDef):
                 yield Instance(inferred)
             raise InferenceError
 
