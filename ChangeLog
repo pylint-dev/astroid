@@ -109,6 +109,11 @@ Release date: TBA
 
   Closes PyCQA/pylint#7092
 
+* Prevent creating ``Instance`` objects that proxy other ``Instance``s when there is
+  ambiguity (or user error) in calling ``__new__(cls)``.
+
+  Refs PyCQA/pylint#7109
+
 
 What's New in astroid 2.11.6?
 =============================
