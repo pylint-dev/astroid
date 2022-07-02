@@ -3799,6 +3799,15 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         with pytest.raises(InferenceError):
             next(ast_node4.infer())
 
+        ast_node5 = extract_node(
+            """
+        class A:  pass
+        A.__new__(A())  #@
+        """
+        )
+        with pytest.raises(InferenceError):
+            next(ast_node5.infer())
+
     @pytest.mark.xfail(reason="Does not support function metaclasses")
     def test_function_metaclasses(self):
         # These are not supported right now, although

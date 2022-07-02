@@ -293,6 +293,9 @@ class Instance(BaseInstance):
     # pylint: disable=unnecessary-lambda
     special_attributes = lazy_descriptor(lambda: objectmodel.InstanceModel())
 
+    def __init__(self, proxied: nodes.ClassDef) -> None:
+        super().__init__(proxied)
+
     def __repr__(self):
         return "<Instance of {}.{} at 0x{}>".format(
             self._proxied.root().name, self._proxied.name, id(self)
@@ -434,9 +437,12 @@ class UnboundMethod(Proxy):
                 return
 
         node_context = context.extra_context.get(caller.args[0])
-        infer = caller.args[0].infer(context=node_context)
-
-        yield from (Instance(x) if x is not Uninferable else x for x in infer)  # type: ignore[misc,arg-type]
+        for inferred in caller.args[0].infer(context=node_context):
+            if inferred is Uninferable:
+                yield inferred
+            if isinstance(inferred, nodes.ClassDef):
+                yield Instance(inferred)
+            raise InferenceError
 
     def bool_value(self, context=None):
         return True
