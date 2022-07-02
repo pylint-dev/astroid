@@ -293,6 +293,9 @@ class Instance(BaseInstance):
     # pylint: disable=unnecessary-lambda
     special_attributes = lazy_descriptor(lambda: objectmodel.InstanceModel())
 
+    def __init__(self, proxied: nodes.ClassDef) -> None:
+        super().__init__(proxied)
+
     def __repr__(self):
         return "<Instance of {}.{} at 0x{}>".format(
             self._proxied.root().name, self._proxied.name, id(self)
