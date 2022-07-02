@@ -34,7 +34,7 @@ from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.utils import Position
-from astroid.typing import InferenceResult, InferFn
+from astroid.typing import InferenceErrorInfo, InferenceResult, InferFn
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -174,17 +174,15 @@ class NodeNG:
             yield from context.inferred[key]
             return
 
-        generator = self._infer(context=context, **kwargs)
         results = []
 
         # Limit inference amount to help with performance issues with
         # exponentially exploding possible results.
-        limit = AstroidManager().max_inferable_values
-        for i, result in enumerate(generator):
+        limit = AstroidManager.max_inferable_values
+        for i, result in enumerate(self._infer(context=context, **kwargs)):
             if i >= limit or (context.nodes_inferred > context.max_inferred):
-                uninferable = util.Uninferable
-                results.append(uninferable)
-                yield uninferable
+                results.append(util.Uninferable)
+                yield util.Uninferable
                 break
             results.append(result)
             yield result
@@ -361,15 +359,14 @@ class NodeNG:
             raise ParentMissingError(target=self)
         return self.parent.scope()
 
-    def root(self):
+    def root(self) -> nodes.Module:
         """Return the root node of the syntax tree.
 
         :returns: The root node.
-        :rtype: Module
         """
         if self.parent:
             return self.parent.root()
-        return self
+        return self  # type: ignore[return-value] # Only 'Module' does not have a parent node.
 
     def child_sequence(self, child):
         """Search for the sequence that contains this child.
@@ -472,16 +469,16 @@ class NodeNG:
         We need this method since not all nodes have :attr:`lineno` set.
         """
         line = self.lineno
-        _node: NodeNG | None = self
+        _node = self
         try:
             while line is None:
                 _node = next(_node.get_children())
                 line = _node.lineno
         except StopIteration:
-            _node = self.parent
-            while _node and line is None:
-                line = _node.lineno
-                _node = _node.parent
+            parent = self.parent
+            while parent and line is None:
+                line = parent.lineno
+                parent = parent.parent
         return line
 
     def block_range(self, lineno):
@@ -596,7 +593,7 @@ class NodeNG:
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """we don't know how to resolve a statement by default"""
         # this method is overridden by most concrete classes
         raise InferenceError(

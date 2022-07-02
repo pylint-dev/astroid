@@ -64,7 +64,7 @@ class AstroidManager:
     }
     max_inferable_values: ClassVar[int] = 100
 
-    def __init__(self):
+    def __init__(self) -> None:
         # NOTE: cache entries are added by the [re]builder
         self.astroid_cache = AstroidManager.brain["astroid_cache"]
         self._mod_file_cache = AstroidManager.brain["_mod_file_cache"]
@@ -86,7 +86,7 @@ class AstroidManager:
         return self._transform.unregister_transform
 
     @property
-    def builtins_module(self):
+    def builtins_module(self) -> nodes.Module:
         return self.astroid_cache["builtins"]
 
     def visit_transforms(self, node):
@@ -357,7 +357,7 @@ class AstroidManager:
         """Cache a module if no module with the same name is known yet."""
         self.astroid_cache.setdefault(module.name, module)
 
-    def bootstrap(self):
+    def bootstrap(self) -> None:
         """Bootstrap the required AST modules needed for the manager to work
 
         The bootstrap usually involves building the AST for the builtins
@@ -388,7 +388,7 @@ class AstroidManager:
             util.is_namespace,
             ObjectModel.attributes,
         ):
-            lru_cache.cache_clear()
+            lru_cache.cache_clear()  # type: ignore[attr-defined]
 
         self.bootstrap()
 
@@ -396,5 +396,7 @@ class AstroidManager:
         for module in BRAIN_MODULES_DIRECTORY.iterdir():
             if module.suffix == ".py":
                 module_spec = find_spec(f"astroid.brain.{module.stem}")
+                assert module_spec
                 module_object = module_from_spec(module_spec)
+                assert module_spec.loader
                 module_spec.loader.exec_module(module_object)

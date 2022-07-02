@@ -1,9 +1,1 @@
-prune .github
-prune doc
-prune tests
-exclude .*
-exclude ChangeLog
-exclude pylintrc
-exclude README.rst
-exclude requirements_*.txt
-exclude tox.ini
+include README.rst

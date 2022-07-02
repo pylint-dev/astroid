@@ -18,6 +18,7 @@ import pytest
 import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
+from astroid.const import PY39_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -75,8 +76,11 @@ class HashlibTest(unittest.TestCase):
         self.assertIn("hexdigest", class_obj)
         self.assertIn("block_size", class_obj)
         self.assertIn("digest_size", class_obj)
-        self.assertEqual(len(class_obj["__init__"].args.args), 2)
-        self.assertEqual(len(class_obj["__init__"].args.defaults), 1)
+        # usedforsecurity was added in Python 3.9, see 8e7174a9
+        self.assertEqual(len(class_obj["__init__"].args.args), 3 if PY39_PLUS else 2)
+        self.assertEqual(
+            len(class_obj["__init__"].args.defaults), 2 if PY39_PLUS else 1
+        )
         self.assertEqual(len(class_obj["update"].args.args), 2)
         self.assertEqual(len(class_obj["digest"].args.args), 1)
         self.assertEqual(len(class_obj["hexdigest"].args.args), 1)
@@ -569,12 +573,28 @@ class SixBrainTest(unittest.TestCase):
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "B")
-        self.assertIsInstance(inferred.bases[0], nodes.Call)
+        self.assertIsInstance(inferred.bases[0], nodes.Name)
+        self.assertEqual(inferred.bases[0].name, "C")
         ancestors = tuple(inferred.ancestors())
         self.assertIsInstance(ancestors[0], nodes.ClassDef)
         self.assertEqual(ancestors[0].name, "C")
         self.assertIsInstance(ancestors[1], nodes.ClassDef)
         self.assertEqual(ancestors[1].name, "object")
+
+    @staticmethod
+    def test_six_with_metaclass_enum_ancestor() -> None:
+        code = """
+        import six
+        from enum import Enum, EnumMeta
+
+        class FooMeta(EnumMeta):
+            pass
+
+        class Foo(six.with_metaclass(FooMeta, Enum)):  #@
+            bar = 1
+        """
+        klass = astroid.extract_node(code)
+        assert list(klass.ancestors())[-1].name == "Enum"
 
     def test_six_with_metaclass_with_additional_transform(self) -> None:
         def transform_class(cls: Any) -> ClassDef:

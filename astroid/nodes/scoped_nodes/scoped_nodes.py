@@ -15,12 +15,12 @@ import itertools
 import os
 import sys
 import warnings
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
 from typing import TYPE_CHECKING, NoReturn, TypeVar, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
-from astroid import mixins, util
+from astroid import util
 from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS
 from astroid.context import (
     CallContext,
@@ -42,7 +42,7 @@ from astroid.exceptions import (
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
-from astroid.nodes import Arguments, Const, NodeNG, node_classes
+from astroid.nodes import Arguments, Const, NodeNG, _base_nodes, node_classes
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
@@ -527,7 +527,9 @@ class Module(LocalsDictNodeNG):
                 raise
         return AstroidManager().ast_from_module_name(modname)
 
-    def relative_to_absolute_name(self, modname: str, level: int) -> str:
+    def relative_to_absolute_name(
+        self, modname: str | None, level: int | None
+    ) -> str | None:
         """Get the absolute module name for a relative import.
 
         The relative import can be implicit or explicit.
@@ -1040,7 +1042,7 @@ def _infer_decorator_callchain(node):
     return None
 
 
-class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
+class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
     """Class representing an :class:`ast.Lambda` node.
 
     >>> import astroid
@@ -1262,7 +1264,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         raise AttributeInferenceError(target=self, attribute=name)
 
 
-class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
+class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda):
     """Class representing an :class:`ast.FunctionDef`.
 
     >>> import astroid
@@ -1915,7 +1917,9 @@ def get_wrapping_class(node):
 
 
 # pylint: disable=too-many-instance-attributes
-class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement):
+class ClassDef(
+    _base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG, _base_nodes.Statement
+):
     """Class representing an :class:`ast.ClassDef` node.
 
     >>> import astroid
@@ -1946,6 +1950,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     """
 
     _type = None
+    _metaclass: NodeNG | None = None
     _metaclass_hack = False
     hide = False
     type = property(
@@ -2010,11 +2015,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type: list(Keyword) or None
         """
 
-        self.bases = []
-        """What the class inherits from.
-
-        :type: list(NodeNG)
-        """
+        self.bases: list[NodeNG] = []
+        """What the class inherits from."""
 
         self.body = []
         """The contents of the class body.
@@ -2090,7 +2092,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         body,
         decorators,
         newstyle=None,
-        metaclass=None,
+        metaclass: NodeNG | None = None,
         keywords=None,
         *,
         position: Position | None = None,
@@ -2111,7 +2113,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type newstyle: bool or None
 
         :param metaclass: The metaclass of this class.
-        :type metaclass: NodeNG or None
 
         :param keywords: The keywords given to the class definition.
         :type keywords: list(Keyword) or None
@@ -2371,14 +2372,14 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         return [bnode.as_string() for bnode in self.bases]
 
-    def ancestors(self, recurs=True, context=None):
+    def ancestors(
+        self, recurs: bool = True, context: InferenceContext | None = None
+    ) -> Generator[ClassDef, None, None]:
         """Iterate over the base classes in prefixed depth first order.
 
         :param recurs: Whether to recurse or return direct ancestors only.
-        :type recurs: bool
 
         :returns: The base classes
-        :rtype: iterable(NodeNG)
         """
         # FIXME: should be possible to choose the resolution order
         # FIXME: inference make infinite loops possible here
@@ -2507,12 +2508,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             return values
         raise AttributeInferenceError(target=self, attribute=name, context=context)
 
-    def instantiate_class(self):
+    def instantiate_class(self) -> bases.Instance:
         """Get an :class:`Instance` of the :class:`ClassDef` node.
 
-        :returns: An :class:`Instance` of the :class:`ClassDef` node,
-            or self if this is not possible.
-        :rtype: Instance or ClassDef
+        :returns: An :class:`Instance` of the :class:`ClassDef` node
         """
         try:
             if any(cls.name in EXCEPTION_BASE_CLASSES for cls in self.mro()):
@@ -2808,8 +2807,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         if self.newstyle:
             return builtin_lookup("type")[1][0]
         return None
-
-    _metaclass = None
 
     def declared_metaclass(self, context=None):
         """Return the explicit declared metaclass for the current class.

@@ -22,6 +22,7 @@ from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 from astroid.nodes.utils import Position
+from astroid.typing import SuccessfulInferenceResult
 
 if sys.version_info >= (3, 8):
     from typing import Final
@@ -1086,7 +1087,9 @@ class TreeRebuilder:
             end_col_offset=getattr(node, "end_col_offset", None),
             parent=parent,
         )
-        items = list(self._visit_dict_items(node, parent, newnode))
+        items: list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]] = list(
+            self._visit_dict_items(node, parent, newnode)
+        )
         newnode.postinit(items)
         return newnode
 

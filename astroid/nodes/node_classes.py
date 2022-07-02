@@ -11,11 +11,11 @@ import itertools
 import sys
 import typing
 import warnings
-from collections.abc import Generator, Iterator
+from collections.abc import Generator, Iterable, Mapping
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Union
 
-from astroid import decorators, mixins, util
+from astroid import decorators, util
 from astroid.bases import Instance, _infer_stmts
 from astroid.const import Context
 from astroid.context import InferenceContext
@@ -27,8 +27,15 @@ from astroid.exceptions import (
     ParentMissingError,
 )
 from astroid.manager import AstroidManager
+from astroid.nodes import _base_nodes
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
+from astroid.typing import (
+    ConstFactoryResult,
+    InferenceErrorInfo,
+    InferenceResult,
+    SuccessfulInferenceResult,
+)
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -50,6 +57,7 @@ def _is_const(value):
 
 
 _NodesT = TypeVar("_NodesT", bound=NodeNG)
+_BadOpMessageT = TypeVar("_BadOpMessageT", bound=util.BadOperationMessage)
 
 AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
 AssignedStmtsCall = Callable[
@@ -61,6 +69,15 @@ AssignedStmtsCall = Callable[
     ],
     Any,
 ]
+InferBinaryOperation = Callable[
+    [_NodesT, Optional[InferenceContext]],
+    typing.Generator[Union[InferenceResult, _BadOpMessageT], None, None],
+]
+InferLHS = Callable[
+    [_NodesT, Optional[InferenceContext]],
+    typing.Generator[InferenceResult, None, Optional[InferenceErrorInfo]],
+]
+InferUnaryOp = Callable[[_NodesT, str], ConstFactoryResult]
 
 
 @decorators.raise_if_nothing_inferred
@@ -232,41 +249,7 @@ def _container_getitem(instance, elts, index, context=None):
     raise AstroidTypeError(f"Could not use {index} as subscript index")
 
 
-class Statement(NodeNG):
-    """Statement node adding a few attributes"""
-
-    is_statement = True
-    """Whether this node indicates a statement."""
-
-    def next_sibling(self):
-        """The next sibling statement node.
-
-        :returns: The next sibling statement node.
-        :rtype: NodeNG or None
-        """
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        try:
-            return stmts[index + 1]
-        except IndexError:
-            return None
-
-    def previous_sibling(self):
-        """The previous sibling statement.
-
-        :returns: The previous sibling statement node.
-        :rtype: NodeNG or None
-        """
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        if index >= 1:
-            return stmts[index - 1]
-        return None
-
-
-class BaseContainer(
-    mixins.ParentAssignTypeMixin, NodeNG, Instance, metaclass=abc.ABCMeta
-):
+class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMeta):
     """Base class for Set, FrozenSet, Tuple and List."""
 
     _astroid_fields = ("elts",)
@@ -356,11 +339,12 @@ class BaseContainer(
         yield from self.elts
 
 
-class LookupMixIn:
+# TODO: Move into _base_nodes. Blocked by import of _infer_stmts from bases.
+class LookupMixIn(NodeNG):
     """Mixin to look up a name in the right scope."""
 
     @lru_cache()  # noqa
-    def lookup(self, name: str) -> tuple[str, list[NodeNG]]:
+    def lookup(self, name: str) -> tuple[LocalsDictNodeNG, list[NodeNG]]:
         """Lookup where the given variable is assigned.
 
         The lookup starts from self's scope. If self is not a frame itself
@@ -393,9 +377,7 @@ class LookupMixIn:
 # Name classes
 
 
-class AssignName(
-    mixins.NoChildrenMixin, LookupMixIn, mixins.ParentAssignTypeMixin, NodeNG
-):
+class AssignName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssignNode):
     """Variation of :class:`ast.Assign` representing assignment to a name.
 
     An :class:`AssignName` is the name of something that is assigned to.
@@ -412,6 +394,8 @@ class AssignName(
     """
 
     _other_fields = ("name",)
+
+    infer_lhs: ClassVar[InferLHS[AssignName]]
 
     @decorators.deprecate_default_argument_values(name="str")
     def __init__(
@@ -456,9 +440,7 @@ class AssignName(
     """
 
 
-class DelName(
-    mixins.NoChildrenMixin, LookupMixIn, mixins.ParentAssignTypeMixin, NodeNG
-):
+class DelName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssignNode):
     """Variation of :class:`ast.Delete` representing deletion of a name.
 
     A :class:`DelName` is the name of something that is deleted.
@@ -511,7 +493,7 @@ class DelName(
         )
 
 
-class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
+class Name(_base_nodes.NoChildrenNode, LookupMixIn):
     """Class representing an :class:`ast.Name` node.
 
     A :class:`Name` node is something that is named, but not covered by
@@ -573,7 +555,7 @@ class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
             yield from child_node._get_name_nodes()
 
 
-class Arguments(mixins.AssignTypeMixin, NodeNG):
+class Arguments(_base_nodes.AssignTypeNode):
     """Class representing an :class:`ast.arguments` node.
 
     An :class:`Arguments` node represents that arguments in a
@@ -974,7 +956,7 @@ def _format_args(args, defaults=None, annotations=None):
     return ", ".join(values)
 
 
-class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
+class AssignAttr(_base_nodes.ParentAssignNode):
     """Variation of :class:`ast.Assign` representing assignment to an attribute.
 
     >>> import astroid
@@ -989,6 +971,8 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
 
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
+
+    infer_lhs: ClassVar[InferLHS[AssignAttr]]
 
     @decorators.deprecate_default_argument_values(attrname="str")
     def __init__(
@@ -1046,7 +1030,7 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
         yield self.expr
 
 
-class Assert(Statement):
+class Assert(_base_nodes.Statement):
     """Class representing an :class:`ast.Assert` node.
 
     An :class:`Assert` node represents an assert statement.
@@ -1112,7 +1096,7 @@ class Assert(Statement):
             yield self.fail
 
 
-class Assign(mixins.AssignTypeMixin, Statement):
+class Assign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Assign` node.
 
     An :class:`Assign` is a statement where something is explicitly
@@ -1201,7 +1185,7 @@ class Assign(mixins.AssignTypeMixin, Statement):
         yield from self.value._get_yield_nodes_skip_lambdas()
 
 
-class AnnAssign(mixins.AssignTypeMixin, Statement):
+class AnnAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """Class representing an :class:`ast.AnnAssign` node.
 
     An :class:`AnnAssign` is an assignment with a type annotation.
@@ -1293,7 +1277,7 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
             yield self.value
 
 
-class AugAssign(mixins.AssignTypeMixin, Statement):
+class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """Class representing an :class:`ast.AugAssign` node.
 
     An :class:`AugAssign` is an assignment paired with an operator.
@@ -1372,8 +1356,9 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
     """
 
     # This is set by inference.py
-    def _infer_augassign(self, context=None):
-        raise NotImplementedError
+    _infer_augassign: ClassVar[
+        InferBinaryOperation[AugAssign, util.BadBinaryOperationMessage]
+    ]
 
     def type_errors(self, context=None):
         """Get a list of type errors which can occur during inference.
@@ -1472,8 +1457,7 @@ class BinOp(NodeNG):
         self.right = right
 
     # This is set by inference.py
-    def _infer_binop(self, context=None):
-        raise NotImplementedError
+    _infer_binop: ClassVar[InferBinaryOperation[BinOp, util.BadBinaryOperationMessage]]
 
     def type_errors(self, context=None):
         """Get a list of type errors which can occur during inference.
@@ -1575,7 +1559,7 @@ class BoolOp(NodeNG):
         return OP_PRECEDENCE[self.op]
 
 
-class Break(mixins.NoChildrenMixin, Statement):
+class Break(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Break` node.
 
     >>> import astroid
@@ -1848,7 +1832,9 @@ class Comprehension(NodeNG):
         """
         return self
 
-    def _get_filtered_stmts(self, lookup_node, node, stmts, mystmt: Statement | None):
+    def _get_filtered_stmts(
+        self, lookup_node, node, stmts, mystmt: _base_nodes.Statement | None
+    ):
         """method used in filter_stmts"""
         if self is mystmt:
             if isinstance(lookup_node, (Const, Name)):
@@ -1869,7 +1855,7 @@ class Comprehension(NodeNG):
         yield from self.ifs
 
 
-class Const(mixins.NoChildrenMixin, NodeNG, Instance):
+class Const(_base_nodes.NoChildrenNode, Instance):
     """Class representing any constant including num, str, bool, None, bytes.
 
     >>> import astroid
@@ -1927,6 +1913,8 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
             end_col_offset=end_col_offset,
             parent=parent,
         )
+
+    infer_unary_op: ClassVar[InferUnaryOp[Const]]
 
     def __getattr__(self, name):
         # This is needed because of Proxy's __getattr__ method.
@@ -2014,7 +2002,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, Instance):
         return bool(self.value)
 
 
-class Continue(mixins.NoChildrenMixin, Statement):
+class Continue(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Continue` node.
 
     >>> import astroid
@@ -2105,7 +2093,7 @@ class Decorators(NodeNG):
         yield from self.nodes
 
 
-class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
+class DelAttr(_base_nodes.ParentAssignNode):
     """Variation of :class:`ast.Delete` representing deletion of an attribute.
 
     >>> import astroid
@@ -2174,7 +2162,7 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
         yield self.expr
 
 
-class Delete(mixins.AssignTypeMixin, Statement):
+class Delete(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Delete` node.
 
     A :class:`Delete` is a ``del`` statement this is deleting something.
@@ -2267,7 +2255,9 @@ class Dict(NodeNG, Instance):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.items: list[tuple[NodeNG, NodeNG]] = []
+        self.items: list[
+            tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]
+        ] = []
         """The key-value pairs contained in the dictionary."""
 
         super().__init__(
@@ -2278,12 +2268,16 @@ class Dict(NodeNG, Instance):
             parent=parent,
         )
 
-    def postinit(self, items: list[tuple[NodeNG, NodeNG]]) -> None:
+    def postinit(
+        self, items: list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]]
+    ) -> None:
         """Do some setup after initialisation.
 
         :param items: The key-value pairs contained in the dictionary.
         """
         self.items = items
+
+    infer_unary_op: ClassVar[InferUnaryOp[Dict]]
 
     @classmethod
     def from_elements(cls, items=None):
@@ -2391,7 +2385,7 @@ class Dict(NodeNG, Instance):
         return bool(self.items)
 
 
-class Expr(Statement):
+class Expr(_base_nodes.Statement):
     """Class representing an :class:`ast.Expr` node.
 
     An :class:`Expr` is any expression that does not have its value used or
@@ -2455,7 +2449,7 @@ class Expr(Statement):
             yield from self.value._get_yield_nodes_skip_lambdas()
 
 
-class Ellipsis(mixins.NoChildrenMixin, NodeNG):  # pylint: disable=redefined-builtin
+class Ellipsis(_base_nodes.NoChildrenNode):  # pylint: disable=redefined-builtin
     """Class representing an :class:`ast.Ellipsis` node.
 
     An :class:`Ellipsis` is the ``...`` syntax.
@@ -2465,13 +2459,15 @@ class Ellipsis(mixins.NoChildrenMixin, NodeNG):  # pylint: disable=redefined-bui
     """
 
 
-class EmptyNode(mixins.NoChildrenMixin, NodeNG):
+class EmptyNode(_base_nodes.NoChildrenNode):
     """Holds an arbitrary object in the :attr:`LocalsDictNodeNG.locals`."""
 
     object = None
 
 
-class ExceptHandler(mixins.MultiLineBlockMixin, mixins.AssignTypeMixin, Statement):
+class ExceptHandler(
+    _base_nodes.MultiLineBlockNode, _base_nodes.AssignTypeNode, _base_nodes.Statement
+):
     """Class representing an :class:`ast.ExceptHandler`. node.
 
     An :class:`ExceptHandler` is an ``except`` block on a try-except.
@@ -2602,10 +2598,9 @@ class ExtSlice(NodeNG):
 
 
 class For(
-    mixins.MultiLineBlockMixin,
-    mixins.BlockRangeMixIn,
-    mixins.AssignTypeMixin,
-    Statement,
+    _base_nodes.MultiLineWithElseBlockNode,
+    _base_nodes.AssignTypeNode,
+    _base_nodes.Statement,
 ):
     """Class representing an :class:`ast.For` node.
 
@@ -2801,7 +2796,7 @@ class Await(NodeNG):
         yield self.value
 
 
-class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
+class ImportFrom(_base_nodes.ImportNode):
     """Class representing an :class:`ast.ImportFrom` node.
 
     >>> import astroid
@@ -2934,7 +2929,7 @@ class Attribute(NodeNG):
         yield self.expr
 
 
-class Global(mixins.NoChildrenMixin, Statement):
+class Global(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Global` node.
 
     >>> import astroid
@@ -2985,7 +2980,7 @@ class Global(mixins.NoChildrenMixin, Statement):
         return name
 
 
-class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
+class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     """Class representing an :class:`ast.If` node.
 
     >>> import astroid
@@ -3229,7 +3224,7 @@ class IfExp(NodeNG):
         return False
 
 
-class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
+class Import(_base_nodes.ImportNode):
     """Class representing an :class:`ast.Import` node.
     >>> import astroid
     >>> node = astroid.extract_node('import astroid')
@@ -3407,6 +3402,8 @@ class List(BaseContainer):
     See astroid/protocols.py for actual implementation.
     """
 
+    infer_unary_op: ClassVar[InferUnaryOp[List]]
+
     def pytype(self):
         """Get the name of the type that this node represents.
 
@@ -3424,7 +3421,7 @@ class List(BaseContainer):
         return _container_getitem(self, self.elts, index, context=context)
 
 
-class Nonlocal(mixins.NoChildrenMixin, Statement):
+class Nonlocal(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Nonlocal` node.
 
     >>> import astroid
@@ -3480,7 +3477,7 @@ class Nonlocal(mixins.NoChildrenMixin, Statement):
         return name
 
 
-class Pass(mixins.NoChildrenMixin, Statement):
+class Pass(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Pass` node.
 
     >>> import astroid
@@ -3490,7 +3487,7 @@ class Pass(mixins.NoChildrenMixin, Statement):
     """
 
 
-class Raise(Statement):
+class Raise(_base_nodes.Statement):
     """Class representing an :class:`ast.Raise` node.
 
     >>> import astroid
@@ -3572,7 +3569,7 @@ class Raise(Statement):
             yield self.cause
 
 
-class Return(Statement):
+class Return(_base_nodes.Statement):
     """Class representing an :class:`ast.Return` node.
 
     >>> import astroid
@@ -3642,6 +3639,8 @@ class Set(BaseContainer):
     >>> node
     <Set.set l.1 at 0x7f23b2e71d68>
     """
+
+    infer_unary_op: ClassVar[InferUnaryOp[Set]]
 
     def pytype(self):
         """Get the name of the type that this node represents.
@@ -3775,7 +3774,7 @@ class Slice(NodeNG):
             yield self.step
 
 
-class Starred(mixins.ParentAssignTypeMixin, NodeNG):
+class Starred(_base_nodes.ParentAssignNode):
     """Class representing an :class:`ast.Starred` node.
 
     >>> import astroid
@@ -3854,6 +3853,8 @@ class Subscript(NodeNG):
     _astroid_fields = ("value", "slice")
     _other_fields = ("ctx",)
 
+    infer_lhs: ClassVar[InferLHS[Subscript]]
+
     def __init__(
         self,
         ctx: Context | None = None,
@@ -3914,7 +3915,7 @@ class Subscript(NodeNG):
         yield self.slice
 
 
-class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
+class TryExcept(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     """Class representing an :class:`ast.TryExcept` node.
 
     >>> import astroid
@@ -4021,7 +4022,7 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         yield from self.orelse or ()
 
 
-class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
+class TryFinally(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     """Class representing an :class:`ast.TryFinally` node.
 
     >>> import astroid
@@ -4169,6 +4170,8 @@ class Tuple(BaseContainer):
     See astroid/protocols.py for actual implementation.
     """
 
+    infer_unary_op: ClassVar[InferUnaryOp[Tuple]]
+
     def pytype(self):
         """Get the name of the type that this node represents.
 
@@ -4246,8 +4249,9 @@ class UnaryOp(NodeNG):
         self.operand = operand
 
     # This is set by inference.py
-    def _infer_unaryop(self, context=None):
-        raise NotImplementedError
+    _infer_unaryop: ClassVar[
+        InferBinaryOperation[UnaryOp, util.BadUnaryOperationMessage]
+    ]
 
     def type_errors(self, context=None):
         """Get a list of type errors which can occur during inference.
@@ -4278,7 +4282,7 @@ class UnaryOp(NodeNG):
         return super().op_precedence()
 
 
-class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
+class While(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     """Class representing an :class:`ast.While` node.
 
     >>> import astroid
@@ -4385,10 +4389,9 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
 
 
 class With(
-    mixins.MultiLineBlockMixin,
-    mixins.BlockRangeMixIn,
-    mixins.AssignTypeMixin,
-    Statement,
+    _base_nodes.MultiLineWithElseBlockNode,
+    _base_nodes.AssignTypeNode,
+    _base_nodes.Statement,
 ):
     """Class representing an :class:`ast.With` node.
 
@@ -4556,7 +4559,7 @@ class YieldFrom(Yield):  # TODO value is required, not optional
     """Class representing an :class:`ast.YieldFrom` node."""
 
 
-class DictUnpack(mixins.NoChildrenMixin, NodeNG):
+class DictUnpack(_base_nodes.NoChildrenNode):
     """Represents the unpacking of dicts into dicts using :pep:`448`."""
 
 
@@ -4712,7 +4715,7 @@ class JoinedStr(NodeNG):
         yield from self.values
 
 
-class NamedExpr(mixins.AssignTypeMixin, NodeNG):
+class NamedExpr(_base_nodes.AssignTypeNode):
     """Represents the assignment from the assignment expression
 
     >>> import astroid
@@ -4832,7 +4835,7 @@ class NamedExpr(mixins.AssignTypeMixin, NodeNG):
         self.frame(future=True).set_local(name, stmt)
 
 
-class Unknown(mixins.AssignTypeMixin, NodeNG):
+class Unknown(_base_nodes.AssignTypeNode):
     """This node represents a node in a constructed AST where
     introspection is not possible.  At the moment, it's only used in
     the args attribute of FunctionDef nodes where function signature
@@ -4877,14 +4880,14 @@ class EvaluatedObject(NodeNG):
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator[NodeNG | type[util.Uninferable]]:
+    ) -> Generator[NodeNG | type[util.Uninferable], None, None]:
         yield self.value
 
 
 # Pattern matching #######################################################
 
 
-class Match(Statement):
+class Match(_base_nodes.Statement):
     """Class representing a :class:`ast.Match` node.
 
     >>> import astroid
@@ -4934,7 +4937,7 @@ class Pattern(NodeNG):
     """Base class for all Pattern nodes."""
 
 
-class MatchCase(mixins.MultiLineBlockMixin, NodeNG):
+class MatchCase(_base_nodes.MultiLineBlockNode):
     """Class representing a :class:`ast.match_case` node.
 
     >>> import astroid
@@ -5094,7 +5097,7 @@ class MatchSequence(Pattern):
         self.patterns = patterns
 
 
-class MatchMapping(mixins.AssignTypeMixin, Pattern):
+class MatchMapping(_base_nodes.AssignTypeNode, Pattern):
     """Class representing a :class:`ast.MatchMapping` node.
 
     >>> import astroid
@@ -5211,7 +5214,7 @@ class MatchClass(Pattern):
         self.kwd_patterns = kwd_patterns
 
 
-class MatchStar(mixins.AssignTypeMixin, Pattern):
+class MatchStar(_base_nodes.AssignTypeNode, Pattern):
     """Class representing a :class:`ast.MatchStar` node.
 
     >>> import astroid
@@ -5263,7 +5266,7 @@ class MatchStar(mixins.AssignTypeMixin, Pattern):
     """
 
 
-class MatchAs(mixins.AssignTypeMixin, Pattern):
+class MatchAs(_base_nodes.AssignTypeNode, Pattern):
     """Class representing a :class:`ast.MatchAs` node.
 
     >>> import astroid
@@ -5373,7 +5376,9 @@ class MatchOr(Pattern):
 
 # constants ##############################################################
 
-CONST_CLS = {
+# The _proxied attribute of all container types (List, Tuple, etc.)
+# are set during bootstrapping by _astroid_bootstrapping().
+CONST_CLS: dict[type, type[NodeNG]] = {
     list: List,
     tuple: Tuple,
     dict: Dict,
@@ -5381,63 +5386,61 @@ CONST_CLS = {
     type(None): Const,
     type(NotImplemented): Const,
     type(...): Const,
+    bool: Const,
+    int: Const,
+    float: Const,
+    complex: Const,
+    str: Const,
+    bytes: Const,
 }
 
 
-def _update_const_classes():
-    """update constant classes, so the keys of CONST_CLS can be reused"""
-    klasses = (bool, int, float, complex, str, bytes)
-    for kls in klasses:
-        CONST_CLS[kls] = Const
+def _create_basic_elements(
+    value: Iterable[Any], node: List | Set | Tuple
+) -> list[NodeNG]:
+    """Create a list of nodes to function as the elements of a new node."""
+    elements: list[NodeNG] = []
+    for element in value:
+        element_node = const_factory(element)
+        element_node.parent = node
+        elements.append(element_node)
+    return elements
 
 
-_update_const_classes()
+def _create_dict_items(
+    values: Mapping[Any, Any], node: Dict
+) -> list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]]:
+    """Create a list of node pairs to function as the items of a new dict node."""
+    elements: list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]] = []
+    for key, value in values.items():
+        key_node = const_factory(key)
+        key_node.parent = node
+        value_node = const_factory(value)
+        value_node.parent = node
+        elements.append((key_node, value_node))
+    return elements
 
 
-def _two_step_initialization(cls, value):
-    instance = cls()
-    instance.postinit(value)
-    return instance
-
-
-def _dict_initialization(cls, value):
-    if isinstance(value, dict):
-        value = tuple(value.items())
-    return _two_step_initialization(cls, value)
-
-
-_CONST_CLS_CONSTRUCTORS = {
-    List: _two_step_initialization,
-    Tuple: _two_step_initialization,
-    Dict: _dict_initialization,
-    Set: _two_step_initialization,
-    Const: lambda cls, value: cls(value),
-}
-
-
-def const_factory(value):
-    """return an astroid node for a python value"""
-    # XXX we should probably be stricter here and only consider stuff in
-    # CONST_CLS or do better treatment: in case where value is not in CONST_CLS,
-    # we should rather recall the builder on this value than returning an empty
-    # node (another option being that const_factory shouldn't be called with something
-    # not in CONST_CLS)
+def const_factory(value: Any) -> ConstFactoryResult:
+    """Return an astroid node for a python value."""
     assert not isinstance(value, NodeNG)
 
-    # Hack for ignoring elements of a sequence
-    # or a mapping, in order to avoid transforming
-    # each element to an AST. This is fixed in 2.0
-    # and this approach is a temporary hack.
-    if isinstance(value, (list, set, tuple, dict)):
-        elts = []
-    else:
-        elts = value
-
-    try:
-        initializer_cls = CONST_CLS[value.__class__]
-        initializer = _CONST_CLS_CONSTRUCTORS[initializer_cls]
-        return initializer(initializer_cls, elts)
-    except (KeyError, AttributeError):
+    # This only handles instances of the CONST types. Any
+    # subclasses get inferred as EmptyNode.
+    # TODO: See if we should revisit these with the normal builder.
+    if value.__class__ not in CONST_CLS:
         node = EmptyNode()
         node.object = value
         return node
+
+    instance: List | Set | Tuple | Dict
+    initializer_cls = CONST_CLS[value.__class__]
+    if issubclass(initializer_cls, (List, Set, Tuple)):
+        instance = initializer_cls()
+        instance.postinit(_create_basic_elements(value, instance))
+        return instance
+    if issubclass(initializer_cls, Dict):
+        instance = initializer_cls()
+        instance.postinit(_create_dict_items(value, instance))
+        return instance
+    return Const(value)

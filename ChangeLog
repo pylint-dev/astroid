@@ -6,7 +6,15 @@ What's New in astroid 2.12.0?
 =============================
 Release date: TBA
 
+* Fix signal has no ``connect`` member for PySide2 5.15.2+ and PySide6
+
+  Closes #4040, #5378
+
 * ``astroid`` now requires Python 3.7.2 to run.
+
+* Avoid setting a Call as a base for classes created using ``six.with_metaclass()``.
+
+  Refs PyCQA/pylint#5935
 
 * Fix detection of builtins on ``PyPy`` 3.9.
 
@@ -17,6 +25,10 @@ Release date: TBA
 
   Closes #1512
 
+* The ``astroid.mixins`` module has been deprecated and marked for removal in 3.0.0.
+
+  Closes #1633
+
 * Capture and log messages emitted by C extensions when importing them.
   This prevents contaminating programmatic output, e.g. pylint's JSON reporter.
 
@@ -25,6 +37,10 @@ Release date: TBA
 * Calls to ``str.format`` are now correctly inferred.
 
   Closes #104, Closes #1611
+
+* Old style string formatting (using ``%`` operators) is now correctly inferred.
+
+  Closes #151
 
 * Adds missing enums from ``ssl`` module.
 
@@ -62,9 +78,17 @@ Release date: TBA
 
   Closes #1403
 
+* Fixed inference of elements of living container objects such as tuples and sets in the
+  ``sys`` and ``ssl`` modules.
+
 * Add ``pathlib`` brain to handle ``pathlib.PurePath.parents`` inference.
 
   Closes PyCQA/pylint#5783
+
+* Avoid inferring the results of ``**`` operations involving values greater than ``1e5``
+  to avoid expensive computation.
+
+  Closes PyCQA/pylint#6745
 
 * Fix test for Python ``3.11``. In some instances ``err.__traceback__`` will
   be uninferable now.
@@ -81,6 +105,13 @@ What's New in astroid 2.11.7?
 =============================
 Release date: TBA
 
+* Added support for ``usedforsecurity`` keyword to ``hashlib`` constructors.
+
+  Closes PyCQA/pylint#6017
+
+* Updated the stdlib brain for ``subprocess.Popen`` to accommodate Python 3.9+.
+
+  Closes PyCQA/pylint#7092
 
 
 What's New in astroid 2.11.6?
