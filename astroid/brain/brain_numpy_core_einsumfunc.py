@@ -7,6 +7,7 @@ Astroid hooks for numpy.core.einsumfunc module:
 https://github.com/numpy/numpy/blob/main/numpy/core/einsumfunc.py
 """
 
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
