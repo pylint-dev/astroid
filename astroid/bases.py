@@ -433,9 +433,7 @@ class UnboundMethod(Proxy):
                 return
 
         node_context = context.extra_context.get(caller.args[0])
-        infer = caller.args[0].infer(context=node_context)
-
-        for inferred in infer:
+        for inferred in caller.args[0].infer(context=node_context):
             if inferred is Uninferable:
                 yield inferred
             if isinstance(inferred, nodes.ClassDef):
