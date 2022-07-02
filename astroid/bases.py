@@ -10,9 +10,9 @@ from __future__ import annotations
 import collections
 import collections.abc
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from astroid import decorators
+from astroid import decorators, nodes
 from astroid.const import PY310_PLUS
 from astroid.context import (
     CallContext,
@@ -32,9 +32,6 @@ from astroid.util import Uninferable, lazy_descriptor, lazy_import
 objectmodel = lazy_import("interpreter.objectmodel")
 helpers = lazy_import("helpers")
 manager = lazy_import("manager")
-
-if TYPE_CHECKING:
-    from astroid import nodes
 
 
 # TODO: check if needs special treatment
@@ -293,6 +290,11 @@ class Instance(BaseInstance):
     # pylint: disable=unnecessary-lambda
     special_attributes = lazy_descriptor(lambda: objectmodel.InstanceModel())
 
+    def __init__(self, proxied: nodes.ClassDef) -> None:
+        if not isinstance(proxied, nodes.ClassDef):
+            raise TypeError
+        super().__init__(proxied)
+
     def __repr__(self):
         return "<Instance of {}.{} at 0x{}>".format(
             self._proxied.root().name, self._proxied.name, id(self)
@@ -415,9 +417,6 @@ class UnboundMethod(Proxy):
     ) -> collections.abc.Generator[
         nodes.Const | Instance | type[Uninferable], None, None
     ]:
-        # pylint: disable-next=import-outside-toplevel; circular import
-        from astroid import nodes
-
         if not caller.args:
             return
         # Attempt to create a constant
