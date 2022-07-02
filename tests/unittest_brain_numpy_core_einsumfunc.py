@@ -20,9 +20,7 @@ from astroid import builder
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
 class BrainNumpyCoreFromNumericTest(unittest.TestCase):
-    """
-    Test the numpy core einsumfunc brain module
-    """
+    """Test the numpy core einsumfunc brain module."""
 
     numpy_functions = (("einsum", "[1, 2]"),)
 
