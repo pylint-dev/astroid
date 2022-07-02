@@ -71,7 +71,7 @@ Release date: TBA
 
 * Add brain for numpy core module ``einsumfunc``.
 
-  Refs PyCQA/pylint#5821
+  Closes PyCQA/pylint#5821
 
 * Infer the ``DictUnpack`` value for ``Dict.getitem`` calls.
 
