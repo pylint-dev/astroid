@@ -12,7 +12,7 @@ from astroid.builder import parse
 from astroid.manager import AstroidManager
 
 
-def numpy_core_einsumfunc_transform():
+def numpy_core_einsumfunc_transform() -> nodes.Module:
     return parse(
         """
     def einsum(*operands, out=None, optimize=False, **kwargs):
