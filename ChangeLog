@@ -6,7 +6,15 @@ What's New in astroid 2.12.0?
 =============================
 Release date: TBA
 
+* Fix signal has no ``connect`` member for PySide2 5.15.2+ and PySide6
+
+  Closes #4040, #5378
+
 * ``astroid`` now requires Python 3.7.2 to run.
+
+* Avoid setting a Call as a base for classes created using ``six.with_metaclass()``.
+
+  Refs PyCQA/pylint#5935
 
 * Fix detection of builtins on ``PyPy`` 3.9.
 
@@ -17,10 +25,22 @@ Release date: TBA
 
   Closes #1512
 
+* The ``astroid.mixins`` module has been deprecated and marked for removal in 3.0.0.
+
+  Closes #1633
+
 * Capture and log messages emitted by C extensions when importing them.
   This prevents contaminating programmatic output, e.g. pylint's JSON reporter.
 
   Closes PyCQA/pylint#3518
+
+* Calls to ``str.format`` are now correctly inferred.
+
+  Closes #104, Closes #1611
+
+* Old style string formatting (using ``%`` operators) is now correctly inferred.
+
+  Closes #151
 
 * Adds missing enums from ``ssl`` module.
 
@@ -60,9 +80,17 @@ Release date: TBA
 
   Closes #1403
 
+* Fixed inference of elements of living container objects such as tuples and sets in the
+  ``sys`` and ``ssl`` modules.
+
 * Add ``pathlib`` brain to handle ``pathlib.PurePath.parents`` inference.
 
   Closes PyCQA/pylint#5783
+
+* Avoid inferring the results of ``**`` operations involving values greater than ``1e5``
+  to avoid expensive computation.
+
+  Closes PyCQA/pylint#6745
 
 * Fix test for Python ``3.11``. In some instances ``err.__traceback__`` will
   be uninferable now.
@@ -71,12 +99,35 @@ Release date: TBA
 
   Closes #1195
 
-What's New in astroid 2.11.6?
+What's New in astroid 2.11.7?
 =============================
 Release date: TBA
 
+* Added support for ``usedforsecurity`` keyword to ``hashlib`` constructors.
+
+  Closes PyCQA/pylint#6017
+
+* Updated the stdlib brain for ``subprocess.Popen`` to accommodate Python 3.9+.
+
+  Closes PyCQA/pylint#7092
+
+* Prevent creating ``Instance`` objects that proxy other ``Instance``s when there is
+  ambiguity (or user error) in calling ``__new__(cls)``.
+
+  Refs PyCQA/pylint#7109
+
+
+What's New in astroid 2.11.6?
+=============================
+Release date: 2022-06-13
+
 * The Qt brain now correctly treats calling ``.disconnect()`` (with no
   arguments) on a slot as valid.
+
+* The argparse brain no longer incorrectly adds ``"Namespace"`` to the locals
+  of functions that return an ``argparse.Namespace`` object.
+
+  Refs PyCQA/pylint#6895
 
 What's New in astroid 2.11.5?
 =============================

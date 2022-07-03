@@ -14,7 +14,7 @@ leads to an inferred FrozenSet:
 from __future__ import annotations
 
 import sys
-from collections.abc import Iterator
+from collections.abc import Generator
 from typing import Any, TypeVar
 
 from astroid import bases, decorators, util
@@ -333,5 +333,5 @@ class Property(scoped_nodes.FunctionDef):
 
     def _infer(
         self: _T, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator[_T]:
+    ) -> Generator[_T, None, None]:
         yield self

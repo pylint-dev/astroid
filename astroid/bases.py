@@ -10,6 +10,7 @@ from __future__ import annotations
 import collections
 import collections.abc
 from collections.abc import Sequence
+from typing import Any
 
 from astroid import decorators, nodes
 from astroid.const import PY310_PLUS
@@ -25,7 +26,7 @@ from astroid.exceptions import (
     InferenceError,
     NameInferenceError,
 )
-from astroid.typing import InferenceResult
+from astroid.typing import InferenceErrorInfo, InferenceResult
 from astroid.util import Uninferable, lazy_descriptor, lazy_import
 
 objectmodel = lazy_import("interpreter.objectmodel")
@@ -101,9 +102,13 @@ class Proxy:
     if new instance attributes are created. See the Const class
     """
 
-    _proxied = None  # proxied object may be set by class or by instance
+    _proxied: nodes.ClassDef | nodes.Lambda | Proxy | None = (
+        None  # proxied object may be set by class or by instance
+    )
 
-    def __init__(self, proxied=None):
+    def __init__(
+        self, proxied: nodes.ClassDef | nodes.Lambda | Proxy | None = None
+    ) -> None:
         if proxied is not None:
             self._proxied = proxied
 
@@ -114,7 +119,9 @@ class Proxy:
             return self.__dict__[name]
         return getattr(self._proxied, name)
 
-    def infer(self, context=None):
+    def infer(  # type: ignore[return]
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> collections.abc.Generator[InferenceResult, None, InferenceErrorInfo | None]:
         yield self
 
 
@@ -137,9 +144,11 @@ def _infer_stmts(
             yield stmt
             inferred = True
             continue
-        context.lookupname = stmt._infer_name(frame, name)
+        # 'context' is always InferenceContext and Instances get '_infer_name' from ClassDef
+        context.lookupname = stmt._infer_name(frame, name)  # type: ignore[union-attr]
         try:
-            for inf in stmt.infer(context=context):
+            # Mypy doesn't recognize that 'stmt' can't be Uninferable
+            for inf in stmt.infer(context=context):  # type: ignore[union-attr]
                 yield inf
                 inferred = True
         except NameInferenceError:
@@ -286,8 +295,13 @@ class BaseInstance(Proxy):
 class Instance(BaseInstance):
     """A special node representing a class instance."""
 
+    _proxied: nodes.ClassDef
+
     # pylint: disable=unnecessary-lambda
     special_attributes = lazy_descriptor(lambda: objectmodel.InstanceModel())
+
+    def __init__(self, proxied: nodes.ClassDef) -> None:
+        super().__init__(proxied)
 
     def __repr__(self):
         return "<Instance of {}.{} at 0x{}>".format(
@@ -427,9 +441,12 @@ class UnboundMethod(Proxy):
                 return
 
         node_context = context.extra_context.get(caller.args[0])
-        infer = caller.args[0].infer(context=node_context)
-
-        yield from (Instance(x) if x is not Uninferable else x for x in infer)
+        for inferred in caller.args[0].infer(context=node_context):
+            if inferred is Uninferable:
+                yield inferred
+            if isinstance(inferred, nodes.ClassDef):
+                yield Instance(inferred)
+            raise InferenceError
 
     def bool_value(self, context=None):
         return True

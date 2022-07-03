@@ -361,7 +361,11 @@ class InspectBuilder:
         except AttributeError:
             # in jython, java modules have no __doc__ (see #109562)
             node = build_module(modname)
-        node.file = node.path = os.path.abspath(path) if path else path
+        if path is None:
+            node.path = node.file = path
+        else:
+            node.path = [os.path.abspath(path)]
+            node.file = node.path[0]
         node.name = modname
         self._manager.cache_module(node)
         node.package = hasattr(module, "__path__")
@@ -474,7 +478,7 @@ class InspectBuilder:
 
 # astroid bootstrapping ######################################################
 
-_CONST_PROXY = {}
+_CONST_PROXY: dict[type, nodes.ClassDef] = {}
 
 
 def _set_proxied(const):
@@ -501,6 +505,7 @@ def _astroid_bootstrapping():
             proxy.parent = astroid_builtin
         else:
             proxy = astroid_builtin.getattr(cls.__name__)[0]
+            assert isinstance(proxy, nodes.ClassDef)
         if cls in (dict, list, set, tuple):
             node_cls._proxied = proxy
         else:

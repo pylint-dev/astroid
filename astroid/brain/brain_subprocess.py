@@ -6,7 +6,7 @@ import textwrap
 
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
-from astroid.const import PY39_PLUS
+from astroid.const import PY39_PLUS, PY310_PLUS, PY311_PLUS
 from astroid.manager import AstroidManager
 
 
@@ -14,10 +14,18 @@ def _subprocess_transform():
     communicate = (bytes("string", "ascii"), bytes("string", "ascii"))
     communicate_signature = "def communicate(self, input=None, timeout=None)"
     args = """\
-        self, args, bufsize=0, executable=None, stdin=None, stdout=None, stderr=None,
-        preexec_fn=None, close_fds=False, shell=False, cwd=None, env=None,
-        universal_newlines=False, startupinfo=None, creationflags=0, restore_signals=True,
+        self, args, bufsize=-1, executable=None, stdin=None, stdout=None, stderr=None,
+        preexec_fn=None, close_fds=True, shell=False, cwd=None, env=None,
+        universal_newlines=None, startupinfo=None, creationflags=0, restore_signals=True,
         start_new_session=False, pass_fds=(), *, encoding=None, errors=None, text=None"""
+
+    if PY39_PLUS:
+        args += ", user=None, group=None, extra_groups=None, umask=-1"
+    if PY310_PLUS:
+        args += ", pipesize=-1"
+    if PY311_PLUS:
+        args += ", process_group=None"
+
     init = f"""
         def __init__({args}):
             pass"""
