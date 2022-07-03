@@ -32,6 +32,24 @@ class ObjectsTest(unittest.TestCase):
         self.assertEqual(inferred.qname(), "builtins.frozenset")
         self.assertIsInstance(proxied, nodes.ClassDef)
 
+    def test_lookup_regression_slots(self) -> None:
+        """Regression test for attr__new__ of ObjectModel.
+
+        ObjectModel._instance is not always an bases.Instance, so we can't
+        rely on the ._proxied attribute of an Instance.
+        """
+
+        node = builder.extract_node(
+            """
+        class ClassHavingUnknownAncestors(Unknown):
+            __slots__ = ["yo"]
+
+            def test(self):
+                self.not_yo = 42
+        """
+        )
+        assert node.getattr("__new__")
+
 
 class SuperTests(unittest.TestCase):
     def test_inferring_super_outside_methods(self) -> None:

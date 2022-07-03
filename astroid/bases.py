@@ -10,9 +10,9 @@ from __future__ import annotations
 import collections
 import collections.abc
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from astroid import decorators
+from astroid import decorators, nodes
 from astroid.const import PY310_PLUS
 from astroid.context import (
     CallContext,
@@ -32,9 +32,6 @@ from astroid.util import Uninferable, lazy_descriptor, lazy_import
 objectmodel = lazy_import("interpreter.objectmodel")
 helpers = lazy_import("helpers")
 manager = lazy_import("manager")
-
-if TYPE_CHECKING:
-    from astroid import nodes
 
 
 # TODO: check if needs special treatment
@@ -271,10 +268,20 @@ class BaseInstance(Proxy):
             else:
                 yield attr
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(
+        self, caller: nodes.Call | Proxy, context: InferenceContext | None = None
+    ):
         """infer what a class instance is returning when called"""
         context = bind_context_to_node(context, self)
         inferred = False
+
+        # If the call is an attribute on the instance, we infer the attribute itself
+        if isinstance(caller, nodes.Call) and isinstance(caller.func, nodes.Attribute):
+            for res in self.igetattr(caller.func.attrname, context):
+                inferred = True
+                yield res
+
+        # Otherwise we infer the call to the __call__ dunder normally
         for node in self._proxied.igetattr("__call__", context):
             if node is Uninferable or not node.callable():
                 continue
@@ -418,9 +425,6 @@ class UnboundMethod(Proxy):
     ) -> collections.abc.Generator[
         nodes.Const | Instance | type[Uninferable], None, None
     ]:
-        # pylint: disable-next=import-outside-toplevel; circular import
-        from astroid import nodes
-
         if not caller.args:
             return
         # Attempt to create a constant

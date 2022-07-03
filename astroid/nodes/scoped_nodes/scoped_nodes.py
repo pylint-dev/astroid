@@ -2298,7 +2298,12 @@ class ClassDef(
         try:
             metaclass = self.metaclass(context=context)
             if metaclass is not None:
-                dunder_call = next(metaclass.igetattr("__call__", context))
+                # Only get __call__ if it's defined locally for the metaclass.
+                # Otherwise we will find ObjectModel.__call__ which will
+                # return an instance of the metaclass. Instantiating the class is
+                # handled later.
+                if "__call__" in metaclass.locals:
+                    dunder_call = next(metaclass.igetattr("__call__", context))
         except (AttributeInferenceError, StopIteration):
             pass
 
@@ -2550,7 +2555,11 @@ class ClassDef(
         if not name:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
-        values = self.locals.get(name, [])
+        # don't modify the list in self.locals!
+        values = list(self.locals.get(name, []))
+        for classnode in self.ancestors(recurs=True, context=context):
+            values += classnode.locals.get(name, [])
+
         if name in self.special_attributes and class_context and not values:
             result = [self.special_attributes.lookup(name)]
             if name == "__bases__":
@@ -2558,11 +2567,6 @@ class ClassDef(
                 # and we need to return all the values.
                 result += values
             return result
-
-        # don't modify the list in self.locals!
-        values = list(values)
-        for classnode in self.ancestors(recurs=True, context=context):
-            values += classnode.locals.get(name, [])
 
         if class_context:
             values += self._metaclass_lookup_attribute(name, context)
