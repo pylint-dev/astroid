@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import unittest
 
-from astroid import bases, builder, nodes, objects
+from astroid import bases, builder, nodes, objects, util
 from astroid.exceptions import AttributeInferenceError, InferenceError, SuperError
 from astroid.objects import Super
 
@@ -551,6 +551,22 @@ class SuperTests(unittest.TestCase):
         """
         super_obj = next(builder.extract_node(code).infer())
         self.assertEqual(super_obj.qname(), "super")
+
+    def test_super_new_call(self) -> None:
+        """Test that __new__ returns an object or node and not a (Un)BoundMethod."""
+        new_call_result: nodes.Name = builder.extract_node(
+            """
+        import enum
+        class ChoicesMeta(enum.EnumMeta):
+            def __new__(metacls, classname, bases, classdict, **kwds):
+                cls = super().__new__(metacls, "str", (enum.Enum,), enum._EnumDict(), **kwargs)
+                cls #@
+        """
+        )
+        inferred = list(new_call_result.infer())
+        assert all(
+            isinstance(i, (nodes.NodeNG, type(util.Uninferable))) for i in inferred
+        )
 
 
 if __name__ == "__main__":
