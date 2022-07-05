@@ -18,38 +18,34 @@ except ImportError:
 from astroid import builder
 
 
-@unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
-class BrainNumpyCoreFromNumericTest(unittest.TestCase):
-    """Test the numpy core einsumfunc brain module."""
+def _inferred_numpy_func_call(func_name, *func_args):
+    node = builder.extract_node(
+        f"""
+    import numpy as np
+    func = np.{func_name:s}
+    func({','.join(func_args):s})
+    """
+    )
+    return node.infer()
 
-    numpy_functions = (("einsum", "[1, 2]"),)
 
-    def _inferred_numpy_func_call(self, func_name, *func_args):
-        node = builder.extract_node(
-            f"""
-        import numpy as np
-        func = np.{func_name:s}
-        func({','.join(func_args):s})
-        """
-        )
-        return node.infer()
-
-    def test_numpy_function_calls_inferred_as_ndarray(self):
-        """
-        Test that calls to numpy functions are inferred as numpy.ndarray
-        """
-        licit_array_types = (".ndarray",)
-        for func_ in self.numpy_functions:
-            with self.subTest(typ=func_):
-                inferred_values = list(self._inferred_numpy_func_call(*func_))
-                self.assertTrue(
-                    len(inferred_values) == 1,
-                    msg=f"Too much inferred value for {func_[0]:s}",
-                )
-                self.assertTrue(
-                    inferred_values[-1].pytype() in licit_array_types,
-                    msg=f"Illicit type for {func_[0]:s} ({inferred_values[-1].pytype()})",
-                )
+@pytest.mark.skipif(not HAS_NUMPY, reason="This test requires the numpy library.")
+@pytest.mark.parametrize(
+    "method, args",
+    [
+        ("einsum", "ii, np.arange(25).reshape(5, 5)"),
+    ],
+)
+def test_numpy_function_calls_inferred_as_ndarray(method, args):
+    """
+    Test that calls to numpy functions are inferred as numpy.ndarray
+    """
+    licit_array_types = (".ndarray",)
+    inferred_values = list(_inferred_numpy_func_call(method, args))
+    assert len(inferred_values) == 1, f"Too much inferred value for {method:s}"
+    assert (
+        inferred_values[-1].pytype() in licit_array_types
+    ), f"Illicit type for {method:s} ({inferred_values[-1].pytype()})"
 
 
 @pytest.mark.skipif(not HAS_NUMPY, reason="This test requires the numpy library.")
