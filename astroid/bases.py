@@ -109,7 +109,15 @@ class Proxy:
     def __init__(
         self, proxied: nodes.ClassDef | nodes.Lambda | Proxy | None = None
     ) -> None:
-        if proxied is not None:
+        if proxied is None:
+            # This is a hack to allow calling this __init__ during bootstrapping of
+            # builtin classes and their docstrings.
+            # For Const and Generator nodes the _proxied attribute is set during bootstrapping
+            # as we first need to build the ClassDef that they can proxy.
+            # Thus, if proxied is None self should be a Const or Generator
+            # as that is the only way _proxied will be correctly set as a ClassDef.
+            assert isinstance(self, (nodes.Const, Generator))
+        else:
             self._proxied = proxied
 
     def __getattr__(self, name):
@@ -300,7 +308,7 @@ class Instance(BaseInstance):
     # pylint: disable=unnecessary-lambda
     special_attributes = lazy_descriptor(lambda: objectmodel.InstanceModel())
 
-    def __init__(self, proxied: nodes.ClassDef) -> None:
+    def __init__(self, proxied: nodes.ClassDef | None) -> None:
         super().__init__(proxied)
 
     def __repr__(self):
@@ -586,6 +594,8 @@ class Generator(BaseInstance):
 
     Proxied class is set once for all in raw_building.
     """
+
+    _proxied: nodes.ClassDef
 
     special_attributes = lazy_descriptor(objectmodel.GeneratorModel)
 
