@@ -38,15 +38,15 @@ def test_numpy_function_calls_inferred_as_ndarray() -> None:
     )
 
     assert len(inferred_values) == 1, f"Too much inferred value for {method:s}"
-    assert inferred_values[-1].pytype() in (
-        ".ndarray",
+    assert (
+        inferred_values[-1].pytype() == ".ndarray"
     ), f"Illicit type for {method:s} ({inferred_values[-1].pytype()})"
 
 
 @pytest.mark.skipif(not HAS_NUMPY, reason="This test requires the numpy library.")
 def test_function_parameters() -> None:
     instance = builder.extract_node(
-        f"""
+        """
     import numpy
     numpy.einsum #@
     """
