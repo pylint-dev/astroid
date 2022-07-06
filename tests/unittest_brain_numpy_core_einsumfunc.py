@@ -16,7 +16,7 @@ except ImportError:
 from astroid import builder
 
 
-def _inferred_numpy_func_call(func_name, *func_args):
+def _inferred_numpy_func_call(func_name: str, *func_args: str) -> nodes.FunctionDef:
     node = builder.extract_node(
         f"""
     import numpy as np
