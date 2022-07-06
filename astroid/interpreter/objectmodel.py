@@ -31,7 +31,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import astroid
-from astroid import util
+from astroid import nodes, util
 from astroid.context import InferenceContext, copy_context
 from astroid.exceptions import AttributeInferenceError, InferenceError, NoDefault
 from astroid.manager import AstroidManager
@@ -130,6 +130,10 @@ class ObjectModel:
             return self._instance._proxied.instantiate_class()
         except AttributeError:
             return self._instance.instantiate_class()
+
+    @property
+    def attr___init__(self) -> nodes.Const:
+        return nodes.Const(None)
 
 
 class ModuleModel(ObjectModel):
@@ -409,7 +413,6 @@ class FunctionModel(ObjectModel):
     attr___delattr___ = attr___ne__
     attr___getattribute__ = attr___ne__
     attr___hash__ = attr___ne__
-    attr___init__ = attr___ne__
     attr___dir__ = attr___ne__
     attr___call__ = attr___ne__
     attr___class__ = attr___ne__
