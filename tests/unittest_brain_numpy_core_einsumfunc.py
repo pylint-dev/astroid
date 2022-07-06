@@ -33,11 +33,13 @@ def test_numpy_function_calls_inferred_as_ndarray() -> None:
     Test that calls to numpy functions are inferred as numpy.ndarray
     """
     method = "einsum"
-    inferred_values = list(_inferred_numpy_func_call(method, "ii, np.arange(25).reshape(5, 5)"))
+    inferred_values = list(
+        _inferred_numpy_func_call(method, "ii, np.arange(25).reshape(5, 5)")
+    )
 
     assert len(inferred_values) == 1, f"Too much inferred value for {method:s}"
-    assert (
-        inferred_values[-1].pytype() in (".ndarray",)
+    assert inferred_values[-1].pytype() in (
+        ".ndarray",
     ), f"Illicit type for {method:s} ({inferred_values[-1].pytype()})"
 
 
