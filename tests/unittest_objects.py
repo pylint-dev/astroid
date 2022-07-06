@@ -568,6 +568,26 @@ class SuperTests(unittest.TestCase):
             isinstance(i, (nodes.NodeNG, type(util.Uninferable))) for i in inferred
         )
 
+    def test_super_init_call(self) -> None:
+        """Test that __init__ is still callable."""
+        init_node: nodes.Attribute = builder.extract_node(
+            """
+        class SuperUsingClass:
+            @staticmethod
+            def test():
+                super(object, 1).__new__ #@
+                super(object, 1).__init__ #@
+        class A:
+            pass
+        A().__new__ #@
+        A().__init__ #@
+        """
+        )
+        assert isinstance(next(init_node[0].infer()), bases.BoundMethod)
+        assert isinstance(next(init_node[1].infer()), bases.BoundMethod)
+        assert isinstance(next(init_node[2].infer()), bases.BoundMethod)
+        assert isinstance(next(init_node[3].infer()), bases.BoundMethod)
+
 
 if __name__ == "__main__":
     unittest.main()

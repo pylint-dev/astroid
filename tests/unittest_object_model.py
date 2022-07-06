@@ -8,7 +8,7 @@ import xml
 import pytest
 
 import astroid
-from astroid import builder, nodes, objects, test_utils, util
+from astroid import bases, builder, nodes, objects, test_utils, util
 from astroid.const import PY311_PLUS
 from astroid.exceptions import InferenceError
 
@@ -203,9 +203,9 @@ class ClassModelTest(unittest.TestCase):
         called_mro = next(ast_nodes[5].infer())
         self.assertEqual(called_mro.elts, mro.elts)
 
-        bases = next(ast_nodes[6].infer())
-        self.assertIsInstance(bases, astroid.Tuple)
-        self.assertEqual([cls.name for cls in bases.elts], ["object"])
+        base_nodes = next(ast_nodes[6].infer())
+        self.assertIsInstance(base_nodes, astroid.Tuple)
+        self.assertEqual([cls.name for cls in base_nodes.elts], ["object"])
 
         cls = next(ast_nodes[7].infer())
         self.assertIsInstance(cls, astroid.ClassDef)
@@ -306,12 +306,13 @@ class ModuleModelTest(unittest.TestCase):
         self.assertIsInstance(dict_, astroid.Dict)
 
         init_ = next(ast_nodes[9].infer())
-        assert isinstance(init_, nodes.Const)
-        assert init_.value is None
+        assert isinstance(init_, bases.BoundMethod)
+        init_result = next(init_.infer_call_result(nodes.Call()))
+        assert isinstance(init_result, nodes.Const)
+        assert init_result.value is None
 
         new_ = next(ast_nodes[10].infer())
-        assert isinstance(new_, nodes.Module)
-        assert new_.name == "xml"
+        assert isinstance(new_, bases.BoundMethod)
 
         # The following nodes are just here for theoretical completeness,
         # and they either return Uninferable or raise InferenceError.
@@ -484,12 +485,13 @@ class FunctionModelTest(unittest.TestCase):
             self.assertIs(next(ast_node.infer()), astroid.Uninferable)
 
         init_ = next(ast_nodes[9].infer())
-        assert isinstance(init_, nodes.Const)
-        assert init_.value is None
+        assert isinstance(init_, bases.BoundMethod)
+        init_result = next(init_.infer_call_result(nodes.Call()))
+        assert isinstance(init_result, nodes.Const)
+        assert init_result.value is None
 
         new_ = next(ast_nodes[10].infer())
-        assert isinstance(new_, nodes.FunctionDef)
-        assert new_.name == "func"
+        assert isinstance(new_, bases.BoundMethod)
 
         # The following nodes are just here for theoretical completeness,
         # and they either return Uninferable or raise InferenceError.
