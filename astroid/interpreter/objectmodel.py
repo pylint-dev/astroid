@@ -140,7 +140,7 @@ class ObjectModel:
     @property
     def attr___init__(self) -> bases.BoundMethod:
         """Calling cls.__init__() normally returns None."""
-        # The *args and **kwargs are necessary not too trigger warnings about missing
+        # The *args and **kwargs are necessary not to trigger warnings about missing
         # or extra parameters for '__init__' methods we don't infer correctly.
         # This BoundMethod is the fallback value for those.
         node: nodes.FunctionDef = builder.extract_node(
@@ -499,7 +499,7 @@ class ClassModel(ObjectModel):
 
     @property
     def attr___class__(self):
-        # pylint: disable=import-outside-toplevel; circular importdd
+        # pylint: disable=import-outside-toplevel; circular import
         from astroid import helpers
 
         return helpers.object_type(self._instance)
