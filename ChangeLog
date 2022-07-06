@@ -38,6 +38,9 @@ Release date: TBA
 
   Closes #104, Closes #1611
 
+* ``__new__`` and ``__init__`` have been added to the ``ObjectModel`` and are now
+  inferred as ``BoundMethods``.
+
 * Old style string formatting (using ``%`` operators) is now correctly inferred.
 
   Closes #151

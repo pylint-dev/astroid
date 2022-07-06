@@ -8,7 +8,7 @@ import xml
 import pytest
 
 import astroid
-from astroid import builder, nodes, objects, test_utils, util
+from astroid import bases, builder, nodes, objects, test_utils, util
 from astroid.const import PY311_PLUS
 from astroid.exceptions import InferenceError
 
@@ -203,9 +203,9 @@ class ClassModelTest(unittest.TestCase):
         called_mro = next(ast_nodes[5].infer())
         self.assertEqual(called_mro.elts, mro.elts)
 
-        bases = next(ast_nodes[6].infer())
-        self.assertIsInstance(bases, astroid.Tuple)
-        self.assertEqual([cls.name for cls in bases.elts], ["object"])
+        base_nodes = next(ast_nodes[6].infer())
+        self.assertIsInstance(base_nodes, astroid.Tuple)
+        self.assertEqual([cls.name for cls in base_nodes.elts], ["object"])
 
         cls = next(ast_nodes[7].infer())
         self.assertIsInstance(cls, astroid.ClassDef)
@@ -253,6 +253,27 @@ class ModuleModelTest(unittest.TestCase):
         xml.__cached__ #@
         xml.__package__ #@
         xml.__dict__ #@
+        xml.__init__ #@
+        xml.__new__ #@
+
+        xml.__subclasshook__ #@
+        xml.__str__ #@
+        xml.__sizeof__ #@
+        xml.__repr__ #@
+        xml.__reduce__ #@
+
+        xml.__setattr__ #@
+        xml.__reduce_ex__ #@
+        xml.__lt__ #@
+        xml.__eq__ #@
+        xml.__gt__ #@
+        xml.__format__ #@
+        xml.__delattr___ #@
+        xml.__getattribute__ #@
+        xml.__hash__ #@
+        xml.__dir__ #@
+        xml.__call__ #@
+        xml.__closure__ #@
         """
         )
         assert isinstance(ast_nodes, list)
@@ -283,6 +304,21 @@ class ModuleModelTest(unittest.TestCase):
 
         dict_ = next(ast_nodes[8].infer())
         self.assertIsInstance(dict_, astroid.Dict)
+
+        init_ = next(ast_nodes[9].infer())
+        assert isinstance(init_, bases.BoundMethod)
+        init_result = next(init_.infer_call_result(nodes.Call()))
+        assert isinstance(init_result, nodes.Const)
+        assert init_result.value is None
+
+        new_ = next(ast_nodes[10].infer())
+        assert isinstance(new_, bases.BoundMethod)
+
+        # The following nodes are just here for theoretical completeness,
+        # and they either return Uninferable or raise InferenceError.
+        for ast_node in ast_nodes[11:28]:
+            with pytest.raises(InferenceError):
+                next(ast_node.infer())
 
 
 class FunctionModelTest(unittest.TestCase):
@@ -394,6 +430,27 @@ class FunctionModelTest(unittest.TestCase):
         func.__globals__ #@
         func.__code__ #@
         func.__closure__ #@
+        func.__init__ #@
+        func.__new__ #@
+
+        func.__subclasshook__ #@
+        func.__str__ #@
+        func.__sizeof__ #@
+        func.__repr__ #@
+        func.__reduce__ #@
+
+        func.__reduce_ex__ #@
+        func.__lt__ #@
+        func.__eq__ #@
+        func.__gt__ #@
+        func.__format__ #@
+        func.__delattr___ #@
+        func.__getattribute__ #@
+        func.__hash__ #@
+        func.__dir__ #@
+        func.__class__ #@
+
+        func.__setattr__ #@
         ''',
             module_name="fake_module",
         )
@@ -426,6 +483,25 @@ class FunctionModelTest(unittest.TestCase):
 
         for ast_node in ast_nodes[7:9]:
             self.assertIs(next(ast_node.infer()), astroid.Uninferable)
+
+        init_ = next(ast_nodes[9].infer())
+        assert isinstance(init_, bases.BoundMethod)
+        init_result = next(init_.infer_call_result(nodes.Call()))
+        assert isinstance(init_result, nodes.Const)
+        assert init_result.value is None
+
+        new_ = next(ast_nodes[10].infer())
+        assert isinstance(new_, bases.BoundMethod)
+
+        # The following nodes are just here for theoretical completeness,
+        # and they either return Uninferable or raise InferenceError.
+        for ast_node in ast_nodes[11:26]:
+            inferred = next(ast_node.infer())
+            assert inferred is util.Uninferable
+
+        for ast_node in ast_nodes[26:27]:
+            with pytest.raises(InferenceError):
+                inferred = next(ast_node.infer())
 
     def test_empty_return_annotation(self) -> None:
         ast_node = builder.extract_node(
