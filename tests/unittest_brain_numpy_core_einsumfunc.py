@@ -6,14 +6,14 @@ from __future__ import annotations
 
 import pytest
 
+from astroid import builder, nodes
+
 try:
     import numpy  # pylint: disable=unused-import
 
     HAS_NUMPY = True
 except ImportError:
     HAS_NUMPY = False
-
-from astroid import builder
 
 
 def _inferred_numpy_func_call(func_name: str, *func_args: str) -> nodes.FunctionDef:
