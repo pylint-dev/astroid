@@ -135,10 +135,11 @@ class Super(node_classes.NodeNG):
     def qname(self):
         return "super"
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name: str, context: InferenceContext | None = None):
         """Retrieve the inferred values of the given attribute name."""
-
-        if name in self.special_attributes:
+        # '__class__' is a special attribute that should be taken directly
+        # from the special attributes dict
+        if name == "__class__":
             yield self.special_attributes.lookup(name)
             return
 
@@ -204,6 +205,12 @@ class Super(node_classes.NodeNG):
                         yield util.Uninferable
                 else:
                     yield bases.BoundMethod(inferred, cls)
+
+        # Only if we haven't found any explicit overwrites for the
+        # attribute we look it up in the special attributes
+        if not found and name in self.special_attributes:
+            yield self.special_attributes.lookup(name)
+            return
 
         if not found:
             raise AttributeInferenceError(target=self, attribute=name, context=context)

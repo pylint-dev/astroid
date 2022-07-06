@@ -3808,6 +3808,50 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         with pytest.raises(InferenceError):
             next(ast_node5.infer())
 
+        ast_nodes6 = extract_node(
+            """
+        class A:  pass
+        class B(A):  pass
+        class C: pass
+        A.__new__(A)  #@
+        A.__new__(B)  #@
+        B.__new__(A)  #@
+        B.__new__(B)  #@
+        C.__new__(A)  #@
+        """
+        )
+        instance_A1 = next(ast_nodes6[0].infer())
+        assert instance_A1._proxied.name == "A"
+        instance_B1 = next(ast_nodes6[1].infer())
+        assert instance_B1._proxied.name == "B"
+        instance_A2 = next(ast_nodes6[2].infer())
+        assert instance_A2._proxied.name == "A"
+        instance_B2 = next(ast_nodes6[3].infer())
+        assert instance_B2._proxied.name == "B"
+        instance_A3 = next(ast_nodes6[4].infer())
+        assert instance_A3._proxied.name == "A"
+
+        ast_nodes7 = extract_node(
+            """
+        import enum
+        class A(enum.EnumMeta): pass
+        class B(enum.EnumMeta):
+            def __new__(mcs, value, **kwargs):
+                return super().__new__(mcs, "str", (enum.Enum,), enum._EnumDict(), **kwargs)
+        class C(enum.EnumMeta):
+            def __new__(mcs, **kwargs):
+                return super().__new__(A, "str", (enum.Enum,), enum._EnumDict(), **kwargs)
+        B("")  #@
+        C()  #@
+        """
+        )
+        instance_B = next(ast_nodes7[0].infer())
+        assert instance_B._proxied.name == "B"
+        instance_C = next(ast_nodes7[1].infer())
+        # TODO: This should be A. However, we don't infer EnumMeta.__new__
+        # correctly.
+        assert instance_C._proxied.name == "C"
+
     @pytest.mark.xfail(reason="Does not support function metaclasses")
     def test_function_metaclasses(self):
         # These are not supported right now, although
