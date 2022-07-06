@@ -1914,6 +1914,8 @@ class Const(_base_nodes.NoChildrenNode, Instance):
             parent=parent,
         )
 
+        Instance.__init__(self, None)
+
     infer_unary_op: ClassVar[InferUnaryOp[Const]]
 
     def __getattr__(self, name):
