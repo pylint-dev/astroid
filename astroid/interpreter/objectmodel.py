@@ -28,7 +28,7 @@ import os
 import pprint
 import types
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import astroid
 from astroid import bases, nodes, util
@@ -63,6 +63,14 @@ def _dunder_dict(instance, attributes):
 
     obj.postinit(list(zip(keys, values)))
     return obj
+
+
+def _get_bound_node(model: ObjectModel) -> Any:
+    # TODO: Use isinstance instead of try ... except after _instance has typing
+    try:
+        return model._instance._proxied
+    except AttributeError:
+        return model._instance
 
 
 class ObjectModel:
@@ -130,12 +138,7 @@ class ObjectModel:
         # triggers correct inference as a call to __new__ in bases.py
         node.parent: nodes.ClassDef = AstroidManager().builtins_module["object"]
 
-        # TODO: Use isinstance instead of try ... except after _instance has typing
-        try:
-            bound = self._instance._proxied
-        except AttributeError:
-            bound = self._instance
-        return bases.BoundMethod(proxy=node, bound=bound)
+        return bases.BoundMethod(proxy=node, bound=_get_bound_node(self))
 
     @property
     def attr___init__(self) -> bases.BoundMethod:
@@ -150,12 +153,7 @@ class ObjectModel:
         # is where this method originally comes from
         node.parent: nodes.ClassDef = AstroidManager().builtins_module["object"]
 
-        # TODO: Use isinstance instead of try ... except after _instance has typing
-        try:
-            bound = self._instance._proxied
-        except AttributeError:
-            bound = self._instance
-        return bases.BoundMethod(proxy=node, bound=bound)
+        return bases.BoundMethod(proxy=node, bound=_get_bound_node(self))
 
 
 class ModuleModel(ObjectModel):
