@@ -28,18 +28,15 @@ def _inferred_numpy_func_call(func_name, *func_args):
 
 
 @pytest.mark.skipif(not HAS_NUMPY, reason="This test requires the numpy library.")
-@pytest.mark.parametrize(
-    "method, args",
-    [
-        ("einsum", "ii, np.arange(25).reshape(5, 5)"),
-    ],
-)
-def test_numpy_function_calls_inferred_as_ndarray(method, args):
+def test_numpy_function_calls_inferred_as_ndarray():
     """
     Test that calls to numpy functions are inferred as numpy.ndarray
     """
+    method = "einsum"
+    args = "ii, np.arange(25).reshape(5, 5)"
     licit_array_types = (".ndarray",)
     inferred_values = list(_inferred_numpy_func_call(method, args))
+
     assert len(inferred_values) == 1, f"Too much inferred value for {method:s}"
     assert (
         inferred_values[-1].pytype() in licit_array_types
@@ -47,18 +44,12 @@ def test_numpy_function_calls_inferred_as_ndarray(method, args):
 
 
 @pytest.mark.skipif(not HAS_NUMPY, reason="This test requires the numpy library.")
-@pytest.mark.parametrize(
-    "method,   expected_vararg, expected_kwonlyargs, expected_kwarg",
-    [
-        ("einsum", "operands", ["out", "optimize"], "kwargs"),
-    ],
-)
-def test_function_parameters(
-    method: str,
-    expected_vararg: str,
-    expected_kwonlyargs: list[str],
-    expected_kwarg: str,
-) -> None:
+def test_function_parameters() -> None:
+    method = "einsum"
+    expected_vararg = "operands"
+    expected_kwonlyargs = ["out", "optimize"]
+    expected_kwarg = "kwargs"
+
     instance = builder.extract_node(
         f"""
     import numpy
