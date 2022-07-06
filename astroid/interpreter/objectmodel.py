@@ -161,6 +161,28 @@ class ObjectModel:
 
         return bases.BoundMethod(proxy=node, bound=_get_bound_node(self))
 
+    # These are here just for completion.
+    @property
+    def attr___ne__(self):
+        return node_classes.Unknown()
+
+    attr___subclasshook__ = attr___ne__
+    attr___str__ = attr___ne__
+    attr___sizeof__ = attr___ne__
+    attr___setattr___ = attr___ne__
+    attr___repr__ = attr___ne__
+    attr___reduce__ = attr___ne__
+    attr___reduce_ex__ = attr___ne__
+    attr___lt__ = attr___ne__
+    attr___eq__ = attr___ne__
+    attr___gt__ = attr___ne__
+    attr___format__ = attr___ne__
+    attr___delattr___ = attr___ne__
+    attr___getattribute__ = attr___ne__
+    attr___hash__ = attr___ne__
+    attr___dir__ = attr___ne__
+    attr___class__ = attr___ne__
+
 
 class ModuleModel(ObjectModel):
     def _builtins(self):
@@ -422,29 +444,9 @@ class FunctionModel(ObjectModel):
         return DescriptorBoundMethod(proxy=self._instance, bound=self._instance)
 
     # These are here just for completion.
-    @property
-    def attr___ne__(self):
-        return node_classes.Unknown()
-
-    attr___subclasshook__ = attr___ne__
-    attr___str__ = attr___ne__
-    attr___sizeof__ = attr___ne__
-    attr___setattr___ = attr___ne__
-    attr___repr__ = attr___ne__
-    attr___reduce__ = attr___ne__
-    attr___reduce_ex__ = attr___ne__
-    attr___lt__ = attr___ne__
-    attr___eq__ = attr___ne__
-    attr___gt__ = attr___ne__
-    attr___format__ = attr___ne__
-    attr___delattr___ = attr___ne__
-    attr___getattribute__ = attr___ne__
-    attr___hash__ = attr___ne__
-    attr___dir__ = attr___ne__
-    attr___call__ = attr___ne__
-    attr___class__ = attr___ne__
-    attr___closure__ = attr___ne__
-    attr___code__ = attr___ne__
+    attr___call__ = ObjectModel.attr___ne__
+    attr___closure__ = ObjectModel.attr___ne__
+    attr___code__ = ObjectModel.attr___ne__
 
 
 class ClassModel(ObjectModel):

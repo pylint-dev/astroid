@@ -262,7 +262,6 @@ class ModuleModelTest(unittest.TestCase):
         xml.__repr__ #@
         xml.__reduce__ #@
 
-        xml.__setattr__ #@
         xml.__reduce_ex__ #@
         xml.__lt__ #@
         xml.__eq__ #@
@@ -272,6 +271,8 @@ class ModuleModelTest(unittest.TestCase):
         xml.__getattribute__ #@
         xml.__hash__ #@
         xml.__dir__ #@
+
+        xml.__setattr__ #@
         xml.__call__ #@
         xml.__closure__ #@
         """
@@ -316,9 +317,13 @@ class ModuleModelTest(unittest.TestCase):
 
         # The following nodes are just here for theoretical completeness,
         # and they either return Uninferable or raise InferenceError.
-        for ast_node in ast_nodes[11:28]:
+        for ast_node in ast_nodes[11:25]:
+            inferred = next(ast_node.infer())
+            assert inferred is util.Uninferable
+
+        for ast_node in ast_nodes[25:28]:
             with pytest.raises(InferenceError):
-                next(ast_node.infer())
+                inferred = next(ast_node.infer())
 
 
 class FunctionModelTest(unittest.TestCase):
