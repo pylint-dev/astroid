@@ -2435,6 +2435,30 @@ def test_issue940_metaclass_funcdef_is_not_datadescriptor() -> None:
     assert isinstance(inferred, objects.Property)
 
 
+def test_property_in_body_of_try() -> None:
+    """Regression test for https://github.com/PyCQA/pylint/issues/6596."""
+    node: nodes.Return = builder._extract_single_node(
+        """
+    def myfunc():
+        try:
+
+            @property
+            def myfunc():
+                return None
+
+        except TypeError:
+            pass
+
+        @myfunc.setter
+        def myfunc():
+            pass
+
+        return myfunc() #@
+    """
+    )
+    next(node.value.infer())
+
+
 def test_issue940_enums_as_a_real_world_usecase() -> None:
     node = builder.extract_node(
         """
