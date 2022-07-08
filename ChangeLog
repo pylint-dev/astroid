@@ -118,6 +118,10 @@ Release date: TBA
 
   Closes PyCQA/pylint#7092
 
+* Fix a crash involving properties within ``try ... except`` blocks.
+
+  Closes PyCQA/pylint#6592
+
 * Prevent creating ``Instance`` objects that proxy other ``Instance``s when there is
   ambiguity (or user error) in calling ``__new__(cls)``.
 
