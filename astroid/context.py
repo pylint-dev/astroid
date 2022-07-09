@@ -3,18 +3,24 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Various context related utilities, including inference and call contexts."""
+
+from __future__ import annotations
+
 import contextlib
 import pprint
-from typing import TYPE_CHECKING, List, MutableMapping, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
     from astroid.nodes.node_classes import Keyword, NodeNG
 
+_InferenceCache = Dict[
+    Tuple["NodeNG", Optional[str], Optional[str], Optional[str]], Sequence["NodeNG"]
+]
 
-_INFERENCE_CACHE = {}
+_INFERENCE_CACHE: _InferenceCache = {}
 
 
-def _invalidate_cache():
+def _invalidate_cache() -> None:
     _INFERENCE_CACHE.clear()
 
 
@@ -49,22 +55,15 @@ class InferenceContext:
 
         Currently this key is ``(node, context.lookupname)``
         """
-        self.lookupname = None
-        """
-        :type: optional[str]
-
-        The original name of the node
+        self.lookupname: str | None = None
+        """The original name of the node.
 
         e.g.
         foo = 1
         The inference of 'foo' is nodes.Const(1) but the lookup name is 'foo'
         """
-        self.callcontext = None
-        """
-        :type: optional[CallContext]
-
-        The call arguments and keywords for the given context
-        """
+        self.callcontext: CallContext | None = None
+        """The call arguments and keywords for the given context."""
         self.boundnode = None
         """
         :type: optional[NodeNG]
@@ -96,11 +95,7 @@ class InferenceContext:
         self._nodes_inferred[0] = value
 
     @property
-    def inferred(
-        self,
-    ) -> MutableMapping[
-        Tuple["NodeNG", Optional[str], Optional[str], Optional[str]], Sequence["NodeNG"]
-    ]:
+    def inferred(self) -> _InferenceCache:
         """
         Inferred node contexts to their mapped results
 
@@ -158,20 +153,20 @@ class CallContext:
 
     def __init__(
         self,
-        args: List["NodeNG"],
-        keywords: Optional[List["Keyword"]] = None,
-        callee: Optional["NodeNG"] = None,
+        args: list[NodeNG],
+        keywords: list[Keyword] | None = None,
+        callee: NodeNG | None = None,
     ):
         self.args = args  # Call positional arguments
         if keywords:
-            keywords = [(arg.arg, arg.value) for arg in keywords]
+            arg_value_pairs = [(arg.arg, arg.value) for arg in keywords]
         else:
-            keywords = []
-        self.keywords = keywords  # Call keyword arguments
+            arg_value_pairs = []
+        self.keywords = arg_value_pairs  # Call keyword arguments
         self.callee = callee  # Function being called
 
 
-def copy_context(context: Optional[InferenceContext]) -> InferenceContext:
+def copy_context(context: InferenceContext | None) -> InferenceContext:
     """Clone a context if given, or return a fresh contexxt"""
     if context is not None:
         return context.clone()

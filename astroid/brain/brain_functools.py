@@ -3,9 +3,12 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid hooks for understanding functools library module."""
+
+from __future__ import annotations
+
+from collections.abc import Iterator
 from functools import partial
 from itertools import chain
-from typing import Iterator, Optional
 
 from astroid import BoundMethod, arguments, extract_node, helpers, nodes, objects
 from astroid.context import InferenceContext
@@ -63,7 +66,7 @@ def _transform_lru_cache(node, context=None) -> None:
 
 
 def _functools_partial_inference(
-    node: nodes.Call, context: Optional[InferenceContext] = None
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[objects.PartialFunction]:
     call = arguments.CallSite.from_call(node, context=context)
     number_of_positional = len(call.positional_arguments)

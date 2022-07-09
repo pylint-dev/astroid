@@ -5,25 +5,14 @@
 """this module contains a set of functions to handle inference on astroid trees
 """
 
+from __future__ import annotations
+
 import ast
 import functools
 import itertools
 import operator
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Generator,
-    Iterable,
-    Iterator,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-)
-
-import wrapt
+from collections.abc import Callable, Generator, Iterable, Iterator
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from astroid import bases, decorators, helpers, nodes, protocols, util
 from astroid.context import (
@@ -44,7 +33,11 @@ from astroid.exceptions import (
 )
 from astroid.interpreter import dunder_lookup
 from astroid.manager import AstroidManager
-from astroid.typing import InferenceErrorInfo
+from astroid.typing import (
+    InferenceErrorInfo,
+    InferenceResult,
+    SuccessfulInferenceResult,
+)
 
 if TYPE_CHECKING:
     from astroid.objects import Property
@@ -59,7 +52,13 @@ _FunctionDefT = TypeVar("_FunctionDefT", bound=nodes.FunctionDef)
 # .infer method ###############################################################
 
 
-def infer_end(self, context=None):
+_T = TypeVar("_T")
+_BaseContainerT = TypeVar("_BaseContainerT", bound=nodes.BaseContainer)
+
+
+def infer_end(
+    self: _T, context: InferenceContext | None = None, **kwargs: Any
+) -> Iterator[_T]:
     """Inference's end for nodes that yield themselves on inference
 
     These are objects for which inference does not have any semantic,
@@ -68,7 +67,7 @@ def infer_end(self, context=None):
     yield self
 
 
-# We add ignores to all these assignments in this file
+# We add ignores to all assignments to methods
 # See https://github.com/python/mypy/issues/2427
 nodes.Module._infer = infer_end  # type: ignore[assignment]
 nodes.ClassDef._infer = infer_end  # type: ignore[assignment]
@@ -100,7 +99,11 @@ def _infer_sequence_helper(node, context=None):
 
 
 @decorators.raise_if_nothing_inferred
-def infer_sequence(self, context=None):
+def infer_sequence(
+    self: _BaseContainerT,
+    context: InferenceContext | None = None,
+    **kwargs: Any,
+) -> Iterator[_BaseContainerT]:
     has_starred_named_expr = any(
         isinstance(e, (nodes.Starred, nodes.NamedExpr)) for e in self.elts
     )
@@ -121,7 +124,9 @@ nodes.Tuple._infer = infer_sequence  # type: ignore[assignment]
 nodes.Set._infer = infer_sequence  # type: ignore[assignment]
 
 
-def infer_map(self, context=None):
+def infer_map(
+    self: nodes.Dict, context: InferenceContext | None = None
+) -> Iterator[nodes.Dict]:
     if not any(isinstance(k, nodes.DictUnpack) for k, _ in self.items):
         yield self
     else:
@@ -131,7 +136,10 @@ def infer_map(self, context=None):
         yield new_seq
 
 
-def _update_with_replacement(lhs_dict, rhs_dict):
+def _update_with_replacement(
+    lhs_dict: dict[SuccessfulInferenceResult, SuccessfulInferenceResult],
+    rhs_dict: dict[SuccessfulInferenceResult, SuccessfulInferenceResult],
+) -> dict[SuccessfulInferenceResult, SuccessfulInferenceResult]:
     """Delete nodes that equate to duplicate keys
 
     Since an astroid node doesn't 'equal' another node with the same value,
@@ -140,12 +148,12 @@ def _update_with_replacement(lhs_dict, rhs_dict):
 
     Note that both the key and the value are astroid nodes
 
-    Fixes issue with DictUnpack causing duplicte keys
+    Fixes issue with DictUnpack causing duplicate keys
     in inferred Dict items
 
-    :param dict(nodes.NodeNG, nodes.NodeNG) lhs_dict: Dictionary to 'merge' nodes into
-    :param dict(nodes.NodeNG, nodes.NodeNG) rhs_dict: Dictionary with nodes to pull from
-    :return dict(nodes.NodeNG, nodes.NodeNG): merged dictionary of nodes
+    :param lhs_dict: Dictionary to 'merge' nodes into
+    :param rhs_dict: Dictionary with nodes to pull from
+    :return : merged dictionary of nodes
     """
     combined_dict = itertools.chain(lhs_dict.items(), rhs_dict.items())
     # Overwrite keys which have the same string values
@@ -154,9 +162,11 @@ def _update_with_replacement(lhs_dict, rhs_dict):
     return dict(string_map.values())
 
 
-def _infer_map(node, context):
+def _infer_map(
+    node: nodes.Dict, context: InferenceContext | None
+) -> dict[SuccessfulInferenceResult, SuccessfulInferenceResult]:
     """Infer all values based on Dict.items"""
-    values = {}
+    values: dict[SuccessfulInferenceResult, SuccessfulInferenceResult] = {}
     for name, value in node.items:
         if isinstance(name, nodes.DictUnpack):
             double_starred = helpers.safe_infer(value, context)
@@ -168,17 +178,18 @@ def _infer_map(node, context):
             values = _update_with_replacement(values, unpack_items)
         else:
             key = helpers.safe_infer(name, context=context)
-            value = helpers.safe_infer(value, context=context)
-            if any(not elem for elem in (key, value)):
+            safe_value = helpers.safe_infer(value, context=context)
+            if any(not elem for elem in (key, safe_value)):
                 raise InferenceError(node=node, context=context)
-            values = _update_with_replacement(values, {key: value})
+            # safe_value is SuccessfulInferenceResult as bool(Uninferable) == False
+            values = _update_with_replacement(values, {key: safe_value})  # type: ignore[dict-item]
     return values
 
 
 nodes.Dict._infer = infer_map  # type: ignore[assignment]
 
 
-def _higher_function_scope(node):
+def _higher_function_scope(node: nodes.NodeNG) -> nodes.FunctionDef | None:
     """Search for the first function which encloses the given
     scope. This can be used for looking up in that function's
     scope, in case looking up in a lower scope for a particular
@@ -194,11 +205,15 @@ def _higher_function_scope(node):
     while current.parent and not isinstance(current.parent, nodes.FunctionDef):
         current = current.parent
     if current and current.parent:
-        return current.parent
+        return current.parent  # type: ignore[return-value]
     return None
 
 
-def infer_name(self, context=None):
+def infer_name(
+    self: nodes.Name | nodes.AssignName,
+    context: InferenceContext | None = None,
+    **kwargs: Any,
+) -> Generator[InferenceResult, None, None]:
     """infer a Name: use name lookup rules"""
     frame, stmts = self.lookup(self.name)
     if not stmts:
@@ -218,7 +233,9 @@ def infer_name(self, context=None):
 
 
 # pylint: disable=no-value-for-parameter
-nodes.Name._infer = decorators.raise_if_nothing_inferred(
+# The order of the decorators here is important
+# See https://github.com/PyCQA/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
+nodes.Name._infer = decorators.raise_if_nothing_inferred(  # type: ignore[assignment]
     decorators.path_wrapper(infer_name)
 )
 nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper
@@ -226,7 +243,9 @@ nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_call(self, context=None):
+def infer_call(
+    self: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, InferenceErrorInfo]:
     """infer a Call node by trying to guess what the function returns"""
     callcontext = copy_context(context)
     callcontext.boundnode = None
@@ -245,7 +264,7 @@ def infer_call(self, context=None):
                 yield from callee.infer_call_result(caller=self, context=callcontext)
         except InferenceError:
             continue
-    return dict(node=self, context=context)
+    return InferenceErrorInfo(node=self, context=context)
 
 
 nodes.Call._infer = infer_call  # type: ignore[assignment]
@@ -253,8 +272,14 @@ nodes.Call._infer = infer_call  # type: ignore[assignment]
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_import(self, context=None, asname=True):
+def infer_import(
+    self: nodes.Import,
+    context: InferenceContext | None = None,
+    asname: bool = True,
+    **kwargs: Any,
+) -> Generator[nodes.Module, None, None]:
     """infer an Import node: return the imported module/object"""
+    context = context or InferenceContext()
     name = context.lookupname
     if name is None:
         raise InferenceError(node=self, context=context)
@@ -268,13 +293,19 @@ def infer_import(self, context=None, asname=True):
         raise InferenceError(node=self, context=context) from exc
 
 
-nodes.Import._infer = infer_import
+nodes.Import._infer = infer_import  # type: ignore[assignment]
 
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_import_from(self, context=None, asname=True):
+def infer_import_from(
+    self: nodes.ImportFrom,
+    context: InferenceContext | None = None,
+    asname: bool = True,
+    **kwargs: Any,
+) -> Generator[InferenceResult, None, None]:
     """infer a ImportFrom node: return the imported module/object"""
+    context = context or InferenceContext()
     name = context.lookupname
     if name is None:
         raise InferenceError(node=self, context=context)
@@ -303,18 +334,18 @@ def infer_import_from(self, context=None, asname=True):
 nodes.ImportFrom._infer = infer_import_from  # type: ignore[assignment]
 
 
-def infer_attribute(self, context=None):
+def infer_attribute(
+    self: nodes.Attribute | nodes.AssignAttr,
+    context: InferenceContext | None = None,
+    **kwargs: Any,
+) -> Generator[InferenceResult, None, InferenceErrorInfo]:
     """infer an Attribute node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
         if owner is util.Uninferable:
             yield owner
             continue
 
-        if not context:
-            context = InferenceContext()
-        else:
-            context = copy_context(context)
-
+        context = copy_context(context)
         old_boundnode = context.boundnode
         try:
             context.boundnode = owner
@@ -327,10 +358,12 @@ def infer_attribute(self, context=None):
             pass
         finally:
             context.boundnode = old_boundnode
-    return dict(node=self, context=context)
+    return InferenceErrorInfo(node=self, context=context)
 
 
-nodes.Attribute._infer = decorators.raise_if_nothing_inferred(
+# The order of the decorators here is important
+# See https://github.com/PyCQA/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
+nodes.Attribute._infer = decorators.raise_if_nothing_inferred(  # type: ignore[assignment]
     decorators.path_wrapper(infer_attribute)
 )
 # won't work with a path wrapper
@@ -339,8 +372,10 @@ nodes.AssignAttr.infer_lhs = decorators.raise_if_nothing_inferred(infer_attribut
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_global(self, context=None):
-    if context.lookupname is None:
+def infer_global(
+    self: nodes.Global, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
+    if context is None or context.lookupname is None:
         raise InferenceError(node=self, context=context)
     try:
         return bases._infer_stmts(self.root().getattr(context.lookupname), context)
@@ -356,7 +391,9 @@ nodes.Global._infer = infer_global  # type: ignore[assignment]
 _SUBSCRIPT_SENTINEL = object()
 
 
-def infer_subscript(self, context=None):
+def infer_subscript(
+    self: nodes.Subscript, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
     """Inference for subscripts
 
     We're understanding if the index is a Const
@@ -408,10 +445,12 @@ def infer_subscript(self, context=None):
             found_one = True
 
     if found_one:
-        return dict(node=self, context=context)
+        return InferenceErrorInfo(node=self, context=context)
     return None
 
 
+# The order of the decorators here is important
+# See https://github.com/PyCQA/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
 nodes.Subscript._infer = decorators.raise_if_nothing_inferred(  # type: ignore[assignment]
     decorators.path_wrapper(infer_subscript)
 )
@@ -420,7 +459,9 @@ nodes.Subscript.infer_lhs = decorators.raise_if_nothing_inferred(infer_subscript
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def _infer_boolop(self, context=None):
+def _infer_boolop(
+    self: nodes.BoolOp, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
     """Infer a boolean operation (and / or / not).
 
     The function will calculate the boolean operation
@@ -434,12 +475,12 @@ def _infer_boolop(self, context=None):
         predicate = operator.not_
 
     try:
-        values = [value.infer(context=context) for value in values]
+        inferred_values = [value.infer(context=context) for value in values]
     except InferenceError:
         yield util.Uninferable
         return None
 
-    for pair in itertools.product(*values):
+    for pair in itertools.product(*inferred_values):
         if any(item is util.Uninferable for item in pair):
             # Can't infer the final result, just yield Uninferable.
             yield util.Uninferable
@@ -468,16 +509,24 @@ def _infer_boolop(self, context=None):
         else:
             yield value
 
-    return dict(node=self, context=context)
+    return InferenceErrorInfo(node=self, context=context)
 
 
-nodes.BoolOp._infer = _infer_boolop
+nodes.BoolOp._infer = _infer_boolop  # type: ignore[assignment]
 
 
 # UnaryOp, BinOp and AugAssign inferences
 
 
-def _filter_operation_errors(self, infer_callable, context, error):
+def _filter_operation_errors(
+    self: _T,
+    infer_callable: Callable[
+        [_T, InferenceContext | None],
+        Generator[InferenceResult | util.BadOperationMessage, None, None],
+    ],
+    context: InferenceContext | None,
+    error: type[util.BadOperationMessage],
+) -> Generator[InferenceResult, None, None]:
     for result in infer_callable(self, context):
         if isinstance(result, error):
             # For the sake of .infer(), we don't care about operation
@@ -485,10 +534,12 @@ def _filter_operation_errors(self, infer_callable, context, error):
             # which shows that we can't infer the result.
             yield util.Uninferable
         else:
-            yield result
+            yield result  # type: ignore[misc]
 
 
-def _infer_unaryop(self, context=None):
+def _infer_unaryop(
+    self: nodes.UnaryOp, context: InferenceContext | None = None
+) -> Generator[InferenceResult | util.BadUnaryOperationMessage, None, None]:
     """Infer what an UnaryOp should return when evaluated."""
     for operand in self.operand.infer(context):
         try:
@@ -537,30 +588,66 @@ def _infer_unaryop(self, context=None):
                         yield operand
                     else:
                         yield result
-                except AttributeInferenceError as exc:
+                except AttributeInferenceError as inner_exc:
                     # The unary operation special method was not found.
-                    yield util.BadUnaryOperationMessage(operand, self.op, exc)
+                    yield util.BadUnaryOperationMessage(operand, self.op, inner_exc)
                 except InferenceError:
                     yield util.Uninferable
 
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_unaryop(self, context=None):
+def infer_unaryop(
+    self: nodes.UnaryOp, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, InferenceErrorInfo]:
     """Infer what an UnaryOp should return when evaluated."""
     yield from _filter_operation_errors(
         self, _infer_unaryop, context, util.BadUnaryOperationMessage
     )
-    return dict(node=self, context=context)
+    return InferenceErrorInfo(node=self, context=context)
 
 
 nodes.UnaryOp._infer_unaryop = _infer_unaryop
-nodes.UnaryOp._infer = infer_unaryop
+nodes.UnaryOp._infer = infer_unaryop  # type: ignore[assignment]
 
 
 def _is_not_implemented(const):
     """Check if the given const node is NotImplemented."""
     return isinstance(const, nodes.Const) and const.value is NotImplemented
+
+
+def _infer_old_style_string_formatting(
+    instance: nodes.Const, other: nodes.NodeNG, context: InferenceContext
+) -> tuple[type[util.Uninferable] | nodes.Const]:
+    """Infer the result of '"string" % ...'.
+
+    TODO: Instead of returning Uninferable we should rely
+    on the call to '%' to see if the result is actually uninferable.
+    """
+    values = None
+    if isinstance(other, nodes.Tuple):
+        inferred_positional = [helpers.safe_infer(i, context) for i in other.elts]
+        if all(isinstance(i, nodes.Const) for i in inferred_positional):
+            values = tuple(i.value for i in inferred_positional)
+    elif isinstance(other, nodes.Dict):
+        values: dict[Any, Any] = {}
+        for pair in other.items:
+            key = helpers.safe_infer(pair[0], context)
+            if not isinstance(key, nodes.Const):
+                return (util.Uninferable,)
+            value = helpers.safe_infer(pair[1], context)
+            if not isinstance(value, nodes.Const):
+                return (util.Uninferable,)
+            values[key.value] = value.value
+    elif isinstance(other, nodes.Const):
+        values = other.value
+    else:
+        return (util.Uninferable,)
+
+    try:
+        return (nodes.const_factory(instance.value % values),)
+    except (TypeError, KeyError):
+        return (util.Uninferable,)
 
 
 def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
@@ -569,6 +656,10 @@ def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     context = bind_context_to_node(context, instance)
     method = methods[0]
     context.callcontext.callee = method
+
+    if isinstance(instance, nodes.Const) and op == "%":
+        return iter(_infer_old_style_string_formatting(instance, other, context))
+
     try:
         inferred = next(method.infer(context=context))
     except StopIteration as e:
@@ -757,7 +848,9 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
     yield util.BadBinaryOperationMessage(left_type, binary_opnode.op, right_type)
 
 
-def _infer_binop(self, context):
+def _infer_binop(
+    self: nodes.BinOp, context: InferenceContext | None = None
+) -> Generator[InferenceResult | util.BadBinaryOperationMessage, None, None]:
     """Binary operation inference logic."""
     left = self.left
     right = self.right
@@ -784,16 +877,18 @@ def _infer_binop(self, context):
 
 @decorators.yes_if_nothing_inferred
 @decorators.path_wrapper
-def infer_binop(self, context=None):
+def infer_binop(
+    self: nodes.BinOp, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
     return _filter_operation_errors(
         self, _infer_binop, context, util.BadBinaryOperationMessage
     )
 
 
 nodes.BinOp._infer_binop = _infer_binop
-nodes.BinOp._infer = infer_binop
+nodes.BinOp._infer = infer_binop  # type: ignore[assignment]
 
-COMPARE_OPS: Dict[str, Callable[[Any, Any], bool]] = {
+COMPARE_OPS: dict[str, Callable[[Any, Any], bool]] = {
     "==": operator.eq,
     "!=": operator.ne,
     "<": operator.lt,
@@ -818,7 +913,7 @@ def _to_literal(node: nodes.NodeNG) -> Any:
 
 def _do_compare(
     left_iter: Iterable[nodes.NodeNG], op: str, right_iter: Iterable[nodes.NodeNG]
-) -> "bool | type[util.Uninferable]":
+) -> bool | type[util.Uninferable]:
     """
     If all possible combinations are either True or False, return that:
     >>> _do_compare([1, 2], '<=', [3, 4])
@@ -831,7 +926,7 @@ def _do_compare(
     >>> _do_compare([1, 3], '<=', [2, 4])
     util.Uninferable
     """
-    retval: Union[None, bool] = None
+    retval: bool | None = None
     if op in UNINFERABLE_OPS:
         return util.Uninferable
     op_func = COMPARE_OPS[op]
@@ -861,10 +956,10 @@ def _do_compare(
 
 
 def _infer_compare(
-    self: nodes.Compare, context: Optional[InferenceContext] = None
-) -> Iterator[Union[nodes.Const, Type[util.Uninferable]]]:
+    self: nodes.Compare, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[nodes.Const | type[util.Uninferable], None, None]:
     """Chained comparison inference logic."""
-    retval: Union[bool, Type[util.Uninferable]] = True
+    retval: bool | type[util.Uninferable] = True
 
     ops = self.ops
     left_node = self.left
@@ -890,10 +985,11 @@ def _infer_compare(
 nodes.Compare._infer = _infer_compare  # type: ignore[assignment]
 
 
-def _infer_augassign(self, context=None):
+def _infer_augassign(
+    self: nodes.AugAssign, context: InferenceContext | None = None
+) -> Generator[InferenceResult | util.BadBinaryOperationMessage, None, None]:
     """Inference logic for augmented binary operations."""
-    if context is None:
-        context = InferenceContext()
+    context = context or InferenceContext()
 
     rhs_context = context.clone()
 
@@ -919,24 +1015,27 @@ def _infer_augassign(self, context=None):
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_augassign(self, context=None):
+def infer_augassign(
+    self: nodes.AugAssign, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
     return _filter_operation_errors(
         self, _infer_augassign, context, util.BadBinaryOperationMessage
     )
 
 
 nodes.AugAssign._infer_augassign = _infer_augassign
-nodes.AugAssign._infer = infer_augassign
+nodes.AugAssign._infer = infer_augassign  # type: ignore[assignment]
 
 # End of binary operation inference.
 
 
 @decorators.raise_if_nothing_inferred
-def infer_arguments(self, context=None):
-    name = context.lookupname
-    if name is None:
+def infer_arguments(
+    self: nodes.Arguments, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
+    if context is None or context.lookupname is None:
         raise InferenceError(node=self, context=context)
-    return protocols._arguments_infer_argname(self, name, context)
+    return protocols._arguments_infer_argname(self, context.lookupname, context)
 
 
 nodes.Arguments._infer = infer_arguments  # type: ignore[assignment]
@@ -944,7 +1043,11 @@ nodes.Arguments._infer = infer_arguments  # type: ignore[assignment]
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_assign(self, context=None):
+def infer_assign(
+    self: nodes.AssignName | nodes.AssignAttr,
+    context: InferenceContext | None = None,
+    **kwargs: Any,
+) -> Generator[InferenceResult, None, None]:
     """infer a AssignName/AssignAttr: need to inspect the RHS part of the
     assign node
     """
@@ -955,13 +1058,15 @@ def infer_assign(self, context=None):
     return bases._infer_stmts(stmts, context)
 
 
-nodes.AssignName._infer = infer_assign
-nodes.AssignAttr._infer = infer_assign
+nodes.AssignName._infer = infer_assign  # type: ignore[assignment]
+nodes.AssignAttr._infer = infer_assign  # type: ignore[assignment]
 
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_empty_node(self, context=None):
+def infer_empty_node(
+    self: nodes.EmptyNode, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
     if not self.has_underlying_object():
         yield util.Uninferable
     else:
@@ -974,14 +1079,6 @@ def infer_empty_node(self, context=None):
 
 
 nodes.EmptyNode._infer = infer_empty_node  # type: ignore[assignment]
-
-
-@decorators.raise_if_nothing_inferred
-def infer_index(self, context=None):
-    return self.value.infer(context)
-
-
-nodes.Index._infer = infer_index  # type: ignore[assignment]
 
 
 def _populate_context_lookup(call, context):
@@ -1002,7 +1099,9 @@ def _populate_context_lookup(call, context):
 
 
 @decorators.raise_if_nothing_inferred
-def infer_ifexp(self, context=None):
+def infer_ifexp(
+    self: nodes.IfExp, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
     """Support IfExp inference
 
     If we can't infer the truthiness of the condition, we default
@@ -1037,42 +1136,35 @@ def infer_ifexp(self, context=None):
 nodes.IfExp._infer = infer_ifexp  # type: ignore[assignment]
 
 
-# pylint: disable=dangerous-default-value
-@wrapt.decorator
-def _cached_generator(
-    func, instance: _FunctionDefT, args, kwargs, _cache={}  # noqa: B006
-):
-    node = instance
-    try:
-        return iter(_cache[func, id(node)])
-    except KeyError:
-        result = func(*args, **kwargs)
-        # Need to keep an iterator around
-        original, copy = itertools.tee(result)
-        _cache[func, id(node)] = list(copy)
-        return original
-
-
-# When inferring a property, we instantiate a new `objects.Property` object,
-# which in turn, because it inherits from `FunctionDef`, sets itself in the locals
-# of the wrapping frame. This means that every time we infer a property, the locals
-# are mutated with a new instance of the property. This is why we cache the result
-# of the function's inference.
-@_cached_generator
 def infer_functiondef(
-    self: _FunctionDefT, context: Optional[InferenceContext] = None
-) -> Generator[Union["Property", _FunctionDefT], None, InferenceErrorInfo]:
+    self: _FunctionDefT, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[Property | _FunctionDefT, None, InferenceErrorInfo]:
     if not self.decorators or not bases._is_property(self):
         yield self
         return InferenceErrorInfo(node=self, context=context)
+
+    # When inferring a property, we instantiate a new `objects.Property` object,
+    # which in turn, because it inherits from `FunctionDef`, sets itself in the locals
+    # of the wrapping frame. This means that every time we infer a property, the locals
+    # are mutated with a new instance of the property. To avoid this, we detect this
+    # scenario and avoid passing the `parent` argument to the constructor.
+    parent_frame = self.parent.frame(future=True)
+    property_already_in_parent_locals = self.name in parent_frame.locals and any(
+        isinstance(val, objects.Property) for val in parent_frame.locals[self.name]
+    )
+    # We also don't want to pass parent if the definition is within a Try node
+    if isinstance(self.parent, (nodes.TryExcept, nodes.TryFinally)):
+        property_already_in_parent_locals = True
 
     prop_func = objects.Property(
         function=self,
         name=self.name,
         lineno=self.lineno,
-        parent=self.parent,
+        parent=self.parent if not property_already_in_parent_locals else None,
         col_offset=self.col_offset,
     )
+    if property_already_in_parent_locals:
+        prop_func.parent = self.parent
     prop_func.postinit(body=[], args=self.args, doc_node=self.doc_node)
     yield prop_func
     return InferenceErrorInfo(node=self, context=context)

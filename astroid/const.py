@@ -4,10 +4,9 @@
 
 import enum
 import sys
+from pathlib import Path
 
-PY36 = sys.version_info[:2] == (3, 6)
 PY38 = sys.version_info[:2] == (3, 8)
-PY37_PLUS = sys.version_info >= (3, 7)
 PY38_PLUS = sys.version_info >= (3, 8)
 PY39_PLUS = sys.version_info >= (3, 9)
 PY310_PLUS = sys.version_info >= (3, 10)
@@ -30,3 +29,7 @@ class Context(enum.Enum):
 Load = Context.Load
 Store = Context.Store
 Del = Context.Del
+
+
+ASTROID_INSTALL_DIRECTORY = Path(__file__).parent
+BRAIN_MODULES_DIRECTORY = ASTROID_INSTALL_DIRECTORY / "brain"

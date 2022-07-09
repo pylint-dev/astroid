@@ -4,7 +4,9 @@
 
 """This module contains mixin classes for scoped nodes."""
 
-from typing import TYPE_CHECKING, Dict, List, TypeVar
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, TypeVar
 
 from astroid.filter_statements import _filter_stmts
 from astroid.nodes import node_classes, scoped_nodes
@@ -16,7 +18,7 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 
 
-class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
+class LocalsDictNodeNG(node_classes.LookupMixIn):
     """this class provides locals handling common to Module, FunctionDef
     and ClassDef nodes, including a dict like interface for direct access
     to locals information
@@ -24,7 +26,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
 
     # attributes below are set by the builder module or by raw factories
 
-    locals: Dict[str, List["nodes.NodeNG"]] = {}
+    locals: dict[str, list[nodes.NodeNG]] = {}
     """A map of the name of a local variable to the node defining the local."""
 
     def qname(self):
@@ -47,6 +49,24 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
         :rtype: Module or FunctionDef or ClassDef or Lambda or GenExpr
         """
         return self
+
+    def scope_lookup(self, node, name: str, offset: int = 0):
+        """Lookup where the given variable is assigned.
+
+        :param node: The node to look for assignments up to.
+            Any assignments after the given node are ignored.
+        :type node: NodeNG
+
+        :param name: The name of the variable to find assignments for.
+
+        :param offset: The line offset to filter statements up to.
+
+        :returns: This scope node and the list of assignments associated to the
+            given name according to the scope where it has been found (locals,
+            globals or builtin).
+        :rtype: tuple(str, list(NodeNG))
+        """
+        raise NotImplementedError
 
     def _scope_lookup(self, node, name, offset=0):
         """XXX method for interfacing the scope lookup"""
@@ -108,7 +128,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
             self._append_node(child_node)
         self.set_local(name or child_node.name, child_node)
 
-    def __getitem__(self, item: str) -> "nodes.NodeNG":
+    def __getitem__(self, item: str) -> nodes.NodeNG:
         """The first node the defines the given local.
 
         :param item: The name of the locally defined object.
@@ -169,3 +189,6 @@ class ComprehensionScope(LocalsDictNodeNG):
     """Scoping for different types of comprehensions."""
 
     scope_lookup = LocalsDictNodeNG._scope_lookup
+
+    generators: list[nodes.Comprehension]
+    """The generators that are looped through."""

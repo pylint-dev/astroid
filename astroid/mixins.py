@@ -4,160 +4,28 @@
 
 """This module contains some mixins for the different nodes.
 """
-import itertools
-import sys
-from typing import TYPE_CHECKING, Optional
 
-from astroid import decorators
-from astroid.exceptions import AttributeInferenceError
+import warnings
 
-if TYPE_CHECKING:
-    from astroid import nodes
+from astroid.nodes._base_nodes import AssignTypeNode as AssignTypeMixin
+from astroid.nodes._base_nodes import FilterStmtsBaseNode as FilterStmtsMixin
+from astroid.nodes._base_nodes import ImportNode as ImportFromMixin
+from astroid.nodes._base_nodes import MultiLineBlockNode as MultiLineBlockMixin
+from astroid.nodes._base_nodes import MultiLineWithElseBlockNode as BlockRangeMixIn
+from astroid.nodes._base_nodes import NoChildrenNode as NoChildrenMixin
+from astroid.nodes._base_nodes import ParentAssignNode as ParentAssignTypeMixin
 
-if sys.version_info >= (3, 8) or TYPE_CHECKING:
-    from functools import cached_property
-else:
-    from astroid.decorators import cachedproperty as cached_property
+__all__ = (
+    "AssignTypeMixin",
+    "BlockRangeMixIn",
+    "FilterStmtsMixin",
+    "ImportFromMixin",
+    "MultiLineBlockMixin",
+    "NoChildrenMixin",
+    "ParentAssignTypeMixin",
+)
 
-
-class BlockRangeMixIn:
-    """override block range"""
-
-    @cached_property
-    def blockstart_tolineno(self):
-        return self.lineno
-
-    def _elsed_block_range(self, lineno, orelse, last=None):
-        """handle block line numbers range for try/finally, for, if and while
-        statements
-        """
-        if lineno == self.fromlineno:
-            return lineno, lineno
-        if orelse:
-            if lineno >= orelse[0].fromlineno:
-                return lineno, orelse[-1].tolineno
-            return lineno, orelse[0].fromlineno - 1
-        return lineno, last or self.tolineno
-
-
-class FilterStmtsMixin:
-    """Mixin for statement filtering and assignment type"""
-
-    def _get_filtered_stmts(self, _, node, _stmts, mystmt: Optional["nodes.Statement"]):
-        """method used in _filter_stmts to get statements and trigger break"""
-        if self.statement(future=True) is mystmt:
-            # original node's statement is the assignment, only keep
-            # current node (gen exp, list comp)
-            return [node], True
-        return _stmts, False
-
-    def assign_type(self):
-        return self
-
-
-class AssignTypeMixin:
-    def assign_type(self):
-        return self
-
-    def _get_filtered_stmts(
-        self, lookup_node, node, _stmts, mystmt: Optional["nodes.Statement"]
-    ):
-        """method used in filter_stmts"""
-        if self is mystmt:
-            return _stmts, True
-        if self.statement(future=True) is mystmt:
-            # original node's statement is the assignment, only keep
-            # current node (gen exp, list comp)
-            return [node], True
-        return _stmts, False
-
-
-class ParentAssignTypeMixin(AssignTypeMixin):
-    def assign_type(self):
-        return self.parent.assign_type()
-
-
-class ImportFromMixin(FilterStmtsMixin):
-    """MixIn for From and Import Nodes"""
-
-    def _infer_name(self, frame, name):
-        return name
-
-    def do_import_module(self, modname=None):
-        """return the ast for a module whose name is <modname> imported by <self>"""
-        # handle special case where we are on a package node importing a module
-        # using the same name as the package, which may end in an infinite loop
-        # on relative imports
-        # XXX: no more needed ?
-        mymodule = self.root()
-        level = getattr(self, "level", None)  # Import as no level
-        if modname is None:
-            modname = self.modname
-        # XXX we should investigate deeper if we really want to check
-        # importing itself: modname and mymodule.name be relative or absolute
-        if mymodule.relative_to_absolute_name(modname, level) == mymodule.name:
-            # FIXME: we used to raise InferenceError here, but why ?
-            return mymodule
-
-        return mymodule.import_module(
-            modname, level=level, relative_only=level and level >= 1
-        )
-
-    def real_name(self, asname):
-        """get name from 'as' name"""
-        for name, _asname in self.names:
-            if name == "*":
-                return asname
-            if not _asname:
-                name = name.split(".", 1)[0]
-                _asname = name
-            if asname == _asname:
-                return name
-        raise AttributeInferenceError(
-            "Could not find original name for {attribute} in {target!r}",
-            target=self,
-            attribute=asname,
-        )
-
-
-class MultiLineBlockMixin:
-    """Mixin for nodes with multi-line blocks, e.g. For and FunctionDef.
-    Note that this does not apply to every node with a `body` field.
-    For instance, an If node has a multi-line body, but the body of an
-    IfExpr is not multi-line, and hence cannot contain Return nodes,
-    Assign nodes, etc.
-    """
-
-    @cached_property
-    def _multi_line_blocks(self):
-        return tuple(getattr(self, field) for field in self._multi_line_block_fields)
-
-    def _get_return_nodes_skip_functions(self):
-        for block in self._multi_line_blocks:
-            for child_node in block:
-                if child_node.is_function:
-                    continue
-                yield from child_node._get_return_nodes_skip_functions()
-
-    def _get_yield_nodes_skip_lambdas(self):
-        for block in self._multi_line_blocks:
-            for child_node in block:
-                if child_node.is_lambda:
-                    continue
-                yield from child_node._get_yield_nodes_skip_lambdas()
-
-    @decorators.cached
-    def _get_assign_nodes(self):
-        children_assign_nodes = (
-            child_node._get_assign_nodes()
-            for block in self._multi_line_blocks
-            for child_node in block
-        )
-        return list(itertools.chain.from_iterable(children_assign_nodes))
-
-
-class NoChildrenMixin:
-    """Mixin for nodes with no children, e.g. Pass."""
-
-    def get_children(self):
-        yield from ()
+warnings.warn(
+    "The 'astroid.mixins' module is deprecated and will become private in astroid 3.0.0",
+    DeprecationWarning,
+)

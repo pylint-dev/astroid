@@ -4,12 +4,15 @@
 
 """tests for specific behaviour of astroid nodes
 """
+
+from __future__ import annotations
+
 import copy
 import os
 import sys
 import textwrap
 import unittest
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 
@@ -528,7 +531,7 @@ from ..cave import wine\n\n"""
         """When we import PickleError from nonexistent, a call to the infer
         method of this From node will be made by unpack_infer.
         inference.infer_from will try to import this module, which will fail and
-        raise a InferenceException (by mixins.do_import_module). The infer_name
+        raise a InferenceException (by ImportNode.do_import_module). The infer_name
         will catch this exception and yield and Uninferable instead.
         """
 
@@ -599,7 +602,6 @@ class CmpNodeTest(unittest.TestCase):
 class ConstNodeTest(unittest.TestCase):
     def _test(self, value: Any) -> None:
         node = nodes.const_factory(value)
-        # pylint: disable=no-member
         self.assertIsInstance(node._proxied, nodes.ClassDef)
         self.assertEqual(node._proxied.name, value.__class__.__name__)
         self.assertIs(node.value, value)
@@ -847,9 +849,6 @@ class AnnAssignNodeTest(unittest.TestCase):
 
 
 class ArgumentsNodeTC(unittest.TestCase):
-    @pytest.mark.skip(
-        "FIXME  http://bugs.python.org/issue10445 (no line number on function args)"
-    )
     def test_linenumbering(self) -> None:
         ast = builder.parse(
             """
@@ -998,13 +997,13 @@ class AliasesTest(unittest.TestCase):
             node.name = "another_test"
             return node
 
-        def test_callfunc(node: Call) -> Optional[Call]:
+        def test_callfunc(node: Call) -> Call | None:
             if node.func.name == "Foo":
                 node.func.name = "Bar"
                 return node
             return None
 
-        def test_assname(node: AssignName) -> Optional[AssignName]:
+        def test_assname(node: AssignName) -> AssignName | None:
             if node.name == "foo":
                 return nodes.AssignName(
                     "bar", node.lineno, node.col_offset, node.parent

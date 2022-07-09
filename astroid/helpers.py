@@ -6,6 +6,7 @@
 Various helper utilities.
 """
 
+from __future__ import annotations
 
 from astroid import bases, manager, nodes, raw_building, util
 from astroid.context import CallContext, InferenceContext
@@ -17,15 +18,18 @@ from astroid.exceptions import (
     _NonDeducibleTypeHierarchy,
 )
 from astroid.nodes import scoped_nodes
+from astroid.typing import InferenceResult
 
 
-def _build_proxy_class(cls_name, builtins):
+def _build_proxy_class(cls_name: str, builtins: nodes.Module) -> nodes.ClassDef:
     proxy = raw_building.build_class(cls_name)
     proxy.parent = builtins
     return proxy
 
 
-def _function_type(function, builtins):
+def _function_type(
+    function: nodes.Lambda | bases.UnboundMethod, builtins: nodes.Module
+) -> nodes.ClassDef:
     if isinstance(function, scoped_nodes.Lambda):
         if function.root().name == "builtins":
             cls_name = "builtin_function_or_method"
@@ -33,7 +37,7 @@ def _function_type(function, builtins):
             cls_name = "function"
     elif isinstance(function, bases.BoundMethod):
         cls_name = "method"
-    elif isinstance(function, bases.UnboundMethod):
+    else:
         cls_name = "function"
     return _build_proxy_class(cls_name, builtins)
 
@@ -138,7 +142,9 @@ def object_issubclass(node, class_or_seq, context=None):
     return _object_type_is_subclass(node, class_or_seq, context=context)
 
 
-def safe_infer(node, context=None):
+def safe_infer(
+    node: nodes.NodeNG | bases.Proxy, context: InferenceContext | None = None
+) -> InferenceResult | None:
     """Return the inferred value for the given node.
 
     Return None if inference failed or if there is some ambiguity (more than

@@ -5,10 +5,14 @@
 """This module contains base classes and functions for the nodes and some
 inference utils.
 """
+from __future__ import annotations
 
 import collections
+import collections.abc
+from collections.abc import Sequence
+from typing import Any
 
-from astroid import decorators
+from astroid import decorators, nodes
 from astroid.const import PY310_PLUS
 from astroid.context import (
     CallContext,
@@ -22,6 +26,7 @@ from astroid.exceptions import (
     InferenceError,
     NameInferenceError,
 )
+from astroid.typing import InferenceErrorInfo, InferenceResult
 from astroid.util import Uninferable, lazy_descriptor, lazy_import
 
 objectmodel = lazy_import("interpreter.objectmodel")
@@ -97,10 +102,22 @@ class Proxy:
     if new instance attributes are created. See the Const class
     """
 
-    _proxied = None  # proxied object may be set by class or by instance
+    _proxied: nodes.ClassDef | nodes.Lambda | Proxy | None = (
+        None  # proxied object may be set by class or by instance
+    )
 
-    def __init__(self, proxied=None):
-        if proxied is not None:
+    def __init__(
+        self, proxied: nodes.ClassDef | nodes.Lambda | Proxy | None = None
+    ) -> None:
+        if proxied is None:
+            # This is a hack to allow calling this __init__ during bootstrapping of
+            # builtin classes and their docstrings.
+            # For Const and Generator nodes the _proxied attribute is set during bootstrapping
+            # as we first need to build the ClassDef that they can proxy.
+            # Thus, if proxied is None self should be a Const or Generator
+            # as that is the only way _proxied will be correctly set as a ClassDef.
+            assert isinstance(self, (nodes.Const, Generator))
+        else:
             self._proxied = proxied
 
     def __getattr__(self, name):
@@ -110,11 +127,17 @@ class Proxy:
             return self.__dict__[name]
         return getattr(self._proxied, name)
 
-    def infer(self, context=None):
+    def infer(  # type: ignore[return]
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> collections.abc.Generator[InferenceResult, None, InferenceErrorInfo | None]:
         yield self
 
 
-def _infer_stmts(stmts, context, frame=None):
+def _infer_stmts(
+    stmts: Sequence[nodes.NodeNG | type[Uninferable] | Instance],
+    context: InferenceContext | None,
+    frame: nodes.NodeNG | Instance | None = None,
+) -> collections.abc.Generator[InferenceResult, None, None]:
     """Return an iterator on statements inferred by each statement in *stmts*."""
     inferred = False
     if context is not None:
@@ -129,9 +152,11 @@ def _infer_stmts(stmts, context, frame=None):
             yield stmt
             inferred = True
             continue
-        context.lookupname = stmt._infer_name(frame, name)
+        # 'context' is always InferenceContext and Instances get '_infer_name' from ClassDef
+        context.lookupname = stmt._infer_name(frame, name)  # type: ignore[union-attr]
         try:
-            for inf in stmt.infer(context=context):
+            # Mypy doesn't recognize that 'stmt' can't be Uninferable
+            for inf in stmt.infer(context=context):  # type: ignore[union-attr]
                 yield inf
                 inferred = True
         except NameInferenceError:
@@ -251,10 +276,20 @@ class BaseInstance(Proxy):
             else:
                 yield attr
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(
+        self, caller: nodes.Call | Proxy, context: InferenceContext | None = None
+    ):
         """infer what a class instance is returning when called"""
         context = bind_context_to_node(context, self)
         inferred = False
+
+        # If the call is an attribute on the instance, we infer the attribute itself
+        if isinstance(caller, nodes.Call) and isinstance(caller.func, nodes.Attribute):
+            for res in self.igetattr(caller.func.attrname, context):
+                inferred = True
+                yield res
+
+        # Otherwise we infer the call to the __call__ dunder normally
         for node in self._proxied.igetattr("__call__", context):
             if node is Uninferable or not node.callable():
                 continue
@@ -268,8 +303,13 @@ class BaseInstance(Proxy):
 class Instance(BaseInstance):
     """A special node representing a class instance."""
 
+    _proxied: nodes.ClassDef
+
     # pylint: disable=unnecessary-lambda
     special_attributes = lazy_descriptor(lambda: objectmodel.InstanceModel())
+
+    def __init__(self, proxied: nodes.ClassDef | None) -> None:
+        super().__init__(proxied)
 
     def __repr__(self):
         return "<Instance of {}.{} at 0x{}>".format(
@@ -319,7 +359,6 @@ class Instance(BaseInstance):
         return result
 
     def getitem(self, index, context=None):
-        # TODO: Rewrap index to Const for this case
         new_context = bind_context_to_node(context, self)
         if not context:
             context = new_context
@@ -373,24 +412,49 @@ class UnboundMethod(Proxy):
         on ``object.__new__`` will be of type ``object``,
         which is incorrect for the argument in general.
         If no context is given the ``object.__new__`` call argument will
-        correctly inferred except when inside a call that requires
+        be correctly inferred except when inside a call that requires
         the additional context (such as a classmethod) of the boundnode
         to determine which class the method was called from
         """
 
-        # If we're unbound method __new__ of builtin object, the result is an
+        # If we're unbound method __new__ of a builtin, the result is an
         # instance of the class given as first argument.
-        if (
-            self._proxied.name == "__new__"
-            and self._proxied.parent.frame(future=True).qname() == "builtins.object"
-        ):
-            if caller.args:
-                node_context = context.extra_context.get(caller.args[0])
-                infer = caller.args[0].infer(context=node_context)
-            else:
-                infer = []
-            return (Instance(x) if x is not Uninferable else x for x in infer)
+        if self._proxied.name == "__new__":
+            qname = self._proxied.parent.frame(future=True).qname()
+            # Avoid checking builtins.type: _infer_type_new_call() does more validation
+            if qname.startswith("builtins.") and qname != "builtins.type":
+                return self._infer_builtin_new(caller, context)
         return self._proxied.infer_call_result(caller, context)
+
+    def _infer_builtin_new(
+        self,
+        caller: nodes.Call,
+        context: InferenceContext,
+    ) -> collections.abc.Generator[
+        nodes.Const | Instance | type[Uninferable], None, None
+    ]:
+        if not caller.args:
+            return
+        # Attempt to create a constant
+        if len(caller.args) > 1:
+            value = None
+            if isinstance(caller.args[1], nodes.Const):
+                value = caller.args[1].value
+            else:
+                inferred_arg = next(caller.args[1].infer(), None)
+                if isinstance(inferred_arg, nodes.Const):
+                    value = inferred_arg.value
+            if value is not None:
+                yield nodes.const_factory(value)
+                return
+
+        node_context = context.extra_context.get(caller.args[0])
+        for inferred in caller.args[0].infer(context=node_context):
+            if inferred is Uninferable:
+                yield inferred
+            if isinstance(inferred, nodes.ClassDef):
+                yield Instance(inferred)
+            raise InferenceError
 
     def bool_value(self, context=None):
         return True
@@ -530,6 +594,8 @@ class Generator(BaseInstance):
 
     Proxied class is set once for all in raw_building.
     """
+
+    _proxied: nodes.ClassDef
 
     special_attributes = lazy_descriptor(objectmodel.GeneratorModel)
 
