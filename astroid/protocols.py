@@ -121,6 +121,8 @@ def const_infer_binary_op(self, opnode, operator, other, context, _):
         if (
             operator == "**"
             and isinstance(self, nodes.Const)
+            and isinstance(self.value, (int, float))
+            and isinstance(other.value, (int, float))
             and (self.value > 1e5 or other.value > 1e5)
         ):
             yield not_implemented
