@@ -9,9 +9,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.11.7?
+What's New in astroid 2.11.8?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.11.7?
+=============================
+Release date: 2022-07-09
 
 * Added support for ``usedforsecurity`` keyword to ``hashlib`` constructors.
 
