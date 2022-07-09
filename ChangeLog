@@ -12,6 +12,7 @@ What's New in astroid 2.12.1?
 =============================
 Release date: TBA
 
+* Fix a crash involving properties within ``if`` blocks.
 
 
 What's New in astroid 2.12.0?
