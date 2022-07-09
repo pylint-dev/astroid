@@ -626,6 +626,8 @@ def _infer_old_style_string_formatting(
     """
     values = None
     if isinstance(other, nodes.Tuple):
+        if util.Uninferable in other.elts:
+            return (util.Uninferable,)
         inferred_positional = [helpers.safe_infer(i, context) for i in other.elts]
         if all(isinstance(i, nodes.Const) for i in inferred_positional):
             values = tuple(i.value for i in inferred_positional)
