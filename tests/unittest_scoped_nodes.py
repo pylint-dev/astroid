@@ -2459,6 +2459,26 @@ def test_property_in_body_of_try() -> None:
     next(node.value.infer())
 
 
+def test_property_in_body_of_if() -> None:
+    node: nodes.Return = builder._extract_single_node(
+        """
+    def myfunc():
+        if True:
+
+            @property
+            def myfunc():
+                return None
+
+        @myfunc.setter
+        def myfunc():
+            pass
+
+        return myfunc() #@
+    """
+    )
+    next(node.value.infer())
+
+
 def test_issue940_enums_as_a_real_world_usecase() -> None:
     node = builder.extract_node(
         """
