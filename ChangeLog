@@ -115,12 +115,6 @@ Release date: TBA
 
   Refs PyCQA/pylint#7109
 
-
-What's New in astroid 2.11.8?
-=============================
-Release date: TBA
-
-
 What's New in astroid 2.11.7?
 =============================
 Release date: 2022-07-09
@@ -132,7 +126,6 @@ Release date: 2022-07-09
 * Updated the stdlib brain for ``subprocess.Popen`` to accommodate Python 3.9+.
 
   Closes PyCQA/pylint#7092
-
 
 What's New in astroid 2.11.6?
 =============================
