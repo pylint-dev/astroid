@@ -6945,6 +6945,9 @@ class TestOldStyleStringFormatting:
             age = 12
             "My name is %0s, I'm %(age)s" % (fname, age)
             """,
+            """
+            "My name is %s, I'm %s" % ((fname,)*2)
+            """,
         ],
     )
     def test_old_style_string_formatting_uninferable(self, format_string: str) -> None:
