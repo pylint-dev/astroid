@@ -2,9 +2,21 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.12.0?
+What's New in astroid 2.13.0?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.12.1?
+=============================
+Release date: TBA
+
+
+
+What's New in astroid 2.12.0?
+=============================
+Release date: 2022-07-09
 
 * Fix signal has no ``connect`` member for PySide2 5.15.2+ and PySide6
 

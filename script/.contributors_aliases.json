@@ -13,6 +13,10 @@
     "name": "Marc Mueller",
     "team": "Maintainers"
   },
+  "adam.grant.hendry@gmail.com": {
+    "mails": ["adam.grant.hendry@gmail.com"],
+    "name": "Adam Hendry"
+  },
   "androwiiid@gmail.com": {
     "mails": ["androwiiid@gmail.com"],
     "name": "Paligot Gérard"
@@ -169,9 +173,5 @@
   "ville.skytta@iki.fi": {
     "mails": ["ville.skytta@iki.fi", "ville.skytta@upcloud.com"],
     "name": "Ville Skyttä"
-  },
-  "adam.grant.hendry@gmail.com": {
-    "mails": ["adam.grant.hendry@gmail.com"],
-    "name": "Adam Hendry"
   }
 }
