@@ -106,17 +106,6 @@ Release date: TBA
 
   Closes #1195
 
-What's New in astroid 2.11.8?
-=============================
-Release date: TBA
-
-* Added support for ``usedforsecurity`` keyword to ``hashlib`` constructors.
-
-  Closes PyCQA/pylint#6017
-
-* Updated the stdlib brain for ``subprocess.Popen`` to accommodate Python 3.9+.
-
-  Closes PyCQA/pylint#7092
 
 * Fix a crash involving properties within ``try ... except`` blocks.
 
@@ -126,6 +115,12 @@ Release date: TBA
   ambiguity (or user error) in calling ``__new__(cls)``.
 
   Refs PyCQA/pylint#7109
+
+
+What's New in astroid 2.11.8?
+=============================
+Release date: TBA
+
 
 
 What's New in astroid 2.11.7?
