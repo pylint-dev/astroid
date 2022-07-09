@@ -14,6 +14,11 @@ Release date: TBA
 
 * Fix a crash when inferring old-style string formatting (``%``) using tuples.
 
+* Fix a crash when ``None`` (or a value inferred as ``None``) participates in a
+  ``**`` expression.
+
+* Fix a crash involving properties within ``if`` blocks.
+
 
 What's New in astroid 2.12.0?
 =============================
