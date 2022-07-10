@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.12.1?
+What's New in astroid 2.12.2?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.12.1?
+=============================
+Release date: 2022-07-10
 
 * Fix a crash when inferring old-style string formatting (``%``) using tuples.
 
