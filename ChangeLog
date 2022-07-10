@@ -12,7 +12,9 @@ What's New in astroid 2.12.2?
 =============================
 Release date: TBA
 
+* Fixed crash in modulo operations for divisions by zero.
 
+  Closes #1700
 
 What's New in astroid 2.12.1?
 =============================
