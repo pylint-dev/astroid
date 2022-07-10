@@ -388,14 +388,14 @@ class ClearCacheTest(unittest.TestCase):
         astroid.MANAGER.clear_cache()
         isinstance_call = astroid.extract_node("isinstance(1, int)")
         inferred = next(isinstance_call.infer())
-        self.assertIs(inferred.value, True)
+        self.assertTrue(inferred.value)
 
     def test_builtins_inference_after_clearing_cache_manually(self) -> None:
         # Not recommended to manipulate this, so we detect it and call clear_cache() instead
         astroid.MANAGER.brain["astroid_cache"].clear()
         isinstance_call = astroid.extract_node("isinstance(1, int)")
         inferred = next(isinstance_call.infer())
-        self.assertIs(inferred.value, True)
+        self.assertTrue(inferred.value)
 
 
 if __name__ == "__main__":

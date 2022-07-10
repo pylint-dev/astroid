@@ -398,7 +398,7 @@ class GetModuleFilesTest(unittest.TestCase):
         m = modutils.load_module_from_modpath(["xml", "etree", "ElementTree"])
         self.assertTrue(hasattr(xml, "etree"))
         self.assertTrue(hasattr(xml.etree, "ElementTree"))
-        self.assertTrue(m is xml.etree.ElementTree)
+        self.assertIs(m, xml.etree.ElementTree)
 
 
 class ExtensionPackageWhitelistTest(unittest.TestCase):

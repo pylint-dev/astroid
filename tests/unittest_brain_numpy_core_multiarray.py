@@ -92,14 +92,16 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
             for func_ in self.numpy_functions_returning_array:
                 with self.subTest(typ=func_):
                     inferred_values = list(infer_wrapper(*func_))
-                    self.assertTrue(
-                        len(inferred_values) == 1,
+                    self.assertEqual(
+                        len(inferred_values),
+                        1,
                         msg="Too much inferred values ({}) for {:s}".format(
                             inferred_values, func_[0]
                         ),
                     )
-                    self.assertTrue(
-                        inferred_values[-1].pytype() == ".ndarray",
+                    self.assertEqual(
+                        inferred_values[-1].pytype(),
+                        ".ndarray",
                         msg="Illicit type for {:s} ({})".format(
                             func_[0], inferred_values[-1].pytype()
                         ),
@@ -116,14 +118,16 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
             for func_ in self.numpy_functions_returning_bool:
                 with self.subTest(typ=func_):
                     inferred_values = list(infer_wrapper(*func_))
-                    self.assertTrue(
-                        len(inferred_values) == 1,
+                    self.assertEqual(
+                        len(inferred_values),
+                        1,
                         msg="Too much inferred values ({}) for {:s}".format(
                             inferred_values, func_[0]
                         ),
                     )
-                    self.assertTrue(
-                        inferred_values[-1].pytype() == "builtins.bool",
+                    self.assertEqual(
+                        inferred_values[-1].pytype(),
+                        "builtins.bool",
                         msg="Illicit type for {:s} ({})".format(
                             func_[0], inferred_values[-1].pytype()
                         ),
@@ -140,14 +144,16 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
             for func_ in self.numpy_functions_returning_dtype:
                 with self.subTest(typ=func_):
                     inferred_values = list(infer_wrapper(*func_))
-                    self.assertTrue(
-                        len(inferred_values) == 1,
+                    self.assertEqual(
+                        len(inferred_values),
+                        1,
                         msg="Too much inferred values ({}) for {:s}".format(
                             inferred_values, func_[0]
                         ),
                     )
-                    self.assertTrue(
-                        inferred_values[-1].pytype() == "numpy.dtype",
+                    self.assertEqual(
+                        inferred_values[-1].pytype(),
+                        "numpy.dtype",
                         msg="Illicit type for {:s} ({})".format(
                             func_[0], inferred_values[-1].pytype()
                         ),
@@ -164,14 +170,16 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
             for func_ in self.numpy_functions_returning_none:
                 with self.subTest(typ=func_):
                     inferred_values = list(infer_wrapper(*func_))
-                    self.assertTrue(
-                        len(inferred_values) == 1,
+                    self.assertEqual(
+                        len(inferred_values),
+                        1,
                         msg="Too much inferred values ({}) for {:s}".format(
                             inferred_values, func_[0]
                         ),
                     )
-                    self.assertTrue(
-                        inferred_values[-1].pytype() == "builtins.NoneType",
+                    self.assertEqual(
+                        inferred_values[-1].pytype(),
+                        "builtins.NoneType",
                         msg="Illicit type for {:s} ({})".format(
                             func_[0], inferred_values[-1].pytype()
                         ),
@@ -188,14 +196,16 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
             for func_ in self.numpy_functions_returning_tuple:
                 with self.subTest(typ=func_):
                     inferred_values = list(infer_wrapper(*func_))
-                    self.assertTrue(
-                        len(inferred_values) == 1,
+                    self.assertEqual(
+                        len(inferred_values),
+                        1,
                         msg="Too much inferred values ({}) for {:s}".format(
                             inferred_values, func_[0]
                         ),
                     )
-                    self.assertTrue(
-                        inferred_values[-1].pytype() == "builtins.tuple",
+                    self.assertEqual(
+                        inferred_values[-1].pytype(),
+                        "builtins.tuple",
                         msg="Illicit type for {:s} ({})".format(
                             func_[0], inferred_values[-1].pytype()
                         ),

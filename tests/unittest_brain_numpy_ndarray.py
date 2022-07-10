@@ -134,12 +134,14 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
         for func_ in self.ndarray_returning_ndarray_methods:
             with self.subTest(typ=func_):
                 inferred_values = list(self._inferred_ndarray_method_call(func_))
-                self.assertTrue(
-                    len(inferred_values) == 1,
+                self.assertEqual(
+                    len(inferred_values),
+                    1,
                     msg=f"Too much inferred value for {func_:s}",
                 )
-                self.assertTrue(
-                    inferred_values[-1].pytype() in licit_array_types,
+                self.assertIn(
+                    inferred_values[-1].pytype(),
+                    licit_array_types,
                     msg=f"Illicit type for {func_:s} ({inferred_values[-1].pytype()})",
                 )
 
@@ -151,12 +153,14 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
         for attr_ in ("real", "imag", "shape", "T"):
             with self.subTest(typ=attr_):
                 inferred_values = list(self._inferred_ndarray_attribute(attr_))
-                self.assertTrue(
-                    len(inferred_values) == 1,
+                self.assertEqual(
+                    len(inferred_values),
+                    1,
                     msg=f"Too much inferred value for {attr_:s}",
                 )
-                self.assertTrue(
-                    inferred_values[-1].pytype() in licit_array_types,
+                self.assertIn(
+                    inferred_values[-1].pytype(),
+                    licit_array_types,
                     msg=f"Illicit type for {attr_:s} ({inferred_values[-1].pytype()})",
                 )
 

@@ -168,7 +168,7 @@ class NamedTupleTest(unittest.TestCase):
         # See: https://github.com/PyCQA/pylint/issues/5982
         self.assertNotIn("X", klass.locals)
         for anc in klass.ancestors():
-            self.assertFalse(anc.parent is None)
+            self.assertIsNotNone(anc.parent)
 
     def test_namedtuple_inference(self) -> None:
         klass = builder.extract_node(
@@ -1505,7 +1505,7 @@ class TypingBrain(unittest.TestCase):
             [anc.name for anc in klass.ancestors()], ["X", "tuple", "object"]
         )
         for anc in klass.ancestors():
-            self.assertFalse(anc.parent is None)
+            self.assertIsNotNone(anc.parent)
 
     def test_namedtuple_can_correctly_access_methods(self) -> None:
         klass, called = builder.extract_node(

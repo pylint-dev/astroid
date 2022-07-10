@@ -87,7 +87,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
     def test_method(self) -> None:
         method = self.module["YOUPI"]["method"]
         my_dict = next(method.ilookup("MY_DICT"))
-        self.assertTrue(isinstance(my_dict, nodes.Dict), my_dict)
+        self.assertIsInstance(my_dict, nodes.Dict, my_dict)
         none = next(method.ilookup("None"))
         self.assertIsNone(none.value)
         self.assertRaises(
@@ -97,7 +97,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
     def test_function_argument_with_default(self) -> None:
         make_class = self.module2["make_class"]
         base = next(make_class.ilookup("base"))
-        self.assertTrue(isinstance(base, nodes.ClassDef), base.__class__)
+        self.assertIsInstance(base, nodes.ClassDef, base.__class__)
         self.assertEqual(base.name, "YO")
         self.assertEqual(base.root().name, "data.module")
 

@@ -40,12 +40,14 @@ class BrainNumpyCoreFromNumericTest(unittest.TestCase):
         for func_ in self.numpy_functions:
             with self.subTest(typ=func_):
                 inferred_values = list(self._inferred_numpy_func_call(*func_))
-                self.assertTrue(
-                    len(inferred_values) == 1,
+                self.assertEqual(
+                    len(inferred_values),
+                    1,
                     msg=f"Too much inferred value for {func_[0]:s}",
                 )
-                self.assertTrue(
-                    inferred_values[-1].pytype() in licit_array_types,
+                self.assertIn(
+                    inferred_values[-1].pytype(),
+                    licit_array_types,
                     msg=f"Illicit type for {func_[0]:s} ({inferred_values[-1].pytype()})",
                 )
 

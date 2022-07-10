@@ -9,6 +9,11 @@ repos:
         exclude: .github/|tests/testdata
       - id: end-of-file-fixer
         exclude: tests/testdata
+  - repo: https://github.com/isidentical/teyit
+    rev: 0.4.3
+    hooks:
+      - id: teyit
+        exclude: tests/testdata
   - repo: https://github.com/myint/autoflake
     rev: v1.4
     hooks:

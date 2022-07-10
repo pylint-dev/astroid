@@ -23,7 +23,7 @@ class Python3TC(unittest.TestCase):
         # Get the star node
         node = next(next(next(astroid.get_children()).get_children()).get_children())
 
-        self.assertTrue(isinstance(node.assign_type(), nodes.Assign))
+        self.assertIsInstance(node.assign_type(), nodes.Assign)
 
     def test_yield_from(self) -> None:
         body = dedent(

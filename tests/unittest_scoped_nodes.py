@@ -627,7 +627,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                 pass
         """
         func = builder.extract_node(data)
-        self.assertIs(func.is_bound(), True)
+        self.assertTrue(func.is_bound())
         self.assertEqual(func.implicit_parameters(), 1)
 
         data2 = """
@@ -635,7 +635,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             pass
         """
         func2 = builder.extract_node(data2)
-        self.assertIs(func2.is_bound(), False)
+        self.assertFalse(func2.is_bound())
         self.assertEqual(func2.implicit_parameters(), 0)
 
     def test_type_builtin_descriptor_subclasses(self) -> None:
@@ -1023,7 +1023,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(klass.statement(), klass)
         self.assertEqual(klass.statement(future=True), klass)
         l_sibling = klass.previous_sibling()
-        self.assertTrue(isinstance(l_sibling, nodes.FunctionDef), l_sibling)
+        self.assertIsInstance(l_sibling, nodes.FunctionDef, l_sibling)
         self.assertEqual(l_sibling.name, "global_access")
         r_sibling = klass.next_sibling()
         self.assertIsInstance(r_sibling, nodes.ClassDef)

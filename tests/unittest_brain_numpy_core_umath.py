@@ -216,14 +216,16 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         for func_ in ndarray_returning_func:
             with self.subTest(typ=func_):
                 inferred_values = list(self._inferred_numpy_func_call(func_))
-                self.assertTrue(
-                    len(inferred_values) == 1,
+                self.assertEqual(
+                    len(inferred_values),
+                    1,
                     msg="Too much inferred values ({}) for {:s}".format(
                         inferred_values[-1].pytype(), func_
                     ),
                 )
-                self.assertTrue(
-                    inferred_values[0].pytype() == ".ndarray",
+                self.assertEqual(
+                    inferred_values[0].pytype(),
+                    ".ndarray",
                     msg=f"Illicit type for {func_:s} ({inferred_values[-1].pytype()})",
                 )
 
@@ -236,26 +238,28 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         for func_ in ndarray_returning_func:
             with self.subTest(typ=func_):
                 inferred_values = list(self._inferred_numpy_func_call(func_))
-                self.assertTrue(
-                    len(inferred_values) == 1,
+                self.assertEqual(
+                    len(inferred_values),
+                    1,
                     msg=f"Too much inferred values ({inferred_values}) for {func_:s}",
                 )
-                self.assertTrue(
-                    inferred_values[-1].pytype() == "builtins.tuple",
+                self.assertEqual(
+                    inferred_values[-1].pytype(),
+                    "builtins.tuple",
                     msg=f"Illicit type for {func_:s} ({inferred_values[-1].pytype()})",
                 )
-                self.assertTrue(
-                    len(inferred_values[0].elts) == 2,
+                self.assertEqual(
+                    len(inferred_values[0].elts),
+                    2,
                     msg=f"{func_} should return a pair of values. That's not the case.",
                 )
                 for array in inferred_values[-1].elts:
                     effective_infer = [m.pytype() for m in array.inferred()]
-                    self.assertTrue(
-                        ".ndarray" in effective_infer,
-                        msg=(
-                            f"Each item in the return of {func_} should be inferred"
-                            f" as a ndarray and not as {effective_infer}"
-                        ),
+                    self.assertIn(
+                        ".ndarray",
+                        effective_infer,
+                        msg=f"Each item in the return of {func_} should be inferred"
+                        f" as a ndarray and not as {effective_infer}",
                     )
 
 

@@ -475,19 +475,19 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_import_self_resolve(self) -> None:
         myos = next(self.module2.igetattr("myos"))
-        self.assertTrue(isinstance(myos, nodes.Module), myos)
+        self.assertIsInstance(myos, nodes.Module, myos)
         self.assertEqual(myos.name, "os")
         self.assertEqual(myos.qname(), "os")
         self.assertEqual(myos.pytype(), "builtins.module")
 
     def test_from_self_resolve(self) -> None:
         namenode = next(self.module.igetattr("NameNode"))
-        self.assertTrue(isinstance(namenode, nodes.ClassDef), namenode)
+        self.assertIsInstance(namenode, nodes.ClassDef, namenode)
         self.assertEqual(namenode.root().name, "astroid.nodes.node_classes")
         self.assertEqual(namenode.qname(), "astroid.nodes.node_classes.Name")
         self.assertEqual(namenode.pytype(), "builtins.type")
         abspath = next(self.module2.igetattr("abspath"))
-        self.assertTrue(isinstance(abspath, nodes.FunctionDef), abspath)
+        self.assertIsInstance(abspath, nodes.FunctionDef, abspath)
         self.assertEqual(abspath.root().name, "os.path")
         self.assertEqual(abspath.pytype(), "builtins.function")
         if sys.platform != "win32":

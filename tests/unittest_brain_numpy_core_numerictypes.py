@@ -207,7 +207,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
                 inferred = self._inferred_numpy_attribute(type_)
                 for meth in generic_methods:
                     with self.subTest(meth=meth):
-                        self.assertTrue(meth in {m.name for m in inferred.methods()})
+                        self.assertIn(meth, {m.name for m in inferred.methods()})
 
     def test_generic_types_have_attributes(self):
         """
@@ -330,12 +330,12 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
         )
         licit_array_types = ".ndarray"
         inferred_values = list(node.infer())
-        self.assertTrue(
-            len(inferred_values) == 1,
-            msg="Too much inferred value for datetime64.astype",
+        self.assertEqual(
+            len(inferred_values), 1, msg="Too much inferred value for datetime64.astype"
         )
-        self.assertTrue(
-            inferred_values[-1].pytype() in licit_array_types,
+        self.assertIn(
+            inferred_values[-1].pytype(),
+            licit_array_types,
             msg="Illicit type for {:s} ({})".format(
                 "datetime64.astype", inferred_values[-1].pytype()
             ),

@@ -23,7 +23,7 @@ class BuiltinsTest(unittest.TestCase):
         """
         )
         inferred_property = list(class_with_property.value.infer())[0]
-        self.assertTrue(isinstance(inferred_property, objects.Property))
+        self.assertIsInstance(inferred_property, objects.Property)
         self.assertTrue(hasattr(inferred_property, "args"))
 
 
