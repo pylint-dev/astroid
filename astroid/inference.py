@@ -659,7 +659,11 @@ def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     method = methods[0]
     context.callcontext.callee = method
 
-    if isinstance(instance, nodes.Const) and op == "%":
+    if (
+        isinstance(instance, nodes.Const)
+        and isinstance(instance.value, str)
+        and op == "%"
+    ):
         return iter(_infer_old_style_string_formatting(instance, other, context))
 
     try:
