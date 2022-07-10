@@ -29,9 +29,11 @@ Maintainers
 
 Contributors
 ------------
-- LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
+- Emile Anclin <emile.anclin@logilab.fr>
 - Nick Drozd <nicholasdrozd@gmail.com>
 - Andrew Haigh <hello@nelf.in>
+- Julien Cristau <julien.cristau@logilab.fr>
+- Alexandre Fayolle <alexandre.fayolle@logilab.fr>
 - David Liu <david@cs.toronto.edu>
 - Eevee (Alex Munroe) <amunroe@yelp.com>
 - David Gilman <davidgilman1@gmail.com>
@@ -52,12 +54,16 @@ Contributors
 - Ville Skyttä <ville.skytta@iki.fi>
 - Rene Zhang <rz99@cornell.edu>
 - Philip Lorenz <philip@bithub.de>
+- Nicolas Chauvat <nicolas.chauvat@logilab.fr>
 - Mark Byrne <31762852+mbyrnepr2@users.noreply.github.com>
 - Mario Corchero <mariocj89@gmail.com>
 - Marien Zwart <marienz@gentoo.org>
+- Laura Médioni <laura.medioni@logilab.fr>
 - FELD Boris <lothiraldan@gmail.com>
 - Enji Cooper <yaneurabeya@gmail.com>
+- Adrien Di Mascio <Adrien.DiMascio@logilab.fr>
 - tristanlatr <19967168+tristanlatr@users.noreply.github.com>
+- emile@crater.logilab.fr <emile@crater.logilab.fr>
 - doranid <ddandd@gmail.com>
 - brendanator <brendan.maginnis@gmail.com>
 - Tomas Gavenciak <gavento@ucw.cz>
@@ -65,6 +71,7 @@ Contributors
 - Stefan Scherfke <stefan@sofa-rockers.org>
 - Sergei Lebedev <185856+superbobry@users.noreply.github.com>
 - Ram Rachum <ram@rachum.com>
+- Pierre-Yves David <pierre-yves.david@logilab.fr>
 - Peter Pentchev <roam@ringlet.net>
 - Peter Kolbus <peter.kolbus@gmail.com>
 - Omer Katz <omer.drow@gmail.com>
@@ -78,7 +85,9 @@ Contributors
 - Jacob Bogdanov <jacob@bogdanov.dev>
 - Google, Inc. <no-reply@google.com>
 - David Euresti <github@euresti.com>
+- David Douard <david.douard@logilab.fr>
 - David Cain <davidjosephcain@gmail.com>
+- Anthony Truchet <anthony.truchet@logilab.fr>
 - Anthony Sottile <asottile@umich.edu>
 - Alexander Shadchin <alexandr.shadchin@gmail.com>
 - wgehalo <wgehalo@gmail.com>
