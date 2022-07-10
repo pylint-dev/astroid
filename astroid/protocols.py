@@ -78,7 +78,7 @@ _UNARY_OPERATORS: dict[str, Callable[[Any], Any]] = {
 
 
 def _infer_unary_op(obj: Any, op: str) -> ConstFactoryResult:
-    """Perform unary operation on `object`, unless it is `NotImplemented`.
+    """Perform unary operation on `obj`, unless it is `NotImplemented`.
 
     Can raise TypeError if operation is unsupported.
     """
