@@ -145,6 +145,10 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
         raise InferenceError(
             "StopIteration raised without any error information."
         ) from error
+    except RecursionError as error:
+        raise InferenceError(
+            f"RecursionError raised with limit {sys.getrecursionlimit()}."
+        ) from error
 
     yield from generator
 
