@@ -16,6 +16,10 @@ Release date: TBA
 
   Closes #1700
 
+* Fixed crash with recursion limits during inference.
+
+  Closes #1646
+
 What's New in astroid 2.12.1?
 =============================
 Release date: 2022-07-10
