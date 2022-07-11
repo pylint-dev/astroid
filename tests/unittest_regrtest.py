@@ -427,7 +427,7 @@ def test_max_inferred_for_complicated_class_hierarchy() -> None:
 )
 def test_recursion_during_inference(mocked) -> None:
     """Check that we don't crash if we hit the recursion limit during inference."""
-    node: nodes.Expr = _extract_single_node(
+    node: nodes.Call = _extract_single_node(
         """
     from module import something
     something()
