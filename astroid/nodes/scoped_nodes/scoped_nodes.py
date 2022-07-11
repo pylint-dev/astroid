@@ -377,11 +377,10 @@ class Module(LocalsDictNodeNG):
                 return self, ()
         return self._scope_lookup(node, name, offset)
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.module"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
         return "builtins.module"
 
@@ -1137,11 +1136,10 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         self.args = args
         self.body = body
 
-    def pytype(self):
+    def pytype(self) -> Literal["bultins.instancemethod", "builtins.function"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
         if "method" in self.type:
             return "builtins.instancemethod"
@@ -2196,11 +2194,10 @@ class ClassDef(
         """
         return self.fromlineno, self.tolineno
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.type", "builtins.classobj"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
         if self.newstyle:
             return "builtins.type"
