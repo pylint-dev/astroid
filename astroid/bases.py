@@ -396,7 +396,7 @@ class UnboundMethod(Proxy):
             self.__class__.__name__, self._proxied.name, frame.qname(), id(self)
         )
 
-    def implicit_parameters(self):
+    def implicit_parameters(self) -> Literal[0]:
         return 0
 
     def is_bound(self):
@@ -476,7 +476,7 @@ class BoundMethod(UnboundMethod):
         super().__init__(proxy)
         self.bound = bound
 
-    def implicit_parameters(self):
+    def implicit_parameters(self) -> Literal[0, 1]:
         if self.name == "__new__":
             # __new__ acts as a classmethod but the class argument is not implicit.
             return 0

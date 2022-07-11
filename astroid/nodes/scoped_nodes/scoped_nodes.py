@@ -1057,7 +1057,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
     special_attributes = FunctionModel()
     """The names of special attributes that this function has."""
 
-    def implicit_parameters(self):
+    def implicit_parameters(self) -> Literal[0]:
         return 0
 
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
@@ -2069,7 +2069,7 @@ class ClassDef(
         )
         self._doc = value
 
-    def implicit_parameters(self):
+    def implicit_parameters(self) -> Literal[1]:
         return 1
 
     def implicit_locals(self):
