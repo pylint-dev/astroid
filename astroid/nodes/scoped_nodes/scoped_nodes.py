@@ -1060,13 +1060,11 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
     def implicit_parameters(self) -> Literal[0]:
         return 0
 
-    # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     @property
-    def type(self):
+    def type(self) -> Literal["method", "function"]:
         """Whether this is a method or function.
 
         :returns: 'method' if this is a method, 'function' otherwise.
-        :rtype: str
         """
         if self.args.arguments and self.args.arguments[0].name == "self":
             if isinstance(self.parent.scope(), ClassDef):
@@ -1471,12 +1469,10 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         return decorators
 
     @cached_property
-    def type(self):  # pylint: disable=too-many-return-statements
+    def type(self) -> str:  # pylint: disable=too-many-return-statements
         """The function type for this node.
 
         Possible values are: method, function, staticmethod, classmethod.
-
-        :type: str
         """
         for decorator in self.extra_decorators:
             if decorator.func.name in BUILTIN_DESCRIPTORS:
