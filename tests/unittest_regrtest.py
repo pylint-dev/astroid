@@ -5,11 +5,12 @@
 import sys
 import textwrap
 import unittest
+from unittest import mock
 
 import pytest
 
 from astroid import MANAGER, Instance, bases, nodes, parse, test_utils
-from astroid.builder import AstroidBuilder, extract_node
+from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
 from astroid.const import PY38_PLUS
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
@@ -418,6 +419,23 @@ def test_max_inferred_for_complicated_class_hierarchy() -> None:
     InferenceContext.max_inferred = 100
     # Check that we don't crash on a previously uninferable node
     assert super_node.getattr("__init__", context=context)[0] == Uninferable
+
+
+@mock.patch(
+    "astroid.nodes.ImportFrom._infer",
+    side_effect=RecursionError,
+)
+def test_recursion_during_inference(mocked) -> None:
+    """Check that we don't crash if we hit the recursion limit during inference."""
+    node: nodes.Call = _extract_single_node(
+        """
+    from module import something
+    something()
+    """
+    )
+    with pytest.raises(InferenceError) as error:
+        next(node.infer())
+    assert error.value.message.startswith("RecursionError raised")
 
 
 if __name__ == "__main__":
