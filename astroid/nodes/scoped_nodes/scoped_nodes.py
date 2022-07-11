@@ -377,11 +377,10 @@ class Module(LocalsDictNodeNG):
                 return self, ()
         return self._scope_lookup(node, name, offset)
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.module"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
         return "builtins.module"
 
@@ -1058,16 +1057,14 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
     special_attributes = FunctionModel()
     """The names of special attributes that this function has."""
 
-    def implicit_parameters(self):
+    def implicit_parameters(self) -> Literal[0]:
         return 0
 
-    # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     @property
-    def type(self):
+    def type(self) -> Literal["method", "function"]:
         """Whether this is a method or function.
 
         :returns: 'method' if this is a method, 'function' otherwise.
-        :rtype: str
         """
         if self.args.arguments and self.args.arguments[0].name == "self":
             if isinstance(self.parent.scope(), ClassDef):
@@ -1137,11 +1134,10 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         self.args = args
         self.body = body
 
-    def pytype(self):
+    def pytype(self) -> Literal["bultins.instancemethod", "builtins.function"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
         if "method" in self.type:
             return "builtins.instancemethod"
@@ -1473,12 +1469,10 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         return decorators
 
     @cached_property
-    def type(self):  # pylint: disable=too-many-return-statements
+    def type(self) -> str:  # pylint: disable=too-many-return-statements
         """The function type for this node.
 
         Possible values are: method, function, staticmethod, classmethod.
-
-        :type: str
         """
         for decorator in self.extra_decorators:
             if decorator.func.name in BUILTIN_DESCRIPTORS:
@@ -2071,7 +2065,7 @@ class ClassDef(
         )
         self._doc = value
 
-    def implicit_parameters(self):
+    def implicit_parameters(self) -> Literal[1]:
         return 1
 
     def implicit_locals(self):
@@ -2196,11 +2190,10 @@ class ClassDef(
         """
         return self.fromlineno, self.tolineno
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.type", "builtins.classobj"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
         if self.newstyle:
             return "builtins.type"
