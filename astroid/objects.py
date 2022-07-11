@@ -32,7 +32,10 @@ objectmodel = util.lazy_import("interpreter.objectmodel")
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
+    from typing import Literal
 else:
+    from typing_extensions import Literal
+
     from astroid.decorators import cachedproperty as cached_property
 
 _T = TypeVar("_T")
@@ -41,7 +44,7 @@ _T = TypeVar("_T")
 class FrozenSet(node_classes.BaseContainer):
     """class representing a FrozenSet composite node"""
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.frozenset"]:
         return "builtins.frozenset"
 
     def _infer(self, context=None, **kwargs: Any):
@@ -121,7 +124,7 @@ class Super(node_classes.NodeNG):
         ast_builtins = AstroidManager().builtins_module
         return ast_builtins.getattr("super")[0]
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.super"]:
         return "builtins.super"
 
     def display_type(self):
@@ -132,7 +135,7 @@ class Super(node_classes.NodeNG):
         """Get the name of the MRO pointer."""
         return self.mro_pointer.name
 
-    def qname(self):
+    def qname(self) -> Literal["super"]:
         return "super"
 
     def igetattr(self, name: str, context: InferenceContext | None = None):
@@ -307,7 +310,7 @@ class PartialFunction(scoped_nodes.FunctionDef):
 
         return super().infer_call_result(caller=caller, context=context)
 
-    def qname(self):
+    def qname(self) -> str:
         return self.__class__.__name__
 
 
@@ -332,7 +335,7 @@ class Property(scoped_nodes.FunctionDef):
     special_attributes = util.lazy_descriptor(lambda: objectmodel.PropertyModel())
     type = "property"
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.property"]:
         return "builtins.property"
 
     def infer_call_result(self, caller=None, context=None):

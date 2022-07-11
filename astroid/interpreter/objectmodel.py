@@ -26,6 +26,7 @@ from __future__ import annotations
 import itertools
 import os
 import pprint
+import sys
 import types
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
@@ -39,6 +40,11 @@ from astroid.nodes import node_classes
 
 objects = util.lazy_import("objects")
 builder = util.lazy_import("builder")
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 if TYPE_CHECKING:
     from astroid import builder
@@ -329,7 +335,7 @@ class FunctionModel(ObjectModel):
         class DescriptorBoundMethod(bases.BoundMethod):
             """Bound method which knows how to understand calling descriptor binding."""
 
-            def implicit_parameters(self):
+            def implicit_parameters(self) -> Literal[0]:
                 # Different than BoundMethod since the signature
                 # is different.
                 return 0
