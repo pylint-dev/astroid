@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.12.2?
+What's New in astroid 2.12.3?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.12.2?
+=============================
+Release date: 2022-07-12
 
 * Fixed crash in modulo operations for divisions by zero.
 
