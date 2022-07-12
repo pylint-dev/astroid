@@ -55,6 +55,7 @@ Contributors
 - Rene Zhang <rz99@cornell.edu>
 - Philip Lorenz <philip@bithub.de>
 - Nicolas Chauvat <nicolas.chauvat@logilab.fr>
+- Michael K <michael-k@users.noreply.github.com>
 - Mark Byrne <31762852+mbyrnepr2@users.noreply.github.com>
 - Mario Corchero <mariocj89@gmail.com>
 - Marien Zwart <marienz@gentoo.org>
@@ -76,7 +77,6 @@ Contributors
 - Peter Kolbus <peter.kolbus@gmail.com>
 - Omer Katz <omer.drow@gmail.com>
 - Moises Lopez <moylop260@vauxoo.com>
-- Michael <michael-k@users.noreply.github.com>
 - Keichi Takahashi <keichi.t@me.com>
 - Kavins Singh <kavinsingh@hotmail.com>
 - Karthikeyan Singaravelan <tir.karthi@gmail.com>
@@ -121,7 +121,6 @@ Contributors
 - Nicolas Noirbent <nicolas@noirbent.fr>
 - Neil Girdhar <mistersheik@gmail.com>
 - Michał Masłowski <m.maslowski@clearcode.cc>
-- Michael K <michael-k@users.noreply.github.com>
 - Mateusz Bysiek <mb@mbdev.pl>
 - Leandro T. C. Melo <ltcmelo@gmail.com>
 - Konrad Weihmann <kweihmann@outlook.com>
