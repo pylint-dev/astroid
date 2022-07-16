@@ -17,6 +17,7 @@ from pathlib import Path
 from xml import etree
 from xml.etree import ElementTree
 
+import pytest
 from pytest import CaptureFixture, LogCaptureFixture
 
 import astroid
@@ -24,6 +25,13 @@ from astroid import modutils
 from astroid.interpreter._import import spec
 
 from . import resources
+
+try:
+    import six  # pylint: disable=unused-import
+
+    HAS_SIX = True
+except ImportError:
+    HAS_SIX = False
 
 
 def _get_file_from_object(obj) -> str:
@@ -439,9 +447,10 @@ class ExtensionPackageWhitelistTest(unittest.TestCase):
         )
 
 
+@pytest.mark.skipif(not HAS_SIX, reason="This test requires six.")
 def test_file_info_from_modpath_namespace_package() -> None:
     assert (
-        modutils.file_info_from_modpath(["urllib3.packages.six.moves.http_client"]).type
+        modutils.file_info_from_modpath(["six.moves.http_client"]).type
         is spec.ModuleType.PY_NAMESPACE
     )
 
