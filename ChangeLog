@@ -12,6 +12,10 @@ What's New in astroid 2.12.3?
 =============================
 Release date: TBA
 
+* Fixed crash in ``ExplicitNamespacePackageFinder``.
+
+  Closes #1708
+
 
 What's New in astroid 2.12.2?
 =============================

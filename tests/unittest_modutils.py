@@ -439,5 +439,12 @@ class ExtensionPackageWhitelistTest(unittest.TestCase):
         )
 
 
+def test_file_info_from_modpath_namespace_package() -> None:
+    assert (
+        modutils.file_info_from_modpath(["urllib3.packages.six.moves.http_client"]).type
+        is spec.ModuleType.PY_NAMESPACE
+    )
+
+
 if __name__ == "__main__":
     unittest.main()
