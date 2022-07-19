@@ -4,6 +4,7 @@
 
 import unittest
 
+import types
 import _io
 import pytest
 
@@ -16,6 +17,9 @@ from astroid.raw_building import (
     build_function,
     build_module,
 )
+
+# A fake module to simulate pandas in unittest below
+from . import fake_module as fm
 
 
 class RawBuildingTC(unittest.TestCase):
@@ -85,6 +89,19 @@ class RawBuildingTC(unittest.TestCase):
         module = builder.inspect_build(_io)
         buffered_reader = module.getattr("BufferedReader")[0]
         self.assertEqual(buffered_reader.root().name, "io")
+
+    def test_build_function_deepinspect_deprecation(self) -> None:
+        # Tests https://github.com/PyCQA/astroid/issues/1717
+        # When astroid deep inspection of modules raises
+        # attribute errors when getting all attributes
+        # Create a mock module to simulate a Cython module
+        m = types.ModuleType("test")
+
+        # Attach a mock of pandas with the same behavior
+        m.pd = fm
+
+        # This should not raise an exception
+        AstroidBuilder().module_build(m, "test")
 
 
 if __name__ == "__main__":
