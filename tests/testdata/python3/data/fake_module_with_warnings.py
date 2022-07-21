@@ -1,12 +1,7 @@
-# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
-"""
+'''
 This is a mock of a module like Pandas, which can throw warnings for deprecated attributes
-"""
+'''
 import warnings
-
-Float64Index = ""
 
 
 def __dir__():
@@ -23,5 +18,5 @@ def __getattr__(name):
     raise AttributeError(f"module 'pandas' has no attribute '{name}'")
 
 
-__all__ = ["Float64Index"]
+__all__ = ["Float64Index"]  # pylint: disable=E0603
 __doc__ = ""

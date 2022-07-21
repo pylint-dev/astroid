@@ -19,7 +19,7 @@ from astroid.raw_building import (
 )
 
 # A fake module to simulate pandas in unittest below
-from . import fake_module as fm
+import tests.testdata.python3.data.fake_module_with_warnings as fm
 
 
 class RawBuildingTC(unittest.TestCase):

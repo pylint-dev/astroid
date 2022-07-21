@@ -388,9 +388,9 @@ class InspectBuilder:
             pypy__class_getitem__ = IS_PYPY and name == "__class_getitem__"
             try:
                 with warnings.catch_warnings():
-                    warnings.simplefilter("error")
+                    warnings.simplefilter("ignore")
                     member = getattr(obj, name)
-            except (AttributeError, DeprecationWarning, FutureWarning):
+            except (AttributeError):
                 # damned ExtensionClass.Base, I know you're there !
                 attach_dummy_node(node, name)
                 continue
