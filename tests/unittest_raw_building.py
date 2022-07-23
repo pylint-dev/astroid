@@ -8,6 +8,8 @@ import unittest
 import _io
 import pytest
 
+# A fake module to simulate pandas in unittest below
+import tests.testdata.python3.data.fake_module_with_warnings as fm
 from astroid.builder import AstroidBuilder
 from astroid.const import IS_PYPY
 from astroid.raw_building import (
@@ -17,9 +19,6 @@ from astroid.raw_building import (
     build_function,
     build_module,
 )
-
-# A fake module to simulate pandas in unittest below
-import tests.testdata.python3.data.fake_module_with_warnings as fm
 
 
 class RawBuildingTC(unittest.TestCase):
