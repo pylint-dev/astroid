@@ -180,6 +180,7 @@ Contributors
 - Deepyaman Datta <deepyaman.datta@utexas.edu>
 - Batuhan Taskaya <isidentical@gmail.com>
 - Alexander Scheel <alexander.m.scheel@gmail.com>
+- Tim Paine <t.paine154@gmail.com>
 
 Co-Author
 ---------
