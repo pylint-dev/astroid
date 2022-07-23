@@ -175,6 +175,12 @@ Contributors
 - Alexander Scheel <alexander.m.scheel@gmail.com>
 - Alexander Presnyakov <flagist0@gmail.com>
 - Ahmed Azzaoui <ahmed.azzaoui@engie.com>
+- nathannaveen <42319948+nathannaveen@users.noreply.github.com>
+- adam-grant-hendry <59346180+adam-grant-hendry@users.noreply.github.com>
+- Deepyaman Datta <deepyaman.datta@utexas.edu>
+- Batuhan Taskaya <isidentical@gmail.com>
+- Alexander Scheel <alexander.m.scheel@gmail.com>
+- Tim Paine <t.paine154@gmail.com>
 
 Co-Author
 ---------

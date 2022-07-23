@@ -12,6 +12,9 @@ What's New in astroid 2.12.3?
 =============================
 Release date: TBA
 
+* Fix unhandled `FutureWarning` from pandas import in cython modules
+
+  Closes #1717
 
 
 What's New in astroid 2.12.2?
