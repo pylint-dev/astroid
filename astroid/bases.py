@@ -11,7 +11,7 @@ import collections
 import collections.abc
 import sys
 from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from astroid import decorators, nodes
 from astroid.const import PY310_PLUS
@@ -34,6 +34,9 @@ if sys.version_info >= (3, 8):
     from typing import Literal
 else:
     from typing_extensions import Literal
+
+if TYPE_CHECKING:
+    from astroid.constraint import Constraint
 
 objectmodel = lazy_import("interpreter.objectmodel")
 helpers = lazy_import("helpers")
@@ -147,6 +150,7 @@ def _infer_stmts(
     """Return an iterator on statements inferred by each statement in *stmts*."""
     inferred = False
     constraint_failed = False
+    constraints: dict[str, dict[nodes.If, Constraint]] = {}
     if context is not None:
         name = context.lookupname
         context = context.clone()
@@ -154,7 +158,6 @@ def _infer_stmts(
     else:
         name = None
         context = InferenceContext()
-        constraints = {}
 
     for stmt in stmts:
         if stmt is Uninferable:

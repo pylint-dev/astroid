@@ -5,19 +5,16 @@
 """Classes representing different types of constraints on inference values."""
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import TypeVar, Union
 
 from astroid import nodes, util
 
-__all__ = ("get_constraints",)
+_NameNodes = Union[nodes.AssignAttr, nodes.Attribute, nodes.AssignName, nodes.Name]
+_ConstraintT = TypeVar("_ConstraintT", bound="Constraint")
 
 
-NameNodes = Union[nodes.AssignAttr, nodes.Attribute, nodes.AssignName, nodes.Name]
-ConstraintT = TypeVar("ConstraintT", bound="Constraint")
-
-
-class Constraint:
+class Constraint(ABC):
     """Represents a single constraint on a variable."""
 
     def __init__(self, node: nodes.NodeNG, negate: bool) -> None:
@@ -29,8 +26,8 @@ class Constraint:
     @classmethod
     @abstractmethod
     def match(
-        cls: ConstraintT, node: NameNodes, expr: nodes.NodeNG, negate: bool = False
-    ) -> ConstraintT | None:
+        cls: _ConstraintT, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> _ConstraintT | None:
         """Return a new constraint for node matched from expr, if expr matches
         the constraint pattern.
 
@@ -49,8 +46,8 @@ class NoneConstraint(Constraint):
 
     @classmethod
     def match(
-        cls: ConstraintT, node: NameNodes, expr: nodes.NodeNG, negate: bool = False
-    ) -> ConstraintT | None:
+        cls: _ConstraintT, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> _ConstraintT | None:
         """Return a new constraint for node matched from expr, if expr matches
         the constraint pattern.
 
@@ -60,10 +57,10 @@ class NoneConstraint(Constraint):
             left = expr.left
             op, right = expr.ops[0]
             if op in {"is", "is not"} and (
-                matches(left, node)
-                and matches(right, cls.CONST_NONE)
-                or matches(left, cls.CONST_NONE)
-                and matches(right, node)
+                _matches(left, node)
+                and _matches(right, cls.CONST_NONE)
+                or _matches(left, cls.CONST_NONE)
+                and _matches(right, node)
             ):
                 negate = (op == "is" and negate) or (op == "is not" and not negate)
                 return cls(node=node, negate=negate)
@@ -76,23 +73,12 @@ class NoneConstraint(Constraint):
         if inferred is util.Uninferable:
             return True
 
-        return self.negate ^ matches(inferred, nodes.Const(None))
-
-
-def matches(node1: nodes.NodeNG, node2: nodes.NodeNG) -> bool:
-    """Returns True if the two nodes match."""
-    if isinstance(node1, nodes.Name) and isinstance(node2, nodes.Name):
-        return node1.name == node2.name
-    if isinstance(node1, nodes.Attribute) and isinstance(node2, nodes.Attribute):
-        return node1.attrname == node2.attrname and matches(node1.expr, node2.expr)
-    if isinstance(node1, nodes.Const) and isinstance(node2, nodes.Const):
-        return node1.value == node2.value
-
-    return False
+        # Return the XOR of self.negate and matches(inferred, self.CONST_NONE)
+        return self.negate ^ _matches(inferred, self.CONST_NONE)
 
 
 def get_constraints(
-    expr: NameNodes, frame: nodes.LocalsDictNodeNG
+    expr: _NameNodes, frame: nodes.LocalsDictNodeNG
 ) -> dict[nodes.If, Constraint]:
     """Returns the constraints for the given expression.
 
@@ -108,12 +94,11 @@ def get_constraints(
         parent = current_node.parent
         if isinstance(parent, nodes.If):
             branch, _ = parent.locate_child(current_node)
+            constraint: Constraint | None = None
             if branch == "body":
-                constraint = match_constraint(expr, parent.test)
+                constraint = _match_constraint(expr, parent.test)
             elif branch == "orelse":
-                constraint = match_constraint(expr, parent.test, invert=True)
-            else:
-                constraint = None
+                constraint = _match_constraint(expr, parent.test, invert=True)
 
             if constraint:
                 constraints[parent] = constraint
@@ -122,15 +107,27 @@ def get_constraints(
     return constraints
 
 
-ALL_CONSTRAINTS = (NoneConstraint,)
+ALL_CONSTRAINT_CLASSES = (NoneConstraint,)
 """All supported constraint types."""
 
 
-def match_constraint(
-    node: NameNodes, expr: nodes.NodeNG, invert: bool = False
+def _matches(node1: nodes.NodeNG, node2: nodes.NodeNG) -> bool:
+    """Returns True if the two nodes match."""
+    if isinstance(node1, nodes.Name) and isinstance(node2, nodes.Name):
+        return node1.name == node2.name
+    if isinstance(node1, nodes.Attribute) and isinstance(node2, nodes.Attribute):
+        return node1.attrname == node2.attrname and _matches(node1.expr, node2.expr)
+    if isinstance(node1, nodes.Const) and isinstance(node2, nodes.Const):
+        return node1.value == node2.value
+
+    return False
+
+
+def _match_constraint(
+    node: _NameNodes, expr: nodes.NodeNG, invert: bool = False
 ) -> Constraint | None:
     """Returns a constraint pattern for node, if one matches."""
-    for constraint_cls in ALL_CONSTRAINTS:
+    for constraint_cls in ALL_CONSTRAINT_CLASSES:
         constraint = constraint_cls.match(node, expr, invert)
         if constraint:
             return constraint
