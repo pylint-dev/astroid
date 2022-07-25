@@ -2,11 +2,14 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+import types
 import unittest
 
 import _io
 import pytest
 
+# A fake module to simulate pandas in unittest below
+import tests.testdata.python3.data.fake_module_with_warnings as fm
 from astroid.builder import AstroidBuilder
 from astroid.const import IS_PYPY
 from astroid.raw_building import (
@@ -85,6 +88,19 @@ class RawBuildingTC(unittest.TestCase):
         module = builder.inspect_build(_io)
         buffered_reader = module.getattr("BufferedReader")[0]
         self.assertEqual(buffered_reader.root().name, "io")
+
+    def test_build_function_deepinspect_deprecation(self) -> None:
+        # Tests https://github.com/PyCQA/astroid/issues/1717
+        # When astroid deep inspection of modules raises
+        # attribute errors when getting all attributes
+        # Create a mock module to simulate a Cython module
+        m = types.ModuleType("test")
+
+        # Attach a mock of pandas with the same behavior
+        m.pd = fm
+
+        # This should not raise an exception
+        AstroidBuilder().module_build(m, "test")
 
 
 if __name__ == "__main__":

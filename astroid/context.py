@@ -57,22 +57,15 @@ class InferenceContext:
 
         Currently this key is ``(node, context.lookupname)``
         """
-        self.lookupname = None
-        """
-        :type: optional[str]
-
-        The original name of the node
+        self.lookupname: str | None = None
+        """The original name of the node.
 
         e.g.
         foo = 1
         The inference of 'foo' is nodes.Const(1) but the lookup name is 'foo'
         """
-        self.callcontext = None
-        """
-        :type: optional[CallContext]
-
-        The call arguments and keywords for the given context
-        """
+        self.callcontext: CallContext | None = None
+        """The call arguments and keywords for the given context."""
         self.boundnode = None
         """
         :type: optional[NodeNG]

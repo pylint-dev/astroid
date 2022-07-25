@@ -14,7 +14,7 @@ from astroid.nodes import FunctionDef
 HAS_PYQT6 = find_spec("PyQt6")
 
 
-@pytest.mark.skipif(HAS_PYQT6 is None, reason="This test requires the PyQt6 library.")
+@pytest.mark.skipif(HAS_PYQT6 is None, reason="These tests require the PyQt6 library.")
 class TestBrainQt:
     AstroidManager.brain["extension_package_whitelist"] = {"PyQt6"}
 

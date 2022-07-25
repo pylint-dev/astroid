@@ -269,6 +269,16 @@ class ProtocolTests(unittest.TestCase):
         )
         parsed.accept(Visitor())
 
+    @staticmethod
+    def test_uninferable_exponents() -> None:
+        """Attempting to calculate the result is prohibitively expensive."""
+        parsed = extract_node("15 ** 20220609")
+        assert parsed.inferred() == [Uninferable]
+
+        # Test a pathological case (more realistic: None as naive inference result)
+        parsed = extract_node("None ** 2")
+        assert parsed.inferred() == [Uninferable]
+
 
 @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
 def test_named_expr_inference() -> None:

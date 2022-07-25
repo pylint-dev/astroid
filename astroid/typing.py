@@ -32,7 +32,7 @@ InferFn = Callable[..., Any]
 class AstroidManagerBrain(TypedDict):
     """Dictionary to store relevant information for a AstroidManager class."""
 
-    astroid_cache: dict
+    astroid_cache: dict[str, nodes.Module]
     _mod_file_cache: dict
     _failed_import_hooks: list
     always_load_extensions: bool
@@ -41,4 +41,14 @@ class AstroidManagerBrain(TypedDict):
     _transform: transforms.TransformVisitor
 
 
-InferenceResult = Union["nodes.NodeNG", "type[util.Uninferable]", "bases.Instance"]
+InferenceResult = Union["nodes.NodeNG", "type[util.Uninferable]", "bases.Proxy"]
+SuccessfulInferenceResult = Union["nodes.NodeNG", "bases.Proxy"]
+
+ConstFactoryResult = Union[
+    "nodes.List",
+    "nodes.Set",
+    "nodes.Tuple",
+    "nodes.Dict",
+    "nodes.Const",
+    "nodes.EmptyNode",
+]

@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import collections
 import collections.abc
+import sys
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import Any
 
-from astroid import decorators
+from astroid import decorators, nodes
 from astroid.const import PY310_PLUS
 from astroid.context import (
     CallContext,
@@ -26,15 +27,17 @@ from astroid.exceptions import (
     InferenceError,
     NameInferenceError,
 )
-from astroid.typing import InferenceResult
+from astroid.typing import InferenceErrorInfo, InferenceResult
 from astroid.util import Uninferable, lazy_descriptor, lazy_import
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 objectmodel = lazy_import("interpreter.objectmodel")
 helpers = lazy_import("helpers")
 manager = lazy_import("manager")
-
-if TYPE_CHECKING:
-    from astroid import nodes
 
 
 # TODO: check if needs special treatment
@@ -105,10 +108,22 @@ class Proxy:
     if new instance attributes are created. See the Const class
     """
 
-    _proxied = None  # proxied object may be set by class or by instance
+    _proxied: nodes.ClassDef | nodes.Lambda | Proxy | None = (
+        None  # proxied object may be set by class or by instance
+    )
 
-    def __init__(self, proxied=None):
-        if proxied is not None:
+    def __init__(
+        self, proxied: nodes.ClassDef | nodes.Lambda | Proxy | None = None
+    ) -> None:
+        if proxied is None:
+            # This is a hack to allow calling this __init__ during bootstrapping of
+            # builtin classes and their docstrings.
+            # For Const and Generator nodes the _proxied attribute is set during bootstrapping
+            # as we first need to build the ClassDef that they can proxy.
+            # Thus, if proxied is None self should be a Const or Generator
+            # as that is the only way _proxied will be correctly set as a ClassDef.
+            assert isinstance(self, (nodes.Const, Generator))
+        else:
             self._proxied = proxied
 
     def __getattr__(self, name):
@@ -118,7 +133,9 @@ class Proxy:
             return self.__dict__[name]
         return getattr(self._proxied, name)
 
-    def infer(self, context=None):
+    def infer(  # type: ignore[return]
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> collections.abc.Generator[InferenceResult, None, InferenceErrorInfo | None]:
         yield self
 
 
@@ -279,10 +296,20 @@ class BaseInstance(Proxy):
             else:
                 yield attr
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(
+        self, caller: nodes.Call | Proxy, context: InferenceContext | None = None
+    ):
         """infer what a class instance is returning when called"""
         context = bind_context_to_node(context, self)
         inferred = False
+
+        # If the call is an attribute on the instance, we infer the attribute itself
+        if isinstance(caller, nodes.Call) and isinstance(caller.func, nodes.Attribute):
+            for res in self.igetattr(caller.func.attrname, context):
+                inferred = True
+                yield res
+
+        # Otherwise we infer the call to the __call__ dunder normally
         for node in self._proxied.igetattr("__call__", context):
             if node is Uninferable or not node.callable():
                 continue
@@ -296,8 +323,13 @@ class BaseInstance(Proxy):
 class Instance(BaseInstance):
     """A special node representing a class instance."""
 
+    _proxied: nodes.ClassDef
+
     # pylint: disable=unnecessary-lambda
     special_attributes = lazy_descriptor(lambda: objectmodel.InstanceModel())
+
+    def __init__(self, proxied: nodes.ClassDef | None) -> None:
+        super().__init__(proxied)
 
     def __repr__(self):
         return "<Instance of {}.{} at 0x{}>".format(
@@ -314,7 +346,7 @@ class Instance(BaseInstance):
         except AttributeInferenceError:
             return False
 
-    def pytype(self):
+    def pytype(self) -> str:
         return self._proxied.qname()
 
     def display_type(self):
@@ -378,7 +410,7 @@ class UnboundMethod(Proxy):
             self.__class__.__name__, self._proxied.name, frame.qname(), id(self)
         )
 
-    def implicit_parameters(self):
+    def implicit_parameters(self) -> Literal[0]:
         return 0
 
     def is_bound(self):
@@ -421,9 +453,6 @@ class UnboundMethod(Proxy):
     ) -> collections.abc.Generator[
         nodes.Const | Instance | type[Uninferable], None, None
     ]:
-        # pylint: disable-next=import-outside-toplevel; circular import
-        from astroid import nodes
-
         if not caller.args:
             return
         # Attempt to create a constant
@@ -440,9 +469,12 @@ class UnboundMethod(Proxy):
                 return
 
         node_context = context.extra_context.get(caller.args[0])
-        infer = caller.args[0].infer(context=node_context)
-
-        yield from (Instance(x) if x is not Uninferable else x for x in infer)  # type: ignore[misc]
+        for inferred in caller.args[0].infer(context=node_context):
+            if inferred is Uninferable:
+                yield inferred
+            if isinstance(inferred, nodes.ClassDef):
+                yield Instance(inferred)
+            raise InferenceError
 
     def bool_value(self, context=None):
         return True
@@ -458,7 +490,7 @@ class BoundMethod(UnboundMethod):
         super().__init__(proxy)
         self.bound = bound
 
-    def implicit_parameters(self):
+    def implicit_parameters(self) -> Literal[0, 1]:
         if self.name == "__new__":
             # __new__ acts as a classmethod but the class argument is not implicit.
             return 0
@@ -583,6 +615,8 @@ class Generator(BaseInstance):
     Proxied class is set once for all in raw_building.
     """
 
+    _proxied: nodes.ClassDef
+
     special_attributes = lazy_descriptor(objectmodel.GeneratorModel)
 
     def __init__(self, parent=None, generator_initial_context=None):
@@ -597,7 +631,7 @@ class Generator(BaseInstance):
     def callable(self):
         return False
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.generator"]:
         return "builtins.generator"
 
     def display_type(self):
@@ -616,7 +650,7 @@ class Generator(BaseInstance):
 class AsyncGenerator(Generator):
     """Special node representing an async generator"""
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.async_generator"]:
         return "builtins.async_generator"
 
     def display_type(self):
