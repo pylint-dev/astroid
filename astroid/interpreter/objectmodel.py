@@ -672,10 +672,7 @@ class InstanceModel(ObjectModel):
 class ExceptionInstanceModel(InstanceModel):
     @property
     def attr_args(self):
-        message = node_classes.Const("")
-        args = node_classes.Tuple(parent=self._instance)
-        args.postinit((message,))
-        return args
+        return node_classes.Tuple(parent=self._instance)
 
     @property
     def attr___traceback__(self):
