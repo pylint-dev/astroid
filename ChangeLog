@@ -12,11 +12,9 @@ What's New in astroid 2.12.3?
 =============================
 Release date: TBA
 
-
-* Fixed crash in ``ExplicitNamespacePackageFinder``.
+* Fixed crash in ``ExplicitNamespacePackageFinder`` involving ``_SixMetaPathImporter``.
 
   Closes #1708
-
 
 * Fix unhandled `FutureWarning` from pandas import in cython modules
 

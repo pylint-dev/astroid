@@ -201,12 +201,7 @@ class ExplicitNamespacePackageFinder(ImportlibFinder):
         if processed:
             modname = ".".join(processed + [modname])
         if util.is_namespace(modname) and modname in sys.modules:
-            try:
-                submodule_path = sys.modules[modname].__path__
-            except AttributeError:
-                submodule_path = sys.modules[
-                    modname
-                ].__spec__.submodule_search_locations
+            submodule_path = sys.modules[modname].__path__
             return ModuleSpec(
                 name=modname,
                 location="",
