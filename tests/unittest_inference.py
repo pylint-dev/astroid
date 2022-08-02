@@ -1518,6 +1518,17 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred._proxied, node.root()["cls"])
 
+    def test_new_replacement(self) -> None:
+        node = extract_node("""
+            class Response: pass
+            class Chameleon:
+                def __new__(cls, arg):
+                    return Response()
+            Chameleon(42)
+        """, "test_mod")
+        inferred = next(node.infer())
+        assert inferred.pytype() == "test_mod.Response"
+
     def test_two_parents_from_same_module(self) -> None:
         code = """
             from data import nonregr

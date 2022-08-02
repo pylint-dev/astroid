@@ -2307,7 +2307,11 @@ class ClassDef(
             context.callcontext.callee = dunder_call
             yield from dunder_call.infer_call_result(caller, context)
         else:
-            yield self.instantiate_class()
+            dunder_new = next(self.igetattr("__new__", context), None)
+            if dunder_new and dunder_new.body:
+                yield from dunder_new.infer_call_result(caller, context)
+            else:
+                yield self.instantiate_class()
 
     def scope_lookup(self, node, name, offset=0):
         """Lookup where the given name is assigned.

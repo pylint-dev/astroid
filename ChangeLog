@@ -6,6 +6,8 @@ What's New in astroid 2.13.0?
 =============================
 Release date: TBA
 
+* Infer resulting instance from call to the ``__new__`` method if class
+__definition provides any.
 
 
 What's New in astroid 2.12.3?
