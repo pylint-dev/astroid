@@ -28,7 +28,7 @@ repos:
         exclude: tests/testdata|setup.py
         types: [python]
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.37.2
+    rev: v2.37.3
     hooks:
       - id: pyupgrade
         exclude: tests/testdata
@@ -39,7 +39,7 @@ repos:
       - id: isort
         exclude: tests/testdata
   - repo: https://github.com/Pierre-Sassoulas/black-disable-checker/
-    rev: v1.1.0
+    rev: v1.1.1
     hooks:
       - id: black-disable-checker
         exclude: tests/unittest_nodes_lineno.py
@@ -50,7 +50,7 @@ repos:
         args: [--safe, --quiet]
         exclude: tests/testdata
   - repo: https://github.com/PyCQA/flake8
-    rev: 4.0.1
+    rev: 5.0.3
     hooks:
       - id: flake8
         additional_dependencies:
