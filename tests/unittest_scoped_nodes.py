@@ -2495,6 +2495,78 @@ def test_issue940_enums_as_a_real_world_usecase() -> None:
     assert sorted(actual) == ["bee", "cat"]
 
 
+def test_enums_type_annotation_str_member() -> None:
+    """A type-annotated member of an Enum class where:
+    - `member.value` is of type `nodes.Const` &
+    - `member.value.value` is of type `str`
+    is inferred as: `repr(member.value.value)`
+    """
+    node = builder.extract_node(
+        """
+    from enum import Enum
+    class Veg(Enum):
+        TOMATO: str = "sweet"
+
+    Veg.TOMATO.value
+    """
+    )
+    inferred_member_value = node.inferred()[0]
+    assert isinstance(inferred_member_value, nodes.Const)
+    assert inferred_member_value.value == "sweet"
+
+
+@pytest.mark.parametrize("annotation, value", [("int", 42), ("bytes", b"")])
+def test_enums_type_annotation_non_str_member(annotation, value) -> None:
+    """A type-annotated member of an Enum class where:
+    - `member.value` is of type `nodes.Const` &
+    - `member.value.value` is not of type `str`
+    is inferred as: `member.value.value`
+    """
+
+    node = builder.extract_node(
+        f"""
+    from enum import Enum
+    class Veg(Enum):
+        TOMATO: {annotation} = {value}
+
+    Veg.TOMATO.value
+    """
+    )
+    inferred_member_value = node.inferred()[0]
+    assert isinstance(inferred_member_value, nodes.Const)
+    assert inferred_member_value.value == value
+
+
+@pytest.mark.parametrize(
+    "annotation, value",
+    [
+        ("dict", {"variety": "beefeater"}),
+        ("list", ["beefeater", "moneymaker"]),
+        ("TypedDict", {"variety": "moneymaker"}),
+    ],
+)
+def test_enums_type_annotations_non_const_member(annotation, value) -> None:
+    """A type-annotated member of an Enum class where:
+    - `member.value` is not of type `nodes.Const`
+    is inferred as: `member.value.as_string()`.
+    """
+
+    member = builder.extract_node(
+        f"""
+    from enum import Enum
+
+    class Veg(Enum):
+        TOMATO: {annotation} = {value}
+
+    Veg.TOMATO.value
+    """
+    )
+
+    inferred_member_value = member.inferred()[0]
+    assert not isinstance(inferred_member_value, nodes.Const)
+    assert inferred_member_value.as_string() == repr(value)
+
+
 def test_metaclass_cannot_infer_call_yields_an_instance() -> None:
     node = builder.extract_node(
         """
