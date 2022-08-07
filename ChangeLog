@@ -16,6 +16,9 @@ Release date: TBA
 
   Closes #1717
 
+* Fix false positive with inference of type-annotated Enum classes.
+
+  Refs PyCQA/pylint#7265
 
 What's New in astroid 2.12.2?
 =============================
