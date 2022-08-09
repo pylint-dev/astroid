@@ -17,6 +17,7 @@ from pathlib import Path
 from xml import etree
 from xml.etree import ElementTree
 
+import pytest
 from pytest import CaptureFixture, LogCaptureFixture
 
 import astroid
@@ -24,6 +25,13 @@ from astroid import modutils
 from astroid.interpreter._import import spec
 
 from . import resources
+
+try:
+    import urllib3  # pylint: disable=unused-import
+
+    HAS_URLLIB3 = True
+except ImportError:
+    HAS_URLLIB3 = False
 
 
 def _get_file_from_object(obj) -> str:
@@ -437,6 +445,15 @@ class ExtensionPackageWhitelistTest(unittest.TestCase):
                 "core.umath", {"numpy"}
             )
         )
+
+
+@pytest.mark.skipif(not HAS_URLLIB3, reason="This test requires urllib3.")
+def test_file_info_from_modpath__SixMetaPathImporter() -> None:
+    pytest.raises(
+        ImportError,
+        modutils.file_info_from_modpath,
+        ["urllib3.packages.six.moves.http_client"],
+    )
 
 
 if __name__ == "__main__":
