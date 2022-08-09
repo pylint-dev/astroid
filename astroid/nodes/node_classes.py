@@ -330,11 +330,10 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         return bool(self.elts)
 
     @abc.abstractmethod
-    def pytype(self):
+    def pytype(self) -> str:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
 
     def get_children(self):
@@ -1989,11 +1988,10 @@ class Const(_base_nodes.NoChildrenNode, Instance):
             return [const_factory(elem) for elem in self.value]
         raise TypeError(f"Cannot iterate over type {type(self.value)!r}")
 
-    def pytype(self):
+    def pytype(self) -> str:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
         return self._proxied.qname()
 
@@ -2306,11 +2304,10 @@ class Dict(NodeNG, Instance):
             ]
         return node
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.dict"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
         return "builtins.dict"
 
@@ -3409,11 +3406,10 @@ class List(BaseContainer):
 
     infer_unary_op: ClassVar[InferUnaryOp[List]]
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.list"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
         return "builtins.list"
 
@@ -3647,11 +3643,10 @@ class Set(BaseContainer):
 
     infer_unary_op: ClassVar[InferUnaryOp[Set]]
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.set"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
         return "builtins.set"
 
@@ -3739,11 +3734,10 @@ class Slice(NodeNG):
         builtins = AstroidManager().builtins_module
         return builtins.getattr("slice")[0]
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.slice"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
         return "builtins.slice"
 
@@ -4177,11 +4171,10 @@ class Tuple(BaseContainer):
 
     infer_unary_op: ClassVar[InferUnaryOp[Tuple]]
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.tuple"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
         return "builtins.tuple"
 
@@ -4849,7 +4842,7 @@ class Unknown(_base_nodes.AssignTypeNode):
 
     name = "Unknown"
 
-    def qname(self):
+    def qname(self) -> Literal["Unknown"]:
         return "Unknown"
 
     def _infer(self, context=None, **kwargs):

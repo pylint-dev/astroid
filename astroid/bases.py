@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import collections
 import collections.abc
+import sys
 from collections.abc import Sequence
 from typing import Any
 
@@ -28,6 +29,11 @@ from astroid.exceptions import (
 )
 from astroid.typing import InferenceErrorInfo, InferenceResult
 from astroid.util import Uninferable, lazy_descriptor, lazy_import
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 objectmodel = lazy_import("interpreter.objectmodel")
 helpers = lazy_import("helpers")
@@ -344,7 +350,7 @@ class Instance(BaseInstance):
         except AttributeInferenceError:
             return False
 
-    def pytype(self):
+    def pytype(self) -> str:
         return self._proxied.qname()
 
     def display_type(self):
@@ -408,7 +414,7 @@ class UnboundMethod(Proxy):
             self.__class__.__name__, self._proxied.name, frame.qname(), id(self)
         )
 
-    def implicit_parameters(self):
+    def implicit_parameters(self) -> Literal[0]:
         return 0
 
     def is_bound(self):
@@ -488,7 +494,7 @@ class BoundMethod(UnboundMethod):
         super().__init__(proxy)
         self.bound = bound
 
-    def implicit_parameters(self):
+    def implicit_parameters(self) -> Literal[0, 1]:
         if self.name == "__new__":
             # __new__ acts as a classmethod but the class argument is not implicit.
             return 0
@@ -629,7 +635,7 @@ class Generator(BaseInstance):
     def callable(self):
         return False
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.generator"]:
         return "builtins.generator"
 
     def display_type(self):
@@ -648,7 +654,7 @@ class Generator(BaseInstance):
 class AsyncGenerator(Generator):
     """Special node representing an async generator"""
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.async_generator"]:
         return "builtins.async_generator"
 
     def display_type(self):

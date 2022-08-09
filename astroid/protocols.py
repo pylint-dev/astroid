@@ -78,12 +78,15 @@ _UNARY_OPERATORS: dict[str, Callable[[Any], Any]] = {
 
 
 def _infer_unary_op(obj: Any, op: str) -> ConstFactoryResult:
-    """Perform unary operation on object.
+    """Perform unary operation on `obj`, unless it is `NotImplemented`.
 
     Can raise TypeError if operation is unsupported.
     """
-    func = _UNARY_OPERATORS[op]
-    value = func(obj)
+    if obj is NotImplemented:
+        value = obj
+    else:
+        func = _UNARY_OPERATORS[op]
+        value = func(obj)
     return nodes.const_factory(value)
 
 
@@ -121,6 +124,8 @@ def const_infer_binary_op(self, opnode, operator, other, context, _):
         if (
             operator == "**"
             and isinstance(self, nodes.Const)
+            and isinstance(self.value, (int, float))
+            and isinstance(other.value, (int, float))
             and (self.value > 1e5 or other.value > 1e5)
         ):
             yield not_implemented

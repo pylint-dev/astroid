@@ -9,7 +9,7 @@ on:
 
 env:
   CACHE_VERSION: 6
-  DEFAULT_PYTHON: 3.8
+  DEFAULT_PYTHON: "3.10"
   PRE_COMMIT_CACHE: ~/.cache/pre-commit
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v3.0.2
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         id: python
-        uses: actions/setup-python@v4.0.0
+        uses: actions/setup-python@v4.2.0
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - name: Generate partial Python venv restore key
@@ -33,7 +33,7 @@ jobs:
           'requirements_test_brain.txt', 'requirements_test_pre_commit.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v3.0.4
+        uses: actions/cache@v3.0.6
         with:
           path: venv
           key: >-
@@ -56,7 +56,7 @@ jobs:
             hashFiles('.pre-commit-config.yaml') }}"
       - name: Restore pre-commit environment
         id: cache-precommit
-        uses: actions/cache@v3.0.4
+        uses: actions/cache@v3.0.6
         with:
           path: ${{ env.PRE_COMMIT_CACHE }}
           key: >-
@@ -89,7 +89,7 @@ jobs:
         uses: actions/checkout@v3.0.2
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v4.0.0
+        uses: actions/setup-python@v4.2.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Qt
@@ -104,7 +104,7 @@ jobs:
           'requirements_test_brain.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v3.0.4
+        uses: actions/cache@v3.0.6
         with:
           path: venv
           key: >-
@@ -137,7 +137,7 @@ jobs:
     needs: ["tests-linux"]
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: ["3.10"]
     env:
       COVERAGERC_FILE: .coveragerc
     steps:
@@ -145,12 +145,12 @@ jobs:
         uses: actions/checkout@v3.0.2
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v4.0.0
+        uses: actions/setup-python@v4.2.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v3.0.4
+        uses: actions/cache@v3.0.6
         with:
           path: venv
           key:
@@ -193,7 +193,7 @@ jobs:
         uses: actions/checkout@v3.0.2
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v4.0.0
+        uses: actions/setup-python@v4.2.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Generate partial Python venv restore key
@@ -204,7 +204,7 @@ jobs:
           'requirements_test_brain.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v3.0.4
+        uses: actions/cache@v3.0.6
         with:
           path: venv
           key: >-
@@ -238,7 +238,7 @@ jobs:
         uses: actions/checkout@v3.0.2
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v4.0.0
+        uses: actions/setup-python@v4.2.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Generate partial Python venv restore key
@@ -248,7 +248,7 @@ jobs:
             hashFiles('setup.cfg', 'requirements_test_min.txt') }}"
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v3.0.4
+        uses: actions/cache@v3.0.6
         with:
           path: venv
           key: >-

@@ -1117,6 +1117,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         first = next(ast_node.infer())
         self.assertEqual(first, util.Uninferable)
 
+    @pytest.mark.filterwarnings("error::DeprecationWarning")
+    def test_binary_op_not_used_in_boolean_context(self) -> None:
+        ast_node = extract_node("not NotImplemented")
+        first = next(ast_node.infer())
+        self.assertIsInstance(first, nodes.Const)
+
     def test_binary_op_list_mul(self) -> None:
         for code in ("a = [[]] * 2", "a = 2 * [[]]"):
             ast = builder.string_build(code, __name__, __file__)
@@ -6945,6 +6951,10 @@ class TestOldStyleStringFormatting:
             age = 12
             "My name is %0s, I'm %(age)s" % (fname, age)
             """,
+            """
+            "My name is %s, I'm %s" % ((fname,)*2)
+            """,
+            """20 % 0""",
         ],
     )
     def test_old_style_string_formatting_uninferable(self, format_string: str) -> None:

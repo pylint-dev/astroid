@@ -13,6 +13,10 @@
     "name": "Marc Mueller",
     "team": "Maintainers"
   },
+  "adam.grant.hendry@gmail.com": {
+    "mails": ["adam.grant.hendry@gmail.com"],
+    "name": "Adam Hendry"
+  },
   "androwiiid@gmail.com": {
     "mails": ["androwiiid@gmail.com"],
     "name": "Paligot Gérard"
@@ -52,25 +56,6 @@
     "mails": ["ceridwenv@gmail.com"],
     "name": "Ceridwen",
     "team": "Maintainers"
-  },
-  "contact@logilab.fr": {
-    "mails": [
-      "alexandre.fayolle@logilab.fr",
-      "emile.anclin@logilab.fr",
-      "david.douard@logilab.fr",
-      "laura.medioni@logilab.fr",
-      "anthony.truchet@logilab.fr",
-      "alain.leufroy@logilab.fr",
-      "julien.cristau@logilab.fr",
-      "Adrien.DiMascio@logilab.fr",
-      "emile@crater.logilab.fr",
-      "pierre-yves.david@logilab.fr",
-      "nicolas.chauvat@logilab.fr",
-      "afayolle.ml@free.fr",
-      "aurelien.campeas@logilab.fr",
-      "lmedioni@logilab.fr"
-    ],
-    "name": "LOGILAB S.A. (Paris, FRANCE)"
   },
   "dmand@yandex.ru": {
     "mails": ["dmand@yandex.ru"],
@@ -119,6 +104,10 @@
     "mails": ["me@the-compiler.org"],
     "name": "Florian Bruhin",
     "team": "Maintainers"
+  },
+  "michael-k@users.noreply.github.com": {
+    "mails": ["michael-k@users.noreply.github.com"],
+    "name": "Michael K"
   },
   "moylop260@vauxoo.com": {
     "mails": ["moylop260@vauxoo.com"],
@@ -169,9 +158,5 @@
   "ville.skytta@iki.fi": {
     "mails": ["ville.skytta@iki.fi", "ville.skytta@upcloud.com"],
     "name": "Ville Skyttä"
-  },
-  "adam.grant.hendry@gmail.com": {
-    "mails": ["adam.grant.hendry@gmail.com"],
-    "name": "Adam Hendry"
   }
 }

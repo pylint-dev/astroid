@@ -2,9 +2,51 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.12.0?
+What's New in astroid 2.13.0?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.12.3?
+=============================
+Release date: TBA
+
+* Fix unhandled `FutureWarning` from pandas import in cython modules
+
+  Closes #1717
+
+* Fix false positive with inference of type-annotated Enum classes.
+
+  Refs PyCQA/pylint#7265
+
+What's New in astroid 2.12.2?
+=============================
+Release date: 2022-07-12
+
+* Fixed crash in modulo operations for divisions by zero.
+
+  Closes #1700
+
+* Fixed crash with recursion limits during inference.
+
+  Closes #1646
+
+What's New in astroid 2.12.1?
+=============================
+Release date: 2022-07-10
+
+* Fix a crash when inferring old-style string formatting (``%``) using tuples.
+
+* Fix a crash when ``None`` (or a value inferred as ``None``) participates in a
+  ``**`` expression.
+
+* Fix a crash involving properties within ``if`` blocks.
+
+
+What's New in astroid 2.12.0?
+=============================
+Release date: 2022-07-09
 
 * Fix signal has no ``connect`` member for PySide2 5.15.2+ and PySide6
 
@@ -111,9 +153,18 @@ Release date: TBA
 
   Closes #1195
 
+* Fix a crash involving properties within ``try ... except`` blocks.
+
+  Closes PyCQA/pylint#6592
+
+* Prevent creating ``Instance`` objects that proxy other ``Instance``s when there is
+  ambiguity (or user error) in calling ``__new__(cls)``.
+
+  Refs PyCQA/pylint#7109
+
 What's New in astroid 2.11.7?
 =============================
-Release date: TBA
+Release date: 2022-07-09
 
 * Added support for ``usedforsecurity`` keyword to ``hashlib`` constructors.
 
@@ -122,12 +173,6 @@ Release date: TBA
 * Updated the stdlib brain for ``subprocess.Popen`` to accommodate Python 3.9+.
 
   Closes PyCQA/pylint#7092
-
-* Prevent creating ``Instance`` objects that proxy other ``Instance``s when there is
-  ambiguity (or user error) in calling ``__new__(cls)``.
-
-  Refs PyCQA/pylint#7109
-
 
 What's New in astroid 2.11.6?
 =============================

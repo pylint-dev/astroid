@@ -626,6 +626,8 @@ def _infer_old_style_string_formatting(
     """
     values = None
     if isinstance(other, nodes.Tuple):
+        if util.Uninferable in other.elts:
+            return (util.Uninferable,)
         inferred_positional = [helpers.safe_infer(i, context) for i in other.elts]
         if all(isinstance(i, nodes.Const) for i in inferred_positional):
             values = tuple(i.value for i in inferred_positional)
@@ -657,7 +659,11 @@ def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     method = methods[0]
     context.callcontext.callee = method
 
-    if isinstance(instance, nodes.Const) and op == "%":
+    if (
+        isinstance(instance, nodes.Const)
+        and isinstance(instance.value, str)
+        and op == "%"
+    ):
         return iter(_infer_old_style_string_formatting(instance, other, context))
 
     try:
@@ -1152,6 +1158,9 @@ def infer_functiondef(
     property_already_in_parent_locals = self.name in parent_frame.locals and any(
         isinstance(val, objects.Property) for val in parent_frame.locals[self.name]
     )
+    # We also don't want to pass parent if the definition is within a Try node
+    if isinstance(self.parent, (nodes.TryExcept, nodes.TryFinally, nodes.If)):
+        property_already_in_parent_locals = True
 
     prop_func = objects.Property(
         function=self,
