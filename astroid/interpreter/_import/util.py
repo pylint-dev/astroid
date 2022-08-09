@@ -72,7 +72,8 @@ def is_namespace(modname: str) -> bool:
         if found_spec and found_spec.submodule_search_locations:
             last_submodule_search_locations = found_spec.submodule_search_locations
 
-    if found_spec is None:
-        return False
-
-    return found_spec.origin is None
+    return (
+        found_spec is not None
+        and found_spec.submodule_search_locations is not None
+        and found_spec.origin is None
+    )
