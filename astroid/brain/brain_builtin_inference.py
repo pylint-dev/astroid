@@ -930,7 +930,7 @@ def _infer_str_format_call(
     """Return a Const node based on the template and passed arguments."""
     call = arguments.CallSite.from_call(node, context=context)
     if isinstance(node.func.expr, nodes.Name):
-        value: nodes.Const = helpers.safe_infer(node.func.expr)
+        value = helpers.safe_infer(node.func.expr)
     else:
         value = node.func.expr
 
