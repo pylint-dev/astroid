@@ -648,7 +648,7 @@ def _infer_old_style_string_formatting(
 
     try:
         return (nodes.const_factory(instance.value % values),)
-    except (TypeError, KeyError):
+    except (TypeError, KeyError, ValueError):
         return (util.Uninferable,)
 
 
