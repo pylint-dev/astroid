@@ -6955,6 +6955,7 @@ class TestOldStyleStringFormatting:
             "My name is %s, I'm %s" % ((fname,)*2)
             """,
             """20 % 0""",
+            """("%" + str(20)) % 0""",
         ],
     )
     def test_old_style_string_formatting_uninferable(self, format_string: str) -> None:

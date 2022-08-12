@@ -24,6 +24,10 @@ Release date: TBA
 
   Refs PyCQA/pylint#7265
 
+* Fix a crash inferring invalid old-style string formatting with `%`.
+
+  Closes #1737
+
 What's New in astroid 2.12.2?
 =============================
 Release date: 2022-07-12
