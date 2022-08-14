@@ -357,106 +357,55 @@ INT_FLAG_ADDITION_METHODS = """
 
 def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
     """Specific inference for enums."""
-    for basename in (b for cls in node.mro() for b in cls.basenames):
-        if node.root().name == "enum":
-            # Skip if the class is directly from enum module.
-            break
-        dunder_members = {}
-        target_names = set()
-        for local, values in node.locals.items():
-            if any(not isinstance(value, nodes.AssignName) for value in values):
-                continue
+    if node.root().name == "enum":
+        # Skip if the class is directly from enum module.
+        return node
+    dunder_members: dict[str, bases.Instance] = {}
+    for local, values in node.locals.items():
+        if any(not isinstance(value, nodes.AssignName) for value in values):
+            continue
 
-            stmt = values[0].statement(future=True)
-            if isinstance(stmt, nodes.Assign):
-                if isinstance(stmt.targets[0], nodes.Tuple):
-                    targets = stmt.targets[0].itered()
-                else:
-                    targets = stmt.targets
-            elif isinstance(stmt, nodes.AnnAssign):
-                targets = [stmt.target]
+        stmt = values[0].statement(future=True)
+        if isinstance(stmt, nodes.Assign):
+            if isinstance(stmt.targets[0], nodes.Tuple):
+                targets: list[nodes.NodeNG] = stmt.targets[0].itered()
             else:
+                targets = stmt.targets
+            value_node = stmt.value
+        elif isinstance(stmt, nodes.AnnAssign):
+            targets = [stmt.target]  # type: ignore[list-item] # .target shouldn't be None
+            value_node = stmt.value
+        else:
+            continue
+
+        new_targets: list[bases.Instance] = []
+        for target in targets:
+            if isinstance(target, nodes.Starred):
                 continue
 
-            inferred_return_value = None
-            if isinstance(stmt, (nodes.AnnAssign, nodes.Assign)):
-                if isinstance(stmt.value, nodes.Const):
-                    if isinstance(stmt.value.value, str):
-                        inferred_return_value = repr(stmt.value.value)
-                    else:
-                        inferred_return_value = stmt.value.value
-                else:
-                    inferred_return_value = stmt.value.as_string()
-
-            new_targets = []
-            for target in targets:
-                if isinstance(target, nodes.Starred):
-                    continue
-                target_names.add(target.name)
-                # Replace all the assignments with our mocked class.
-                classdef = dedent(
-                    """
-                class {name}({types}):
-                    @property
-                    def value(self):
-                        return {return_value}
-                    @property
-                    def name(self):
-                        return "{name}"
-                """.format(
-                        name=target.name,
-                        types=", ".join(node.basenames),
-                        return_value=inferred_return_value,
-                    )
-                )
-                if "IntFlag" in basename:
-                    # Alright, we need to add some additional methods.
-                    # Unfortunately we still can't infer the resulting objects as
-                    # Enum members, but once we'll be able to do that, the following
-                    # should result in some nice symbolic execution
-                    classdef += INT_FLAG_ADDITION_METHODS.format(name=target.name)
-
-                fake = AstroidBuilder(
-                    AstroidManager(), apply_transforms=False
-                ).string_build(classdef)[target.name]
-                fake.parent = target.parent
-                for method in node.mymethods():
-                    fake.locals[method.name] = [method]
-                new_targets.append(fake.instantiate_class())
-                dunder_members[local] = fake
-            node.locals[local] = new_targets
-        members = nodes.Dict(parent=node)
-        members.postinit(
-            [
-                (nodes.Const(k, parent=members), nodes.Name(v.name, parent=members))
-                for k, v in dunder_members.items()
+            # Instantiate a class of the Enum with the value and name
+            # attributes set to the values of the assignment
+            # See: https://docs.python.org/3/library/enum.html#creating-an-enum
+            target_node = node.instantiate_class()
+            target_node._explicit_instance_attrs["value"] = [value_node]
+            target_node._explicit_instance_attrs["name"] = [
+                nodes.const_factory(target.name)
             ]
-        )
-        node.locals["__members__"] = [members]
-        # The enum.Enum class itself defines two @DynamicClassAttribute data-descriptors
-        # "name" and "value" (which we override in the mocked class for each enum member
-        # above). When dealing with inference of an arbitrary instance of the enum
-        # class, e.g. in a method defined in the class body like:
-        #     class SomeEnum(enum.Enum):
-        #         def method(self):
-        #             self.name  # <- here
-        # In the absence of an enum member called "name" or "value", these attributes
-        # should resolve to the descriptor on that particular instance, i.e. enum member.
-        # For "value", we have no idea what that should be, but for "name", we at least
-        # know that it should be a string, so infer that as a guess.
-        if "name" not in target_names:
-            code = dedent(
-                """
-            @property
-            def name(self):
-                return ''
-            """
-            )
-            name_dynamicclassattr = AstroidBuilder(AstroidManager()).string_build(code)[
-                "name"
-            ]
-            node.locals["name"] = [name_dynamicclassattr]
-        break
+
+            new_targets.append(target_node)
+            dunder_members[local] = target_node
+
+        node.locals[local] = new_targets
+
+    # Creation of the __members__ attribute of the Enum node
+    members = nodes.Dict(parent=node)
+    members.postinit(
+        [
+            (nodes.Const(k, parent=members), nodes.Name(v.name, parent=members))
+            for k, v in dunder_members.items()
+        ]
+    )
+    node.locals["__members__"] = [members]
     return node
 
 

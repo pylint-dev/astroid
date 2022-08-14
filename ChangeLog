@@ -117,6 +117,11 @@ Release date: 2022-07-09
 
   Closes PyCQA/pylint#5776
 
+* Members of ``Enums`` are now correctly inferred as instances of the ``Enum`` they belong
+  to instead of instances of their own class.
+
+  Closes #744
+
 * Rename ``ModuleSpec`` -> ``module_type`` constructor parameter to match attribute
   name and improve typing. Use ``type`` instead.
 

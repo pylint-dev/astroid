@@ -18,7 +18,7 @@ import pytest
 import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
-from astroid.const import PY39_PLUS
+from astroid.const import PY39_PLUS, PY311_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -771,11 +771,17 @@ class EnumBrainTest(unittest.TestCase):
 
         enumeration = next(module["MyEnum"].infer())
         one = enumeration["one"]
-        self.assertEqual(one.pytype(), ".MyEnum.one")
+        self.assertEqual(one.pytype(), ".MyEnum")
 
         for propname in ("name", "value"):
-            prop = next(iter(one.getattr(propname)))
-            self.assertIn("builtins.property", prop.decoratornames())
+            # On the base Enum class 'name' and 'value' are properties
+            # decorated by DynamicClassAttribute in < 3.11.
+            prop = next(iter(one._proxied.getattr(propname)))
+            if PY311_PLUS:
+                expected_name = "enum.property"
+            else:
+                expected_name = "types.DynamicClassAttribute"
+            self.assertIn(expected_name, prop.decoratornames())
 
         meth = one.getattr("mymethod")[0]
         self.assertIsInstance(meth, astroid.FunctionDef)
@@ -1030,18 +1036,17 @@ class EnumBrainTest(unittest.TestCase):
         """
         i_name, i_value, c_name, c_value = astroid.extract_node(code)
 
-        # <instance>.name should be a string, <class>.name should be a property (that
+        # <instance>.name should be Uninferable, <class>.name should be a property (that
         # forwards the lookup to __getattr__)
         inferred = next(i_name.infer())
-        assert isinstance(inferred, nodes.Const)
-        assert inferred.pytype() == "builtins.str"
+        assert inferred is util.Uninferable
         inferred = next(c_name.infer())
         assert isinstance(inferred, objects.Property)
 
-        # Inferring .value should not raise InferenceError. It is probably Uninferable
-        # but we don't particularly care
-        next(i_value.infer())
-        next(c_value.infer())
+        inferred = next(i_value.infer())
+        assert inferred is util.Uninferable
+        inferred = next(c_value.infer())
+        assert isinstance(inferred, objects.Property)
 
     def test_enum_name_and_value_members_override_dynamicclassattr(self) -> None:
         code = """
@@ -1058,19 +1063,23 @@ class EnumBrainTest(unittest.TestCase):
         """
         i_name, i_value, c_name, c_value = astroid.extract_node(code)
 
-        # All of these cases should be inferred as enum members
-        inferred = next(i_name.infer())
-        assert isinstance(inferred, bases.Instance)
-        assert inferred.pytype() == ".TrickyEnum.name"
-        inferred = next(c_name.infer())
-        assert isinstance(inferred, bases.Instance)
-        assert inferred.pytype() == ".TrickyEnum.name"
-        inferred = next(i_value.infer())
-        assert isinstance(inferred, bases.Instance)
-        assert inferred.pytype() == ".TrickyEnum.value"
-        inferred = next(c_value.infer())
-        assert isinstance(inferred, bases.Instance)
-        assert inferred.pytype() == ".TrickyEnum.value"
+        # All of these cases should be inferred as enum instances
+        # and refer to the same instance
+        name_inner = next(i_name.infer())
+        assert isinstance(name_inner, bases.Instance)
+        assert name_inner.pytype() == ".TrickyEnum"
+        name_outer = next(c_name.infer())
+        assert isinstance(name_outer, bases.Instance)
+        assert name_outer.pytype() == ".TrickyEnum"
+        assert name_inner == name_outer
+
+        value_inner = next(i_value.infer())
+        assert isinstance(value_inner, bases.Instance)
+        assert value_inner.pytype() == ".TrickyEnum"
+        value_outer = next(c_value.infer())
+        assert isinstance(value_outer, bases.Instance)
+        assert value_outer.pytype() == ".TrickyEnum"
+        assert value_inner == value_outer
 
     def test_enum_subclass_member_name(self) -> None:
         ast_node = astroid.extract_node(
@@ -1188,7 +1197,15 @@ class EnumBrainTest(unittest.TestCase):
         )
         inferred = next(ast_node.infer())
         assert isinstance(inferred, bases.Instance)
-        assert inferred._proxied.name == "ENUM_KEY"
+        assert inferred._proxied.name == "MyEnum"
+
+        name_node = inferred.getattr("name")[0]
+        assert isinstance(name_node, nodes.Const)
+        assert name_node.value == "ENUM_KEY"
+
+        value_node = inferred.getattr("value")[0]
+        assert isinstance(value_node, nodes.Const)
+        assert value_node.value == "enum_value"
 
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
