@@ -2525,7 +2525,7 @@ def test_enums_type_annotation_no_value(annotation) -> None:
         """
     from enum import Enum
     class Veg(Enum):
-        TOMATO: {annotation} 
+        TOMATO: {annotation}
 
     Veg.TOMATO.value
     """
