@@ -24,6 +24,8 @@ Release date: TBA
 
   Refs PyCQA/pylint#7265
 
+* Fix crash with inference of type-annotated Enum classes where the member has no value.
+
 * Fix a crash inferring invalid old-style string formatting with `%`.
 
   Closes #1737

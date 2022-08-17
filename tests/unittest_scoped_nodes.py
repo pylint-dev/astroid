@@ -2515,6 +2515,25 @@ def test_enums_type_annotation_str_member() -> None:
     assert inferred_member_value.value == "sweet"
 
 
+@pytest.mark.parametrize("annotation", ["bool", "dict", "int", "str"])
+def test_enums_type_annotation_no_value(annotation) -> None:
+    """A type-annotated member of an Enum class which has no value where:
+    - `member.value.value` is `None`
+    is not inferred
+    """
+    node = builder.extract_node(
+        """
+    from enum import Enum
+    class Veg(Enum):
+        TOMATO: {annotation} 
+
+    Veg.TOMATO.value
+    """
+    )
+    inferred_member_value = node.inferred()[0]
+    assert inferred_member_value.value is None
+
+
 @pytest.mark.parametrize("annotation, value", [("int", 42), ("bytes", b"")])
 def test_enums_type_annotation_non_str_member(annotation, value) -> None:
     """A type-annotated member of an Enum class where:
