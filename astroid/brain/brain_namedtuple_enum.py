@@ -379,7 +379,7 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                 continue
 
             inferred_return_value = None
-            if isinstance(stmt, (nodes.AnnAssign, nodes.Assign)) and stmt.value:
+            if stmt.value is not None:
                 if isinstance(stmt.value, nodes.Const):
                     if isinstance(stmt.value.value, str):
                         inferred_return_value = repr(stmt.value.value)
