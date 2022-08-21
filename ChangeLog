@@ -30,6 +30,8 @@ Release date: TBA
 
   Closes #1737
 
+* Bumped minimum requirement of ``wrapt`` to 1.14.
+
 What's New in astroid 2.12.2?
 =============================
 Release date: 2022-07-12
