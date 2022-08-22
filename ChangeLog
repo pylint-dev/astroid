@@ -30,6 +30,10 @@ Release date: TBA
 
   Closes #1737
 
+* Don't add dataclass fields annotated with ``KW_ONLY`` to the list of fields.
+
+  Refs PyCQA/pylint#5767
+
 What's New in astroid 2.12.2?
 =============================
 Release date: 2022-07-12
