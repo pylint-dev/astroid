@@ -10,7 +10,7 @@ Release date: TBA
   A file called ``math.py`` will now correctly ``import math`` from the standard library
   instead of trying to import itself.
 
-  Refs PyCQA/pylint#7289
+  Refs PyCQA/pylint#5151
 
 
 What's New in astroid 2.12.3?

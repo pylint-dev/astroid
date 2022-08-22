@@ -326,9 +326,9 @@ class AstroidManagerTest(
                 self.manager.ast_from_module_name("foo.bar.baz")
 
     def test_same_name_import_module(self) -> None:
-        """test inference of an import statement with the same name as the module.
+        """Test inference of an import statement with the same name as the module.
 
-        see https://github.com/pycqa/pylint/issues/.
+        See https://github.com/PyCQA/pylint/issues/5151.
         """
         math_file = resources.find("data/import_conflicting_names/math.py")
         module = self.manager.ast_from_file(math_file)
