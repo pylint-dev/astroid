@@ -6,7 +6,9 @@ What's New in astroid 2.13.0?
 =============================
 Release date: TBA
 
-* Fixed importing self when a module had the same name as an installed package.
+* Fixed importing of modules that have the same name as the file that is importing.
+  A file called ``math.py`` will now correctly ``import math`` from the standard library
+  instead of trying to import itself.
 
   Refs PyCQA/pylint#7289
 
