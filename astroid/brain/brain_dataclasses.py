@@ -19,9 +19,9 @@ import sys
 from collections.abc import Generator
 from typing import Tuple, Union
 
-from astroid import bases, context, inference_tip
+from astroid import bases, context, helpers, inference_tip
 from astroid.builder import parse
-from astroid.const import PY39_PLUS
+from astroid.const import PY39_PLUS, PY310_PLUS
 from astroid.exceptions import (
     AstroidSyntaxError,
     InferenceError,
@@ -409,10 +409,12 @@ def _is_class_var(node: NodeNG) -> bool:
 
 def _is_keyword_only_sentinel(node: NodeNG) -> bool:
     """Return True if node is the KW_ONLY sentinel."""
-    return any(
+    if not PY310_PLUS:
+        return False
+    inferred = helpers.safe_infer(node)
+    return (
         isinstance(inferred, bases.Instance)
         and inferred.qname() == "dataclasses._KW_ONLY_TYPE"
-        for inferred in node.infer()
     )
 
 

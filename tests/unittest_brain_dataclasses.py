@@ -6,6 +6,7 @@ import pytest
 
 import astroid
 from astroid import bases, nodes
+from astroid.const import PY310_PLUS
 from astroid.exceptions import InferenceError
 from astroid.util import Uninferable
 
@@ -737,8 +738,12 @@ def test_kw_only_sentinel() -> None:
     B.__init__  #@
     """
     )
+    if PY310_PLUS:
+        expected = ["self", "y"]
+    else:
+        expected = ["self", "_", "y"]
     init = next(node_one.infer())
-    assert [a.name for a in init.args.args] == ["self", "y"]
+    assert [a.name for a in init.args.args] == expected
 
     init = next(node_two.infer())
-    assert [a.name for a in init.args.args] == ["self", "y"]
+    assert [a.name for a in init.args.args] == expected
