@@ -330,7 +330,7 @@ class AstroidManagerTest(
 
         see https://github.com/pycqa/pylint/issues/7289.
         """
-        data_dir = resources.find_in_testdata("import_conflicting_names")
+        data_dir = resources.get_testdata_path("import_conflicting_names")
         math_file = data_dir / "math.py"
         module = self.manager.ast_from_file(str(math_file))
 

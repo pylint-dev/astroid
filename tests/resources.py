@@ -20,7 +20,7 @@ def find(name: str) -> str:
     return os.path.normpath(os.path.join(os.path.dirname(__file__), DATA_DIR, name))
 
 
-def find_in_testdata(name: str) -> Path:
+def get_testdata_path(name: str) -> Path:
     return (Path(__file__).parent / "testdata" / name).resolve()
 
 
