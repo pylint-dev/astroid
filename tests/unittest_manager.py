@@ -330,8 +330,8 @@ class AstroidManagerTest(
 
         see https://github.com/pycqa/pylint/issues/.
         """
-        math_file = resources.get_testdata_path("import_conflicting_names") / "math.py"
-        module = self.manager.ast_from_file(str(math_file))
+        math_file = resources.find("data/import_conflicting_names/math.py")
+        module = self.manager.ast_from_file(math_file)
 
         # Change the cache key and module name to mimick importing the test file
         # from the root/top level. This creates a clash between math.py and stdlib math.
