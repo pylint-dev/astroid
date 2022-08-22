@@ -6,6 +6,9 @@ What's New in astroid 2.13.0?
 =============================
 Release date: TBA
 
+* Fixed importing self when a module had the same name as an installed package.
+
+  Refs PyCQA/pylint#7289
 
 
 What's New in astroid 2.12.3?

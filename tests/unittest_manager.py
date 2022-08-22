@@ -325,6 +325,24 @@ class AstroidManagerTest(
             with self.assertRaises(AstroidBuildingError):
                 self.manager.ast_from_module_name("foo.bar.baz")
 
+    def test_same_name_import_module(self) -> None:
+        """test inference of an import statement with the same name as the module.
+
+        see https://github.com/pycqa/pylint/issues/7289.
+        """
+        data_dir = resources.find_in_testdata("import_conflicting_names")
+        math_file = data_dir / "math.py"
+        module = self.manager.ast_from_file(str(math_file))
+
+        # Change the cache key and module name to mimick importing the test file
+        # from the root/top level. This creates a clash between math.py and stdlib math.
+        self.manager.astroid_cache["math"] = self.manager.astroid_cache.pop(module.name)
+        module.name = "math"
+
+        # Infer the 'import math' statement
+        stdlib_math = next(module.body[1].value.args[0].infer())
+        assert self.manager.astroid_cache["math"] != stdlib_math
+
 
 class BorgAstroidManagerTC(unittest.TestCase):
     def test_borg(self) -> None:

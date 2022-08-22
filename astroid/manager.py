@@ -147,9 +147,18 @@ class AstroidManager:
             modname, self.extension_package_whitelist
         )
 
-    def ast_from_module_name(self, modname, context_file=None):
-        """given a module name, return the astroid object"""
-        if modname in self.astroid_cache:
+    def ast_from_module_name(
+        self,
+        modname: str | None,
+        context_file: str | None = None,
+        use_cache: bool = True,
+    ) -> nodes.Module:
+        """Given a module name, return the astroid object."""
+        # Sometimes we don't want to use the cache. For example, when we're
+        # importing a module with the same name as the file that is importing
+        # we want to fallback on the import system to make sure we get the correct
+        # module.
+        if modname in self.astroid_cache and use_cache:
             return self.astroid_cache[modname]
         if modname == "__main__":
             return self._build_stub_module(modname)
