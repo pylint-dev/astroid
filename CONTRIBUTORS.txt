@@ -39,6 +39,7 @@ Contributors
 - David Gilman <davidgilman1@gmail.com>
 - Julien Jehannet <julien.jehannet@logilab.fr>
 - Calen Pennington <calen.pennington@gmail.com>
+- Mark Byrne <31762852+mbyrnepr2@users.noreply.github.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Phil Schaf <flying-sheep@web.de>
 - Hugo van Kemenade <hugovk@users.noreply.github.com>
@@ -56,7 +57,6 @@ Contributors
 - Philip Lorenz <philip@bithub.de>
 - Nicolas Chauvat <nicolas.chauvat@logilab.fr>
 - Michael K <michael-k@users.noreply.github.com>
-- Mark Byrne <31762852+mbyrnepr2@users.noreply.github.com>
 - Mario Corchero <mariocj89@gmail.com>
 - Marien Zwart <marienz@gentoo.org>
 - Laura Médioni <laura.medioni@logilab.fr>
@@ -105,6 +105,7 @@ Contributors
 - Valentin Valls <valentin.valls@esrf.fr>
 - Uilian Ries <uilianries@gmail.com>
 - Tomas Novak <ext.Tomas.Novak@skoda-auto.cz>
+- Tim Paine <t.paine154@gmail.com>
 - Thirumal Venkat <me@thirumal.in>
 - SupImDos <62866982+SupImDos@users.noreply.github.com>
 - Stanislav Levin <slev@altlinux.org>

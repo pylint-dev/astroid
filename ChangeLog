@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.12.3?
+What's New in astroid 2.12.4?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.12.3?
+=============================
+Release date: 2022-08-23
 
 * Fixed crash in ``ExplicitNamespacePackageFinder`` involving ``_SixMetaPathImporter``.
 
@@ -35,6 +41,7 @@ Release date: TBA
   Refs PyCQA/pylint#7307
 
 * Bumped minimum requirement of ``wrapt`` to 1.14 on Python 3.11.
+
 
 * Don't add dataclass fields annotated with ``KW_ONLY`` to the list of fields.
 
