@@ -28,7 +28,7 @@ Release date: TBA
 
   Closes #1737
 
-* Fix false positive with inference of `http` module when iterating `HTTPStatus`.
+* Fix false positive with inference of ``http`` module when iterating ``HTTPStatus``.
 
   Refs PyCQA/pylint#7307
 
