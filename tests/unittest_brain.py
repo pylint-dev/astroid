@@ -3143,7 +3143,7 @@ def test_http_status_brain() -> None:
     )
     inferred = next(node.infer())
     # Cannot infer the exact value but the field is there.
-    assert inferred is util.Uninferable
+    assert inferred.value == ""
 
     node = astroid.extract_node(
         """
@@ -3153,6 +3153,19 @@ def test_http_status_brain() -> None:
     )
     inferred = next(node.infer())
     assert isinstance(inferred, astroid.Const)
+
+
+def test_http_status_brain_iterable() -> None:
+    """Astroid inference of `http.HTTPStatus` is an iterable subclass of `enum.IntEnum`"""
+    node = astroid.extract_node(
+        """
+    import http
+    http.HTTPStatus
+    """
+    )
+    inferred = next(node.infer())
+    assert "enum.IntEnum" in [ancestor.qname() for ancestor in inferred.ancestors()]
+    assert inferred.getattr("__iter__")
 
 
 def test_oserror_model() -> None:
