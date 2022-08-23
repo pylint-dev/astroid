@@ -373,9 +373,9 @@ def _find_spec_with_path(
         if spec:
             try:
                 module_type = _MetaPathFinderModuleTypes[
-                    meta_finder.__name__  # type: ignore[attr-defined]
+                    meta_finder.__name__  # type: ignore[attr-defined], caught by AttributeError
                 ]
-            except KeyError:
+            except (KeyError, AttributeError):
                 # If we don't recognise the finder, we assume it's a regular module
                 module_type = ModuleType.PY_SOURCE
             return (  # type: ignore[return-value]
