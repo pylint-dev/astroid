@@ -6,6 +6,7 @@ import pytest
 
 import astroid
 from astroid import bases, nodes
+from astroid.const import PY310_PLUS
 from astroid.exceptions import InferenceError
 from astroid.util import Uninferable
 
@@ -713,3 +714,36 @@ def test_non_dataclass_is_not_dataclass() -> None:
     assert len(class_b) == 1
     assert isinstance(class_b[0], nodes.ClassDef)
     assert not class_b[0].is_dataclass
+
+
+def test_kw_only_sentinel() -> None:
+    """Test that the KW_ONLY sentinel doesn't get added to the fields."""
+    node_one, node_two = astroid.extract_node(
+        """
+    from dataclasses import dataclass, KW_ONLY
+    from dataclasses import KW_ONLY as keyword_only
+
+    @dataclass
+    class A:
+        _: KW_ONLY
+        y: str
+
+    A.__init__  #@
+
+    @dataclass
+    class B:
+        _: keyword_only
+        y: str
+
+    B.__init__  #@
+    """
+    )
+    if PY310_PLUS:
+        expected = ["self", "y"]
+    else:
+        expected = ["self", "_", "y"]
+    init = next(node_one.infer())
+    assert [a.name for a in init.args.args] == expected
+
+    init = next(node_two.infer())
+    assert [a.name for a in init.args.args] == expected

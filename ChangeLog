@@ -24,6 +24,8 @@ Release date: TBA
 
   Refs PyCQA/pylint#7265
 
+* Fix crash with inference of type-annotated Enum classes where the member has no value.
+
 * Fix a crash inferring invalid old-style string formatting with `%`.
 
   Closes #1737
@@ -31,6 +33,11 @@ Release date: TBA
 * Fix false positive with inference of ``http`` module when iterating ``HTTPStatus``.
 
   Refs PyCQA/pylint#7307
+* Bumped minimum requirement of ``wrapt`` to 1.14 on Python 3.11.
+
+* Don't add dataclass fields annotated with ``KW_ONLY`` to the list of fields.
+
+  Refs PyCQA/pylint#5767
 
 What's New in astroid 2.12.2?
 =============================
