@@ -498,27 +498,33 @@ class Module(LocalsDictNodeNG):
         """
         return self._absolute_import_activated
 
-    def import_module(self, modname, relative_only=False, level=None):
+    def import_module(
+        self,
+        modname: str | None,
+        relative_only: bool = False,
+        level: int | None = None,
+        use_cache: bool = True,
+    ) -> Module:
         """Get the ast for a given module as if imported from this module.
 
         :param modname: The name of the module to "import".
-        :type modname: str
 
         :param relative_only: Whether to only consider relative imports.
-        :type relative_only: bool
 
         :param level: The level of relative import.
-        :type level: int or None
+
+        :param use_cache: Whether to use the astroid_cache of modules.
 
         :returns: The imported module ast.
-        :rtype: NodeNG
         """
         if relative_only and level is None:
             level = 0
         absmodname = self.relative_to_absolute_name(modname, level)
 
         try:
-            return AstroidManager().ast_from_module_name(absmodname)
+            return AstroidManager().ast_from_module_name(
+                absmodname, use_cache=use_cache
+            )
         except AstroidBuildingError:
             # we only want to import a sub module or package of this module,
             # skip here
