@@ -671,8 +671,8 @@ class InstanceModel(ObjectModel):
 
 class ExceptionInstanceModel(InstanceModel):
     @property
-    def attr_args(self):
-        return node_classes.Tuple(parent=self._instance)
+    def attr_args(self) -> nodes.Tuple:
+        return nodes.Tuple(parent=self._instance)
 
     @property
     def attr___traceback__(self):
