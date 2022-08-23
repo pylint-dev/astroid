@@ -30,6 +30,10 @@ Release date: TBA
 
   Closes #1737
 
+* Fix false positive with inference of ``http`` module when iterating ``HTTPStatus``.
+
+  Refs PyCQA/pylint#7307
+
 * Bumped minimum requirement of ``wrapt`` to 1.14 on Python 3.11.
 
 * Don't add dataclass fields annotated with ``KW_ONLY`` to the list of fields.
