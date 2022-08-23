@@ -748,6 +748,21 @@ class DictObjectModelTest(unittest.TestCase):
         self.assertIsInstance(items, objects.DictItems)
 
 
+class TestExceptionInstanceModel:
+    """Tests for ExceptionInstanceModel."""
+
+    def test_str_argument_not_required(self) -> None:
+        """Test that the first argument to an exception does not need to be a str."""
+        ast_node = builder.extract_node(
+            """
+        BaseException() #@
+        """
+        )
+        args: nodes.Tuple = next(ast_node.infer()).getattr("args")[0]
+        # BaseException doesn't have any required args, not even a string
+        assert not args.elts
+
+
 class LruCacheModelTest(unittest.TestCase):
     def test_lru_cache(self) -> None:
         ast_nodes = builder.extract_node(
