@@ -6,6 +6,9 @@ What's New in astroid 2.15.0?
 =============================
 Release date: TBA
 
+* ``Astroid`` now supports custom import hooks.
+
+  Refs PyCQA/pylint#7306
 
 
 What's New in astroid 2.14.2?

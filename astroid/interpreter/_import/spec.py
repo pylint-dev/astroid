@@ -14,6 +14,7 @@ import pathlib
 import sys
 import zipimport
 from collections.abc import Iterator, Sequence
+from importlib.abc import MetaPathFinder
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -41,6 +42,13 @@ class ModuleType(enum.Enum):
     PY_SOURCE = enum.auto()
     PY_ZIPMODULE = enum.auto()
     PY_NAMESPACE = enum.auto()
+
+
+_MetaPathFinderModuleTypes: dict[str, ModuleType] = {
+    # Finders created by setuptools editable installs
+    "_EditableFinder": ModuleType.PY_SOURCE,
+    "_EditableNamespaceFinder": ModuleType.PY_NAMESPACE,
+}
 
 
 class ModuleSpec(NamedTuple):
@@ -349,7 +357,7 @@ def _find_spec_with_path(
     module_parts: list[str],
     processed: list[str],
     submodule_path: Sequence[str] | None,
-) -> tuple[Finder, ModuleSpec]:
+) -> tuple[Finder | MetaPathFinder, ModuleSpec]:
     for finder in _SPEC_FINDERS:
         finder_instance = finder(search_path)
         spec = finder_instance.find_module(
@@ -358,6 +366,28 @@ def _find_spec_with_path(
         if spec is None:
             continue
         return finder_instance, spec
+
+    # Support for custom finders
+    for meta_finder in sys.meta_path:
+        spec = meta_finder.find_spec(modname, submodule_path)
+        if spec:
+            try:
+                module_type = _MetaPathFinderModuleTypes[
+                    meta_finder.__name__  # type: ignore[attr-defined]
+                ]
+            except KeyError:
+                # If we don't recognise the finder, we assume it's a regular module
+                module_type = ModuleType.PY_SOURCE
+            return (  # type: ignore[return-value]
+                meta_finder,
+                ModuleSpec(
+                    spec.name,
+                    module_type,
+                    spec.origin,
+                    spec.origin,
+                    spec.submodule_search_locations,
+                ),
+            )
 
     raise ImportError(f"No module named {'.'.join(module_parts)}")
 
@@ -394,7 +424,7 @@ def find_spec(modpath: list[str], path: Sequence[str] | None = None) -> ModuleSp
             _path, modname, module_parts, processed, submodule_path or path
         )
         processed.append(modname)
-        if modpath:
+        if modpath and isinstance(finder, Finder):
             submodule_path = finder.contribute_to_path(spec, processed)
 
         if spec.type == ModuleType.PKG_DIRECTORY:
