@@ -333,7 +333,7 @@ class AstroidManagerTest(
         math_file = resources.find("data/import_conflicting_names/math.py")
         module = self.manager.ast_from_file(math_file)
 
-        # Change the cache key and module name to mimick importing the test file
+        # Change the cache key and module name to mimic importing the test file
         # from the root/top level. This creates a clash between math.py and stdlib math.
         self.manager.astroid_cache["math"] = self.manager.astroid_cache.pop(module.name)
         module.name = "math"
