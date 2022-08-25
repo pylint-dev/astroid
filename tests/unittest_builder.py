@@ -737,6 +737,14 @@ class BuilderTest(unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, NotImplemented)
 
+    def test_type_comments_without_content(self) -> None:
+        node = builder.parse(
+            """
+            a = 1 # type: # any comment
+        """
+        )
+        assert node
+
 
 class FileBuildTest(unittest.TestCase):
     def setUp(self) -> None:

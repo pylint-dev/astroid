@@ -734,6 +734,11 @@ class TreeRebuilder:
             # Invalid type comment, just skip it.
             return None
 
+        # For '# type: # any comment' ast.parse returns a Module node,
+        # without any nodes in the body.
+        if not type_comment_ast.body:
+            return None
+
         type_object = self.visit(type_comment_ast.body[0], parent=parent)
         if not isinstance(type_object, nodes.Expr):
             return None
