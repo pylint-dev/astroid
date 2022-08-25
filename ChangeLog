@@ -12,6 +12,9 @@ What's New in astroid 2.12.4?
 =============================
 Release date: TBA
 
+* Fixed a crash involving non-standard type comments such as ``# type: # any comment``.
+
+  Refs PyCQA/pylint#7347
 
 
 What's New in astroid 2.12.3?
