@@ -17,6 +17,9 @@ What's New in astroid 2.12.5?
 =============================
 Release date: TBA
 
+* Prevent first-party imports from being resolved to `site-packages`.
+
+  Refs PyCQA/pylint#7365
 
 
 What's New in astroid 2.12.4?

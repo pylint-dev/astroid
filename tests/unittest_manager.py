@@ -128,6 +128,7 @@ class AstroidManagerTest(
     def test_module_is_not_namespace(self) -> None:
         self.assertFalse(util.is_namespace("tests.testdata.python3.data.all"))
         self.assertFalse(util.is_namespace("__main__"))
+        self.assertFalse(util.is_namespace("site-packages"))
 
     def test_module_unexpectedly_missing_spec(self) -> None:
         astroid_module = sys.modules["astroid"]

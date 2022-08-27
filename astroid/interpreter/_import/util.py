@@ -13,6 +13,8 @@ from importlib.util import _find_spec_from_path  # type: ignore[attr-defined]
 
 @lru_cache(maxsize=4096)
 def is_namespace(modname: str) -> bool:
+    from astroid.modutils import EXT_LIB_DIRS  # pylint: disable=import-outside-toplevel
+
     if modname in sys.builtin_module_names:
         return False
 
@@ -70,6 +72,11 @@ def is_namespace(modname: str) -> bool:
 
         # Update last_submodule_search_locations
         if found_spec and found_spec.submodule_search_locations:
+            if any(
+                location in EXT_LIB_DIRS
+                for location in found_spec.submodule_search_locations
+            ):
+                return False
             last_submodule_search_locations = found_spec.submodule_search_locations
 
     return (
