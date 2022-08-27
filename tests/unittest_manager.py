@@ -15,7 +15,7 @@ from astroid import manager, test_utils
 from astroid.const import IS_JYTHON
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import util
-from astroid.modutils import is_standard_module
+from astroid.modutils import EXT_LIB_DIRS, is_standard_module
 from astroid.nodes import Const
 from astroid.nodes.scoped_nodes import ClassDef
 
@@ -128,7 +128,9 @@ class AstroidManagerTest(
     def test_module_is_not_namespace(self) -> None:
         self.assertFalse(util.is_namespace("tests.testdata.python3.data.all"))
         self.assertFalse(util.is_namespace("__main__"))
-        self.assertFalse(util.is_namespace("site-packages"))
+        self.assertFalse(
+            util.is_namespace(list(EXT_LIB_DIRS)[0].rsplit("/", maxsplit=1)[0])
+        )
 
     def test_module_unexpectedly_missing_spec(self) -> None:
         astroid_module = sys.modules["astroid"]
