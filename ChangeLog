@@ -17,6 +17,10 @@ What's New in astroid 2.12.5?
 =============================
 Release date: TBA
 
+* Fix ``astroid.interpreter._import.util.is_namespace()`` incorrectly
+  returning ``True`` for frozen stdlib modules on PyPy.
+
+  Closes #1755
 
 
 What's New in astroid 2.12.4?
