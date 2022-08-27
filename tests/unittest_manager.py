@@ -158,7 +158,7 @@ class AstroidManagerTest(
             for _ in range(2):
                 sys.path.pop(0)
 
-    @pytest.mark.skipIf(
+    @pytest.mark.skipif(
         IS_PYPY,
         reason="PyPy provides no way to tell apart frozen stdlib from old-style namespace packages",
     )
@@ -176,7 +176,7 @@ class AstroidManagerTest(
         finally:
             sys.modules.pop("foogle")
 
-    @pytest.mark.skipIf(
+    @pytest.mark.skipif(
         IS_PYPY,
         reason="PyPy provides no way to tell apart frozen stdlib from old-style namespace packages",
     )
