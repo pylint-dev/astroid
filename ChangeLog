@@ -8,10 +8,16 @@ Release date: TBA
 
 
 
-What's New in astroid 2.12.5?
+What's New in astroid 2.12.6?
 =============================
 Release date: TBA
 
+
+
+
+What's New in astroid 2.12.5?
+=============================
+Release date: 2022-08-29
 
 * Prevent first-party imports from being resolved to `site-packages`.
 
