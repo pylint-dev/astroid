@@ -15,7 +15,12 @@ from astroid.const import IS_PYPY
 
 @lru_cache(maxsize=4096)
 def is_namespace(modname: str) -> bool:
-    from astroid.modutils import EXT_LIB_DIRS  # pylint: disable=import-outside-toplevel
+    from astroid.modutils import (  # pylint: disable=import-outside-toplevel
+        EXT_LIB_DIRS,
+        STD_LIB_DIRS,
+    )
+
+    STD_AND_EXT_LIB_DIRS = STD_LIB_DIRS.union(EXT_LIB_DIRS)
 
     if modname in sys.builtin_module_names:
         return False
@@ -75,7 +80,7 @@ def is_namespace(modname: str) -> bool:
         # Update last_submodule_search_locations
         if found_spec and found_spec.submodule_search_locations:
             if any(
-                location in EXT_LIB_DIRS
+                any(location.startswith(lib_dir) for lib_dir in STD_AND_EXT_LIB_DIRS)
                 for location in found_spec.submodule_search_locations
             ):
                 return False

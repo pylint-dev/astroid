@@ -128,24 +128,10 @@ class AstroidManagerTest(
         )
 
     def test_module_is_not_namespace(self) -> None:
-        def debug_result():
-            import sysconfig
-            from importlib.util import _find_spec_from_path
-
-            tested = list(EXT_LIB_DIRS)[0].rsplit("/", maxsplit=1)[-1]
-            spec = _find_spec_from_path(tested)
-            return (
-                f"SYCONFIG PATHS: {sysconfig.get_paths()}\n"
-                f"EXT_LIB_DIRS: {EXT_LIB_DIRS}\n"
-                f"TESTED: {tested}\n"
-                f"SPEC VARS: {vars(spec)}"
-            )
-
         self.assertFalse(util.is_namespace("tests.testdata.python3.data.all"))
         self.assertFalse(util.is_namespace("__main__"))
         self.assertFalse(
             util.is_namespace(list(EXT_LIB_DIRS)[0].rsplit("/", maxsplit=1)[-1]),
-            debug_result(),
         )
         self.assertFalse(util.is_namespace("importlib._bootstrap"))
 
