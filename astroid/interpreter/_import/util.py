@@ -10,6 +10,8 @@ from functools import lru_cache
 from importlib._bootstrap_external import _NamespacePath
 from importlib.util import _find_spec_from_path  # type: ignore[attr-defined]
 
+from astroid.const import IS_PYPY
+
 
 @lru_cache(maxsize=4096)
 def is_namespace(modname: str) -> bool:
@@ -40,7 +42,7 @@ def is_namespace(modname: str) -> bool:
                 return False
             try:
                 # .pth files will be on sys.modules
-                return sys.modules[modname].__spec__ is None
+                return sys.modules[modname].__spec__ is None and not IS_PYPY
             except KeyError:
                 return False
             except AttributeError:
