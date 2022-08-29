@@ -15,6 +15,13 @@ from astroid.const import IS_PYPY
 
 @lru_cache(maxsize=4096)
 def is_namespace(modname: str) -> bool:
+    from astroid.modutils import (  # pylint: disable=import-outside-toplevel
+        EXT_LIB_DIRS,
+        STD_LIB_DIRS,
+    )
+
+    STD_AND_EXT_LIB_DIRS = STD_LIB_DIRS.union(EXT_LIB_DIRS)
+
     if modname in sys.builtin_module_names:
         return False
 
@@ -72,8 +79,15 @@ def is_namespace(modname: str) -> bool:
                 last_submodule_search_locations.append(str(assumed_location))
             continue
 
-        # Update last_submodule_search_locations
+        # Update last_submodule_search_locations for next iteration
         if found_spec and found_spec.submodule_search_locations:
+            # But immediately return False if we can detect we are in stdlib
+            # or external lib (e.g site-packages)
+            if any(
+                any(location.startswith(lib_dir) for lib_dir in STD_AND_EXT_LIB_DIRS)
+                for location in found_spec.submodule_search_locations
+            ):
+                return False
             last_submodule_search_locations = found_spec.submodule_search_locations
 
     return (
