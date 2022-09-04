@@ -538,7 +538,13 @@ def _get_namedtuple_fields(node: nodes.Call) -> str:
     extract a node from them later on.
     """
     names = []
-    for elt in next(node.args[1].infer()).elts:
+    try:
+        container = next(node.args[1].infer())
+    except (InferenceError, StopIteration) as exc:
+        raise UseInferenceDefault from exc
+    if container is astroid.Uninferable:
+        raise UseInferenceDefault
+    for elt in container.elts:
         if isinstance(elt, nodes.Const):
             names.append(elt.as_string())
             continue

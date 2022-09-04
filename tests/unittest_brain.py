@@ -18,6 +18,7 @@ import pytest
 import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
+from astroid.brain.brain_namedtuple_enum import _get_namedtuple_fields
 from astroid.const import PY39_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
@@ -26,6 +27,7 @@ from astroid.exceptions import (
 )
 from astroid.nodes.node_classes import Const
 from astroid.nodes.scoped_nodes import ClassDef
+from astroid.objects import FrozenSet
 
 try:
     import multiprocessing  # pylint: disable=unused-import
@@ -1643,6 +1645,14 @@ class TypingBrain(unittest.TestCase):
         """
         )
         next(node.infer())
+
+    def test_namedtuple_uninferable_member(self) -> None:
+        call = nodes.Call(1)
+        fs = FrozenSet()
+        fs.elts = astroid.Uninferable
+        call.args = [nodes.Const('uninferable'), fs]
+        with pytest.raises(UseInferenceDefault):
+            _get_namedtuple_fields(call)
 
     def test_typing_types(self) -> None:
         ast_nodes = builder.extract_node(
