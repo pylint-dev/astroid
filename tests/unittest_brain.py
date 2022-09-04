@@ -18,6 +18,7 @@ import pytest
 import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
+from astroid.brain.brain_namedtuple_enum import _get_namedtuple_fields
 from astroid.const import PY39_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
@@ -1643,6 +1644,25 @@ class TypingBrain(unittest.TestCase):
         """
         )
         next(node.infer())
+
+    def test_namedtuple_uninferable_member(self) -> None:
+        call = builder.extract_node(
+            """
+        from typing import namedtuple
+        namedtuple('uninf', {x: x for x in range(0)})  #@"""
+        )
+        with pytest.raises(UseInferenceDefault):
+            _get_namedtuple_fields(call)
+
+        call = builder.extract_node(
+            """
+        from typing import namedtuple
+        uninferable = {x: x for x in range(0)}
+        namedtuple('uninferable', uninferable)  #@
+        """
+        )
+        with pytest.raises(UseInferenceDefault):
+            _get_namedtuple_fields(call)
 
     def test_typing_types(self) -> None:
         ast_nodes = builder.extract_node(
