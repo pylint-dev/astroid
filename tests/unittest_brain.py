@@ -1650,7 +1650,7 @@ class TypingBrain(unittest.TestCase):
         call = nodes.Call(1)
         fs = FrozenSet()
         fs.elts = astroid.Uninferable
-        call.args = [nodes.Const('uninferable'), fs]
+        call.args = [nodes.Const("uninferable"), fs]
         with pytest.raises(UseInferenceDefault):
             _get_namedtuple_fields(call)
 
