@@ -27,7 +27,6 @@ from astroid.exceptions import (
 )
 from astroid.nodes.node_classes import Const
 from astroid.nodes.scoped_nodes import ClassDef
-from astroid.objects import FrozenSet
 
 try:
     import multiprocessing  # pylint: disable=unused-import
@@ -1647,10 +1646,21 @@ class TypingBrain(unittest.TestCase):
         next(node.infer())
 
     def test_namedtuple_uninferable_member(self) -> None:
-        call = nodes.Call(1)
-        fs = FrozenSet()
-        fs.elts = astroid.Uninferable
-        call.args = [nodes.Const("uninferable"), fs]
+        call = builder.extract_node(
+            """
+        from typing import namedtuple
+        namedtuple('uninf', {x: x for x in range(0)})  #@"""
+        )
+        with pytest.raises(UseInferenceDefault):
+            _get_namedtuple_fields(call)
+
+        call = builder.extract_node(
+            """
+        from typing import namedtuple
+        uninferable = {x: x for x in range(0)}
+        namedtuple('uninferable', uninferable)  #@
+        """
+        )
         with pytest.raises(UseInferenceDefault):
             _get_namedtuple_fields(call)
 

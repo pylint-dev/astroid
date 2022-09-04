@@ -542,7 +542,7 @@ def _get_namedtuple_fields(node: nodes.Call) -> str:
         container = next(node.args[1].infer())
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
-    if container is astroid.Uninferable:
+    if not isinstance(container, nodes.BaseContainer):
         raise UseInferenceDefault
     for elt in container.elts:
         if isinstance(elt, nodes.Const):
