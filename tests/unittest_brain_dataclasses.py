@@ -813,7 +813,7 @@ def test_kw_only_decorator() -> None:
     dee_init: bases.UnboundMethod = next(dee.infer())
     if PY310_PLUS:
         assert [a.name for a in dee_init.args.args] == ["self", "c", "d"]
-        assert [a.name for a in dee_init.args.kwonlyargs] == ["a", "e", "e"]
+        assert [a.name for a in dee_init.args.kwonlyargs] == ["a", "e", "ee"]
     else:
         assert [a.name for a in dee_init.args.args] == [
             "self",

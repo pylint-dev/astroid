@@ -186,11 +186,13 @@ def _generate_dataclass_init(
     node: ClassDef, assigns: list[AnnAssign], kw_only_decorated: bool
 ) -> str:
     """Return an init method for a dataclass given the targets."""
-    params = []
-    assignments = []
+    params: list[str] = []
+    assignments: list[str] = []
+    assign_names: list[str] = []
 
     for assign in assigns:
         name, annotation, value = assign.target.name, assign.annotation, assign.value
+        assign_names.append(name)
 
         if _is_init_var(annotation):  # type: ignore[arg-type] # annotation is never None
             init_var = True
@@ -228,9 +230,6 @@ def _generate_dataclass_init(
         if not init_var:
             assignments.append(assignment_str)
 
-    assignments_string = "\n    ".join(assignments) if assignments else "pass"
-    new_params_string = ", ".join(params)
-
     try:
         base: ClassDef = next(next(iter(node.bases)).infer())
         base_init: FunctionDef | None = base.locals["__init__"][0]
@@ -240,10 +239,10 @@ def _generate_dataclass_init(
     prev_pos_only = ""
     prev_kw_only = ""
     if base_init and base.is_dataclass:
-        # Skip the self argument
+        # Skip the self argument and check for duplicate arguments
         all_arguments = base_init.args.format_args()[6:].split(", ")
         arguments = ", ".join(
-            i for i in all_arguments if i.split(":")[0] not in new_params_string
+            i for i in all_arguments if i.split(":")[0] not in assign_names
         )
         try:
             prev_pos_only, prev_kw_only = arguments.split("*, ")
@@ -258,7 +257,7 @@ def _generate_dataclass_init(
     if prev_pos_only:
         params_string += prev_pos_only
     if not kw_only_decorated:
-        params_string += new_params_string
+        params_string += ", ".join(params)
 
     if not params_string.endswith(", "):
         params_string += ", "
@@ -266,10 +265,11 @@ def _generate_dataclass_init(
     if prev_kw_only:
         params_string += "*, " + prev_kw_only + ", "
         if kw_only_decorated:
-            params_string += new_params_string + ", "
+            params_string += ", ".join(params) + ", "
     elif kw_only_decorated:
-        params_string += "*, " + new_params_string + ", "
+        params_string += "*, " + ", ".join(params) + ", "
 
+    assignments_string = "\n    ".join(assignments) if assignments else "pass"
     return f"def __init__({params_string}) -> None:\n    {assignments_string}"
 
 
