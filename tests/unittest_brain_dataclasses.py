@@ -761,7 +761,7 @@ def test_kw_only_decorator() -> None:
     @dataclass(kw_only=True)
     class Foo:
         a: int
-        b: str
+        e: str
 
 
     @dataclass(kw_only=False)
@@ -776,7 +776,7 @@ def test_kw_only_decorator() -> None:
 
     @dataclass(kw_only=True)
     class Dee(Cee):
-        e: int
+        ee: int
 
 
     Foo.__init__  #@
@@ -789,31 +789,38 @@ def test_kw_only_decorator() -> None:
     foo_init: bases.UnboundMethod = next(foodef.infer())
     if PY310_PLUS:
         assert [a.name for a in foo_init.args.args] == ["self"]
-        assert [a.name for a in foo_init.args.kwonlyargs] == ["a", "b"]
+        assert [a.name for a in foo_init.args.kwonlyargs] == ["a", "e"]
     else:
-        assert [a.name for a in foo_init.args.args] == ["self", "a", "b"]
+        assert [a.name for a in foo_init.args.args] == ["self", "a", "e"]
         assert [a.name for a in foo_init.args.kwonlyargs] == []
 
     bar_init: bases.UnboundMethod = next(bardef.infer())
     if PY310_PLUS:
         assert [a.name for a in bar_init.args.args] == ["self", "c"]
-        assert [a.name for a in bar_init.args.kwonlyargs] == ["a", "b"]
+        assert [a.name for a in bar_init.args.kwonlyargs] == ["a", "e"]
     else:
-        assert [a.name for a in bar_init.args.args] == ["self", "a", "b", "c"]
+        assert [a.name for a in bar_init.args.args] == ["self", "a", "e", "c"]
         assert [a.name for a in bar_init.args.kwonlyargs] == []
 
     cee_init: bases.UnboundMethod = next(cee.infer())
     if PY310_PLUS:
         assert [a.name for a in cee_init.args.args] == ["self", "c", "d"]
-        assert [a.name for a in cee_init.args.kwonlyargs] == ["a", "b"]
+        assert [a.name for a in cee_init.args.kwonlyargs] == ["a", "e"]
     else:
-        assert [a.name for a in cee_init.args.args] == ["self", "a", "b", "c", "d"]
+        assert [a.name for a in cee_init.args.args] == ["self", "a", "e", "c", "d"]
         assert [a.name for a in cee_init.args.kwonlyargs] == []
 
     dee_init: bases.UnboundMethod = next(dee.infer())
     if PY310_PLUS:
         assert [a.name for a in dee_init.args.args] == ["self", "c", "d"]
-        assert [a.name for a in dee_init.args.kwonlyargs] == ["a", "b", "e"]
+        assert [a.name for a in dee_init.args.kwonlyargs] == ["a", "e", "e"]
     else:
-        assert [a.name for a in dee_init.args.args] == ["self", "a", "b", "c", "d", "e"]
+        assert [a.name for a in dee_init.args.args] == [
+            "self",
+            "a",
+            "e",
+            "c",
+            "d",
+            "ee",
+        ]
         assert [a.name for a in dee_init.args.kwonlyargs] == []
