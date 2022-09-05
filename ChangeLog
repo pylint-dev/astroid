@@ -13,9 +13,15 @@ Release date: TBA
   Refs PyCQA/pylint#5151
 
 
-What's New in astroid 2.12.6?
+What's New in astroid 2.12.7?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.12.6?
+=============================
+Release date: 2022-09-05
 
 * Fix a crash involving ``Uninferable`` arguments to ``namedtuple()``.
 
