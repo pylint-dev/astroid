@@ -625,12 +625,12 @@ def test_init_attributes_from_superclasses(module: str):
     """
     )
     init = next(node.infer())
-    assert [a.name for a in init.args.args] == ["self", "arg0", "arg2", "arg1"]
+    assert [a.name for a in init.args.args] == ["self", "arg0", "arg1", "arg2"]
     assert [a.as_string() if a else None for a in init.args.annotations] == [
         None,
         "float",
-        "list",  # not str
         "int",
+        "list",  # not str
     ]
 
 
@@ -747,3 +747,73 @@ def test_kw_only_sentinel() -> None:
 
     init = next(node_two.infer())
     assert [a.name for a in init.args.args] == expected
+
+
+def test_kw_only_decorator() -> None:
+    """Test that we update the signature correctly based on the keyword.
+
+    Keyword was introduced in PY310.
+    """
+    foodef, bardef, cee, dee = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+
+    @dataclass(kw_only=True)
+    class Foo:
+        a: int
+        b: str
+
+
+    @dataclass(kw_only=False)
+    class Bar(Foo):
+        c: int
+
+
+    @dataclass(kw_only=False)
+    class Cee(Bar):
+        d: int
+
+
+    @dataclass(kw_only=True)
+    class Dee(Cee):
+        e: int
+
+
+    Foo.__init__  #@
+    Bar.__init__  #@
+    Cee.__init__  #@
+    Dee.__init__  #@
+    """
+    )
+
+    foo_init: bases.UnboundMethod = next(foodef.infer())
+    if PY310_PLUS:
+        assert [a.name for a in foo_init.args.args] == ["self"]
+        assert [a.name for a in foo_init.args.kwonlyargs] == ["a", "b"]
+    else:
+        assert [a.name for a in foo_init.args.args] == ["self", "a", "b"]
+        assert [a.name for a in foo_init.args.kwonlyargs] == []
+
+    bar_init: bases.UnboundMethod = next(bardef.infer())
+    if PY310_PLUS:
+        assert [a.name for a in bar_init.args.args] == ["self", "c"]
+        assert [a.name for a in bar_init.args.kwonlyargs] == ["a", "b"]
+    else:
+        assert [a.name for a in bar_init.args.args] == ["self", "a", "b", "c"]
+        assert [a.name for a in bar_init.args.kwonlyargs] == []
+
+    cee_init: bases.UnboundMethod = next(cee.infer())
+    if PY310_PLUS:
+        assert [a.name for a in cee_init.args.args] == ["self", "c", "d"]
+        assert [a.name for a in cee_init.args.kwonlyargs] == ["a", "b"]
+    else:
+        assert [a.name for a in cee_init.args.args] == ["self", "a", "b", "c", "d"]
+        assert [a.name for a in cee_init.args.kwonlyargs] == []
+
+    dee_init: bases.UnboundMethod = next(dee.infer())
+    if PY310_PLUS:
+        assert [a.name for a in dee_init.args.args] == ["self", "c", "d"]
+        assert [a.name for a in dee_init.args.kwonlyargs] == ["a", "b", "e"]
+    else:
+        assert [a.name for a in dee_init.args.args] == ["self", "a", "b", "c", "d", "e"]
+        assert [a.name for a in dee_init.args.kwonlyargs] == []
