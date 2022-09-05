@@ -752,7 +752,7 @@ def test_kw_only_sentinel() -> None:
 def test_kw_only_decorator() -> None:
     """Test that we update the signature correctly based on the keyword.
 
-    Keyword was introduced in PY310.
+    kw_only was introduced in PY310.
     """
     foodef, bardef, cee, dee = astroid.extract_node(
         """
