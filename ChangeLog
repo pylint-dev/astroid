@@ -16,6 +16,10 @@ Release date: TBA
 
   Closes PyCQA/pylint#7375
 
+* The ``dataclass`` brain now understands the ``kw_only`` keyword in dataclass decorators.
+
+  Closes PyCQA/pylint#7290
+
 
 What's New in astroid 2.12.5?
 =============================

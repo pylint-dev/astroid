@@ -22,12 +22,7 @@ from typing import Tuple, Union
 from astroid import bases, context, helpers, inference_tip
 from astroid.builder import parse
 from astroid.const import PY39_PLUS, PY310_PLUS
-from astroid.exceptions import (
-    AstroidSyntaxError,
-    InferenceError,
-    MroError,
-    UseInferenceDefault,
-)
+from astroid.exceptions import AstroidSyntaxError, InferenceError, UseInferenceDefault
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import (
     AnnAssign,
@@ -89,21 +84,22 @@ def dataclass_transform(node: ClassDef) -> None:
     if not _check_generate_dataclass_init(node):
         return
 
-    try:
-        reversed_mro = list(reversed(node.mro()))
-    except MroError:
-        reversed_mro = [node]
+    kw_only_decorated = False
+    if PY310_PLUS and node.decorators.nodes:
+        for decorator in node.decorators.nodes:
+            if not isinstance(decorator, Call):
+                kw_only_decorated = False
+                break
+            for keyword in decorator.keywords:
+                if keyword.arg == "kw_only":
+                    kw_only_decorated = keyword.value.bool_value()
 
-    field_assigns = {}
-    field_order = []
-    for klass in (k for k in reversed_mro if is_decorated_with_dataclass(k)):
-        for assign_node in _get_dataclass_attributes(klass, init=True):
-            name = assign_node.target.name
-            if name not in field_assigns:
-                field_order.append(name)
-            field_assigns[name] = assign_node
+    init_str = _generate_dataclass_init(
+        node,
+        list(_get_dataclass_attributes(node, init=True)),
+        kw_only_decorated,
+    )
 
-    init_str = _generate_dataclass_init([field_assigns[name] for name in field_order])
     try:
         init_node = parse(init_str)["__init__"]
     except AstroidSyntaxError:
@@ -179,22 +175,24 @@ def _check_generate_dataclass_init(node: ClassDef) -> bool:
         return True
 
     # Check for keyword arguments of the form init=False
-    return all(
-        keyword.arg != "init"
-        and keyword.value.bool_value()  # type: ignore[union-attr] # value is never None
+    return not any(
+        keyword.arg == "init"
+        and not keyword.value.bool_value()  # type: ignore[union-attr] # value is never None
         for keyword in found.keywords
     )
 
 
-def _generate_dataclass_init(assigns: list[AnnAssign]) -> str:
+def _generate_dataclass_init(
+    node: ClassDef, assigns: list[AnnAssign], kw_only_decorated: bool
+) -> str:
     """Return an init method for a dataclass given the targets."""
-    target_names = []
-    params = []
-    assignments = []
+    params: list[str] = []
+    assignments: list[str] = []
+    assign_names: list[str] = []
 
     for assign in assigns:
         name, annotation, value = assign.target.name, assign.annotation, assign.value
-        target_names.append(name)
+        assign_names.append(name)
 
         if _is_init_var(annotation):  # type: ignore[arg-type] # annotation is never None
             init_var = True
@@ -208,10 +206,7 @@ def _generate_dataclass_init(assigns: list[AnnAssign]) -> str:
             init_var = False
             assignment_str = f"self.{name} = {name}"
 
-        if annotation:
-            param_str = f"{name}: {annotation.as_string()}"
-        else:
-            param_str = name
+        param_str = f"{name}: {annotation.as_string()}"
 
         if value:
             if isinstance(value, Call) and _looks_like_dataclass_field_call(
@@ -235,7 +230,45 @@ def _generate_dataclass_init(assigns: list[AnnAssign]) -> str:
         if not init_var:
             assignments.append(assignment_str)
 
-    params_string = ", ".join(["self"] + params)
+    try:
+        base: ClassDef = next(next(iter(node.bases)).infer())
+        base_init: FunctionDef | None = base.locals["__init__"][0]
+    except (StopIteration, InferenceError, KeyError):
+        base_init = None
+
+    prev_pos_only = ""
+    prev_kw_only = ""
+    if base_init and base.is_dataclass:
+        # Skip the self argument and check for duplicate arguments
+        all_arguments = base_init.args.format_args()[6:].split(", ")
+        arguments = ", ".join(
+            i for i in all_arguments if i.split(":")[0] not in assign_names
+        )
+        try:
+            prev_pos_only, prev_kw_only = arguments.split("*, ")
+        except ValueError:
+            prev_pos_only, prev_kw_only = arguments, ""
+
+        if prev_pos_only and not prev_pos_only.endswith(", "):
+            prev_pos_only += ", "
+
+    # Construct the new init method paramter string
+    params_string = "self, "
+    if prev_pos_only:
+        params_string += prev_pos_only
+    if not kw_only_decorated:
+        params_string += ", ".join(params)
+
+    if not params_string.endswith(", "):
+        params_string += ", "
+
+    if prev_kw_only:
+        params_string += "*, " + prev_kw_only + ", "
+        if kw_only_decorated:
+            params_string += ", ".join(params) + ", "
+    elif kw_only_decorated:
+        params_string += "*, " + ", ".join(params) + ", "
+
     assignments_string = "\n    ".join(assignments) if assignments else "pass"
     return f"def __init__({params_string}) -> None:\n    {assignments_string}"
 
