@@ -231,7 +231,9 @@ def _generate_dataclass_init(
             assignments.append(assignment_str)
 
     try:
-        base: ClassDef = next(next(iter(node.bases)).infer())
+        base = next(next(iter(node.bases)).infer())
+        if not isinstance(base, ClassDef):
+            raise InferenceError
         base_init: FunctionDef | None = base.locals["__init__"][0]
     except (StopIteration, InferenceError, KeyError):
         base_init = None
