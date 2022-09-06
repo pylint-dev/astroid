@@ -242,10 +242,7 @@ def _generate_dataclass_init(
     prev_kw_only = ""
     if base_init and base.is_dataclass:
         # Skip the self argument and check for duplicate arguments
-        all_arguments = base_init.args.format_args()[6:].split(", ")
-        arguments = ", ".join(
-            i for i in all_arguments if i.split(":")[0] not in assign_names
-        )
+        arguments = base_init.args.format_args(skippable_names=assign_names)[6:]
         try:
             prev_pos_only, prev_kw_only = arguments.split("*, ")
         except ValueError:
