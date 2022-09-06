@@ -8,9 +8,16 @@ Release date: TBA
 
 
 
-What's New in astroid 2.12.8?
+What's New in astroid 2.12.9?
 =============================
 Release date: TBA
+
+
+
+
+What's New in astroid 2.12.8?
+=============================
+Release date: 2022-09-06
 
 * Fixed a crash in the ``dataclass`` brain for ``InitVars`` without subscript typing.
 
