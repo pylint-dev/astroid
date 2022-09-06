@@ -17,6 +17,9 @@ What's New in astroid 2.12.8?
 =============================
 Release date: TBA
 
+* Fixed a crash in the ``dataclass`` brain for ``InitVars`` without subscript typing.
+
+  Closes PyCQA/pylint#7422
 
 
 What's New in astroid 2.12.7?

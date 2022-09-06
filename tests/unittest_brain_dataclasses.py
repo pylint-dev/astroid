@@ -847,3 +847,27 @@ def test_dataclass_with_unknown_base() -> None:
     )
 
     assert next(node.infer())
+
+
+def test_dataclass_with_unknown_typing() -> None:
+    """Regression test for dataclasses with unknown base classes.
+
+    Reported in https://github.com/PyCQA/pylint/issues/7422
+    """
+    node = astroid.extract_node(
+        """
+    from dataclasses import dataclass, InitVar
+
+
+    @dataclass
+    class TestClass:
+        '''Test Class'''
+
+        config: InitVar = None
+
+    TestClass.__init__  #@
+    """
+    )
+
+    init_def: bases.UnboundMethod = next(node.infer())
+    assert [a.name for a in init_def.args.args] == ["self", "config"]
