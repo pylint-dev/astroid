@@ -937,6 +937,8 @@ def _find_arg(argname, args, rec=False):
 def _format_args(
     args, defaults=None, annotations=None, skippable_names: set[str] | None = None
 ) -> str:
+    if skippable_names is None:
+        skippable_names = set()
     values = []
     if args is None:
         return ""
