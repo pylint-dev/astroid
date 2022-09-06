@@ -21,6 +21,9 @@ Release date: TBA
 
   Closes PyCQA/pylint#7422
 
+* Fixed parsing of default values in ``dataclass`` attributes.
+
+  Closes PyCQA/pylint#7425
 
 What's New in astroid 2.12.7?
 =============================

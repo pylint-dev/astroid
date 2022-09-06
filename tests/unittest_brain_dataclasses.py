@@ -871,3 +871,44 @@ def test_dataclass_with_unknown_typing() -> None:
 
     init_def: bases.UnboundMethod = next(node.infer())
     assert [a.name for a in init_def.args.args] == ["self", "config"]
+
+
+def test_dataclass_with_default_factory() -> None:
+    """Regression test for dataclasses with default values.
+
+    Reported in https://github.com/PyCQA/pylint/issues/7425
+    """
+    bad_node, good_node = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+    from typing import Union
+
+    @dataclass
+    class BadExampleParentClass:
+        xyz: Union[str, int]
+
+    @dataclass
+    class BadExampleClass(BadExampleParentClass):
+        xyz: str = ""
+
+    BadExampleClass.__init__  #@
+
+    @dataclass
+    class GoodExampleParentClass:
+        xyz: str
+
+    @dataclass
+    class GoodExampleClass(GoodExampleParentClass):
+        xyz: str = ""
+
+    GoodExampleClass.__init__  #@
+    """
+    )
+
+    bad_init: bases.UnboundMethod = next(bad_node.infer())
+    assert bad_init.args.defaults
+    assert [a.name for a in bad_init.args.args] == ["self", "xyz"]
+
+    good_init: bases.UnboundMethod = next(good_node.infer())
+    assert bad_init.args.defaults
+    assert [a.name for a in good_init.args.args] == ["self", "xyz"]
