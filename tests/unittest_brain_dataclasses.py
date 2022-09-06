@@ -824,3 +824,26 @@ def test_kw_only_decorator() -> None:
             "ee",
         ]
         assert [a.name for a in dee_init.args.kwonlyargs] == []
+
+
+def test_dataclass_with_unknown_base() -> None:
+    """Regression test for dataclasses with unknown base classes.
+
+    Reported in https://github.com/PyCQA/pylint/issues/7418
+    """
+    node = astroid.extract_node(
+        """
+    import dataclasses
+
+    from unknown import Unknown
+
+
+    @dataclasses.dataclass
+    class MyDataclass(Unknown):
+        pass
+
+    MyDataclass()
+    """
+    )
+
+    assert next(node.infer())

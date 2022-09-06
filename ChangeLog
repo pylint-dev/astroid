@@ -12,6 +12,9 @@ What's New in astroid 2.12.7?
 =============================
 Release date: TBA
 
+* Fixed a crash in the ``dataclass`` brain for uninferable bases.
+
+  Closes PyCQA/pylint#7418
 
 
 What's New in astroid 2.12.6?
