@@ -784,7 +784,7 @@ class Arguments(_base_nodes.AssignTypeNode):
         """Get all the arguments for this node, including positional only and positional and keyword"""
         return list(itertools.chain((self.posonlyargs or ()), self.args or ()))
 
-    def format_args(self):
+    def format_args(self, *, skippable_names: set[str] | None = None) -> str:
         """Get the arguments formatted as string.
 
         :returns: The formatted arguments.
@@ -804,6 +804,7 @@ class Arguments(_base_nodes.AssignTypeNode):
                     self.posonlyargs,
                     positional_only_defaults,
                     self.posonlyargs_annotations,
+                    skippable_names=skippable_names,
                 )
             )
             result.append("/")
@@ -813,6 +814,7 @@ class Arguments(_base_nodes.AssignTypeNode):
                     self.args,
                     positional_or_keyword_defaults,
                     getattr(self, "annotations", None),
+                    skippable_names=skippable_names,
                 )
             )
         if self.vararg:
@@ -822,7 +824,10 @@ class Arguments(_base_nodes.AssignTypeNode):
                 result.append("*")
             result.append(
                 _format_args(
-                    self.kwonlyargs, self.kw_defaults, self.kwonlyargs_annotations
+                    self.kwonlyargs,
+                    self.kw_defaults,
+                    self.kwonlyargs_annotations,
+                    skippable_names=skippable_names,
                 )
             )
         if self.kwarg:
@@ -929,7 +934,11 @@ def _find_arg(argname, args, rec=False):
     return None, None
 
 
-def _format_args(args, defaults=None, annotations=None):
+def _format_args(
+    args, defaults=None, annotations=None, skippable_names: set[str] | None = None
+) -> str:
+    if skippable_names is None:
+        skippable_names = set()
     values = []
     if args is None:
         return ""
@@ -939,6 +948,8 @@ def _format_args(args, defaults=None, annotations=None):
         default_offset = len(args) - len(defaults)
     packed = itertools.zip_longest(args, annotations)
     for i, (arg, annotation) in enumerate(packed):
+        if arg.name in skippable_names:
+            continue
         if isinstance(arg, Tuple):
             values.append(f"({_format_args(arg.elts)})")
         else:
