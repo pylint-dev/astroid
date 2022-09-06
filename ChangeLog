@@ -17,7 +17,9 @@ What's New in astroid 2.12.8?
 =============================
 Release date: TBA
 
+* Fixed parsing of default values in ``dataclass`` attributes.
 
+  Closes PyCQA/pylint#7425
 
 What's New in astroid 2.12.7?
 =============================
