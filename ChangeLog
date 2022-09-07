@@ -17,6 +17,9 @@ What's New in astroid 2.12.9?
 =============================
 Release date: TBA
 
+* Fixed a crash on ``namedtuples`` that use ``typename`` to specify their name.
+
+  Closes PyCQA/pylint#7429
 
 
 What's New in astroid 2.12.8?
