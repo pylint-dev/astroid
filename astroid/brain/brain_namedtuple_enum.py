@@ -543,7 +543,7 @@ def _get_namedtuple_fields(node: nodes.Call) -> str:
         container = next(node.args[1].infer())
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
-    # We pass on IndexError as well try to infer 'field_names' from the keywords
+    # We pass on IndexError as we'll try to infer 'field_names' from the keywords
     except IndexError:
         pass
     if not container:
