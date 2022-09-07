@@ -434,6 +434,23 @@ class NamedTupleTest(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIs(util.Uninferable, inferred)
 
+    def test_name_as_typename(self) -> None:
+        """Reported in https://github.com/PyCQA/pylint/issues/7429 as a crash."""
+        good_node, good_node_two, bad_node = builder.extract_node(
+            """
+            import collections
+            collections.namedtuple(typename="MyTuple", field_names=["birth_date", "city"])  #@
+            collections.namedtuple("MyTuple", field_names=["birth_date", "city"])  #@
+            collections.namedtuple(["birth_date", "city"], typename="MyTuple")  #@
+        """
+        )
+        good_inferred = next(good_node.infer())
+        assert isinstance(good_inferred, nodes.ClassDef)
+        good_node_two_inferred = next(good_node_two.infer())
+        assert isinstance(good_node_two_inferred, nodes.ClassDef)
+        bad_node_inferred = next(bad_node.infer())
+        assert bad_node_inferred == util.Uninferable
+
 
 class DefaultDictTest(unittest.TestCase):
     def test_1(self) -> None:
