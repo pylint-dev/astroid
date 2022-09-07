@@ -177,6 +177,45 @@ def _check_generate_dataclass_init(node: nodes.ClassDef) -> bool:
     )
 
 
+def _find_arguments_from_base_classes(
+    node: nodes.ClassDef, skippable_names: set[str]
+) -> tuple[str, str]:
+    """Iterate through all bases and add them to the list of arguments to add to the init."""
+    prev_pos_only = ""
+    prev_kw_only = ""
+    for base in node.mro():
+        if not base.is_dataclass:
+            continue
+        try:
+            base_init: nodes.FunctionDef = base.locals["__init__"][0]
+        except KeyError:
+            continue
+
+        # Skip the self argument and check for duplicate arguments
+        arguments = base_init.args.format_args(skippable_names=skippable_names)
+        try:
+            new_prev_pos_only, new_prev_kw_only = arguments.split("*, ")
+        except ValueError:
+            new_prev_pos_only, new_prev_kw_only = arguments, ""
+
+        if new_prev_pos_only:
+            # The split on '*, ' can crete a pos_only string that consists only of a comma
+            if new_prev_pos_only == ", ":
+                new_prev_pos_only = ""
+            elif not new_prev_pos_only.endswith(", "):
+                new_prev_pos_only += ", "
+
+        # Dataclasses put last seen arguments at the front of the init
+        prev_pos_only = new_prev_pos_only + prev_pos_only
+        prev_kw_only = new_prev_kw_only + prev_kw_only
+
+        # Add arguments to skippable arguments
+        skippable_names.update(arg.name for arg in base_init.args.args)
+        skippable_names.update(arg.name for arg in base_init.args.kwonlyargs)
+
+    return prev_pos_only, prev_kw_only
+
+
 def _generate_dataclass_init(
     node: nodes.ClassDef, assigns: list[nodes.AnnAssign], kw_only_decorated: bool
 ) -> str:
@@ -228,26 +267,9 @@ def _generate_dataclass_init(
         if not init_var:
             assignments.append(assignment_str)
 
-    try:
-        base = next(next(iter(node.bases)).infer())
-        if not isinstance(base, nodes.ClassDef):
-            raise InferenceError
-        base_init: nodes.FunctionDef | None = base.locals["__init__"][0]
-    except (StopIteration, InferenceError, KeyError):
-        base_init = None
-
-    prev_pos_only = ""
-    prev_kw_only = ""
-    if base_init and base.is_dataclass:
-        # Skip the self argument and check for duplicate arguments
-        arguments = base_init.args.format_args(skippable_names=assign_names)[6:]
-        try:
-            prev_pos_only, prev_kw_only = arguments.split("*, ")
-        except ValueError:
-            prev_pos_only, prev_kw_only = arguments, ""
-
-        if prev_pos_only and not prev_pos_only.endswith(", "):
-            prev_pos_only += ", "
+    prev_pos_only, prev_kw_only = _find_arguments_from_base_classes(
+        node, set(assign_names + ["self"])
+    )
 
     # Construct the new init method paramter string
     params_string = "self, "
