@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
+What's New in astroid 2.12.10?
+==============================
+Release date: TBA
+
+
+
 What's New in astroid 2.12.9?
 =============================
-Release date: TBA
+Release date: 2022-09-07
 
 * Fixed creation of the ``__init__`` of ``dataclassess`` with multiple inheritance.
 
