@@ -538,10 +538,22 @@ def _get_namedtuple_fields(node: nodes.Call) -> str:
     extract a node from them later on.
     """
     names = []
+    container = None
     try:
         container = next(node.args[1].infer())
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
+    # We pass on IndexError as we'll try to infer 'field_names' from the keywords
+    except IndexError:
+        pass
+    if not container:
+        for keyword_node in node.keywords:
+            if keyword_node.arg == "field_names":
+                try:
+                    container = next(keyword_node.value.infer())
+                except (InferenceError, StopIteration) as exc:
+                    raise UseInferenceDefault from exc
+                break
     if not isinstance(container, nodes.BaseContainer):
         raise UseInferenceDefault
     for elt in container.elts:
