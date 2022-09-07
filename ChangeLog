@@ -17,6 +17,10 @@ What's New in astroid 2.12.9?
 =============================
 Release date: TBA
 
+* Fixed creation of the ``__init__`` of ``dataclassess`` with multiple inheritance.
+
+  Closes PyCQA/pylint#7427
+
 * Fixed a crash on ``namedtuples`` that use ``typename`` to specify their name.
 
   Closes PyCQA/pylint#7429

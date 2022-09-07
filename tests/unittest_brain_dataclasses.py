@@ -912,3 +912,135 @@ def test_dataclass_with_default_factory() -> None:
     good_init: bases.UnboundMethod = next(good_node.infer())
     assert bad_init.args.defaults
     assert [a.name for a in good_init.args.args] == ["self", "xyz"]
+
+
+def test_dataclass_with_multiple_inheritance() -> None:
+    """Regression test for dataclasses with multiple inheritance.
+
+    Reported in https://github.com/PyCQA/pylint/issues/7427
+    """
+    first, second, overwritten, overwriting, mixed = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+
+    @dataclass
+    class BaseParent:
+        _abc: int = 1
+
+    @dataclass
+    class AnotherParent:
+        ef: int = 2
+
+    @dataclass
+    class FirstChild(BaseParent, AnotherParent):
+        ghi: int = 3
+
+    @dataclass
+    class ConvolutedParent(AnotherParent):
+        '''Convoluted Parent'''
+
+    @dataclass
+    class SecondChild(BaseParent, ConvolutedParent):
+        jkl: int = 4
+
+    @dataclass
+    class OverwritingParent:
+        ef: str = "2"
+
+    @dataclass
+    class OverwrittenChild(OverwritingParent, AnotherParent):
+        '''Overwritten Child'''
+
+    @dataclass
+    class OverwritingChild(BaseParent, AnotherParent):
+        _abc: float = 1.0
+        ef: float = 2.0
+
+    class NotADataclassParent:
+        ef: int = 2
+
+    @dataclass
+    class ChildWithMixedParents(BaseParent, NotADataclassParent):
+        ghi: int = 3
+
+    FirstChild.__init__  #@
+    SecondChild.__init__  #@
+    OverwrittenChild.__init__  #@
+    OverwritingChild.__init__  #@
+    ChildWithMixedParents.__init__  #@
+    """
+    )
+
+    first_init: bases.UnboundMethod = next(first.infer())
+    assert [a.name for a in first_init.args.args] == ["self", "ef", "_abc", "ghi"]
+    assert [a.value for a in first_init.args.defaults] == [2, 1, 3]
+
+    second_init: bases.UnboundMethod = next(second.infer())
+    assert [a.name for a in second_init.args.args] == ["self", "ef", "_abc", "jkl"]
+    assert [a.value for a in second_init.args.defaults] == [2, 1, 4]
+
+    overwritten_init: bases.UnboundMethod = next(overwritten.infer())
+    assert [a.name for a in overwritten_init.args.args] == ["self", "ef"]
+    assert [a.value for a in overwritten_init.args.defaults] == ["2"]
+
+    overwriting_init: bases.UnboundMethod = next(overwriting.infer())
+    assert [a.name for a in overwriting_init.args.args] == ["self", "_abc", "ef"]
+    assert [a.value for a in overwriting_init.args.defaults] == [1.0, 2.0]
+
+    mixed_init: bases.UnboundMethod = next(mixed.infer())
+    assert [a.name for a in mixed_init.args.args] == ["self", "_abc", "ghi"]
+    assert [a.value for a in mixed_init.args.defaults] == [1, 3]
+
+
+def test_dataclass_inits_of_non_dataclasses() -> None:
+    """Regression test for __init__ mangling for non dataclasses.
+
+    Regression test against changes tested in test_dataclass_with_multiple_inheritance
+    """
+    first, second, third = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+
+    @dataclass
+    class DataclassParent:
+        _abc: int = 1
+
+
+    class NotADataclassParent:
+        ef: int = 2
+
+
+    class FirstChild(DataclassParent, NotADataclassParent):
+        ghi: int = 3
+
+
+    class SecondChild(DataclassParent, NotADataclassParent):
+        ghi: int = 3
+
+        def __init__(self, ef: int = 3):
+            self.ef = ef
+
+
+    class ThirdChild(NotADataclassParent, DataclassParent):
+        ghi: int = 3
+
+        def __init__(self, ef: int = 3):
+            self.ef = ef
+
+    FirstChild.__init__  #@
+    SecondChild.__init__  #@
+    ThirdChild.__init__  #@
+    """
+    )
+
+    first_init: bases.UnboundMethod = next(first.infer())
+    assert [a.name for a in first_init.args.args] == ["self", "_abc"]
+    assert [a.value for a in first_init.args.defaults] == [1]
+
+    second_init: bases.UnboundMethod = next(second.infer())
+    assert [a.name for a in second_init.args.args] == ["self", "ef"]
+    assert [a.value for a in second_init.args.defaults] == [3]
+
+    third_init: bases.UnboundMethod = next(third.infer())
+    assert [a.name for a in third_init.args.args] == ["self", "ef"]
+    assert [a.value for a in third_init.args.defaults] == [3]
