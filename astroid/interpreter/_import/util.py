@@ -49,7 +49,13 @@ def is_namespace(modname: str) -> bool:
                 # .pth files will be on sys.modules
                 # __spec__ is set inconsistently on PyPy so we can't really on the heuristic here
                 # See: https://foss.heptapod.net/pypy/pypy/-/issues/3736
-                return sys.modules[modname].__spec__ is None and not IS_PYPY
+                # Check first fragment of modname, e.g. "astroid", not "astroid.interpreter"
+                # because of cffi's behavior
+                # See: https://github.com/PyCQA/astroid/issues/1776
+                return (
+                    sys.modules[processed_components[0]].__spec__ is None
+                    and not IS_PYPY
+                )
             except KeyError:
                 return False
             except AttributeError:

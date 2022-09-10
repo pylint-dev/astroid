@@ -17,6 +17,10 @@ What's New in astroid 2.12.10?
 ==============================
 Release date: TBA
 
+* Fixed a crash when introspecting modules compiled by `cffi`.
+
+  Closes #1776
+  Closes PyCQA/pylint#7399
 
 
 What's New in astroid 2.12.9?
