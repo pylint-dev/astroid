@@ -9,7 +9,7 @@ repos:
         exclude: .github/|tests/testdata
       - id: end-of-file-fixer
         exclude: tests/testdata
-  - repo: https://github.com/myint/autoflake
+  - repo: https://github.com/PyCQA/autoflake
     rev: v1.5.3
     hooks:
       - id: autoflake
