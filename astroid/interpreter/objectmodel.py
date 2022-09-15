@@ -795,7 +795,9 @@ class PropertyModel(ObjectModel):
     """Model for a builtin property"""
 
     def _init_function(self, name):
-        args = nodes.Arguments()
+        function = nodes.FunctionDef(name=name, parent=self._instance)
+
+        args = nodes.Arguments(parent=function)
         args.postinit(
             args=[],
             defaults=[],
@@ -806,8 +808,6 @@ class PropertyModel(ObjectModel):
             posonlyargs_annotations=[],
             kwonlyargs_annotations=[],
         )
-
-        function = nodes.FunctionDef(name=name, parent=self._instance)
 
         function.postinit(args=args, body=[])
         return function
