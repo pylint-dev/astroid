@@ -17,7 +17,9 @@ What's New in astroid 2.12.10?
 ==============================
 Release date: TBA
 
+* ``decorators.cached`` now gets its cache cleared by calling ``AstroidManager.clear_cache``.
 
+  Refs #1780
 
 What's New in astroid 2.12.9?
 =============================
