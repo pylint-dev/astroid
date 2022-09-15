@@ -10,6 +10,7 @@ import functools
 import inspect
 import sys
 import warnings
+import weakref
 from collections.abc import Callable
 from typing import TypeVar
 
@@ -32,8 +33,10 @@ _P = ParamSpec("_P")
 def cached(func, instance, args, kwargs):
     """Simple decorator to cache result of method calls without args."""
     cache = getattr(instance, "__cache", None)
+    # Use a WeakKeyDictionary to allow the garbage collector to remove entries
+    # that only exist in the cache.
     if cache is None:
-        instance.__cache = cache = {}
+        instance.__cache = cache = weakref.WeakKeyDictionary()
     try:
         return cache[func]
     except KeyError:

@@ -17,7 +17,10 @@ What's New in astroid 2.12.10?
 ==============================
 Release date: TBA
 
+* ``decorators.cached`` now uses a ``WeakKeyDictionary`` to allow the garbave collector
+  to remove entries when possible.
 
+  Refs #1780
 
 What's New in astroid 2.12.9?
 =============================
