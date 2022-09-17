@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.12.10?
+What's New in astroid 2.12.11?
 ==============================
 Release date: TBA
+
+
+
+What's New in astroid 2.12.10?
+==============================
+Release date: 2022-09-17
 
 
 * Fixed a crash when introspecting modules compiled by `cffi`.
