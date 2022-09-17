@@ -2811,7 +2811,9 @@ class ClassDef(
             return builtin_lookup("type")[1][0]
         return None
 
-    def declared_metaclass(self, context=None):
+    def declared_metaclass(
+        self, context: InferenceContext | None = None
+    ) -> NodeNG | None:
         """Return the explicit declared metaclass for the current class.
 
         An explicit declared metaclass is defined
@@ -2822,7 +2824,6 @@ class ClassDef(
 
         :returns: The metaclass of this class,
             or None if one could not be found.
-        :rtype: NodeNG or None
         """
         for base in self.bases:
             try:
@@ -2840,14 +2841,16 @@ class ClassDef(
                 return next(
                     node
                     for node in self._metaclass.infer(context=context)
-                    if node is not util.Uninferable
+                    if isinstance(node, NodeNG)
                 )
             except (InferenceError, StopIteration):
                 return None
 
         return None
 
-    def _find_metaclass(self, seen=None, context=None):
+    def _find_metaclass(
+        self, seen: set[ClassDef] | None = None, context: InferenceContext | None = None
+    ) -> NodeNG | None:
         if seen is None:
             seen = set()
         seen.add(self)
@@ -2861,7 +2864,7 @@ class ClassDef(
                         break
         return klass
 
-    def metaclass(self, context=None):
+    def metaclass(self, context: InferenceContext | None = None) -> NodeNG | None:
         """Get the metaclass of this class.
 
         If this class does not define explicitly a metaclass,
@@ -2869,7 +2872,6 @@ class ClassDef(
         instead.
 
         :returns: The metaclass of this class.
-        :rtype: NodeNG or None
         """
         return self._find_metaclass(context=context)
 
