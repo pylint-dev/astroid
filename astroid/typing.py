@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Any, Callable, Union
+from typing import TYPE_CHECKING, Any, Callable, Generator, TypeVar, Union
 
 if TYPE_CHECKING:
     from astroid import bases, nodes, transforms, util
@@ -15,6 +15,8 @@ if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
     from typing_extensions import TypedDict
+
+_NodesT = TypeVar("_NodesT", bound="nodes.NodeNG")
 
 
 class InferenceErrorInfo(TypedDict):
@@ -51,4 +53,16 @@ ConstFactoryResult = Union[
     "nodes.Dict",
     "nodes.Const",
     "nodes.EmptyNode",
+]
+
+InferBinaryOp = Callable[
+    [
+        Union[_NodesT, "bases.Instance"],
+        Union["nodes.AugAssign", "nodes.BinOp"],
+        str,
+        InferenceResult,
+        "InferenceContext",
+        SuccessfulInferenceResult,
+    ],
+    Generator[InferenceResult, None, None],
 ]

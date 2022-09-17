@@ -11,7 +11,7 @@ import collections
 import collections.abc
 import sys
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, ClassVar
 
 from astroid import decorators, nodes
 from astroid.const import PY310_PLUS
@@ -27,7 +27,7 @@ from astroid.exceptions import (
     InferenceError,
     NameInferenceError,
 )
-from astroid.typing import InferenceErrorInfo, InferenceResult
+from astroid.typing import InferBinaryOp, InferenceErrorInfo, InferenceResult
 from astroid.util import Uninferable, lazy_descriptor, lazy_import
 
 if sys.version_info >= (3, 8):
@@ -316,6 +316,8 @@ class Instance(BaseInstance):
 
     def __init__(self, proxied: nodes.ClassDef | None) -> None:
         super().__init__(proxied)
+
+    infer_binary_op: ClassVar[InferBinaryOp[Instance]]
 
     def __repr__(self):
         return "<Instance of {}.{} at 0x{}>".format(
