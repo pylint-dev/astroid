@@ -11,8 +11,9 @@ import ast
 import functools
 import itertools
 import operator
+import typing
 from collections.abc import Callable, Generator, Iterable, Iterator
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
 
 from astroid import bases, decorators, helpers, nodes, protocols, util
 from astroid.context import (
@@ -45,15 +46,24 @@ if TYPE_CHECKING:
 # Prevents circular imports
 objects = util.lazy_import("objects")
 
-
-_FunctionDefT = TypeVar("_FunctionDefT", bound=nodes.FunctionDef)
-
-
-# .infer method ###############################################################
-
-
 _T = TypeVar("_T")
 _BaseContainerT = TypeVar("_BaseContainerT", bound=nodes.BaseContainer)
+_FunctionDefT = TypeVar("_FunctionDefT", bound=nodes.FunctionDef)
+
+GetFlowFactory = typing.Callable[
+    [
+        InferenceResult,
+        Optional[InferenceResult],
+        Union[nodes.AugAssign, nodes.BinOp],
+        InferenceResult,
+        Optional[InferenceResult],
+        InferenceContext,
+        InferenceContext,
+    ],
+    Any,
+]
+
+# .infer method ###############################################################
 
 
 def infer_end(
@@ -652,7 +662,14 @@ def _infer_old_style_string_formatting(
         return (util.Uninferable,)
 
 
-def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
+def _invoke_binop_inference(
+    instance: InferenceResult,
+    opnode: nodes.AugAssign | nodes.BinOp,
+    op: str,
+    other: InferenceResult,
+    context: InferenceContext,
+    method_name: str,
+):
     """Invoke binary operation inference on the given instance."""
     methods = dunder_lookup.lookup(instance, method_name)
     context = bind_context_to_node(context, instance)
@@ -675,7 +692,14 @@ def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     return instance.infer_binary_op(opnode, op, other, context, inferred)
 
 
-def _aug_op(instance, opnode, op, other, context, reverse=False):
+def _aug_op(
+    instance: InferenceResult,
+    opnode: nodes.AugAssign,
+    op: str,
+    other: InferenceResult,
+    context: InferenceContext,
+    reverse: bool = False,
+):
     """Get an inference callable for an augmented binary operation."""
     method_name = protocols.AUGMENTED_OP_METHOD[op]
     return functools.partial(
@@ -689,7 +713,14 @@ def _aug_op(instance, opnode, op, other, context, reverse=False):
     )
 
 
-def _bin_op(instance, opnode, op, other, context, reverse=False):
+def _bin_op(
+    instance: InferenceResult,
+    opnode: nodes.AugAssign | nodes.BinOp,
+    op: str,
+    other: InferenceResult,
+    context: InferenceContext,
+    reverse: bool = False,
+):
     """Get an inference callable for a normal binary operation.
 
     If *reverse* is True, then the reflected method will be used instead.
@@ -731,7 +762,13 @@ def _same_type(type1, type2):
 
 
 def _get_binop_flow(
-    left, left_type, binary_opnode, right, right_type, context, reverse_context
+    left: InferenceResult,
+    left_type: InferenceResult | None,
+    binary_opnode: nodes.AugAssign | nodes.BinOp,
+    right: InferenceResult,
+    right_type: InferenceResult | None,
+    context: InferenceContext,
+    reverse_context: InferenceContext,
 ):
     """Get the flow for binary operations.
 
@@ -766,7 +803,13 @@ def _get_binop_flow(
 
 
 def _get_aug_flow(
-    left, left_type, aug_opnode, right, right_type, context, reverse_context
+    left: InferenceResult,
+    left_type: InferenceResult | None,
+    aug_opnode: nodes.AugAssign,
+    right: InferenceResult,
+    right_type: InferenceResult | None,
+    context: InferenceContext,
+    reverse_context: InferenceContext,
 ):
     """Get the flow for augmented binary operations.
 
@@ -810,7 +853,13 @@ def _get_aug_flow(
     return methods
 
 
-def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
+def _infer_binary_operation(
+    left: InferenceResult,
+    right: InferenceResult,
+    binary_opnode: nodes.AugAssign | nodes.BinOp,
+    context: InferenceContext,
+    flow_factory: GetFlowFactory,
+):
     """Infer a binary operation between a left operand and a right operand
 
     This is used by both normal binary operations and augmented binary
