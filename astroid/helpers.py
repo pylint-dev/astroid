@@ -70,8 +70,7 @@ def _object_type(
         elif isinstance(inferred, (bases.Proxy, nodes.Slice)):
             yield inferred._proxied
         else:  # pragma: no cover
-            # We don't handle other node types returned by infer currently
-            raise AssertionError()
+            raise AssertionError(f"We don't handle {type(inferred)} currently")
 
 
 def object_type(
