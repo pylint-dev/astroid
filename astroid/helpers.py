@@ -8,6 +8,8 @@ Various helper utilities.
 
 from __future__ import annotations
 
+from collections.abc import Generator
+
 from astroid import bases, manager, nodes, raw_building, util
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
@@ -18,7 +20,7 @@ from astroid.exceptions import (
     _NonDeducibleTypeHierarchy,
 )
 from astroid.nodes import scoped_nodes
-from astroid.typing import InferenceResult
+from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 
 def _build_proxy_class(cls_name: str, builtins: nodes.Module) -> nodes.ClassDef:
@@ -42,7 +44,9 @@ def _function_type(
     return _build_proxy_class(cls_name, builtins)
 
 
-def _object_type(node, context=None):
+def _object_type(
+    node: SuccessfulInferenceResult, context: InferenceContext | None = None
+) -> Generator[InferenceResult | None, None, None]:
     astroid_manager = manager.AstroidManager()
     builtins = astroid_manager.builtins_module
     context = context or InferenceContext()
@@ -61,11 +65,18 @@ def _object_type(node, context=None):
             yield _build_proxy_class("module", builtins)
         elif isinstance(inferred, nodes.Unknown):
             raise InferenceError
-        else:
+        elif inferred is util.Uninferable:
+            yield inferred
+        elif isinstance(inferred, (bases.Proxy, nodes.Slice)):
             yield inferred._proxied
+        else:  # pragma: no cover
+            # We don't handle other node types returned by infer currently
+            raise AssertionError()
 
 
-def object_type(node, context=None):
+def object_type(
+    node: SuccessfulInferenceResult, context: InferenceContext | None = None
+) -> InferenceResult | None:
     """Obtain the type of the given node
 
     This is used to implement the ``type`` builtin, which means that it's

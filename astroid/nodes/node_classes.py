@@ -3738,7 +3738,7 @@ class Slice(NodeNG):
         return attr
 
     @cached_property
-    def _proxied(self):
+    def _proxied(self) -> nodes.ClassDef:
         builtins = AstroidManager().builtins_module
         return builtins.getattr("slice")[0]
 
