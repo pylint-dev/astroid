@@ -16,6 +16,7 @@ import zipimport
 from importlib.util import find_spec, module_from_spec
 from typing import TYPE_CHECKING, ClassVar
 
+from astroid._cache import CACHE_MANAGER
 from astroid.const import BRAIN_MODULES_DIRECTORY
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec, util
@@ -381,6 +382,8 @@ class AstroidManager:
         self.astroid_cache.clear()
         # NB: not a new TransformVisitor()
         AstroidManager.brain["_transform"].transforms = collections.defaultdict(list)
+
+        CACHE_MANAGER.clear_all_caches()
 
         for lru_cache in (
             LookupMixIn.lookup,

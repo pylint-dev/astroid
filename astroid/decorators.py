@@ -15,7 +15,7 @@ from typing import TypeVar
 
 import wrapt
 
-from astroid import util
+from astroid import _cache, util
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
 
@@ -34,6 +34,7 @@ def cached(func, instance, args, kwargs):
     cache = getattr(instance, "__cache", None)
     if cache is None:
         instance.__cache = cache = {}
+        _cache.CACHE_MANAGER.add_dict_cache(cache)
     try:
         return cache[func]
     except KeyError:
