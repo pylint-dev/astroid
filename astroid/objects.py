@@ -138,7 +138,9 @@ class Super(node_classes.NodeNG):
     def qname(self) -> Literal["super"]:
         return "super"
 
-    def igetattr(self, name: str, context: InferenceContext | None = None):
+    def igetattr(  # noqa: C901
+        self, name: str, context: InferenceContext | None = None
+    ):
         """Retrieve the inferred values of the given attribute name."""
         # '__class__' is a special attribute that should be taken directly
         # from the special attributes dict
