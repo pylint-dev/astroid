@@ -228,7 +228,7 @@ class-attribute-rgx = "([A-Za-z_][A-Za-z0-9_]{2,30}|(__.*__))$"
 no-docstring-rgx = "__.*__"
 # Minimum line length for functions/classes that require docstrings, shorter
 # ones are exempt.
-docstring-min-length = -1.0
+docstring-min-length = -1
 
 [tool.pylint.format]
 # Maximum number of characters on a single line.
