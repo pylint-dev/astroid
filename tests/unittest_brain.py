@@ -1473,7 +1473,8 @@ class CollectionsBrain(unittest.TestCase):
 
     @test_utils.require_version(minver="3.9")
     def test_collections_object_subscriptable_3(self):
-        """With python39 ByteString class of the colletions module is subscritable (but not the same class from typing module)"""
+        """With Python 3.9 the ByteString class of the collections module is subscritable
+        (but not the same class from typing module)"""
         right_node = builder.extract_node(
             """
         import collections.abc
@@ -1984,7 +1985,8 @@ class TypingBrain(unittest.TestCase):
         )
 
     def test_typing_object_notsubscriptable_3(self):
-        """Until python39 ByteString class of the typing module is not subscritable (whereas it is in the collections module)"""
+        """Until python39 ByteString class of the typing module is not
+        subscriptable (whereas it is in the collections' module)"""
         right_node = builder.extract_node(
             """
         import typing
