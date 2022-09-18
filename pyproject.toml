@@ -79,11 +79,11 @@ show_error_codes = true
 warn_redundant_casts = true
 
 [[tool.mypy.overrides]]
-# Importlib typeshed stubs do not include the private functions we use
+ignore_missing_imports = true
 module = [
     "_io.*",
     "gi.*",
-    "importlib.*",
+    "importlib.*",  # Importlib typeshed stubs do not include the private functions we use
     "lazy_object_proxy.*",
     "nose.*",
     "numpy.*",
@@ -91,7 +91,6 @@ module = [
     "setuptools",
     "wrapt.*",
 ]
-ignore_missing_imports = true
 
 [tool.pylint.main]
 # Analyse import fallback blocks. This can be used to support both Python 2 and 3
