@@ -452,13 +452,51 @@ confidence = ["HIGH", "CONTROL_FLOW", "INFERENCE", "INFERENCE_FAILURE", "UNDEFIN
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-disable = ["raw-checker-failed", "bad-inline-option", "locally-disabled", "file-ignored", "suppressed-message", "deprecated-pragma", "use-symbolic-message-instead", "fixme", "invalid-name", "missing-module-docstring", "missing-class-docstring", "missing-function-docstring", "too-few-public-methods", "too-many-public-methods", "too-many-boolean-expressions", "too-many-branches", "too-many-statements", "cyclic-import", "protected-access", "unused-argument", "line-too-long", "too-many-lines", "trailing-whitespace", "missing-final-newline", "trailing-newlines", "bad-indentation", "unnecessary-semicolon", "multiple-statements", "superfluous-parens", "mixed-line-endings", "unexpected-line-ending-format", "useless-option-value", "unknown-option-value", "duplicate-code", "consider-using-f-string"]
+disable = [
+    "bad-builtin",
+    "bad-indentation",
+    "bad-inline-option",
+    "consider-using-f-string",
+    "cyclic-import",
+    "deprecated-pragma",
+    "duplicate-code",
+    "file-ignored",
+    "fixme",
+    "invalid-name",
+    "line-too-long",
+    "locally-disabled",
+    "missing-class-docstring",
+    "missing-final-newline",
+    "missing-function-docstring",
+    "missing-module-docstring",
+    "mixed-line-endings",
+    "multiple-statements",
+    "protected-access",
+    "raw-checker-failed",
+    "superfluous-parens",
+    "suppressed-message",
+    "too-few-public-methods",
+    "too-many-boolean-expressions",
+    "too-many-branches",
+    "too-many-lines",
+    "too-many-public-methods",
+    "too-many-statements",
+    "trailing-newlines",
+    "trailing-whitespace",
+    "unexpected-line-ending-format",
+    "unknown-option-value",
+    "unnecessary-semicolon",
+    "unused-argument",
+    "use-symbolic-message-instead",
+    "useless-option-value",
+    "useless-suppression"
+]
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
 # multiple time (only on the command line, not in the configuration file where it
 # should appear only once). See also the "--disable" option for examples.
-enable = ["useless-suppression", "c-extension-no-member"]
+enable = ["c-extension-no-member"]
 
 [tool.pylint.method_args]
 # List of qualified names (i.e., library.method) which require a timeout
