@@ -21,10 +21,16 @@ from astroid.const import BRAIN_MODULES_DIRECTORY
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec, util
 from astroid.modutils import (
-    NoSourceFile, _cache_normalize_path_, file_info_from_modpath,
-    get_source_file, is_module_name_part_of_extension_package_whitelist,
-    is_python_source, is_standard_module, load_module_from_name,
-    modpath_from_file)
+    NoSourceFile,
+    _cache_normalize_path_,
+    file_info_from_modpath,
+    get_source_file,
+    is_module_name_part_of_extension_package_whitelist,
+    is_python_source,
+    is_standard_module,
+    load_module_from_name,
+    modpath_from_file,
+)
 from astroid.transforms import TransformVisitor
 from astroid.typing import AstroidManagerBrain
 
@@ -367,8 +373,7 @@ class AstroidManager:
         The bootstrap usually involves building the AST for the builtins
         module, which is required by the rest of astroid to work correctly.
         """
-        from astroid import \
-            raw_building  # pylint: disable=import-outside-toplevel
+        from astroid import raw_building  # pylint: disable=import-outside-toplevel
 
         raw_building._astroid_bootstrapping()
 

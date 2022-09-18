@@ -5,8 +5,12 @@
 import logging
 
 import pytest
-from bump_changelog import (VersionType, get_next_version, get_next_versions,
-                            transform_content)
+from bump_changelog import (
+    VersionType,
+    get_next_version,
+    get_next_versions,
+    transform_content,
+)
 
 
 @pytest.mark.parametrize(

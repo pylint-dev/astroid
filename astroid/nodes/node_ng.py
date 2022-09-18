@@ -9,14 +9,27 @@ import sys
 import warnings
 from collections.abc import Generator, Iterator
 from functools import singledispatch as _singledispatch
-from typing import (TYPE_CHECKING, Any, ClassVar, Tuple, Type, TypeVar, Union,
-                    cast, overload)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from astroid import decorators, util
 from astroid.context import InferenceContext
-from astroid.exceptions import (AstroidError, InferenceError,
-                                ParentMissingError, StatementMissing,
-                                UseInferenceDefault)
+from astroid.exceptions import (
+    AstroidError,
+    InferenceError,
+    ParentMissingError,
+    StatementMissing,
+    UseInferenceDefault,
+)
 from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE

@@ -15,10 +15,18 @@ from typing import Any
 
 from astroid import decorators, nodes
 from astroid.const import PY310_PLUS
-from astroid.context import (CallContext, InferenceContext,
-                             bind_context_to_node, copy_context)
-from astroid.exceptions import (AstroidTypeError, AttributeInferenceError,
-                                InferenceError, NameInferenceError)
+from astroid.context import (
+    CallContext,
+    InferenceContext,
+    bind_context_to_node,
+    copy_context,
+)
+from astroid.exceptions import (
+    AstroidTypeError,
+    AttributeInferenceError,
+    InferenceError,
+    NameInferenceError,
+)
 from astroid.typing import InferenceErrorInfo, InferenceResult
 from astroid.util import Uninferable, lazy_descriptor, lazy_import
 

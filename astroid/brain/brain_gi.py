@@ -181,7 +181,9 @@ def _import_gi_module(modname):
                         # warnings, so ignore them.
                         try:
                             from gi import (  # pylint:disable=import-error
-                                PyGIDeprecationWarning, PyGIWarning)
+                                PyGIDeprecationWarning,
+                                PyGIWarning,
+                            )
 
                             warnings.simplefilter("ignore", PyGIDeprecationWarning)
                             warnings.simplefilter("ignore", PyGIWarning)

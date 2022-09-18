@@ -6,8 +6,7 @@ import pytest
 from _pytest.recwarn import WarningsRecorder
 
 from astroid.const import PY38_PLUS
-from astroid.decorators import (cachedproperty,
-                                deprecate_default_argument_values)
+from astroid.decorators import cachedproperty, deprecate_default_argument_values
 
 
 class SomeClass:

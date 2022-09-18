@@ -15,8 +15,13 @@ import astroid
 from astroid import arguments, bases, inference_tip, nodes, util
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
 from astroid.context import InferenceContext
-from astroid.exceptions import (AstroidTypeError, AstroidValueError,
-                                InferenceError, MroError, UseInferenceDefault)
+from astroid.exceptions import (
+    AstroidTypeError,
+    AstroidValueError,
+    InferenceError,
+    MroError,
+    UseInferenceDefault,
+)
 from astroid.manager import AstroidManager
 
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}

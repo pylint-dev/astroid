@@ -13,8 +13,13 @@ from functools import partial
 from astroid import arguments, helpers, inference_tip, nodes, objects, util
 from astroid.builder import AstroidBuilder
 from astroid.context import InferenceContext
-from astroid.exceptions import (AstroidTypeError, AttributeInferenceError,
-                                InferenceError, MroError, UseInferenceDefault)
+from astroid.exceptions import (
+    AstroidTypeError,
+    AttributeInferenceError,
+    InferenceError,
+    MroError,
+    UseInferenceDefault,
+)
 from astroid.manager import AstroidManager
 from astroid.nodes import scoped_nodes
 

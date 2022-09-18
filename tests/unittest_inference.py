@@ -22,12 +22,15 @@ from astroid import decorators as decoratorsmod
 from astroid import helpers, nodes, objects, test_utils, util
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod
-from astroid.builder import (AstroidBuilder, _extract_single_node,
-                             extract_node, parse)
+from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
 from astroid.const import PY38_PLUS, PY39_PLUS
 from astroid.context import InferenceContext
-from astroid.exceptions import (AstroidTypeError, AttributeInferenceError,
-                                InferenceError, NotFoundError)
+from astroid.exceptions import (
+    AstroidTypeError,
+    AttributeInferenceError,
+    InferenceError,
+    NotFoundError,
+)
 from astroid.inference import infer_end as inference_infer_end
 from astroid.objects import ExceptionInstance
 

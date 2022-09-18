@@ -19,8 +19,12 @@ from typing import Any, TypeVar
 
 from astroid import bases, decorators, util
 from astroid.context import InferenceContext
-from astroid.exceptions import (AttributeInferenceError, InferenceError,
-                                MroError, SuperError)
+from astroid.exceptions import (
+    AttributeInferenceError,
+    InferenceError,
+    MroError,
+    SuperError,
+)
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes, scoped_nodes
 

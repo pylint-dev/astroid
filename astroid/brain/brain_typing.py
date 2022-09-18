@@ -13,12 +13,24 @@ from functools import partial
 from astroid import context, extract_node, inference_tip
 from astroid.builder import _extract_single_node
 from astroid.const import PY38_PLUS, PY39_PLUS
-from astroid.exceptions import (AttributeInferenceError, InferenceError,
-                                UseInferenceDefault)
+from astroid.exceptions import (
+    AttributeInferenceError,
+    InferenceError,
+    UseInferenceDefault,
+)
 from astroid.manager import AstroidManager
-from astroid.nodes.node_classes import (Assign, AssignName, Attribute, Call,
-                                        Const, JoinedStr, Name, NodeNG,
-                                        Subscript, Tuple)
+from astroid.nodes.node_classes import (
+    Assign,
+    AssignName,
+    Attribute,
+    Call,
+    Const,
+    JoinedStr,
+    Name,
+    NodeNG,
+    Subscript,
+    Tuple,
+)
 from astroid.nodes.scoped_nodes import ClassDef, FunctionDef
 from astroid.util import Uninferable
 

@@ -10,10 +10,19 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from astroid.nodes import Const
-    from astroid.nodes.node_classes import (Match, MatchAs, MatchCase,
-                                            MatchClass, MatchMapping, MatchOr,
-                                            MatchSequence, MatchSingleton,
-                                            MatchStar, MatchValue, Unknown)
+    from astroid.nodes.node_classes import (
+        Match,
+        MatchAs,
+        MatchCase,
+        MatchClass,
+        MatchMapping,
+        MatchOr,
+        MatchSequence,
+        MatchSingleton,
+        MatchStar,
+        MatchValue,
+        Unknown,
+    )
 
 # pylint: disable=unused-argument
 
@@ -593,8 +602,7 @@ class AsStringVisitor:
         """Return an astroid.MatchAs node as string."""
         # pylint: disable=import-outside-toplevel
         # Prevent circular dependency
-        from astroid.nodes.node_classes import (MatchClass, MatchMapping,
-                                                MatchSequence)
+        from astroid.nodes.node_classes import MatchClass, MatchMapping, MatchSequence
 
         if isinstance(node.parent, (MatchSequence, MatchMapping, MatchClass)):
             return node.name.accept(self) if node.name else "_"

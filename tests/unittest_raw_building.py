@@ -12,9 +12,13 @@ import pytest
 import tests.testdata.python3.data.fake_module_with_warnings as fm
 from astroid.builder import AstroidBuilder
 from astroid.const import IS_PYPY
-from astroid.raw_building import (attach_dummy_node, build_class,
-                                  build_from_import, build_function,
-                                  build_module)
+from astroid.raw_building import (
+    attach_dummy_node,
+    build_class,
+    build_from_import,
+    build_function,
+    build_module,
+)
 
 
 class RawBuildingTC(unittest.TestCase):

@@ -7,8 +7,7 @@ from __future__ import annotations
 import unittest
 
 from astroid import bases, builder, nodes, objects, util
-from astroid.exceptions import (AttributeInferenceError, InferenceError,
-                                SuperError)
+from astroid.exceptions import AttributeInferenceError, InferenceError, SuperError
 from astroid.objects import Super
 
 
