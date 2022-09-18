@@ -94,3 +94,10 @@ repos:
     hooks:
       - id: prettier
         args: [--prose-wrap=always, --print-width=88]
+  - repo: https://github.com/DanielNoord/pydocstringformatter
+    rev: v0.7.0
+    hooks:
+      - id: pydocstringformatter
+        exclude: tests/testdata
+        args: ["--max-summary-lines=2", "--linewrap-full-docstring"]
+        files: "astroid"
