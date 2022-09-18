@@ -418,7 +418,7 @@ Release date: 2022-02-27
 
   Closes PyCQA/pylint#5679
 
-* Inlcude names of keyword-only arguments in ``astroid.scoped_nodes.Lambda.argnames``.
+* Include names of keyword-only arguments in ``astroid.scoped_nodes.Lambda.argnames``.
 
   Closes PyCQA/pylint#5771
 
