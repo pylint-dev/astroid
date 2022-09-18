@@ -411,7 +411,6 @@ class GetModuleFilesTest(unittest.TestCase):
 
 class ExtensionPackageWhitelistTest(unittest.TestCase):
     def test_is_module_name_part_of_extension_package_whitelist_true(self) -> None:
-        """Test that the is_module_name_part_of_extension_package_whitelist function returns True when needed"""
         self.assertTrue(
             modutils.is_module_name_part_of_extension_package_whitelist(
                 "numpy", {"numpy"}
@@ -429,7 +428,6 @@ class ExtensionPackageWhitelistTest(unittest.TestCase):
         )
 
     def test_is_module_name_part_of_extension_package_whitelist_success(self) -> None:
-        """Test that the is_module_name_part_of_extension_package_whitelist function returns False when needed"""
         self.assertFalse(
             modutils.is_module_name_part_of_extension_package_whitelist(
                 "numpy", {"numpy.core"}

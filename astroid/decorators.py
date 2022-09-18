@@ -208,7 +208,8 @@ if util.check_warnings_filter():
                     ):
                         warnings.warn(
                             f"'{arg}' will be a required argument for "
-                            f"'{args[0].__class__.__qualname__}.{func.__name__}' in astroid {astroid_version} "
+                            f"'{args[0].__class__.__qualname__}.{func.__name__}'"
+                            f" in astroid {astroid_version} "
                             f"('{arg}' should be of type: '{type_annotation}')",
                             DeprecationWarning,
                         )

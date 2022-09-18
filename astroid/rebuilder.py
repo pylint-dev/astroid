@@ -1332,7 +1332,8 @@ class TreeRebuilder:
             )
             # Prohibit a local save if we are in an ExceptHandler.
             if not isinstance(parent, nodes.ExceptHandler):
-                # mypy doesn't recognize that newnode has to be AssignAttr because it doesn't support ParamSpec
+                # mypy doesn't recognize that newnode has to be AssignAttr because it
+                # doesn't support ParamSpec
                 # See https://github.com/python/mypy/issues/8645
                 self._delayed_assattr.append(newnode)  # type: ignore[arg-type]
         else:
