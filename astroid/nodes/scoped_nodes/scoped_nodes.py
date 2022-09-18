@@ -1475,7 +1475,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         return decorators
 
     @cached_property
-    def type(self) -> str:  # pylint: disable=too-many-return-statements
+    def type(self) -> str:  # pylint: disable=too-many-return-statements # noqa: C901
         """The function type for this node.
 
         Possible values are: method, function, staticmethod, classmethod.

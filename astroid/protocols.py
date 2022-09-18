@@ -672,7 +672,7 @@ nodes.NamedExpr.assigned_stmts = named_expr_assigned_stmts
 
 
 @decorators.yes_if_nothing_inferred
-def starred_assigned_stmts(
+def starred_assigned_stmts(  # noqa: C901
     self: nodes.Starred,
     node: node_classes.AssignedStmtsPossibleNode = None,
     context: InferenceContext | None = None,
@@ -823,7 +823,6 @@ def starred_assigned_stmts(
         last_lookup = lookup_slice
 
         for element in itered:
-
             # We probably want to infer the potential values *for each* element in an
             # iterable, but we can't infer a list of all values, when only a list of
             # step values are expected:

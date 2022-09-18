@@ -259,7 +259,7 @@ class TreeRebuilder:
             self._reset_end_lineno(newnode)
         return newnode
 
-    if TYPE_CHECKING:
+    if TYPE_CHECKING:  # noqa: C901
 
         @overload
         def visit(self, node: ast.arg, parent: NodeNG) -> nodes.AssignName:

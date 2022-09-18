@@ -157,7 +157,7 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
 # Expensive decorators only used to emit Deprecation warnings.
 # If no other than the default DeprecationWarning are enabled,
 # fall back to passthrough implementations.
-if util.check_warnings_filter():
+if util.check_warnings_filter():  # noqa: C901
 
     def deprecate_default_argument_values(
         astroid_version: str = "3.0", **arguments: str

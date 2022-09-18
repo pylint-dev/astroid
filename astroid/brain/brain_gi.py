@@ -54,7 +54,7 @@ _special_methods = frozenset(
 )
 
 
-def _gi_build_stub(parent):
+def _gi_build_stub(parent):  # noqa: C901
     """
     Inspect the passed module recursively and build stubs for functions,
     classes, etc.

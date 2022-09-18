@@ -485,7 +485,7 @@ class BoundMethod(UnboundMethod):
     def is_bound(self):
         return True
 
-    def _infer_type_new_call(self, caller, context):
+    def _infer_type_new_call(self, caller, context):  # noqa: C901
         """Try to infer what type.__new__(mcs, name, bases, attrs) returns.
 
         In order for such call to be valid, the metaclass needs to be

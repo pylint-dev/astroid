@@ -148,7 +148,7 @@ class AstroidManager:
             modname, self.extension_package_whitelist
         )
 
-    def ast_from_module_name(
+    def ast_from_module_name(  # noqa: C901
         self,
         modname: str | None,
         context_file: str | None = None,
