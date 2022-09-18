@@ -20,11 +20,8 @@ from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
 from astroid.brain.brain_namedtuple_enum import _get_namedtuple_fields
 from astroid.const import PY39_PLUS
-from astroid.exceptions import (
-    AttributeInferenceError,
-    InferenceError,
-    UseInferenceDefault,
-)
+from astroid.exceptions import (AttributeInferenceError, InferenceError,
+                                UseInferenceDefault)
 from astroid.nodes.node_classes import Const
 from astroid.nodes.scoped_nodes import ClassDef
 

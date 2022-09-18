@@ -16,9 +16,7 @@ from astroid.const import IS_PYPY
 @lru_cache(maxsize=4096)
 def is_namespace(modname: str) -> bool:
     from astroid.modutils import (  # pylint: disable=import-outside-toplevel
-        EXT_LIB_DIRS,
-        STD_LIB_DIRS,
-    )
+        EXT_LIB_DIRS, STD_LIB_DIRS)
 
     STD_AND_EXT_LIB_DIRS = STD_LIB_DIRS.union(EXT_LIB_DIRS)
 

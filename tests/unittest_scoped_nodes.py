@@ -19,29 +19,14 @@ from typing import Any
 
 import pytest
 
-from astroid import (
-    MANAGER,
-    builder,
-    extract_node,
-    nodes,
-    objects,
-    parse,
-    test_utils,
-    util,
-)
+from astroid import (MANAGER, builder, extract_node, nodes, objects, parse,
+                     test_utils, util)
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
 from astroid.const import IS_PYPY, PY38, PY38_PLUS
-from astroid.exceptions import (
-    AttributeInferenceError,
-    DuplicateBasesError,
-    InconsistentMroError,
-    InferenceError,
-    MroError,
-    NameInferenceError,
-    NoDefault,
-    ResolveError,
-    TooManyLevelsError,
-)
+from astroid.exceptions import (AttributeInferenceError, DuplicateBasesError,
+                                InconsistentMroError, InferenceError, MroError,
+                                NameInferenceError, NoDefault, ResolveError,
+                                TooManyLevelsError)
 from astroid.nodes.scoped_nodes.scoped_nodes import _is_metaclass
 
 from . import resources

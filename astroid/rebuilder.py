@@ -17,7 +17,8 @@ from tokenize import TokenInfo, generate_tokens
 from typing import TYPE_CHECKING, TypeVar, Union, cast, overload
 
 from astroid import nodes
-from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
+from astroid._ast import (ParserModule, get_parser_module,
+                          parse_function_type_comment)
 from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG

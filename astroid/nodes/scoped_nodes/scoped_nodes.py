@@ -22,28 +22,19 @@ from astroid import bases
 from astroid import decorators as decorators_mod
 from astroid import util
 from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS
-from astroid.context import (
-    CallContext,
-    InferenceContext,
-    bind_context_to_node,
-    copy_context,
-)
-from astroid.exceptions import (
-    AstroidBuildingError,
-    AstroidTypeError,
-    AttributeInferenceError,
-    DuplicateBasesError,
-    InconsistentMroError,
-    InferenceError,
-    MroError,
-    StatementMissing,
-    TooManyLevelsError,
-)
+from astroid.context import (CallContext, InferenceContext,
+                             bind_context_to_node, copy_context)
+from astroid.exceptions import (AstroidBuildingError, AstroidTypeError,
+                                AttributeInferenceError, DuplicateBasesError,
+                                InconsistentMroError, InferenceError, MroError,
+                                StatementMissing, TooManyLevelsError)
 from astroid.interpreter.dunder_lookup import lookup
-from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
+from astroid.interpreter.objectmodel import (ClassModel, FunctionModel,
+                                             ModuleModel)
 from astroid.manager import AstroidManager
 from astroid.nodes import Arguments, Const, NodeNG, _base_nodes, node_classes
-from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
+from astroid.nodes.scoped_nodes.mixin import (ComprehensionScope,
+                                              LocalsDictNodeNG)
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
 

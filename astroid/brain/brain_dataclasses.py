@@ -22,7 +22,8 @@ from typing import Tuple, Union
 from astroid import bases, context, helpers, nodes
 from astroid.builder import parse
 from astroid.const import PY39_PLUS, PY310_PLUS
-from astroid.exceptions import AstroidSyntaxError, InferenceError, UseInferenceDefault
+from astroid.exceptions import (AstroidSyntaxError, InferenceError,
+                                UseInferenceDefault)
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.typing import InferenceResult

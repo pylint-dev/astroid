@@ -12,10 +12,8 @@ except ImportError:
     HAS_NUMPY = False
 
 from astroid import builder, nodes
-from astroid.brain.brain_numpy_utils import (
-    NUMPY_VERSION_TYPE_HINTS_SUPPORT,
-    numpy_supports_type_hints,
-)
+from astroid.brain.brain_numpy_utils import (NUMPY_VERSION_TYPE_HINTS_SUPPORT,
+                                             numpy_supports_type_hints)
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")

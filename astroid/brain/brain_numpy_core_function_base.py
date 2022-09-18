@@ -6,7 +6,8 @@
 
 import functools
 
-from astroid.brain.brain_numpy_utils import infer_numpy_member, looks_like_numpy_member
+from astroid.brain.brain_numpy_utils import (infer_numpy_member,
+                                             looks_like_numpy_member)
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import Attribute

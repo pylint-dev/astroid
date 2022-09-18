@@ -17,13 +17,9 @@ from typing import Any
 from astroid import arguments, bases, decorators, helpers, nodes, util
 from astroid.const import Context
 from astroid.context import InferenceContext, copy_context
-from astroid.exceptions import (
-    AstroidIndexError,
-    AstroidTypeError,
-    AttributeInferenceError,
-    InferenceError,
-    NoDefault,
-)
+from astroid.exceptions import (AstroidIndexError, AstroidTypeError,
+                                AttributeInferenceError, InferenceError,
+                                NoDefault)
 from astroid.nodes import node_classes
 from astroid.typing import ConstFactoryResult
 

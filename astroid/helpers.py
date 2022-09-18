@@ -12,13 +12,9 @@ from collections.abc import Generator
 
 from astroid import bases, manager, nodes, raw_building, util
 from astroid.context import CallContext, InferenceContext
-from astroid.exceptions import (
-    AstroidTypeError,
-    AttributeInferenceError,
-    InferenceError,
-    MroError,
-    _NonDeducibleTypeHierarchy,
-)
+from astroid.exceptions import (AstroidTypeError, AttributeInferenceError,
+                                InferenceError, MroError,
+                                _NonDeducibleTypeHierarchy)
 from astroid.nodes import scoped_nodes
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
 

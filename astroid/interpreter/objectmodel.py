@@ -34,7 +34,8 @@ from typing import TYPE_CHECKING, Any
 import astroid
 from astroid import bases, nodes, util
 from astroid.context import InferenceContext, copy_context
-from astroid.exceptions import AttributeInferenceError, InferenceError, NoDefault
+from astroid.exceptions import (AttributeInferenceError, InferenceError,
+                                NoDefault)
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
 

@@ -20,13 +20,9 @@ import pytest
 
 from astroid import Instance, builder, nodes, test_utils, util
 from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS
-from astroid.exceptions import (
-    AstroidBuildingError,
-    AstroidSyntaxError,
-    AttributeInferenceError,
-    InferenceError,
-    StatementMissing,
-)
+from astroid.exceptions import (AstroidBuildingError, AstroidSyntaxError,
+                                AttributeInferenceError, InferenceError,
+                                StatementMissing)
 from astroid.nodes.scoped_nodes import Module
 
 from . import resources

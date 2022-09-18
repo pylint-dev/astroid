@@ -8,16 +8,9 @@ from astroid import helpers
 from astroid.exceptions import UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
-from astroid.nodes.node_classes import (
-    Attribute,
-    Call,
-    Const,
-    EvaluatedObject,
-    List,
-    Name,
-    Set,
-    Tuple,
-)
+from astroid.nodes.node_classes import (Attribute, Call, Const,
+                                        EvaluatedObject, List, Name, Set,
+                                        Tuple)
 
 ACCEPTED_ITERABLES_FOR_SAMPLE = (List, Set, Tuple)
 

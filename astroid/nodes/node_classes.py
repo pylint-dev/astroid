@@ -13,29 +13,21 @@ import typing
 import warnings
 from collections.abc import Generator, Iterable, Mapping
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Union
+from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar,
+                    Union)
 
 from astroid import decorators, util
 from astroid.bases import Instance, _infer_stmts
 from astroid.const import Context
 from astroid.context import InferenceContext
-from astroid.exceptions import (
-    AstroidIndexError,
-    AstroidTypeError,
-    InferenceError,
-    NoDefault,
-    ParentMissingError,
-)
+from astroid.exceptions import (AstroidIndexError, AstroidTypeError,
+                                InferenceError, NoDefault, ParentMissingError)
 from astroid.manager import AstroidManager
 from astroid.nodes import _base_nodes
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
-from astroid.typing import (
-    ConstFactoryResult,
-    InferenceErrorInfo,
-    InferenceResult,
-    SuccessfulInferenceResult,
-)
+from astroid.typing import (ConstFactoryResult, InferenceErrorInfo,
+                            InferenceResult, SuccessfulInferenceResult)
 
 if sys.version_info >= (3, 8):
     from typing import Literal

@@ -17,7 +17,8 @@ from tokenize import detect_encoding
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import get_parser_module
-from astroid.exceptions import AstroidBuildingError, AstroidSyntaxError, InferenceError
+from astroid.exceptions import (AstroidBuildingError, AstroidSyntaxError,
+                                InferenceError)
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import NodeNG
 

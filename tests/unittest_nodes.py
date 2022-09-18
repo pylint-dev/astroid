@@ -17,34 +17,17 @@ from typing import Any
 import pytest
 
 import astroid
-from astroid import (
-    Uninferable,
-    bases,
-    builder,
-    nodes,
-    parse,
-    test_utils,
-    transforms,
-    util,
-)
+from astroid import (Uninferable, bases, builder, nodes, parse, test_utils,
+                     transforms, util)
 from astroid.const import PY38_PLUS, PY310_PLUS, Context
 from astroid.context import InferenceContext
-from astroid.exceptions import (
-    AstroidBuildingError,
-    AstroidSyntaxError,
-    AttributeInferenceError,
-    ParentMissingError,
-    StatementMissing,
-)
-from astroid.nodes.node_classes import (
-    AssignAttr,
-    AssignName,
-    Attribute,
-    Call,
-    ImportFrom,
-    Tuple,
-)
-from astroid.nodes.scoped_nodes import ClassDef, FunctionDef, GeneratorExp, Module
+from astroid.exceptions import (AstroidBuildingError, AstroidSyntaxError,
+                                AttributeInferenceError, ParentMissingError,
+                                StatementMissing)
+from astroid.nodes.node_classes import (AssignAttr, AssignName, Attribute,
+                                        Call, ImportFrom, Tuple)
+from astroid.nodes.scoped_nodes import (ClassDef, FunctionDef, GeneratorExp,
+                                        Module)
 
 from . import resources
 

@@ -8,11 +8,8 @@ import functools
 import unittest
 
 from astroid import builder, nodes, test_utils
-from astroid.exceptions import (
-    AttributeInferenceError,
-    InferenceError,
-    NameInferenceError,
-)
+from astroid.exceptions import (AttributeInferenceError, InferenceError,
+                                NameInferenceError)
 
 from . import resources
 

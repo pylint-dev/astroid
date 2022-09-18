@@ -9,11 +9,8 @@ from textwrap import dedent
 from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
-from astroid.exceptions import (
-    AstroidBuildingError,
-    AttributeInferenceError,
-    InferenceError,
-)
+from astroid.exceptions import (AstroidBuildingError, AttributeInferenceError,
+                                InferenceError)
 from astroid.manager import AstroidManager
 
 SIX_ADD_METACLASS = "six.add_metaclass"

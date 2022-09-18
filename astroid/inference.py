@@ -16,29 +16,16 @@ from collections.abc import Callable, Generator, Iterable, Iterator
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
 
 from astroid import bases, decorators, helpers, nodes, protocols, util
-from astroid.context import (
-    CallContext,
-    InferenceContext,
-    bind_context_to_node,
-    copy_context,
-)
-from astroid.exceptions import (
-    AstroidBuildingError,
-    AstroidError,
-    AstroidIndexError,
-    AstroidTypeError,
-    AttributeInferenceError,
-    InferenceError,
-    NameInferenceError,
-    _NonDeducibleTypeHierarchy,
-)
+from astroid.context import (CallContext, InferenceContext,
+                             bind_context_to_node, copy_context)
+from astroid.exceptions import (AstroidBuildingError, AstroidError,
+                                AstroidIndexError, AstroidTypeError,
+                                AttributeInferenceError, InferenceError,
+                                NameInferenceError, _NonDeducibleTypeHierarchy)
 from astroid.interpreter import dunder_lookup
 from astroid.manager import AstroidManager
-from astroid.typing import (
-    InferenceErrorInfo,
-    InferenceResult,
-    SuccessfulInferenceResult,
-)
+from astroid.typing import (InferenceErrorInfo, InferenceResult,
+                            SuccessfulInferenceResult)
 
 if TYPE_CHECKING:
     from astroid.objects import Property
