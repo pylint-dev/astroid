@@ -7,7 +7,7 @@ from other_funcs import FromClause
 from .nodes import roles
 
 
-class HasMemoized(object):
+class HasMemoized:
     ...
 
 

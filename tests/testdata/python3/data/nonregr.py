@@ -1,5 +1,3 @@
-
-
 try:
     enumerate = enumerate
 except NameError:
@@ -29,7 +27,7 @@ class OptionParser(s_opt.OptionParser):
             optcomp.completion(self)
 
 
-class Aaa(object):
+class Aaa:
     """docstring"""
     def __init__(self):
         self.__setattr__('a','b')

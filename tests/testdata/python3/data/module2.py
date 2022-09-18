@@ -1,4 +1,3 @@
-from __future__ import print_function
 from data.module import YO, YOUPI
 import data
 
@@ -38,7 +37,7 @@ class MyError(MyException):
 
 
 
-class AbstractClass(object):
+class AbstractClass:
     
     def to_override(self, whatever):
         raise NotImplementedError()

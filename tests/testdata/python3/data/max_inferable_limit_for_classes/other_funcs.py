@@ -3,11 +3,11 @@ from operator import attrgetter
 from .nodes import roles
 
 
-class HasCacheKey(object):
+class HasCacheKey:
     ...
 
 
-class HasMemoized(object):
+class HasMemoized:
     ...
 
 

@@ -1,12 +1,12 @@
-class SQLRole(object):
+class SQLRole:
     ...
 
 
-class UsesInspection(object):
+class UsesInspection:
     ...
 
 
-class AllowsLambdaRole(object):
+class AllowsLambdaRole:
     ...
 
 

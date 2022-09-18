@@ -17,8 +17,7 @@ def definition(a,
                c):
     return a + b + c
 
-class debile(dict,
-             object):
+class debile(dict):
     pass
 
 if aaaa: pass
