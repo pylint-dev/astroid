@@ -1,5 +1,5 @@
 black==22.8.0
-pylint==2.15.2
+pylint==2.15.3
 isort==5.10.1
 flake8==5.0.4
 flake8-typing-imports==1.13.0
