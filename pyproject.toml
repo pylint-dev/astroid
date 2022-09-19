@@ -92,3 +92,122 @@ module = [
     "wrapt.*",
 ]
 ignore_missing_imports = true
+
+# === pylint ===
+
+[tool.pylint.main]
+ignore = ["CVS"]
+ignore-patterns = ["^\\.#"]
+ignored-modules = ["typed_ast.ast3"]
+load-plugins = [
+    "pylint.extensions.bad_builtin",
+    "pylint.extensions.check_elif",
+    "pylint.extensions.code_style",
+    "pylint.extensions.for_any_all",
+    "pylint.extensions.overlapping_exceptions",
+    "pylint.extensions.redefined_variable_type",
+    "pylint.extensions.set_membership",
+    "pylint.extensions.typing"
+]
+py-version = "3.7.2"
+
+[tool.pylint.basic]
+argument-rgx = "[a-z_][a-z0-9_]{2,30}$"
+attr-rgx = "[a-z_][a-z0-9_]{2,30}$"
+bad-names = ["bar", "baz", "foo", "tata", "toto", "tutu"]
+class-attribute-rgx = "([A-Za-z_][A-Za-z0-9_]{2,30}|(__.*__))$"
+class-rgx = "[A-Z_][a-zA-Z0-9]+$"
+const-rgx = "(([A-Z_][A-Z0-9_]*)|(__.*__))$"
+function-rgx = "[a-z_][a-z0-9_]{2,30}$"
+good-names = ["_", "cm", "e", "ex", "f", "i", "it", "j", "k", "m", "n", "op", "Run"]
+inlinevar-rgx = "[A-Za-z_][A-Za-z0-9_]*$"
+method-rgx = "[a-z_][a-z0-9_]{2,30}$"
+module-rgx = "(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$"
+no-docstring-rgx = "__.*__"
+variable-rgx = "[a-z_][a-z0-9_]{2,30}$"
+
+[tool.pylint.classes]
+defining-attr-methods = ["__init__", "__new__", "setUp"]
+exclude-protected = ["_asdict", "_fields", "_make", "_replace", "_source"]
+valid-classmethod-first-arg = ["cls"]
+valid-metaclass-classmethod-first-arg = ["mcs"]
+
+[tool.pylint.design]
+max-args = 10
+max-attributes = 15
+max-branches = 25
+max-locals = 25
+max-parents = 10
+max-returns = 10
+max-statements = 60
+
+[tool.pylint.exceptions]
+overgeneral-exceptions = ["Exception"]
+
+[tool.pylint.format]
+max-module-lines = 3000
+
+[tool.pylint.imports]
+deprecated-modules = ["optparse", "stringprep"]
+
+[tool.pylint.logging]
+logging-modules = ["logging"]
+
+[tool.pylint."messages control"]
+disable = [
+    "bad-builtin",
+    "bad-indentation",
+    "bad-inline-option",
+    "consider-using-f-string",
+    "cyclic-import",
+    "deprecated-pragma",
+    "duplicate-code",
+    "file-ignored",
+    "fixme",
+    "invalid-name",
+    "line-too-long",
+    "locally-disabled",
+    "missing-class-docstring",
+    "missing-final-newline",
+    "missing-function-docstring",
+    "missing-module-docstring",
+    "mixed-line-endings",
+    "multiple-statements",
+    "protected-access",
+    "raw-checker-failed",
+    "superfluous-parens",
+    "suppressed-message",
+    "too-few-public-methods",
+    "too-many-boolean-expressions",
+    "too-many-branches",
+    "too-many-lines",
+    "too-many-public-methods",
+    "too-many-statements",
+    "trailing-newlines",
+    "trailing-whitespace",
+    "unexpected-line-ending-format",
+    "unknown-option-value",
+    "unnecessary-semicolon",
+    "unused-argument",
+    "use-symbolic-message-instead",
+    "useless-option-value",
+    "useless-suppression"
+]
+
+enable = ["c-extension-no-member"]
+
+[tool.pylint.miscellaneous]
+notes = ["FIXME", "TODO", "XXX"]
+
+[tool.pylint.reports]
+evaluation = "10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)"
+
+[tool.pylint.typecheck]
+generated-members = "REQUEST,acl_users,aq_parent,argparse.Namespace,ast\\.([mM]atch.*|pattern)"
+ignored-classes = ["SQLObject"]
+mixin-class-rgx = ".*Mix[Ii]n"
+
+[tool.pylint.variables]
+callbacks = ["_cb", "cb_"]
+dummy-variables-rgx = "_$|dummy"
+ignored-argument-names = "_.*"
