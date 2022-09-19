@@ -110,8 +110,8 @@ BUILTIN_MODULES = dict.fromkeys(sys.builtin_module_names, True)
 
 
 class NoSourceFile(Exception):
-    """exception raised when we are not able to get a python
-    source file for a precompiled file
+    """Exception raised when we are not able to get a python
+    source file for a precompiled file.
     """
 
 
@@ -138,7 +138,7 @@ def _path_from_filename(filename: str, is_jython: bool = IS_JYTHON) -> str:
 def _handle_blacklist(
     blacklist: Sequence[str], dirnames: list[str], filenames: list[str]
 ) -> None:
-    """remove files/directories in the black list
+    """Remove files/directories in the black list.
 
     dirnames/filenames are usually from os.walk
     """
@@ -230,7 +230,7 @@ def load_module_from_file(filepath: str) -> types.ModuleType:
 
 
 def check_modpath_has_init(path: str, mod_path: list[str]) -> bool:
-    """check there are some __init__.py all along the way"""
+    """Check there are some __init__.py all along the way."""
     modpath: list[str] = []
     for part in mod_path:
         modpath.append(part)
@@ -243,7 +243,7 @@ def check_modpath_has_init(path: str, mod_path: list[str]) -> bool:
 
 
 def _get_relative_base_path(filename: str, path_to_check: str) -> list[str] | None:
-    """Extracts the relative mod path of the file to import from
+    """Extracts the relative mod path of the file to import from.
 
     Check if a file is within the passed in path and if so, returns the
     relative mod path from the one passed in.
@@ -306,7 +306,7 @@ def modpath_from_file_with_callback(
 
 
 def modpath_from_file(filename: str, path: Sequence[str] | None = None) -> list[str]:
-    """Get the corresponding split module's name from a filename
+    """Get the corresponding split module's name from a filename.
 
     This function will return the name of a module or package split on `.`.
 
@@ -339,9 +339,10 @@ def file_info_from_modpath(
     path: Sequence[str] | None = None,
     context_file: str | None = None,
 ) -> spec.ModuleSpec:
-    """given a mod path (i.e. split module / package name), return the
-    corresponding file, giving priority to source file over precompiled
-    file if it exists
+    """Given a mod path (i.e. split module / package name), return the
+    corresponding file.
+
+    Giving priority to source file over precompiled file if it exists.
 
     :param modpath:
       split module's name (i.e name of a module or package split
@@ -385,7 +386,7 @@ def file_info_from_modpath(
 
 
 def get_module_part(dotted_name: str, context_file: str | None = None) -> str:
-    """given a dotted name return the module part of the name :
+    """Given a dotted name return the module part of the name :
 
     >>> get_module_part('astroid.as_string.dump')
     'astroid.as_string'
@@ -396,7 +397,6 @@ def get_module_part(dotted_name: str, context_file: str | None = None) -> str:
       context file to consider, necessary if the identifier has been
       introduced using a relative import unresolvable in the actual
       context (i.e. modutils)
-
 
     :raise ImportError: if there is no such module in the directory
 
@@ -448,8 +448,8 @@ def get_module_part(dotted_name: str, context_file: str | None = None) -> str:
 def get_module_files(
     src_directory: str, blacklist: Sequence[str], list_all: bool = False
 ) -> list[str]:
-    """given a package directory return a list of all available python
-    module's files in the package and its subpackages
+    """Given a package directory return a list of all available python
+    module's files in the package and its subpackages.
 
     :param src_directory:
       path of the directory corresponding to the package
@@ -481,8 +481,9 @@ def get_module_files(
 
 
 def get_source_file(filename: str, include_no_ext: bool = False) -> str:
-    """given a python module's file name return the matching source file
-    name (the filename will be returned identically if it's already an
+    """Given a python module's file name return the matching source file
+    name (the filename will be returned identically if it's already an.
+
     absolute path to a python source file...)
 
     :param filename: python module's file name
@@ -503,17 +504,15 @@ def get_source_file(filename: str, include_no_ext: bool = False) -> str:
 
 
 def is_python_source(filename: str | None) -> bool:
-    """
-    return: True if the filename is a python source file
-    """
+    """Return: True if the filename is a python source file."""
     if not filename:
         return False
     return os.path.splitext(filename)[1][1:] in PY_SOURCE_EXTS
 
 
 def is_standard_module(modname: str, std_path: Iterable[str] | None = None) -> bool:
-    """try to guess if a module is a standard python module (by default,
-    see `std_path` parameter's description)
+    """Try to guess if a module is a standard python module (by default,
+    see `std_path` parameter's description).
 
     :param modname: name of the module we are interested in
 
@@ -547,8 +546,8 @@ def is_standard_module(modname: str, std_path: Iterable[str] | None = None) -> b
 
 
 def is_relative(modname: str, from_file: str) -> bool:
-    """return true if the given module name is relative to the given
-    file name
+    """Return true if the given module name is relative to the given
+    file name.
 
     :param modname: name of the module we are interested in
 
@@ -577,8 +576,8 @@ def _spec_from_modpath(
     path: Sequence[str] | None = None,
     context: str | None = None,
 ) -> spec.ModuleSpec:
-    """given a mod path (i.e. split module / package name), return the
-    corresponding spec
+    """Given a mod path (i.e. split module / package name), return the
+    corresponding spec.
 
     this function is used internally, see `file_from_modpath`'s
     documentation for more information
@@ -614,7 +613,7 @@ def _spec_from_modpath(
 
 
 def _is_python_file(filename: str) -> bool:
-    """return true if the given filename should be considered as a python file
+    """Return true if the given filename should be considered as a python file.
 
     .pyc and .pyo are ignored
     """
@@ -622,8 +621,8 @@ def _is_python_file(filename: str) -> bool:
 
 
 def _has_init(directory: str) -> str | None:
-    """if the given directory has a valid __init__ file, return its path,
-    else return None
+    """If the given directory has a valid __init__ file, return its path,
+    else return None.
     """
     mod_or_pack = os.path.join(directory, "__init__")
     for ext in PY_SOURCE_EXTS + ("pyc", "pyo"):
@@ -644,7 +643,7 @@ def is_module_name_part_of_extension_package_whitelist(
     module_name: str, package_whitelist: set[str]
 ) -> bool:
     """
-    Returns True if one part of the module name is in the package whitelist
+    Returns True if one part of the module name is in the package whitelist.
 
     >>> is_module_name_part_of_extension_package_whitelist('numpy.core.umath', {'numpy'})
     True

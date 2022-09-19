@@ -2,7 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""Different utilities for the numpy brains"""
+"""Different utilities for the numpy brains."""
 
 from __future__ import annotations
 
@@ -15,17 +15,16 @@ NUMPY_VERSION_TYPE_HINTS_SUPPORT = ("1", "20", "0")
 
 
 def numpy_supports_type_hints() -> bool:
-    """
-    Returns True if numpy supports type hints
-    """
+    """Returns True if numpy supports type hints."""
     np_ver = _get_numpy_version()
     return np_ver and np_ver > NUMPY_VERSION_TYPE_HINTS_SUPPORT
 
 
 def _get_numpy_version() -> tuple[str, str, str]:
     """
-    Return the numpy version number if numpy can be imported. Otherwise returns
-    ('0', '0', '0')
+    Return the numpy version number if numpy can be imported.
+
+    Otherwise returns ('0', '0', '0')
     """
     try:
         import numpy  # pylint: disable=import-outside-toplevel

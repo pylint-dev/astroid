@@ -15,7 +15,6 @@ defined using the `@hypothesis.strategies.composite` decorator.  For example:
         return draw(st.integers())
 
     a_strategy()
-
 """
 from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import FunctionDef
@@ -39,7 +38,8 @@ def is_decorated_with_st_composite(node) -> bool:
 
 def remove_draw_parameter_from_composite_strategy(node):
     """Given that the FunctionDef is decorated with @st.composite, remove the
-    first argument (`draw`) - it's always supplied by Hypothesis so we don't
+    first argument (`draw`) - it's always supplied by Hypothesis so we don't.
+
     need to emit the no-value-for-parameter lint.
     """
     del node.args.args[0]

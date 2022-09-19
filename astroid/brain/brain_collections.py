@@ -86,8 +86,8 @@ register_module_extender(AstroidManager(), "collections", _collections_transform
 
 def _looks_like_subscriptable(node: ClassDef) -> bool:
     """
-    Returns True if the node corresponds to a ClassDef of the Collections.abc module that
-    supports subscripting
+    Returns True if the node corresponds to a ClassDef of the Collections.abc module
+    that supports subscripting.
 
     :param node: ClassDef node
     """

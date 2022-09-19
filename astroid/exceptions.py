@@ -2,8 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""this module contains exceptions used in the astroid library
-"""
+"""This module contains exceptions used in the astroid library."""
 
 from __future__ import annotations
 
@@ -49,7 +48,7 @@ __all__ = (
 
 
 class AstroidError(Exception):
-    """base exception class for all astroid related exceptions
+    """Base exception class for all astroid related exceptions.
 
     AstroidError and its subclasses are structured, intended to hold
     objects representing state when the exception is thrown.  Field
@@ -73,7 +72,7 @@ class AstroidError(Exception):
 
 
 class AstroidBuildingError(AstroidError):
-    """exception class when we are unable to build an astroid representation
+    """Exception class when we are unable to build an astroid representation.
 
     Standard attributes:
         modname: Name of the module that AST construction failed for.
@@ -140,8 +139,8 @@ class AstroidSyntaxError(AstroidBuildingError):
 
 
 class NoDefault(AstroidError):
-    """raised by function's `default_value` method when an argument has
-    no default value
+    """Raised by function's `default_value` method when an argument has
+    no default value.
 
     Standard attributes:
         func: Function node.
@@ -228,7 +227,7 @@ class SuperError(ResolveError):
 
 
 class InferenceError(ResolveError):  # pylint: disable=too-many-instance-attributes
-    """raised when we are unable to infer a node
+    """Raised when we are unable to infer a node.
 
     Standard attributes:
         node: The node inference was called on.
@@ -332,13 +331,15 @@ class AttributeInferenceError(ResolveError):
 
 
 class UseInferenceDefault(Exception):
-    """exception to be raised in custom inference function to indicate that it
-    should go back to the default behaviour
+    """Exception to be raised in custom inference function to indicate that it
+    should go back to the default behaviour.
     """
 
 
 class _NonDeducibleTypeHierarchy(Exception):
-    """Raised when is_subtype / is_supertype can't deduce the relation between two types."""
+    """Raised when is_subtype / is_supertype can't deduce the relation between two
+    types.
+    """
 
 
 class AstroidIndexError(AstroidError):
@@ -380,14 +381,14 @@ class AstroidValueError(AstroidError):
 
 
 class InferenceOverwriteError(AstroidError):
-    """Raised when an inference tip is overwritten
+    """Raised when an inference tip is overwritten.
 
     Currently only used for debugging.
     """
 
 
 class ParentMissingError(AstroidError):
-    """Raised when a node which is expected to have a parent attribute is missing one
+    """Raised when a node which is expected to have a parent attribute is missing one.
 
     Standard attributes:
         target: The node for which the parent lookup failed.
@@ -399,7 +400,9 @@ class ParentMissingError(AstroidError):
 
 
 class StatementMissing(ParentMissingError):
-    """Raised when a call to node.statement() does not return a node. This is because
+    """Raised when a call to node.statement() does not return a node.
+
+    This is because
     a node in the chain does not have a parent attribute and therefore does not
     return a node for statement().
 

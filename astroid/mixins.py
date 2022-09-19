@@ -2,8 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""This module contains some mixins for the different nodes.
-"""
+"""This module contains some mixins for the different nodes."""
 
 import warnings
 

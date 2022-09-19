@@ -81,7 +81,7 @@ class TransformVisitor:
         self.transforms[node_class].remove((transform, predicate))
 
     def visit(self, module):
-        """Walk the given astroid *tree* and transform each encountered node
+        """Walk the given astroid *tree* and transform each encountered node.
 
         Only the nodes which have transforms registered will actually
         be replaced or changed.
