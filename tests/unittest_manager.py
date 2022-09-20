@@ -356,6 +356,10 @@ class AstroidManagerTest(
         stdlib_math = next(module.body[1].value.args[0].infer())
         assert self.manager.astroid_cache["math"] != stdlib_math
 
+    def test_raises_exception_for_empty_modname(self) -> None:
+        with pytest.raises(AstroidBuildingError):
+            self.manager.ast_from_module_name(None)
+
 
 class BorgAstroidManagerTC(unittest.TestCase):
     def test_borg(self) -> None:
