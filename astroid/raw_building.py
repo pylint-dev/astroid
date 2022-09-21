@@ -486,7 +486,7 @@ def _set_proxied(const):
     return _CONST_PROXY[const.value.__class__]
 
 
-def _astroid_bootstrapping():
+def _astroid_bootstrapping() -> None:
     """astroid bootstrapping the builtins module"""
     # this boot strapping is necessary since we need the Const nodes to
     # inspect_build builtins, and then we can proxy Const
