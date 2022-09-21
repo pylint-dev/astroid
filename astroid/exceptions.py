@@ -87,7 +87,7 @@ class AstroidBuildingError(AstroidError):
         error: Exception | None = None,
         source: str | None = None,
         path: str | None = None,
-        cls: None = None,
+        cls: type | None = None,
         class_repr: str | None = None,
         **kws: Any,
     ) -> None:

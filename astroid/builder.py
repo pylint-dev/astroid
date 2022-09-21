@@ -13,6 +13,7 @@ from __future__ import annotations
 import os
 import textwrap
 import types
+from collections.abc import Sequence
 from tokenize import detect_encoding
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
@@ -261,8 +262,8 @@ class AstroidBuilder(raw_building.InspectBuilder):
             pass
 
 
-def build_namespace_package_module(name: str, path: list[str]) -> nodes.Module:
-    return nodes.Module(name, path=path, package=True)
+def build_namespace_package_module(name: str, path: Sequence[str]) -> nodes.Module:
+    return nodes.Module(name, path=list(path), package=True)
 
 
 def parse(code, module_name="", path=None, apply_transforms=True):
