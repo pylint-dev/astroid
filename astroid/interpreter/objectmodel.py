@@ -613,10 +613,17 @@ class GeneratorModel(FunctionModel):
 
         return ret
 
-    def attr___enter__(self):
+    @property
+    def attr___enter__(self) -> bases.BoundMethod:
+        # TODO: Return a simple BoundMethod that returns None and accepts no args.
+        # See ObjectModel.attr___init__ for an example that does have args and a return value
         pass
 
-    def attr___exit__(self, exc_type, exc_value, traceback):
+    @property
+    def attr___exit__(self) -> bases.BoundMethod:
+        # TODO: Return a simple BoundMethod that returns something and
+        # accepts: 'exc_type, exc_value, traceback'
+        # See ObjectModel.attr___init__ for an example that does have args and a return value
         pass
 
     @property

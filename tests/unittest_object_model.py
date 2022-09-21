@@ -168,8 +168,6 @@ class ClassModelTest(unittest.TestCase):
 
         A.__module__ #@
         A.__name__ #@
-        A.__enter__ #@
-        A.__exit__ #@
         A.__qualname__ #@
         A.__doc__ #@
         A.__mro__ #@
@@ -587,6 +585,8 @@ class GeneratorModelTest(unittest.TestCase):
         gen.gi_code #@
         gen.gi_frame #@
         gen.send #@
+        gen.__enter__ #@
+        gen.__exit__ #@
         """
         )
         assert isinstance(ast_nodes, list)
@@ -606,6 +606,14 @@ class GeneratorModelTest(unittest.TestCase):
 
         send = next(ast_nodes[4].infer())
         self.assertIsInstance(send, astroid.BoundMethod)
+
+        enter = next(ast_nodes[5].infer())
+        assert isinstance(enter, astroid.BoundMethod)
+        # TODO: Some test about the args to be passed to this method
+
+        exit_node = next(ast_nodes[6].infer())
+        assert isinstance(exit_node, astroid.BoundMethod)
+        # TODO: Some test about the args to be passed to this method
 
 
 class ExceptionModelTest(unittest.TestCase):
