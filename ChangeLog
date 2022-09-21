@@ -11,6 +11,10 @@ Release date: TBA
 
   Refs PyCQA/pylint#3941
 
+* Improve detection of namespace packages for the modules with ``__spec__`` set to None.
+
+  Closes PyCQA/pylint#7488.
+
 
 What's New in astroid 2.12.11?
 ==============================
