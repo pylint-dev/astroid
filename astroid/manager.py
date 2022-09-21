@@ -13,6 +13,7 @@ import collections
 import os
 import types
 import zipimport
+from collections.abc import Callable
 from importlib.util import find_spec, module_from_spec
 from typing import TYPE_CHECKING, ClassVar
 
@@ -353,7 +354,7 @@ class AstroidManager:
             for inferred in modastroid.igetattr(name, context):
                 yield inferred.instantiate_class()
 
-    def register_failed_import_hook(self, hook):
+    def register_failed_import_hook(self, hook: Callable[[str], nodes.Module]) -> None:
         """Registers a hook to resolve imports that cannot be found otherwise.
 
         `hook` must be a function that accepts a single argument `modname` which
