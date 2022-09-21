@@ -613,6 +613,12 @@ class GeneratorModel(FunctionModel):
 
         return ret
 
+    def attr___enter__(self):
+        pass
+
+    def attr___exit__(self, exc_type, exc_value, traceback):
+        pass
+
     @property
     def attr___name__(self):
         return node_classes.Const(

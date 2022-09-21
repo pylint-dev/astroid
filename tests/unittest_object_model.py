@@ -168,6 +168,8 @@ class ClassModelTest(unittest.TestCase):
 
         A.__module__ #@
         A.__name__ #@
+        A.__enter__ #@
+        A.__exit__ #@
         A.__qualname__ #@
         A.__doc__ #@
         A.__mro__ #@
