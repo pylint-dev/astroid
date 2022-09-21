@@ -86,4 +86,4 @@ Tests are in the 'test' subdirectory. To launch the whole tests suite, you can u
 either `tox` or `pytest`::
 
     tox
-    pytest astroid
+    pytest
