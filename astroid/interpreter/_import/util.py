@@ -52,8 +52,11 @@ def is_namespace(modname: str) -> bool:
                 # Check first fragment of modname, e.g. "astroid", not "astroid.interpreter"
                 # because of cffi's behavior
                 # See: https://github.com/PyCQA/astroid/issues/1776
+                mod = sys.modules[processed_components[0]]
                 return (
-                    sys.modules[processed_components[0]].__spec__ is None
+                    mod.__spec__ is None
+                    and getattr(mod, "__file__", None) is None
+                    and hasattr(mod, "__path__")
                     and not IS_PYPY
                 )
             except KeyError:
