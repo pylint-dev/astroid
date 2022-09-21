@@ -338,7 +338,7 @@ class InspectBuilder:
     FunctionDef and ClassDef nodes and some others as guessed.
     """
 
-    def __init__(self, manager_instance=None):
+    def __init__(self, manager_instance: AstroidManager | None = None) -> None:
         self._manager = manager_instance or AstroidManager()
         self._done: dict[types.ModuleType | type, nodes.Module | nodes.ClassDef] = {}
         self._module: types.ModuleType
