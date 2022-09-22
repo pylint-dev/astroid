@@ -131,7 +131,7 @@ class AstroidSyntaxError(AstroidBuildingError):
     def __init__(
         self,
         message: str,
-        modname: str,
+        modname: str | None,
         error: Exception,
         path: str | None,
         source: str | None = None,
