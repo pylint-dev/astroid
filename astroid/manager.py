@@ -165,6 +165,8 @@ class AstroidManager:
         use_cache: bool = True,
     ) -> nodes.Module:
         """Given a module name, return the astroid object."""
+        if modname is None:
+            raise AstroidBuildingError("No module name given.")
         # Sometimes we don't want to use the cache. For example, when we're
         # importing a module with the same name as the file that is importing
         # we want to fallback on the import system to make sure we get the correct
