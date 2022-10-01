@@ -3374,7 +3374,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "B")
 
-    @pytest.mark.xfail(reason="String interpolation is incorrect for modulo formatting")
     def test_string_interpolation(self):
         ast_nodes = extract_node(
             """
