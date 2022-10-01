@@ -992,7 +992,7 @@ def test_dataclass_with_multiple_inheritance() -> None:
     assert [a.name for a in mixed_init.args.args] == ["self", "_abc", "ghi"]
     assert [a.value for a in mixed_init.args.defaults] == [1, 3]
 
-    first, impossible = astroid.extract_node(
+    first = astroid.extract_node(
         """
     from dataclasses import dataclass
 
@@ -1012,6 +1012,40 @@ def test_dataclass_with_multiple_inheritance() -> None:
     class GrandChild(FirstChild, SecondChild):
         ...
 
+    GrandChild.__init__  #@
+    """
+    )
+
+    first_init: bases.UnboundMethod = next(first.infer())
+    assert [a.name for a in first_init.args.args] == ["self", "required", "optional"]
+    assert [a.value for a in first_init.args.defaults] == [False]
+
+
+@pytest.mark.xfail(reason="Transforms returning Uninferable isn't supported.")
+def test_dataclass_non_default_argument_after_default() -> None:
+    """Test that a non-default argument after a default argument is not allowed.
+
+    This should succeed, but the dataclass brain is a transform
+    which currently can't return an Uninferable correctly. Therefore, we can't
+    set the dataclass ClassDef node to be Uninferable currently.
+    """
+
+    impossible = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+
+    @dataclass
+    class BaseParent:
+        required: bool
+
+    @dataclass
+    class FirstChild(BaseParent):
+        ...
+
+    @dataclass
+    class SecondChild(BaseParent):
+        optional: bool = False
+
     @dataclass
     class ThirdChild:
         other: bool = False
@@ -1020,18 +1054,11 @@ def test_dataclass_with_multiple_inheritance() -> None:
     class ImpossibleGrandChild(FirstChild, SecondChild, ThirdChild):
         ...
 
-    GrandChild.__init__  #@
     ImpossibleGrandChild() #@
     """
     )
 
-    first_init: bases.UnboundMethod = next(first.infer())
-    assert [a.name for a in first_init.args.args] == ["self", "required", "optional"]
-    assert [a.value for a in first_init.args.defaults] == [False]
-
-    # TODO: This should be an assertion, but the dataclass brain is a transform
-    # which currently can't return an Uninferable correctly.
-    assert not next(impossible.infer()) is Uninferable
+    assert next(impossible.infer()) is Uninferable
 
 
 def test_dataclass_inits_of_non_dataclasses() -> None:
