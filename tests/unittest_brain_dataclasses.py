@@ -1028,7 +1028,7 @@ def test_dataclass_non_default_argument_after_default() -> None:
     This should succeed, but the dataclass brain is a transform
     which currently can't return an Uninferable correctly. Therefore, we can't
     set the dataclass ClassDef node to be Uninferable currently.
-    Eventually it can merged into test_dataclass_with_multiple_inheritance.
+    Eventually it can be merged into test_dataclass_with_multiple_inheritance.
     """
 
     impossible = astroid.extract_node(
