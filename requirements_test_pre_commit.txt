@@ -3,4 +3,4 @@ pylint==2.15.3
 isort==5.10.1
 flake8==5.0.4
 flake8-typing-imports==1.13.0
-mypy==0.971
+mypy==0.982
