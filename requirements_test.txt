@@ -4,7 +4,7 @@ contributors-txt>=0.7.4
 coveralls~=3.3
 coverage~=6.4
 pre-commit~=2.20
-pytest-cov~=3.0
+pytest-cov~=4.0
 tbump~=6.9.0
 types-typed-ast; implementation_name=="cpython" and python_version<"3.8"
 types-pkg_resources==0.1.3
