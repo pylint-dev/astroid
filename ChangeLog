@@ -25,7 +25,10 @@ What's New in astroid 2.12.11?
 ==============================
 Release date: TBA
 
+* Fixed a regression in the creation of the ``__init__`` of dataclasses with
+  multiple inheritance.
 
+  Closes PyCQA/pylint#7434
 
 What's New in astroid 2.12.10?
 ==============================
