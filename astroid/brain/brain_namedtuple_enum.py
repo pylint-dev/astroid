@@ -425,6 +425,10 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                 new_targets.append(fake.instantiate_class())
                 dunder_members[local] = fake
             node.locals[local] = new_targets
+
+        # The undocumented `_value2member_map_` member:
+        node.locals["_value2member_map_"] = [nodes.Dict(parent=node)]
+
         members = nodes.Dict(parent=node)
         members.postinit(
             [

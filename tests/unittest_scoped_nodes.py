@@ -2534,6 +2534,21 @@ def test_enums_type_annotation_no_value(annotation) -> None:
     assert inferred_member_value.value is None
 
 
+def test_enums_value2member_map_() -> None:
+    """Check the `_value2member_map_` member is present in an Enum class"""
+    node = builder.extract_node(
+        """
+    from enum import Enum
+    class Veg(Enum):
+        TOMATO: 1
+
+    Veg
+    """
+    )
+    inferred_class = node.inferred()[0]
+    assert "_value2member_map_" in inferred_class.locals
+
+
 @pytest.mark.parametrize("annotation, value", [("int", 42), ("bytes", b"")])
 def test_enums_type_annotation_non_str_member(annotation, value) -> None:
     """A type-annotated member of an Enum class where:
