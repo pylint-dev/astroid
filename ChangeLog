@@ -7,6 +7,10 @@ What's New in astroid 2.13.0?
 Release date: TBA
 
 
+* Add ``_value2member_map_`` member to the ``enum`` brain.
+
+  Refs PyCQA/pylint#3941
+
 
 What's New in astroid 2.12.11?
 ==============================
