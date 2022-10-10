@@ -16,10 +16,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3.0.2
+        uses: actions/checkout@v3.1.0
       - name: Set up Python
         id: python
-        uses: actions/setup-python@v4.2.0
+        uses: actions/setup-python@v4.3.0
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - name: Create Python virtual environment with virtualenv==15.1.0
