@@ -12,10 +12,6 @@ Release date: TBA
 
   Refs PyCQA/pylint#5151
 
-* Improve detection of namespace packages for the modules with ``__spec__`` set to None.
-
-  Closes PyCQA/pylint#7488.
-
 * Create ``ContextManagerModel`` and let ``GeneratorModel`` inherit from it.
 
   Refs PyCQA/pylint#2567
@@ -25,9 +21,20 @@ Release date: TBA
   Refs PyCQA/pylint#3941
 
 
-What's New in astroid 2.12.11?
+What's New in astroid 2.12.12?
 ==============================
 Release date: TBA
+
+
+
+
+What's New in astroid 2.12.11?
+==============================
+Release date: 2022-10-10
+
+* Improve detection of namespace packages for the modules with ``__spec__`` set to None.
+
+  Closes PyCQA/pylint#7488.
 
 * Fixed a regression in the creation of the ``__init__`` of dataclasses with
   multiple inheritance.

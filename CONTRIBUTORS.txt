@@ -23,6 +23,7 @@ Maintainers
 - Łukasz Rogalski <rogalski.91@gmail.com>
 - Florian Bruhin <me@the-compiler.org>
 - Ashley Whetter <ashley@awhetter.co.uk>
+- Mark Byrne <31762852+mbyrnepr2@users.noreply.github.com>
 - Dimitri Prybysh <dmand@yandex.ru>
 - Areveny <areveny@protonmail.com>
 
@@ -39,7 +40,6 @@ Contributors
 - David Gilman <davidgilman1@gmail.com>
 - Julien Jehannet <julien.jehannet@logilab.fr>
 - Calen Pennington <calen.pennington@gmail.com>
-- Mark Byrne <31762852+mbyrnepr2@users.noreply.github.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Phil Schaf <flying-sheep@web.de>
 - Hugo van Kemenade <hugovk@users.noreply.github.com>
@@ -111,6 +111,7 @@ Contributors
 - Stanislav Levin <slev@altlinux.org>
 - Simon Hewitt <si@sjhewitt.co.uk>
 - Serhiy Storchaka <storchaka@gmail.com>
+- Saugat Pachhai (सौगात) <suagatchhetri@outlook.com>
 - Roy Wright <roy@wright.org>
 - Robin Jarry <robin.jarry@6wind.com>
 - René Fritze <47802+renefritze@users.noreply.github.com>
