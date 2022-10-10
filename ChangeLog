@@ -20,14 +20,14 @@ Release date: TBA
 
   Refs PyCQA/pylint#3941
 
-* Add the ``length`` parameter to ``hash.digest`` & ``hash.hexdigest`` in the ``hashlib`` brain.
-
-  Refs PyCQA/pylint#4039
-
 
 What's New in astroid 2.12.12?
 ==============================
 Release date: TBA
+
+* Add the ``length`` parameter to ``hash.digest`` & ``hash.hexdigest`` in the ``hashlib`` brain.
+
+  Refs PyCQA/pylint#4039
 
 
 
