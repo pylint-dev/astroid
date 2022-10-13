@@ -338,6 +338,30 @@ def test(val):
         assert isinstance(inferred, Instance)
         assert inferred.qname() == ".A"
 
+    def test_inference_context_consideration(self) -> None:
+        # Test for https://github.com/PyCQA/astroid/issues/1828
+        code = """
+        class Base:
+            def return_type(self):
+                return type(self)()
+
+        class A(Base):
+            def method(self):
+                return self.return_type()
+
+        class B(Base):
+            def method(self):
+                return self.return_type()
+
+        A().method() #@
+        B().method() #@
+        """
+        node1, node2 = extract_node(code)
+        inferred1 = next(node1.infer())
+        assert inferred1.qname() == ".A"
+        inferred2 = next(node2.infer())
+        assert inferred2.qname() == ".B"
+
 
 class Whatever:
     a = property(lambda x: x, lambda x: x)  # type: ignore[misc]

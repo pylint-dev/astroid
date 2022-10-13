@@ -79,7 +79,7 @@ from astroid.exceptions import (
     UnresolvableName,
     UseInferenceDefault,
 )
-from astroid.inference_tip import _inference_tip_cached, inference_tip
+from astroid.inference_tip import inference_tip
 from astroid.objects import ExceptionInstance
 
 # isort: off

@@ -12,7 +12,7 @@ from collections.abc import Iterator
 import wrapt
 
 from astroid import bases, util
-from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
+from astroid.exceptions import InferenceOverwriteError
 from astroid.nodes import NodeNG
 from astroid.typing import InferFn
 
@@ -20,30 +20,14 @@ InferOptions = typing.Union[
     NodeNG, bases.Instance, bases.UnboundMethod, typing.Type[util.Uninferable]
 ]
 
-_cache: dict[tuple[InferFn, NodeNG], list[InferOptions] | None] = {}
-
-
-def clear_inference_tip_cache() -> None:
-    """Clear the inference tips cache."""
-    _cache.clear()
-
 
 @wrapt.decorator
-def _inference_tip_cached(
+def _inference_tip(
     func: InferFn, instance: None, args: typing.Any, kwargs: typing.Any
 ) -> Iterator[InferOptions]:
     """Cache decorator used for inference tips"""
-    node = args[0]
-    try:
-        result = _cache[func, node]
-        # If through recursion we end up trying to infer the same
-        # func + node we raise here.
-        if result is None:
-            raise UseInferenceDefault()
-    except KeyError:
-        _cache[func, node] = None
-        result = _cache[func, node] = list(func(*args, **kwargs))
-        assert result
+    result = list(func(*args, **kwargs))
+    assert result
     return iter(result)
 
 
@@ -84,7 +68,7 @@ def inference_tip(infer_function: InferFn, raise_on_overwrite: bool = False) -> 
                 )
             )
         # pylint: disable=no-value-for-parameter
-        node._explicit_inference = _inference_tip_cached(infer_function)
+        node._explicit_inference = _inference_tip(infer_function)
         return node
 
     return transform

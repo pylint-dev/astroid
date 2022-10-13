@@ -409,11 +409,8 @@ class AstroidManager:
         re-register transforms."""
         # import here because of cyclic imports
         # pylint: disable=import-outside-toplevel
-        from astroid.inference_tip import clear_inference_tip_cache
         from astroid.interpreter.objectmodel import ObjectModel
         from astroid.nodes.node_classes import LookupMixIn
-
-        clear_inference_tip_cache()
 
         self.astroid_cache.clear()
         # NB: not a new TransformVisitor()
