@@ -9,6 +9,7 @@ import time
 import unittest
 from collections.abc import Iterator
 from contextlib import contextmanager
+from unittest import mock
 
 import pytest
 
@@ -143,6 +144,14 @@ class AstroidManagerTest(
             self.assertFalse(util.is_namespace("astroid"))
         finally:
             astroid_module.__spec__ = original_spec
+
+    @mock.patch(
+        "astroid.interpreter._import.util._find_spec_from_path",
+        side_effect=AttributeError,
+    )
+    def test_module_unexpectedly_missing_path(self, mocked) -> None:
+        """https://github.com/PyCQA/pylint/issues/7592"""
+        self.assertFalse(util.is_namespace("astroid"))
 
     def test_module_unexpectedly_spec_is_none(self) -> None:
         astroid_module = sys.modules["astroid"]
