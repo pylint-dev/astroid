@@ -24,7 +24,9 @@ Release date: TBA
 
   Refs PyCQA/pylint#4039
 
+* Prevent a crash when a module's ``__path__`` attribute is unexpectedly missing.
 
+  Refs PyCQA/pylint#7592
 
 What's New in astroid 2.12.11?
 ==============================
