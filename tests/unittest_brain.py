@@ -83,24 +83,44 @@ class HashlibTest(unittest.TestCase):
             len(class_obj["__init__"].args.defaults), 2 if PY39_PLUS else 1
         )
         self.assertEqual(len(class_obj["update"].args.args), 2)
-        self.assertEqual(len(class_obj["digest"].args.args), 1)
-        self.assertEqual(len(class_obj["hexdigest"].args.args), 1)
 
     def test_hashlib(self) -> None:
         """Tests that brain extensions for hashlib work."""
         hashlib_module = MANAGER.ast_from_module_name("hashlib")
-        for class_name in ("md5", "sha1"):
+        for class_name in (
+            "md5",
+            "sha1",
+            "sha224",
+            "sha256",
+            "sha384",
+            "sha512",
+            "sha3_224",
+            "sha3_256",
+            "sha3_384",
+            "sha3_512",
+        ):
             class_obj = hashlib_module[class_name]
             self._assert_hashlib_class(class_obj)
+            self.assertEqual(len(class_obj["digest"].args.args), 1)
+            self.assertEqual(len(class_obj["hexdigest"].args.args), 1)
 
-    def test_hashlib_py36(self) -> None:
+    def test_shake(self) -> None:
+        """Tests that the brain extensions for the hashlib shake algorithms work."""
         hashlib_module = MANAGER.ast_from_module_name("hashlib")
-        for class_name in ("sha3_224", "sha3_512", "shake_128"):
+        for class_name in ("shake_128", "shake_256"):
             class_obj = hashlib_module[class_name]
             self._assert_hashlib_class(class_obj)
+            self.assertEqual(len(class_obj["digest"].args.args), 2)
+            self.assertEqual(len(class_obj["hexdigest"].args.args), 2)
+
+    def test_blake2(self) -> None:
+        """Tests that the brain extensions for the hashlib blake2 hash functions work."""
+        hashlib_module = MANAGER.ast_from_module_name("hashlib")
         for class_name in ("blake2b", "blake2s"):
             class_obj = hashlib_module[class_name]
             self.assertEqual(len(class_obj["__init__"].args.args), 2)
+            self.assertEqual(len(class_obj["digest"].args.args), 1)
+            self.assertEqual(len(class_obj["hexdigest"].args.args), 1)
 
 
 class CollectionsDequeTests(unittest.TestCase):
