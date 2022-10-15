@@ -42,6 +42,8 @@ def is_namespace(modname: str) -> bool:
             found_spec = _find_spec_from_path(
                 working_modname, path=last_submodule_search_locations
             )
+        except AttributeError:
+            return False
         except ValueError:
             if modname == "__main__":
                 return False
