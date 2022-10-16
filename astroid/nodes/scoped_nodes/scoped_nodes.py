@@ -2841,7 +2841,7 @@ class ClassDef(
                 return next(
                     node
                     for node in self._metaclass.infer(context=context)
-                    if isinstance(node, NodeNG)
+                    if node is not util.Uninferable
                 )
             except (InferenceError, StopIteration):
                 return None
