@@ -1415,6 +1415,20 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         inferred = next(klass.infer())
         self.assertIsNone(inferred.metaclass())
 
+    @staticmethod
+    def test_with_invalid_metaclass():
+        klass = extract_node(
+            """
+        class InvalidAsMetaclass: ...
+
+        class Invalid(metaclass=InvalidAsMetaclass()):  #@
+            pass
+        """
+        )
+        inferred = next(klass.infer())
+        metaclass = inferred.metaclass()
+        assert isinstance(metaclass, Instance)
+
     def test_nonregr_infer_callresult(self) -> None:
         astroid = builder.parse(
             """
