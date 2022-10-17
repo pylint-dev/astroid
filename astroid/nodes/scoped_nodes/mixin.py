@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, overload
 
 from astroid.filter_statements import _filter_stmts
 from astroid.nodes import node_classes, scoped_nodes
@@ -88,23 +88,21 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         # self is at the top level of a module, or is enclosed only by ClassDefs
         return builtin_lookup(name)
 
-    def set_local(self, name, stmt):
+    def set_local(self, name: str, stmt: nodes.NodeNG) -> None:
         """Define that the given name is declared in the given statement node.
 
         .. seealso:: :meth:`scope`
 
         :param name: The name that is being defined.
-        :type name: str
 
         :param stmt: The statement that defines the given name.
-        :type stmt: NodeNG
         """
         # assert not stmt in self.locals.get(name, ()), (self, stmt)
         self.locals.setdefault(name, []).append(stmt)
 
     __setitem__ = set_local
 
-    def _append_node(self, child):
+    def _append_node(self, child: nodes.NodeNG) -> None:
         """append a child, linking it in the tree"""
         # pylint: disable=no-member; depending by the class
         # which uses the current class as a mixin or base class.
@@ -113,20 +111,28 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         self.body.append(child)
         child.parent = self
 
-    def add_local_node(self, child_node, name=None):
+    @overload
+    def add_local_node(
+        self, child_node: nodes.ClassDef, name: str | None = ...
+    ) -> None:
+        ...
+
+    @overload
+    def add_local_node(self, child_node: nodes.NodeNG, name: str) -> None:
+        ...
+
+    def add_local_node(self, child_node: nodes.NodeNG, name: str | None = None) -> None:
         """Append a child that should alter the locals of this scope node.
 
         :param child_node: The child node that will alter locals.
-        :type child_node: NodeNG
 
         :param name: The name of the local that will be altered by
             the given child node.
-        :type name: str or None
         """
         if name != "__class__":
             # add __class__ node as a child will cause infinite recursion later!
             self._append_node(child_node)
-        self.set_local(name or child_node.name, child_node)
+        self.set_local(name or child_node.name, child_node)  # type: ignore[attr-defined]
 
     def __getitem__(self, item: str) -> nodes.NodeNG:
         """The first node the defines the given local.

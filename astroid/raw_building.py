@@ -165,7 +165,7 @@ def build_from_import(fromname, names):
     return nodes.ImportFrom(fromname, [(name, None) for name in names])
 
 
-def register_arguments(func, args=None):
+def register_arguments(func: nodes.FunctionDef, args: list | None = None) -> None:
     """add given arguments to local
 
     args is a list that may contains nested lists
