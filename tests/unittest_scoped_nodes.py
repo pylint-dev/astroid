@@ -1268,6 +1268,22 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(attr1, nodes.AssignName)
         self.assertEqual(attr1.name, "attr")
 
+    @staticmethod
+    def test_getattr_with_enpty_annassign() -> None:
+        code = """
+            class Parent:
+                attr: int = 2
+
+            class Child(Parent):  #@
+                attr: int
+        """
+        child = extract_node(code)
+        attr = child.getattr("attr")
+        assert len(attr) == 1
+        assert isinstance(attr[0], nodes.AssignName)
+        assert attr[0].name == "attr"
+        assert attr[0].lineno == 3
+
     def test_function_with_decorator_lineno(self) -> None:
         data = """
             @f(a=2,

@@ -38,6 +38,11 @@ Release date: TBA
 
   Refs PyCQA/pylint#7592
 
+* Fix inferring attributes with empty annotation assignments if parent
+  class contains valid assignment.
+
+  Refs PyCQA/pylint#7631
+
 
 What's New in astroid 2.12.11?
 ==============================
