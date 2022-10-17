@@ -46,6 +46,7 @@ from astroid.nodes import Arguments, Const, NodeNG, _base_nodes, node_classes
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
+from astroid.typing import InferenceResult
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
@@ -2519,7 +2520,12 @@ class ClassDef(
             pass
         return bases.Instance(self)
 
-    def getattr(self, name, context=None, class_context=True):
+    def getattr(
+        self,
+        name: str,
+        context: InferenceContext | None = None,
+        class_context: bool = True,
+    ) -> list[NodeNG]:
         """Get an attribute from this class, using Python's attribute semantic.
 
         This method doesn't look in the :attr:`instance_attrs` dictionary
@@ -2535,13 +2541,10 @@ class ClassDef(
         metaclass will be done.
 
         :param name: The attribute to look for.
-        :type name: str
 
         :param class_context: Whether the attribute can be accessed statically.
-        :type class_context: bool
 
         :returns: The attribute.
-        :rtype: list(NodeNG)
 
         :raises AttributeInferenceError: If the attribute cannot be inferred.
         """
@@ -2564,17 +2567,16 @@ class ClassDef(
         if class_context:
             values += self._metaclass_lookup_attribute(name, context)
 
-        if not values:
-            raise AttributeInferenceError(target=self, attribute=name, context=context)
-
-        # Look for AnnAssigns, which are not attributes in the purest sense.
-        for value in values:
+        # Remove AnnAssigns without value, which are not attributes in the purest sense.
+        for value in values.copy():
             if isinstance(value, node_classes.AssignName):
                 stmt = value.statement(future=True)
                 if isinstance(stmt, node_classes.AnnAssign) and stmt.value is None:
-                    raise AttributeInferenceError(
-                        target=self, attribute=name, context=context
-                    )
+                    values.pop(values.index(value))
+
+        if not values:
+            raise AttributeInferenceError(target=self, attribute=name, context=context)
+
         return values
 
     def _metaclass_lookup_attribute(self, name, context):
@@ -2616,14 +2618,17 @@ class ClassDef(
             else:
                 yield bases.BoundMethod(attr, self)
 
-    def igetattr(self, name, context=None, class_context=True):
+    def igetattr(
+        self,
+        name: str,
+        context: InferenceContext | None = None,
+        class_context: bool = True,
+    ) -> Iterator[InferenceResult]:
         """Infer the possible values of the given variable.
 
         :param name: The name of the variable to infer.
-        :type name: str
 
         :returns: The inferred possible values.
-        :rtype: iterable(NodeNG or Uninferable)
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
