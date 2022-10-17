@@ -20,8 +20,6 @@ What's New in astroid 2.12.12?
 ==============================
 Release date: TBA
 
-
-
 * Add the ``length`` parameter to ``hash.digest`` & ``hash.hexdigest`` in the ``hashlib`` brain.
 
   Refs PyCQA/pylint#4039
@@ -29,6 +27,12 @@ Release date: TBA
 * Prevent a crash when a module's ``__path__`` attribute is unexpectedly missing.
 
   Refs PyCQA/pylint#7592
+
+* Fix inferring attributes with empty annotation assignments if parent
+  class contains valid assignment.
+
+  Refs PyCQA/pylint#7631
+
 
 What's New in astroid 2.12.11?
 ==============================
