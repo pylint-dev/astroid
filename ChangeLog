@@ -20,6 +20,8 @@ What's New in astroid 2.12.12?
 ==============================
 Release date: TBA
 
+
+
 * Add the ``length`` parameter to ``hash.digest`` & ``hash.hexdigest`` in the ``hashlib`` brain.
 
   Refs PyCQA/pylint#4039
@@ -32,10 +34,15 @@ What's New in astroid 2.12.11?
 ==============================
 Release date: 2022-10-10
 
+* Improve detection of namespace packages for the modules with ``__spec__`` set to None.
+
+  Closes PyCQA/pylint#7488.
+
 * Fixed a regression in the creation of the ``__init__`` of dataclasses with
   multiple inheritance.
 
   Closes PyCQA/pylint#7434
+
 
 What's New in astroid 2.12.10?
 ==============================
