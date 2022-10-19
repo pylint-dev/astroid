@@ -202,7 +202,7 @@ jobs:
         run: >-
           echo "key=venv-${{ env.CACHE_VERSION }}-${{
             hashFiles('setup.cfg', 'requirements_test_min.txt',
-          'requirements_test_brain.txt') }}" >> $GITHUB_OUTPUT
+          'requirements_test_brain.txt') }}" >> $env:GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
         uses: actions/cache@v3.0.11
