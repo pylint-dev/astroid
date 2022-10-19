@@ -16,9 +16,15 @@ Release date: TBA
   Closes PyCQA/pylint#7488.
 
 
-What's New in astroid 2.12.12?
+What's New in astroid 2.12.13?
 ==============================
 Release date: TBA
+
+
+
+What's New in astroid 2.12.12?
+==============================
+Release date: 2022-10-19
 
 * Add the ``length`` parameter to ``hash.digest`` & ``hash.hexdigest`` in the ``hashlib`` brain.
 
