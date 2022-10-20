@@ -5316,6 +5316,16 @@ def test_slice_inference_in_for_loops_not_working() -> None:
         assert inferred == util.Uninferable
 
 
+def test_slice_zero_step_does_not_raise_ValueError() -> None:
+    node = extract_node("x = [][::0]; x")
+    assert next(node.infer()) == util.Uninferable
+
+
+def test_slice_zero_step_on_str_does_not_raise_ValueError() -> None:
+    node = extract_node('x = ""[::0]; x')
+    assert next(node.infer()) == util.Uninferable
+
+
 def test_unpacking_starred_and_dicts_in_assignment() -> None:
     node = extract_node(
         """
