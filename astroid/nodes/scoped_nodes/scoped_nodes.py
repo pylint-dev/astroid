@@ -2968,7 +2968,7 @@ class ClassDef(
             mro: list[ClassDef],
         ) -> Iterator[node_classes.NodeNG | None]:
             # Not interested in object, since it can't have slots.
-            for cls in mro[:-1]:
+            for cls in [cls for cls in mro if cls.qname() != "builtins.object"]:
                 try:
                     cls_slots = cls._slots()
                 except NotImplementedError:
