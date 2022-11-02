@@ -31,9 +31,9 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=base-venv-${{ env.CACHE_VERSION }}-${{
-            hashFiles('setup.cfg', 'requirements_test.txt', 'requirements_test_min.txt',
-          'requirements_test_brain.txt', 'requirements_test_pre_commit.txt') }}" >>
-          $GITHUB_OUTPUT
+            hashFiles('pyproject.toml', 'requirements_test.txt',
+          'requirements_test_min.txt', 'requirements_test_brain.txt',
+          'requirements_test_pre_commit.txt') }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
         uses: actions/cache@v3.0.11
@@ -100,8 +100,9 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
-            hashFiles('setup.cfg', 'requirements_test.txt', 'requirements_test_min.txt',
-          'requirements_test_brain.txt') }}" >> $GITHUB_OUTPUT
+            hashFiles('pyproject.toml', 'requirements_test.txt',
+          'requirements_test_min.txt', 'requirements_test_brain.txt') }}" >>
+          $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
         uses: actions/cache@v3.0.11
@@ -200,7 +201,7 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
-            hashFiles('setup.cfg', 'requirements_test_min.txt',
+            hashFiles('pyproject.toml', 'requirements_test_min.txt',
           'requirements_test_brain.txt') }}" >> $env:GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
@@ -244,7 +245,8 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
-            hashFiles('setup.cfg', 'requirements_test_min.txt') }}" >> $GITHUB_OUTPUT
+            hashFiles('pyproject.toml', 'requirements_test_min.txt')
+          }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
         uses: actions/cache@v3.0.11
