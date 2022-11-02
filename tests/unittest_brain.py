@@ -1820,7 +1820,6 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(slots[0], nodes.Const)
         assert slots[0].value == "value"
 
-
     def test_collections_generic_alias_slots(self):
         """Test slots for a class which is a subclass of a generic alias type."""
         node = builder.extract_node(
