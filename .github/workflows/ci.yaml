@@ -9,6 +9,7 @@ on:
 
 env:
   CACHE_VERSION: 6
+  KEY_PREFIX: venv
   DEFAULT_PYTHON: "3.10"
   PRE_COMMIT_CACHE: ~/.cache/pre-commit
 
@@ -98,7 +99,7 @@ jobs:
       - name: Generate partial Python venv restore key
         id: generate-python-key
         run: >-
-          echo "key=venv-${{ env.CACHE_VERSION }}-${{
+          echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
             hashFiles('setup.cfg', 'requirements_test.txt', 'requirements_test_min.txt',
           'requirements_test_brain.txt') }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
@@ -198,7 +199,7 @@ jobs:
       - name: Generate partial Python venv restore key
         id: generate-python-key
         run: >-
-          echo "key=venv-${{ env.CACHE_VERSION }}-${{
+          echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
             hashFiles('setup.cfg', 'requirements_test_min.txt',
           'requirements_test_brain.txt') }}" >> $env:GITHUB_OUTPUT
       - name: Restore Python virtual environment
@@ -242,7 +243,7 @@ jobs:
       - name: Generate partial Python venv restore key
         id: generate-python-key
         run: >-
-          echo "key=venv-${{ env.CACHE_VERSION }}-${{
+          echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
             hashFiles('setup.cfg', 'requirements_test_min.txt') }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
