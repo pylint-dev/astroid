@@ -2967,8 +2967,10 @@ class ClassDef(
         def grouped_slots(
             mro: list[ClassDef],
         ) -> Iterator[node_classes.NodeNG | None]:
-            # Not interested in object, since it can't have slots.
-            for cls in [cls for cls in mro if cls.qname() != "builtins.object"]:
+            for cls in mro:
+                # Not interested in object, since it can't have slots.
+                if cls.qname() == "builtins.object":
+                    continue
                 try:
                     cls_slots = cls._slots()
                 except NotImplementedError:
