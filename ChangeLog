@@ -16,6 +16,10 @@ Release date: TBA
 
   Refs PyCQA/pylint#2567
 
+* Infer the `length` argument of the ``random.sample`` function.
+
+  Refs PyCQA/pylint#7706
+
 * Add ``_value2member_map_`` member to the ``enum`` brain.
 
   Refs PyCQA/pylint#3941
