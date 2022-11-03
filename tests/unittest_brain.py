@@ -1819,6 +1819,26 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(slots[0], nodes.Const)
         assert slots[0].value == "value"
 
+    def test_collections_generic_alias_slots(self):
+        """Test slots for a class which is a subclass of a generic alias type."""
+        node = builder.extract_node(
+            """
+        import collections
+        import typing
+        Type = typing.TypeVar('Type')
+        class A(collections.abc.AsyncIterator[Type]):
+            __slots__ = ('_value',)
+            def __init__(self, value: collections.abc.AsyncIterator[Type]):
+                self._value = value
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+        slots = inferred.slots()
+        assert len(slots) == 1
+        assert isinstance(slots[0], nodes.Const)
+        assert slots[0].value == "_value"
+
     def test_has_dunder_args(self) -> None:
         ast_node = builder.extract_node(
             """
