@@ -24,6 +24,9 @@ What's New in astroid 2.12.13?
 ==============================
 Release date: TBA
 
+* Infer the `length` argument of the ``random.sample`` function.
+
+  Refs PyCQA/pylint#7706
 
 
 What's New in astroid 2.12.12?
