@@ -7,9 +7,10 @@ What's New in astroid 2.13.0?
 Release date: TBA
 
 
-* Prevent returning an empty list for ``ClassDef.slots()`` when the mro list contains one class & it is not ``object``.
 
-  Refs PyCQA/pylint#5099
+What's New in astroid 2.12.13?
+==============================
+Release date: TBA
 
 * Add ``_value2member_map_`` member to the ``enum`` brain.
 
@@ -19,10 +20,9 @@ Release date: TBA
 
   Closes PyCQA/pylint#7488.
 
+* Prevent returning an empty list for ``ClassDef.slots()`` when the mro list contains one class & it is not ``object``.
 
-What's New in astroid 2.12.13?
-==============================
-Release date: TBA
+  Refs PyCQA/pylint#5099
 
 * Infer the `length` argument of the ``random.sample`` function.
 
