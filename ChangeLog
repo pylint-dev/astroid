@@ -16,10 +16,6 @@ Release date: TBA
 
   Refs PyCQA/pylint#2567
 
-* Infer the `length` argument of the ``random.sample`` function.
-
-  Refs PyCQA/pylint#7706
-
 * Prevent returning an empty list for ``ClassDef.slots()`` when the mro list contains one class & it is not ``object``.
 
   Refs PyCQA/pylint#5099
@@ -33,6 +29,9 @@ What's New in astroid 2.12.13?
 ==============================
 Release date: TBA
 
+* Infer the `length` argument of the ``random.sample`` function.
+
+  Refs PyCQA/pylint#7706
 
 
 What's New in astroid 2.12.12?
