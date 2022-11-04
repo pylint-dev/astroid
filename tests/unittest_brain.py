@@ -2413,6 +2413,29 @@ class RandomSampleTest(unittest.TestCase):
         elems = sorted(elem.value for elem in inferred.elts)
         self.assertEqual(elems, [1, 2])
 
+    def test_arguments_inferred_successfully(self) -> None:
+        """Test inference of `random.sample` when both arguments are of type `nodes.Call`."""
+        node = astroid.extract_node(
+            """
+        import random
+
+        def sequence():
+            return [1, 2]
+
+        random.sample(sequence(), len([1,2])) #@
+        """
+        )
+        # Check that arguments are of type `nodes.Call`.
+        sequence, length = node.args
+        self.assertIsInstance(sequence, astroid.Call)
+        self.assertIsInstance(length, astroid.Call)
+
+        # Check the inference of `random.sample` call.
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, astroid.List)
+        elems = sorted(elem.value for elem in inferred.elts)
+        self.assertEqual(elems, [1, 2])
+
     def test_no_crash_on_evaluatedobject(self) -> None:
         node = astroid.extract_node(
             """
