@@ -2,9 +2,6 @@ name: Release tests
 
 on: workflow_dispatch
 
-env:
-  DEFAULT_PYTHON: "3.10"
-
 permissions:
   contents: read
 
@@ -16,8 +13,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3.0.2
-      - name: Set up Python
+        uses: actions/checkout@v3.1.0
+      - name: Set up Python 3.9
         id: python
         uses: actions/setup-python@v4.0.0
         with:
