@@ -709,10 +709,7 @@ class GeneratorExp(ComprehensionScope):
         :type end_col_offset: Optional[int]
         """
         self.locals = {}
-        """A map of the name of a local variable to the node defining the local.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining the local."""
 
         super().__init__(
             lineno=lineno,
@@ -801,10 +798,7 @@ class DictComp(ComprehensionScope):
         :type end_col_offset: Optional[int]
         """
         self.locals = {}
-        """A map of the name of a local variable to the node defining the local.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining the local."""
 
         super().__init__(
             lineno=lineno,
@@ -898,10 +892,7 @@ class SetComp(ComprehensionScope):
         :type end_col_offset: Optional[int]
         """
         self.locals = {}
-        """A map of the name of a local variable to the node defining the local.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining the local."""
 
         super().__init__(
             lineno=lineno,
@@ -968,10 +959,7 @@ class ListComp(ComprehensionScope):
         end_col_offset=None,
     ):
         self.locals = {}
-        """A map of the name of a local variable to the node defining it.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining it."""
 
         super().__init__(
             lineno=lineno,
@@ -1106,10 +1094,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         :type end_col_offset: Optional[int]
         """
         self.locals = {}
-        """A map of the name of a local variable to the node defining it.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining it."""
 
         self.args: Arguments
         """The arguments that the function takes."""
@@ -2003,10 +1988,7 @@ class ClassDef(
         """
         self.instance_attrs = {}
         self.locals = {}
-        """A map of the name of a local variable to the node defining it.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining it."""
 
         self.keywords = []
         """The keywords given to the class definition.
@@ -2558,7 +2540,7 @@ class ClassDef(
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
         # don't modify the list in self.locals!
-        values = list(self.locals.get(name, []))
+        values: list[SuccessfulInferenceResult] = list(self.locals.get(name, []))
         for classnode in self.ancestors(recurs=True, context=context):
             values += classnode.locals.get(name, [])
 
