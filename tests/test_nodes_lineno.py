@@ -763,7 +763,7 @@ class TestLinenoColOffset:
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 2
 
         t1 = ast_nodes[0]
-        assert isinstance(t1, nodes.TryExcept)
+        assert isinstance(t1, nodes.Try)
         assert isinstance(t1.body[0], nodes.Pass)
         assert isinstance(t1.orelse[0], nodes.Pass)
         assert (t1.lineno, t1.col_offset) == (1, 0)
@@ -789,13 +789,12 @@ class TestLinenoColOffset:
         assert (t2.body[0].end_lineno, t2.body[0].end_col_offset) == (4, 8)
 
         t3 = ast_nodes[1]
-        assert isinstance(t3, nodes.TryFinally)
-        assert isinstance(t3.body[0], nodes.TryExcept)
+        assert isinstance(t3, nodes.Try)
         assert isinstance(t3.finalbody[0], nodes.Pass)
         assert (t3.lineno, t3.col_offset) == (10, 0)
         assert (t3.end_lineno, t3.end_col_offset) == (17, 8)
-        assert (t3.body[0].lineno, t3.body[0].col_offset) == (10, 0)
-        assert (t3.body[0].end_lineno, t3.body[0].end_col_offset) == (15, 8)
+        assert (t3.body[0].lineno, t3.body[0].col_offset) == (11, 4)
+        assert (t3.body[0].end_lineno, t3.body[0].end_col_offset) == (11, 8)
         assert (t3.finalbody[0].lineno, t3.finalbody[0].col_offset) == (17, 4)
         assert (t3.finalbody[0].end_lineno, t3.finalbody[0].end_col_offset) == (17, 8)
 

@@ -134,6 +134,9 @@ Release date: TBA
 
   Refs #2154
 
+* Add new ``nodes.Try`` to better match Python AST. Replaces the ``TryExcept``
+  and ``TryFinally`` nodes which have been removed.
+
 
 What's New in astroid 2.15.5?
 =============================

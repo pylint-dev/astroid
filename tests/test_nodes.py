@@ -339,6 +339,35 @@ class IfNodeTest(_NodeTest):
         self.assertEqual(self.astroid.body[1].orelse[0].block_range(8), (8, 8))
 
 
+class TryNodeTest(_NodeTest):
+    CODE = """
+        try:  # L2
+            print("Hello")
+        except IOError:
+            pass
+        except UnicodeError:
+            pass
+        else:
+            print()
+        finally:
+            print()
+    """
+
+    def test_block_range(self) -> None:
+        try_node = self.astroid.body[0]
+        assert try_node.block_range(1) == (1, 11)
+        assert try_node.block_range(2) == (2, 2)
+        assert try_node.block_range(3) == (3, 3)
+        assert try_node.block_range(4) == (4, 4)
+        assert try_node.block_range(5) == (5, 5)
+        assert try_node.block_range(6) == (6, 6)
+        assert try_node.block_range(7) == (7, 7)
+        assert try_node.block_range(8) == (8, 8)
+        assert try_node.block_range(9) == (9, 9)
+        assert try_node.block_range(10) == (10, 10)
+        assert try_node.block_range(11) == (11, 11)
+
+
 class TryExceptNodeTest(_NodeTest):
     CODE = """
         try:
@@ -353,14 +382,15 @@ class TryExceptNodeTest(_NodeTest):
 
     def test_block_range(self) -> None:
         # XXX ensure expected values
-        self.assertEqual(self.astroid.body[0].block_range(1), (1, 8))
+        self.assertEqual(self.astroid.body[0].block_range(1), (1, 9))
         self.assertEqual(self.astroid.body[0].block_range(2), (2, 2))
-        self.assertEqual(self.astroid.body[0].block_range(3), (3, 8))
+        self.assertEqual(self.astroid.body[0].block_range(3), (3, 3))
         self.assertEqual(self.astroid.body[0].block_range(4), (4, 4))
         self.assertEqual(self.astroid.body[0].block_range(5), (5, 5))
         self.assertEqual(self.astroid.body[0].block_range(6), (6, 6))
         self.assertEqual(self.astroid.body[0].block_range(7), (7, 7))
         self.assertEqual(self.astroid.body[0].block_range(8), (8, 8))
+        self.assertEqual(self.astroid.body[0].block_range(9), (9, 9))
 
 
 class TryFinallyNodeTest(_NodeTest):
@@ -373,10 +403,11 @@ class TryFinallyNodeTest(_NodeTest):
 
     def test_block_range(self) -> None:
         # XXX ensure expected values
-        self.assertEqual(self.astroid.body[0].block_range(1), (1, 4))
+        self.assertEqual(self.astroid.body[0].block_range(1), (1, 5))
         self.assertEqual(self.astroid.body[0].block_range(2), (2, 2))
-        self.assertEqual(self.astroid.body[0].block_range(3), (3, 4))
+        self.assertEqual(self.astroid.body[0].block_range(3), (3, 3))
         self.assertEqual(self.astroid.body[0].block_range(4), (4, 4))
+        self.assertEqual(self.astroid.body[0].block_range(5), (5, 5))
 
 
 class TryExceptFinallyNodeTest(_NodeTest):
@@ -391,12 +422,13 @@ class TryExceptFinallyNodeTest(_NodeTest):
 
     def test_block_range(self) -> None:
         # XXX ensure expected values
-        self.assertEqual(self.astroid.body[0].block_range(1), (1, 6))
+        self.assertEqual(self.astroid.body[0].block_range(1), (1, 7))
         self.assertEqual(self.astroid.body[0].block_range(2), (2, 2))
-        self.assertEqual(self.astroid.body[0].block_range(3), (3, 4))
+        self.assertEqual(self.astroid.body[0].block_range(3), (3, 3))
         self.assertEqual(self.astroid.body[0].block_range(4), (4, 4))
         self.assertEqual(self.astroid.body[0].block_range(5), (5, 5))
         self.assertEqual(self.astroid.body[0].block_range(6), (6, 6))
+        self.assertEqual(self.astroid.body[0].block_range(7), (7, 7))
 
 
 class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):

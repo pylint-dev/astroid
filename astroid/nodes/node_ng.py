@@ -574,7 +574,7 @@ class NodeNG:
         yield from ()
 
     def _infer_name(self, frame, name):
-        # overridden for ImportFrom, Import, Global, TryExcept, TryStar and Arguments
+        # overridden for ImportFrom, Import, Global, Try, TryStar and Arguments
         pass
 
     def _infer(

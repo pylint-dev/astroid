@@ -485,20 +485,16 @@ class AsStringVisitor:
             idxstr = idxstr[1:-1]
         return f"{self._precedence_parens(node, node.value)}[{idxstr}]"
 
-    def visit_tryexcept(self, node) -> str:
-        """return an astroid.TryExcept node as string"""
+    def visit_try(self, node) -> str:
+        """return an astroid.Try node as string"""
         trys = [f"try:\n{self._stmt_list(node.body)}"]
         for handler in node.handlers:
             trys.append(handler.accept(self))
         if node.orelse:
             trys.append(f"else:\n{self._stmt_list(node.orelse)}")
+        if node.finalbody:
+            trys.append(f"finally:\n{self._stmt_list(node.finalbody)}")
         return "\n".join(trys)
-
-    def visit_tryfinally(self, node) -> str:
-        """return an astroid.TryFinally node as string"""
-        return "try:\n{}\nfinally:\n{}".format(
-            self._stmt_list(node.body), self._stmt_list(node.finalbody)
-        )
 
     def visit_trystar(self, node) -> str:
         """return an astroid.TryStar node as string"""

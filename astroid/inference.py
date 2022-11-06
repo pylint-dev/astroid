@@ -1260,7 +1260,7 @@ def infer_functiondef(
         isinstance(val, objects.Property) for val in parent_frame.locals[self.name]
     )
     # We also don't want to pass parent if the definition is within a Try node
-    if isinstance(self.parent, (nodes.TryExcept, nodes.TryFinally, nodes.If)):
+    if isinstance(self.parent, (nodes.Try, nodes.If)):
         property_already_in_parent_locals = True
 
     prop_func = objects.Property(
