@@ -2649,12 +2649,13 @@ class ClassDef(
             # to the attribute happening *after* the attribute's definition (e.g. AugAssigns on lists)
             if len(attributes) > 1:
                 first_attr, attributes = attributes[0], attributes[1:]
-                first_scope = first_attr.scope()
-                attributes = [first_attr] + [
-                    attr
-                    for attr in attributes
-                    if attr.parent and attr.parent.scope() == first_scope
-                ]
+                if first_attr.parent:
+                    first_scope = first_attr.parent.scope()
+                    attributes = [first_attr] + [
+                        attr
+                        for attr in attributes
+                        if attr.parent and attr.parent.scope() == first_scope
+                    ]
 
             for inferred in bases._infer_stmts(attributes, context, frame=self):
                 # yield Uninferable object instead of descriptors when necessary

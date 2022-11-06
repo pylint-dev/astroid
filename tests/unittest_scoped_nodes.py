@@ -2164,6 +2164,18 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         f2 = next(instance.igetattr("f2"))
         self.assertIsInstance(f2, BoundMethod)
 
+    def test_instance_duplicate_method_issue1015(self) -> None:
+        data = """
+            class Klass:
+                def foo(self): ...
+                def foo(self):
+                    yield
+        """
+        astroid = builder.parse(data)
+        inst = Instance(astroid["Klass"])
+        attrs = list(inst.igetattr("foo"))
+        self.assertEqual(len(attrs), 2, attrs)
+
     def test_class_extra_decorators_frame_is_not_class(self) -> None:
         ast_node = builder.extract_node(
             """
