@@ -493,7 +493,7 @@ class NodeNG:
         """
         return lineno, self.tolineno
 
-    def set_local(self, name, stmt):
+    def set_local(self, name: str, stmt: NodeNG) -> None:
         """Define that the given name is declared in the given statement node.
 
         This definition is stored on the parent scope node.
@@ -501,11 +501,10 @@ class NodeNG:
         .. seealso:: :meth:`scope`
 
         :param name: The name that is being defined.
-        :type name: str
 
         :param stmt: The statement that defines the given name.
-        :type stmt: NodeNG
         """
+        assert self.parent
         self.parent.set_local(name, stmt)
 
     @overload

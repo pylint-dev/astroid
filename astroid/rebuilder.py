@@ -610,6 +610,7 @@ class TreeRebuilder:
             node.root().set_local(node.name, node)
         else:
             assert node.parent
+            assert node.name
             node.parent.set_local(node.name, node)
 
     def visit_arg(self, node: ast.arg, parent: NodeNG) -> nodes.AssignName:
