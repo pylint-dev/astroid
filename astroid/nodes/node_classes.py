@@ -22,6 +22,7 @@ from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidIndexError,
     AstroidTypeError,
+    AstroidValueError,
     InferenceError,
     NoDefault,
     ParentMissingError,
@@ -234,6 +235,13 @@ def _container_getitem(instance, elts, index, context=None):
             return new_cls
         if isinstance(index, Const):
             return elts[index.value]
+    except ValueError as exc:
+        raise AstroidValueError(
+            message="Slice {index!r} cannot index container",
+            node=instance,
+            index=index,
+            context=context,
+        ) from exc
     except IndexError as exc:
         raise AstroidIndexError(
             message="Index {index!s} out of range",
@@ -2030,6 +2038,10 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         try:
             if isinstance(self.value, (str, bytes)):
                 return Const(self.value[index_value])
+        except ValueError as exc:
+            raise AstroidValueError(
+                f"Could not index {self.value!r} with {index_value!r}"
+            ) from exc
         except IndexError as exc:
             raise AstroidIndexError(
                 message="Index {index!r} out of range",
