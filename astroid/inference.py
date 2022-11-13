@@ -26,6 +26,7 @@ from astroid.exceptions import (
     AstroidError,
     AstroidIndexError,
     AstroidTypeError,
+    AstroidValueError,
     AttributeInferenceError,
     InferenceError,
     NameInferenceError,
@@ -431,6 +432,7 @@ def infer_subscript(
             except (
                 AstroidTypeError,
                 AstroidIndexError,
+                AstroidValueError,
                 AttributeInferenceError,
                 AttributeError,
             ) as exc:
