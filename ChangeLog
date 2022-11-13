@@ -38,6 +38,9 @@ Release date: TBA
 
   Refs PyCQA/pylint#7706
 
+* Catch ``ValueError`` when indexing some builtin containers and sequences during inference.
+
+  Closes #1843
 
 What's New in astroid 2.12.12?
 ==============================
