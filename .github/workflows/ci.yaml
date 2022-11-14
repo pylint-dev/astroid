@@ -8,7 +8,7 @@ on:
   pull_request: ~
 
 env:
-  CACHE_VERSION: 1
+  CACHE_VERSION: 2
   KEY_PREFIX: venv
   DEFAULT_PYTHON: "3.10"
   PRE_COMMIT_CACHE: ~/.cache/pre-commit
@@ -49,7 +49,6 @@ jobs:
           . venv/bin/activate
           python -m pip install -U pip setuptools wheel
           pip install -U -r requirements_test.txt -r requirements_test_brain.txt
-          pip install -e .
       - name: Generate pre-commit restore key
         id: generate-pre-commit-key
         run: >-
@@ -70,7 +69,6 @@ jobs:
       - name: Run pre-commit checks
         run: |
           . venv/bin/activate
-          pip install -e .
           pre-commit run pylint --all-files
 
   tests-linux:
