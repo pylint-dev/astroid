@@ -8,4 +8,5 @@ The "Changelog" contains *all* nontrivial changes to astroid for the current ver
 .. toctree::
    :maxdepth: 2
 
+   upgrade_guide
    changelog
