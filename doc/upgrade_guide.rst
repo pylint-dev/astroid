@@ -1,5 +1,5 @@
 ===============
-Upgrade guide 
+Upgrade guide
 ===============
 
 To ease the transition between major releases, the following page describes some of the breaking
