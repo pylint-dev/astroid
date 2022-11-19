@@ -135,7 +135,7 @@ _extend_builtins(
 )
 
 
-def _builtin_filter_predicate(node, builtin_name):
+def _builtin_filter_predicate(node, builtin_name) -> bool:
     if (
         builtin_name == "type"
         and node.root().name == "re"
@@ -635,7 +635,7 @@ def _infer_object__new__decorator(node, context=None):
     return iter((node.instantiate_class(),))
 
 
-def _infer_object__new__decorator_check(node):
+def _infer_object__new__decorator_check(node) -> bool:
     """Predicate before inference_tip
 
     Check if the given ClassDef has an @object.__new__ decorator

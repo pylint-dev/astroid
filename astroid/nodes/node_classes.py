@@ -53,7 +53,7 @@ else:
     from astroid.decorators import cachedproperty as cached_property
 
 
-def _is_const(value):
+def _is_const(value) -> bool:
     return isinstance(value, tuple(CONST_CLS))
 
 
@@ -327,7 +327,7 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         """
         return self.elts
 
-    def bool_value(self, context=None):
+    def bool_value(self, context=None) -> bool:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -931,7 +931,7 @@ class Arguments(_base_nodes.AssignTypeNode):
             return self.kw_defaults[index]
         raise NoDefault(func=self.parent, name=argname)
 
-    def is_argument(self, name):
+    def is_argument(self, name) -> bool:
         """Check if the given name is defined in the arguments.
 
         :param name: The name to check for.
@@ -947,7 +947,7 @@ class Arguments(_base_nodes.AssignTypeNode):
             return True
         return (
             self.find_argname(name, rec=True)[1] is not None
-            or self.kwonlyargs
+            or bool(self.kwonlyargs)
             and _find_arg(name, self.kwonlyargs, rec=True)[1] is not None
         )
 
@@ -1572,7 +1572,7 @@ class BinOp(NodeNG):
     def op_precedence(self):
         return OP_PRECEDENCE[self.op]
 
-    def op_left_associative(self):
+    def op_left_associative(self) -> bool:
         # 2**3**4 == 2**(3**4)
         return self.op != "**"
 
@@ -2056,7 +2056,7 @@ class Const(_base_nodes.NoChildrenNode, Instance):
 
         raise AstroidTypeError(f"{self!r} (value={self.value})")
 
-    def has_dynamic_getattr(self):
+    def has_dynamic_getattr(self) -> bool:
         """Check if the node has a custom __getattr__ or __getattribute__.
 
         :returns: True if the class has a custom
@@ -3309,7 +3309,7 @@ class IfExp(NodeNG):
         yield self.body
         yield self.orelse
 
-    def op_left_associative(self):
+    def op_left_associative(self) -> bool:
         # `1 if True else 2 if False else 3` is parsed as
         # `1 if True else (2 if False else 3)`
         return False
@@ -3638,7 +3638,7 @@ class Raise(_base_nodes.Statement):
         self.exc = exc
         self.cause = cause
 
-    def raises_not_implemented(self):
+    def raises_not_implemented(self) -> bool:
         """Check if this node raises a :class:`NotImplementedError`.
 
         :returns: True if this node raises a :class:`NotImplementedError`,

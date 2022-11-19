@@ -436,7 +436,7 @@ class Module(LocalsDictNodeNG):
                 str(error), target=self, attribute=name, context=context
             ) from error
 
-    def fully_defined(self):
+    def fully_defined(self) -> bool:
         """Check if this module has been build from a .py file.
 
         If so, the module contains a complete representation,
@@ -491,7 +491,7 @@ class Module(LocalsDictNodeNG):
 
     _absolute_import_activated = True
 
-    def absolute_import_activated(self):
+    def absolute_import_activated(self) -> bool:
         """Whether :pep:`328` absolute import behaviour has been enabled.
 
         :returns: True if :pep:`328` has been enabled, False otherwise.
@@ -618,7 +618,7 @@ class Module(LocalsDictNodeNG):
         if not isinstance(explicit, (node_classes.Tuple, node_classes.List)):
             return default
 
-        def str_const(node):
+        def str_const(node) -> bool:
             return isinstance(node, node_classes.Const) and isinstance(node.value, str)
 
         for node in explicit.elts:
@@ -641,7 +641,7 @@ class Module(LocalsDictNodeNG):
         """
         return [name for name in self.keys() if not name.startswith("_")]
 
-    def bool_value(self, context=None):
+    def bool_value(self, context=None) -> bool:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -733,7 +733,7 @@ class GeneratorExp(ComprehensionScope):
         else:
             self.generators = generators
 
-    def bool_value(self, context=None):
+    def bool_value(self, context=None) -> bool:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1145,7 +1145,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             return "Method"
         return "Function"
 
-    def callable(self):
+    def callable(self) -> bool:
         """Whether this node defines something that is callable.
 
         :returns: True if this defines something that is callable,
@@ -1213,7 +1213,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             frame = self
         return frame._scope_lookup(node, name, offset)
 
-    def bool_value(self, context=None):
+    def bool_value(self, context=None) -> bool:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1574,7 +1574,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
                 str(error), target=self, attribute=name, context=context
             ) from error
 
-    def is_method(self):
+    def is_method(self) -> bool:
         """Check if this function node represents a method.
 
         :returns: True if this is a method, False otherwise.
@@ -1608,7 +1608,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
                 continue
         return result
 
-    def is_bound(self):
+    def is_bound(self) -> bool:
         """Check if the function is bound to an instance or class.
 
         :returns: True if the function is bound to an instance or class,
@@ -1617,7 +1617,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         """
         return self.type in {"method", "classmethod"}
 
-    def is_abstract(self, pass_is_abstract=True, any_raise_is_abstract=False):
+    def is_abstract(self, pass_is_abstract=True, any_raise_is_abstract=False) -> bool:
         """Check if the method is abstract.
 
         A method is considered abstract if any of the following is true:
@@ -1652,7 +1652,9 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         if pass_is_abstract:
             return True
 
-    def is_generator(self):
+        return False
+
+    def is_generator(self) -> bool:
         """Check if this is a generator function.
 
         :returns: True is this is a generator function, False otherwise.
@@ -1741,7 +1743,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
                 except InferenceError:
                     yield util.Uninferable
 
-    def bool_value(self, context=None):
+    def bool_value(self, context=None) -> bool:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1815,7 +1817,7 @@ def _rec_get_names(args, names: list[str] | None = None) -> list[str]:
     return names
 
 
-def _is_metaclass(klass, seen=None):
+def _is_metaclass(klass, seen=None) -> bool:
     """Return if the given class can be
     used as a metaclass.
     """
@@ -2196,7 +2198,7 @@ class ClassDef(
         """
         return "Class"
 
-    def callable(self):
+    def callable(self) -> bool:
         """Whether this node defines something that is callable.
 
         :returns: True if this defines something that is callable,
@@ -2206,7 +2208,7 @@ class ClassDef(
         """
         return True
 
-    def is_subtype_of(self, type_name, context=None):
+    def is_subtype_of(self, type_name, context=None) -> bool:
         """Whether this class is a subtype of the given type.
 
         :param type_name: The name of the type of check against.
@@ -2439,7 +2441,7 @@ class ClassDef(
             if name in astroid.instance_attrs:
                 yield astroid
 
-    def has_base(self, node):
+    def has_base(self, node) -> bool:
         """Whether this class directly inherits from the given node.
 
         :param node: The node to check for.
@@ -2680,7 +2682,7 @@ class ClassDef(
                     str(error), target=self, attribute=name, context=context
                 ) from error
 
-    def has_dynamic_getattr(self, context=None):
+    def has_dynamic_getattr(self, context=None) -> bool:
         """Check if the class has a custom __getattr__ or __getattribute__.
 
         If any such method is found and it is not from
@@ -3053,7 +3055,7 @@ class ClassDef(
         """
         return self._compute_mro(context=context)
 
-    def bool_value(self, context=None):
+    def bool_value(self, context=None) -> bool:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.

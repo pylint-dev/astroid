@@ -148,7 +148,7 @@ def infer_numpy_ndarray(node, context=None):
     return node.infer(context=context)
 
 
-def _looks_like_numpy_ndarray(node):
+def _looks_like_numpy_ndarray(node) -> bool:
     return isinstance(node, Attribute) and node.attrname == "ndarray"
 
 

@@ -28,7 +28,7 @@ COMPOSITE_NAMES = (
 )
 
 
-def is_decorated_with_st_composite(node):
+def is_decorated_with_st_composite(node) -> bool:
     """Return True if a decorated node has @st.composite applied."""
     if node.decorators and node.args.args and node.args.args[0].name == "draw":
         for decorator_attribute in node.decorators.nodes:

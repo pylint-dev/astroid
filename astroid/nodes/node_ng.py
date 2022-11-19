@@ -279,7 +279,7 @@ class NodeNG:
             yield parent
             parent = parent.parent
 
-    def parent_of(self, node):
+    def parent_of(self, node) -> bool:
         """Check if this node is the parent of the given node.
 
         :param node: The node to check if it is the child.
@@ -621,7 +621,7 @@ class NodeNG:
         """
         return self
 
-    def has_base(self, node):
+    def has_base(self, node) -> bool:
         """Check if this node inherits from the given type.
 
         :param node: The node defining the base to look for.
@@ -630,7 +630,7 @@ class NodeNG:
         """
         return False
 
-    def callable(self):
+    def callable(self) -> bool:
         """Whether this node defines something that is callable.
 
         :returns: True if this defines something that is callable,
@@ -639,7 +639,7 @@ class NodeNG:
         """
         return False
 
-    def eq(self, value):
+    def eq(self, value) -> bool:
         return False
 
     def as_string(self) -> str:
@@ -806,6 +806,6 @@ class NodeNG:
         # Look up by class name or default to highest precedence
         return OP_PRECEDENCE.get(self.__class__.__name__, len(OP_PRECEDENCE))
 
-    def op_left_associative(self):
+    def op_left_associative(self) -> bool:
         # Everything is left associative except `**` and IfExp
         return True

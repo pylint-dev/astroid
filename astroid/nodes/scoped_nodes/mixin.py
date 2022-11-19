@@ -179,7 +179,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         """
         return list(zip(self.keys(), self.values()))
 
-    def __contains__(self, name):
+    def __contains__(self, name) -> bool:
         """Check if a local is defined in this scope.
 
         :param name: The name of the local to check for.

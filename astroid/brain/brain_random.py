@@ -73,7 +73,7 @@ def infer_random_sample(node, context=None):
     return iter((new_node,))
 
 
-def _looks_like_random_sample(node):
+def _looks_like_random_sample(node) -> bool:
     func = node.func
     if isinstance(func, Attribute):
         return func.attrname == "sample"
