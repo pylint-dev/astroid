@@ -436,7 +436,7 @@ class Module(LocalsDictNodeNG):
                 str(error), target=self, attribute=name, context=context
             ) from error
 
-    def fully_defined(self):
+    def fully_defined(self) -> bool:
         """Check if this module has been build from a .py file.
 
         If so, the module contains a complete representation,
@@ -491,7 +491,7 @@ class Module(LocalsDictNodeNG):
 
     _absolute_import_activated = True
 
-    def absolute_import_activated(self):
+    def absolute_import_activated(self) -> bool:
         """Whether :pep:`328` absolute import behaviour has been enabled.
 
         :returns: True if :pep:`328` has been enabled, False otherwise.
@@ -618,7 +618,7 @@ class Module(LocalsDictNodeNG):
         if not isinstance(explicit, (node_classes.Tuple, node_classes.List)):
             return default
 
-        def str_const(node):
+        def str_const(node) -> bool:
             return isinstance(node, node_classes.Const) and isinstance(node.value, str)
 
         for node in explicit.elts:
@@ -641,7 +641,7 @@ class Module(LocalsDictNodeNG):
         """
         return [name for name in self.keys() if not name.startswith("_")]
 
-    def bool_value(self, context=None):
+    def bool_value(self, context=None) -> bool:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -2692,7 +2692,7 @@ class ClassDef(
         :rtype: bool
         """
 
-        def _valid_getattr(node):
+        def _valid_getattr(node) -> bool:
             root = node.root()
             return root.name != "builtins" and getattr(root, "pure_python", None)
 

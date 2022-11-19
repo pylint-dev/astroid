@@ -482,7 +482,7 @@ class BoundMethod(UnboundMethod):
             return 0
         return 1
 
-    def is_bound(self):
+    def is_bound(self) -> bool:
         return True
 
     def _infer_type_new_call(self, caller, context):  # noqa: C901

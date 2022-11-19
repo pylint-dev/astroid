@@ -43,7 +43,7 @@ class Uninferable:
     def __call__(self, *args, **kwargs):
         return self
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return False
 
     __nonzero__ = __bool__
@@ -108,7 +108,7 @@ class BadBinaryOperationMessage(BadOperationMessage):
         return msg.format(self.op, self.left_type.name, self.right_type.name)
 
 
-def _instancecheck(cls, other):
+def _instancecheck(cls, other) -> bool:
     wrapped = cls.__wrapped__
     other_cls = other.__class__
     is_instance_of = wrapped is other_cls or issubclass(other_cls, wrapped)

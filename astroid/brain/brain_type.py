@@ -26,7 +26,7 @@ from astroid.exceptions import UseInferenceDefault
 from astroid.manager import AstroidManager
 
 
-def _looks_like_type_subscript(node):
+def _looks_like_type_subscript(node) -> bool:
     """
     Try to figure out if a Name node is used inside a type related subscript
 

@@ -189,7 +189,7 @@ def transform_six_add_metaclass(node):  # pylint: disable=inconsistent-return-st
     return
 
 
-def _looks_like_nested_from_six_with_metaclass(node):
+def _looks_like_nested_from_six_with_metaclass(node) -> bool:
     if len(node.bases) != 1:
         return False
     base = node.bases[0]

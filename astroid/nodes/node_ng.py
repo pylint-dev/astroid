@@ -279,7 +279,7 @@ class NodeNG:
             yield parent
             parent = parent.parent
 
-    def parent_of(self, node):
+    def parent_of(self, node) -> bool:
         """Check if this node is the parent of the given node.
 
         :param node: The node to check if it is the child.
@@ -806,6 +806,6 @@ class NodeNG:
         # Look up by class name or default to highest precedence
         return OP_PRECEDENCE.get(self.__class__.__name__, len(OP_PRECEDENCE))
 
-    def op_left_associative(self):
+    def op_left_associative(self) -> bool:
         # Everything is left associative except `**` and IfExp
         return True

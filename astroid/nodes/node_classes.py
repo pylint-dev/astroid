@@ -53,7 +53,7 @@ else:
     from astroid.decorators import cachedproperty as cached_property
 
 
-def _is_const(value):
+def _is_const(value) -> bool:
     return isinstance(value, tuple(CONST_CLS))
 
 
@@ -327,7 +327,7 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         """
         return self.elts
 
-    def bool_value(self, context=None):
+    def bool_value(self, context=None) -> bool:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -931,7 +931,7 @@ class Arguments(_base_nodes.AssignTypeNode):
             return self.kw_defaults[index]
         raise NoDefault(func=self.parent, name=argname)
 
-    def is_argument(self, name):
+    def is_argument(self, name) -> bool:
         """Check if the given name is defined in the arguments.
 
         :param name: The name to check for.
@@ -1572,7 +1572,7 @@ class BinOp(NodeNG):
     def op_precedence(self):
         return OP_PRECEDENCE[self.op]
 
-    def op_left_associative(self):
+    def op_left_associative(self) -> bool:
         # 2**3**4 == 2**(3**4)
         return self.op != "**"
 
@@ -3309,7 +3309,7 @@ class IfExp(NodeNG):
         yield self.body
         yield self.orelse
 
-    def op_left_associative(self):
+    def op_left_associative(self) -> bool:
         # `1 if True else 2 if False else 3` is parsed as
         # `1 if True else (2 if False else 3)`
         return False

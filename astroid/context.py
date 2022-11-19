@@ -104,7 +104,7 @@ class InferenceContext:
         """
         return _INFERENCE_CACHE
 
-    def push(self, node):
+    def push(self, node) -> bool:
         """Push node into inference path
 
         :return: True if node is already in context path else False
