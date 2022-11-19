@@ -21,10 +21,6 @@ What's New in astroid 2.12.13?
 ==============================
 Release date: TBA
 
-* Add ``_value2member_map_`` member to the ``enum`` brain.
-
-  Refs PyCQA/pylint#3941
-
 * Prevent returning an empty list for ``ClassDef.slots()`` when the mro list contains one class & it is not ``object``.
 
   Refs PyCQA/pylint#5099
@@ -63,6 +59,10 @@ Release date: 2022-10-19
 What's New in astroid 2.12.11?
 ==============================
 Release date: 2022-10-10
+
+* Add ``_value2member_map_`` member to the ``enum`` brain.
+
+  Refs PyCQA/pylint#3941
 
 * Improve detection of namespace packages for the modules with ``__spec__`` set to None.
 
