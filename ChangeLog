@@ -8,9 +8,10 @@ Release date: TBA
 
 
 
+
 What's New in astroid 2.12.13?
 ==============================
-Release date: TBA
+Release date: 2022-11-19
 
 * Improve detection of namespace packages for the modules with ``__spec__`` set to None.
 
