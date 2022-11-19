@@ -16,10 +16,9 @@ Release date: TBA
 
   Refs PyCQA/pylint#2567
 
-
 What's New in astroid 2.12.13?
 ==============================
-Release date: TBA
+Release date: 2022-11-19
 
 * Prevent returning an empty list for ``ClassDef.slots()`` when the mro list contains one class & it is not ``object``.
 
