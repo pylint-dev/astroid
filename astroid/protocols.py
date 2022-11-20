@@ -31,11 +31,11 @@ raw_building = util.lazy_import("raw_building")
 objects = util.lazy_import("objects")
 
 
-def _reflected_name(name):
+def _reflected_name(name) -> str:
     return "__r" + name[2:]
 
 
-def _augmented_name(name):
+def _augmented_name(name) -> str:
     return "__i" + name[2:]
 
 
