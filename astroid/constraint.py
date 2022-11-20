@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 from typing import TypeVar, Union
 
 from astroid import nodes, util
+from astroid.typing import InferenceResult
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -41,7 +42,7 @@ class Constraint(ABC):
         """
 
     @abstractmethod
-    def satisfied_by(self, inferred: nodes.NodeNG | type[util.Uninferable]) -> bool:
+    def satisfied_by(self, inferred: InferenceResult) -> bool:
         """Return True if this constraint is satisfied by the given inferred value."""
 
 
@@ -73,7 +74,7 @@ class NoneConstraint(Constraint):
 
         return None
 
-    def satisfied_by(self, inferred: nodes.NodeNG | type[util.Uninferable]) -> bool:
+    def satisfied_by(self, inferred: InferenceResult) -> bool:
         """Return True if this constraint is satisfied by the given inferred value."""
         # Assume true if uninferable
         if inferred is util.Uninferable:
