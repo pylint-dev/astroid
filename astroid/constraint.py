@@ -64,10 +64,7 @@ class NoneConstraint(Constraint):
             left = expr.left
             op, right = expr.ops[0]
             if op in {"is", "is not"} and (
-                _matches(left, node)
-                and _matches(right, cls.CONST_NONE)
-                or _matches(left, cls.CONST_NONE)
-                and _matches(right, node)
+                _matches(left, node) and _matches(right, cls.CONST_NONE)
             ):
                 negate = (op == "is" and negate) or (op == "is not" and not negate)
                 return cls(node=node, negate=negate)
