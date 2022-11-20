@@ -787,6 +787,7 @@ def _get_binop_flow(
           is first tried and then left.__op__(right)
     """
     op = binary_opnode.op
+    assert op is not None
     if _same_type(left_type, right_type):
         methods = [_bin_op(left, binary_opnode, op, right, context)]
     elif helpers.is_subtype(left_type, right_type):
