@@ -5,10 +5,16 @@
 """Classes representing different types of constraints on inference values."""
 from __future__ import annotations
 
+import sys
 from abc import ABC, abstractmethod
 from typing import TypeVar, Union
 
 from astroid import nodes, util
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 _NameNodes = Union[nodes.AssignAttr, nodes.Attribute, nodes.AssignName, nodes.Name]
 _ConstraintT = TypeVar("_ConstraintT", bound="Constraint")
@@ -26,8 +32,8 @@ class Constraint(ABC):
     @classmethod
     @abstractmethod
     def match(
-        cls: _ConstraintT, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
-    ) -> _ConstraintT | None:
+        cls: type[Self], node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
         """Return a new constraint for node matched from expr, if expr matches
         the constraint pattern.
 
@@ -46,8 +52,8 @@ class NoneConstraint(Constraint):
 
     @classmethod
     def match(
-        cls: _ConstraintT, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
-    ) -> _ConstraintT | None:
+        cls: type[Self], node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
         """Return a new constraint for node matched from expr, if expr matches
         the constraint pattern.
 
