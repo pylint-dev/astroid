@@ -206,7 +206,7 @@ class BaseInstance(Proxy):
 
     special_attributes = None
 
-    def display_type(self):
+    def display_type(self) -> str:
         return "Instance of"
 
     def getattr(self, name, context=None, lookupclass=True):
@@ -317,12 +317,12 @@ class Instance(BaseInstance):
     def __init__(self, proxied: nodes.ClassDef | None) -> None:
         super().__init__(proxied)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<Instance of {}.{} at 0x{}>".format(
             self._proxied.root().name, self._proxied.name, id(self)
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Instance of {self._proxied.root().name}.{self._proxied.name}"
 
     def callable(self):
@@ -335,7 +335,7 @@ class Instance(BaseInstance):
     def pytype(self) -> str:
         return self._proxied.qname()
 
-    def display_type(self):
+    def display_type(self) -> str:
         return "Instance of"
 
     def bool_value(self, context=None):
@@ -390,7 +390,7 @@ class UnboundMethod(Proxy):
     # pylint: disable=unnecessary-lambda
     special_attributes = lazy_descriptor(lambda: objectmodel.UnboundMethodModel())
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         frame = self._proxied.parent.frame(future=True)
         return "<{} {} of {} at 0x{}".format(
             self.__class__.__name__, self._proxied.name, frame.qname(), id(self)
@@ -620,16 +620,16 @@ class Generator(BaseInstance):
     def pytype(self) -> Literal["builtins.generator"]:
         return "builtins.generator"
 
-    def display_type(self):
+    def display_type(self) -> str:
         return "Generator"
 
     def bool_value(self, context=None):
         return True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Generator({self._proxied.name}) l.{self.lineno} at 0x{id(self)}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Generator({self._proxied.name})"
 
 
@@ -639,11 +639,11 @@ class AsyncGenerator(Generator):
     def pytype(self) -> Literal["builtins.async_generator"]:
         return "builtins.async_generator"
 
-    def display_type(self):
+    def display_type(self) -> str:
         return "AsyncGenerator"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<AsyncGenerator({self._proxied.name}) l.{self.lineno} at 0x{id(self)}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"AsyncGenerator({self._proxied.name})"

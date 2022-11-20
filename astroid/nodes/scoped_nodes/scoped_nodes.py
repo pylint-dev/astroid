@@ -385,7 +385,7 @@ class Module(LocalsDictNodeNG):
         """
         return "builtins.module"
 
-    def display_type(self):
+    def display_type(self) -> str:
         """A human readable type of this node.
 
         :returns: The type of this node.
@@ -1135,7 +1135,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             return "builtins.instancemethod"
         return "builtins.function"
 
-    def display_type(self):
+    def display_type(self) -> str:
         """A human readable type of this node.
 
         :returns: The type of this node.
@@ -2188,7 +2188,7 @@ class ClassDef(
             return "builtins.type"
         return "builtins.classobj"
 
-    def display_type(self):
+    def display_type(self) -> str:
         """A human readable type of this node.
 
         :returns: The type of this node.
