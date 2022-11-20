@@ -16,6 +16,11 @@ Release date: TBA
 
   Refs PyCQA/pylint#2567
 
+* Treat ``typing.NewType()`` values as normal subclasses.
+
+  Closes PyCQA/pylint#2296
+  Closes PyCQA/pylint#3162
+
 What's New in astroid 2.12.13?
 ==============================
 Release date: 2022-11-19

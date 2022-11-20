@@ -1718,6 +1718,26 @@ class TypingBrain(unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
 
+    def test_typing_typevar_bad_args(self) -> None:
+        ast_nodes = builder.extract_node(
+            """
+        from typing import TypeVar
+
+        T = TypeVar()
+        T #@
+
+        U = TypeVar(f"U")
+        U #@
+        """
+        )
+        assert isinstance(ast_nodes, list)
+
+        no_args_node = ast_nodes[0]
+        assert list(no_args_node.infer()) == [util.Uninferable]
+
+        fstr_node = ast_nodes[1]
+        assert list(fstr_node.infer()) == [util.Uninferable]
+
     def test_typing_type_without_tip(self):
         """Regression test for https://github.com/PyCQA/pylint/issues/5770"""
         node = builder.extract_node(
@@ -1729,7 +1749,337 @@ class TypingBrain(unittest.TestCase):
         """
         )
         with self.assertRaises(UseInferenceDefault):
-            astroid.brain.brain_typing.infer_typing_typevar_or_newtype(node.value)
+            astroid.brain.brain_typing.infer_typing_newtype(node.value)
+
+    def test_typing_newtype_attrs(self) -> None:
+        ast_nodes = builder.extract_node(
+            """
+        from typing import NewType
+        import decimal
+        from decimal import Decimal
+
+        NewType("Foo", str) #@
+        NewType("Bar", "int") #@
+        NewType("Baz", Decimal) #@
+        NewType("Qux", decimal.Decimal) #@
+        """
+        )
+        assert isinstance(ast_nodes, list)
+
+        # Base type given by reference
+        foo_node = ast_nodes[0]
+
+        # Should be unambiguous
+        foo_inferred_all = list(foo_node.infer())
+        assert len(foo_inferred_all) == 1
+
+        foo_inferred = foo_inferred_all[0]
+        assert isinstance(foo_inferred, astroid.ClassDef)
+
+        # Check base type method is inferred by accessing one of its methods
+        foo_base_class_method = foo_inferred.getattr("endswith")[0]
+        assert isinstance(foo_base_class_method, astroid.FunctionDef)
+        assert foo_base_class_method.qname() == "builtins.str.endswith"
+
+        # Base type given by string (i.e. "int")
+        bar_node = ast_nodes[1]
+        bar_inferred_all = list(bar_node.infer())
+        assert len(bar_inferred_all) == 1
+        bar_inferred = bar_inferred_all[0]
+        assert isinstance(bar_inferred, astroid.ClassDef)
+
+        bar_base_class_method = bar_inferred.getattr("bit_length")[0]
+        assert isinstance(bar_base_class_method, astroid.FunctionDef)
+        assert bar_base_class_method.qname() == "builtins.int.bit_length"
+
+        # Decimal may be reexported from an implementation-defined module. For
+        # example, in CPython 3.10 this is _decimal, but in PyPy 7.3 it's
+        # _pydecimal. So the expected qname needs to be grabbed dynamically.
+        decimal_quant_node = builder.extract_node(
+            """
+        from decimal import Decimal
+        Decimal.quantize #@
+        """
+        )
+        assert isinstance(decimal_quant_node, nodes.NodeNG)
+
+        # Just grab the first result, since infer() may return values for both
+        # _decimal and _pydecimal
+        decimal_quant_qname = next(decimal_quant_node.infer()).qname()
+
+        # Base type is from an "import from"
+        baz_node = ast_nodes[2]
+        baz_inferred_all = list(baz_node.infer())
+        assert len(baz_inferred_all) == 1
+        baz_inferred = baz_inferred_all[0]
+        assert isinstance(baz_inferred, astroid.ClassDef)
+
+        baz_base_class_method = baz_inferred.getattr("quantize")[0]
+        assert isinstance(baz_base_class_method, astroid.FunctionDef)
+        assert decimal_quant_qname == baz_base_class_method.qname()
+
+        # Base type is from an import
+        qux_node = ast_nodes[3]
+        qux_inferred_all = list(qux_node.infer())
+        qux_inferred = qux_inferred_all[0]
+        assert isinstance(qux_inferred, astroid.ClassDef)
+
+        qux_base_class_method = qux_inferred.getattr("quantize")[0]
+        assert isinstance(qux_base_class_method, astroid.FunctionDef)
+        assert decimal_quant_qname == qux_base_class_method.qname()
+
+    def test_typing_newtype_bad_args(self) -> None:
+        ast_nodes = builder.extract_node(
+            """
+        from typing import NewType
+
+        NoArgs = NewType()
+        NoArgs #@
+
+        OneArg = NewType("OneArg")
+        OneArg #@
+
+        ThreeArgs = NewType("ThreeArgs", int, str)
+        ThreeArgs #@
+
+        DynamicArg = NewType(f"DynamicArg", int)
+        DynamicArg #@
+
+        DynamicBase = NewType("DynamicBase", f"int")
+        DynamicBase #@
+        """
+        )
+        assert isinstance(ast_nodes, list)
+
+        node: nodes.NodeNG
+        for node in ast_nodes:
+            assert list(node.infer()) == [util.Uninferable]
+
+    def test_typing_newtype_user_defined(self) -> None:
+        ast_nodes = builder.extract_node(
+            """
+        from typing import NewType
+
+        class A:
+            def __init__(self, value: int):
+                self.value = value
+
+        a = A(5)
+        a #@
+
+        B = NewType("B", A)
+        b = B(5)
+        b #@
+        """
+        )
+        assert isinstance(ast_nodes, list)
+
+        for node in ast_nodes:
+            self._verify_node_has_expected_attr(node)
+
+    def test_typing_newtype_forward_reference(self) -> None:
+        # Similar to the test above, but using a forward reference for "A"
+        ast_nodes = builder.extract_node(
+            """
+        from typing import NewType
+
+        B = NewType("B", "A")
+
+        class A:
+            def __init__(self, value: int):
+                self.value = value
+
+        a = A(5)
+        a #@
+
+        b = B(5)
+        b #@
+        """
+        )
+        assert isinstance(ast_nodes, list)
+
+        for node in ast_nodes:
+            self._verify_node_has_expected_attr(node)
+
+    def _verify_node_has_expected_attr(self, node: nodes.NodeNG) -> None:
+        inferred_all = list(node.infer())
+        assert len(inferred_all) == 1
+        inferred = inferred_all[0]
+        assert isinstance(inferred, astroid.Instance)
+
+        # Should be able to infer that the "value" attr is present on both types
+        val = inferred.getattr("value")[0]
+        assert isinstance(val, astroid.AssignAttr)
+
+        # Sanity check: nonexistent attr is not inferred
+        with self.assertRaises(AttributeInferenceError):
+            inferred.getattr("bad_attr")
+
+    def test_typing_newtype_forward_reference_imported(self) -> None:
+        all_ast_nodes = builder.extract_node(
+            """
+        from typing import NewType
+
+        A = NewType("A", "decimal.Decimal")
+        B = NewType("B", "decimal_mod_alias.Decimal")
+        C = NewType("C", "Decimal")
+        D = NewType("D", "DecimalAlias")
+
+        import decimal
+        import decimal as decimal_mod_alias
+        from decimal import Decimal
+        from decimal import Decimal as DecimalAlias
+
+        Decimal #@
+
+        a = A(decimal.Decimal(2))
+        a #@
+        b = B(decimal_mod_alias.Decimal(2))
+        b #@
+        c = C(Decimal(2))
+        c #@
+        d = D(DecimalAlias(2))
+        d #@
+        """
+        )
+        assert isinstance(all_ast_nodes, list)
+
+        real_dec, *ast_nodes = all_ast_nodes
+
+        real_quantize = next(real_dec.infer()).getattr("quantize")
+
+        for node in ast_nodes:
+            all_inferred = list(node.infer())
+            assert len(all_inferred) == 1
+            inferred = all_inferred[0]
+            assert isinstance(inferred, astroid.Instance)
+
+            assert inferred.getattr("quantize") == real_quantize
+
+    def test_typing_newtype_forward_ref_bad_base(self) -> None:
+        ast_nodes = builder.extract_node(
+            """
+        from typing import NewType
+
+        A = NewType("A", "DoesntExist")
+
+        a = A()
+        a #@
+
+        # Valid name, but not actually imported
+        B = NewType("B", "decimal.Decimal")
+
+        b = B()
+        b #@
+
+        # AST works out, but can't import the module
+        import not_a_real_module
+
+        C = NewType("C", "not_a_real_module.SomeClass")
+        c = C()
+        c #@
+
+        # Real module, fake base class name
+        import email.charset
+
+        D = NewType("D", "email.charset.BadClassRef")
+        d = D()
+        d #@
+
+        # Real module, but aliased differently than used
+        import email.header as header_mod
+
+        E = NewType("E", "email.header.Header")
+        e = E(header_mod.Header())
+        e #@
+        """
+        )
+        assert isinstance(ast_nodes, list)
+
+        for ast_node in ast_nodes:
+            inferred = next(ast_node.infer())
+
+            with self.assertRaises(astroid.AttributeInferenceError):
+                inferred.getattr("value")
+
+    def test_typing_newtype_forward_ref_nested_module(self) -> None:
+        ast_nodes = builder.extract_node(
+            """
+        from typing import NewType
+
+        A = NewType("A", "email.charset.Charset")
+        B = NewType("B", "charset.Charset")
+
+        # header is unused in both cases, but verifies that module name is properly checked
+        import email.header, email.charset
+        from email import header, charset
+
+        real = charset.Charset()
+        real #@
+
+        a = A(email.charset.Charset())
+        a #@
+
+        b = B(charset.Charset())
+        """
+        )
+        assert isinstance(ast_nodes, list)
+
+        real, *newtypes = ast_nodes
+
+        real_inferred_all = list(real.infer())
+        assert len(real_inferred_all) == 1
+        real_inferred = real_inferred_all[0]
+
+        real_method = real_inferred.getattr("get_body_encoding")
+
+        for newtype_node in newtypes:
+            newtype_inferred_all = list(newtype_node.infer())
+            assert len(newtype_inferred_all) == 1
+            newtype_inferred = newtype_inferred_all[0]
+
+            newtype_method = newtype_inferred.getattr("get_body_encoding")
+
+            assert real_method == newtype_method
+
+    def test_typing_newtype_forward_ref_nested_class(self) -> None:
+        ast_nodes = builder.extract_node(
+            """
+        from typing import NewType
+
+        A = NewType("A", "SomeClass.Nested")
+
+        class SomeClass:
+            class Nested:
+                def method(self) -> None:
+                    pass
+
+        real = SomeClass.Nested()
+        real #@
+
+        a = A(SomeClass.Nested())
+        a #@
+        """
+        )
+        assert isinstance(ast_nodes, list)
+
+        real, newtype = ast_nodes
+
+        real_all_inferred = list(real.infer())
+        assert len(real_all_inferred) == 1
+        real_inferred = real_all_inferred[0]
+        real_method = real_inferred.getattr("method")
+
+        newtype_all_inferred = list(newtype.infer())
+        assert len(newtype_all_inferred) == 1
+        newtype_inferred = newtype_all_inferred[0]
+
+        # This could theoretically work, but for now just here to check that
+        # the "forward-declared module" inference doesn't totally break things
+        with self.assertRaises(astroid.AttributeInferenceError):
+            newtype_method = newtype_inferred.getattr("method")
+
+            assert real_method == newtype_method
 
     def test_namedtuple_nested_class(self):
         result = builder.extract_node(
