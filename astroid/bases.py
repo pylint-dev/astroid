@@ -206,7 +206,7 @@ class BaseInstance(Proxy):
 
     special_attributes = None
 
-    def display_type(self):
+    def display_type(self) -> str:
         return "Instance of"
 
     def getattr(self, name, context=None, lookupclass=True):
@@ -639,7 +639,7 @@ class AsyncGenerator(Generator):
     def pytype(self) -> Literal["builtins.async_generator"]:
         return "builtins.async_generator"
 
-    def display_type(self):
+    def display_type(self) -> str:
         return "AsyncGenerator"
 
     def __repr__(self):

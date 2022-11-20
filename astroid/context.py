@@ -138,7 +138,7 @@ class InferenceContext:
         yield
         self.path = path
 
-    def __str__(self):
+    def __str__(self) -> str:
         state = (
             f"{field}={pprint.pformat(getattr(self, field), width=80 - len(field))}"
             for field in self.__slots__
