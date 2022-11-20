@@ -11,6 +11,7 @@ import queue
 import re
 import sys
 import unittest
+import warnings
 from typing import Any
 
 import pytest
@@ -37,8 +38,9 @@ except ImportError:
 
 
 try:
-    import nose  # pylint: disable=unused-import
-
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        import nose  # pylint: disable=unused-import
     HAS_NOSE = True
 except ImportError:
     HAS_NOSE = False
