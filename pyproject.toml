@@ -62,6 +62,7 @@ test = "pytest"
 addopts = '-m "not acceptance"'
 python_files = ["*test_*.py"]
 testpaths = ["tests"]
+filterwarnings = "error"
 
 [tool.isort]
 include_trailing_comma = true
