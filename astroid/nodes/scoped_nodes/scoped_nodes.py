@@ -15,12 +15,12 @@ import itertools
 import os
 import sys
 import warnings
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
 from typing import TYPE_CHECKING, NoReturn, TypeVar, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
-from astroid import mixins, util
+from astroid import util
 from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS
 from astroid.context import (
     CallContext,
@@ -42,10 +42,11 @@ from astroid.exceptions import (
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
-from astroid.nodes import Arguments, Const, NodeNG, node_classes
+from astroid.nodes import Arguments, Const, NodeNG, _base_nodes, node_classes
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
+from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
@@ -377,11 +378,10 @@ class Module(LocalsDictNodeNG):
                 return self, ()
         return self._scope_lookup(node, name, offset)
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.module"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
         return "builtins.module"
 
@@ -499,27 +499,33 @@ class Module(LocalsDictNodeNG):
         """
         return self._absolute_import_activated
 
-    def import_module(self, modname, relative_only=False, level=None):
+    def import_module(
+        self,
+        modname: str | None,
+        relative_only: bool = False,
+        level: int | None = None,
+        use_cache: bool = True,
+    ) -> Module:
         """Get the ast for a given module as if imported from this module.
 
         :param modname: The name of the module to "import".
-        :type modname: str
 
         :param relative_only: Whether to only consider relative imports.
-        :type relative_only: bool
 
         :param level: The level of relative import.
-        :type level: int or None
+
+        :param use_cache: Whether to use the astroid_cache of modules.
 
         :returns: The imported module ast.
-        :rtype: NodeNG
         """
         if relative_only and level is None:
             level = 0
         absmodname = self.relative_to_absolute_name(modname, level)
 
         try:
-            return AstroidManager().ast_from_module_name(absmodname)
+            return AstroidManager().ast_from_module_name(
+                absmodname, use_cache=use_cache
+            )
         except AstroidBuildingError:
             # we only want to import a sub module or package of this module,
             # skip here
@@ -527,7 +533,9 @@ class Module(LocalsDictNodeNG):
                 raise
         return AstroidManager().ast_from_module_name(modname)
 
-    def relative_to_absolute_name(self, modname: str, level: int) -> str:
+    def relative_to_absolute_name(
+        self, modname: str | None, level: int | None
+    ) -> str | None:
         """Get the absolute module name for a relative import.
 
         The relative import can be implicit or explicit.
@@ -701,10 +709,7 @@ class GeneratorExp(ComprehensionScope):
         :type end_col_offset: Optional[int]
         """
         self.locals = {}
-        """A map of the name of a local variable to the node defining the local.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining the local."""
 
         super().__init__(
             lineno=lineno,
@@ -793,10 +798,7 @@ class DictComp(ComprehensionScope):
         :type end_col_offset: Optional[int]
         """
         self.locals = {}
-        """A map of the name of a local variable to the node defining the local.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining the local."""
 
         super().__init__(
             lineno=lineno,
@@ -890,10 +892,7 @@ class SetComp(ComprehensionScope):
         :type end_col_offset: Optional[int]
         """
         self.locals = {}
-        """A map of the name of a local variable to the node defining the local.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining the local."""
 
         super().__init__(
             lineno=lineno,
@@ -960,10 +959,7 @@ class ListComp(ComprehensionScope):
         end_col_offset=None,
     ):
         self.locals = {}
-        """A map of the name of a local variable to the node defining it.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining it."""
 
         super().__init__(
             lineno=lineno,
@@ -1040,7 +1036,7 @@ def _infer_decorator_callchain(node):
     return None
 
 
-class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
+class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
     """Class representing an :class:`ast.Lambda` node.
 
     >>> import astroid
@@ -1056,16 +1052,14 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     special_attributes = FunctionModel()
     """The names of special attributes that this function has."""
 
-    def implicit_parameters(self):
+    def implicit_parameters(self) -> Literal[0]:
         return 0
 
-    # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     @property
-    def type(self):
+    def type(self) -> Literal["method", "function"]:
         """Whether this is a method or function.
 
         :returns: 'method' if this is a method, 'function' otherwise.
-        :rtype: str
         """
         if self.args.arguments and self.args.arguments[0].name == "self":
             if isinstance(self.parent.scope(), ClassDef):
@@ -1100,10 +1094,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :type end_col_offset: Optional[int]
         """
         self.locals = {}
-        """A map of the name of a local variable to the node defining it.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining it."""
 
         self.args: Arguments
         """The arguments that the function takes."""
@@ -1135,11 +1126,10 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         self.args = args
         self.body = body
 
-    def pytype(self):
+    def pytype(self) -> Literal["bultins.instancemethod", "builtins.function"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
         if "method" in self.type:
             return "builtins.instancemethod"
@@ -1262,7 +1252,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         raise AttributeInferenceError(target=self, attribute=name)
 
 
-class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
+class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda):
     """Class representing an :class:`ast.FunctionDef`.
 
     >>> import astroid
@@ -1471,12 +1461,10 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         return decorators
 
     @cached_property
-    def type(self):  # pylint: disable=too-many-return-statements
+    def type(self) -> str:  # pylint: disable=too-many-return-statements # noqa: C901
         """The function type for this node.
 
         Possible values are: method, function, staticmethod, classmethod.
-
-        :type: str
         """
         for decorator in self.extra_decorators:
             if decorator.func.name in BUILTIN_DESCRIPTORS:
@@ -1915,7 +1903,9 @@ def get_wrapping_class(node):
 
 
 # pylint: disable=too-many-instance-attributes
-class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement):
+class ClassDef(
+    _base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG, _base_nodes.Statement
+):
     """Class representing an :class:`ast.ClassDef` node.
 
     >>> import astroid
@@ -1946,6 +1936,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
     """
 
     _type = None
+    _metaclass: NodeNG | None = None
     _metaclass_hack = False
     hide = False
     type = property(
@@ -1997,10 +1988,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         self.instance_attrs = {}
         self.locals = {}
-        """A map of the name of a local variable to the node defining it.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining it."""
 
         self.keywords = []
         """The keywords given to the class definition.
@@ -2010,11 +1998,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type: list(Keyword) or None
         """
 
-        self.bases = []
-        """What the class inherits from.
-
-        :type: list(NodeNG)
-        """
+        self.bases: list[NodeNG] = []
+        """What the class inherits from."""
 
         self.body = []
         """The contents of the class body.
@@ -2069,7 +2054,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         )
         self._doc = value
 
-    def implicit_parameters(self):
+    def implicit_parameters(self) -> Literal[1]:
         return 1
 
     def implicit_locals(self):
@@ -2090,7 +2075,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         body,
         decorators,
         newstyle=None,
-        metaclass=None,
+        metaclass: NodeNG | None = None,
         keywords=None,
         *,
         position: Position | None = None,
@@ -2111,7 +2096,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type newstyle: bool or None
 
         :param metaclass: The metaclass of this class.
-        :type metaclass: NodeNG or None
 
         :param keywords: The keywords given to the class definition.
         :type keywords: list(Keyword) or None
@@ -2195,11 +2179,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         return self.fromlineno, self.tolineno
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.type", "builtins.classobj"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
-        :rtype: str
         """
         if self.newstyle:
             return "builtins.type"
@@ -2297,7 +2280,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         try:
             metaclass = self.metaclass(context=context)
             if metaclass is not None:
-                dunder_call = next(metaclass.igetattr("__call__", context))
+                # Only get __call__ if it's defined locally for the metaclass.
+                # Otherwise we will find ObjectModel.__call__ which will
+                # return an instance of the metaclass. Instantiating the class is
+                # handled later.
+                if "__call__" in metaclass.locals:
+                    dunder_call = next(metaclass.igetattr("__call__", context))
         except (AttributeInferenceError, StopIteration):
             pass
 
@@ -2371,14 +2359,14 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         return [bnode.as_string() for bnode in self.bases]
 
-    def ancestors(self, recurs=True, context=None):
+    def ancestors(
+        self, recurs: bool = True, context: InferenceContext | None = None
+    ) -> Generator[ClassDef, None, None]:
         """Iterate over the base classes in prefixed depth first order.
 
         :param recurs: Whether to recurse or return direct ancestors only.
-        :type recurs: bool
 
         :returns: The base classes
-        :rtype: iterable(NodeNG)
         """
         # FIXME: should be possible to choose the resolution order
         # FIXME: inference make infinite loops possible here
@@ -2507,12 +2495,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             return values
         raise AttributeInferenceError(target=self, attribute=name, context=context)
 
-    def instantiate_class(self):
+    def instantiate_class(self) -> bases.Instance:
         """Get an :class:`Instance` of the :class:`ClassDef` node.
 
-        :returns: An :class:`Instance` of the :class:`ClassDef` node,
-            or self if this is not possible.
-        :rtype: Instance or ClassDef
+        :returns: An :class:`Instance` of the :class:`ClassDef` node
         """
         try:
             if any(cls.name in EXCEPTION_BASE_CLASSES for cls in self.mro()):
@@ -2522,7 +2508,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             pass
         return bases.Instance(self)
 
-    def getattr(self, name, context=None, class_context=True):
+    def getattr(
+        self,
+        name: str,
+        context: InferenceContext | None = None,
+        class_context: bool = True,
+    ) -> list[SuccessfulInferenceResult]:
         """Get an attribute from this class, using Python's attribute semantic.
 
         This method doesn't look in the :attr:`instance_attrs` dictionary
@@ -2538,20 +2529,21 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         metaclass will be done.
 
         :param name: The attribute to look for.
-        :type name: str
 
         :param class_context: Whether the attribute can be accessed statically.
-        :type class_context: bool
 
         :returns: The attribute.
-        :rtype: list(NodeNG)
 
         :raises AttributeInferenceError: If the attribute cannot be inferred.
         """
         if not name:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
-        values = self.locals.get(name, [])
+        # don't modify the list in self.locals!
+        values: list[SuccessfulInferenceResult] = list(self.locals.get(name, []))
+        for classnode in self.ancestors(recurs=True, context=context):
+            values += classnode.locals.get(name, [])
+
         if name in self.special_attributes and class_context and not values:
             result = [self.special_attributes.lookup(name)]
             if name == "__bases__":
@@ -2560,25 +2552,19 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 result += values
             return result
 
-        # don't modify the list in self.locals!
-        values = list(values)
-        for classnode in self.ancestors(recurs=True, context=context):
-            values += classnode.locals.get(name, [])
-
         if class_context:
             values += self._metaclass_lookup_attribute(name, context)
+
+        # Remove AnnAssigns without value, which are not attributes in the purest sense.
+        for value in values.copy():
+            if isinstance(value, node_classes.AssignName):
+                stmt = value.statement(future=True)
+                if isinstance(stmt, node_classes.AnnAssign) and stmt.value is None:
+                    values.pop(values.index(value))
 
         if not values:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
-        # Look for AnnAssigns, which are not attributes in the purest sense.
-        for value in values:
-            if isinstance(value, node_classes.AssignName):
-                stmt = value.statement(future=True)
-                if isinstance(stmt, node_classes.AnnAssign) and stmt.value is None:
-                    raise AttributeInferenceError(
-                        target=self, attribute=name, context=context
-                    )
         return values
 
     def _metaclass_lookup_attribute(self, name, context):
@@ -2620,14 +2606,17 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             else:
                 yield bases.BoundMethod(attr, self)
 
-    def igetattr(self, name, context=None, class_context=True):
+    def igetattr(
+        self,
+        name: str,
+        context: InferenceContext | None = None,
+        class_context: bool = True,
+    ) -> Iterator[InferenceResult]:
         """Infer the possible values of the given variable.
 
         :param name: The name of the variable to infer.
-        :type name: str
 
         :returns: The inferred possible values.
-        :rtype: iterable(NodeNG or Uninferable)
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
@@ -2809,9 +2798,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             return builtin_lookup("type")[1][0]
         return None
 
-    _metaclass = None
-
-    def declared_metaclass(self, context=None):
+    def declared_metaclass(
+        self, context: InferenceContext | None = None
+    ) -> NodeNG | None:
         """Return the explicit declared metaclass for the current class.
 
         An explicit declared metaclass is defined
@@ -2822,7 +2811,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         :returns: The metaclass of this class,
             or None if one could not be found.
-        :rtype: NodeNG or None
         """
         for base in self.bases:
             try:
@@ -2847,7 +2835,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         return None
 
-    def _find_metaclass(self, seen=None, context=None):
+    def _find_metaclass(
+        self, seen: set[ClassDef] | None = None, context: InferenceContext | None = None
+    ) -> NodeNG | None:
         if seen is None:
             seen = set()
         seen.add(self)
@@ -2861,7 +2851,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                         break
         return klass
 
-    def metaclass(self, context=None):
+    def metaclass(self, context: InferenceContext | None = None) -> NodeNG | None:
         """Get the metaclass of this class.
 
         If this class does not define explicitly a metaclass,
@@ -2869,7 +2859,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         instead.
 
         :returns: The metaclass of this class.
-        :rtype: NodeNG or None
         """
         return self._find_metaclass(context=context)
 
@@ -2960,8 +2949,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         def grouped_slots(
             mro: list[ClassDef],
         ) -> Iterator[node_classes.NodeNG | None]:
-            # Not interested in object, since it can't have slots.
-            for cls in mro[:-1]:
+            for cls in mro:
+                # Not interested in object, since it can't have slots.
+                if cls.qname() == "builtins.object":
+                    continue
                 try:
                     cls_slots = cls._slots()
                 except NotImplementedError:

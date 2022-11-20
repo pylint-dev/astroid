@@ -14,8 +14,8 @@ leads to an inferred FrozenSet:
 from __future__ import annotations
 
 import sys
-from collections.abc import Iterator
-from typing import TypeVar
+from collections.abc import Generator
+from typing import Any, TypeVar
 
 from astroid import bases, decorators, util
 from astroid.context import InferenceContext
@@ -32,7 +32,10 @@ objectmodel = util.lazy_import("interpreter.objectmodel")
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
+    from typing import Literal
 else:
+    from typing_extensions import Literal
+
     from astroid.decorators import cachedproperty as cached_property
 
 _T = TypeVar("_T")
@@ -41,10 +44,10 @@ _T = TypeVar("_T")
 class FrozenSet(node_classes.BaseContainer):
     """class representing a FrozenSet composite node"""
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.frozenset"]:
         return "builtins.frozenset"
 
-    def _infer(self, context=None):
+    def _infer(self, context=None, **kwargs: Any):
         yield self
 
     @cached_property
@@ -77,7 +80,7 @@ class Super(node_classes.NodeNG):
         self._scope = scope
         super().__init__()
 
-    def _infer(self, context=None):
+    def _infer(self, context=None, **kwargs: Any):
         yield self
 
     def super_mro(self):
@@ -121,7 +124,7 @@ class Super(node_classes.NodeNG):
         ast_builtins = AstroidManager().builtins_module
         return ast_builtins.getattr("super")[0]
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.super"]:
         return "builtins.super"
 
     def display_type(self):
@@ -132,13 +135,16 @@ class Super(node_classes.NodeNG):
         """Get the name of the MRO pointer."""
         return self.mro_pointer.name
 
-    def qname(self):
+    def qname(self) -> Literal["super"]:
         return "super"
 
-    def igetattr(self, name, context=None):
+    def igetattr(  # noqa: C901
+        self, name: str, context: InferenceContext | None = None
+    ):
         """Retrieve the inferred values of the given attribute name."""
-
-        if name in self.special_attributes:
+        # '__class__' is a special attribute that should be taken directly
+        # from the special attributes dict
+        if name == "__class__":
             yield self.special_attributes.lookup(name)
             return
 
@@ -204,6 +210,12 @@ class Super(node_classes.NodeNG):
                         yield util.Uninferable
                 else:
                     yield bases.BoundMethod(inferred, cls)
+
+        # Only if we haven't found any explicit overwrites for the
+        # attribute we look it up in the special attributes
+        if not found and name in self.special_attributes:
+            yield self.special_attributes.lookup(name)
+            return
 
         if not found:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
@@ -300,7 +312,7 @@ class PartialFunction(scoped_nodes.FunctionDef):
 
         return super().infer_call_result(caller=caller, context=context)
 
-    def qname(self):
+    def qname(self) -> str:
         return self.__class__.__name__
 
 
@@ -325,11 +337,13 @@ class Property(scoped_nodes.FunctionDef):
     special_attributes = util.lazy_descriptor(lambda: objectmodel.PropertyModel())
     type = "property"
 
-    def pytype(self):
+    def pytype(self) -> Literal["builtins.property"]:
         return "builtins.property"
 
     def infer_call_result(self, caller=None, context=None):
         raise InferenceError("Properties are not callable")
 
-    def _infer(self: _T, context: InferenceContext | None = None) -> Iterator[_T]:
+    def _infer(
+        self: _T, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[_T, None, None]:
         yield self

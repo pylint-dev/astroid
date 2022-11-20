@@ -150,7 +150,7 @@ class CallSite:
                 values.append(arg)
         return values
 
-    def infer_argument(self, funcnode, name, context):
+    def infer_argument(self, funcnode, name, context):  # noqa: C901
         """infer a function argument value according to the call context
 
         Arguments:

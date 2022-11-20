@@ -737,6 +737,14 @@ class BuilderTest(unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, NotImplemented)
 
+    def test_type_comments_without_content(self) -> None:
+        node = builder.parse(
+            """
+            a = 1 # type: # any comment
+        """
+        )
+        assert node
+
 
 class FileBuildTest(unittest.TestCase):
     def setUp(self) -> None:
@@ -943,6 +951,13 @@ def test_parse_module_with_invalid_type_comments_does_not_crash():
     """
     )
     assert isinstance(node, nodes.Module)
+
+
+def test_arguments_of_signature() -> None:
+    """Test that arguments is None for function without an inferable signature."""
+    node = builder.extract_node("int")
+    classdef: nodes.ClassDef = next(node.infer())
+    assert all(i.args.args is None for i in classdef.getattr("__dir__"))
 
 
 class HermeticInterpreterTest(unittest.TestCase):

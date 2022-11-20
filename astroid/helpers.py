@@ -6,6 +6,9 @@
 Various helper utilities.
 """
 
+from __future__ import annotations
+
+from collections.abc import Generator
 
 from astroid import bases, manager, nodes, raw_building, util
 from astroid.context import CallContext, InferenceContext
@@ -17,15 +20,18 @@ from astroid.exceptions import (
     _NonDeducibleTypeHierarchy,
 )
 from astroid.nodes import scoped_nodes
+from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 
-def _build_proxy_class(cls_name, builtins):
+def _build_proxy_class(cls_name: str, builtins: nodes.Module) -> nodes.ClassDef:
     proxy = raw_building.build_class(cls_name)
     proxy.parent = builtins
     return proxy
 
 
-def _function_type(function, builtins):
+def _function_type(
+    function: nodes.Lambda | bases.UnboundMethod, builtins: nodes.Module
+) -> nodes.ClassDef:
     if isinstance(function, scoped_nodes.Lambda):
         if function.root().name == "builtins":
             cls_name = "builtin_function_or_method"
@@ -33,12 +39,14 @@ def _function_type(function, builtins):
             cls_name = "function"
     elif isinstance(function, bases.BoundMethod):
         cls_name = "method"
-    elif isinstance(function, bases.UnboundMethod):
+    else:
         cls_name = "function"
     return _build_proxy_class(cls_name, builtins)
 
 
-def _object_type(node, context=None):
+def _object_type(
+    node: SuccessfulInferenceResult, context: InferenceContext | None = None
+) -> Generator[InferenceResult | None, None, None]:
     astroid_manager = manager.AstroidManager()
     builtins = astroid_manager.builtins_module
     context = context or InferenceContext()
@@ -57,11 +65,17 @@ def _object_type(node, context=None):
             yield _build_proxy_class("module", builtins)
         elif isinstance(inferred, nodes.Unknown):
             raise InferenceError
-        else:
+        elif inferred is util.Uninferable:
+            yield inferred
+        elif isinstance(inferred, (bases.Proxy, nodes.Slice)):
             yield inferred._proxied
+        else:  # pragma: no cover
+            raise AssertionError(f"We don't handle {type(inferred)} currently")
 
 
-def object_type(node, context=None):
+def object_type(
+    node: SuccessfulInferenceResult, context: InferenceContext | None = None
+) -> InferenceResult | None:
     """Obtain the type of the given node
 
     This is used to implement the ``type`` builtin, which means that it's
@@ -138,7 +152,9 @@ def object_issubclass(node, class_or_seq, context=None):
     return _object_type_is_subclass(node, class_or_seq, context=context)
 
 
-def safe_infer(node, context=None):
+def safe_infer(
+    node: nodes.NodeNG | bases.Proxy, context: InferenceContext | None = None
+) -> InferenceResult | None:
     """Return the inferred value for the given node.
 
     Return None if inference failed or if there is some ambiguity (more than

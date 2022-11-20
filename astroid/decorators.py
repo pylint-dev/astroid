@@ -15,7 +15,7 @@ from typing import TypeVar
 
 import wrapt
 
-from astroid import util
+from astroid import _cache, util
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
 
@@ -34,6 +34,7 @@ def cached(func, instance, args, kwargs):
     cache = getattr(instance, "__cache", None)
     if cache is None:
         instance.__cache = cache = {}
+        _cache.CACHE_MANAGER.add_dict_cache(cache)
     try:
         return cache[func]
     except KeyError:
@@ -145,6 +146,10 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
         raise InferenceError(
             "StopIteration raised without any error information."
         ) from error
+    except RecursionError as error:
+        raise InferenceError(
+            f"RecursionError raised with limit {sys.getrecursionlimit()}."
+        ) from error
 
     yield from generator
 
@@ -152,7 +157,7 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
 # Expensive decorators only used to emit Deprecation warnings.
 # If no other than the default DeprecationWarning are enabled,
 # fall back to passthrough implementations.
-if util.check_warnings_filter():
+if util.check_warnings_filter():  # noqa: C901
 
     def deprecate_default_argument_values(
         astroid_version: str = "3.0", **arguments: str
@@ -203,7 +208,8 @@ if util.check_warnings_filter():
                     ):
                         warnings.warn(
                             f"'{arg}' will be a required argument for "
-                            f"'{args[0].__class__.__qualname__}.{func.__name__}' in astroid {astroid_version} "
+                            f"'{args[0].__class__.__qualname__}.{func.__name__}'"
+                            f" in astroid {astroid_version} "
                             f"('{arg}' should be of type: '{type_annotation}')",
                             DeprecationWarning,
                         )

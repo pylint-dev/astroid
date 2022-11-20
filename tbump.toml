@@ -1,7 +1,7 @@
 github_url = "https://github.com/PyCQA/astroid"
 
 [version]
-current = "2.12.0-dev0"
+current = "2.13.0-dev0"
 regex = '''
 ^(?P<major>0|[1-9]\d*)
 \.
@@ -39,6 +39,10 @@ cmd = "python3 script/create_contributor_list.py"
 [[before_commit]]
 name = "Apply pre-commit"
 cmd = "pre-commit run --all-files||echo 'Hack so this command does not fail'"
+
+[[before_commit]]
+name = "Confirm changes"
+cmd = "read -p 'Continue (y)? ' -n 1 -r; echo; [[ ! $REPLY =~ ^[Yy]$ ]] && exit 1 || exit 0"
 
 # Or run some commands after the git tag and the branch
 # have been pushed:

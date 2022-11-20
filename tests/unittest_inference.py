@@ -22,7 +22,7 @@ from astroid import decorators as decoratorsmod
 from astroid import helpers, nodes, objects, test_utils, util
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod
-from astroid.builder import AstroidBuilder, extract_node, parse
+from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
 from astroid.const import PY38_PLUS, PY39_PLUS
 from astroid.context import InferenceContext
 from astroid.exceptions import (
@@ -1117,6 +1117,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         first = next(ast_node.infer())
         self.assertEqual(first, util.Uninferable)
 
+    @pytest.mark.filterwarnings("error::DeprecationWarning")
+    def test_binary_op_not_used_in_boolean_context(self) -> None:
+        ast_node = extract_node("not NotImplemented")
+        first = next(ast_node.infer())
+        self.assertIsInstance(first, nodes.Const)
+
     def test_binary_op_list_mul(self) -> None:
         for code in ("a = [[]] * 2", "a = 2 * [[]]"):
             ast = builder.string_build(code, __name__, __file__)
@@ -2127,7 +2133,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ' '.decode() #@
         ' '.join('abcd') #@
         ' '.replace('a', 'b') #@
-        ' '.format('a') #@
         ' '.capitalize() #@
         ' '.title() #@
         ' '.lower() #@
@@ -2143,20 +2148,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ' '.index() #@
         ' '.find() #@
         ' '.count() #@
+
+        ' '.format('a') #@
         """
         ast = extract_node(code, __name__)
         self.assertInferConst(ast[0], "")
-        for i in range(1, 15):
+        for i in range(1, 14):
             self.assertInferConst(ast[i], "")
-        for i in range(15, 18):
+        for i in range(14, 17):
             self.assertInferConst(ast[i], 0)
+        self.assertInferConst(ast[17], " ")
 
     def test_unicode_methods(self) -> None:
         code = """
         u' '.decode() #@
         u' '.join('abcd') #@
         u' '.replace('a', 'b') #@
-        u' '.format('a') #@
         u' '.capitalize() #@
         u' '.title() #@
         u' '.lower() #@
@@ -2172,13 +2179,16 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         u' '.index() #@
         u' '.find() #@
         u' '.count() #@
+
+        u' '.format('a') #@
         """
         ast = extract_node(code, __name__)
         self.assertInferConst(ast[0], "")
-        for i in range(1, 15):
+        for i in range(1, 14):
             self.assertInferConst(ast[i], "")
-        for i in range(15, 18):
+        for i in range(14, 17):
             self.assertInferConst(ast[i], 0)
+        self.assertInferConst(ast[17], " ")
 
     def test_scope_lookup_same_attributes(self) -> None:
         code = """
@@ -3364,7 +3374,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "B")
 
-    @pytest.mark.xfail(reason="String interpolation is incorrect for modulo formatting")
     def test_string_interpolation(self):
         ast_nodes = extract_node(
             """
@@ -3767,6 +3776,86 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             for title in attr.inferred()
         ]
         self.assertEqual(titles, ["Catch 22", "Ubik", "Grimus"])
+
+    @staticmethod
+    def test_builtin_new() -> None:
+        ast_node = extract_node("int.__new__(int, 42)")
+        inferred = next(ast_node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 42
+
+        ast_node2 = extract_node("int.__new__(int)")
+        inferred2 = next(ast_node2.infer())
+        assert isinstance(inferred2, Instance)
+        assert not isinstance(inferred2, nodes.Const)
+        assert inferred2._proxied is inferred._proxied
+
+        ast_node3 = extract_node(
+            """
+        x = 43
+        int.__new__(int, x)  #@
+        """
+        )
+        inferred3 = next(ast_node3.infer())
+        assert isinstance(inferred3, nodes.Const)
+        assert inferred3.value == 43
+
+        ast_node4 = extract_node("int.__new__()")
+        with pytest.raises(InferenceError):
+            next(ast_node4.infer())
+
+        ast_node5 = extract_node(
+            """
+        class A:  pass
+        A.__new__(A())  #@
+        """
+        )
+        with pytest.raises(InferenceError):
+            next(ast_node5.infer())
+
+        ast_nodes6 = extract_node(
+            """
+        class A:  pass
+        class B(A):  pass
+        class C: pass
+        A.__new__(A)  #@
+        A.__new__(B)  #@
+        B.__new__(A)  #@
+        B.__new__(B)  #@
+        C.__new__(A)  #@
+        """
+        )
+        instance_A1 = next(ast_nodes6[0].infer())
+        assert instance_A1._proxied.name == "A"
+        instance_B1 = next(ast_nodes6[1].infer())
+        assert instance_B1._proxied.name == "B"
+        instance_A2 = next(ast_nodes6[2].infer())
+        assert instance_A2._proxied.name == "A"
+        instance_B2 = next(ast_nodes6[3].infer())
+        assert instance_B2._proxied.name == "B"
+        instance_A3 = next(ast_nodes6[4].infer())
+        assert instance_A3._proxied.name == "A"
+
+        ast_nodes7 = extract_node(
+            """
+        import enum
+        class A(enum.EnumMeta): pass
+        class B(enum.EnumMeta):
+            def __new__(mcs, value, **kwargs):
+                return super().__new__(mcs, "str", (enum.Enum,), enum._EnumDict(), **kwargs)
+        class C(enum.EnumMeta):
+            def __new__(mcs, **kwargs):
+                return super().__new__(A, "str", (enum.Enum,), enum._EnumDict(), **kwargs)
+        B("")  #@
+        C()  #@
+        """
+        )
+        instance_B = next(ast_nodes7[0].infer())
+        assert instance_B._proxied.name == "B"
+        instance_C = next(ast_nodes7[1].infer())
+        # TODO: This should be A. However, we don't infer EnumMeta.__new__
+        # correctly.
+        assert instance_C._proxied.name == "C"
 
     @pytest.mark.xfail(reason="Does not support function metaclasses")
     def test_function_metaclasses(self):
@@ -5225,6 +5314,16 @@ def test_slice_inference_in_for_loops_not_working() -> None:
     for node in ast_nodes:
         inferred = next(node.infer())
         assert inferred == util.Uninferable
+
+
+def test_slice_zero_step_does_not_raise_ValueError() -> None:
+    node = extract_node("x = [][::0]; x")
+    assert next(node.infer()) == util.Uninferable
+
+
+def test_slice_zero_step_on_str_does_not_raise_ValueError() -> None:
+    node = extract_node('x = ""[::0]; x')
+    assert next(node.infer()) == util.Uninferable
 
 
 def test_unpacking_starred_and_dicts_in_assignment() -> None:
@@ -6764,6 +6863,122 @@ def test_function_def_cached_generator() -> None:
     """Regression test for https://github.com/PyCQA/astroid/issues/817."""
     funcdef: nodes.FunctionDef = extract_node("def func(): pass")
     next(funcdef._infer())
+
+
+class TestOldStyleStringFormatting:
+    @pytest.mark.parametrize(
+        "format_string",
+        [
+            pytest.param(
+                """"My name is %s, I'm %s" % ("Daniel", 12)""", id="empty-indexes"
+            ),
+            pytest.param(
+                """"My name is %0s, I'm %1s" % ("Daniel", 12)""",
+                id="numbered-indexes",
+            ),
+            pytest.param(
+                """
+        fname = "Daniel"
+        age = 12
+        "My name is %s, I'm %s" % (fname, age)
+        """,
+                id="empty-indexes-from-positional",
+            ),
+            pytest.param(
+                """
+        fname = "Daniel"
+        age = 12
+        "My name is %0s, I'm %1s" % (fname, age)
+        """,
+                id="numbered-indexes-from-positionl",
+            ),
+            pytest.param(
+                """
+        fname = "Daniel"
+        age = 12
+        "My name is %(fname)s, I'm %(age)s" % {"fname": fname, "age": age}
+        """,
+                id="named-indexes-from-keyword",
+            ),
+            pytest.param(
+                """
+        string = "My name is %s, I'm %s"
+        string % ("Daniel", 12)
+        """,
+                id="empty-indexes-on-variable",
+            ),
+            pytest.param(
+                """"My name is Daniel, I'm %s" % 12""", id="empty-indexes-from-variable"
+            ),
+            pytest.param(
+                """
+                age = 12
+                "My name is Daniel, I'm %s" % age
+                """,
+                id="empty-indexes-from-variable",
+            ),
+        ],
+    )
+    def test_old_style_string_formatting(self, format_string: str) -> None:
+        node: nodes.Call = _extract_single_node(format_string)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "My name is Daniel, I'm 12"
+
+    @pytest.mark.parametrize(
+        "format_string",
+        [
+            """
+            from missing import Unknown
+            fname = Unknown
+            age = 12
+            "My name is %(fname)s, I'm %(age)s" % {"fname": fname, "age": age}
+            """,
+            """
+            from missing import fname
+            age = 12
+            "My name is %(fname)s, I'm %(age)s" % {"fname": fname, "age": age}
+            """,
+            """
+            from missing import fname
+            "My name is %s, I'm %s" % (fname, 12)
+            """,
+            """
+            "My name is %0s, I'm %1s" % ("Daniel")
+            """,
+            """"I am %s" % ()""",
+            """"I am %s" % Exception()""",
+            """
+            fsname = "Daniel"
+            "My name is %(fname)s, I'm %(age)s" % {"fsname": fsname, "age": age}
+            """,
+            """
+            "My name is %(fname)s, I'm %(age)s" % {Exception(): "Daniel", "age": age}
+            """,
+            """
+            fname = "Daniel"
+            age = 12
+            "My name is %0s, I'm %(age)s" % (fname, age)
+            """,
+            """
+            "My name is %s, I'm %s" % ((fname,)*2)
+            """,
+            """20 % 0""",
+            """("%" + str(20)) % 0""",
+        ],
+    )
+    def test_old_style_string_formatting_uninferable(self, format_string: str) -> None:
+        node: nodes.Call = _extract_single_node(format_string)
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
+
+    def test_old_style_string_formatting_with_specs(self) -> None:
+        node: nodes.Call = _extract_single_node(
+            """"My name is %s, I'm %.2f" % ("Daniel", 12)"""
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "My name is Daniel, I'm 12.00"
 
 
 if __name__ == "__main__":

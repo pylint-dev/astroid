@@ -13,10 +13,14 @@ import collections
 import os
 import types
 import zipimport
+from collections.abc import Callable, Iterator, Sequence
 from importlib.util import find_spec, module_from_spec
-from typing import TYPE_CHECKING, ClassVar
+from typing import Any, ClassVar
 
+from astroid import nodes
+from astroid._cache import CACHE_MANAGER
 from astroid.const import BRAIN_MODULES_DIRECTORY
+from astroid.context import InferenceContext
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec, util
 from astroid.modutils import (
@@ -31,15 +35,12 @@ from astroid.modutils import (
     modpath_from_file,
 )
 from astroid.transforms import TransformVisitor
-from astroid.typing import AstroidManagerBrain
-
-if TYPE_CHECKING:
-    from astroid import nodes
+from astroid.typing import AstroidManagerBrain, InferenceResult
 
 ZIP_IMPORT_EXTS = (".zip", ".egg", ".whl", ".pyz", ".pyzw")
 
 
-def safe_repr(obj):
+def safe_repr(obj: Any) -> str:
     try:
         return repr(obj)
     except Exception:  # pylint: disable=broad-except
@@ -64,7 +65,7 @@ class AstroidManager:
     }
     max_inferable_values: ClassVar[int] = 100
 
-    def __init__(self):
+    def __init__(self) -> None:
         # NOTE: cache entries are added by the [re]builder
         self.astroid_cache = AstroidManager.brain["astroid_cache"]
         self._mod_file_cache = AstroidManager.brain["_mod_file_cache"]
@@ -86,14 +87,20 @@ class AstroidManager:
         return self._transform.unregister_transform
 
     @property
-    def builtins_module(self):
+    def builtins_module(self) -> nodes.Module:
         return self.astroid_cache["builtins"]
 
-    def visit_transforms(self, node):
+    def visit_transforms(self, node: nodes.NodeNG) -> InferenceResult:
         """Visit the transforms and apply them to the given *node*."""
         return self._transform.visit(node)
 
-    def ast_from_file(self, filepath, modname=None, fallback=True, source=False):
+    def ast_from_file(
+        self,
+        filepath: str,
+        modname: str | None = None,
+        fallback: bool = True,
+        source: bool = False,
+    ) -> nodes.Module:
         """given a module name, return the astroid object"""
         try:
             filepath = get_source_file(filepath, include_no_ext=True)
@@ -119,20 +126,24 @@ class AstroidManager:
             return self.ast_from_module_name(modname)
         raise AstroidBuildingError("Unable to build an AST for {path}.", path=filepath)
 
-    def ast_from_string(self, data, modname="", filepath=None):
+    def ast_from_string(
+        self, data: str, modname: str = "", filepath: str | None = None
+    ) -> nodes.Module:
         """Given some source code as a string, return its corresponding astroid object"""
         # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import AstroidBuilder
 
         return AstroidBuilder(self).string_build(data, modname, filepath)
 
-    def _build_stub_module(self, modname):
+    def _build_stub_module(self, modname: str) -> nodes.Module:
         # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import AstroidBuilder
 
         return AstroidBuilder(self).string_build("", modname)
 
-    def _build_namespace_module(self, modname: str, path: list[str]) -> nodes.Module:
+    def _build_namespace_module(
+        self, modname: str, path: Sequence[str]
+    ) -> nodes.Module:
         # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import build_namespace_package_module
 
@@ -147,9 +158,20 @@ class AstroidManager:
             modname, self.extension_package_whitelist
         )
 
-    def ast_from_module_name(self, modname, context_file=None):
-        """given a module name, return the astroid object"""
-        if modname in self.astroid_cache:
+    def ast_from_module_name(  # noqa: C901
+        self,
+        modname: str | None,
+        context_file: str | None = None,
+        use_cache: bool = True,
+    ) -> nodes.Module:
+        """Given a module name, return the astroid object."""
+        if modname is None:
+            raise AstroidBuildingError("No module name given.")
+        # Sometimes we don't want to use the cache. For example, when we're
+        # importing a module with the same name as the file that is importing
+        # we want to fallback on the import system to make sure we get the correct
+        # module.
+        if modname in self.astroid_cache and use_cache:
             return self.astroid_cache[modname]
         if modname == "__main__":
             return self._build_stub_module(modname)
@@ -173,14 +195,14 @@ class AstroidManager:
                 ):
                     return self._build_stub_module(modname)
                 try:
-                    module = load_module_from_name(modname)
+                    named_module = load_module_from_name(modname)
                 except Exception as e:
                     raise AstroidImportError(
                         "Loading {modname} failed with:\n{error}",
                         modname=modname,
                         path=found_spec.location,
                     ) from e
-                return self.ast_from_module(module, modname)
+                return self.ast_from_module(named_module, modname)
 
             elif found_spec.type == spec.ModuleType.PY_COMPILED:
                 raise AstroidImportError(
@@ -191,7 +213,7 @@ class AstroidManager:
 
             elif found_spec.type == spec.ModuleType.PY_NAMESPACE:
                 return self._build_namespace_module(
-                    modname, found_spec.submodule_search_locations
+                    modname, found_spec.submodule_search_locations or []
                 )
             elif found_spec.type == spec.ModuleType.PY_FROZEN:
                 if found_spec.location is None:
@@ -217,7 +239,7 @@ class AstroidManager:
             if context_file:
                 os.chdir(old_cwd)
 
-    def zip_import_data(self, filepath):
+    def zip_import_data(self, filepath: str) -> nodes.Module | None:
         if zipimport is None:
             return None
 
@@ -244,7 +266,9 @@ class AstroidManager:
                 continue
         return None
 
-    def file_from_module_name(self, modname, contextfile):
+    def file_from_module_name(
+        self, modname: str, contextfile: str | None
+    ) -> spec.ModuleSpec:
         try:
             value = self._mod_file_cache[(modname, contextfile)]
         except KeyError:
@@ -253,6 +277,7 @@ class AstroidManager:
                     modname.split("."), context_file=contextfile
                 )
             except ImportError as e:
+                # pylint: disable-next=redefined-variable-type
                 value = AstroidImportError(
                     "Failed to import module {modname} with error:\n{error}.",
                     modname=modname,
@@ -262,10 +287,12 @@ class AstroidManager:
             self._mod_file_cache[(modname, contextfile)] = value
         if isinstance(value, AstroidBuildingError):
             # we remove the traceback here to save on memory usage (since these exceptions are cached)
-            raise value.with_traceback(None)
+            raise value.with_traceback(None)  # pylint: disable=no-member
         return value
 
-    def ast_from_module(self, module: types.ModuleType, modname: str | None = None):
+    def ast_from_module(
+        self, module: types.ModuleType, modname: str | None = None
+    ) -> nodes.Module:
         """given an imported module, return the astroid object"""
         modname = modname or module.__name__
         if modname in self.astroid_cache:
@@ -274,7 +301,8 @@ class AstroidManager:
             # some builtin modules don't have __file__ attribute
             filepath = module.__file__
             if is_python_source(filepath):
-                return self.ast_from_file(filepath, modname)
+                # Type is checked in is_python_source
+                return self.ast_from_file(filepath, modname)  # type: ignore[arg-type]
         except AttributeError:
             pass
 
@@ -283,7 +311,7 @@ class AstroidManager:
 
         return AstroidBuilder(self).module_build(module, modname)
 
-    def ast_from_class(self, klass, modname=None):
+    def ast_from_class(self, klass: type, modname: str | None = None) -> nodes.ClassDef:
         """get astroid for the given class"""
         if modname is None:
             try:
@@ -296,14 +324,24 @@ class AstroidManager:
                     modname=modname,
                 ) from exc
         modastroid = self.ast_from_module_name(modname)
-        return modastroid.getattr(klass.__name__)[0]  # XXX
+        ret = modastroid.getattr(klass.__name__)[0]
+        assert isinstance(ret, nodes.ClassDef)
+        return ret
 
-    def infer_ast_from_something(self, obj, context=None):
+    def infer_ast_from_something(
+        self, obj: object, context: InferenceContext | None = None
+    ) -> Iterator[InferenceResult]:
         """infer astroid for the given class"""
         if hasattr(obj, "__class__") and not isinstance(obj, type):
             klass = obj.__class__
-        else:
+        elif isinstance(obj, type):
             klass = obj
+        else:
+            raise AstroidBuildingError(  # pragma: no cover
+                "Unable to get type for {class_repr}.",
+                cls=None,
+                class_repr=safe_repr(obj),
+            )
         try:
             modname = klass.__module__
         except AttributeError as exc:
@@ -342,7 +380,7 @@ class AstroidManager:
             for inferred in modastroid.igetattr(name, context):
                 yield inferred.instantiate_class()
 
-    def register_failed_import_hook(self, hook):
+    def register_failed_import_hook(self, hook: Callable[[str], nodes.Module]) -> None:
         """Registers a hook to resolve imports that cannot be found otherwise.
 
         `hook` must be a function that accepts a single argument `modname` which
@@ -352,11 +390,11 @@ class AstroidManager:
         """
         self._failed_import_hooks.append(hook)
 
-    def cache_module(self, module):
+    def cache_module(self, module: nodes.Module) -> None:
         """Cache a module if no module with the same name is known yet."""
         self.astroid_cache.setdefault(module.name, module)
 
-    def bootstrap(self):
+    def bootstrap(self) -> None:
         """Bootstrap the required AST modules needed for the manager to work
 
         The bootstrap usually involves building the AST for the builtins
@@ -381,13 +419,15 @@ class AstroidManager:
         # NB: not a new TransformVisitor()
         AstroidManager.brain["_transform"].transforms = collections.defaultdict(list)
 
+        CACHE_MANAGER.clear_all_caches()
+
         for lru_cache in (
             LookupMixIn.lookup,
             _cache_normalize_path_,
             util.is_namespace,
             ObjectModel.attributes,
         ):
-            lru_cache.cache_clear()
+            lru_cache.cache_clear()  # type: ignore[attr-defined]
 
         self.bootstrap()
 
@@ -395,5 +435,7 @@ class AstroidManager:
         for module in BRAIN_MODULES_DIRECTORY.iterdir():
             if module.suffix == ".py":
                 module_spec = find_spec(f"astroid.brain.{module.stem}")
+                assert module_spec
                 module_object = module_from_spec(module_spec)
+                assert module_spec.loader
                 module_spec.loader.exec_module(module_object)

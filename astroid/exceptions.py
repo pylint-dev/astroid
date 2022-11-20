@@ -7,12 +7,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 from astroid import util
 
 if TYPE_CHECKING:
-    from astroid import nodes
+    from astroid import arguments, bases, nodes, objects
+    from astroid.context import InferenceContext
 
 __all__ = (
     "AstroidBuildingError",
@@ -60,13 +62,13 @@ class AstroidError(Exception):
     arguments.
     """
 
-    def __init__(self, message="", **kws):
+    def __init__(self, message: str = "", **kws: Any) -> None:
         super().__init__(message)
         self.message = message
         for key, value in kws.items():
             setattr(self, key, value)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.message.format(**vars(self))
 
 
@@ -78,7 +80,23 @@ class AstroidBuildingError(AstroidError):
         error: Exception raised during construction.
     """
 
-    def __init__(self, message="Failed to import module {modname}.", **kws):
+    def __init__(
+        self,
+        message: str = "Failed to import module {modname}.",
+        modname: str | None = None,
+        error: Exception | None = None,
+        source: str | None = None,
+        path: str | None = None,
+        cls: type | None = None,
+        class_repr: str | None = None,
+        **kws: Any,
+    ) -> None:
+        self.modname = modname
+        self.error = error
+        self.source = source
+        self.path = path
+        self.cls = cls
+        self.class_repr = class_repr
         super().__init__(message, **kws)
 
 
@@ -94,19 +112,31 @@ class TooManyLevelsError(AstroidImportError):
         name: the name of the module on which the relative import was attempted.
     """
 
-    level = None
-    name = None
-
     def __init__(
         self,
-        message="Relative import with too many levels " "({level}) for module {name!r}",
-        **kws,
-    ):
+        message: str = "Relative import with too many levels "
+        "({level}) for module {name!r}",
+        level: int | None = None,
+        name: str | None = None,
+        **kws: Any,
+    ) -> None:
+        self.level = level
+        self.name = name
         super().__init__(message, **kws)
 
 
 class AstroidSyntaxError(AstroidBuildingError):
     """Exception class used when a module can't be parsed."""
+
+    def __init__(
+        self,
+        message: str,
+        modname: str | None,
+        error: Exception,
+        path: str | None,
+        source: str | None = None,
+    ) -> None:
+        super().__init__(message, modname, error, source, path)
 
 
 class NoDefault(AstroidError):
@@ -118,10 +148,15 @@ class NoDefault(AstroidError):
         name: Name of argument without a default.
     """
 
-    func = None
-    name = None
-
-    def __init__(self, message="{func!r} has no default for {name!r}.", **kws):
+    def __init__(
+        self,
+        message: str = "{func!r} has no default for {name!r}.",
+        func: nodes.FunctionDef | None = None,
+        name: str | None = None,
+        **kws: Any,
+    ) -> None:
+        self.func = func
+        self.name = name
         super().__init__(message, **kws)
 
 
@@ -134,7 +169,11 @@ class ResolveError(AstroidError):
         context: InferenceContext object.
     """
 
-    context = None
+    def __init__(
+        self, message: str = "", context: InferenceContext | None = None, **kws: Any
+    ) -> None:
+        self.context = context
+        super().__init__(message, **kws)
 
 
 class MroError(ResolveError):
@@ -146,10 +185,20 @@ class MroError(ResolveError):
         context: InferenceContext object.
     """
 
-    mros = ()
-    cls = None
+    def __init__(
+        self,
+        message: str,
+        mros: list[nodes.ClassDef],
+        cls: nodes.ClassDef,
+        context: InferenceContext | None = None,
+        **kws: Any,
+    ) -> None:
+        self.mros = mros
+        self.cls = cls
+        self.context = context
+        super().__init__(message, **kws)
 
-    def __str__(self):
+    def __str__(self) -> str:
         mro_names = ", ".join(f"({', '.join(b.name for b in m)})" for m in self.mros)
         return self.message.format(mros=mro_names, cls=self.cls)
 
@@ -170,13 +219,15 @@ class SuperError(ResolveError):
         context: InferenceContext object.
     """
 
-    super_ = None
+    def __init__(self, message: str, super_: objects.Super, **kws: Any) -> None:
+        self.super_ = super_
+        super().__init__(message, **kws)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.message.format(**vars(self.super_))
 
 
-class InferenceError(ResolveError):
+class InferenceError(ResolveError):  # pylint: disable=too-many-instance-attributes
     """raised when we are unable to infer a node
 
     Standard attributes:
@@ -184,10 +235,45 @@ class InferenceError(ResolveError):
         context: InferenceContext object.
     """
 
-    node = None
-    context = None
-
-    def __init__(self, message="Inference failed for {node!r}.", **kws):
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        message: str = "Inference failed for {node!r}.",
+        node: nodes.NodeNG | bases.Instance | None = None,
+        context: InferenceContext | None = None,
+        target: nodes.NodeNG | bases.Instance | None = None,
+        targets: nodes.Tuple | None = None,
+        attribute: str | None = None,
+        unknown: nodes.NodeNG | bases.Instance | None = None,
+        assign_path: list[int] | None = None,
+        caller: nodes.Call | None = None,
+        stmts: Sequence[nodes.NodeNG | bases.Instance] | None = None,
+        frame: nodes.LocalsDictNodeNG | None = None,
+        call_site: arguments.CallSite | None = None,
+        func: nodes.FunctionDef | None = None,
+        arg: str | None = None,
+        positional_arguments: list | None = None,
+        unpacked_args: list | None = None,
+        keyword_arguments: dict | None = None,
+        unpacked_kwargs: dict | None = None,
+        **kws: Any,
+    ) -> None:
+        self.node = node
+        self.context = context
+        self.target = target
+        self.targets = targets
+        self.attribute = attribute
+        self.unknown = unknown
+        self.assign_path = assign_path
+        self.caller = caller
+        self.stmts = stmts
+        self.frame = frame
+        self.call_site = call_site
+        self.func = func
+        self.arg = arg
+        self.positional_arguments = positional_arguments
+        self.unpacked_args = unpacked_args
+        self.keyword_arguments = keyword_arguments
+        self.unpacked_kwargs = unpacked_kwargs
         super().__init__(message, **kws)
 
 
@@ -202,10 +288,17 @@ class NameInferenceError(InferenceError):
         context: InferenceContext object.
     """
 
-    name = None
-    scope = None
-
-    def __init__(self, message="{name!r} not found in {scope!r}.", **kws):
+    def __init__(
+        self,
+        message: str = "{name!r} not found in {scope!r}.",
+        name: str | None = None,
+        scope: nodes.LocalsDictNodeNG | None = None,
+        context: InferenceContext | None = None,
+        **kws: Any,
+    ) -> None:
+        self.name = name
+        self.scope = scope
+        self.context = context
         super().__init__(message, **kws)
 
 
@@ -218,10 +311,23 @@ class AttributeInferenceError(ResolveError):
         context: InferenceContext object.
     """
 
-    target = None
-    attribute = None
-
-    def __init__(self, message="{attribute!r} not found on {target!r}.", **kws):
+    def __init__(
+        self,
+        message: str = "{attribute!r} not found on {target!r}.",
+        attribute: str = "",
+        target: nodes.NodeNG | bases.Instance | None = None,
+        context: InferenceContext | None = None,
+        mros: list[nodes.ClassDef] | None = None,
+        super_: nodes.ClassDef | None = None,
+        cls: nodes.ClassDef | None = None,
+        **kws: Any,
+    ) -> None:
+        self.attribute = attribute
+        self.target = target
+        self.context = context
+        self.mros = mros
+        self.super_ = super_
+        self.cls = cls
         super().__init__(message, **kws)
 
 
@@ -238,9 +344,35 @@ class _NonDeducibleTypeHierarchy(Exception):
 class AstroidIndexError(AstroidError):
     """Raised when an Indexable / Mapping does not have an index / key."""
 
+    def __init__(
+        self,
+        message: str = "",
+        node: nodes.NodeNG | bases.Instance | None = None,
+        index: nodes.Subscript | None = None,
+        context: InferenceContext | None = None,
+        **kws: Any,
+    ) -> None:
+        self.node = node
+        self.index = index
+        self.context = context
+        super().__init__(message, **kws)
+
 
 class AstroidTypeError(AstroidError):
     """Raised when a TypeError would be expected in Python code."""
+
+    def __init__(
+        self,
+        message: str = "",
+        node: nodes.NodeNG | bases.Instance | None = None,
+        index: nodes.Subscript | None = None,
+        context: InferenceContext | None = None,
+        **kws: Any,
+    ) -> None:
+        self.node = node
+        self.index = index
+        self.context = context
+        super().__init__(message, **kws)
 
 
 class AstroidValueError(AstroidError):
@@ -276,9 +408,6 @@ class StatementMissing(ParentMissingError):
     """
 
     def __init__(self, target: nodes.NodeNG) -> None:
-        # pylint: disable-next=bad-super-call
-        # https://github.com/PyCQA/pylint/issues/2903
-        # https://github.com/PyCQA/astroid/pull/1217#discussion_r744149027
         super(ParentMissingError, self).__init__(
             message=f"Statement not found on {target!r}"
         )

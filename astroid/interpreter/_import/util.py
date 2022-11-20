@@ -8,11 +8,20 @@ import pathlib
 import sys
 from functools import lru_cache
 from importlib._bootstrap_external import _NamespacePath
-from importlib.util import _find_spec_from_path
+from importlib.util import _find_spec_from_path  # type: ignore[attr-defined]
+
+from astroid.const import IS_PYPY
 
 
 @lru_cache(maxsize=4096)
 def is_namespace(modname: str) -> bool:
+    from astroid.modutils import (  # pylint: disable=import-outside-toplevel
+        EXT_LIB_DIRS,
+        STD_LIB_DIRS,
+    )
+
+    STD_AND_EXT_LIB_DIRS = STD_LIB_DIRS.union(EXT_LIB_DIRS)
+
     if modname in sys.builtin_module_names:
         return False
 
@@ -33,12 +42,25 @@ def is_namespace(modname: str) -> bool:
             found_spec = _find_spec_from_path(
                 working_modname, path=last_submodule_search_locations
             )
+        except AttributeError:
+            return False
         except ValueError:
             if modname == "__main__":
                 return False
             try:
                 # .pth files will be on sys.modules
-                return sys.modules[modname].__spec__ is None
+                # __spec__ is set inconsistently on PyPy so we can't really on the heuristic here
+                # See: https://foss.heptapod.net/pypy/pypy/-/issues/3736
+                # Check first fragment of modname, e.g. "astroid", not "astroid.interpreter"
+                # because of cffi's behavior
+                # See: https://github.com/PyCQA/astroid/issues/1776
+                mod = sys.modules[processed_components[0]]
+                return (
+                    mod.__spec__ is None
+                    and getattr(mod, "__file__", None) is None
+                    and hasattr(mod, "__path__")
+                    and not IS_PYPY
+                )
             except KeyError:
                 return False
             except AttributeError:
@@ -68,11 +90,19 @@ def is_namespace(modname: str) -> bool:
                 last_submodule_search_locations.append(str(assumed_location))
             continue
 
-        # Update last_submodule_search_locations
+        # Update last_submodule_search_locations for next iteration
         if found_spec and found_spec.submodule_search_locations:
+            # But immediately return False if we can detect we are in stdlib
+            # or external lib (e.g site-packages)
+            if any(
+                any(location.startswith(lib_dir) for lib_dir in STD_AND_EXT_LIB_DIRS)
+                for location in found_spec.submodule_search_locations
+            ):
+                return False
             last_submodule_search_locations = found_spec.submodule_search_locations
 
-    if found_spec is None:
-        return False
-
-    return found_spec.origin is None
+    return (
+        found_spec is not None
+        and found_spec.submodule_search_locations is not None
+        and found_spec.origin is None
+    )

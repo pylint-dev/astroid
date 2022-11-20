@@ -7,11 +7,22 @@ from __future__ import annotations
 import pprint
 import sys
 import warnings
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
 from functools import singledispatch as _singledispatch
-from typing import TYPE_CHECKING, ClassVar, Tuple, Type, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from astroid import decorators, util
+from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidError,
     InferenceError,
@@ -23,7 +34,7 @@ from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.utils import Position
-from astroid.typing import InferFn
+from astroid.typing import InferenceErrorInfo, InferenceResult, InferFn
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -124,7 +135,9 @@ class NodeNG:
         E.g. ClassDef, FunctionDef.
         """
 
-    def infer(self, context=None, **kwargs):
+    def infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, None]:
         """Get a generator of the inferred values.
 
         This is the main entry point to the inference system.
@@ -161,17 +174,15 @@ class NodeNG:
             yield from context.inferred[key]
             return
 
-        generator = self._infer(context=context, **kwargs)
         results = []
 
         # Limit inference amount to help with performance issues with
         # exponentially exploding possible results.
-        limit = AstroidManager().max_inferable_values
-        for i, result in enumerate(generator):
+        limit = AstroidManager.max_inferable_values
+        for i, result in enumerate(self._infer(context=context, **kwargs)):
             if i >= limit or (context.nodes_inferred > context.max_inferred):
-                uninferable = util.Uninferable
-                results.append(uninferable)
-                yield uninferable
+                results.append(util.Uninferable)
+                yield util.Uninferable
                 break
             results.append(result)
             yield result
@@ -348,15 +359,14 @@ class NodeNG:
             raise ParentMissingError(target=self)
         return self.parent.scope()
 
-    def root(self):
+    def root(self) -> nodes.Module:
         """Return the root node of the syntax tree.
 
         :returns: The root node.
-        :rtype: Module
         """
         if self.parent:
             return self.parent.root()
-        return self
+        return self  # type: ignore[return-value] # Only 'Module' does not have a parent node.
 
     def child_sequence(self, child):
         """Search for the sequence that contains this child.
@@ -459,16 +469,16 @@ class NodeNG:
         We need this method since not all nodes have :attr:`lineno` set.
         """
         line = self.lineno
-        _node: NodeNG | None = self
+        _node = self
         try:
             while line is None:
                 _node = next(_node.get_children())
                 line = _node.lineno
         except StopIteration:
-            _node = self.parent
-            while _node and line is None:
-                line = _node.lineno
-                _node = _node.parent
+            parent = self.parent
+            while parent and line is None:
+                line = parent.lineno
+                parent = parent.parent
         return line
 
     def block_range(self, lineno):
@@ -483,7 +493,7 @@ class NodeNG:
         """
         return lineno, self.tolineno
 
-    def set_local(self, name, stmt):
+    def set_local(self, name: str, stmt: NodeNG) -> None:
         """Define that the given name is declared in the given statement node.
 
         This definition is stored on the parent scope node.
@@ -491,11 +501,10 @@ class NodeNG:
         .. seealso:: :meth:`scope`
 
         :param name: The name that is being defined.
-        :type name: str
 
         :param stmt: The statement that defines the given name.
-        :type stmt: NodeNG
         """
+        assert self.parent
         self.parent.set_local(name, stmt)
 
     @overload
@@ -581,7 +590,9 @@ class NodeNG:
         # overridden for ImportFrom, Import, Global, TryExcept and Arguments
         pass
 
-    def _infer(self, context=None):
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """we don't know how to resolve a statement by default"""
         # this method is overridden by most concrete classes
         raise InferenceError(

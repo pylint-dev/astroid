@@ -32,9 +32,6 @@ class TransformVisitor:
         transformed node.
         """
         cls = node.__class__
-        if cls not in self.transforms:
-            # no transform registered for this class of node
-            return node
 
         transforms = self.transforms[cls]
         for transform_func, predicate in transforms:

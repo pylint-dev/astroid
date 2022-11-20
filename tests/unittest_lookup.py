@@ -83,7 +83,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         name = next(cls2.nodes_of_class(nodes.Name))
         self.assertEqual(next(name.infer()), cls1)
 
-    ### backport those test to inline code
+    # backport those test to inline code
     def test_method(self) -> None:
         method = self.module["YOUPI"]["method"]
         my_dict = next(method.ilookup("MY_DICT"))
@@ -382,7 +382,6 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(intstmts), 1)
         self.assertIsInstance(intstmts[0], nodes.ClassDef)
         self.assertEqual(intstmts[0].name, "int")
-        # pylint: disable=no-member
         self.assertIs(intstmts[0], nodes.const_factory(1)._proxied)
 
     def test_decorator_arguments_lookup(self) -> None:

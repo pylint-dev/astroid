@@ -18,6 +18,8 @@ import pytest
 import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
+from astroid.brain.brain_namedtuple_enum import _get_namedtuple_fields
+from astroid.const import PY39_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -75,27 +77,50 @@ class HashlibTest(unittest.TestCase):
         self.assertIn("hexdigest", class_obj)
         self.assertIn("block_size", class_obj)
         self.assertIn("digest_size", class_obj)
-        self.assertEqual(len(class_obj["__init__"].args.args), 2)
-        self.assertEqual(len(class_obj["__init__"].args.defaults), 1)
+        # usedforsecurity was added in Python 3.9, see 8e7174a9
+        self.assertEqual(len(class_obj["__init__"].args.args), 3 if PY39_PLUS else 2)
+        self.assertEqual(
+            len(class_obj["__init__"].args.defaults), 2 if PY39_PLUS else 1
+        )
         self.assertEqual(len(class_obj["update"].args.args), 2)
-        self.assertEqual(len(class_obj["digest"].args.args), 1)
-        self.assertEqual(len(class_obj["hexdigest"].args.args), 1)
 
     def test_hashlib(self) -> None:
         """Tests that brain extensions for hashlib work."""
         hashlib_module = MANAGER.ast_from_module_name("hashlib")
-        for class_name in ("md5", "sha1"):
+        for class_name in (
+            "md5",
+            "sha1",
+            "sha224",
+            "sha256",
+            "sha384",
+            "sha512",
+            "sha3_224",
+            "sha3_256",
+            "sha3_384",
+            "sha3_512",
+        ):
             class_obj = hashlib_module[class_name]
             self._assert_hashlib_class(class_obj)
+            self.assertEqual(len(class_obj["digest"].args.args), 1)
+            self.assertEqual(len(class_obj["hexdigest"].args.args), 1)
 
-    def test_hashlib_py36(self) -> None:
+    def test_shake(self) -> None:
+        """Tests that the brain extensions for the hashlib shake algorithms work."""
         hashlib_module = MANAGER.ast_from_module_name("hashlib")
-        for class_name in ("sha3_224", "sha3_512", "shake_128"):
+        for class_name in ("shake_128", "shake_256"):
             class_obj = hashlib_module[class_name]
             self._assert_hashlib_class(class_obj)
+            self.assertEqual(len(class_obj["digest"].args.args), 2)
+            self.assertEqual(len(class_obj["hexdigest"].args.args), 2)
+
+    def test_blake2(self) -> None:
+        """Tests that the brain extensions for the hashlib blake2 hash functions work."""
+        hashlib_module = MANAGER.ast_from_module_name("hashlib")
         for class_name in ("blake2b", "blake2s"):
             class_obj = hashlib_module[class_name]
             self.assertEqual(len(class_obj["__init__"].args.args), 2)
+            self.assertEqual(len(class_obj["digest"].args.args), 1)
+            self.assertEqual(len(class_obj["hexdigest"].args.args), 1)
 
 
 class CollectionsDequeTests(unittest.TestCase):
@@ -429,6 +454,23 @@ class NamedTupleTest(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIs(util.Uninferable, inferred)
 
+    def test_name_as_typename(self) -> None:
+        """Reported in https://github.com/PyCQA/pylint/issues/7429 as a crash."""
+        good_node, good_node_two, bad_node = builder.extract_node(
+            """
+            import collections
+            collections.namedtuple(typename="MyTuple", field_names=["birth_date", "city"])  #@
+            collections.namedtuple("MyTuple", field_names=["birth_date", "city"])  #@
+            collections.namedtuple(["birth_date", "city"], typename="MyTuple")  #@
+        """
+        )
+        good_inferred = next(good_node.infer())
+        assert isinstance(good_inferred, nodes.ClassDef)
+        good_node_two_inferred = next(good_node_two.infer())
+        assert isinstance(good_node_two_inferred, nodes.ClassDef)
+        bad_node_inferred = next(bad_node.infer())
+        assert bad_node_inferred == util.Uninferable
+
 
 class DefaultDictTest(unittest.TestCase):
     def test_1(self) -> None:
@@ -569,12 +611,28 @@ class SixBrainTest(unittest.TestCase):
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "B")
-        self.assertIsInstance(inferred.bases[0], nodes.Call)
+        self.assertIsInstance(inferred.bases[0], nodes.Name)
+        self.assertEqual(inferred.bases[0].name, "C")
         ancestors = tuple(inferred.ancestors())
         self.assertIsInstance(ancestors[0], nodes.ClassDef)
         self.assertEqual(ancestors[0].name, "C")
         self.assertIsInstance(ancestors[1], nodes.ClassDef)
         self.assertEqual(ancestors[1].name, "object")
+
+    @staticmethod
+    def test_six_with_metaclass_enum_ancestor() -> None:
+        code = """
+        import six
+        from enum import Enum, EnumMeta
+
+        class FooMeta(EnumMeta):
+            pass
+
+        class Foo(six.with_metaclass(FooMeta, Enum)):  #@
+            bar = 1
+        """
+        klass = astroid.extract_node(code)
+        assert list(klass.ancestors())[-1].name == "Enum"
 
     def test_six_with_metaclass_with_additional_transform(self) -> None:
         def transform_class(cls: Any) -> ClassDef:
@@ -1435,7 +1493,8 @@ class CollectionsBrain(unittest.TestCase):
 
     @test_utils.require_version(minver="3.9")
     def test_collections_object_subscriptable_3(self):
-        """With python39 ByteString class of the colletions module is subscritable (but not the same class from typing module)"""
+        """With Python 3.9 the ByteString class of the collections module is subscritable
+        (but not the same class from typing module)"""
         right_node = builder.extract_node(
             """
         import collections.abc
@@ -1623,6 +1682,25 @@ class TypingBrain(unittest.TestCase):
         """
         )
         next(node.infer())
+
+    def test_namedtuple_uninferable_member(self) -> None:
+        call = builder.extract_node(
+            """
+        from typing import namedtuple
+        namedtuple('uninf', {x: x for x in range(0)})  #@"""
+        )
+        with pytest.raises(UseInferenceDefault):
+            _get_namedtuple_fields(call)
+
+        call = builder.extract_node(
+            """
+        from typing import namedtuple
+        uninferable = {x: x for x in range(0)}
+        namedtuple('uninferable', uninferable)  #@
+        """
+        )
+        with pytest.raises(UseInferenceDefault):
+            _get_namedtuple_fields(call)
 
     def test_typing_types(self) -> None:
         ast_nodes = builder.extract_node(
@@ -2092,6 +2170,26 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(slots[0], nodes.Const)
         assert slots[0].value == "value"
 
+    def test_collections_generic_alias_slots(self):
+        """Test slots for a class which is a subclass of a generic alias type."""
+        node = builder.extract_node(
+            """
+        import collections
+        import typing
+        Type = typing.TypeVar('Type')
+        class A(collections.abc.AsyncIterator[Type]):
+            __slots__ = ('_value',)
+            def __init__(self, value: collections.abc.AsyncIterator[Type]):
+                self._value = value
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+        slots = inferred.slots()
+        assert len(slots) == 1
+        assert isinstance(slots[0], nodes.Const)
+        assert slots[0].value == "_value"
+
     def test_has_dunder_args(self) -> None:
         ast_node = builder.extract_node(
             """
@@ -2277,7 +2375,8 @@ class TypingBrain(unittest.TestCase):
         )
 
     def test_typing_object_notsubscriptable_3(self):
-        """Until python39 ByteString class of the typing module is not subscritable (whereas it is in the collections module)"""
+        """Until python39 ByteString class of the typing module is not
+        subscriptable (whereas it is in the collections' module)"""
         right_node = builder.extract_node(
             """
         import typing
@@ -2661,6 +2760,29 @@ class RandomSampleTest(unittest.TestCase):
         random.sample([1, 2], 2) #@
         """
         )
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, astroid.List)
+        elems = sorted(elem.value for elem in inferred.elts)
+        self.assertEqual(elems, [1, 2])
+
+    def test_arguments_inferred_successfully(self) -> None:
+        """Test inference of `random.sample` when both arguments are of type `nodes.Call`."""
+        node = astroid.extract_node(
+            """
+        import random
+
+        def sequence():
+            return [1, 2]
+
+        random.sample(sequence(), len([1,2])) #@
+        """
+        )
+        # Check that arguments are of type `nodes.Call`.
+        sequence, length = node.args
+        self.assertIsInstance(sequence, astroid.Call)
+        self.assertIsInstance(length, astroid.Call)
+
+        # Check the inference of `random.sample` call.
         inferred = next(node.infer())
         self.assertIsInstance(inferred, astroid.List)
         elems = sorted(elem.value for elem in inferred.elts)
@@ -3473,7 +3595,7 @@ def test_http_status_brain() -> None:
     )
     inferred = next(node.infer())
     # Cannot infer the exact value but the field is there.
-    assert inferred is util.Uninferable
+    assert inferred.value == ""
 
     node = astroid.extract_node(
         """
@@ -3483,6 +3605,19 @@ def test_http_status_brain() -> None:
     )
     inferred = next(node.infer())
     assert isinstance(inferred, astroid.Const)
+
+
+def test_http_status_brain_iterable() -> None:
+    """Astroid inference of `http.HTTPStatus` is an iterable subclass of `enum.IntEnum`"""
+    node = astroid.extract_node(
+        """
+    import http
+    http.HTTPStatus
+    """
+    )
+    inferred = next(node.infer())
+    assert "enum.IntEnum" in [ancestor.qname() for ancestor in inferred.ancestors()]
+    assert inferred.getattr("__iter__")
 
 
 def test_oserror_model() -> None:
