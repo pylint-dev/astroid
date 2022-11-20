@@ -9,7 +9,7 @@ import sys
 from abc import ABC, abstractmethod
 from typing import TypeVar, Union
 
-from astroid import nodes, util
+from astroid import bases, nodes, util
 from astroid.typing import InferenceResult
 
 if sys.version_info >= (3, 11):
@@ -115,7 +115,7 @@ ALL_CONSTRAINT_CLASSES = frozenset((NoneConstraint,))
 """All supported constraint types."""
 
 
-def _matches(node1: nodes.NodeNG, node2: nodes.NodeNG) -> bool:
+def _matches(node1: nodes.NodeNG | bases.Proxy, node2: nodes.NodeNG) -> bool:
     """Returns True if the two nodes match."""
     if isinstance(node1, nodes.Name) and isinstance(node2, nodes.Name):
         return node1.name == node2.name
