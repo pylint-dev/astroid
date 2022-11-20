@@ -82,7 +82,7 @@ class InferenceContext:
         for call arguments
         """
 
-        self.constraints: dict[str, dict[nodes.If, constraint.Constraint]] = {}
+        self.constraints: dict[str, dict[nodes.If, set[constraint.Constraint]]] = {}
         """The constraints on nodes."""
 
     @property

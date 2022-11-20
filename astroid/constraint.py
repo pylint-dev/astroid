@@ -7,7 +7,8 @@ from __future__ import annotations
 
 import sys
 from abc import ABC, abstractmethod
-from typing import TypeVar, Union
+from collections.abc import Iterator
+from typing import Union
 
 from astroid import bases, nodes, util
 from astroid.typing import InferenceResult
@@ -18,7 +19,6 @@ else:
     from typing_extensions import Self
 
 _NameNodes = Union[nodes.AssignAttr, nodes.Attribute, nodes.AssignName, nodes.Name]
-_ConstraintT = TypeVar("_ConstraintT", bound="Constraint")
 
 
 class Constraint(ABC):
@@ -83,32 +83,32 @@ class NoneConstraint(Constraint):
 
 def get_constraints(
     expr: _NameNodes, frame: nodes.LocalsDictNodeNG
-) -> dict[nodes.If, Constraint]:
+) -> dict[nodes.If, set[Constraint]]:
     """Returns the constraints for the given expression.
 
     The returned dictionary maps the node where the constraint was generated to the
-    corresponding constraint.
+    corresponding constraint(s).
 
     Constraints are computed statically by analysing the code surrounding expr.
     Currently this only supports constraints generated from if conditions.
     """
-    current_node = expr
-    constraints: dict[nodes.If, Constraint] = {}
+    current_node: nodes.NodeNG | None = expr
+    constraints_mapping: dict[nodes.If, set[Constraint]] = {}
     while current_node is not None and current_node is not frame:
         parent = current_node.parent
         if isinstance(parent, nodes.If):
             branch, _ = parent.locate_child(current_node)
-            constraint: Constraint | None = None
+            constraints: set[Constraint] | None = None
             if branch == "body":
-                constraint = _match_constraint(expr, parent.test)
+                constraints = set(_match_constraint(expr, parent.test))
             elif branch == "orelse":
-                constraint = _match_constraint(expr, parent.test, invert=True)
+                constraints = set(_match_constraint(expr, parent.test, invert=True))
 
-            if constraint:
-                constraints[parent] = constraint
+            if constraints:
+                constraints_mapping[parent] = constraints
         current_node = parent
 
-    return constraints
+    return constraints_mapping
 
 
 ALL_CONSTRAINT_CLASSES = frozenset((NoneConstraint,))
@@ -129,11 +129,9 @@ def _matches(node1: nodes.NodeNG | bases.Proxy, node2: nodes.NodeNG) -> bool:
 
 def _match_constraint(
     node: _NameNodes, expr: nodes.NodeNG, invert: bool = False
-) -> Constraint | None:
-    """Returns a constraint pattern for node, if one matches."""
+) -> Iterator[Constraint]:
+    """Yields all constraint patterns for node that match."""
     for constraint_cls in ALL_CONSTRAINT_CLASSES:
         constraint = constraint_cls.match(node, expr, invert)
         if constraint:
-            return constraint
-
-    return None
+            yield constraint

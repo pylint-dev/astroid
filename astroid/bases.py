@@ -150,13 +150,13 @@ def _infer_stmts(
     """Return an iterator on statements inferred by each statement in *stmts*."""
     inferred = False
     constraint_failed = False
-    constraints: dict[str, dict[nodes.If, Constraint]] = {}
     if context is not None:
         name = context.lookupname
         context = context.clone()
         constraints = context.constraints.get(name, {})
     else:
         name = None
+        constraints = {}
         context = InferenceContext()
 
     for stmt in stmts:
@@ -167,11 +167,10 @@ def _infer_stmts(
         # 'context' is always InferenceContext and Instances get '_infer_name' from ClassDef
         context.lookupname = stmt._infer_name(frame, name)  # type: ignore[union-attr]
         try:
-            stmt_constraints = {
-                constraint
-                for constraint_stmt, constraint in constraints.items()
-                if not constraint_stmt.parent_of(stmt)
-            }
+            stmt_constraints: set[Constraint] = set()
+            for constraint_stmt, potential_constraints in constraints.items():
+                if not constraint_stmt.parent_of(stmt):
+                    stmt_constraints.update(potential_constraints)
             # Mypy doesn't recognize that 'stmt' can't be Uninferable
             for inf in stmt.infer(context=context):  # type: ignore[union-attr]
                 if all(constraint.satisfied_by(inf) for constraint in stmt_constraints):
