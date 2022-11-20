@@ -111,7 +111,7 @@ def get_constraints(
     return constraints
 
 
-ALL_CONSTRAINT_CLASSES = (NoneConstraint,)
+ALL_CONSTRAINT_CLASSES = frozenset((NoneConstraint,))
 """All supported constraint types."""
 
 
