@@ -51,10 +51,9 @@ class InferenceContext:
             self._nodes_inferred = [0]
         else:
             self._nodes_inferred = nodes_inferred
+
         self.path = path or set()
         """
-        :type: set(tuple(NodeNG, optional(str)))
-
         Path of visited nodes and their lookupname
 
         Currently this key is ``(node, context.lookupname)``
@@ -68,18 +67,14 @@ class InferenceContext:
         """
         self.callcontext: CallContext | None = None
         """The call arguments and keywords for the given context."""
-        self.boundnode = None
+        self.boundnode: NodeNG | None = None
         """
-        :type: optional[NodeNG]
-
         The bound node of the given context
 
         e.g. the bound node of object.__new__(cls) is the object node
         """
         self.extra_context: dict[Any, InferenceContext] = {}
         """
-        :type: dict(NodeNG, Context)
-
         Context that needs to be passed down through call stacks
         for call arguments
         """
@@ -111,8 +106,7 @@ class InferenceContext:
     def push(self, node) -> bool:
         """Push node into inference path
 
-        :return: True if node is already in context path else False
-        :rtype: bool
+        :return: Whether node is already in context path.
 
         Allows one to see if the given node has already
         been looked at for this inference context"""
