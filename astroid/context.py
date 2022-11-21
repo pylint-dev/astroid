@@ -67,14 +67,18 @@ class InferenceContext:
         """
         self.callcontext: CallContext | None = None
         """The call arguments and keywords for the given context."""
-        self.boundnode: NodeNG | None = None
+        self.boundnode = None
         """
+        :type: optional[NodeNG]
+
         The bound node of the given context
 
         e.g. the bound node of object.__new__(cls) is the object node
         """
         self.extra_context: dict[Any, InferenceContext] = {}
         """
+        :type: dict(NodeNG, Context)
+
         Context that needs to be passed down through call stacks
         for call arguments
         """
