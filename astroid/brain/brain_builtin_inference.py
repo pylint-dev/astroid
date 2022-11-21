@@ -697,8 +697,6 @@ def infer_isinstance(callnode, context: InferenceContext | None = None):
     """Infer isinstance calls
 
     :param nodes.Call callnode: an isinstance call
-    :param InferenceContext context: context for call
-        (currently unused but is a common interface for inference)
     :rtype nodes.Const: Boolean Const value of isinstance call
 
     :raises UseInferenceDefault: If the node cannot be inferred
