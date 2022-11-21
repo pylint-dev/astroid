@@ -4,6 +4,7 @@
 
 import importlib
 import warnings
+from typing import Literal
 
 import lazy_object_proxy
 
