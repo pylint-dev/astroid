@@ -278,7 +278,7 @@ def infer_typing_alias(
     try:
         res = next(node.args[0].infer(context=ctx))
     except StopIteration as e:
-        raise InferenceError(node=node.args[0], context=context) from e
+        raise InferenceError(node=node.args[0], context=ctx) from e
 
     assign_name = node.parent.targets[0]
 
@@ -359,7 +359,7 @@ def infer_special_alias(
     try:
         res = next(node.args[0].infer(context=ctx))
     except StopIteration as e:
-        raise InferenceError(node=node.args[0], context=context) from e
+        raise InferenceError(node=node.args[0], context=ctx) from e
 
     assign_name = node.parent.targets[0]
     class_def = ClassDef(
