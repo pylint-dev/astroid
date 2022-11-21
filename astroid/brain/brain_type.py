@@ -48,8 +48,6 @@ def infer_type_sub(node, context: InferenceContext | None = None):
 
     :param node: node to infer
     :type node: astroid.nodes.node_classes.NodeNG
-    :param context: inference context
-    :type context: astroid.context.InferenceContext
     :return: the inferred node
     :rtype: nodes.NodeNG
     """

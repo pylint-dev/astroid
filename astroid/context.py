@@ -186,9 +186,6 @@ def bind_context_to_node(context: InferenceContext | None, node) -> InferenceCon
     Do not use an existing context since the boundnode could then
     be incorrectly propagated higher up in the call stack.
 
-    :param context: Context to use
-    :type context: Optional(context)
-
     :param node: Node to do name lookups from
     :type node NodeNG:
 
