@@ -636,13 +636,14 @@ def _infer_old_style_string_formatting(
     TODO: Instead of returning Uninferable we should rely
     on the call to '%' to see if the result is actually uninferable.
     """
-    values = None
     if isinstance(other, nodes.Tuple):
         if util.Uninferable in other.elts:
             return (util.Uninferable,)
         inferred_positional = [helpers.safe_infer(i, context) for i in other.elts]
         if all(isinstance(i, nodes.Const) for i in inferred_positional):
             values = tuple(i.value for i in inferred_positional)
+        else:
+            values = None
     elif isinstance(other, nodes.Dict):
         values: dict[Any, Any] = {}
         for pair in other.items:
