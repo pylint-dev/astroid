@@ -947,7 +947,7 @@ class Arguments(_base_nodes.AssignTypeNode):
             return True
         return (
             self.find_argname(name, rec=True)[1] is not None
-            or bool(self.kwonlyargs)
+            or self.kwonlyargs
             and _find_arg(name, self.kwonlyargs, rec=True)[1] is not None
         )
 
