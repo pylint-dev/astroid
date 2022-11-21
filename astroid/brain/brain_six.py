@@ -24,7 +24,7 @@ def default_predicate(line):
     return line.strip()
 
 
-def _indent(text, prefix, predicate=default_predicate):
+def _indent(text, prefix, predicate=default_predicate) -> str:
     """Adds 'prefix' to the beginning of selected lines in 'text'.
 
     If 'predicate' is provided, 'prefix' will only be added to the lines

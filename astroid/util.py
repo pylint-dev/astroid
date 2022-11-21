@@ -26,7 +26,7 @@ def lazy_import(module_name):
 class Uninferable:
     """Special inference object, which is returned when inference fails."""
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Uninferable"
 
     __str__ = __repr__
@@ -80,7 +80,7 @@ class BadUnaryOperationMessage(BadOperationMessage):
 
         return objtype
 
-    def __str__(self):
+    def __str__(self) -> str:
         if hasattr(self.operand, "name"):
             operand_type = self.operand.name
         else:
@@ -103,7 +103,7 @@ class BadBinaryOperationMessage(BadOperationMessage):
         self.right_type = right_type
         self.op = op
 
-    def __str__(self):
+    def __str__(self) -> str:
         msg = "unsupported operand type(s) for {}: {!r} and {!r}"
         return msg.format(self.op, self.left_type.name, self.right_type.name)
 

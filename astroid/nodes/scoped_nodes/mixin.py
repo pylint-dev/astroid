@@ -30,7 +30,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
     locals: dict[str, list[SuccessfulInferenceResult]] = {}
     """A map of the name of a local variable to the node defining the local."""
 
-    def qname(self):
+    def qname(self) -> str:
         """Get the 'qualified' name of the node.
 
         For example: module.name, module.class.name ...

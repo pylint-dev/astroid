@@ -127,7 +127,7 @@ class Super(node_classes.NodeNG):
     def pytype(self) -> Literal["builtins.super"]:
         return "builtins.super"
 
-    def display_type(self):
+    def display_type(self) -> str:
         return "Super of"
 
     @property
