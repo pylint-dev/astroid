@@ -399,7 +399,7 @@ class UnboundMethod(Proxy):
     def implicit_parameters(self) -> Literal[0]:
         return 0
 
-    def is_bound(self) -> bool:
+    def is_bound(self) -> Literal[False]:
         return False
 
     def getattr(self, name, context=None):
@@ -462,7 +462,7 @@ class UnboundMethod(Proxy):
                 yield Instance(inferred)
             raise InferenceError
 
-    def bool_value(self, context=None) -> bool:
+    def bool_value(self, context=None) -> Literal[True]:
         return True
 
 
@@ -482,7 +482,7 @@ class BoundMethod(UnboundMethod):
             return 0
         return 1
 
-    def is_bound(self) -> bool:
+    def is_bound(self) -> Literal[True]:
         return True
 
     def _infer_type_new_call(self, caller, context):  # noqa: C901
@@ -591,7 +591,7 @@ class BoundMethod(UnboundMethod):
 
         return super().infer_call_result(caller, context)
 
-    def bool_value(self, context=None) -> bool:
+    def bool_value(self, context=None) -> Literal[True]:
         return True
 
 
@@ -614,7 +614,7 @@ class Generator(BaseInstance):
     def infer_yield_types(self):
         yield from self.parent.infer_yield_result(self._call_context)
 
-    def callable(self) -> bool:
+    def callable(self) -> Literal[False]:
         return False
 
     def pytype(self) -> Literal["builtins.generator"]:
@@ -623,7 +623,7 @@ class Generator(BaseInstance):
     def display_type(self) -> str:
         return "Generator"
 
-    def bool_value(self, context=None) -> bool:
+    def bool_value(self, context=None) -> Literal[True]:
         return True
 
     def __repr__(self) -> str:

@@ -806,6 +806,6 @@ class NodeNG:
         # Look up by class name or default to highest precedence
         return OP_PRECEDENCE.get(self.__class__.__name__, len(OP_PRECEDENCE))
 
-    def op_left_associative(self) -> bool:
+    def op_left_associative(self) -> Literal[True]:
         # Everything is left associative except `**` and IfExp
         return True

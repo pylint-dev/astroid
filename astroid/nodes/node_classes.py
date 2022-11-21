@@ -3309,7 +3309,7 @@ class IfExp(NodeNG):
         yield self.body
         yield self.orelse
 
-    def op_left_associative(self) -> bool:
+    def op_left_associative(self) -> Literal[False]:
         # `1 if True else 2 if False else 3` is parsed as
         # `1 if True else (2 if False else 3)`
         return False

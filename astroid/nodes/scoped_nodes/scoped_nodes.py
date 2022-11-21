@@ -733,7 +733,7 @@ class GeneratorExp(ComprehensionScope):
         else:
             self.generators = generators
 
-    def bool_value(self, context=None) -> bool:
+    def bool_value(self, context=None) -> Literal[True]:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1145,7 +1145,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             return "Method"
         return "Function"
 
-    def callable(self) -> bool:
+    def callable(self) -> Literal[True]:
         """Whether this node defines something that is callable.
 
         :returns: True if this defines something that is callable,
@@ -1213,7 +1213,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             frame = self
         return frame._scope_lookup(node, name, offset)
 
-    def bool_value(self, context=None) -> bool:
+    def bool_value(self, context=None) -> Literal[True]:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -3055,7 +3055,7 @@ class ClassDef(
         """
         return self._compute_mro(context=context)
 
-    def bool_value(self, context=None) -> bool:
+    def bool_value(self, context=None) -> Literal[True]:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
