@@ -2,13 +2,16 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-from __future__ import annotations
-
 import importlib
 import warnings
 from typing import Literal
 
 import lazy_object_proxy
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 
 def lazy_descriptor(obj):
