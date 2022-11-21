@@ -43,7 +43,7 @@ class Uninferable:
     def __call__(self, *args, **kwargs):
         return self
 
-    def __bool__(self) -> bool:
+    def __bool__(self) -> Literal[False]:
         return False
 
     __nonzero__ = __bool__
