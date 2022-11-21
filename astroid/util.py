@@ -3,8 +3,8 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 import importlib
-import warnings
 import sys
+import warnings
 
 import lazy_object_proxy
 
