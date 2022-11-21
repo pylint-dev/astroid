@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import contextlib
 import pprint
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple
+from typing import Any, TYPE_CHECKING, Dict, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
     from astroid.nodes.node_classes import Keyword, NodeNG
@@ -76,7 +76,7 @@ class InferenceContext:
 
         e.g. the bound node of object.__new__(cls) is the object node
         """
-        self.extra_context: dict[NodeNG, InferenceContext] = {}
+        self.extra_context: dict[Any, InferenceContext] = {}
         """
         :type: dict(NodeNG, Context)
 
