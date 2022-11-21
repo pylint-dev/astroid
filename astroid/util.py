@@ -4,6 +4,7 @@
 
 import importlib
 import warnings
+import sys
 
 import lazy_object_proxy
 
