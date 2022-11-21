@@ -2,9 +2,12 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import random
 
 from astroid import helpers
+from astroid.context import InferenceContext
 from astroid.exceptions import UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
@@ -38,7 +41,7 @@ def _clone_node_with_lineno(node, parent, lineno):
     return new_node
 
 
-def infer_random_sample(node, context=None):
+def infer_random_sample(node, context: InferenceContext | None = None):
     if len(node.args) != 2:
         raise UseInferenceDefault
 

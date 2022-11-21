@@ -119,7 +119,7 @@ class InferenceContext:
         self.path.add((node, name))
         return False
 
-    def clone(self):
+    def clone(self) -> InferenceContext:
         """Clone inference path
 
         For example, each side of a binary operation (BinOp)

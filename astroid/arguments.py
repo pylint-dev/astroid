@@ -29,7 +29,7 @@ class CallSite:
     """
 
     def __init__(
-        self, callcontext: CallContext, argument_context_map=None, context=None
+        self, callcontext: CallContext, argument_context_map=None, context: InferenceContext | None = None
     ):
         if argument_context_map is None:
             argument_context_map = {}
@@ -81,7 +81,7 @@ class CallSite:
         """
         return len(self.keyword_arguments) != len(self._unpacked_kwargs)
 
-    def _unpack_keywords(self, keywords, context=None):
+    def _unpack_keywords(self, keywords, context: InferenceContext | None = None):
         values = {}
         context = context or InferenceContext()
         context.extra_context = self.argument_context_map
@@ -125,7 +125,7 @@ class CallSite:
                 values[name] = value
         return values
 
-    def _unpack_args(self, args, context=None):
+    def _unpack_args(self, args, context: InferenceContext | None = None):
         values = []
         context = context or InferenceContext()
         context.extra_context = self.argument_context_map

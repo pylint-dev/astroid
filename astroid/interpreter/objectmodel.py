@@ -340,7 +340,7 @@ class FunctionModel(ObjectModel):
                 # is different.
                 return 0
 
-            def infer_call_result(self, caller, context=None):
+            def infer_call_result(self, caller, context: InferenceContext | None = None):
                 if len(caller.args) > 2 or len(caller.args) < 1:
                     raise InferenceError(
                         "Invalid arguments for descriptor binding",
@@ -486,7 +486,7 @@ class ClassModel(ObjectModel):
         # Cls.mro is a method and we need to return one in order to have a proper inference.
         # The method we're returning is capable of inferring the underlying MRO though.
         class MroBoundMethod(bases.BoundMethod):
-            def infer_call_result(self, caller, context=None):
+            def infer_call_result(self, caller, context: InferenceContext | None = None):
                 yield other_self.attr___mro__
 
         implicit_metaclass = self._instance.implicit_metaclass()
@@ -532,7 +532,7 @@ class ClassModel(ObjectModel):
         obj.postinit(classes)
 
         class SubclassesBoundMethod(bases.BoundMethod):
-            def infer_call_result(self, caller, context=None):
+            def infer_call_result(self, caller, context: InferenceContext | None = None):
                 yield obj
 
         implicit_metaclass = self._instance.implicit_metaclass()
@@ -794,7 +794,7 @@ class DictModel(ObjectModel):
         """Generate a bound method that can infer the given *obj*."""
 
         class DictMethodBoundMethod(astroid.BoundMethod):
-            def infer_call_result(self, caller, context=None):
+            def infer_call_result(self, caller, context: InferenceContext | None = None):
                 yield obj
 
         meth = next(self._instance._proxied.igetattr(name), None)
@@ -859,7 +859,7 @@ class PropertyModel(ObjectModel):
         func = self._instance
 
         class PropertyFuncAccessor(nodes.FunctionDef):
-            def infer_call_result(self, caller=None, context=None):
+            def infer_call_result(self, caller=None, context: InferenceContext | None = None):
                 nonlocal func
                 if caller and len(caller.args) != 1:
                     raise InferenceError(
@@ -900,7 +900,7 @@ class PropertyModel(ObjectModel):
             )
 
         class PropertyFuncAccessor(nodes.FunctionDef):
-            def infer_call_result(self, caller=None, context=None):
+            def infer_call_result(self, caller=None, context: InferenceContext | None = None):
                 nonlocal func_setter
                 if caller and len(caller.args) != 2:
                     raise InferenceError(

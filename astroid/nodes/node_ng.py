@@ -782,7 +782,7 @@ class NodeNG:
         _repr_tree(self, result, set())
         return "".join(result)
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None):
         """Determine the boolean value of this node.
 
         The boolean value of a node can have three

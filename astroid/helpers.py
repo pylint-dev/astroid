@@ -94,7 +94,7 @@ def object_type(
     return list(types)[0]
 
 
-def _object_type_is_subclass(obj_type, class_or_seq, context=None):
+def _object_type_is_subclass(obj_type, class_or_seq, context: InferenceContext | None = None):
     if not isinstance(class_or_seq, (tuple, list)):
         class_seq = (class_or_seq,)
     else:
@@ -121,7 +121,7 @@ def _object_type_is_subclass(obj_type, class_or_seq, context=None):
     return False
 
 
-def object_isinstance(node, class_or_seq, context=None):
+def object_isinstance(node, class_or_seq, context: InferenceContext | None = None):
     """Check if a node 'isinstance' any node in class_or_seq
 
     :param node: A given node
@@ -136,7 +136,7 @@ def object_isinstance(node, class_or_seq, context=None):
     return _object_type_is_subclass(obj_type, class_or_seq, context=context)
 
 
-def object_issubclass(node, class_or_seq, context=None):
+def object_issubclass(node, class_or_seq, context: InferenceContext | None = None):
     """Check if a type is a subclass of any node in class_or_seq
 
     :param node: A given node
@@ -174,7 +174,7 @@ def safe_infer(
         return value
 
 
-def has_known_bases(klass, context=None):
+def has_known_bases(klass, context: InferenceContext | None = None):
     """Return true if all base classes of a class could be inferred."""
     try:
         return klass._all_bases_known
@@ -240,7 +240,7 @@ def class_instance_as_index(node):
     return None
 
 
-def object_len(node, context=None):
+def object_len(node, context: InferenceContext | None = None):
     """Infer length of given node object
 
     :param Union[nodes.ClassDef, nodes.Instance] node:

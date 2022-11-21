@@ -82,7 +82,7 @@ InferUnaryOp = Callable[[_NodesT, str], ConstFactoryResult]
 
 
 @decorators.raise_if_nothing_inferred
-def unpack_infer(stmt, context=None):
+def unpack_infer(stmt, context: InferenceContext | None = None):
     """recursively generate nodes inferred by the given statement.
     If the inferred value is a list or a tuple, recurse on the elements
     """
@@ -182,7 +182,7 @@ def are_exclusive(stmt1, stmt2, exceptions: list[str] | None = None) -> bool:
 _SLICE_SENTINEL = object()
 
 
-def _slice_value(index, context=None):
+def _slice_value(index, context: InferenceContext | None = None):
     """Get the value of the given slice index."""
 
     if isinstance(index, Const):
@@ -209,7 +209,7 @@ def _slice_value(index, context=None):
     return _SLICE_SENTINEL
 
 
-def _infer_slice(node, context=None):
+def _infer_slice(node, context: InferenceContext | None = None):
     lower = _slice_value(node.lower, context)
     upper = _slice_value(node.upper, context)
     step = _slice_value(node.step, context)
@@ -224,7 +224,7 @@ def _infer_slice(node, context=None):
     )
 
 
-def _container_getitem(instance, elts, index, context=None):
+def _container_getitem(instance, elts, index, context: InferenceContext | None = None):
     """Get a slice or an item, using the given *index*, for the given sequence."""
     try:
         if isinstance(index, Slice):
@@ -327,7 +327,7 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         """
         return self.elts
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1447,7 +1447,7 @@ class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         InferBinaryOperation[AugAssign, util.BadBinaryOperationMessage]
     ]
 
-    def type_errors(self, context=None):
+    def type_errors(self, context: InferenceContext | None = None):
         """Get a list of type errors which can occur during inference.
 
         Each TypeError is represented by a :class:`BadBinaryOperationMessage` ,
@@ -1546,7 +1546,7 @@ class BinOp(NodeNG):
     # This is set by inference.py
     _infer_binop: ClassVar[InferBinaryOperation[BinOp, util.BadBinaryOperationMessage]]
 
-    def type_errors(self, context=None):
+    def type_errors(self, context: InferenceContext | None = None):
         """Get a list of type errors which can occur during inference.
 
         Each TypeError is represented by a :class:`BadBinaryOperationMessage`,
@@ -2016,7 +2016,7 @@ class Const(_base_nodes.NoChildrenNode, Instance):
             raise AttributeError
         return super().__getattr__(name)
 
-    def getitem(self, index, context=None):
+    def getitem(self, index, context: InferenceContext | None = None):
         """Get an item from this node if subscriptable.
 
         :param index: The node to use as a subscript index.
@@ -2085,7 +2085,7 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         """
         return self._proxied.qname()
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -2467,7 +2467,7 @@ class Dict(NodeNG, Instance):
 
         raise AstroidIndexError(index)
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -3502,7 +3502,7 @@ class List(BaseContainer):
         """
         return "builtins.list"
 
-    def getitem(self, index, context=None):
+    def getitem(self, index, context: InferenceContext | None = None):
         """Get an item from this node.
 
         :param index: The node to use as a subscript index.
@@ -3830,7 +3830,7 @@ class Slice(NodeNG):
         """
         return "builtins.slice"
 
-    def igetattr(self, attrname, context=None):
+    def igetattr(self, attrname, context: InferenceContext | None = None):
         """Infer the possible values of the given attribute on the slice.
 
         :param attrname: The name of the attribute to infer.
@@ -3848,7 +3848,7 @@ class Slice(NodeNG):
         else:
             yield from self.getattr(attrname, context=context)
 
-    def getattr(self, attrname, context=None):
+    def getattr(self, attrname, context: InferenceContext | None = None):
         return self._proxied.getattr(attrname, context)
 
     def get_children(self):
@@ -4267,7 +4267,7 @@ class Tuple(BaseContainer):
         """
         return "builtins.tuple"
 
-    def getitem(self, index, context=None):
+    def getitem(self, index, context: InferenceContext | None = None):
         """Get an item from this node.
 
         :param index: The node to use as a subscript index.
@@ -4340,7 +4340,7 @@ class UnaryOp(NodeNG):
         InferBinaryOperation[UnaryOp, util.BadUnaryOperationMessage]
     ]
 
-    def type_errors(self, context=None):
+    def type_errors(self, context: InferenceContext | None = None):
         """Get a list of type errors which can occur during inference.
 
         Each TypeError is represented by a :class:`BadBinaryOperationMessage`,
@@ -4934,7 +4934,7 @@ class Unknown(_base_nodes.AssignTypeNode):
     def qname(self) -> Literal["Unknown"]:
         return "Unknown"
 
-    def _infer(self, context=None, **kwargs):
+    def _infer(self, context: InferenceContext | None = None, **kwargs):
         """Inference on an Unknown node immediately terminates."""
         yield util.Uninferable
 
