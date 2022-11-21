@@ -168,7 +168,7 @@ def _has_namedtuple_base(node):
     return set(node.basenames) & TYPING_NAMEDTUPLE_BASENAMES
 
 
-def _looks_like(node, name):
+def _looks_like(node, name) -> bool:
     func = node.func
     if isinstance(func, nodes.Attribute):
         return func.attrname == name

@@ -103,7 +103,7 @@ def __class_getitem__(cls, item):
 """
 
 
-def looks_like_typing_typevar_or_newtype(node):
+def looks_like_typing_typevar_or_newtype(node) -> bool:
     func = node.func
     if isinstance(func, Attribute):
         return func.attrname in TYPING_TYPEVARS
@@ -132,7 +132,7 @@ def infer_typing_typevar_or_newtype(node, context_itton=None):
     return node.infer(context=context_itton)
 
 
-def _looks_like_typing_subscript(node):
+def _looks_like_typing_subscript(node) -> bool:
     """Try to figure out if a Subscript node *might* be a typing-related subscript"""
     if isinstance(node, Name):
         return node.name in TYPING_MEMBERS

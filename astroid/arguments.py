@@ -74,7 +74,7 @@ class CallSite:
         """
         return len(self.positional_arguments) != len(self._unpacked_args)
 
-    def has_invalid_keywords(self):
+    def has_invalid_keywords(self) -> bool:
         """Check if in the current CallSite were passed *invalid* keyword arguments
 
         For instance, unpacking a dictionary with integer keys is invalid

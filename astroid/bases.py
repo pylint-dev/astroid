@@ -71,7 +71,7 @@ POSSIBLE_PROPERTIES = {
 }
 
 
-def _is_property(meth, context: InferenceContext | None = None):
+def _is_property(meth, context: InferenceContext | None = None) -> bool:
     decoratornames = meth.decoratornames(context=context)
     if PROPERTIES.intersection(decoratornames):
         return True
@@ -325,7 +325,7 @@ class Instance(BaseInstance):
     def __str__(self) -> str:
         return f"Instance of {self._proxied.root().name}.{self._proxied.name}"
 
-    def callable(self):
+    def callable(self) -> bool:
         try:
             self._proxied.getattr("__call__", class_context=False)
             return True
@@ -399,7 +399,7 @@ class UnboundMethod(Proxy):
     def implicit_parameters(self) -> Literal[0]:
         return 0
 
-    def is_bound(self):
+    def is_bound(self) -> Literal[False]:
         return False
 
     def getattr(self, name, context: InferenceContext | None = None):
@@ -462,7 +462,7 @@ class UnboundMethod(Proxy):
                 yield Instance(inferred)
             raise InferenceError
 
-    def bool_value(self, context: InferenceContext | None = None):
+    def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
         return True
 
 
@@ -482,7 +482,7 @@ class BoundMethod(UnboundMethod):
             return 0
         return 1
 
-    def is_bound(self):
+    def is_bound(self) -> Literal[True]:
         return True
 
     def _infer_type_new_call(self, caller, context):  # noqa: C901
@@ -591,7 +591,7 @@ class BoundMethod(UnboundMethod):
 
         return super().infer_call_result(caller, context)
 
-    def bool_value(self, context: InferenceContext | None = None):
+    def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
         return True
 
 
@@ -616,7 +616,7 @@ class Generator(BaseInstance):
     def infer_yield_types(self):
         yield from self.parent.infer_yield_result(self._call_context)
 
-    def callable(self):
+    def callable(self) -> Literal[False]:
         return False
 
     def pytype(self) -> Literal["builtins.generator"]:
@@ -625,7 +625,7 @@ class Generator(BaseInstance):
     def display_type(self) -> str:
         return "Generator"
 
-    def bool_value(self, context: InferenceContext | None = None):
+    def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
         return True
 
     def __repr__(self) -> str:

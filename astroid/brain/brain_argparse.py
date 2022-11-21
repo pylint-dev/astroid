@@ -28,7 +28,7 @@ def infer_namespace(node, context: InferenceContext | None = None):
     return iter((class_node.instantiate_class(),))
 
 
-def _looks_like_namespace(node):
+def _looks_like_namespace(node) -> bool:
     func = node.func
     if isinstance(func, nodes.Attribute):
         return (

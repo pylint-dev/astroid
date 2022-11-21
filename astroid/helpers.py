@@ -176,8 +176,8 @@ def safe_infer(
         return value
 
 
-def has_known_bases(klass, context: InferenceContext | None = None):
-    """Return true if all base classes of a class could be inferred."""
+def has_known_bases(klass, context: InferenceContext | None = None) -> bool:
+    """Return whether all base classes of a class could be inferred."""
     try:
         return klass._all_bases_known
     except AttributeError:
@@ -196,7 +196,7 @@ def has_known_bases(klass, context: InferenceContext | None = None):
     return True
 
 
-def _type_check(type1, type2):
+def _type_check(type1, type2) -> bool:
     if not all(map(has_known_bases, (type1, type2))):
         raise _NonDeducibleTypeHierarchy
 
@@ -209,12 +209,12 @@ def _type_check(type1, type2):
         raise _NonDeducibleTypeHierarchy from e
 
 
-def is_subtype(type1, type2):
+def is_subtype(type1, type2) -> bool:
     """Check if *type1* is a subtype of *type2*."""
     return _type_check(type1=type2, type2=type1)
 
 
-def is_supertype(type1, type2):
+def is_supertype(type1, type2) -> bool:
     """Check if *type2* is a supertype of *type1*."""
     return _type_check(type1, type2)
 

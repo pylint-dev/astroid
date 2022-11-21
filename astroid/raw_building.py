@@ -324,7 +324,7 @@ def _build_from_function(
         object_build_function(node, member, name)
 
 
-def _safe_has_attribute(obj, member):
+def _safe_has_attribute(obj, member) -> bool:
     try:
         return hasattr(obj, member)
     except Exception:  # pylint: disable=broad-except

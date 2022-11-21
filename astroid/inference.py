@@ -623,7 +623,7 @@ nodes.UnaryOp._infer_unaryop = _infer_unaryop
 nodes.UnaryOp._infer = infer_unaryop  # type: ignore[assignment]
 
 
-def _is_not_implemented(const):
+def _is_not_implemented(const) -> bool:
     """Check if the given const node is NotImplemented."""
     return isinstance(const, nodes.Const) and const.value is NotImplemented
 

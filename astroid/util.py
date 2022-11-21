@@ -3,9 +3,15 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 import importlib
+import sys
 import warnings
 
 import lazy_object_proxy
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 
 def lazy_descriptor(obj):
@@ -43,7 +49,7 @@ class Uninferable:
     def __call__(self, *args, **kwargs):
         return self
 
-    def __bool__(self):
+    def __bool__(self) -> Literal[False]:
         return False
 
     __nonzero__ = __bool__
@@ -108,7 +114,7 @@ class BadBinaryOperationMessage(BadOperationMessage):
         return msg.format(self.op, self.left_type.name, self.right_type.name)
 
 
-def _instancecheck(cls, other):
+def _instancecheck(cls, other) -> bool:
     wrapped = cls.__wrapped__
     other_cls = other.__class__
     is_instance_of = wrapped is other_cls or issubclass(other_cls, wrapped)
