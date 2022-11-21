@@ -44,7 +44,7 @@ class InferenceContext:
 
     def __init__(
         self,
-        path: set[tuple[NodeNG, str | None]] | None = None,
+        path: set[tuple[Any, str | None]] | None = None,
         nodes_inferred: list[int] | None = None,
     ):
         if nodes_inferred is None:
