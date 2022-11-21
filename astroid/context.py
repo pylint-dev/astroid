@@ -54,6 +54,8 @@ class InferenceContext:
 
         self.path = path or set()
         """
+        :type: set(tuple(NodeNG, optional(str)))
+
         Path of visited nodes and their lookupname
 
         Currently this key is ``(node, context.lookupname)``
