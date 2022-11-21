@@ -32,8 +32,7 @@ ATTRS_NAMES = frozenset(
 
 
 def is_decorated_with_attrs(node, decorator_names=ATTRS_NAMES) -> bool:
-    """Return True if a decorated node has
-    an attr decorator applied."""
+    """Return whether a decorated node has an attr decorator applied."""
     if not node.decorators:
         return False
     for decorator_attribute in node.decorators.nodes:

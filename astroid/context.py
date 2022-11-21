@@ -107,8 +107,7 @@ class InferenceContext:
     def push(self, node) -> bool:
         """Push node into inference path
 
-        :return: True if node is already in context path else False
-        :rtype: bool
+        :return: Whether node is already in context path
 
         Allows one to see if the given node has already
         been looked at for this inference context"""

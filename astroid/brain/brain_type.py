@@ -32,8 +32,7 @@ def _looks_like_type_subscript(node) -> bool:
 
     :param node: node to check
     :type node: astroid.nodes.node_classes.NodeNG
-    :return: true if the node is a Name node inside a type related subscript
-    :rtype: bool
+    :return: whether the node is a Name node inside a type related subscript
     """
     if isinstance(node, nodes.Name) and isinstance(node.parent, nodes.Subscript):
         return node.name == "type"

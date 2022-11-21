@@ -185,9 +185,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         :param name: The name of the local to check for.
         :type name: str
 
-        :returns: True if this node has a local of the given name,
-            False otherwise.
-        :rtype: bool
+        :returns: Whether this node has a local of the given name,
         """
         return name in self.locals
 

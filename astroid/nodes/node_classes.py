@@ -331,7 +331,6 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
-        :rtype: bool or Uninferable
         """
         return bool(self.elts)
 
@@ -937,9 +936,7 @@ class Arguments(_base_nodes.AssignTypeNode):
         :param name: The name to check for.
         :type name: str
 
-        :returns: True if the given name is defined in the arguments,
-            False otherwise.
-        :rtype: bool
+        :returns: Whether the given name is defined in the arguments,
         """
         if name == self.vararg:
             return True
@@ -2059,10 +2056,8 @@ class Const(_base_nodes.NoChildrenNode, Instance):
     def has_dynamic_getattr(self) -> bool:
         """Check if the node has a custom __getattr__ or __getattribute__.
 
-        :returns: True if the class has a custom
-            __getattr__ or __getattribute__, False otherwise.
+        :returns: Whether the class has a custom __getattr__ or __getattribute__.
             For a :class:`Const` this is always ``False``.
-        :rtype: bool
         """
         return False
 
@@ -3641,9 +3636,7 @@ class Raise(_base_nodes.Statement):
     def raises_not_implemented(self) -> bool:
         """Check if this node raises a :class:`NotImplementedError`.
 
-        :returns: True if this node raises a :class:`NotImplementedError`,
-            False otherwise.
-        :rtype: bool
+        :returns: Whether this node raises a :class:`NotImplementedError`.
         """
         if not self.exc:
             return False

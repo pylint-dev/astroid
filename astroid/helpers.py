@@ -175,7 +175,7 @@ def safe_infer(
 
 
 def has_known_bases(klass, context=None) -> bool:
-    """Return true if all base classes of a class could be inferred."""
+    """Return whether all base classes of a class could be inferred."""
     try:
         return klass._all_bases_known
     except AttributeError:

@@ -285,9 +285,7 @@ class NodeNG:
         :param node: The node to check if it is the child.
         :type node: NodeNG
 
-        :returns: True if this node is the parent of the given node,
-            False otherwise.
-        :rtype: bool
+        :returns: Whether this node is the parent of the given node.
         """
         return any(self is parent for parent in node.node_ancestors())
 
@@ -633,9 +631,7 @@ class NodeNG:
     def callable(self) -> bool:
         """Whether this node defines something that is callable.
 
-        :returns: True if this defines something that is callable,
-            False otherwise.
-        :rtype: bool
+        :returns: Whether this defines something that is callable.
         """
         return False
 
