@@ -116,7 +116,7 @@ class ObjectModel:
         # underlying data model and to the instance for which it got accessed.
         return self(instance)
 
-    def __contains__(self, name):
+    def __contains__(self, name) -> bool:
         return name in self.attributes()
 
     @lru_cache()  # noqa

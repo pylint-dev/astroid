@@ -154,7 +154,7 @@ def _six_fail_hook(modname):
     return module
 
 
-def _looks_like_decorated_with_six_add_metaclass(node):
+def _looks_like_decorated_with_six_add_metaclass(node) -> bool:
     if not node.decorators:
         return False
 
@@ -189,7 +189,7 @@ def transform_six_add_metaclass(node):  # pylint: disable=inconsistent-return-st
     return
 
 
-def _looks_like_nested_from_six_with_metaclass(node):
+def _looks_like_nested_from_six_with_metaclass(node) -> bool:
     if len(node.bases) != 1:
         return False
     base = node.bases[0]

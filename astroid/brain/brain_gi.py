@@ -207,7 +207,7 @@ def _import_gi_module(modname):
     return astng
 
 
-def _looks_like_require_version(node):
+def _looks_like_require_version(node) -> bool:
     # Return whether this looks like a call to gi.require_version(<name>, <version>)
     # Only accept function calls with two constant arguments
     if len(node.args) != 2:

@@ -122,7 +122,7 @@ def _functools_partial_inference(
     return iter((partial_function,))
 
 
-def _looks_like_lru_cache(node):
+def _looks_like_lru_cache(node) -> bool:
     """Check if the given function node is decorated with lru_cache."""
     if not node.decorators:
         return False
