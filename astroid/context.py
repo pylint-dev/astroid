@@ -42,7 +42,7 @@ class InferenceContext:
 
     max_inferred = 100
 
-    def __init__(self, path=None, nodes_inferred=None):
+    def __init__(self, path: set[tuple[NodeNG, str | None]] | None=None, nodes_inferred: list[int] | None=None):
         if nodes_inferred is None:
             self._nodes_inferred = [0]
         else:
@@ -72,7 +72,7 @@ class InferenceContext:
 
         e.g. the bound node of object.__new__(cls) is the object node
         """
-        self.extra_context = {}
+        self.extra_context: dict[NodeNG, InferenceContext] = {}
         """
         :type: dict(NodeNG, Context)
 
@@ -81,7 +81,7 @@ class InferenceContext:
         """
 
     @property
-    def nodes_inferred(self):
+    def nodes_inferred(self) -> int:
         """
         Number of nodes inferred in this context and all its clones/descendents
 
@@ -91,7 +91,7 @@ class InferenceContext:
         return self._nodes_inferred[0]
 
     @nodes_inferred.setter
-    def nodes_inferred(self, value):
+    def nodes_inferred(self, value: int) -> None:
         self._nodes_inferred[0] = value
 
     @property
@@ -104,7 +104,7 @@ class InferenceContext:
         """
         return _INFERENCE_CACHE
 
-    def push(self, node):
+    def push(self, node) -> bool:
         """Push node into inference path
 
         :return: True if node is already in context path else False
@@ -174,7 +174,7 @@ def copy_context(context: InferenceContext | None) -> InferenceContext:
     return InferenceContext()
 
 
-def bind_context_to_node(context, node):
+def bind_context_to_node(context: InferenceContext | None, node) -> InferenceContext:
     """Give a context a boundnode
     to retrieve the correct function name or attribute value
     with from further inference.
