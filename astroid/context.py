@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import contextlib
 import pprint
-from typing import Any, TYPE_CHECKING, Dict, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
     from astroid.nodes.node_classes import Keyword, NodeNG
