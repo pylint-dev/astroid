@@ -29,7 +29,10 @@ class CallSite:
     """
 
     def __init__(
-        self, callcontext: CallContext, argument_context_map=None, context: InferenceContext | None = None
+        self,
+        callcontext: CallContext,
+        argument_context_map=None,
+        context: InferenceContext | None = None,
     ):
         if argument_context_map is None:
             argument_context_map = {}

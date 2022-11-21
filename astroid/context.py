@@ -42,7 +42,11 @@ class InferenceContext:
 
     max_inferred = 100
 
-    def __init__(self, path: set[tuple[NodeNG, str | None]] | None=None, nodes_inferred: list[int] | None=None):
+    def __init__(
+        self,
+        path: set[tuple[NodeNG, str | None]] | None = None,
+        nodes_inferred: list[int] | None = None,
+    ):
         if nodes_inferred is None:
             self._nodes_inferred = [0]
         else:

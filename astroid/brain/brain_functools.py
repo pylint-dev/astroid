@@ -44,7 +44,9 @@ class LruWrappedModel(objectmodel.FunctionModel):
         )
 
         class CacheInfoBoundMethod(BoundMethod):
-            def infer_call_result(self, caller, context: InferenceContext | None = None):
+            def infer_call_result(
+                self, caller, context: InferenceContext | None = None
+            ):
                 yield helpers.safe_infer(cache_info)
 
         return CacheInfoBoundMethod(proxy=self._instance, bound=self._instance)

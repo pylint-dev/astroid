@@ -94,7 +94,9 @@ def object_type(
     return list(types)[0]
 
 
-def _object_type_is_subclass(obj_type, class_or_seq, context: InferenceContext | None = None):
+def _object_type_is_subclass(
+    obj_type, class_or_seq, context: InferenceContext | None = None
+):
     if not isinstance(class_or_seq, (tuple, list)):
         class_seq = (class_or_seq,)
     else:

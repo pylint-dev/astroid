@@ -393,7 +393,9 @@ class Module(LocalsDictNodeNG):
         """
         return "Module"
 
-    def getattr(self, name, context: InferenceContext | None = None, ignore_locals=False):
+    def getattr(
+        self, name, context: InferenceContext | None = None, ignore_locals=False
+    ):
         if not name:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 

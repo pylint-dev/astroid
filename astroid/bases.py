@@ -605,7 +605,9 @@ class Generator(BaseInstance):
 
     special_attributes = lazy_descriptor(objectmodel.GeneratorModel)
 
-    def __init__(self, parent=None, generator_initial_context: InferenceContext | None = None):
+    def __init__(
+        self, parent=None, generator_initial_context: InferenceContext | None = None
+    ):
         super().__init__()
         self.parent = parent
         self._call_context = copy_context(generator_initial_context)
