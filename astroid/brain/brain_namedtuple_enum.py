@@ -464,7 +464,7 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
     return node
 
 
-def infer_typing_namedtuple_class(class_node, context=None):
+def infer_typing_namedtuple_class(class_node, context: InferenceContext | None = None):
     """Infer a subclass of typing.NamedTuple"""
     # Check if it has the corresponding bases
     annassigns_fields = [
@@ -497,7 +497,7 @@ def infer_typing_namedtuple_class(class_node, context=None):
     return iter((generated_class_node,))
 
 
-def infer_typing_namedtuple_function(node, context=None):
+def infer_typing_namedtuple_function(node, context: InferenceContext | None = None):
     """
     Starting with python3.9, NamedTuple is a function of the typing module.
     The class NamedTuple is build dynamically through a call to `type` during

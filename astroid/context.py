@@ -42,11 +42,16 @@ class InferenceContext:
 
     max_inferred = 100
 
-    def __init__(self, path=None, nodes_inferred=None):
+    def __init__(
+        self,
+        path=None,
+        nodes_inferred: list[int] | None = None,
+    ):
         if nodes_inferred is None:
             self._nodes_inferred = [0]
         else:
             self._nodes_inferred = nodes_inferred
+
         self.path = path or set()
         """
         :type: set(tuple(NodeNG, optional(str)))
@@ -81,7 +86,7 @@ class InferenceContext:
         """
 
     @property
-    def nodes_inferred(self):
+    def nodes_inferred(self) -> int:
         """
         Number of nodes inferred in this context and all its clones/descendents
 
@@ -91,7 +96,7 @@ class InferenceContext:
         return self._nodes_inferred[0]
 
     @nodes_inferred.setter
-    def nodes_inferred(self, value):
+    def nodes_inferred(self, value: int) -> None:
         self._nodes_inferred[0] = value
 
     @property
@@ -107,7 +112,7 @@ class InferenceContext:
     def push(self, node) -> bool:
         """Push node into inference path
 
-        :return: Whether node is already in context path
+        :return: Whether node is already in context path.
 
         Allows one to see if the given node has already
         been looked at for this inference context"""
@@ -118,7 +123,7 @@ class InferenceContext:
         self.path.add((node, name))
         return False
 
-    def clone(self):
+    def clone(self) -> InferenceContext:
         """Clone inference path
 
         For example, each side of a binary operation (BinOp)
@@ -173,16 +178,13 @@ def copy_context(context: InferenceContext | None) -> InferenceContext:
     return InferenceContext()
 
 
-def bind_context_to_node(context, node):
+def bind_context_to_node(context: InferenceContext | None, node) -> InferenceContext:
     """Give a context a boundnode
     to retrieve the correct function name or attribute value
     with from further inference.
 
     Do not use an existing context since the boundnode could then
     be incorrectly propagated higher up in the call stack.
-
-    :param context: Context to use
-    :type context: Optional(context)
 
     :param node: Node to do name lookups from
     :type node NodeNG:

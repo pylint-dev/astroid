@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from astroid.builder import extract_node
+from astroid.context import InferenceContext
 from astroid.nodes.node_classes import Attribute, Import, Name, NodeNG
 
 # Class subscript is available in numpy starting with version 1.20.0
@@ -34,7 +35,7 @@ def _get_numpy_version() -> tuple[str, str, str]:
         return ("0", "0", "0")
 
 
-def infer_numpy_member(src, node, context=None):
+def infer_numpy_member(src, node, context: InferenceContext | None = None):
     node = extract_node(src)
     return node.infer(context=context)
 
