@@ -142,7 +142,7 @@ class ObjectModel:
         )
         # We set the parent as being the ClassDef of 'object' as that
         # triggers correct inference as a call to __new__ in bases.py
-        node.parent: nodes.ClassDef = AstroidManager().builtins_module["object"]
+        node.parent = AstroidManager().builtins_module["object"]
 
         return bases.BoundMethod(proxy=node, bound=_get_bound_node(self))
 
@@ -157,7 +157,7 @@ class ObjectModel:
         )
         # We set the parent as being the ClassDef of 'object' as that
         # is where this method originally comes from
-        node.parent: nodes.ClassDef = AstroidManager().builtins_module["object"]
+        node.parent = AstroidManager().builtins_module["object"]
 
         return bases.BoundMethod(proxy=node, bound=_get_bound_node(self))
 

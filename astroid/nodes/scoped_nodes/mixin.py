@@ -109,7 +109,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         # which uses the current class as a mixin or base class.
         # It's rewritten in 2.0, so it makes no sense for now
         # to spend development time on it.
-        self.body.append(child)
+        self.body.append(child)  # type: ignore[attr-defined]
         child.parent = self
 
     @overload
