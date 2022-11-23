@@ -39,12 +39,12 @@ TYPE_NOTIMPLEMENTED = type(NotImplemented)
 TYPE_ELLIPSIS = type(...)
 
 
-def _attach_local_node(parent, node, name):
+def _attach_local_node(parent, node, name: str) -> None:
     node.name = name  # needed by add_local_node
     parent.add_local_node(node)
 
 
-def _add_dunder_class(func, member):
+def _add_dunder_class(func, member) -> None:
     """Add a __class__ member to the given func node, if we can determine it."""
     python_cls = member.__class__
     cls_name = getattr(python_cls, "__name__", None)
@@ -58,7 +58,7 @@ def _add_dunder_class(func, member):
 _marker = object()
 
 
-def attach_dummy_node(node, name, runtime_object=_marker):
+def attach_dummy_node(node, name: str, runtime_object=_marker) -> None:
     """create a dummy node and register it in the locals of the given
     node with the specified name
     """
@@ -67,14 +67,14 @@ def attach_dummy_node(node, name, runtime_object=_marker):
     _attach_local_node(node, enode, name)
 
 
-def _has_underlying_object(self):
+def _has_underlying_object(self: nodes.EmptyNode) -> bool:
     return self.object is not None and self.object is not _marker
 
 
 nodes.EmptyNode.has_underlying_object = _has_underlying_object
 
 
-def attach_const_node(node, name, value):
+def attach_const_node(node, name: str, value) -> None:
     """create a Const node and register it in the locals of the given
     node with the specified name
     """
@@ -82,7 +82,7 @@ def attach_const_node(node, name, value):
         _attach_local_node(node, nodes.const_factory(value), name)
 
 
-def attach_import_node(node, modname, membername):
+def attach_import_node(node, modname: str, membername: str) -> None:
     """create a ImportFrom node and register it in the locals of the given
     node with the specified name
     """
@@ -97,7 +97,7 @@ def build_module(name: str, doc: str | None = None) -> nodes.Module:
         body=[],
         doc_node=nodes.Const(value=doc) if doc else None,
     )
-    return node
+    return node  # type: ignore[no-any-return]
 
 
 def build_class(
@@ -111,7 +111,7 @@ def build_class(
         decorators=None,
         doc_node=nodes.Const(value=doc) if doc else None,
     )
-    return node
+    return node  # type: ignore[no-any-return]
 
 
 def build_function(
@@ -157,10 +157,10 @@ def build_function(
         argsnode.defaults[-1].parent = argsnode
     if args:
         register_arguments(func)
-    return func
+    return func  # type: ignore[no-any-return]
 
 
-def build_from_import(fromname, names):
+def build_from_import(fromname: str | None, names: list[str]) -> nodes.ImportFrom:
     """create and initialize an astroid ImportFrom import statement"""
     return nodes.ImportFrom(fromname, [(name, None) for name in names])
 
@@ -177,6 +177,7 @@ def register_arguments(func: nodes.FunctionDef, args: list | None = None) -> Non
             func.set_local(func.args.vararg, func.args)
         if func.args.kwarg:
             func.set_local(func.args.kwarg, func.args)
+    assert args is not None
     for arg in args:
         if isinstance(arg, nodes.AssignName):
             func.set_local(arg.name, arg)
@@ -324,7 +325,7 @@ def _build_from_function(
         object_build_function(node, member, name)
 
 
-def _safe_has_attribute(obj, member) -> bool:
+def _safe_has_attribute(obj, member: str) -> bool:
     try:
         return hasattr(obj, member)
     except Exception:  # pylint: disable=broad-except
@@ -481,7 +482,7 @@ class InspectBuilder:
 _CONST_PROXY: dict[type, nodes.ClassDef] = {}
 
 
-def _set_proxied(const):
+def _set_proxied(const) -> nodes.ClassDef:
     # TODO : find a nicer way to handle this situation;
     return _CONST_PROXY[const.value.__class__]
 
@@ -559,6 +560,7 @@ def _astroid_bootstrapping() -> None:
         types.TracebackType,
     )
     for _type in builtin_types:
+        assert hasattr(_type, "__name__")
         if _type.__name__ not in astroid_builtin:
             klass = nodes.ClassDef(_type.__name__)
             klass.parent = astroid_builtin

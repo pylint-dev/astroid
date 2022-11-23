@@ -2550,6 +2550,8 @@ class EmptyNode(_base_nodes.NoChildrenNode):
 
     object = None
 
+    has_underlying_object: Callable[[EmptyNode], bool]
+
 
 class ExceptHandler(
     _base_nodes.MultiLineBlockNode, _base_nodes.AssignTypeNode, _base_nodes.Statement
