@@ -172,12 +172,13 @@ def register_arguments(func: nodes.FunctionDef, args: list | None = None) -> Non
     (i.e. def func(a, (b, c, d)): ...)
     """
     if args is None:
-        args = func.args.args
         if func.args.vararg:
             func.set_local(func.args.vararg, func.args)
         if func.args.kwarg:
             func.set_local(func.args.kwarg, func.args)
-    assert args is not None
+        args = func.args.args
+        if args is None:
+            return
     for arg in args:
         if isinstance(arg, nodes.AssignName):
             func.set_local(arg.name, arg)
