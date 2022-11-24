@@ -97,7 +97,7 @@ def build_module(name: str, doc: str | None = None) -> nodes.Module:
         body=[],
         doc_node=nodes.Const(value=doc) if doc else None,
     )
-    return node  # type: ignore[no-any-return]
+    return node
 
 
 def build_class(
@@ -111,7 +111,7 @@ def build_class(
         decorators=None,
         doc_node=nodes.Const(value=doc) if doc else None,
     )
-    return node  # type: ignore[no-any-return]
+    return node
 
 
 def build_function(
@@ -157,7 +157,7 @@ def build_function(
         argsnode.defaults[-1].parent = argsnode
     if args:
         register_arguments(func)
-    return func  # type: ignore[no-any-return]
+    return func
 
 
 def build_from_import(fromname: str | None, names: list[str]) -> nodes.ImportFrom:
