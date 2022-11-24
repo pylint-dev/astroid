@@ -150,7 +150,7 @@ def build_function(
     return func
 
 
-def build_from_import(fromname: str | None, names: list[str]) -> nodes.ImportFrom:
+def build_from_import(fromname: str, names: list[str]) -> nodes.ImportFrom:
     """create and initialize an astroid ImportFrom import statement"""
     return nodes.ImportFrom(fromname, [(name, None) for name in names])
 
