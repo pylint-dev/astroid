@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Un
 
 from astroid import decorators, util
 from astroid.bases import Instance, _infer_stmts
-from astroid.const import Context
+from astroid.const import Context, EMPTY_OBJECT_MARKER
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidIndexError,
@@ -2550,7 +2550,8 @@ class EmptyNode(_base_nodes.NoChildrenNode):
 
     object = None
 
-    has_underlying_object: Callable[[EmptyNode], bool]
+    def has_underlying_object(self) -> bool:
+        return self.object is not None and self.object is not EMPTY_OBJECT_MARKER
 
 
 class ExceptHandler(

@@ -18,7 +18,7 @@ from collections.abc import Iterable
 from typing import Any, Union
 
 from astroid import bases, nodes
-from astroid.const import IS_PYPY
+from astroid.const import IS_PYPY, EMPTY_OBJECT_MARKER
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
 
@@ -55,23 +55,13 @@ def _add_dunder_class(func, member) -> None:
     func.instance_attrs["__class__"] = [ast_klass]
 
 
-_marker = object()
-
-
-def attach_dummy_node(node, name: str, runtime_object=_marker) -> None:
+def attach_dummy_node(node, name: str, runtime_object=EMPTY_OBJECT_MARKER) -> None:
     """create a dummy node and register it in the locals of the given
     node with the specified name
     """
     enode = nodes.EmptyNode()
     enode.object = runtime_object
     _attach_local_node(node, enode, name)
-
-
-def _has_underlying_object(self: nodes.EmptyNode) -> bool:
-    return self.object is not None and self.object is not _marker
-
-
-nodes.EmptyNode.has_underlying_object = _has_underlying_object
 
 
 def attach_const_node(node, name: str, value) -> None:
