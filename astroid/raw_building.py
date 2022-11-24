@@ -561,7 +561,6 @@ def _astroid_bootstrapping() -> None:
         types.TracebackType,
     )
     for _type in builtin_types:
-        assert hasattr(_type, "__name__")
         if _type.__name__ not in astroid_builtin:
             klass = nodes.ClassDef(_type.__name__)
             klass.parent = astroid_builtin
