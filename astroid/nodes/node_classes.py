@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Un
 
 from astroid import decorators, util
 from astroid.bases import Instance, _infer_stmts
-from astroid.const import Context, EMPTY_OBJECT_MARKER
+from astroid.const import EMPTY_OBJECT_MARKER, Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidIndexError,

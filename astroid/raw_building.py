@@ -18,7 +18,7 @@ from collections.abc import Iterable
 from typing import Any, Union
 
 from astroid import bases, nodes
-from astroid.const import IS_PYPY, EMPTY_OBJECT_MARKER
+from astroid.const import EMPTY_OBJECT_MARKER, IS_PYPY
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
 
