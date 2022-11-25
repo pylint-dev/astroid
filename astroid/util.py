@@ -22,7 +22,7 @@ def lazy_descriptor(obj):
     return DescriptorProxy(obj)
 
 
-def lazy_import(module_name):
+def lazy_import(module_name: str):
     return lazy_object_proxy.Proxy(
         lambda: importlib.import_module("." + module_name, "astroid")
     )
@@ -37,7 +37,7 @@ class Uninferable:
 
     __str__ = __repr__
 
-    def __getattribute__(self, name):
+    def __getattribute__(self, name: str):
         if name == "next":
             raise AttributeError("next method should not be called")
         if name.startswith("__") and name.endswith("__"):
