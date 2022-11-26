@@ -18,7 +18,7 @@ from collections.abc import Iterable
 from typing import Any, Union
 
 from astroid import bases, nodes
-from astroid.const import IS_PYPY
+from astroid.const import _EMPTY_OBJECT_MARKER, IS_PYPY
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
 
@@ -39,12 +39,12 @@ TYPE_NOTIMPLEMENTED = type(NotImplemented)
 TYPE_ELLIPSIS = type(...)
 
 
-def _attach_local_node(parent, node, name):
+def _attach_local_node(parent, node, name: str) -> None:
     node.name = name  # needed by add_local_node
     parent.add_local_node(node)
 
 
-def _add_dunder_class(func, member):
+def _add_dunder_class(func, member) -> None:
     """Add a __class__ member to the given func node, if we can determine it."""
     python_cls = member.__class__
     cls_name = getattr(python_cls, "__name__", None)
@@ -55,10 +55,7 @@ def _add_dunder_class(func, member):
     func.instance_attrs["__class__"] = [ast_klass]
 
 
-_marker = object()
-
-
-def attach_dummy_node(node, name, runtime_object=_marker):
+def attach_dummy_node(node, name: str, runtime_object=_EMPTY_OBJECT_MARKER) -> None:
     """create a dummy node and register it in the locals of the given
     node with the specified name
     """
@@ -67,14 +64,7 @@ def attach_dummy_node(node, name, runtime_object=_marker):
     _attach_local_node(node, enode, name)
 
 
-def _has_underlying_object(self):
-    return self.object is not None and self.object is not _marker
-
-
-nodes.EmptyNode.has_underlying_object = _has_underlying_object
-
-
-def attach_const_node(node, name, value):
+def attach_const_node(node, name: str, value) -> None:
     """create a Const node and register it in the locals of the given
     node with the specified name
     """
@@ -82,7 +72,7 @@ def attach_const_node(node, name, value):
         _attach_local_node(node, nodes.const_factory(value), name)
 
 
-def attach_import_node(node, modname, membername):
+def attach_import_node(node, modname: str, membername: str) -> None:
     """create a ImportFrom node and register it in the locals of the given
     node with the specified name
     """
@@ -160,7 +150,7 @@ def build_function(
     return func
 
 
-def build_from_import(fromname, names):
+def build_from_import(fromname: str, names: list[str]) -> nodes.ImportFrom:
     """create and initialize an astroid ImportFrom import statement"""
     return nodes.ImportFrom(fromname, [(name, None) for name in names])
 
@@ -171,12 +161,16 @@ def register_arguments(func: nodes.FunctionDef, args: list | None = None) -> Non
     args is a list that may contains nested lists
     (i.e. def func(a, (b, c, d)): ...)
     """
+    # If no args are passed in, get the args from the function.
     if args is None:
-        args = func.args.args
         if func.args.vararg:
             func.set_local(func.args.vararg, func.args)
         if func.args.kwarg:
             func.set_local(func.args.kwarg, func.args)
+        args = func.args.args
+        # If the function has no args, there is nothing left to do.
+        if args is None:
+            return
     for arg in args:
         if isinstance(arg, nodes.AssignName):
             func.set_local(arg.name, arg)
@@ -324,13 +318,6 @@ def _build_from_function(
         object_build_function(node, member, name)
 
 
-def _safe_has_attribute(obj, member) -> bool:
-    try:
-        return hasattr(obj, member)
-    except Exception:  # pylint: disable=broad-except
-        return False
-
-
 class InspectBuilder:
     """class for building nodes from living object
 
@@ -426,7 +413,7 @@ class InspectBuilder:
                 # This should be called for Jython, where some builtin
                 # methods aren't caught by isbuiltin branch.
                 _build_from_function(node, name, member, self._module)
-            elif _safe_has_attribute(member, "__all__"):
+            elif hasattr(member, "__all__"):
                 module = build_module(name)
                 _attach_local_node(node, module, name)
                 # recursion
@@ -481,7 +468,7 @@ class InspectBuilder:
 _CONST_PROXY: dict[type, nodes.ClassDef] = {}
 
 
-def _set_proxied(const):
+def _set_proxied(const) -> nodes.ClassDef:
     # TODO : find a nicer way to handle this situation;
     return _CONST_PROXY[const.value.__class__]
 

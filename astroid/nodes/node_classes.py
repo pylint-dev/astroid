@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Un
 
 from astroid import decorators, util
 from astroid.bases import Instance, _infer_stmts
-from astroid.const import Context
+from astroid.const import _EMPTY_OBJECT_MARKER, Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidIndexError,
@@ -2549,6 +2549,9 @@ class EmptyNode(_base_nodes.NoChildrenNode):
     """Holds an arbitrary object in the :attr:`LocalsDictNodeNG.locals`."""
 
     object = None
+
+    def has_underlying_object(self) -> bool:
+        return self.object is not None and self.object is not _EMPTY_OBJECT_MARKER
 
 
 class ExceptHandler(
