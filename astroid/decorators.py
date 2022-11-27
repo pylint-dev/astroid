@@ -97,7 +97,9 @@ def path_wrapper(func: Callable) -> Callable:
     """
 
     @functools.wraps(func)
-    def wrapped(node, context: InferenceContext | None = None, _func=func, **kwargs) -> Iterator:
+    def wrapped(
+        node, context: InferenceContext | None = None, _func=func, **kwargs
+    ) -> Iterator:
         """wrapper function handling context"""
         if context is None:
             context = InferenceContext()

@@ -87,7 +87,9 @@ nodes.Const._infer = infer_end  # type: ignore[assignment]
 nodes.Slice._infer = infer_end  # type: ignore[assignment]
 
 
-def _infer_sequence_helper(node: _BaseContainerT, context: InferenceContext | None = None) -> list[nodes.NodeNG]:
+def _infer_sequence_helper(
+    node: _BaseContainerT, context: InferenceContext | None = None
+) -> list[nodes.NodeNG]:
     """Infer all values based on _BaseContainer.elts"""
     values = []
 
@@ -743,7 +745,9 @@ def _bin_op(
     )
 
 
-def _get_binop_contexts(context: InferenceContext, left, right) -> Iterator[InferenceContext]:
+def _get_binop_contexts(
+    context: InferenceContext, left, right
+) -> Iterator[InferenceContext]:
     """Get contexts for binary operations.
 
     This will return two inference contexts, the first one
@@ -1139,7 +1143,9 @@ def infer_empty_node(
 nodes.EmptyNode._infer = infer_empty_node  # type: ignore[assignment]
 
 
-def _populate_context_lookup(call: nodes.Call, context: InferenceContext | None) -> dict[nodes.NodeNG, InferenceContext]:
+def _populate_context_lookup(
+    call: nodes.Call, context: InferenceContext | None
+) -> dict[nodes.NodeNG, InferenceContext]:
     # Allows context to be saved for later
     # for inference inside a function
     context_lookup: dict[nodes.NodeNG, InferenceContext] = {}
