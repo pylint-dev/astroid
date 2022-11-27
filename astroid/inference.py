@@ -87,7 +87,7 @@ nodes.Const._infer = infer_end  # type: ignore[assignment]
 nodes.Slice._infer = infer_end  # type: ignore[assignment]
 
 
-def _infer_sequence_helper(node, context: InferenceContext | None = None):
+def _infer_sequence_helper(node: _BaseContainerT, context: InferenceContext | None = None) -> list[nodes.NodeNG]:
     """Infer all values based on _BaseContainer.elts"""
     values = []
 
@@ -743,7 +743,7 @@ def _bin_op(
     )
 
 
-def _get_binop_contexts(context, left, right):
+def _get_binop_contexts(context: InferenceContext, left, right) -> Iterator[InferenceContext]:
     """Get contexts for binary operations.
 
     This will return two inference contexts, the first one
@@ -759,7 +759,7 @@ def _get_binop_contexts(context, left, right):
         yield new_context
 
 
-def _same_type(type1, type2):
+def _same_type(type1, type2) -> bool:
     """Check if type1 is the same as type2."""
     return type1.qname() == type2.qname()
 
@@ -772,7 +772,7 @@ def _get_binop_flow(
     right_type: InferenceResult | None,
     context: InferenceContext,
     reverse_context: InferenceContext,
-):
+) -> list:
     """Get the flow for binary operations.
 
     The rules are a bit messy:
@@ -813,7 +813,7 @@ def _get_aug_flow(
     right_type: InferenceResult | None,
     context: InferenceContext,
     reverse_context: InferenceContext,
-):
+) -> list:
     """Get the flow for augmented binary operations.
 
     The rules are a bit messy:
@@ -862,7 +862,7 @@ def _infer_binary_operation(
     binary_opnode: nodes.AugAssign | nodes.BinOp,
     context: InferenceContext,
     flow_factory: GetFlowFactory,
-):
+) -> Iterator:
     """Infer a binary operation between a left operand and a right operand
 
     This is used by both normal binary operations and augmented binary
@@ -1139,10 +1139,10 @@ def infer_empty_node(
 nodes.EmptyNode._infer = infer_empty_node  # type: ignore[assignment]
 
 
-def _populate_context_lookup(call, context):
+def _populate_context_lookup(call: nodes.Call, context: InferenceContext | None) -> dict[nodes.NodeNG, InferenceContext]:
     # Allows context to be saved for later
     # for inference inside a function
-    context_lookup = {}
+    context_lookup: dict[nodes.NodeNG, InferenceContext] = {}
     if context is None:
         return context_lookup
     for arg in call.args:

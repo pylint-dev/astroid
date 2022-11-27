@@ -10,7 +10,7 @@ import functools
 import inspect
 import sys
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import TypeVar
 
 import wrapt
@@ -89,7 +89,7 @@ class cachedproperty:
         return val
 
 
-def path_wrapper(func):
+def path_wrapper(func: Callable) -> Callable:
     """return the given infer function wrapped to handle the path
 
     Used to stop inference if the node has already been looked
@@ -97,7 +97,7 @@ def path_wrapper(func):
     """
 
     @functools.wraps(func)
-    def wrapped(node, context: InferenceContext | None = None, _func=func, **kwargs):
+    def wrapped(node, context: InferenceContext | None = None, _func=func, **kwargs) -> Iterator:
         """wrapper function handling context"""
         if context is None:
             context = InferenceContext()

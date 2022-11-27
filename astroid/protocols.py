@@ -11,7 +11,7 @@ from __future__ import annotations
 import collections
 import itertools
 import operator as operator_mod
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Generator, Iterator
 from typing import Any
 
 from astroid import arguments, bases, decorators, helpers, nodes, util
@@ -349,7 +349,7 @@ nodes.AssignName.assigned_stmts = assend_assigned_stmts
 nodes.AssignAttr.assigned_stmts = assend_assigned_stmts
 
 
-def _arguments_infer_argname(self, name, context):
+def _arguments_infer_argname(self, name: sttr, context: InferenceContext) -> Iterator:
     # arguments information may be missing, in which case we can't do anything
     # more
     if not (self.arguments or self.vararg or self.kwarg):
