@@ -16,7 +16,7 @@ import os
 import sys
 import warnings
 from collections.abc import Generator, Iterator
-from typing import TYPE_CHECKING, NoReturn, TypeVar, overload
+from typing import TYPE_CHECKING, ClassVar, NoReturn, TypeVar, overload
 
 from astroid import bases
 from astroid import decorators as decorators_mod
@@ -46,7 +46,7 @@ from astroid.nodes import Arguments, Const, NodeNG, _base_nodes, node_classes
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
-from astroid.typing import InferenceResult, SuccessfulInferenceResult
+from astroid.typing import InferBinaryOp, InferenceResult, SuccessfulInferenceResult
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
@@ -2025,6 +2025,8 @@ class ClassDef(
 
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)
+
+    infer_binary_op: ClassVar[InferBinaryOp[ClassDef]]
 
     @property
     def doc(self) -> str | None:
