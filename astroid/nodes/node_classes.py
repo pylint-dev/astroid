@@ -2706,62 +2706,32 @@ class For(
     _other_other_fields = ("type_annotation",)
     _multi_line_block_fields = ("body", "orelse")
 
+    target: NodeNG
+    """What the loop assigns to."""
+
+    iter: NodeNG
+    """What the loop iterates over."""
+
+    body: list[NodeNG]
+    """The contents of the body of the loop."""
+
+    orelse: list[NodeNG]
+    """The contents of the ``else`` block of the loop."""
+
+    type_annotation: NodeNG | None
+    """If present, this will contain the type annotation passed by a type comment"""
+
     optional_assign = True
     """Whether this node optionally assigns a variable.
 
     This is always ``True`` for :class:`For` nodes.
     """
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.target: NodeNG | None = None
-        """What the loop assigns to."""
-
-        self.iter: NodeNG | None = None
-        """What the loop iterates over."""
-
-        self.body: list[NodeNG] = []
-        """The contents of the body of the loop."""
-
-        self.orelse: list[NodeNG] = []
-        """The contents of the ``else`` block of the loop."""
-
-        self.type_annotation: NodeNG | None = None  # can be None
-        """If present, this will contain the type annotation passed by a type comment"""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
-
     # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
     def postinit(
         self,
-        target: NodeNG | None = None,
-        iter: NodeNG | None = None,
+        target: NodeNG,
+        iter: NodeNG,
         body: list[NodeNG] | None = None,
         orelse: list[NodeNG] | None = None,
         type_annotation: NodeNG | None = None,
@@ -2778,10 +2748,8 @@ class For(
         """
         self.target = target
         self.iter = iter
-        if body is not None:
-            self.body = body
-        if orelse is not None:
-            self.orelse = orelse
+        self.body = body or []
+        self.orelse = orelse or []
         self.type_annotation = type_annotation
 
     assigned_stmts: ClassVar[AssignedStmtsCall[For]]
@@ -2790,11 +2758,8 @@ class For(
     """
 
     @cached_property
-    def blockstart_tolineno(self):
-        """The line on which the beginning of this block ends.
-
-        :type: int
-        """
+    def blockstart_tolineno(self) -> int:
+        """The line on which the beginning of this block ends."""
         return self.iter.tolineno
 
     def get_children(self):
