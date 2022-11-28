@@ -11,7 +11,7 @@ from __future__ import annotations
 import collections
 import itertools
 import operator as operator_mod
-from collections.abc import Callable, Generator, Iterator
+from collections.abc import Callable, Generator
 from typing import Any
 
 from astroid import arguments, bases, decorators, helpers, nodes, util
@@ -25,7 +25,7 @@ from astroid.exceptions import (
     NoDefault,
 )
 from astroid.nodes import node_classes
-from astroid.typing import ConstFactoryResult
+from astroid.typing import ConstFactoryResult, InferenceResult
 
 raw_building = util.lazy_import("raw_building")
 objects = util.lazy_import("objects")
@@ -349,7 +349,7 @@ nodes.AssignName.assigned_stmts = assend_assigned_stmts
 nodes.AssignAttr.assigned_stmts = assend_assigned_stmts
 
 
-def _arguments_infer_argname(self, name: str, context: InferenceContext) -> Iterator:
+def _arguments_infer_argname(self, name: str, context: InferenceContext) -> Generator[InferenceResult, None, None]:
     # arguments information may be missing, in which case we can't do anything
     # more
     if not (self.arguments or self.vararg or self.kwarg):
