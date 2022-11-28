@@ -1343,13 +1343,25 @@ class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     <AugAssign l.1 at 0x7effe1db4d68>
     """
 
+    target: NodeNG
+    """What is being assigned to."""
+
+    op: str
+    """The operator that is being combined with the assignment.
+
+    This includes the equals sign.
+    """
+
+    value: NodeNG
+    """The value being assigned to the variable."""
+
     _astroid_fields = ("target", "value")
     _other_fields = ("op",)
 
     @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
-        op: str | None = None,
+        op: str,
         lineno: int | None = None,
         col_offset: int | None = None,
         parent: NodeNG | None = None,
@@ -1373,17 +1385,7 @@ class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.target: NodeNG | None = None
-        """What is being assigned to."""
-
-        self.op: str | None = op
-        """The operator that is being combined with the assignment.
-
-        This includes the equals sign.
-        """
-
-        self.value: NodeNG | None = None
-        """The value being assigned to the variable."""
+        self.op = op
 
         super().__init__(
             lineno=lineno,
@@ -1393,9 +1395,7 @@ class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
             parent=parent,
         )
 
-    def postinit(
-        self, target: NodeNG | None = None, value: NodeNG | None = None
-    ) -> None:
+    def postinit(self, target: NodeNG, value: NodeNG) -> None:
         """Do some setup after initialisation.
 
         :param target: What is being assigned to.
