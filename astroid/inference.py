@@ -776,7 +776,7 @@ def _get_binop_flow(
     right_type: InferenceResult | None,
     context: InferenceContext,
     reverse_context: InferenceContext,
-) -> list:
+):
     """Get the flow for binary operations.
 
     The rules are a bit messy:
@@ -817,7 +817,7 @@ def _get_aug_flow(
     right_type: InferenceResult | None,
     context: InferenceContext,
     reverse_context: InferenceContext,
-) -> list:
+):
     """Get the flow for augmented binary operations.
 
     The rules are a bit messy:
@@ -866,7 +866,7 @@ def _infer_binary_operation(
     binary_opnode: nodes.AugAssign | nodes.BinOp,
     context: InferenceContext,
     flow_factory: GetFlowFactory,
-) -> Iterator:
+):
     """Infer a binary operation between a left operand and a right operand
 
     This is used by both normal binary operations and augmented binary

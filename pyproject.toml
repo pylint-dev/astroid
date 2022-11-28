@@ -78,6 +78,8 @@ no_implicit_optional = true
 scripts_are_modules = true
 show_error_codes = true
 warn_redundant_casts = true
+allow_untyped_decorators = true
+strict = true
 
 [[tool.mypy.overrides]]
 # Importlib typeshed stubs do not include the private functions we use
