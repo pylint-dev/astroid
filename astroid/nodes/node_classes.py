@@ -1666,50 +1666,20 @@ class Call(NodeNG):
     <Call l.1 at 0x7f23b2e71eb8>
     """
 
+    func: NodeNG
+    """What is being called."""
+
+    args: list[NodeNG]
+    """The positional arguments being given to the call."""
+
+    keywords: list[Keyword]
+    """The keyword arguments being given to the call."""
+
     _astroid_fields = ("func", "args", "keywords")
-
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.func: NodeNG | None = None
-        """What is being called."""
-
-        self.args: list[NodeNG] = []
-        """The positional arguments being given to the call."""
-
-        self.keywords: list[Keyword] = []
-        """The keyword arguments being given to the call."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
 
     def postinit(
         self,
-        func: NodeNG | None = None,
+        func: NodeNG,
         args: list[NodeNG] | None = None,
         keywords: list[Keyword] | None = None,
     ) -> None:
@@ -1722,10 +1692,8 @@ class Call(NodeNG):
         :param keywords: The keyword arguments being given to the call.
         """
         self.func = func
-        if args is not None:
-            self.args = args
-        if keywords is not None:
-            self.keywords = keywords
+        self.args = args or []
+        self.keywords = keywords or []
 
     @property
     def starargs(self) -> list[Starred]:
