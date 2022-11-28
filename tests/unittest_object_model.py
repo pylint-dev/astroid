@@ -571,6 +571,45 @@ class FunctionModelTest(unittest.TestCase):
         self.assertEqual(annotations.getitem(astroid.Const("c")).value, 3)
 
 
+class TestContextManagerModel:
+    def test_model(self) -> None:
+        """We use a generator to test this model."""
+        ast_nodes = builder.extract_node(
+            """
+        def test():
+           "a"
+           yield
+
+        gen = test()
+        gen.__enter__ #@
+        gen.__exit__ #@
+        """
+        )
+        assert isinstance(ast_nodes, list)
+
+        enter = next(ast_nodes[0].infer())
+        assert isinstance(enter, astroid.BoundMethod)
+        # Test that the method is correctly bound
+        assert isinstance(enter.bound, bases.Generator)
+        assert enter.bound._proxied.qname() == "builtins.generator"
+        # Test that thet FunctionDef accepts no arguments except self
+        # NOTE: This probably shouldn't be double proxied, but this is a
+        # quirck of the current model implementations.
+        assert isinstance(enter._proxied._proxied, nodes.FunctionDef)
+        assert len(enter._proxied._proxied.args.args) == 1
+        assert enter._proxied._proxied.args.args[0].name == "self"
+
+        exit_node = next(ast_nodes[1].infer())
+        assert isinstance(exit_node, astroid.BoundMethod)
+        # Test that the FunctionDef accepts the arguments as defiend in the ObjectModel
+        assert isinstance(exit_node._proxied._proxied, nodes.FunctionDef)
+        assert len(exit_node._proxied._proxied.args.args) == 4
+        assert exit_node._proxied._proxied.args.args[0].name == "self"
+        assert exit_node._proxied._proxied.args.args[1].name == "exc_type"
+        assert exit_node._proxied._proxied.args.args[2].name == "exc_value"
+        assert exit_node._proxied._proxied.args.args[3].name == "traceback"
+
+
 class GeneratorModelTest(unittest.TestCase):
     def test_model(self) -> None:
         ast_nodes = builder.extract_node(
@@ -585,6 +624,8 @@ class GeneratorModelTest(unittest.TestCase):
         gen.gi_code #@
         gen.gi_frame #@
         gen.send #@
+        gen.__enter__ #@
+        gen.__exit__ #@
         """
         )
         assert isinstance(ast_nodes, list)
@@ -604,6 +645,12 @@ class GeneratorModelTest(unittest.TestCase):
 
         send = next(ast_nodes[4].infer())
         self.assertIsInstance(send, astroid.BoundMethod)
+
+        enter = next(ast_nodes[5].infer())
+        assert isinstance(enter, astroid.BoundMethod)
+
+        exit_node = next(ast_nodes[6].infer())
+        assert isinstance(exit_node, astroid.BoundMethod)
 
 
 class ExceptionModelTest(unittest.TestCase):

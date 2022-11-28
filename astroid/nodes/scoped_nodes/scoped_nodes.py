@@ -46,7 +46,7 @@ from astroid.nodes import Arguments, Const, NodeNG, _base_nodes, node_classes
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
-from astroid.typing import InferBinaryOp
+from astroid.typing import InferBinaryOp, InferenceResult, SuccessfulInferenceResult
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
@@ -385,7 +385,7 @@ class Module(LocalsDictNodeNG):
         """
         return "builtins.module"
 
-    def display_type(self):
+    def display_type(self) -> str:
         """A human readable type of this node.
 
         :returns: The type of this node.
@@ -393,7 +393,9 @@ class Module(LocalsDictNodeNG):
         """
         return "Module"
 
-    def getattr(self, name, context=None, ignore_locals=False):
+    def getattr(
+        self, name, context: InferenceContext | None = None, ignore_locals=False
+    ):
         if not name:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
@@ -416,7 +418,7 @@ class Module(LocalsDictNodeNG):
             return result
         raise AttributeInferenceError(target=self, attribute=name, context=context)
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context: InferenceContext | None = None):
         """Infer the possible values of the given variable.
 
         :param name: The name of the variable to infer.
@@ -436,14 +438,13 @@ class Module(LocalsDictNodeNG):
                 str(error), target=self, attribute=name, context=context
             ) from error
 
-    def fully_defined(self):
+    def fully_defined(self) -> bool:
         """Check if this module has been build from a .py file.
 
         If so, the module contains a complete representation,
         including the code.
 
-        :returns: True if the module has been built from a .py file.
-        :rtype: bool
+        :returns: Whether the module has been built from a .py file.
         """
         return self.file is not None and self.file.endswith(".py")
 
@@ -491,11 +492,10 @@ class Module(LocalsDictNodeNG):
 
     _absolute_import_activated = True
 
-    def absolute_import_activated(self):
+    def absolute_import_activated(self) -> bool:
         """Whether :pep:`328` absolute import behaviour has been enabled.
 
-        :returns: True if :pep:`328` has been enabled, False otherwise.
-        :rtype: bool
+        :returns: Whether :pep:`328` has been enabled.
         """
         return self._absolute_import_activated
 
@@ -618,7 +618,7 @@ class Module(LocalsDictNodeNG):
         if not isinstance(explicit, (node_classes.Tuple, node_classes.List)):
             return default
 
-        def str_const(node):
+        def str_const(node) -> bool:
             return isinstance(node, node_classes.Const) and isinstance(node.value, str)
 
         for node in explicit.elts:
@@ -641,12 +641,11 @@ class Module(LocalsDictNodeNG):
         """
         return [name for name in self.keys() if not name.startswith("_")]
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None) -> bool:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
             For a :class:`Module` this is always ``True``.
-        :rtype: bool
         """
         return True
 
@@ -709,10 +708,7 @@ class GeneratorExp(ComprehensionScope):
         :type end_col_offset: Optional[int]
         """
         self.locals = {}
-        """A map of the name of a local variable to the node defining the local.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining the local."""
 
         super().__init__(
             lineno=lineno,
@@ -736,12 +732,11 @@ class GeneratorExp(ComprehensionScope):
         else:
             self.generators = generators
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
             For a :class:`GeneratorExp` this is always ``True``.
-        :rtype: bool
         """
         return True
 
@@ -801,10 +796,7 @@ class DictComp(ComprehensionScope):
         :type end_col_offset: Optional[int]
         """
         self.locals = {}
-        """A map of the name of a local variable to the node defining the local.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining the local."""
 
         super().__init__(
             lineno=lineno,
@@ -837,7 +829,7 @@ class DictComp(ComprehensionScope):
         else:
             self.generators = generators
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -898,10 +890,7 @@ class SetComp(ComprehensionScope):
         :type end_col_offset: Optional[int]
         """
         self.locals = {}
-        """A map of the name of a local variable to the node defining the local.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining the local."""
 
         super().__init__(
             lineno=lineno,
@@ -925,7 +914,7 @@ class SetComp(ComprehensionScope):
         else:
             self.generators = generators
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -968,10 +957,7 @@ class ListComp(ComprehensionScope):
         end_col_offset=None,
     ):
         self.locals = {}
-        """A map of the name of a local variable to the node defining it.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining it."""
 
         super().__init__(
             lineno=lineno,
@@ -996,7 +982,7 @@ class ListComp(ComprehensionScope):
         else:
             self.generators = generators
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1106,10 +1092,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         :type end_col_offset: Optional[int]
         """
         self.locals = {}
-        """A map of the name of a local variable to the node defining it.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining it."""
 
         self.args: Arguments
         """The arguments that the function takes."""
@@ -1150,7 +1133,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             return "builtins.instancemethod"
         return "builtins.function"
 
-    def display_type(self):
+    def display_type(self) -> str:
         """A human readable type of this node.
 
         :returns: The type of this node.
@@ -1160,13 +1143,11 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             return "Method"
         return "Function"
 
-    def callable(self):
+    def callable(self) -> Literal[True]:
         """Whether this node defines something that is callable.
 
-        :returns: True if this defines something that is callable,
-            False otherwise.
+        :returns: Whether this defines something that is callable
             For a :class:`Lambda` this is always ``True``.
-        :rtype: bool
         """
         return True
 
@@ -1189,7 +1170,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             names.append(self.args.kwarg)
         return names
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller, context: InferenceContext | None = None):
         """Infer what the function returns when called.
 
         :param caller: Unused
@@ -1228,12 +1209,11 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             frame = self
         return frame._scope_lookup(node, name, offset)
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
             For a :class:`Lambda` this is always ``True``.
-        :rtype: bool
         """
         return True
 
@@ -1476,7 +1456,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         return decorators
 
     @cached_property
-    def type(self) -> str:  # pylint: disable=too-many-return-statements
+    def type(self) -> str:  # pylint: disable=too-many-return-statements # noqa: C901
         """The function type for this node.
 
         Possible values are: method, function, staticmethod, classmethod.
@@ -1580,7 +1560,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         """
         return self.fromlineno, self.tolineno
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context: InferenceContext | None = None):
         """Inferred getattr, which returns an iterator of inferred statements."""
         try:
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
@@ -1589,11 +1569,10 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
                 str(error), target=self, attribute=name, context=context
             ) from error
 
-    def is_method(self):
+    def is_method(self) -> bool:
         """Check if this function node represents a method.
 
-        :returns: True if this is a method, False otherwise.
-        :rtype: bool
+        :returns: Whether this is a method.
         """
         # check we are defined in a ClassDef, because this is usually expected
         # (e.g. pylint...) when is_method() return True
@@ -1602,7 +1581,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         )
 
     @decorators_mod.cached
-    def decoratornames(self, context=None):
+    def decoratornames(self, context: InferenceContext | None = None):
         """Get the qualified names of each of the decorators on this function.
 
         :param context:
@@ -1623,16 +1602,14 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
                 continue
         return result
 
-    def is_bound(self):
+    def is_bound(self) -> bool:
         """Check if the function is bound to an instance or class.
 
-        :returns: True if the function is bound to an instance or class,
-            False otherwise.
-        :rtype: bool
+        :returns: Whether the function is bound to an instance or class.
         """
         return self.type in {"method", "classmethod"}
 
-    def is_abstract(self, pass_is_abstract=True, any_raise_is_abstract=False):
+    def is_abstract(self, pass_is_abstract=True, any_raise_is_abstract=False) -> bool:
         """Check if the method is abstract.
 
         A method is considered abstract if any of the following is true:
@@ -1641,8 +1618,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         * The only statement is 'pass' and pass_is_abstract is True
         * The method is annotated with abc.astractproperty/abc.abstractmethod
 
-        :returns: True if the method is abstract, False otherwise.
-        :rtype: bool
+        :returns: Whether the method is abstract.
         """
         if self.decorators:
             for node in self.decorators.nodes:
@@ -1667,15 +1643,16 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         if pass_is_abstract:
             return True
 
-    def is_generator(self):
+        return False
+
+    def is_generator(self) -> bool:
         """Check if this is a generator function.
 
-        :returns: True is this is a generator function, False otherwise.
-        :rtype: bool
+        :returns: Whether this is a generator function.
         """
         return bool(next(self._get_yield_nodes_skip_lambdas(), False))
 
-    def infer_yield_result(self, context=None):
+    def infer_yield_result(self, context: InferenceContext | None = None):
         """Infer what the function yields when called
 
         :returns: What the function yields
@@ -1692,7 +1669,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
             elif yield_.scope() == self:
                 yield from yield_.value.infer(context=context)
 
-    def infer_call_result(self, caller=None, context=None):
+    def infer_call_result(self, caller=None, context: InferenceContext | None = None):
         """Infer what the function returns when called.
 
         :returns: What the function returns.
@@ -1756,12 +1733,11 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
                 except InferenceError:
                     yield util.Uninferable
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None) -> bool:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
             For a :class:`FunctionDef` this is always ``True``.
-        :rtype: bool
         """
         return True
 
@@ -1830,7 +1806,7 @@ def _rec_get_names(args, names: list[str] | None = None) -> list[str]:
     return names
 
 
-def _is_metaclass(klass, seen=None):
+def _is_metaclass(klass, seen=None) -> bool:
     """Return if the given class can be
     used as a metaclass.
     """
@@ -2003,10 +1979,7 @@ class ClassDef(
         """
         self.instance_attrs = {}
         self.locals = {}
-        """A map of the name of a local variable to the node defining it.
-
-        :type: dict(str, NodeNG)
-        """
+        """A map of the name of a local variable to the node defining it."""
 
         self.keywords = []
         """The keywords given to the class definition.
@@ -2138,7 +2111,7 @@ class ClassDef(
         if doc_node:
             self._doc = doc_node.value
 
-    def _newstyle_impl(self, context=None):
+    def _newstyle_impl(self, context: InferenceContext | None = None):
         if context is None:
             context = InferenceContext()
         if self._newstyle is not None:
@@ -2208,7 +2181,7 @@ class ClassDef(
             return "builtins.type"
         return "builtins.classobj"
 
-    def display_type(self):
+    def display_type(self) -> str:
         """A human readable type of this node.
 
         :returns: The type of this node.
@@ -2216,25 +2189,21 @@ class ClassDef(
         """
         return "Class"
 
-    def callable(self):
+    def callable(self) -> bool:
         """Whether this node defines something that is callable.
 
-        :returns: True if this defines something that is callable,
-            False otherwise.
+        :returns: Whether this defines something that is callable.
             For a :class:`ClassDef` this is always ``True``.
-        :rtype: bool
         """
         return True
 
-    def is_subtype_of(self, type_name, context=None):
+    def is_subtype_of(self, type_name, context: InferenceContext | None = None) -> bool:
         """Whether this class is a subtype of the given type.
 
         :param type_name: The name of the type of check against.
         :type type_name: str
 
-        :returns: True if this class is a subtype of the given type,
-            False otherwise.
-        :rtype: bool
+        :returns: Whether this class is a subtype of the given type.
         """
         if self.qname() == type_name:
             return True
@@ -2289,7 +2258,7 @@ class ClassDef(
         result.parent = caller.parent
         return result
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller, context: InferenceContext | None = None):
         """infer what a class is returning when called"""
         if self.is_subtype_of("builtins.type", context) and len(caller.args) == 3:
             result = self._infer_type_call(caller, context)
@@ -2424,7 +2393,7 @@ class ClassDef(
                 except InferenceError:
                     continue
 
-    def local_attr_ancestors(self, name, context=None):
+    def local_attr_ancestors(self, name, context: InferenceContext | None = None):
         """Iterate over the parents that define the given name.
 
         :param name: The name to find definitions for.
@@ -2445,7 +2414,7 @@ class ClassDef(
             if name in astroid:
                 yield astroid
 
-    def instance_attr_ancestors(self, name, context=None):
+    def instance_attr_ancestors(self, name, context: InferenceContext | None = None):
         """Iterate over the parents that define the given name as an attribute.
 
         :param name: The name to find definitions for.
@@ -2459,18 +2428,17 @@ class ClassDef(
             if name in astroid.instance_attrs:
                 yield astroid
 
-    def has_base(self, node):
+    def has_base(self, node) -> bool:
         """Whether this class directly inherits from the given node.
 
         :param node: The node to check for.
         :type node: NodeNG
 
-        :returns: True if this class directly inherits from the given node.
-        :rtype: bool
+        :returns: Whether this class directly inherits from the given node.
         """
         return node in self.bases
 
-    def local_attr(self, name, context=None):
+    def local_attr(self, name, context: InferenceContext | None = None):
         """Get the list of assign nodes associated to the given name.
 
         Assignments are looked for in both this class and in parents.
@@ -2493,7 +2461,7 @@ class ClassDef(
             return result
         raise AttributeInferenceError(target=self, attribute=name, context=context)
 
-    def instance_attr(self, name, context=None):
+    def instance_attr(self, name, context: InferenceContext | None = None):
         """Get the list of nodes associated to the given attribute name.
 
         Assignments are looked for in both this class and in parents.
@@ -2528,7 +2496,12 @@ class ClassDef(
             pass
         return bases.Instance(self)
 
-    def getattr(self, name, context=None, class_context=True):
+    def getattr(
+        self,
+        name: str,
+        context: InferenceContext | None = None,
+        class_context: bool = True,
+    ) -> list[SuccessfulInferenceResult]:
         """Get an attribute from this class, using Python's attribute semantic.
 
         This method doesn't look in the :attr:`instance_attrs` dictionary
@@ -2544,13 +2517,10 @@ class ClassDef(
         metaclass will be done.
 
         :param name: The attribute to look for.
-        :type name: str
 
         :param class_context: Whether the attribute can be accessed statically.
-        :type class_context: bool
 
         :returns: The attribute.
-        :rtype: list(NodeNG)
 
         :raises AttributeInferenceError: If the attribute cannot be inferred.
         """
@@ -2558,7 +2528,7 @@ class ClassDef(
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
         # don't modify the list in self.locals!
-        values = list(self.locals.get(name, []))
+        values: list[SuccessfulInferenceResult] = list(self.locals.get(name, []))
         for classnode in self.ancestors(recurs=True, context=context):
             values += classnode.locals.get(name, [])
 
@@ -2573,17 +2543,16 @@ class ClassDef(
         if class_context:
             values += self._metaclass_lookup_attribute(name, context)
 
-        if not values:
-            raise AttributeInferenceError(target=self, attribute=name, context=context)
-
-        # Look for AnnAssigns, which are not attributes in the purest sense.
-        for value in values:
+        # Remove AnnAssigns without value, which are not attributes in the purest sense.
+        for value in values.copy():
             if isinstance(value, node_classes.AssignName):
                 stmt = value.statement(future=True)
                 if isinstance(stmt, node_classes.AnnAssign) and stmt.value is None:
-                    raise AttributeInferenceError(
-                        target=self, attribute=name, context=context
-                    )
+                    values.pop(values.index(value))
+
+        if not values:
+            raise AttributeInferenceError(target=self, attribute=name, context=context)
+
         return values
 
     def _metaclass_lookup_attribute(self, name, context):
@@ -2625,14 +2594,17 @@ class ClassDef(
             else:
                 yield bases.BoundMethod(attr, self)
 
-    def igetattr(self, name, context=None, class_context=True):
+    def igetattr(
+        self,
+        name: str,
+        context: InferenceContext | None = None,
+        class_context: bool = True,
+    ) -> Iterator[InferenceResult]:
         """Infer the possible values of the given variable.
 
         :param name: The name of the variable to infer.
-        :type name: str
 
         :returns: The inferred possible values.
-        :rtype: iterable(NodeNG or Uninferable)
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
@@ -2696,16 +2668,14 @@ class ClassDef(
                     str(error), target=self, attribute=name, context=context
                 ) from error
 
-    def has_dynamic_getattr(self, context=None):
+    def has_dynamic_getattr(self, context: InferenceContext | None = None) -> bool:
         """Check if the class has a custom __getattr__ or __getattribute__.
 
         If any such method is found and it is not from
         builtins, nor from an extension module, then the function
         will return True.
 
-        :returns: True if the class has a custom
-            __getattr__ or __getattribute__, False otherwise.
-        :rtype: bool
+        :returns: Whether the class has a custom __getattr__ or __getattribute__.
         """
 
         def _valid_getattr(node):
@@ -2723,7 +2693,7 @@ class ClassDef(
                 pass
         return False
 
-    def getitem(self, index, context=None):
+    def getitem(self, index, context: InferenceContext | None = None):
         """Return the inference of a subscript.
 
         This is basically looking up the method in the metaclass and calling it.
@@ -2844,7 +2814,7 @@ class ClassDef(
                 return next(
                     node
                     for node in self._metaclass.infer(context=context)
-                    if isinstance(node, NodeNG)
+                    if node is not util.Uninferable
                 )
             except (InferenceError, StopIteration):
                 return None
@@ -2965,8 +2935,10 @@ class ClassDef(
         def grouped_slots(
             mro: list[ClassDef],
         ) -> Iterator[node_classes.NodeNG | None]:
-            # Not interested in object, since it can't have slots.
-            for cls in mro[:-1]:
+            for cls in mro:
+                # Not interested in object, since it can't have slots.
+                if cls.qname() == "builtins.object":
+                    continue
                 try:
                     cls_slots = cls._slots()
                 except NotImplementedError:
@@ -2994,7 +2966,7 @@ class ClassDef(
 
         return sorted(set(slots), key=lambda item: item.value)
 
-    def _inferred_bases(self, context=None):
+    def _inferred_bases(self, context: InferenceContext | None = None):
         # Similar with .ancestors, but the difference is when one base is inferred,
         # only the first object is wanted. That's because
         # we aren't interested in superclasses, as in the following
@@ -3033,7 +3005,7 @@ class ClassDef(
             else:
                 yield from baseobj.bases
 
-    def _compute_mro(self, context=None):
+    def _compute_mro(self, context: InferenceContext | None = None):
         inferred_bases = list(self._inferred_bases(context=context))
         bases_mro = []
         for base in inferred_bases:
@@ -3057,7 +3029,7 @@ class ClassDef(
         clean_typing_generic_mro(unmerged_mro)
         return _c3_merge(unmerged_mro, self, context)
 
-    def mro(self, context=None) -> list[ClassDef]:
+    def mro(self, context: InferenceContext | None = None) -> list[ClassDef]:
         """Get the method resolution order, using C3 linearization.
 
         :returns: The list of ancestors, sorted by the mro.
@@ -3067,12 +3039,11 @@ class ClassDef(
         """
         return self._compute_mro(context=context)
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
             For a :class:`ClassDef` this is always ``True``.
-        :rtype: bool
         """
         return True
 

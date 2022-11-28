@@ -279,15 +279,13 @@ class NodeNG:
             yield parent
             parent = parent.parent
 
-    def parent_of(self, node):
+    def parent_of(self, node) -> bool:
         """Check if this node is the parent of the given node.
 
         :param node: The node to check if it is the child.
         :type node: NodeNG
 
-        :returns: True if this node is the parent of the given node,
-            False otherwise.
-        :rtype: bool
+        :returns: Whether this node is the parent of the given node.
         """
         return any(self is parent for parent in node.node_ancestors())
 
@@ -493,7 +491,7 @@ class NodeNG:
         """
         return lineno, self.tolineno
 
-    def set_local(self, name, stmt):
+    def set_local(self, name: str, stmt: NodeNG) -> None:
         """Define that the given name is declared in the given statement node.
 
         This definition is stored on the parent scope node.
@@ -501,11 +499,10 @@ class NodeNG:
         .. seealso:: :meth:`scope`
 
         :param name: The name that is being defined.
-        :type name: str
 
         :param stmt: The statement that defines the given name.
-        :type stmt: NodeNG
         """
+        assert self.parent
         self.parent.set_local(name, stmt)
 
     @overload
@@ -622,7 +619,7 @@ class NodeNG:
         """
         return self
 
-    def has_base(self, node):
+    def has_base(self, node) -> bool:
         """Check if this node inherits from the given type.
 
         :param node: The node defining the base to look for.
@@ -631,16 +628,14 @@ class NodeNG:
         """
         return False
 
-    def callable(self):
+    def callable(self) -> bool:
         """Whether this node defines something that is callable.
 
-        :returns: True if this defines something that is callable,
-            False otherwise.
-        :rtype: bool
+        :returns: Whether this defines something that is callable.
         """
         return False
 
-    def eq(self, value):
+    def eq(self, value) -> bool:
         return False
 
     def as_string(self) -> str:
@@ -783,7 +778,7 @@ class NodeNG:
         _repr_tree(self, result, set())
         return "".join(result)
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None):
         """Determine the boolean value of this node.
 
         The boolean value of a node can have three
@@ -807,6 +802,6 @@ class NodeNG:
         # Look up by class name or default to highest precedence
         return OP_PRECEDENCE.get(self.__class__.__name__, len(OP_PRECEDENCE))
 
-    def op_left_associative(self):
+    def op_left_associative(self) -> Literal[True]:
         # Everything is left associative except `**` and IfExp
         return True

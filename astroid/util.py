@@ -3,9 +3,15 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 import importlib
+import sys
 import warnings
 
 import lazy_object_proxy
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 
 def lazy_descriptor(obj):
@@ -26,7 +32,7 @@ def lazy_import(module_name):
 class Uninferable:
     """Special inference object, which is returned when inference fails."""
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Uninferable"
 
     __str__ = __repr__
@@ -43,7 +49,7 @@ class Uninferable:
     def __call__(self, *args, **kwargs):
         return self
 
-    def __bool__(self):
+    def __bool__(self) -> Literal[False]:
         return False
 
     __nonzero__ = __bool__
@@ -80,7 +86,7 @@ class BadUnaryOperationMessage(BadOperationMessage):
 
         return objtype
 
-    def __str__(self):
+    def __str__(self) -> str:
         if hasattr(self.operand, "name"):
             operand_type = self.operand.name
         else:
@@ -103,12 +109,12 @@ class BadBinaryOperationMessage(BadOperationMessage):
         self.right_type = right_type
         self.op = op
 
-    def __str__(self):
+    def __str__(self) -> str:
         msg = "unsupported operand type(s) for {}: {!r} and {!r}"
         return msg.format(self.op, self.left_type.name, self.right_type.name)
 
 
-def _instancecheck(cls, other):
+def _instancecheck(cls, other) -> bool:
     wrapped = cls.__wrapped__
     other_cls = other.__class__
     is_instance_of = wrapped is other_cls or issubclass(other_cls, wrapped)

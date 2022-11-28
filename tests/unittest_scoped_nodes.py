@@ -1268,6 +1268,22 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(attr1, nodes.AssignName)
         self.assertEqual(attr1.name, "attr")
 
+    @staticmethod
+    def test_getattr_with_enpty_annassign() -> None:
+        code = """
+            class Parent:
+                attr: int = 2
+
+            class Child(Parent):  #@
+                attr: int
+        """
+        child = extract_node(code)
+        attr = child.getattr("attr")
+        assert len(attr) == 1
+        assert isinstance(attr[0], nodes.AssignName)
+        assert attr[0].name == "attr"
+        assert attr[0].lineno == 3
+
     def test_function_with_decorator_lineno(self) -> None:
         data = """
             @f(a=2,
@@ -1414,6 +1430,20 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         )
         inferred = next(klass.infer())
         self.assertIsNone(inferred.metaclass())
+
+    @staticmethod
+    def test_with_invalid_metaclass():
+        klass = extract_node(
+            """
+        class InvalidAsMetaclass: ...
+
+        class Invalid(metaclass=InvalidAsMetaclass()):  #@
+            pass
+        """
+        )
+        inferred = next(klass.infer())
+        metaclass = inferred.metaclass()
+        assert isinstance(metaclass, Instance)
 
     def test_nonregr_infer_callresult(self) -> None:
         astroid = builder.parse(
@@ -2532,6 +2562,21 @@ def test_enums_type_annotation_no_value(annotation) -> None:
     )
     inferred_member_value = node.inferred()[0]
     assert inferred_member_value.value is None
+
+
+def test_enums_value2member_map_() -> None:
+    """Check the `_value2member_map_` member is present in an Enum class"""
+    node = builder.extract_node(
+        """
+    from enum import Enum
+    class Veg(Enum):
+        TOMATO: 1
+
+    Veg
+    """
+    )
+    inferred_class = node.inferred()[0]
+    assert "_value2member_map_" in inferred_class.locals
 
 
 @pytest.mark.parametrize("annotation, value", [("int", 42), ("bytes", b"")])

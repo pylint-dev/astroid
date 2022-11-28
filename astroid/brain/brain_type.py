@@ -20,34 +20,34 @@ Doing this type[int] is allowed whereas str[int] is not.
 Thanks to Lukasz Langa for fruitful discussion.
 """
 
+from __future__ import annotations
+
 from astroid import extract_node, inference_tip, nodes
 from astroid.const import PY39_PLUS
+from astroid.context import InferenceContext
 from astroid.exceptions import UseInferenceDefault
 from astroid.manager import AstroidManager
 
 
-def _looks_like_type_subscript(node):
+def _looks_like_type_subscript(node) -> bool:
     """
     Try to figure out if a Name node is used inside a type related subscript
 
     :param node: node to check
     :type node: astroid.nodes.node_classes.NodeNG
-    :return: true if the node is a Name node inside a type related subscript
-    :rtype: bool
+    :return: whether the node is a Name node inside a type related subscript
     """
     if isinstance(node, nodes.Name) and isinstance(node.parent, nodes.Subscript):
         return node.name == "type"
     return False
 
 
-def infer_type_sub(node, context=None):
+def infer_type_sub(node, context: InferenceContext | None = None):
     """
     Infer a type[...] subscript
 
     :param node: node to infer
     :type node: astroid.nodes.node_classes.NodeNG
-    :param context: inference context
-    :type context: astroid.context.InferenceContext
     :return: the inferred node
     :rtype: nodes.NodeNG
     """

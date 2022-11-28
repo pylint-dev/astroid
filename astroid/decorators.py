@@ -97,7 +97,7 @@ def path_wrapper(func):
     """
 
     @functools.wraps(func)
-    def wrapped(node, context=None, _func=func, **kwargs):
+    def wrapped(node, context: InferenceContext | None = None, _func=func, **kwargs):
         """wrapper function handling context"""
         if context is None:
             context = InferenceContext()
@@ -157,7 +157,7 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
 # Expensive decorators only used to emit Deprecation warnings.
 # If no other than the default DeprecationWarning are enabled,
 # fall back to passthrough implementations.
-if util.check_warnings_filter():
+if util.check_warnings_filter():  # noqa: C901
 
     def deprecate_default_argument_values(
         astroid_version: str = "3.0", **arguments: str
@@ -208,7 +208,8 @@ if util.check_warnings_filter():
                     ):
                         warnings.warn(
                             f"'{arg}' will be a required argument for "
-                            f"'{args[0].__class__.__qualname__}.{func.__name__}' in astroid {astroid_version} "
+                            f"'{args[0].__class__.__qualname__}.{func.__name__}'"
+                            f" in astroid {astroid_version} "
                             f"('{arg}' should be of type: '{type_annotation}')",
                             DeprecationWarning,
                         )

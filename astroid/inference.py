@@ -27,6 +27,7 @@ from astroid.exceptions import (
     AstroidError,
     AstroidIndexError,
     AstroidTypeError,
+    AstroidValueError,
     AttributeInferenceError,
     InferenceError,
     NameInferenceError,
@@ -86,7 +87,7 @@ nodes.Const._infer = infer_end  # type: ignore[assignment]
 nodes.Slice._infer = infer_end  # type: ignore[assignment]
 
 
-def _infer_sequence_helper(node, context=None):
+def _infer_sequence_helper(node, context: InferenceContext | None = None):
     """Infer all values based on _BaseContainer.elts"""
     values = []
 
@@ -441,6 +442,7 @@ def infer_subscript(
             except (
                 AstroidTypeError,
                 AstroidIndexError,
+                AstroidValueError,
                 AttributeInferenceError,
                 AttributeError,
             ) as exc:
@@ -621,7 +623,7 @@ nodes.UnaryOp._infer_unaryop = _infer_unaryop
 nodes.UnaryOp._infer = infer_unaryop  # type: ignore[assignment]
 
 
-def _is_not_implemented(const):
+def _is_not_implemented(const) -> bool:
     """Check if the given const node is NotImplemented."""
     return isinstance(const, nodes.Const) and const.value is NotImplemented
 
@@ -634,13 +636,14 @@ def _infer_old_style_string_formatting(
     TODO: Instead of returning Uninferable we should rely
     on the call to '%' to see if the result is actually uninferable.
     """
-    values = None
     if isinstance(other, nodes.Tuple):
         if util.Uninferable in other.elts:
             return (util.Uninferable,)
         inferred_positional = [helpers.safe_infer(i, context) for i in other.elts]
         if all(isinstance(i, nodes.Const) for i in inferred_positional):
             values = tuple(i.value for i in inferred_positional)
+        else:
+            values = None
     elif isinstance(other, nodes.Dict):
         values: dict[Any, Any] = {}
         for pair in other.items:

@@ -9,6 +9,7 @@ import time
 import unittest
 from collections.abc import Iterator
 from contextlib import contextmanager
+from unittest import mock
 
 import pytest
 
@@ -139,6 +140,23 @@ class AstroidManagerTest(
         astroid_module = sys.modules["astroid"]
         original_spec = astroid_module.__spec__
         del astroid_module.__spec__
+        try:
+            self.assertFalse(util.is_namespace("astroid"))
+        finally:
+            astroid_module.__spec__ = original_spec
+
+    @mock.patch(
+        "astroid.interpreter._import.util._find_spec_from_path",
+        side_effect=AttributeError,
+    )
+    def test_module_unexpectedly_missing_path(self, mocked) -> None:
+        """https://github.com/PyCQA/pylint/issues/7592"""
+        self.assertFalse(util.is_namespace("astroid"))
+
+    def test_module_unexpectedly_spec_is_none(self) -> None:
+        astroid_module = sys.modules["astroid"]
+        original_spec = astroid_module.__spec__
+        astroid_module.__spec__ = None
         try:
             self.assertFalse(util.is_namespace("astroid"))
         finally:
@@ -355,6 +373,10 @@ class AstroidManagerTest(
         # Infer the 'import math' statement
         stdlib_math = next(module.body[1].value.args[0].infer())
         assert self.manager.astroid_cache["math"] != stdlib_math
+
+    def test_raises_exception_for_empty_modname(self) -> None:
+        with pytest.raises(AstroidBuildingError):
+            self.manager.ast_from_module_name(None)
 
 
 class BorgAstroidManagerTC(unittest.TestCase):

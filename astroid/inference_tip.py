@@ -23,7 +23,7 @@ InferOptions = typing.Union[
 _cache: dict[tuple[InferFn, NodeNG], list[InferOptions] | None] = {}
 
 
-def clear_inference_tip_cache():
+def clear_inference_tip_cache() -> None:
     """Clear the inference tips cache."""
     _cache.clear()
 

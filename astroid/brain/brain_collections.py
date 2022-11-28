@@ -2,9 +2,12 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
 from astroid.const import PY39_PLUS
+from astroid.context import InferenceContext
 from astroid.exceptions import AttributeInferenceError
 from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import ClassDef
@@ -106,7 +109,7 @@ def __class_getitem__(cls, item):
 """
 
 
-def easy_class_getitem_inference(node, context=None):
+def easy_class_getitem_inference(node, context: InferenceContext | None = None):
     # Here __class_getitem__ exists but is quite a mess to infer thus
     # put an easy inference tip
     func_to_add = extract_node(CLASS_GET_ITEM_TEMPLATE)

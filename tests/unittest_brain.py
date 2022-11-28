@@ -11,6 +11,7 @@ import queue
 import re
 import sys
 import unittest
+import warnings
 from typing import Any
 
 import pytest
@@ -37,8 +38,9 @@ except ImportError:
 
 
 try:
-    import nose  # pylint: disable=unused-import
-
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        import nose  # pylint: disable=unused-import
     HAS_NOSE = True
 except ImportError:
     HAS_NOSE = False
@@ -83,24 +85,44 @@ class HashlibTest(unittest.TestCase):
             len(class_obj["__init__"].args.defaults), 2 if PY39_PLUS else 1
         )
         self.assertEqual(len(class_obj["update"].args.args), 2)
-        self.assertEqual(len(class_obj["digest"].args.args), 1)
-        self.assertEqual(len(class_obj["hexdigest"].args.args), 1)
 
     def test_hashlib(self) -> None:
         """Tests that brain extensions for hashlib work."""
         hashlib_module = MANAGER.ast_from_module_name("hashlib")
-        for class_name in ("md5", "sha1"):
+        for class_name in (
+            "md5",
+            "sha1",
+            "sha224",
+            "sha256",
+            "sha384",
+            "sha512",
+            "sha3_224",
+            "sha3_256",
+            "sha3_384",
+            "sha3_512",
+        ):
             class_obj = hashlib_module[class_name]
             self._assert_hashlib_class(class_obj)
+            self.assertEqual(len(class_obj["digest"].args.args), 1)
+            self.assertEqual(len(class_obj["hexdigest"].args.args), 1)
 
-    def test_hashlib_py36(self) -> None:
+    def test_shake(self) -> None:
+        """Tests that the brain extensions for the hashlib shake algorithms work."""
         hashlib_module = MANAGER.ast_from_module_name("hashlib")
-        for class_name in ("sha3_224", "sha3_512", "shake_128"):
+        for class_name in ("shake_128", "shake_256"):
             class_obj = hashlib_module[class_name]
             self._assert_hashlib_class(class_obj)
+            self.assertEqual(len(class_obj["digest"].args.args), 2)
+            self.assertEqual(len(class_obj["hexdigest"].args.args), 2)
+
+    def test_blake2(self) -> None:
+        """Tests that the brain extensions for the hashlib blake2 hash functions work."""
+        hashlib_module = MANAGER.ast_from_module_name("hashlib")
         for class_name in ("blake2b", "blake2s"):
             class_obj = hashlib_module[class_name]
             self.assertEqual(len(class_obj["__init__"].args.args), 2)
+            self.assertEqual(len(class_obj["digest"].args.args), 1)
+            self.assertEqual(len(class_obj["hexdigest"].args.args), 1)
 
 
 class CollectionsDequeTests(unittest.TestCase):
@@ -1473,7 +1495,8 @@ class CollectionsBrain(unittest.TestCase):
 
     @test_utils.require_version(minver="3.9")
     def test_collections_object_subscriptable_3(self):
-        """With python39 ByteString class of the colletions module is subscritable (but not the same class from typing module)"""
+        """With Python 3.9 the ByteString class of the collections module is subscritable
+        (but not the same class from typing module)"""
         right_node = builder.extract_node(
             """
         import collections.abc
@@ -1799,6 +1822,26 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(slots[0], nodes.Const)
         assert slots[0].value == "value"
 
+    def test_collections_generic_alias_slots(self):
+        """Test slots for a class which is a subclass of a generic alias type."""
+        node = builder.extract_node(
+            """
+        import collections
+        import typing
+        Type = typing.TypeVar('Type')
+        class A(collections.abc.AsyncIterator[Type]):
+            __slots__ = ('_value',)
+            def __init__(self, value: collections.abc.AsyncIterator[Type]):
+                self._value = value
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+        slots = inferred.slots()
+        assert len(slots) == 1
+        assert isinstance(slots[0], nodes.Const)
+        assert slots[0].value == "_value"
+
     def test_has_dunder_args(self) -> None:
         ast_node = builder.extract_node(
             """
@@ -1984,7 +2027,8 @@ class TypingBrain(unittest.TestCase):
         )
 
     def test_typing_object_notsubscriptable_3(self):
-        """Until python39 ByteString class of the typing module is not subscritable (whereas it is in the collections module)"""
+        """Until python39 ByteString class of the typing module is not
+        subscriptable (whereas it is in the collections' module)"""
         right_node = builder.extract_node(
             """
         import typing
@@ -2368,6 +2412,29 @@ class RandomSampleTest(unittest.TestCase):
         random.sample([1, 2], 2) #@
         """
         )
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, astroid.List)
+        elems = sorted(elem.value for elem in inferred.elts)
+        self.assertEqual(elems, [1, 2])
+
+    def test_arguments_inferred_successfully(self) -> None:
+        """Test inference of `random.sample` when both arguments are of type `nodes.Call`."""
+        node = astroid.extract_node(
+            """
+        import random
+
+        def sequence():
+            return [1, 2]
+
+        random.sample(sequence(), len([1,2])) #@
+        """
+        )
+        # Check that arguments are of type `nodes.Call`.
+        sequence, length = node.args
+        self.assertIsInstance(sequence, astroid.Call)
+        self.assertIsInstance(length, astroid.Call)
+
+        # Check the inference of `random.sample` call.
         inferred = next(node.infer())
         self.assertIsInstance(inferred, astroid.List)
         elems = sorted(elem.value for elem in inferred.elts)

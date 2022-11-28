@@ -661,9 +661,10 @@ class TestLinenoColOffset:
         assert isinstance(f1.args.kwonlyargs[0], nodes.AssignName)
         assert (f1.args.kwonlyargs[0].lineno, f1.args.kwonlyargs[0].col_offset) == (4, 4)
         assert (f1.args.kwonlyargs[0].end_lineno, f1.args.kwonlyargs[0].end_col_offset) == (4, 16)
-        assert isinstance(f1.args.kwonlyargs_annotations[0], nodes.Name)
-        assert (f1.args.kwonlyargs_annotations[0].lineno, f1.args.kwonlyargs_annotations[0].col_offset) == (4, 13)
-        assert (f1.args.kwonlyargs_annotations[0].end_lineno, f1.args.kwonlyargs_annotations[0].end_col_offset) == (4, 16)
+        annotations = f1.args.kwonlyargs_annotations
+        assert isinstance(annotations[0], nodes.Name)
+        assert (annotations[0].lineno, annotations[0].col_offset) == (4, 13)
+        assert (annotations[0].end_lineno, annotations[0].end_col_offset) == (4, 16)
         assert isinstance(f1.args.kw_defaults[0], nodes.Const)
         assert (f1.args.kw_defaults[0].lineno, f1.args.kw_defaults[0].col_offset) == (4, 19)
         assert (f1.args.kw_defaults[0].end_lineno, f1.args.kw_defaults[0].end_col_offset) == (4, 20)

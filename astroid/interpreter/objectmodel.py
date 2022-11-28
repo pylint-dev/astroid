@@ -116,7 +116,7 @@ class ObjectModel:
         # underlying data model and to the instance for which it got accessed.
         return self(instance)
 
-    def __contains__(self, name):
+    def __contains__(self, name) -> bool:
         return name in self.attributes()
 
     @lru_cache()  # noqa
@@ -142,7 +142,7 @@ class ObjectModel:
         )
         # We set the parent as being the ClassDef of 'object' as that
         # triggers correct inference as a call to __new__ in bases.py
-        node.parent: nodes.ClassDef = AstroidManager().builtins_module["object"]
+        node.parent = AstroidManager().builtins_module["object"]
 
         return bases.BoundMethod(proxy=node, bound=_get_bound_node(self))
 
@@ -157,7 +157,7 @@ class ObjectModel:
         )
         # We set the parent as being the ClassDef of 'object' as that
         # is where this method originally comes from
-        node.parent: nodes.ClassDef = AstroidManager().builtins_module["object"]
+        node.parent = AstroidManager().builtins_module["object"]
 
         return bases.BoundMethod(proxy=node, bound=_get_bound_node(self))
 
@@ -340,7 +340,9 @@ class FunctionModel(ObjectModel):
                 # is different.
                 return 0
 
-            def infer_call_result(self, caller, context=None):
+            def infer_call_result(
+                self, caller, context: InferenceContext | None = None
+            ):
                 if len(caller.args) > 2 or len(caller.args) < 1:
                     raise InferenceError(
                         "Invalid arguments for descriptor binding",
@@ -486,7 +488,9 @@ class ClassModel(ObjectModel):
         # Cls.mro is a method and we need to return one in order to have a proper inference.
         # The method we're returning is capable of inferring the underlying MRO though.
         class MroBoundMethod(bases.BoundMethod):
-            def infer_call_result(self, caller, context=None):
+            def infer_call_result(
+                self, caller, context: InferenceContext | None = None
+            ):
                 yield other_self.attr___mro__
 
         implicit_metaclass = self._instance.implicit_metaclass()
@@ -532,7 +536,9 @@ class ClassModel(ObjectModel):
         obj.postinit(classes)
 
         class SubclassesBoundMethod(bases.BoundMethod):
-            def infer_call_result(self, caller, context=None):
+            def infer_call_result(
+                self, caller, context: InferenceContext | None = None
+            ):
                 yield obj
 
         implicit_metaclass = self._instance.implicit_metaclass()
@@ -588,6 +594,48 @@ class UnboundMethodModel(ObjectModel):
     attr_im_self = attr___self__
 
 
+class ContextManagerModel(ObjectModel):
+    """Model for context managers.
+
+    Based on 3.3.9 of the Data Model documentation:
+    https://docs.python.org/3/reference/datamodel.html#with-statement-context-managers
+    """
+
+    @property
+    def attr___enter__(self) -> bases.BoundMethod:
+        """Representation of the base implementation of __enter__.
+
+        As per Python documentation:
+        Enter the runtime context related to this object. The with statement
+        will bind this method's return value to the target(s) specified in the
+        as clause of the statement, if any.
+        """
+        node: nodes.FunctionDef = builder.extract_node("""def __enter__(self): ...""")
+        # We set the parent as being the ClassDef of 'object' as that
+        # is where this method originally comes from
+        node.parent = AstroidManager().builtins_module["object"]
+
+        return bases.BoundMethod(proxy=node, bound=_get_bound_node(self))
+
+    @property
+    def attr___exit__(self) -> bases.BoundMethod:
+        """Representation of the base implementation of __exit__.
+
+        As per Python documentation:
+        Exit the runtime context related to this object. The parameters describe the
+        exception that caused the context to be exited. If the context was exited
+        without an exception, all three arguments will be None.
+        """
+        node: nodes.FunctionDef = builder.extract_node(
+            """def __exit__(self, exc_type, exc_value, traceback): ..."""
+        )
+        # We set the parent as being the ClassDef of 'object' as that
+        # is where this method originally comes from
+        node.parent = AstroidManager().builtins_module["object"]
+
+        return bases.BoundMethod(proxy=node, bound=_get_bound_node(self))
+
+
 class BoundMethodModel(FunctionModel):
     @property
     def attr___func__(self):
@@ -598,7 +646,7 @@ class BoundMethodModel(FunctionModel):
         return self._instance.bound
 
 
-class GeneratorModel(FunctionModel):
+class GeneratorModel(FunctionModel, ContextManagerModel):
     def __new__(cls, *args, **kwargs):
         # Append the values from the GeneratorType unto this object.
         ret = super().__new__(cls, *args, **kwargs)
@@ -752,7 +800,9 @@ class DictModel(ObjectModel):
         """Generate a bound method that can infer the given *obj*."""
 
         class DictMethodBoundMethod(astroid.BoundMethod):
-            def infer_call_result(self, caller, context=None):
+            def infer_call_result(
+                self, caller, context: InferenceContext | None = None
+            ):
                 yield obj
 
         meth = next(self._instance._proxied.igetattr(name), None)
@@ -817,7 +867,9 @@ class PropertyModel(ObjectModel):
         func = self._instance
 
         class PropertyFuncAccessor(nodes.FunctionDef):
-            def infer_call_result(self, caller=None, context=None):
+            def infer_call_result(
+                self, caller=None, context: InferenceContext | None = None
+            ):
                 nonlocal func
                 if caller and len(caller.args) != 1:
                     raise InferenceError(
@@ -858,7 +910,9 @@ class PropertyModel(ObjectModel):
             )
 
         class PropertyFuncAccessor(nodes.FunctionDef):
-            def infer_call_result(self, caller=None, context=None):
+            def infer_call_result(
+                self, caller=None, context: InferenceContext | None = None
+            ):
                 nonlocal func_setter
                 if caller and len(caller.args) != 2:
                     raise InferenceError(

@@ -94,7 +94,9 @@ def object_type(
     return list(types)[0]
 
 
-def _object_type_is_subclass(obj_type, class_or_seq, context=None):
+def _object_type_is_subclass(
+    obj_type, class_or_seq, context: InferenceContext | None = None
+):
     if not isinstance(class_or_seq, (tuple, list)):
         class_seq = (class_or_seq,)
     else:
@@ -121,7 +123,7 @@ def _object_type_is_subclass(obj_type, class_or_seq, context=None):
     return False
 
 
-def object_isinstance(node, class_or_seq, context=None):
+def object_isinstance(node, class_or_seq, context: InferenceContext | None = None):
     """Check if a node 'isinstance' any node in class_or_seq
 
     :param node: A given node
@@ -136,7 +138,7 @@ def object_isinstance(node, class_or_seq, context=None):
     return _object_type_is_subclass(obj_type, class_or_seq, context=context)
 
 
-def object_issubclass(node, class_or_seq, context=None):
+def object_issubclass(node, class_or_seq, context: InferenceContext | None = None):
     """Check if a type is a subclass of any node in class_or_seq
 
     :param node: A given node
@@ -174,8 +176,8 @@ def safe_infer(
         return value
 
 
-def has_known_bases(klass, context=None):
-    """Return true if all base classes of a class could be inferred."""
+def has_known_bases(klass, context: InferenceContext | None = None) -> bool:
+    """Return whether all base classes of a class could be inferred."""
     try:
         return klass._all_bases_known
     except AttributeError:
@@ -194,7 +196,7 @@ def has_known_bases(klass, context=None):
     return True
 
 
-def _type_check(type1, type2):
+def _type_check(type1, type2) -> bool:
     if not all(map(has_known_bases, (type1, type2))):
         raise _NonDeducibleTypeHierarchy
 
@@ -207,12 +209,12 @@ def _type_check(type1, type2):
         raise _NonDeducibleTypeHierarchy from e
 
 
-def is_subtype(type1, type2):
+def is_subtype(type1, type2) -> bool:
     """Check if *type1* is a subtype of *type2*."""
     return _type_check(type1=type2, type2=type1)
 
 
-def is_supertype(type1, type2):
+def is_supertype(type1, type2) -> bool:
     """Check if *type2* is a supertype of *type1*."""
     return _type_check(type1, type2)
 
@@ -240,7 +242,7 @@ def class_instance_as_index(node: SuccessfulInferenceResult) -> nodes.Const | No
     return None
 
 
-def object_len(node, context=None):
+def object_len(node, context: InferenceContext | None = None):
     """Infer length of given node object
 
     :param Union[nodes.ClassDef, nodes.Instance] node:

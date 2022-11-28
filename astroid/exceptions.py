@@ -87,7 +87,7 @@ class AstroidBuildingError(AstroidError):
         error: Exception | None = None,
         source: str | None = None,
         path: str | None = None,
-        cls: None = None,
+        cls: type | None = None,
         class_repr: str | None = None,
         **kws: Any,
     ) -> None:
@@ -131,7 +131,7 @@ class AstroidSyntaxError(AstroidBuildingError):
     def __init__(
         self,
         message: str,
-        modname: str,
+        modname: str | None,
         error: Exception,
         path: str | None,
         source: str | None = None,

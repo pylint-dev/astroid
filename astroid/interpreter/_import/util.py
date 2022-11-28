@@ -42,6 +42,8 @@ def is_namespace(modname: str) -> bool:
             found_spec = _find_spec_from_path(
                 working_modname, path=last_submodule_search_locations
             )
+        except AttributeError:
+            return False
         except ValueError:
             if modname == "__main__":
                 return False
@@ -52,8 +54,11 @@ def is_namespace(modname: str) -> bool:
                 # Check first fragment of modname, e.g. "astroid", not "astroid.interpreter"
                 # because of cffi's behavior
                 # See: https://github.com/PyCQA/astroid/issues/1776
+                mod = sys.modules[processed_components[0]]
                 return (
-                    sys.modules[processed_components[0]].__spec__ is None
+                    mod.__spec__ is None
+                    and getattr(mod, "__file__", None) is None
+                    and hasattr(mod, "__path__")
                     and not IS_PYPY
                 )
             except KeyError:

@@ -103,7 +103,7 @@ def __class_getitem__(cls, item):
 """
 
 
-def looks_like_typing_typevar_or_newtype(node):
+def looks_like_typing_typevar_or_newtype(node) -> bool:
     func = node.func
     if isinstance(func, Attribute):
         return func.attrname in TYPING_TYPEVARS
@@ -132,7 +132,7 @@ def infer_typing_typevar_or_newtype(node, context_itton=None):
     return node.infer(context=context_itton)
 
 
-def _looks_like_typing_subscript(node):
+def _looks_like_typing_subscript(node) -> bool:
     """Try to figure out if a Subscript node *might* be a typing-related subscript"""
     if isinstance(node, Name):
         return node.name in TYPING_MEMBERS
@@ -240,7 +240,7 @@ def _forbid_class_getitem_access(node: ClassDef) -> None:
     def full_raiser(origin_func, attr, *args, **kwargs):
         """
         Raises an AttributeInferenceError in case of access to __class_getitem__ method.
-        Otherwise just call origin_func.
+        Otherwise, just call origin_func.
         """
         if attr == "__class_getitem__":
             raise AttributeInferenceError("__class_getitem__ access is not allowed")
@@ -248,8 +248,9 @@ def _forbid_class_getitem_access(node: ClassDef) -> None:
 
     try:
         node.getattr("__class_getitem__")
-        # If we are here, then we are sure to modify object that do have __class_getitem__ method (which origin is one the
-        # protocol defined in collections module) whereas the typing module consider it should not
+        # If we are here, then we are sure to modify an object that does have
+        # __class_getitem__ method (which origin is the protocol defined in
+        # collections module) whereas the typing module considers it should not.
         # We do not want __class_getitem__ to be found in the classdef
         partial_raiser = partial(full_raiser, node.getattr)
         node.getattr = partial_raiser
@@ -277,7 +278,7 @@ def infer_typing_alias(
     try:
         res = next(node.args[0].infer(context=ctx))
     except StopIteration as e:
-        raise InferenceError(node=node.args[0], context=context) from e
+        raise InferenceError(node=node.args[0], context=ctx) from e
 
     assign_name = node.parent.targets[0]
 
@@ -358,7 +359,7 @@ def infer_special_alias(
     try:
         res = next(node.args[0].infer(context=ctx))
     except StopIteration as e:
-        raise InferenceError(node=node.args[0], context=context) from e
+        raise InferenceError(node=node.args[0], context=ctx) from e
 
     assign_name = node.parent.targets[0]
     class_def = ClassDef(

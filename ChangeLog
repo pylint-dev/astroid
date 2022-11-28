@@ -12,10 +12,70 @@ Release date: TBA
 
   Refs PyCQA/pylint#5151
 
+* Create ``ContextManagerModel`` and let ``GeneratorModel`` inherit from it.
+
+  Refs PyCQA/pylint#2567
+
+What's New in astroid 2.12.13?
+==============================
+Release date: 2022-11-19
+
+* Prevent returning an empty list for ``ClassDef.slots()`` when the mro list contains one class & it is not ``object``.
+
+  Refs PyCQA/pylint#5099
+
+* Prevent a crash when inferring calls to ``str.format`` with inferred arguments
+  that would be invalid.
+
+  Closes #1856
+
+* Infer the `length` argument of the ``random.sample`` function.
+
+  Refs PyCQA/pylint#7706
+
+* Catch ``ValueError`` when indexing some builtin containers and sequences during inference.
+
+  Closes #1843
+
+What's New in astroid 2.12.12?
+==============================
+Release date: 2022-10-19
+
+* Add the ``length`` parameter to ``hash.digest`` & ``hash.hexdigest`` in the ``hashlib`` brain.
+
+  Refs PyCQA/pylint#4039
+
+* Prevent a crash when a module's ``__path__`` attribute is unexpectedly missing.
+
+  Refs PyCQA/pylint#7592
+
+* Fix inferring attributes with empty annotation assignments if parent
+  class contains valid assignment.
+
+  Refs PyCQA/pylint#7631
+
+
+What's New in astroid 2.12.11?
+==============================
+Release date: 2022-10-10
+
+* Add ``_value2member_map_`` member to the ``enum`` brain.
+
+  Refs PyCQA/pylint#3941
+
+* Improve detection of namespace packages for the modules with ``__spec__`` set to None.
+
+  Closes PyCQA/pylint#7488.
+
+* Fixed a regression in the creation of the ``__init__`` of dataclasses with
+  multiple inheritance.
+
+  Closes PyCQA/pylint#7434
+
 
 What's New in astroid 2.12.10?
 ==============================
-Release date: TBA
+Release date: 2022-09-17
 
 
 * Fixed a crash when introspecting modules compiled by `cffi`.
@@ -412,7 +472,7 @@ Release date: 2022-02-27
 
   Closes PyCQA/pylint#5679
 
-* Inlcude names of keyword-only arguments in ``astroid.scoped_nodes.Lambda.argnames``.
+* Include names of keyword-only arguments in ``astroid.scoped_nodes.Lambda.argnames``.
 
   Closes PyCQA/pylint#5771
 

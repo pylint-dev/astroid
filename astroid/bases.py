@@ -71,7 +71,7 @@ POSSIBLE_PROPERTIES = {
 }
 
 
-def _is_property(meth, context=None):
+def _is_property(meth, context: InferenceContext | None = None) -> bool:
     decoratornames = meth.decoratornames(context=context)
     if PROPERTIES.intersection(decoratornames):
         return True
@@ -206,10 +206,10 @@ class BaseInstance(Proxy):
 
     special_attributes = None
 
-    def display_type(self):
+    def display_type(self) -> str:
         return "Instance of"
 
-    def getattr(self, name, context=None, lookupclass=True):
+    def getattr(self, name, context: InferenceContext | None = None, lookupclass=True):
         try:
             values = self._proxied.instance_attr(name, context)
         except AttributeInferenceError as exc:
@@ -235,7 +235,7 @@ class BaseInstance(Proxy):
                 pass
         return values
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context: InferenceContext | None = None):
         """inferred getattr"""
         if not context:
             context = InferenceContext()
@@ -266,7 +266,7 @@ class BaseInstance(Proxy):
             except AttributeInferenceError as error:
                 raise InferenceError(**vars(error)) from error
 
-    def _wrap_attr(self, attrs, context=None):
+    def _wrap_attr(self, attrs, context: InferenceContext | None = None):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
         for attr in attrs:
             if isinstance(attr, UnboundMethod):
@@ -319,15 +319,15 @@ class Instance(BaseInstance):
 
     infer_binary_op: ClassVar[InferBinaryOp[Instance]]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<Instance of {}.{} at 0x{}>".format(
             self._proxied.root().name, self._proxied.name, id(self)
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Instance of {self._proxied.root().name}.{self._proxied.name}"
 
-    def callable(self):
+    def callable(self) -> bool:
         try:
             self._proxied.getattr("__call__", class_context=False)
             return True
@@ -337,10 +337,10 @@ class Instance(BaseInstance):
     def pytype(self) -> str:
         return self._proxied.qname()
 
-    def display_type(self):
+    def display_type(self) -> str:
         return "Instance of"
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None):
         """Infer the truth value for an Instance
 
         The truth value of an instance is determined by these conditions:
@@ -366,7 +366,7 @@ class Instance(BaseInstance):
                 return True
         return result
 
-    def getitem(self, index, context=None):
+    def getitem(self, index, context: InferenceContext | None = None):
         new_context = bind_context_to_node(context, self)
         if not context:
             context = new_context
@@ -392,7 +392,7 @@ class UnboundMethod(Proxy):
     # pylint: disable=unnecessary-lambda
     special_attributes = lazy_descriptor(lambda: objectmodel.UnboundMethodModel())
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         frame = self._proxied.parent.frame(future=True)
         return "<{} {} of {} at 0x{}".format(
             self.__class__.__name__, self._proxied.name, frame.qname(), id(self)
@@ -401,15 +401,15 @@ class UnboundMethod(Proxy):
     def implicit_parameters(self) -> Literal[0]:
         return 0
 
-    def is_bound(self):
+    def is_bound(self) -> Literal[False]:
         return False
 
-    def getattr(self, name, context=None):
+    def getattr(self, name, context: InferenceContext | None = None):
         if name in self.special_attributes:
             return [self.special_attributes.lookup(name)]
         return self._proxied.getattr(name, context)
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context: InferenceContext | None = None):
         if name in self.special_attributes:
             return iter((self.special_attributes.lookup(name),))
         return self._proxied.igetattr(name, context)
@@ -464,7 +464,7 @@ class UnboundMethod(Proxy):
                 yield Instance(inferred)
             raise InferenceError
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
         return True
 
 
@@ -484,10 +484,10 @@ class BoundMethod(UnboundMethod):
             return 0
         return 1
 
-    def is_bound(self):
+    def is_bound(self) -> Literal[True]:
         return True
 
-    def _infer_type_new_call(self, caller, context):
+    def _infer_type_new_call(self, caller, context):  # noqa: C901
         """Try to infer what type.__new__(mcs, name, bases, attrs) returns.
 
         In order for such call to be valid, the metaclass needs to be
@@ -578,7 +578,7 @@ class BoundMethod(UnboundMethod):
         cls.locals = cls_locals
         return cls
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller, context: InferenceContext | None = None):
         context = bind_context_to_node(context, self.bound)
         if (
             self.bound.__class__.__name__ == "ClassDef"
@@ -593,7 +593,7 @@ class BoundMethod(UnboundMethod):
 
         return super().infer_call_result(caller, context)
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
         return True
 
 
@@ -607,7 +607,9 @@ class Generator(BaseInstance):
 
     special_attributes = lazy_descriptor(objectmodel.GeneratorModel)
 
-    def __init__(self, parent=None, generator_initial_context=None):
+    def __init__(
+        self, parent=None, generator_initial_context: InferenceContext | None = None
+    ):
         super().__init__()
         self.parent = parent
         self._call_context = copy_context(generator_initial_context)
@@ -616,22 +618,22 @@ class Generator(BaseInstance):
     def infer_yield_types(self):
         yield from self.parent.infer_yield_result(self._call_context)
 
-    def callable(self):
+    def callable(self) -> Literal[False]:
         return False
 
     def pytype(self) -> Literal["builtins.generator"]:
         return "builtins.generator"
 
-    def display_type(self):
+    def display_type(self) -> str:
         return "Generator"
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
         return True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Generator({self._proxied.name}) l.{self.lineno} at 0x{id(self)}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Generator({self._proxied.name})"
 
 
@@ -641,11 +643,11 @@ class AsyncGenerator(Generator):
     def pytype(self) -> Literal["builtins.async_generator"]:
         return "builtins.async_generator"
 
-    def display_type(self):
+    def display_type(self) -> str:
         return "AsyncGenerator"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<AsyncGenerator({self._proxied.name}) l.{self.lineno} at 0x{id(self)}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"AsyncGenerator({self._proxied.name})"
