@@ -4188,13 +4188,19 @@ class UnaryOp(NodeNG):
     <UnaryOp l.1 at 0x7f23b2e4e198>
     """
 
+    op: str
+    """The operator."""
+
+    operand: NodeNG
+    """What the unary operator is applied to."""
+
     _astroid_fields = ("operand",)
     _other_fields = ("op",)
 
     @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
-        op: str | None = None,
+        op: str,
         lineno: int | None = None,
         col_offset: int | None = None,
         parent: NodeNG | None = None,
@@ -4217,11 +4223,8 @@ class UnaryOp(NodeNG):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.op: str | None = op
-        """The operator."""
 
-        self.operand: NodeNG | None = None
-        """What the unary operator is applied to."""
+        self.op = op
 
         super().__init__(
             lineno=lineno,
@@ -4231,7 +4234,7 @@ class UnaryOp(NodeNG):
             parent=parent,
         )
 
-    def postinit(self, operand: NodeNG | None = None) -> None:
+    def postinit(self, operand: NodeNG) -> None:
         """Do some setup after initialisation.
 
         :param operand: What the unary operator is applied to.
