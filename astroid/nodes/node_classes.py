@@ -1455,13 +1455,22 @@ class BinOp(NodeNG):
     <BinOp l.1 at 0x7f23b2e8cfd0>
     """
 
+    left: NodeNG
+    """What is being applied to the operator on the left side."""
+
+    right: NodeNG
+    """What is being applied to the operator on the right side."""
+
+    op: str
+    """The operator."""
+
     _astroid_fields = ("left", "right")
     _other_fields = ("op",)
 
     @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
-        op: str | None = None,
+        op: str,
         lineno: int | None = None,
         col_offset: int | None = None,
         parent: NodeNG | None = None,
@@ -1484,14 +1493,8 @@ class BinOp(NodeNG):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.left: NodeNG | None = None
-        """What is being applied to the operator on the left side."""
-
-        self.op: str | None = op
+        self.op = op
         """The operator."""
-
-        self.right: NodeNG | None = None
-        """What is being applied to the operator on the right side."""
 
         super().__init__(
             lineno=lineno,
@@ -1501,7 +1504,7 @@ class BinOp(NodeNG):
             parent=parent,
         )
 
-    def postinit(self, left: NodeNG | None = None, right: NodeNG | None = None) -> None:
+    def postinit(self, left: NodeNG, right: NodeNG) -> None:
         """Do some setup after initialisation.
 
         :param left: What is being applied to the operator on the left side.
