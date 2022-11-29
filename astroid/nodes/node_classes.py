@@ -3761,6 +3761,15 @@ class Subscript(NodeNG):
 
     infer_lhs: ClassVar[InferLHS[Subscript]]
 
+    value: NodeNG
+    """What is being indexed."""
+
+    slice: NodeNG
+    """The slice being used to lookup."""
+
+    ctx: Context | None
+    """Whether the subscripted item is assigned to or loaded from."""
+
     def __init__(
         self,
         ctx: Context | None = None,
@@ -3786,14 +3795,7 @@ class Subscript(NodeNG):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.value: NodeNG | None = None
-        """What is being indexed."""
-
-        self.slice: NodeNG | None = None
-        """The slice being used to lookup."""
-
-        self.ctx: Context | None = ctx
-        """Whether the subscripted item is assigned to or loaded from."""
+        self.ctx = ctx
 
         super().__init__(
             lineno=lineno,
@@ -3804,9 +3806,7 @@ class Subscript(NodeNG):
         )
 
     # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
-    def postinit(
-        self, value: NodeNG | None = None, slice: NodeNG | None = None
-    ) -> None:
+    def postinit(self, value: NodeNG, slice: NodeNG) -> None:
         """Do some setup after initialisation.
 
         :param value: What is being indexed.
