@@ -1670,47 +1670,17 @@ class Compare(NodeNG):
     [('<=', <Name.b l.1 at 0x7f23b2e9e2b0>), ('<=', <Name.c l.1 at 0x7f23b2e9e390>)]
     """
 
+    left: NodeNG
+    """The value at the left being applied to a comparison operator."""
+
+    ops: list[tuple[str, NodeNG]]
+    """The remainder of the operators and their relevant right hand value."""
+
     _astroid_fields = ("left", "ops")
-
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.left: NodeNG | None = None
-        """The value at the left being applied to a comparison operator."""
-
-        self.ops: list[tuple[str, NodeNG]] = []
-        """The remainder of the operators and their relevant right hand value."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
 
     def postinit(
         self,
-        left: NodeNG | None = None,
+        left: NodeNG,
         ops: list[tuple[str, NodeNG]] | None = None,
     ) -> None:
         """Do some setup after initialisation.
@@ -1722,8 +1692,7 @@ class Compare(NodeNG):
             and their relevant right hand value.
         """
         self.left = left
-        if ops is not None:
-            self.ops = ops
+        self.ops = ops or []
 
     def get_children(self):
         """Get the child nodes below this node.
