@@ -22,6 +22,7 @@ Release date: TBA
   - ``nodes.BinOp``
   - ``nodes.Call``
   - ``nodes.Compare``
+  - ``nodes.Comprehension``
   - ``nodes.Delete``
   - ``nodes.DelAttr``
   - ``nodes.DelName``
