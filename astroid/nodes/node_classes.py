@@ -2865,6 +2865,15 @@ class ImportFrom(_base_nodes.ImportNode):
 class Attribute(NodeNG):
     """Class representing an :class:`ast.Attribute` node."""
 
+    expr: NodeNG
+    """The name that this node represents.
+
+    :type: Name or None
+    """
+
+    attrname: str | None
+    """The name of the attribute."""
+
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
 
@@ -2894,14 +2903,7 @@ class Attribute(NodeNG):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.expr: NodeNG | None = None
-        """The name that this node represents.
-
-        :type: Name or None
-        """
-
-        self.attrname: str | None = attrname
-        """The name of the attribute."""
+        self.attrname = attrname
 
         super().__init__(
             lineno=lineno,
@@ -2911,7 +2913,7 @@ class Attribute(NodeNG):
             parent=parent,
         )
 
-    def postinit(self, expr: NodeNG | None = None) -> None:
+    def postinit(self, expr: NodeNG) -> None:
         """Do some setup after initialisation.
 
         :param expr: The name that this node represents.
