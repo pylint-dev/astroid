@@ -1732,6 +1732,18 @@ class Comprehension(NodeNG):
     'for x in some_values'
     """
 
+    target: NodeNG
+    """What is assigned to by the comprehension."""
+
+    iter: NodeNG
+    """What is iterated over by the comprehension."""
+
+    ifs: list[NodeNG]
+    """The contents of any if statements that filter the comprehension."""
+
+    is_async: bool
+    """Whether this is an asynchronous comprehension or not."""
+
     _astroid_fields = ("target", "iter", "ifs")
     _other_fields = ("is_async",)
 
@@ -1747,27 +1759,15 @@ class Comprehension(NodeNG):
         """
         :param parent: The parent node in the syntax tree.
         """
-        self.target: NodeNG | None = None
-        """What is assigned to by the comprehension."""
-
-        self.iter: NodeNG | None = None
-        """What is iterated over by the comprehension."""
-
-        self.ifs: list[NodeNG] = []
-        """The contents of any if statements that filter the comprehension."""
-
-        self.is_async: bool | None = None
-        """Whether this is an asynchronous comprehension or not."""
-
         super().__init__(parent=parent)
 
     # pylint: disable=redefined-builtin; same name as builtin ast module.
     def postinit(
         self,
-        target: NodeNG | None = None,
-        iter: NodeNG | None = None,
+        target: NodeNG,
+        iter: NodeNG,
+        is_async: bool,
         ifs: list[NodeNG] | None = None,
-        is_async: bool | None = None,
     ) -> None:
         """Do some setup after initialisation.
 
@@ -1782,8 +1782,7 @@ class Comprehension(NodeNG):
         """
         self.target = target
         self.iter = iter
-        if ifs is not None:
-            self.ifs = ifs
+        self.ifs = ifs or []
         self.is_async = is_async
 
     assigned_stmts: ClassVar[AssignedStmtsCall[Comprehension]]

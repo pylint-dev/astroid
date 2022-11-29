@@ -1013,8 +1013,8 @@ class TreeRebuilder:
         newnode.postinit(
             self.visit(node.target, newnode),
             self.visit(node.iter, newnode),
-            [self.visit(child, newnode) for child in node.ifs],
             bool(node.is_async),
+            [self.visit(child, newnode) for child in node.ifs],
         )
         return newnode
 
