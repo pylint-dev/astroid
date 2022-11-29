@@ -1202,62 +1202,25 @@ class Assign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     <Assign l.1 at 0x7effe1db8550>
     """
 
+    targets: list[NodeNG]
+    """What is being assigned to."""
+
+    value: NodeNG
+    """The value being assigned to the variables."""
+
+    type_annotation: NodeNG | None
+    """If present, this will contain the type annotation passed by a type comment"""
+
     _astroid_fields = ("targets", "value")
     _other_other_fields = ("type_annotation",)
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.targets: list[NodeNG] = []
-        """What is being assigned to."""
-
-        self.value: NodeNG | None = None
-        """The value being assigned to the variables."""
-
-        self.type_annotation: NodeNG | None = None  # can be None
-        """If present, this will contain the type annotation passed by a type comment"""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
-
     def postinit(
         self,
-        targets: list[NodeNG] | None = None,
-        value: NodeNG | None = None,
+        targets: list[NodeNG],
+        value: NodeNG,
         type_annotation: NodeNG | None = None,
     ) -> None:
-        """Do some setup after initialisation.
-
-        :param targets: What is being assigned to.
-        :param value: The value being assigned to the variables.
-        :param type_annotation:
-        """
-        if targets is not None:
-            self.targets = targets
+        self.targets = targets
         self.value = value
         self.type_annotation = type_annotation
 
