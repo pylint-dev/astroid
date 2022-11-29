@@ -2898,54 +2898,24 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     <If l.1 at 0x7f23b2e9dd30>
     """
 
+    test: NodeNG
+    """The condition that the statement tests."""
+
+    body: list[NodeNG]
+    """The contents of the block."""
+
+    orelse: list[NodeNG]
+    """The contents of the ``else`` block."""
+
+    is_orelse: bool
+    """Whether the if-statement is the orelse-block of another if statement."""
+
     _astroid_fields = ("test", "body", "orelse")
     _multi_line_block_fields = ("body", "orelse")
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.test: NodeNG | None = None
-        """The condition that the statement tests."""
-
-        self.body: list[NodeNG] = []
-        """The contents of the block."""
-
-        self.orelse: list[NodeNG] = []
-        """The contents of the ``else`` block."""
-
-        self.is_orelse: bool = False
-        """Whether the if-statement is the orelse-block of another if statement."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
-
     def postinit(
         self,
-        test: NodeNG | None = None,
+        test: NodeNG,
         body: list[NodeNG] | None = None,
         orelse: list[NodeNG] | None = None,
     ) -> None:
@@ -2958,12 +2928,9 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         :param orelse: The contents of the ``else`` block.
         """
         self.test = test
-        if body is not None:
-            self.body = body
-        if orelse is not None:
-            self.orelse = orelse
-        if isinstance(self.parent, If) and self in self.parent.orelse:
-            self.is_orelse = True
+        self.body = body or []
+        self.orelse = orelse or []
+        self.is_orelse = isinstance(self.parent, If) and self in self.parent.orelse
 
     @cached_property
     def blockstart_tolineno(self):
