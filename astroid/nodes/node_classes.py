@@ -1251,50 +1251,20 @@ class AnnAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     <AnnAssign l.1 at 0x7effe1d4c630>
     """
 
+    target: NodeNG
+    """What is being assigned to."""
+
+    annotation: NodeNG
+    """The type annotation of what is being assigned to."""
+
+    value: NodeNG | None
+    """The value being assigned to the variables."""
+
+    simple: int
+    """Whether :attr:`target` is a pure name or a complex statement."""
+
     _astroid_fields = ("target", "annotation", "value")
     _other_fields = ("simple",)
-
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.target: NodeNG | None = None
-        """What is being assigned to."""
-
-        self.annotation: NodeNG | None = None
-        """The type annotation of what is being assigned to."""
-
-        self.value: NodeNG | None = None  # can be None
-        """The value being assigned to the variables."""
-
-        self.simple: int | None = None
-        """Whether :attr:`target` is a pure name or a complex statement."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
 
     def postinit(
         self,
