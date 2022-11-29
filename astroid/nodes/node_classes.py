@@ -1055,6 +1055,12 @@ class AssignAttr(_base_nodes.ParentAssignNode):
     'self.attribute'
     """
 
+    expr: NodeNG
+    """What has the attribute that is being assigned to."""
+
+    attrname: str
+    """The name of the attribute being assigned to."""
+
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
 
@@ -1063,7 +1069,7 @@ class AssignAttr(_base_nodes.ParentAssignNode):
     @decorators.deprecate_default_argument_values(attrname="str")
     def __init__(
         self,
-        attrname: str | None = None,
+        attrname: str,
         lineno: int | None = None,
         col_offset: int | None = None,
         parent: NodeNG | None = None,
@@ -1086,11 +1092,7 @@ class AssignAttr(_base_nodes.ParentAssignNode):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.expr: NodeNG | None = None
-        """What has the attribute that is being assigned to."""
-
-        self.attrname: str | None = attrname
-        """The name of the attribute being assigned to."""
+        self.attrname = attrname
 
         super().__init__(
             lineno=lineno,
@@ -1100,7 +1102,7 @@ class AssignAttr(_base_nodes.ParentAssignNode):
             parent=parent,
         )
 
-    def postinit(self, expr: NodeNG | None = None) -> None:
+    def postinit(self, expr: NodeNG) -> None:
         """Do some setup after initialisation.
 
         :param expr: What has the attribute that is being assigned to.
