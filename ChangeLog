@@ -27,6 +27,7 @@ Release date: TBA
   - ``nodes.Delete``
   - ``nodes.DelAttr``
   - ``nodes.DelName``
+  - ``nodes.Expr``
   - ``nodes.For``
   - ``nodes.If``
   - ``nodes.IfExp``
