@@ -2085,44 +2085,10 @@ class Expr(_base_nodes.Statement):
 
     _astroid_fields = ("value",)
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    value: NodeNG
+    """What the expression does."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.value: NodeNG | None = None
-        """What the expression does."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
-
-    def postinit(self, value: NodeNG | None = None) -> None:
-        """Do some setup after initialisation.
-
-        :param value: What the expression does.
-        """
+    def postinit(self, value: NodeNG) -> None:
         self.value = value
 
     def get_children(self):
