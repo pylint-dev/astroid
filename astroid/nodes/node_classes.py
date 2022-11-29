@@ -3773,6 +3773,9 @@ class Starred(_base_nodes.ParentAssignNode):
     <Starred l.1 at 0x7f23b2e41978>
     """
 
+    value: NodeNG
+    """What is being unpacked."""
+
     _astroid_fields = ("value",)
     _other_fields = ("ctx",)
 
@@ -3801,9 +3804,6 @@ class Starred(_base_nodes.ParentAssignNode):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.value: NodeNG | None = None
-        """What is being unpacked."""
-
         self.ctx: Context | None = ctx
         """Whether the starred item is assigned to or loaded from."""
 
@@ -3815,7 +3815,7 @@ class Starred(_base_nodes.ParentAssignNode):
             parent=parent,
         )
 
-    def postinit(self, value: NodeNG | None = None) -> None:
+    def postinit(self, value: NodeNG) -> None:
         """Do some setup after initialisation.
 
         :param value: What is being unpacked.
