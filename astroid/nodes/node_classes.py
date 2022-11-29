@@ -2907,9 +2907,6 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     orelse: list[NodeNG]
     """The contents of the ``else`` block."""
 
-    is_orelse: bool
-    """Whether the if-statement is the orelse-block of another if statement."""
-
     _astroid_fields = ("test", "body", "orelse")
     _multi_line_block_fields = ("body", "orelse")
 
@@ -2930,7 +2927,11 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         self.test = test
         self.body = body or []
         self.orelse = orelse or []
-        self.is_orelse = isinstance(self.parent, If) and self in self.parent.orelse
+
+    @cached_property
+    def is_orelse(self) -> bool:
+        """Whether the if-statement is the orelse-block of another if statement."""
+        return isinstance(self.parent, If) and self in self.parent.orelse
 
     @cached_property
     def blockstart_tolineno(self):
