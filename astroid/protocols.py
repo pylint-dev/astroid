@@ -377,7 +377,7 @@ nodes.AssignAttr.assigned_stmts = assend_assigned_stmts
 
 
 def _arguments_infer_argname(
-    self, name: str, context: InferenceContext
+    self, name: str | None, context: InferenceContext
 ) -> Generator[InferenceResult, None, None]:
     # arguments information may be missing, in which case we can't do anything
     # more
