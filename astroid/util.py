@@ -5,10 +5,9 @@
 import importlib
 import sys
 import warnings
+from typing import Any
 
 import lazy_object_proxy
-
-from typing import Any
 
 if sys.version_info >= (3, 8):
     from typing import Literal
