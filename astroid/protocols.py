@@ -321,14 +321,24 @@ def for_assigned_stmts(
 ) -> Any:
     if isinstance(self, nodes.AsyncFor) or getattr(self, "is_async", False):
         # Skip inferring of async code for now
-        return dict(node=self, unknown=node, assign_path=assign_path, context=context)
+        return {
+            "node": self,
+            "unknown": node,
+            "assign_path": assign_path,
+            "context": context,
+        }
     if assign_path is None:
         for lst in self.iter.infer(context):
             if isinstance(lst, (nodes.Tuple, nodes.List)):
                 yield from lst.elts
     else:
         yield from _resolve_looppart(self.iter.infer(context), assign_path, context)
-    return dict(node=self, unknown=node, assign_path=assign_path, context=context)
+    return {
+        "node": self,
+        "unknown": node,
+        "assign_path": assign_path,
+        "context": context,
+    }
 
 
 nodes.For.assigned_stmts = for_assigned_stmts
@@ -481,7 +491,12 @@ def assign_assigned_stmts(
         self.value.infer(context), assign_path, context
     )
 
-    return dict(node=self, unknown=node, assign_path=assign_path, context=context)
+    return {
+        "node": self,
+        "unknown": node,
+        "assign_path": assign_path,
+        "context": context,
+    }
 
 
 def assign_annassigned_stmts(
@@ -554,7 +569,12 @@ def excepthandler_assigned_stmts(
             assigned = objects.ExceptionInstance(assigned)
 
         yield assigned
-    return dict(node=self, unknown=node, assign_path=assign_path, context=context)
+    return {
+        "node": self,
+        "unknown": node,
+        "assign_path": assign_path,
+        "context": context,
+    }
 
 
 nodes.ExceptHandler.assigned_stmts = excepthandler_assigned_stmts
@@ -670,7 +690,12 @@ def with_assigned_stmts(
                         context=context,
                     ) from exc
             yield obj
-    return dict(node=self, unknown=node, assign_path=assign_path, context=context)
+    return {
+        "node": self,
+        "unknown": node,
+        "assign_path": assign_path,
+        "context": context,
+    }
 
 
 nodes.With.assigned_stmts = with_assigned_stmts
