@@ -2,10 +2,15 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from collections.abc import Callable
+
+from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import Module
 
 
-def register_module_extender(manager, module_name: str, get_extension_mod) -> None:
+def register_module_extender(
+    manager: AstroidManager, module_name: str, get_extension_mod: Callable[[], Module]
+) -> None:
     def transform(node) -> None:
         extension_module = get_extension_mod()
         for name, objs in extension_module.locals.items():
