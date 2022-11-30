@@ -3374,7 +3374,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "B")
 
-    @pytest.mark.xfail(reason="String interpolation is incorrect for modulo formatting")
     def test_string_interpolation(self):
         ast_nodes = extract_node(
             """
@@ -5317,6 +5316,16 @@ def test_slice_inference_in_for_loops_not_working() -> None:
         assert inferred == util.Uninferable
 
 
+def test_slice_zero_step_does_not_raise_ValueError() -> None:
+    node = extract_node("x = [][::0]; x")
+    assert next(node.infer()) == util.Uninferable
+
+
+def test_slice_zero_step_on_str_does_not_raise_ValueError() -> None:
+    node = extract_node('x = ""[::0]; x')
+    assert next(node.infer()) == util.Uninferable
+
+
 def test_unpacking_starred_and_dicts_in_assignment() -> None:
     node = extract_node(
         """
@@ -6955,6 +6964,7 @@ class TestOldStyleStringFormatting:
             "My name is %s, I'm %s" % ((fname,)*2)
             """,
             """20 % 0""",
+            """("%" + str(20)) % 0""",
         ],
     )
     def test_old_style_string_formatting_uninferable(self, format_string: str) -> None:

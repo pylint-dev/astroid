@@ -47,7 +47,7 @@ class FrozenSet(node_classes.BaseContainer):
     def pytype(self) -> Literal["builtins.frozenset"]:
         return "builtins.frozenset"
 
-    def _infer(self, context=None, **kwargs: Any):
+    def _infer(self, context: InferenceContext | None = None, **kwargs: Any):
         yield self
 
     @cached_property
@@ -80,7 +80,7 @@ class Super(node_classes.NodeNG):
         self._scope = scope
         super().__init__()
 
-    def _infer(self, context=None, **kwargs: Any):
+    def _infer(self, context: InferenceContext | None = None, **kwargs: Any):
         yield self
 
     def super_mro(self):
@@ -127,7 +127,7 @@ class Super(node_classes.NodeNG):
     def pytype(self) -> Literal["builtins.super"]:
         return "builtins.super"
 
-    def display_type(self):
+    def display_type(self) -> str:
         return "Super of"
 
     @property
@@ -138,7 +138,9 @@ class Super(node_classes.NodeNG):
     def qname(self) -> Literal["super"]:
         return "super"
 
-    def igetattr(self, name: str, context: InferenceContext | None = None):
+    def igetattr(  # noqa: C901
+        self, name: str, context: InferenceContext | None = None
+    ):
         """Retrieve the inferred values of the given attribute name."""
         # '__class__' is a special attribute that should be taken directly
         # from the special attributes dict
@@ -218,7 +220,7 @@ class Super(node_classes.NodeNG):
         if not found:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
-    def getattr(self, name, context=None):
+    def getattr(self, name, context: InferenceContext | None = None):
         return list(self.igetattr(name, context=context))
 
 
@@ -296,7 +298,7 @@ class PartialFunction(scoped_nodes.FunctionDef):
 
         self.filled_positionals = len(self.filled_args)
 
-    def infer_call_result(self, caller=None, context=None):
+    def infer_call_result(self, caller=None, context: InferenceContext | None = None):
         if context:
             current_passed_keywords = {
                 keyword for (keyword, _) in context.callcontext.keywords
@@ -338,7 +340,7 @@ class Property(scoped_nodes.FunctionDef):
     def pytype(self) -> Literal["builtins.property"]:
         return "builtins.property"
 
-    def infer_call_result(self, caller=None, context=None):
+    def infer_call_result(self, caller=None, context: InferenceContext | None = None):
         raise InferenceError("Properties are not callable")
 
     def _infer(

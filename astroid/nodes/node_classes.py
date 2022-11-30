@@ -17,11 +17,12 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Un
 
 from astroid import decorators, util
 from astroid.bases import Instance, _infer_stmts
-from astroid.const import Context
+from astroid.const import _EMPTY_OBJECT_MARKER, Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidIndexError,
     AstroidTypeError,
+    AstroidValueError,
     InferenceError,
     NoDefault,
     ParentMissingError,
@@ -32,6 +33,7 @@ from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
 from astroid.typing import (
     ConstFactoryResult,
+    InferBinaryOp,
     InferenceErrorInfo,
     InferenceResult,
     SuccessfulInferenceResult,
@@ -52,7 +54,7 @@ else:
     from astroid.decorators import cachedproperty as cached_property
 
 
-def _is_const(value):
+def _is_const(value) -> bool:
     return isinstance(value, tuple(CONST_CLS))
 
 
@@ -81,7 +83,7 @@ InferUnaryOp = Callable[[_NodesT, str], ConstFactoryResult]
 
 
 @decorators.raise_if_nothing_inferred
-def unpack_infer(stmt, context=None):
+def unpack_infer(stmt, context: InferenceContext | None = None):
     """recursively generate nodes inferred by the given statement.
     If the inferred value is a list or a tuple, recurse on the elements
     """
@@ -91,12 +93,12 @@ def unpack_infer(stmt, context=None):
                 yield elt
                 continue
             yield from unpack_infer(elt, context)
-        return dict(node=stmt, context=context)
+        return {"node": stmt, "context": context}
     # if inferred is a final node, return it and stop
     inferred = next(stmt.infer(context), util.Uninferable)
     if inferred is stmt:
         yield inferred
-        return dict(node=stmt, context=context)
+        return {"node": stmt, "context": context}
     # else, infer recursively, except Uninferable object that should be returned as is
     for inferred in stmt.infer(context):
         if inferred is util.Uninferable:
@@ -104,7 +106,7 @@ def unpack_infer(stmt, context=None):
         else:
             yield from unpack_infer(inferred, context)
 
-    return dict(node=stmt, context=context)
+    return {"node": stmt, "context": context}
 
 
 def are_exclusive(stmt1, stmt2, exceptions: list[str] | None = None) -> bool:
@@ -181,7 +183,7 @@ def are_exclusive(stmt1, stmt2, exceptions: list[str] | None = None) -> bool:
 _SLICE_SENTINEL = object()
 
 
-def _slice_value(index, context=None):
+def _slice_value(index, context: InferenceContext | None = None):
     """Get the value of the given slice index."""
 
     if isinstance(index, Const):
@@ -208,7 +210,7 @@ def _slice_value(index, context=None):
     return _SLICE_SENTINEL
 
 
-def _infer_slice(node, context=None):
+def _infer_slice(node, context: InferenceContext | None = None):
     lower = _slice_value(node.lower, context)
     upper = _slice_value(node.upper, context)
     step = _slice_value(node.step, context)
@@ -223,7 +225,7 @@ def _infer_slice(node, context=None):
     )
 
 
-def _container_getitem(instance, elts, index, context=None):
+def _container_getitem(instance, elts, index, context: InferenceContext | None = None):
     """Get a slice or an item, using the given *index*, for the given sequence."""
     try:
         if isinstance(index, Slice):
@@ -234,6 +236,13 @@ def _container_getitem(instance, elts, index, context=None):
             return new_cls
         if isinstance(index, Const):
             return elts[index.value]
+    except ValueError as exc:
+        raise AstroidValueError(
+            message="Slice {index!r} cannot index container",
+            node=instance,
+            index=index,
+            context=context,
+        ) from exc
     except IndexError as exc:
         raise AstroidIndexError(
             message="Index {index!s} out of range",
@@ -319,11 +328,10 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         """
         return self.elts
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None) -> bool:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
-        :rtype: bool or Uninferable
         """
         return bool(self.elts)
 
@@ -784,7 +792,7 @@ class Arguments(_base_nodes.AssignTypeNode):
         """Get all the arguments for this node, including positional only and positional and keyword"""
         return list(itertools.chain((self.posonlyargs or ()), self.args or ()))
 
-    def format_args(self):
+    def format_args(self, *, skippable_names: set[str] | None = None) -> str:
         """Get the arguments formatted as string.
 
         :returns: The formatted arguments.
@@ -804,6 +812,7 @@ class Arguments(_base_nodes.AssignTypeNode):
                     self.posonlyargs,
                     positional_only_defaults,
                     self.posonlyargs_annotations,
+                    skippable_names=skippable_names,
                 )
             )
             result.append("/")
@@ -813,6 +822,7 @@ class Arguments(_base_nodes.AssignTypeNode):
                     self.args,
                     positional_or_keyword_defaults,
                     getattr(self, "annotations", None),
+                    skippable_names=skippable_names,
                 )
             )
         if self.vararg:
@@ -822,12 +832,84 @@ class Arguments(_base_nodes.AssignTypeNode):
                 result.append("*")
             result.append(
                 _format_args(
-                    self.kwonlyargs, self.kw_defaults, self.kwonlyargs_annotations
+                    self.kwonlyargs,
+                    self.kw_defaults,
+                    self.kwonlyargs_annotations,
+                    skippable_names=skippable_names,
                 )
             )
         if self.kwarg:
             result.append(f"**{self.kwarg}")
         return ", ".join(result)
+
+    def _get_arguments_data(
+        self,
+    ) -> tuple[
+        dict[str, tuple[str | None, str | None]],
+        dict[str, tuple[str | None, str | None]],
+    ]:
+        """Get the arguments as dictionary with information about typing and defaults.
+
+        The return tuple contains a dictionary for positional and keyword arguments with their typing
+        and their default value, if any.
+        The method follows a similar order as format_args but instead of formatting into a string it
+        returns the data that is used to do so.
+        """
+        pos_only: dict[str, tuple[str | None, str | None]] = {}
+        kw_only: dict[str, tuple[str | None, str | None]] = {}
+
+        # Setup and match defaults with arguments
+        positional_only_defaults = []
+        positional_or_keyword_defaults = self.defaults
+        if self.defaults:
+            args = self.args or []
+            positional_or_keyword_defaults = self.defaults[-len(args) :]
+            positional_only_defaults = self.defaults[: len(self.defaults) - len(args)]
+
+        for index, posonly in enumerate(self.posonlyargs):
+            annotation, default = self.posonlyargs_annotations[index], None
+            if annotation is not None:
+                annotation = annotation.as_string()
+            if positional_only_defaults:
+                default = positional_only_defaults[index].as_string()
+            pos_only[posonly.name] = (annotation, default)
+
+        for index, arg in enumerate(self.args):
+            annotation, default = self.annotations[index], None
+            if annotation is not None:
+                annotation = annotation.as_string()
+            if positional_or_keyword_defaults:
+                defaults_offset = len(self.args) - len(positional_or_keyword_defaults)
+                default_index = index - defaults_offset
+                if (
+                    default_index > -1
+                    and positional_or_keyword_defaults[default_index] is not None
+                ):
+                    default = positional_or_keyword_defaults[default_index].as_string()
+            pos_only[arg.name] = (annotation, default)
+
+        if self.vararg:
+            annotation = self.varargannotation
+            if annotation is not None:
+                annotation = annotation.as_string()
+            pos_only[self.vararg] = (annotation, None)
+
+        for index, kwarg in enumerate(self.kwonlyargs):
+            annotation = self.kwonlyargs_annotations[index]
+            if annotation is not None:
+                annotation = annotation.as_string()
+            default = self.kw_defaults[index]
+            if default is not None:
+                default = default.as_string()
+            kw_only[kwarg.name] = (annotation, default)
+
+        if self.kwarg:
+            annotation = self.kwargannotation
+            if annotation is not None:
+                annotation = annotation.as_string()
+            kw_only[self.kwarg] = (annotation, None)
+
+        return pos_only, kw_only
 
     def default_value(self, argname):
         """Get the default value for an argument.
@@ -849,15 +931,13 @@ class Arguments(_base_nodes.AssignTypeNode):
             return self.kw_defaults[index]
         raise NoDefault(func=self.parent, name=argname)
 
-    def is_argument(self, name):
+    def is_argument(self, name) -> bool:
         """Check if the given name is defined in the arguments.
 
         :param name: The name to check for.
         :type name: str
 
-        :returns: True if the given name is defined in the arguments,
-            False otherwise.
-        :rtype: bool
+        :returns: Whether the given name is defined in the arguments,
         """
         if name == self.vararg:
             return True
@@ -929,7 +1009,11 @@ def _find_arg(argname, args, rec=False):
     return None, None
 
 
-def _format_args(args, defaults=None, annotations=None):
+def _format_args(
+    args, defaults=None, annotations=None, skippable_names: set[str] | None = None
+) -> str:
+    if skippable_names is None:
+        skippable_names = set()
     values = []
     if args is None:
         return ""
@@ -939,6 +1023,8 @@ def _format_args(args, defaults=None, annotations=None):
         default_offset = len(args) - len(defaults)
     packed = itertools.zip_longest(args, annotations)
     for i, (arg, annotation) in enumerate(packed):
+        if arg.name in skippable_names:
+            continue
         if isinstance(arg, Tuple):
             values.append(f"({_format_args(arg.elts)})")
         else:
@@ -1359,7 +1445,7 @@ class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         InferBinaryOperation[AugAssign, util.BadBinaryOperationMessage]
     ]
 
-    def type_errors(self, context=None):
+    def type_errors(self, context: InferenceContext | None = None):
         """Get a list of type errors which can occur during inference.
 
         Each TypeError is represented by a :class:`BadBinaryOperationMessage` ,
@@ -1458,7 +1544,7 @@ class BinOp(NodeNG):
     # This is set by inference.py
     _infer_binop: ClassVar[InferBinaryOperation[BinOp, util.BadBinaryOperationMessage]]
 
-    def type_errors(self, context=None):
+    def type_errors(self, context: InferenceContext | None = None):
         """Get a list of type errors which can occur during inference.
 
         Each TypeError is represented by a :class:`BadBinaryOperationMessage`,
@@ -1484,7 +1570,7 @@ class BinOp(NodeNG):
     def op_precedence(self):
         return OP_PRECEDENCE[self.op]
 
-    def op_left_associative(self):
+    def op_left_associative(self) -> bool:
         # 2**3**4 == 2**(3**4)
         return self.op != "**"
 
@@ -1916,6 +2002,7 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         Instance.__init__(self, None)
 
     infer_unary_op: ClassVar[InferUnaryOp[Const]]
+    infer_binary_op: ClassVar[InferBinaryOp[Const]]
 
     def __getattr__(self, name):
         # This is needed because of Proxy's __getattr__ method.
@@ -1928,7 +2015,7 @@ class Const(_base_nodes.NoChildrenNode, Instance):
             raise AttributeError
         return super().__getattr__(name)
 
-    def getitem(self, index, context=None):
+    def getitem(self, index, context: InferenceContext | None = None):
         """Get an item from this node if subscriptable.
 
         :param index: The node to use as a subscript index.
@@ -1950,6 +2037,10 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         try:
             if isinstance(self.value, (str, bytes)):
                 return Const(self.value[index_value])
+        except ValueError as exc:
+            raise AstroidValueError(
+                f"Could not index {self.value!r} with {index_value!r}"
+            ) from exc
         except IndexError as exc:
             raise AstroidIndexError(
                 message="Index {index!r} out of range",
@@ -1964,13 +2055,11 @@ class Const(_base_nodes.NoChildrenNode, Instance):
 
         raise AstroidTypeError(f"{self!r} (value={self.value})")
 
-    def has_dynamic_getattr(self):
+    def has_dynamic_getattr(self) -> bool:
         """Check if the node has a custom __getattr__ or __getattribute__.
 
-        :returns: True if the class has a custom
-            __getattr__ or __getattribute__, False otherwise.
+        :returns: Whether the class has a custom __getattr__ or __getattribute__.
             For a :class:`Const` this is always ``False``.
-        :rtype: bool
         """
         return False
 
@@ -1993,7 +2082,7 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         """
         return self._proxied.qname()
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -2375,7 +2464,7 @@ class Dict(NodeNG, Instance):
 
         raise AstroidIndexError(index)
 
-    def bool_value(self, context=None):
+    def bool_value(self, context: InferenceContext | None = None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -2462,6 +2551,9 @@ class EmptyNode(_base_nodes.NoChildrenNode):
     """Holds an arbitrary object in the :attr:`LocalsDictNodeNG.locals`."""
 
     object = None
+
+    def has_underlying_object(self) -> bool:
+        return self.object is not None and self.object is not _EMPTY_OBJECT_MARKER
 
 
 class ExceptHandler(
@@ -3217,7 +3309,7 @@ class IfExp(NodeNG):
         yield self.body
         yield self.orelse
 
-    def op_left_associative(self):
+    def op_left_associative(self) -> Literal[False]:
         # `1 if True else 2 if False else 3` is parsed as
         # `1 if True else (2 if False else 3)`
         return False
@@ -3402,6 +3494,7 @@ class List(BaseContainer):
     """
 
     infer_unary_op: ClassVar[InferUnaryOp[List]]
+    infer_binary_op: ClassVar[InferBinaryOp[List]]
 
     def pytype(self) -> Literal["builtins.list"]:
         """Get the name of the type that this node represents.
@@ -3410,7 +3503,7 @@ class List(BaseContainer):
         """
         return "builtins.list"
 
-    def getitem(self, index, context=None):
+    def getitem(self, index, context: InferenceContext | None = None):
         """Get an item from this node.
 
         :param index: The node to use as a subscript index.
@@ -3546,12 +3639,10 @@ class Raise(_base_nodes.Statement):
         self.exc = exc
         self.cause = cause
 
-    def raises_not_implemented(self):
+    def raises_not_implemented(self) -> bool:
         """Check if this node raises a :class:`NotImplementedError`.
 
-        :returns: True if this node raises a :class:`NotImplementedError`,
-            False otherwise.
-        :rtype: bool
+        :returns: Whether this node raises a :class:`NotImplementedError`.
         """
         if not self.exc:
             return False
@@ -3727,7 +3818,7 @@ class Slice(NodeNG):
         return attr
 
     @cached_property
-    def _proxied(self):
+    def _proxied(self) -> nodes.ClassDef:
         builtins = AstroidManager().builtins_module
         return builtins.getattr("slice")[0]
 
@@ -3738,7 +3829,7 @@ class Slice(NodeNG):
         """
         return "builtins.slice"
 
-    def igetattr(self, attrname, context=None):
+    def igetattr(self, attrname, context: InferenceContext | None = None):
         """Infer the possible values of the given attribute on the slice.
 
         :param attrname: The name of the attribute to infer.
@@ -3756,7 +3847,7 @@ class Slice(NodeNG):
         else:
             yield from self.getattr(attrname, context=context)
 
-    def getattr(self, attrname, context=None):
+    def getattr(self, attrname, context: InferenceContext | None = None):
         return self._proxied.getattr(attrname, context)
 
     def get_children(self):
@@ -4167,6 +4258,7 @@ class Tuple(BaseContainer):
     """
 
     infer_unary_op: ClassVar[InferUnaryOp[Tuple]]
+    infer_binary_op: ClassVar[InferBinaryOp[Tuple]]
 
     def pytype(self) -> Literal["builtins.tuple"]:
         """Get the name of the type that this node represents.
@@ -4175,7 +4267,7 @@ class Tuple(BaseContainer):
         """
         return "builtins.tuple"
 
-    def getitem(self, index, context=None):
+    def getitem(self, index, context: InferenceContext | None = None):
         """Get an item from this node.
 
         :param index: The node to use as a subscript index.
@@ -4248,7 +4340,7 @@ class UnaryOp(NodeNG):
         InferBinaryOperation[UnaryOp, util.BadUnaryOperationMessage]
     ]
 
-    def type_errors(self, context=None):
+    def type_errors(self, context: InferenceContext | None = None):
         """Get a list of type errors which can occur during inference.
 
         Each TypeError is represented by a :class:`BadBinaryOperationMessage`,
@@ -4816,7 +4908,7 @@ class NamedExpr(_base_nodes.AssignTypeNode):
 
         return self.parent.scope()
 
-    def set_local(self, name: str, stmt: AssignName) -> None:
+    def set_local(self, name: str, stmt: NodeNG) -> None:
         """Define that the given name is declared in the given statement node.
         NamedExpr's in Arguments, Keyword or Comprehension are evaluated in their
         parent's parent scope. So we add to their frame's locals.
@@ -4842,7 +4934,7 @@ class Unknown(_base_nodes.AssignTypeNode):
     def qname(self) -> Literal["Unknown"]:
         return "Unknown"
 
-    def _infer(self, context=None, **kwargs):
+    def _infer(self, context: InferenceContext | None = None, **kwargs):
         """Inference on an Unknown node immediately terminates."""
         yield util.Uninferable
 

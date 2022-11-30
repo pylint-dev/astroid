@@ -9,13 +9,16 @@ import time
 import unittest
 from collections.abc import Iterator
 from contextlib import contextmanager
+from unittest import mock
+
+import pytest
 
 import astroid
 from astroid import manager, test_utils
-from astroid.const import IS_JYTHON
+from astroid.const import IS_JYTHON, IS_PYPY
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import util
-from astroid.modutils import is_standard_module
+from astroid.modutils import EXT_LIB_DIRS, is_standard_module
 from astroid.nodes import Const
 from astroid.nodes.scoped_nodes import ClassDef
 
@@ -128,11 +131,32 @@ class AstroidManagerTest(
     def test_module_is_not_namespace(self) -> None:
         self.assertFalse(util.is_namespace("tests.testdata.python3.data.all"))
         self.assertFalse(util.is_namespace("__main__"))
+        self.assertFalse(
+            util.is_namespace(list(EXT_LIB_DIRS)[0].rsplit("/", maxsplit=1)[-1]),
+        )
+        self.assertFalse(util.is_namespace("importlib._bootstrap"))
 
     def test_module_unexpectedly_missing_spec(self) -> None:
         astroid_module = sys.modules["astroid"]
         original_spec = astroid_module.__spec__
         del astroid_module.__spec__
+        try:
+            self.assertFalse(util.is_namespace("astroid"))
+        finally:
+            astroid_module.__spec__ = original_spec
+
+    @mock.patch(
+        "astroid.interpreter._import.util._find_spec_from_path",
+        side_effect=AttributeError,
+    )
+    def test_module_unexpectedly_missing_path(self, mocked) -> None:
+        """https://github.com/PyCQA/pylint/issues/7592"""
+        self.assertFalse(util.is_namespace("astroid"))
+
+    def test_module_unexpectedly_spec_is_none(self) -> None:
+        astroid_module = sys.modules["astroid"]
+        original_spec = astroid_module.__spec__
+        astroid_module.__spec__ = None
         try:
             self.assertFalse(util.is_namespace("astroid"))
         finally:
@@ -155,6 +179,10 @@ class AstroidManagerTest(
             for _ in range(2):
                 sys.path.pop(0)
 
+    @pytest.mark.skipif(
+        IS_PYPY,
+        reason="PyPy provides no way to tell apart frozen stdlib from old-style namespace packages",
+    )
     def test_namespace_package_pth_support(self) -> None:
         pth = "foogle_fax-0.12.5-py2.7-nspkg.pth"
         site.addpackage(resources.RESOURCE_PATH, pth, [])
@@ -169,6 +197,10 @@ class AstroidManagerTest(
         finally:
             sys.modules.pop("foogle")
 
+    @pytest.mark.skipif(
+        IS_PYPY,
+        reason="PyPy provides no way to tell apart frozen stdlib from old-style namespace packages",
+    )
     def test_nested_namespace_import(self) -> None:
         pth = "foogle_fax-0.12.5-py2.7-nspkg.pth"
         site.addpackage(resources.RESOURCE_PATH, pth, [])
@@ -324,6 +356,27 @@ class AstroidManagerTest(
             self.assertEqual(unittest, self.manager.ast_from_module_name("foo.bar"))
             with self.assertRaises(AstroidBuildingError):
                 self.manager.ast_from_module_name("foo.bar.baz")
+
+    def test_same_name_import_module(self) -> None:
+        """Test inference of an import statement with the same name as the module.
+
+        See https://github.com/PyCQA/pylint/issues/5151.
+        """
+        math_file = resources.find("data/import_conflicting_names/math.py")
+        module = self.manager.ast_from_file(math_file)
+
+        # Change the cache key and module name to mimic importing the test file
+        # from the root/top level. This creates a clash between math.py and stdlib math.
+        self.manager.astroid_cache["math"] = self.manager.astroid_cache.pop(module.name)
+        module.name = "math"
+
+        # Infer the 'import math' statement
+        stdlib_math = next(module.body[1].value.args[0].infer())
+        assert self.manager.astroid_cache["math"] != stdlib_math
+
+    def test_raises_exception_for_empty_modname(self) -> None:
+        with pytest.raises(AstroidBuildingError):
+            self.manager.ast_from_module_name(None)
 
 
 class BorgAstroidManagerTC(unittest.TestCase):

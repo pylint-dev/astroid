@@ -33,7 +33,8 @@ classifiers = [
 requires-python = ">=3.7.2"
 dependencies = [
     "lazy_object_proxy>=1.4.0",
-    "wrapt>=1.11,<2",
+    "wrapt>=1.14,<2;python_version>='3.11'",
+    "wrapt>=1.11,<2;python_version<'3.11'",
     "typed-ast>=1.4.0,<2.0;implementation_name=='cpython' and python_version<'3.8'",
     "typing-extensions>=3.10;python_version<'3.10'",
 ]
@@ -53,3 +54,42 @@ include = ["astroid*"]
 
 [tool.setuptools.dynamic]
 version = {attr = "astroid.__pkginfo__.__version__"}
+
+[tool.aliases]
+test = "pytest"
+
+[tool.pytest.ini_options]
+addopts = '-m "not acceptance"'
+python_files = ["*test_*.py"]
+testpaths = ["tests"]
+filterwarnings = "error"
+
+[tool.isort]
+include_trailing_comma = true
+known_first_party = ["astroid"]
+known_third_party = ["attr", "nose", "numpy", "pytest", "six", "sphinx"]
+line_length = 88
+multi_line_output = 3
+skip_glob = ["tests/testdata"]
+
+[tool.mypy]
+enable_error_code = "ignore-without-code"
+no_implicit_optional = true
+scripts_are_modules = true
+show_error_codes = true
+warn_redundant_casts = true
+
+[[tool.mypy.overrides]]
+# Importlib typeshed stubs do not include the private functions we use
+module = [
+    "_io.*",
+    "gi.*",
+    "importlib.*",
+    "lazy_object_proxy.*",
+    "nose.*",
+    "numpy.*",
+    "pytest",
+    "setuptools",
+    "wrapt.*",
+]
+ignore_missing_imports = true

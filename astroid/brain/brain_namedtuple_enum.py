@@ -168,7 +168,7 @@ def _has_namedtuple_base(node):
     return set(node.basenames) & TYPING_NAMEDTUPLE_BASENAMES
 
 
-def _looks_like(node, name):
+def _looks_like(node, name) -> bool:
     func = node.func
     if isinstance(func, nodes.Attribute):
         return func.attrname == name
@@ -379,7 +379,7 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                 continue
 
             inferred_return_value = None
-            if isinstance(stmt, nodes.Assign):
+            if stmt.value is not None:
                 if isinstance(stmt.value, nodes.Const):
                     if isinstance(stmt.value.value, str):
                         inferred_return_value = repr(stmt.value.value)
@@ -425,6 +425,10 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                 new_targets.append(fake.instantiate_class())
                 dunder_members[local] = fake
             node.locals[local] = new_targets
+
+        # The undocumented `_value2member_map_` member:
+        node.locals["_value2member_map_"] = [nodes.Dict(parent=node)]
+
         members = nodes.Dict(parent=node)
         members.postinit(
             [
@@ -460,7 +464,7 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
     return node
 
 
-def infer_typing_namedtuple_class(class_node, context=None):
+def infer_typing_namedtuple_class(class_node, context: InferenceContext | None = None):
     """Infer a subclass of typing.NamedTuple"""
     # Check if it has the corresponding bases
     annassigns_fields = [
@@ -493,7 +497,7 @@ def infer_typing_namedtuple_class(class_node, context=None):
     return iter((generated_class_node,))
 
 
-def infer_typing_namedtuple_function(node, context=None):
+def infer_typing_namedtuple_function(node, context: InferenceContext | None = None):
     """
     Starting with python3.9, NamedTuple is a function of the typing module.
     The class NamedTuple is build dynamically through a call to `type` during
@@ -538,7 +542,25 @@ def _get_namedtuple_fields(node: nodes.Call) -> str:
     extract a node from them later on.
     """
     names = []
-    for elt in next(node.args[1].infer()).elts:
+    container = None
+    try:
+        container = next(node.args[1].infer())
+    except (InferenceError, StopIteration) as exc:
+        raise UseInferenceDefault from exc
+    # We pass on IndexError as we'll try to infer 'field_names' from the keywords
+    except IndexError:
+        pass
+    if not container:
+        for keyword_node in node.keywords:
+            if keyword_node.arg == "field_names":
+                try:
+                    container = next(keyword_node.value.infer())
+                except (InferenceError, StopIteration) as exc:
+                    raise UseInferenceDefault from exc
+                break
+    if not isinstance(container, nodes.BaseContainer):
+        raise UseInferenceDefault
+    for elt in container.elts:
         if isinstance(elt, nodes.Const):
             names.append(elt.as_string())
             continue

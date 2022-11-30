@@ -23,6 +23,7 @@ Maintainers
 - Łukasz Rogalski <rogalski.91@gmail.com>
 - Florian Bruhin <me@the-compiler.org>
 - Ashley Whetter <ashley@awhetter.co.uk>
+- Mark Byrne <31762852+mbyrnepr2@users.noreply.github.com>
 - Dimitri Prybysh <dmand@yandex.ru>
 - Areveny <areveny@protonmail.com>
 
@@ -56,7 +57,6 @@ Contributors
 - Philip Lorenz <philip@bithub.de>
 - Nicolas Chauvat <nicolas.chauvat@logilab.fr>
 - Michael K <michael-k@users.noreply.github.com>
-- Mark Byrne <31762852+mbyrnepr2@users.noreply.github.com>
 - Mario Corchero <mariocj89@gmail.com>
 - Marien Zwart <marienz@gentoo.org>
 - Laura Médioni <laura.medioni@logilab.fr>
@@ -105,11 +105,13 @@ Contributors
 - Valentin Valls <valentin.valls@esrf.fr>
 - Uilian Ries <uilianries@gmail.com>
 - Tomas Novak <ext.Tomas.Novak@skoda-auto.cz>
+- Tim Paine <t.paine154@gmail.com>
 - Thirumal Venkat <me@thirumal.in>
 - SupImDos <62866982+SupImDos@users.noreply.github.com>
 - Stanislav Levin <slev@altlinux.org>
 - Simon Hewitt <si@sjhewitt.co.uk>
 - Serhiy Storchaka <storchaka@gmail.com>
+- Saugat Pachhai (सौगात) <suagatchhetri@outlook.com>
 - Roy Wright <roy@wright.org>
 - Robin Jarry <robin.jarry@6wind.com>
 - René Fritze <47802+renefritze@users.noreply.github.com>

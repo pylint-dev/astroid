@@ -121,7 +121,9 @@ class ImportlibFinder(Finder):
         else:
             try:
                 spec = importlib.util.find_spec(modname)
-                if spec and spec.loader is importlib.machinery.FrozenImporter:  # type: ignore[comparison-overlap]
+                if (
+                    spec and spec.loader is importlib.machinery.FrozenImporter
+                ):  # noqa: E501 # type: ignore[comparison-overlap]
                     # No need for BuiltinImporter; builtins handled above
                     return ModuleSpec(
                         name=modname,

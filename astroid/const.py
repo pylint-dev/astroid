@@ -33,3 +33,6 @@ Del = Context.Del
 
 ASTROID_INSTALL_DIRECTORY = Path(__file__).parent
 BRAIN_MODULES_DIRECTORY = ASTROID_INSTALL_DIRECTORY / "brain"
+
+
+_EMPTY_OBJECT_MARKER = object()

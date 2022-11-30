@@ -44,7 +44,9 @@ class LruWrappedModel(objectmodel.FunctionModel):
         )
 
         class CacheInfoBoundMethod(BoundMethod):
-            def infer_call_result(self, caller, context=None):
+            def infer_call_result(
+                self, caller, context: InferenceContext | None = None
+            ):
                 yield helpers.safe_infer(cache_info)
 
         return CacheInfoBoundMethod(proxy=self._instance, bound=self._instance)
@@ -55,7 +57,7 @@ class LruWrappedModel(objectmodel.FunctionModel):
         return BoundMethod(proxy=node, bound=self._instance.parent.scope())
 
 
-def _transform_lru_cache(node, context=None) -> None:
+def _transform_lru_cache(node, context: InferenceContext | None = None) -> None:
     # TODO: this is not ideal, since the node should be immutable,
     # but due to https://github.com/PyCQA/astroid/issues/354,
     # there's not much we can do now.
@@ -122,7 +124,7 @@ def _functools_partial_inference(
     return iter((partial_function,))
 
 
-def _looks_like_lru_cache(node):
+def _looks_like_lru_cache(node) -> bool:
     """Check if the given function node is decorated with lru_cache."""
     if not node.decorators:
         return False

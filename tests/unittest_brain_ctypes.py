@@ -10,7 +10,8 @@ from astroid import extract_node, nodes
 
 pytestmark = pytest.mark.skipif(
     hasattr(sys, "pypy_version_info"),
-    reason="pypy has its own implementation of _ctypes module which is different from the one of cpython",
+    reason="pypy has its own implementation of _ctypes module which is different "
+    "from the one of cpython",
 )
 
 
@@ -83,8 +84,9 @@ def test_ctypes_redefined_types_members(c_type, builtin_type, type_code):
 
 def test_cdata_member_access() -> None:
     """
-    Test that the base members are still accessible. Each redefined ctypes type inherits from _SimpleCData which itself
-    inherits from _CData. Checks that _CData members are accessibles
+    Test that the base members are still accessible. Each redefined ctypes type
+    inherits from _SimpleCData which itself inherits from _CData. Checks that
+    _CData members are accessible.
     """
     src = """
     import ctypes

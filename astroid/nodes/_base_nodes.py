@@ -128,25 +128,26 @@ class ImportNode(FilterStmtsBaseNode, NoChildrenNode, Statement):
         return name
 
     def do_import_module(self, modname: str | None = None) -> nodes.Module:
-        """return the ast for a module whose name is <modname> imported by <self>"""
-        # handle special case where we are on a package node importing a module
-        # using the same name as the package, which may end in an infinite loop
-        # on relative imports
-        # XXX: no more needed ?
+        """Return the ast for a module whose name is <modname> imported by <self>."""
         mymodule = self.root()
-        level = getattr(self, "level", None)  # Import as no level
+        level: int | None = getattr(self, "level", None)  # Import has no level
         if modname is None:
             modname = self.modname
-        # XXX we should investigate deeper if we really want to check
-        # importing itself: modname and mymodule.name be relative or absolute
+        # If the module ImportNode is importing is a module with the same name
+        # as the file that contains the ImportNode we don't want to use the cache
+        # to make sure we use the import system to get the correct module.
         # pylint: disable-next=no-member # pylint doesn't recognize type of mymodule
         if mymodule.relative_to_absolute_name(modname, level) == mymodule.name:
-            # FIXME: we used to raise InferenceError here, but why ?
-            return mymodule
+            use_cache = False
+        else:
+            use_cache = True
 
         # pylint: disable-next=no-member # pylint doesn't recognize type of mymodule
         return mymodule.import_module(
-            modname, level=level, relative_only=level and level >= 1
+            modname,
+            level=level,
+            relative_only=bool(level and level >= 1),
+            use_cache=use_cache,
         )
 
     def real_name(self, asname):

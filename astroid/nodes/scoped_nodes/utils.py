@@ -32,7 +32,7 @@ def builtin_lookup(name: str) -> tuple[nodes.Module, Sequence[nodes.NodeNG]]:
     if name == "__dict__":
         return _builtin_astroid, ()
     try:
-        stmts: Sequence[nodes.NodeNG] = _builtin_astroid.locals[name]
+        stmts: Sequence[nodes.NodeNG] = _builtin_astroid.locals[name]  # type: ignore[assignment]
     except KeyError:
         stmts = ()
     return _builtin_astroid, stmts

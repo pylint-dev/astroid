@@ -21,7 +21,7 @@ def service_request_transform(node):
     return node
 
 
-def _looks_like_boto3_service_request(node):
+def _looks_like_boto3_service_request(node) -> bool:
     return node.qname() == BOTO_SERVICE_FACTORY_QUALIFIED_NAME
 
 

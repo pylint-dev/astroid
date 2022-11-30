@@ -5,16 +5,19 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Any, Callable, Union
+from typing import TYPE_CHECKING, Any, Callable, Generator, TypeVar, Union
 
 if TYPE_CHECKING:
-    from astroid import bases, nodes, transforms, util
+    from astroid import bases, exceptions, nodes, transforms, util
     from astroid.context import InferenceContext
+    from astroid.interpreter._import import spec
 
 if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
     from typing_extensions import TypedDict
+
+_NodesT = TypeVar("_NodesT", bound="nodes.NodeNG")
 
 
 class InferenceErrorInfo(TypedDict):
@@ -33,11 +36,13 @@ class AstroidManagerBrain(TypedDict):
     """Dictionary to store relevant information for a AstroidManager class."""
 
     astroid_cache: dict[str, nodes.Module]
-    _mod_file_cache: dict
-    _failed_import_hooks: list
+    _mod_file_cache: dict[
+        tuple[str, str | None], spec.ModuleSpec | exceptions.AstroidImportError
+    ]
+    _failed_import_hooks: list[Callable[[str], nodes.Module]]
     always_load_extensions: bool
     optimize_ast: bool
-    extension_package_whitelist: set
+    extension_package_whitelist: set[str]
     _transform: transforms.TransformVisitor
 
 
@@ -51,4 +56,16 @@ ConstFactoryResult = Union[
     "nodes.Dict",
     "nodes.Const",
     "nodes.EmptyNode",
+]
+
+InferBinaryOp = Callable[
+    [
+        Union[_NodesT, "bases.Instance"],
+        Union["nodes.AugAssign", "nodes.BinOp"],
+        str,
+        InferenceResult,
+        "InferenceContext",
+        SuccessfulInferenceResult,
+    ],
+    Generator[InferenceResult, None, None],
 ]

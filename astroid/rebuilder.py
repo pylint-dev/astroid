@@ -259,7 +259,7 @@ class TreeRebuilder:
             self._reset_end_lineno(newnode)
         return newnode
 
-    if TYPE_CHECKING:
+    if TYPE_CHECKING:  # noqa: C901
 
         @overload
         def visit(self, node: ast.arg, parent: NodeNG) -> nodes.AssignName:
@@ -610,6 +610,7 @@ class TreeRebuilder:
             node.root().set_local(node.name, node)
         else:
             assert node.parent
+            assert node.name
             node.parent.set_local(node.name, node)
 
     def visit_arg(self, node: ast.arg, parent: NodeNG) -> nodes.AssignName:
@@ -732,6 +733,11 @@ class TreeRebuilder:
             type_comment_ast = self._parser_module.parse(type_comment)
         except SyntaxError:
             # Invalid type comment, just skip it.
+            return None
+
+        # For '# type: # any comment' ast.parse returns a Module node,
+        # without any nodes in the body.
+        if not type_comment_ast.body:
             return None
 
         type_object = self.visit(type_comment_ast.body[0], parent=parent)
@@ -1327,7 +1333,8 @@ class TreeRebuilder:
             )
             # Prohibit a local save if we are in an ExceptHandler.
             if not isinstance(parent, nodes.ExceptHandler):
-                # mypy doesn't recognize that newnode has to be AssignAttr because it doesn't support ParamSpec
+                # mypy doesn't recognize that newnode has to be AssignAttr because it
+                # doesn't support ParamSpec
                 # See https://github.com/python/mypy/issues/8645
                 self._delayed_assattr.append(newnode)  # type: ignore[arg-type]
         else:
