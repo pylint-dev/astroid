@@ -78,12 +78,12 @@ class AstroidManager:
         self._transform = AstroidManager.brain["_transform"]
 
     @property
-    def register_transform(self) -> Callable[[Any, Any, Any], None]:
+    def register_transform(self):
         # This and unregister_transform below are exported for convenience
         return self._transform.register_transform
 
     @property
-    def unregister_transform(self) -> Callable[[Any, Any, Any], None]:
+    def unregister_transform(self):
         return self._transform.unregister_transform
 
     @property
