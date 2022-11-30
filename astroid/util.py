@@ -8,6 +8,8 @@ import warnings
 
 import lazy_object_proxy
 
+from typing import Any
+
 if sys.version_info >= (3, 8):
     from typing import Literal
 else:
@@ -22,7 +24,7 @@ def lazy_descriptor(obj):
     return DescriptorProxy(obj)
 
 
-def lazy_import(module_name: str):
+def lazy_import(module_name: str) -> lazy_object_proxy.Proxy:
     return lazy_object_proxy.Proxy(
         lambda: importlib.import_module("." + module_name, "astroid")
     )
@@ -37,7 +39,7 @@ class Uninferable:
 
     __str__ = __repr__
 
-    def __getattribute__(self, name: str):
+    def __getattribute__(self, name: str) -> Any:
         if name == "next":
             raise AttributeError("next method should not be called")
         if name.startswith("__") and name.endswith("__"):
