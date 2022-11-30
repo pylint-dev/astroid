@@ -745,9 +745,7 @@ def _bin_op(
     )
 
 
-def _get_binop_contexts(
-    context: InferenceContext, left, right
-) -> Iterator[InferenceContext]:
+def _get_binop_contexts(context, left, right):
     """Get contexts for binary operations.
 
     This will return two inference contexts, the first one
