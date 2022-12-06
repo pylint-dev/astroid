@@ -1114,3 +1114,72 @@ def test_dataclass_inits_of_non_dataclasses() -> None:
     third_init: bases.UnboundMethod = next(third.infer())
     assert [a.name for a in third_init.args.args] == ["self", "ef"]
     assert [a.value for a in third_init.args.defaults] == [3]
+
+
+def test_dataclass_with_properties() -> None:
+    """Tests for __init__ creation for dataclasses that use properties."""
+    first, second, third = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+
+    @dataclass
+    class Dataclass:
+        attr: int
+
+        @property
+        def attr(self) -> int:
+            return 1
+
+        @attr.setter
+        def attr(self, value: int) -> None:
+            pass
+
+    class ParentOne(Dataclass):
+        '''Docstring'''
+
+    @dataclass
+    class ParentTwo(Dataclass):
+        '''Docstring'''
+
+    Dataclass.__init__  #@
+    ParentOne.__init__  #@
+    ParentTwo.__init__  #@
+    """
+    )
+
+    first_init: bases.UnboundMethod = next(first.infer())
+    assert [a.name for a in first_init.args.args] == ["self", "attr"]
+    assert [a.value for a in first_init.args.defaults] == [1]
+
+    second_init: bases.UnboundMethod = next(second.infer())
+    assert [a.name for a in second_init.args.args] == ["self", "attr"]
+    assert [a.value for a in second_init.args.defaults] == [1]
+
+    third_init: bases.UnboundMethod = next(third.infer())
+    assert [a.name for a in third_init.args.args] == ["self", "attr"]
+    assert [a.value for a in third_init.args.defaults] == [1]
+
+    fourth = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+
+    @dataclass
+    class Dataclass:
+        other_attr: str
+        attr: str
+
+        @property
+        def attr(self) -> str:
+            return self.other_attr[-1]
+
+        @attr.setter
+        def attr(self, value: int) -> None:
+            pass
+
+    Dataclass.__init__  #@
+    """
+    )
+
+    fourth_init: bases.UnboundMethod = next(fourth.infer())
+    assert [a.name for a in fourth_init.args.args] == ["self", "other_attr", "attr"]
+    assert [a.name for a in fourth_init.args.defaults] == ["Uninferable"]
