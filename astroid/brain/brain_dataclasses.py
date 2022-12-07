@@ -240,11 +240,12 @@ def _get_previous_field_default(node: nodes.ClassDef, name: str) -> nodes.NodeNG
     return None
 
 
-def _generate_dataclass_init(
+def _generate_dataclass_init(  # pylint: disable=too-many-locals
     node: nodes.ClassDef, assigns: list[nodes.AnnAssign], kw_only_decorated: bool
 ) -> str:
     """Return an init method for a dataclass given the targets."""
     params: list[str] = []
+    kw_only_params: list[str] = []
     assignments: list[str] = []
     assign_names: list[str] = []
 
@@ -323,7 +324,22 @@ def _generate_dataclass_init(
             if previous_default:
                 param_str += f" = {previous_default.as_string()}"
 
-        params.append(param_str)
+        # If the field is a kw_only field, we need to add it to the kw_only_params
+        # This overwrites whether or not the class is kw_only decorated
+        if is_field:
+            kw_only = [k for k in value.keywords if k.arg == "kw_only"]  # type: ignore[union-attr]
+            if kw_only:
+                if kw_only[0].value.bool_value():
+                    kw_only_params.append(param_str)
+                else:
+                    params.append(param_str)
+                continue
+        # If kw_only decorated, we need to add all parameters to the kw_only_params
+        if kw_only_decorated:
+            kw_only_params.append(param_str)
+        else:
+            params.append(param_str)
+
         if not init_var:
             assignments.append(assignment_str)
 
@@ -332,21 +348,16 @@ def _generate_dataclass_init(
     )
 
     # Construct the new init method paramter string
-    params_string = "self, "
-    if prev_pos_only:
-        params_string += prev_pos_only
-    if not kw_only_decorated:
-        params_string += ", ".join(params)
-
+    # First we do the positional only parameters, making sure to add the
+    # the self parameter and the comma to allow adding keyword only parameters
+    params_string = f"self, {prev_pos_only}{', '.join(params)}"
     if not params_string.endswith(", "):
         params_string += ", "
 
-    if prev_kw_only:
-        params_string += "*, " + prev_kw_only
-        if kw_only_decorated:
-            params_string += ", ".join(params) + ", "
-    elif kw_only_decorated:
-        params_string += "*, " + ", ".join(params) + ", "
+    # Then we add the keyword only parameters
+    if prev_kw_only or kw_only_params:
+        params_string += "*, "
+    params_string += f"{prev_kw_only}{', '.join(kw_only_params)}"
 
     assignments_string = "\n    ".join(assignments) if assignments else "pass"
     return f"def __init__({params_string}) -> None:\n    {assignments_string}"
