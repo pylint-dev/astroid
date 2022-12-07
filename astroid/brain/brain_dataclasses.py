@@ -132,7 +132,9 @@ def _get_dataclass_attributes(
 
         # Annotation is never None
         if not init and _is_init_var(assign_node.annotation):  # type: ignore[arg-type]
-            yield assign_node
+            continue
+
+        yield assign_node
 
 
 def _check_generate_dataclass_init(node: nodes.ClassDef) -> bool:
