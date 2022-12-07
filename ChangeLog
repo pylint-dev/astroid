@@ -24,6 +24,10 @@ Release date: TBA
 
   Closes PyCQA/pylint#5225
 
+* Handle the effect of ``kw_only=True`` in dataclass fields correctly.
+
+  Closes PyCQA/pylint#7623
+
 * Handle the effect of ``init=False`` in dataclass fields correctly.
 
   Closes PyCQA/pylint#7291

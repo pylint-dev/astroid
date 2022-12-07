@@ -826,6 +826,49 @@ def test_kw_only_decorator() -> None:
         assert [a.name for a in dee_init.args.kwonlyargs] == []
 
 
+def test_kw_only_in_field_call() -> None:
+    """Test that keyword only fields get correctly put at the end of the __init__."""
+
+    first, second, third = astroid.extract_node(
+        """
+    from dataclasses import dataclass, field
+
+    @dataclass
+    class Parent:
+        p1: int = field(kw_only=True, default=0)
+
+    @dataclass
+    class Child(Parent):
+        c1: str
+
+    @dataclass(kw_only=True)
+    class GrandChild(Child):
+        p2: int = field(kw_only=False, default=1)
+        p3: int = field(kw_only=True, default=2)
+
+    Parent.__init__  #@
+    Child.__init__ #@
+    GrandChild.__init__ #@
+    """
+    )
+
+    first_init: bases.UnboundMethod = next(first.infer())
+    assert [a.name for a in first_init.args.args] == ["self"]
+    assert [a.name for a in first_init.args.kwonlyargs] == ["p1"]
+    assert [d.value for d in first_init.args.kw_defaults] == [0]
+
+    second_init: bases.UnboundMethod = next(second.infer())
+    assert [a.name for a in second_init.args.args] == ["self", "c1"]
+    assert [a.name for a in second_init.args.kwonlyargs] == ["p1"]
+    assert [d.value for d in second_init.args.kw_defaults] == [0]
+
+    third_init: bases.UnboundMethod = next(third.infer())
+    assert [a.name for a in third_init.args.args] == ["self", "c1", "p2"]
+    assert [a.name for a in third_init.args.kwonlyargs] == ["p1", "p3"]
+    assert [d.value for d in third_init.args.defaults] == [1]
+    assert [d.value for d in third_init.args.kw_defaults] == [0, 2]
+
+
 def test_dataclass_with_unknown_base() -> None:
     """Regression test for dataclasses with unknown base classes.
 
