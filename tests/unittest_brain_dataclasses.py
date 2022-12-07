@@ -1062,6 +1062,62 @@ def test_dataclass_non_default_argument_after_default() -> None:
     assert next(impossible.infer()) is Uninferable
 
 
+def test_dataclass_with_field_init_is_false() -> None:
+    """When init=False it shouldn't end up in the __init__."""
+    first, second, second_child, third_child, third = astroid.extract_node(
+        """
+    from dataclasses import dataclass, field
+
+
+    @dataclass
+    class First:
+        a: int
+
+    @dataclass
+    class Second(First):
+        a: int = field(init=False, default=1)
+
+    @dataclass
+    class SecondChild(Second):
+        a: float
+
+    @dataclass
+    class ThirdChild(SecondChild):
+        a: str
+
+    @dataclass
+    class Third(First):
+        a: str
+
+    First.__init__  #@
+    Second.__init__  #@
+    SecondChild.__init__  #@
+    ThirdChild.__init__  #@
+    Third.__init__  #@
+    """
+    )
+
+    first_init: bases.UnboundMethod = next(first.infer())
+    assert [a.name for a in first_init.args.args] == ["self", "a"]
+    assert [a.value for a in first_init.args.defaults] == []
+
+    second_init: bases.UnboundMethod = next(second.infer())
+    assert [a.name for a in second_init.args.args] == ["self"]
+    assert [a.value for a in second_init.args.defaults] == []
+
+    second_child_init: bases.UnboundMethod = next(second_child.infer())
+    assert [a.name for a in second_child_init.args.args] == ["self", "a"]
+    assert [a.value for a in second_child_init.args.defaults] == [1]
+
+    third_child_init: bases.UnboundMethod = next(third_child.infer())
+    assert [a.name for a in third_child_init.args.args] == ["self", "a"]
+    assert [a.value for a in third_child_init.args.defaults] == [1]
+
+    third_init: bases.UnboundMethod = next(third.infer())
+    assert [a.name for a in third_init.args.args] == ["self", "a"]
+    assert [a.value for a in third_init.args.defaults] == []
+
+
 def test_dataclass_inits_of_non_dataclasses() -> None:
     """Regression test for __init__ mangling for non dataclasses.
 
