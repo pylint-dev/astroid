@@ -243,6 +243,17 @@ def _generate_dataclass_init(
         name, annotation, value = assign.target.name, assign.annotation, assign.value
         assign_names.append(name)
 
+        # Check whether this assign is overriden by a property assignment
+        property_node: nodes.FunctionDef | None = None
+        for additional_assign in node.locals[name]:
+            if not isinstance(additional_assign, nodes.FunctionDef):
+                continue
+            if not additional_assign.decorators:
+                continue
+            if "builtins.property" in additional_assign.decoratornames():
+                property_node = additional_assign
+                break
+
         if _is_init_var(annotation):  # type: ignore[arg-type] # annotation is never None
             init_var = True
             if isinstance(annotation, nodes.Subscript):
@@ -277,6 +288,14 @@ def _generate_dataclass_init(
                         )
             else:
                 param_str += f" = {value.as_string()}"
+        elif property_node:
+            # We set the result of the property call as default
+            # This hides the fact that this would normally be a 'property object'
+            # But we can't represent those as string
+            try:
+                param_str += f" = {next(property_node.infer_call_result()).as_string()}"
+            except (InferenceError, StopIteration):
+                pass
 
         params.append(param_str)
         if not init_var:
