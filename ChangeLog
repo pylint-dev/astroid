@@ -16,6 +16,10 @@ Release date: TBA
 
   Refs PyCQA/pylint#2567
 
+* Fix crash if `numpy` module doesn't have `version` attribute
+
+  Refs PyCQA/pylint#7868
+
 What's New in astroid 2.12.13?
 ==============================
 Release date: 2022-11-19
