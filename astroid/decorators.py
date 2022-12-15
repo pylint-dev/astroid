@@ -89,7 +89,7 @@ class cachedproperty:
         return val
 
 
-def path_wrapper(func: Callable) -> Callable:
+def path_wrapper(func):
     """return the given infer function wrapped to handle the path
 
     Used to stop inference if the node has already been looked

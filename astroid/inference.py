@@ -1141,9 +1141,7 @@ def infer_empty_node(
 nodes.EmptyNode._infer = infer_empty_node  # type: ignore[assignment]
 
 
-def _populate_context_lookup(
-    call: nodes.Call, context: InferenceContext | None
-) -> dict[InferenceResult, InferenceContext]:
+def _populate_context_lookup(call: nodes.Call, context: InferenceContext | None):
     # Allows context to be saved for later
     # for inference inside a function
     context_lookup: dict[InferenceResult, InferenceContext] = {}
