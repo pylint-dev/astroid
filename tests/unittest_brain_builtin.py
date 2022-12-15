@@ -109,6 +109,10 @@ class TestStringNodes:
             """
             "My hex format is {:4x}".format('1')
             """,
+            """
+            daniel_age = 12
+            "My name is {0.name}".format(daniel_age)
+            """,
         ],
     )
     def test_string_format_uninferable(self, format_string: str) -> None:
@@ -123,17 +127,3 @@ class TestStringNodes:
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "My name is Daniel, I'm 12.00"
-
-    @pytest.mark.parametrize(
-        "format_string",
-        [
-            """
-            daniel_age = 12
-            "My name is {0.name}".format(daniel_age)
-            """,
-        ],
-    )
-    def test_string_format_invalid_type(self, format_string: str) -> None:
-        node: nodes.Call = _extract_single_node(format_string)
-        inferred = next(node.infer())
-        assert inferred is util.Uninferable
