@@ -150,7 +150,7 @@ class ImportNode(FilterStmtsBaseNode, NoChildrenNode, Statement):
             use_cache=use_cache,
         )
 
-    def real_name(self, asname):
+    def real_name(self, asname: str) -> str:
         """get name from 'as' name"""
         for name, _asname in self.names:
             if name == "*":

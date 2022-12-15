@@ -10,7 +10,7 @@ import functools
 import inspect
 import sys
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from typing import TypeVar
 
 import wrapt
@@ -97,7 +97,9 @@ def path_wrapper(func):
     """
 
     @functools.wraps(func)
-    def wrapped(node, context: InferenceContext | None = None, _func=func, **kwargs):
+    def wrapped(
+        node, context: InferenceContext | None = None, _func=func, **kwargs
+    ) -> Generator:
         """wrapper function handling context"""
         if context is None:
             context = InferenceContext()

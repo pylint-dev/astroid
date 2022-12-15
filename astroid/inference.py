@@ -80,14 +80,16 @@ def infer_end(
 
 # We add ignores to all assignments to methods
 # See https://github.com/python/mypy/issues/2427
-nodes.Module._infer = infer_end  # type: ignore[assignment]
-nodes.ClassDef._infer = infer_end  # type: ignore[assignment]
+nodes.Module._infer = infer_end
+nodes.ClassDef._infer = infer_end
 nodes.Lambda._infer = infer_end  # type: ignore[assignment]
 nodes.Const._infer = infer_end  # type: ignore[assignment]
 nodes.Slice._infer = infer_end  # type: ignore[assignment]
 
 
-def _infer_sequence_helper(node, context: InferenceContext | None = None):
+def _infer_sequence_helper(
+    node: _BaseContainerT, context: InferenceContext | None = None
+) -> list[SuccessfulInferenceResult]:
     """Infer all values based on _BaseContainer.elts"""
     values = []
 
@@ -193,7 +195,7 @@ def _infer_map(
             if any(not elem for elem in (key, safe_value)):
                 raise InferenceError(node=node, context=context)
             # safe_value is SuccessfulInferenceResult as bool(Uninferable) == False
-            values = _update_with_replacement(values, {key: safe_value})  # type: ignore[dict-item]
+            values = _update_with_replacement(values, {key: safe_value})
     return values
 
 
@@ -216,7 +218,7 @@ def _higher_function_scope(node: nodes.NodeNG) -> nodes.FunctionDef | None:
     while current.parent and not isinstance(current.parent, nodes.FunctionDef):
         current = current.parent
     if current and current.parent:
-        return current.parent  # type: ignore[return-value]
+        return current.parent  # type: ignore[no-any-return]
     return None
 
 
@@ -246,7 +248,7 @@ def infer_name(
 # pylint: disable=no-value-for-parameter
 # The order of the decorators here is important
 # See https://github.com/PyCQA/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
-nodes.Name._infer = decorators.raise_if_nothing_inferred(  # type: ignore[assignment]
+nodes.Name._infer = decorators.raise_if_nothing_inferred(
     decorators.path_wrapper(infer_name)
 )
 nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper
@@ -304,7 +306,7 @@ def infer_import(
         raise InferenceError(node=self, context=context) from exc
 
 
-nodes.Import._infer = infer_import  # type: ignore[assignment]
+nodes.Import._infer = infer_import
 
 
 @decorators.raise_if_nothing_inferred
@@ -374,7 +376,7 @@ def infer_attribute(
 
 # The order of the decorators here is important
 # See https://github.com/PyCQA/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
-nodes.Attribute._infer = decorators.raise_if_nothing_inferred(  # type: ignore[assignment]
+nodes.Attribute._infer = decorators.raise_if_nothing_inferred(
     decorators.path_wrapper(infer_attribute)
 )
 # won't work with a path wrapper
@@ -524,7 +526,7 @@ def _infer_boolop(
     return InferenceErrorInfo(node=self, context=context)
 
 
-nodes.BoolOp._infer = _infer_boolop  # type: ignore[assignment]
+nodes.BoolOp._infer = _infer_boolop
 
 
 # UnaryOp, BinOp and AugAssign inferences
@@ -546,7 +548,7 @@ def _filter_operation_errors(
             # which shows that we can't infer the result.
             yield util.Uninferable
         else:
-            yield result  # type: ignore[misc]
+            yield result
 
 
 def _infer_unaryop(
@@ -620,7 +622,7 @@ def infer_unaryop(
 
 
 nodes.UnaryOp._infer_unaryop = _infer_unaryop
-nodes.UnaryOp._infer = infer_unaryop  # type: ignore[assignment]
+nodes.UnaryOp._infer = infer_unaryop
 
 
 def _is_not_implemented(const) -> bool:
@@ -763,7 +765,7 @@ def _get_binop_contexts(context, left, right):
         yield new_context
 
 
-def _same_type(type1, type2):
+def _same_type(type1, type2) -> bool:
     """Check if type1 is the same as type2."""
     return type1.qname() == type2.qname()
 
@@ -948,7 +950,7 @@ def infer_binop(
 
 
 nodes.BinOp._infer_binop = _infer_binop
-nodes.BinOp._infer = infer_binop  # type: ignore[assignment]
+nodes.BinOp._infer = infer_binop
 
 COMPARE_OPS: dict[str, Callable[[Any, Any], bool]] = {
     "==": operator.eq,
@@ -1086,7 +1088,7 @@ def infer_augassign(
 
 
 nodes.AugAssign._infer_augassign = _infer_augassign
-nodes.AugAssign._infer = infer_augassign  # type: ignore[assignment]
+nodes.AugAssign._infer = infer_augassign
 
 # End of binary operation inference.
 
@@ -1120,8 +1122,8 @@ def infer_assign(
     return bases._infer_stmts(stmts, context)
 
 
-nodes.AssignName._infer = infer_assign  # type: ignore[assignment]
-nodes.AssignAttr._infer = infer_assign  # type: ignore[assignment]
+nodes.AssignName._infer = infer_assign
+nodes.AssignAttr._infer = infer_assign
 
 
 @decorators.raise_if_nothing_inferred
@@ -1143,10 +1145,10 @@ def infer_empty_node(
 nodes.EmptyNode._infer = infer_empty_node  # type: ignore[assignment]
 
 
-def _populate_context_lookup(call, context):
+def _populate_context_lookup(call: nodes.Call, context: InferenceContext | None):
     # Allows context to be saved for later
     # for inference inside a function
-    context_lookup = {}
+    context_lookup: dict[InferenceResult, InferenceContext] = {}
     if context is None:
         return context_lookup
     for arg in call.args:
@@ -1232,4 +1234,4 @@ def infer_functiondef(
     return InferenceErrorInfo(node=self, context=context)
 
 
-nodes.FunctionDef._infer = infer_functiondef  # type: ignore[assignment]
+nodes.FunctionDef._infer = infer_functiondef
