@@ -93,12 +93,12 @@ def unpack_infer(stmt, context: InferenceContext | None = None):
                 yield elt
                 continue
             yield from unpack_infer(elt, context)
-        return dict(node=stmt, context=context)
+        return {"node": stmt, "context": context}
     # if inferred is a final node, return it and stop
     inferred = next(stmt.infer(context), util.Uninferable)
     if inferred is stmt:
         yield inferred
-        return dict(node=stmt, context=context)
+        return {"node": stmt, "context": context}
     # else, infer recursively, except Uninferable object that should be returned as is
     for inferred in stmt.infer(context):
         if inferred is util.Uninferable:
@@ -106,7 +106,7 @@ def unpack_infer(stmt, context: InferenceContext | None = None):
         else:
             yield from unpack_infer(inferred, context)
 
-    return dict(node=stmt, context=context)
+    return {"node": stmt, "context": context}
 
 
 def are_exclusive(stmt1, stmt2, exceptions: list[str] | None = None) -> bool:

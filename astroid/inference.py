@@ -61,7 +61,7 @@ GetFlowFactory = typing.Callable[
         InferenceContext,
         InferenceContext,
     ],
-    Any,
+    "list[functools.partial[Generator[InferenceResult, None, None]]]",
 ]
 
 # .infer method ###############################################################
@@ -674,7 +674,7 @@ def _invoke_binop_inference(
     other: InferenceResult,
     context: InferenceContext,
     method_name: str,
-):
+) -> Generator[InferenceResult, None, None]:
     """Invoke binary operation inference on the given instance."""
     methods = dunder_lookup.lookup(instance, method_name)
     context = bind_context_to_node(context, instance)
@@ -694,6 +694,10 @@ def _invoke_binop_inference(
         raise InferenceError(node=method, context=context) from e
     if inferred is util.Uninferable:
         raise InferenceError
+    if not isinstance(
+        instance, (nodes.Const, nodes.Tuple, nodes.List, nodes.ClassDef, bases.Instance)
+    ):
+        raise InferenceError  # pragma: no cover # Used as a failsafe
     return instance.infer_binary_op(opnode, op, other, context, inferred)
 
 
@@ -704,7 +708,7 @@ def _aug_op(
     other: InferenceResult,
     context: InferenceContext,
     reverse: bool = False,
-):
+) -> functools.partial[Generator[InferenceResult, None, None]]:
     """Get an inference callable for an augmented binary operation."""
     method_name = protocols.AUGMENTED_OP_METHOD[op]
     return functools.partial(
@@ -725,7 +729,7 @@ def _bin_op(
     other: InferenceResult,
     context: InferenceContext,
     reverse: bool = False,
-):
+) -> functools.partial[Generator[InferenceResult, None, None]]:
     """Get an inference callable for a normal binary operation.
 
     If *reverse* is True, then the reflected method will be used instead.
@@ -774,7 +778,7 @@ def _get_binop_flow(
     right_type: InferenceResult | None,
     context: InferenceContext,
     reverse_context: InferenceContext,
-):
+) -> list[functools.partial[Generator[InferenceResult, None, None]]]:
     """Get the flow for binary operations.
 
     The rules are a bit messy:
@@ -815,7 +819,7 @@ def _get_aug_flow(
     right_type: InferenceResult | None,
     context: InferenceContext,
     reverse_context: InferenceContext,
-):
+) -> list[functools.partial[Generator[InferenceResult, None, None]]]:
     """Get the flow for augmented binary operations.
 
     The rules are a bit messy:
@@ -864,7 +868,7 @@ def _infer_binary_operation(
     binary_opnode: nodes.AugAssign | nodes.BinOp,
     context: InferenceContext,
     flow_factory: GetFlowFactory,
-):
+) -> Generator[InferenceResult | util.BadBinaryOperationMessage, None, None]:
     """Infer a binary operation between a left operand and a right operand
 
     This is used by both normal binary operations and augmented binary
