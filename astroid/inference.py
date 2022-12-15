@@ -89,7 +89,7 @@ nodes.Slice._infer = infer_end  # type: ignore[assignment]
 
 def _infer_sequence_helper(
     node: _BaseContainerT, context: InferenceContext | None = None
-) -> list[nodes.NodeNG]:
+) -> list[SuccessfulInferenceResult]:
     """Infer all values based on _BaseContainer.elts"""
     values = []
 
