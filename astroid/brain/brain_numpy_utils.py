@@ -31,7 +31,7 @@ def _get_numpy_version() -> tuple[str, str, str]:
         import numpy  # pylint: disable=import-outside-toplevel
 
         return tuple(numpy.version.version.split("."))
-    except ImportError:
+    except (ImportError, AttributeError):
         return ("0", "0", "0")
 
 

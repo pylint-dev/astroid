@@ -11,8 +11,8 @@ from __future__ import annotations
 import collections
 import itertools
 import operator as operator_mod
-from collections.abc import Callable, Generator
-from typing import Any
+from collections.abc import Callable, Generator, Iterator, Sequence
+from typing import Any, TypeVar
 
 from astroid import arguments, bases, decorators, helpers, nodes, util
 from astroid.const import Context
@@ -25,10 +25,17 @@ from astroid.exceptions import (
     NoDefault,
 )
 from astroid.nodes import node_classes
-from astroid.typing import ConstFactoryResult
+from astroid.typing import (
+    ConstFactoryResult,
+    InferenceResult,
+    SuccessfulInferenceResult,
+)
 
 raw_building = util.lazy_import("raw_building")
 objects = util.lazy_import("objects")
+
+
+_TupleListNodeT = TypeVar("_TupleListNodeT", nodes.Tuple, nodes.List)
 
 
 def _reflected_name(name) -> str:
@@ -118,12 +125,18 @@ for _KEY, _IMPL in list(BIN_OP_IMPL.items()):
 
 
 @decorators.yes_if_nothing_inferred
-def const_infer_binary_op(self, opnode, operator, other, context, _):
+def const_infer_binary_op(
+    self: nodes.Const,
+    opnode: nodes.AugAssign | nodes.BinOp,
+    operator: str,
+    other: InferenceResult,
+    context: InferenceContext,
+    _: SuccessfulInferenceResult,
+) -> Generator[ConstFactoryResult | type[util.Uninferable], None, None]:
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, nodes.Const):
         if (
             operator == "**"
-            and isinstance(self, nodes.Const)
             and isinstance(self.value, (int, float))
             and isinstance(other.value, (int, float))
             and (self.value > 1e5 or other.value > 1e5)
@@ -151,7 +164,12 @@ def const_infer_binary_op(self, opnode, operator, other, context, _):
 nodes.Const.infer_binary_op = const_infer_binary_op
 
 
-def _multiply_seq_by_int(self, opnode, other, context):
+def _multiply_seq_by_int(
+    self: _TupleListNodeT,
+    opnode: nodes.AugAssign | nodes.BinOp,
+    other: nodes.Const,
+    context: InferenceContext,
+) -> _TupleListNodeT:
     node = self.__class__(parent=opnode)
     filtered_elts = (
         helpers.safe_infer(elt, context) or util.Uninferable
@@ -162,7 +180,9 @@ def _multiply_seq_by_int(self, opnode, other, context):
     return node
 
 
-def _filter_uninferable_nodes(elts, context):
+def _filter_uninferable_nodes(
+    elts: Sequence[InferenceResult], context: InferenceContext
+) -> Iterator[SuccessfulInferenceResult]:
     for elt in elts:
         if elt is util.Uninferable:
             yield nodes.Unknown()
@@ -176,13 +196,13 @@ def _filter_uninferable_nodes(elts, context):
 
 @decorators.yes_if_nothing_inferred
 def tl_infer_binary_op(
-    self,
-    opnode: nodes.BinOp,
+    self: _TupleListNodeT,
+    opnode: nodes.AugAssign | nodes.BinOp,
     operator: str,
-    other: nodes.NodeNG,
+    other: InferenceResult,
     context: InferenceContext,
-    method: nodes.FunctionDef,
-) -> Generator[nodes.NodeNG | type[util.Uninferable], None, None]:
+    method: SuccessfulInferenceResult,
+) -> Generator[_TupleListNodeT | nodes.Const | type[util.Uninferable], None, None]:
     """Infer a binary operation on a tuple or list.
 
     The instance on which the binary operation is performed is a tuple
@@ -222,7 +242,14 @@ nodes.List.infer_binary_op = tl_infer_binary_op
 
 
 @decorators.yes_if_nothing_inferred
-def instance_class_infer_binary_op(self, opnode, operator, other, context, method):
+def instance_class_infer_binary_op(
+    self: bases.Instance | nodes.ClassDef,
+    opnode: nodes.AugAssign | nodes.BinOp,
+    operator: str,
+    other: InferenceResult,
+    context: InferenceContext,
+    method: SuccessfulInferenceResult,
+) -> Generator[InferenceResult, None, None]:
     return method.infer_call_result(self, context)
 
 
@@ -294,14 +321,24 @@ def for_assigned_stmts(
 ) -> Any:
     if isinstance(self, nodes.AsyncFor) or getattr(self, "is_async", False):
         # Skip inferring of async code for now
-        return dict(node=self, unknown=node, assign_path=assign_path, context=context)
+        return {
+            "node": self,
+            "unknown": node,
+            "assign_path": assign_path,
+            "context": context,
+        }
     if assign_path is None:
         for lst in self.iter.infer(context):
             if isinstance(lst, (nodes.Tuple, nodes.List)):
                 yield from lst.elts
     else:
         yield from _resolve_looppart(self.iter.infer(context), assign_path, context)
-    return dict(node=self, unknown=node, assign_path=assign_path, context=context)
+    return {
+        "node": self,
+        "unknown": node,
+        "assign_path": assign_path,
+        "context": context,
+    }
 
 
 nodes.For.assigned_stmts = for_assigned_stmts
@@ -454,7 +491,12 @@ def assign_assigned_stmts(
         self.value.infer(context), assign_path, context
     )
 
-    return dict(node=self, unknown=node, assign_path=assign_path, context=context)
+    return {
+        "node": self,
+        "unknown": node,
+        "assign_path": assign_path,
+        "context": context,
+    }
 
 
 def assign_annassigned_stmts(
@@ -527,7 +569,12 @@ def excepthandler_assigned_stmts(
             assigned = objects.ExceptionInstance(assigned)
 
         yield assigned
-    return dict(node=self, unknown=node, assign_path=assign_path, context=context)
+    return {
+        "node": self,
+        "unknown": node,
+        "assign_path": assign_path,
+        "context": context,
+    }
 
 
 nodes.ExceptHandler.assigned_stmts = excepthandler_assigned_stmts
@@ -643,7 +690,12 @@ def with_assigned_stmts(
                         context=context,
                     ) from exc
             yield obj
-    return dict(node=self, unknown=node, assign_path=assign_path, context=context)
+    return {
+        "node": self,
+        "unknown": node,
+        "assign_path": assign_path,
+        "context": context,
+    }
 
 
 nodes.With.assigned_stmts = with_assigned_stmts

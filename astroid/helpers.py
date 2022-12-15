@@ -219,7 +219,7 @@ def is_supertype(type1, type2) -> bool:
     return _type_check(type1, type2)
 
 
-def class_instance_as_index(node):
+def class_instance_as_index(node: SuccessfulInferenceResult) -> nodes.Const | None:
     """Get the value as an index for the given instance.
 
     If an instance provides an __index__ method, then it can
