@@ -164,7 +164,7 @@ def _builtin_filter_predicate(node, builtin_name) -> bool:
     return False
 
 
-def register_builtin_transform(transform, builtin_name):
+def register_builtin_transform(transform, builtin_name) -> None:
     """Register a new transform function for the given *builtin_name*.
 
     The transform function must accept two parameters, a node and
