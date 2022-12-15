@@ -957,6 +957,8 @@ def _infer_str_format_call(
         # TypeError: Unsupported format string
         # ValueError: Unknown format code
         return iter([util.Uninferable])
+    except AttributeError as exc:
+        raise AstroidTypeError(str(exc)) from exc
 
     return iter([nodes.const_factory(formatted_string)])
 

@@ -10,6 +10,7 @@ import pytest
 
 from astroid import nodes, objects, util
 from astroid.builder import _extract_single_node
+from astroid.exceptions import AstroidTypeError
 
 
 class BuiltinsTest(unittest.TestCase):
@@ -123,3 +124,17 @@ class TestStringNodes:
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "My name is Daniel, I'm 12.00"
+
+    @pytest.mark.parametrize(
+        "format_string",
+        [
+            """
+            daniel_age = 12
+            "My name is {0.name}".format(daniel_age)
+            """,
+        ],
+    )
+    def test_string_format_invalid_type(self, format_string: str) -> None:
+        node: nodes.Call = _extract_single_node(format_string)
+        with pytest.raises(AstroidTypeError):
+            next(node.infer())
