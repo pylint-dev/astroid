@@ -952,13 +952,12 @@ def _infer_str_format_call(
 
     try:
         formatted_string = format_template.format(*pos_values, **keyword_values)
-    except (IndexError, KeyError, TypeError, ValueError):
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+        # AttributeError: processing a replacement field using the arguments failed
         # IndexError: there are too few arguments to interpolate
         # TypeError: Unsupported format string
         # ValueError: Unknown format code
         return iter([util.Uninferable])
-    except AttributeError as exc:
-        raise AstroidTypeError(str(exc)) from exc
 
     return iter([nodes.const_factory(formatted_string)])
 

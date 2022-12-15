@@ -136,5 +136,5 @@ class TestStringNodes:
     )
     def test_string_format_invalid_type(self, format_string: str) -> None:
         node: nodes.Call = _extract_single_node(format_string)
-        with pytest.raises(AstroidTypeError):
-            next(node.infer())
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
