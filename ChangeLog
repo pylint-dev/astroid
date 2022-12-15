@@ -21,6 +21,10 @@ Release date: TBA
 
   Refs PyCQA/pylint#7868
 
+* Handle ``AttributeError`` during ``str.format`` template inference tip evaluation
+
+  Closes PyCQA/pylint#1902
+
 What's New in astroid 2.12.13?
 ==============================
 Release date: 2022-11-19
