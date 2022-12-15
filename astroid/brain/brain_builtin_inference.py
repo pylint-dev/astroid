@@ -954,7 +954,8 @@ def _infer_str_format_call(
 
     try:
         formatted_string = format_template.format(*pos_values, **keyword_values)
-    except (IndexError, KeyError, TypeError, ValueError):
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+        # AttributeError: processing a replacement field using the arguments failed
         # IndexError: there are too few arguments to interpolate
         # TypeError: Unsupported format string
         # ValueError: Unknown format code
