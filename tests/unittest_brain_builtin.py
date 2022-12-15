@@ -10,7 +10,6 @@ import pytest
 
 from astroid import nodes, objects, util
 from astroid.builder import _extract_single_node
-from astroid.exceptions import AstroidTypeError
 
 
 class BuiltinsTest(unittest.TestCase):
