@@ -155,15 +155,23 @@ class FromToLineNoTest(unittest.TestCase):
 
         b = ast_module.body[1]
         assert isinstance(b, nodes.ClassDef)
-        assert b.fromlineno == 6
+        if PY38 and IS_PYPY:
+            # Not perfect, but best we can do for PyPy 3.8
+            assert b.fromlineno == 7
+        else:
+            assert b.fromlineno == 6
         assert b.tolineno == 7
 
         c = ast_module.body[2]
         assert isinstance(c, nodes.ClassDef)
-        if not PY38_PLUS or PY38 and IS_PYPY:
-            # Not perfect, but best we can do for Python 3.7 and PyPy 3.8
+        if not PY38_PLUS:
+            # Not perfect, but best we can do for Python 3.7
             # Can't detect closing bracket on new line.
             assert c.fromlineno == 12
+        elif PY38 and IS_PYPY:
+            # Not perfect, but best we can do for PyPy 3.8
+            # Can't detect closing bracket on new line.
+            assert c.fromlineno == 16
         else:
             assert c.fromlineno == 13
         assert c.tolineno == 14
