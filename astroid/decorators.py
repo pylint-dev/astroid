@@ -237,7 +237,6 @@ if util.check_warnings_filter():  # noqa: C901
         def deco(func: Callable[_P, _R]) -> Callable[_P, _R]:
             @functools.wraps(func)
             def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-
                 keys = list(inspect.signature(func).parameters.keys())
                 for arg, note in arguments.items():
                     try:

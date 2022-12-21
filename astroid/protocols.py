@@ -741,6 +741,7 @@ def starred_assigned_stmts(  # noqa: C901
             A list of indices, where each index specifies what item to fetch from
             the inference results.
     """
+
     # pylint: disable=too-many-locals,too-many-statements
     def _determine_starred_iteration_lookups(
         starred: nodes.Starred, target: nodes.Tuple, lookups: list[tuple[int, int]]

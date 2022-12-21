@@ -832,7 +832,6 @@ class DictModel(ObjectModel):
 
     @property
     def attr_values(self):
-
         values = [value for (_, value) in self._instance.items]
         obj = node_classes.List(parent=self._instance)
         obj.postinit(values)
