@@ -1,17 +1,13 @@
 <!--
-
 Thank you for submitting a PR to astroid!
 
-To ease our work reviewing your PR, do make sure to mark the complete the following boxes.
+To ease the process of reviewing your PR, do make sure to complete the following boxes.
 
--->
-
-## Steps
-
-- [ ] For new features or bug fixes, add a ChangeLog entry describing what your PR does.
 - [ ] Write a good description on what the PR does.
-
-## Description
+- [ ] For new features or bug fixes, add a ChangeLog entry describing what your PR does.
+- [ ] If you used multiple emails or multiple names when contributing, add your mails
+      and preferred name in ``script/.contributors_aliases.json``
+-->
 
 ## Type of Changes
 
@@ -24,11 +20,12 @@ To ease our work reviewing your PR, do make sure to mark the complete the follow
 | ✓   | :hammer: Refactoring   |
 | ✓   | :scroll: Docs          |
 
-## Related Issue
+## Description
 
-<!--
-If this PR fixes a particular issue, use the following to automatically close that issue
-once this PR gets merged:
+<!-- If this PR references an issue without fixing it: -->
 
-Closes #XXX
--->
+Refs #XXXX
+
+<!-- If this PR fixes an issue, use the following to automatically close when we merge: -->
+
+Closes #XXXX
