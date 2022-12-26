@@ -14,16 +14,16 @@ Ex-maintainers
 Maintainers
 -----------
 - Pierre Sassoulas <pierre.sassoulas@gmail.com>
-- Hippo91 <guillaume.peillex@gmail.com>
 - Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
+- Hippo91 <guillaume.peillex@gmail.com>
 - Marc Mueller <30130371+cdce8p@users.noreply.github.com>
-- Bryce Guinta <bryce.paul.guinta@gmail.com>
 - Jacob Walls <jacobtylerwalls@gmail.com>
+- Bryce Guinta <bryce.paul.guinta@gmail.com>
 - Ceridwen <ceridwenv@gmail.com>
 - Łukasz Rogalski <rogalski.91@gmail.com>
+- Mark Byrne <31762852+mbyrnepr2@users.noreply.github.com>
 - Florian Bruhin <me@the-compiler.org>
 - Ashley Whetter <ashley@awhetter.co.uk>
-- Mark Byrne <31762852+mbyrnepr2@users.noreply.github.com>
 - Dimitri Prybysh <dmand@yandex.ru>
 - Areveny <areveny@protonmail.com>
 
@@ -40,11 +40,11 @@ Contributors
 - David Gilman <davidgilman1@gmail.com>
 - Julien Jehannet <julien.jehannet@logilab.fr>
 - Calen Pennington <calen.pennington@gmail.com>
+- Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Phil Schaf <flying-sheep@web.de>
 - Hugo van Kemenade <hugovk@users.noreply.github.com>
 - Alex Hall <alex.mojaki@gmail.com>
-- Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
 - Raphael Gaschignard <raphael@makeleaps.com>
 - Radosław Ganczarek <radoslaw@ganczarek.in>
 - Paligot Gérard <androwiiid@gmail.com>
@@ -52,6 +52,7 @@ Contributors
 - Derek Gustafson <degustaf@gmail.com>
 - David Shea <dshea@redhat.com>
 - Daniel Harding <dharding@gmail.com>
+- Christian Clauss <cclauss@me.com>
 - Ville Skyttä <ville.skytta@iki.fi>
 - Rene Zhang <rz99@cornell.edu>
 - Philip Lorenz <philip@bithub.de>
@@ -68,9 +69,11 @@ Contributors
 - doranid <ddandd@gmail.com>
 - brendanator <brendan.maginnis@gmail.com>
 - Tomas Gavenciak <gavento@ucw.cz>
+- Tim Paine <t.paine154@gmail.com>
 - Thomas Hisch <t.hisch@gmail.com>
 - Stefan Scherfke <stefan@sofa-rockers.org>
 - Sergei Lebedev <185856+superbobry@users.noreply.github.com>
+- Saugat Pachhai (सौगात) <suagatchhetri@outlook.com>
 - Ram Rachum <ram@rachum.com>
 - Pierre-Yves David <pierre-yves.david@logilab.fr>
 - Peter Pentchev <roam@ringlet.net>
@@ -105,13 +108,11 @@ Contributors
 - Valentin Valls <valentin.valls@esrf.fr>
 - Uilian Ries <uilianries@gmail.com>
 - Tomas Novak <ext.Tomas.Novak@skoda-auto.cz>
-- Tim Paine <t.paine154@gmail.com>
 - Thirumal Venkat <me@thirumal.in>
 - SupImDos <62866982+SupImDos@users.noreply.github.com>
 - Stanislav Levin <slev@altlinux.org>
 - Simon Hewitt <si@sjhewitt.co.uk>
 - Serhiy Storchaka <storchaka@gmail.com>
-- Saugat Pachhai (सौगात) <suagatchhetri@outlook.com>
 - Roy Wright <roy@wright.org>
 - Robin Jarry <robin.jarry@6wind.com>
 - René Fritze <47802+renefritze@users.noreply.github.com>
@@ -135,6 +136,7 @@ Contributors
 - Jeff Quast <contact@jeffquast.com>
 - Jarrad Hope <me@jarradhope.com>
 - Jared Garst <jgarst@users.noreply.github.com>
+- James Addison <55152140+jayaddison@users.noreply.github.com>
 - Jakub Wilk <jwilk@jwilk.net>
 - Iva Miholic <ivamiho@gmail.com>
 - Ionel Maries Cristian <contact@ionelmc.ro>
@@ -156,6 +158,7 @@ Contributors
 - Dave Baum <dbaum@google.com>
 - Daniel Martin <daniel.martin@crowdstrike.com>
 - Daniel Colascione <dancol@dancol.org>
+- Dani Alcala <112832187+clavedeluna@users.noreply.github.com>
 - Damien Baty <damien@damienbaty.com>
 - Craig Franklin <craigjfranklin@gmail.com>
 - Colin Kennedy <colinvfx@gmail.com>
@@ -177,12 +180,6 @@ Contributors
 - Alexander Scheel <alexander.m.scheel@gmail.com>
 - Alexander Presnyakov <flagist0@gmail.com>
 - Ahmed Azzaoui <ahmed.azzaoui@engie.com>
-- nathannaveen <42319948+nathannaveen@users.noreply.github.com>
-- adam-grant-hendry <59346180+adam-grant-hendry@users.noreply.github.com>
-- Deepyaman Datta <deepyaman.datta@utexas.edu>
-- Batuhan Taskaya <isidentical@gmail.com>
-- Alexander Scheel <alexander.m.scheel@gmail.com>
-- Tim Paine <t.paine154@gmail.com>
 
 Co-Author
 ---------
