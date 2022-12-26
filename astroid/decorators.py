@@ -189,7 +189,7 @@ if util.check_warnings_filter():  # noqa: C901
                     try:
                         index = keys.index(arg)
                     except ValueError:
-                        raise Exception(
+                        raise ValueError(
                             f"Can't find argument '{arg}' for '{args[0].__class__.__qualname__}'"
                         ) from None
                     if (
@@ -237,13 +237,12 @@ if util.check_warnings_filter():  # noqa: C901
         def deco(func: Callable[_P, _R]) -> Callable[_P, _R]:
             @functools.wraps(func)
             def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-
                 keys = list(inspect.signature(func).parameters.keys())
                 for arg, note in arguments.items():
                     try:
                         index = keys.index(arg)
                     except ValueError:
-                        raise Exception(
+                        raise ValueError(
                             f"Can't find argument '{arg}' for '{args[0].__class__.__qualname__}'"
                         ) from None
                     if arg in kwargs or len(args) > index:
