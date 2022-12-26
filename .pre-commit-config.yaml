@@ -28,13 +28,13 @@ repos:
         exclude: tests/testdata|setup.py
         types: [python]
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.2.2
+    rev: v3.3.1
     hooks:
       - id: pyupgrade
         exclude: tests/testdata
         args: [--py37-plus]
   - repo: https://github.com/PyCQA/isort
-    rev: 5.10.1
+    rev: 5.11.4
     hooks:
       - id: isort
         exclude: tests/testdata
