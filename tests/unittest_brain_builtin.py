@@ -109,6 +109,10 @@ class TestStringNodes:
             """
             "My hex format is {:4x}".format('1')
             """,
+            """
+            daniel_age = 12
+            "My name is {0.name}".format(daniel_age)
+            """,
         ],
     )
     def test_string_format_uninferable(self, format_string: str) -> None:

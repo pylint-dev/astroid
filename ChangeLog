@@ -28,6 +28,14 @@ Release date: TBA
 
   Closes PyCQA/pylint#7291
 
+* Fix crash if ``numpy`` module doesn't have ``version`` attribute.
+
+  Refs PyCQA/pylint#7868
+
+* Handle ``AttributeError`` during ``str.format`` template inference tip evaluation
+
+  Closes PyCQA/pylint#1902
+
 
 What's New in astroid 2.12.13?
 ==============================
