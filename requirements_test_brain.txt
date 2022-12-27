@@ -4,6 +4,7 @@ nose
 numpy>=1.17.0; python_version<"3.11"
 python-dateutil
 PyQt6
+regex
 types-python-dateutil
 six
 types-six
