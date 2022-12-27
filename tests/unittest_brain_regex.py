@@ -1,3 +1,6 @@
+# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 import unittest
 
@@ -8,11 +11,7 @@ try:
 except ImportError:
     HAS_REGEX = False
 
-from astroid import MANAGER, builder, nodes, test_utils
-from astroid.exceptions import (
-    AttributeInferenceError,
-    InferenceError,
-)
+from astroid import MANAGER, builder, nodes
 
 
 @unittest.skipUnless(HAS_REGEX, "This test requires the regex library.")
