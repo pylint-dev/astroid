@@ -50,6 +50,7 @@ register_module_extender(AstroidManager(), "re", _re_transform)
 # Regex module is a re-compatible module with more features and better
 # performance.
 
+
 def _regex_transform() -> nodes.Module:
     # The RegexFlag enum exposes all its entries by updating globals()
     import_compiler = "import regex._regex_core as _compiler"
@@ -92,6 +93,7 @@ def _regex_transform() -> nodes.Module:
     T = TEMPLATE
     """
     )
+
 
 register_module_extender(AstroidManager(), "regex", _regex_transform)
 
