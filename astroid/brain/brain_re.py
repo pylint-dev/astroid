@@ -47,6 +47,55 @@ def _re_transform() -> nodes.Module:
 register_module_extender(AstroidManager(), "re", _re_transform)
 
 
+# Regex module is a re-compatible module with more features and better
+# performance.
+
+def _regex_transform() -> nodes.Module:
+    # The RegexFlag enum exposes all its entries by updating globals()
+    import_compiler = "import regex._regex_core as _compiler"
+    return parse(
+        f"""
+    {import_compiler}
+    ASCII = _compiler.ASCII
+    BESTMATCH = _compiler.BESTMATCH
+    DEBUG = _compiler.DEBUG
+    ENHANCEMATCH = _compiler.ENHANCEMATCH
+    FULLCASE = _compiler.FULLCASE
+    IGNORECASE = _compiler.IGNORECASE
+    LOCALE = _compiler.LOCALE
+    MULTILINE = _compiler.MULTILINE
+    POSIX = _compiler.POSIX
+    REVERSE = _compiler.REVERSE
+    DOTALL = _compiler.DOTALL
+    UNICODE = _compiler.UNICODE
+    VERSION0 = _compiler.VERSION0
+    VERSION1 = _compiler.VERSION1
+    WORD = _compiler.WORD
+    VERBOSE = _compiler.VERBOSE
+    TEMPLATE = _compiler.TEMPLATE
+    A = ASCII
+    B = BESTMATCH
+    D = DEBUG
+    E = ENHANCEMATCH
+    F = FULLCASE
+    I = IGNORECASE
+    L = LOCALE
+    M = MULTILINE
+    P = POSIX
+    R = REVERSE
+    S = DOTALL
+    U = UNICODE
+    V0 = VERSION0
+    V1 = VERSION1
+    W = WORD
+    X = VERBOSE
+    T = TEMPLATE
+    """
+    )
+
+register_module_extender(AstroidManager(), "regex", _regex_transform)
+
+
 CLASS_GETITEM_TEMPLATE = """
 @classmethod
 def __class_getitem__(cls, item):
