@@ -377,7 +377,7 @@ class InspectBuilder:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
                     member = getattr(obj, name)
-            except (AttributeError):
+            except AttributeError:
                 # damned ExtensionClass.Base, I know you're there !
                 attach_dummy_node(node, name)
                 continue
