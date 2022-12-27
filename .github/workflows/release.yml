@@ -6,7 +6,7 @@ on:
       - published
 
 env:
-  DEFAULT_PYTHON: "3.10"
+  DEFAULT_PYTHON: "3.11"
 
 permissions:
   contents: read
@@ -20,10 +20,10 @@ jobs:
       url: https://pypi.org/project/astroid/
     steps:
       - name: Check out code from Github
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.2.0
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         id: python
-        uses: actions/setup-python@v4.3.1
+        uses: actions/setup-python@v4.4.0
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
           check-latest: true

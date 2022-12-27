@@ -189,7 +189,7 @@ if util.check_warnings_filter():  # noqa: C901
                     try:
                         index = keys.index(arg)
                     except ValueError:
-                        raise Exception(
+                        raise ValueError(
                             f"Can't find argument '{arg}' for '{args[0].__class__.__qualname__}'"
                         ) from None
                     if (
@@ -242,7 +242,7 @@ if util.check_warnings_filter():  # noqa: C901
                     try:
                         index = keys.index(arg)
                     except ValueError:
-                        raise Exception(
+                        raise ValueError(
                             f"Can't find argument '{arg}' for '{args[0].__class__.__qualname__}'"
                         ) from None
                     if arg in kwargs or len(args) > index:

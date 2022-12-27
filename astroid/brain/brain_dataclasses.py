@@ -115,8 +115,7 @@ def _get_dataclass_attributes(
 ) -> Iterator[nodes.AnnAssign]:
     """Yield the AnnAssign nodes of dataclass attributes for the node.
 
-    If init is True, also include InitVars, but exclude attributes from calls to
-    field where init=False.
+    If init is True, also include InitVars.
     """
     for assign_node in node.body:
         if not isinstance(assign_node, nodes.AnnAssign) or not isinstance(
@@ -124,24 +123,15 @@ def _get_dataclass_attributes(
         ):
             continue
 
-        if _is_class_var(assign_node.annotation):  # type: ignore[arg-type] # annotation is never None
+        # Annotation is never None
+        if _is_class_var(assign_node.annotation):  # type: ignore[arg-type]
             continue
 
         if _is_keyword_only_sentinel(assign_node.annotation):
             continue
 
-        if init:
-            value = assign_node.value
-            if (
-                isinstance(value, nodes.Call)
-                and _looks_like_dataclass_field_call(value, check_scope=False)
-                and any(
-                    keyword.arg == "init" and not keyword.value.bool_value()
-                    for keyword in value.keywords
-                )
-            ):
-                continue
-        elif _is_init_var(assign_node.annotation):  # type: ignore[arg-type] # annotation is never None
+        # Annotation is never None
+        if not init and _is_init_var(assign_node.annotation):  # type: ignore[arg-type]
             continue
 
         yield assign_node
@@ -231,11 +221,31 @@ def _find_arguments_from_base_classes(
     return pos_only, kw_only
 
 
-def _generate_dataclass_init(
+def _get_previous_field_default(node: nodes.ClassDef, name: str) -> nodes.NodeNG | None:
+    """Get the default value of a previously defined field."""
+    for base in reversed(node.mro()):
+        if not base.is_dataclass:
+            continue
+        if name in base.locals:
+            for assign in base.locals[name]:
+                if (
+                    isinstance(assign.parent, nodes.AnnAssign)
+                    and assign.parent.value
+                    and isinstance(assign.parent.value, nodes.Call)
+                    and _looks_like_dataclass_field_call(assign.parent.value)
+                ):
+                    default = _get_field_default(assign.parent.value)
+                    if default:
+                        return default[1]
+    return None
+
+
+def _generate_dataclass_init(  # pylint: disable=too-many-locals
     node: nodes.ClassDef, assigns: list[nodes.AnnAssign], kw_only_decorated: bool
 ) -> str:
     """Return an init method for a dataclass given the targets."""
     params: list[str] = []
+    kw_only_params: list[str] = []
     assignments: list[str] = []
     assign_names: list[str] = []
 
@@ -253,6 +263,18 @@ def _generate_dataclass_init(
             if "builtins.property" in additional_assign.decoratornames():
                 property_node = additional_assign
                 break
+
+        is_field = isinstance(value, nodes.Call) and _looks_like_dataclass_field_call(
+            value, check_scope=False
+        )
+
+        if is_field:
+            # Skip any fields that have `init=False`
+            if any(
+                keyword.arg == "init" and not keyword.value.bool_value()
+                for keyword in value.keywords  # type: ignore[union-attr] # value is never None
+            ):
+                continue
 
         if _is_init_var(annotation):  # type: ignore[arg-type] # annotation is never None
             init_var = True
@@ -272,10 +294,8 @@ def _generate_dataclass_init(
             param_str = name
 
         if value:
-            if isinstance(value, nodes.Call) and _looks_like_dataclass_field_call(
-                value, check_scope=False
-            ):
-                result = _get_field_default(value)
+            if is_field:
+                result = _get_field_default(value)  # type: ignore[arg-type]
                 if result:
                     default_type, default_node = result
                     if default_type == "default":
@@ -296,8 +316,30 @@ def _generate_dataclass_init(
                 param_str += f" = {next(property_node.infer_call_result()).as_string()}"
             except (InferenceError, StopIteration):
                 pass
+        else:
+            # Even with `init=False` the default value still can be propogated to
+            # later assignments. Creating weird signatures like:
+            # (self, a: str = 1) -> None
+            previous_default = _get_previous_field_default(node, name)
+            if previous_default:
+                param_str += f" = {previous_default.as_string()}"
 
-        params.append(param_str)
+        # If the field is a kw_only field, we need to add it to the kw_only_params
+        # This overwrites whether or not the class is kw_only decorated
+        if is_field:
+            kw_only = [k for k in value.keywords if k.arg == "kw_only"]  # type: ignore[union-attr]
+            if kw_only:
+                if kw_only[0].value.bool_value():
+                    kw_only_params.append(param_str)
+                else:
+                    params.append(param_str)
+                continue
+        # If kw_only decorated, we need to add all parameters to the kw_only_params
+        if kw_only_decorated:
+            kw_only_params.append(param_str)
+        else:
+            params.append(param_str)
+
         if not init_var:
             assignments.append(assignment_str)
 
@@ -306,21 +348,16 @@ def _generate_dataclass_init(
     )
 
     # Construct the new init method paramter string
-    params_string = "self, "
-    if prev_pos_only:
-        params_string += prev_pos_only
-    if not kw_only_decorated:
-        params_string += ", ".join(params)
-
+    # First we do the positional only parameters, making sure to add the
+    # the self parameter and the comma to allow adding keyword only parameters
+    params_string = f"self, {prev_pos_only}{', '.join(params)}"
     if not params_string.endswith(", "):
         params_string += ", "
 
-    if prev_kw_only:
-        params_string += "*, " + prev_kw_only
-        if kw_only_decorated:
-            params_string += ", ".join(params) + ", "
-    elif kw_only_decorated:
-        params_string += "*, " + ", ".join(params) + ", "
+    # Then we add the keyword only parameters
+    if prev_kw_only or kw_only_params:
+        params_string += "*, "
+    params_string += f"{prev_kw_only}{', '.join(kw_only_params)}"
 
     assignments_string = "\n    ".join(assignments) if assignments else "pass"
     return f"def __init__({params_string}) -> None:\n    {assignments_string}"

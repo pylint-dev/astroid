@@ -301,12 +301,11 @@ def _is_setuptools_namespace(location: pathlib.Path) -> bool:
             data = stream.read(4096)
     except OSError:
         return False
-    else:
-        extend_path = b"pkgutil" in data and b"extend_path" in data
-        declare_namespace = (
-            b"pkg_resources" in data and b"declare_namespace(__name__)" in data
-        )
-        return extend_path or declare_namespace
+    extend_path = b"pkgutil" in data and b"extend_path" in data
+    declare_namespace = (
+        b"pkg_resources" in data and b"declare_namespace(__name__)" in data
+    )
+    return extend_path or declare_namespace
 
 
 def _get_zipimporters() -> Iterator[tuple[str, zipimport.zipimporter]]:
