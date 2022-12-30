@@ -13,8 +13,6 @@ except ImportError:
 
 from astroid import builder
 
-parametrize = pytest.mark.parametrize("alias_import", [True, False])
-
 
 @pytest.mark.skipif(HAS_NUMPY is False, reason="This test requires the numpy library.")
 class TestBrainNumpyMa:
@@ -27,44 +25,24 @@ class TestBrainNumpyMa:
         cls_node = node.inferred()[0]
         assert cls_node.pytype() == "numpy.ma.core.MaskedArray"
 
-    @parametrize
-    def test_numpy_ma_masked_where_returns_maskedarray(self, alias_import):
+    @pytest.mark.parametrize("alias_import", [True, False])
+    @pytest.mark.parametrize("ma_function", ["masked_invalid", "masked_where"])
+    def test_numpy_ma_returns_maskedarray(self, alias_import, ma_function):
         """
-        Test that calls to numpy ma masked_where returns a MaskedArray object.
+        Test that calls to numpy ma functions return a MaskedArray object.
 
-        The "masked_where" node is an Attribute
-        """
-        import_str = (
-            "import numpy as np"
-            if alias_import
-            else "from numpy.ma import masked_where"
-        )
-        func_call = "np.ma.masked_where" if alias_import else "masked_where"
-
-        src = f"""
-        {import_str}
-        data = np.ndarray((1,2))
-        {func_call}([1, 0, 0], data)
-        """
-        self._assert_maskedarray(src)
-
-    @parametrize
-    def test_numpy_ma_masked_invalid_returns_maskedarray(self, alias_import):
-        """
-        Test that calls to numpy ma masked_invalid returns a MaskedArray object.
-
-        The "masked_invalid" node is an Attribute
+        The `ma_function` node is an Attribute or a Name
         """
         import_str = (
             "import numpy as np"
             if alias_import
-            else "from numpy.ma import masked_invalid"
+            else f"from numpy.ma import {ma_function}"
         )
-        func_call = "np.ma.masked_invalid" if alias_import else "masked_invalid"
+        func = f"np.ma.{ma_function}" if alias_import else ma_function
 
         src = f"""
         {import_str}
         data = np.ndarray((1,2))
-        {func_call}([1, 0, 0], data)
+        {func}([1, 0, 0], data)
         """
         self._assert_maskedarray(src)

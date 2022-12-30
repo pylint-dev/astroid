@@ -40,6 +40,9 @@ Release date: TBA
 
   Closes PyCQA/pylint#1902
 
+* Add the ``masked_invalid`` function in the ``numpy.ma`` brain.
+
+  Closes PyCQA/pylint#5715
 
 What's New in astroid 2.12.13?
 ==============================
