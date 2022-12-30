@@ -21,7 +21,7 @@ def numpy_ma_transform():
     import numpy.ma
     def masked_where(condition, a, copy=True):
         return numpy.ma.masked_array(a, mask=[])
-    
+
     def masked_invalid(a, copy=True):
         return numpy.ma.masked_array(a, mask=[])
     """
