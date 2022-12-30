@@ -13,6 +13,8 @@ except ImportError:
 
 from astroid import builder
 
+parametrize = pytest.mark.parametrize("alias_import", [True, False])
+
 
 @pytest.mark.skipif(HAS_NUMPY is False, reason="This test requires the numpy library.")
 class TestBrainNumpyMa:
@@ -20,34 +22,49 @@ class TestBrainNumpyMa:
     Test the numpy ma brain module
     """
 
-    @staticmethod
-    def test_numpy_ma_masked_where_returns_maskedarray():
+    def _assert_maskedarray(self, code):
+        node = builder.extract_node(code)
+        cls_node = node.inferred()[0]
+        assert cls_node.pytype() == "numpy.ma.core.MaskedArray"
+
+    @parametrize
+    def test_numpy_ma_masked_where_returns_maskedarray(self, alias_import):
         """
         Test that calls to numpy ma masked_where returns a MaskedArray object.
 
         The "masked_where" node is an Attribute
         """
-        src = """
-        import numpy as np
-        data = np.ndarray((1,2))
-        np.ma.masked_where([1, 0, 0], data)
-        """
-        node = builder.extract_node(src)
-        cls_node = node.inferred()[0]
-        assert cls_node.pytype() == "numpy.ma.core.MaskedArray"
+        import_str = (
+            "import numpy as np"
+            if alias_import
+            else "from numpy.ma import masked_where"
+        )
+        func_call = "np.ma.masked_where" if alias_import else "masked_where"
 
-    @staticmethod
-    def test_numpy_ma_masked_where_returns_maskedarray_bis():
-        """
-        Test that calls to numpy ma masked_where returns a MaskedArray object
-
-        The "masked_where" node is a Name
-        """
-        src = """
-        from numpy.ma import masked_where
+        src = f"""
+        {import_str}
         data = np.ndarray((1,2))
-        masked_where([1, 0, 0], data)
+        {func_call}([1, 0, 0], data)
         """
-        node = builder.extract_node(src)
-        cls_node = node.inferred()[0]
-        assert cls_node.pytype() == "numpy.ma.core.MaskedArray"
+        self._assert_maskedarray(src)
+
+    @parametrize
+    def test_numpy_ma_masked_invalid_returns_maskedarray(self, alias_import):
+        """
+        Test that calls to numpy ma masked_invalid returns a MaskedArray object.
+
+        The "masked_invalid" node is an Attribute
+        """
+        import_str = (
+            "import numpy as np"
+            if alias_import
+            else "from numpy.ma import masked_invalid"
+        )
+        func_call = "np.ma.masked_invalid" if alias_import else "masked_invalid"
+
+        src = f"""
+        {import_str}
+        data = np.ndarray((1,2))
+        {func_call}([1, 0, 0], data)
+        """
+        self._assert_maskedarray(src)

@@ -11,7 +11,7 @@ from astroid.manager import AstroidManager
 
 def numpy_ma_transform():
     """
-    Infer the call of the masked_where function
+    Infer the call of various numpy.ma functions
 
     :param node: node to infer
     :param context: inference context
