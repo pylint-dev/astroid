@@ -2556,7 +2556,7 @@ class ClassDef(
 
         return values
 
-    @lru_cache(maxsize=1024)
+    @lru_cache(maxsize=1024)  # noqa
     def _metaclass_lookup_attribute(self, name, context):
         """Search the given name in the implicit and the explicit metaclass."""
         attrs = set()
