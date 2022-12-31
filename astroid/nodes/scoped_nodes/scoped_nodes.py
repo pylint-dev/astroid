@@ -16,6 +16,7 @@ import os
 import sys
 import warnings
 from collections.abc import Generator, Iterator
+from functools import lru_cache
 from typing import TYPE_CHECKING, ClassVar, NoReturn, TypeVar, overload
 
 from astroid import bases
@@ -2555,6 +2556,7 @@ class ClassDef(
 
         return values
 
+    @lru_cache(maxsize=1024)  # noqa
     def _metaclass_lookup_attribute(self, name, context):
         """Search the given name in the implicit and the explicit metaclass."""
         attrs = set()
