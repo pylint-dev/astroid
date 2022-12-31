@@ -412,6 +412,7 @@ class AstroidManager:
         from astroid.inference_tip import clear_inference_tip_cache
         from astroid.interpreter.objectmodel import ObjectModel
         from astroid.nodes.node_classes import LookupMixIn
+        from astroid.nodes.scoped_nodes import ClassDef
 
         clear_inference_tip_cache()
 
@@ -426,6 +427,7 @@ class AstroidManager:
             _cache_normalize_path_,
             util.is_namespace,
             ObjectModel.attributes,
+            ClassDef._metaclass_lookup_attribute,
         ):
             lru_cache.cache_clear()  # type: ignore[attr-defined]
 
