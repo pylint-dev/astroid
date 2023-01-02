@@ -16,6 +16,10 @@ Release date: TBA
 
   Refs PyCQA/pylint#2567
 
+* Added a ``regex`` brain.
+
+  Refs PyCQA/pylint#1911
+
 What's New in astroid 2.12.14?
 ==============================
 Release date: TBA

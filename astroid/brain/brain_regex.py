@@ -7,44 +7,39 @@ from __future__ import annotations
 from astroid import context, inference_tip, nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import _extract_single_node, parse
-from astroid.const import PY39_PLUS, PY311_PLUS
+from astroid.const import PY39_PLUS
 from astroid.manager import AstroidManager
 
 
-def _re_transform() -> nodes.Module:
-    # The RegexFlag enum exposes all its entries by updating globals()
-    # In 3.6-3.10 all flags come from sre_compile
-    # On 3.11+ all flags come from re._compiler
-    if PY311_PLUS:
-        import_compiler = "import re._compiler as _compiler"
-    else:
-        import_compiler = "import sre_compile as _compiler"
+def _regex_transform() -> nodes.Module:
+    # The RegexFlag enum exposes all its entries by updating globals().
+    # We hard-code the flags for now.
     return parse(
-        f"""
-    {import_compiler}
-    NOFLAG = 0
-    ASCII = _compiler.SRE_FLAG_ASCII
-    IGNORECASE = _compiler.SRE_FLAG_IGNORECASE
-    LOCALE = _compiler.SRE_FLAG_LOCALE
-    UNICODE = _compiler.SRE_FLAG_UNICODE
-    MULTILINE = _compiler.SRE_FLAG_MULTILINE
-    DOTALL = _compiler.SRE_FLAG_DOTALL
-    VERBOSE = _compiler.SRE_FLAG_VERBOSE
-    TEMPLATE = _compiler.SRE_FLAG_TEMPLATE
-    DEBUG = _compiler.SRE_FLAG_DEBUG
-    A = ASCII
-    I = IGNORECASE
-    L = LOCALE
-    U = UNICODE
-    M = MULTILINE
-    S = DOTALL
-    X = VERBOSE
-    T = TEMPLATE
+        """
+    A = ASCII = 0x80          # Assume ASCII locale.
+    B = BESTMATCH = 0x1000    # Best fuzzy match.
+    D = DEBUG = 0x200         # Print parsed pattern.
+    E = ENHANCEMATCH = 0x8000 # Attempt to improve the fit after finding the first
+                              # fuzzy match.
+    F = FULLCASE = 0x4000     # Unicode full case-folding.
+    I = IGNORECASE = 0x2      # Ignore case.
+    L = LOCALE = 0x4          # Assume current 8-bit locale.
+    M = MULTILINE = 0x8       # Make anchors look for newline.
+    P = POSIX = 0x10000       # POSIX-style matching (leftmost longest).
+    R = REVERSE = 0x400       # Search backwards.
+    S = DOTALL = 0x10         # Make dot match newline.
+    U = UNICODE = 0x20        # Assume Unicode locale.
+    V0 = VERSION0 = 0x2000    # Old legacy behaviour.
+    DEFAULT_VERSION = V0
+    V1 = VERSION1 = 0x100     # New enhanced behaviour.
+    W = WORD = 0x800          # Default Unicode word breaks.
+    X = VERBOSE = 0x40        # Ignore whitespace and comments.
+    T = TEMPLATE = 0x1        # Template (present because re module has it).
     """
     )
 
 
-register_module_extender(AstroidManager(), "re", _re_transform)
+register_module_extender(AstroidManager(), "regex", _regex_transform)
 
 
 CLASS_GETITEM_TEMPLATE = """
@@ -55,7 +50,7 @@ def __class_getitem__(cls, item):
 
 
 def _looks_like_pattern_or_match(node: nodes.Call) -> bool:
-    """Check for re.Pattern or re.Match call in stdlib.
+    """Check for regex.Pattern or regex.Match call in stdlib.
 
     Match these patterns from stdlib/re.py
     ```py
@@ -64,7 +59,7 @@ def _looks_like_pattern_or_match(node: nodes.Call) -> bool:
     ```
     """
     return (
-        node.root().name == "re"
+        node.root().name == "regex.regex"
         and isinstance(node.func, nodes.Name)
         and node.func.name == "type"
         and isinstance(node.parent, nodes.Assign)
@@ -75,7 +70,7 @@ def _looks_like_pattern_or_match(node: nodes.Call) -> bool:
 
 
 def infer_pattern_match(node: nodes.Call, ctx: context.InferenceContext | None = None):
-    """Infer re.Pattern and re.Match as classes. For PY39+ add `__class_getitem__`."""
+    """Infer regex.Pattern and regex.Match as classes. For PY39+ add `__class_getitem__`."""
     class_def = nodes.ClassDef(
         name=node.parent.targets[0].name,
         lineno=node.lineno,

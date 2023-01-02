@@ -2,8 +2,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-import unittest
-
 try:
     import regex
 
@@ -11,19 +9,22 @@ try:
 except ImportError:
     HAS_REGEX = False
 
+import pytest
+
 from astroid import MANAGER, builder, nodes
 
 
-@unittest.skipUnless(HAS_REGEX, "This test requires the regex library.")
-class RegexBrainTest(unittest.TestCase):
+@pytest.mark.skipif(not HAS_REGEX, reason="This test requires the regex library.")
+class TestRegexBrain:
     def test_regex_flags(self) -> None:
+        """Test that we have all regex enum flags in the brain."""
         names = [name for name in dir(regex) if name.isupper()]
         re_ast = MANAGER.ast_from_module_name("regex")
         for name in names:
-            self.assertIn(name, re_ast)
-            self.assertEqual(next(re_ast[name].infer()).value, getattr(regex, name))
+            assert name in re_ast
+            assert next(re_ast[name].infer()).value == getattr(regex, name)
 
-    def test_re_pattern_subscriptable(self):
+    def test_regex_pattern_and_match_subscriptable(self):
         """Test regex.Pattern and regex.Match are subscriptable in PY39+"""
         node1 = builder.extract_node(
             """
