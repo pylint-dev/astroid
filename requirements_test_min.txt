@@ -1,2 +1,4 @@
+coverage~=7.0
 pytest
+pytest-cov~=4.0
 typing-extensions>=3.10
