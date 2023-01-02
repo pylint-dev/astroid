@@ -13,7 +13,7 @@ from astroid.manager import AstroidManager
 
 def _regex_transform() -> nodes.Module:
     """The RegexFlag enum exposes all its entries by updating globals().
-    
+
     We hard-code the flags for now.
     # pylint: disable-next=line-too-long
     See https://github.com/mrabarnett/mrab-regex/blob/cc392629b28ed0aeb8bf6d46f826ff9e87aac551/regex_3/regex.py#L198
