@@ -210,17 +210,24 @@ def object_build_class(
 
 def _get_args_info_from_callable(
     member: _FunctionTypes,
-) -> tuple[list[str], list[str], list[Any], list[str], list[Any]]:
+) -> (
+    tuple[list[str], list[str], list[Any], list[str], list[Any]]
+    | tuple[None, None, None, None, None]
+):
     """Returns args, posonlyargs, defaults, kwonlyargs.
 
     :note: currently ignores the return annotation.
     """
-    signature = inspect.signature(member)
     args: list[str] = []
     defaults: list[Any] = []
     posonlyargs: list[str] = []
     kwonlyargs: list[str] = []
     kwonlydefaults: list[Any] = []
+
+    try:
+        signature = inspect.signature(member)
+    except (ValueError, RuntimeError):
+        return None, None, None, None, None
 
     for param_name, param in signature.parameters.items():
         if param.kind == inspect.Parameter.POSITIONAL_ONLY:
@@ -280,10 +287,24 @@ def object_build_methoddescriptor(
     localname: str,
 ) -> None:
     """create astroid for a living method descriptor object"""
-    # FIXME get arguments ?
+    (
+        args,
+        posonlyargs,
+        defaults,
+        kwonlyargs,
+        kwonlydefaults,
+    ) = _get_args_info_from_callable(member)
+
     func = build_function(
-        getattr(member, "__name__", None) or localname, doc=member.__doc__
+        name=getattr(member, "__name__", None) or localname,
+        args=args,
+        posonlyargs=posonlyargs,
+        defaults=defaults,
+        doc=member.__doc__,
+        kwonlyargs=kwonlyargs,
+        kwonlydefaults=kwonlydefaults,
     )
+
     node.add_local_node(func, localname)
     _add_dunder_class(func, member)
 
