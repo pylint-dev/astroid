@@ -125,9 +125,18 @@ def build_function(
     else:
         arguments = None
 
+    default_nodes: list[nodes.NodeNG] | None = []
+    if defaults is not None:
+        for default in defaults:
+            default_node = nodes.const_factory(default)
+            default_node.parent = argsnode
+            default_nodes.append(default_node)
+    else:
+        default_nodes = None
+
     argsnode.postinit(
         args=arguments,
-        defaults=[],
+        defaults=default_nodes,
         kwonlyargs=[
             nodes.AssignName(name=arg, parent=argsnode) for arg in kwonlyargs or ()
         ],
@@ -142,9 +151,6 @@ def build_function(
         body=[],
         doc_node=nodes.Const(value=doc) if doc else None,
     )
-    for default in defaults or ():
-        argsnode.defaults.append(nodes.const_factory(default))
-        argsnode.defaults[-1].parent = argsnode
     if args:
         register_arguments(func)
     return func
@@ -188,7 +194,7 @@ def object_build_class(
 
 def _get_args_info_from_callable(
     member: _FunctionTypes,
-) -> tuple[list[str], list[Any], list[str], list[str]]:
+) -> tuple[list[str], list[str], list[Any], list[str]]:
     """Returns args, posonlyargs, defaults, kwonlyargs.
 
     :note: currently ignores the return annotation.

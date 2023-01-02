@@ -458,7 +458,7 @@ class BuilderTest(unittest.TestCase):
     def test_inspect_build1(self) -> None:
         time_ast = self.manager.ast_from_module_name("time")
         self.assertTrue(time_ast)
-        self.assertEqual(time_ast["time"].args.defaults, [])
+        self.assertEqual(time_ast["time"].args.defaults, None)
 
     def test_inspect_build3(self) -> None:
         self.builder.inspect_build(unittest)
