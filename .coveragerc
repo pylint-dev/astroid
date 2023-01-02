@@ -1,12 +1,10 @@
-[paths]
-source =
-   astroid
+[run]
+relative_files = true
 
 [report]
-include =
-    astroid/*
 omit =
     */tests/*
+    */tmp*/*
 exclude_lines =
     # Re-enable default pragma
     pragma: no cover
