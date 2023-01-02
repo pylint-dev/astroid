@@ -10,7 +10,7 @@ on:
 env:
   CACHE_VERSION: 1
   KEY_PREFIX: venv
-  DEFAULT_PYTHON: "3.10"
+  DEFAULT_PYTHON: "3.11"
   PRE_COMMIT_CACHE: ~/.cache/pre-commit
 
 jobs:
@@ -122,58 +122,12 @@ jobs:
       - name: Run pytest
         run: |
           . venv/bin/activate
-          pytest --cov --cov-report= tests/
+          pytest --cov
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v3.1.0
         with:
-          name: coverage-${{ matrix.python-version }}
+          name: coverage-linux-${{ matrix.python-version }}
           path: .coverage
-
-  coverage:
-    name: tests / process / coverage
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    needs: ["tests-linux"]
-    strategy:
-      matrix:
-        python-version: ["3.10"]
-    env:
-      COVERAGERC_FILE: .coveragerc
-    steps:
-      - name: Check out code from GitHub
-        uses: actions/checkout@v3.0.2
-      - name: Set up Python ${{ matrix.python-version }}
-        id: python
-        uses: actions/setup-python@v4.0.0
-        with:
-          python-version: ${{ matrix.python-version }}
-          check-latest: true
-      - name: Restore Python virtual environment
-        id: cache-venv
-        uses: actions/cache@v3.0.4
-        with:
-          path: venv
-          key:
-            ${{ runner.os }}-${{ steps.python.outputs.python-version }}-${{
-            needs.tests-linux.outputs.python-key }}
-      - name: Fail job if Python cache restore failed
-        if: steps.cache-venv.outputs.cache-hit != 'true'
-        run: |
-          echo "Failed to restore Python venv from cache"
-          exit 1
-      - name: Download all coverage artifacts
-        uses: actions/download-artifact@v3.0.0
-      - name: Combine coverage results
-        run: |
-          . venv/bin/activate
-          coverage combine coverage*/.coverage
-          coverage report --rcfile=${{ env.COVERAGERC_FILE }}
-      - name: Upload coverage to Coveralls
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          . venv/bin/activate
-          coveralls --rcfile=${{ env.COVERAGERC_FILE }} --service=github
 
   tests-windows:
     name: tests / run / ${{ matrix.python-version }} / Windows
@@ -222,7 +176,12 @@ jobs:
       - name: Run pytest
         run: |
           . venv\\Scripts\\activate
-          pytest tests/
+          pytest --cov
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: coverage-windows-${{ matrix.python-version }}
+          path: .coverage
 
   tests-pypy:
     name: tests / run / ${{ matrix.python-version }} / Linux
@@ -266,4 +225,58 @@ jobs:
       - name: Run pytest
         run: |
           . venv/bin/activate
-          pytest tests/
+          pytest --cov
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: coverage-pypy-${{ matrix.python-version }}
+          path: .coverage
+
+  coverage:
+    name: tests / process / coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: ["tests-linux", "tests-windows", "tests-pypy"]
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v3.2.0
+      - name: Set up Python 3.11
+        id: python
+        uses: actions/setup-python@v4.4.0
+        with:
+          python-version: "3.11"
+          check-latest: true
+      - name: Install dependencies
+        run: pip install -U -r requirements_test_min.txt
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v3.0.1
+      - name: Combine Linux coverage results
+        run: |
+          coverage combine coverage-linux*/.coverage
+          coverage xml -o coverage-linux.xml
+      - uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: true
+          verbose: true
+          flags: linux
+          files: coverage-linux.xml
+      - name: Combine Windows coverage results
+        run: |
+          coverage combine coverage-windows*/.coverage
+          coverage xml -o coverage-windows.xml
+      - uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: true
+          verbose: true
+          flags: windows
+          files: coverage-windows.xml
+      - name: Combine PyPy coverage results
+        run: |
+          coverage combine coverage-pypy*/.coverage
+          coverage xml -o coverage-pypy.xml
+      - uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: true
+          verbose: true
+          flags: pypy
+          files: coverage-pypy.xml
