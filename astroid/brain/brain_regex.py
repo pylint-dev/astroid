@@ -16,7 +16,7 @@ def _regex_transform() -> nodes.Module:
 
     We hard-code the flags for now.
     # pylint: disable-next=line-too-long
-    See https://github.com/mrabarnett/mrab-regex/blob/cc392629b28ed0aeb8bf6d46f826ff9e87aac551/regex_3/regex.py#L198
+    See https://github.com/mrabarnett/mrab-regex/blob/2022.10.31/regex_3/regex.py#L200
     """
     return parse(
         """
