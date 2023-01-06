@@ -20,9 +20,10 @@ Release date: TBA
 
   Refs PyCQA/pylint#1911
 
+
 What's New in astroid 2.12.14?
 ==============================
-Release date: TBA
+Release date: 2023-01-06
 
 * Handle the effect of properties on the ``__init__`` of a dataclass correctly.
 
