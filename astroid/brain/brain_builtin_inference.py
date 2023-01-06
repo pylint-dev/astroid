@@ -953,7 +953,7 @@ def _infer_str_format_call(
     try:
         formatted_string = format_template.format(*pos_values, **keyword_values)
     except (AttributeError, IndexError, KeyError, TypeError, ValueError):
-        # AttributeError: processing a replacement field using the arguments failed
+        # AttributeError: named field in format string was not found in the arguments
         # IndexError: there are too few arguments to interpolate
         # TypeError: Unsupported format string
         # ValueError: Unknown format code
