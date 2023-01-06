@@ -191,4 +191,3 @@ under this name, or we did not manage to find their commits in the history.
 - carl
 - alain lefroy
 - Mark Gius
-- jarradhope

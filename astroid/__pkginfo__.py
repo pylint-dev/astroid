@@ -2,5 +2,5 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-__version__ = "2.12.13"
+__version__ = "2.12.14"
 version = __version__
