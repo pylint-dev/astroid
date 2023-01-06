@@ -2,9 +2,21 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.13.0?
+What's New in astroid 2.14.0?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.13.1?
+=============================
+Release date: TBA
+
+
+
+What's New in astroid 2.13.0?
+=============================
+Release date: 2023-01-07
 
 * Fixed importing of modules that have the same name as the file that is importing.
   ``astroid`` will now correctly handle an ``import math`` statement in a file called ``math.py``
