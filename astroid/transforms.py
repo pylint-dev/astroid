@@ -66,7 +66,7 @@ class TransformVisitor:
 
         return self._visit(node)
 
-    def register_transform(self, node_class, transform, predicate=None):
+    def register_transform(self, node_class, transform, predicate=None) -> None:
         """Register `transform(node)` function to be applied on the given
         astroid's `node_class` if `predicate` is None or returns true
         when called with the node as argument.
@@ -76,7 +76,7 @@ class TransformVisitor:
         """
         self.transforms[node_class].append((transform, predicate))
 
-    def unregister_transform(self, node_class, transform, predicate=None):
+    def unregister_transform(self, node_class, transform, predicate=None) -> None:
         """Unregister the given transform."""
         self.transforms[node_class].remove((transform, predicate))
 

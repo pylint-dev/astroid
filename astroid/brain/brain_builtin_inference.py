@@ -164,7 +164,7 @@ def _builtin_filter_predicate(node, builtin_name) -> bool:
     return False
 
 
-def register_builtin_transform(transform, builtin_name):
+def register_builtin_transform(transform, builtin_name) -> None:
     """Register a new transform function for the given *builtin_name*.
 
     The transform function must accept two parameters, a node and
@@ -952,7 +952,8 @@ def _infer_str_format_call(
 
     try:
         formatted_string = format_template.format(*pos_values, **keyword_values)
-    except (IndexError, KeyError, TypeError, ValueError):
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+        # AttributeError: processing a replacement field using the arguments failed
         # IndexError: there are too few arguments to interpolate
         # TypeError: Unsupported format string
         # ValueError: Unknown format code

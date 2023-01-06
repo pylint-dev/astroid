@@ -11,7 +11,7 @@ from astroid.manager import AstroidManager
 
 def numpy_ma_transform():
     """
-    Infer the call of the masked_where function
+    Infer the call of various numpy.ma functions
 
     :param node: node to infer
     :param context: inference context
@@ -20,6 +20,9 @@ def numpy_ma_transform():
         """
     import numpy.ma
     def masked_where(condition, a, copy=True):
+        return numpy.ma.masked_array(a, mask=[])
+
+    def masked_invalid(a, copy=True):
         return numpy.ma.masked_array(a, mask=[])
     """
     )

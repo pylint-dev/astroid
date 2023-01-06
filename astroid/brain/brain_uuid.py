@@ -8,7 +8,7 @@ from astroid.nodes.node_classes import Const
 from astroid.nodes.scoped_nodes import ClassDef
 
 
-def _patch_uuid_class(node):
+def _patch_uuid_class(node: ClassDef) -> None:
     # The .int member is patched using __dict__
     node.locals["int"] = [Const(0, parent=node)]
 

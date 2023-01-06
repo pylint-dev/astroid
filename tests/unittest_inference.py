@@ -86,7 +86,6 @@ def partialmethod(func, arg):
 
 
 class InferenceTest(resources.SysPathSetup, unittest.TestCase):
-
     # additional assertInfer* method for builtin types
 
     def assertInferConst(self, node: nodes.Call, expected: str) -> None:
@@ -6498,7 +6497,7 @@ def test_self_reference_infer_does_not_trigger_recursion_error() -> None:
     assert inferred is util.Uninferable
 
 
-def test_inferring_properties_multiple_time_does_not_mutate_locals_multiple_times() -> None:
+def test_inferring_properties_multiple_time_does_not_mutate_locals() -> None:
     code = """
     class A:
         @property

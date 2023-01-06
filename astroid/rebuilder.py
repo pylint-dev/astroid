@@ -1413,7 +1413,7 @@ class TreeRebuilder:
             parent=parent,
         )
         # save import names in parent's locals:
-        for (name, asname) in newnode.names:
+        for name, asname in newnode.names:
             name = asname or name
             parent.set_local(name.split(".")[0], newnode)
         return newnode

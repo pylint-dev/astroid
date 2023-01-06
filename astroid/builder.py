@@ -217,7 +217,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             my_list.sort(key=_key_func)
 
         assert node.parent  # It should always default to the module
-        for (name, asname) in node.names:
+        for name, asname in node.names:
             if name == "*":
                 try:
                     imported = node.do_import_module()

@@ -16,7 +16,11 @@ import pytest
 import astroid
 from astroid import manager, test_utils
 from astroid.const import IS_JYTHON, IS_PYPY
-from astroid.exceptions import AstroidBuildingError, AstroidImportError
+from astroid.exceptions import (
+    AstroidBuildingError,
+    AstroidImportError,
+    AttributeInferenceError,
+)
 from astroid.interpreter._import import util
 from astroid.modutils import EXT_LIB_DIRS, is_standard_module
 from astroid.nodes import Const
@@ -398,6 +402,7 @@ class ClearCacheTest(unittest.TestCase):
             astroid.modutils._cache_normalize_path_,
             util.is_namespace,
             astroid.interpreter.objectmodel.ObjectModel.attributes,
+            ClassDef._metaclass_lookup_attribute,
         )
 
         # Get a baseline for the size of the cache after simply calling bootstrap()
@@ -408,6 +413,8 @@ class ClearCacheTest(unittest.TestCase):
         is_standard_module("unittest", std_path=["garbage_path"])
         util.is_namespace("unittest")
         astroid.interpreter.objectmodel.ObjectModel().attributes()
+        with pytest.raises(AttributeInferenceError):
+            ClassDef().getattr("garbage")
 
         # Did the hits or misses actually happen?
         incremented_cache_infos = [lru.cache_info() for lru in lrus]

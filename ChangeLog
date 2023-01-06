@@ -16,6 +16,39 @@ Release date: TBA
 
   Refs PyCQA/pylint#2567
 
+* Added a ``regex`` brain.
+
+  Refs PyCQA/pylint#1911
+
+
+What's New in astroid 2.12.14?
+==============================
+Release date: 2023-01-06
+
+* Handle the effect of properties on the ``__init__`` of a dataclass correctly.
+
+  Closes PyCQA/pylint#5225
+
+* Handle the effect of ``kw_only=True`` in dataclass fields correctly.
+
+  Closes PyCQA/pylint#7623
+
+* Handle the effect of ``init=False`` in dataclass fields correctly.
+
+  Closes PyCQA/pylint#7291
+
+* Fix crash if ``numpy`` module doesn't have ``version`` attribute.
+
+  Refs PyCQA/pylint#7868
+
+* Handle ``AttributeError`` during ``str.format`` template inference tip evaluation
+
+  Closes PyCQA/pylint#1902
+
+* Add the ``masked_invalid`` function in the ``numpy.ma`` brain.
+
+  Closes PyCQA/pylint#5715
+
 What's New in astroid 2.12.13?
 ==============================
 Release date: 2022-11-19
@@ -272,6 +305,8 @@ Release date: 2022-07-09
   ``AstroidManager.clear_cache``.
 
   Closes #1559
+
+* ``Arguments.defaults`` is now ``None`` for uninferable signatures.
 
 * On Python versions >= 3.9, ``astroid`` now understands subscripting
   builtin classes such as ``enumerate`` or ``staticmethod``.

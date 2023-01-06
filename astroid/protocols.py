@@ -386,7 +386,9 @@ nodes.AssignName.assigned_stmts = assend_assigned_stmts
 nodes.AssignAttr.assigned_stmts = assend_assigned_stmts
 
 
-def _arguments_infer_argname(self, name, context):
+def _arguments_infer_argname(
+    self, name: str | None, context: InferenceContext
+) -> Generator[InferenceResult, None, None]:
     # arguments information may be missing, in which case we can't do anything
     # more
     if not (self.arguments or self.vararg or self.kwarg):
@@ -739,6 +741,7 @@ def starred_assigned_stmts(  # noqa: C901
             A list of indices, where each index specifies what item to fetch from
             the inference results.
     """
+
     # pylint: disable=too-many-locals,too-many-statements
     def _determine_starred_iteration_lookups(
         starred: nodes.Starred, target: nodes.Tuple, lookups: list[tuple[int, int]]

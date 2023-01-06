@@ -193,7 +193,6 @@ def infer_named_tuple(
     call_site = arguments.CallSite.from_call(node, context=context)
     node = extract_node("import collections; collections.namedtuple")
     try:
-
         func = next(node.infer())
     except StopIteration as e:
         raise InferenceError(node=node) from e

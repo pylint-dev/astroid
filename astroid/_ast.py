@@ -7,6 +7,7 @@ from __future__ import annotations
 import ast
 import sys
 import types
+from collections.abc import Callable
 from functools import partial
 from typing import NamedTuple
 
@@ -36,6 +37,7 @@ class ParserModule(NamedTuple):
     context_classes: dict[type[ast.expr_context], Context]
 
     def parse(self, string: str, type_comments: bool = True) -> ast.Module:
+        parse_func: Callable[[str], ast.Module]
         if self.module is _ast_py3:
             if PY38_PLUS:
                 parse_func = partial(self.module.parse, type_comments=type_comments)
