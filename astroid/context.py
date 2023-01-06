@@ -11,6 +11,7 @@ import pprint
 from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
+    from astroid import constraint, nodes
     from astroid.nodes.node_classes import Keyword, NodeNG
 
 _InferenceCache = Dict[
@@ -37,6 +38,7 @@ class InferenceContext:
         "callcontext",
         "boundnode",
         "extra_context",
+        "constraints",
         "_nodes_inferred",
     )
 
@@ -84,6 +86,9 @@ class InferenceContext:
         Context that needs to be passed down through call stacks
         for call arguments
         """
+
+        self.constraints: dict[str, dict[nodes.If, set[constraint.Constraint]]] = {}
+        """The constraints on nodes."""
 
     @property
     def nodes_inferred(self) -> int:
@@ -134,6 +139,7 @@ class InferenceContext:
         clone.callcontext = self.callcontext
         clone.boundnode = self.boundnode
         clone.extra_context = self.extra_context
+        clone.constraints = self.constraints.copy()
         return clone
 
     @contextlib.contextmanager
