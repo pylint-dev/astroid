@@ -32,6 +32,14 @@ Release date: 2023-01-07
 
   Refs PyCQA/pylint#1911
 
+* Support "is None" constraints from if statements during inference.
+
+  Ref #791
+  Ref PyCQA/pylint#157
+  Ref PyCQA/pylint#1472
+  Ref PyCQA/pylint#2016
+  Ref PyCQA/pylint#2631
+  Ref PyCQA/pylint#2880
 
 What's New in astroid 2.12.14?
 ==============================
@@ -374,15 +382,6 @@ Release date: 2022-07-09
   ambiguity (or user error) in calling ``__new__(cls)``.
 
   Refs PyCQA/pylint#7109
-
-* Support "is None" constraints from if statements during inference.
-
-  Ref #791
-  Ref PyCQA/pylint#157
-  Ref PyCQA/pylint#1472
-  Ref PyCQA/pylint#2016
-  Ref PyCQA/pylint#2631
-  Ref PyCQA/pylint#2880
 
 What's New in astroid 2.11.7?
 =============================
