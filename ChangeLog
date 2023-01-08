@@ -8,11 +8,19 @@ Release date: TBA
 
 
 
-What's New in astroid 2.13.1?
+What's New in astroid 2.13.2?
 =============================
 Release date: TBA
 
 
+
+What's New in astroid 2.13.1?
+=============================
+Release date: 2023-01-08
+
+* Bumping typing_extensions to 4.0.0 that is required when using ``Self``
+
+  Closes #1942
 
 What's New in astroid 2.13.0?
 =============================
