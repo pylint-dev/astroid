@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.13.2?
+What's New in astroid 2.13.3?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.13.2?
+=============================
+Release date: 2023-01-08
 
 * Removed version conditions on typing_extensions dependency. Removed typing_extensions from
   our tests requirements as it was preventing issues to appear in our continuous integration.
