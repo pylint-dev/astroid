@@ -12,6 +12,10 @@ What's New in astroid 2.13.2?
 =============================
 Release date: TBA
 
+* Removed version conditions on typing_extensions dependency. Removed typing_extensions from
+  our tests requirements as it was preventing issues to appear in our continuous integration.
+
+  Closes #1945
 
 
 What's New in astroid 2.13.1?
