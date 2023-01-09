@@ -19,7 +19,9 @@ from astroid.manager import AstroidManager
 
 def enrich_ctypes_redefined_types():
     """
-    For each ctypes redefined types, overload 'value' and '_type_' members definition.
+    For each ctypes redefined types, overload 'value' and '_type_' members
+    definition.
+
     Overloading 'value' is mandatory otherwise astroid cannot infer the correct type for it.
     Overloading '_type_' is necessary because the class definition made here replaces the original
     one, in which '_type_' member is defined. Luckily those original class definitions are very short

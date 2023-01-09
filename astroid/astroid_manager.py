@@ -1,5 +1,7 @@
 """
-This file contain the global astroid MANAGER, to prevent circular import that happened
+This file contain the global astroid MANAGER.
+
+It prevents a circular import that happened
 when the only possibility to import it was from astroid.__init__.py.
 
 This AstroidManager is a singleton/borg so it's possible to instantiate an

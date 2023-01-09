@@ -18,9 +18,7 @@ from astroid import manager, nodes, transforms
 
 
 def require_version(minver: str = "0.0.0", maxver: str = "4.0.0") -> Callable:
-    """Compare version of python interpreter to the given one.
-    Skip the test if older.
-    """
+    """Compare version of python interpreter to the given one and skips the test if older."""
 
     def parse(python_version: str) -> tuple[int, ...]:
         try:

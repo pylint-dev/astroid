@@ -42,7 +42,7 @@ _T = TypeVar("_T")
 
 
 class FrozenSet(node_classes.BaseContainer):
-    """class representing a FrozenSet composite node"""
+    """Class representing a FrozenSet composite node."""
 
     def pytype(self) -> Literal["builtins.frozenset"]:
         return "builtins.frozenset"
@@ -225,7 +225,7 @@ class Super(node_classes.NodeNG):
 
 
 class ExceptionInstance(bases.Instance):
-    """Class for instances of exceptions
+    """Class for instances of exceptions.
 
     It has special treatment for some of the exceptions's attributes,
     which are transformed at runtime into certain concrete objects, such as
@@ -242,7 +242,7 @@ class ExceptionInstance(bases.Instance):
 
 
 class DictInstance(bases.Instance):
-    """Special kind of instances for dictionaries
+    """Special kind of instances for dictionaries.
 
     This instance knows the underlying object model of the dictionaries, which means
     that methods such as .values or .items can be properly inferred.
@@ -271,7 +271,7 @@ class DictValues(bases.Proxy):
 
 
 class PartialFunction(scoped_nodes.FunctionDef):
-    """A class representing partial function obtained via functools.partial"""
+    """A class representing partial function obtained via functools.partial."""
 
     @decorators.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
@@ -322,7 +322,7 @@ node_classes.Dict.__bases__ = (node_classes.NodeNG, DictInstance)
 
 
 class Property(scoped_nodes.FunctionDef):
-    """Class representing a Python property"""
+    """Class representing a Python property."""
 
     @decorators.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(

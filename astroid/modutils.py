@@ -339,9 +339,10 @@ def file_info_from_modpath(
     path: Sequence[str] | None = None,
     context_file: str | None = None,
 ) -> spec.ModuleSpec:
-    """given a mod path (i.e. split module / package name), return the
-    corresponding file, giving priority to source file over precompiled
-    file if it exists
+    """Given a mod path (i.e. split module / package name), return the
+    corresponding file.
+
+    Giving priority to source file over precompiled file if it exists.
 
     :param modpath:
       split module's name (i.e name of a module or package split

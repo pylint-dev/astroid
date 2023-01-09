@@ -126,13 +126,15 @@ class NodeNG:
 
         self.end_col_offset: int | None = end_col_offset
         """The end column this node appears on in the source code.
+
         Note: This is after the last symbol.
         """
 
         self.position: Position | None = None
-        """Position of keyword(s) and name. Used as fallback for block nodes
-        which might not provide good enough positional information.
-        E.g. ClassDef, FunctionDef.
+        """Position of keyword(s) and name.
+
+        Used as fallback for block nodes which might not provide good
+        enough positional information. E.g. ClassDef, FunctionDef.
         """
 
     def infer(
@@ -262,7 +264,7 @@ class NodeNG:
         yield from ()
 
     def last_child(self) -> NodeNG | None:
-        """An optimized version of list(get_children())[-1]"""
+        """An optimized version of list(get_children())[-1]."""
         for field in self._astroid_fields[::-1]:
             attr = getattr(self, field)
             if not attr:  # None or empty list / tuple
@@ -349,6 +351,7 @@ class NodeNG:
 
     def scope(self) -> nodes.LocalsDictNodeNG:
         """The first parent node defining a new scope.
+
         These can be Module, FunctionDef, ClassDef, Lambda, or GeneratorExp nodes.
 
         :returns: The first parent scope node.
@@ -591,7 +594,7 @@ class NodeNG:
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-        """we don't know how to resolve a statement by default"""
+        """We don't know how to resolve a statement by default."""
         # this method is overridden by most concrete classes
         raise InferenceError(
             "No inference function for {node!r}.", node=self, context=context
@@ -696,7 +699,9 @@ class NodeNG:
         @_repr_tree.register(tuple)
         @_repr_tree.register(list)
         def _repr_seq(node, result, done, cur_indent="", depth=1):
-            """Outputs a representation of a sequence that's contained within an AST."""
+            """Outputs a representation of a sequence that's contained within an
+            AST.
+            """
             cur_indent += indent
             result.append("[")
             if not node:

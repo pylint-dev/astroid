@@ -2,7 +2,8 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""Astroid hooks for understanding boto3.ServiceRequest()."""
+"""Astroid hooks for understanding ``boto3.ServiceRequest()``."""
+
 from astroid import extract_node
 from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import ClassDef

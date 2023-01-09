@@ -400,9 +400,10 @@ class ParentMissingError(AstroidError):
 
 
 class StatementMissing(ParentMissingError):
-    """Raised when a call to node.statement() does not return a node. This is because
-    a node in the chain does not have a parent attribute and therefore does not
-    return a node for statement().
+    """Raised when a call to node.statement() does not return a node.
+
+    This is because a node in the chain does not have a parent attribute
+    and therefore does not return a node for statement().
 
     Standard attributes:
         target: The node for which the parent lookup failed.
