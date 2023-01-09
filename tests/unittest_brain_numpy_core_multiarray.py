@@ -16,9 +16,7 @@ from astroid import builder
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
 class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
-    """
-    Test the numpy core multiarray brain module
-    """
+    """Test the numpy core multiarray brain module."""
 
     numpy_functions_returning_array = (
         ("array", "[1, 2]"),
@@ -82,9 +80,7 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
         return node.infer()
 
     def test_numpy_function_calls_inferred_as_ndarray(self):
-        """
-        Test that calls to numpy functions are inferred as numpy.ndarray
-        """
+        """Test that calls to numpy functions are inferred as numpy.ndarray."""
         for infer_wrapper in (
             self._inferred_numpy_func_call,
             self._inferred_numpy_no_alias_func_call,
@@ -106,9 +102,7 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
                     )
 
     def test_numpy_function_calls_inferred_as_bool(self):
-        """
-        Test that calls to numpy functions are inferred as bool
-        """
+        """Test that calls to numpy functions are inferred as bool."""
         for infer_wrapper in (
             self._inferred_numpy_func_call,
             self._inferred_numpy_no_alias_func_call,
@@ -130,9 +124,7 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
                     )
 
     def test_numpy_function_calls_inferred_as_dtype(self):
-        """
-        Test that calls to numpy functions are inferred as numpy.dtype
-        """
+        """Test that calls to numpy functions are inferred as numpy.dtype."""
         for infer_wrapper in (
             self._inferred_numpy_func_call,
             self._inferred_numpy_no_alias_func_call,
@@ -154,9 +146,7 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
                     )
 
     def test_numpy_function_calls_inferred_as_none(self):
-        """
-        Test that calls to numpy functions are inferred as None
-        """
+        """Test that calls to numpy functions are inferred as None."""
         for infer_wrapper in (
             self._inferred_numpy_func_call,
             self._inferred_numpy_no_alias_func_call,
@@ -178,9 +168,7 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
                     )
 
     def test_numpy_function_calls_inferred_as_tuple(self):
-        """
-        Test that calls to numpy functions are inferred as tuple
-        """
+        """Test that calls to numpy functions are inferred as tuple."""
         for infer_wrapper in (
             self._inferred_numpy_func_call,
             self._inferred_numpy_no_alias_func_call,

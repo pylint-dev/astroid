@@ -394,8 +394,7 @@ class FunctionModelTest(unittest.TestCase):
                 next(node.infer())
 
     def test_descriptor_error_regression(self) -> None:
-        """Make sure the following code does
-        node cause an exception"""
+        """Make sure the following code does node cause an exception."""
         node = builder.extract_node(
             """
         class MyClass:

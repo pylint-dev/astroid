@@ -16,7 +16,9 @@ from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS, PY310_PLUS
     reason="end_lineno and end_col_offset were added in PY38",
 )
 class TestEndLinenoNotSet:
-    """Test 'end_lineno' and 'end_col_offset' are initialized as 'None' for Python < 3.8."""
+    """Test 'end_lineno' and 'end_col_offset' are initialized as 'None' for Python <
+    3.8.
+    """
 
     @staticmethod
     def test_end_lineno_not_set() -> None:
@@ -45,7 +47,9 @@ class TestEndLinenoNotSet:
     reason="end_lineno and end_col_offset were added in PY38",
 )
 class TestLinenoColOffset:
-    """Test 'lineno', 'col_offset', 'end_lineno', and 'end_col_offset' for all nodes."""
+    """Test 'lineno', 'col_offset', 'end_lineno', and 'end_col_offset' for all
+    nodes.
+    """
 
     @staticmethod
     def test_end_lineno_container() -> None:
@@ -1232,7 +1236,7 @@ class TestLinenoColOffset:
 
     @staticmethod
     def test_end_lineno_module() -> None:
-        """Tests for Module"""
+        """Tests for Module."""
         code = """print()"""
         module = astroid.parse(code)
         assert isinstance(module, nodes.Module)

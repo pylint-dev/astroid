@@ -2,8 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""tests for specific behaviour of astroid nodes
-"""
+"""Tests for specific behaviour of astroid nodes."""
 
 from __future__ import annotations
 
@@ -115,19 +114,19 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(ast.as_string(), "raise_string(*args, **kwargs)")
 
     def test_module_as_string(self) -> None:
-        """check as_string on a whole module prepared to be returned identically"""
+        """Check as_string on a whole module prepared to be returned identically."""
         module = resources.build_file("data/module.py", "data.module")
         with open(resources.find("data/module.py"), encoding="utf-8") as fobj:
             self.assertMultiLineEqual(module.as_string(), fobj.read())
 
     def test_module2_as_string(self) -> None:
-        """check as_string on a whole module prepared to be returned identically"""
+        """Check as_string on a whole module prepared to be returned identically."""
         module2 = resources.build_file("data/module2.py", "data.module2")
         with open(resources.find("data/module2.py"), encoding="utf-8") as fobj:
             self.assertMultiLineEqual(module2.as_string(), fobj.read())
 
     def test_as_string(self) -> None:
-        """check as_string for python syntax >= 2.7"""
+        """Check as_string for python syntax >= 2.7."""
         code = """one_two = {1, 2}
 b = {v: k for (k, v) in enumerate('string')}
 cdd = {k for k in b}\n\n"""
@@ -135,7 +134,7 @@ cdd = {k for k in b}\n\n"""
         self.assertMultiLineEqual(ast.as_string(), code)
 
     def test_3k_as_string(self) -> None:
-        """check as_string for python 3k syntax"""
+        """Check as_string for python 3k syntax."""
         code = """print()
 
 def function(var):
@@ -223,7 +222,7 @@ y = (3).imag
     def check_as_string_ast_equality(code: str) -> None:
         """
         Check that as_string produces source code with exactly the same
-        semantics as the source it was originally parsed from
+        semantics as the source it was originally parsed from.
         """
         pre = builder.parse(code)
         post = builder.parse(pre.as_string())
@@ -286,7 +285,7 @@ everything = f""" " \' \r \t \\ {{ }} {'x' + x!r:a} {["'"]!s:{a}}"""
 
 
 class _NodeTest(unittest.TestCase):
-    """test transformation of If Node"""
+    """Test transformation of If Node."""
 
     CODE = ""
 
@@ -301,7 +300,7 @@ class _NodeTest(unittest.TestCase):
 
 
 class IfNodeTest(_NodeTest):
-    """test transformation of If Node"""
+    """Test transformation of If Node."""
 
     CODE = """
         if 0:
@@ -328,7 +327,7 @@ class IfNodeTest(_NodeTest):
     """
 
     def test_if_elif_else_node(self) -> None:
-        """test transformation for If node"""
+        """Test transformation for If node."""
         self.assertEqual(len(self.astroid.body), 4)
         for stmt in self.astroid.body:
             self.assertIsInstance(stmt, nodes.If)
@@ -656,16 +655,14 @@ class ConstNodeTest(unittest.TestCase):
         assert node.value.kind, "u"
 
     def test_copy(self) -> None:
-        """
-        Make sure copying a Const object doesn't result in infinite recursion
-        """
+        """Make sure copying a Const object doesn't result in infinite recursion."""
         const = copy.copy(nodes.Const(1))
         assert const.value == 1
 
 
 class NameNodeTest(unittest.TestCase):
     def test_assign_to_true(self) -> None:
-        """Test that True and False assignments don't crash"""
+        """Test that True and False assignments don't crash."""
         code = """
             True = False
             def hello(False):
@@ -678,7 +675,7 @@ class NameNodeTest(unittest.TestCase):
 
 @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
 class TestNamedExprNode:
-    """Tests for the NamedExpr node"""
+    """Tests for the NamedExpr node."""
 
     @staticmethod
     def test_frame() -> None:
@@ -1214,7 +1211,7 @@ class ContextTest(unittest.TestCase):
 
 
 def test_unknown() -> None:
-    """Test Unknown node"""
+    """Test Unknown node."""
     assert isinstance(next(nodes.Unknown().infer()), type(util.Uninferable))
     assert isinstance(nodes.Unknown().name, str)
     assert isinstance(nodes.Unknown().qname(), str)
@@ -1481,7 +1478,7 @@ class AsyncGeneratorTest:
 
 
 def test_f_string_correct_line_numbering() -> None:
-    """Test that we generate correct line numbers for f-strings"""
+    """Test that we generate correct line numbers for f-strings."""
     node = astroid.extract_node(
         """
     def func_foo(arg_bar, arg_foo):

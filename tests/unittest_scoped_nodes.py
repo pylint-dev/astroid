@@ -2,8 +2,8 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""tests for specific behaviour of astroid scoped nodes (i.e. module, class and
-function)
+"""Tests for specific behaviour of astroid scoped nodes (i.e. module, class and
+function).
 """
 
 from __future__ import annotations
@@ -539,7 +539,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         )
 
     def test_return_nothing(self) -> None:
-        """test inferred value on a function with empty return"""
+        """Test inferred value on a function with empty return."""
         data = """
             def func():
                 return
@@ -604,7 +604,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             assert inferred.value == value
 
     def test_func_instance_attr(self) -> None:
-        """test instance attributes for functions"""
+        """Test instance attributes for functions."""
         data = """
             def test():
                 print(test.bar)
@@ -1991,7 +1991,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertRaises(AttributeInferenceError, instance.getattr, "mro")
 
     def test_metaclass_lookup_using_same_class(self) -> None:
-        """Check that we don't have recursive attribute access for metaclass"""
+        """Check that we don't have recursive attribute access for metaclass."""
         cls = builder.extract_node(
             """
         class A(object): pass
@@ -2143,7 +2143,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_instance_bound_method_lambdas_2(self) -> None:
         """
         Test the fact that a method which is a lambda built from
-        a factory is well inferred as a bound method (bug pylint 2594)
+        a factory is well inferred as a bound method (bug pylint 2594).
         """
         ast_nodes = builder.extract_node(
             """
@@ -2565,7 +2565,7 @@ def test_enums_type_annotation_no_value(annotation) -> None:
 
 
 def test_enums_value2member_map_() -> None:
-    """Check the `_value2member_map_` member is present in an Enum class"""
+    """Check the `_value2member_map_` member is present in an Enum class."""
     node = builder.extract_node(
         """
     from enum import Enum
@@ -2755,7 +2755,7 @@ class TestFrameNodes:
     @staticmethod
     @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
     def test_frame_node():
-        """Test if the frame of FunctionDef, ClassDef and Module is correctly set"""
+        """Test if the frame of FunctionDef, ClassDef and Module is correctly set."""
         module = builder.parse(
             """
             def func():
@@ -2795,7 +2795,7 @@ class TestFrameNodes:
 
     @staticmethod
     def test_non_frame_node():
-        """Test if the frame of non frame nodes is set correctly"""
+        """Test if the frame of non frame nodes is set correctly."""
         module = builder.parse(
             """
             VAR_ONE = 1

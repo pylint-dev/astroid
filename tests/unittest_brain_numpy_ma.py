@@ -16,9 +16,7 @@ from astroid import builder
 
 @pytest.mark.skipif(HAS_NUMPY is False, reason="This test requires the numpy library.")
 class TestBrainNumpyMa:
-    """
-    Test the numpy ma brain module
-    """
+    """Test the numpy ma brain module."""
 
     def _assert_maskedarray(self, code):
         node = builder.extract_node(code)

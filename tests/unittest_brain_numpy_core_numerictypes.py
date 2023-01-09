@@ -21,9 +21,7 @@ from astroid.brain.brain_numpy_utils import (
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
 class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
-    """
-    Test of all the missing types defined in numerictypes module.
-    """
+    """Test of all the missing types defined in numerictypes module."""
 
     all_types = [
         "uint16",
@@ -87,18 +85,14 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
         return next(node.value.infer())
 
     def test_numpy_core_types(self):
-        """
-        Test that all defined types have ClassDef type.
-        """
+        """Test that all defined types have ClassDef type."""
         for typ in self.all_types:
             with self.subTest(typ=typ):
                 inferred = self._inferred_numpy_attribute(typ)
                 self.assertIsInstance(inferred, nodes.ClassDef)
 
     def test_generic_types_have_methods(self):
-        """
-        Test that all generic derived types have specified methods
-        """
+        """Test that all generic derived types have specified methods."""
         generic_methods = [
             "all",
             "any",
@@ -210,9 +204,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
                         self.assertTrue(meth in {m.name for m in inferred.methods()})
 
     def test_generic_types_have_attributes(self):
-        """
-        Test that all generic derived types have specified attributes
-        """
+        """Test that all generic derived types have specified attributes."""
         generic_attr = [
             "base",
             "data",
@@ -270,9 +262,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
                         self.assertNotEqual(len(inferred.getattr(attr)), 0)
 
     def test_number_types_have_unary_operators(self):
-        """
-        Test that number types have unary operators
-        """
+        """Test that number types have unary operators."""
         unary_ops = ("__neg__",)
 
         for type_ in (
@@ -301,9 +291,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
                         self.assertNotEqual(len(inferred.getattr(attr)), 0)
 
     def test_array_types_have_unary_operators(self):
-        """
-        Test that array types have unary operators
-        """
+        """Test that array types have unary operators."""
         unary_ops = ("__neg__", "__invert__")
 
         for type_ in ("ndarray",):
@@ -346,9 +334,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
         f"This test requires the numpy library with a version above {NUMPY_VERSION_TYPE_HINTS_SUPPORT}",
     )
     def test_generic_types_are_subscriptables(self):
-        """
-        Test that all types deriving from generic are subscriptables
-        """
+        """Test that all types deriving from generic are subscriptables."""
         for type_ in (
             "bool_",
             "bytes_",
@@ -401,19 +387,20 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
 class NumpyBrainUtilsTest(unittest.TestCase):
     """
     This class is dedicated to test that astroid does not crash
-    if numpy module is not available
+    if numpy module is not available.
     """
 
     def test_get_numpy_version_do_not_crash(self):
         """
-        Test that the function _get_numpy_version doesn't crash even if numpy is not installed
+        Test that the function _get_numpy_version doesn't crash even if numpy is not
+        installed.
         """
         self.assertEqual(_get_numpy_version(), ("0", "0", "0"))
 
     def test_numpy_object_uninferable(self):
         """
         Test that in case numpy is not available, then a numpy object is uninferable
-        but the inference doesn't lead to a crash
+        but the inference doesn't lead to a crash.
         """
         src = """
         import numpy as np
