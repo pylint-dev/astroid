@@ -2,9 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""
-unit tests for module modutils (module manipulation utilities)
-"""
+"""Unit tests for module modutils (module manipulation utilities)."""
 import email
 import logging
 import os
@@ -68,7 +66,7 @@ class ModuleFileTest(unittest.TestCase):
 
 
 class LoadModuleFromNameTest(unittest.TestCase):
-    """load a python module from its name"""
+    """Load a python module from its name."""
 
     def test_known_values_load_module_from_name_1(self) -> None:
         self.assertEqual(modutils.load_module_from_name("sys"), sys)
@@ -115,7 +113,7 @@ def test_import_dotted_library(
 
 
 class GetModulePartTest(unittest.TestCase):
-    """given a dotted name return the module part of the name"""
+    """Given a dotted name return the module part of the name."""
 
     def test_known_values_get_module_part_1(self) -> None:
         self.assertEqual(
@@ -129,7 +127,7 @@ class GetModulePartTest(unittest.TestCase):
         )
 
     def test_known_values_get_module_part_3(self) -> None:
-        """relative import from given file"""
+        """Relative import from given file."""
         self.assertEqual(
             modutils.get_module_part("nodes.node_classes.AssName", modutils.__file__),
             "nodes.node_classes",
@@ -150,7 +148,7 @@ class GetModulePartTest(unittest.TestCase):
 
 
 class ModPathFromFileTest(unittest.TestCase):
-    """given an absolute file path return the python module's path as a list"""
+    """Given an absolute file path return the python module's path as a list."""
 
     def test_known_values_modpath_from_file_1(self) -> None:
         self.assertEqual(
@@ -291,8 +289,8 @@ class GetSourceFileTest(unittest.TestCase):
 
 class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
     """
-    return true if the module may be considered as a module from the standard
-    library
+    Return true if the module may be considered as a module from the standard
+    library.
     """
 
     def test_datetime(self) -> None:
@@ -395,7 +393,7 @@ class GetModuleFilesTest(unittest.TestCase):
         self.assertEqual(modules, {os.path.join(package, x) for x in expected})
 
     def test_get_all_files(self) -> None:
-        """test that list_all returns all Python files from given location"""
+        """Test that list_all returns all Python files from given location."""
         non_package = resources.find("data/notamodule")
         modules = modutils.get_module_files(non_package, [], list_all=True)
         self.assertEqual(modules, [os.path.join(non_package, "file.py")])

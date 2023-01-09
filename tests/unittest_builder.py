@@ -2,7 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""tests for the astroid builder and rebuilder module"""
+"""Tests for the astroid builder and rebuilder module."""
 
 import collections
 import importlib
@@ -428,7 +428,7 @@ class BuilderTest(unittest.TestCase):
             self.builder.string_build('"\\x1"')
 
     def test_missing_newline(self) -> None:
-        """check that a file with no trailing new line is parseable"""
+        """Check that a file with no trailing new line is parseable."""
         resources.build_file("data/noendingnewline.py")
 
     def test_missing_file(self) -> None:
@@ -436,7 +436,7 @@ class BuilderTest(unittest.TestCase):
             resources.build_file("data/inexistent.py")
 
     def test_inspect_build0(self) -> None:
-        """test astroid tree build from a living object"""
+        """Test astroid tree build from a living object."""
         builtin_ast = self.manager.ast_from_module_name("builtins")
         # just check type and object are there
         builtin_ast.getattr("type")
@@ -495,7 +495,7 @@ class BuilderTest(unittest.TestCase):
             self.manager.unregister_transform(nodes.Module, transform_time)
 
     def test_package_name(self) -> None:
-        """test base properties and method of an astroid module"""
+        """Test base properties and method of an astroid module."""
         datap = resources.build_file("data/__init__.py", "data")
         self.assertEqual(datap.name, "data")
         self.assertEqual(datap.package, 1)
@@ -507,7 +507,7 @@ class BuilderTest(unittest.TestCase):
         self.assertEqual(datap.package, 0)
 
     def test_yield_parent(self) -> None:
-        """check if we added discard nodes as yield parent (w/ compiler)"""
+        """Check if we added discard nodes as yield parent (w/ compiler)."""
         code = """
             def yiell(): #@
                 yield 0
@@ -720,7 +720,7 @@ class BuilderTest(unittest.TestCase):
         self.assertIn("body", astroid["visit_if"].locals)
 
     def test_build_constants(self) -> None:
-        """test expected values of constants after rebuilding"""
+        """Test expected values of constants after rebuilding."""
         code = """
             def func():
                 return None
@@ -759,7 +759,7 @@ class FileBuildTest(unittest.TestCase):
         self.module = resources.build_file("data/module.py", "data.module")
 
     def test_module_base_props(self) -> None:
-        """test base properties and method of an astroid module"""
+        """Test base properties and method of an astroid module."""
         module = self.module
         self.assertEqual(module.name, "data.module")
         with pytest.warns(DeprecationWarning) as records:
@@ -783,7 +783,7 @@ class FileBuildTest(unittest.TestCase):
             module.statement(future=True)
 
     def test_module_locals(self) -> None:
-        """test the 'locals' dictionary of an astroid module"""
+        """Test the 'locals' dictionary of an astroid module."""
         module = self.module
         _locals = module.locals
         self.assertIs(_locals, module.globals)
@@ -804,7 +804,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(keys, sorted(should))
 
     def test_function_base_props(self) -> None:
-        """test base properties and method of an astroid function"""
+        """Test base properties and method of an astroid function."""
         module = self.module
         function = module["global_access"]
         self.assertEqual(function.name, "global_access")
@@ -824,14 +824,14 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(function.type, "function")
 
     def test_function_locals(self) -> None:
-        """test the 'locals' dictionary of an astroid function"""
+        """Test the 'locals' dictionary of an astroid function."""
         _locals = self.module["global_access"].locals
         self.assertEqual(len(_locals), 4)
         keys = sorted(_locals.keys())
         self.assertEqual(keys, ["i", "key", "local", "val"])
 
     def test_class_base_props(self) -> None:
-        """test base properties and method of an astroid class"""
+        """Test base properties and method of an astroid class."""
         module = self.module
         klass = module["YO"]
         self.assertEqual(klass.name, "YO")
@@ -851,7 +851,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertTrue(klass.newstyle)
 
     def test_class_locals(self) -> None:
-        """test the 'locals' dictionary of an astroid class"""
+        """Test the 'locals' dictionary of an astroid class."""
         module = self.module
         klass1 = module["YO"]
         locals1 = klass1.locals
@@ -887,7 +887,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(klass2.basenames, ["YO"])
 
     def test_method_base_props(self) -> None:
-        """test base properties and method of an astroid method"""
+        """Test base properties and method of an astroid method."""
         klass2 = self.module["YOUPI"]
         # "normal" method
         method = klass2["method"]
@@ -910,7 +910,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(method.type, "staticmethod")
 
     def test_method_locals(self) -> None:
-        """test the 'locals' dictionary of an astroid method"""
+        """Test the 'locals' dictionary of an astroid method."""
         method = self.module["YOUPI"]["method"]
         _locals = method.locals
         keys = sorted(_locals)
@@ -924,7 +924,9 @@ class FileBuildTest(unittest.TestCase):
 
 
 def test_module_build_dunder_file() -> None:
-    """Test that module_build() can work with modules that have the *__file__* attribute"""
+    """Test that module_build() can work with modules that have the *__file__*
+    attribute.
+    """
     module = builder.AstroidBuilder().module_build(collections)
     assert module.path[0] == collections.__file__
 
@@ -969,7 +971,7 @@ def test_arguments_of_signature() -> None:
 
 
 class HermeticInterpreterTest(unittest.TestCase):
-    """Modeled on https://github.com/PyCQA/astroid/pull/1207#issuecomment-951455588"""
+    """Modeled on https://github.com/PyCQA/astroid/pull/1207#issuecomment-951455588."""
 
     @classmethod
     def setUpClass(cls):
@@ -1004,6 +1006,7 @@ class HermeticInterpreterTest(unittest.TestCase):
 
     def test_build_from_live_module_without_source_file(self) -> None:
         """Assert that inspect_build() is not called.
+
         See comment in module_build() before the call to inspect_build():
             "get a partial representation by introspection"
 

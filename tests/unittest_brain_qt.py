@@ -20,7 +20,7 @@ class TestBrainQt:
 
     @staticmethod
     def test_value_of_lambda_instance_attrs_is_list():
-        """Regression test for https://github.com/PyCQA/pylint/issues/6221
+        """Regression test for https://github.com/PyCQA/pylint/issues/6221.
 
         A crash occurred in pylint when a nodes.FunctionDef was iterated directly,
         giving items like "self" instead of iterating a one-element list containing
@@ -40,7 +40,7 @@ class TestBrainQt:
 
     @staticmethod
     def test_implicit_parameters() -> None:
-        """Regression test for https://github.com/PyCQA/pylint/issues/6464"""
+        """Regression test for https://github.com/PyCQA/pylint/issues/6464."""
         src = """
         from PyQt6.QtCore import QTimer
         timer = QTimer()

@@ -154,7 +154,7 @@ class AstroidManagerTest(
         side_effect=AttributeError,
     )
     def test_module_unexpectedly_missing_path(self, mocked) -> None:
-        """https://github.com/PyCQA/pylint/issues/7592"""
+        """Https://github.com/PyCQA/pylint/issues/7592."""
         self.assertFalse(util.is_namespace("astroid"))
 
     def test_module_unexpectedly_spec_is_none(self) -> None:
@@ -278,25 +278,25 @@ class AstroidManagerTest(
             os.remove(linked_file_name)
 
     def test_zip_import_data(self) -> None:
-        """check if zip_import_data works"""
+        """Check if zip_import_data works."""
         with self._restore_package_cache():
             filepath = resources.find("data/MyPyPa-0.1.0-py2.5.zip/mypypa")
             ast = self.manager.zip_import_data(filepath)
             self.assertEqual(ast.name, "mypypa")
 
     def test_zip_import_data_without_zipimport(self) -> None:
-        """check if zip_import_data return None without zipimport"""
+        """Check if zip_import_data return None without zipimport."""
         self.assertEqual(self.manager.zip_import_data("path"), None)
 
     def test_file_from_module(self) -> None:
-        """check if the unittest filepath is equals to the result of the method"""
+        """Check if the unittest filepath is equals to the result of the method."""
         self.assertEqual(
             _get_file_from_object(unittest),
             self.manager.file_from_module_name("unittest", None).location,
         )
 
     def test_file_from_module_name_astro_building_exception(self) -> None:
-        """check if the method raises an exception with a wrong module name"""
+        """Check if the method raises an exception with a wrong module name."""
         self.assertRaises(
             AstroidBuildingError,
             self.manager.file_from_module_name,
@@ -311,7 +311,7 @@ class AstroidManagerTest(
         self.assertEqual(ast.pure_python, False)
 
     def test_ast_from_module_cache(self) -> None:
-        """check if the module is in the cache manager"""
+        """Check if the module is in the cache manager."""
         ast = self.manager.ast_from_module(unittest)
         self.assertEqual(ast.name, "unittest")
         self.assertIn("unittest", self.manager.astroid_cache)
@@ -329,7 +329,7 @@ class AstroidManagerTest(
         self.assertIn("__setattr__", ast)
 
     def test_ast_from_class_with_module(self) -> None:
-        """check if the method works with the module name"""
+        """Check if the method works with the module name."""
         ast = self.manager.ast_from_class(int, int.__module__)
         self.assertEqual(ast.name, "int")
         self.assertEqual(ast.parent.frame().name, "builtins")
@@ -342,7 +342,7 @@ class AstroidManagerTest(
         self.assertIn("__setattr__", ast)
 
     def test_ast_from_class_attr_error(self) -> None:
-        """give a wrong class at the ast_from_class method"""
+        """Give a wrong class at the ast_from_class method."""
         self.assertRaises(AstroidBuildingError, self.manager.ast_from_class, None)
 
     def test_failed_import_hooks(self) -> None:
@@ -385,8 +385,9 @@ class AstroidManagerTest(
 
 class BorgAstroidManagerTC(unittest.TestCase):
     def test_borg(self) -> None:
-        """test that the AstroidManager is really a borg, i.e. that two different
-        instances has same cache"""
+        """Test that the AstroidManager is really a borg, i.e. that two different
+        instances has same cache.
+        """
         first_manager = manager.AstroidManager()
         built = first_manager.ast_from_module_name("builtins")
 

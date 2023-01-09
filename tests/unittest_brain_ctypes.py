@@ -57,8 +57,8 @@ pytestmark = pytest.mark.skipif(
     ],
 )
 def test_ctypes_redefined_types_members(c_type, builtin_type, type_code):
-    """
-    Test that the "value" and "_type_" member of each redefined types are correct
+    """Test that the "value" and "_type_" member of each redefined types are
+    correct.
     """
     src = f"""
     import ctypes
@@ -102,7 +102,8 @@ def test_cdata_member_access() -> None:
 
 def test_other_ctypes_member_untouched() -> None:
     """
-    Test that other ctypes members, which are not touched by the brain, are correctly inferred
+    Test that other ctypes members, which are not touched by the brain, are correctly
+    inferred.
     """
     src = """
     import ctypes

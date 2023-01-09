@@ -29,9 +29,7 @@ def _inferred_numpy_func_call(func_name: str, *func_args: str) -> nodes.Function
 
 @pytest.mark.skipif(not HAS_NUMPY, reason="This test requires the numpy library.")
 def test_numpy_function_calls_inferred_as_ndarray() -> None:
-    """
-    Test that calls to numpy functions are inferred as numpy.ndarray
-    """
+    """Test that calls to numpy functions are inferred as numpy.ndarray."""
     method = "einsum"
     inferred_values = list(
         _inferred_numpy_func_call(method, "ii, np.arange(25).reshape(5, 5)")

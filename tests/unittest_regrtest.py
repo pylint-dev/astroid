@@ -68,7 +68,7 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
 
     @unittest.skipIf(not HAS_NUMPY, "Needs numpy")
     def test_numpy_crash(self):
-        """test don't crash on numpy"""
+        """Test don't crash on numpy."""
         # a crash occurred somewhere in the past, and an
         # InferenceError instead of a crash was better, but now we even infer!
         builder = AstroidBuilder()
@@ -374,7 +374,9 @@ def test_crash_in_dunder_inference_prevented() -> None:
 
 
 def test_regression_crash_classmethod() -> None:
-    """Regression test for a crash reported in https://github.com/PyCQA/pylint/issues/4982"""
+    """Regression test for a crash reported in
+    https://github.com/PyCQA/pylint/issues/4982.
+    """
     code = """
     class Base:
         @classmethod
@@ -394,7 +396,8 @@ def test_regression_crash_classmethod() -> None:
 
 
 def test_max_inferred_for_complicated_class_hierarchy() -> None:
-    """Regression test for a crash reported in https://github.com/PyCQA/pylint/issues/5679.
+    """Regression test for a crash reported in
+    https://github.com/PyCQA/pylint/issues/5679.
 
     The class hierarchy of 'sqlalchemy' is so intricate that it becomes uninferable with
     the standard max_inferred of 100. We used to crash when this happened.

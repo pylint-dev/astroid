@@ -16,9 +16,7 @@ from astroid import builder, nodes
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
 class NumpyBrainRandomMtrandTest(unittest.TestCase):
-    """
-    Test of all the functions of numpy.random.mtrand module.
-    """
+    """Test of all the functions of numpy.random.mtrand module."""
 
     # Map between functions names and arguments names and default values
     all_mtrand = {
@@ -82,18 +80,14 @@ class NumpyBrainRandomMtrandTest(unittest.TestCase):
         return next(node.infer())
 
     def test_numpy_random_mtrand_functions(self):
-        """
-        Test that all functions have FunctionDef type.
-        """
+        """Test that all functions have FunctionDef type."""
         for func in self.all_mtrand:
             with self.subTest(func=func):
                 inferred = self._inferred_numpy_attribute(func)
                 self.assertIsInstance(inferred, nodes.FunctionDef)
 
     def test_numpy_random_mtrand_functions_signature(self):
-        """
-        Test the arguments names and default values.
-        """
+        """Test the arguments names and default values."""
         for (
             func,
             (exact_arg_names, exact_kwargs_default_values),

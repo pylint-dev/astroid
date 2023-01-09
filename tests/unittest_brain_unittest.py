@@ -9,9 +9,7 @@ from astroid.test_utils import require_version
 
 
 class UnittestTest(unittest.TestCase):
-    """
-    A class that tests the brain_unittest module
-    """
+    """A class that tests the brain_unittest module."""
 
     @require_version(minver="3.8.0")
     def test_isolatedasynciotestcase(self):
