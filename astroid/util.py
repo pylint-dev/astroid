@@ -60,7 +60,7 @@ class Uninferable:
 
 
 class BadOperationMessage:
-    """Object which describes a TypeError occurred somewhere in the inference chain
+    """Object which describes a TypeError occurred somewhere in the inference chain.
 
     This is not an exception, but a container object which holds the types and
     the error which occurred.

@@ -12,7 +12,7 @@ from astroid.util import Uninferable
 
 
 class CallSite:
-    """Class for understanding arguments passed into a call site
+    """Class for understanding arguments passed into a call site.
 
     It needs a call context, which contains the arguments and the
     keyword arguments that were passed into a given call site.
@@ -65,7 +65,7 @@ class CallSite:
         return cls(callcontext, context=context)
 
     def has_invalid_arguments(self):
-        """Check if in the current CallSite were passed *invalid* arguments
+        """Check if in the current CallSite were passed *invalid* arguments.
 
         This can mean multiple things. For instance, if an unpacking
         of an invalid object was passed, then this method will return True.
@@ -75,7 +75,7 @@ class CallSite:
         return len(self.positional_arguments) != len(self._unpacked_args)
 
     def has_invalid_keywords(self) -> bool:
-        """Check if in the current CallSite were passed *invalid* keyword arguments
+        """Check if in the current CallSite were passed *invalid* keyword arguments.
 
         For instance, unpacking a dictionary with integer keys is invalid
         (**{1:2}), because the keys must be strings, which will make this
@@ -154,7 +154,7 @@ class CallSite:
         return values
 
     def infer_argument(self, funcnode, name, context):  # noqa: C901
-        """infer a function argument value according to the call context
+        """Infer a function argument value according to the call context.
 
         Arguments:
             funcnode: The function being called.

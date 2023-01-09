@@ -74,7 +74,10 @@ def _looks_like_pattern_or_match(node: nodes.Call) -> bool:
 
 
 def infer_pattern_match(node: nodes.Call, ctx: context.InferenceContext | None = None):
-    """Infer regex.Pattern and regex.Match as classes. For PY39+ add `__class_getitem__`."""
+    """Infer regex.Pattern and regex.Match as classes.
+
+    For PY39+ add `__class_getitem__`.
+    """
     class_def = nodes.ClassDef(
         name=node.parent.targets[0].name,
         lineno=node.lineno,

@@ -2,9 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""
-This module contains utility functions for scoped nodes.
-"""
+"""This module contains utility functions for scoped nodes."""
 
 from __future__ import annotations
 

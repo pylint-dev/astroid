@@ -2,9 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""
-Various helper utilities.
-"""
+"""Various helper utilities."""
 
 from __future__ import annotations
 
@@ -76,7 +74,7 @@ def _object_type(
 def object_type(
     node: SuccessfulInferenceResult, context: InferenceContext | None = None
 ) -> InferenceResult | None:
-    """Obtain the type of the given node
+    """Obtain the type of the given node.
 
     This is used to implement the ``type`` builtin, which means that it's
     used for inferring type calls, as well as used in a couple of other places
@@ -124,7 +122,7 @@ def _object_type_is_subclass(
 
 
 def object_isinstance(node, class_or_seq, context: InferenceContext | None = None):
-    """Check if a node 'isinstance' any node in class_or_seq
+    """Check if a node 'isinstance' any node in class_or_seq.
 
     :param node: A given node
     :param class_or_seq: Union[nodes.NodeNG, Sequence[nodes.NodeNG]]
@@ -139,7 +137,7 @@ def object_isinstance(node, class_or_seq, context: InferenceContext | None = Non
 
 
 def object_issubclass(node, class_or_seq, context: InferenceContext | None = None):
-    """Check if a type is a subclass of any node in class_or_seq
+    """Check if a type is a subclass of any node in class_or_seq.
 
     :param node: A given node
     :param class_or_seq: Union[Nodes.NodeNG, Sequence[nodes.NodeNG]]
@@ -243,7 +241,7 @@ def class_instance_as_index(node: SuccessfulInferenceResult) -> nodes.Const | No
 
 
 def object_len(node, context: InferenceContext | None = None):
-    """Infer length of given node object
+    """Infer length of given node object.
 
     :param Union[nodes.ClassDef, nodes.Instance] node:
     :param node: Node to infer length of

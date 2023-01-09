@@ -113,7 +113,7 @@ def looks_like_typing_typevar_or_newtype(node) -> bool:
 
 
 def infer_typing_typevar_or_newtype(node, context_itton=None):
-    """Infer a typing.TypeVar(...) or typing.NewType(...) call"""
+    """Infer a typing.TypeVar(...) or typing.NewType(...) call."""
     try:
         func = next(node.func.infer(context=context_itton))
     except (InferenceError, StopIteration) as exc:
@@ -133,7 +133,7 @@ def infer_typing_typevar_or_newtype(node, context_itton=None):
 
 
 def _looks_like_typing_subscript(node) -> bool:
-    """Try to figure out if a Subscript node *might* be a typing-related subscript"""
+    """Try to figure out if a Subscript node *might* be a typing-related subscript."""
     if isinstance(node, Name):
         return node.name in TYPING_MEMBERS
     if isinstance(node, Attribute):
@@ -146,7 +146,7 @@ def _looks_like_typing_subscript(node) -> bool:
 def infer_typing_attr(
     node: Subscript, ctx: context.InferenceContext | None = None
 ) -> Iterator[ClassDef]:
-    """Infer a typing.X[...] subscript"""
+    """Infer a typing.X[...] subscript."""
     try:
         value = next(node.value.infer())  # type: ignore[union-attr] # value shouldn't be None for Subscript.
     except (InferenceError, StopIteration) as exc:
@@ -216,6 +216,7 @@ def infer_typedDict(  # pylint: disable=invalid-name
 def _looks_like_typing_alias(node: Call) -> bool:
     """
     Returns True if the node corresponds to a call to _alias function.
+
     For example :
 
     MutableSet = _alias(collections.abc.MutableSet, T)
@@ -233,9 +234,7 @@ def _looks_like_typing_alias(node: Call) -> bool:
 
 
 def _forbid_class_getitem_access(node: ClassDef) -> None:
-    """
-    Disable the access to __class_getitem__ method for the node in parameters
-    """
+    """Disable the access to __class_getitem__ method for the node in parameters."""
 
     def full_raiser(origin_func, attr, *args, **kwargs):
         """
@@ -321,7 +320,6 @@ def _looks_like_special_alias(node: Call) -> bool:
     PY37: Tuple = _VariadicGenericAlias(tuple, (), inst=False, special=True)
     PY39: Tuple = _TupleType(tuple, -1, inst=False, name='Tuple')
 
-
     PY37: Callable = _VariadicGenericAlias(collections.abc.Callable, (), special=True)
     PY39: Callable = _CallableType(collections.abc.Callable, 2)
     """
@@ -384,7 +382,7 @@ def _looks_like_typing_cast(node: Call) -> bool:
 def infer_typing_cast(
     node: Call, ctx: context.InferenceContext | None = None
 ) -> Iterator[NodeNG]:
-    """Infer call to cast() returning same type as casted-from var"""
+    """Infer call to cast() returning same type as casted-from var."""
     if not isinstance(node.func, (Name, Attribute)):
         raise UseInferenceDefault
 

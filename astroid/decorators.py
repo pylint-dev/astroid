@@ -2,7 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-""" A few useful function/method decorators."""
+"""A few useful function/method decorators."""
 
 from __future__ import annotations
 
@@ -90,7 +90,7 @@ class cachedproperty:
 
 
 def path_wrapper(func):
-    """return the given infer function wrapped to handle the path
+    """Return the given infer function wrapped to handle the path.
 
     Used to stop inference if the node has already been looked
     at for a given `InferenceContext` to prevent infinite recursion
@@ -100,7 +100,7 @@ def path_wrapper(func):
     def wrapped(
         node, context: InferenceContext | None = None, _func=func, **kwargs
     ) -> Generator:
-        """wrapper function handling context"""
+        """Wrapper function handling context."""
         if context is None:
             context = InferenceContext()
         if context.push(node):
@@ -263,7 +263,9 @@ else:
     def deprecate_default_argument_values(
         astroid_version: str = "3.0", **arguments: str
     ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
-        """Passthrough decorator to improve performance if DeprecationWarnings are disabled."""
+        """Passthrough decorator to improve performance if DeprecationWarnings are
+        disabled.
+        """
 
         def deco(func: Callable[_P, _R]) -> Callable[_P, _R]:
             """Decorator function."""
@@ -274,7 +276,9 @@ else:
     def deprecate_arguments(
         astroid_version: str = "3.0", **arguments: str
     ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
-        """Passthrough decorator to improve performance if DeprecationWarnings are disabled."""
+        """Passthrough decorator to improve performance if DeprecationWarnings are
+        disabled.
+        """
 
         def deco(func: Callable[_P, _R]) -> Callable[_P, _R]:
             """Decorator function."""

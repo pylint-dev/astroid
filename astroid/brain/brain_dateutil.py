@@ -2,7 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""Astroid hooks for dateutil"""
+"""Astroid hooks for dateutil."""
 
 import textwrap
 
