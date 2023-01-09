@@ -28,7 +28,7 @@ else:
 
 
 class Statement(NodeNG):
-    """Statement node adding a few attributes
+    """Statement node adding a few attributes.
 
     NOTE: This class is part of the public API of 'astroid.nodes'.
     """
@@ -70,10 +70,10 @@ class NoChildrenNode(NodeNG):
 
 
 class FilterStmtsBaseNode(NodeNG):
-    """Base node for statement filtering and assignment type"""
+    """Base node for statement filtering and assignment type."""
 
     def _get_filtered_stmts(self, _, node, _stmts, mystmt: Statement | None):
-        """method used in _filter_stmts to get statements and trigger break"""
+        """Method used in _filter_stmts to get statements and trigger break."""
         if self.statement(future=True) is mystmt:
             # original node's statement is the assignment, only keep
             # current node (gen exp, list comp)
@@ -91,7 +91,7 @@ class AssignTypeNode(NodeNG):
         return self
 
     def _get_filtered_stmts(self, lookup_node, node, _stmts, mystmt: Statement | None):
-        """method used in filter_stmts"""
+        """Method used in filter_stmts."""
         if self is mystmt:
             return _stmts, True
         if self.statement(future=True) is mystmt:
@@ -109,7 +109,7 @@ class ParentAssignNode(AssignTypeNode):
 
 
 class ImportNode(FilterStmtsBaseNode, NoChildrenNode, Statement):
-    """Base node for From and Import Nodes"""
+    """Base node for From and Import Nodes."""
 
     modname: str | None
     """The module that is being imported from.
@@ -151,7 +151,7 @@ class ImportNode(FilterStmtsBaseNode, NoChildrenNode, Statement):
         )
 
     def real_name(self, asname: str) -> str:
-        """get name from 'as' name"""
+        """Get name from 'as' name."""
         for name, _asname in self.names:
             if name == "*":
                 return asname
@@ -169,6 +169,7 @@ class ImportNode(FilterStmtsBaseNode, NoChildrenNode, Statement):
 
 class MultiLineBlockNode(NodeNG):
     """Base node for multi-line blocks, e.g. For and FunctionDef.
+
     Note that this does not apply to every node with a `body` field.
     For instance, an If node has a multi-line body, but the body of an
     IfExpr is not multi-line, and hence cannot contain Return nodes,
@@ -213,8 +214,8 @@ class MultiLineWithElseBlockNode(MultiLineBlockNode):
         return self.lineno
 
     def _elsed_block_range(self, lineno, orelse, last=None):
-        """handle block line numbers range for try/finally, for, if and while
-        statements
+        """Handle block line numbers range for try/finally, for, if and while
+        statements.
         """
         if lineno == self.fromlineno:
             return lineno, lineno
