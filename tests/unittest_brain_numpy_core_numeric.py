@@ -20,9 +20,7 @@ from astroid import builder
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
 class BrainNumpyCoreNumericTest(unittest.TestCase):
-    """
-    Test the numpy core numeric brain module
-    """
+    """Test the numpy core numeric brain module."""
 
     numpy_functions = (
         ("zeros_like", "[1, 2]"),
@@ -42,9 +40,7 @@ class BrainNumpyCoreNumericTest(unittest.TestCase):
         return node.infer()
 
     def test_numpy_function_calls_inferred_as_ndarray(self):
-        """
-        Test that calls to numpy functions are inferred as numpy.ndarray
-        """
+        """Test that calls to numpy functions are inferred as numpy.ndarray."""
         licit_array_types = (".ndarray",)
         for func_ in self.numpy_functions:
             with self.subTest(typ=func_):

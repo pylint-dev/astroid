@@ -20,9 +20,7 @@ from astroid.brain.brain_numpy_utils import (
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
 class NumpyBrainNdarrayTest(unittest.TestCase):
-    """
-    Test that calls to numpy functions returning arrays are correctly inferred
-    """
+    """Test that calls to numpy functions returning arrays are correctly inferred."""
 
     ndarray_returning_ndarray_methods = (
         "__abs__",
@@ -127,9 +125,7 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
         return node.infer()
 
     def test_numpy_function_calls_inferred_as_ndarray(self):
-        """
-        Test that some calls to numpy functions are inferred as numpy.ndarray
-        """
+        """Test that some calls to numpy functions are inferred as numpy.ndarray."""
         licit_array_types = ".ndarray"
         for func_ in self.ndarray_returning_ndarray_methods:
             with self.subTest(typ=func_):
@@ -144,9 +140,7 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
                 )
 
     def test_numpy_ndarray_attribute_inferred_as_ndarray(self):
-        """
-        Test that some numpy ndarray attributes are inferred as numpy.ndarray
-        """
+        """Test that some numpy ndarray attributes are inferred as numpy.ndarray."""
         licit_array_types = ".ndarray"
         for attr_ in ("real", "imag", "shape", "T"):
             with self.subTest(typ=attr_):
@@ -165,9 +159,7 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
         f"This test requires the numpy library with a version above {NUMPY_VERSION_TYPE_HINTS_SUPPORT}",
     )
     def test_numpy_ndarray_class_support_type_indexing(self):
-        """
-        Test that numpy ndarray class can be subscripted (type hints)
-        """
+        """Test that numpy ndarray class can be subscripted (type hints)."""
         src = """
         import numpy as np
         np.ndarray[int]

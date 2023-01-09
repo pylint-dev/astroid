@@ -2,7 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""Tests for inference involving constraints"""
+"""Tests for inference involving constraints."""
 from __future__ import annotations
 
 import pytest
@@ -58,7 +58,9 @@ def test_if_single_statement(
 def test_if_multiple_statements(
     condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
-    """Test constraint for a variable that is used in an if body with multiple statements."""
+    """Test constraint for a variable that is used in an if body with multiple
+    statements.
+    """
     node1, node2 = builder.extract_node(
         f"""
     def f1(x = {fail_val}):
@@ -185,7 +187,9 @@ def test_nested_if(
 
 
 def test_if_uninferable() -> None:
-    """Test that when no inferred values satisfy all constraints, Uninferable is inferred."""
+    """Test that when no inferred values satisfy all constraints, Uninferable is
+    inferred.
+    """
     node1, node2 = builder.extract_node(
         """
     def f1():
@@ -505,7 +509,9 @@ def test_if_instance_attr_varname_collision1(
 def test_if_instance_attr_varname_collision2(
     condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
-    """Test that constraint in an if condition doesn't apply to a variable with the same name."""
+    """Test that constraint in an if condition doesn't apply to a variable with the same
+    name.
+    """
     node1, node2 = builder.extract_node(
         f"""
     class A1:
