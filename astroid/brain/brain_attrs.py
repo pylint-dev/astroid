@@ -3,7 +3,7 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """
-Astroid hook for the attrs library
+Astroid hook for the attrs library.
 
 Without this hook pylint reports unsupported-assignment-operation
 for attrs classes
@@ -45,7 +45,7 @@ def is_decorated_with_attrs(node, decorator_names=ATTRS_NAMES) -> bool:
 
 def attr_attributes_transform(node: ClassDef) -> None:
     """Given that the ClassNode has an attr decorator,
-    rewrite class attributes as instance attributes
+    rewrite class attributes as instance attributes.
     """
     # Astroid can't infer this attribute properly
     # Prevents https://github.com/PyCQA/pylint/issues/1884

@@ -20,8 +20,9 @@ _T = TypeVar("_T")
 
 
 class LocalsDictNodeNG(node_classes.LookupMixIn):
-    """this class provides locals handling common to Module, FunctionDef
-    and ClassDef nodes, including a dict like interface for direct access
+    """This class provides locals handling common to Module, FunctionDef
+    and ClassDef nodes, including a dict like interface for direct access.
+
     to locals information
     """
 
@@ -70,7 +71,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         raise NotImplementedError
 
     def _scope_lookup(self, node, name, offset=0):
-        """XXX method for interfacing the scope lookup"""
+        """XXX method for interfacing the scope lookup."""
         try:
             stmts = _filter_stmts(node, self.locals[name], self, offset)
         except KeyError:
@@ -104,7 +105,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
     __setitem__ = set_local
 
     def _append_node(self, child: nodes.NodeNG) -> None:
-        """append a child, linking it in the tree"""
+        """Append a child, linking it in the tree."""
         # pylint: disable=no-member; depending by the class
         # which uses the current class as a mixin or base class.
         # It's rewritten in 2.0, so it makes no sense for now

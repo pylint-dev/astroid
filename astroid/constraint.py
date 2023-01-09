@@ -28,7 +28,10 @@ class Constraint(ABC):
         self.node = node
         """The node that this constraint applies to."""
         self.negate = negate
-        """True if this constraint is negated. E.g., "is not" instead of "is"."""
+        """True if this constraint is negated.
+
+        E.g., "is not" instead of "is".
+        """
 
     @classmethod
     @abstractmethod

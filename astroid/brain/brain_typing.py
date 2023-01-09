@@ -238,7 +238,9 @@ def _forbid_class_getitem_access(node: ClassDef) -> None:
 
     def full_raiser(origin_func, attr, *args, **kwargs):
         """
-        Raises an AttributeInferenceError in case of access to __class_getitem__ method.
+        Raises an AttributeInferenceError in case of access to __class_getitem__
+        method.
+
         Otherwise, just call origin_func.
         """
         if attr == "__class_getitem__":
@@ -262,7 +264,8 @@ def infer_typing_alias(
 ) -> Iterator[ClassDef]:
     """
     Infers the call to _alias function
-    Insert ClassDef, with same name as aliased class,
+    Insert ClassDef, with same name as aliased class,.
+
     in mro to simulate _GenericAlias.
 
     :param node: call node

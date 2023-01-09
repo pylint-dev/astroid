@@ -2,8 +2,9 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""astroid manager: avoid multiple astroid build of a same module when
-possible by providing a class responsible to get astroid representation
+"""Astroid manager: avoid multiple astroid build of a same module when
+possible by providing a class responsible to get astroid representation.
+
 from various source and using a cache of built modules)
 """
 
