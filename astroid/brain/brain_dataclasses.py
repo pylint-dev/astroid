@@ -3,14 +3,13 @@
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
 """
-Astroid hook for the dataclasses library
+Astroid hook for the dataclasses library.
 
 Support built-in dataclasses, pydantic.dataclasses, and marshmallow_dataclass-annotated
 dataclasses. References:
 - https://docs.python.org/3/library/dataclasses.html
 - https://pydantic-docs.helpmanual.io/usage/dataclasses/
 - https://lovasoa.github.io/marshmallow_dataclass/
-
 """
 
 from __future__ import annotations
@@ -61,7 +60,7 @@ def is_decorated_with_dataclass(
 
 
 def dataclass_transform(node: nodes.ClassDef) -> None:
-    """Rewrite a dataclass to be easily understood by pylint"""
+    """Rewrite a dataclass to be easily understood by pylint."""
     node.is_dataclass = True
 
     for assign_node in _get_dataclass_attributes(node):
@@ -170,7 +169,9 @@ def _check_generate_dataclass_init(node: nodes.ClassDef) -> bool:
 def _find_arguments_from_base_classes(
     node: nodes.ClassDef, skippable_names: set[str]
 ) -> tuple[str, str]:
-    """Iterate through all bases and add them to the list of arguments to add to the init."""
+    """Iterate through all bases and add them to the list of arguments to add to the
+    init.
+    """
     pos_only_store: dict[str, tuple[str | None, str | None]] = {}
     kw_only_store: dict[str, tuple[str | None, str | None]] = {}
     # See TODO down below
@@ -482,7 +483,8 @@ def _looks_like_dataclass_field_call(
 
 
 def _get_field_default(field_call: nodes.Call) -> _FieldDefaultReturn:
-    """Return a the default value of a field call, and the corresponding keyword argument name.
+    """Return a the default value of a field call, and the corresponding keyword
+    argument name.
 
     field(default=...) results in the ... node
     field(default_factory=...) results in a Call node with func ... and no arguments

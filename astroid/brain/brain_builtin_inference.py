@@ -108,7 +108,7 @@ class whatever(object):
 
 
 def _extend_string_class(class_node, code, rvalue):
-    """function to extend builtin str/unicode class"""
+    """Function to extend builtin str/unicode class."""
     code = code.format(rvalue=rvalue)
     fake = AstroidBuilder(AstroidManager()).string_build(code)["whatever"]
     for method in fake.mymethods():
@@ -459,7 +459,7 @@ def _infer_getattr_args(node, context):
 
 
 def infer_getattr(node, context: InferenceContext | None = None):
-    """Understand getattr calls
+    """Understand getattr calls.
 
     If one of the arguments is an Uninferable object, then the
     result will be an Uninferable object. Otherwise, the normal attribute
@@ -487,7 +487,7 @@ def infer_getattr(node, context: InferenceContext | None = None):
 
 
 def infer_hasattr(node, context: InferenceContext | None = None):
-    """Understand hasattr calls
+    """Understand hasattr calls.
 
     This always guarantees three possible outcomes for calling
     hasattr: Const(False) when we are sure that the object
@@ -514,7 +514,7 @@ def infer_hasattr(node, context: InferenceContext | None = None):
 
 
 def infer_callable(node, context: InferenceContext | None = None):
-    """Understand callable calls
+    """Understand callable calls.
 
     This follows Python's semantics, where an object
     is callable if it provides an attribute __call__,
@@ -538,7 +538,7 @@ def infer_callable(node, context: InferenceContext | None = None):
 def infer_property(
     node: nodes.Call, context: InferenceContext | None = None
 ) -> objects.Property:
-    """Understand `property` class
+    """Understand `property` class.
 
     This only infers the output of `property`
     call, not the arguments themselves.
@@ -636,7 +636,7 @@ def _infer_object__new__decorator(node, context: InferenceContext | None = None)
 
 
 def _infer_object__new__decorator_check(node) -> bool:
-    """Predicate before inference_tip
+    """Predicate before inference_tip.
 
     Check if the given ClassDef has an @object.__new__ decorator
     """
@@ -651,7 +651,7 @@ def _infer_object__new__decorator_check(node) -> bool:
 
 
 def infer_issubclass(callnode, context: InferenceContext | None = None):
-    """Infer issubclass() calls
+    """Infer issubclass() calls.
 
     :param nodes.Call callnode: an `issubclass` call
     :param InferenceContext context: the context for the inference
@@ -694,7 +694,7 @@ def infer_issubclass(callnode, context: InferenceContext | None = None):
 
 
 def infer_isinstance(callnode, context: InferenceContext | None = None):
-    """Infer isinstance calls
+    """Infer isinstance calls.
 
     :param nodes.Call callnode: an isinstance call
     :rtype nodes.Const: Boolean Const value of isinstance call
@@ -756,7 +756,7 @@ def _class_or_tuple_to_container(node, context: InferenceContext | None = None):
 
 
 def infer_len(node, context: InferenceContext | None = None):
-    """Infer length calls
+    """Infer length calls.
 
     :param nodes.Call node: len call to infer
     :param context.InferenceContext: node context
@@ -779,7 +779,7 @@ def infer_len(node, context: InferenceContext | None = None):
 
 
 def infer_str(node, context: InferenceContext | None = None):
-    """Infer str() calls
+    """Infer str() calls.
 
     :param nodes.Call node: str() call to infer
     :param context.InferenceContext: node context
@@ -795,7 +795,7 @@ def infer_str(node, context: InferenceContext | None = None):
 
 
 def infer_int(node, context: InferenceContext | None = None):
-    """Infer int() calls
+    """Infer int() calls.
 
     :param nodes.Call node: int() call to infer
     :param context.InferenceContext: node context
@@ -827,7 +827,7 @@ def infer_int(node, context: InferenceContext | None = None):
 
 
 def infer_dict_fromkeys(node, context: InferenceContext | None = None):
-    """Infer dict.fromkeys
+    """Infer dict.fromkeys.
 
     :param nodes.Call node: dict.fromkeys() call to infer
     :param context.InferenceContext context: node context

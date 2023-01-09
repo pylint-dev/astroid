@@ -125,7 +125,7 @@ class ObjectModel:
         return [o[LEN_OF_IMPL_PREFIX:] for o in dir(self) if o.startswith(IMPL_PREFIX)]
 
     def lookup(self, name):
-        """Look up the given *name* in the current model
+        """Look up the given *name* in the current model.
 
         It should return an AST or an interpreter object,
         but if the name is not found, then an AttributeInferenceError will be raised.
@@ -333,7 +333,9 @@ class FunctionModel(ObjectModel):
         func = self._instance
 
         class DescriptorBoundMethod(bases.BoundMethod):
-            """Bound method which knows how to understand calling descriptor binding."""
+            """Bound method which knows how to understand calling descriptor
+            binding.
+            """
 
             def implicit_parameters(self) -> Literal[0]:
                 # Different than BoundMethod since the signature
@@ -390,7 +392,7 @@ class FunctionModel(ObjectModel):
 
             @property
             def args(self):
-                """Overwrite the underlying args to match those of the underlying func
+                """Overwrite the underlying args to match those of the underlying func.
 
                 Usually the underlying *func* is a function/method, as in:
 
@@ -514,7 +516,7 @@ class ClassModel(ObjectModel):
 
     @property
     def attr___subclasses__(self):
-        """Get the subclasses of the underlying class
+        """Get the subclasses of the underlying class.
 
         This looks only in the current module for retrieving the subclasses,
         thus it might miss a couple of them.
@@ -841,7 +843,7 @@ class DictModel(ObjectModel):
 
 
 class PropertyModel(ObjectModel):
-    """Model for a builtin property"""
+    """Model for a builtin property."""
 
     def _init_function(self, name):
         function = nodes.FunctionDef(name=name, parent=self._instance)

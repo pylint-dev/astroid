@@ -2,8 +2,8 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""this module contains utilities for rebuilding an _ast tree in
-order to get a single Astroid representation
+"""This module contains utilities for rebuilding an _ast tree in
+order to get a single Astroid representation.
 """
 
 from __future__ import annotations
@@ -55,7 +55,7 @@ NodesWithDocsType = Union[nodes.Module, nodes.ClassDef, nodes.FunctionDef]
 
 # noinspection PyMethodMayBeStatic
 class TreeRebuilder:
-    """Rebuilds the _ast tree to become an Astroid tree"""
+    """Rebuilds the _ast tree to become an Astroid tree."""
 
     def __init__(
         self,
@@ -238,7 +238,7 @@ class TreeRebuilder:
     def visit_module(
         self, node: ast.Module, modname: str, modpath: str, package: bool
     ) -> nodes.Module:
-        """visit a Module node by returning a fresh instance of it
+        """Visit a Module node by returning a fresh instance of it.
 
         Note: Method not called by 'visit'
         """
@@ -605,7 +605,7 @@ class TreeRebuilder:
         return visit_method(node, parent)
 
     def _save_assignment(self, node: nodes.AssignName | nodes.DelName) -> None:
-        """save assignment situation since node.parent is not available yet"""
+        """Save assignment situation since node.parent is not available yet."""
         if self._global_names and node.name in self._global_names[-1]:
             node.root().set_local(node.name, node)
         else:
@@ -614,11 +614,11 @@ class TreeRebuilder:
             node.parent.set_local(node.name, node)
 
     def visit_arg(self, node: ast.arg, parent: NodeNG) -> nodes.AssignName:
-        """visit an arg node by returning a fresh AssName instance"""
+        """Visit an arg node by returning a fresh AssName instance."""
         return self.visit_assignname(node, parent, node.arg)
 
     def visit_arguments(self, node: ast.arguments, parent: NodeNG) -> nodes.Arguments:
-        """visit an Arguments node by returning a fresh instance of it"""
+        """Visit an Arguments node by returning a fresh instance of it."""
         vararg: str | None = None
         kwarg: str | None = None
         newnode = nodes.Arguments(
@@ -696,7 +696,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_assert(self, node: ast.Assert, parent: NodeNG) -> nodes.Assert:
-        """visit a Assert node by returning a fresh instance of it"""
+        """Visit a Assert node by returning a fresh instance of it."""
         newnode = nodes.Assert(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -795,7 +795,7 @@ class TreeRebuilder:
         return self._visit_with(nodes.AsyncWith, node, parent)
 
     def visit_assign(self, node: ast.Assign, parent: NodeNG) -> nodes.Assign:
-        """visit a Assign node by returning a fresh instance of it"""
+        """Visit a Assign node by returning a fresh instance of it."""
         newnode = nodes.Assign(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -813,7 +813,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_annassign(self, node: ast.AnnAssign, parent: NodeNG) -> nodes.AnnAssign:
-        """visit an AnnAssign node by returning a fresh instance of it"""
+        """Visit an AnnAssign node by returning a fresh instance of it."""
         newnode = nodes.AnnAssign(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -843,7 +843,7 @@ class TreeRebuilder:
     def visit_assignname(
         self, node: ast.AST, parent: NodeNG, node_name: str | None
     ) -> nodes.AssignName | None:
-        """visit a node and return a AssignName node
+        """Visit a node and return a AssignName node.
 
         Note: Method not called by 'visit'
         """
@@ -862,7 +862,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_augassign(self, node: ast.AugAssign, parent: NodeNG) -> nodes.AugAssign:
-        """visit a AugAssign node by returning a fresh instance of it"""
+        """Visit a AugAssign node by returning a fresh instance of it."""
         newnode = nodes.AugAssign(
             op=self._parser_module.bin_op_classes[type(node.op)] + "=",
             lineno=node.lineno,
@@ -878,7 +878,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_binop(self, node: ast.BinOp, parent: NodeNG) -> nodes.BinOp:
-        """visit a BinOp node by returning a fresh instance of it"""
+        """Visit a BinOp node by returning a fresh instance of it."""
         newnode = nodes.BinOp(
             op=self._parser_module.bin_op_classes[type(node.op)],
             lineno=node.lineno,
@@ -894,7 +894,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_boolop(self, node: ast.BoolOp, parent: NodeNG) -> nodes.BoolOp:
-        """visit a BoolOp node by returning a fresh instance of it"""
+        """Visit a BoolOp node by returning a fresh instance of it."""
         newnode = nodes.BoolOp(
             op=self._parser_module.bool_op_classes[type(node.op)],
             lineno=node.lineno,
@@ -908,7 +908,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_break(self, node: ast.Break, parent: NodeNG) -> nodes.Break:
-        """visit a Break node by returning a fresh instance of it"""
+        """Visit a Break node by returning a fresh instance of it."""
         return nodes.Break(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -919,7 +919,7 @@ class TreeRebuilder:
         )
 
     def visit_call(self, node: ast.Call, parent: NodeNG) -> nodes.Call:
-        """visit a CallFunc node by returning a fresh instance of it"""
+        """Visit a CallFunc node by returning a fresh instance of it."""
         newnode = nodes.Call(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -938,7 +938,7 @@ class TreeRebuilder:
     def visit_classdef(
         self, node: ast.ClassDef, parent: NodeNG, newstyle: bool = True
     ) -> nodes.ClassDef:
-        """visit a ClassDef node to become astroid"""
+        """Visit a ClassDef node to become astroid."""
         node, doc_ast_node = self._get_doc(node)
         newnode = nodes.ClassDef(
             name=node.name,
@@ -973,7 +973,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_continue(self, node: ast.Continue, parent: NodeNG) -> nodes.Continue:
-        """visit a Continue node by returning a fresh instance of it"""
+        """Visit a Continue node by returning a fresh instance of it."""
         return nodes.Continue(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -984,7 +984,7 @@ class TreeRebuilder:
         )
 
     def visit_compare(self, node: ast.Compare, parent: NodeNG) -> nodes.Compare:
-        """visit a Compare node by returning a fresh instance of it"""
+        """Visit a Compare node by returning a fresh instance of it."""
         newnode = nodes.Compare(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1008,7 +1008,7 @@ class TreeRebuilder:
     def visit_comprehension(
         self, node: ast.comprehension, parent: NodeNG
     ) -> nodes.Comprehension:
-        """visit a Comprehension node by returning a fresh instance of it"""
+        """Visit a Comprehension node by returning a fresh instance of it."""
         newnode = nodes.Comprehension(parent)
         newnode.postinit(
             self.visit(node.target, newnode),
@@ -1023,7 +1023,7 @@ class TreeRebuilder:
         node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef,
         parent: NodeNG,
     ) -> nodes.Decorators | None:
-        """visit a Decorators node by returning a fresh instance of it
+        """Visit a Decorators node by returning a fresh instance of it.
 
         Note: Method not called by 'visit'
         """
@@ -1051,7 +1051,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_delete(self, node: ast.Delete, parent: NodeNG) -> nodes.Delete:
-        """visit a Delete node by returning a fresh instance of it"""
+        """Visit a Delete node by returning a fresh instance of it."""
         newnode = nodes.Delete(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1084,7 +1084,7 @@ class TreeRebuilder:
             yield rebuilt_key, rebuilt_value
 
     def visit_dict(self, node: ast.Dict, parent: NodeNG) -> nodes.Dict:
-        """visit a Dict node by returning a fresh instance of it"""
+        """Visit a Dict node by returning a fresh instance of it."""
         newnode = nodes.Dict(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1100,7 +1100,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_dictcomp(self, node: ast.DictComp, parent: NodeNG) -> nodes.DictComp:
-        """visit a DictComp node by returning a fresh instance of it"""
+        """Visit a DictComp node by returning a fresh instance of it."""
         newnode = nodes.DictComp(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1117,7 +1117,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_expr(self, node: ast.Expr, parent: NodeNG) -> nodes.Expr:
-        """visit a Expr node by returning a fresh instance of it"""
+        """Visit a Expr node by returning a fresh instance of it."""
         newnode = nodes.Expr(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1132,7 +1132,7 @@ class TreeRebuilder:
     def visit_excepthandler(
         self, node: ast.ExceptHandler, parent: NodeNG
     ) -> nodes.ExceptHandler:
-        """visit an ExceptHandler node by returning a fresh instance of it"""
+        """Visit an ExceptHandler node by returning a fresh instance of it."""
         newnode = nodes.ExceptHandler(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1163,7 +1163,7 @@ class TreeRebuilder:
     def _visit_for(
         self, cls: type[_ForT], node: ast.For | ast.AsyncFor, parent: NodeNG
     ) -> _ForT:
-        """visit a For node by returning a fresh instance of it"""
+        """Visit a For node by returning a fresh instance of it."""
         col_offset = node.col_offset
         if IS_PYPY and not PY39_PLUS and isinstance(node, ast.AsyncFor) and self._data:
             # pylint: disable-next=unsubscriptable-object
@@ -1193,7 +1193,7 @@ class TreeRebuilder:
     def visit_importfrom(
         self, node: ast.ImportFrom, parent: NodeNG
     ) -> nodes.ImportFrom:
-        """visit an ImportFrom node by returning a fresh instance of it"""
+        """Visit an ImportFrom node by returning a fresh instance of it."""
         names = [(alias.name, alias.asname) for alias in node.names]
         newnode = nodes.ImportFrom(
             fromname=node.module or "",
@@ -1231,7 +1231,7 @@ class TreeRebuilder:
         node: ast.FunctionDef | ast.AsyncFunctionDef,
         parent: NodeNG,
     ) -> _FunctionT:
-        """visit an FunctionDef node to become astroid"""
+        """Visit an FunctionDef node to become astroid."""
         self._global_names.append({})
         node, doc_ast_node = self._get_doc(node)
 
@@ -1288,7 +1288,7 @@ class TreeRebuilder:
     def visit_generatorexp(
         self, node: ast.GeneratorExp, parent: NodeNG
     ) -> nodes.GeneratorExp:
-        """visit a GeneratorExp node by returning a fresh instance of it"""
+        """Visit a GeneratorExp node by returning a fresh instance of it."""
         newnode = nodes.GeneratorExp(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1306,7 +1306,7 @@ class TreeRebuilder:
     def visit_attribute(
         self, node: ast.Attribute, parent: NodeNG
     ) -> nodes.Attribute | nodes.AssignAttr | nodes.DelAttr:
-        """visit an Attribute node by returning a fresh instance of it"""
+        """Visit an Attribute node by returning a fresh instance of it."""
         context = self._get_context(node)
         newnode: nodes.Attribute | nodes.AssignAttr | nodes.DelAttr
         if context == Context.Del:
@@ -1351,7 +1351,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_global(self, node: ast.Global, parent: NodeNG) -> nodes.Global:
-        """visit a Global node to become astroid"""
+        """Visit a Global node to become astroid."""
         newnode = nodes.Global(
             names=node.names,
             lineno=node.lineno,
@@ -1367,7 +1367,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_if(self, node: ast.If, parent: NodeNG) -> nodes.If:
-        """visit an If node by returning a fresh instance of it"""
+        """Visit an If node by returning a fresh instance of it."""
         newnode = nodes.If(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1384,7 +1384,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_ifexp(self, node: ast.IfExp, parent: NodeNG) -> nodes.IfExp:
-        """visit a IfExp node by returning a fresh instance of it"""
+        """Visit a IfExp node by returning a fresh instance of it."""
         newnode = nodes.IfExp(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1401,7 +1401,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_import(self, node: ast.Import, parent: NodeNG) -> nodes.Import:
-        """visit a Import node by returning a fresh instance of it"""
+        """Visit a Import node by returning a fresh instance of it."""
         names = [(alias.name, alias.asname) for alias in node.names]
         newnode = nodes.Import(
             names=names,
@@ -1471,18 +1471,18 @@ class TreeRebuilder:
         def visit_extslice(
             self, node: ast.ExtSlice, parent: nodes.Subscript
         ) -> nodes.Tuple:
-            """visit an ExtSlice node by returning a fresh instance of Tuple"""
+            """Visit an ExtSlice node by returning a fresh instance of Tuple."""
             # ExtSlice doesn't have lineno or col_offset information
             newnode = nodes.Tuple(ctx=Context.Load, parent=parent)
             newnode.postinit([self.visit(dim, newnode) for dim in node.dims])
             return newnode
 
         def visit_index(self, node: ast.Index, parent: nodes.Subscript) -> NodeNG:
-            """visit a Index node by returning a fresh instance of NodeNG"""
+            """Visit a Index node by returning a fresh instance of NodeNG."""
             return self.visit(node.value, parent)
 
     def visit_keyword(self, node: ast.keyword, parent: NodeNG) -> nodes.Keyword:
-        """visit a Keyword node by returning a fresh instance of it"""
+        """Visit a Keyword node by returning a fresh instance of it."""
         newnode = nodes.Keyword(
             arg=node.arg,
             # position attributes added in 3.9
@@ -1496,7 +1496,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_lambda(self, node: ast.Lambda, parent: NodeNG) -> nodes.Lambda:
-        """visit a Lambda node by returning a fresh instance of it"""
+        """Visit a Lambda node by returning a fresh instance of it."""
         newnode = nodes.Lambda(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1509,7 +1509,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_list(self, node: ast.List, parent: NodeNG) -> nodes.List:
-        """visit a List node by returning a fresh instance of it"""
+        """Visit a List node by returning a fresh instance of it."""
         context = self._get_context(node)
         newnode = nodes.List(
             ctx=context,
@@ -1524,7 +1524,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_listcomp(self, node: ast.ListComp, parent: NodeNG) -> nodes.ListComp:
-        """visit a ListComp node by returning a fresh instance of it"""
+        """Visit a ListComp node by returning a fresh instance of it."""
         newnode = nodes.ListComp(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1542,7 +1542,7 @@ class TreeRebuilder:
     def visit_name(
         self, node: ast.Name, parent: NodeNG
     ) -> nodes.Name | nodes.AssignName | nodes.DelName:
-        """visit a Name node by returning a fresh instance of it"""
+        """Visit a Name node by returning a fresh instance of it."""
         context = self._get_context(node)
         newnode: nodes.Name | nodes.AssignName | nodes.DelName
         if context == Context.Del:
@@ -1582,7 +1582,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_nonlocal(self, node: ast.Nonlocal, parent: NodeNG) -> nodes.Nonlocal:
-        """visit a Nonlocal node and return a new instance of it"""
+        """Visit a Nonlocal node and return a new instance of it."""
         return nodes.Nonlocal(
             names=node.names,
             lineno=node.lineno,
@@ -1594,7 +1594,7 @@ class TreeRebuilder:
         )
 
     def visit_constant(self, node: ast.Constant, parent: NodeNG) -> nodes.Const:
-        """visit a Constant node by returning a fresh instance of Const"""
+        """Visit a Constant node by returning a fresh instance of Const."""
         return nodes.Const(
             value=node.value,
             kind=node.kind,
@@ -1609,7 +1609,7 @@ class TreeRebuilder:
     if sys.version_info < (3, 8):
         # Not used in Python 3.8+.
         def visit_ellipsis(self, node: ast.Ellipsis, parent: NodeNG) -> nodes.Const:
-            """visit an Ellipsis node by returning a fresh instance of Const"""
+            """Visit an Ellipsis node by returning a fresh instance of Const."""
             return nodes.Const(
                 value=Ellipsis,
                 lineno=node.lineno,
@@ -1629,7 +1629,7 @@ class TreeRebuilder:
             )
 
         def visit_str(self, node: ast.Str | ast.Bytes, parent: NodeNG) -> nodes.Const:
-            """visit a String/Bytes node by returning a fresh instance of Const"""
+            """Visit a String/Bytes node by returning a fresh instance of Const."""
             return nodes.Const(
                 node.s,
                 node.lineno,
@@ -1640,7 +1640,7 @@ class TreeRebuilder:
         visit_bytes = visit_str
 
         def visit_num(self, node: ast.Num, parent: NodeNG) -> nodes.Const:
-            """visit a Num node by returning a fresh instance of Const"""
+            """Visit a Num node by returning a fresh instance of Const."""
             return nodes.Const(
                 node.n,
                 node.lineno,
@@ -1649,7 +1649,7 @@ class TreeRebuilder:
             )
 
     def visit_pass(self, node: ast.Pass, parent: NodeNG) -> nodes.Pass:
-        """visit a Pass node by returning a fresh instance of it"""
+        """Visit a Pass node by returning a fresh instance of it."""
         return nodes.Pass(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1660,7 +1660,7 @@ class TreeRebuilder:
         )
 
     def visit_raise(self, node: ast.Raise, parent: NodeNG) -> nodes.Raise:
-        """visit a Raise node by returning a fresh instance of it"""
+        """Visit a Raise node by returning a fresh instance of it."""
         newnode = nodes.Raise(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1677,7 +1677,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_return(self, node: ast.Return, parent: NodeNG) -> nodes.Return:
-        """visit a Return node by returning a fresh instance of it"""
+        """Visit a Return node by returning a fresh instance of it."""
         newnode = nodes.Return(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1691,7 +1691,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_set(self, node: ast.Set, parent: NodeNG) -> nodes.Set:
-        """visit a Set node by returning a fresh instance of it"""
+        """Visit a Set node by returning a fresh instance of it."""
         newnode = nodes.Set(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1704,7 +1704,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_setcomp(self, node: ast.SetComp, parent: NodeNG) -> nodes.SetComp:
-        """visit a SetComp node by returning a fresh instance of it"""
+        """Visit a SetComp node by returning a fresh instance of it."""
         newnode = nodes.SetComp(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1720,7 +1720,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_slice(self, node: ast.Slice, parent: nodes.Subscript) -> nodes.Slice:
-        """visit a Slice node by returning a fresh instance of it"""
+        """Visit a Slice node by returning a fresh instance of it."""
         newnode = nodes.Slice(
             # position attributes added in 3.9
             lineno=getattr(node, "lineno", None),
@@ -1737,7 +1737,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_subscript(self, node: ast.Subscript, parent: NodeNG) -> nodes.Subscript:
-        """visit a Subscript node by returning a fresh instance of it"""
+        """Visit a Subscript node by returning a fresh instance of it."""
         context = self._get_context(node)
         newnode = nodes.Subscript(
             ctx=context,
@@ -1754,7 +1754,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_starred(self, node: ast.Starred, parent: NodeNG) -> nodes.Starred:
-        """visit a Starred node and return a new instance of it"""
+        """Visit a Starred node and return a new instance of it."""
         context = self._get_context(node)
         newnode = nodes.Starred(
             ctx=context,
@@ -1769,7 +1769,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_tryexcept(self, node: ast.Try, parent: NodeNG) -> nodes.TryExcept:
-        """visit a TryExcept node by returning a fresh instance of it"""
+        """Visit a TryExcept node by returning a fresh instance of it."""
         if sys.version_info >= (3, 8):
             # TryExcept excludes the 'finally' but that will be included in the
             # end_lineno from 'node'. Therefore, we check all non 'finally'
@@ -1823,7 +1823,7 @@ class TreeRebuilder:
         return None
 
     def visit_tuple(self, node: ast.Tuple, parent: NodeNG) -> nodes.Tuple:
-        """visit a Tuple node by returning a fresh instance of it"""
+        """Visit a Tuple node by returning a fresh instance of it."""
         context = self._get_context(node)
         newnode = nodes.Tuple(
             ctx=context,
@@ -1838,7 +1838,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_unaryop(self, node: ast.UnaryOp, parent: NodeNG) -> nodes.UnaryOp:
-        """visit a UnaryOp node by returning a fresh instance of it"""
+        """Visit a UnaryOp node by returning a fresh instance of it."""
         newnode = nodes.UnaryOp(
             op=self._parser_module.unary_op_classes[node.op.__class__],
             lineno=node.lineno,
@@ -1852,7 +1852,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_while(self, node: ast.While, parent: NodeNG) -> nodes.While:
-        """visit a While node by returning a fresh instance of it"""
+        """Visit a While node by returning a fresh instance of it."""
         newnode = nodes.While(
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1917,7 +1917,7 @@ class TreeRebuilder:
         return self._visit_with(nodes.With, node, parent)
 
     def visit_yield(self, node: ast.Yield, parent: NodeNG) -> NodeNG:
-        """visit a Yield node by returning a fresh instance of it"""
+        """Visit a Yield node by returning a fresh instance of it."""
         newnode = nodes.Yield(
             lineno=node.lineno,
             col_offset=node.col_offset,

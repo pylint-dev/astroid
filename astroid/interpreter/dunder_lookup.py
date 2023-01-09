@@ -32,7 +32,7 @@ def _lookup_in_mro(node, name) -> list:
 
 
 def lookup(node, name) -> list:
-    """Lookup the given special method name in the given *node*
+    """Lookup the given special method name in the given *node*.
 
     If the special method was found, then a list of attributes
     will be returned. Otherwise, `astroid.AttributeInferenceError`
