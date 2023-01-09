@@ -1469,7 +1469,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.fail(f"expected to find an instance of Application in {inferred}")
 
     def test_list_inference(self) -> None:
-        """#20464."""
         code = """
             from unknown import Unknown
             A = []
