@@ -2,7 +2,9 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""_filter_stmts and helper functions. This method gets used in LocalsDictnodes.NodeNG._scope_lookup.
+"""_filter_stmts and helper functions.
+
+This method gets used in LocalsDictnodes.NodeNG._scope_lookup.
 It is not considered public.
 """
 
@@ -27,12 +29,12 @@ def _get_filtered_node_statements(
 
 
 def _is_from_decorator(node) -> bool:
-    """Return whether the given node is the child of a decorator"""
+    """Return whether the given node is the child of a decorator."""
     return any(isinstance(parent, nodes.Decorators) for parent in node.node_ancestors())
 
 
 def _get_if_statement_ancestor(node: nodes.NodeNG) -> nodes.If | None:
-    """Return the first parent node that is an If node (or None)"""
+    """Return the first parent node that is an If node (or None)."""
     for parent in node.node_ancestors():
         if isinstance(parent, nodes.If):
             return parent

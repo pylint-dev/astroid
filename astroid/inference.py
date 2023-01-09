@@ -2,8 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""this module contains a set of functions to handle inference on astroid trees
-"""
+"""This module contains a set of functions to handle inference on astroid trees."""
 
 from __future__ import annotations
 
@@ -70,7 +69,7 @@ GetFlowFactory = typing.Callable[
 def infer_end(
     self: _T, context: InferenceContext | None = None, **kwargs: Any
 ) -> Iterator[_T]:
-    """Inference's end for nodes that yield themselves on inference
+    """Inference's end for nodes that yield themselves on inference.
 
     These are objects for which inference does not have any semantic,
     such as Module or Consts.
@@ -90,7 +89,7 @@ nodes.Slice._infer = infer_end  # type: ignore[assignment]
 def _infer_sequence_helper(
     node: _BaseContainerT, context: InferenceContext | None = None
 ) -> list[SuccessfulInferenceResult]:
-    """Infer all values based on _BaseContainer.elts"""
+    """Infer all values based on _BaseContainer.elts."""
     values = []
 
     for elt in node.elts:
@@ -153,7 +152,7 @@ def _update_with_replacement(
     lhs_dict: dict[SuccessfulInferenceResult, SuccessfulInferenceResult],
     rhs_dict: dict[SuccessfulInferenceResult, SuccessfulInferenceResult],
 ) -> dict[SuccessfulInferenceResult, SuccessfulInferenceResult]:
-    """Delete nodes that equate to duplicate keys
+    """Delete nodes that equate to duplicate keys.
 
     Since an astroid node doesn't 'equal' another node with the same value,
     this function uses the as_string method to make sure duplicate keys
@@ -178,7 +177,7 @@ def _update_with_replacement(
 def _infer_map(
     node: nodes.Dict, context: InferenceContext | None
 ) -> dict[SuccessfulInferenceResult, SuccessfulInferenceResult]:
-    """Infer all values based on Dict.items"""
+    """Infer all values based on Dict.items."""
     values: dict[SuccessfulInferenceResult, SuccessfulInferenceResult] = {}
     for name, value in node.items:
         if isinstance(name, nodes.DictUnpack):
@@ -227,7 +226,7 @@ def infer_name(
     context: InferenceContext | None = None,
     **kwargs: Any,
 ) -> Generator[InferenceResult, None, None]:
-    """infer a Name: use name lookup rules"""
+    """Infer a Name: use name lookup rules."""
     frame, stmts = self.lookup(self.name)
     if not stmts:
         # Try to see if the name is enclosed in a nested function
@@ -261,7 +260,7 @@ nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper
 def infer_call(
     self: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
 ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
-    """infer a Call node by trying to guess what the function returns"""
+    """Infer a Call node by trying to guess what the function returns."""
     callcontext = copy_context(context)
     callcontext.boundnode = None
     if context is not None:
@@ -293,7 +292,7 @@ def infer_import(
     asname: bool = True,
     **kwargs: Any,
 ) -> Generator[nodes.Module, None, None]:
-    """infer an Import node: return the imported module/object"""
+    """Infer an Import node: return the imported module/object."""
     context = context or InferenceContext()
     name = context.lookupname
     if name is None:
@@ -319,7 +318,7 @@ def infer_import_from(
     asname: bool = True,
     **kwargs: Any,
 ) -> Generator[InferenceResult, None, None]:
-    """infer a ImportFrom node: return the imported module/object"""
+    """Infer a ImportFrom node: return the imported module/object."""
     context = context or InferenceContext()
     name = context.lookupname
     if name is None:
@@ -354,7 +353,7 @@ def infer_attribute(
     context: InferenceContext | None = None,
     **kwargs: Any,
 ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
-    """infer an Attribute node by using getattr on the associated object"""
+    """Infer an Attribute node by using getattr on the associated object."""
     for owner in self.expr.infer(context):
         if owner is util.Uninferable:
             yield owner
@@ -414,7 +413,7 @@ _SUBSCRIPT_SENTINEL = object()
 def infer_subscript(
     self: nodes.Subscript, context: InferenceContext | None = None, **kwargs: Any
 ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-    """Inference for subscripts
+    """Inference for subscripts.
 
     We're understanding if the index is a Const
     or a slice, passing the result of inference
@@ -876,7 +875,7 @@ def _infer_binary_operation(
     context: InferenceContext,
     flow_factory: GetFlowFactory,
 ) -> Generator[InferenceResult | util.BadBinaryOperationMessage, None, None]:
-    """Infer a binary operation between a left operand and a right operand
+    """Infer a binary operation between a left operand and a right operand.
 
     This is used by both normal binary operations and augmented binary
     operations, the only difference is the flow factory used.
@@ -1119,8 +1118,8 @@ def infer_assign(
     context: InferenceContext | None = None,
     **kwargs: Any,
 ) -> Generator[InferenceResult, None, None]:
-    """infer a AssignName/AssignAttr: need to inspect the RHS part of the
-    assign node
+    """Infer a AssignName/AssignAttr: need to inspect the RHS part of the
+    assign node.
     """
     if isinstance(self.parent, nodes.AugAssign):
         return self.parent.infer(context)
@@ -1173,7 +1172,7 @@ def _populate_context_lookup(call: nodes.Call, context: InferenceContext | None)
 def infer_ifexp(
     self: nodes.IfExp, context: InferenceContext | None = None, **kwargs: Any
 ) -> Generator[InferenceResult, None, None]:
-    """Support IfExp inference
+    """Support IfExp inference.
 
     If we can't infer the truthiness of the condition, we default
     to inferring both branches. Otherwise, we infer either branch

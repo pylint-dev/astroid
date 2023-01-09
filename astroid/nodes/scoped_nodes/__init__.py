@@ -2,7 +2,9 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""This module contains all classes that are considered a "scoped" node and anything related.
+"""This module contains all classes that are considered a "scoped" node and anything
+related.
+
 A scope node is a node that opens a new local scope in the language definition:
 Module, ClassDef, FunctionDef (and Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """

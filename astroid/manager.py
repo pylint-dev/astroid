@@ -101,7 +101,7 @@ class AstroidManager:
         fallback: bool = True,
         source: bool = False,
     ) -> nodes.Module:
-        """given a module name, return the astroid object"""
+        """Given a module name, return the astroid object."""
         try:
             filepath = get_source_file(filepath, include_no_ext=True)
             source = True
@@ -129,7 +129,9 @@ class AstroidManager:
     def ast_from_string(
         self, data: str, modname: str = "", filepath: str | None = None
     ) -> nodes.Module:
-        """Given some source code as a string, return its corresponding astroid object"""
+        """Given some source code as a string, return its corresponding astroid
+        object.
+        """
         # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import AstroidBuilder
 
@@ -293,7 +295,7 @@ class AstroidManager:
     def ast_from_module(
         self, module: types.ModuleType, modname: str | None = None
     ) -> nodes.Module:
-        """given an imported module, return the astroid object"""
+        """Given an imported module, return the astroid object."""
         modname = modname or module.__name__
         if modname in self.astroid_cache:
             return self.astroid_cache[modname]
@@ -312,7 +314,7 @@ class AstroidManager:
         return AstroidBuilder(self).module_build(module, modname)
 
     def ast_from_class(self, klass: type, modname: str | None = None) -> nodes.ClassDef:
-        """get astroid for the given class"""
+        """Get astroid for the given class."""
         if modname is None:
             try:
                 modname = klass.__module__
@@ -331,7 +333,7 @@ class AstroidManager:
     def infer_ast_from_something(
         self, obj: object, context: InferenceContext | None = None
     ) -> Iterator[InferenceResult]:
-        """infer astroid for the given class"""
+        """Infer astroid for the given class."""
         if hasattr(obj, "__class__") and not isinstance(obj, type):
             klass = obj.__class__
         elif isinstance(obj, type):
@@ -395,7 +397,7 @@ class AstroidManager:
         self.astroid_cache.setdefault(module.name, module)
 
     def bootstrap(self) -> None:
-        """Bootstrap the required AST modules needed for the manager to work
+        """Bootstrap the required AST modules needed for the manager to work.
 
         The bootstrap usually involves building the AST for the builtins
         module, which is required by the rest of astroid to work correctly.
@@ -406,7 +408,8 @@ class AstroidManager:
 
     def clear_cache(self) -> None:
         """Clear the underlying cache, bootstrap the builtins module and
-        re-register transforms."""
+        re-register transforms.
+        """
         # import here because of cyclic imports
         # pylint: disable=import-outside-toplevel
         from astroid.inference_tip import clear_inference_tip_cache

@@ -2,7 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""Transform utilities (filters and decorator)"""
+"""Transform utilities (filters and decorator)."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ def clear_inference_tip_cache() -> None:
 def _inference_tip_cached(
     func: InferFn, instance: None, args: typing.Any, kwargs: typing.Any
 ) -> Iterator[InferOptions]:
-    """Cache decorator used for inference tips"""
+    """Cache decorator used for inference tips."""
     node = args[0]
     try:
         result = _cache[func, node]

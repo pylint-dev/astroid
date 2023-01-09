@@ -15,7 +15,6 @@ defined using the `@hypothesis.strategies.composite` decorator.  For example:
         return draw(st.integers())
 
     a_strategy()
-
 """
 from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import FunctionDef
