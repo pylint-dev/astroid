@@ -133,9 +133,8 @@ class NodeNG:
         self.position: Position | None = None
         """Position of keyword(s) and name.
 
-        Used as fallback for block nodes
-        which might not provide good enough positional information.
-        E.g. ClassDef, FunctionDef.
+        Used as fallback for block nodes which might not provide good
+        enough positional information. E.g. ClassDef, FunctionDef.
         """
 
     def infer(
