@@ -203,7 +203,9 @@ nodes.Dict._infer = infer_map  # type: ignore[assignment]
 
 def _higher_function_scope(node: nodes.NodeNG) -> nodes.FunctionDef | None:
     """Search for the first function which encloses the given
-    scope. This can be used for looking up in that function's
+    scope.
+
+    This can be used for looking up in that function's
     scope, in case looking up in a lower scope for a particular
     name fails.
 
@@ -986,7 +988,8 @@ def _do_compare(
 ) -> bool | type[util.Uninferable]:
     """
     If all possible combinations are either True or False, return that:
-    >>> _do_compare([1, 2], '<=', [3, 4])
+    >>> _do_compare([1, 2], '<=', [3, 4]).
+
     True
     >>> _do_compare([1, 2], '==', [3, 4])
     False

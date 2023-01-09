@@ -435,7 +435,8 @@ class UnboundMethod(Proxy):
     def infer_call_result(self, caller, context):
         """
         The boundnode of the regular context with a function called
-        on ``object.__new__`` will be of type ``object``,
+        on ``object.__new__`` will be of type ``object``,.
+
         which is incorrect for the argument in general.
         If no context is given the ``object.__new__`` call argument will
         be correctly inferred except when inside a call that requires

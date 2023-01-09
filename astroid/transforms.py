@@ -68,7 +68,8 @@ class TransformVisitor:
 
     def register_transform(self, node_class, transform, predicate=None) -> None:
         """Register `transform(node)` function to be applied on the given
-        astroid's `node_class` if `predicate` is None or returns true
+        astroid's `node_class` if `predicate` is None or returns true.
+
         when called with the node as argument.
 
         The transform function may return a value which is then used to

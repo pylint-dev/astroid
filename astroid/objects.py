@@ -4,7 +4,8 @@
 
 """
 Inference objects are a way to represent composite AST nodes,
-which are used only as inference results, so they can't be found in the
+which are used only as inference results, so they can't be found in the.
+
 original AST tree. For instance, inferring the following frozenset use,
 leads to an inferred FrozenSet:
 
