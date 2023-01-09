@@ -2,7 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""Python Abstract Syntax Tree New Generation
+"""Python Abstract Syntax Tree New Generation.
 
 The aim of this module is to provide a common base representation of
 python source code for projects such as pychecker, pyreverse,

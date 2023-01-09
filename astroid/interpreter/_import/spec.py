@@ -44,7 +44,7 @@ class ModuleType(enum.Enum):
 
 
 class ModuleSpec(NamedTuple):
-    """Defines a class similar to PEP 420's ModuleSpec
+    """Defines a class similar to PEP 420's ModuleSpec.
 
     A module spec defines a name of a module, its type, location
     and where submodules can be found, if the module is a package.
@@ -71,7 +71,7 @@ class Finder:
         processed: list[str],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
-        """Find the given module
+        """Find the given module.
 
         Each finder is responsible for each protocol of finding, as long as
         they all return a ModuleSpec.

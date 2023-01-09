@@ -26,7 +26,7 @@ def _invalidate_cache() -> None:
 
 
 class InferenceContext:
-    """Provide context for inference
+    """Provide context for inference.
 
     Store already inferred nodes to save time
     Account for already visited nodes to stop infinite recursion
@@ -93,7 +93,7 @@ class InferenceContext:
     @property
     def nodes_inferred(self) -> int:
         """
-        Number of nodes inferred in this context and all its clones/descendents
+        Number of nodes inferred in this context and all its clones/descendents.
 
         Wrap inner value in a mutable cell to allow for mutating a class
         variable in the presence of __slots__
@@ -107,7 +107,7 @@ class InferenceContext:
     @property
     def inferred(self) -> _InferenceCache:
         """
-        Inferred node contexts to their mapped results
+        Inferred node contexts to their mapped results.
 
         Currently the key is ``(node, lookupname, callcontext, boundnode)``
         and the value is tuple of the inferred results
@@ -115,12 +115,13 @@ class InferenceContext:
         return _INFERENCE_CACHE
 
     def push(self, node) -> bool:
-        """Push node into inference path
+        """Push node into inference path.
 
         :return: Whether node is already in context path.
 
         Allows one to see if the given node has already
-        been looked at for this inference context"""
+        been looked at for this inference context
+        """
         name = self.lookupname
         if (node, name) in self.path:
             return True
@@ -129,11 +130,12 @@ class InferenceContext:
         return False
 
     def clone(self) -> InferenceContext:
-        """Clone inference path
+        """Clone inference path.
 
         For example, each side of a binary operation (BinOp)
         starts with the same context but diverge as each side is inferred
-        so the InferenceContext will need be cloned"""
+        so the InferenceContext will need be cloned
+        """
         # XXX copy lookupname/callcontext ?
         clone = InferenceContext(self.path.copy(), nodes_inferred=self._nodes_inferred)
         clone.callcontext = self.callcontext
@@ -177,7 +179,7 @@ class CallContext:
 
 
 def copy_context(context: InferenceContext | None) -> InferenceContext:
-    """Clone a context if given, or return a fresh contexxt"""
+    """Clone a context if given, or return a fresh context."""
     if context is not None:
         return context.clone()
 

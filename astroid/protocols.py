@@ -2,7 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""this module contains a set of functions to handle python protocols for nodes
+"""This module contains a set of functions to handle python protocols for nodes
 where it makes sense.
 """
 
@@ -259,7 +259,7 @@ nodes.ClassDef.infer_binary_op = instance_class_infer_binary_op
 
 # assignment ##################################################################
 
-"""the assigned_stmts method is responsible to return the assigned statement
+"""The assigned_stmts method is responsible to return the assigned statement
 (e.g. not inferred) according to the assignment type.
 
 The `assign_path` argument is used to record the lhs path of the original node.
@@ -272,7 +272,7 @@ to any intermediary inference necessary.
 
 
 def _resolve_looppart(parts, assign_path, context):
-    """recursive function to resolve multiple assignments on loops"""
+    """Recursive function to resolve multiple assignments on loops."""
     assign_path = assign_path[:]
     index = assign_path.pop(0)
     for part in parts:
@@ -520,7 +520,7 @@ nodes.AugAssign.assigned_stmts = assign_assigned_stmts
 
 
 def _resolve_assignment_parts(parts, assign_path, context):
-    """recursive function to resolve multiple assignments"""
+    """Recursive function to resolve multiple assignments."""
     assign_path = assign_path[:]
     index = assign_path.pop(0)
     for part in parts:
@@ -710,7 +710,7 @@ def named_expr_assigned_stmts(
     context: InferenceContext | None = None,
     assign_path: list[int] | None = None,
 ) -> Any:
-    """Infer names and other nodes from an assignment expression"""
+    """Infer names and other nodes from an assignment expression."""
     if self.target == node:
         yield from self.value.infer(context=context)
     else:
