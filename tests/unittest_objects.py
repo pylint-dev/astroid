@@ -541,7 +541,7 @@ class SuperTests(unittest.TestCase):
 
     def test_super_qname(self) -> None:
         """Make sure a Super object generates a qname
-        equivalent to super.__qname__
+        equivalent to super.__qname__.
         """
         # See issue 533
         code = """

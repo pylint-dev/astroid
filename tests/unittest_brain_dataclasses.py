@@ -74,7 +74,8 @@ def test_inference_non_field_default(module: str):
 @parametrize_module
 def test_inference_field_default(module: str):
     """Test inference of dataclass attribute with a field call default
-    (default keyword argument given)."""
+    (default keyword argument given).
+    """
     klass, instance = astroid.extract_node(
         f"""
     from {module} import dataclass
@@ -105,7 +106,8 @@ def test_inference_field_default(module: str):
 @parametrize_module
 def test_inference_field_default_factory(module: str):
     """Test inference of dataclass attribute with a field call default
-    (default_factory keyword argument given)."""
+    (default_factory keyword argument given).
+    """
     klass, instance = astroid.extract_node(
         f"""
     from {module} import dataclass
@@ -406,7 +408,7 @@ def test_pydantic_field() -> None:
 
 @parametrize_module
 def test_init_empty(module: str):
-    """Test init for a dataclass with no attributes"""
+    """Test init for a dataclass with no attributes."""
     node = astroid.extract_node(
         f"""
     from {module} import dataclass
@@ -424,7 +426,7 @@ def test_init_empty(module: str):
 
 @parametrize_module
 def test_init_no_defaults(module: str):
-    """Test init for a dataclass with attributes and no defaults"""
+    """Test init for a dataclass with attributes and no defaults."""
     node = astroid.extract_node(
         f"""
     from {module} import dataclass
@@ -451,7 +453,7 @@ def test_init_no_defaults(module: str):
 
 @parametrize_module
 def test_init_defaults(module: str):
-    """Test init for a dataclass with attributes and some defaults"""
+    """Test init for a dataclass with attributes and some defaults."""
     node = astroid.extract_node(
         f"""
     from {module} import dataclass
@@ -486,7 +488,7 @@ def test_init_defaults(module: str):
 
 @parametrize_module
 def test_init_initvar(module: str):
-    """Test init for a dataclass with attributes and an InitVar"""
+    """Test init for a dataclass with attributes and an InitVar."""
     node = astroid.extract_node(
         f"""
     from {module} import dataclass
@@ -602,7 +604,8 @@ def test_init_override(module: str):
 
 @parametrize_module
 def test_init_attributes_from_superclasses(module: str):
-    """Test init for a dataclass that inherits and overrides attributes from superclasses.
+    """Test init for a dataclass that inherits and overrides attributes from
+    superclasses.
 
     Based on https://github.com/PyCQA/pylint/issues/3201
     """
@@ -636,7 +639,9 @@ def test_init_attributes_from_superclasses(module: str):
 
 @parametrize_module
 def test_invalid_init(module: str):
-    """Test that astroid doesn't generate an initializer when attribute order is invalid."""
+    """Test that astroid doesn't generate an initializer when attribute order is
+    invalid.
+    """
     node = astroid.extract_node(
         f"""
     from {module} import dataclass
@@ -655,7 +660,9 @@ def test_invalid_init(module: str):
 
 @parametrize_module
 def test_annotated_enclosed_field_call(module: str):
-    """Test inference of dataclass attribute with a field call in another function call"""
+    """Test inference of dataclass attribute with a field call in another function
+    call.
+    """
     node = astroid.extract_node(
         f"""
     from {module} import dataclass, field

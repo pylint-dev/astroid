@@ -2,8 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""tests for the astroid variable lookup capabilities
-"""
+"""Tests for the astroid variable lookup capabilities."""
 import functools
 import unittest
 
@@ -155,7 +154,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(xnames[2].lookup("i")[1][0].lineno, 4)
 
     def test_list_comp_target(self) -> None:
-        """test the list comprehension target"""
+        """Test the list comprehension target."""
         astroid = builder.parse(
             """
             ten = [ var for var in range(10) ]
@@ -466,7 +465,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
 
 
 class LookupControlFlowTest(unittest.TestCase):
-    """Tests for lookup capabilities and control flow"""
+    """Tests for lookup capabilities and control flow."""
 
     def test_consecutive_assign(self) -> None:
         """When multiple assignment statements are in the same block, only the last one
@@ -495,7 +494,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 0)
 
     def test_del_removes_prior(self) -> None:
-        """Delete statement removes any prior assignments"""
+        """Delete statement removes any prior assignments."""
         code = """
             x = 10
             del x
@@ -507,7 +506,7 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts), 0)
 
     def test_del_no_effect_after(self) -> None:
-        """Delete statement doesn't remove future assignments"""
+        """Delete statement doesn't remove future assignments."""
         code = """
             x = 10
             del x
@@ -626,7 +625,9 @@ class LookupControlFlowTest(unittest.TestCase):
 
     def test_if_else(self) -> None:
         """When an assignment statement appears in both an if and else branch, both
-        are added. This does NOT replace an assignment statement appearing before the
+        are added.
+
+        This does NOT replace an assignment statement appearing before the
         if statement. (See issue #213)
         """
         code = """

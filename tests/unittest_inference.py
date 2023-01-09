@@ -2,7 +2,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""Tests for the astroid inference capabilities"""
+"""Tests for the astroid inference capabilities."""
 
 from __future__ import annotations
 
@@ -1133,7 +1133,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertIsInstance(inferred[0].elts[1], nodes.List)
 
     def test_binary_op_list_mul_none(self) -> None:
-        "test correct handling on list multiplied by None"
+        """Test correct handling on list multiplied by None."""
         ast = builder.string_build('a = [1] * None\nb = [1] * "r"')
         inferred = ast["a"].inferred()
         self.assertEqual(len(inferred), 1)
@@ -1143,7 +1143,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred[0], util.Uninferable)
 
     def test_binary_op_list_mul_int(self) -> None:
-        "test correct handling on list multiplied by int when there are more than one"
+        """Test correct handling on list multiplied by int when there are more than one."""
         code = """
         from ctypes import c_int
         seq = [c_int()] * 4
@@ -1156,7 +1156,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(listval.itered()), 4)
 
     def test_binary_op_on_self(self) -> None:
-        "test correct handling of applying binary operator to self"
+        """Test correct handling of applying binary operator to self."""
         code = """
         import sys
         sys.path = ['foo'] + sys.path
@@ -1232,7 +1232,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred[0], util.Uninferable)
 
     def test_nonregr_instance_attrs(self) -> None:
-        """non regression for instance_attrs infinite loop : pylint / #4"""
+        """Non regression for instance_attrs infinite loop : pylint / #4."""
 
         code = """
             class Foo(object):
@@ -1275,7 +1275,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_nonregr_layed_dictunpack(self) -> None:
         """Regression test for https://github.com/PyCQA/astroid/issues/483
-        Make sure multiple dictunpack references are inferable
+        Make sure multiple dictunpack references are inferable.
         """
         code = """
         base = {'data': 0}
@@ -1287,7 +1287,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(ass.inferred()[0], nodes.Dict)
 
     def test_nonregr_inference_modifying_col_offset(self) -> None:
-        """Make sure inference doesn't improperly modify col_offset
+        """Make sure inference doesn't improperly modify col_offset.
 
         Regression test for https://github.com/PyCQA/pylint/issues/1839
         """
@@ -1305,7 +1305,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(cdef.col_offset, orig_offset)
 
     def test_no_runtime_error_in_repeat_inference(self) -> None:
-        """Stop repeat inference attempt causing a RuntimeError in Python3.7
+        """Stop repeat inference attempt causing a RuntimeError in Python3.7.
 
         See https://github.com/PyCQA/pylint/issues/2317
         """
@@ -1469,7 +1469,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.fail(f"expected to find an instance of Application in {inferred}")
 
     def test_list_inference(self) -> None:
-        """#20464"""
         code = """
             from unknown import Unknown
             A = []
@@ -2071,7 +2070,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertInferDict(node, expected_value)
 
     def test_dict_inference_unpack_repeated_key(self) -> None:
-        """Make sure astroid does not infer repeated keys in a dictionary
+        """Make sure astroid does not infer repeated keys in a dictionary.
 
         Regression test for https://github.com/PyCQA/pylint/issues/1843
         """
@@ -2397,7 +2396,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertRaises(InferenceError, next, module["no_yield"].infer())
 
     def test_nested_contextmanager(self) -> None:
-        """Make sure contextmanager works with nested functions
+        """Make sure contextmanager works with nested functions.
 
         Previously contextmanager would retrieve
         the first yield instead of the yield in the
@@ -4066,7 +4065,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_metaclass_custom_dunder_call(self) -> None:
         """The Metaclass __call__ should take precedence
-        over the default metaclass type call (initialization)
+        over the default metaclass type call (initialization).
 
         See https://github.com/PyCQA/pylint/issues/2159
         """
@@ -4089,7 +4088,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         assert val == 1
 
     def test_metaclass_custom_dunder_call_boundnode(self) -> None:
-        """The boundnode should be the calling class"""
+        """The boundnode should be the calling class."""
         cls = extract_node(
             """
         class _Meta(type):
@@ -5199,11 +5198,10 @@ class ObjectDunderNewTest(unittest.TestCase):
 
 
 def test_augassign_recursion() -> None:
-    """Make sure inference doesn't throw a RecursionError
+    """Make sure inference doesn't throw a RecursionError.
 
     Regression test for augmented assign dropping context.path
     causing recursion errors
-
     """
     # infinitely recurses in python
     code = """
@@ -5361,7 +5359,7 @@ def test_unpacking_starred_empty_list_in_assignment() -> None:
 
 def test_regression_infinite_loop_decorator() -> None:
     """Make sure decorators with the same names
-    as a decorated method do not cause an infinite loop
+    as a decorated method do not cause an infinite loop.
 
     See https://github.com/PyCQA/astroid/issues/375
     """
@@ -5400,7 +5398,7 @@ def test_stop_iteration_in_int() -> None:
 
 
 def test_call_on_instance_with_inherited_dunder_call_method() -> None:
-    """Stop inherited __call__ method from incorrectly returning wrong class
+    """Stop inherited __call__ method from incorrectly returning wrong class.
 
     See https://github.com/PyCQA/pylint/issues/2199
     """
@@ -5425,7 +5423,8 @@ def test_call_on_instance_with_inherited_dunder_call_method() -> None:
 
 class TestInferencePropagation:
     """Make sure function argument values are properly
-    propagated to sub functions"""
+    propagated to sub functions.
+    """
 
     @pytest.mark.xfail(reason="Relying on path copy")
     def test_call_context_propagation(self):
@@ -5723,7 +5722,7 @@ def test_compare_unknown() -> None:
 
 
 def test_limit_inference_result_amount() -> None:
-    """Test setting limit inference result amount"""
+    """Test setting limit inference result amount."""
     code = """
     args = []
 
@@ -5752,7 +5751,7 @@ def test_limit_inference_result_amount() -> None:
 
 
 def test_attribute_inference_should_not_access_base_classes() -> None:
-    """attributes of classes should mask ancestor attributes"""
+    """Attributes of classes should mask ancestor attributes."""
     code = """
     type.__new__ #@
     """
@@ -5762,9 +5761,7 @@ def test_attribute_inference_should_not_access_base_classes() -> None:
 
 
 def test_attribute_mro_object_inference() -> None:
-    """
-    Inference should only infer results from the first available method
-    """
+    """Inference should only infer results from the first available method."""
     inferred = extract_node(
         """
     class A:
@@ -6703,7 +6700,7 @@ def test_issue926_binop_referencing_same_name_is_not_uninferable() -> None:
 
 
 def test_pylint_issue_4692_attribute_inference_error_in_infer_import_from() -> None:
-    """https://github.com/PyCQA/pylint/issues/4692"""
+    """Https://github.com/PyCQA/pylint/issues/4692."""
     code = """
 import click
 
@@ -6738,19 +6735,21 @@ b
 
 
 def test_namespace_package() -> None:
-    """check that a file using namespace packages and relative imports is parseable"""
+    """Check that a file using namespace packages and relative imports is parseable."""
     resources.build_file("data/beyond_top_level/import_package.py")
 
 
 def test_namespace_package_same_name() -> None:
-    """check that a file using namespace packages and relative imports
-    with similar names is parseable"""
+    """Check that a file using namespace packages and relative imports
+    with similar names is parseable.
+    """
     resources.build_file("data/beyond_top_level_two/a.py")
 
 
 def test_relative_imports_init_package() -> None:
-    """check that relative imports within a package that uses __init__.py
-    still works"""
+    """Check that relative imports within a package that uses __init__.py
+    still works.
+    """
     resources.build_file(
         "data/beyond_top_level_three/module/sub_module/sub_sub_module/main.py"
     )
@@ -6766,7 +6765,8 @@ def test_inference_of_items_on_module_dict() -> None:
 
 def test_imported_module_var_inferable() -> None:
     """
-    Module variables can be imported and inferred successfully as part of binary operators.
+    Module variables can be imported and inferred successfully as part of binary
+    operators.
     """
     mod1 = parse(
         textwrap.dedent(
