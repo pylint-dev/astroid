@@ -254,6 +254,7 @@ jobs:
           coverage xml -o coverage-linux.xml
       - uses: codecov/codecov-action@v3
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true
           flags: linux
@@ -264,6 +265,7 @@ jobs:
           coverage xml -o coverage-windows.xml
       - uses: codecov/codecov-action@v3
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true
           flags: windows
@@ -274,6 +276,7 @@ jobs:
           coverage xml -o coverage-pypy.xml
       - uses: codecov/codecov-action@v3
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true
           flags: pypy
