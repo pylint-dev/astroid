@@ -100,4 +100,4 @@ repos:
       - id: pydocstringformatter
         exclude: tests/testdata
         args: ["--max-summary-lines=2", "--linewrap-full-docstring"]
-        files: "astroid"
+        files: "astroid,tests"
