@@ -1,6 +1,7 @@
 """
-'tests.testdata.python3.data.fake_module_with_warnings' is a fake module to
-simulate issues in unittest below
+'tests.testdata.python3.data.fake_module_with_warnings' and
+'tests.testdata.python3.data.fake_module_with_warnings' are fake modules
+to simulate issues in unittest below
 """
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
