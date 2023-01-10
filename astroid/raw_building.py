@@ -324,6 +324,17 @@ def _build_from_function(
         object_build_function(node, member, name)
 
 
+def _safe_has_attribute(obj, member: str) -> bool:
+    """Required because unexpected RunTimeError can be raised.
+
+    See https://github.com/PyCQA/astroid/issues/1958
+    """
+    try:
+        return hasattr(obj, member)
+    except Exception:  # pylint: disable=broad-except
+        return False
+
+
 class InspectBuilder:
     """class for building nodes from living object
 
@@ -419,7 +430,7 @@ class InspectBuilder:
                 # This should be called for Jython, where some builtin
                 # methods aren't caught by isbuiltin branch.
                 _build_from_function(node, name, member, self._module)
-            elif hasattr(member, "__all__"):
+            elif _safe_has_attribute(member, "__all__"):
                 module = build_module(name)
                 _attach_local_node(node, module, name)
                 # recursion
