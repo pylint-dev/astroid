@@ -12,7 +12,9 @@ What's New in astroid 2.13.3?
 =============================
 Release date: TBA
 
+* Fix a regression in 2.13.2 where a RunTimeError could be raised unexpectedly.
 
+  Closes #1958
 
 What's New in astroid 2.13.2?
 =============================
