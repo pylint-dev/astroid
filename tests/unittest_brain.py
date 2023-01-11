@@ -1230,6 +1230,42 @@ class EnumBrainTest(unittest.TestCase):
         assert isinstance(inferred, bases.Instance)
         assert inferred._proxied.name == "ENUM_KEY"
 
+    def test_class_named_enum(self) -> None:
+        """Test the user-defined class named `Enum` is not inferred as `enum.Enum`"""
+        astroid.extract_node(
+            """
+        class Enum:
+            def __init__(self, one, two):
+                self.one = one
+                self.two = two
+            def pear(self):
+                ...
+        """,
+            "module_with_class_named_enum",
+        )
+
+        attribute_node = astroid.extract_node(
+            """
+        import module_with_class_named_enum
+        module_with_class_named_enum.Enum("apple", "orange") #@
+        """
+        )
+
+        name_node = astroid.extract_node(
+            """
+        from module_with_class_named_enum import Enum
+        Enum("apple", "orange") #@
+        """
+        )
+
+        inferred_attribute_node = attribute_node.inferred()[0]
+        inferred_name_node = name_node.inferred()[0]
+        for inferred in (inferred_attribute_node, inferred_name_node):
+            assert isinstance(inferred, astroid.Instance)
+            assert inferred.name == "Enum"
+            assert inferred.qname() == "module_with_class_named_enum.Enum"
+            assert "pear" in inferred.locals
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):

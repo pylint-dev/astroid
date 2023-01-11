@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import functools
 import keyword
+from typing import Final
 from collections.abc import Iterator
 from textwrap import dedent
 
@@ -24,7 +25,6 @@ from astroid.exceptions import (
 )
 from astroid.manager import AstroidManager
 
-TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
 ENUM_BASE_NAMES = {
     "Enum",
     "IntEnum",
@@ -33,6 +33,8 @@ ENUM_BASE_NAMES = {
     "IntFlag",
     "enum.IntFlag",
 }
+ENUM_QNAME: Final = "enum.Enum"
+TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
 
 
 def _infer_first(node, context):
@@ -298,6 +300,19 @@ def infer_enum(
     node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[bases.Instance]:
     """Specific inference function for enum Call node."""
+
+    # Raise `UseInferenceDefault` if `node` is a call to a a user-defined Enum.
+    try:
+        inferred = node.func.infer(context)
+    except (InferenceError, StopIteration) as exc:
+        raise UseInferenceDefault from exc
+
+    if not any(
+        isinstance(item, nodes.ClassDef) and item.qname() == ENUM_QNAME
+        for item in inferred
+    ):
+        raise UseInferenceDefault
+
     enum_meta = _extract_single_node(
         """
     class EnumMeta(object):
