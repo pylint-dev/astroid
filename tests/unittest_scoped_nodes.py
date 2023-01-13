@@ -1907,11 +1907,14 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         import typing
         import dataclasses
 
-        import typing_extensions
+        if sys.version_info >= (3, 8):
+            from typing import Protocol
+        else:
+            from typing_extensions import Protocol
 
         T = typing.TypeVar("T")
 
-        class MyProtocol(typing_extensions.Protocol): pass
+        class MyProtocol(Protocol): pass
         class EarlyBase(typing.Generic[T], MyProtocol): pass
         class Base(EarlyBase[T], abc.ABC): pass
         class Final(Base[object]): pass

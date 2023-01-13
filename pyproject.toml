@@ -36,7 +36,7 @@ dependencies = [
     "wrapt>=1.14,<2;python_version>='3.11'",
     "wrapt>=1.11,<2;python_version<'3.11'",
     "typed-ast>=1.4.0,<2.0;implementation_name=='cpython' and python_version<'3.8'",
-    "typing-extensions>=4.0.0",
+    "typing-extensions>=4.0.0;python_version<'3.11'",
 ]
 dynamic = ["version"]
 
