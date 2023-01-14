@@ -306,7 +306,6 @@ def infer_enum(
     node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[bases.Instance]:
     """Specific inference function for enum Call node."""
-
     # Raise `UseInferenceDefault` if `node` is a call to a a user-defined Enum.
     try:
         inferred = node.func.infer(context)
