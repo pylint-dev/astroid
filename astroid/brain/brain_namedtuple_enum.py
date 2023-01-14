@@ -33,7 +33,7 @@ ENUM_BASE_NAMES = {
     "IntFlag",
     "enum.IntFlag",
 }
-ENUM_QNAME: Final = "enum.Enum"
+ENUM_QNAME = "enum.Enum"
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
 
 
