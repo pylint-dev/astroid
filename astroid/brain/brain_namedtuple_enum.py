@@ -40,7 +40,7 @@ ENUM_BASE_NAMES = {
     "enum.IntFlag",
 }
 ENUM_QNAME: Final[str] = "enum.Enum"
-TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
+TYPING_NAMEDTUPLE_BASENAMES: Final[set[str]] = {"NamedTuple", "typing.NamedTuple"}
 
 
 def _infer_first(node, context):
