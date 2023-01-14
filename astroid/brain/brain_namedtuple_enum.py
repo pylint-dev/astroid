@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import functools
 import keyword
+import sys
 from collections.abc import Iterator
 from textwrap import dedent
 
