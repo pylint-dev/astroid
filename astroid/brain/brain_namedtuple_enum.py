@@ -24,6 +24,13 @@ from astroid.exceptions import (
 )
 from astroid.manager import AstroidManager
 
+
+if sys.version_info >= (3, 8):
+    from typing import Final
+else:
+    from typing_extensions import Final
+
+
 ENUM_BASE_NAMES = {
     "Enum",
     "IntEnum",
@@ -32,7 +39,7 @@ ENUM_BASE_NAMES = {
     "IntFlag",
     "enum.IntFlag",
 }
-ENUM_QNAME = "enum.Enum"
+ENUM_QNAME: Final[str] = "enum.Enum"
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
 
 
