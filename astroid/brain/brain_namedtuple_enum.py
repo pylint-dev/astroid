@@ -10,7 +10,6 @@ import functools
 import keyword
 from collections.abc import Iterator
 from textwrap import dedent
-from typing import Final
 
 import astroid
 from astroid import arguments, bases, inference_tip, nodes, util
