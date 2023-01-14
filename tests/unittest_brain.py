@@ -1231,7 +1231,7 @@ class EnumBrainTest(unittest.TestCase):
         assert inferred._proxied.name == "ENUM_KEY"
 
     def test_class_named_enum(self) -> None:
-        """Test the user-defined class named `Enum` is not inferred as `enum.Enum`"""
+        """Test that the user-defined class named `Enum` is not inferred as `enum.Enum`"""
         astroid.extract_node(
             """
         class Enum:
