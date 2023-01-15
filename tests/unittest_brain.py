@@ -1244,27 +1244,35 @@ class EnumBrainTest(unittest.TestCase):
             "module_with_class_named_enum",
         )
 
-        attribute_node = astroid.extract_node(
+        attribute_nodes = astroid.extract_node(
             """
         import module_with_class_named_enum
         module_with_class_named_enum.Enum("apple", "orange") #@
+        typo_module_with_class_named_enum.Enum("apple", "orange") #@
         """
         )
 
-        name_node = astroid.extract_node(
+        name_nodes = astroid.extract_node(
             """
         from module_with_class_named_enum import Enum
         Enum("apple", "orange") #@
+        TypoEnum("apple", "orange") #@
         """
         )
 
-        inferred_attribute_node = attribute_node.inferred()[0]
-        inferred_name_node = name_node.inferred()[0]
-        for inferred in (inferred_attribute_node, inferred_name_node):
+        # Test that both of the successfully inferred `Name` & `Attribute`
+        # nodes refer to the user-defined Enum class.
+        for inferred in (attribute_nodes[0].inferred()[0], name_nodes[0].inferred()[0]):
             assert isinstance(inferred, astroid.Instance)
             assert inferred.name == "Enum"
             assert inferred.qname() == "module_with_class_named_enum.Enum"
             assert "pear" in inferred.locals
+
+        # Test that an `InferenceError` is raised when an attempt is made to
+        # infer a `Name` or `Attribute` node & they cannot be found.
+        for node in (attribute_nodes[1], name_nodes[1]):
+            with pytest.raises(InferenceError):
+                node.inferred()
 
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
