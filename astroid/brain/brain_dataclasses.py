@@ -334,9 +334,9 @@ def _generate_dataclass_init(  # pylint: disable=too-many-locals
         # Construct the param string to add to the init if necessary
         param_str = name
         if ann_str is not None:
-            param_str += ": " + ann_str
+            param_str += f": {ann_str}"
         if default_str is not None:
-            param_str += " = " + default_str
+            param_str += f" = {default_str}"
 
         # If the field is a kw_only field, we need to add it to the kw_only_params
         # This overwrites whether or not the class is kw_only decorated
