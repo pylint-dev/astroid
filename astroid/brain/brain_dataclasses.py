@@ -350,14 +350,18 @@ def _generate_dataclass_init(  # pylint: disable=too-many-locals
                 continue
         # If kw_only decorated, we need to add all parameters to the kw_only_params
         if kw_only_decorated:
-            kw_only_params.append(param_str)
+            if name in prev_kw_only_store:
+                prev_kw_only_store[name] = (ann_str, default_str)
+            else:
+                kw_only_params.append(param_str)
         else:
             # If the name was previously seen, overwrite that data
             # pylint: disable-next=else-if-used
             if name in prev_pos_only_store:
                 prev_pos_only_store[name] = (ann_str, default_str)
             elif name in prev_kw_only_store:
-                prev_kw_only_store[name] = (ann_str, default_str)
+                params = [name] + params
+                prev_kw_only_store.pop(name)
             else:
                 params.append(param_str)
 

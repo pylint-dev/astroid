@@ -376,12 +376,11 @@ def test_inference_inherited(module: str):
     assert inferred[1].name == "str"
 
 
-@parametrize_module
-def test_dataclass_order_of_inherited_attributes(module: str):
+def test_dataclass_order_of_inherited_attributes():
     """Test that an attribute in a child does not get put at the end of the init."""
-    child = astroid.extract_node(
-        f"""
-    from {module} import dataclass
+    child, normal, keyword_only = astroid.extract_node(
+        """
+    from dataclass import dataclass
 
 
     @dataclass
@@ -396,11 +395,46 @@ def test_dataclass_order_of_inherited_attributes(module: str):
         a: str
 
 
+    @dataclass(kw_only=True)
+    class KeywordOnlyParent:
+        a: int
+        b: str
+
+
+    @dataclass
+    class NormalChild(KeywordOnlyParent):
+        c: str
+        a: str
+
+
+    @dataclass(kw_only=True)
+    class KeywordOnlyChild(KeywordOnlyParent):
+        c: str
+        a: str
+
+
     Child.__init__  #@
+    NormalChild.__init__  #@
+    KeywordOnlyChild.__init__  #@
     """
     )
     child_init: bases.UnboundMethod = next(child.infer())
     assert [a.name for a in child_init.args.args] == ["self", "a", "b", "c"]
+
+    normal_init: bases.UnboundMethod = next(normal.infer())
+    if PY310_PLUS:
+        assert [a.name for a in normal_init.args.args] == ["self", "a", "c"]
+        assert [a.name for a in normal_init.args.kwonlyargs] == ["b"]
+    else:
+        assert [a.name for a in normal_init.args.args] == ["self", "a", "b", "c"]
+        assert [a.name for a in normal_init.args.kwonlyargs] == []
+
+    keyword_only_init: bases.UnboundMethod = next(keyword_only.infer())
+    if PY310_PLUS:
+        assert [a.name for a in keyword_only_init.args.args] == ["self"]
+        assert [a.name for a in keyword_only_init.args.kwonlyargs] == ["a", "b", "c"]
+    else:
+        assert [a.name for a in keyword_only_init.args.args] == ["self", "a", "b", "c"]
 
 
 def test_pydantic_field() -> None:
