@@ -353,6 +353,7 @@ def _generate_dataclass_init(  # pylint: disable=too-many-locals
             kw_only_params.append(param_str)
         else:
             # If the name was previously seen, overwrite that data
+            # pylint: disable-next=else-if-used
             if name in prev_pos_only_store:
                 prev_pos_only_store[name] = (ann_str, default_str)
             elif name in prev_kw_only_store:
