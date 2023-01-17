@@ -167,11 +167,11 @@ def _check_generate_dataclass_init(node: nodes.ClassDef) -> bool:
 
 
 def _find_arguments_from_base_classes(
-    node: nodes.ClassDef, skippable_names: set[str]
-) -> tuple[str, str]:
-    """Iterate through all bases and add them to the list of arguments to add to the
-    init.
-    """
+    node: nodes.ClassDef,
+) -> tuple[
+    dict[str, tuple[str | None, str | None]], dict[str, tuple[str | None, str | None]]
+]:
+    """Iterate through all bases and get their typing and defaults."""
     pos_only_store: dict[str, tuple[str | None, str | None]] = {}
     kw_only_store: dict[str, tuple[str | None, str | None]] = {}
     # See TODO down below
@@ -187,8 +187,6 @@ def _find_arguments_from_base_classes(
 
         pos_only, kw_only = base_init.args._get_arguments_data()
         for posarg, data in pos_only.items():
-            if posarg in skippable_names:
-                continue
             # if data[1] is None:
             #     if all_have_defaults and pos_only_store:
             #         # TODO: This should return an Uninferable as this would raise
@@ -199,10 +197,15 @@ def _find_arguments_from_base_classes(
             pos_only_store[posarg] = data
 
         for kwarg, data in kw_only.items():
-            if kwarg in skippable_names:
-                continue
             kw_only_store[kwarg] = data
+    return pos_only_store, kw_only_store
 
+
+def _parse_arguments_into_strings(
+    pos_only_store: dict[str, tuple[str | None, str | None]],
+    kw_only_store: dict[str, tuple[str | None, str | None]],
+) -> tuple[str, str]:
+    """Parse positional and keyword arguments into strings for an __init__ method."""
     pos_only, kw_only = "", ""
     for pos_arg, data in pos_only_store.items():
         pos_only += pos_arg
@@ -248,11 +251,11 @@ def _generate_dataclass_init(  # pylint: disable=too-many-locals
     params: list[str] = []
     kw_only_params: list[str] = []
     assignments: list[str] = []
-    assign_names: list[str] = []
+
+    prev_pos_only_store, prev_kw_only_store = _find_arguments_from_base_classes(node)
 
     for assign in assigns:
         name, annotation, value = assign.target.name, assign.annotation, assign.value
-        assign_names.append(name)
 
         # Check whether this assign is overriden by a property assignment
         property_node: nodes.FunctionDef | None = None
@@ -275,6 +278,9 @@ def _generate_dataclass_init(  # pylint: disable=too-many-locals
                 keyword.arg == "init" and not keyword.value.bool_value()
                 for keyword in value.keywords  # type: ignore[union-attr] # value is never None
             ):
+                # Also remove the name from the previous arguments to be inserted later
+                prev_pos_only_store.pop(name, None)
+                prev_kw_only_store.pop(name, None)
                 continue
 
         if _is_init_var(annotation):  # type: ignore[arg-type] # annotation is never None
@@ -289,10 +295,9 @@ def _generate_dataclass_init(  # pylint: disable=too-many-locals
             init_var = False
             assignment_str = f"self.{name} = {name}"
 
+        ann_str, default_str = None, None
         if annotation is not None:
-            param_str = f"{name}: {annotation.as_string()}"
-        else:
-            param_str = name
+            ann_str = annotation.as_string()
 
         if value:
             if is_field:
@@ -300,21 +305,22 @@ def _generate_dataclass_init(  # pylint: disable=too-many-locals
                 if result:
                     default_type, default_node = result
                     if default_type == "default":
-                        param_str += f" = {default_node.as_string()}"
+                        default_str = default_node.as_string()
                     elif default_type == "default_factory":
-                        param_str += f" = {DEFAULT_FACTORY}"
+                        default_str = DEFAULT_FACTORY
                         assignment_str = (
                             f"self.{name} = {default_node.as_string()} "
                             f"if {name} is {DEFAULT_FACTORY} else {name}"
                         )
             else:
-                param_str += f" = {value.as_string()}"
+                default_str = value.as_string()
         elif property_node:
             # We set the result of the property call as default
             # This hides the fact that this would normally be a 'property object'
             # But we can't represent those as string
             try:
-                param_str += f" = {next(property_node.infer_call_result()).as_string()}"
+                # Call str to make sure also Uninferable gets stringified
+                default_str = str(next(property_node.infer_call_result()).as_string())
             except (InferenceError, StopIteration):
                 pass
         else:
@@ -323,7 +329,14 @@ def _generate_dataclass_init(  # pylint: disable=too-many-locals
             # (self, a: str = 1) -> None
             previous_default = _get_previous_field_default(node, name)
             if previous_default:
-                param_str += f" = {previous_default.as_string()}"
+                default_str = previous_default.as_string()
+
+        # Construct the param string to add to the init if necessary
+        param_str = name
+        if ann_str is not None:
+            param_str += ": " + ann_str
+        if default_str is not None:
+            param_str += " = " + default_str
 
         # If the field is a kw_only field, we need to add it to the kw_only_params
         # This overwrites whether or not the class is kw_only decorated
@@ -339,19 +352,26 @@ def _generate_dataclass_init(  # pylint: disable=too-many-locals
         if kw_only_decorated:
             kw_only_params.append(param_str)
         else:
-            params.append(param_str)
+            # If the name was previously seen, overwrite that data
+            if name in prev_pos_only_store:
+                prev_pos_only_store[name] = (ann_str, default_str)
+            elif name in prev_kw_only_store:
+                prev_kw_only_store[name] = (ann_str, default_str)
+            else:
+                params.append(param_str)
 
         if not init_var:
             assignments.append(assignment_str)
 
-    prev_pos_only, prev_kw_only = _find_arguments_from_base_classes(
-        node, set(assign_names + ["self"])
+    prev_pos_only, prev_kw_only = _parse_arguments_into_strings(
+        prev_pos_only_store, prev_kw_only_store
     )
 
     # Construct the new init method paramter string
     # First we do the positional only parameters, making sure to add the
     # the self parameter and the comma to allow adding keyword only parameters
-    params_string = f"self, {prev_pos_only}{', '.join(params)}"
+    params_string = "" if "self" in prev_pos_only else "self, "
+    params_string += prev_pos_only + ", ".join(params)
     if not params_string.endswith(", "):
         params_string += ", "
 

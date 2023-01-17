@@ -376,6 +376,33 @@ def test_inference_inherited(module: str):
     assert inferred[1].name == "str"
 
 
+@parametrize_module
+def test_dataclass_order_of_inherited_attributes(module: str):
+    """Test that an attribute in a child does not get put at the end of the init."""
+    child = astroid.extract_node(
+        f"""
+    from {module} import dataclass
+
+
+    @dataclass
+    class Parent:
+        a: str
+        b: str
+
+
+    @dataclass
+    class Child(Parent):
+        c: str
+        a: str
+
+
+    Child.__init__  #@
+    """
+    )
+    child_init: bases.UnboundMethod = next(child.infer())
+    assert [a.name for a in child_init.args.args] == ["self", "a", "b", "c"]
+
+
 def test_pydantic_field() -> None:
     """Test that pydantic.Field attributes are currently Uninferable.
 
@@ -628,12 +655,12 @@ def test_init_attributes_from_superclasses(module: str):
     """
     )
     init = next(node.infer())
-    assert [a.name for a in init.args.args] == ["self", "arg0", "arg1", "arg2"]
+    assert [a.name for a in init.args.args] == ["self", "arg0", "arg2", "arg1"]
     assert [a.as_string() if a else None for a in init.args.annotations] == [
         None,
         "float",
-        "int",
         "list",  # not str
+        "int",
     ]
 
 
@@ -1035,8 +1062,8 @@ def test_dataclass_with_multiple_inheritance() -> None:
     assert [a.value for a in overwritten_init.args.defaults] == ["2"]
 
     overwriting_init: bases.UnboundMethod = next(overwriting.infer())
-    assert [a.name for a in overwriting_init.args.args] == ["self", "_abc", "ef"]
-    assert [a.value for a in overwriting_init.args.defaults] == [1.0, 2.0]
+    assert [a.name for a in overwriting_init.args.args] == ["self", "ef", "_abc"]
+    assert [a.value for a in overwriting_init.args.defaults] == [2.0, 1.0]
 
     mixed_init: bases.UnboundMethod = next(mixed.infer())
     assert [a.name for a in mixed_init.args.args] == ["self", "_abc", "ghi"]
