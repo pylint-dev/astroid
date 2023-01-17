@@ -16,6 +16,15 @@ Release date: TBA
 
   Closes #1958
 
+* Fix overwritten attributes in inherited dataclasses not being ordered correctly.
+
+  Closes PyCQA/pylint#7881
+
+* Fix a false positive when an attribute named ``Enum`` was confused with ``enum.Enum``.
+  Calls to ``Enum`` are now inferred & the qualified name is checked.
+
+  Refs PyCQA/pylint#5719
+
 * Remove unnecessary typing_extensions dependency on Python 3.11 and newer
 
 What's New in astroid 2.13.2?
