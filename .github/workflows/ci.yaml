@@ -93,6 +93,7 @@ jobs:
       - name: Install Qt
         if: ${{ matrix.python-version == '3.10' }}
         run: |
+          sudo apt-get update
           sudo apt-get install build-essential libgl1-mesa-dev
       - name: Generate partial Python venv restore key
         id: generate-python-key
