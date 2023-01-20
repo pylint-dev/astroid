@@ -1764,6 +1764,18 @@ class TypingBrain(unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
 
+    def test_typing_extensions_types(self) -> None:
+        ast_nodes = builder.extract_node(
+            """
+        from typing_extensions import TypeVar
+        TypeVar('MyTypeVar', int, float, complex) #@
+        TypeVar('AnyStr', str, bytes) #@
+        """
+        )
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
+
     def test_typing_type_without_tip(self):
         """Regression test for https://github.com/PyCQA/pylint/issues/5770"""
         node = builder.extract_node(

@@ -34,9 +34,13 @@ from astroid.nodes.node_classes import (
 from astroid.nodes.scoped_nodes import ClassDef, FunctionDef
 from astroid.util import Uninferable
 
-TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
 TYPING_TYPEVARS = {"TypeVar", "NewType"}
-TYPING_TYPEVARS_QUALIFIED = {"typing.TypeVar", "typing.NewType"}
+TYPING_TYPEVARS_QUALIFIED = {
+    "typing.TypeVar",
+    "typing.NewType",
+    "typing_extensions.TypeVar",
+}
+TYPING_TYPEDDICT_QUALIFIED = {"typing.TypedDict", "typing_extensions.TypedDict"}
 TYPING_TYPE_TEMPLATE = """
 class Meta(type):
     def __getitem__(self, item):
@@ -186,7 +190,7 @@ def _looks_like_typedDict(  # pylint: disable=invalid-name
     node: FunctionDef | ClassDef,
 ) -> bool:
     """Check if node is TypedDict FunctionDef."""
-    return node.qname() in {"typing.TypedDict", "typing_extensions.TypedDict"}
+    return node.qname() in TYPING_TYPEDDICT_QUALIFIED
 
 
 def infer_old_typedDict(  # pylint: disable=invalid-name
