@@ -127,6 +127,7 @@ Contributors
 - Nicolas Noirbent <nicolas@noirbent.fr>
 - Neil Girdhar <mistersheik@gmail.com>
 - Michał Masłowski <m.maslowski@clearcode.cc>
+- Michal Vasilek <michal@vasilek.cz>
 - Mateusz Bysiek <mb@mbdev.pl>
 - Leandro T. C. Melo <ltcmelo@gmail.com>
 - Konrad Weihmann <kweihmann@outlook.com>
