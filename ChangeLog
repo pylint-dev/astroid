@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.13.3?
+What's New in astroid 2.13.4?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.13.3?
+=============================
+Release date: 2023-01-20
 
 * Fix a regression in 2.13.2 where a RunTimeError could be raised unexpectedly.
 
