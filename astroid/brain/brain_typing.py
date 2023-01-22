@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import sys
 import typing
 from collections.abc import Iterator
 from functools import partial
@@ -34,7 +35,6 @@ from astroid.nodes.node_classes import (
 from astroid.nodes.scoped_nodes import ClassDef, FunctionDef
 from astroid.util import Uninferable
 
-import sys
 if sys.version_info >= (3, 8):
     from typing import Final
 else:
