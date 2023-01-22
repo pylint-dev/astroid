@@ -35,12 +35,12 @@ from astroid.nodes.scoped_nodes import ClassDef, FunctionDef
 from astroid.util import Uninferable
 
 TYPING_TYPEVARS = {"TypeVar", "NewType"}
-TYPING_TYPEVARS_QUALIFIED = {
+TYPING_TYPEVARS_QUALIFIED: Final = {
     "typing.TypeVar",
     "typing.NewType",
     "typing_extensions.TypeVar",
 }
-TYPING_TYPEDDICT_QUALIFIED = {"typing.TypedDict", "typing_extensions.TypedDict"}
+TYPING_TYPEDDICT_QUALIFIED: Final = {"typing.TypedDict", "typing_extensions.TypedDict"}
 TYPING_TYPE_TEMPLATE = """
 class Meta(type):
     def __getitem__(self, item):
