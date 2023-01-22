@@ -66,6 +66,15 @@ try:
 except ImportError:
     HAS_SIX = False
 
+try:
+    import typing_extensions  # pylint: disable=unused-import
+
+    HAS_TYPING_EXTENSIONS = True
+    HAS_TYPING_EXTENSIONS_TYPEVAR = hasattr(typing_extensions, "TypeVar")
+except ImportError:
+    HAS_TYPING_EXTENSIONS = False
+    HAS_TYPING_EXTENSIONS_TYPEVAR = False
+
 
 def assertEqualMro(klass: ClassDef, expected_mro: list[str]) -> None:
     """Check mro names."""
@@ -1764,18 +1773,6 @@ class TypingBrain(unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
 
-    def test_typing_extensions_types(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
-        from typing_extensions import TypeVar
-        TypeVar('MyTypeVar', int, float, complex) #@
-        TypeVar('AnyStr', str, bytes) #@
-        """
-        )
-        for node in ast_nodes:
-            inferred = next(node.infer())
-            self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
-
     def test_typing_type_without_tip(self):
         """Regression test for https://github.com/PyCQA/pylint/issues/5770"""
         node = builder.extract_node(
@@ -2158,6 +2155,29 @@ class TypingBrain(unittest.TestCase):
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == 42
+
+
+@pytest.mark.skipif(
+    not HAS_TYPING_EXTENSIONS,
+    reason="These tests require the typing_extensions library",
+)
+class TestTypingExtensions:
+    @staticmethod
+    @pytest.mark.skipif(
+        not HAS_TYPING_EXTENSIONS_TYPEVAR,
+        reason="Need typing_extensions>=4.4.0 to test TypeVar",
+    )
+    def test_typing_extensions_types() -> None:
+        ast_nodes = builder.extract_node(
+            """
+        from typing_extensions import TypeVar
+        TypeVar('MyTypeVar', int, float, complex) #@
+        TypeVar('AnyStr', str, bytes) #@
+        """
+        )
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            assert isinstance(inferred, nodes.ClassDef)
 
 
 class ReBrainTest(unittest.TestCase):
