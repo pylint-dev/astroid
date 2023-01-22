@@ -40,7 +40,15 @@ ENUM_BASE_NAMES = {
     "enum.IntFlag",
 }
 ENUM_QNAME: Final[str] = "enum.Enum"
-TYPING_NAMEDTUPLE_BASENAMES: Final[set[str]] = {"NamedTuple", "typing.NamedTuple"}
+TYPING_NAMEDTUPLE_QUALIFIED: Final = {
+    "typing.NamedTuple",
+    "typing_extensions.NamedTuple",
+}
+TYPING_NAMEDTUPLE_BASENAMES: Final = {
+    "NamedTuple",
+    "typing.NamedTuple",
+    "typing_extensions.NamedTuple",
+}
 
 
 def _infer_first(node, context):
@@ -542,7 +550,7 @@ def infer_typing_namedtuple(
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
-    if func.qname() != "typing.NamedTuple":
+    if func.qname() not in TYPING_NAMEDTUPLE_QUALIFIED:
         raise UseInferenceDefault
 
     if len(node.args) != 2:

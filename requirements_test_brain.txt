@@ -9,3 +9,4 @@ types-python-dateutil
 six
 types-six
 urllib3
+typing_extensions>=4.4.0
