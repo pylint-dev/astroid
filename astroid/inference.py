@@ -15,6 +15,7 @@ from collections.abc import Callable, Generator, Iterable, Iterator
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
 
 from astroid import bases, constraint, decorators, helpers, nodes, protocols, util
+from astroid.const import PY310_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -755,6 +756,14 @@ def _bin_op(
     )
 
 
+def _bin_op_or_union_type(
+    left: bases.UnionType | nodes.ClassDef | nodes.Const,
+    right: bases.UnionType | nodes.ClassDef | nodes.Const,
+) -> Generator[InferenceResult, None, None]:
+    """Create a new UnionType instance for binary or, e.g. int | str."""
+    yield bases.UnionType(left, right)
+
+
 def _get_binop_contexts(context, left, right):
     """Get contexts for binary operations.
 
@@ -814,6 +823,22 @@ def _get_binop_flow(
             _bin_op(left, binary_opnode, op, right, context),
             _bin_op(right, binary_opnode, op, left, reverse_context, reverse=True),
         ]
+
+    if (
+        PY310_PLUS
+        and op == "|"
+        and (
+            isinstance(left, (bases.UnionType, nodes.ClassDef))
+            or isinstance(left, nodes.Const)
+            and left.value is None
+        )
+        and (
+            isinstance(right, (bases.UnionType, nodes.ClassDef))
+            or isinstance(right, nodes.Const)
+            and right.value is None
+        )
+    ):
+        methods.extend([functools.partial(_bin_op_or_union_type, left, right)])
     return methods
 
 
