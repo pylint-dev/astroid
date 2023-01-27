@@ -1225,6 +1225,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             assert n.inferred() == [util.Uninferable]
 
         code = """
+        from typing import List
+
         class A: ...
         class B: ...
 
@@ -1233,7 +1235,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         int | str | None  #@
         A | B  #@
         A | None  #@
-        list[int] | int  #@
+        List[int] | int  #@
+        tuple | int  #@
         """
         ast_nodes = extract_node(code)
         if not PY310_PLUS:
@@ -1273,10 +1276,17 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             i5 = ast_nodes[5].inferred()[0]
             assert isinstance(i5, UnionType)
             assert isinstance(i5.left, nodes.ClassDef)
-            assert i5.left.name == "list"
+            assert i5.left.name == "List"
+
+            i6 = ast_nodes[6].inferred()[0]
+            assert isinstance(i6, UnionType)
+            assert isinstance(i6.left, nodes.ClassDef)
+            assert i6.left.name == "tuple"
 
         code = """
-        Alias1 = list[int]
+        from typing import List
+
+        Alias1 = List[int]
         Alias2 = str | int
 
         Alias1 | int  #@
@@ -1291,7 +1301,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             i0 = ast_nodes[0].inferred()[0]
             assert isinstance(i0, UnionType)
             assert isinstance(i0.left, nodes.ClassDef)
-            assert i0.left.name == "list"
+            assert i0.left.name == "List"
 
             i1 = ast_nodes[1].inferred()[0]
             assert isinstance(i1, UnionType)
@@ -1302,7 +1312,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             i2 = ast_nodes[2].inferred()[0]
             assert isinstance(i2, UnionType)
             assert isinstance(i2.left, nodes.ClassDef)
-            assert i2.left.name == "list"
+            assert i2.left.name == "List"
             assert isinstance(i2.right, UnionType)
 
     def test_nonregr_lambda_arg(self) -> None:
