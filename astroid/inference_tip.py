@@ -47,12 +47,16 @@ def _inference_tip_cached(
     return iter(result)
 
 
-def inference_tip(infer_function: InferFn, raise_on_overwrite: bool = False) -> InferFn:
+def inference_tip(
+    infer_function: InferFn, raise_on_overwrite: bool = False, *, cached: bool = True
+) -> InferFn:
     """Given an instance specific inference function, return a function to be
     given to AstroidManager().register_transform to set this inference function.
 
     :param bool raise_on_overwrite: Raise an `InferenceOverwriteError`
         if the inference tip will overwrite another. Used for debugging
+    :param cached: Whether to cache the inference function and reuse the result.
+        Set to 'False' if the result is dependents on the caller.
 
     Typical usage
 
@@ -84,7 +88,9 @@ def inference_tip(infer_function: InferFn, raise_on_overwrite: bool = False) -> 
                 )
             )
         # pylint: disable=no-value-for-parameter
-        node._explicit_inference = _inference_tip_cached(infer_function)
+        node._explicit_inference = (
+            _inference_tip_cached(infer_function) if cached else infer_function
+        )
         return node
 
     return transform

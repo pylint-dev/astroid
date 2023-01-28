@@ -14,8 +14,11 @@ Release date: TBA
 
 * Fix issues with ``typing_extensions.TypeVar``.
 
-
 * Fix ``ClassDef.fromlino`` for PyPy 3.8 (v7.3.11) if class is wrapped by a decorator.
+
+* Fix wrong inference cache result for ``typing.cast`` calls inside functions.
+
+  Closes PyCQA/pylint#8074
 
 
 What's New in astroid 2.13.3?

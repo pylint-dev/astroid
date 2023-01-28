@@ -419,7 +419,7 @@ AstroidManager().register_transform(
     Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript
 )
 AstroidManager().register_transform(
-    Call, inference_tip(infer_typing_cast), _looks_like_typing_cast
+    Call, inference_tip(infer_typing_cast, cached=False), _looks_like_typing_cast
 )
 
 if PY39_PLUS:
