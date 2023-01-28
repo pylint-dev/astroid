@@ -10,17 +10,23 @@ from __future__ import annotations
 
 import builtins
 import inspect
+import io
+import logging
 import os
 import sys
 import types
 import warnings
 from collections.abc import Iterable
+from contextlib import redirect_stderr, redirect_stdout
 from typing import Any, Union
 
 from astroid import bases, nodes
 from astroid.const import _EMPTY_OBJECT_MARKER, IS_PYPY
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
+
+logger = logging.getLogger(__name__)
+
 
 _FunctionTypes = Union[
     types.FunctionType,
@@ -471,7 +477,18 @@ class InspectBuilder:
             # check if it sounds valid and then add an import node, else use a
             # dummy node
             try:
-                getattr(sys.modules[modname], name)
+                with redirect_stderr(io.StringIO()) as stderr, redirect_stdout(io.StringIO()) as stdout:
+                    getattr(sys.modules[modname], name)
+                    stderr_value = stderr.getvalue()
+                    if stderr_value:
+                        logger.error(
+                            "Captured stderr while getting %s %s:\n%s", sys.modules[modname], name, stderr_value
+                        )
+                    stdout_value = stdout.getvalue()
+                    if stdout_value:
+                        logger.info(
+                            "Captured stdout while importing %s %s:\n%s", sys.modules[modname], name, stdout_value
+                        )
             except (KeyError, AttributeError):
                 attach_dummy_node(node, name, member)
             else:
