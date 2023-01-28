@@ -18,6 +18,9 @@ WIN32 = sys.platform == "win32"
 IS_PYPY = sys.implementation.name == "pypy"
 IS_JYTHON = sys.implementation.name == "jython"
 
+# pylint: disable-next=no-member
+PYPY_7_3_11_PLUS = IS_PYPY and sys.pypy_version_info >= (7, 3, 11)  # type: ignore[attr-defined]
+
 
 class Context(enum.Enum):
     Load = 1
