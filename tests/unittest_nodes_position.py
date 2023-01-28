@@ -7,7 +7,6 @@ from __future__ import annotations
 import textwrap
 
 from astroid import builder, nodes
-from astroid.const import IS_PYPY, PY38
 
 
 class TestNodePosition:
@@ -65,11 +64,9 @@ class TestNodePosition:
         assert isinstance(e, nodes.ClassDef)
         assert e.position == (13, 0, 13, 7)
 
-        if not PY38 or not IS_PYPY:
-            # The new (2022-12) version of pypy 3.8 broke this
-            f = ast_nodes[5]
-            assert isinstance(f, nodes.ClassDef)
-            assert f.position == (18, 0, 18, 7)
+        f = ast_nodes[5]
+        assert isinstance(f, nodes.ClassDef)
+        assert f.position == (18, 0, 18, 7)
 
     @staticmethod
     def test_position_function() -> None:
