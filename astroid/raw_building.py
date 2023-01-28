@@ -477,17 +477,25 @@ class InspectBuilder:
             # check if it sounds valid and then add an import node, else use a
             # dummy node
             try:
-                with redirect_stderr(io.StringIO()) as stderr, redirect_stdout(io.StringIO()) as stdout:
+                with redirect_stderr(io.StringIO()) as stderr, redirect_stdout(
+                    io.StringIO()
+                ) as stdout:
                     getattr(sys.modules[modname], name)
                     stderr_value = stderr.getvalue()
                     if stderr_value:
                         logger.error(
-                            "Captured stderr while getting %s %s:\n%s", sys.modules[modname], name, stderr_value
+                            "Captured stderr while getting %s %s:\n%s",
+                            sys.modules[modname],
+                            name,
+                            stderr_value,
                         )
                     stdout_value = stdout.getvalue()
                     if stdout_value:
                         logger.info(
-                            "Captured stdout while importing %s %s:\n%s", sys.modules[modname], name, stdout_value
+                            "Captured stdout while importing %s %s:\n%s",
+                            sys.modules[modname],
+                            name,
+                            stdout_value,
                         )
             except (KeyError, AttributeError):
                 attach_dummy_node(node, name, member)
