@@ -19,7 +19,7 @@ import unittest.mock
 import pytest
 
 from astroid import Instance, builder, nodes, test_utils, util
-from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS
+from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS, PYPY_7_3_11_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -130,18 +130,18 @@ class FromToLineNoTest(unittest.TestCase):
     def test_decorated_class_lineno() -> None:
         code = textwrap.dedent(
             """
-        class A:
+        class A:  # L2
             ...
 
         @decorator
-        class B:
+        class B:  # L6
             ...
 
         @deco1
         @deco2(
             var=42
         )
-        class C:
+        class C:  # L13
             ...
         """
         )
@@ -155,23 +155,15 @@ class FromToLineNoTest(unittest.TestCase):
 
         b = ast_module.body[1]
         assert isinstance(b, nodes.ClassDef)
-        if PY38 and IS_PYPY:
-            # Not perfect, but best we can do for PyPy 3.8
-            assert b.fromlineno == 7
-        else:
-            assert b.fromlineno == 6
+        assert b.fromlineno == 6
         assert b.tolineno == 7
 
         c = ast_module.body[2]
         assert isinstance(c, nodes.ClassDef)
-        if not PY38_PLUS:
-            # Not perfect, but best we can do for Python 3.7
+        if not PY38_PLUS or IS_PYPY and PY38 and not PYPY_7_3_11_PLUS:
+            # Not perfect, but best we can do for Python 3.7 and PyPy 3.8 (< v7.3.11).
             # Can't detect closing bracket on new line.
             assert c.fromlineno == 12
-        elif PY38 and IS_PYPY:
-            # Not perfect, but best we can do for PyPy 3.8
-            # Can't detect closing bracket on new line.
-            assert c.fromlineno == 16
         else:
             assert c.fromlineno == 13
         assert c.tolineno == 14

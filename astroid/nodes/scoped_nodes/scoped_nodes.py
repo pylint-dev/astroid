@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, ClassVar, NoReturn, TypeVar, overload
 from astroid import bases
 from astroid import decorators as decorators_mod
 from astroid import util
-from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS
+from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS, PYPY_7_3_11_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -2139,9 +2139,10 @@ class ClassDef(
     @cached_property
     def fromlineno(self) -> int | None:
         """The first line that this node appears on in the source code."""
-        if not PY38_PLUS or PY38 and IS_PYPY:
+        if not PY38_PLUS or IS_PYPY and PY38 and not PYPY_7_3_11_PLUS:
             # For Python < 3.8 the lineno is the line number of the first decorator.
             # We want the class statement lineno. Similar to 'FunctionDef.fromlineno'
+            # PyPy (3.8): Fixed with version v7.3.11
             lineno = self.lineno
             if self.decorators is not None:
                 lineno += sum(
