@@ -28,7 +28,6 @@ from astroid.nodes.node_classes import (
     Const,
     JoinedStr,
     Name,
-    NodeNG,
     Subscript,
     Tuple,
 )
@@ -380,36 +379,6 @@ def infer_special_alias(
     return iter([class_def])
 
 
-def _looks_like_typing_cast(node: Call) -> bool:
-    return isinstance(node, Call) and (
-        isinstance(node.func, Name)
-        and node.func.name == "cast"
-        or isinstance(node.func, Attribute)
-        and node.func.attrname == "cast"
-    )
-
-
-def infer_typing_cast(
-    node: Call, ctx: context.InferenceContext | None = None
-) -> Iterator[NodeNG]:
-    """Infer call to cast() returning same type as casted-from var."""
-    if not isinstance(node.func, (Name, Attribute)):
-        raise UseInferenceDefault
-
-    try:
-        func = next(node.func.infer(context=ctx))
-    except (InferenceError, StopIteration) as exc:
-        raise UseInferenceDefault from exc
-    if (
-        not isinstance(func, FunctionDef)
-        or func.qname() != "typing.cast"
-        or len(node.args) != 2
-    ):
-        raise UseInferenceDefault
-
-    return node.args[1].infer(context=ctx)
-
-
 AstroidManager().register_transform(
     Call,
     inference_tip(infer_typing_typevar_or_newtype),
@@ -417,9 +386,6 @@ AstroidManager().register_transform(
 )
 AstroidManager().register_transform(
     Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript
-)
-AstroidManager().register_transform(
-    Call, inference_tip(infer_typing_cast), _looks_like_typing_cast
 )
 
 if PY39_PLUS:

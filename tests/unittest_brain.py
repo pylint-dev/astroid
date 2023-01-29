@@ -2132,8 +2132,7 @@ class TypingBrain(unittest.TestCase):
             pass
 
         b = 42
-        a = cast(A, b)
-        a
+        cast(A, b)
         """
         )
         inferred = next(node.infer())
@@ -2148,13 +2147,32 @@ class TypingBrain(unittest.TestCase):
             pass
 
         b = 42
-        a = typing.cast(A, b)
-        a
+        typing.cast(A, b)
         """
         )
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == 42
+
+    def test_typing_cast_multiple_inference_calls(self) -> None:
+        ast_nodes = builder.extract_node(
+            """
+        from typing import TypeVar, cast
+        T = TypeVar("T")
+        def ident(var: T) -> T:
+            return cast(T, var)
+
+        ident(2)  #@
+        ident("Hello")  #@
+        """
+        )
+        i0 = next(ast_nodes[0].infer())
+        assert isinstance(i0, nodes.Const)
+        assert i0.value == 2
+
+        i1 = next(ast_nodes[1].infer())
+        assert isinstance(i1, nodes.Const)
+        assert i1.value == "Hello"
 
 
 @pytest.mark.skipif(
