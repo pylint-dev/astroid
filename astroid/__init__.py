@@ -31,6 +31,7 @@ Main modules are:
 """
 
 import functools
+import sys
 import tokenize
 from importlib import import_module
 
@@ -190,6 +191,9 @@ if (
     and getattr(tokenize._compile, "__wrapped__", None) is None  # type: ignore[attr-defined]
 ):
     tokenize._compile = functools.lru_cache()(tokenize._compile)  # type: ignore[attr-defined]
+
+# Set a higher recursion limit. 10**3 is a bit low. Especially for PyPy.
+sys.setrecursionlimit(2**12)
 
 # load brain plugins
 for module in BRAIN_MODULES_DIRECTORY.iterdir():
