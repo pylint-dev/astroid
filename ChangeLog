@@ -20,7 +20,7 @@ Release date: TBA
 
   Closes PyCQA/pylint#8074
 
-* Set a higher recursion limit at ``2**12``, instead of ``1000``
+* Set a higher recursion limit at ``2**12`` for PyPy, instead of ``1000``
   to prevent accidental ``RecursionErrors``.
 
 

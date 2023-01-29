@@ -49,7 +49,15 @@ from astroid.astroid_manager import MANAGER
 from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
-from astroid.const import BRAIN_MODULES_DIRECTORY, PY310_PLUS, Context, Del, Load, Store
+from astroid.const import (
+    BRAIN_MODULES_DIRECTORY,
+    IS_PYPY,
+    PY310_PLUS,
+    Context,
+    Del,
+    Load,
+    Store,
+)
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidBuildingException,
@@ -192,8 +200,9 @@ if (
 ):
     tokenize._compile = functools.lru_cache()(tokenize._compile)  # type: ignore[attr-defined]
 
-# Set a higher recursion limit. 10**3 is a bit low. Especially for PyPy.
-sys.setrecursionlimit(2**12)
+if IS_PYPY:
+    # Set a higher recursion limit for PyPy. 1000 is a bit low.
+    sys.setrecursionlimit(2**12)
 
 # load brain plugins
 for module in BRAIN_MODULES_DIRECTORY.iterdir():
