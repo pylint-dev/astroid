@@ -492,7 +492,7 @@ class InspectBuilder:
                     stdout_value = stdout.getvalue()
                     if stdout_value:
                         logger.info(
-                            "Captured stdout while importing %s from %s:\n%s",
+                            "Captured stdout while getting %s from %s:\n%s",
                             name,
                             sys.modules[modname],
                             stdout_value,
