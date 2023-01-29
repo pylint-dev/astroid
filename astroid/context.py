@@ -161,13 +161,14 @@ class InferenceContext:
 class CallContext:
     """Holds information for a call site."""
 
-    __slots__ = ("args", "keywords", "callee")
+    __slots__ = ("args", "keywords", "callee", "parent_call_context")
 
     def __init__(
         self,
         args: list[NodeNG],
         keywords: list[Keyword] | None = None,
         callee: NodeNG | None = None,
+        parent_call_context: CallContext | None = None,
     ):
         self.args = args  # Call positional arguments
         if keywords:
@@ -176,6 +177,9 @@ class CallContext:
             arg_value_pairs = []
         self.keywords = arg_value_pairs  # Call keyword arguments
         self.callee = callee  # Function being called
+        self.parent_call_context = (
+            parent_call_context  # Parent CallContext for nested calls
+        )
 
 
 def copy_context(context: InferenceContext | None) -> InferenceContext:
