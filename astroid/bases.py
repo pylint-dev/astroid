@@ -680,7 +680,12 @@ class UnionType(BaseInstance):
 
     _proxied: nodes.ClassDef
 
-    def __init__(self, left, right, parent=None):
+    def __init__(
+        self,
+        left: UnionType | nodes.ClassDef | nodes.Const,
+        right: UnionType | nodes.ClassDef | nodes.Const,
+        parent: nodes.NodeNG | None = None,
+    ) -> None:
         super().__init__()
         self.parent = parent
         self.left = left
