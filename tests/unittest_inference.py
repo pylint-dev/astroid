@@ -23,7 +23,7 @@ from astroid import helpers, nodes, objects, test_utils, util
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod, UnionType
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
-from astroid.const import PY38_PLUS, PY39_PLUS, PY310_PLUS
+from astroid.const import IS_PYPY, PY38_PLUS, PY39_PLUS, PY310_PLUS
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -6926,10 +6926,18 @@ def test_imported_module_var_inferable3() -> None:
     assert i_w_val.as_string() == "['w', 'v']"
 
 
+@pytest.mark.skipif(
+    IS_PYPY, reason="Test run with coverage on PyPy sometimes raises a RecursionError"
+)
 def test_recursion_on_inference_tip() -> None:
     """Regression test for recursion in inference tip.
 
     Originally reported in https://github.com/PyCQA/pylint/issues/5408.
+
+    When run on PyPy with coverage enabled, the test can sometimes raise a RecursionError
+    outside of the code that we actually want to test.
+    As the issue seems to be with coverage, skip the test on PyPy.
+    https://github.com/PyCQA/astroid/pull/1984#issuecomment-1407720311
     """
     code = """
     class MyInnerClass:
