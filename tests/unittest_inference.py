@@ -6828,7 +6828,8 @@ def test_recursion_on_inference_tip() -> None:
 
     Originally reported in https://github.com/PyCQA/pylint/issues/5408.
 
-    When run on PyPy with coverage enabled, the test can sometimes raise a RecursionError.
+    When run on PyPy with coverage enabled, the test can sometimes raise a RecursionError
+    outside of the code that we actually want to test.
     As the issue seems to be with coverage, skip the test on PyPy.
     https://github.com/PyCQA/astroid/pull/1984#issuecomment-1407720311
     """
