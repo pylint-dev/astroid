@@ -484,9 +484,9 @@ class InspectBuilder:
                     stderr_value = stderr.getvalue()
                     if stderr_value:
                         logger.error(
-                            "Captured stderr while getting %s %s:\n%s",
-                            sys.modules[modname],
+                            "Captured stderr while getting %s from %s:\n%s",
                             name,
+                            sys.modules[modname],
                             stderr_value,
                         )
                     stdout_value = stdout.getvalue()
