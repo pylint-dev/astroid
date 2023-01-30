@@ -2332,52 +2332,30 @@ class ExceptHandler(
     _astroid_fields = ("type", "name", "body")
     _multi_line_block_fields = ("body",)
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    type: NodeNG | None
+    """The types that the block handles."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
+    name: AssignName | None
+    """The name that the caught exception is assigned to."""
 
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.type: NodeNG | None = None  # can be None
-        """The types that the block handles.
-
-        :type: Tuple or NodeNG or None
-        """
-
-        self.name: AssignName | None = None  # can be None
-        """The name that the caught exception is assigned to."""
-
-        self.body: list[NodeNG] = []
-        """The contents of the block."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+    body: list[NodeNG]
+    """The contents of the block."""
 
     assigned_stmts: ClassVar[AssignedStmtsCall[ExceptHandler]]
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
+
+    # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
+    def postinit(
+        self,
+        type: NodeNG | None = None,
+        name: AssignName | None = None,
+        body: list[NodeNG] | None = None,
+    ) -> None:
+        self.type = type
+        self.name = name
+        self.body = body or []
 
     def get_children(self):
         if self.type is not None:
@@ -2387,27 +2365,6 @@ class ExceptHandler(
             yield self.name
 
         yield from self.body
-
-    # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
-    def postinit(
-        self,
-        type: NodeNG | None = None,
-        name: AssignName | None = None,
-        body: list[NodeNG] | None = None,
-    ) -> None:
-        """Do some setup after initialisation.
-
-        :param type: The types that the block handles.
-        :type type: Tuple or NodeNG or None
-
-        :param name: The name that the caught exception is assigned to.
-
-        :param body:The contents of the block.
-        """
-        self.type = type
-        self.name = name
-        if body is not None:
-            self.body = body
 
     @cached_property
     def blockstart_tolineno(self):
