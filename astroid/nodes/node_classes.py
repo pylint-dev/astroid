@@ -3204,53 +3204,17 @@ class Raise(_base_nodes.Statement):
 
     _astroid_fields = ("exc", "cause")
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    exc: NodeNG | None
+    """What is being raised."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.exc: NodeNG | None = None  # can be None
-        """What is being raised."""
-
-        self.cause: NodeNG | None = None  # can be None
-        """The exception being used to raise this one."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+    cause: NodeNG | None
+    """The exception being used to raise this one."""
 
     def postinit(
         self,
         exc: NodeNG | None = None,
         cause: NodeNG | None = None,
     ) -> None:
-        """Do some setup after initialisation.
-
-        :param exc: What is being raised.
-
-        :param cause: The exception being used to raise this one.
-        """
         self.exc = exc
         self.cause = cause
 
