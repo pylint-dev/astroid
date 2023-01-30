@@ -3628,57 +3628,19 @@ class TryFinally(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     _astroid_fields = ("body", "finalbody")
     _multi_line_block_fields = ("body", "finalbody")
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    body: list[NodeNG | TryExcept]
+    """The try-except that the finally is attached to."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.body: list[NodeNG | TryExcept] = []
-        """The try-except that the finally is attached to."""
-
-        self.finalbody: list[NodeNG] = []
-        """The contents of the ``finally`` block."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+    finalbody: list[NodeNG]
+    """The contents of the ``finally`` block."""
 
     def postinit(
         self,
         body: list[NodeNG | TryExcept] | None = None,
         finalbody: list[NodeNG] | None = None,
     ) -> None:
-        """Do some setup after initialisation.
-
-        :param body: The try-except that the finally is attached to.
-
-        :param finalbody: The contents of the ``finally`` block.
-        """
-        if body is not None:
-            self.body = body
-        if finalbody is not None:
-            self.finalbody = finalbody
+        self.body = body or []
+        self.finalbody = finalbody or []
 
     def block_range(self, lineno):
         """Get a range from the given line number to where this node ends.
