@@ -575,6 +575,24 @@ def _astroid_bootstrapping() -> None:
         )
         bases.AsyncGenerator._proxied = _AsyncGeneratorType
         builder.object_build(bases.AsyncGenerator._proxied, types.AsyncGeneratorType)
+
+    if hasattr(types, "UnionType"):
+        _UnionTypeType = nodes.ClassDef(types.UnionType.__name__)
+        _UnionTypeType.parent = astroid_builtin
+        union_type_doc_node = (
+            nodes.Const(value=types.UnionType.__doc__)
+            if types.UnionType.__doc__
+            else None
+        )
+        _UnionTypeType.postinit(
+            bases=[],
+            body=[],
+            decorators=None,
+            doc_node=union_type_doc_node,
+        )
+        bases.UnionType._proxied = _UnionTypeType
+        builder.object_build(bases.UnionType._proxied, types.UnionType)
+
     builtin_types = (
         types.GetSetDescriptorType,
         types.GeneratorType,

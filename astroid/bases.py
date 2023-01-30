@@ -121,11 +121,12 @@ class Proxy:
         if proxied is None:
             # This is a hack to allow calling this __init__ during bootstrapping of
             # builtin classes and their docstrings.
-            # For Const and Generator nodes the _proxied attribute is set during bootstrapping
+            # For Const, Generator, and UnionType nodes the _proxied attribute
+            # is set during bootstrapping
             # as we first need to build the ClassDef that they can proxy.
             # Thus, if proxied is None self should be a Const or Generator
             # as that is the only way _proxied will be correctly set as a ClassDef.
-            assert isinstance(self, (nodes.Const, Generator))
+            assert isinstance(self, (nodes.Const, Generator, UnionType))
         else:
             self._proxied = proxied
 
@@ -669,3 +670,41 @@ class AsyncGenerator(Generator):
 
     def __str__(self) -> str:
         return f"AsyncGenerator({self._proxied.name})"
+
+
+class UnionType(BaseInstance):
+    """Special node representing new style typing unions.
+
+    Proxied class is set once for all in raw_building.
+    """
+
+    _proxied: nodes.ClassDef
+
+    def __init__(
+        self,
+        left: UnionType | nodes.ClassDef | nodes.Const,
+        right: UnionType | nodes.ClassDef | nodes.Const,
+        parent: nodes.NodeNG | None = None,
+    ) -> None:
+        super().__init__()
+        self.parent = parent
+        self.left = left
+        self.right = right
+
+    def callable(self) -> Literal[False]:
+        return False
+
+    def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
+        return True
+
+    def pytype(self) -> Literal["types.UnionType"]:
+        return "types.UnionType"
+
+    def display_type(self) -> str:
+        return "UnionType"
+
+    def __repr__(self) -> str:
+        return f"<UnionType({self._proxied.name}) l.{self.lineno} at 0x{id(self)}>"
+
+    def __str__(self) -> str:
+        return f"UnionType({self._proxied.name})"

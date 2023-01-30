@@ -6,6 +6,9 @@ What's New in astroid 2.14.0?
 =============================
 Release date: TBA
 
+* Add support for inferring binary union types added in Python 3.10.
+
+  Refs PyCQA/pylint#8119
 
 
 What's New in astroid 2.13.4?
