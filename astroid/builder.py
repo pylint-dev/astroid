@@ -358,12 +358,9 @@ def _find_statement_by_line(node: nodes.NodeNG, line: int) -> nodes.NodeNG | Non
     recursively.
 
     :param node: An astroid node.
-    :type node: astroid.bases.NodeNG
     :param line: The line number of the statement to extract.
-    :type line: int
     :returns: The statement on the line, or None if no statement for the line
       can be found.
-    :rtype:  astroid.bases.NodeNG or None
     """
     if isinstance(node, (nodes.ClassDef, nodes.FunctionDef, nodes.MatchCase)):
         # This is an inaccuracy in the AST: the nodes that can be

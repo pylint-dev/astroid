@@ -375,7 +375,6 @@ def find_spec(modpath: list[str], path: Sequence[str] | None = None) -> ModuleSp
       optional list of path where the module or package should be
       searched (use sys.path if nothing or None is given)
 
-    :rtype: ModuleSpec
     :return: A module spec, which describes how the module was
              found and where.
     """

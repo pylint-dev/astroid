@@ -34,21 +34,15 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         """Get the 'qualified' name of the node.
 
         For example: module.name, module.class.name ...
-
-        :returns: The qualified name.
-        :rtype: str
         """
+
         # pylint: disable=no-member; github.com/pycqa/astroid/issues/278
         if self.parent is None:
             return self.name
         return f"{self.parent.frame(future=True).qname()}.{self.name}"
 
     def scope(self: _T) -> _T:
-        """The first parent node defining a new scope.
-
-        :returns: The first parent scope node.
-        :rtype: Module or FunctionDef or ClassDef or Lambda or GenExpr
-        """
+        """The first parent node defining a new scope."""
         return self
 
     def scope_lookup(self, node, name: str, offset: int = 0):
@@ -152,41 +146,23 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         """
         return iter(self.keys())
 
-    def keys(self):
-        """The names of locals defined in this scoped node.
-
-        :returns: The names of the defined locals.
-        :rtype: list(str)
-        """
+    def keys(self) -> list[str]:
+        """The names of locals defined in this scoped node."""
         return list(self.locals.keys())
 
-    def values(self):
-        """The nodes that define the locals in this scoped node.
-
-        :returns: The nodes that define locals.
-        :rtype: list(NodeNG)
-        """
+    def values(self) -> list[NodeNG]:
+        """The nodes that define the locals in this scoped node."""
         # pylint: disable=consider-using-dict-items
         # It look like this class override items/keys/values,
         # probably not worth the headache
         return [self[key] for key in self.keys()]
 
-    def items(self):
-        """Get the names of the locals and the node that defines the local.
-
-        :returns: The names of locals and their associated node.
-        :rtype: list(tuple(str, NodeNG))
-        """
+    def items(self) -> list[tuple[str, NodeNG]]:
+        """Get the names of the locals and the node that defines the local."""
         return list(zip(self.keys(), self.values()))
 
-    def __contains__(self, name) -> bool:
-        """Check if a local is defined in this scope.
-
-        :param name: The name of the local to check for.
-        :type name: str
-
-        :returns: Whether this node has a local of the given name,
-        """
+    def __contains__(self, name: str) -> bool:
+        """Check if a local is defined in this scope."""
         return name in self.locals
 
 

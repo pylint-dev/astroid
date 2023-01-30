@@ -198,7 +198,6 @@ def bind_context_to_node(context: InferenceContext | None, node) -> InferenceCon
     :type node NodeNG:
 
     :returns: A new context
-    :rtype: InferenceContext
     """
     context = copy_context(context)
     context.boundnode = node

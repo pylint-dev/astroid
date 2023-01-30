@@ -343,18 +343,14 @@ class Module(LocalsDictNodeNG):
         """
         return self._get_stream()
 
-    def block_range(self, lineno):
+    def block_range(self, lineno: int) -> tuple[int, int]:
         """Get a range from where this node starts to where this node ends.
 
         :param lineno: Unused.
-        :type lineno: int
-
-        :returns: The range of line numbers that this node belongs to.
-        :rtype: tuple(int, int)
         """
         return self.fromlineno, self.tolineno
 
-    def scope_lookup(self, node, name, offset=0):
+    def scope_lookup(self, node, name: str, offset: int = 0):
         """Lookup where the given variable is assigned.
 
         :param node: The node to look for assignments up to.
@@ -362,10 +358,8 @@ class Module(LocalsDictNodeNG):
         :type node: NodeNG
 
         :param name: The name of the variable to find assignments for.
-        :type name: str
 
         :param offset: The line offset to filter statements up to.
-        :type offset: int
 
         :returns: This scope node and the list of assignments associated to the
             given name according to the scope where it has been found (locals,
@@ -650,7 +644,7 @@ class Module(LocalsDictNodeNG):
         """
         return True
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.body
 
     def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
@@ -741,7 +735,7 @@ class GeneratorExp(ComprehensionScope):
         """
         return True
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.elt
 
         yield from self.generators
@@ -839,7 +833,7 @@ class DictComp(ComprehensionScope):
         """
         return util.Uninferable
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.key
         yield self.value
 
@@ -924,7 +918,7 @@ class SetComp(ComprehensionScope):
         """
         return util.Uninferable
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.elt
 
         yield from self.generators
@@ -992,7 +986,7 @@ class ListComp(ComprehensionScope):
         """
         return util.Uninferable
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.elt
 
         yield from self.generators
@@ -1182,7 +1176,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         # to None due to a strong interaction between Lambda and FunctionDef.
         return self.body.infer(context)
 
-    def scope_lookup(self, node, name, offset=0):
+    def scope_lookup(self, node, name: str, offset: int=0):
         """Lookup where the given names is assigned.
 
         :param node: The node to look for assignments up to.
@@ -1218,7 +1212,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         """
         return True
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.args
         yield self.body
 
@@ -1540,24 +1534,19 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         return lineno
 
     @cached_property
-    def blockstart_tolineno(self):
-        """The line on which the beginning of this block ends.
-
-        :type: int
-        """
+    def blockstart_tolineno(self) -> int:
+        """The line on which the beginning of this block ends."""
         return self.args.tolineno
 
     def implicit_parameters(self) -> Literal[0, 1]:
         return 1 if self.is_bound() else 0
 
-    def block_range(self, lineno):
+    def block_range(self, lineno: int) -> tuple[int, int]:
         """Get a range from the given line number to where this node ends.
 
         :param lineno: Unused.
-        :type lineno: int
 
         :returns: The range of line numbers that this node belongs to,
-        :rtype: tuple(int, int)
         """
         return self.fromlineno, self.tolineno
 
@@ -1742,7 +1731,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         """
         return True
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         if self.decorators is not None:
             yield self.decorators
 
@@ -2153,24 +2142,20 @@ class ClassDef(
         return super().fromlineno
 
     @cached_property
-    def blockstart_tolineno(self):
+    def blockstart_tolineno(self) -> int:
         """The line on which the beginning of this block ends.
-
-        :type: int
         """
         if self.bases:
             return self.bases[-1].tolineno
 
         return self.fromlineno
 
-    def block_range(self, lineno):
+    def block_range(self, lineno: int) -> tuple[int, int]:
         """Get a range from the given line number to where this node ends.
 
         :param lineno: Unused.
-        :type lineno: int
 
         :returns: The range of line numbers that this node belongs to,
-        :rtype: tuple(int, int)
         """
         return self.fromlineno, self.tolineno
 
@@ -2289,7 +2274,7 @@ class ClassDef(
         else:
             yield self.instantiate_class()
 
-    def scope_lookup(self, node, name, offset=0):
+    def scope_lookup(self, node, name: str, offset: int = 0):
         """Lookup where the given name is assigned.
 
         :param node: The node to look for assignments up to.
@@ -2297,10 +2282,8 @@ class ClassDef(
         :type node: NodeNG
 
         :param name: The name to find assignments for.
-        :type name: str
 
         :param offset: The line offset to filter statements up to.
-        :type offset: int
 
         :returns: This scope node and the list of assignments associated to the
             given name according to the scope where it has been found (locals,
@@ -3050,7 +3033,7 @@ class ClassDef(
         """
         return True
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         if self.decorators is not None:
             yield self.decorators
 

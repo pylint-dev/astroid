@@ -150,7 +150,6 @@ class NodeNG:
         called instead of the default interface.
 
         :returns: The inferred values.
-        :rtype: iterable
         """
         if context is not None:
             context = context.extra_context.get(self, context)
@@ -424,20 +423,12 @@ class NodeNG:
     # FIXME : should we merge child_sequence and locate_child ? locate_child
     # is only used in are_exclusive, child_sequence one time in pylint.
 
-    def next_sibling(self):
-        """The next sibling statement node.
-
-        :returns: The next sibling statement node.
-        :rtype: NodeNG or None
-        """
+    def next_sibling(self) -> NodeNG | None:
+        """The next sibling statement node."""
         return self.parent.next_sibling()
 
-    def previous_sibling(self):
-        """The previous sibling statement.
-
-        :returns: The previous sibling statement node.
-        :rtype: NodeNG or None
-        """
+    def previous_sibling(self) -> NodeNG | None:
+        """The previous sibling statement."""
         return self.parent.previous_sibling()
 
     # these are lazy because they're relatively expensive to compute for every
@@ -482,16 +473,8 @@ class NodeNG:
                 parent = parent.parent
         return line
 
-    def block_range(self, lineno):
-        """Get a range from the given line number to where this node ends.
-
-        :param lineno: The line number to start the range at.
-        :type lineno: int
-
-        :returns: The range of line numbers that this node belongs to,
-            starting at the given line number.
-        :rtype: tuple(int, int or None)
-        """
+    def block_range(self, lineno: int) -> tuple[int, int]:
+        """Get a range from the given line number to where this node ends."""
         return lineno, self.tolineno
 
     def set_local(self, name: str, stmt: NodeNG) -> None:
@@ -647,40 +630,33 @@ class NodeNG:
 
     def repr_tree(
         self,
-        ids=False,
-        include_linenos=False,
-        ast_state=False,
-        indent="   ",
-        max_depth=0,
-        max_width=80,
+        ids: bool=False,
+        include_linenos: bool=False,
+        ast_state: bool=False,
+        indent: str="   ",
+        max_depth: int=0,
+        max_width: int=80,
     ) -> str:
         """Get a string representation of the AST from this node.
 
         :param ids: If true, includes the ids with the node type names.
-        :type ids: bool
 
         :param include_linenos: If true, includes the line numbers and
             column offsets.
-        :type include_linenos: bool
 
         :param ast_state: If true, includes information derived from
             the whole AST like local and global variables.
-        :type ast_state: bool
 
         :param indent: A string to use to indent the output string.
-        :type indent: str
 
         :param max_depth: If set to a positive integer, won't return
             nodes deeper than max_depth in the string.
-        :type max_depth: int
 
         :param max_width: Attempt to format the output string to stay
             within this number of characters, but can exceed it under some
             circumstances. Only positive integer values are valid, the default is 80.
-        :type max_width: int
 
         :returns: The string representation of the AST.
-        :rtype: str
         """
 
         @_singledispatch
@@ -803,7 +779,7 @@ class NodeNG:
         """
         return util.Uninferable
 
-    def op_precedence(self):
+    def op_precedence(self) -> int:
         # Look up by class name or default to highest precedence
         return OP_PRECEDENCE.get(self.__class__.__name__, len(OP_PRECEDENCE))
 

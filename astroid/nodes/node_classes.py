@@ -11,7 +11,7 @@ import itertools
 import sys
 import typing
 import warnings
-from collections.abc import Generator, Iterable, Mapping
+from collections.abc import Generator, Iterable, Mapping, Iterator
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Union
 
@@ -304,11 +304,10 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         self.elts = elts
 
     @classmethod
-    def from_elements(cls, elts=None):
+    def from_elements(cls, elts: list[NodeNG] = None):
         """Create a node of this type from the given list of elements.
 
         :param elts: The list of elements that the node should contain.
-        :type elts: list(NodeNG)
 
         :returns: A new node containing the given elements.
         :rtype: NodeNG
@@ -342,7 +341,7 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         :returns: The name of the type.
         """
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.elts
 
 
@@ -366,11 +365,10 @@ class LookupMixIn(NodeNG):
         """
         return self.scope().scope_lookup(self, name)
 
-    def ilookup(self, name):
+    def ilookup(self, name: str):
         """Lookup the inferred values of the given variable.
 
         :param name: The variable name to find values for.
-        :type name: str
 
         :returns: The inferred values of the statements returned from
             :meth:`lookup`.
@@ -779,11 +777,8 @@ class Arguments(_base_nodes.AssignTypeNode):
         return None
 
     @cached_property
-    def fromlineno(self):
-        """The first line that this node appears on in the source code.
-
-        :type: int or None
-        """
+    def fromlineno(self) -> int:
+        """The first line that this node appears on in the source code."""
         lineno = super().fromlineno
         return max(lineno, self.parent.fromlineno or 0)
 
@@ -793,11 +788,7 @@ class Arguments(_base_nodes.AssignTypeNode):
         return list(itertools.chain((self.posonlyargs or ()), self.args or ()))
 
     def format_args(self, *, skippable_names: set[str] | None = None) -> str:
-        """Get the arguments formatted as string.
-
-        :returns: The formatted arguments.
-        :rtype: str
-        """
+        """Get the arguments formatted as string."""
         result = []
         positional_only_defaults = []
         positional_or_keyword_defaults = self.defaults
@@ -911,11 +902,10 @@ class Arguments(_base_nodes.AssignTypeNode):
 
         return pos_only, kw_only
 
-    def default_value(self, argname):
+    def default_value(self, argname: str):
         """Get the default value for an argument.
 
         :param argname: The name of the argument to get the default value for.
-        :type argname: str
 
         :raises NoDefault: If there is no default value defined for the
             given argument.
@@ -931,14 +921,8 @@ class Arguments(_base_nodes.AssignTypeNode):
             return self.kw_defaults[index]
         raise NoDefault(func=self.parent, name=argname)
 
-    def is_argument(self, name) -> bool:
-        """Check if the given name is defined in the arguments.
-
-        :param name: The name to check for.
-        :type name: str
-
-        :returns: Whether the given name is defined in the arguments,
-        """
+    def is_argument(self, name: str) -> bool:
+        """Check if the given name is defined in the arguments."""
         if name == self.vararg:
             return True
         if name == self.kwarg:
@@ -949,15 +933,13 @@ class Arguments(_base_nodes.AssignTypeNode):
             and _find_arg(name, self.kwonlyargs, rec=True)[1] is not None
         )
 
-    def find_argname(self, argname, rec=False):
+    def find_argname(self, argname: str, rec: bool = False):
         """Get the index and :class:`AssignName` node for given name.
 
         :param argname: The name of the argument to search for.
-        :type argname: str
 
         :param rec: Whether or not to include arguments in unpacked tuples
             in the search.
-        :type rec: bool
 
         :returns: The index and node for the argument.
         :rtype: tuple(str or None, AssignName or None)
@@ -966,7 +948,7 @@ class Arguments(_base_nodes.AssignTypeNode):
             return _find_arg(argname, self.arguments, rec)
         return None, None
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.posonlyargs or ()
 
         for elt in self.posonlyargs_annotations:
@@ -1112,7 +1094,7 @@ class AssignAttr(_base_nodes.ParentAssignNode):
     See astroid/protocols.py for actual implementation.
     """
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.expr
 
 
@@ -1175,7 +1157,7 @@ class Assert(_base_nodes.Statement):
         self.fail = fail
         self.test = test
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.test
 
         if self.fail is not None:
@@ -1258,7 +1240,7 @@ class Assign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     See astroid/protocols.py for actual implementation.
     """
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.targets
 
         yield self.value
@@ -1355,7 +1337,7 @@ class AnnAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     See astroid/protocols.py for actual implementation.
     """
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.target
         yield self.annotation
 
@@ -1465,7 +1447,7 @@ class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         except InferenceError:
             return []
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.target
         yield self.value
 
@@ -1564,11 +1546,11 @@ class BinOp(NodeNG):
         except InferenceError:
             return []
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.left
         yield self.right
 
-    def op_precedence(self):
+    def op_precedence(self) -> int:
         return OP_PRECEDENCE[self.op]
 
     def op_left_associative(self) -> bool:
@@ -1638,10 +1620,10 @@ class BoolOp(NodeNG):
         if values is not None:
             self.values = values
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.values
 
-    def op_precedence(self):
+    def op_precedence(self) -> int:
         return OP_PRECEDENCE[self.op]
 
 
@@ -1737,7 +1719,7 @@ class Call(NodeNG):
         """The keyword arguments that unpack something."""
         return [keyword for keyword in self.keywords if keyword.arg is None]
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.func
 
         yield from self.args
@@ -1813,25 +1795,12 @@ class Compare(NodeNG):
         if ops is not None:
             self.ops = ops
 
-    def get_children(self):
-        """Get the child nodes below this node.
-
-        Overridden to handle the tuple fields and skip returning the operator
-        strings.
-
-        :returns: The children.
-        :rtype: iterable(NodeNG)
-        """
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.left
         for _, comparator in self.ops:
             yield comparator  # we don't want the 'op'
 
-    def last_child(self):
-        """An optimized version of list(get_children())[-1]
-
-        :returns: The last child.
-        :rtype: NodeNG
-        """
+    def last_child(self) -> NodeNG | None:
         # XXX maybe if self.ops:
         return self.ops[-1][1]
         # return self.left
@@ -1934,7 +1903,7 @@ class Comprehension(NodeNG):
 
         return stmts, False
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.target
         yield self.iter
 
@@ -2083,12 +2052,7 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         """
         return self._proxied.qname()
 
-    def bool_value(self, context: InferenceContext | None = None):
-        """Determine the boolean value of this node.
-
-        :returns: The boolean value of this node.
-        :rtype: bool
-        """
+    def bool_value(self, context: InferenceContext | None = None) -> bool:
         return bool(self.value)
 
 
@@ -2146,8 +2110,6 @@ class Decorators(NodeNG):
         """
         self.nodes: list[NodeNG]
         """The decorators that this node contains.
-
-        :type: list(Name or Call) or None
         """
 
         super().__init__(
@@ -2159,11 +2121,6 @@ class Decorators(NodeNG):
         )
 
     def postinit(self, nodes: list[NodeNG]) -> None:
-        """Do some setup after initialisation.
-
-        :param nodes: The decorators that this node contains.
-        :type nodes: list(Name or Call)
-        """
         self.nodes = nodes
 
     def scope(self) -> LocalsDictNodeNG:
@@ -2179,7 +2136,7 @@ class Decorators(NodeNG):
             raise ParentMissingError(target=self.parent)
         return self.parent.parent.scope()
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.nodes
 
 
@@ -2224,10 +2181,7 @@ class DelAttr(_base_nodes.ParentAssignNode):
             source code. Note: This is after the last symbol.
         """
         self.expr: NodeNG | None = None
-        """The name that this node represents.
-
-        :type: Name or None
-        """
+        """The name that this node represents."""
 
         self.attrname: str | None = attrname
         """The name of the attribute that is being deleted."""
@@ -2241,14 +2195,9 @@ class DelAttr(_base_nodes.ParentAssignNode):
         )
 
     def postinit(self, expr: NodeNG | None = None) -> None:
-        """Do some setup after initialisation.
-
-        :param expr: The name that this node represents.
-        :type expr: Name or None
-        """
         self.expr = expr
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.expr
 
 
@@ -2306,7 +2255,7 @@ class Delete(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         if targets is not None:
             self.targets = targets
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.targets
 
 
@@ -2398,28 +2347,13 @@ class Dict(NodeNG, Instance):
         """
         return "builtins.dict"
 
-    def get_children(self):
-        """Get the key and value nodes below this node.
-
-        Children are returned in the order that they are defined in the source
-        code, key first then the value.
-
-        :returns: The children.
-        :rtype: iterable(NodeNG)
-        """
+    def get_children(self) -> Iterator[NodeNG]:
         for key, value in self.items:
             yield key
             yield value
 
-    def last_child(self):
-        """An optimized version of list(get_children())[-1]
-
-        :returns: The last child, or None if no children exist.
-        :rtype: NodeNG or None
-        """
-        if self.items:
-            return self.items[-1][1]
-        return None
+    def last_child(self) -> NodeNG | None:
+        return self.items[-1][1] if self.items else None
 
     def itered(self):
         """An iterator over the keys this node contains.
@@ -2465,12 +2399,7 @@ class Dict(NodeNG, Instance):
 
         raise AstroidIndexError(index)
 
-    def bool_value(self, context: InferenceContext | None = None):
-        """Determine the boolean value of this node.
-
-        :returns: The boolean value of this node.
-        :rtype: bool
-        """
+    def bool_value(self, context: InferenceContext | None = None) -> bool:
         return bool(self.items)
 
 
@@ -2530,7 +2459,7 @@ class Expr(_base_nodes.Statement):
         """
         self.value = value
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.value
 
     def _get_yield_nodes_skip_lambdas(self):
@@ -2627,7 +2556,7 @@ class ExceptHandler(
     See astroid/protocols.py for actual implementation.
     """
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         if self.type is not None:
             yield self.type
 
@@ -2658,11 +2587,8 @@ class ExceptHandler(
             self.body = body
 
     @cached_property
-    def blockstart_tolineno(self):
-        """The line on which the beginning of this block ends.
-
-        :type: int
-        """
+    def blockstart_tolineno(self) -> int:
+        """The line on which the beginning of this block ends."""
         if self.name:
             return self.name.tolineno
         if self.type:
@@ -2790,14 +2716,11 @@ class For(
     """
 
     @cached_property
-    def blockstart_tolineno(self):
-        """The line on which the beginning of this block ends.
-
-        :type: int
-        """
+    def blockstart_tolineno(self) -> int:
+        """The line on which the beginning of this block ends."""
         return self.iter.tolineno
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.target
         yield self.iter
 
@@ -2884,7 +2807,7 @@ class Await(NodeNG):
         """
         self.value = value
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.value
 
 
@@ -3017,7 +2940,7 @@ class Attribute(NodeNG):
         """
         self.expr = expr
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.expr
 
 
@@ -3149,22 +3072,17 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
             self.is_orelse = True
 
     @cached_property
-    def blockstart_tolineno(self):
-        """The line on which the beginning of this block ends.
-
-        :type: int
-        """
+    def blockstart_tolineno(self) -> int:
+        """The line on which the beginning of this block ends."""
         return self.test.tolineno
 
-    def block_range(self, lineno):
+    def block_range(self, lineno: int) -> tuple[int, int]:
         """Get a range from the given line number to where this node ends.
 
         :param lineno: The line number to start the range at.
-        :type lineno: int
 
         :returns: The range of line numbers that this node belongs to,
             starting at the given line number.
-        :rtype: tuple(int, int)
         """
         if lineno == self.body[0].fromlineno:
             return lineno, lineno
@@ -3172,7 +3090,7 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
             return lineno, self.body[-1].tolineno
         return self._elsed_block_range(lineno, self.orelse, self.body[0].fromlineno - 1)
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.test
 
         yield from self.body
@@ -3305,7 +3223,7 @@ class IfExp(NodeNG):
         self.body = body
         self.orelse = orelse
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.test
         yield self.body
         yield self.orelse
@@ -3438,7 +3356,7 @@ class Keyword(NodeNG):
         """
         self.value = value
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.value
 
 
@@ -3651,7 +3569,7 @@ class Raise(_base_nodes.Statement):
             name.name == "NotImplementedError" for name in self.exc._get_name_nodes()
         )
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         if self.exc is not None:
             yield self.exc
 
@@ -3710,11 +3628,11 @@ class Return(_base_nodes.Statement):
         """
         self.value = value
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         if self.value is not None:
             yield self.value
 
-    def is_tuple_return(self):
+    def is_tuple_return(self) -> bool:
         return isinstance(self.value, Tuple)
 
     def _get_return_nodes_skip_functions(self):
@@ -3830,11 +3748,10 @@ class Slice(NodeNG):
         """
         return "builtins.slice"
 
-    def igetattr(self, attrname, context: InferenceContext | None = None):
+    def igetattr(self, attrname: str, context: InferenceContext | None = None):
         """Infer the possible values of the given attribute on the slice.
 
         :param attrname: The name of the attribute to infer.
-        :type attrname: str
 
         :returns: The inferred possible values.
         :rtype: iterable(NodeNG)
@@ -3851,7 +3768,7 @@ class Slice(NodeNG):
     def getattr(self, attrname, context: InferenceContext | None = None):
         return self._proxied.getattr(attrname, context)
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         if self.lower is not None:
             yield self.lower
 
@@ -3925,7 +3842,7 @@ class Starred(_base_nodes.ParentAssignNode):
     See astroid/protocols.py for actual implementation.
     """
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.value
 
 
@@ -3998,7 +3915,7 @@ class Subscript(NodeNG):
         self.value = value
         self.slice = slice
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.value
         yield self.slice
 
@@ -4083,15 +4000,13 @@ class TryExcept(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     def _infer_name(self, frame, name):
         return name
 
-    def block_range(self, lineno):
+    def block_range(self, lineno: int) -> tuple[int, int]:
         """Get a range from the given line number to where this node ends.
 
         :param lineno: The line number to start the range at.
-        :type lineno: int
 
         :returns: The range of line numbers that this node belongs to,
             starting at the given line number.
-        :rtype: tuple(int, int)
         """
         last = None
         for exhandler in self.handlers:
@@ -4103,7 +4018,7 @@ class TryExcept(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
                 last = exhandler.body[0].fromlineno - 1
         return self._elsed_block_range(lineno, self.orelse, last)
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.body
 
         yield from self.handlers or ()
@@ -4181,15 +4096,13 @@ class TryFinally(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         if finalbody is not None:
             self.finalbody = finalbody
 
-    def block_range(self, lineno):
+    def block_range(self, lineno: int) -> tuple[int, int]:
         """Get a range from the given line number to where this node ends.
 
         :param lineno: The line number to start the range at.
-        :type lineno: int
 
         :returns: The range of line numbers that this node belongs to,
             starting at the given line number.
-        :rtype: tuple(int, int)
         """
         child = self.body[0]
         # py2.5 try: except: finally:
@@ -4201,7 +4114,7 @@ class TryFinally(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
             return child.block_range(lineno)
         return self._elsed_block_range(lineno, self.finalbody)
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.body
         yield from self.finalbody
 
@@ -4360,10 +4273,10 @@ class UnaryOp(NodeNG):
         except InferenceError:
             return []
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.operand
 
-    def op_precedence(self):
+    def op_precedence(self) -> int:
         if self.op == "not":
             return OP_PRECEDENCE[self.op]
 
@@ -4445,26 +4358,21 @@ class While(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
             self.orelse = orelse
 
     @cached_property
-    def blockstart_tolineno(self):
-        """The line on which the beginning of this block ends.
-
-        :type: int
-        """
+    def blockstart_tolineno(self) -> int:
+        """The line on which the beginning of this block ends."""
         return self.test.tolineno
 
-    def block_range(self, lineno):
+    def block_range(self, lineno: int) -> tuple[int, int]:
         """Get a range from the given line number to where this node ends.
 
         :param lineno: The line number to start the range at.
-        :type lineno: int
 
         :returns: The range of line numbers that this node belongs to,
             starting at the given line number.
-        :rtype: tuple(int, int)
         """
         return self._elsed_block_range(lineno, self.orelse)
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.test
 
         yield from self.body
@@ -4560,19 +4468,11 @@ class With(
     """
 
     @cached_property
-    def blockstart_tolineno(self):
-        """The line on which the beginning of this block ends.
-
-        :type: int
-        """
+    def blockstart_tolineno(self) -> int:
+        """The line on which the beginning of this block ends."""
         return self.items[-1][0].tolineno
 
-    def get_children(self):
-        """Get the child nodes below this node.
-
-        :returns: The children.
-        :rtype: iterable(NodeNG)
-        """
+    def get_children(self) -> Iterator[NodeNG]:
         for expr, var in self.items:
             yield expr
             if var:
@@ -4635,7 +4535,7 @@ class Yield(NodeNG):
         """
         self.value = value
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         if self.value is not None:
             yield self.value
 
@@ -4735,7 +4635,7 @@ class FormattedValue(NodeNG):
         self.conversion = conversion
         self.format_spec = format_spec
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.value
 
         if self.format_spec is not None:
@@ -4799,7 +4699,7 @@ class JoinedStr(NodeNG):
         if values is not None:
             self.values = values
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.values
 
 
