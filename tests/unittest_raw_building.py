@@ -124,6 +124,9 @@ class RawBuildingTC(unittest.TestCase):
         AstroidBuilder().inspect_build(fm_getattr, "test")
 
 
+@pytest.mark.skipif(
+    "posix" not in sys.builtin_module_names, reason="Platform doesn't support posix"
+)
 def test_build_module_getattr_catch_output(
     capsys: pytest.CaptureFixture[str],
     caplog: pytest.LogCaptureFixture,
@@ -134,9 +137,9 @@ def test_build_module_getattr_catch_output(
     """
     caplog.set_level(logging.INFO)
     original_sys = sys.modules
-    original_module = sys.modules["types"]
-    expected_out = "INFO (TEST): Welcome to types!"
-    expected_err = "WARNING (TEST): Monkey-patched version of types - module getattr"
+    original_module = sys.modules["posix"]
+    expected_out = "INFO (TEST): Welcome to posix!"
+    expected_err = "WARNING (TEST): Monkey-patched version of posix - module getattr"
 
     class CustomGetattr:
         def __getattr__(self, name: str) -> Any:
@@ -145,7 +148,7 @@ def test_build_module_getattr_catch_output(
             return getattr(original_module, name)
 
     def mocked_sys_modules_getitem(name: str) -> types.ModuleType | CustomGetattr:
-        if name != "types":
+        if name != "posix":
             return original_sys[name]
         return CustomGetattr()
 
