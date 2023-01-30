@@ -3596,44 +3596,14 @@ class TryExcept(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     _astroid_fields = ("body", "handlers", "orelse")
     _multi_line_block_fields = ("body", "handlers", "orelse")
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    body: list[NodeNG]
+    """The contents of the block to catch exceptions from."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
+    handlers: list[ExceptHandler]
+    """The exception handlers."""
 
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.body: list[NodeNG] = []
-        """The contents of the block to catch exceptions from."""
-
-        self.handlers: list[ExceptHandler] = []
-        """The exception handlers."""
-
-        self.orelse: list[NodeNG] = []
-        """The contents of the ``else`` block."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+    orelse: list[NodeNG]
+    """The contents of the ``else`` block."""
 
     def postinit(
         self,
@@ -3641,20 +3611,9 @@ class TryExcept(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         handlers: list[ExceptHandler] | None = None,
         orelse: list[NodeNG] | None = None,
     ) -> None:
-        """Do some setup after initialisation.
-
-        :param body: The contents of the block to catch exceptions from.
-
-        :param handlers: The exception handlers.
-
-        :param orelse: The contents of the ``else`` block.
-        """
-        if body is not None:
-            self.body = body
-        if handlers is not None:
-            self.handlers = handlers
-        if orelse is not None:
-            self.orelse = orelse
+        self.body = body or []
+        self.handlers = handlers or []
+        self.orelse = orelse or []
 
     def _infer_name(self, frame, name):
         return name
