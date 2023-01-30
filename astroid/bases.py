@@ -694,14 +694,14 @@ class UnionType(BaseInstance):
     def callable(self) -> Literal[False]:
         return False
 
+    def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
+        return True
+
     def pytype(self) -> Literal["types.UnionType"]:
         return "types.UnionType"
 
     def display_type(self) -> str:
         return "UnionType"
-
-    def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
-        return True
 
     def __repr__(self) -> str:
         return f"<UnionType({self._proxied.name}) l.{self.lineno} at 0x{id(self)}>"
