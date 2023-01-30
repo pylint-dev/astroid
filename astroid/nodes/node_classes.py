@@ -4910,23 +4910,7 @@ class MatchOr(Pattern):
 
     _astroid_fields = ("patterns",)
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        self.patterns: list[Pattern]
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+    patterns: list[Pattern]
 
     def postinit(self, *, patterns: list[Pattern]) -> None:
         self.patterns = patterns
