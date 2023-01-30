@@ -38,6 +38,7 @@ Release date: TBA
   - ``nodes.Return
   - ``nodes.Slice``
   - ``nodes.Starred``
+  - ``nodes.TryExcept``
   - ``nodes.Subscript``
   - ``nodes.UnaryOp``
   - ``nodes.While``
