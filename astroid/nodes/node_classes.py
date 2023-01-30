@@ -4391,24 +4391,8 @@ class Match(_base_nodes.Statement):
 
     _astroid_fields = ("subject", "cases")
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        self.subject: NodeNG
-        self.cases: list[MatchCase]
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+    subject: NodeNG
+    cases: list[MatchCase]
 
     def postinit(
         self,
