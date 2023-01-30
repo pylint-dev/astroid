@@ -2082,46 +2082,11 @@ class Delete(_base_nodes.AssignTypeNode, _base_nodes.Statement):
 
     _astroid_fields = ("targets",)
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.targets: list[NodeNG] = []
-        """What is being deleted."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+    targets: list[NodeNG]
+    """What is being deleted."""
 
     def postinit(self, targets: list[NodeNG] | None = None) -> None:
-        """Do some setup after initialisation.
-
-        :param targets: What is being deleted.
-        """
-        if targets is not None:
-            self.targets = targets
+        self.targets = targets or []
 
     def get_children(self):
         yield from self.targets
