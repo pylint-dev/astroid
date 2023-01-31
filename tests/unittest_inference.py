@@ -23,7 +23,7 @@ from astroid import helpers, nodes, objects, test_utils, util
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod, UnionType
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
-from astroid.const import IS_PYPY, PY38_PLUS, PY39_PLUS, PY310_PLUS
+from astroid.const import PY38_PLUS, PY39_PLUS, PY310_PLUS
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -6934,9 +6934,6 @@ def test_imported_module_var_inferable3() -> None:
     assert i_w_val.as_string() == "['w', 'v']"
 
 
-@pytest.mark.skipif(
-    IS_PYPY, reason="Test run with coverage on PyPy sometimes raises a RecursionError"
-)
 def test_recursion_on_inference_tip() -> None:
     """Regression test for recursion in inference tip.
 

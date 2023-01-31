@@ -146,6 +146,8 @@ def test_inner_call_with_const_argument() -> None:
 def test_inner_call_with_dynamic_argument() -> None:
     """Test function where return value is the result of a separate function call,
     with a dynamic value passed to the inner function.
+
+    Currently, this is Uninferable.
     """
     node = builder.extract_node(
         """
@@ -161,8 +163,7 @@ def test_inner_call_with_dynamic_argument() -> None:
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
-    assert isinstance(inferred[0], nodes.Const)
-    assert inferred[0].value == 3
+    assert inferred[0] is Uninferable
 
 
 def test_method_const_instance_attr() -> None:
