@@ -10,11 +10,9 @@ Release date: TBA
 
   Refs PyCQA/pylint#8119
 
+* Capture and log messages emitted when inspecting a module for astroid.
 
-What's New in astroid 2.13.5?
-=============================
-Release date: TBA
-
+  Closes #1904
 
 
 What's New in astroid 2.13.4?
