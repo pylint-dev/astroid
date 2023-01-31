@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.13.4?
+What's New in astroid 2.13.5?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.13.4?
+=============================
+Release date: 2023-01-31
 
 * Fix issues with ``typing_extensions.TypeVar``.
 
