@@ -711,6 +711,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
         joinable_queue = manager.JoinableQueue()
         event = manager.Event()
         rlock = manager.RLock()
+        lock = manager.Lock()
         bounded_semaphore = manager.BoundedSemaphore()
         condition = manager.Condition()
         barrier = manager.Barrier()
@@ -735,6 +736,10 @@ class MultiprocessingBrainTest(unittest.TestCase):
         rlock = next(module["rlock"].infer())
         rlock_name = "threading._RLock"
         self.assertEqual(rlock.qname(), rlock_name)
+
+        lock = next(module["lock"].infer())
+        lock_name = "threading.lock"
+        self.assertEqual(lock.qname(), lock_name)
 
         bounded_semaphore = next(module["bounded_semaphore"].infer())
         semaphore_name = "threading.BoundedSemaphore"

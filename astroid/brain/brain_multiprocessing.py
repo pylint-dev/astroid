@@ -78,6 +78,7 @@ def _multiprocessing_managers_transform():
         Queue = JoinableQueue = queue.Queue
         Event = threading.Event
         RLock = threading.RLock
+        Lock = threading.Lock
         BoundedSemaphore = threading.BoundedSemaphore
         Condition = threading.Condition
         Barrier = threading.Barrier
