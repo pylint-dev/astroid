@@ -273,10 +273,7 @@ def infer_call(
         try:
             if hasattr(callee, "infer_call_result"):
                 callcontext.callcontext = CallContext(
-                    args=self.args,
-                    keywords=self.keywords,
-                    callee=callee,
-                    parent_call_context=callcontext.callcontext,
+                    args=self.args, keywords=self.keywords, callee=callee
                 )
                 yield from callee.infer_call_result(caller=self, context=callcontext)
         except InferenceError:

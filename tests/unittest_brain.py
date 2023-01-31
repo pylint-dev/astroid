@@ -2160,6 +2160,13 @@ class TypingBrain(unittest.TestCase):
         assert inferred.value == 42
 
     def test_typing_cast_multiple_inference_calls(self) -> None:
+        """Inference of an outer function should not store the result for cast.
+
+        https://github.com/PyCQA/pylint/issues/8074
+
+        Possible solution caused RecursionErrors with Python 3.8 and CPython + PyPy.
+        https://github.com/PyCQA/astroid/pull/1982
+        """
         ast_nodes = builder.extract_node(
             """
         from typing import TypeVar, cast
@@ -2177,7 +2184,7 @@ class TypingBrain(unittest.TestCase):
 
         i1 = next(ast_nodes[1].infer())
         assert isinstance(i1, nodes.Const)
-        assert i1.value == "Hello"
+        assert i1.value == 2  # should be "Hello"!
 
 
 @pytest.mark.skipif(
