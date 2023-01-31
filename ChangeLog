@@ -29,6 +29,13 @@ Release date: 2023-01-31
   Closes #1904
 
 
+What's New in astroid 2.13.5?
+=============================
+Release date: 2023-01-31
+
+* Revert ``CallContext`` change as it caused a ``RecursionError`` regression.
+
+
 What's New in astroid 2.13.4?
 =============================
 Release date: 2023-01-31
