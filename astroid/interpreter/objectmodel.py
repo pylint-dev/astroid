@@ -163,13 +163,6 @@ class ObjectModel:
 
 
 class ModuleModel(ObjectModel):
-    def _builtins(self):
-        builtins_ast_module = AstroidManager().builtins_module
-        return builtins_ast_module.special_attributes.lookup("__dict__")
-
-    @property
-    def attr_builtins(self):
-        return self._builtins()
 
     @property
     def attr___path__(self):
