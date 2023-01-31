@@ -182,6 +182,7 @@ Contributors
 - Alexander Scheel <alexander.m.scheel@gmail.com>
 - Alexander Presnyakov <flagist0@gmail.com>
 - Ahmed Azzaoui <ahmed.azzaoui@engie.com>
+- Ben Elliston <bje@air.net.au>
 
 Co-Author
 ---------

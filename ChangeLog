@@ -2,19 +2,29 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.14.0?
+What's New in astroid 2.15.0?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.14.1?
+=============================
+Release date: TBA
+
+
+
+What's New in astroid 2.14.0?
+=============================
+Release date: 2023-01-31
 
 * Add support for inferring binary union types added in Python 3.10.
 
   Refs PyCQA/pylint#8119
 
+* Capture and log messages emitted when inspecting a module for astroid.
 
-What's New in astroid 2.13.5?
-=============================
-Release date: TBA
-
+  Closes #1904
 
 
 What's New in astroid 2.13.4?
