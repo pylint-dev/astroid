@@ -120,7 +120,7 @@ def infer_numpy_ndarray(node, context: InferenceContext | None = None):
         def put(self, indices, values, mode='raise'): return None
         def ravel(self, order='C'): return np.ndarray([0, 0])
         def repeat(self, repeats, axis=None): return np.ndarray([0, 0])
-        def reshape(self, shape, order='C'): return np.ndarray([0, 0])
+        def reshape(self, *shape, order='C'): return np.ndarray([0, 0])
         def resize(self, new_shape, refcheck=True): return None
         def round(self, decimals=0, out=None): return np.ndarray([0, 0])
         def searchsorted(self, v, side='left', sorter=None): return np.ndarray([0, 0])
