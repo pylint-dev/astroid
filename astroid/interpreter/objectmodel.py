@@ -163,7 +163,6 @@ class ObjectModel:
 
 
 class ModuleModel(ObjectModel):
-
     @property
     def attr___path__(self):
         if not self._instance.package:
