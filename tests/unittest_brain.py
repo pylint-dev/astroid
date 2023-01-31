@@ -2164,7 +2164,7 @@ class TypingBrain(unittest.TestCase):
 
         https://github.com/PyCQA/pylint/issues/8074
 
-        Possible solution caused RecursionErrors on PyPy and Python 3.8.
+        Possible solution caused RecursionErrors with Python 3.8 and CPython + PyPy.
         https://github.com/PyCQA/astroid/pull/1982
         """
         ast_nodes = builder.extract_node(

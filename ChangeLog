@@ -12,7 +12,7 @@ What's New in astroid 2.14.1?
 =============================
 Release date: TBA
 
-* Revert ``CallContext`` change since it caused a ``RecursionError`` regression.
+* Revert ``CallContext`` change as it caused a ``RecursionError`` regression.
 
 
 
