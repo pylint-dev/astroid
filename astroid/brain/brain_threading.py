@@ -22,7 +22,7 @@ def _thread_transform():
         def locked(self):
             return False
 
-    def Lock():
+    def Lock(*args, **kwargs):
         return lock()
     """
     )
