@@ -8,12 +8,17 @@ Release date: TBA
 
 
 
-What's New in astroid 2.14.1?
+What's New in astroid 2.14.2?
 =============================
 Release date: TBA
 
-* Revert ``CallContext`` change as it caused a ``RecursionError`` regression.
 
+
+What's New in astroid 2.14.1?
+=============================
+Release date: 2023-01-31
+
+* Revert ``CallContext`` change as it caused a ``RecursionError`` regression.
 
 
 What's New in astroid 2.14.0?
@@ -27,6 +32,13 @@ Release date: 2023-01-31
 * Capture and log messages emitted when inspecting a module for astroid.
 
   Closes #1904
+
+
+What's New in astroid 2.13.5?
+=============================
+Release date: 2023-01-31
+
+* Revert ``CallContext`` change as it caused a ``RecursionError`` regression.
 
 
 What's New in astroid 2.13.4?
