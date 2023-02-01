@@ -226,7 +226,6 @@ class ZipFinder(Finder):
         super().__init__(path)
         for entry_path in path:
             if entry_path not in sys.path_importer_cache:
-                # pylint: disable=no-member
                 try:
                     sys.path_importer_cache[entry_path] = zipimport.zipimporter(  # type: ignore[assignment]
                         entry_path
@@ -310,7 +309,6 @@ def _is_setuptools_namespace(location: pathlib.Path) -> bool:
 
 def _get_zipimporters() -> Iterator[tuple[str, zipimport.zipimporter]]:
     for filepath, importer in sys.path_importer_cache.items():
-        # pylint: disable-next=no-member
         if isinstance(importer, zipimport.zipimporter):
             yield filepath, importer
 

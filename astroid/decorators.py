@@ -143,7 +143,6 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
     except StopIteration as error:
         # generator is empty
         if error.args:
-            # pylint: disable=not-a-mapping
             raise InferenceError(**error.args[0]) from error
         raise InferenceError(
             "StopIteration raised without any error information."
