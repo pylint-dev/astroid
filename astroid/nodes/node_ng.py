@@ -630,12 +630,12 @@ class NodeNG:
 
     def repr_tree(
         self,
-        ids: bool=False,
-        include_linenos: bool=False,
-        ast_state: bool=False,
-        indent: str="   ",
-        max_depth: int=0,
-        max_width: int=80,
+        ids: bool = False,
+        include_linenos: bool = False,
+        ast_state: bool = False,
+        indent: str = "   ",
+        max_depth: int = 0,
+        max_width: int = 80,
     ) -> str:
         """Get a string representation of the AST from this node.
 

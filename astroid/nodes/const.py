@@ -21,7 +21,5 @@ OPS: list[list[str]] = [
 ]
 
 OP_PRECEDENCE: dict[str, int] = {
-    op: precedence
-    for precedence, ops in enumerate(OPS)
-    for op in ops
+    op: precedence for precedence, ops in enumerate(OPS) for op in ops
 }

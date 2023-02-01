@@ -1176,7 +1176,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         # to None due to a strong interaction between Lambda and FunctionDef.
         return self.body.infer(context)
 
-    def scope_lookup(self, node, name: str, offset: int=0):
+    def scope_lookup(self, node, name: str, offset: int = 0):
         """Lookup where the given names is assigned.
 
         :param node: The node to look for assignments up to.
@@ -2143,8 +2143,7 @@ class ClassDef(
 
     @cached_property
     def blockstart_tolineno(self) -> int:
-        """The line on which the beginning of this block ends.
-        """
+        """The line on which the beginning of this block ends."""
         if self.bases:
             return self.bases[-1].tolineno
 
