@@ -150,14 +150,14 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         """The names of locals defined in this scoped node."""
         return list(self.locals.keys())
 
-    def values(self) -> list[NodeNG]:
+    def values(self) -> list[nodes.NodeNG]:
         """The nodes that define the locals in this scoped node."""
         # pylint: disable=consider-using-dict-items
         # It look like this class override items/keys/values,
         # probably not worth the headache
         return [self[key] for key in self.keys()]
 
-    def items(self) -> list[tuple[str, NodeNG]]:
+    def items(self) -> list[tuple[str, nodes.NodeNG]]:
         """Get the names of the locals and the node that defines the local."""
         return list(zip(self.keys(), self.values()))
 
