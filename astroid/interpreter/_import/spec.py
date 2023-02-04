@@ -12,9 +12,9 @@ import importlib.util
 import os
 import pathlib
 import sys
+import types
 import zipimport
 from collections.abc import Iterator, Sequence
-from importlib.abc import MetaPathFinder
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -24,9 +24,21 @@ from astroid.modutils import EXT_LIB_DIRS
 from . import util
 
 if sys.version_info >= (3, 8):
-    from typing import Literal
+    from typing import Literal, Protocol
 else:
-    from typing_extensions import Literal
+    from typing_extensions import Literal, Protocol
+
+
+# The MetaPathFinder protocol comes from typeshed, which says:
+# Intentionally omits one deprecated and one optional method of `importlib.abc.MetaPathFinder`
+class _MetaPathFinder(Protocol):
+    def find_spec(
+        self,
+        fullname: str,
+        path: Sequence[str] | None,
+        target: types.ModuleType | None = ...,
+    ) -> importlib.machinery.ModuleSpec | None:
+        ...
 
 
 class ModuleType(enum.Enum):
@@ -130,8 +142,10 @@ class ImportlibFinder(Finder):
             try:
                 spec = importlib.util.find_spec(modname)
                 if (
-                    spec and spec.loader is importlib.machinery.FrozenImporter
-                ):  # noqa: E501 # type: ignore[comparison-overlap]
+                    spec
+                    and spec.loader  # type: ignore[comparison-overlap] # noqa: E501
+                    is importlib.machinery.FrozenImporter
+                ):
                     # No need for BuiltinImporter; builtins handled above
                     return ModuleSpec(
                         name=modname,
@@ -357,7 +371,7 @@ def _find_spec_with_path(
     module_parts: list[str],
     processed: list[str],
     submodule_path: Sequence[str] | None,
-) -> tuple[Finder | MetaPathFinder, ModuleSpec]:
+) -> tuple[Finder | _MetaPathFinder, ModuleSpec]:
     for finder in _SPEC_FINDERS:
         finder_instance = finder(search_path)
         spec = finder_instance.find_module(
@@ -373,12 +387,12 @@ def _find_spec_with_path(
         if spec:
             try:
                 module_type = _MetaPathFinderModuleTypes[
-                    meta_finder.__name__  # type: ignore[attr-defined], caught by AttributeError
+                    meta_finder.__name__  # type: ignore[attr-defined] # Caught by AttributeError
                 ]
             except (KeyError, AttributeError):
                 # If we don't recognise the finder, we assume it's a regular module
                 module_type = ModuleType.PY_SOURCE
-            return (  # type: ignore[return-value]
+            return (
                 meta_finder,
                 ModuleSpec(
                     spec.name,
