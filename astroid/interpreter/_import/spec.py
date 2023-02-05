@@ -60,6 +60,8 @@ _MetaPathFinderModuleTypes: dict[str, ModuleType] = {
     # Finders created by setuptools editable installs
     "_EditableFinder": ModuleType.PY_SOURCE,
     "_EditableNamespaceFinder": ModuleType.PY_NAMESPACE,
+    # Finders create by six
+    "_SixMetaPathImporter": ModuleType.PY_SOURCE,
 }
 
 
@@ -382,10 +384,7 @@ def _find_spec_with_path(
     # Support for custom finders
     for meta_finder in sys.meta_path:
         # See if we support the customer import hook of the meta_finder
-        try:
-            meta_finder_name: str = meta_finder.__name__  # type: ignore[attr-defined]
-        except AttributeError:
-            continue
+        meta_finder_name = meta_finder.__class__.__name__
         if meta_finder_name not in _MetaPathFinderModuleTypes:
             continue
 
