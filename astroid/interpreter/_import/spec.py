@@ -387,7 +387,7 @@ def _find_spec_with_path(
         meta_finder_name = meta_finder.__class__.__name__
         if meta_finder_name not in _MetaPathFinderModuleTypes:
             # Setuptools>62 creates its EditableFinders dynamically and have
-            # "type" as their __clas__.__name__. We check __name__ as well
+            # "type" as their __class__.__name__. We check __name__ as well
             # to see if we can support the finder.
             try:
                 meta_finder_name = meta_finder.__name__
