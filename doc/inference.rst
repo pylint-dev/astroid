@@ -22,10 +22,10 @@ In both cases the :meth:`infer` must return a *generator* which iterates
 through the various *values* the node could take.
 
 In some case the value yielded will not be a node found in the AST of the node
-but an instance of a special inference class such as :class:`Uninferable`,
+but an instance of a special inference class such as :obj:`Uninferable`,
 or :class:`Instance`.
 
-Namely, the special singleton :obj:`Uninferable()` is yielded when the inference reaches
+Namely, the special singleton :obj:`Uninferable` is yielded when the inference reaches
 a point where it can't follow the code and is so unable to guess a value; and
 instances of the :class:`Instance` class are yielded when the current node is
 inferred to be an instance of some known class.

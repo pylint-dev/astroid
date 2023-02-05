@@ -209,10 +209,10 @@ def _container_generic_inference(node, context, node_type, transform):
             inferred = next(arg.infer(context=context))
         except (InferenceError, StopIteration) as exc:
             raise UseInferenceDefault from exc
-        if inferred is util.Uninferable:
+        if isinstance(inferred, util.UninferableBase):
             raise UseInferenceDefault
         transformed = transform(inferred)
-    if not transformed or transformed is util.Uninferable:
+    if not transformed or isinstance(transformed, util.UninferableBase):
         raise UseInferenceDefault
     return transformed
 
@@ -423,7 +423,9 @@ def infer_super(node, context: InferenceContext | None = None):
         except (InferenceError, StopIteration) as exc:
             raise UseInferenceDefault from exc
 
-    if mro_pointer is util.Uninferable or mro_type is util.Uninferable:
+    if isinstance(mro_pointer, util.UninferableBase) or isinstance(
+        mro_type, util.UninferableBase
+    ):
         # No way we could understand this.
         raise UseInferenceDefault
 
@@ -445,7 +447,7 @@ def _infer_getattr_args(node, context):
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
-    if obj is util.Uninferable or attr is util.Uninferable:
+    if isinstance(obj, util.UninferableBase) or isinstance(attr, util.UninferableBase):
         # If one of the arguments is something we can't infer,
         # then also make the result of the getattr call something
         # which is unknown.
@@ -467,8 +469,8 @@ def infer_getattr(node, context: InferenceContext | None = None):
     """
     obj, attr = _infer_getattr_args(node, context)
     if (
-        obj is util.Uninferable
-        or attr is util.Uninferable
+        isinstance(obj, util.UninferableBase)
+        or isinstance(attr, util.UninferableBase)
         or not hasattr(obj, "igetattr")
     ):
         return util.Uninferable
@@ -498,8 +500,8 @@ def infer_hasattr(node, context: InferenceContext | None = None):
     try:
         obj, attr = _infer_getattr_args(node, context)
         if (
-            obj is util.Uninferable
-            or attr is util.Uninferable
+            isinstance(obj, util.UninferableBase)
+            or isinstance(attr, util.UninferableBase)
             or not hasattr(obj, "getattr")
         ):
             return util.Uninferable
@@ -530,7 +532,7 @@ def infer_callable(node, context: InferenceContext | None = None):
         inferred = next(argument.infer(context=context))
     except (InferenceError, StopIteration):
         return util.Uninferable
-    if inferred is util.Uninferable:
+    if isinstance(inferred, util.UninferableBase):
         return util.Uninferable
     return nodes.Const(inferred.callable())
 
@@ -585,11 +587,11 @@ def infer_bool(node, context: InferenceContext | None = None):
         inferred = next(argument.infer(context=context))
     except (InferenceError, StopIteration):
         return util.Uninferable
-    if inferred is util.Uninferable:
+    if isinstance(inferred, util.UninferableBase):
         return util.Uninferable
 
     bool_value = inferred.bool_value(context=context)
-    if bool_value is util.Uninferable:
+    if isinstance(bool_value, util.UninferableBase):
         return util.Uninferable
     return nodes.Const(bool_value)
 
@@ -611,7 +613,7 @@ def infer_slice(node, context: InferenceContext | None = None):
     infer_func = partial(helpers.safe_infer, context=context)
     args = [infer_func(arg) for arg in args]
     for arg in args:
-        if not arg or arg is util.Uninferable:
+        if not arg or isinstance(arg, util.UninferableBase):
             raise UseInferenceDefault
         if not isinstance(arg, nodes.Const):
             raise UseInferenceDefault
@@ -725,7 +727,7 @@ def infer_isinstance(callnode, context: InferenceContext | None = None):
         raise UseInferenceDefault("TypeError: " + str(exc)) from exc
     except MroError as exc:
         raise UseInferenceDefault from exc
-    if isinstance_bool is util.Uninferable:
+    if isinstance(isinstance_bool, util.UninferableBase):
         raise UseInferenceDefault
     return nodes.Const(isinstance_bool)
 
@@ -811,7 +813,7 @@ def infer_int(node, context: InferenceContext | None = None):
         except (InferenceError, StopIteration) as exc:
             raise UseInferenceDefault(str(exc)) from exc
 
-        if first_value is util.Uninferable:
+        if isinstance(first_value, util.UninferableBase):
             raise UseInferenceDefault
 
         if isinstance(first_value, nodes.Const) and isinstance(
@@ -924,7 +926,7 @@ def _is_str_format_call(node: nodes.Call) -> bool:
 
 def _infer_str_format_call(
     node: nodes.Call, context: InferenceContext | None = None
-) -> Iterator[nodes.Const | type[util.Uninferable]]:
+) -> Iterator[nodes.Const | util.UninferableBase]:
     """Return a Const node based on the template and passed arguments."""
     call = arguments.CallSite.from_call(node, context=context)
     if isinstance(node.func.expr, nodes.Name):

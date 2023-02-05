@@ -8,7 +8,7 @@ from astroid import nodes
 from astroid.bases import Instance
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import InferenceError, NoDefault
-from astroid.util import Uninferable
+from astroid.util import Uninferable, UninferableBase
 
 
 class CallSite:
@@ -44,12 +44,12 @@ class CallSite:
         self._unpacked_kwargs = self._unpack_keywords(keywords, context=context)
 
         self.positional_arguments = [
-            arg for arg in self._unpacked_args if arg is not Uninferable
+            arg for arg in self._unpacked_args if not isinstance(arg, UninferableBase)
         ]
         self.keyword_arguments = {
             key: value
             for key, value in self._unpacked_kwargs.items()
-            if value is not Uninferable
+            if not isinstance(value, UninferableBase)
         }
 
     @classmethod
@@ -142,7 +142,7 @@ class CallSite:
                 except StopIteration:
                     continue
 
-                if inferred is Uninferable:
+                if isinstance(inferred, UninferableBase):
                     values.append(Uninferable)
                     continue
                 if not hasattr(inferred, "elts"):

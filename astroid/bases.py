@@ -28,7 +28,7 @@ from astroid.exceptions import (
     NameInferenceError,
 )
 from astroid.typing import InferBinaryOp, InferenceErrorInfo, InferenceResult
-from astroid.util import Uninferable, lazy_descriptor, lazy_import
+from astroid.util import Uninferable, UninferableBase, lazy_descriptor, lazy_import
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -79,7 +79,9 @@ def _is_property(meth, context: InferenceContext | None = None) -> bool:
     if PROPERTIES.intersection(decoratornames):
         return True
     stripped = {
-        name.split(".")[-1] for name in decoratornames if name is not Uninferable
+        name.split(".")[-1]
+        for name in decoratornames
+        if not isinstance(name, UninferableBase)
     }
     if any(name in stripped for name in POSSIBLE_PROPERTIES):
         return True
@@ -89,7 +91,7 @@ def _is_property(meth, context: InferenceContext | None = None) -> bool:
         return False
     for decorator in meth.decorators.nodes or ():
         inferred = helpers.safe_infer(decorator, context=context)
-        if inferred is None or inferred is Uninferable:
+        if inferred is None or isinstance(inferred, UninferableBase):
             continue
         if inferred.__class__.__name__ == "ClassDef":
             for base_class in inferred.bases:
@@ -144,7 +146,7 @@ class Proxy:
 
 
 def _infer_stmts(
-    stmts: Sequence[nodes.NodeNG | type[Uninferable] | Instance],
+    stmts: Sequence[nodes.NodeNG | UninferableBase | Instance],
     context: InferenceContext | None,
     frame: nodes.NodeNG | Instance | None = None,
 ) -> collections.abc.Generator[InferenceResult, None, None]:
@@ -161,7 +163,7 @@ def _infer_stmts(
         context = InferenceContext()
 
     for stmt in stmts:
-        if stmt is Uninferable:
+        if isinstance(stmt, UninferableBase):
             yield stmt
             inferred = True
             continue
@@ -172,8 +174,7 @@ def _infer_stmts(
             for constraint_stmt, potential_constraints in constraints.items():
                 if not constraint_stmt.parent_of(stmt):
                     stmt_constraints.update(potential_constraints)
-            # Mypy doesn't recognize that 'stmt' can't be Uninferable
-            for inf in stmt.infer(context=context):  # type: ignore[union-attr]
+            for inf in stmt.infer(context=context):
                 if all(constraint.satisfied_by(inf) for constraint in stmt_constraints):
                     yield inf
                     inferred = True
@@ -206,7 +207,7 @@ def _infer_method_result_truth(instance, method_name, context):
         try:
             context.callcontext = CallContext(args=[], callee=meth)
             for value in meth.infer_call_result(instance, context=context):
-                if value is Uninferable:
+                if isinstance(value, UninferableBase):
                     return value
                 try:
                     inferred = next(value.infer(context=context))
@@ -316,7 +317,7 @@ class BaseInstance(Proxy):
 
         # Otherwise we infer the call to the __call__ dunder normally
         for node in self._proxied.igetattr("__call__", context):
-            if node is Uninferable or not node.callable():
+            if isinstance(node, UninferableBase) or not node.callable():
                 continue
             for res in node.infer_call_result(caller, context):
                 inferred = True
@@ -458,7 +459,7 @@ class UnboundMethod(Proxy):
         caller: nodes.Call,
         context: InferenceContext,
     ) -> collections.abc.Generator[
-        nodes.Const | Instance | type[Uninferable], None, None
+        nodes.Const | Instance | UninferableBase, None, None
     ]:
         if not caller.args:
             return
@@ -477,7 +478,7 @@ class UnboundMethod(Proxy):
 
         node_context = context.extra_context.get(caller.args[0])
         for inferred in caller.args[0].infer(context=node_context):
-            if inferred is Uninferable:
+            if isinstance(inferred, UninferableBase):
                 yield inferred
             if isinstance(inferred, nodes.ClassDef):
                 yield Instance(inferred)

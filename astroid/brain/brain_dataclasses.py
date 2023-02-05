@@ -25,7 +25,7 @@ from astroid.exceptions import AstroidSyntaxError, InferenceError, UseInferenceD
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.typing import InferenceResult
-from astroid.util import Uninferable
+from astroid.util import Uninferable, UninferableBase
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -446,7 +446,7 @@ def _looks_like_dataclass_decorator(
     except (InferenceError, StopIteration):
         inferred = Uninferable
 
-    if inferred is Uninferable:
+    if isinstance(inferred, UninferableBase):
         if isinstance(node, nodes.Name):
             return node.name in decorator_names
         if isinstance(node, nodes.Attribute):
@@ -594,7 +594,7 @@ _INFERABLE_TYPING_TYPES = frozenset(
 
 def _infer_instance_from_annotation(
     node: nodes.NodeNG, ctx: context.InferenceContext | None = None
-) -> Iterator[type[Uninferable] | bases.Instance]:
+) -> Iterator[UninferableBase | bases.Instance]:
     """Infer an instance corresponding to the type annotation represented by node.
 
     Currently has limited support for the typing module.

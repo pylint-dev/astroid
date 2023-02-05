@@ -10,6 +10,11 @@ Release date: TBA
 
   Refs PyCQA/pylint#7306
 
+* ``Uninferable`` now has the type ``UninferableBase``. This is to facilitate correctly type annotating
+  code that uses this singleton.
+
+  Closes #1680
+
 
 What's New in astroid 2.14.2?
 =============================

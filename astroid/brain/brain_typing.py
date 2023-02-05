@@ -33,7 +33,6 @@ from astroid.nodes.node_classes import (
     Tuple,
 )
 from astroid.nodes.scoped_nodes import ClassDef, FunctionDef
-from astroid.util import Uninferable
 
 if sys.version_info >= (3, 8):
     from typing import Final
@@ -297,7 +296,7 @@ def infer_typing_alias(
         col_offset=assign_name.col_offset,
         parent=node.parent,
     )
-    if res != Uninferable and isinstance(res, ClassDef):
+    if isinstance(res, ClassDef):
         # Only add `res` as base if it's a `ClassDef`
         # This isn't the case for `typing.Pattern` and `typing.Match`
         class_def.postinit(bases=[res], body=[], decorators=None)

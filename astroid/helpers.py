@@ -63,7 +63,7 @@ def _object_type(
             yield _build_proxy_class("module", builtins)
         elif isinstance(inferred, nodes.Unknown):
             raise InferenceError
-        elif inferred is util.Uninferable:
+        elif isinstance(inferred, util.UninferableBase):
             yield inferred
         elif isinstance(inferred, (bases.Proxy, nodes.Slice)):
             yield inferred._proxied
@@ -100,7 +100,7 @@ def _object_type_is_subclass(
     else:
         class_seq = class_or_seq
 
-    if obj_type is util.Uninferable:
+    if isinstance(obj_type, util.UninferableBase):
         return util.Uninferable
 
     # Instances are not types
@@ -112,7 +112,7 @@ def _object_type_is_subclass(
     # issubclass(type, (object, 1)) evaluates to true
     # issubclass(object, (1, type)) raises TypeError
     for klass in class_seq:
-        if klass is util.Uninferable:
+        if isinstance(klass, util.UninferableBase):
             raise AstroidTypeError("arg 2 must be a type or tuple of types")
 
         for obj_subclass in obj_type.mro():
@@ -131,7 +131,7 @@ def object_isinstance(node, class_or_seq, context: InferenceContext | None = Non
     :raises AstroidTypeError: if the given ``classes_or_seq`` are not types
     """
     obj_type = object_type(node, context)
-    if obj_type is util.Uninferable:
+    if isinstance(obj_type, util.UninferableBase):
         return util.Uninferable
     return _object_type_is_subclass(obj_type, class_or_seq, context=context)
 
@@ -275,7 +275,7 @@ def object_len(node, context: InferenceContext | None = None):
         )
         raise InferenceError(message)
 
-    if inferred_node is None or inferred_node is util.Uninferable:
+    if inferred_node is None or isinstance(inferred_node, util.UninferableBase):
         raise InferenceError(node=node)
     if isinstance(inferred_node, nodes.Const) and isinstance(
         inferred_node.value, (bytes, str)
@@ -300,7 +300,7 @@ def object_len(node, context: InferenceContext | None = None):
         ) from e
 
     inferred = len_call.infer_call_result(node, context)
-    if inferred is util.Uninferable:
+    if isinstance(inferred, util.UninferableBase):
         raise InferenceError(node=node, context=context)
     result_of_len = next(inferred, None)
     if (

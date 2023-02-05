@@ -2,6 +2,9 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+
+from __future__ import annotations
+
 import importlib
 import sys
 import warnings
@@ -10,9 +13,9 @@ from typing import Any
 import lazy_object_proxy
 
 if sys.version_info >= (3, 8):
-    from typing import Literal
+    from typing import Final, Literal
 else:
-    from typing_extensions import Literal
+    from typing_extensions import Final, Literal
 
 
 def lazy_descriptor(obj):
@@ -29,11 +32,13 @@ def lazy_import(module_name: str) -> lazy_object_proxy.Proxy:
     )
 
 
-@object.__new__
-class Uninferable:
-    """Special inference object, which is returned when inference fails."""
+class UninferableBase:
+    """Special inference object, which is returned when inference fails.
 
-    def __repr__(self) -> str:
+    This is meant to be used as a singleton. Use astroid.util.Uninferable to access it.
+    """
+
+    def __repr__(self) -> Literal["Uninferable"]:
         return "Uninferable"
 
     __str__ = __repr__
@@ -47,7 +52,7 @@ class Uninferable:
             return object.__getattribute__(self, name)
         return self
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: Any, **kwargs: Any) -> UninferableBase:
         return self
 
     def __bool__(self) -> Literal[False]:
@@ -57,6 +62,9 @@ class Uninferable:
 
     def accept(self, visitor):
         return visitor.visit_uninferable(self)
+
+
+Uninferable: Final = UninferableBase()
 
 
 class BadOperationMessage:
@@ -82,7 +90,7 @@ class BadUnaryOperationMessage(BadOperationMessage):
 
     def _object_type(self, obj):
         objtype = self._object_type_helper(obj)
-        if objtype is Uninferable:
+        if isinstance(objtype, UninferableBase):
             return None
 
         return objtype
