@@ -117,6 +117,7 @@ def build_function(
     defaults: list[Any] | None = None,
     doc: str | None = None,
     kwonlyargs: list[str] | None = None,
+    kwonlydefaults: list[Any] | None = None,
 ) -> nodes.FunctionDef:
     """create and initialize an astroid FunctionDef node"""
     # first argument is now a list of decorators
@@ -140,13 +141,22 @@ def build_function(
     else:
         default_nodes = None
 
+    kwonlydefault_nodes: list[nodes.NodeNG | None] | None = []
+    if kwonlydefaults is not None:
+        for kwonlydefault in kwonlydefaults:
+            kwonlydefault_node = nodes.const_factory(kwonlydefault)
+            kwonlydefault_node.parent = argsnode
+            kwonlydefault_nodes.append(kwonlydefault_node)
+    else:
+        kwonlydefault_nodes = None
+
     argsnode.postinit(
         args=arguments,
         defaults=default_nodes,
         kwonlyargs=[
             nodes.AssignName(name=arg, parent=argsnode) for arg in kwonlyargs or ()
         ],
-        kw_defaults=[],
+        kw_defaults=kwonlydefault_nodes,
         annotations=[],
         posonlyargs=[
             nodes.AssignName(name=arg, parent=argsnode) for arg in posonlyargs or ()
@@ -200,7 +210,7 @@ def object_build_class(
 
 def _get_args_info_from_callable(
     member: _FunctionTypes,
-) -> tuple[list[str], list[str], list[Any], list[str]]:
+) -> tuple[list[str], list[str], list[Any], list[str], list[Any]]:
     """Returns args, posonlyargs, defaults, kwonlyargs.
 
     :note: currently ignores the return annotation.
@@ -210,6 +220,7 @@ def _get_args_info_from_callable(
     defaults: list[Any] = []
     posonlyargs: list[str] = []
     kwonlyargs: list[str] = []
+    kwonlydefaults: list[Any] = []
 
     for param_name, param in signature.parameters.items():
         if param.kind == inspect.Parameter.POSITIONAL_ONLY:
@@ -222,17 +233,26 @@ def _get_args_info_from_callable(
             args.append(param_name)
         elif param.kind == inspect.Parameter.KEYWORD_ONLY:
             kwonlyargs.append(param_name)
-        if param.default is not inspect._empty:
+            if param.default is not inspect.Parameter.empty:
+                kwonlydefaults.append(param.default)
+            continue
+        if param.default is not inspect.Parameter.empty:
             defaults.append(param.default)
 
-    return args, posonlyargs, defaults, kwonlyargs
+    return args, posonlyargs, defaults, kwonlyargs, kwonlydefaults
 
 
 def object_build_function(
     node: nodes.Module | nodes.ClassDef, member: _FunctionTypes, localname: str
 ) -> None:
     """create astroid for a living function object"""
-    args, posonlyargs, defaults, kwonlyargs = _get_args_info_from_callable(member)
+    (
+        args,
+        posonlyargs,
+        defaults,
+        kwonlyargs,
+        kwonly_defaults,
+    ) = _get_args_info_from_callable(member)
 
     func = build_function(
         getattr(member, "__name__", None) or localname,
@@ -241,6 +261,7 @@ def object_build_function(
         defaults,
         member.__doc__,
         kwonlyargs=kwonlyargs,
+        kwonlydefaults=kwonly_defaults,
     )
 
     node.add_local_node(func, localname)

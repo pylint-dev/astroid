@@ -10,6 +10,9 @@ Release date: TBA
 
   Refs PyCQA/pylint#7306
 
+* ``Astroid`` now retrieves the default values of keyword only arguments and sets them on
+  ``Arguments.kw_defaults``.
+
 * ``Uninferable`` now has the type ``UninferableBase``. This is to facilitate correctly type annotating
   code that uses this singleton.
 
