@@ -12,6 +12,7 @@ import importlib.util
 import os
 import pathlib
 import sys
+import types
 import zipimport
 from collections.abc import Iterator, Sequence
 from pathlib import Path
@@ -23,9 +24,21 @@ from astroid.modutils import EXT_LIB_DIRS
 from . import util
 
 if sys.version_info >= (3, 8):
-    from typing import Literal
+    from typing import Literal, Protocol
 else:
-    from typing_extensions import Literal
+    from typing_extensions import Literal, Protocol
+
+
+# The MetaPathFinder protocol comes from typeshed, which says:
+# Intentionally omits one deprecated and one optional method of `importlib.abc.MetaPathFinder`
+class _MetaPathFinder(Protocol):
+    def find_spec(
+        self,
+        fullname: str,
+        path: Sequence[str] | None,
+        target: types.ModuleType | None = ...,
+    ) -> importlib.machinery.ModuleSpec | None:
+        ...  # pragma: no cover
 
 
 class ModuleType(enum.Enum):
@@ -41,6 +54,15 @@ class ModuleType(enum.Enum):
     PY_SOURCE = enum.auto()
     PY_ZIPMODULE = enum.auto()
     PY_NAMESPACE = enum.auto()
+
+
+_MetaPathFinderModuleTypes: dict[str, ModuleType] = {
+    # Finders created by setuptools editable installs
+    "_EditableFinder": ModuleType.PY_SOURCE,
+    "_EditableNamespaceFinder": ModuleType.PY_NAMESPACE,
+    # Finders create by six
+    "_SixMetaPathImporter": ModuleType.PY_SOURCE,
+}
 
 
 class ModuleSpec(NamedTuple):
@@ -122,8 +144,10 @@ class ImportlibFinder(Finder):
             try:
                 spec = importlib.util.find_spec(modname)
                 if (
-                    spec and spec.loader is importlib.machinery.FrozenImporter
-                ):  # noqa: E501 # type: ignore[comparison-overlap]
+                    spec
+                    and spec.loader  # type: ignore[comparison-overlap] # noqa: E501
+                    is importlib.machinery.FrozenImporter
+                ):
                     # No need for BuiltinImporter; builtins handled above
                     return ModuleSpec(
                         name=modname,
@@ -226,7 +250,6 @@ class ZipFinder(Finder):
         super().__init__(path)
         for entry_path in path:
             if entry_path not in sys.path_importer_cache:
-                # pylint: disable=no-member
                 try:
                     sys.path_importer_cache[entry_path] = zipimport.zipimporter(  # type: ignore[assignment]
                         entry_path
@@ -310,7 +333,6 @@ def _is_setuptools_namespace(location: pathlib.Path) -> bool:
 
 def _get_zipimporters() -> Iterator[tuple[str, zipimport.zipimporter]]:
     for filepath, importer in sys.path_importer_cache.items():
-        # pylint: disable-next=no-member
         if isinstance(importer, zipimport.zipimporter):
             yield filepath, importer
 
@@ -349,7 +371,7 @@ def _find_spec_with_path(
     module_parts: list[str],
     processed: list[str],
     submodule_path: Sequence[str] | None,
-) -> tuple[Finder, ModuleSpec]:
+) -> tuple[Finder | _MetaPathFinder, ModuleSpec]:
     for finder in _SPEC_FINDERS:
         finder_instance = finder(search_path)
         spec = finder_instance.find_module(
@@ -358,6 +380,43 @@ def _find_spec_with_path(
         if spec is None:
             continue
         return finder_instance, spec
+
+    # Support for custom finders
+    for meta_finder in sys.meta_path:
+        # See if we support the customer import hook of the meta_finder
+        meta_finder_name = meta_finder.__class__.__name__
+        if meta_finder_name not in _MetaPathFinderModuleTypes:
+            # Setuptools>62 creates its EditableFinders dynamically and have
+            # "type" as their __class__.__name__. We check __name__ as well
+            # to see if we can support the finder.
+            try:
+                meta_finder_name = meta_finder.__name__
+            except AttributeError:
+                continue
+            if meta_finder_name not in _MetaPathFinderModuleTypes:
+                continue
+
+        module_type = _MetaPathFinderModuleTypes[meta_finder_name]
+
+        # Meta path finders are supposed to have a find_spec method since
+        # Python 3.4. However, some third-party finders do not implement it.
+        # PEP302 does not refer to find_spec as well.
+        # See: https://github.com/PyCQA/astroid/pull/1752/
+        if not hasattr(meta_finder, "find_spec"):
+            continue
+
+        spec = meta_finder.find_spec(modname, submodule_path)
+        if spec:
+            return (
+                meta_finder,
+                ModuleSpec(
+                    spec.name,
+                    module_type,
+                    spec.origin,
+                    spec.origin,
+                    spec.submodule_search_locations,
+                ),
+            )
 
     raise ImportError(f"No module named {'.'.join(module_parts)}")
 
@@ -394,7 +453,7 @@ def find_spec(modpath: list[str], path: Sequence[str] | None = None) -> ModuleSp
             _path, modname, module_parts, processed, submodule_path or path
         )
         processed.append(modname)
-        if modpath:
+        if modpath and isinstance(finder, Finder):
             submodule_path = finder.contribute_to_path(spec, processed)
 
         if spec.type == ModuleType.PKG_DIRECTORY:
