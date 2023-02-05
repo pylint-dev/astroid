@@ -226,7 +226,7 @@ def _get_args_info_from_callable(
 
     try:
         signature = inspect.signature(member)
-    except (ValueError, RuntimeError):
+    except (ValueError, TypeError, RuntimeError):
         return None, None, None, None, None
 
     for param_name, param in signature.parameters.items():
