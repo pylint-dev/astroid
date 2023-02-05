@@ -38,7 +38,7 @@ class _MetaPathFinder(Protocol):
         path: Sequence[str] | None,
         target: types.ModuleType | None = ...,
     ) -> importlib.machinery.ModuleSpec | None:
-        ...
+        ...  # pragma: no cover
 
 
 class ModuleType(enum.Enum):
@@ -248,7 +248,6 @@ class ZipFinder(Finder):
         super().__init__(path)
         for entry_path in path:
             if entry_path not in sys.path_importer_cache:
-                # pylint: disable=no-member
                 try:
                     sys.path_importer_cache[entry_path] = zipimport.zipimporter(  # type: ignore[assignment]
                         entry_path
@@ -332,7 +331,6 @@ def _is_setuptools_namespace(location: pathlib.Path) -> bool:
 
 def _get_zipimporters() -> Iterator[tuple[str, zipimport.zipimporter]]:
     for filepath, importer in sys.path_importer_cache.items():
-        # pylint: disable-next=no-member
         if isinstance(importer, zipimport.zipimporter):
             yield filepath, importer
 
@@ -383,15 +381,24 @@ def _find_spec_with_path(
 
     # Support for custom finders
     for meta_finder in sys.meta_path:
-        spec = meta_finder.find_spec(modname, submodule_path)
-        if spec:
-            try:
-                module_type = _MetaPathFinderModuleTypes[
-                    meta_finder.__name__  # type: ignore[attr-defined] # Caught by AttributeError
-                ]
-            except (KeyError, AttributeError):
-                # If we don't recognise the finder, we assume it's a regular module
-                module_type = ModuleType.PY_SOURCE
+        # See if we support the customer import hook of the meta_finder
+        try:
+            meta_finder_name: str = meta_finder.__name__  # type: ignore[attr-defined]
+        except AttributeError:
+            continue
+        if meta_finder_name not in _MetaPathFinderModuleTypes:
+            continue
+
+        module_type = _MetaPathFinderModuleTypes[meta_finder_name]
+
+        # Meta path finders are supposed to have a find_spec method since
+        # Python 3.4. However, some third-party finders do not implement it.
+        # PEP302 does not refer to find_spec as well.
+        # See: https://github.com/PyCQA/astroid/pull/1752/
+        if not hasattr(meta_finder, "find_spec"):
+            continue
+
+        if spec := meta_finder.find_spec(modname, submodule_path):
             return (
                 meta_finder,
                 ModuleSpec(
