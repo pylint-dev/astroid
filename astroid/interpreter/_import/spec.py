@@ -398,7 +398,8 @@ def _find_spec_with_path(
         if not hasattr(meta_finder, "find_spec"):
             continue
 
-        if spec := meta_finder.find_spec(modname, submodule_path):
+        spec = meta_finder.find_spec(modname, submodule_path)
+        if spec:
             return (
                 meta_finder,
                 ModuleSpec(
