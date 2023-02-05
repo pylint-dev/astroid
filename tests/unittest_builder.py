@@ -4,6 +4,8 @@
 
 """Tests for the astroid builder and rebuilder module."""
 
+from __future__ import annotations
+
 import collections
 import importlib
 import importlib.abc
@@ -12,15 +14,14 @@ import importlib.util
 import os
 import pathlib
 import py_compile
+import shutil
 import socket
 import subprocess
 import sys
 import tempfile
 import textwrap
-import types
 import unittest
 import unittest.mock
-from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
@@ -970,56 +971,54 @@ def test_arguments_of_signature() -> None:
     assert all(len(i.args.posonlyargs) == 1 for i in classdef.getattr("__dir__"))
 
 
-def test_c_module_text_signature() -> None:
+@pytest.mark.skipif(
+    shutil.which("python") is None,
+    reason="python executable is required for this test to work",
+)
+def test_c_module_text_signature(tmp_path: Path) -> None:
     """Test for c-extensions with invalid __text_signature__ attribute."""
 
-    def _find_dot_so_files(path: Path) -> Iterator[Path]:
-        for entry in path.iterdir():
-            if entry.suffix in importlib.machinery.EXTENSION_SUFFIXES:
-                yield entry
+    # Set up temporary directory with a c-extension module
+    (tmp_path / "c_extension").mkdir()
+    c_extension_path = Path(resources.RESOURCE_PATH) / "c_module_invalid_text_signature"
+    for file in c_extension_path.iterdir():
+        if file.is_file():
+            shutil.copy(file, tmp_path / "c_extension" / file.name)
 
-    def _import_module(path: Path, module_full_name: str) -> types.ModuleType:
-        spec = importlib.util.spec_from_file_location(module_full_name, path)
-        if spec is None:
-            raise RuntimeError(
-                f"Cannot find spec for module {module_full_name} at {path}"
-            )
-        py_mod = importlib.util.module_from_spec(spec)
-        loader = spec.loader
-        assert isinstance(loader, importlib.abc.Loader), loader
-        loader.exec_module(py_mod)
-        return py_mod
+    (tmp_path / "c_extension" / "mymod").mkdir()
+    package_path = c_extension_path / "mymod"
+    for file in package_path.iterdir():
+        if file.is_file():
+            shutil.copy(file, tmp_path / "c_extension" / "mymod" / file.name)
 
-    c_module_invalid_text_signature = (
-        Path(resources.RESOURCE_PATH) / "c_module_invalid_text_signature"
-    )
-    package_path = c_module_invalid_text_signature / "mymod"
-
-    # build extension
+    # Build the c-extension from within the extension directory
+    cwd = os.getcwd()
     try:
-        cwd = os.getcwd()
-        code, outstr = subprocess.getstatusoutput(
-            f"cd {c_module_invalid_text_signature} && python3 setup.py build_ext --inplace"
-        )
+        os.chdir(tmp_path / "c_extension")
+        subprocess.getstatusoutput("python setup.py build_ext --inplace")
+    except BaseException as exc:
+        raise AssertionError() from exc
+    finally:
         os.chdir(cwd)
 
-        assert code == 0, outstr
-
-        for p in _find_dot_so_files(package_path):
-            py_mod = _import_module(p, "mymod.base")
+    # Import the new module
+    for entry in (tmp_path / "c_extension" / "mymod").iterdir():
+        if entry.suffix in importlib.machinery.EXTENSION_SUFFIXES:
+            spec = importlib.util.spec_from_file_location("mymod.base", entry)
+            py_mod = importlib.util.module_from_spec(spec)
             break
 
-        mod = builder.AstroidBuilder().module_build(py_mod, "mymod.base")
-        as_python_string = mod.as_string()
+    # Build the module
+    mod = builder.AstroidBuilder().module_build(py_mod, "mymod.base")
 
-        assert "def invalid_text_signature():" in as_python_string
-        assert "def valid_text_signature(a='r', b=-3.14):" in as_python_string
+    # Assert that the code comes out as expected
+    as_python_string = mod.as_string()
+    assert "def invalid_text_signature():" in as_python_string
+    assert "def valid_text_signature(a='r', b=-3.14):" in as_python_string
 
-        assert mod.body[2].args.args is None
-        assert mod.body[3].args.args is not None
-    finally:
-        # cleanup
-        subprocess.getoutput(f"rm -f {package_path}/*.so")
+    # Assert that we inspect signatures
+    assert mod.body[2].args.args is None
+    assert mod.body[3].args.args is not None
 
 
 class HermeticInterpreterTest(unittest.TestCase):

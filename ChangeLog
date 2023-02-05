@@ -10,6 +10,8 @@ Release date: TBA
 
   Refs PyCQA/pylint#7306
 
+* ``Astroid`` now inspects signatures of method descriptors as well.
+
 * ``Astroid`` now retrieves the default values of keyword only arguments and sets them on
   ``Arguments.kw_defaults``.
 
