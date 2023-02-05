@@ -650,8 +650,12 @@ class Arguments(_base_nodes.AssignTypeNode):
         self.posonlyargs: list[AssignName] = []
         """The arguments that can only be passed positionally."""
 
-        self.kw_defaults: list[NodeNG | None]
-        """The default values for keyword arguments that cannot be passed positionally."""
+        self.kw_defaults: list[NodeNG | None] | None
+        """
+        The default values for keyword arguments that cannot be passed positionally.
+
+        See .args for why this can be None.
+        """
 
         self.annotations: list[NodeNG | None]
         """The type annotations of arguments that can be passed positionally."""
@@ -695,7 +699,7 @@ class Arguments(_base_nodes.AssignTypeNode):
         args: list[AssignName] | None,
         defaults: list[NodeNG] | None,
         kwonlyargs: list[AssignName],
-        kw_defaults: list[NodeNG | None],
+        kw_defaults: list[NodeNG | None] | None,
         annotations: list[NodeNG | None],
         posonlyargs: list[AssignName] | None = None,
         kwonlyargs_annotations: list[NodeNG | None] | None = None,
@@ -979,7 +983,7 @@ class Arguments(_base_nodes.AssignTypeNode):
             yield from self.defaults
         yield from self.kwonlyargs
 
-        for elt in self.kw_defaults:
+        for elt in self.kw_defaults or ():
             if elt is not None:
                 yield elt
 

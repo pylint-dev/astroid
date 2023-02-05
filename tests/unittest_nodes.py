@@ -869,7 +869,22 @@ class ArgumentsNodeTC(unittest.TestCase):
         """
         )
         args = ast["func"].args
-        self.assertTrue(args.is_argument("x"))
+        assert isinstance(args, nodes.Arguments)
+        assert args.is_argument("x")
+        assert args.kw_defaults == [None]
+
+        ast = builder.parse(
+            """
+            def func(*, x = "default"):
+                pass
+        """
+        )
+        args = ast["func"].args
+        assert isinstance(args, nodes.Arguments)
+        assert args.is_argument("x")
+        assert len(args.kw_defaults) == 1
+        assert isinstance(args.kw_defaults[0], nodes.Const)
+        assert args.kw_defaults[0].value == "default"
 
     @test_utils.require_version(minver="3.8")
     def test_positional_only(self):
