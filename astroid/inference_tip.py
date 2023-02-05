@@ -11,16 +11,11 @@ from collections.abc import Iterator
 
 import wrapt
 
-from astroid import bases, util
 from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
 from astroid.nodes import NodeNG
-from astroid.typing import InferFn
+from astroid.typing import InferenceResult, InferFn
 
-InferOptions = typing.Union[
-    NodeNG, bases.Instance, bases.UnboundMethod, typing.Type[util.Uninferable]
-]
-
-_cache: dict[tuple[InferFn, NodeNG], list[InferOptions] | None] = {}
+_cache: dict[tuple[InferFn, NodeNG], list[InferenceResult] | None] = {}
 
 
 def clear_inference_tip_cache() -> None:
@@ -31,7 +26,7 @@ def clear_inference_tip_cache() -> None:
 @wrapt.decorator
 def _inference_tip_cached(
     func: InferFn, instance: None, args: typing.Any, kwargs: typing.Any
-) -> Iterator[InferOptions]:
+) -> Iterator[InferenceResult]:
     """Cache decorator used for inference tips."""
     node = args[0]
     try:

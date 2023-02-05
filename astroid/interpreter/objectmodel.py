@@ -358,7 +358,7 @@ class FunctionModel(ObjectModel):
                 except StopIteration as e:
                     raise InferenceError(context=context, node=caller.args[0]) from e
 
-                if cls is astroid.Uninferable:
+                if isinstance(cls, util.UninferableBase):
                     raise InferenceError(
                         "Invalid class inferred", target=self, context=context
                     )

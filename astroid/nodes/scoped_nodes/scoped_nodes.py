@@ -1705,7 +1705,11 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
                 new_class.hide = True
                 new_class.parent = self
                 new_class.postinit(
-                    bases=[base for base in class_bases if base != util.Uninferable],
+                    bases=[
+                        base
+                        for base in class_bases
+                        if not isinstance(base, util.UninferableBase)
+                    ],
                     body=[],
                     decorators=[],
                     metaclass=metaclass,
@@ -1826,8 +1830,6 @@ def _is_metaclass(klass, seen=None) -> bool:
                 if isinstance(baseobj, bases.Instance):
                     # not abstract
                     return False
-                if baseobj is util.Uninferable:
-                    continue
                 if baseobj is klass:
                     continue
                 if not isinstance(baseobj, ClassDef):
@@ -2817,7 +2819,7 @@ class ClassDef(
                 return next(
                     node
                     for node in self._metaclass.infer(context=context)
-                    if node is not util.Uninferable
+                    if not isinstance(node, util.UninferableBase)
                 )
             except (InferenceError, StopIteration):
                 return None
@@ -2883,7 +2885,7 @@ class ClassDef(
                 values = [item[0] for item in slots.items]
             else:
                 values = slots.itered()
-            if values is util.Uninferable:
+            if isinstance(values, util.UninferableBase):
                 continue
             if not values:
                 # Stop the iteration, because the class
@@ -2893,8 +2895,6 @@ class ClassDef(
             for elt in values:
                 try:
                     for inferred in elt.infer():
-                        if inferred is util.Uninferable:
-                            continue
                         if not isinstance(
                             inferred, node_classes.Const
                         ) or not isinstance(inferred.value, str):

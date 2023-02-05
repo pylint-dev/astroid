@@ -16,7 +16,7 @@ from astroid import extract_node, nodes
 from astroid.const import PY38_PLUS, PY310_PLUS
 from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
-from astroid.util import Uninferable
+from astroid.util import Uninferable, UninferableBase
 
 
 @contextlib.contextmanager
@@ -125,7 +125,7 @@ class ProtocolTests(unittest.TestCase):
         assert isinstance(assigned, astroid.List)
         assert assigned.as_string() == "[1, 2]"
 
-    def _get_starred_stmts(self, code: str) -> list | Uninferable:
+    def _get_starred_stmts(self, code: str) -> list | UninferableBase:
         assign_stmt = extract_node(f"{code} #@")
         starred = next(assign_stmt.nodes_of_class(nodes.Starred))
         return next(starred.assigned_stmts())
@@ -136,7 +136,7 @@ class ProtocolTests(unittest.TestCase):
         stmts = stmts.elts
         self.assertConstNodesEqual(expected, stmts)
 
-    def _helper_starred_expected(self, code: str, expected: Uninferable) -> None:
+    def _helper_starred_expected(self, code: str, expected: UninferableBase) -> None:
         stmts = self._get_starred_stmts(code)
         self.assertEqual(expected, stmts)
 

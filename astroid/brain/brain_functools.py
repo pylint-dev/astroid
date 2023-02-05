@@ -18,7 +18,7 @@ from astroid.interpreter import objectmodel
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import AssignName, Attribute, Call, Name
 from astroid.nodes.scoped_nodes import FunctionDef
-from astroid.util import Uninferable
+from astroid.util import UninferableBase
 
 LRU_CACHE = "functools.lru_cache"
 
@@ -84,7 +84,7 @@ def _functools_partial_inference(
         inferred_wrapped_function = next(partial_function.infer(context=context))
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
-    if inferred_wrapped_function is Uninferable:
+    if isinstance(inferred_wrapped_function, UninferableBase):
         raise UseInferenceDefault("Cannot infer the wrapped function")
     if not isinstance(inferred_wrapped_function, FunctionDef):
         raise UseInferenceDefault("The wrapped function is not a function")

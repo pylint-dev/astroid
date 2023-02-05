@@ -238,7 +238,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         try:
             frame = node.frame(future=True)
             for inferred in node.expr.infer():
-                if inferred is util.Uninferable:
+                if isinstance(inferred, util.UninferableBase):
                     continue
                 try:
                     # pylint: disable=unidiomatic-typecheck # We want a narrow check on the
@@ -255,10 +255,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                         # Const, Tuple or other containers that inherit from
                         # `Instance`
                         continue
-                    elif (
-                        isinstance(inferred, bases.Proxy)
-                        or inferred is util.Uninferable
-                    ):
+                    elif isinstance(inferred, (bases.Proxy, util.UninferableBase)):
                         continue
                     elif inferred.is_function:
                         iattrs = inferred.instance_attrs

@@ -101,7 +101,7 @@ def unpack_infer(stmt, context: InferenceContext | None = None):
         return {"node": stmt, "context": context}
     # else, infer recursively, except Uninferable object that should be returned as is
     for inferred in stmt.infer(context):
-        if inferred is util.Uninferable:
+        if isinstance(inferred, util.UninferableBase):
             yield inferred
         else:
             yield from unpack_infer(inferred, context)
@@ -2457,7 +2457,7 @@ class Dict(NodeNG, Instance):
                     continue
 
             for inferredkey in key.infer(context):
-                if inferredkey is util.Uninferable:
+                if isinstance(inferredkey, util.UninferableBase):
                     continue
                 if isinstance(inferredkey, Const) and isinstance(index, Const):
                     if inferredkey.value == index.value:
@@ -4951,13 +4951,11 @@ class EvaluatedObject(NodeNG):
     _astroid_fields = ("original",)
     _other_fields = ("value",)
 
-    def __init__(
-        self, original: NodeNG, value: NodeNG | type[util.Uninferable]
-    ) -> None:
+    def __init__(self, original: NodeNG, value: NodeNG | util.UninferableBase) -> None:
         self.original: NodeNG = original
         """The original node that has already been evaluated"""
 
-        self.value: NodeNG | type[util.Uninferable] = value
+        self.value: NodeNG | util.UninferableBase = value
         """The inferred value"""
 
         super().__init__(
@@ -4968,7 +4966,7 @@ class EvaluatedObject(NodeNG):
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[NodeNG | type[util.Uninferable], None, None]:
+    ) -> Generator[NodeNG | util.UninferableBase, None, None]:
         yield self.value
 
 

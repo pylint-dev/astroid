@@ -74,7 +74,7 @@ class NoneConstraint(Constraint):
     def satisfied_by(self, inferred: InferenceResult) -> bool:
         """Return True if this constraint is satisfied by the given inferred value."""
         # Assume true if uninferable
-        if inferred is util.Uninferable:
+        if isinstance(inferred, util.UninferableBase):
             return True
 
         # Return the XOR of self.negate and matches(inferred, self.CONST_NONE)

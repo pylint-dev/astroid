@@ -268,7 +268,7 @@ def infer_call(
         callcontext.extra_context = _populate_context_lookup(self, context.clone())
 
     for callee in self.func.infer(context):
-        if callee is util.Uninferable:
+        if isinstance(callee, util.UninferableBase):
             yield callee
             continue
         try:
@@ -356,7 +356,7 @@ def infer_attribute(
 ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
     """Infer an Attribute node by using getattr on the associated object."""
     for owner in self.expr.infer(context):
-        if owner is util.Uninferable:
+        if isinstance(owner, util.UninferableBase):
             yield owner
             continue
 
@@ -424,11 +424,11 @@ def infer_subscript(
 
     found_one = False
     for value in self.value.infer(context):
-        if value is util.Uninferable:
+        if isinstance(value, util.UninferableBase):
             yield util.Uninferable
             return None
         for index in self.slice.infer(context):
-            if index is util.Uninferable:
+            if isinstance(index, util.UninferableBase):
                 yield util.Uninferable
                 return None
 
@@ -459,7 +459,7 @@ def infer_subscript(
 
             # Prevent inferring if the inferred subscript
             # is the same as the original subscripted object.
-            if self is assigned or assigned is util.Uninferable:
+            if self is assigned or isinstance(assigned, util.UninferableBase):
                 yield util.Uninferable
                 return None
             yield from assigned.infer(context)
@@ -502,13 +502,13 @@ def _infer_boolop(
         return None
 
     for pair in itertools.product(*inferred_values):
-        if any(item is util.Uninferable for item in pair):
+        if any(isinstance(item, util.UninferableBase) for item in pair):
             # Can't infer the final result, just yield Uninferable.
             yield util.Uninferable
             continue
 
         bool_values = [item.bool_value() for item in pair]
-        if any(item is util.Uninferable for item in bool_values):
+        if any(isinstance(item, util.UninferableBase) for item in bool_values):
             # Can't infer the final result, just yield Uninferable.
             yield util.Uninferable
             continue
@@ -575,7 +575,7 @@ def _infer_unaryop(
                 # value and negate its result, unless it is
                 # Uninferable, which will be returned as is.
                 bool_value = operand.bool_value()
-                if bool_value is not util.Uninferable:
+                if not isinstance(bool_value, util.UninferableBase):
                     yield nodes.const_factory(not bool_value)
                 else:
                     yield util.Uninferable
@@ -595,7 +595,10 @@ def _infer_unaryop(
 
                     meth = methods[0]
                     inferred = next(meth.infer(context=context), None)
-                    if inferred is util.Uninferable or not inferred.callable():
+                    if (
+                        isinstance(inferred, util.UninferableBase)
+                        or not inferred.callable()
+                    ):
                         continue
 
                     context = copy_context(context)
@@ -639,7 +642,7 @@ def _is_not_implemented(const) -> bool:
 
 def _infer_old_style_string_formatting(
     instance: nodes.Const, other: nodes.NodeNG, context: InferenceContext
-) -> tuple[type[util.Uninferable] | nodes.Const]:
+) -> tuple[util.UninferableBase | nodes.Const]:
     """Infer the result of '"string" % ...'.
 
     TODO: Instead of returning Uninferable we should rely
@@ -699,7 +702,7 @@ def _invoke_binop_inference(
         inferred = next(method.infer(context=context))
     except StopIteration as e:
         raise InferenceError(node=method, context=context) from e
-    if inferred is util.Uninferable:
+    if isinstance(inferred, util.UninferableBase):
         raise InferenceError
     if not isinstance(
         instance, (nodes.Const, nodes.Tuple, nodes.List, nodes.ClassDef, bases.Instance)
@@ -923,7 +926,7 @@ def _infer_binary_operation(
             yield util.Uninferable
             return
         else:
-            if any(result is util.Uninferable for result in results):
+            if any(isinstance(result, util.UninferableBase) for result in results):
                 yield util.Uninferable
                 return
 
@@ -959,7 +962,7 @@ def _infer_binop(
     lhs_iter = left.infer(context=lhs_context)
     rhs_iter = right.infer(context=rhs_context)
     for lhs, rhs in itertools.product(lhs_iter, rhs_iter):
-        if any(value is util.Uninferable for value in (rhs, lhs)):
+        if any(isinstance(value, util.UninferableBase) for value in (rhs, lhs)):
             # Don't know how to process this.
             yield util.Uninferable
             return
@@ -1008,7 +1011,7 @@ def _to_literal(node: nodes.NodeNG) -> Any:
 
 def _do_compare(
     left_iter: Iterable[nodes.NodeNG], op: str, right_iter: Iterable[nodes.NodeNG]
-) -> bool | type[util.Uninferable]:
+) -> bool | util.UninferableBase:
     """
     If all possible combinations are either True or False, return that:
     >>> _do_compare([1, 2], '<=', [3, 4])
@@ -1027,7 +1030,9 @@ def _do_compare(
     op_func = COMPARE_OPS[op]
 
     for left, right in itertools.product(left_iter, right_iter):
-        if left is util.Uninferable or right is util.Uninferable:
+        if isinstance(left, util.UninferableBase) or isinstance(
+            right, util.UninferableBase
+        ):
             return util.Uninferable
 
         try:
@@ -1052,9 +1057,9 @@ def _do_compare(
 
 def _infer_compare(
     self: nodes.Compare, context: InferenceContext | None = None, **kwargs: Any
-) -> Generator[nodes.Const | type[util.Uninferable], None, None]:
+) -> Generator[nodes.Const | util.UninferableBase, None, None]:
     """Chained comparison inference logic."""
-    retval: bool | type[util.Uninferable] = True
+    retval: bool | util.UninferableBase = True
 
     ops = self.ops
     left_node = self.left
@@ -1091,7 +1096,7 @@ def _infer_augassign(
     lhs_iter = self.target.infer_lhs(context=context)
     rhs_iter = self.value.infer(context=rhs_context)
     for lhs, rhs in itertools.product(lhs_iter, rhs_iter):
-        if any(value is util.Uninferable for value in (rhs, lhs)):
+        if any(isinstance(value, util.UninferableBase) for value in (rhs, lhs)):
             # Don't know how to process this.
             yield util.Uninferable
             return
@@ -1216,7 +1221,7 @@ def infer_ifexp(
     except (InferenceError, StopIteration):
         both_branches = True
     else:
-        if test is not util.Uninferable:
+        if not isinstance(test, util.UninferableBase):
             if test.bool_value():
                 yield from self.body.infer(context=lhs_context)
             else:

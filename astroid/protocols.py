@@ -132,7 +132,7 @@ def const_infer_binary_op(
     other: InferenceResult,
     context: InferenceContext,
     _: SuccessfulInferenceResult,
-) -> Generator[ConstFactoryResult | type[util.Uninferable], None, None]:
+) -> Generator[ConstFactoryResult | util.UninferableBase, None, None]:
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, nodes.Const):
         if (
@@ -174,7 +174,7 @@ def _multiply_seq_by_int(
     filtered_elts = (
         helpers.safe_infer(elt, context) or util.Uninferable
         for elt in self.elts
-        if elt is not util.Uninferable
+        if not isinstance(elt, util.UninferableBase)
     )
     node.elts = list(filtered_elts) * other.value
     return node
@@ -184,11 +184,11 @@ def _filter_uninferable_nodes(
     elts: Sequence[InferenceResult], context: InferenceContext
 ) -> Iterator[SuccessfulInferenceResult]:
     for elt in elts:
-        if elt is util.Uninferable:
+        if isinstance(elt, util.UninferableBase):
             yield nodes.Unknown()
         else:
             for inferred in elt.infer(context):
-                if inferred is not util.Uninferable:
+                if not isinstance(inferred, util.UninferableBase):
                     yield inferred
                 else:
                     yield nodes.Unknown()
@@ -202,7 +202,7 @@ def tl_infer_binary_op(
     other: InferenceResult,
     context: InferenceContext,
     method: SuccessfulInferenceResult,
-) -> Generator[_TupleListNodeT | nodes.Const | type[util.Uninferable], None, None]:
+) -> Generator[_TupleListNodeT | nodes.Const | util.UninferableBase, None, None]:
     """Infer a binary operation on a tuple or list.
 
     The instance on which the binary operation is performed is a tuple
@@ -276,7 +276,7 @@ def _resolve_looppart(parts, assign_path, context):
     assign_path = assign_path[:]
     index = assign_path.pop(0)
     for part in parts:
-        if part is util.Uninferable:
+        if isinstance(part, util.UninferableBase):
             continue
         if not hasattr(part, "itered"):
             continue
@@ -299,7 +299,7 @@ def _resolve_looppart(parts, assign_path, context):
                 # we achieved to resolved the assignment path,
                 # don't infer the last part
                 yield assigned
-            elif assigned is util.Uninferable:
+            elif isinstance(assigned, util.UninferableBase):
                 break
             else:
                 # we are not yet on the last part of the path
@@ -546,7 +546,7 @@ def _resolve_assignment_parts(parts, assign_path, context):
             # we achieved to resolved the assignment path, don't infer the
             # last part
             yield assigned
-        elif assigned is util.Uninferable:
+        elif isinstance(assigned, util.UninferableBase):
             return
         else:
             # we are not yet on the last part of the path search on each
@@ -793,7 +793,7 @@ def starred_assigned_stmts(  # noqa: C901
         except (InferenceError, StopIteration):
             yield util.Uninferable
             return
-        if rhs is util.Uninferable or not hasattr(rhs, "itered"):
+        if isinstance(rhs, util.UninferableBase) or not hasattr(rhs, "itered"):
             yield util.Uninferable
             return
 
@@ -841,7 +841,7 @@ def starred_assigned_stmts(  # noqa: C901
         except (InferenceError, StopIteration):
             yield util.Uninferable
             return
-        if inferred_iterable is util.Uninferable or not hasattr(
+        if isinstance(inferred_iterable, util.UninferableBase) or not hasattr(
             inferred_iterable, "itered"
         ):
             yield util.Uninferable
