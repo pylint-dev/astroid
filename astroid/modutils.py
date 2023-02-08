@@ -38,7 +38,7 @@ from astroid.interpreter._import import spec, util
 if sys.version_info >= (3, 10):
     from sys import stdlib_module_names
 else:
-    from astroid._stdlib import stdlib_module_names
+    from astroid._backport_stdlib_names import stdlib_module_names
 
 logger = logging.getLogger(__name__)
 
