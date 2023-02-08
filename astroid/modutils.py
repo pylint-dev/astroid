@@ -26,6 +26,7 @@ import os
 import sys
 import sysconfig
 import types
+import warnings
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import redirect_stderr, redirect_stdout
 from functools import lru_cache
@@ -33,6 +34,11 @@ from pathlib import Path
 
 from astroid.const import IS_JYTHON, IS_PYPY
 from astroid.interpreter._import import spec, util
+
+if sys.version_info >= (3, 10):
+    from sys import stdlib_module_names
+else:
+    from astroid._stdlib import stdlib_module_names
 
 logger = logging.getLogger(__name__)
 
@@ -510,6 +516,41 @@ def is_python_source(filename: str | None) -> bool:
     return os.path.splitext(filename)[1][1:] in PY_SOURCE_EXTS
 
 
+def is_stdlib_module(modname: str) -> bool:
+    """Return: True if the modname is in the standard library"""
+    return modname.split(".")[0] in stdlib_module_names
+
+
+def module_in_path(modname: str, path: str | Iterable[str]) -> bool:
+    """Try to determine if a module is imported from one of the specified paths
+
+    :param modname: name of the module
+
+    :param path: paths to consider
+
+    :return:
+      true if the module:
+      - is located on the path listed in one of the directory in `paths`
+    """
+
+    modname = modname.split(".")[0]
+    try:
+        filename = file_from_modpath([modname])
+    except ImportError:
+        # Import failed, we can't check path if we don't know it
+        return False
+
+    if filename is None:
+        # No filename likely means it's compiled in, or potentially a namespace
+        return False
+    filename = _normalize_path(filename)
+
+    if isinstance(path, str):
+        return filename.startswith(_cache_normalize_path(path))
+
+    return any(filename.startswith(_cache_normalize_path(entry)) for entry in path)
+
+
 def is_standard_module(modname: str, std_path: Iterable[str] | None = None) -> bool:
     """Try to guess if a module is a standard python module (by default,
     see `std_path` parameter's description).
@@ -523,6 +564,11 @@ def is_standard_module(modname: str, std_path: Iterable[str] | None = None) -> b
       - is located on the path listed in one of the directory in `std_path`
       - is a built-in module
     """
+    warnings.warn(
+        "is_standard_module() is deprecated. Use, is_stdlib_module() or module_in_path() instead",
+        DeprecationWarning,
+    )
+
     modname = modname.split(".")[0]
     try:
         filename = file_from_modpath([modname])
