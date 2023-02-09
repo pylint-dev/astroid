@@ -409,7 +409,3 @@ class NumpyBrainUtilsTest(unittest.TestCase):
         node = builder.extract_node(src)
         cls_node = node.inferred()[0]
         self.assertIs(cls_node, Uninferable)
-
-
-if __name__ == "__main__":
-    unittest.main()

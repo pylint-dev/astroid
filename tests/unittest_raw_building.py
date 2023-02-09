@@ -162,7 +162,3 @@ def test_build_module_getattr_catch_output(
     assert expected_err in caplog.text
     assert not out
     assert not err
-
-
-if __name__ == "__main__":
-    unittest.main()

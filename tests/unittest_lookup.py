@@ -1008,7 +1008,3 @@ class LookupControlFlowTest(unittest.TestCase):
         _, stmts = x_name.lookup("x")
         self.assertEqual(len(stmts), 1)
         self.assertEqual(stmts[0].lineno, 8)
-
-
-if __name__ == "__main__":
-    unittest.main()

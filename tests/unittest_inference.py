@@ -7097,7 +7097,3 @@ class TestOldStyleStringFormatting:
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "My name is Daniel, I'm 12.00"
-
-
-if __name__ == "__main__":
-    unittest.main()

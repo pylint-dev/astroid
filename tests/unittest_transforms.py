@@ -238,7 +238,3 @@ class TestTransforms(unittest.TestCase):
                 import UserDict
         """
         )
-
-
-if __name__ == "__main__":
-    unittest.main()

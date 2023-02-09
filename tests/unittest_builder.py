@@ -1023,7 +1023,3 @@ class HermeticInterpreterTest(unittest.TestCase):
                 my_builder.module_build(
                     self.imported_module, modname=self.imported_module_path.stem
                 )
-
-
-if __name__ == "__main__":
-    unittest.main()

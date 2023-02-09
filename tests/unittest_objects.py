@@ -587,7 +587,3 @@ class SuperTests(unittest.TestCase):
         assert isinstance(next(init_node[1].infer()), bases.BoundMethod)
         assert isinstance(next(init_node[2].infer()), bases.BoundMethod)
         assert isinstance(next(init_node[3].infer()), bases.BoundMethod)
-
-
-if __name__ == "__main__":
-    unittest.main()

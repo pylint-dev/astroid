@@ -99,7 +99,3 @@ class NumpyBrainRandomMtrandTest(unittest.TestCase):
                     default.value for default in inferred.args.defaults
                 ]
                 self.assertEqual(default_args_values, exact_kwargs_default_values)
-
-
-if __name__ == "__main__":
-    unittest.main()

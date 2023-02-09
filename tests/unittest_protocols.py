@@ -409,7 +409,3 @@ class TestPatternMatching:
         assert match_as.name
         assigned_match_as = next(match_as.name.assigned_stmts())
         assert assigned_match_as == subject
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -399,7 +399,3 @@ class Python3TC(unittest.TestCase):
             )
             func = extract_node(code)
             self.assertEqual(func.as_string().strip(), code.strip())
-
-
-if __name__ == "__main__":
-    unittest.main()

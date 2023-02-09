@@ -2891,7 +2891,3 @@ def test_deprecation_of_doc_attribute() -> None:
         node_class = nodes.ClassDef(name="MyClass", doc="Docstring")
         node_func = nodes.FunctionDef(name="MyFunction", doc="Docstring")
         assert len(records) == 3
-
-
-if __name__ == "__main__":
-    unittest.main()

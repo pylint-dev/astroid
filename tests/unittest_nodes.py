@@ -1947,7 +1947,3 @@ class TestPatternMatching:
             case1.pattern.cls,
             *case1.pattern.kwd_patterns,
         ]
-
-
-if __name__ == "__main__":
-    unittest.main()

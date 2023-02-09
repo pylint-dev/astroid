@@ -3489,7 +3489,3 @@ def test_no_attributeerror_on_self_referential_length_check() -> None:
         )
         assert isinstance(node, nodes.NodeNG)
         node.inferred()
-
-
-if __name__ == "__main__":
-    unittest.main()

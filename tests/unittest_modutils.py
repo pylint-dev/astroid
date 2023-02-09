@@ -446,7 +446,3 @@ class ExtensionPackageWhitelistTest(unittest.TestCase):
 @pytest.mark.skipif(not HAS_URLLIB3, reason="This test requires urllib3.")
 def test_file_info_from_modpath__SixMetaPathImporter() -> None:
     assert modutils.file_info_from_modpath(["urllib3.packages.six.moves.http_client"])
-
-
-if __name__ == "__main__":
-    unittest.main()
