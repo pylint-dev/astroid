@@ -2,8 +2,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
-"""Tests for basic functionality in astroid.brain."""
-
 from __future__ import annotations
 
 import io
@@ -20,7 +18,6 @@ import astroid
 from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
 from astroid.brain.brain_namedtuple_enum import _get_namedtuple_fields
-from astroid.const import PY39_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -79,59 +76,6 @@ except ImportError:
 def assertEqualMro(klass: ClassDef, expected_mro: list[str]) -> None:
     """Check mro names."""
     assert [member.qname() for member in klass.mro()] == expected_mro
-
-
-class HashlibTest(unittest.TestCase):
-    def _assert_hashlib_class(self, class_obj: ClassDef) -> None:
-        self.assertIn("update", class_obj)
-        self.assertIn("digest", class_obj)
-        self.assertIn("hexdigest", class_obj)
-        self.assertIn("block_size", class_obj)
-        self.assertIn("digest_size", class_obj)
-        # usedforsecurity was added in Python 3.9, see 8e7174a9
-        self.assertEqual(len(class_obj["__init__"].args.args), 3 if PY39_PLUS else 2)
-        self.assertEqual(
-            len(class_obj["__init__"].args.defaults), 2 if PY39_PLUS else 1
-        )
-        self.assertEqual(len(class_obj["update"].args.args), 2)
-
-    def test_hashlib(self) -> None:
-        """Tests that brain extensions for hashlib work."""
-        hashlib_module = MANAGER.ast_from_module_name("hashlib")
-        for class_name in (
-            "md5",
-            "sha1",
-            "sha224",
-            "sha256",
-            "sha384",
-            "sha512",
-            "sha3_224",
-            "sha3_256",
-            "sha3_384",
-            "sha3_512",
-        ):
-            class_obj = hashlib_module[class_name]
-            self._assert_hashlib_class(class_obj)
-            self.assertEqual(len(class_obj["digest"].args.args), 1)
-            self.assertEqual(len(class_obj["hexdigest"].args.args), 1)
-
-    def test_shake(self) -> None:
-        """Tests that the brain extensions for the hashlib shake algorithms work."""
-        hashlib_module = MANAGER.ast_from_module_name("hashlib")
-        for class_name in ("shake_128", "shake_256"):
-            class_obj = hashlib_module[class_name]
-            self._assert_hashlib_class(class_obj)
-            self.assertEqual(len(class_obj["digest"].args.args), 2)
-            self.assertEqual(len(class_obj["hexdigest"].args.args), 2)
-
-    def test_blake2(self) -> None:
-        """Tests that the brain extensions for the hashlib blake2 hash functions work."""
-        hashlib_module = MANAGER.ast_from_module_name("hashlib")
-        for class_name in ("blake2b", "blake2s"):
-            class_obj = hashlib_module[class_name]
-            self.assertEqual(len(class_obj["__init__"].args.args), 2)
-            self.assertEqual(len(class_obj["digest"].args.args), 1)
-            self.assertEqual(len(class_obj["hexdigest"].args.args), 1)
 
 
 class CollectionsDequeTests(unittest.TestCase):
