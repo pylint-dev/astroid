@@ -111,7 +111,3 @@ class InferenceUtil(unittest.TestCase):
         inferred = next(node.infer())
         with self.assertRaises(InferenceError):
             list(nodes.unpack_infer(inferred))
-
-
-if __name__ == "__main__":
-    unittest.main()

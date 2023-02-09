@@ -457,7 +457,3 @@ class ClearCacheTest(unittest.TestCase):
         isinstance_call = astroid.extract_node("isinstance(1, int)")
         inferred = next(isinstance_call.infer())
         self.assertIs(inferred.value, True)
-
-
-if __name__ == "__main__":
-    unittest.main()

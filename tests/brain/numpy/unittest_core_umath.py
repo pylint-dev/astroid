@@ -239,7 +239,3 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
                             f" as a ndarray and not as {effective_infer}"
                         ),
                     )
-
-
-if __name__ == "__main__":
-    unittest.main()

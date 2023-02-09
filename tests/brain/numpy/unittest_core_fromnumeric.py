@@ -44,7 +44,3 @@ class BrainNumpyCoreFromNumericTest(unittest.TestCase):
                     inferred_values[-1].pytype() in licit_array_types,
                     msg=f"Illicit type for {func_[0]:s} ({inferred_values[-1].pytype()})",
                 )
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -439,7 +439,3 @@ def test_recursion_during_inference(mocked) -> None:
     with pytest.raises(InferenceError) as error:
         next(node.infer())
     assert error.value.message.startswith("RecursionError raised")
-
-
-if __name__ == "__main__":
-    unittest.main()

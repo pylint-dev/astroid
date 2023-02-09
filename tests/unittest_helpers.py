@@ -258,7 +258,3 @@ class TestHelpers(unittest.TestCase):
         builtin_type = self._extract("type")
         self.assertTrue(helpers.is_supertype(builtin_type, cls_a))
         self.assertTrue(helpers.is_subtype(cls_a, builtin_type))
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -168,7 +168,3 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
         cls_node = node.inferred()[0]
         self.assertIsInstance(cls_node, nodes.ClassDef)
         self.assertEqual(cls_node.name, "ndarray")
-
-
-if __name__ == "__main__":
-    unittest.main()

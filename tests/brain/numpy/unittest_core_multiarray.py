@@ -188,7 +188,3 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
                             func_[0], inferred_values[-1].pytype()
                         ),
                     )
-
-
-if __name__ == "__main__":
-    unittest.main()

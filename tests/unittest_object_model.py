@@ -832,7 +832,3 @@ class LruCacheModelTest(unittest.TestCase):
         self.assertEqual(wrapped.name, "foo")
         cache_info = next(ast_nodes[2].infer())
         self.assertIsInstance(cache_info, astroid.Instance)
-
-
-if __name__ == "__main__":
-    unittest.main()
