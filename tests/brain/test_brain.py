@@ -8,7 +8,6 @@ import io
 import re
 import sys
 import unittest
-import warnings
 
 import pytest
 
@@ -23,14 +22,6 @@ from astroid.exceptions import (
 )
 from astroid.nodes.node_classes import Const
 from astroid.nodes.scoped_nodes import ClassDef
-
-try:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-        import nose  # pylint: disable=unused-import
-    HAS_NOSE = True
-except ImportError:
-    HAS_NOSE = False
 
 try:
     import dateutil  # pylint: disable=unused-import
@@ -130,32 +121,6 @@ class ModuleExtenderTest(unittest.TestCase):
         for extender, _ in transformer.transforms[nodes.Module]:
             n = nodes.Module("__main__")
             extender(n)
-
-
-@unittest.skipUnless(HAS_NOSE, "This test requires nose library.")
-class NoseBrainTest(unittest.TestCase):
-    def test_nose_tools(self):
-        methods = builder.extract_node(
-            """
-        from nose.tools import assert_equal
-        from nose.tools import assert_equals
-        from nose.tools import assert_true
-        assert_equal = assert_equal #@
-        assert_true = assert_true #@
-        assert_equals = assert_equals #@
-        """
-        )
-        assert isinstance(methods, list)
-        assert_equal = next(methods[0].value.infer())
-        assert_true = next(methods[1].value.infer())
-        assert_equals = next(methods[2].value.infer())
-
-        self.assertIsInstance(assert_equal, astroid.BoundMethod)
-        self.assertIsInstance(assert_true, astroid.BoundMethod)
-        self.assertIsInstance(assert_equals, astroid.BoundMethod)
-        self.assertEqual(assert_equal.qname(), "unittest.case.TestCase.assertEqual")
-        self.assertEqual(assert_true.qname(), "unittest.case.TestCase.assertTrue")
-        self.assertEqual(assert_equals.qname(), "unittest.case.TestCase.assertEqual")
 
 
 class ThreadingBrainTest(unittest.TestCase):
