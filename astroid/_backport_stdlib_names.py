@@ -358,4 +358,4 @@ elif sys.version_info[:2] == (3, 8):
 elif sys.version_info[:2] == (3, 9):
     stdlib_module_names = PY_3_9
 else:
-    stdlib_module_names = sys.stdlib_module_names
+    stdlib_module_names = sys.stdlib_module_names  # pragma: no cover
