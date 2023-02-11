@@ -137,10 +137,14 @@ def are_exclusive(stmt1, stmt2, exceptions: list[str] | None = None) -> bool:
             # if the common parent is a If or TryExcept statement, look if
             # nodes are in exclusive branches
             if isinstance(node, If) and exceptions is None:
-                if (
-                    node.locate_child(previous)[1]
-                    is not node.locate_child(children[node])[1]
-                ):
+                c2attr, c2node = node.locate_child(previous)
+                c1attr, c1node = node.locate_child(children[node])
+                if "test" in (c1attr, c2attr):
+                    # If any node is `If.test`, then it must be inclusive with
+                    # the other node (`If.body` and `If.orelse`)
+                    return False
+                if c1attr != c2attr:
+                    # different `If` branches (`If.body` and `If.orelse`)
                     return True
             elif isinstance(node, TryExcept):
                 c2attr, c2node = node.locate_child(previous)

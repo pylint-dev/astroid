@@ -4,7 +4,7 @@
 
 import unittest
 
-from astroid import Uninferable, builder, nodes
+from astroid import Uninferable, builder, nodes, extract_node
 from astroid.exceptions import InferenceError
 
 
@@ -29,6 +29,44 @@ class InferenceUtil(unittest.TestCase):
         assert xnames[1].lineno == 6
         self.assertEqual(nodes.are_exclusive(xass1, xnames[1]), False)
         self.assertEqual(nodes.are_exclusive(xass1, xnames[2]), False)
+
+    def test_not_exclusive_walrus_operator(self) -> None:
+        from astroid import nodes, extract_node
+
+        node_if, node_body, node_or_else = extract_node("""
+        if val := True:  #@
+            print(val)  #@  
+        else:
+            print(val)  #@
+        """)
+        node_if: nodes.If
+        node_walrus = next(node_if.nodes_of_class(nodes.NamedExpr))
+
+        self.assertEqual(nodes.are_exclusive(node_walrus, node_if), False)
+        self.assertEqual(nodes.are_exclusive(node_walrus, node_body), False)
+        self.assertEqual(nodes.are_exclusive(node_walrus, node_or_else), False)
+
+        self.assertEqual(nodes.are_exclusive(node_if, node_body), False)
+        self.assertEqual(nodes.are_exclusive(node_if, node_or_else), False)
+        self.assertEqual(nodes.are_exclusive(node_body, node_or_else), True)
+
+    def test_not_exclusive_walrus_operator_nested(self) -> None:
+        node_if, node_body, node_or_else = extract_node("""
+        if all((last_val := i) % 2 == 0 for i in range(10)): #@
+            print(last_val)  #@
+        else:
+            print(last_val)  #@
+        """)
+        node_if: nodes.If
+        node_walrus = next(node_if.nodes_of_class(nodes.NamedExpr))
+
+        self.assertEqual(nodes.are_exclusive(node_walrus, node_if), False)
+        self.assertEqual(nodes.are_exclusive(node_walrus, node_body), False)
+        self.assertEqual(nodes.are_exclusive(node_walrus, node_or_else), False)
+
+        self.assertEqual(nodes.are_exclusive(node_if, node_body), False)
+        self.assertEqual(nodes.are_exclusive(node_if, node_or_else), False)
+        self.assertEqual(nodes.are_exclusive(node_body, node_or_else), True)
 
     def test_if(self) -> None:
         module = builder.parse(
