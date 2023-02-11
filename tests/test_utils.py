@@ -4,7 +4,10 @@
 
 import unittest
 
+import pytest as pytest
+
 from astroid import Uninferable, builder, extract_node, nodes
+from astroid.const import PY38_PLUS
 from astroid.exceptions import InferenceError
 
 
@@ -30,6 +33,7 @@ class InferenceUtil(unittest.TestCase):
         self.assertEqual(nodes.are_exclusive(xass1, xnames[1]), False)
         self.assertEqual(nodes.are_exclusive(xass1, xnames[2]), False)
 
+    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
     def test_not_exclusive_walrus_operator(self) -> None:
         from astroid import extract_node, nodes
 
@@ -52,6 +56,7 @@ class InferenceUtil(unittest.TestCase):
         self.assertEqual(nodes.are_exclusive(node_if, node_or_else), False)
         self.assertEqual(nodes.are_exclusive(node_body, node_or_else), True)
 
+    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
     def test_not_exclusive_walrus_operator_nested(self) -> None:
         node_if, node_body, node_or_else = extract_node(
             """
