@@ -4,7 +4,7 @@
 
 import unittest
 
-from astroid import Uninferable, builder, nodes, extract_node
+from astroid import Uninferable, builder, extract_node, nodes
 from astroid.exceptions import InferenceError
 
 
@@ -31,14 +31,16 @@ class InferenceUtil(unittest.TestCase):
         self.assertEqual(nodes.are_exclusive(xass1, xnames[2]), False)
 
     def test_not_exclusive_walrus_operator(self) -> None:
-        from astroid import nodes, extract_node
+        from astroid import extract_node, nodes
 
-        node_if, node_body, node_or_else = extract_node("""
+        node_if, node_body, node_or_else = extract_node(
+            """
         if val := True:  #@
-            print(val)  #@  
+            print(val)  #@
         else:
             print(val)  #@
-        """)
+        """
+        )
         node_if: nodes.If
         node_walrus = next(node_if.nodes_of_class(nodes.NamedExpr))
 
@@ -51,12 +53,14 @@ class InferenceUtil(unittest.TestCase):
         self.assertEqual(nodes.are_exclusive(node_body, node_or_else), True)
 
     def test_not_exclusive_walrus_operator_nested(self) -> None:
-        node_if, node_body, node_or_else = extract_node("""
+        node_if, node_body, node_or_else = extract_node(
+            """
         if all((last_val := i) % 2 == 0 for i in range(10)): #@
             print(last_val)  #@
         else:
             print(last_val)  #@
-        """)
+        """
+        )
         node_if: nodes.If
         node_walrus = next(node_if.nodes_of_class(nodes.NamedExpr))
 
