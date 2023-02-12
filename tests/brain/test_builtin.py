@@ -9,7 +9,7 @@ import unittest
 import pytest
 
 from astroid import nodes, objects, util
-from astroid.builder import _extract_single_node
+from astroid.builder import _extract_single_node, extract_node
 
 
 class BuiltinsTest(unittest.TestCase):
@@ -127,3 +127,22 @@ class TestStringNodes:
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "My name is Daniel, I'm 12.00"
+
+    def test_string_format_in_dataclass_pylint8109(self) -> None:
+        """https://github.com/PyCQA/pylint/issues/8109"""
+        function_def = extract_node(
+            """
+from dataclasses import dataclass
+
+@dataclass
+class Number:
+    amount: int | float
+    round: int = 2
+
+    def __str__(self): #@
+        number_format = "{:,.%sf}" % self.round
+        return number_format.format(self.amount).rstrip("0").rstrip(".")
+"""
+        )
+        inferit = function_def.infer_call_result(function_def, context=None)
+        assert [a.name for a in inferit] == [util.Uninferable]
