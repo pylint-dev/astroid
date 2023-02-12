@@ -32,10 +32,10 @@ from contextlib import redirect_stderr, redirect_stdout
 from functools import lru_cache
 from pathlib import Path
 
-from astroid.const import IS_JYTHON, IS_PYPY
+from astroid.const import IS_JYTHON, IS_PYPY, PY310_PLUS
 from astroid.interpreter._import import spec, util
 
-if sys.version_info >= (3, 10):
+if PY310_PLUS:
     from sys import stdlib_module_names
 else:
     from astroid._backport_stdlib_names import stdlib_module_names
