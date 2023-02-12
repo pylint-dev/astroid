@@ -14,8 +14,7 @@ import sys
 
 # TODO: Remove this file when Python 3.9 is no longer supported
 
-# Standard library modules common to 3.7 - 3.9
-_COMMON = frozenset(
+PY_3_7 = frozenset(
     {
         "__future__",
         "_abc",
@@ -45,6 +44,7 @@ _COMMON = frozenset(
         "_datetime",
         "_dbm",
         "_decimal",
+        "_dummy_thread",
         "_elementtree",
         "_functools",
         "_gdbm",
@@ -144,6 +144,7 @@ _COMMON = frozenset(
         "dis",
         "distutils",
         "doctest",
+        "dummy_threading",
         "email",
         "encodings",
         "ensurepip",
@@ -187,6 +188,7 @@ _COMMON = frozenset(
         "locale",
         "logging",
         "lzma",
+        "macpath",
         "mailbox",
         "mailcap",
         "marshal",
@@ -316,35 +318,28 @@ _COMMON = frozenset(
     }
 )
 
-PY_3_7 = frozenset(
-    _COMMON
-    | {
-        "_dummy_thread",
-        "dummy_threading",
+PY_3_8 = frozenset(
+    PY_3_7
+    - {
         "macpath",
     }
-)
-
-PY_3_8 = frozenset(
-    _COMMON
     | {
-        "_dummy_thread",
         "_posixshmem",
         "_statistics",
         "_xxsubinterpreters",
-        "dummy_threading",
     }
 )
 
 PY_3_9 = frozenset(
-    _COMMON
+    PY_3_8
+    - {
+        "_dummy_thread",
+        "dummy_threading",
+    }
     | {
         "_aix_support",
         "_bootsubprocess",
         "_peg_parser",
-        "_posixshmem",
-        "_statistics",
-        "_xxsubinterpreters",
         "_zoneinfo",
         "graphlib",
         "zoneinfo",
@@ -358,4 +353,4 @@ elif sys.version_info[:2] == (3, 8):
 elif sys.version_info[:2] == (3, 9):
     stdlib_module_names = PY_3_9
 else:
-    stdlib_module_names = sys.stdlib_module_names  # pragma: no cover
+    raise AssertionError("This module is only intended as a backport for Python <= 3.9")

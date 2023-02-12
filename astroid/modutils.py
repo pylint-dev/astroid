@@ -567,6 +567,7 @@ def is_standard_module(modname: str, std_path: Iterable[str] | None = None) -> b
     warnings.warn(
         "is_standard_module() is deprecated. Use, is_stdlib_module() or module_in_path() instead",
         DeprecationWarning,
+        stacklevel=2,
     )
 
     modname = modname.split(".")[0]
