@@ -6,6 +6,11 @@ What's New in astroid 2.15.0?
 =============================
 Release date: TBA
 
+* ``Formattedvalue.postinit`` is now keyword only. This is to allow correct typing of the
+  ``Formattedvalue`` class.
+
+  Refs #1516
+
 * ``Astroid`` now supports custom import hooks.
 
   Refs PyCQA/pylint#7306
