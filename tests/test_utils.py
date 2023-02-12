@@ -4,7 +4,7 @@
 
 import unittest
 
-import pytest as pytest
+import pytest
 
 from astroid import Uninferable, builder, extract_node, nodes
 from astroid.const import PY38_PLUS
@@ -35,8 +35,6 @@ class InferenceUtil(unittest.TestCase):
 
     @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
     def test_not_exclusive_walrus_operator(self) -> None:
-        from astroid import extract_node, nodes
-
         node_if, node_body, node_or_else = extract_node(
             """
         if val := True:  #@
@@ -48,13 +46,13 @@ class InferenceUtil(unittest.TestCase):
         node_if: nodes.If
         node_walrus = next(node_if.nodes_of_class(nodes.NamedExpr))
 
-        self.assertEqual(nodes.are_exclusive(node_walrus, node_if), False)
-        self.assertEqual(nodes.are_exclusive(node_walrus, node_body), False)
-        self.assertEqual(nodes.are_exclusive(node_walrus, node_or_else), False)
+        assert nodes.are_exclusive(node_walrus, node_if) is False
+        assert nodes.are_exclusive(node_walrus, node_body) is False
+        assert nodes.are_exclusive(node_walrus, node_or_else) is False
 
-        self.assertEqual(nodes.are_exclusive(node_if, node_body), False)
-        self.assertEqual(nodes.are_exclusive(node_if, node_or_else), False)
-        self.assertEqual(nodes.are_exclusive(node_body, node_or_else), True)
+        assert nodes.are_exclusive(node_if, node_body) is False
+        assert nodes.are_exclusive(node_if, node_or_else) is False
+        assert nodes.are_exclusive(node_body, node_or_else) is True
 
     @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
     def test_not_exclusive_walrus_operator_nested(self) -> None:
@@ -69,13 +67,13 @@ class InferenceUtil(unittest.TestCase):
         node_if: nodes.If
         node_walrus = next(node_if.nodes_of_class(nodes.NamedExpr))
 
-        self.assertEqual(nodes.are_exclusive(node_walrus, node_if), False)
-        self.assertEqual(nodes.are_exclusive(node_walrus, node_body), False)
-        self.assertEqual(nodes.are_exclusive(node_walrus, node_or_else), False)
+        assert nodes.are_exclusive(node_walrus, node_if) is False
+        assert nodes.are_exclusive(node_walrus, node_body) is False
+        assert nodes.are_exclusive(node_walrus, node_or_else) is False
 
-        self.assertEqual(nodes.are_exclusive(node_if, node_body), False)
-        self.assertEqual(nodes.are_exclusive(node_if, node_or_else), False)
-        self.assertEqual(nodes.are_exclusive(node_body, node_or_else), True)
+        assert nodes.are_exclusive(node_if, node_body) is False
+        assert nodes.are_exclusive(node_if, node_or_else) is False
+        assert nodes.are_exclusive(node_body, node_or_else) is True
 
     def test_if(self) -> None:
         module = builder.parse(
