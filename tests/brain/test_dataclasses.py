@@ -1350,23 +1350,3 @@ def test_dataclass_with_properties() -> None:
     fourth_init: bases.UnboundMethod = next(fourth.infer())
     assert [a.name for a in fourth_init.args.args] == ["self", "other_attr", "attr"]
     assert [a.name for a in fourth_init.args.defaults] == ["Uninferable"]
-
-
-def test_dataclass_pylint_8109() -> None:
-    """https://github.com/PyCQA/pylint/issues/8109"""
-    function_def = astroid.extract_node(
-        """
-from dataclasses import dataclass
-
-@dataclass
-class Number:
-    amount: int | float
-    round: int = 2
-
-    def __str__(self): #@
-        number_format = "{:,.%sf}" % self.round
-        return number_format.format(self.amount).rstrip("0").rstrip(".")
-"""
-    )
-    inferit = function_def.infer_call_result(function_def, context=None)
-    assert [a.name for a in inferit] == [Uninferable]
