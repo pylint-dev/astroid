@@ -19,9 +19,10 @@ Release date: TBA
   Closes #1680
 
 
+
 What's New in astroid 2.14.2?
 =============================
-Release date: TBA
+Release date: 2023-02-12
 
 * '_infer_str_format_call' won't crash anymore when the string it analyses are uninferable.
 
