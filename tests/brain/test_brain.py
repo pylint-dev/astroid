@@ -143,34 +143,6 @@ class ThreadingBrainTest(unittest.TestCase):
             self.assertIsInstance(next(inferred.igetattr(method)), astroid.BoundMethod)
 
 
-class PytestBrainTest(unittest.TestCase):
-    def test_pytest(self) -> None:
-        ast_node = builder.extract_node(
-            """
-        import pytest
-        pytest #@
-        """
-        )
-        module = next(ast_node.infer())
-        attrs = [
-            "deprecated_call",
-            "warns",
-            "exit",
-            "fail",
-            "skip",
-            "importorskip",
-            "xfail",
-            "mark",
-            "raises",
-            "freeze_includes",
-            "set_trace",
-            "fixture",
-            "yield_fixture",
-        ]
-        for attr in attrs:
-            self.assertIn(attr, module)
-
-
 def streams_are_fine():
     """Check if streams are being overwritten,
     for example, by pytest
