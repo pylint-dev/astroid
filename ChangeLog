@@ -18,6 +18,12 @@ Release date: TBA
 
   Closes #1680
 
+* Deprecate ``modutils.is_standard_module()``. It will be removed in the next minor release.
+  Functionality has been replaced by two new functions,
+  ``modutils.is_stdlib_module()`` and ``modutils.module_in_path()``.
+
+  Closes #2012
+
 
 
 What's New in astroid 2.14.2?

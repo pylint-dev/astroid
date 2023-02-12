@@ -20,6 +20,7 @@ from pytest import CaptureFixture, LogCaptureFixture
 
 import astroid
 from astroid import modutils
+from astroid.const import PY310_PLUS
 from astroid.interpreter._import import spec
 
 from . import resources
@@ -287,7 +288,7 @@ class GetSourceFileTest(unittest.TestCase):
         self.assertRaises(modutils.NoSourceFile, modutils.get_source_file, "whatever")
 
 
-class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
+class IsStandardModuleTest(resources.SysPathSetup, unittest.TestCase):
     """
     Return true if the module may be considered as a module from the standard
     library.
@@ -296,50 +297,153 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
     def test_datetime(self) -> None:
         # This is an interesting example, since datetime, on pypy,
         # is under lib_pypy, rather than the usual Lib directory.
-        self.assertTrue(modutils.is_standard_module("datetime"))
+        with pytest.warns(DeprecationWarning):
+            assert modutils.is_standard_module("datetime")
 
     def test_builtins(self) -> None:
-        self.assertFalse(modutils.is_standard_module("__builtin__"))
-        self.assertTrue(modutils.is_standard_module("builtins"))
+        with pytest.warns(DeprecationWarning):
+            assert not modutils.is_standard_module("__builtin__")
+        with pytest.warns(DeprecationWarning):
+            assert modutils.is_standard_module("builtins")
 
     def test_builtin(self) -> None:
-        self.assertTrue(modutils.is_standard_module("sys"))
-        self.assertTrue(modutils.is_standard_module("marshal"))
+        with pytest.warns(DeprecationWarning):
+            assert modutils.is_standard_module("sys")
+        with pytest.warns(DeprecationWarning):
+            assert modutils.is_standard_module("marshal")
 
     def test_nonstandard(self) -> None:
-        self.assertFalse(modutils.is_standard_module("astroid"))
+        with pytest.warns(DeprecationWarning):
+            assert not modutils.is_standard_module("astroid")
 
     def test_unknown(self) -> None:
-        self.assertFalse(modutils.is_standard_module("unknown"))
+        with pytest.warns(DeprecationWarning):
+            assert not modutils.is_standard_module("unknown")
 
     def test_4(self) -> None:
-        self.assertTrue(modutils.is_standard_module("hashlib"))
-        self.assertTrue(modutils.is_standard_module("pickle"))
-        self.assertTrue(modutils.is_standard_module("email"))
-        self.assertTrue(modutils.is_standard_module("io"))
-        self.assertFalse(modutils.is_standard_module("StringIO"))
-        self.assertTrue(modutils.is_standard_module("unicodedata"))
+        with pytest.warns(DeprecationWarning):
+            assert modutils.is_standard_module("hashlib")
+        with pytest.warns(DeprecationWarning):
+            assert modutils.is_standard_module("pickle")
+        with pytest.warns(DeprecationWarning):
+            assert modutils.is_standard_module("email")
+        with pytest.warns(DeprecationWarning):
+            assert modutils.is_standard_module("io")
+        with pytest.warns(DeprecationWarning):
+            assert not modutils.is_standard_module("StringIO")
+        with pytest.warns(DeprecationWarning):
+            assert modutils.is_standard_module("unicodedata")
 
     def test_custom_path(self) -> None:
         datadir = resources.find("")
         if any(datadir.startswith(p) for p in modutils.EXT_LIB_DIRS):
             self.skipTest("known breakage of is_standard_module on installed package")
 
-        self.assertTrue(modutils.is_standard_module("data.module", (datadir,)))
-        self.assertTrue(
-            modutils.is_standard_module("data.module", (os.path.abspath(datadir),))
-        )
+        with pytest.warns(DeprecationWarning):
+            assert modutils.is_standard_module("data.module", (datadir,))
+        with pytest.warns(DeprecationWarning):
+            assert modutils.is_standard_module(
+                "data.module", (os.path.abspath(datadir),)
+            )
         # "" will evaluate to cwd
-        self.assertTrue(modutils.is_standard_module("data.module", ("",)))
+        with pytest.warns(DeprecationWarning):
+            assert modutils.is_standard_module("data.module", ("",))
 
     def test_failing_edge_cases(self) -> None:
         # using a subpackage/submodule path as std_path argument
-        self.assertFalse(modutils.is_standard_module("xml.etree", etree.__path__))
+        with pytest.warns(DeprecationWarning):
+            assert not modutils.is_standard_module("xml.etree", etree.__path__)
         # using a module + object name as modname argument
-        self.assertTrue(modutils.is_standard_module("sys.path"))
+        with pytest.warns(DeprecationWarning):
+            assert modutils.is_standard_module("sys.path")
         # this is because only the first package/module is considered
-        self.assertTrue(modutils.is_standard_module("sys.whatever"))
-        self.assertFalse(modutils.is_standard_module("xml.whatever", etree.__path__))
+        with pytest.warns(DeprecationWarning):
+            assert modutils.is_standard_module("sys.whatever")
+        with pytest.warns(DeprecationWarning):
+            assert not modutils.is_standard_module("xml.whatever", etree.__path__)
+
+
+class IsStdLibModuleTest(resources.SysPathSetup, unittest.TestCase):
+    """
+    Return true if the module is path of the standard library
+    """
+
+    def test_datetime(self) -> None:
+        # This is an interesting example, since datetime, on pypy,
+        # is under lib_pypy, rather than the usual Lib directory.
+        assert modutils.is_stdlib_module("datetime")
+
+    def test_builtins(self) -> None:
+        assert not modutils.is_stdlib_module("__builtin__")
+        assert modutils.is_stdlib_module("builtins")
+
+    def test_builtin(self) -> None:
+        assert modutils.is_stdlib_module("sys")
+        assert modutils.is_stdlib_module("marshal")
+
+    def test_nonstandard(self) -> None:
+        assert not modutils.is_stdlib_module("astroid")
+
+    def test_unknown(self) -> None:
+        assert not modutils.is_stdlib_module("unknown")
+
+    def test_4(self) -> None:
+        assert modutils.is_stdlib_module("hashlib")
+        assert modutils.is_stdlib_module("pickle")
+        assert modutils.is_stdlib_module("email")
+        assert modutils.is_stdlib_module("io")
+        assert not modutils.is_stdlib_module("StringIO")
+        assert modutils.is_stdlib_module("unicodedata")
+
+    def test_subpackages(self) -> None:
+        # using a module + object name as modname argument
+        assert modutils.is_stdlib_module("sys.path")
+        # this is because only the first package/module is considered
+        assert modutils.is_stdlib_module("sys.whatever")
+
+    def test_platform_specific(self) -> None:
+        assert modutils.is_stdlib_module("_curses")
+        assert modutils.is_stdlib_module("msvcrt")
+        assert modutils.is_stdlib_module("termios")
+
+
+class ModuleInPathTest(resources.SysPathSetup, unittest.TestCase):
+    """
+    Return true if the module is imported from the specified path
+    """
+
+    def test_success(self) -> None:
+        datadir = resources.find("")
+        assert modutils.module_in_path("data.module", datadir)
+        assert modutils.module_in_path("data.module", (datadir,))
+        assert modutils.module_in_path("data.module", os.path.abspath(datadir))
+        # "" will evaluate to cwd
+        assert modutils.module_in_path("data.module", "")
+
+    def test_bad_import(self) -> None:
+        datadir = resources.find("")
+        assert not modutils.module_in_path("this_module_is_no_more", datadir)
+
+    def test_no_filename(self) -> None:
+        datadir = resources.find("")
+        assert not modutils.module_in_path("sys", datadir)
+
+    def test_failure(self) -> None:
+        datadir = resources.find("")
+        assert not modutils.module_in_path("etree", datadir)
+        assert not modutils.module_in_path("astroid", datadir)
+
+
+class BackportStdlibNamesTest(resources.SysPathSetup, unittest.TestCase):
+    """
+    Verify backport raises exception on newer versions
+    """
+
+    @pytest.mark.skipif(not PY310_PLUS, reason="Backport valid on <=3.9")
+    def test_import_error(self) -> None:
+        with pytest.raises(AssertionError):
+            # pylint: disable-next=import-outside-toplevel, unused-import
+            from astroid import _backport_stdlib_names  # noqa
 
 
 class IsRelativeTest(unittest.TestCase):

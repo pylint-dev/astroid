@@ -22,7 +22,7 @@ from astroid.exceptions import (
     AttributeInferenceError,
 )
 from astroid.interpreter._import import util
-from astroid.modutils import EXT_LIB_DIRS, is_standard_module
+from astroid.modutils import EXT_LIB_DIRS, module_in_path
 from astroid.nodes import Const
 from astroid.nodes.scoped_nodes import ClassDef
 
@@ -411,7 +411,7 @@ class ClearCacheTest(unittest.TestCase):
 
         # Generate some hits and misses
         ClassDef().lookup("garbage")
-        is_standard_module("unittest", std_path=["garbage_path"])
+        module_in_path("unittest", "garbage_path")
         util.is_namespace("unittest")
         astroid.interpreter.objectmodel.ObjectModel().attributes()
         with pytest.raises(AttributeInferenceError):

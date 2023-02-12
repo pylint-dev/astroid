@@ -30,7 +30,7 @@ from astroid.modutils import (
     get_source_file,
     is_module_name_part_of_extension_package_whitelist,
     is_python_source,
-    is_standard_module,
+    is_stdlib_module,
     load_module_from_name,
     modpath_from_file,
 )
@@ -154,7 +154,7 @@ class AstroidManager:
     def _can_load_extension(self, modname: str) -> bool:
         if self.always_load_extensions:
             return True
-        if is_standard_module(modname):
+        if is_stdlib_module(modname):
             return True
         return is_module_name_part_of_extension_package_whitelist(
             modname, self.extension_package_whitelist
