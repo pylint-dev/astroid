@@ -55,6 +55,36 @@ class InferenceUtil(unittest.TestCase):
         assert nodes.are_exclusive(node_body, node_or_else) is True
 
     @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
+    def test_not_exclusive_walrus_multiple(self) -> None:
+        node_if, body_1, body_2, or_else_1, or_else_2 = extract_node(
+            """
+        if (val := True) or (val_2 := True):  #@
+            print(val)  #@
+            print(val_2)  #@
+        else:
+            print(val)  #@
+            print(val_2)  #@
+        """
+        )
+        node_if: nodes.If
+        walruses = list(node_if.nodes_of_class(nodes.NamedExpr))
+
+        assert nodes.are_exclusive(node_if, walruses[0]) is False
+        assert nodes.are_exclusive(node_if, walruses[1]) is False
+
+        assert nodes.are_exclusive(walruses[0], walruses[1]) is False
+
+        assert nodes.are_exclusive(walruses[0], body_1) is False
+        assert nodes.are_exclusive(walruses[0], body_2) is False
+        assert nodes.are_exclusive(walruses[1], body_1) is False
+        assert nodes.are_exclusive(walruses[1], body_2) is False
+
+        assert nodes.are_exclusive(walruses[0], or_else_1) is False
+        assert nodes.are_exclusive(walruses[0], or_else_2) is False
+        assert nodes.are_exclusive(walruses[1], or_else_1) is False
+        assert nodes.are_exclusive(walruses[1], or_else_2) is False
+
+    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
     def test_not_exclusive_walrus_operator_nested(self) -> None:
         node_if, node_body, node_or_else = extract_node(
             """
