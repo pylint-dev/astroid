@@ -4,7 +4,10 @@
 
 import unittest
 
-from astroid import Uninferable, builder, nodes
+import pytest
+
+from astroid import Uninferable, builder, extract_node, nodes
+from astroid.const import PY38_PLUS
 from astroid.exceptions import InferenceError
 
 
@@ -29,6 +32,78 @@ class InferenceUtil(unittest.TestCase):
         assert xnames[1].lineno == 6
         self.assertEqual(nodes.are_exclusive(xass1, xnames[1]), False)
         self.assertEqual(nodes.are_exclusive(xass1, xnames[2]), False)
+
+    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
+    def test_not_exclusive_walrus_operator(self) -> None:
+        node_if, node_body, node_or_else = extract_node(
+            """
+        if val := True:  #@
+            print(val)  #@
+        else:
+            print(val)  #@
+        """
+        )
+        node_if: nodes.If
+        node_walrus = next(node_if.nodes_of_class(nodes.NamedExpr))
+
+        assert nodes.are_exclusive(node_walrus, node_if) is False
+        assert nodes.are_exclusive(node_walrus, node_body) is False
+        assert nodes.are_exclusive(node_walrus, node_or_else) is False
+
+        assert nodes.are_exclusive(node_if, node_body) is False
+        assert nodes.are_exclusive(node_if, node_or_else) is False
+        assert nodes.are_exclusive(node_body, node_or_else) is True
+
+    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
+    def test_not_exclusive_walrus_multiple(self) -> None:
+        node_if, body_1, body_2, or_else_1, or_else_2 = extract_node(
+            """
+        if (val := True) or (val_2 := True):  #@
+            print(val)  #@
+            print(val_2)  #@
+        else:
+            print(val)  #@
+            print(val_2)  #@
+        """
+        )
+        node_if: nodes.If
+        walruses = list(node_if.nodes_of_class(nodes.NamedExpr))
+
+        assert nodes.are_exclusive(node_if, walruses[0]) is False
+        assert nodes.are_exclusive(node_if, walruses[1]) is False
+
+        assert nodes.are_exclusive(walruses[0], walruses[1]) is False
+
+        assert nodes.are_exclusive(walruses[0], body_1) is False
+        assert nodes.are_exclusive(walruses[0], body_2) is False
+        assert nodes.are_exclusive(walruses[1], body_1) is False
+        assert nodes.are_exclusive(walruses[1], body_2) is False
+
+        assert nodes.are_exclusive(walruses[0], or_else_1) is False
+        assert nodes.are_exclusive(walruses[0], or_else_2) is False
+        assert nodes.are_exclusive(walruses[1], or_else_1) is False
+        assert nodes.are_exclusive(walruses[1], or_else_2) is False
+
+    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
+    def test_not_exclusive_walrus_operator_nested(self) -> None:
+        node_if, node_body, node_or_else = extract_node(
+            """
+        if all((last_val := i) % 2 == 0 for i in range(10)): #@
+            print(last_val)  #@
+        else:
+            print(last_val)  #@
+        """
+        )
+        node_if: nodes.If
+        node_walrus = next(node_if.nodes_of_class(nodes.NamedExpr))
+
+        assert nodes.are_exclusive(node_walrus, node_if) is False
+        assert nodes.are_exclusive(node_walrus, node_body) is False
+        assert nodes.are_exclusive(node_walrus, node_or_else) is False
+
+        assert nodes.are_exclusive(node_if, node_body) is False
+        assert nodes.are_exclusive(node_if, node_or_else) is False
+        assert nodes.are_exclusive(node_body, node_or_else) is True
 
     def test_if(self) -> None:
         module = builder.parse(

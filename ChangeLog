@@ -30,6 +30,9 @@ Release date: TBA
   Closes #2012
 
 
+* Fix ``are_exclusive`` function when a walrus operator is used inside ``IfExp.test`` field.
+
+  Closes #2022
 
 What's New in astroid 2.14.2?
 =============================
