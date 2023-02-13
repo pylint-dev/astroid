@@ -1442,9 +1442,9 @@ class TreeRebuilder:
             parent=parent,
         )
         newnode.postinit(
-            self.visit(node.value, newnode),
-            node.conversion,
-            self.visit(node.format_spec, newnode),
+            value=self.visit(node.value, newnode),
+            conversion=node.conversion,
+            format_spec=self.visit(node.format_spec, newnode),
         )
         return newnode
 

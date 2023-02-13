@@ -4700,20 +4700,18 @@ class FormattedValue(NodeNG):
         self.value: NodeNG
         """The value to be formatted into the string."""
 
-        self.conversion: int | None = None  # can be None
+        self.conversion: int
         """The type of formatting to be applied to the value.
 
         .. seealso::
             :class:`ast.FormattedValue`
         """
 
-        self.format_spec: NodeNG | None = None  # can be None
+        self.format_spec: JoinedStr | None = None
         """The formatting to be applied to the value.
 
         .. seealso::
             :class:`ast.FormattedValue`
-
-        :type: JoinedStr or None
         """
 
         super().__init__(
@@ -4726,9 +4724,10 @@ class FormattedValue(NodeNG):
 
     def postinit(
         self,
+        *,
         value: NodeNG,
-        conversion: int | None = None,
-        format_spec: NodeNG | None = None,
+        conversion: int,
+        format_spec: JoinedStr | None = None,
     ) -> None:
         """Do some setup after initialisation.
 

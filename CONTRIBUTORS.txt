@@ -20,8 +20,8 @@ Maintainers
 - Jacob Walls <jacobtylerwalls@gmail.com>
 - Bryce Guinta <bryce.paul.guinta@gmail.com>
 - Ceridwen <ceridwenv@gmail.com>
-- Łukasz Rogalski <rogalski.91@gmail.com>
 - Mark Byrne <31762852+mbyrnepr2@users.noreply.github.com>
+- Łukasz Rogalski <rogalski.91@gmail.com>
 - Florian Bruhin <me@the-compiler.org>
 - Ashley Whetter <ashley@awhetter.co.uk>
 - Dimitri Prybysh <dmand@yandex.ru>
@@ -64,6 +64,7 @@ Contributors
 - James Addison <55152140+jayaddison@users.noreply.github.com>
 - FELD Boris <lothiraldan@gmail.com>
 - Enji Cooper <yaneurabeya@gmail.com>
+- Dani Alcala <112832187+clavedeluna@users.noreply.github.com>
 - Adrien Di Mascio <Adrien.DiMascio@logilab.fr>
 - tristanlatr <19967168+tristanlatr@users.noreply.github.com>
 - emile@crater.logilab.fr <emile@crater.logilab.fr>
@@ -81,6 +82,7 @@ Contributors
 - Peter Kolbus <peter.kolbus@gmail.com>
 - Omer Katz <omer.drow@gmail.com>
 - Moises Lopez <moylop260@vauxoo.com>
+- Michal Vasilek <michal@vasilek.cz>
 - Keichi Takahashi <keichi.t@me.com>
 - Kavins Singh <kavinsingh@hotmail.com>
 - Karthikeyan Singaravelan <tir.karthi@gmail.com>
@@ -91,7 +93,6 @@ Contributors
 - David Euresti <github@euresti.com>
 - David Douard <david.douard@logilab.fr>
 - David Cain <davidjosephcain@gmail.com>
-- Dani Alcala <112832187+clavedeluna@users.noreply.github.com>
 - Anthony Truchet <anthony.truchet@logilab.fr>
 - Anthony Sottile <asottile@umich.edu>
 - Alexander Shadchin <alexandr.shadchin@gmail.com>
@@ -127,7 +128,6 @@ Contributors
 - Nicolas Noirbent <nicolas@noirbent.fr>
 - Neil Girdhar <mistersheik@gmail.com>
 - Michał Masłowski <m.maslowski@clearcode.cc>
-- Michal Vasilek <michal@vasilek.cz>
 - Mateusz Bysiek <mb@mbdev.pl>
 - Leandro T. C. Melo <ltcmelo@gmail.com>
 - Konrad Weihmann <kweihmann@outlook.com>
@@ -170,6 +170,7 @@ Contributors
 - BioGeek <jeroen.vangoey@gmail.com>
 - Bianca Power <30207144+biancapower@users.noreply.github.com>
 - Benjamin Elven <25181435+S3ntinelX@users.noreply.github.com>
+- Ben Elliston <bje@air.net.au>
 - Becker Awqatty <bawqatty@mide.com>
 - Batuhan Taskaya <isidentical@gmail.com>
 - BasPH <BasPH@users.noreply.github.com>
@@ -182,7 +183,6 @@ Contributors
 - Alexander Scheel <alexander.m.scheel@gmail.com>
 - Alexander Presnyakov <flagist0@gmail.com>
 - Ahmed Azzaoui <ahmed.azzaoui@engie.com>
-- Ben Elliston <bje@air.net.au>
 
 Co-Author
 ---------

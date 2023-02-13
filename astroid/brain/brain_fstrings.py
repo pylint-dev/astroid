@@ -2,13 +2,20 @@
 # For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import collections.abc
+from typing import TypeVar
 
+from astroid import nodes
 from astroid.manager import AstroidManager
-from astroid.nodes.node_classes import FormattedValue
+
+_NodeT = TypeVar("_NodeT", bound=nodes.NodeNG)
 
 
-def _clone_node_with_lineno(node, parent, lineno):
+def _clone_node_with_lineno(
+    node: _NodeT, parent: nodes.NodeNG, lineno: int | None
+) -> _NodeT:
     cls = node.__class__
     other_fields = node._other_fields
     _astroid_fields = node._astroid_fields
@@ -28,16 +35,22 @@ def _clone_node_with_lineno(node, parent, lineno):
     return new_node
 
 
-def _transform_formatted_value(node):  # pylint: disable=inconsistent-return-statements
+def _transform_formatted_value(  # pylint: disable=inconsistent-return-statements
+    node: nodes.FormattedValue,
+) -> nodes.FormattedValue | None:
     if node.value and node.value.lineno == 1:
         if node.lineno != node.value.lineno:
-            new_node = FormattedValue(
+            new_node = nodes.FormattedValue(
                 lineno=node.lineno, col_offset=node.col_offset, parent=node.parent
             )
             new_value = _clone_node_with_lineno(
                 node=node.value, lineno=node.lineno, parent=new_node
             )
-            new_node.postinit(value=new_value, format_spec=node.format_spec)
+            new_node.postinit(
+                value=new_value,
+                conversion=node.conversion,
+                format_spec=node.format_spec,
+            )
             return new_node
 
 
@@ -45,4 +58,4 @@ def _transform_formatted_value(node):  # pylint: disable=inconsistent-return-sta
 # The problem is that FormattedValue.value, which is a Name node,
 # has wrong line numbers, usually 1. This creates problems for pylint,
 # which expects correct line numbers for things such as message control.
-AstroidManager().register_transform(FormattedValue, _transform_formatted_value)
+AstroidManager().register_transform(nodes.FormattedValue, _transform_formatted_value)

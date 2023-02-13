@@ -6,6 +6,11 @@ What's New in astroid 2.15.0?
 =============================
 Release date: TBA
 
+* ``Formattedvalue.postinit`` is now keyword only. This is to allow correct typing of the
+  ``Formattedvalue`` class.
+
+  Refs #1516
+
 * ``Astroid`` now supports custom import hooks.
 
   Refs PyCQA/pylint#7306
@@ -18,14 +23,24 @@ Release date: TBA
 
   Closes #1680
 
+* Deprecate ``modutils.is_standard_module()``. It will be removed in the next minor release.
+  Functionality has been replaced by two new functions,
+  ``modutils.is_stdlib_module()`` and ``modutils.module_in_path()``.
+
+  Closes #2012
+
+
 * Fix ``are_exclusive`` function when a walrus operator is used inside ``IfExp.test`` field.
 
   Closes #2022
 
 What's New in astroid 2.14.2?
 =============================
-Release date: TBA
+Release date: 2023-02-12
 
+* '_infer_str_format_call' won't crash anymore when the string it analyses are uninferable.
+
+  Closes PyCQA/pylint#8109
 
 
 What's New in astroid 2.14.1?
