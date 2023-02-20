@@ -6,4 +6,4 @@ flake8==6.0.0;python_version>='3.8'
 flake8-typing-imports==1.14.0;python_version>='3.8'
 flake8-bugbear==23.1.20;python_version>='3.8'
 mypy==1.0.0
-pre-commit~=2.21
+pre-commit~=3.0
