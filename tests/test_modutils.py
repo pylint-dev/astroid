@@ -550,3 +550,15 @@ class ExtensionPackageWhitelistTest(unittest.TestCase):
 @pytest.mark.skipif(not HAS_URLLIB3, reason="This test requires urllib3.")
 def test_file_info_from_modpath__SixMetaPathImporter() -> None:
     assert modutils.file_info_from_modpath(["urllib3.packages.six.moves.http_client"])
+
+
+def test_find_setuptools_pep660_editable_install():
+    """Find the spec for a package installed via setuptools PEP 660 import hooks."""
+    # pylint: disable-next=import-outside-toplevel
+    from tests.testdata.python3.data.import_setuptools_pep660.__editable___example_0_1_0_finder import (
+        _EditableFinder,
+    )
+
+    with unittest.mock.patch.object(sys, "meta_path", new=[_EditableFinder]):
+        assert spec.find_spec(["example"])
+        assert spec.find_spec(["example", "subpackage"])
