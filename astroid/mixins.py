@@ -27,4 +27,5 @@ __all__ = (
 warnings.warn(
     "The 'astroid.mixins' module is deprecated and will become private in astroid 3.0.0",
     DeprecationWarning,
+    stacklevel=2,
 )
