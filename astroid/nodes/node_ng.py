@@ -321,7 +321,7 @@ class NodeNG:
                 "This behaviour can already be triggered "
                 "by passing 'future=True' to a statement() call.",
                 DeprecationWarning,
-                stacklevel=2
+                stacklevel=2,
             )
             raise AttributeError(f"{self} object has no attribute 'parent'")
         return self.parent.statement(future=future)
@@ -345,7 +345,7 @@ class NodeNG:
                 "This behaviour can already be triggered "
                 "by passing 'future=True' to a frame() call.",
                 DeprecationWarning,
-                stacklevel=2
+                stacklevel=2,
             )
             raise AttributeError(f"{self} object has no attribute 'parent'")
 

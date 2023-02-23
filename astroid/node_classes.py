@@ -95,5 +95,5 @@ warnings.warn(
     "The 'astroid.node_classes' module is deprecated and will be replaced by "
     "'astroid.nodes' in astroid 3.0.0",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
