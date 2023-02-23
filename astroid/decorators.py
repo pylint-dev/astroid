@@ -67,6 +67,7 @@ class cachedproperty:
                 "cachedproperty has been deprecated and will be removed in astroid 3.0 for Python 3.8+. "
                 "Use functools.cached_property instead.",
                 DeprecationWarning,
+                stacklevel=2
             )
         try:
             wrapped.__name__
@@ -214,6 +215,7 @@ if util.check_warnings_filter():  # noqa: C901
                             f" in astroid {astroid_version} "
                             f"('{arg}' should be of type: '{type_annotation}')",
                             DeprecationWarning,
+                            stacklevel=2
                         )
                 return func(*args, **kwargs)
 
@@ -251,6 +253,7 @@ if util.check_warnings_filter():  # noqa: C901
                             f"'{args[0].__class__.__qualname__}.{func.__name__}' is deprecated "
                             f"and will be removed in astroid {astroid_version} ({note})",
                             DeprecationWarning,
+                            stacklevel=2
                         )
                 return func(*args, **kwargs)
 

@@ -315,6 +315,7 @@ class Module(LocalsDictNodeNG):
             "The 'Module.doc' attribute is deprecated, "
             "use 'Module.doc_node' instead.",
             DeprecationWarning,
+            stacklevel=2
         )
         return self._doc
 
@@ -324,6 +325,7 @@ class Module(LocalsDictNodeNG):
             "Setting the 'Module.doc' attribute is deprecated, "
             "use 'Module.doc_node' instead.",
             DeprecationWarning,
+            stacklevel=2
         )
         self._doc = value
 
@@ -474,6 +476,7 @@ class Module(LocalsDictNodeNG):
             "considered a statement. This behaviour can already be triggered "
             "by passing 'future=True' to a statement() call.",
             DeprecationWarning,
+            stacklevel=2
         )
         return self
 
@@ -1403,6 +1406,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
             "The 'FunctionDef.doc' attribute is deprecated, "
             "use 'FunctionDef.doc_node' instead.",
             DeprecationWarning,
+            stacklevel=2
         )
         return self._doc
 
@@ -1412,6 +1416,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
             "Setting the 'FunctionDef.doc' attribute is deprecated, "
             "use 'FunctionDef.doc_node' instead.",
             DeprecationWarning,
+            stacklevel=2
         )
         self._doc = value
 
@@ -2038,6 +2043,7 @@ class ClassDef(
             "The 'ClassDef.doc' attribute is deprecated, "
             "use 'ClassDef.doc_node' instead.",
             DeprecationWarning,
+            stacklevel=2
         )
         return self._doc
 
@@ -2047,6 +2053,7 @@ class ClassDef(
             "Setting the 'ClassDef.doc' attribute is deprecated, "
             "use 'ClassDef.doc_node.value' instead.",
             DeprecationWarning,
+            stacklevel=2    
         )
         self._doc = value
 

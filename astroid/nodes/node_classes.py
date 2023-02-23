@@ -3213,6 +3213,7 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
             "It has been moved to pylint and can be imported from 'pylint.checkers.utils' "
             "starting with pylint 2.12",
             DeprecationWarning,
+            stacklevel=2
         )
         if isinstance(self.test, Compare):
             value = self.test.left
@@ -3240,6 +3241,7 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
             "It has been moved to pylint and can be imported from 'pylint.checkers.utils' "
             "starting with pylint 2.12",
             DeprecationWarning,
+            stacklevel=2
         )
         return isinstance(
             self.test, (Name, Attribute)
