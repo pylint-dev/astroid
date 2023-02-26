@@ -64,6 +64,11 @@ _MetaPathFinderModuleTypes: dict[str, ModuleType] = {
     "_SixMetaPathImporter": ModuleType.PY_SOURCE,
 }
 
+_EditableFinderClasses: set[str] = {
+    "_EditableFinder",
+    "_EditableNamespaceFinder",
+}
+
 
 class ModuleSpec(NamedTuple):
     """Defines a class similar to PEP 420's ModuleSpec.
@@ -453,8 +458,13 @@ def find_spec(modpath: list[str], path: Sequence[str] | None = None) -> ModuleSp
             _path, modname, module_parts, processed, submodule_path or path
         )
         processed.append(modname)
-        if modpath and isinstance(finder, Finder):
-            submodule_path = finder.contribute_to_path(spec, processed)
+        if modpath:
+            if isinstance(finder, Finder):
+                submodule_path = finder.contribute_to_path(spec, processed)
+            # If modname is a package from an editable install, update submodule_path
+            # so that the next module in the path will be found inside of it using importlib.
+            elif finder.__name__ in _EditableFinderClasses:
+                submodule_path = spec.submodule_search_locations
 
         if spec.type == ModuleType.PKG_DIRECTORY:
             spec = spec._replace(submodule_search_locations=submodule_path)
