@@ -4982,7 +4982,7 @@ class EvaluatedObject(NodeNG):
 # Pattern matching #######################################################
 
 
-class Match(_base_nodes.Statement):
+class Match(_base_nodes.Statement, _base_nodes.MultiLineBlockNode):
     """Class representing a :class:`ast.Match` node.
 
     >>> import astroid
@@ -4998,6 +4998,7 @@ class Match(_base_nodes.Statement):
     """
 
     _astroid_fields = ("subject", "cases")
+    _multi_line_block_fields = ("cases",)
 
     def __init__(
         self,

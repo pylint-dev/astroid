@@ -1947,3 +1947,22 @@ class TestPatternMatching:
             case1.pattern.cls,
             *case1.pattern.kwd_patterns,
         ]
+
+    @staticmethod
+    def test_return_from_match():
+        code = textwrap.dedent(
+            """
+        def return_from_match(x):
+            match x:
+                case 10:
+                    return 10
+                case _:
+                    return -1
+
+        return_from_match(10)  #@
+        """
+        ).strip()
+        node = builder.extract_node(code)
+        inferred = node.inferred()
+        assert len(inferred) == 2
+        assert [inf.value for inf in inferred] == [10, -1]
