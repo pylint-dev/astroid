@@ -15,6 +15,10 @@ Release date: TBA
 
   Refs PyCQA/pylint#7306
 
+* ``astroid`` now infers return values from match cases.
+
+  Refs PyCQA/pylint#5288
+
 * ``Astroid`` now retrieves the default values of keyword only arguments and sets them on
   ``Arguments.kw_defaults``.
 
