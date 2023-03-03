@@ -1959,7 +1959,7 @@ class TestPatternMatching:
                 case _:
                     return -1
 
-        return_from_match()  #@
+        return_from_match(10)  #@
         """
         ).strip()
         node = builder.extract_node(code)
