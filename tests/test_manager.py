@@ -430,6 +430,8 @@ class ClearCacheTest(unittest.TestCase):
 
         astroid.MANAGER.clear_cache()  # also calls bootstrap()
 
+        self.assertEqual(astroid.context._INFERENCE_CACHE, {})
+
         # The cache sizes are now as low or lower than the original baseline
         cleared_cache_infos = [lru.cache_info() for lru in lrus]
         for cleared_cache, baseline_cache in zip(

@@ -19,6 +19,10 @@ Release date: TBA
 
   Refs PyCQA/pylint#5288
 
+* ``AstroidManager.clear_cache`` now also clears the inference context cache.
+
+  Refs #1780
+
 * ``Astroid`` now retrieves the default values of keyword only arguments and sets them on
   ``Arguments.kw_defaults``.
 
