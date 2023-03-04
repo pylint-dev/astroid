@@ -20,7 +20,7 @@ from typing import Any, ClassVar
 from astroid import nodes
 from astroid._cache import CACHE_MANAGER
 from astroid.const import BRAIN_MODULES_DIRECTORY
-from astroid.context import InferenceContext
+from astroid.context import InferenceContext, _invalidate_cache
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec, util
 from astroid.modutils import (
@@ -407,7 +407,7 @@ class AstroidManager:
         raw_building._astroid_bootstrapping()
 
     def clear_cache(self) -> None:
-        """Clear the underlying cache, bootstrap the builtins module and
+        """Clear the underlying caches, bootstrap the builtins module and
         re-register transforms.
         """
         # import here because of cyclic imports
@@ -418,6 +418,7 @@ class AstroidManager:
         from astroid.nodes.scoped_nodes import ClassDef
 
         clear_inference_tip_cache()
+        _invalidate_cache()  # inference context cache
 
         self.astroid_cache.clear()
         # NB: not a new TransformVisitor()
