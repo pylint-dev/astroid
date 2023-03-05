@@ -13,6 +13,10 @@ env:
   DEFAULT_PYTHON: "3.11"
   PRE_COMMIT_CACHE: ~/.cache/pre-commit
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   base-checks:
     name: Checks
