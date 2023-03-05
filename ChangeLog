@@ -18,6 +18,9 @@ What's New in astroid 2.15.0?
 =============================
 Release date: 2023-03-06
 
+* astroid now support ``TryStar`` nodes from python 3.11 and should be fully compatible with python 3.11.
+
+  Closes #2028 
 * ``Formattedvalue.postinit`` is now keyword only. This is to allow correct typing of the
   ``Formattedvalue`` class.
 
