@@ -41,9 +41,9 @@ Contributors
 - Julien Jehannet <julien.jehannet@logilab.fr>
 - Calen Pennington <calen.pennington@gmail.com>
 - Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
+- Hugo van Kemenade <hugovk@users.noreply.github.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Phil Schaf <flying-sheep@web.de>
-- Hugo van Kemenade <hugovk@users.noreply.github.com>
 - Alex Hall <alex.mojaki@gmail.com>
 - Raphael Gaschignard <raphael@makeleaps.com>
 - Radosław Ganczarek <radoslaw@ganczarek.in>
@@ -100,6 +100,8 @@ Contributors
 - rr- <rr-@sakuya.pl>
 - raylu <lurayl@gmail.com>
 - plucury <plucury@gmail.com>
+- ostr00000 <ostr00000@gmail.com>
+- noah-weingarden <33741795+noah-weingarden@users.noreply.github.com>
 - nathannaveen <42319948+nathannaveen@users.noreply.github.com>
 - mathieui <mathieui@users.noreply.github.com>
 - markmcclain <markmcclain@users.noreply.github.com>
@@ -175,6 +177,7 @@ Contributors
 - Batuhan Taskaya <isidentical@gmail.com>
 - BasPH <BasPH@users.noreply.github.com>
 - Azeem Bande-Ali <A.BandeAli@gmail.com>
+- Avram Lubkin <aviso@rockhopper.net>
 - Aru Sahni <arusahni@gmail.com>
 - Artsiom Kaval <lezeroq@gmail.com>
 - Anubhav <35621759+anubh-v@users.noreply.github.com>

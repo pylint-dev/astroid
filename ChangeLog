@@ -2,9 +2,21 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.15.0?
+What's New in astroid 2.16.0?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.15.1?
+=============================
+Release date: TBA
+
+
+
+What's New in astroid 2.15.0?
+=============================
+Release date: 2023-03-06
 
 * ``Formattedvalue.postinit`` is now keyword only. This is to allow correct typing of the
   ``Formattedvalue`` class.
