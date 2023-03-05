@@ -18,7 +18,7 @@ What's New in astroid 2.15.0?
 =============================
 Release date: 2023-03-06
 
-* astroid now support ``TryStar`` nodes from python 3.11 and should be fully compatible with python 3.11.
+* astroid now supports ``TryStar`` nodes from python 3.11 and should be fully compatible with python 3.11.
 
   Closes #2028
 
