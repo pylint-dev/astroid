@@ -1822,6 +1822,22 @@ class TreeRebuilder:
             return self.visit_tryexcept(node, parent)
         return None
 
+    def visit_trystar(self, node: ast.TryStar, parent: NodeNG) -> nodes.TryStar:
+        newnode = nodes.TryStar(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=getattr(node, "end_lineno", None),
+            end_col_offset=getattr(node, "end_col_offset", None),
+            parent=parent,
+        )
+        newnode.postinit(
+            body=[self.visit(n, newnode) for n in node.body],
+            handlers=[self.visit(n, newnode) for n in node.handlers],
+            orelse=[self.visit(n, newnode) for n in node.orelse],
+            finalbody=[self.visit(n, newnode) for n in node.finalbody],
+        )
+        return newnode
+
     def visit_tuple(self, node: ast.Tuple, parent: NodeNG) -> nodes.Tuple:
         """Visit a Tuple node by returning a fresh instance of it."""
         context = self._get_context(node)
