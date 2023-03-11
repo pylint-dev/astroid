@@ -1403,6 +1403,20 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(["object"], [base.name for base in klass.ancestors()])
         self.assertEqual("type", klass.metaclass().name)
 
+    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
+    def test_metaclass_generator_hack_enum_base(self):
+        """Regression test for https://github.com/PyCQA/pylint/issues/5935"""
+        klass = builder.extract_node(
+            """
+            import six
+            from enum import Enum, EnumMeta
+
+            class PetEnumPy2Metaclass(six.with_metaclass(EnumMeta, Enum)): #@
+                DOG = "dog"
+        """
+        )
+        self.assertEqual(list(klass.local_attr_ancestors("DOG")), [])
+
     def test_add_metaclass(self) -> None:
         klass = builder.extract_node(
             """
