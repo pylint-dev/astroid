@@ -14,7 +14,6 @@ import sys
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, ClassVar
 
-from astroid import decorators
 from astroid.exceptions import AttributeInferenceError
 from astroid.nodes.node_ng import NodeNG
 
@@ -196,10 +195,10 @@ class MultiLineBlockNode(NodeNG):
                     continue
                 yield from child_node._get_yield_nodes_skip_lambdas()
 
-    @decorators.cached
-    def _get_assign_nodes(self):
+    @cached_property
+    def _assign_nodes_in_scope(self) -> list[nodes.Assign]:
         children_assign_nodes = (
-            child_node._get_assign_nodes()
+            child_node._assign_nodes_in_scope
             for block in self._multi_line_blocks
             for child_node in block
         )

@@ -1434,7 +1434,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
             return []
 
         decorators: list[node_classes.Call] = []
-        for assign in frame._get_assign_nodes():
+        for assign in frame._assign_nodes_in_scope:
             if isinstance(assign.value, node_classes.Call) and isinstance(
                 assign.value.func, node_classes.Name
             ):
@@ -3065,10 +3065,10 @@ class ClassDef(
             yield from self.keywords
         yield from self.body
 
-    @decorators_mod.cached
-    def _get_assign_nodes(self):
+    @cached_property
+    def _assign_nodes_in_scope(self):
         children_assign_nodes = (
-            child_node._get_assign_nodes() for child_node in self.body
+            child_node._assign_nodes_in_scope for child_node in self.body
         )
         return list(itertools.chain.from_iterable(children_assign_nodes))
 
