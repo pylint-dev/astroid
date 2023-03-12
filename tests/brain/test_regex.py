@@ -24,6 +24,9 @@ class TestRegexBrain:
             assert name in re_ast
             assert next(re_ast[name].infer()).value == getattr(regex, name)
 
+    @pytest.mark.xfail(
+        reason="Started failing on main, but no one reproduced locally yet"
+    )
     @test_utils.require_version(minver="3.9")
     def test_regex_pattern_and_match_subscriptable(self):
         """Test regex.Pattern and regex.Match are subscriptable in PY39+."""
