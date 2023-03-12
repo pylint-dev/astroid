@@ -21,7 +21,7 @@ from typing import (
     overload,
 )
 
-from astroid import decorators, util
+from astroid import util
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidError,
@@ -575,8 +575,8 @@ class NodeNG:
                 continue
             yield from child_node.nodes_of_class(klass, skip_klass)
 
-    @decorators.cached
-    def _get_assign_nodes(self):
+    @cached_property
+    def _assign_nodes_in_scope(self) -> list[nodes.Assign]:
         return []
 
     def _get_name_nodes(self):

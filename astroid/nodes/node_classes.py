@@ -1271,9 +1271,9 @@ class Assign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
 
         yield self.value
 
-    @decorators.cached
-    def _get_assign_nodes(self):
-        return [self] + list(self.value._get_assign_nodes())
+    @cached_property
+    def _assign_nodes_in_scope(self) -> list[nodes.Assign]:
+        return [self] + self.value._assign_nodes_in_scope
 
     def _get_yield_nodes_skip_lambdas(self):
         yield from self.value._get_yield_nodes_skip_lambdas()
