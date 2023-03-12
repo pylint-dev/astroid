@@ -1586,7 +1586,6 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
             self.parent.frame(future=True), ClassDef
         )
 
-    @decorators_mod.cached
     def decoratornames(self, context: InferenceContext | None = None):
         """Get the qualified names of each of the decorators on this function.
 
