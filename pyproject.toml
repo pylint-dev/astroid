@@ -117,5 +117,5 @@ fixable = [
     "I",  # isort
     "RUF", # ruff
 ]
-unfixable = [
-]
+unfixable = []
+target-version = "py37"
