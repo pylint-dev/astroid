@@ -17,9 +17,8 @@ from unittest.mock import patch
 
 import pytest
 
-from astroid import Slice, arguments
+from astroid import Slice, arguments, helpers, nodes, objects, test_utils, util
 from astroid import decorators as decoratorsmod
-from astroid import helpers, nodes, objects, test_utils, util
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod, UnionType
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse

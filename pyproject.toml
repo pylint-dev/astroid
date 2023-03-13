@@ -65,14 +65,6 @@ python_files = ["*test_*.py"]
 testpaths = ["tests"]
 filterwarnings = "error"
 
-[tool.isort]
-include_trailing_comma = true
-known_first_party = ["astroid"]
-known_third_party = ["attr", "nose", "numpy", "pytest", "six", "sphinx"]
-line_length = 88
-multi_line_output = 3
-skip_glob = ["tests/testdata"]
-
 [tool.mypy]
 enable_error_code = "ignore-without-code"
 no_implicit_optional = true
@@ -94,3 +86,36 @@ module = [
     "wrapt.*",
 ]
 ignore_missing_imports = true
+
+
+[tool.ruff]
+
+# ruff is less lenient than pylint and does not make any exceptions
+# (for docstrings, strings and comments in particular).
+line-length = 115
+
+select = [
+    "E",  # pycodestyle
+    "F",  # pyflakes
+    "W",  # pycodestyle
+    "B",  # bugbear
+    "I",  # isort
+    "RUF", # ruff
+]
+
+ignore = [
+    "B905", # `zip()` without an explicit `strict=` parameter
+    "F401",  # API
+    "RUF100", # ruff does not understand pylint's directive usefulness
+]
+
+fixable = [
+    "E",  # pycodestyle
+    "F",  # pyflakes
+    "W",  # pycodestyle
+    "B",  # bugbear
+    "I",  # isort
+    "RUF", # ruff
+]
+unfixable = [
+]

@@ -19,9 +19,8 @@ from collections.abc import Generator, Iterator
 from functools import lru_cache
 from typing import TYPE_CHECKING, ClassVar, NoReturn, TypeVar, overload
 
-from astroid import bases
+from astroid import bases, util
 from astroid import decorators as decorators_mod
-from astroid import util
 from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS, PYPY_7_3_11_PLUS
 from astroid.context import (
     CallContext,
@@ -2927,7 +2926,7 @@ class ClassDef(
             if exc.args and exc.args[0] not in ("", None):
                 return exc.args[0]
             return None
-        return [first] + list(slots)
+        return [first, *list(slots)]
 
     # Cached, because inferring them all the time is expensive
     @decorators_mod.cached
@@ -3033,7 +3032,7 @@ class ClassDef(
                 ancestors = list(base.ancestors(context=context))
                 bases_mro.append(ancestors)
 
-        unmerged_mro = [[self]] + bases_mro + [inferred_bases]
+        unmerged_mro = [[self], *bases_mro] + [inferred_bases]
         unmerged_mro = list(clean_duplicates_mro(unmerged_mro, self, context))
         clean_typing_generic_mro(unmerged_mro)
         return _c3_merge(unmerged_mro, self, context)
