@@ -40,7 +40,7 @@ jobs:
           'requirements_test_pre_commit.txt') }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v3.2.6
+        uses: actions/cache@v3.3.1
         with:
           path: venv
           key: >-
@@ -60,7 +60,7 @@ jobs:
             hashFiles('.pre-commit-config.yaml') }}" >> $GITHUB_OUTPUT
       - name: Restore pre-commit environment
         id: cache-precommit
-        uses: actions/cache@v3.2.6
+        uses: actions/cache@v3.3.1
         with:
           path: ${{ env.PRE_COMMIT_CACHE }}
           key: >-
@@ -108,7 +108,7 @@ jobs:
           'requirements_test_pre_commit.txt') }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v3.2.6
+        uses: actions/cache@v3.3.1
         with:
           path: venv
           key: >-
@@ -162,7 +162,7 @@ jobs:
           'requirements_test_brain.txt') }}" >> $env:GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v3.2.6
+        uses: actions/cache@v3.3.1
         with:
           path: venv
           key: >-
@@ -211,7 +211,7 @@ jobs:
           }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v3.2.6
+        uses: actions/cache@v3.3.1
         with:
           path: venv
           key: >-
