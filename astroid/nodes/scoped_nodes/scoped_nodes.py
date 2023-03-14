@@ -2926,7 +2926,7 @@ class ClassDef(
             if exc.args and exc.args[0] not in ("", None):
                 return exc.args[0]
             return None
-        return [first, *list(slots)]
+        return [first, *slots]
 
     # Cached, because inferring them all the time is expensive
     @decorators_mod.cached
@@ -3032,7 +3032,7 @@ class ClassDef(
                 ancestors = list(base.ancestors(context=context))
                 bases_mro.append(ancestors)
 
-        unmerged_mro = [[self], *bases_mro] + [inferred_bases]
+        unmerged_mro = [[self], *bases_mro, inferred_bases]
         unmerged_mro = list(clean_duplicates_mro(unmerged_mro, self, context))
         clean_typing_generic_mro(unmerged_mro)
         return _c3_merge(unmerged_mro, self, context)
