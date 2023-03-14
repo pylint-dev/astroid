@@ -267,7 +267,7 @@ def test(val):
                 "With unicode : {'’'} "
 
         instance = MyClass()
-        """
+        """  # noqa[RUF001]
         )
 
         next(node.value.infer()).as_string()

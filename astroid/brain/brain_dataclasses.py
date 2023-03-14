@@ -360,7 +360,7 @@ def _generate_dataclass_init(  # pylint: disable=too-many-locals
             if name in prev_pos_only_store:
                 prev_pos_only_store[name] = (ann_str, default_str)
             elif name in prev_kw_only_store:
-                params = [name] + params
+                params = [name, *params]
                 prev_kw_only_store.pop(name)
             else:
                 params.append(param_str)

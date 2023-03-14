@@ -998,7 +998,7 @@ class AliasesTest(unittest.TestCase):
 
     def test_aliases(self) -> None:
         def test_from(node: ImportFrom) -> ImportFrom:
-            node.names = node.names + [("absolute_import", None)]
+            node.names = [*node.names, ("absolute_import", None)]
             return node
 
         def test_class(node: ClassDef) -> ClassDef:

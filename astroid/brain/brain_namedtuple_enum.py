@@ -284,7 +284,7 @@ def _check_namedtuple_attributes(typename, attributes, rename=False):
 
     # The following snippet is derived from the CPython Lib/collections/__init__.py sources
     # <snippet>
-    for name in (typename,) + attributes:
+    for name in (typename, *attributes):
         if not isinstance(name, str):
             raise AstroidTypeError("Type names and field names must be strings")
         if not name.isidentifier():

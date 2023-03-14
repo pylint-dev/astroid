@@ -230,7 +230,7 @@ class ExplicitNamespacePackageFinder(ImportlibFinder):
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
         if processed:
-            modname = ".".join(processed + [modname])
+            modname = ".".join([*processed, modname])
         if util.is_namespace(modname) and modname in sys.modules:
             submodule_path = sys.modules[modname].__path__
             return ModuleSpec(

@@ -62,7 +62,7 @@ copyright = f"2003-{current_year}, Logilab, PyCQA and contributors"
 # built documents.
 #
 # The short X.Y version.
-from astroid.__pkginfo__ import __version__
+from astroid.__pkginfo__ import __version__  # noqa
 
 # The full version, including alpha/beta/rc tags.
 release = __version__
