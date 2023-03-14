@@ -2,4 +2,5 @@
 black
 pylint
 mypy
+ruff
 pre-commit
