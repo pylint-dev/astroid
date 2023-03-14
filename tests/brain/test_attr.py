@@ -167,8 +167,6 @@ class AttrsTest(unittest.TestCase):
                 # breakpoint()
                 ...
 
-                
-
     def test_special_attributes(self) -> None:
         """Make sure special attrs attributes exist"""
 
