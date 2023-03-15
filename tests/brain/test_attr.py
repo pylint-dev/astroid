@@ -161,11 +161,7 @@ class AttrsTest(unittest.TestCase):
 
         for name in ("f", "g", "h", "i", "j", "k", "l", "m", "n"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
-            try:
-                self.assertIsInstance(should_be_unknown, astroid.Unknown)
-            except:
-                # breakpoint()
-                ...
+            self.assertIsInstance(should_be_unknown, astroid.Unknown)
 
     def test_special_attributes(self) -> None:
         """Make sure special attrs attributes exist"""

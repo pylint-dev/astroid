@@ -47,18 +47,18 @@ def is_decorated_with_attrs(node, decorator_names=ATTRS_NAMES) -> bool:
             decorator_attribute = decorator_attribute.func
         if decorator_attribute.as_string() in decorator_names:
             return True
-        else:
-            # Check if by including the origin module of the decorator - and concatenating them we get one of ATTRS_NAMES
-            decorator_name = decorator_attribute.as_string()
-            local_value = decorator_attribute.scope().locals.get(decorator_name)
+        # Check if by including the origin module of the decorator -
+        # and concatenating them we get one of ATTRS_NAMES
+        decorator_name = decorator_attribute.as_string()
+        local_value = decorator_attribute.scope().locals.get(decorator_name)
 
-            # TODO: hack, as sometimes its a list?
-            if isinstance(local_value, ImportFrom) or (
-                isinstance(local_value, list) and isinstance(local_value[0], ImportFrom)
-            ):
-                decorator_module = local_value[0].modname
-                if f"{decorator_module}.{decorator_name}" in ATTRS_NAMES:
-                    return True
+        # TODO: hack, as sometimes its a list?
+        if isinstance(local_value, ImportFrom) or (
+            isinstance(local_value, list) and isinstance(local_value[0], ImportFrom)
+        ):
+            decorator_module = local_value[0].modname
+            if f"{decorator_module}.{decorator_name}" in ATTRS_NAMES:
+                return True
     return False
 
 
