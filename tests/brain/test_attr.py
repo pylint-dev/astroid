@@ -90,7 +90,7 @@ class AttrsTest(unittest.TestCase):
         module = astroid.parse(
             """
         import attrs
-        from attrs import field, mutable, frozen
+        from attrs import field, mutable, frozen, define
 
         @attrs.define
         class Foo:
