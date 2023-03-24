@@ -146,7 +146,7 @@ class TypeBrain(unittest.TestCase):
             a: type[int] = int
             """
         )
-        val_inf = src.annotation.value.inferred()[0]
+        val_inf = src.annotation.value.inferred_best()
         self.assertIsInstance(val_inf, astroid.ClassDef)
         self.assertEqual(val_inf.name, "type")
         meth_inf = val_inf.getattr("__class_getitem__")[0]
@@ -163,7 +163,7 @@ class TypeBrain(unittest.TestCase):
             a: str[int] = "abc"
             """
         )
-        val_inf = src.annotation.value.inferred()[0]
+        val_inf = src.annotation.value.inferred_best()
         self.assertIsInstance(val_inf, astroid.ClassDef)
         self.assertEqual(val_inf.name, "str")
         with self.assertRaises(AttributeInferenceError):

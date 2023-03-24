@@ -334,7 +334,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         """
         )
         next_node = tree.body[2].value.func
-        gener = next_node.expr.inferred()[0]
+        gener = next_node.expr.inferred_best()
         self.assertIsInstance(gener.getattr("__next__")[0], nodes.FunctionDef)
         self.assertIsInstance(gener.getattr("send")[0], nodes.FunctionDef)
         self.assertIsInstance(gener.getattr("throw")[0], nodes.FunctionDef)

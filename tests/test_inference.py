@@ -391,7 +391,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             raise __(NotImplementedError)
         """
         error = extract_node(code, __name__)
-        nie = error.inferred()[0]
+        nie = error.inferred_best()
         self.assertIsInstance(nie, nodes.ClassDef)
         nie_ancestors = [c.name for c in nie.ancestors()]
         expected = ["RuntimeError", "Exception", "BaseException", "object"]
@@ -1242,7 +1242,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             for n in ast_nodes:
                 assert n.inferred() == [util.Uninferable]
         else:
-            i0 = ast_nodes[0].inferred()[0]
+            i0 = ast_nodes[0].inferred_best()
             assert isinstance(i0, UnionType)
             assert isinstance(i0.left, nodes.ClassDef)
             assert i0.left.name == "int"
@@ -1257,10 +1257,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             assert str(i0) == "UnionType(UnionType)"
             assert repr(i0) == f"<UnionType(UnionType) l.None at 0x{id(i0)}>"
 
-            i1 = ast_nodes[1].inferred()[0]
+            i1 = ast_nodes[1].inferred_best()
             assert isinstance(i1, UnionType)
 
-            i2 = ast_nodes[2].inferred()[0]
+            i2 = ast_nodes[2].inferred_best()
             assert isinstance(i2, UnionType)
             assert isinstance(i2.left, UnionType)
             assert isinstance(i2.left.left, nodes.ClassDef)
@@ -1270,22 +1270,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             assert isinstance(i2.right, nodes.Const)
             assert i2.right.value is None
 
-            i3 = ast_nodes[3].inferred()[0]
+            i3 = ast_nodes[3].inferred_best()
             assert isinstance(i3, UnionType)
             assert isinstance(i3.left, nodes.ClassDef)
             assert i3.left.name == "A"
             assert isinstance(i3.right, nodes.ClassDef)
             assert i3.right.name == "B"
 
-            i4 = ast_nodes[4].inferred()[0]
+            i4 = ast_nodes[4].inferred_best()
             assert isinstance(i4, UnionType)
 
-            i5 = ast_nodes[5].inferred()[0]
+            i5 = ast_nodes[5].inferred_best()
             assert isinstance(i5, UnionType)
             assert isinstance(i5.left, nodes.ClassDef)
             assert i5.left.name == "List"
 
-            i6 = ast_nodes[6].inferred()[0]
+            i6 = ast_nodes[6].inferred_best()
             assert isinstance(i6, UnionType)
             assert isinstance(i6.left, nodes.ClassDef)
             assert i6.left.name == "tuple"
@@ -1305,18 +1305,18 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             for n in ast_nodes:
                 assert n.inferred() == [util.Uninferable]
         else:
-            i0 = ast_nodes[0].inferred()[0]
+            i0 = ast_nodes[0].inferred_best()
             assert isinstance(i0, UnionType)
             assert isinstance(i0.left, nodes.ClassDef)
             assert i0.left.name == "List"
 
-            i1 = ast_nodes[1].inferred()[0]
+            i1 = ast_nodes[1].inferred_best()
             assert isinstance(i1, UnionType)
             assert isinstance(i1.left, UnionType)
             assert isinstance(i1.left.left, nodes.ClassDef)
             assert i1.left.left.name == "str"
 
-            i2 = ast_nodes[2].inferred()[0]
+            i2 = ast_nodes[2].inferred_best()
             assert isinstance(i2, UnionType)
             assert isinstance(i2.left, nodes.ClassDef)
             assert i2.left.name == "List"
@@ -1367,7 +1367,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(bar_class.instance_attrs["attr"]), 1)
         self.assertEqual(bar_class.instance_attrs, {"attr": [assattr]})
         # call 'instance_attr' via 'Instance.getattr' to trigger the bug:
-        instance = bar_self.inferred()[0]
+        instance = bar_self.inferred_best()
         instance.getattr("attr")
         self.assertEqual(len(bar_class.instance_attrs["attr"]), 1)
         self.assertEqual(len(foo_class.instance_attrs["attr"]), 1)
@@ -1384,7 +1384,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         a #@
         """
         variable_a = extract_node(code)
-        self.assertEqual(variable_a.inferred()[0].value, 2)
+        self.assertEqual(variable_a.inferred_best().value, 2)
 
     def test_nonregr_layed_dictunpack(self) -> None:
         """Regression test for https://github.com/PyCQA/astroid/issues/483
@@ -1397,7 +1397,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         new3 #@
         """
         ass = extract_node(code)
-        self.assertIsInstance(ass.inferred()[0], nodes.Dict)
+        self.assertIsInstance(ass.inferred_best(), nodes.Dict)
 
     def test_nonregr_inference_modifying_col_offset(self) -> None:
         """Make sure inference doesn't improperly modify col_offset.
@@ -1646,11 +1646,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             B = namedtuple('B', 'a b')
         """
         ast = parse(code, __name__)
-        aclass = ast["A"].inferred()[0]
+        aclass = ast["A"].inferred_best()
         self.assertIsInstance(aclass, nodes.ClassDef)
         self.assertIn("a", aclass.instance_attrs)
         self.assertIn("b", aclass.instance_attrs)
-        bclass = ast["B"].inferred()[0]
+        bclass = ast["B"].inferred_best()
         self.assertIsInstance(bclass, nodes.ClassDef)
         self.assertIn("a", bclass.instance_attrs)
         self.assertIn("b", bclass.instance_attrs)
@@ -1678,18 +1678,18 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             empty_list = A().empty_method()
         """
         ast = parse(code, __name__)
-        int_node = ast["x"].inferred()[0]
+        int_node = ast["x"].inferred_best()
         self.assertIsInstance(int_node, nodes.Const)
         self.assertEqual(int_node.value, 1)
-        list_node = ast["y"].inferred()[0]
+        list_node = ast["y"].inferred_best()
         self.assertIsInstance(list_node, nodes.List)
-        int_node = ast["z"].inferred()[0]
+        int_node = ast["z"].inferred_best()
         self.assertIsInstance(int_node, nodes.Const)
         self.assertEqual(int_node.value, 1)
-        empty = ast["empty"].inferred()[0]
+        empty = ast["empty"].inferred_best()
         self.assertIsInstance(empty, nodes.Const)
         self.assertEqual(empty.value, 2)
-        empty_list = ast["empty_list"].inferred()[0]
+        empty_list = ast["empty_list"].inferred_best()
         self.assertIsInstance(empty_list, nodes.List)
 
     def test_infer_variable_arguments(self) -> None:
@@ -1703,11 +1703,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         vararg = func.body[0].value
         kwarg = func.body[1].value
 
-        kwarg_inferred = kwarg.inferred()[0]
+        kwarg_inferred = kwarg.inferred_best()
         self.assertIsInstance(kwarg_inferred, nodes.Dict)
         self.assertIs(kwarg_inferred.parent, func.args)
 
-        vararg_inferred = vararg.inferred()[0]
+        vararg_inferred = vararg.inferred_best()
         self.assertIsInstance(vararg_inferred, nodes.Tuple)
         self.assertIs(vararg_inferred.parent, func.args)
 
@@ -1725,7 +1725,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast = parse(code, __name__)
         callfunc = next(ast.nodes_of_class(nodes.Call))
         func = callfunc.func
-        inferred = func.inferred()[0]
+        inferred = func.inferred_best()
         self.assertIsInstance(inferred, UnboundMethod)
 
     def test_instance_binary_operations(self) -> None:
@@ -1739,8 +1739,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             mul = a * b
         """
         ast = parse(code, __name__)
-        sub = ast["sub"].inferred()[0]
-        mul = ast["mul"].inferred()[0]
+        sub = ast["sub"].inferred_best()
+        mul = ast["mul"].inferred_best()
         self.assertIs(sub, util.Uninferable)
         self.assertIsInstance(mul, nodes.Const)
         self.assertEqual(mul.value, 42)
@@ -1758,8 +1758,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             mul = a * b
         """
         ast = parse(code, __name__)
-        sub = ast["sub"].inferred()[0]
-        mul = ast["mul"].inferred()[0]
+        sub = ast["sub"].inferred_best()
+        mul = ast["mul"].inferred_best()
         self.assertIs(sub, util.Uninferable)
         self.assertIsInstance(mul, nodes.Const)
         self.assertEqual(mul.value, 42)
@@ -1778,8 +1778,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             mul = a * b
         """
         ast = parse(code, __name__)
-        sub = ast["sub"].inferred()[0]
-        mul = ast["mul"].inferred()[0]
+        sub = ast["sub"].inferred_best()
+        mul = ast["mul"].inferred_best()
         self.assertIs(sub, util.Uninferable)
         self.assertIsInstance(mul, nodes.List)
         self.assertIsInstance(mul.elts[0], nodes.Const)
@@ -2198,7 +2198,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast = extract_node(code)
         final_values = ("{'data': 1}", "{'data': 0}", "{'data': 3}", "{'data': 0}")
         for node, final_value in zip(ast, final_values):
-            assert node.targets[0].inferred()[0].as_string() == final_value
+            assert node.targets[0].inferred_best().as_string() == final_value
 
     def test_dict_invalid_args(self) -> None:
         invalid_values = ["dict(*1)", "dict(**lala)", "dict(**[])"]
@@ -4195,7 +4195,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         Clazz() #@
         """
             )
-            .inferred()[0]
+            .inferred_best()
             .value
         )
         assert val == 1
@@ -4211,7 +4211,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
         Clazz() #@
         """
-        ).inferred()[0]
+        ).inferred_best()
         assert isinstance(cls, nodes.ClassDef) and cls.name == "Clazz"
 
     def test_infer_subclass_attr_outer_class(self) -> None:
@@ -4465,6 +4465,51 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         with self.assertRaises(InferenceError):
             _ = next(node.infer())
 
+    def test_inferred_best(self) -> None:
+        node = extract_node(
+            """
+        if hasattr(typing, 'some_future_function'):
+            future_function = typing.some_future_function
+        else:
+            def future_function(arg: int) -> bool:
+                return False
+        future_function
+        """
+        )
+        inferred_all = node.inferred()
+        inferred_best = node.inferred_best()
+        assert inferred_best is not util.Uninferable
+        assert inferred_best in inferred_all
+
+    def test_inferred_best_no_choice(self) -> None:
+        node = extract_node(
+            """
+        if hasattr(typing, 'future_function'):
+            future_function = typing.future_function
+        else:
+            future_function = typing.old_function
+        future_function
+        """
+        )
+        inferred_all = node.inferred()
+        inferred_best = node.inferred_best()
+        assert inferred_best is util.Uninferable
+        assert inferred_best in inferred_all
+
+    def test_inferred_best_any_value(self) -> None:
+        node = extract_node(
+            """
+        if hasattr(typing, 'future_function'):
+            future_function = 1
+        else:
+            future_function = '1'
+        future_function
+        """
+        )
+        inferred_all = node.inferred()
+        inferred_best = node.inferred_best()
+        assert inferred_best is not util.Uninferable
+        assert inferred_best in inferred_all
 
 class GetattrTest(unittest.TestCase):
     def test_yes_when_unknown(self) -> None:

@@ -376,7 +376,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
                 np.{type_}[int]
                 """
                 node = builder.extract_node(src)
-                cls_node = node.inferred()[0]
+                cls_node = node.inferred_best()
                 self.assertIsInstance(cls_node, nodes.ClassDef)
                 self.assertEqual(cls_node.name, type_)
 
@@ -407,5 +407,5 @@ class NumpyBrainUtilsTest(unittest.TestCase):
         np.number[int]
         """
         node = builder.extract_node(src)
-        cls_node = node.inferred()[0]
+        cls_node = node.inferred_best()
         self.assertIs(cls_node, Uninferable)

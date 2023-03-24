@@ -612,6 +612,21 @@ class NodeNG:
         """
         return list(self.infer())
 
+    def inferred_best(self) -> InferenceResult:
+        """Return single inferred value, possibly avoid Uninferable.
+
+        Try to return value of type other than :class:`UninferableBase`.
+        It is still possible to return :class:`UninferableBase`
+        if there is no other choice.
+
+        :returns: The best inferred value.
+        :rtype: InferenceResult
+        """
+        return sorted(
+            self.infer(),
+            key=lambda inf: isinstance(inf, util.UninferableBase)
+        )[0]
+
     def instantiate_class(self):
         """Instantiate an instance of the defined class.
 

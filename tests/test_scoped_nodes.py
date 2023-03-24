@@ -613,10 +613,10 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             test()
         """
         astroid = builder.parse(data, "mod")
-        func = astroid.body[2].value.func.inferred()[0]
+        func = astroid.body[2].value.func.inferred_best()
         self.assertIsInstance(func, nodes.FunctionDef)
         self.assertEqual(func.name, "test")
-        one = func.getattr("bar")[0].inferred()[0]
+        one = func.getattr("bar")[0].inferred_best()
         self.assertIsInstance(one, nodes.Const)
         self.assertEqual(one.value, 1)
 
@@ -2543,7 +2543,7 @@ def test_enums_type_annotation_str_member() -> None:
     Veg.TOMATO.value
     """
     )
-    inferred_member_value = node.inferred()[0]
+    inferred_member_value = node.inferred_best()
     assert isinstance(inferred_member_value, nodes.Const)
     assert inferred_member_value.value == "sweet"
 
@@ -2563,7 +2563,7 @@ def test_enums_type_annotation_no_value(annotation) -> None:
     Veg.TOMATO.value
     """
     )
-    inferred_member_value = node.inferred()[0]
+    inferred_member_value = node.inferred_best()
     assert inferred_member_value.value is None
 
 
@@ -2578,7 +2578,7 @@ def test_enums_value2member_map_() -> None:
     Veg
     """
     )
-    inferred_class = node.inferred()[0]
+    inferred_class = node.inferred_best()
     assert "_value2member_map_" in inferred_class.locals
 
 
@@ -2599,7 +2599,7 @@ def test_enums_type_annotation_non_str_member(annotation, value) -> None:
     Veg.TOMATO.value
     """
     )
-    inferred_member_value = node.inferred()[0]
+    inferred_member_value = node.inferred_best()
     assert isinstance(inferred_member_value, nodes.Const)
     assert inferred_member_value.value == value
 
@@ -2629,7 +2629,7 @@ def test_enums_type_annotations_non_const_member(annotation, value) -> None:
     """
     )
 
-    inferred_member_value = member.inferred()[0]
+    inferred_member_value = member.inferred_best()
     assert not isinstance(inferred_member_value, nodes.Const)
     assert inferred_member_value.as_string() == repr(value)
 

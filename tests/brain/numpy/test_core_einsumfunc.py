@@ -49,7 +49,7 @@ def test_function_parameters() -> None:
     numpy.einsum #@
     """
     )
-    actual_args = instance.inferred()[0].args
+    actual_args = instance.inferred_best().args
 
     assert actual_args.vararg == "operands"
     assert [arg.name for arg in actual_args.kwonlyargs] == ["out", "optimize"]

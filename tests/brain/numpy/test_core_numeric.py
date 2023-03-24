@@ -74,5 +74,5 @@ def test_function_parameters(method: str, expected_args: list[str]) -> None:
     numpy.{method} #@
     """
     )
-    actual_args = instance.inferred()[0].args.args
+    actual_args = instance.inferred_best().args.args
     assert [arg.name for arg in actual_args] == expected_args

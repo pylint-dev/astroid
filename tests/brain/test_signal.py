@@ -30,7 +30,7 @@ def test_enum(enum_name):
 
     # Check the extracted node
     assert isinstance(node, nodes.NodeNG)
-    node_inf = node.inferred()[0]
+    node_inf = node.inferred_best()
     assert isinstance(node_inf, nodes.ClassDef)
     assert node_inf.display_type() == "Class"
     assert node_inf.is_subtype_of("enum.IntEnum")

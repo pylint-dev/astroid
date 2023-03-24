@@ -20,7 +20,7 @@ class TestBrainNumpyMa:
 
     def _assert_maskedarray(self, code):
         node = builder.extract_node(code)
-        cls_node = node.inferred()[0]
+        cls_node = node.inferred_best()
         assert cls_node.pytype() == "numpy.ma.core.MaskedArray"
 
     @pytest.mark.parametrize("alias_import", [True, False])
