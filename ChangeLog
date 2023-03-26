@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.15.1?
+What's New in astroid 2.15.2?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.15.1?
+=============================
+Release date: 2023-03-26
 
 * Restore behavior of setting a Call as a base for classes created using ``six.with_metaclass()``,
   and harden support for using enums as metaclasses in this case.
