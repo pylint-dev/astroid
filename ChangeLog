@@ -12,6 +12,12 @@ What's New in astroid 2.15.1?
 =============================
 Release date: TBA
 
+* Restore behavior of setting a Call as a base for classes created using ``six.with_metaclass()``,
+  and harden support for using enums as metaclasses in this case.
+
+  Reverts #1622
+  Refs PyCQA/pylint#5935
+  Refs PyCQA/pylint#7506
 
 
 What's New in astroid 2.15.0?

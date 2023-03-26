@@ -1701,7 +1701,15 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
             metaclass = next(caller.args[0].infer(context), None)
             if isinstance(metaclass, ClassDef):
                 try:
-                    class_bases = [next(arg.infer(context)) for arg in caller.args[1:]]
+                    class_bases = [
+                        # Find the first non-None inferred base value
+                        next(
+                            b
+                            for b in arg.infer(context=context.clone())
+                            if not (isinstance(b, Const) and b.value is None)
+                        )
+                        for arg in caller.args[1:]
+                    ]
                 except StopIteration as e:
                     raise InferenceError(node=caller.args[1:], context=context) from e
                 new_class = ClassDef(name="temporary_class")

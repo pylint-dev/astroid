@@ -110,8 +110,7 @@ class SixBrainTest(unittest.TestCase):
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "B")
-        self.assertIsInstance(inferred.bases[0], nodes.Name)
-        self.assertEqual(inferred.bases[0].name, "C")
+        self.assertIsInstance(inferred.bases[0], nodes.Call)
         ancestors = tuple(inferred.ancestors())
         self.assertIsInstance(ancestors[0], nodes.ClassDef)
         self.assertEqual(ancestors[0].name, "C")
@@ -131,7 +130,7 @@ class SixBrainTest(unittest.TestCase):
             bar = 1
         """
         klass = astroid.extract_node(code)
-        assert list(klass.ancestors())[-1].name == "Enum"
+        assert next(klass.ancestors()).name == "Enum"
 
     def test_six_with_metaclass_with_additional_transform(self) -> None:
         def transform_class(cls: Any) -> ClassDef:
