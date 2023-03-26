@@ -4511,6 +4511,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         assert inferred_best is not util.Uninferable
         assert inferred_best in inferred_all
 
+
 class GetattrTest(unittest.TestCase):
     def test_yes_when_unknown(self) -> None:
         ast_nodes = extract_node(

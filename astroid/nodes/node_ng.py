@@ -623,8 +623,7 @@ class NodeNG:
         :rtype: InferenceResult
         """
         return sorted(
-            self.infer(),
-            key=lambda inf: isinstance(inf, util.UninferableBase)
+            self.infer(), key=lambda inf: isinstance(inf, util.UninferableBase)
         )[0]
 
     def instantiate_class(self):

@@ -482,7 +482,10 @@ class EnumBrainTest(unittest.TestCase):
 
         # Test that both of the successfully inferred `Name` & `Attribute`
         # nodes refer to the user-defined Enum class.
-        for inferred in (attribute_nodes[0].inferred_best(), name_nodes[0].inferred_best()):
+        for inferred in (
+            attribute_nodes[0].inferred_best(),
+            name_nodes[0].inferred_best(),
+        ):
             assert isinstance(inferred, astroid.Instance)
             assert inferred.name == "Enum"
             assert inferred.qname() == "module_with_class_named_enum.Enum"
