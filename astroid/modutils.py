@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Python modules manipulation utility functions.
 
@@ -52,7 +52,7 @@ else:
 
 
 # TODO: Adding `platstdlib` is a fix for a workaround in virtualenv. At some point we should
-# revisit whether this is still necessary. See https://github.com/PyCQA/astroid/pull/1323.
+# revisit whether this is still necessary. See https://github.com/pylint-dev/astroid/pull/1323.
 STD_LIB_DIRS = {sysconfig.get_path("stdlib"), sysconfig.get_path("platstdlib")}
 
 if os.name == "nt":
@@ -80,7 +80,7 @@ if IS_PYPY and sys.version_info < (3, 8):
     STD_LIB_DIRS.add(str(Path(sysconfig.get_path("stdlib")).parent / "lib-python/3"))
 
     # TODO: This is a fix for a workaround in virtualenv. At some point we should revisit
-    # whether this is still necessary. See https://github.com/PyCQA/astroid/pull/1324.
+    # whether this is still necessary. See https://github.com/pylint-dev/astroid/pull/1324.
     STD_LIB_DIRS.add(str(Path(sysconfig.get_path("platstdlib")).parent / "lib_pypy"))
     STD_LIB_DIRS.add(
         str(Path(sysconfig.get_path("platstdlib")).parent / "lib-python/3")
@@ -108,7 +108,7 @@ if os.name == "posix":
         # standard library could be found. More details can be found
         # here http://bugs.python.org/issue1294959.
         # An easy reproducing case would be
-        # https://github.com/PyCQA/pylint/issues/712#issuecomment-163178753
+        # https://github.com/pylint-dev/pylint/issues/712#issuecomment-163178753
         STD_LIB_DIRS.add(_posix_path("lib64"))
 
 EXT_LIB_DIRS = {sysconfig.get_path("purelib"), sysconfig.get_path("platlib")}

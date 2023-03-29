@@ -1,8 +1,8 @@
 Astroid
 =======
 
-.. image:: https://codecov.io/gh/PyCQA/astroid/branch/main/graph/badge.svg?token=Buxy4WptLb
-    :target: https://codecov.io/gh/PyCQA/astroid
+.. image:: https://codecov.io/gh/pylint-dev/astroid/branch/main/graph/badge.svg?token=Buxy4WptLb
+    :target: https://codecov.io/gh/pylint-dev/astroid
     :alt: Coverage badge from codecov
 
 .. image:: https://readthedocs.org/projects/astroid/badge/?version=latest
@@ -12,11 +12,11 @@ Astroid
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/ambv/black
 
-.. image:: https://results.pre-commit.ci/badge/github/PyCQA/astroid/main.svg
-   :target: https://results.pre-commit.ci/latest/github/PyCQA/astroid/main
+.. image:: https://results.pre-commit.ci/badge/github/pylint-dev/astroid/main.svg
+   :target: https://results.pre-commit.ci/latest/github/pylint-dev/astroid/main
    :alt: pre-commit.ci status
 
-.. |tidelift_logo| image:: https://raw.githubusercontent.com/PyCQA/astroid/main/doc/media/Tidelift_Logos_RGB_Tidelift_Shorthand_On-White.png
+.. |tidelift_logo| image:: https://raw.githubusercontent.com/pylint-dev/astroid/main/doc/media/Tidelift_Logos_RGB_Tidelift_Shorthand_On-White.png
    :width: 200
    :alt: Tidelift
 

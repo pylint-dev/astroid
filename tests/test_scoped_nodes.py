@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for specific behaviour of astroid scoped nodes (i.e. module, class and
 function).
@@ -1405,7 +1405,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_metaclass_generator_hack_enum_base(self):
-        """Regression test for https://github.com/PyCQA/pylint/issues/5935"""
+        """Regression test for https://github.com/pylint-dev/pylint/issues/5935"""
         klass = builder.extract_node(
             """
             import six
@@ -1913,7 +1913,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """Regression test for mro() inference on typing_extesnions.
 
         Regression reported in:
-        https://github.com/PyCQA/astroid/issues/1124
+        https://github.com/pylint-dev/astroid/issues/1124
         """
         module = parse(
             """
@@ -2483,7 +2483,7 @@ def test_issue940_metaclass_funcdef_is_not_datadescriptor() -> None:
 
 
 def test_property_in_body_of_try() -> None:
-    """Regression test for https://github.com/PyCQA/pylint/issues/6596."""
+    """Regression test for https://github.com/pylint-dev/pylint/issues/6596."""
     node: nodes.Return = builder._extract_single_node(
         """
     def myfunc():
@@ -2733,7 +2733,7 @@ def test_posonlyargs_default_value() -> None:
 
 
 def test_ancestor_with_generic() -> None:
-    # https://github.com/PyCQA/astroid/issues/942
+    # https://github.com/pylint-dev/astroid/issues/942
     tree = builder.parse(
         """
     from typing import TypeVar, Generic

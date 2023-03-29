@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Various helper utilities."""
 
@@ -259,7 +259,7 @@ def object_len(node, context: InferenceContext | None = None):
     inferred_node = safe_infer(node, context=context)
 
     # prevent self referential length calls from causing a recursion error
-    # see https://github.com/PyCQA/astroid/issues/777
+    # see https://github.com/pylint-dev/astroid/issues/777
     node_frame = node.frame(future=True)
     if (
         isinstance(node_frame, scoped_nodes.FunctionDef)

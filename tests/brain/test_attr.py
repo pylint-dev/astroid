@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 from __future__ import annotations
 
@@ -161,7 +161,7 @@ class AttrsTest(unittest.TestCase):
         """
         foo_inst = next(astroid.extract_node(code).infer())
         [attr_node] = foo_inst.getattr("__attrs_attrs__")
-        # Prevents https://github.com/PyCQA/pylint/issues/1884
+        # Prevents https://github.com/pylint-dev/pylint/issues/1884
         assert isinstance(attr_node, nodes.Unknown)
 
     def test_dont_consider_assignments_but_without_attrs(self) -> None:

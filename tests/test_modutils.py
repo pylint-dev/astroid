@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Unit tests for module modutils (module manipulation utilities)."""
 import email
@@ -218,7 +218,7 @@ class ModPathFromFileTest(unittest.TestCase):
         """Test that we correctly find packages with an __init__.py file.
 
         Regression test for issue reported in:
-        https://github.com/PyCQA/astroid/issues/1327
+        https://github.com/pylint-dev/astroid/issues/1327
         """
         tmp_dir = Path(tempfile.gettempdir())
         self.addCleanup(os.chdir, os.getcwd())

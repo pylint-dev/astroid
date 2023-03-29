@@ -1,3 +1,3 @@
-# https://github.com/PyCQA/astroid/issues/749
+# https://github.com/pylint-dev/astroid/issues/749
 class OriginalClass:
     pass

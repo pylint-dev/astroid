@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid hooks for understanding functools library module."""
 
@@ -59,7 +59,7 @@ class LruWrappedModel(objectmodel.FunctionModel):
 
 def _transform_lru_cache(node, context: InferenceContext | None = None) -> None:
     # TODO: this is not ideal, since the node should be immutable,
-    # but due to https://github.com/PyCQA/astroid/issues/354,
+    # but due to https://github.com/pylint-dev/astroid/issues/354,
     # there's not much we can do now.
     # Replacing the node would work partially, because,
     # in pylint, the old node would still be available, leading

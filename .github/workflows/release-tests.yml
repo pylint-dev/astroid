@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   virtualenv-15-windows-test:
-    # Regression test added in https://github.com/PyCQA/astroid/pull/1386
+    # Regression test added in https://github.com/pylint-dev/astroid/pull/1386
     name: Regression test for virtualenv==15.1.0 on Windows
     runs-on: windows-latest
     timeout-minutes: 5

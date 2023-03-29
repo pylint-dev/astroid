@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 from __future__ import annotations
 
@@ -203,7 +203,7 @@ class ImportlibFinder(Finder):
             # virtualenv below 20.0 patches distutils in an unexpected way
             # so we just find the location of distutils that will be
             # imported to avoid spurious import-error messages
-            # https://github.com/PyCQA/pylint/issues/5645
+            # https://github.com/pylint-dev/pylint/issues/5645
             # A regression test to create this scenario exists in release-tests.yml
             # and can be triggered manually from GitHub Actions
             distutils_spec = importlib.util.find_spec("distutils")
@@ -406,7 +406,7 @@ def _find_spec_with_path(
         # Meta path finders are supposed to have a find_spec method since
         # Python 3.4. However, some third-party finders do not implement it.
         # PEP302 does not refer to find_spec as well.
-        # See: https://github.com/PyCQA/astroid/pull/1752/
+        # See: https://github.com/pylint-dev/astroid/pull/1752/
         if not hasattr(meta_finder, "find_spec"):
             continue
 

@@ -1,4 +1,4 @@
-# https://github.com/PyCQA/astroid/issues/749
+# https://github.com/pylint-dev/astroid/issues/749
 # Not an actual module but allows us to reproduce the issue
 from tests.testdata.python3.data.metaclass_recursion import parent
 
