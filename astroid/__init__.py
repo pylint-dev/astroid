@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Python Abstract Syntax Tree New Generation.
 
@@ -183,7 +183,7 @@ from astroid.nodes import (  # pylint: disable=redefined-builtin (Ellipsis)
 from astroid.util import Uninferable
 
 # Performance hack for tokenize. See https://bugs.python.org/issue43014
-# Adapted from https://github.com/PyCQA/pycodestyle/pull/993
+# Adapted from https://github.com/pylint-dev/pycodestyle/pull/993
 if (
     not PY310_PLUS
     and callable(getattr(tokenize, "_compile", None))

@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 from __future__ import annotations
 
@@ -171,7 +171,7 @@ class ProtocolTests(unittest.TestCase):
         )
 
     def test_assigned_stmts_starred_inside_call(self) -> None:
-        """Regression test for https://github.com/PyCQA/pylint/issues/6372."""
+        """Regression test for https://github.com/pylint-dev/pylint/issues/6372."""
         code = "string_twos = ''.join(str(*y) for _, *y in [[1, 2], [1, 2]]) #@"
         stmt = extract_node(code)
         starred = next(stmt.nodes_of_class(nodes.Starred))

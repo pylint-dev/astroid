@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ class NamedTupleTest(unittest.TestCase):
         self.assertEqual(
             [anc.name for anc in klass.ancestors()], ["X", "tuple", "object"]
         )
-        # See: https://github.com/PyCQA/pylint/issues/5982
+        # See: https://github.com/pylint-dev/pylint/issues/5982
         self.assertNotIn("X", klass.locals)
         for anc in klass.ancestors():
             self.assertFalse(anc.parent is None)
@@ -294,7 +294,7 @@ class NamedTupleTest(unittest.TestCase):
         self.assertIs(util.Uninferable, inferred)
 
     def test_name_as_typename(self) -> None:
-        """Reported in https://github.com/PyCQA/pylint/issues/7429 as a crash."""
+        """Reported in https://github.com/pylint-dev/pylint/issues/7429 as a crash."""
         good_node, good_node_two, bad_node = builder.extract_node(
             """
             import collections

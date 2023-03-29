@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 import pytest
 
@@ -140,7 +140,7 @@ def test_inference_method(module: str):
     """Test inference of dataclass attribute within a method,
     with a default_factory field.
 
-    Based on https://github.com/PyCQA/pylint/issues/2600
+    Based on https://github.com/pylint-dev/pylint/issues/2600
     """
     node = astroid.extract_node(
         f"""
@@ -316,7 +316,7 @@ def test_inference_generic_collection_attribute(module: str):
 def test_inference_callable_attribute(module: str, typing_module: str):
     """Test that an attribute with a Callable annotation is inferred as Uninferable.
 
-    See issue #1129 and PyCQA/pylint#4895
+    See issue #1129 and pylint-dev/pylint#4895
     """
     instance = astroid.extract_node(
         f"""
@@ -633,7 +633,7 @@ def test_init_field_init_false(module: str):
 def test_init_override(module: str):
     """Test init for a dataclass overrides a superclass initializer.
 
-    Based on https://github.com/PyCQA/pylint/issues/3201
+    Based on https://github.com/pylint-dev/pylint/issues/3201
     """
     node = astroid.extract_node(
         f"""
@@ -668,7 +668,7 @@ def test_init_attributes_from_superclasses(module: str):
     """Test init for a dataclass that inherits and overrides attributes from
     superclasses.
 
-    Based on https://github.com/PyCQA/pylint/issues/3201
+    Based on https://github.com/pylint-dev/pylint/issues/3201
     """
     node = astroid.extract_node(
         f"""
@@ -940,7 +940,7 @@ def test_kw_only_in_field_call() -> None:
 def test_dataclass_with_unknown_base() -> None:
     """Regression test for dataclasses with unknown base classes.
 
-    Reported in https://github.com/PyCQA/pylint/issues/7418
+    Reported in https://github.com/pylint-dev/pylint/issues/7418
     """
     node = astroid.extract_node(
         """
@@ -963,7 +963,7 @@ def test_dataclass_with_unknown_base() -> None:
 def test_dataclass_with_unknown_typing() -> None:
     """Regression test for dataclasses with unknown base classes.
 
-    Reported in https://github.com/PyCQA/pylint/issues/7422
+    Reported in https://github.com/pylint-dev/pylint/issues/7422
     """
     node = astroid.extract_node(
         """
@@ -987,7 +987,7 @@ def test_dataclass_with_unknown_typing() -> None:
 def test_dataclass_with_default_factory() -> None:
     """Regression test for dataclasses with default values.
 
-    Reported in https://github.com/PyCQA/pylint/issues/7425
+    Reported in https://github.com/pylint-dev/pylint/issues/7425
     """
     bad_node, good_node = astroid.extract_node(
         """
@@ -1028,8 +1028,8 @@ def test_dataclass_with_default_factory() -> None:
 def test_dataclass_with_multiple_inheritance() -> None:
     """Regression test for dataclasses with multiple inheritance.
 
-    Reported in https://github.com/PyCQA/pylint/issues/7427
-    Reported in https://github.com/PyCQA/pylint/issues/7434
+    Reported in https://github.com/pylint-dev/pylint/issues/7427
+    Reported in https://github.com/pylint-dev/pylint/issues/7434
     """
     first, second, overwritten, overwriting, mixed = astroid.extract_node(
         """

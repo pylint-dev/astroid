@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 import sys
 import textwrap
@@ -375,7 +375,7 @@ def test_crash_in_dunder_inference_prevented() -> None:
 
 def test_regression_crash_classmethod() -> None:
     """Regression test for a crash reported in
-    https://github.com/PyCQA/pylint/issues/4982.
+    https://github.com/pylint-dev/pylint/issues/4982.
     """
     code = """
     class Base:
@@ -397,7 +397,7 @@ def test_regression_crash_classmethod() -> None:
 
 def test_max_inferred_for_complicated_class_hierarchy() -> None:
     """Regression test for a crash reported in
-    https://github.com/PyCQA/pylint/issues/5679.
+    https://github.com/pylint-dev/pylint/issues/5679.
 
     The class hierarchy of 'sqlalchemy' is so intricate that it becomes uninferable with
     the standard max_inferred of 100. We used to crash when this happened.

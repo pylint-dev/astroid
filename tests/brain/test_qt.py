@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 from importlib.util import find_spec
 
@@ -20,7 +20,7 @@ class TestBrainQt:
 
     @staticmethod
     def test_value_of_lambda_instance_attrs_is_list():
-        """Regression test for https://github.com/PyCQA/pylint/issues/6221.
+        """Regression test for https://github.com/pylint-dev/pylint/issues/6221.
 
         A crash occurred in pylint when a nodes.FunctionDef was iterated directly,
         giving items like "self" instead of iterating a one-element list containing
@@ -40,7 +40,7 @@ class TestBrainQt:
 
     @staticmethod
     def test_implicit_parameters() -> None:
-        """Regression test for https://github.com/PyCQA/pylint/issues/6464."""
+        """Regression test for https://github.com/pylint-dev/pylint/issues/6464."""
         src = """
         from PyQt6.QtCore import QTimer
         timer = QTimer()
@@ -57,7 +57,7 @@ class TestBrainQt:
     def test_slot_disconnect_no_args() -> None:
         """Test calling .disconnect() on a signal.
 
-        See https://github.com/PyCQA/astroid/pull/1531#issuecomment-1111963792
+        See https://github.com/pylint-dev/astroid/pull/1531#issuecomment-1111963792
         """
         src = """
         from PyQt6.QtCore import QTimer

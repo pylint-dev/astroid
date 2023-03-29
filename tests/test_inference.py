@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for the astroid inference capabilities."""
 
@@ -1374,7 +1374,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(bar_class.instance_attrs, {"attr": [assattr]})
 
     def test_nonregr_multi_referential_addition(self) -> None:
-        """Regression test for https://github.com/PyCQA/astroid/issues/483
+        """Regression test for https://github.com/pylint-dev/astroid/issues/483
         Make sure issue where referring to the same variable
         in the same inferred expression caused an uninferable result.
         """
@@ -1387,7 +1387,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(variable_a.inferred()[0].value, 2)
 
     def test_nonregr_layed_dictunpack(self) -> None:
-        """Regression test for https://github.com/PyCQA/astroid/issues/483
+        """Regression test for https://github.com/pylint-dev/astroid/issues/483
         Make sure multiple dictunpack references are inferable.
         """
         code = """
@@ -1402,7 +1402,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     def test_nonregr_inference_modifying_col_offset(self) -> None:
         """Make sure inference doesn't improperly modify col_offset.
 
-        Regression test for https://github.com/PyCQA/pylint/issues/1839
+        Regression test for https://github.com/pylint-dev/pylint/issues/1839
         """
 
         code = """
@@ -1420,7 +1420,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     def test_no_runtime_error_in_repeat_inference(self) -> None:
         """Stop repeat inference attempt causing a RuntimeError in Python3.7.
 
-        See https://github.com/PyCQA/pylint/issues/2317
+        See https://github.com/pylint-dev/pylint/issues/2317
         """
         code = """
 
@@ -2185,7 +2185,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     def test_dict_inference_unpack_repeated_key(self) -> None:
         """Make sure astroid does not infer repeated keys in a dictionary.
 
-        Regression test for https://github.com/PyCQA/pylint/issues/1843
+        Regression test for https://github.com/pylint-dev/pylint/issues/1843
         """
         code = """
         base = {'data': 0}
@@ -2465,7 +2465,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertRaises(InferenceError, next, module["a"].infer())
 
     def test_inferring_context_manager_unpacking_inference_error(self) -> None:
-        # https://github.com/PyCQA/pylint/issues/1463
+        # https://github.com/pylint-dev/pylint/issues/1463
         module = parse(
             """
         import contextlib
@@ -2515,7 +2515,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         the first yield instead of the yield in the
         proper scope
 
-        Fixes https://github.com/PyCQA/pylint/issues/1746
+        Fixes https://github.com/pylint-dev/pylint/issues/1746
         """
         code = """
         from contextlib import contextmanager
@@ -3161,7 +3161,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     def test_binop_self_in_list(self) -> None:
         """If 'self' is referenced within a list it should not be bound by it.
 
-        Reported in https://github.com/PyCQA/pylint/issues/4826.
+        Reported in https://github.com/pylint-dev/pylint/issues/4826.
         """
         ast_nodes = extract_node(
             """
@@ -4180,7 +4180,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """The Metaclass __call__ should take precedence
         over the default metaclass type call (initialization).
 
-        See https://github.com/PyCQA/pylint/issues/2159
+        See https://github.com/pylint-dev/pylint/issues/2159
         """
         val = (
             extract_node(
@@ -4268,7 +4268,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         # old_boundnode fixes in infer_subscript, so it should have been
         # possible to infer the subscript directly. It is the difference
         # between these two cases that led to the discovery of the cause of the
-        # bug in https://github.com/PyCQA/astroid/issues/904
+        # bug in https://github.com/pylint-dev/astroid/issues/904
         inferred = next(attr_node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == 123
@@ -4384,7 +4384,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     @test_utils.require_version(minver="3.9")
     def test_infer_arg_called_type_when_used_as_index_is_uninferable(self):
-        # https://github.com/PyCQA/astroid/pull/958
+        # https://github.com/pylint-dev/astroid/pull/958
         node = extract_node(
             """
         def func(type):
@@ -4399,7 +4399,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     @test_utils.require_version(minver="3.9")
     def test_infer_arg_called_type_when_used_as_subscript_is_uninferable(self):
-        # https://github.com/PyCQA/astroid/pull/958
+        # https://github.com/pylint-dev/astroid/pull/958
         node = extract_node(
             """
         def func(type):
@@ -4412,7 +4412,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     @test_utils.require_version(minver="3.9")
     def test_infer_arg_called_type_defined_in_outer_scope_is_uninferable(self):
-        # https://github.com/PyCQA/astroid/pull/958
+        # https://github.com/pylint-dev/astroid/pull/958
         node = extract_node(
             """
         def outer(type):
@@ -5147,7 +5147,7 @@ class ArgumentsTest(unittest.TestCase):
             self.assertEqual(inferred, util.Uninferable)
 
     def test_args_overwritten(self) -> None:
-        # https://github.com/PyCQA/astroid/issues/180
+        # https://github.com/pylint-dev/astroid/issues/180
         node = extract_node(
             """
         next = 42
@@ -5474,7 +5474,7 @@ def test_regression_infinite_loop_decorator() -> None:
     """Make sure decorators with the same names
     as a decorated method do not cause an infinite loop.
 
-    See https://github.com/PyCQA/astroid/issues/375
+    See https://github.com/pylint-dev/astroid/issues/375
     """
     code = """
     from functools import lru_cache
@@ -5513,7 +5513,7 @@ def test_stop_iteration_in_int() -> None:
 def test_call_on_instance_with_inherited_dunder_call_method() -> None:
     """Stop inherited __call__ method from incorrectly returning wrong class.
 
-    See https://github.com/PyCQA/pylint/issues/2199
+    See https://github.com/pylint-dev/pylint/issues/2199
     """
     node = extract_node(
         """
@@ -6055,7 +6055,7 @@ def test_prevent_recursion_error_in_igetattr_and_context_manager_inference() -> 
     """
     node = extract_node(code)
     # According to the original issue raised that introduced this test
-    # (https://github.com/PyCQA/astroid/663, see 55076ca), this test was a
+    # (https://github.com/pylint-dev/astroid/663, see 55076ca), this test was a
     # non-regression check for StopIteration leaking out of inference and
     # causing a RuntimeError. Hence, here just consume the inferred value
     # without checking it and rely on pytest to fail on raise
@@ -6591,7 +6591,7 @@ def test_dataclasses_subscript_inference_recursion_error_39():
 
 
 def test_self_reference_infer_does_not_trigger_recursion_error() -> None:
-    # Prevents https://github.com/PyCQA/pylint/issues/1285
+    # Prevents https://github.com/pylint-dev/pylint/issues/1285
     code = """
     def func(elems):
         return elems
@@ -6666,7 +6666,7 @@ def test_recursion_error_metaclass_monkeypatching() -> None:
 
 @pytest.mark.xfail(reason="Cannot fully infer all the base classes properly.")
 def test_recursion_error_self_reference_type_call() -> None:
-    # Fix for https://github.com/PyCQA/astroid/issues/199
+    # Fix for https://github.com/pylint-dev/astroid/issues/199
     code = """
     class A(object):
         pass
@@ -6780,7 +6780,7 @@ def test_infer_list_of_uninferables_does_not_crash() -> None:
     assert not inferred.elts
 
 
-# https://github.com/PyCQA/astroid/issues/926
+# https://github.com/pylint-dev/astroid/issues/926
 def test_issue926_infer_stmts_referencing_same_name_is_not_uninferable() -> None:
     code = """
     pair = [1, 2]
@@ -6798,7 +6798,7 @@ def test_issue926_infer_stmts_referencing_same_name_is_not_uninferable() -> None
     assert inferred[1].value == 2
 
 
-# https://github.com/PyCQA/astroid/issues/926
+# https://github.com/pylint-dev/astroid/issues/926
 def test_issue926_binop_referencing_same_name_is_not_uninferable() -> None:
     code = """
     pair = [1, 2]
@@ -6813,7 +6813,7 @@ def test_issue926_binop_referencing_same_name_is_not_uninferable() -> None:
 
 
 def test_pylint_issue_4692_attribute_inference_error_in_infer_import_from() -> None:
-    """Https://github.com/PyCQA/pylint/issues/4692."""
+    """Https://github.com/pylint-dev/pylint/issues/4692."""
     code = """
 import click
 
@@ -6871,7 +6871,7 @@ def test_relative_imports_init_package() -> None:
 def test_inference_of_items_on_module_dict() -> None:
     """Crash test for the inference of items() on a module's dict attribute.
 
-    Originally reported in https://github.com/PyCQA/astroid/issues/1085
+    Originally reported in https://github.com/pylint-dev/astroid/issues/1085
     """
     builder.file_build(str(DATA_DIR / "module_dict_items_call" / "test.py"), "models")
 
@@ -6936,12 +6936,12 @@ def test_imported_module_var_inferable3() -> None:
 def test_recursion_on_inference_tip() -> None:
     """Regression test for recursion in inference tip.
 
-    Originally reported in https://github.com/PyCQA/pylint/issues/5408.
+    Originally reported in https://github.com/pylint-dev/pylint/issues/5408.
 
     When run on PyPy with coverage enabled, the test can sometimes raise a RecursionError
     outside of the code that we actually want to test.
     As the issue seems to be with coverage, skip the test on PyPy.
-    https://github.com/PyCQA/astroid/pull/1984#issuecomment-1407720311
+    https://github.com/pylint-dev/astroid/pull/1984#issuecomment-1407720311
     """
     code = """
     class MyInnerClass:
@@ -6977,7 +6977,7 @@ def test_recursion_on_inference_tip() -> None:
 
 
 def test_function_def_cached_generator() -> None:
-    """Regression test for https://github.com/PyCQA/astroid/issues/817."""
+    """Regression test for https://github.com/pylint-dev/astroid/issues/817."""
     funcdef: nodes.FunctionDef = extract_node("def func(): pass")
     next(funcdef._infer())
 

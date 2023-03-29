@@ -22,8 +22,8 @@ Release date: 2023-03-26
   and harden support for using enums as metaclasses in this case.
 
   Reverts #1622
-  Refs PyCQA/pylint#5935
-  Refs PyCQA/pylint#7506
+  Refs pylint-dev/pylint#5935
+  Refs pylint-dev/pylint#7506
 
 
 What's New in astroid 2.15.0?
@@ -41,11 +41,11 @@ Release date: 2023-03-06
 
 * ``Astroid`` now supports custom import hooks.
 
-  Refs PyCQA/pylint#7306
+  Refs pylint-dev/pylint#7306
 
 * ``astroid`` now infers return values from match cases.
 
-  Refs PyCQA/pylint#5288
+  Refs pylint-dev/pylint#5288
 
 * ``AstroidManager.clear_cache`` now also clears the inference context cache.
 
@@ -76,7 +76,7 @@ Release date: 2023-02-12
 
 * '_infer_str_format_call' won't crash anymore when the string it analyses are uninferable.
 
-  Closes PyCQA/pylint#8109
+  Closes pylint-dev/pylint#8109
 
 
 What's New in astroid 2.14.1?
@@ -92,7 +92,7 @@ Release date: 2023-01-31
 
 * Add support for inferring binary union types added in Python 3.10.
 
-  Refs PyCQA/pylint#8119
+  Refs pylint-dev/pylint#8119
 
 * Capture and log messages emitted when inspecting a module for astroid.
 
@@ -116,11 +116,11 @@ Release date: 2023-01-31
 
 * Preserve parent CallContext when inferring nested functions.
 
-  Closes PyCQA/pylint#8074
+  Closes pylint-dev/pylint#8074
 
 * Add ``Lock`` to the ``multiprocessing`` brain.
 
-  Closes PyCQA/pylint#3313
+  Closes pylint-dev/pylint#3313
 
 
 What's New in astroid 2.13.3?
@@ -133,12 +133,12 @@ Release date: 2023-01-20
 
 * Fix overwritten attributes in inherited dataclasses not being ordered correctly.
 
-  Closes PyCQA/pylint#7881
+  Closes pylint-dev/pylint#7881
 
 * Fix a false positive when an attribute named ``Enum`` was confused with ``enum.Enum``.
   Calls to ``Enum`` are now inferred & the qualified name is checked.
 
-  Refs PyCQA/pylint#5719
+  Refs pylint-dev/pylint#5719
 
 * Remove unnecessary typing_extensions dependency on Python 3.11 and newer
 
@@ -168,24 +168,24 @@ Release date: 2023-01-07
   ``astroid`` will now correctly handle an ``import math`` statement in a file called ``math.py``
   by relying on the import system.
 
-  Refs PyCQA/pylint#5151
+  Refs pylint-dev/pylint#5151
 
 * Create ``ContextManagerModel`` and let ``GeneratorModel`` inherit from it.
 
-  Refs PyCQA/pylint#2567
+  Refs pylint-dev/pylint#2567
 
 * Added a ``regex`` brain.
 
-  Refs PyCQA/pylint#1911
+  Refs pylint-dev/pylint#1911
 
 * Support "is None" constraints from if statements during inference.
 
   Ref #791
-  Ref PyCQA/pylint#157
-  Ref PyCQA/pylint#1472
-  Ref PyCQA/pylint#2016
-  Ref PyCQA/pylint#2631
-  Ref PyCQA/pylint#2880
+  Ref pylint-dev/pylint#157
+  Ref pylint-dev/pylint#1472
+  Ref pylint-dev/pylint#2016
+  Ref pylint-dev/pylint#2631
+  Ref pylint-dev/pylint#2880
 
 What's New in astroid 2.12.14?
 ==============================
@@ -193,27 +193,27 @@ Release date: 2023-01-06
 
 * Handle the effect of properties on the ``__init__`` of a dataclass correctly.
 
-  Closes PyCQA/pylint#5225
+  Closes pylint-dev/pylint#5225
 
 * Handle the effect of ``kw_only=True`` in dataclass fields correctly.
 
-  Closes PyCQA/pylint#7623
+  Closes pylint-dev/pylint#7623
 
 * Handle the effect of ``init=False`` in dataclass fields correctly.
 
-  Closes PyCQA/pylint#7291
+  Closes pylint-dev/pylint#7291
 
 * Fix crash if ``numpy`` module doesn't have ``version`` attribute.
 
-  Refs PyCQA/pylint#7868
+  Refs pylint-dev/pylint#7868
 
 * Handle ``AttributeError`` during ``str.format`` template inference tip evaluation
 
-  Closes PyCQA/pylint#1902
+  Closes pylint-dev/pylint#1902
 
 * Add the ``masked_invalid`` function in the ``numpy.ma`` brain.
 
-  Closes PyCQA/pylint#5715
+  Closes pylint-dev/pylint#5715
 
 What's New in astroid 2.12.13?
 ==============================
@@ -221,7 +221,7 @@ Release date: 2022-11-19
 
 * Prevent returning an empty list for ``ClassDef.slots()`` when the mro list contains one class & it is not ``object``.
 
-  Refs PyCQA/pylint#5099
+  Refs pylint-dev/pylint#5099
 
 * Prevent a crash when inferring calls to ``str.format`` with inferred arguments
   that would be invalid.
@@ -230,7 +230,7 @@ Release date: 2022-11-19
 
 * Infer the `length` argument of the ``random.sample`` function.
 
-  Refs PyCQA/pylint#7706
+  Refs pylint-dev/pylint#7706
 
 * Catch ``ValueError`` when indexing some builtin containers and sequences during inference.
 
@@ -242,16 +242,16 @@ Release date: 2022-10-19
 
 * Add the ``length`` parameter to ``hash.digest`` & ``hash.hexdigest`` in the ``hashlib`` brain.
 
-  Refs PyCQA/pylint#4039
+  Refs pylint-dev/pylint#4039
 
 * Prevent a crash when a module's ``__path__`` attribute is unexpectedly missing.
 
-  Refs PyCQA/pylint#7592
+  Refs pylint-dev/pylint#7592
 
 * Fix inferring attributes with empty annotation assignments if parent
   class contains valid assignment.
 
-  Refs PyCQA/pylint#7631
+  Refs pylint-dev/pylint#7631
 
 
 What's New in astroid 2.12.11?
@@ -260,16 +260,16 @@ Release date: 2022-10-10
 
 * Add ``_value2member_map_`` member to the ``enum`` brain.
 
-  Refs PyCQA/pylint#3941
+  Refs pylint-dev/pylint#3941
 
 * Improve detection of namespace packages for the modules with ``__spec__`` set to None.
 
-  Closes PyCQA/pylint#7488.
+  Closes pylint-dev/pylint#7488.
 
 * Fixed a regression in the creation of the ``__init__`` of dataclasses with
   multiple inheritance.
 
-  Closes PyCQA/pylint#7434
+  Closes pylint-dev/pylint#7434
 
 
 What's New in astroid 2.12.10?
@@ -280,7 +280,7 @@ Release date: 2022-09-17
 * Fixed a crash when introspecting modules compiled by `cffi`.
 
   Closes #1776
-  Closes PyCQA/pylint#7399
+  Closes pylint-dev/pylint#7399
 
 * ``decorators.cached`` now gets its cache cleared by calling ``AstroidManager.clear_cache``.
 
@@ -292,11 +292,11 @@ Release date: 2022-09-07
 
 * Fixed creation of the ``__init__`` of ``dataclassess`` with multiple inheritance.
 
-  Closes PyCQA/pylint#7427
+  Closes pylint-dev/pylint#7427
 
 * Fixed a crash on ``namedtuples`` that use ``typename`` to specify their name.
 
-  Closes PyCQA/pylint#7429
+  Closes pylint-dev/pylint#7429
 
 
 
@@ -306,11 +306,11 @@ Release date: 2022-09-06
 
 * Fixed a crash in the ``dataclass`` brain for ``InitVars`` without subscript typing.
 
-  Closes PyCQA/pylint#7422
+  Closes pylint-dev/pylint#7422
 
 * Fixed parsing of default values in ``dataclass`` attributes.
 
-  Closes PyCQA/pylint#7425
+  Closes pylint-dev/pylint#7425
 
 What's New in astroid 2.12.7?
 =============================
@@ -318,7 +318,7 @@ Release date: 2022-09-06
 
 * Fixed a crash in the ``dataclass`` brain for uninferable bases.
 
-  Closes PyCQA/pylint#7418
+  Closes pylint-dev/pylint#7418
 
 
 What's New in astroid 2.12.6?
@@ -327,11 +327,11 @@ Release date: 2022-09-05
 
 * Fix a crash involving ``Uninferable`` arguments to ``namedtuple()``.
 
-  Closes PyCQA/pylint#7375
+  Closes pylint-dev/pylint#7375
 
 * The ``dataclass`` brain now understands the ``kw_only`` keyword in dataclass decorators.
 
-  Closes PyCQA/pylint#7290
+  Closes pylint-dev/pylint#7290
 
 
 What's New in astroid 2.12.5?
@@ -340,7 +340,7 @@ Release date: 2022-08-29
 
 * Prevent first-party imports from being resolved to `site-packages`.
 
-  Refs PyCQA/pylint#7365
+  Refs pylint-dev/pylint#7365
 
 * Fix ``astroid.interpreter._import.util.is_namespace()`` incorrectly
   returning ``True`` for frozen stdlib modules on PyPy.
@@ -354,7 +354,7 @@ Release date: 2022-08-25
 
 * Fixed a crash involving non-standard type comments such as ``# type: # any comment``.
 
-  Refs PyCQA/pylint#7347
+  Refs pylint-dev/pylint#7347
 
 
 What's New in astroid 2.12.3?
@@ -371,7 +371,7 @@ Release date: 2022-08-23
 
 * Fix false positive with inference of type-annotated Enum classes.
 
-  Refs PyCQA/pylint#7265
+  Refs pylint-dev/pylint#7265
 
 * Fix crash with inference of type-annotated Enum classes where the member has no value.
 
@@ -381,14 +381,14 @@ Release date: 2022-08-23
 
 * Fix false positive with inference of ``http`` module when iterating ``HTTPStatus``.
 
-  Refs PyCQA/pylint#7307
+  Refs pylint-dev/pylint#7307
 
 * Bumped minimum requirement of ``wrapt`` to 1.14 on Python 3.11.
 
 
 * Don't add dataclass fields annotated with ``KW_ONLY`` to the list of fields.
 
-  Refs PyCQA/pylint#5767
+  Refs pylint-dev/pylint#5767
 
 What's New in astroid 2.12.2?
 =============================
@@ -426,7 +426,7 @@ Release date: 2022-07-09
 
 * Avoid setting a Call as a base for classes created using ``six.with_metaclass()``.
 
-  Refs PyCQA/pylint#5935
+  Refs pylint-dev/pylint#5935
 
 * Fix detection of builtins on ``PyPy`` 3.9.
 
@@ -444,7 +444,7 @@ Release date: 2022-07-09
 * Capture and log messages emitted by C extensions when importing them.
   This prevents contaminating programmatic output, e.g. pylint's JSON reporter.
 
-  Closes PyCQA/pylint#3518
+  Closes pylint-dev/pylint#3518
 
 * Calls to ``str.format`` are now correctly inferred.
 
@@ -459,7 +459,7 @@ Release date: 2022-07-09
 
 * Adds missing enums from ``ssl`` module.
 
-  Closes PyCQA/pylint#3691
+  Closes pylint-dev/pylint#3691
 
 * Remove dependency on ``pkg_resources`` from ``setuptools``.
 
@@ -479,7 +479,7 @@ Release date: 2022-07-09
 
 * Fixed inference of ``Enums`` when they are imported under an alias.
 
-  Closes PyCQA/pylint#5776
+  Closes pylint-dev/pylint#5776
 
 * Rename ``ModuleSpec`` -> ``module_type`` constructor parameter to match attribute
   name and improve typing. Use ``type`` instead.
@@ -488,7 +488,7 @@ Release date: 2022-07-09
 
 * Fixed pylint ``not-callable`` false positive with nested-tuple assignment in a for-loop.
 
-  Refs PyCQA/pylint#5113
+  Refs pylint-dev/pylint#5113
 
 * Instances of builtins created with ``__new__(cls, value)`` are now inferred.
 
@@ -502,19 +502,19 @@ Release date: 2022-07-09
 
 * Add ``pathlib`` brain to handle ``pathlib.PurePath.parents`` inference.
 
-  Closes PyCQA/pylint#5783
+  Closes pylint-dev/pylint#5783
 
 * Avoid inferring the results of ``**`` operations involving values greater than ``1e5``
   to avoid expensive computation.
 
-  Closes PyCQA/pylint#6745
+  Closes pylint-dev/pylint#6745
 
 * Fix test for Python ``3.11``. In some instances ``err.__traceback__`` will
   be uninferable now.
 
 * Add brain for numpy core module ``einsumfunc``.
 
-  Closes PyCQA/pylint#5821
+  Closes pylint-dev/pylint#5821
 
 * Infer the ``DictUnpack`` value for ``Dict.getitem`` calls.
 
@@ -522,12 +522,12 @@ Release date: 2022-07-09
 
 * Fix a crash involving properties within ``try ... except`` blocks.
 
-  Closes PyCQA/pylint#6592
+  Closes pylint-dev/pylint#6592
 
 * Prevent creating ``Instance`` objects that proxy other ``Instance``s when there is
   ambiguity (or user error) in calling ``__new__(cls)``.
 
-  Refs PyCQA/pylint#7109
+  Refs pylint-dev/pylint#7109
 
 What's New in astroid 2.11.7?
 =============================
@@ -535,11 +535,11 @@ Release date: 2022-07-09
 
 * Added support for ``usedforsecurity`` keyword to ``hashlib`` constructors.
 
-  Closes PyCQA/pylint#6017
+  Closes pylint-dev/pylint#6017
 
 * Updated the stdlib brain for ``subprocess.Popen`` to accommodate Python 3.9+.
 
-  Closes PyCQA/pylint#7092
+  Closes pylint-dev/pylint#7092
 
 What's New in astroid 2.11.6?
 =============================
@@ -551,7 +551,7 @@ Release date: 2022-06-13
 * The argparse brain no longer incorrectly adds ``"Namespace"`` to the locals
   of functions that return an ``argparse.Namespace`` object.
 
-  Refs PyCQA/pylint#6895
+  Refs pylint-dev/pylint#6895
 
 What's New in astroid 2.11.5?
 =============================
@@ -559,12 +559,12 @@ Release date: 2022-05-09
 
 * Fix crash while obtaining ``object_type()`` of an ``Unknown`` node.
 
-  Refs PyCQA/pylint#6539
+  Refs pylint-dev/pylint#6539
 
 * Fix a bug where in attempting to handle the patching of ``distutils`` by ``virtualenv``,
   library submodules called ``distutils`` (e.g. ``numpy.distutils``) were included also.
 
-  Refs PyCQA/pylint#6497
+  Refs pylint-dev/pylint#6497
 
 What's New in astroid 2.11.4?
 =============================
@@ -575,16 +575,16 @@ Release date: 2022-05-02
 * Fixed a crash involving two starred expressions: one inside a comprehension,
   both inside a call.
 
-  Refs PyCQA/pylint#6372
+  Refs pylint-dev/pylint#6372
 
 * Made ``FunctionDef.implicit_parameters`` return 1 for methods by making
   ``FunctionDef.is_bound`` return ``True``, as it does for class methods.
 
-  Closes PyCQA/pylint#6464
+  Closes pylint-dev/pylint#6464
 
 * Fixed a crash when ``_filter_stmts`` encounters an ``EmptyNode``.
 
-  Closes PyCQA/pylint#6438
+  Closes pylint-dev/pylint#6438
 
 
 What's New in astroid 2.11.3?
@@ -593,11 +593,11 @@ Release date: 2022-04-19
 
 * Fixed an error in the Qt brain when building ``instance_attrs``.
 
-  Closes PyCQA/pylint#6221
+  Closes pylint-dev/pylint#6221
 
 * Fixed a crash in the ``gi`` brain.
 
-  Closes PyCQA/pylint#6371
+  Closes pylint-dev/pylint#6371
 
 
 What's New in astroid 2.11.2?
@@ -606,7 +606,7 @@ Release date: 2022-03-26
 
 * Avoided adding the name of a parent namedtuple to its child's locals.
 
-  Refs PyCQA/pylint#5982
+  Refs pylint-dev/pylint#5982
 
 
 What's New in astroid 2.11.1?
@@ -649,7 +649,7 @@ Release date: 2022-03-12
 * Add missing ``shape`` parameter to numpy ``zeros_like``, ``ones_like``,
   and ``full_like`` methods.
 
-  Closes PyCQA/pylint#5871
+  Closes pylint-dev/pylint#5871
 
 * Only pin ``wrapt`` on the major version.
 
@@ -662,7 +662,7 @@ Release date: 2022-02-27
 * Fixed inference of ``self`` in binary operations in which ``self``
   is part of a list or tuple.
 
-  Closes PyCQA/pylint#4826
+  Closes pylint-dev/pylint#4826
 
 * Fixed builtin inference on `property` calls not calling the `postinit` of the new node, which
   resulted in instance arguments missing on these nodes.
@@ -671,15 +671,15 @@ Release date: 2022-02-27
   limit size. This limit can be hit when the inheritance pattern of a class (and therefore of the
   ``__init__`` attribute) is very large.
 
-  Closes PyCQA/pylint#5679
+  Closes pylint-dev/pylint#5679
 
 * Include names of keyword-only arguments in ``astroid.scoped_nodes.Lambda.argnames``.
 
-  Closes PyCQA/pylint#5771
+  Closes pylint-dev/pylint#5771
 
 * Fixed a crash inferring on a ``NewType`` named with an f-string.
 
-  Closes PyCQA/pylint#5770
+  Closes pylint-dev/pylint#5770
 
 * Add support for [attrs v21.3.0](https://github.com/python-attrs/attrs/releases/tag/21.3.0) which
   added a new `attrs` module alongside the existing `attr`.
@@ -703,7 +703,7 @@ Release date: 2022-02-27
 * Fixed crash with recursion error for inference of class attributes that referenced
   the class itself.
 
-  Closes PyCQA/pylint#5408
+  Closes pylint-dev/pylint#5408
 
 * Fixed crash when trying to infer ``items()`` on the ``__dict__``
   attribute of an imported module.
@@ -764,7 +764,7 @@ Release date: 2021-12-31
 
 * Restore custom ``distutils`` handling for resolving paths to submodules.
 
-  Closes PyCQA/pylint#5645
+  Closes pylint-dev/pylint#5645
 
 * Fix ``deque.insert()`` signature in ``collections`` brain.
 
@@ -778,7 +778,7 @@ Release date: 2021-12-31
 * Fix crash if a variable named ``type`` is accessed with an index operator (``[]``)
   in a generator expression.
 
-  Closes PyCQA/pylint#5461
+  Closes pylint-dev/pylint#5461
 
 * Enable inference of dataclass import from marshmallow_dataclass.
   This allows the dataclasses brain to recognize dataclasses annotated by marshmallow_dataclass.
@@ -788,10 +788,10 @@ Release date: 2021-12-31
   installed on macOS via Homebrew).
 
   Closes #823
-  Closes PyCQA/pylint#3499
-  Closes PyCQA/pylint#4302
-  Closes PyCQA/pylint#4798
-  Closes PyCQA/pylint#5081
+  Closes pylint-dev/pylint#3499
+  Closes pylint-dev/pylint#4302
+  Closes pylint-dev/pylint#4798
+  Closes pylint-dev/pylint#5081
 
 What's New in astroid 2.9.0?
 ============================
@@ -812,7 +812,7 @@ Release date: 2021-11-21
 
 * Fix crash on inference of subclasses created from ``Class().__subclasses__``
 
-  Closes PyCQA/pylint#4982
+  Closes pylint-dev/pylint#4982
 
 * Fix bug with Python 3.7.0 / 3.7.1 and ``typing.NoReturn``.
 
@@ -829,13 +829,13 @@ Release date: 2021-11-12
 
 * Fix crash on inference of ``__len__``.
 
-  Closes PyCQA/pylint#5244
+  Closes pylint-dev/pylint#5244
 
 * Added missing ``kind`` (for ``Const``) and ``conversion`` (for ``FormattedValue``) fields to repr.
 
 * Fix crash with assignment expressions, nested if expressions and filtering of statements
 
-  Closes PyCQA/pylint#5178
+  Closes pylint-dev/pylint#5178
 
 * Fix incorrect filtering of assignment expressions statements
 
@@ -863,16 +863,16 @@ Release date: 2021-10-17
 
 * Fixes handling of nested partial functions
 
-  Closes PyCQA/pylint#2462
+  Closes pylint-dev/pylint#2462
   Closes #1208
 
 * Fix regression with the import resolver
 
-  Closes PyCQA/pylint#5131
+  Closes pylint-dev/pylint#5131
 
 * Fix crash with invalid dataclass field call
 
-  Closes PyCQA/pylint#5153
+  Closes pylint-dev/pylint#5153
 
 
 What's New in astroid 2.8.2?
@@ -889,21 +889,21 @@ Release date: 2021-10-06
 
 * Adds support of type hints inside numpy's brains.
 
-  Closes PyCQA/pylint#4326
+  Closes pylint-dev/pylint#4326
 
 * Enable inference of dataclass import from pydantic.dataclasses.
   This allows the dataclasses brain to recognize pydantic dataclasses.
 
-  Closes PyCQA/pylint#4899
+  Closes pylint-dev/pylint#4899
 
 * Fix regression on ClassDef inference
 
-  Closes PyCQA/pylint#5030
-  Closes PyCQA/pylint#5036
+  Closes pylint-dev/pylint#5030
+  Closes pylint-dev/pylint#5036
 
 * Fix regression on Compare node inference
 
-  Closes PyCQA/pylint#5048
+  Closes pylint-dev/pylint#5048
 
 * Extended attrs brain to support the provisional APIs
 
@@ -913,7 +913,7 @@ Release date: 2021-10-06
 
 * Fix bug with importing namespace packages with relative imports
 
-  Closes PyCQA/pylint#5059
+  Closes pylint-dev/pylint#5059
 
 * The ``is_typing_guard`` and ``is_sys_guard`` functions are deprecated and will
   be removed in 3.0.0. They are complex meta-inference functions that are better
@@ -926,7 +926,7 @@ Release date: 2021-10-06
 
 * Adds a brain to infer the ``numpy.ma.masked_where`` function.
 
-  Closes PyCQA/pylint#3342
+  Closes pylint-dev/pylint#3342
 
 
 What's New in astroid 2.8.0?
@@ -944,7 +944,7 @@ Release date: 2021-09-14
 
 * Support pyz imports
 
-  Closes PyCQA/pylint#3887
+  Closes pylint-dev/pylint#3887
 
 * Add ``node_ancestors`` method to ``NodeNG`` for obtaining the ancestors of nodes.
 
@@ -954,7 +954,7 @@ Release date: 2021-09-14
 
 * Fixed bug in inference of dataclass field calls.
 
-  Closes PyCQA/pylint#4963
+  Closes pylint-dev/pylint#4963
 
 
 What's New in astroid 2.7.3?
@@ -965,36 +965,36 @@ Release date: 2021-08-30
   (i.e is not in AstroidManager.extension_package_whitelist). Solves the following issues if numpy is authorized to be imported
   through the `extension-pkg-allow-list` option.
 
-  Closes PyCQA/pylint#3342
-  Closes PyCQA/pylint#4326
+  Closes pylint-dev/pylint#3342
+  Closes pylint-dev/pylint#4326
 
 * Fixed bug in attribute inference from inside method calls.
 
-    Closes PyCQA/pylint#400
+    Closes pylint-dev/pylint#400
 
 * Fixed bug in inference for superclass instance methods called
   from the class rather than an instance.
 
     Closes #1008
-    Closes PyCQA/pylint#4377
+    Closes pylint-dev/pylint#4377
 
 * Fixed bug in inference of chained attributes where a subclass
   had an attribute that was an instance of its superclass.
 
-    Closes PyCQA/pylint#4220
+    Closes pylint-dev/pylint#4220
 
 * Adds a brain for the ctypes module.
 
-  Closes PyCQA/pylint#4896
+  Closes pylint-dev/pylint#4896
 
 * When processing dataclass attributes, exclude the same type hints from abc.collections
   as from typing.
 
-  Closes PyCQA/pylint#4895
+  Closes pylint-dev/pylint#4895
 
 * Apply dataclass inference to pydantic's dataclasses.
 
-  Closes PyCQA/pylint#4899
+  Closes pylint-dev/pylint#4899
 
 
 What's New in astroid 2.7.2?
@@ -1011,7 +1011,7 @@ Release date: 2021-08-20
 
 * Add inference for dataclass initializer method.
 
-    Closes PyCQA/pylint#3201
+    Closes pylint-dev/pylint#3201
 
 What's New in astroid 2.7.1?
 ============================
@@ -1034,21 +1034,21 @@ Release date: 2021-08-15
 
 * Add support for arbitrary Enum subclass hierarchies
 
-  Closes PyCQA/pylint#533
-  Closes PyCQA/pylint#2224
-  Closes PyCQA/pylint#2626
+  Closes pylint-dev/pylint#533
+  Closes pylint-dev/pylint#2224
+  Closes pylint-dev/pylint#2626
 
 * Add inference tips for dataclass attributes, including dataclasses.field calls.
   Also add support for InitVar.
 
-  Closes PyCQA/pylint#2600
-  Closes PyCQA/pylint#2698
-  Closes PyCQA/pylint#3405
-  Closes PyCQA/pylint#3794
+  Closes pylint-dev/pylint#2600
+  Closes pylint-dev/pylint#2698
+  Closes pylint-dev/pylint#3405
+  Closes pylint-dev/pylint#3794
 
 * Adds a brain that deals with dynamic import of `IsolatedAsyncioTestCase` class of the `unittest` module.
 
-  Closes PyCQA/pylint#4060
+  Closes pylint-dev/pylint#4060
 
 
 What's New in astroid 2.6.6?
@@ -1059,17 +1059,17 @@ Release date: 2021-08-03
 
 * Fix variable lookup handling of exclusive statements
 
-  Closes PyCQA/pylint#3711
+  Closes pylint-dev/pylint#3711
 
 * Fix variable lookup handling of function parameters
 
-  Closes PyCQA/astroid#180
+  Closes pylint-dev/astroid#180
 
 * Fix variable lookup's handling of except clause variables
 
 * Fix handling of classes with duplicated bases with the same name
 
-  Closes PyCQA/astroid#1088
+  Closes pylint-dev/astroid#1088
 
 What's New in astroid 2.6.5?
 ============================
@@ -1078,12 +1078,12 @@ Release date: 2021-07-21
 * Fix a crash when there would be a 'TypeError object does not support
   item assignment' in the code we parse.
 
-  Closes PyCQA/pylint#4439
+  Closes pylint-dev/pylint#4439
 
 * Fix a crash when a AttributeInferenceError was raised when
   failing to find the real name in infer_import_from.
 
-  Closes PyCQA/pylint#4692
+  Closes pylint-dev/pylint#4692
 
 
 What's New in astroid 2.6.4?
@@ -1093,7 +1093,7 @@ Release date: 2021-07-19
 * Fix a crash when a StopIteration was raised when inferring
   a faulty function in a context manager.
 
-  Closes PyCQA/pylint#4723
+  Closes pylint-dev/pylint#4723
 
 What's New in astroid 2.6.3?
 ============================
@@ -1103,21 +1103,21 @@ Release date: 2021-07-19
 
 * Fix a bad inference type for yield values inside of a derived class.
 
-  Closes PyCQA/astroid#1090
+  Closes pylint-dev/astroid#1090
 
 * Fix a crash when the node is a 'Module' in the brain builtin inference
 
-  Closes PyCQA/pylint#4671
+  Closes pylint-dev/pylint#4671
 
 * Fix issues when inferring match variables
 
-  Closes PyCQA/pylint#4685
+  Closes pylint-dev/pylint#4685
 
 * Fix lookup for nested non-function scopes
 
 * Fix issue that ``TypedDict`` instance wasn't callable.
 
-  Closes PyCQA/pylint#4715
+  Closes pylint-dev/pylint#4715
 
 * Add dependency on setuptools and a guard to prevent related exceptions.
 
@@ -1128,12 +1128,12 @@ Release date: 2021-06-30
 
 * Fix a crash when the inference of the length of a node failed
 
-  Closes PyCQA/pylint#4633
+  Closes pylint-dev/pylint#4633
 
 * Fix unhandled StopIteration during inference, following the implementation
   of PEP479 in python 3.7+
 
-  Closes PyCQA/pylint#4631
+  Closes pylint-dev/pylint#4631
   Closes #1080
 
 
@@ -1143,7 +1143,7 @@ Release date: 2021-06-29
 
 * Fix issue with ``TypedDict`` for Python 3.9+
 
-  Closes PyCQA/pylint#4610
+  Closes pylint-dev/pylint#4610
 
 
 What's New in astroid 2.6.0?
@@ -1161,9 +1161,9 @@ Release date: 2021-06-22
 * Update enum brain to improve inference of .name and .value dynamic class
   attributes
 
-  Closes PyCQA/pylint#1932
-  Closes PyCQA/pylint#2062
-  Closes PyCQA/pylint#2306
+  Closes pylint-dev/pylint#1932
+  Closes pylint-dev/pylint#2062
+  Closes pylint-dev/pylint#2306
 
 * Removed ``Repr``, ``Exec``, and ``Print`` nodes as the ``ast`` nodes
   they represented have been removed with the change to Python 3
@@ -1212,7 +1212,7 @@ Release date: 2021-05-09
 
 * Fix detection of relative imports.
   Closes #930
-  Closes PyCQA/pylint#4186
+  Closes pylint-dev/pylint#4186
 
 * Fix inference of instance attributes defined in base classes
 
@@ -1226,10 +1226,10 @@ Release date: 2021-05-09
 * Do not set instance attributes on builtin object()
 
  Closes #945
- Closes PyCQA/pylint#4232
- Closes PyCQA/pylint#4221
- Closes PyCQA/pylint#3970
- Closes PyCQA/pylint#3595
+ Closes pylint-dev/pylint#4232
+ Closes pylint-dev/pylint#4221
+ Closes pylint-dev/pylint#3970
+ Closes pylint-dev/pylint#3595
 
 * Fix some spurious cycles detected in ``context.path`` leading to more cases
   that can now be inferred
@@ -1247,8 +1247,8 @@ Release date: 2021-05-09
 
 * Update enum brain to fix definition of __members__ for subclass-defined Enums
 
-  Closes PyCQA/pylint#3535
-  Closes PyCQA/pylint#4358
+  Closes pylint-dev/pylint#3535
+  Closes pylint-dev/pylint#4358
 
 * Update random brain to fix a crash with inference of some sequence elements
 
@@ -1274,14 +1274,14 @@ What's New in astroid 2.5.6?
 Release date: 2021-04-25
 
 * Fix retro-compatibility issues with old version of pylint
-  Closes PyCQA/pylint#4402
+  Closes pylint-dev/pylint#4402
 
 What's New in astroid 2.5.5?
 ============================
 Release date: 2021-04-24
 
 * Fixes the discord link in the project urls of the package.
-  Closes PyCQA/pylint#4393
+  Closes pylint-dev/pylint#4393
 
 What's New in astroid 2.5.4?
 ============================
@@ -1299,7 +1299,7 @@ Release date: 2021-04-24
 
 * Fix crash when evaluating ``typing.NamedTuple``
 
-  Closes PyCQA/pylint#4383
+  Closes pylint-dev/pylint#4383
 
 * COPYING was removed in favor of COPYING.LESSER and the latter was renamed to LICENSE to make more apparent
   that the code is licensed under LGPLv2 or later.
@@ -1314,7 +1314,7 @@ Release date: 2021-04-10
 
 * Reworks the ``collections`` and ``typing`` brain so that pylint`s acceptance tests are fine.
 
-  Closes PyCQA/pylint#4206
+  Closes pylint-dev/pylint#4206
 
 * Use ``inference_tip`` for ``typing.TypedDict`` brain.
 
@@ -1322,7 +1322,7 @@ Release date: 2021-04-10
 
 * Add inference tip for typing.Generic and typing.Annotated with ``__class_getitem__``
 
-  Closes PyCQA/pylint#2822
+  Closes pylint-dev/pylint#2822
 
 
 What's New in astroid 2.5.2?
@@ -1331,11 +1331,11 @@ Release date: 2021-03-28
 
 * Detects `import numpy` as a valid `numpy` import.
 
-  Closes PyCQA/pylint#3974
+  Closes pylint-dev/pylint#3974
 
 * Iterate over ``Keywords`` when using ``ClassDef.get_children``
 
-  Closes PyCQA/pylint#3202
+  Closes pylint-dev/pylint#3202
 
 What's New in astroid 2.5.1?
 ============================
@@ -1353,11 +1353,11 @@ Release date: 2021-02-28
 * Fix the `Duplicates found in MROs` false positive.
 
   Closes #905
-  Closes PyCQA/pylint#2717
-  Closes PyCQA/pylint#3247
-  Closes PyCQA/pylint#4093
-  Closes PyCQA/pylint#4131
-  Closes PyCQA/pylint#4145
+  Closes pylint-dev/pylint#2717
+  Closes pylint-dev/pylint#3247
+  Closes pylint-dev/pylint#4093
+  Closes pylint-dev/pylint#4131
+  Closes pylint-dev/pylint#4145
 
 
 What's New in astroid 2.5?
@@ -1366,13 +1366,13 @@ Release date: 2021-02-15
 
 * Adds `attr_fset` in the `PropertyModel` class.
 
-  Fixes PyCQA/pylint#3480
+  Fixes pylint-dev/pylint#3480
 
 * Remove support for Python 3.5.
 * Remove the runtime dependency on ``six``. The ``six`` brain remains in
   astroid.
 
-  Fixes PyCQA/astroid#863
+  Fixes pylint-dev/astroid#863
 
 * Enrich the ``brain_collection`` module so that ``__class_getitem__`` method is added to `deque` for
   ``python`` version above 3.9.
@@ -1384,16 +1384,16 @@ Release date: 2021-02-15
 
 * Adds a brain for type object so that it is possible to write `type[int]` in annotation.
 
-  Fixes PyCQA/pylint#4001
+  Fixes pylint-dev/pylint#4001
 
 * Add ``__class_getitem__`` method to ``subprocess.Popen`` brain under Python 3.9 so that it is seen as subscriptable by pylint.
 
-  Fixes PyCQA/pylint#4034
+  Fixes pylint-dev/pylint#4034
 
 
 * Adds `degrees`, `radians`, which are `numpy ufunc` functions, in the `numpy` brain. Adds `random` function in the `numpy.random` brain.
 
-  Fixes PyCQA/pylint#3856
+  Fixes pylint-dev/pylint#3856
 
 * Fix deprecated importlib methods
 
@@ -1408,7 +1408,7 @@ Release date: 2021-02-15
 * The flat attribute of ``numpy.ndarray`` is now inferred as an ``numpy.ndarray`` itself.
   It should be a ``numpy.flatiter`` instance, but this class is not yet available in the numpy brain.
 
-  Fixes PyCQA/pylint#3640
+  Fixes pylint-dev/pylint#3640
 
 * Fix a bug for dunder methods inference of function objects
 
@@ -1426,13 +1426,13 @@ Release date: 2021-02-15
 
 * The transpose of a ``numpy.ndarray`` is also a ``numpy.ndarray``
 
-  Fixes PyCQA/pylint#3387
+  Fixes pylint-dev/pylint#3387
 
 * Added a brain for ``sqlalchemy.orm.session``
 
 * Separate string and bytes classes patching
 
-  Fixes PyCQA/pylint#3599
+  Fixes pylint-dev/pylint#3599
 
 * Prevent recursion error for self referential length calls
 
@@ -1446,16 +1446,16 @@ Release date: 2021-02-15
 
 * Fix recursion errors with pandas
 
-  Fixes PyCQA/pylint#2843
-  Fixes PyCQA/pylint#2811
+  Fixes pylint-dev/pylint#2843
+  Fixes pylint-dev/pylint#2811
 
 * Added exception inference for `UnicodeDecodeError`
 
-  Close PyCQA/pylint#3639
+  Close pylint-dev/pylint#3639
 
 * `FunctionDef.is_generator` properly handles `yield` nodes in `If` tests
 
-  Close PyCQA/pylint#3583
+  Close pylint-dev/pylint#3583
 
 * Fixed exception-chaining error messages.
 
@@ -1480,24 +1480,24 @@ Release date: 2021-02-15
 
 * Fix a crash in functools.partial inference when the arguments cannot be determined
 
-  Close PyCQA/pylint#3776
+  Close pylint-dev/pylint#3776
 
 * Fix a crash caused by a lookup of a monkey-patched method
 
-  Close PyCQA/pylint#3686
+  Close pylint-dev/pylint#3686
 
 * ``is_generator`` correctly considers `Yield` nodes in `AugAssign` nodes
 
   This fixes a false positive with the `assignment-from-no-return` pylint check.
 
-  Close PyCQA/pylint#3904
+  Close pylint-dev/pylint#3904
 
 * Corrected the parent of function type comment nodes.
 
   These nodes used to be parented to their original ast.FunctionDef parent
   but are now correctly parented to their astroid.FunctionDef parent.
 
-  Close PyCQA/astroid#851
+  Close pylint-dev/astroid#851
 
 
 What's New in astroid 2.4.2?
@@ -1506,11 +1506,11 @@ Release date: 2020-06-08
 
 * `FunctionDef.is_generator` properly handles `yield` nodes in `While` tests
 
-  Close PyCQA/pylint#3519
+  Close pylint-dev/pylint#3519
 
 * Properly construct the arguments of inferred property descriptors
 
-  Close PyCQA/pylint#3648
+  Close pylint-dev/pylint#3648
 
 
 What's New in astroid 2.4.1?
@@ -1523,7 +1523,7 @@ Release date: 2020-05-05
 
 * Restructure the AST parsing heuristic to always pick the same module
 
-  Close PyCQA/pylint#3540
+  Close pylint-dev/pylint#3540
   Close #773
 
 * Changed setup.py to work with [distlib](https://pypi.org/project/distlib)
@@ -1532,11 +1532,11 @@ Release date: 2020-05-05
 
 * Do not crash with SyntaxError when parsing namedtuples with invalid label
 
-  Close PyCQA/pylint#3549
+  Close pylint-dev/pylint#3549
 
 * Protect against ``infer_call_result`` failing with `InferenceError` in `Super.getattr()`
 
-  Close PyCQA/pylint#3529
+  Close pylint-dev/pylint#3529
 
 
 What's New in astroid 2.4.0?
@@ -1546,23 +1546,23 @@ Release date: 2020-04-27
 * Expose a ast_from_string method in AstroidManager, which will accept
   source code as a string and return the corresponding astroid object
 
-  Closes PyCQA/astroid#725
+  Closes pylint-dev/astroid#725
 
 * ``BoundMethod.implicit_parameters`` returns a proper value for ``__new__``
 
-  Close PyCQA/pylint#2335
+  Close pylint-dev/pylint#2335
 
 * Allow slots added dynamically to a class to still be inferred
 
-  Close PyCQA/pylint#2334
+  Close pylint-dev/pylint#2334
 
 * Allow `FunctionDef.getattr` to look into both instance attrs and special attributes
 
-  Close PyCQA/pylint#1078
+  Close pylint-dev/pylint#1078
 
 * Infer qualified ``classmethod`` as a classmethod.
 
-  Close PyCQA/pylint#3417
+  Close pylint-dev/pylint#3417
 
 * Prevent a recursion error to happen when inferring the declared metaclass of a class
 
@@ -1570,7 +1570,7 @@ Release date: 2020-04-27
 
 * Raise ``AttributeInferenceError`` when ``getattr()`` receives an empty name
 
-  Close PyCQA/pylint#2991
+  Close pylint-dev/pylint#2991
 
 * Prevent a recursion error for self reference variables and `type()` calls.
 
@@ -1578,7 +1578,7 @@ Release date: 2020-04-27
 
 * Do not infer the first argument of a staticmethod in a metaclass as the class itself
 
-  Close PyCQA/pylint#3032
+  Close pylint-dev/pylint#3032
 
 * ``NodeNG.bool_value()`` gained an optional ``context`` parameter
 
@@ -1587,15 +1587,15 @@ Release date: 2020-04-27
 
   This fix prevents a recursion error with dask library.
 
-  Close PyCQA/pylint#2985
+  Close pylint-dev/pylint#2985
 
 * Pass a context argument to ``astroid.Arguments`` to prevent recursion errors
 
-  Close PyCQA/pylint#3414
+  Close pylint-dev/pylint#3414
 
 * Better inference of class and static methods decorated with custom methods
 
-  Close PyCQA/pylint#3209
+  Close pylint-dev/pylint#3209
 
 * Reverse the order of decorators for `infer_subscript`
 
@@ -1606,19 +1606,19 @@ Release date: 2020-04-27
 
 * Prevent a recursion error when inferring self-referential variables without definition
 
-  Close PyCQA/pylint#1285
+  Close pylint-dev/pylint#1285
 
 * Numpy `datetime64.astype` return value is inferred as a `ndarray`.
 
-  Close PyCQA/pylint#3332
+  Close pylint-dev/pylint#3332
 
 * Skip non ``Assign`` and ``AnnAssign`` nodes from enum reinterpretation
 
-  Closes PyCQA/pylint#3365
+  Closes pylint-dev/pylint#3365
 
 * Numpy ``ndarray`` attributes ``imag`` and ``real`` are now inferred as ``ndarray``.
 
-  Close PyCQA/pylint#3322
+  Close pylint-dev/pylint#3322
 
 * Added a call to ``register_transform`` for all functions of the ``brain_numpy_core_multiarray``
   module in case the current node is an instance of ``astroid.Name``
@@ -1627,30 +1627,30 @@ Release date: 2020-04-27
 
 * Use the parent of the node when inferring aug assign nodes instead of the statement
 
-  Close PyCQA/pylint#2911
-  Close PyCQA/pylint#3214
+  Close pylint-dev/pylint#2911
+  Close pylint-dev/pylint#3214
 
 * Added some functions to the ``brain_numpy_core_umath`` module
 
-  Close PyCQA/pylint#3319
+  Close pylint-dev/pylint#3319
 
 * Added some functions of the ``numpy.core.multiarray`` module
 
-  Close PyCQA/pylint#3208
+  Close pylint-dev/pylint#3208
 
 * All the ``numpy ufunc`` functions derived now from a common class that
   implements the specific ``reduce``, ``accumulate``, ``reduceat``,
   ``outer`` and ``at`` methods.
 
-  Close PyCQA/pylint#2885
+  Close pylint-dev/pylint#2885
 
 * ``nodes.Const.itered`` returns a list of ``Const`` nodes, not strings
 
-  Close PyCQA/pylint#3306
+  Close pylint-dev/pylint#3306
 
 * The ``shape`` attribute of a ``numpy ndarray`` is now a ``ndarray``
 
-  Close PyCQA/pylint#3139
+  Close pylint-dev/pylint#3139
 
 * Don't ignore special methods when inspecting gi classes
 
@@ -1681,7 +1681,7 @@ Release date: 2020-04-27
   ``self``, will override the ``self`` to point to it instead of pointing
   to the parent class.
 
-  Close PyCQA/pylint#3157
+  Close pylint-dev/pylint#3157
 
 * Add support for inferring exception instances in all contexts
 
@@ -1692,7 +1692,7 @@ Release date: 2020-04-27
   This additional support should remove certain false positives related
   to ``.args`` and other exception attributes in ``pylint``.
 
-  Close PyCQA/pylint#2333
+  Close pylint-dev/pylint#2333
 
 * Add more supported parameters to ``subprocess.check_output``
 
@@ -1706,7 +1706,7 @@ Release date: 2020-04-27
   argument to figure out the instance where we should be
   setting attributes.
 
-  Close PyCQA/pylint#3216
+  Close pylint-dev/pylint#3216
 
 * Clean up setup.py
 
@@ -1717,7 +1717,7 @@ Release date: 2020-04-27
 
 * Handle StopIteration error in infer_int.
 
-  Close PyCQA/pylint#3274
+  Close pylint-dev/pylint#3274
 
 * Can access per argument type comments for positional only and keyword only arguments.
 
@@ -1740,7 +1740,7 @@ Release date: 2019-10-18
   Until now they had as parent the builtin `ast` node which meant
   we were operating with primitive objects instead of our own.
 
-  Close PyCQA/pylint#3174
+  Close pylint-dev/pylint#3174
 
 
 * Pass an inference context to `metaclass()` when inferring an object type
@@ -1749,8 +1749,8 @@ Release date: 2019-10-18
   Also refactor the inference of `IfExp` nodes to use separate contexts
   for each potential branch.
 
-  Close PyCQA/pylint#3152
-  Close PyCQA/pylint#3159
+  Close pylint-dev/pylint#3152
+  Close pylint-dev/pylint#3159
 
 
 What's New in astroid 2.3.1?
@@ -1807,11 +1807,11 @@ Release date: 2019-09-24
     - ``numpy.core.umath``
     - ``numpy.random.mtrand``
 
-  Close PyCQA/pylint#2865
-  Close PyCQA/pylint#2747
-  Close PyCQA/pylint#2721
-  Close PyCQA/pylint#2326
-  Close PyCQA/pylint#2021
+  Close pylint-dev/pylint#2865
+  Close pylint-dev/pylint#2747
+  Close pylint-dev/pylint#2721
+  Close pylint-dev/pylint#2326
+  Close pylint-dev/pylint#2021
 
 * ``assert`` only functions are properly inferred as returning ``None``
 
@@ -1827,11 +1827,11 @@ Release date: 2019-09-24
 
   This allows special inference support for exception attributes such as `.args`.
 
-  Close PyCQA/pylint#2333
+  Close pylint-dev/pylint#2333
 
 * Drop a superfluous and wrong callcontext when inferring the result of a context manager
 
-  Close PyCQA/pylint#2859
+  Close pylint-dev/pylint#2859
 
 * ``igetattr`` raises ``InferenceError`` on re-inference of the same object
 
@@ -1856,23 +1856,23 @@ Release date: 2019-09-24
   the values that their arguments can be and use them instead of assuming
   Const nodes all the time.
 
-  Close PyCQA/pylint#2841
+  Close pylint-dev/pylint#2841
 
 * The last except handler wins when inferring variables bound in an except handler.
 
-  Close PyCQA/pylint#2777
+  Close pylint-dev/pylint#2777
 
 
 * ``threading.Lock.locked()`` is properly recognized as a member of ``threading.Lock``
 
-  Close PyCQA/pylint#2791
+  Close pylint-dev/pylint#2791
 
 
 * Fix recursion error involving ``len`` and self referential attributes
 
-  Close PyCQA/pylint#2736
-  Close PyCQA/pylint#2734
-  Close PyCQA/pylint#2740
+  Close pylint-dev/pylint#2736
+  Close pylint-dev/pylint#2734
+  Close pylint-dev/pylint#2740
 
 * Can access per argument type comments through new ``Arguments.type_comment_args`` attribute.
 
@@ -1880,11 +1880,11 @@ Release date: 2019-09-24
 
 * Fix being unable to access class attributes on a NamedTuple.
 
-  Close PyCQA/pylint#1628
+  Close pylint-dev/pylint#1628
 
 * Fixed being unable to find distutils submodules by name when in a virtualenv.
 
-  Close PyCQA/pylint#73
+  Close pylint-dev/pylint#73
 
 What's New in astroid 2.2.0?
 ============================
@@ -1893,23 +1893,23 @@ Release date: 2019-02-27
 
 * Fix a bug concerning inference of calls to numpy function that should not return Tuple or List instances.
 
- Close PyCQA/pylint#2436
+ Close pylint-dev/pylint#2436
 
 * Fix a bug where a method, which is a lambda built from a function, is not inferred as ``BoundMethod``
 
-  Close PyCQA/pylint#2594
+  Close pylint-dev/pylint#2594
 
 * ``typed_ast`` gets installed for Python 3.7, meaning type comments can now work on 3.7.
 
 * Fix a bug concerning inference of unary operators on numpy types.
 
-  Close PyCQA/pylint#2436 (first part)
+  Close pylint-dev/pylint#2436 (first part)
 
-* Fix a crash with ``typing.NamedTuple`` and empty fields. Close PyCQA/pylint#2745
+* Fix a crash with ``typing.NamedTuple`` and empty fields. Close pylint-dev/pylint#2745
 
 * Add a proper ``strerror`` inference to the ``OSError`` exceptions.
 
-  Close PyCQA/pylint#2553
+  Close pylint-dev/pylint#2553
 
 * Support non-const nodes as values of Enum attributes.
 
@@ -1917,38 +1917,38 @@ Release date: 2019-02-27
 
 * Fix a crash in the ``enum`` brain tip caused by non-assign members in class definitions.
 
-  Close PyCQA/pylint#2719
+  Close pylint-dev/pylint#2719
 
 * ``brain_numpy`` returns an undefined type for ``numpy`` methods to avoid ``assignment-from-no-return``
 
-  Close PyCQA/pylint#2694
+  Close pylint-dev/pylint#2694
 
 * Fix a bug where a call to a function that has been previously called via
   functools.partial was wrongly inferred
 
-  Close PyCQA/pylint#2588
+  Close pylint-dev/pylint#2588
 
 * Fix a recursion error caused by inferring the ``slice`` builtin.
 
-  Close PyCQA/pylint#2667
+  Close pylint-dev/pylint#2667
 
 * Remove the restriction that "old style classes" cannot have a MRO.
 
   This does not make sense any longer given that we run against Python 3
   code.
-  Close PyCQA/pylint#2701
+  Close pylint-dev/pylint#2701
 
 * Added more builtin exceptions attributes. Close #580
 
-* Add a registry for builtin exception models. Close PyCQA/pylint#1432
+* Add a registry for builtin exception models. Close pylint-dev/pylint#1432
 
-* Add brain tips for `http.client`. Close PyCQA/pylint#2687
+* Add brain tips for `http.client`. Close pylint-dev/pylint#2687
 
 * Prevent crashing when processing ``enums`` with mixed single and double quotes.
 
-  Close PyCQA/pylint#2676
+  Close pylint-dev/pylint#2676
 
-* ``typing`` types have the `__args__` property. Close PyCQA/pylint#2419
+* ``typing`` types have the `__args__` property. Close pylint-dev/pylint#2419
 
 * Fix a bug where an Attribute used as a base class was triggering a crash
 
@@ -1956,7 +1956,7 @@ Release date: 2019-02-27
 
 * Added special support for `enum.IntFlag`
 
-  Close PyCQA/pylint#2534
+  Close pylint-dev/pylint#2534
 
 * Extend detection of data classes defined with attr
 
@@ -1971,11 +1971,11 @@ Release date: 2018-11-25
 
    * ``threading.Lock.acquire`` has the ``timeout`` parameter now.
 
-     Close PyCQA/pylint#2457
+     Close pylint-dev/pylint#2457
 
    * Pass parameters by keyword name when inferring sequences.
 
-     Close PyCQA/pylint#2526
+     Close pylint-dev/pylint#2526
 
    * Correct line numbering for f-strings for complex embedded expressions
 
@@ -1985,17 +1985,17 @@ Release date: 2018-11-25
      and for its underlying elements the line number 1, but this is causing all sorts of bugs and
      problems in pylint, which expects correct line numbering.
 
-     Close PyCQA/pylint#2449
+     Close pylint-dev/pylint#2449
 
    * Add support for `argparse.Namespace`
 
-     Close PyCQA/pylint#2413
+     Close pylint-dev/pylint#2413
 
    * `async` functions are now inferred as `AsyncGenerator` when inferring their call result.
 
    * Filter out ``Uninferable`` when inferring the call result result of a class with an uninferable ``__call__`` method.
 
-     Close PyCQA/pylint#2434
+     Close pylint-dev/pylint#2434
 
    * Make compatible with AST changes in Python 3.8.
 
@@ -2010,7 +2010,7 @@ Release date: 2018-08-10
 
    * Make sure that assign nodes can find ``yield`` statements in their values
 
-     Close PyCQA/pylint#2400
+     Close pylint-dev/pylint#2400
 
 What's New in astroid 2.0.3?
 ============================
@@ -2026,7 +2026,7 @@ Release date: 2018-08-01
 
    * Stop repeat inference attempt causing a RuntimeError in Python3.7
 
-     Close PyCQA/pylint#2317
+     Close pylint-dev/pylint#2317
 
    *  infer_call_result can raise InferenceError so make sure to handle that for the call sites
       where it is used
@@ -2037,7 +2037,7 @@ Release date: 2018-08-01
      Since it is after all an inference method, it is expected that it
      could raise an InferenceError rather than returning nothing.
 
-     Close PyCQA/pylint#2350
+     Close pylint-dev/pylint#2350
 
 
 What's New in astroid 2.0.1?
@@ -2065,7 +2065,7 @@ Release date: 2018-07-15
      (use of inspect module to determine the class hierarchy of
      numpy.core.numerictypes module)
 
-     Close PyCQA/pylint#2140
+     Close pylint-dev/pylint#2140
 
    * Added inference support for starred nodes in for loops
 
@@ -2095,11 +2095,11 @@ Release date: 2018-07-15
 
    * Improvement of the numpy numeric types definition.
 
-     Close PyCQA/pylint#1971
+     Close pylint-dev/pylint#1971
 
    * Subclasses of *property* are now interpreted as properties
 
-     Close PyCQA/pylint#1601
+     Close pylint-dev/pylint#1601
 
    * AsStringRegexpPredicate has been removed.
 
@@ -2124,7 +2124,7 @@ Release date: 2018-07-15
 
    * Added brain tips for random.sample
 
-     Part of PyCQA/pylint#811
+     Part of pylint-dev/pylint#811
 
    * Add brain tip for `issubclass` builtin
 
@@ -2132,11 +2132,11 @@ Release date: 2018-07-15
 
    * Fix submodule imports from six
 
-     Close PyCQA/pylint#1640
+     Close pylint-dev/pylint#1640
 
    * Fix missing __module__ and __qualname__ from class definition locals
 
-     Close PyCQA/pylint#1753
+     Close pylint-dev/pylint#1753
 
    * Fix a crash when __annotations__ access a parent's __init__ that does not have arguments
 
@@ -2148,25 +2148,25 @@ Release date: 2018-07-15
 
    * Fix improper modification of col_offset, lineno upon inference of builtin functions
 
-     Close PyCQA/pylint#1839
+     Close pylint-dev/pylint#1839
 
    * Subprocess.Popen brain now knows of the args member
 
-     Close PyCQA/pylint#1860
+     Close pylint-dev/pylint#1860
 
    * add move_to_end method to collections.OrderedDict brain
 
-     Close PyCQA/pylint#1872
+     Close pylint-dev/pylint#1872
 
    * Include new hashlib classes added in python 3.6
 
    * Fix RecursionError for augmented assign
 
-     Close #437, #447, #313, PyCQA/pylint#1642, PyCQA/pylint#1805, PyCQA/pylint#1854, PyCQA/pylint#1452
+     Close #437, #447, #313, pylint-dev/pylint#1642, pylint-dev/pylint#1805, pylint-dev/pylint#1854, pylint-dev/pylint#1452
 
    * Add missing attrs special attribute
 
-     Close PyCQA/pylint#1884
+     Close pylint-dev/pylint#1884
 
    * Inference now understands the 'isinstance' builtin
 
@@ -2175,7 +2175,7 @@ Release date: 2018-07-15
    * Stop duplicate nodes with the same key values
      from appearing in dictionaries from dictionary unpacking.
 
-     Close PyCQA/pylint#1843
+     Close pylint-dev/pylint#1843
 
    * Fix ``contextlib.contextmanager`` inference for nested context managers
 
@@ -2197,11 +2197,11 @@ Release date: 2018-07-15
 
    * Fix issue with inherited __call__ improperly inferencing self
 
-     Close #PyCQA/pylint#2199
+     Close #pylint-dev/pylint#2199
 
    * Fix __call__ precedence for classes with custom metaclasses
 
-     Close PyCQA/pylint#2159
+     Close pylint-dev/pylint#2159
 
    * Limit the maximum amount of interable result in an NodeNG.infer() call to
      100 by default for performance issues with variables with large amounts of
@@ -2219,11 +2219,11 @@ Release date: 2017-12-15
 
    * When verifying duplicates classes in MRO, ignore on-the-fly generated classes
 
-     Close PyCQA/pylint#1706
+     Close pylint-dev/pylint#1706
 
    * Add brain tip for attrs library to prevent unsupported-assignment-operation false positives
 
-	 Close PyCQA/pylint#1698
+	 Close pylint-dev/pylint#1698
 
    * file_stream was removed, since it was deprecated for three releases
 
@@ -2233,11 +2233,11 @@ Release date: 2017-12-15
 
    * Add brain tips for curses
 
-     Close PyCQA/pylint#1703
+     Close pylint-dev/pylint#1703
 
    * Add brain tips for UUID.int
 
-     Close PyCQA/pylint#961
+     Close pylint-dev/pylint#961
 
    * The result of using object.__new__ as class decorator is correctly inferred as instance
 
@@ -2253,7 +2253,7 @@ Release date: 2017-12-15
      getting the string representation of a BadUnaryOperationMessage leads
      to a crash.
 
-     Close PyCQA/pylint#1563
+     Close pylint-dev/pylint#1563
 
    * Don't raise DuplicateBaseError when classes at different locations are used
 
@@ -2263,17 +2263,17 @@ Release date: 2017-12-15
      they are different, being created at different locations and through different
      means.
 
-     Close PyCQA/pylint#1458
+     Close pylint-dev/pylint#1458
 
     * The func form of namedtuples with keywords is now understood
 
-      Close PyCQA/pylint#1530
+      Close pylint-dev/pylint#1530
 
     * Fix inference for nested calls
 
     * Dunder class at method level is now inferred as the class of the method
 
-      Close PyCQA/pylint#1328
+      Close pylint-dev/pylint#1328
 
     * Stop most inference tip overwrites from happening by using
 		predicates on existing inference_tip transforms.
@@ -2288,8 +2288,8 @@ Release date: 2017-12-15
 
     * Fix Pathlib type inference
 
-        Close PyCQA/pylint#224
-        Close PyCQA/pylint#1660
+        Close pylint-dev/pylint#224
+        Close pylint-dev/pylint#1660
 
 
 
@@ -2413,7 +2413,7 @@ Release date: 2017-04-13
       of a base class and the attribute is defined at the base class's level,
       by taking in consideration a redefinition in the subclass.
 
-      This should fix https://github.com/PyCQA/pylint/issues/432
+      This should fix https://github.com/pylint-dev/pylint/issues/432
 
     * Calling lambda methods (defined at class level) can be understood.
 

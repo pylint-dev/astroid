@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for the astroid variable lookup capabilities."""
 import functools
@@ -671,7 +671,7 @@ class LookupControlFlowTest(unittest.TestCase):
         """Test lookup works correctly when a variable appears in an if condition,
         and the variable is reassigned in each branch.
 
-        This is based on PyCQA/pylint issue #3711.
+        This is based on pylint-dev/pylint issue #3711.
         """
         code = """
             x = 10

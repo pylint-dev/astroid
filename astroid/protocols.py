@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """This module contains a set of functions to handle python protocols for nodes
 where it makes sense.
@@ -457,7 +457,7 @@ def arguments_assigned_stmts(
         node_name = node.name  # type: ignore[union-attr]
     except AttributeError:
         # Added to handle edge cases where node.name is not defined.
-        # https://github.com/PyCQA/astroid/pull/1644#discussion_r901545816
+        # https://github.com/pylint-dev/astroid/pull/1644#discussion_r901545816
         node_name = None  # pragma: no cover
 
     if context and context.callcontext:

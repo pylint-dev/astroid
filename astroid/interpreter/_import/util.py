@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ def is_namespace(modname: str) -> bool:
                 # See: https://foss.heptapod.net/pypy/pypy/-/issues/3736
                 # Check first fragment of modname, e.g. "astroid", not "astroid.interpreter"
                 # because of cffi's behavior
-                # See: https://github.com/PyCQA/astroid/issues/1776
+                # See: https://github.com/pylint-dev/astroid/issues/1776
                 mod = sys.modules[processed_components[0]]
                 return (
                     mod.__spec__ is None

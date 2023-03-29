@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """
 This module contains the classes for "scoped" node, i.e. which are opening a
@@ -1179,7 +1179,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         :param caller: Unused
         :type caller: object
         """
-        # pylint: disable=no-member; github.com/pycqa/astroid/issues/291
+        # pylint: disable=no-member; github.com/pylint-dev/astroid/issues/291
         # args is in fact redefined later on by postinit. Can't be changed
         # to None due to a strong interaction between Lambda and FunctionDef.
         return self.body.infer(context)
@@ -1663,7 +1663,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         :rtype: iterable(NodeNG or Uninferable) or None
         """
         # pylint: disable=not-an-iterable
-        # https://github.com/PyCQA/astroid/issues/1015
+        # https://github.com/pylint-dev/astroid/issues/1015
         for yield_ in self.nodes_of_class(node_classes.Yield):
             if yield_.value is None:
                 const = node_classes.Const(None)
