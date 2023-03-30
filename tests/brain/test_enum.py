@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 from __future__ import annotations
 
@@ -437,7 +437,7 @@ class EnumBrainTest(unittest.TestCase):
         self.assertTrue(inferred.locals)
 
     def test_enum_as_renamed_import(self) -> None:
-        """Originally reported in https://github.com/PyCQA/pylint/issues/5776."""
+        """Originally reported in https://github.com/pylint-dev/pylint/issues/5776."""
         ast_node: nodes.Attribute = builder.extract_node(
             """
         from enum import Enum as PyEnum

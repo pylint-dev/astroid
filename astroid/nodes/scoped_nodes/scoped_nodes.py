@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """
 This module contains the classes for "scoped" node, i.e. which are opening a
@@ -19,9 +19,8 @@ from collections.abc import Generator, Iterator
 from functools import lru_cache
 from typing import TYPE_CHECKING, ClassVar, NoReturn, TypeVar, overload
 
-from astroid import bases
+from astroid import bases, util
 from astroid import decorators as decorators_mod
-from astroid import util
 from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS, PYPY_7_3_11_PLUS
 from astroid.context import (
     CallContext,
@@ -1180,7 +1179,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         :param caller: Unused
         :type caller: object
         """
-        # pylint: disable=no-member; github.com/pycqa/astroid/issues/291
+        # pylint: disable=no-member; github.com/pylint-dev/astroid/issues/291
         # args is in fact redefined later on by postinit. Can't be changed
         # to None due to a strong interaction between Lambda and FunctionDef.
         return self.body.infer(context)
@@ -1664,7 +1663,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         :rtype: iterable(NodeNG or Uninferable) or None
         """
         # pylint: disable=not-an-iterable
-        # https://github.com/PyCQA/astroid/issues/1015
+        # https://github.com/pylint-dev/astroid/issues/1015
         for yield_ in self.nodes_of_class(node_classes.Yield):
             if yield_.value is None:
                 const = node_classes.Const(None)
@@ -1702,7 +1701,15 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
             metaclass = next(caller.args[0].infer(context), None)
             if isinstance(metaclass, ClassDef):
                 try:
-                    class_bases = [next(arg.infer(context)) for arg in caller.args[1:]]
+                    class_bases = [
+                        # Find the first non-None inferred base value
+                        next(
+                            b
+                            for b in arg.infer(context=context.clone())
+                            if not (isinstance(b, Const) and b.value is None)
+                        )
+                        for arg in caller.args[1:]
+                    ]
                 except StopIteration as e:
                     raise InferenceError(node=caller.args[1:], context=context) from e
                 new_class = ClassDef(name="temporary_class")
@@ -2927,7 +2934,7 @@ class ClassDef(
             if exc.args and exc.args[0] not in ("", None):
                 return exc.args[0]
             return None
-        return [first] + list(slots)
+        return [first, *slots]
 
     # Cached, because inferring them all the time is expensive
     @decorators_mod.cached
@@ -3033,7 +3040,7 @@ class ClassDef(
                 ancestors = list(base.ancestors(context=context))
                 bases_mro.append(ancestors)
 
-        unmerged_mro = [[self]] + bases_mro + [inferred_bases]
+        unmerged_mro = [[self], *bases_mro, inferred_bases]
         unmerged_mro = list(clean_duplicates_mro(unmerged_mro, self, context))
         clean_typing_generic_mro(unmerged_mro)
         return _c3_merge(unmerged_mro, self, context)

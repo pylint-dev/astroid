@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid hooks for the Python standard library."""
 
@@ -158,7 +158,7 @@ def infer_func_form(
     class_node = nodes.ClassDef(name)
     # A typical ClassDef automatically adds its name to the parent scope,
     # but doing so causes problems, so defer setting parent until after init
-    # see: https://github.com/PyCQA/pylint/issues/5982
+    # see: https://github.com/pylint-dev/pylint/issues/5982
     class_node.parent = node.parent
     class_node.postinit(
         # set base class=tuple
@@ -284,7 +284,7 @@ def _check_namedtuple_attributes(typename, attributes, rename=False):
 
     # The following snippet is derived from the CPython Lib/collections/__init__.py sources
     # <snippet>
-    for name in (typename,) + attributes:
+    for name in (typename, *attributes):
         if not isinstance(name, str):
             raise AstroidTypeError("Type names and field names must be strings")
         if not name.isidentifier():

@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """This module contains a set of functions to handle inference on astroid trees."""
 
@@ -249,7 +249,7 @@ def infer_name(
 
 # pylint: disable=no-value-for-parameter
 # The order of the decorators here is important
-# See https://github.com/PyCQA/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
+# See https://github.com/pylint-dev/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
 nodes.Name._infer = decorators.raise_if_nothing_inferred(
     decorators.path_wrapper(infer_name)
 )
@@ -328,7 +328,7 @@ def infer_import_from(
         try:
             name = self.real_name(name)
         except AttributeInferenceError as exc:
-            # See https://github.com/PyCQA/pylint/issues/4692
+            # See https://github.com/pylint-dev/pylint/issues/4692
             raise InferenceError(node=self, context=context) from exc
     try:
         module = self.do_import_module()
@@ -382,7 +382,7 @@ def infer_attribute(
 
 
 # The order of the decorators here is important
-# See https://github.com/PyCQA/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
+# See https://github.com/pylint-dev/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
 nodes.Attribute._infer = decorators.raise_if_nothing_inferred(
     decorators.path_wrapper(infer_attribute)
 )
@@ -471,7 +471,7 @@ def infer_subscript(
 
 
 # The order of the decorators here is important
-# See https://github.com/PyCQA/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
+# See https://github.com/pylint-dev/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
 nodes.Subscript._infer = decorators.raise_if_nothing_inferred(  # type: ignore[assignment]
     decorators.path_wrapper(infer_subscript)
 )

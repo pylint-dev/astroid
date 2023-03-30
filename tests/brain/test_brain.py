@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 from __future__ import annotations
 
@@ -501,7 +501,7 @@ class TypingBrain(unittest.TestCase):
     def test_namedtuple_bug_pylint_4383(self) -> None:
         """Inference of 'NamedTuple' function shouldn't cause InferenceError.
 
-        https://github.com/PyCQA/pylint/issues/4383
+        https://github.com/pylint-dev/pylint/issues/4383
         """
         node = builder.extract_node(
             """
@@ -549,7 +549,7 @@ class TypingBrain(unittest.TestCase):
             self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
 
     def test_typing_type_without_tip(self):
-        """Regression test for https://github.com/PyCQA/pylint/issues/5770"""
+        """Regression test for https://github.com/pylint-dev/pylint/issues/5770"""
         node = builder.extract_node(
             """
         from typing import NewType
@@ -932,10 +932,10 @@ class TypingBrain(unittest.TestCase):
     def test_typing_cast_multiple_inference_calls(self) -> None:
         """Inference of an outer function should not store the result for cast.
 
-        https://github.com/PyCQA/pylint/issues/8074
+        https://github.com/pylint-dev/pylint/issues/8074
 
         Possible solution caused RecursionErrors with Python 3.8 and CPython + PyPy.
-        https://github.com/PyCQA/astroid/pull/1982
+        https://github.com/pylint-dev/astroid/pull/1982
         """
         ast_nodes = builder.extract_node(
             """
@@ -1138,7 +1138,7 @@ class SubprocessTest(unittest.TestCase):
     def test_subprocess_args(self) -> None:
         """Make sure the args attribute exists for Popen
 
-        Test for https://github.com/PyCQA/pylint/issues/1860"""
+        Test for https://github.com/pylint-dev/pylint/issues/1860"""
         name = astroid.extract_node(
             """
         import subprocess
@@ -1594,7 +1594,7 @@ class TestLenBuiltinInference:
         """Make sure len builtin doesn't raise an AttributeError
         on instances of str or bytes
 
-        See https://github.com/PyCQA/pylint/issues/1942
+        See https://github.com/pylint-dev/pylint/issues/1942
         """
         code = 'len(str("F"))'
         try:
@@ -1608,7 +1608,7 @@ class TestLenBuiltinInference:
         """Make sure len calls do not trigger
         recursion errors for self referential assignment
 
-        See https://github.com/PyCQA/pylint/issues/2734
+        See https://github.com/pylint-dev/pylint/issues/2734
         """
         code = """
         class Data:
@@ -1996,7 +1996,7 @@ def test_str_and_bytes(code, expected_class, expected_value):
 
 def test_no_recursionerror_on_self_referential_length_check() -> None:
     """
-    Regression test for https://github.com/PyCQA/astroid/issues/777
+    Regression test for https://github.com/pylint-dev/astroid/issues/777
 
     This test should only raise an InferenceError and no RecursionError.
     """
@@ -2015,8 +2015,8 @@ def test_no_recursionerror_on_self_referential_length_check() -> None:
 
 def test_inference_on_outer_referential_length_check() -> None:
     """
-    Regression test for https://github.com/PyCQA/pylint/issues/5244
-    See also https://github.com/PyCQA/astroid/pull/1234
+    Regression test for https://github.com/pylint-dev/pylint/issues/5244
+    See also https://github.com/pylint-dev/astroid/pull/1234
 
     This test should succeed without any error.
     """
@@ -2042,8 +2042,8 @@ def test_inference_on_outer_referential_length_check() -> None:
 
 def test_no_attributeerror_on_self_referential_length_check() -> None:
     """
-    Regression test for https://github.com/PyCQA/pylint/issues/5244
-    See also https://github.com/PyCQA/astroid/pull/1234
+    Regression test for https://github.com/pylint-dev/pylint/issues/5244
+    See also https://github.com/pylint-dev/astroid/pull/1234
 
     This test should only raise an InferenceError and no AttributeError.
     """

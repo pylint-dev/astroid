@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for the astroid builder and rebuilder module."""
 
@@ -963,7 +963,7 @@ def test_arguments_of_signature() -> None:
 
 
 class HermeticInterpreterTest(unittest.TestCase):
-    """Modeled on https://github.com/PyCQA/astroid/pull/1207#issuecomment-951455588."""
+    """Modeled on https://github.com/pylint-dev/astroid/pull/1207#issuecomment-951455588."""
 
     @classmethod
     def setUpClass(cls):

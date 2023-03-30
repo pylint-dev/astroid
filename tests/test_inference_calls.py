@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for function call inference."""
 
@@ -356,7 +356,7 @@ def test_method_dynamic_instance_attr_5() -> None:
 
     But, where the outer and inner functions have the same signature.
 
-    Inspired by https://github.com/PyCQA/pylint/issues/400
+    Inspired by https://github.com/pylint-dev/pylint/issues/400
 
     This is currently Uninferable.
     """
@@ -503,7 +503,7 @@ def test_static_method() -> None:
 def test_instance_method_inherited() -> None:
     """Tests for instance methods that are inherited from a superclass.
 
-    Based on https://github.com/PyCQA/astroid/issues/1008.
+    Based on https://github.com/pylint-dev/astroid/issues/1008.
     """
     nodes_ = builder.extract_node(
         """
@@ -534,7 +534,7 @@ def test_instance_method_inherited() -> None:
 def test_class_method_inherited() -> None:
     """Tests for class methods that are inherited from a superclass.
 
-    Based on https://github.com/PyCQA/astroid/issues/1008.
+    Based on https://github.com/pylint-dev/astroid/issues/1008.
     """
     nodes_ = builder.extract_node(
         """
@@ -565,7 +565,7 @@ def test_class_method_inherited() -> None:
 def test_chained_attribute_inherited() -> None:
     """Tests for class methods that are inherited from a superclass.
 
-    Based on https://github.com/PyCQA/pylint/issues/4220.
+    Based on https://github.com/pylint-dev/pylint/issues/4220.
     """
     node = builder.extract_node(
         """

@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 #
 # Astroid documentation build configuration file, created by
@@ -62,7 +62,7 @@ copyright = f"2003-{current_year}, Logilab, PyCQA and contributors"
 # built documents.
 #
 # The short X.Y version.
-from astroid.__pkginfo__ import __version__
+from astroid.__pkginfo__ import __version__  # noqa
 
 # The full version, including alpha/beta/rc tags.
 release = __version__

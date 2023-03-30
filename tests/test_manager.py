@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 import os
 import site
@@ -154,7 +154,7 @@ class AstroidManagerTest(
         side_effect=AttributeError,
     )
     def test_module_unexpectedly_missing_path(self, mocked) -> None:
-        """Https://github.com/PyCQA/pylint/issues/7592."""
+        """Https://github.com/pylint-dev/pylint/issues/7592."""
         self.assertFalse(util.is_namespace("astroid"))
 
     def test_module_unexpectedly_spec_is_none(self) -> None:
@@ -364,7 +364,7 @@ class AstroidManagerTest(
     def test_same_name_import_module(self) -> None:
         """Test inference of an import statement with the same name as the module.
 
-        See https://github.com/PyCQA/pylint/issues/5151.
+        See https://github.com/pylint-dev/pylint/issues/5151.
         """
         math_file = resources.find("data/import_conflicting_names/math.py")
         module = self.manager.ast_from_file(math_file)

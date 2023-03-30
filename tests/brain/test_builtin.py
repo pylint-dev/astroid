@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Unit Tests for the builtins brain module."""
 
@@ -129,7 +129,7 @@ class TestStringNodes:
         assert inferred.value == "My name is Daniel, I'm 12.00"
 
     def test_string_format_in_dataclass_pylint8109(self) -> None:
-        """https://github.com/PyCQA/pylint/issues/8109"""
+        """https://github.com/pylint-dev/pylint/issues/8109"""
         function_def = extract_node(
             """
 from dataclasses import dataclass

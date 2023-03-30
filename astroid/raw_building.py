@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """this module contains a set of functions to create astroid trees from scratch
 (build_* functions) or from living object (object_build_* functions)
@@ -354,7 +354,7 @@ def _build_from_function(
 def _safe_has_attribute(obj, member: str) -> bool:
     """Required because unexpected RunTimeError can be raised.
 
-    See https://github.com/PyCQA/astroid/issues/1958
+    See https://github.com/pylint-dev/astroid/issues/1958
     """
     try:
         return hasattr(obj, member)

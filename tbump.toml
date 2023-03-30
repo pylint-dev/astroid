@@ -1,4 +1,4 @@
-github_url = "https://github.com/PyCQA/astroid"
+github_url = "https://github.com/pylint-dev/astroid"
 
 [version]
 current = "2.16.0dev0"

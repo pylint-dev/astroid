@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 import unittest
 
@@ -306,7 +306,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
         Test that the return of astype method of the datetime object
         is inferred as a ndarray.
 
-        PyCQA/pylint#3332
+        pylint-dev/pylint#3332
         """
         node = builder.extract_node(
             """

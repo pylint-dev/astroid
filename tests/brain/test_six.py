@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 from __future__ import annotations
 
@@ -79,7 +79,7 @@ class SixBrainTest(unittest.TestCase):
     def test_from_submodule_imports(self) -> None:
         """Make sure ulrlib submodules can be imported from
 
-        See PyCQA/pylint#1640 for relevant issue
+        See pylint-dev/pylint#1640 for relevant issue
         """
         ast_node = builder.extract_node(
             """
@@ -110,8 +110,7 @@ class SixBrainTest(unittest.TestCase):
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "B")
-        self.assertIsInstance(inferred.bases[0], nodes.Name)
-        self.assertEqual(inferred.bases[0].name, "C")
+        self.assertIsInstance(inferred.bases[0], nodes.Call)
         ancestors = tuple(inferred.ancestors())
         self.assertIsInstance(ancestors[0], nodes.ClassDef)
         self.assertEqual(ancestors[0].name, "C")
@@ -131,7 +130,7 @@ class SixBrainTest(unittest.TestCase):
             bar = 1
         """
         klass = astroid.extract_node(code)
-        assert list(klass.ancestors())[-1].name == "Enum"
+        assert next(klass.ancestors()).name == "Enum"
 
     def test_six_with_metaclass_with_additional_transform(self) -> None:
         def transform_class(cls: Any) -> ClassDef:

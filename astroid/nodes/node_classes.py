@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Module for some node classes. More nodes in scoped_nodes.py"""
 
@@ -1273,7 +1273,7 @@ class Assign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
 
     @cached_property
     def _assign_nodes_in_scope(self) -> list[nodes.Assign]:
-        return [self] + self.value._assign_nodes_in_scope
+        return [self, *self.value._assign_nodes_in_scope]
 
     def _get_yield_nodes_skip_lambdas(self):
         yield from self.value._get_yield_nodes_skip_lambdas()

@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """This module contains mixin classes for scoped nodes."""
 
@@ -38,7 +38,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         :returns: The qualified name.
         :rtype: str
         """
-        # pylint: disable=no-member; github.com/pycqa/astroid/issues/278
+        # pylint: disable=no-member; github.com/pylint-dev/astroid/issues/278
         if self.parent is None:
             return self.name
         return f"{self.parent.frame(future=True).qname()}.{self.name}"

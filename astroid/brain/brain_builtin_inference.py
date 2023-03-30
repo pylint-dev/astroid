@@ -1,6 +1,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid hooks for various builtins."""
 
@@ -182,7 +182,7 @@ def register_builtin_transform(transform, builtin_name) -> None:
 
             if result.lineno is None:
                 result.lineno = node.lineno
-            # Can be a 'Module' see https://github.com/PyCQA/pylint/issues/4671
+            # Can be a 'Module' see https://github.com/pylint-dev/pylint/issues/4671
             # We don't have a regression test on this one: tread carefully
             if hasattr(result, "col_offset") and result.col_offset is None:
                 result.col_offset = node.col_offset
