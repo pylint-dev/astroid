@@ -10,6 +10,8 @@ Release date: TBA
 
   Closes #1780
 
+* Remove dependency on ``wrapt``.
+
 
 What's New in astroid 2.15.2?
 =============================
