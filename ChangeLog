@@ -6,6 +6,9 @@ What's New in astroid 2.16.0?
 =============================
 Release date: TBA
 
+* Remove ``@cached`` decorator (just use ``@cached_property`` from the stdlib).
+
+  Closes #1780
 
 
 What's New in astroid 2.15.2?
