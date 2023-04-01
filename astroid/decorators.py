@@ -13,11 +13,10 @@ import warnings
 from collections.abc import Callable, Generator
 from typing import TypeVar
 
-import wrapt
-
 from astroid import util
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
+from astroid.typing import InferenceResult
 
 if sys.version_info >= (3, 10):
     from typing import ParamSpec
@@ -108,39 +107,51 @@ def path_wrapper(func):
     return wrapped
 
 
-@wrapt.decorator
-def yes_if_nothing_inferred(func, instance, args, kwargs):
-    generator = func(*args, **kwargs)
+def yes_if_nothing_inferred(
+    func: Callable[_P, Generator[InferenceResult, None, None]]
+) -> Callable[_P, Generator[InferenceResult, None, None]]:
+    def inner(
+        *args: _P.args, **kwargs: _P.kwargs
+    ) -> Generator[InferenceResult, None, None]:
+        generator = func(*args, **kwargs)
 
-    try:
-        yield next(generator)
-    except StopIteration:
-        # generator is empty
-        yield util.Uninferable
-        return
+        try:
+            yield next(generator)
+        except StopIteration:
+            # generator is empty
+            yield util.Uninferable
+            return
 
-    yield from generator
+        yield from generator
+
+    return inner
 
 
-@wrapt.decorator
-def raise_if_nothing_inferred(func, instance, args, kwargs):
-    generator = func(*args, **kwargs)
-    try:
-        yield next(generator)
-    except StopIteration as error:
-        # generator is empty
-        if error.args:
-            # pylint: disable=not-a-mapping
-            raise InferenceError(**error.args[0]) from error
-        raise InferenceError(
-            "StopIteration raised without any error information."
-        ) from error
-    except RecursionError as error:
-        raise InferenceError(
-            f"RecursionError raised with limit {sys.getrecursionlimit()}."
-        ) from error
+def raise_if_nothing_inferred(
+    func: Callable[_P, Generator[InferenceResult, None, None]],
+) -> Callable[_P, Generator[InferenceResult, None, None]]:
+    def inner(
+        *args: _P.args, **kwargs: _P.kwargs
+    ) -> Generator[InferenceResult, None, None]:
+        generator = func(*args, **kwargs)
+        try:
+            yield next(generator)
+        except StopIteration as error:
+            # generator is empty
+            if error.args:
+                # pylint: disable=not-a-mapping
+                raise InferenceError(**error.args[0]) from error
+            raise InferenceError(
+                "StopIteration raised without any error information."
+            ) from error
+        except RecursionError as error:
+            raise InferenceError(
+                f"RecursionError raised with limit {sys.getrecursionlimit()}."
+            ) from error
 
-    yield from generator
+        yield from generator
+
+    return inner
 
 
 # Expensive decorators only used to emit Deprecation warnings.
