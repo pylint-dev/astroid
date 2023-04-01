@@ -2937,8 +2937,8 @@ class ClassDef(
         return [first, *slots]
 
     # Cached, because inferring them all the time is expensive
-    @decorators_mod.cached
-    def slots(self):
+    @cached_property
+    def _all_slots(self):
         """Get all the slots for this node.
 
         :returns: The names of slots for this class.
@@ -2981,6 +2981,9 @@ class ClassDef(
             return None
 
         return sorted(set(slots), key=lambda item: item.value)
+
+    def slots(self):
+        return self._all_slots
 
     def _inferred_bases(self, context: InferenceContext | None = None):
         # Similar with .ancestors, but the difference is when one base is inferred,
