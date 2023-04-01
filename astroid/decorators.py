@@ -15,7 +15,7 @@ from typing import TypeVar
 
 import wrapt
 
-from astroid import _cache, util
+from astroid import util
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
 
@@ -26,20 +26,6 @@ else:
 
 _R = TypeVar("_R")
 _P = ParamSpec("_P")
-
-
-@wrapt.decorator
-def cached(func, instance, args, kwargs):
-    """Simple decorator to cache result of method calls without args."""
-    cache = getattr(instance, "__cache", None)
-    if cache is None:
-        instance.__cache = cache = {}
-        _cache.CACHE_MANAGER.add_dict_cache(cache)
-    try:
-        return cache[func]
-    except KeyError:
-        cache[func] = result = func(*args, **kwargs)
-        return result
 
 
 # TODO: Remove when support for 3.7 is dropped

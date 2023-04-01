@@ -13,7 +13,7 @@ import sys
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from astroid import decorators, nodes
+from astroid import nodes
 from astroid.const import PY310_PLUS
 from astroid.context import (
     CallContext,
@@ -634,7 +634,6 @@ class Generator(BaseInstance):
         self.parent = parent
         self._call_context = copy_context(generator_initial_context)
 
-    @decorators.cached
     def infer_yield_types(self):
         yield from self.parent.infer_yield_result(self._call_context)
 
