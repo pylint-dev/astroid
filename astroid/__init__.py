@@ -35,15 +35,13 @@ import tokenize
 from importlib import import_module
 
 # isort: off
-# We have an isort: off on '__version__' because the packaging need to access
-# the version before the dependencies are installed (in particular 'wrapt'
-# that is imported in astroid.inference)
-from astroid.__pkginfo__ import __version__, version
+# We have an isort: off on '__version__' because of a circular import in nodes.
 from astroid.nodes import node_classes, scoped_nodes
 
 # isort: on
 
 from astroid import inference, raw_building
+from astroid.__pkginfo__ import __version__, version
 from astroid.astroid_manager import MANAGER
 from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
 from astroid.brain.helpers import register_module_extender
