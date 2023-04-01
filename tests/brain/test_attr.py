@@ -90,7 +90,8 @@ class AttrsTest(unittest.TestCase):
         module = astroid.parse(
             """
         import attrs
-        from attrs import field, mutable, frozen
+        from attrs import field, mutable, frozen, define
+        from attrs import mutable as my_mutable
 
         @attrs.define
         class Foo:
@@ -141,10 +142,39 @@ class AttrsTest(unittest.TestCase):
 
         l = Eggs(d=1)
         l.d['answer'] = 42
+
+
+        @frozen
+        class Legs:
+            d = attrs.field(default=attrs.Factory(dict))
+
+        m = Legs(d=1)
+        m.d['answer'] = 42
+
+        @define
+        class FooBar:
+            d = attrs.field(default=attrs.Factory(dict))
+
+        n = FooBar(d=1)
+        n.d['answer'] = 42
+
+        @mutable
+        class BarFoo:
+            d = attrs.field(default=attrs.Factory(dict))
+
+        o = BarFoo(d=1)
+        o.d['answer'] = 42
+
+        @my_mutable
+        class FooFoo:
+            d = attrs.field(default=attrs.Factory(dict))
+
+        p = FooFoo(d=1)
+        p.d['answer'] = 42
         """
         )
 
-        for name in ("f", "g", "h", "i", "j", "k", "l"):
+        for name in ("f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
             self.assertIsInstance(should_be_unknown, astroid.Unknown)
 

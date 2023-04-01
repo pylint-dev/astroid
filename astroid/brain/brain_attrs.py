@@ -8,6 +8,7 @@ Astroid hook for the attrs library
 Without this hook pylint reports unsupported-assignment-operation
 for attrs classes
 """
+from astroid.helpers import safe_infer
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import AnnAssign, Assign, AssignName, Call, Unknown
 from astroid.nodes.scoped_nodes import ClassDef
@@ -39,6 +40,10 @@ def is_decorated_with_attrs(node, decorator_names=ATTRS_NAMES) -> bool:
         if isinstance(decorator_attribute, Call):  # decorator with arguments
             decorator_attribute = decorator_attribute.func
         if decorator_attribute.as_string() in decorator_names:
+            return True
+
+        inferred = safe_infer(decorator_attribute)
+        if inferred and inferred.root().name == "attr._next_gen":
             return True
     return False
 

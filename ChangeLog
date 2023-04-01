@@ -12,6 +12,9 @@ What's New in astroid 2.15.2?
 =============================
 Release date: TBA
 
+* Support more possible usages of ``attrs`` decorators.
+
+  Closes pylint-dev/pylint#7884
 
 
 What's New in astroid 2.15.1?
