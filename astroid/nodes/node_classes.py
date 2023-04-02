@@ -3094,28 +3094,18 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
 
     def __init__(
         self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
+        self.test: NodeNG
+        """The condition that the statement tests.
+
+        This attribute gets set in the postinit method.
         """
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.test: NodeNG | None = None
-        """The condition that the statement tests."""
 
         self.body: list[NodeNG] = []
         """The contents of the block."""
@@ -3134,25 +3124,10 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
             parent=parent,
         )
 
-    def postinit(
-        self,
-        test: NodeNG | None = None,
-        body: list[NodeNG] | None = None,
-        orelse: list[NodeNG] | None = None,
-    ) -> None:
-        """Do some setup after initialisation.
-
-        :param test: The condition that the statement tests.
-
-        :param body: The contents of the block.
-
-        :param orelse: The contents of the ``else`` block.
-        """
+    def postinit(self, test: NodeNG, body: list[NodeNG], orelse: list[NodeNG]) -> None:
         self.test = test
-        if body is not None:
-            self.body = body
-        if orelse is not None:
-            self.orelse = orelse
+        self.body = body
+        self.orelse = orelse
         if isinstance(self.parent, If) and self in self.parent.orelse:
             self.is_orelse = True
 
@@ -3258,59 +3233,16 @@ class IfExp(NodeNG):
 
     _astroid_fields = ("test", "body", "orelse")
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    test: NodeNG
+    """The condition that the statement tests."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
+    body: NodeNG
+    """The contents of the block."""
 
-        :param parent: The parent node in the syntax tree.
+    orelse: NodeNG
+    """The contents of the ``else`` block."""
 
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.test: NodeNG | None = None
-        """The condition that the statement tests."""
-
-        self.body: NodeNG | None = None
-        """The contents of the block."""
-
-        self.orelse: NodeNG | None = None
-        """The contents of the ``else`` block."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
-
-    def postinit(
-        self,
-        test: NodeNG | None = None,
-        body: NodeNG | None = None,
-        orelse: NodeNG | None = None,
-    ) -> None:
-        """Do some setup after initialisation.
-
-        :param test: The condition that the statement tests.
-
-        :param body: The contents of the block.
-
-        :param orelse: The contents of the ``else`` block.
-        """
+    def postinit(self, test: NodeNG, body: NodeNG, orelse: NodeNG) -> None:
         self.test = test
         self.body = body
         self.orelse = orelse
