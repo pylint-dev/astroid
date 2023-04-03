@@ -1531,8 +1531,11 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         return type_name
 
     @cached_property
-    def fromlineno(self) -> int | None:
-        """The first line that this node appears on in the source code."""
+    def fromlineno(self) -> int:
+        """The first line that this node appears on in the source code.
+
+        Can also return 0 if the line can not be determined.
+        """
         # lineno is the line number of the first decorator, we want the def
         # statement lineno. Similar to 'ClassDef.fromlineno'
         lineno = self.lineno
@@ -1541,7 +1544,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
                 node.tolineno - node.lineno + 1 for node in self.decorators.nodes
             )
 
-        return lineno
+        return lineno or 0
 
     @cached_property
     def blockstart_tolineno(self):
@@ -2152,8 +2155,11 @@ class ClassDef(
     )
 
     @cached_property
-    def fromlineno(self) -> int | None:
-        """The first line that this node appears on in the source code."""
+    def fromlineno(self) -> int:
+        """The first line that this node appears on in the source code.
+
+        Can also return 0 if the line can not be determined.
+        """
         if not PY38_PLUS or IS_PYPY and PY38 and not PYPY_7_3_11_PLUS:
             # For Python < 3.8 the lineno is the line number of the first decorator.
             # We want the class statement lineno. Similar to 'FunctionDef.fromlineno'
@@ -2164,7 +2170,7 @@ class ClassDef(
                     node.tolineno - node.lineno + 1 for node in self.decorators.nodes
                 )
 
-            return lineno
+            return lineno or 0
         return super().fromlineno
 
     @cached_property
