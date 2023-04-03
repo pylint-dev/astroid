@@ -4045,37 +4045,21 @@ class UnaryOp(NodeNG):
     _astroid_fields = ("operand",)
     _other_fields = ("op",)
 
-    @decorators.deprecate_default_argument_values(op="str")
+    operand: NodeNG
+    """What the unary operator is applied to."""
+
     def __init__(
         self,
-        op: str | None = None,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        op: str,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        """
-        :param op: The operator.
-
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.op: str | None = op
+        self.op = op
         """The operator."""
-
-        self.operand: NodeNG | None = None
-        """What the unary operator is applied to."""
 
         super().__init__(
             lineno=lineno,
@@ -4085,11 +4069,7 @@ class UnaryOp(NodeNG):
             parent=parent,
         )
 
-    def postinit(self, operand: NodeNG | None = None) -> None:
-        """Do some setup after initialisation.
-
-        :param operand: What the unary operator is applied to.
-        """
+    def postinit(self, operand: NodeNG) -> None:
         self.operand = operand
 
     # This is set by inference.py
