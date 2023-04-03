@@ -26,6 +26,7 @@ Release date: TBA
   - ``nodes.If``
   - ``nodes.IfExp``
   - ``nodes.Keyword``
+  - ``nodes.Name``
   - ``nodes.Starred``
   - ``nodes.Subscript``
   - ``nodes.UnaryOp``

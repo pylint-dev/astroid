@@ -202,7 +202,16 @@ def infer_named_tuple(
     node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[nodes.ClassDef]:
     """Specific inference function for namedtuple Call node."""
-    tuple_base_name: list[nodes.NodeNG] = [nodes.Name(name="tuple", parent=node.root())]
+    tuple_base_name: list[nodes.NodeNG] = [
+        nodes.Name(
+            name="tuple",
+            parent=node.root(),
+            lineno=0,
+            col_offset=0,
+            end_lineno=None,
+            end_col_offset=None,
+        )
+    ]
     class_node, name, attributes = infer_func_form(
         node, tuple_base_name, context=context
     )
@@ -459,7 +468,17 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
         members = nodes.Dict(parent=node)
         members.postinit(
             [
-                (nodes.Const(k, parent=members), nodes.Name(v.name, parent=members))
+                (
+                    nodes.Const(k, parent=members),
+                    nodes.Name(
+                        v.name,
+                        parent=members,
+                        lineno=v.lineno,
+                        col_offset=v.col_offset,
+                        end_lineno=v.end_lineno,
+                        end_col_offset=v.end_col_offset,
+                    ),
+                )
                 for k, v in dunder_members.items()
             ]
         )
