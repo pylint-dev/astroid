@@ -33,7 +33,7 @@ class Constraint(ABC):
     @classmethod
     @abstractmethod
     def match(
-        cls: type[Self], node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
     ) -> Self | None:
         """Return a new constraint for node matched from expr, if expr matches
         the constraint pattern.
@@ -53,7 +53,7 @@ class NoneConstraint(Constraint):
 
     @classmethod
     def match(
-        cls: type[Self], node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
     ) -> Self | None:
         """Return a new constraint for node matched from expr, if expr matches
         the constraint pattern.
