@@ -10,7 +10,7 @@ import astroid
 from astroid import nodes
 
 try:
-    import attr as attr_module  # pylint: disable=unused-import
+    import attr  # type: ignore[import]  # pylint: disable=unused-import
 
     HAS_ATTR = True
 except ImportError:

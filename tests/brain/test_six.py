@@ -12,7 +12,7 @@ from astroid import MANAGER, builder, nodes
 from astroid.nodes.scoped_nodes import ClassDef
 
 try:
-    import six  # pylint: disable=unused-import
+    import six  # type: ignore[import]  # pylint: disable=unused-import
 
     HAS_SIX = True
 except ImportError:

@@ -2259,26 +2259,13 @@ class Delete(_base_nodes.AssignTypeNode, _base_nodes.Statement):
 
     def __init__(
         self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
         self.targets: list[NodeNG] = []
         """What is being deleted."""
 
@@ -2290,13 +2277,8 @@ class Delete(_base_nodes.AssignTypeNode, _base_nodes.Statement):
             parent=parent,
         )
 
-    def postinit(self, targets: list[NodeNG] | None = None) -> None:
-        """Do some setup after initialisation.
-
-        :param targets: What is being deleted.
-        """
-        if targets is not None:
-            self.targets = targets
+    def postinit(self, targets: list[NodeNG]) -> None:
+        self.targets = targets
 
     def get_children(self):
         yield from self.targets
