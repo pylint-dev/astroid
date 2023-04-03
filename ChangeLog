@@ -18,6 +18,7 @@ Release date: TBA
   - ``nodes.DelName``
   - ``nodes.If``
   - ``nodes.IfExp``
+  - ``nodes.Subscript``
 
   These changes involve breaking changes to their API but should be considered bug fixes. We
   now make arguments required when they are instead of always providing defaults.
