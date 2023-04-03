@@ -3048,36 +3048,21 @@ class Keyword(NodeNG):
     _astroid_fields = ("value",)
     _other_fields = ("arg",)
 
+    value: NodeNG
+    """The value being assigned to the keyword argument."""
+
     def __init__(
         self,
-        arg: str | None = None,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        arg: str | None,
+        lineno: int | None,
+        col_offset: int | None,
+        parent: NodeNG,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        """
-        :param arg: The argument being assigned to.
-
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.arg: str | None = arg  # can be None
+        self.arg = arg
         """The argument being assigned to."""
-
-        self.value: NodeNG | None = None
-        """The value being assigned to the keyword argument."""
 
         super().__init__(
             lineno=lineno,
@@ -3087,11 +3072,7 @@ class Keyword(NodeNG):
             parent=parent,
         )
 
-    def postinit(self, value: NodeNG | None = None) -> None:
-        """Do some setup after initialisation.
-
-        :param value: The value being assigned to the keyword argument.
-        """
+    def postinit(self, value: NodeNG) -> None:
         self.value = value
 
     def get_children(self):
