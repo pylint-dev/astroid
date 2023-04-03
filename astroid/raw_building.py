@@ -128,7 +128,19 @@ def build_function(
     # (in contrast to when there are no arguments and args == []). We pass
     # this to the builder to indicate this.
     if args is not None:
-        arguments = [nodes.AssignName(name=arg, parent=argsnode) for arg in args]
+        # We set the lineno and col_offset to 0 because we don't have any
+        # information about the location of the function definition.
+        arguments = [
+            nodes.AssignName(
+                name=arg,
+                parent=argsnode,
+                lineno=0,
+                col_offset=0,
+                end_lineno=None,
+                end_col_offset=None,
+            )
+            for arg in args
+        ]
     else:
         arguments = None
 
@@ -150,16 +162,34 @@ def build_function(
     else:
         kwonlydefault_nodes = None
 
+    # We set the lineno and col_offset to 0 because we don't have any
+    # information about the location of the kwonly and posonlyargs.
     argsnode.postinit(
         args=arguments,
         defaults=default_nodes,
         kwonlyargs=[
-            nodes.AssignName(name=arg, parent=argsnode) for arg in kwonlyargs or ()
+            nodes.AssignName(
+                name=arg,
+                parent=argsnode,
+                lineno=0,
+                col_offset=0,
+                end_lineno=None,
+                end_col_offset=None,
+            )
+            for arg in kwonlyargs or ()
         ],
         kw_defaults=kwonlydefault_nodes,
         annotations=[],
         posonlyargs=[
-            nodes.AssignName(name=arg, parent=argsnode) for arg in posonlyargs or ()
+            nodes.AssignName(
+                name=arg,
+                parent=argsnode,
+                lineno=0,
+                col_offset=0,
+                end_lineno=None,
+                end_col_offset=None,
+            )
+            for arg in posonlyargs or ()
         ],
     )
     func.postinit(
