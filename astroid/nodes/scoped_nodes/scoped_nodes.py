@@ -1046,8 +1046,8 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
     <Lambda.<lambda> l.1 at 0x7f23b2e41518>
     """
 
-    _astroid_fields = ("args", "body")
-    _other_other_fields = ("locals",)
+    _astroid_fields: ClassVar[tuple[str, ...]] = ("args", "body")
+    _other_other_fields: ClassVar[tuple[str, ...]] = ("locals",)
     name = "<lambda>"
     is_lambda = True
     special_attributes = FunctionModel()
@@ -1127,7 +1127,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         self.args = args
         self.body = body
 
-    def pytype(self) -> Literal["bultins.instancemethod", "builtins.function"]:
+    def pytype(self) -> Literal["builtins.instancemethod", "builtins.function"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
