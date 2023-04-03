@@ -699,10 +699,10 @@ class Arguments(_base_nodes.AssignTypeNode):
         return None
 
     @cached_property
-    def fromlineno(self):
+    def fromlineno(self) -> int:
         """The first line that this node appears on in the source code.
 
-        :type: int or None
+        Can also return 0 if the line can not be determined.
         """
         lineno = super().fromlineno
         return max(lineno, self.parent.fromlineno or 0)

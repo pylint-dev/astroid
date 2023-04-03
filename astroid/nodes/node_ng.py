@@ -446,15 +446,21 @@ class NodeNG:
     # single node, and they rarely get looked at
 
     @cached_property
-    def fromlineno(self) -> int | None:
-        """The first line that this node appears on in the source code."""
+    def fromlineno(self) -> int:
+        """The first line that this node appears on in the source code.
+
+        Can also return 0 if the line can not be determined.
+        """
         if self.lineno is None:
             return self._fixed_source_line()
         return self.lineno
 
     @cached_property
-    def tolineno(self) -> int | None:
-        """The last line that this node appears on in the source code."""
+    def tolineno(self) -> int:
+        """The last line that this node appears on in the source code.
+
+        Can also return 0 if the line can not be determined.
+        """
         if self.end_lineno is not None:
             return self.end_lineno
         if not self._astroid_fields:
@@ -466,10 +472,11 @@ class NodeNG:
             return self.fromlineno
         return last_child.tolineno
 
-    def _fixed_source_line(self) -> int | None:
+    def _fixed_source_line(self) -> int:
         """Attempt to find the line that this node appears on.
 
         We need this method since not all nodes have :attr:`lineno` set.
+        Will return 0 if the line number can not be determined.
         """
         line = self.lineno
         _node = self
@@ -482,7 +489,7 @@ class NodeNG:
             while parent and line is None:
                 line = parent.lineno
                 parent = parent.parent
-        return line
+        return line or 0
 
     def block_range(self, lineno):
         """Get a range from the given line number to where this node ends.
