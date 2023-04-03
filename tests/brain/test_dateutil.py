@@ -9,7 +9,7 @@ import unittest
 from astroid import builder
 
 try:
-    import dateutil  # pylint: disable=unused-import
+    import dateutil  # type: ignore[import]  # pylint: disable=unused-import
 
     HAS_DATEUTIL = True
 except ImportError:

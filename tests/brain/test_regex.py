@@ -3,7 +3,7 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 try:
-    import regex
+    import regex  # type: ignore[import]
 
     HAS_REGEX = True
 except ImportError:
