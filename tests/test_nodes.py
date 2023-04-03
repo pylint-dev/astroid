@@ -1018,7 +1018,12 @@ class AliasesTest(unittest.TestCase):
         def test_assname(node: AssignName) -> AssignName | None:
             if node.name == "foo":
                 return nodes.AssignName(
-                    "bar", node.lineno, node.col_offset, node.parent
+                    "bar",
+                    node.lineno,
+                    node.col_offset,
+                    node.parent,
+                    end_lineno=node.end_lineno,
+                    end_col_offset=node.end_col_offset,
                 )
             return None
 
