@@ -2883,7 +2883,11 @@ def test_deprecation_of_doc_attribute() -> None:
         node_class.postinit(bases=[], body=[], decorators=[], doc_node=doc_node)
         assert node_class.doc_node == doc_node
         node_func = nodes.FunctionDef(name="MyFunction")
-        node_func.postinit(args=nodes.Arguments(), body=[], doc_node=doc_node)
+        node_func.postinit(
+            args=nodes.Arguments(parent=node_func, vararg=None, kwarg=None),
+            body=[],
+            doc_node=doc_node,
+        )
         assert node_func.doc_node == doc_node
 
     # Test 'doc' attribute if only 'doc_node' is passed

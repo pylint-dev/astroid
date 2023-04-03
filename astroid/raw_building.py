@@ -122,7 +122,7 @@ def build_function(
     """create and initialize an astroid FunctionDef node"""
     # first argument is now a list of decorators
     func = nodes.FunctionDef(name)
-    argsnode = nodes.Arguments(parent=func)
+    argsnode = nodes.Arguments(parent=func, vararg=None, kwarg=None)
 
     # If args is None we don't have any information about the signature
     # (in contrast to when there are no arguments and args == []). We pass
@@ -191,6 +191,8 @@ def build_function(
             )
             for arg in posonlyargs or ()
         ],
+        kwonlyargs_annotations=[],
+        posonlyargs_annotations=[],
     )
     func.postinit(
         args=argsnode,
