@@ -3,4 +3,3 @@
 contributors-txt>=0.7.4
 tbump~=6.9.0
 types-typed-ast; implementation_name=="cpython" and python_version<"3.8"
-types-pkg_resources==0.1.3
