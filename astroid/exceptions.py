@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from astroid import util
+from astroid.typing import InferenceResult
 
 if TYPE_CHECKING:
     from astroid import arguments, bases, nodes, objects
@@ -237,15 +238,15 @@ class InferenceError(ResolveError):  # pylint: disable=too-many-instance-attribu
     def __init__(  # pylint: disable=too-many-arguments
         self,
         message: str = "Inference failed for {node!r}.",
-        node: nodes.NodeNG | bases.Instance | None = None,
+        node: InferenceResult | None = None,
         context: InferenceContext | None = None,
-        target: nodes.NodeNG | bases.Instance | None = None,
+        target: InferenceResult | None = None,
         targets: nodes.Tuple | None = None,
         attribute: str | None = None,
-        unknown: nodes.NodeNG | bases.Instance | None = None,
+        unknown: InferenceResult | None = None,
         assign_path: list[int] | None = None,
         caller: nodes.Call | None = None,
-        stmts: Sequence[nodes.NodeNG | bases.Instance] | None = None,
+        stmts: Sequence[InferenceResult] | None = None,
         frame: nodes.LocalsDictNodeNG | None = None,
         call_site: arguments.CallSite | None = None,
         func: nodes.FunctionDef | None = None,
