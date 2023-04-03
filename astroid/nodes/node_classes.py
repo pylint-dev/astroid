@@ -1632,58 +1632,15 @@ class Compare(NodeNG):
 
     _astroid_fields = ("left", "ops")
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    left: NodeNG
+    """The value at the left being applied to a comparison operator."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
+    ops: list[tuple[str, NodeNG]]
+    """The remainder of the operators and their relevant right hand value."""
 
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.left: NodeNG | None = None
-        """The value at the left being applied to a comparison operator."""
-
-        self.ops: list[tuple[str, NodeNG]] = []
-        """The remainder of the operators and their relevant right hand value."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
-
-    def postinit(
-        self,
-        left: NodeNG | None = None,
-        ops: list[tuple[str, NodeNG]] | None = None,
-    ) -> None:
-        """Do some setup after initialisation.
-
-        :param left: The value at the left being applied to a comparison
-            operator.
-
-        :param ops: The remainder of the operators
-            and their relevant right hand value.
-        """
+    def postinit(self, left: NodeNG, ops: list[tuple[str, NodeNG]]) -> None:
         self.left = left
-        if ops is not None:
-            self.ops = ops
+        self.ops = ops
 
     def get_children(self):
         """Get the child nodes below this node.
