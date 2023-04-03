@@ -12,7 +12,9 @@ Release date: TBA
 
 * Improved signature of the ``__init__`` and ``__postinit__`` methods of the following nodes:
   - ``nodes.AssignName``
+  - ``nodes.BinOp``
   - ``nodes.Delete``
+  - ``nodes.DelName``
   - ``nodes.If``
   - ``nodes.IfExp``
 
