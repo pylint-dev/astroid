@@ -20,6 +20,7 @@ Release date: TBA
   - ``nodes.AugAssign``
   - ``nodes.Await``
   - ``nodes.BinOp``
+  - ``nodes.Call``
   - ``nodes.Compare``
   - ``nodes.Delete``
   - ``nodes.DelAttr``

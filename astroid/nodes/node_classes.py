@@ -1427,64 +1427,21 @@ class Call(NodeNG):
 
     _astroid_fields = ("func", "args", "keywords")
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    func: NodeNG
+    """What is being called."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
+    args: list[NodeNG]
+    """The positional arguments being given to the call."""
 
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.func: NodeNG | None = None
-        """What is being called."""
-
-        self.args: list[NodeNG] = []
-        """The positional arguments being given to the call."""
-
-        self.keywords: list[Keyword] = []
-        """The keyword arguments being given to the call."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+    keywords: list[Keyword]
+    """The keyword arguments being given to the call."""
 
     def postinit(
-        self,
-        func: NodeNG | None = None,
-        args: list[NodeNG] | None = None,
-        keywords: list[Keyword] | None = None,
+        self, func: NodeNG, args: list[NodeNG], keywords: list[Keyword]
     ) -> None:
-        """Do some setup after initialisation.
-
-        :param func: What is being called.
-
-        :param args: The positional arguments being given to the call.
-
-        :param keywords: The keyword arguments being given to the call.
-        """
         self.func = func
-        if args is not None:
-            self.args = args
-        if keywords is not None:
-            self.keywords = keywords
+        self.args = args
+        self.keywords = keywords
 
     @property
     def starargs(self) -> list[Starred]:

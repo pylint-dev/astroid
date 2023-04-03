@@ -533,7 +533,7 @@ def _get_field_default(field_call: nodes.Call) -> _FieldDefaultReturn:
             col_offset=field_call.col_offset,
             parent=field_call.parent,
         )
-        new_call.postinit(func=default_factory)
+        new_call.postinit(func=default_factory, args=[], keywords=[])
         return "default_factory", new_call
 
     return None
