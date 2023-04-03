@@ -11,6 +11,8 @@ It is not considered public.
 from __future__ import annotations
 
 from astroid import nodes
+from astroid.nodes import node_classes
+from astroid.typing import SuccessfulInferenceResult
 
 
 def _get_filtered_node_statements(
@@ -41,7 +43,12 @@ def _get_if_statement_ancestor(node: nodes.NodeNG) -> nodes.If | None:
     return None
 
 
-def _filter_stmts(base_node: nodes.NodeNG, stmts, frame, offset):
+def _filter_stmts(
+    base_node: node_classes.LookupMixIn,
+    stmts: list[SuccessfulInferenceResult],
+    frame: nodes.LocalsDictNodeNG,
+    offset: int,
+) -> list[nodes.NodeNG]:
     """Filter the given list of statements to remove ignorable statements.
 
     If base_node is not a frame itself and the name is found in the inner
@@ -49,16 +56,12 @@ def _filter_stmts(base_node: nodes.NodeNG, stmts, frame, offset):
     statements according to base_node's location.
 
     :param stmts: The statements to filter.
-    :type stmts: list(nodes.NodeNG)
 
     :param frame: The frame that all of the given statements belong to.
-    :type frame: nodes.NodeNG
 
     :param offset: The line offset to filter statements up to.
-    :type offset: int
 
     :returns: The filtered statements.
-    :rtype: list(nodes.NodeNG)
     """
     # if offset == -1, my actual frame is not the inner frame but its parent
     #
@@ -102,7 +105,7 @@ def _filter_stmts(base_node: nodes.NodeNG, stmts, frame, offset):
         # disabling lineno filtering
         mylineno = 0
 
-    _stmts = []
+    _stmts: list[nodes.NodeNG] = []
     _stmt_parents = []
     statements = _get_filtered_node_statements(base_node, stmts)
     for node, stmt in statements:
