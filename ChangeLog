@@ -11,6 +11,7 @@ Release date: TBA
   Closes #1780
 
 * Improved signature of the ``__init__`` and ``__postinit__`` methods of the following nodes:
+  - ``nodes.AssignName``
   - ``nodes.BinOp``
   - ``nodes.Delete``
   - ``nodes.DelName``

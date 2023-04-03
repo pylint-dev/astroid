@@ -408,33 +408,17 @@ class AssignName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssi
 
     infer_lhs: ClassVar[InferLHS[AssignName]]
 
-    @decorators.deprecate_default_argument_values(name="str")
     def __init__(
         self,
-        name: str | None = None,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        name: str,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        """
-        :param name: The name that is assigned to.
-
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.name: str | None = name
+        self.name = name
         """The name that is assigned to."""
 
         super().__init__(
