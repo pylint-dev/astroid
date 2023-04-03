@@ -1036,36 +1036,20 @@ class AssignAttr(_base_nodes.ParentAssignNode):
 
     infer_lhs: ClassVar[InferLHS[AssignAttr]]
 
-    @decorators.deprecate_default_argument_values(attrname="str")
+    expr: NodeNG
+    """What has the attribute that is being assigned to."""
+
     def __init__(
         self,
-        attrname: str | None = None,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        attrname: str,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        """
-        :param attrname: The name of the attribute being assigned to.
-
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.expr: NodeNG | None = None
-        """What has the attribute that is being assigned to."""
-
-        self.attrname: str | None = attrname
+        self.attrname = attrname
         """The name of the attribute being assigned to."""
 
         super().__init__(
@@ -1076,11 +1060,7 @@ class AssignAttr(_base_nodes.ParentAssignNode):
             parent=parent,
         )
 
-    def postinit(self, expr: NodeNG | None = None) -> None:
-        """Do some setup after initialisation.
-
-        :param expr: What has the attribute that is being assigned to.
-        """
+    def postinit(self, expr: NodeNG) -> None:
         self.expr = expr
 
     assigned_stmts: ClassVar[AssignedStmtsCall[AssignAttr]]
@@ -2114,39 +2094,20 @@ class DelAttr(_base_nodes.ParentAssignNode):
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
 
-    @decorators.deprecate_default_argument_values(attrname="str")
+    expr: NodeNG
+    """The name that this node represents."""
+
     def __init__(
         self,
-        attrname: str | None = None,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        attrname: str,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        """
-        :param attrname: The name of the attribute that is being deleted.
-
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.expr: NodeNG | None = None
-        """The name that this node represents.
-
-        :type: Name or None
-        """
-
-        self.attrname: str | None = attrname
+        self.attrname = attrname
         """The name of the attribute that is being deleted."""
 
         super().__init__(
@@ -2157,12 +2118,7 @@ class DelAttr(_base_nodes.ParentAssignNode):
             parent=parent,
         )
 
-    def postinit(self, expr: NodeNG | None = None) -> None:
-        """Do some setup after initialisation.
-
-        :param expr: The name that this node represents.
-        :type expr: Name or None
-        """
+    def postinit(self, expr: NodeNG) -> None:
         self.expr = expr
 
     def get_children(self):
@@ -2865,39 +2821,20 @@ class Attribute(NodeNG):
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
 
-    @decorators.deprecate_default_argument_values(attrname="str")
+    expr: NodeNG
+    """The name that this node represents."""
+
     def __init__(
         self,
-        attrname: str | None = None,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        attrname: str,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        """
-        :param attrname: The name of the attribute.
-
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.expr: NodeNG | None = None
-        """The name that this node represents.
-
-        :type: Name or None
-        """
-
-        self.attrname: str | None = attrname
+        self.attrname = attrname
         """The name of the attribute."""
 
         super().__init__(
@@ -2908,12 +2845,7 @@ class Attribute(NodeNG):
             parent=parent,
         )
 
-    def postinit(self, expr: NodeNG | None = None) -> None:
-        """Do some setup after initialisation.
-
-        :param expr: The name that this node represents.
-        :type expr: Name or None
-        """
+    def postinit(self, expr: NodeNG) -> None:
         self.expr = expr
 
     def get_children(self):
