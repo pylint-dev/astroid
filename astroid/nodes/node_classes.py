@@ -3614,35 +3614,20 @@ class Starred(_base_nodes.ParentAssignNode):
     _astroid_fields = ("value",)
     _other_fields = ("ctx",)
 
+    value: NodeNG
+    """What is being unpacked."""
+
     def __init__(
         self,
-        ctx: Context | None = None,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        ctx: Context,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        """
-        :param ctx: Whether the list is assigned to or loaded from.
-
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.value: NodeNG | None = None
-        """What is being unpacked."""
-
-        self.ctx: Context | None = ctx
+        self.ctx = ctx
         """Whether the starred item is assigned to or loaded from."""
 
         super().__init__(
@@ -3653,11 +3638,7 @@ class Starred(_base_nodes.ParentAssignNode):
             parent=parent,
         )
 
-    def postinit(self, value: NodeNG | None = None) -> None:
-        """Do some setup after initialisation.
-
-        :param value: What is being unpacked.
-        """
+    def postinit(self, value: NodeNG) -> None:
         self.value = value
 
     assigned_stmts: ClassVar[AssignedStmtsCall[Starred]]
