@@ -13,7 +13,7 @@ from astroid.const import PY311_PLUS
 from astroid.exceptions import InferenceError
 
 try:
-    import six  # pylint: disable=unused-import
+    import six  # type: ignore[import]  # pylint: disable=unused-import
 
     HAS_SIX = True
 except ImportError:

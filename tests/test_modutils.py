@@ -26,7 +26,7 @@ from astroid.interpreter._import import spec
 from . import resources
 
 try:
-    import urllib3  # pylint: disable=unused-import
+    import urllib3  # type: ignore[import]  # pylint: disable=unused-import
 
     HAS_URLLIB3 = True
 except ImportError:
