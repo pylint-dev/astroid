@@ -1218,7 +1218,7 @@ class Assign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         self,
         targets: list[NodeNG],
         value: NodeNG,
-        type_annotation: NodeNG | None = None,
+        type_annotation: NodeNG | None,
     ) -> None:
         self.targets = targets
         self.value = value
