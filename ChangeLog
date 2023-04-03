@@ -20,9 +20,15 @@ Release date: TBA
 * Remove dependency on ``wrapt``.
 
 
-What's New in astroid 2.15.2?
+What's New in astroid 2.15.3?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.15.2?
+=============================
+Release date: 2023-04-03
 
 * Support more possible usages of ``attrs`` decorators.
 
