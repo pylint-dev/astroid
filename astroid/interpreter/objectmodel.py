@@ -403,7 +403,9 @@ class FunctionModel(ObjectModel):
                 we get a new object which has two parameters, *self* and *type*.
                 """
                 nonlocal func
-                arguments = astroid.Arguments(parent=func.args.parent)
+                arguments = astroid.Arguments(
+                    parent=func.args.parent, vararg=None, kwarg=None
+                )
 
                 positional_or_keyword_params = func.args.args.copy()
                 positional_or_keyword_params.append(
@@ -426,6 +428,8 @@ class FunctionModel(ObjectModel):
                     kwonlyargs=[],
                     kw_defaults=[],
                     annotations=[],
+                    kwonlyargs_annotations=[],
+                    posonlyargs_annotations=[],
                 )
                 return arguments
 
@@ -858,7 +862,7 @@ class PropertyModel(ObjectModel):
     def _init_function(self, name):
         function = nodes.FunctionDef(name=name, parent=self._instance)
 
-        args = nodes.Arguments(parent=function)
+        args = nodes.Arguments(parent=function, vararg=None, kwarg=None)
         args.postinit(
             args=[],
             defaults=[],
