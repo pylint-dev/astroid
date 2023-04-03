@@ -344,14 +344,12 @@ class Module(LocalsDictNodeNG):
         """
         return self._get_stream()
 
-    def block_range(self, lineno):
+    def block_range(self, lineno: int) -> tuple[Literal[0], Literal[0]]:
         """Get a range from where this node starts to where this node ends.
 
         :param lineno: Unused.
-        :type lineno: int
 
         :returns: The range of line numbers that this node belongs to.
-        :rtype: tuple(int, int)
         """
         return self.fromlineno, self.tolineno
 
@@ -1557,14 +1555,12 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
     def implicit_parameters(self) -> Literal[0, 1]:
         return 1 if self.is_bound() else 0
 
-    def block_range(self, lineno):
+    def block_range(self, lineno: int) -> tuple[int, int]:
         """Get a range from the given line number to where this node ends.
 
         :param lineno: Unused.
-        :type lineno: int
 
         :returns: The range of line numbers that this node belongs to,
-        :rtype: tuple(int, int)
         """
         return self.fromlineno, self.tolineno
 
@@ -2184,14 +2180,12 @@ class ClassDef(
 
         return self.fromlineno
 
-    def block_range(self, lineno):
+    def block_range(self, lineno: int) -> tuple[int, int]:
         """Get a range from the given line number to where this node ends.
 
         :param lineno: Unused.
-        :type lineno: int
 
         :returns: The range of line numbers that this node belongs to,
-        :rtype: tuple(int, int)
         """
         return self.fromlineno, self.tolineno
 

@@ -2797,15 +2797,13 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         """
         return self.test.tolineno
 
-    def block_range(self, lineno):
+    def block_range(self, lineno: int) -> tuple[int, int]:
         """Get a range from the given line number to where this node ends.
 
         :param lineno: The line number to start the range at.
-        :type lineno: int
 
         :returns: The range of line numbers that this node belongs to,
             starting at the given line number.
-        :rtype: tuple(int, int)
         """
         if lineno == self.body[0].fromlineno:
             return lineno, lineno
@@ -3622,15 +3620,13 @@ class TryExcept(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     def _infer_name(self, frame, name):
         return name
 
-    def block_range(self, lineno):
+    def block_range(self, lineno: int) -> tuple[int, int]:
         """Get a range from the given line number to where this node ends.
 
         :param lineno: The line number to start the range at.
-        :type lineno: int
 
         :returns: The range of line numbers that this node belongs to,
             starting at the given line number.
-        :rtype: tuple(int, int)
         """
         last = None
         for exhandler in self.handlers:
@@ -3720,15 +3716,13 @@ class TryFinally(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         if finalbody is not None:
             self.finalbody = finalbody
 
-    def block_range(self, lineno):
+    def block_range(self, lineno: int) -> tuple[int, int]:
         """Get a range from the given line number to where this node ends.
 
         :param lineno: The line number to start the range at.
-        :type lineno: int
 
         :returns: The range of line numbers that this node belongs to,
             starting at the given line number.
-        :rtype: tuple(int, int)
         """
         child = self.body[0]
         # py2.5 try: except: finally:
@@ -4072,15 +4066,13 @@ class While(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         """
         return self.test.tolineno
 
-    def block_range(self, lineno):
+    def block_range(self, lineno: int) -> tuple[int, int]:
         """Get a range from the given line number to where this node ends.
 
         :param lineno: The line number to start the range at.
-        :type lineno: int
 
         :returns: The range of line numbers that this node belongs to,
             starting at the given line number.
-        :rtype: tuple(int, int)
         """
         return self._elsed_block_range(lineno, self.orelse)
 

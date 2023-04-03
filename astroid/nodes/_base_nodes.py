@@ -212,7 +212,9 @@ class MultiLineWithElseBlockNode(MultiLineBlockNode):
     def blockstart_tolineno(self):
         return self.lineno
 
-    def _elsed_block_range(self, lineno, orelse, last=None):
+    def _elsed_block_range(
+        self, lineno: int, orelse: list[nodes.NodeNG], last: int | None = None
+    ) -> tuple[int, int]:
         """Handle block line numbers range for try/finally, for, if and while
         statements.
         """
