@@ -1296,44 +1296,27 @@ class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     _astroid_fields = ("target", "value")
     _other_fields = ("op",)
 
-    @decorators.deprecate_default_argument_values(op="str")
+    target: Name | Attribute | Subscript
+    """What is being assigned to."""
+
+    value: NodeNG
+    """The value being assigned to the variable."""
+
     def __init__(
         self,
-        op: str | None = None,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        op: str,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        """
-        :param op: The operator that is being combined with the assignment.
-            This includes the equals sign.
-
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.target: NodeNG | None = None
-        """What is being assigned to."""
-
-        self.op: str | None = op
+        self.op = op
         """The operator that is being combined with the assignment.
 
         This includes the equals sign.
         """
-
-        self.value: NodeNG | None = None
-        """The value being assigned to the variable."""
 
         super().__init__(
             lineno=lineno,
@@ -1343,15 +1326,7 @@ class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
             parent=parent,
         )
 
-    def postinit(
-        self, target: NodeNG | None = None, value: NodeNG | None = None
-    ) -> None:
-        """Do some setup after initialisation.
-
-        :param target: What is being assigned to.
-
-        :param value: The value being assigned to the variable.
-        """
+    def postinit(self, target: Name | Attribute | Subscript, value: NodeNG) -> None:
         self.target = target
         self.value = value
 
