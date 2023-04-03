@@ -491,15 +491,13 @@ class NodeNG:
                 parent = parent.parent
         return line or 0
 
-    def block_range(self, lineno):
+    def block_range(self, lineno: int) -> tuple[int, int]:
         """Get a range from the given line number to where this node ends.
 
         :param lineno: The line number to start the range at.
-        :type lineno: int
 
         :returns: The range of line numbers that this node belongs to,
             starting at the given line number.
-        :rtype: tuple(int, int or None)
         """
         return lineno, self.tolineno
 
