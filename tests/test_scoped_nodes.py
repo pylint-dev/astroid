@@ -47,7 +47,7 @@ from astroid.nodes.scoped_nodes.scoped_nodes import _is_metaclass
 from . import resources
 
 try:
-    import six  # pylint: disable=unused-import
+    import six  # type: ignore[import]  # pylint: disable=unused-import
 
     HAS_SIX = True
 except ImportError:
