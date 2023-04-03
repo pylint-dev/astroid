@@ -418,10 +418,10 @@ class UnboundMethod(Proxy):
             self.__class__.__name__, self._proxied.name, frame.qname(), id(self)
         )
 
-    def implicit_parameters(self) -> Literal[0]:
+    def implicit_parameters(self) -> Literal[0, 1]:
         return 0
 
-    def is_bound(self) -> Literal[False]:
+    def is_bound(self) -> bool:
         return False
 
     def getattr(self, name, context: InferenceContext | None = None):
@@ -640,7 +640,7 @@ class Generator(BaseInstance):
     def callable(self) -> Literal[False]:
         return False
 
-    def pytype(self) -> Literal["builtins.generator"]:
+    def pytype(self) -> str:
         return "builtins.generator"
 
     def display_type(self) -> str:
