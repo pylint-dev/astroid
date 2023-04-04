@@ -650,7 +650,7 @@ class Module(LocalsDictNodeNG):
         """
         return True
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.body
 
     def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
@@ -741,7 +741,7 @@ class GeneratorExp(ComprehensionScope):
         """
         return True
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.elt
 
         yield from self.generators
@@ -839,7 +839,7 @@ class DictComp(ComprehensionScope):
         """
         return util.Uninferable
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.key
         yield self.value
 
@@ -924,7 +924,7 @@ class SetComp(ComprehensionScope):
         """
         return util.Uninferable
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.elt
 
         yield from self.generators
@@ -992,7 +992,7 @@ class ListComp(ComprehensionScope):
         """
         return util.Uninferable
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.elt
 
         yield from self.generators
@@ -1218,7 +1218,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         """
         return True
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.args
         yield self.body
 
@@ -1756,7 +1756,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         """
         return True
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         if self.decorators is not None:
             yield self.decorators
 
@@ -3066,7 +3066,7 @@ class ClassDef(
         """
         return True
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         if self.decorators is not None:
             yield self.decorators
 

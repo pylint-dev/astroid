@@ -11,7 +11,7 @@ import itertools
 import sys
 import typing
 import warnings
-from collections.abc import Generator, Iterable, Mapping
+from collections.abc import Generator, Iterable, Mapping, Iterator
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Union
 
@@ -346,7 +346,7 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         :returns: The name of the type.
         """
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.elts
 
 
@@ -886,7 +886,7 @@ class Arguments(_base_nodes.AssignTypeNode):
             return _find_arg(argname, self.arguments, rec)
         return None, None
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.posonlyargs or ()
 
         for elt in self.posonlyargs_annotations:
@@ -1012,7 +1012,7 @@ class AssignAttr(_base_nodes.ParentAssignNode):
     See astroid/protocols.py for actual implementation.
     """
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.expr
 
 
@@ -1075,7 +1075,7 @@ class Assert(_base_nodes.Statement):
         self.fail = fail
         self.test = test
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.test
 
         if self.fail is not None:
@@ -1121,7 +1121,7 @@ class Assign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     See astroid/protocols.py for actual implementation.
     """
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.targets
 
         yield self.value
@@ -1177,7 +1177,7 @@ class AnnAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     See astroid/protocols.py for actual implementation.
     """
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.target
         yield self.annotation
 
@@ -1262,7 +1262,7 @@ class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         except InferenceError:
             return []
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.target
         yield self.value
 
@@ -1339,7 +1339,7 @@ class BinOp(NodeNG):
         except InferenceError:
             return []
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.left
         yield self.right
 
@@ -1413,7 +1413,7 @@ class BoolOp(NodeNG):
         if values is not None:
             self.values = values
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.values
 
     def op_precedence(self):
@@ -1512,7 +1512,7 @@ class Call(NodeNG):
         """The keyword arguments that unpack something."""
         return [keyword for keyword in self.keywords if keyword.arg is None]
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.func
 
         yield from self.args
@@ -1545,7 +1545,7 @@ class Compare(NodeNG):
         self.left = left
         self.ops = ops
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         """Get the child nodes below this node.
 
         Overridden to handle the tuple fields and skip returning the operator
@@ -1666,7 +1666,7 @@ class Comprehension(NodeNG):
 
         return stmts, False
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.target
         yield self.iter
 
@@ -1911,7 +1911,7 @@ class Decorators(NodeNG):
             raise ParentMissingError(target=self.parent)
         return self.parent.parent.scope()
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.nodes
 
 
@@ -1956,7 +1956,7 @@ class DelAttr(_base_nodes.ParentAssignNode):
     def postinit(self, expr: NodeNG) -> None:
         self.expr = expr
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.expr
 
 
@@ -1996,7 +1996,7 @@ class Delete(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     def postinit(self, targets: list[NodeNG]) -> None:
         self.targets = targets
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.targets
 
 
@@ -2088,7 +2088,7 @@ class Dict(NodeNG, Instance):
         """
         return "builtins.dict"
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         """Get the key and value nodes below this node.
 
         Children are returned in the order that they are defined in the source
@@ -2220,7 +2220,7 @@ class Expr(_base_nodes.Statement):
         """
         self.value = value
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.value
 
     def _get_yield_nodes_skip_lambdas(self):
@@ -2317,7 +2317,7 @@ class ExceptHandler(
     See astroid/protocols.py for actual implementation.
     """
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         if self.type is not None:
             yield self.type
 
@@ -2487,7 +2487,7 @@ class For(
         """
         return self.iter.tolineno
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.target
         yield self.iter
 
@@ -2574,7 +2574,7 @@ class Await(NodeNG):
         """
         self.value = value
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.value
 
 
@@ -2683,7 +2683,7 @@ class Attribute(NodeNG):
     def postinit(self, expr: NodeNG) -> None:
         self.expr = expr
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.expr
 
 
@@ -2811,7 +2811,7 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
             return lineno, self.body[-1].tolineno
         return self._elsed_block_range(lineno, self.orelse, self.body[0].fromlineno - 1)
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.test
 
         yield from self.body
@@ -2903,7 +2903,7 @@ class IfExp(NodeNG):
         self.body = body
         self.orelse = orelse
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.test
         yield self.body
         yield self.orelse
@@ -3017,7 +3017,7 @@ class Keyword(NodeNG):
     def postinit(self, value: NodeNG) -> None:
         self.value = value
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.value
 
 
@@ -3230,7 +3230,7 @@ class Raise(_base_nodes.Statement):
             name.name == "NotImplementedError" for name in self.exc._get_name_nodes()
         )
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         if self.exc is not None:
             yield self.exc
 
@@ -3289,7 +3289,7 @@ class Return(_base_nodes.Statement):
         """
         self.value = value
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         if self.value is not None:
             yield self.value
 
@@ -3430,7 +3430,7 @@ class Slice(NodeNG):
     def getattr(self, attrname, context: InferenceContext | None = None):
         return self._proxied.getattr(attrname, context)
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         if self.lower is not None:
             yield self.lower
 
@@ -3485,7 +3485,7 @@ class Starred(_base_nodes.ParentAssignNode):
     See astroid/protocols.py for actual implementation.
     """
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.value
 
 
@@ -3535,7 +3535,7 @@ class Subscript(NodeNG):
         self.value = value
         self.slice = slice
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.value
         yield self.slice
 
@@ -3638,7 +3638,7 @@ class TryExcept(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
                 last = exhandler.body[0].fromlineno - 1
         return self._elsed_block_range(lineno, self.orelse, last)
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.body
 
         yield from self.handlers or ()
@@ -3734,7 +3734,7 @@ class TryFinally(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
             return child.block_range(lineno)
         return self._elsed_block_range(lineno, self.finalbody)
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.body
         yield from self.finalbody
 
@@ -3833,7 +3833,7 @@ class TryStar(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
                 return lineno, self.finalbody[-1].tolineno
         return lineno, self.tolineno
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.body
         yield from self.handlers
         yield from self.orelse
@@ -3974,7 +3974,7 @@ class UnaryOp(NodeNG):
         except InferenceError:
             return []
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.operand
 
     def op_precedence(self):
@@ -4076,7 +4076,7 @@ class While(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         """
         return self._elsed_block_range(lineno, self.orelse)
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.test
 
         yield from self.body
@@ -4179,7 +4179,7 @@ class With(
         """
         return self.items[-1][0].tolineno
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         """Get the child nodes below this node.
 
         :returns: The children.
@@ -4247,7 +4247,7 @@ class Yield(NodeNG):
         """
         self.value = value
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         if self.value is not None:
             yield self.value
 
@@ -4346,7 +4346,7 @@ class FormattedValue(NodeNG):
         self.conversion = conversion
         self.format_spec = format_spec
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield self.value
 
         if self.format_spec is not None:
@@ -4410,7 +4410,7 @@ class JoinedStr(NodeNG):
         if values is not None:
             self.values = values
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         yield from self.values
 
 
