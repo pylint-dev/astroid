@@ -2402,76 +2402,33 @@ class For(
     This is always ``True`` for :class:`For` nodes.
     """
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    target: NodeNG
+    """What the loop assigns to."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
+    iter: NodeNG
+    """What the loop iterates over."""
 
-        :param parent: The parent node in the syntax tree.
+    body: list[NodeNG]
+    """The contents of the body of the loop."""
 
-        :param end_lineno: The last line this node appears on in the source code.
+    orelse: list[NodeNG]
+    """The contents of the ``else`` block of the loop."""
 
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.target: NodeNG | None = None
-        """What the loop assigns to."""
+    type_annotation: NodeNG | None
+    """If present, this will contain the type annotation passed by a type comment"""
 
-        self.iter: NodeNG | None = None
-        """What the loop iterates over."""
-
-        self.body: list[NodeNG] = []
-        """The contents of the body of the loop."""
-
-        self.orelse: list[NodeNG] = []
-        """The contents of the ``else`` block of the loop."""
-
-        self.type_annotation: NodeNG | None = None  # can be None
-        """If present, this will contain the type annotation passed by a type comment"""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
-
-    # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
     def postinit(
         self,
-        target: NodeNG | None = None,
-        iter: NodeNG | None = None,
-        body: list[NodeNG] | None = None,
-        orelse: list[NodeNG] | None = None,
-        type_annotation: NodeNG | None = None,
+        target: NodeNG,
+        iter: NodeNG,  # pylint: disable = redefined-builtin
+        body: list[NodeNG],
+        orelse: list[NodeNG],
+        type_annotation: NodeNG | None,
     ) -> None:
-        """Do some setup after initialisation.
-
-        :param target: What the loop assigns to.
-
-        :param iter: What the loop iterates over.
-
-        :param body: The contents of the body of the loop.
-
-        :param orelse: The contents of the ``else`` block of the loop.
-        """
         self.target = target
         self.iter = iter
-        if body is not None:
-            self.body = body
-        if orelse is not None:
-            self.orelse = orelse
+        self.body = body
+        self.orelse = orelse
         self.type_annotation = type_annotation
 
     assigned_stmts: ClassVar[AssignedStmtsCall[For]]
