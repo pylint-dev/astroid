@@ -434,9 +434,9 @@ def infer_subscript(
 
             # Try to deduce the index value.
             index_value = _SUBSCRIPT_SENTINEL
-            if value.__class__ == bases.Instance:
+            if isinstance(value, bases.Instance):
                 index_value = index
-            elif index.__class__ == bases.Instance:
+            elif isinstance(index, bases.Instance):
                 instance_as_index = helpers.class_instance_as_index(index)
                 if instance_as_index:
                     index_value = instance_as_index
