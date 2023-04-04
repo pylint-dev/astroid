@@ -3999,64 +3999,24 @@ class While(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     _astroid_fields = ("test", "body", "orelse")
     _multi_line_block_fields = ("body", "orelse")
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    test: NodeNG
+    """The condition that the loop tests."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
+    body: list[NodeNG]
+    """The contents of the loop."""
 
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.test: NodeNG | None = None
-        """The condition that the loop tests."""
-
-        self.body: list[NodeNG] = []
-        """The contents of the loop."""
-
-        self.orelse: list[NodeNG] = []
-        """The contents of the ``else`` block."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+    orelse: list[NodeNG]
+    """The contents of the ``else`` block."""
 
     def postinit(
         self,
-        test: NodeNG | None = None,
+        test: NodeNG,
         body: list[NodeNG] | None = None,
         orelse: list[NodeNG] | None = None,
     ) -> None:
-        """Do some setup after initialisation.
-
-        :param test: The condition that the loop tests.
-
-        :param body: The contents of the loop.
-
-        :param orelse: The contents of the ``else`` block.
-        """
         self.test = test
-        if body is not None:
-            self.body = body
-        if orelse is not None:
-            self.orelse = orelse
+        self.body = body or []
+        self.orelse = orelse or []
 
     @cached_property
     def blockstart_tolineno(self):
