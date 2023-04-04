@@ -1011,15 +1011,16 @@ class Assert(_base_nodes.Statement):
     <Assert l.1 at 0x7effe1d527b8>
     """
 
+    _astroid_fields = ("test", "fail")
+
     test: NodeNG
     """The test that passes or fails the assertion."""
 
     fail: NodeNG | None
     """The message shown when the assertion fails."""
 
-    _astroid_fields = ("test", "fail")
 
-    def postinit(self, test: NodeNG, fail: NodeNG | None = None) -> None:
+    def postinit(self, test: NodeNG, fail: NodeNG | None) -> None:
         self.fail = fail
         self.test = test
 
