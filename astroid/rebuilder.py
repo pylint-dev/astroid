@@ -1009,7 +1009,7 @@ class TreeRebuilder:
         self, node: ast.comprehension, parent: NodeNG
     ) -> nodes.Comprehension:
         """Visit a Comprehension node by returning a fresh instance of it."""
-        newnode = nodes.Comprehension(parent)
+        newnode = nodes.Comprehension(parent=parent)
         newnode.postinit(
             self.visit(node.target, newnode),
             self.visit(node.iter, newnode),

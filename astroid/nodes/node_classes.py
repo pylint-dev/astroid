@@ -1542,17 +1542,6 @@ class Comprehension(NodeNG):
     optional_assign = True
     """Whether this node optionally assigns a variable."""
 
-    lineno: None
-    col_offset: None
-    end_lineno: None
-    end_col_offset: None
-
-    def __init__(self, parent: NodeNG | None = None) -> None:
-        """
-        :param parent: The parent node in the syntax tree.
-        """
-        super().__init__(parent=parent)
-
     def postinit(
         self,
         target: NodeNG,
