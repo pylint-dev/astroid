@@ -4011,12 +4011,12 @@ class While(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     def postinit(
         self,
         test: NodeNG,
-        body: list[NodeNG] | None = None,
-        orelse: list[NodeNG] | None = None,
+        body: list[NodeNG],
+        orelse: list[NodeNG],
     ) -> None:
         self.test = test
-        self.body = body or []
-        self.orelse = orelse or []
+        self.body = body
+        self.orelse = orelse
 
     @cached_property
     def blockstart_tolineno(self):
