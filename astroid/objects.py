@@ -299,7 +299,8 @@ class PartialFunction(scoped_nodes.FunctionDef):
         self.filled_positionals = len(self.filled_args)
 
     def infer_call_result(self, caller=None, context: InferenceContext | None = None):
-        if context and context.callcontext:
+        if context:
+            assert context.callcontext
             current_passed_keywords = {
                 keyword for (keyword, _) in context.callcontext.keywords
             }
