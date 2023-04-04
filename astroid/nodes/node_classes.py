@@ -1527,6 +1527,9 @@ class Comprehension(NodeNG):
     _astroid_fields = ("target", "iter", "ifs")
     _other_fields = ("is_async",)
 
+    optional_assign = True
+    """Whether this node optionally assigns a variable."""
+
     target: NodeNG
     """What is assigned to by the comprehension."""
 
@@ -1538,9 +1541,6 @@ class Comprehension(NodeNG):
 
     is_async: bool
     """Whether this is an asynchronous comprehension or not."""
-
-    optional_assign = True
-    """Whether this node optionally assigns a variable."""
 
     def postinit(
         self,
