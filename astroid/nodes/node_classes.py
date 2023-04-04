@@ -1458,9 +1458,9 @@ class Call(NodeNG):
         args: list[NodeNG] | None = None,
         keywords: list[Keyword] | None = None,
     ) -> None:
-       self.func = func
-       self.args = args or []
-       self.keywords = keywords or []
+        self.func = func
+        self.args = args or []
+        self.keywords = keywords or []
 
     @property
     def starargs(self) -> list[Starred]:
