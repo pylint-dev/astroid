@@ -11,7 +11,7 @@ import itertools
 import sys
 import typing
 import warnings
-from collections.abc import Generator, Iterable, Mapping, Iterator
+from collections.abc import Generator, Iterable, Iterator, Mapping
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Union
 
