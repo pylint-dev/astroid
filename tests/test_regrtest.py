@@ -126,7 +126,7 @@ def run():
         classes = astroid.nodes_of_class(nodes.ClassDef)
         for klass in classes:
             # triggers the _is_metaclass call
-            klass.type  # pylint: disable=pointless-statement
+            klass.type  # pylint: disable=pointless-statement  # noqa[B018]
 
     def test_decorator_callchain_issue42(self) -> None:
         builder = AstroidBuilder()

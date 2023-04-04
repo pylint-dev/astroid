@@ -55,7 +55,7 @@ class cachedproperty:
                 stacklevel=2,
             )
         try:
-            wrapped.__name__
+            wrapped.__name__  # noqa[B018]
         except AttributeError as exc:
             raise TypeError(f"{wrapped} must have a __name__ attribute") from exc
         self.wrapped = wrapped
