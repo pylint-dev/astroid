@@ -1019,7 +1019,6 @@ class Assert(_base_nodes.Statement):
     fail: NodeNG | None
     """The message shown when the assertion fails."""
 
-
     def postinit(self, test: NodeNG, fail: NodeNG | None) -> None:
         self.fail = fail
         self.test = test
