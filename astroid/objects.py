@@ -14,7 +14,7 @@ leads to an inferred FrozenSet:
 from __future__ import annotations
 
 import sys
-from collections.abc import Generator
+from collections.abc import Generator, Iterator
 from typing import Any, TypeVar
 
 from astroid import bases, decorators, util
@@ -27,6 +27,7 @@ from astroid.exceptions import (
 )
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes, scoped_nodes
+from astroid.typing import InferenceResult
 
 objectmodel = util.lazy_import("interpreter.objectmodel")
 
@@ -140,7 +141,7 @@ class Super(node_classes.NodeNG):
 
     def igetattr(  # noqa: C901
         self, name: str, context: InferenceContext | None = None
-    ):
+    ) -> Iterator[InferenceResult]:
         """Retrieve the inferred values of the given attribute name."""
         # '__class__' is a special attribute that should be taken directly
         # from the special attributes dict
