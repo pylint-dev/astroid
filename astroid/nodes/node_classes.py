@@ -2423,7 +2423,7 @@ class For(
         iter: NodeNG,  # pylint: disable = redefined-builtin
         body: list[NodeNG],
         orelse: list[NodeNG],
-        type_annotation: NodeNG | None = None,
+        type_annotation: NodeNG | None,
     ) -> None:
         self.target = target
         self.iter = iter
