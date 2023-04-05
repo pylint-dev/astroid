@@ -30,7 +30,9 @@ Release date: TBA
   - ``nodes.IfExp``
   - ``nodes.Keyword``
   - ``nodes.Name``
-  - ``nodes.Return``
+  - ``nodes.Raise``
+  - ``nodes.Return
+  - ``nodes.Slice``
   - ``nodes.Starred``
   - ``nodes.Subscript``
   - ``nodes.UnaryOp``
