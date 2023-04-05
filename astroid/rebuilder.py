@@ -1686,8 +1686,7 @@ class TreeRebuilder:
             end_col_offset=getattr(node, "end_col_offset", None),
             parent=parent,
         )
-        if node.value is not None:
-            newnode.postinit(self.visit(node.value, newnode))
+        newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
     def visit_set(self, node: ast.Set, parent: NodeNG) -> nodes.Set:
