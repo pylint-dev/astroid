@@ -23,6 +23,7 @@ Release date: TBA
   - ``nodes.Call``
   - ``nodes.Compare``
   - ``nodes.Comprehension``
+  - ``nodes.Decorators``
   - ``nodes.Delete``
   - ``nodes.DelAttr``
   - ``nodes.DelName``
