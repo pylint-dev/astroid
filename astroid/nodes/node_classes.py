@@ -11,7 +11,7 @@ import itertools
 import sys
 import typing
 import warnings
-from collections.abc import Generator, Iterable, Mapping
+from collections.abc import Generator, Iterable, Iterator, Mapping
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Union
 
@@ -490,33 +490,17 @@ class Name(_base_nodes.NoChildrenNode, LookupMixIn):
 
     _other_fields = ("name",)
 
-    @decorators.deprecate_default_argument_values(name="str")
     def __init__(
         self,
-        name: str | None = None,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        name: str,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        """
-        :param name: The name that this node refers to.
-
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.name: str | None = name
+        self.name = name
         """The name that this node refers to."""
 
         super().__init__(
@@ -1029,49 +1013,13 @@ class Assert(_base_nodes.Statement):
 
     _astroid_fields = ("test", "fail")
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    test: NodeNG
+    """The test that passes or fails the assertion."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
+    fail: NodeNG | None
+    """The message shown when the assertion fails."""
 
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.test: NodeNG | None = None
-        """The test that passes or fails the assertion."""
-
-        self.fail: NodeNG | None = None  # can be None
-        """The message shown when the assertion fails."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
-
-    def postinit(self, test: NodeNG | None = None, fail: NodeNG | None = None) -> None:
-        """Do some setup after initialisation.
-
-        :param test: The test that passes or fails the assertion.
-
-        :param fail: The message shown when the assertion fails.
-        """
+    def postinit(self, test: NodeNG, fail: NodeNG | None) -> None:
         self.fail = fail
         self.test = test
 
@@ -1443,64 +1391,21 @@ class Call(NodeNG):
 
     _astroid_fields = ("func", "args", "keywords")
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    func: NodeNG
+    """What is being called."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
+    args: list[NodeNG]
+    """The positional arguments being given to the call."""
 
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.func: NodeNG | None = None
-        """What is being called."""
-
-        self.args: list[NodeNG] = []
-        """The positional arguments being given to the call."""
-
-        self.keywords: list[Keyword] = []
-        """The keyword arguments being given to the call."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+    keywords: list[Keyword]
+    """The keyword arguments being given to the call."""
 
     def postinit(
-        self,
-        func: NodeNG | None = None,
-        args: list[NodeNG] | None = None,
-        keywords: list[Keyword] | None = None,
+        self, func: NodeNG, args: list[NodeNG], keywords: list[Keyword]
     ) -> None:
-        """Do some setup after initialisation.
-
-        :param func: What is being called.
-
-        :param args: The positional arguments being given to the call.
-
-        :param keywords: The keyword arguments being given to the call.
-        """
         self.func = func
-        if args is not None:
-            self.args = args
-        if keywords is not None:
-            self.keywords = keywords
+        self.args = args
+        self.keywords = keywords
 
     @property
     def starargs(self) -> list[Starred]:
@@ -1589,52 +1494,28 @@ class Comprehension(NodeNG):
     optional_assign = True
     """Whether this node optionally assigns a variable."""
 
-    lineno: None
-    col_offset: None
-    end_lineno: None
-    end_col_offset: None
+    target: NodeNG
+    """What is assigned to by the comprehension."""
 
-    def __init__(self, parent: NodeNG | None = None) -> None:
-        """
-        :param parent: The parent node in the syntax tree.
-        """
-        self.target: NodeNG | None = None
-        """What is assigned to by the comprehension."""
+    iter: NodeNG
+    """What is iterated over by the comprehension."""
 
-        self.iter: NodeNG | None = None
-        """What is iterated over by the comprehension."""
+    ifs: list[NodeNG]
+    """The contents of any if statements that filter the comprehension."""
 
-        self.ifs: list[NodeNG] = []
-        """The contents of any if statements that filter the comprehension."""
+    is_async: bool
+    """Whether this is an asynchronous comprehension or not."""
 
-        self.is_async: bool | None = None
-        """Whether this is an asynchronous comprehension or not."""
-
-        super().__init__(parent=parent)
-
-    # pylint: disable=redefined-builtin; same name as builtin ast module.
     def postinit(
         self,
-        target: NodeNG | None = None,
-        iter: NodeNG | None = None,
-        ifs: list[NodeNG] | None = None,
-        is_async: bool | None = None,
+        target: NodeNG,
+        iter: NodeNG,  # pylint: disable = redefined-builtin
+        ifs: list[NodeNG],
+        is_async: bool,
     ) -> None:
-        """Do some setup after initialisation.
-
-        :param target: What is assigned to by the comprehension.
-
-        :param iter: What is iterated over by the comprehension.
-
-        :param ifs: The contents of any if statements that filter
-            the comprehension.
-
-        :param is_async: Whether this is an asynchronous comprehension or not.
-        """
         self.target = target
         self.iter = iter
-        if ifs is not None:
-            self.ifs = ifs
+        self.ifs = ifs
         self.is_async = is_async
 
     assigned_stmts: ClassVar[AssignedStmtsCall[Comprehension]]
@@ -2364,76 +2245,33 @@ class For(
     This is always ``True`` for :class:`For` nodes.
     """
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    target: NodeNG
+    """What the loop assigns to."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
+    iter: NodeNG
+    """What the loop iterates over."""
 
-        :param parent: The parent node in the syntax tree.
+    body: list[NodeNG]
+    """The contents of the body of the loop."""
 
-        :param end_lineno: The last line this node appears on in the source code.
+    orelse: list[NodeNG]
+    """The contents of the ``else`` block of the loop."""
 
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.target: NodeNG | None = None
-        """What the loop assigns to."""
+    type_annotation: NodeNG | None
+    """If present, this will contain the type annotation passed by a type comment"""
 
-        self.iter: NodeNG | None = None
-        """What the loop iterates over."""
-
-        self.body: list[NodeNG] = []
-        """The contents of the body of the loop."""
-
-        self.orelse: list[NodeNG] = []
-        """The contents of the ``else`` block of the loop."""
-
-        self.type_annotation: NodeNG | None = None  # can be None
-        """If present, this will contain the type annotation passed by a type comment"""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
-
-    # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
     def postinit(
         self,
-        target: NodeNG | None = None,
-        iter: NodeNG | None = None,
-        body: list[NodeNG] | None = None,
-        orelse: list[NodeNG] | None = None,
-        type_annotation: NodeNG | None = None,
+        target: NodeNG,
+        iter: NodeNG,  # pylint: disable = redefined-builtin
+        body: list[NodeNG],
+        orelse: list[NodeNG],
+        type_annotation: NodeNG | None,
     ) -> None:
-        """Do some setup after initialisation.
-
-        :param target: What the loop assigns to.
-
-        :param iter: What the loop iterates over.
-
-        :param body: The contents of the body of the loop.
-
-        :param orelse: The contents of the ``else`` block of the loop.
-        """
         self.target = target
         self.iter = iter
-        if body is not None:
-            self.body = body
-        if orelse is not None:
-            self.orelse = orelse
+        self.body = body
+        self.orelse = orelse
         self.type_annotation = type_annotation
 
     assigned_stmts: ClassVar[AssignedStmtsCall[For]]
@@ -2496,44 +2334,10 @@ class Await(NodeNG):
 
     _astroid_fields = ("value",)
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    value: NodeNG
+    """What to wait for."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.value: NodeNG | None = None
-        """What to wait for."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
-
-    def postinit(self, value: NodeNG | None = None) -> None:
-        """Do some setup after initialisation.
-
-        :param value: What to wait for.
-        """
+    def postinit(self, value: NodeNG) -> None:
         self.value = value
 
     def get_children(self):
@@ -3131,53 +2935,17 @@ class Raise(_base_nodes.Statement):
 
     _astroid_fields = ("exc", "cause")
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    exc: NodeNG | None
+    """What is being raised."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.exc: NodeNG | None = None  # can be None
-        """What is being raised."""
-
-        self.cause: NodeNG | None = None  # can be None
-        """The exception being used to raise this one."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+    cause: NodeNG | None
+    """The exception being used to raise this one."""
 
     def postinit(
         self,
-        exc: NodeNG | None = None,
-        cause: NodeNG | None = None,
+        exc: NodeNG | None,
+        cause: NodeNG | None,
     ) -> None:
-        """Do some setup after initialisation.
-
-        :param exc: What is being raised.
-
-        :param cause: The exception being used to raise this one.
-        """
         self.exc = exc
         self.cause = cause
 
@@ -3211,44 +2979,10 @@ class Return(_base_nodes.Statement):
 
     _astroid_fields = ("value",)
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    value: NodeNG | None
+    """The value being returned."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.value: NodeNG | None = None  # can be None
-        """The value being returned."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
-
-    def postinit(self, value: NodeNG | None = None) -> None:
-        """Do some setup after initialisation.
-
-        :param value: The value being returned.
-        """
+    def postinit(self, value: NodeNG | None) -> None:
         self.value = value
 
     def get_children(self):
@@ -3294,59 +3028,21 @@ class Slice(NodeNG):
 
     _astroid_fields = ("lower", "upper", "step")
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    lower: NodeNG | None
+    """The lower index in the slice."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
+    upper: NodeNG | None
+    """The upper index in the slice."""
 
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.lower: NodeNG | None = None  # can be None
-        """The lower index in the slice."""
-
-        self.upper: NodeNG | None = None  # can be None
-        """The upper index in the slice."""
-
-        self.step: NodeNG | None = None  # can be None
-        """The step to take between indexes."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+    step: NodeNG | None
+    """The step to take between indexes."""
 
     def postinit(
         self,
-        lower: NodeNG | None = None,
-        upper: NodeNG | None = None,
-        step: NodeNG | None = None,
+        lower: NodeNG | None,
+        upper: NodeNG | None,
+        step: NodeNG | None,
     ) -> None:
-        """Do some setup after initialisation.
-
-        :param lower: The lower index in the slice.
-
-        :param upper: The upper index in the slice.
-
-        :param step: The step to take between index.
-        """
         self.lower = lower
         self.upper = upper
         self.step = step
@@ -3371,14 +3067,14 @@ class Slice(NodeNG):
         """
         return "builtins.slice"
 
-    def igetattr(self, attrname, context: InferenceContext | None = None):
+    def igetattr(
+        self, attrname: str, context: InferenceContext | None = None
+    ) -> Iterator[SuccessfulInferenceResult]:
         """Infer the possible values of the given attribute on the slice.
 
         :param attrname: The name of the attribute to infer.
-        :type attrname: str
 
         :returns: The inferred possible values.
-        :rtype: iterable(NodeNG)
         """
         if attrname == "start":
             yield self._wrap_attribute(self.lower)
@@ -3961,64 +3657,24 @@ class While(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     _astroid_fields = ("test", "body", "orelse")
     _multi_line_block_fields = ("body", "orelse")
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    test: NodeNG
+    """The condition that the loop tests."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
+    body: list[NodeNG]
+    """The contents of the loop."""
 
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.test: NodeNG | None = None
-        """The condition that the loop tests."""
-
-        self.body: list[NodeNG] = []
-        """The contents of the loop."""
-
-        self.orelse: list[NodeNG] = []
-        """The contents of the ``else`` block."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+    orelse: list[NodeNG]
+    """The contents of the ``else`` block."""
 
     def postinit(
         self,
-        test: NodeNG | None = None,
-        body: list[NodeNG] | None = None,
-        orelse: list[NodeNG] | None = None,
+        test: NodeNG,
+        body: list[NodeNG],
+        orelse: list[NodeNG],
     ) -> None:
-        """Do some setup after initialisation.
-
-        :param test: The condition that the loop tests.
-
-        :param body: The contents of the loop.
-
-        :param orelse: The contents of the ``else`` block.
-        """
         self.test = test
-        if body is not None:
-            self.body = body
-        if orelse is not None:
-            self.orelse = orelse
+        self.body = body
+        self.orelse = orelse
 
     @cached_property
     def blockstart_tolineno(self):

@@ -51,12 +51,13 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         """
         return self
 
-    def scope_lookup(self, node, name: str, offset: int = 0):
+    def scope_lookup(
+        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+    ) -> tuple[LocalsDictNodeNG, list[nodes.NodeNG]]:
         """Lookup where the given variable is assigned.
 
         :param node: The node to look for assignments up to.
             Any assignments after the given node are ignored.
-        :type node: NodeNG
 
         :param name: The name of the variable to find assignments for.
 
@@ -65,11 +66,12 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         :returns: This scope node and the list of assignments associated to the
             given name according to the scope where it has been found (locals,
             globals or builtin).
-        :rtype: tuple(str, list(NodeNG))
         """
         raise NotImplementedError
 
-    def _scope_lookup(self, node, name, offset=0):
+    def _scope_lookup(
+        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+    ) -> tuple[LocalsDictNodeNG, list[nodes.NodeNG]]:
         """XXX method for interfacing the scope lookup"""
         try:
             stmts = _filter_stmts(node, self.locals[name], self, offset)

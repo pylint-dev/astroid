@@ -353,23 +353,21 @@ class Module(LocalsDictNodeNG):
         """
         return self.fromlineno, self.tolineno
 
-    def scope_lookup(self, node, name, offset=0):
+    def scope_lookup(
+        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+    ) -> tuple[LocalsDictNodeNG, list[node_classes.NodeNG]]:
         """Lookup where the given variable is assigned.
 
         :param node: The node to look for assignments up to.
             Any assignments after the given node are ignored.
-        :type node: NodeNG
 
         :param name: The name of the variable to find assignments for.
-        :type name: str
 
         :param offset: The line offset to filter statements up to.
-        :type offset: int
 
         :returns: This scope node and the list of assignments associated to the
             given name according to the scope where it has been found (locals,
             globals or builtin).
-        :rtype: tuple(str, list(NodeNG))
         """
         if name in self.scope_attrs and name not in self.locals:
             try:
@@ -418,14 +416,14 @@ class Module(LocalsDictNodeNG):
             return result
         raise AttributeInferenceError(target=self, attribute=name, context=context)
 
-    def igetattr(self, name, context: InferenceContext | None = None):
+    def igetattr(
+        self, name: str, context: InferenceContext | None = None
+    ) -> Iterator[InferenceResult]:
         """Infer the possible values of the given variable.
 
         :param name: The name of the variable to infer.
-        :type name: str
 
         :returns: The inferred possible values.
-        :rtype: iterable(NodeNG) or None
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
@@ -1182,23 +1180,21 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         # to None due to a strong interaction between Lambda and FunctionDef.
         return self.body.infer(context)
 
-    def scope_lookup(self, node, name, offset=0):
+    def scope_lookup(
+        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+    ) -> tuple[LocalsDictNodeNG, list[NodeNG]]:
         """Lookup where the given names is assigned.
 
         :param node: The node to look for assignments up to.
             Any assignments after the given node are ignored.
-        :type node: NodeNG
 
         :param name: The name to find assignments for.
-        :type name: str
 
         :param offset: The line offset to filter statements up to.
-        :type offset: int
 
         :returns: This scope node and the list of assignments associated to the
             given name according to the scope where it has been found (locals,
             globals or builtin).
-        :rtype: tuple(str, list(NodeNG))
         """
         if node in self.args.defaults or node in self.args.kw_defaults:
             frame = self.parent.frame(future=True)
@@ -1564,7 +1560,9 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         """
         return self.fromlineno, self.tolineno
 
-    def igetattr(self, name, context: InferenceContext | None = None):
+    def igetattr(
+        self, name: str, context: InferenceContext | None = None
+    ) -> Iterator[InferenceResult]:
         """Inferred getattr, which returns an iterator of inferred statements."""
         try:
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
@@ -1767,7 +1765,9 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
 
         yield from self.body
 
-    def scope_lookup(self, node, name, offset=0):
+    def scope_lookup(
+        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+    ) -> tuple[LocalsDictNodeNG, list[nodes.NodeNG]]:
         """Lookup where the given name is assigned."""
         if name == "__class__":
             # __class__ is an implicit closure reference created by the compiler
@@ -2304,23 +2304,21 @@ class ClassDef(
         else:
             yield self.instantiate_class()
 
-    def scope_lookup(self, node, name, offset=0):
+    def scope_lookup(
+        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+    ) -> tuple[LocalsDictNodeNG, list[nodes.NodeNG]]:
         """Lookup where the given name is assigned.
 
         :param node: The node to look for assignments up to.
             Any assignments after the given node are ignored.
-        :type node: NodeNG
 
         :param name: The name to find assignments for.
-        :type name: str
 
         :param offset: The line offset to filter statements up to.
-        :type offset: int
 
         :returns: This scope node and the list of assignments associated to the
             given name according to the scope where it has been found (locals,
             globals or builtin).
-        :rtype: tuple(str, list(NodeNG))
         """
         # If the name looks like a builtin name, just try to look
         # into the upper scope of this class. We might have a

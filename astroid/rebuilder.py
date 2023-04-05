@@ -1009,7 +1009,15 @@ class TreeRebuilder:
         self, node: ast.comprehension, parent: NodeNG
     ) -> nodes.Comprehension:
         """Visit a Comprehension node by returning a fresh instance of it."""
-        newnode = nodes.Comprehension(parent)
+        newnode = nodes.Comprehension(
+            parent=parent,
+            # Comprehension nodes don't have these attributes
+            # see https://docs.python.org/3/library/ast.html#abstract-grammar
+            lineno=None,
+            col_offset=None,
+            end_lineno=None,
+            end_col_offset=None,
+        )
         newnode.postinit(
             self.visit(node.target, newnode),
             self.visit(node.iter, newnode),
@@ -1686,8 +1694,7 @@ class TreeRebuilder:
             end_col_offset=getattr(node, "end_col_offset", None),
             parent=parent,
         )
-        if node.value is not None:
-            newnode.postinit(self.visit(node.value, newnode))
+        newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
     def visit_set(self, node: ast.Set, parent: NodeNG) -> nodes.Set:

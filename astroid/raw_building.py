@@ -102,7 +102,17 @@ def build_class(
     """Create and initialize an astroid ClassDef node."""
     node = nodes.ClassDef(name)
     node.postinit(
-        bases=[nodes.Name(name=base, parent=node) for base in basenames],
+        bases=[
+            nodes.Name(
+                name=base,
+                lineno=0,
+                col_offset=0,
+                parent=node,
+                end_lineno=None,
+                end_col_offset=None,
+            )
+            for base in basenames
+        ],
         body=[],
         decorators=None,
         doc_node=nodes.Const(value=doc) if doc else None,
@@ -144,23 +154,25 @@ def build_function(
     else:
         arguments = None
 
-    default_nodes: list[nodes.NodeNG] | None = []
-    if defaults is not None:
+    default_nodes: list[nodes.NodeNG] | None
+    if defaults is None:
+        default_nodes = None
+    else:
+        default_nodes = []
         for default in defaults:
             default_node = nodes.const_factory(default)
             default_node.parent = argsnode
             default_nodes.append(default_node)
-    else:
-        default_nodes = None
 
-    kwonlydefault_nodes: list[nodes.NodeNG | None] | None = []
-    if kwonlydefaults is not None:
+    kwonlydefault_nodes: list[nodes.NodeNG | None] | None
+    if kwonlydefaults is None:
+        kwonlydefault_nodes = None
+    else:
+        kwonlydefault_nodes = []
         for kwonlydefault in kwonlydefaults:
             kwonlydefault_node = nodes.const_factory(kwonlydefault)
             kwonlydefault_node.parent = argsnode
             kwonlydefault_nodes.append(kwonlydefault_node)
-    else:
-        kwonlydefault_nodes = None
 
     # We set the lineno and col_offset to 0 because we don't have any
     # information about the location of the kwonly and posonlyargs.

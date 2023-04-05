@@ -18,18 +18,27 @@ Release date: TBA
   - ``nodes.AssignName``
   - ``nodes.Attribute``
   - ``nodes.AugAssign``
+  - ``nodes.Await``
   - ``nodes.BinOp``
+  - ``nodes.Call``
   - ``nodes.Compare``
+  - ``nodes.Comprehension``
   - ``nodes.Decorators``
   - ``nodes.Delete``
   - ``nodes.DelAttr``
   - ``nodes.DelName``
+  - ``nodes.For``
   - ``nodes.If``
   - ``nodes.IfExp``
   - ``nodes.Keyword``
+  - ``nodes.Name``
+  - ``nodes.Raise``
+  - ``nodes.Return
+  - ``nodes.Slice``
   - ``nodes.Starred``
   - ``nodes.Subscript``
   - ``nodes.UnaryOp``
+  - ``nodes.While``
 
   These changes involve breaking changes to their API but should be considered bug fixes. We
   now make arguments required when they are instead of always providing defaults.
