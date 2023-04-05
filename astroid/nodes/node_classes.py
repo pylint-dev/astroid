@@ -11,7 +11,7 @@ import itertools
 import sys
 import typing
 import warnings
-from collections.abc import Generator, Iterable, Mapping
+from collections.abc import Generator, Iterable, Iterator, Mapping
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Union
 
@@ -3237,14 +3237,14 @@ class Slice(NodeNG):
         """
         return "builtins.slice"
 
-    def igetattr(self, attrname, context: InferenceContext | None = None):
+    def igetattr(
+        self, attrname: str, context: InferenceContext | None = None
+    ) -> Iterator[SuccessfulInferenceResult]:
         """Infer the possible values of the given attribute on the slice.
 
         :param attrname: The name of the attribute to infer.
-        :type attrname: str
 
         :returns: The inferred possible values.
-        :rtype: iterable(NodeNG)
         """
         if attrname == "start":
             yield self._wrap_attribute(self.lower)
