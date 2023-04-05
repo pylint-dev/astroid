@@ -1941,8 +1941,7 @@ class TreeRebuilder:
             end_col_offset=getattr(node, "end_col_offset", None),
             parent=parent,
         )
-        if node.value is not None:
-            newnode.postinit(self.visit(node.value, newnode))
+        newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
     def visit_yieldfrom(self, node: ast.YieldFrom, parent: NodeNG) -> NodeNG:
@@ -1954,8 +1953,7 @@ class TreeRebuilder:
             end_col_offset=getattr(node, "end_col_offset", None),
             parent=parent,
         )
-        if node.value is not None:
-            newnode.postinit(self.visit(node.value, newnode))
+        newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
     if sys.version_info >= (3, 10):
