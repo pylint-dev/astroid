@@ -689,6 +689,7 @@ class Arguments(_base_nodes.AssignTypeNode):
         Can also return 0 if the line can not be determined.
         """
         lineno = super().fromlineno
+        assert self.parent is not None
         return max(lineno, self.parent.fromlineno or 0)
 
     @cached_property
