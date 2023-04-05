@@ -416,14 +416,14 @@ class Module(LocalsDictNodeNG):
             return result
         raise AttributeInferenceError(target=self, attribute=name, context=context)
 
-    def igetattr(self, name, context: InferenceContext | None = None):
+    def igetattr(
+        self, name: str, context: InferenceContext | None = None
+    ) -> Iterator[InferenceResult]:
         """Infer the possible values of the given variable.
 
         :param name: The name of the variable to infer.
-        :type name: str
 
         :returns: The inferred possible values.
-        :rtype: iterable(NodeNG) or None
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
@@ -1560,7 +1560,9 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         """
         return self.fromlineno, self.tolineno
 
-    def igetattr(self, name, context: InferenceContext | None = None):
+    def igetattr(
+        self, name: str, context: InferenceContext | None = None
+    ) -> Iterator[InferenceResult]:
         """Inferred getattr, which returns an iterator of inferred statements."""
         try:
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
