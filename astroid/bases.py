@@ -10,7 +10,7 @@ from __future__ import annotations
 import collections
 import collections.abc
 import sys
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from astroid import nodes
@@ -255,7 +255,9 @@ class BaseInstance(Proxy):
                 pass
         return values
 
-    def igetattr(self, name, context: InferenceContext | None = None):
+    def igetattr(
+        self, name: str, context: InferenceContext | None = None
+    ) -> Iterator[InferenceResult]:
         """Inferred getattr."""
         if not context:
             context = InferenceContext()
@@ -429,7 +431,9 @@ class UnboundMethod(Proxy):
             return [self.special_attributes.lookup(name)]
         return self._proxied.getattr(name, context)
 
-    def igetattr(self, name, context: InferenceContext | None = None):
+    def igetattr(
+        self, name: str, context: InferenceContext | None = None
+    ) -> Iterator[InferenceResult]:
         if name in self.special_attributes:
             return iter((self.special_attributes.lookup(name),))
         return self._proxied.igetattr(name, context)

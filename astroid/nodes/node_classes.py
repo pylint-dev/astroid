@@ -11,7 +11,7 @@ import itertools
 import sys
 import typing
 import warnings
-from collections.abc import Generator, Iterable, Mapping
+from collections.abc import Generator, Iterable, Iterator, Mapping
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Union
 
@@ -3124,59 +3124,21 @@ class Slice(NodeNG):
 
     _astroid_fields = ("lower", "upper", "step")
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    lower: NodeNG | None
+    """The lower index in the slice."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
+    upper: NodeNG | None
+    """The upper index in the slice."""
 
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.lower: NodeNG | None = None  # can be None
-        """The lower index in the slice."""
-
-        self.upper: NodeNG | None = None  # can be None
-        """The upper index in the slice."""
-
-        self.step: NodeNG | None = None  # can be None
-        """The step to take between indexes."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+    step: NodeNG | None
+    """The step to take between indexes."""
 
     def postinit(
         self,
-        lower: NodeNG | None = None,
-        upper: NodeNG | None = None,
-        step: NodeNG | None = None,
+        lower: NodeNG | None,
+        upper: NodeNG | None,
+        step: NodeNG | None,
     ) -> None:
-        """Do some setup after initialisation.
-
-        :param lower: The lower index in the slice.
-
-        :param upper: The upper index in the slice.
-
-        :param step: The step to take between index.
-        """
         self.lower = lower
         self.upper = upper
         self.step = step
@@ -3201,14 +3163,14 @@ class Slice(NodeNG):
         """
         return "builtins.slice"
 
-    def igetattr(self, attrname, context: InferenceContext | None = None):
+    def igetattr(
+        self, attrname: str, context: InferenceContext | None = None
+    ) -> Iterator[SuccessfulInferenceResult]:
         """Infer the possible values of the given attribute on the slice.
 
         :param attrname: The name of the attribute to infer.
-        :type attrname: str
 
         :returns: The inferred possible values.
-        :rtype: iterable(NodeNG)
         """
         if attrname == "start":
             yield self._wrap_attribute(self.lower)
