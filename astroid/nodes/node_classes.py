@@ -267,44 +267,15 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
 
     _astroid_fields = ("elts",)
 
-    def __init__(
-        self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
+    elts: list[NodeNG]
+    """The elements in the node."""
 
-        :param col_offset: The column that this node appears on in the
-            source code.
+    def __init__(self, *args, **kwargs):
+        self.elts = []
 
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.elts: list[NodeNG] = []
-        """The elements in the node."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+        super().__init__(*args, **kwargs)
 
     def postinit(self, elts: list[NodeNG]) -> None:
-        """Do some setup after initialisation.
-
-        :param elts: The list of elements the that node contains.
-        """
         self.elts = elts
 
     @classmethod
@@ -2764,41 +2735,13 @@ class List(BaseContainer):
 
     _other_fields = ("ctx",)
 
-    def __init__(
-        self,
-        ctx: Context | None = None,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param ctx: Whether the list is assigned to or loaded from.
+    ctx: Context | None
+    """Whether the list is assigned to or loaded from."""
 
-        :param lineno: The line that this node appears on in the source code.
+    def __init__(self, *args, ctx: Context | None = None, **kwargs):
+        self.ctx = ctx
 
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.ctx: Context | None = ctx
-        """Whether the list is assigned to or loaded from."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+        super().__init__(*args, **kwargs)
 
     assigned_stmts: ClassVar[AssignedStmtsCall[List]]
     """Returns the assigned statement (non inferred) according to the assignment type.
@@ -3475,41 +3418,13 @@ class Tuple(BaseContainer):
 
     _other_fields = ("ctx",)
 
-    def __init__(
-        self,
-        ctx: Context | None = None,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
-        *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-    ) -> None:
-        """
-        :param ctx: Whether the tuple is assigned to or loaded from.
+    ctx: Context | None
+    """Whether the tuple is assigned to or loaded from."""
 
-        :param lineno: The line that this node appears on in the source code.
+    def __init__(self, *args, ctx: Context | None = None, **kwargs):
+        self.ctx = ctx
 
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.ctx: Context | None = ctx
-        """Whether the tuple is assigned to or loaded from."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+        super().__init__(*args, **kwargs)
 
     assigned_stmts: ClassVar[AssignedStmtsCall[Tuple]]
     """Returns the assigned statement (non inferred) according to the assignment type.

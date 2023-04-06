@@ -32,12 +32,15 @@ Release date: TBA
   - ``nodes.If``
   - ``nodes.IfExp``
   - ``nodes.Keyword``
+  - ``nodes.List``
   - ``nodes.Name``
   - ``nodes.Raise``
   - ``nodes.Return
+  - ``nodes.Set
   - ``nodes.Slice``
   - ``nodes.Starred``
   - ``nodes.Subscript``
+  - ``nodes.Tuple``
   - ``nodes.UnaryOp``
   - ``nodes.While``
   - ``nodes.Yield``
