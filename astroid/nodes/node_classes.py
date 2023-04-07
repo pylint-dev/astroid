@@ -2584,6 +2584,9 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     body: list[NodeNG]
     """The contents of the block."""
 
+    orelse: list[NodeNG]
+    """The contents of the ``else`` block."""
+
     def postinit(self, test: NodeNG, body: list[NodeNG], orelse: list[NodeNG]) -> None:
         self.test = test
         self.body = body
