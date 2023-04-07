@@ -2584,18 +2584,10 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     body: list[NodeNG]
     """The contents of the block."""
 
-    orelse: list[NodeNG]
-    """The contents of the ``else`` block."""
-
     def postinit(self, test: NodeNG, body: list[NodeNG], orelse: list[NodeNG]) -> None:
         self.test = test
         self.body = body
         self.orelse = orelse
-
-    @cached_property
-    def is_orelse(self) -> bool:
-        """Whether the if-statement is the orelse-block of another if statement."""
-        return isinstance(self.parent, If) and self in self.parent.orelse
 
     @cached_property
     def blockstart_tolineno(self):
