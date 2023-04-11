@@ -30,7 +30,7 @@ def _build_proxy_class(cls_name: str, builtins: nodes.Module) -> nodes.ClassDef:
 def _function_type(
     function: nodes.Lambda | bases.UnboundMethod, builtins: nodes.Module
 ) -> nodes.ClassDef:
-    if isinstance(function, scoped_nodes.Lambda):
+    if isinstance(function, (scoped_nodes.Lambda, scoped_nodes.FunctionDef)):
         if function.root().name == "builtins":
             cls_name = "builtin_function_or_method"
         else:
@@ -57,7 +57,10 @@ def _object_type(
                     yield metaclass
                     continue
             yield builtins.getattr("type")[0]
-        elif isinstance(inferred, (scoped_nodes.Lambda, bases.UnboundMethod)):
+        elif isinstance(
+            inferred,
+            (scoped_nodes.Lambda, bases.UnboundMethod, scoped_nodes.FunctionDef),
+        ):
             yield _function_type(inferred, builtins)
         elif isinstance(inferred, scoped_nodes.Module):
             yield _build_proxy_class("module", builtins)
