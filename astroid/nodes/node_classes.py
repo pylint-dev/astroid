@@ -2438,44 +2438,19 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     _astroid_fields = ("test", "body", "orelse")
     _multi_line_block_fields = ("body", "orelse")
 
-    def __init__(
-        self,
-        lineno: int,
-        col_offset: int,
-        parent: NodeNG,
-        *,
-        end_lineno: int | None,
-        end_col_offset: int | None,
-    ) -> None:
-        self.test: NodeNG
-        """The condition that the statement tests.
+    test: NodeNG
+    """The condition that the statement tests."""
 
-        This attribute gets set in the postinit method.
-        """
+    body: list[NodeNG]
+    """The contents of the block."""
 
-        self.body: list[NodeNG] = []
-        """The contents of the block."""
-
-        self.orelse: list[NodeNG] = []
-        """The contents of the ``else`` block."""
-
-        self.is_orelse: bool = False
-        """Whether the if-statement is the orelse-block of another if statement."""
-
-        super().__init__(
-            lineno=lineno,
-            col_offset=col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
-            parent=parent,
-        )
+    orelse: list[NodeNG]
+    """The contents of the ``else`` block."""
 
     def postinit(self, test: NodeNG, body: list[NodeNG], orelse: list[NodeNG]) -> None:
         self.test = test
         self.body = body
         self.orelse = orelse
-        if isinstance(self.parent, If) and self in self.parent.orelse:
-            self.is_orelse = True
 
     @cached_property
     def blockstart_tolineno(self):
