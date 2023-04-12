@@ -148,8 +148,7 @@ def _filter_stmts(
                     optional_assign = False
                     _stmts.append(node)
                     _stmt_parents.append(stmt.parent)
-                # If the if statement is first-level and not within an orelse block
-                # we know that it will be evaluated
+                # Else we assume that it will be evaluated
                 else:
                     _stmts = [node]
                     _stmt_parents = [stmt.parent]
