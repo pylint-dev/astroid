@@ -41,6 +41,9 @@ Release date: TBA
   These changes involve breaking changes to their API but should be considered bug fixes. We
   now make arguments required when they are instead of always providing defaults.
 
+* ``nodes.If.self.is_orelse`` has been removed as it was never set correctly and therefore
+  provided a false value.
+
 * Remove dependency on ``wrapt``.
 
 
