@@ -31,7 +31,7 @@ Release date: TBA
   - ``nodes.Keyword``
   - ``nodes.Name``
   - ``nodes.Raise``
-  - ``nodes.Return
+  - ``nodes.Return``
   - ``nodes.Slice``
   - ``nodes.Starred``
   - ``nodes.Subscript``
