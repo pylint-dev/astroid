@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 import pytest
 
-from astroid import Slice, arguments, helpers, nodes, objects, test_utils, util
+from astroid import Slice, Uninferable, arguments, helpers, nodes, objects, test_utils, util
 from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod, UnionType
@@ -5295,6 +5295,29 @@ class CallSiteTest(unittest.TestCase):
         ast_node = extract_node('f(f=24, **{"f": 25})')
         site = self._call_site_from_call(ast_node)
         self.assertIn("f", site.duplicated_keywords)
+
+    def test_call_site_uninferable(self) -> None:
+        code = """
+            def get_nums():
+                nums = ()
+                if x == '1':
+                    nums = (1, 2)
+                return nums
+
+            def add(x, y):
+                return x + y
+
+            nums = get_nums()
+            if nums:
+                add(*nums)
+        """
+        # Test that `*nums` argument should be Uninferable
+        ast = parse(code, __name__)
+        add_call = list(ast.nodes_of_class(nodes.Call))[-1]
+        nums_arg = add_call.args[0]
+        call_site = self._call_site_from_call(add_call)
+        assert call_site._unpack_args([nums_arg]) == [Uninferable]
+
 
 
 class ObjectDunderNewTest(unittest.TestCase):
