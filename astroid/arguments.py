@@ -134,14 +134,7 @@ class CallSite:
         context.extra_context = self.argument_context_map
         for arg in args:
             if isinstance(arg, nodes.Starred):
-                try:
-                    inferred = next(arg.value.infer(context=context))
-                except InferenceError:
-                    values.append(Uninferable)
-                    continue
-                except StopIteration:
-                    continue
-
+                inferred = safe_infer(arg.value, context=context)
                 if isinstance(inferred, UninferableBase):
                     values.append(Uninferable)
                     continue
