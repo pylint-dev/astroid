@@ -17,7 +17,16 @@ from unittest.mock import patch
 
 import pytest
 
-from astroid import Slice, Uninferable, arguments, helpers, nodes, objects, test_utils, util
+from astroid import (
+    Slice,
+    Uninferable,
+    arguments,
+    helpers,
+    nodes,
+    objects,
+    test_utils,
+    util,
+)
 from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod, UnionType
@@ -5317,7 +5326,6 @@ class CallSiteTest(unittest.TestCase):
         nums_arg = add_call.args[0]
         call_site = self._call_site_from_call(add_call)
         assert call_site._unpack_args([nums_arg]) == [Uninferable]
-
 
 
 class ObjectDunderNewTest(unittest.TestCase):
