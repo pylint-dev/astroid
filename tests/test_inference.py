@@ -32,7 +32,7 @@ from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod, UnionType
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
 from astroid.const import PY38_PLUS, PY39_PLUS, PY310_PLUS
-from astroid.context import InferenceContext
+from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
