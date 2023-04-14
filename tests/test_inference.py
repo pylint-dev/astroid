@@ -5318,7 +5318,10 @@ class CallSiteTest(unittest.TestCase):
 
             nums = get_nums()
 
-            kwargs = {foo: bar, 1: baz}
+            if x:
+                kwargs = {1: bar}
+            else:
+                kwargs = {}
 
             if nums:
                 add(*nums)
