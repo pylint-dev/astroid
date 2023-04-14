@@ -92,27 +92,14 @@ class CallSite:
         for name, value in keywords:
             if name is None:
                 # Then it's an unpacking operation (**)
-                try:
-                    inferred = next(value.infer(context=context))
-                except InferenceError:
-                    values[name] = Uninferable
-                    continue
-                except StopIteration:
-                    continue
-
+                inferred = safe_infer(value, context=context)
                 if not isinstance(inferred, nodes.Dict):
                     # Not something we can work with.
                     values[name] = Uninferable
                     continue
 
                 for dict_key, dict_value in inferred.items:
-                    try:
-                        dict_key = next(dict_key.infer(context=context))
-                    except InferenceError:
-                        values[name] = Uninferable
-                        continue
-                    except StopIteration:
-                        continue
+                    dict_key = safe_infer(dict_key, context=context)
                     if not isinstance(dict_key, nodes.Const):
                         values[name] = Uninferable
                         continue

@@ -5317,15 +5317,23 @@ class CallSiteTest(unittest.TestCase):
                 return x + y
 
             nums = get_nums()
+
+            kwargs = {foo: bar, 1: baz}
+
             if nums:
                 add(*nums)
+                print(**kwargs)
         """
         # Test that `*nums` argument should be Uninferable
         ast = parse(code, __name__)
-        add_call = list(ast.nodes_of_class(nodes.Call))[-1]
+        *_, add_call, print_call = list(ast.nodes_of_class(nodes.Call))
         nums_arg = add_call.args[0]
-        call_site = self._call_site_from_call(add_call)
-        assert call_site._unpack_args([nums_arg]) == [Uninferable]
+        add_call_site = self._call_site_from_call(add_call)
+        assert add_call_site._unpack_args([nums_arg]) == [Uninferable]
+
+        print_call_site = self._call_site_from_call(print_call)
+        keywords = CallContext(print_call.args, print_call.keywords).keywords
+        assert print_call_site._unpack_keywords(keywords) == {None: Uninferable}
 
 
 class ObjectDunderNewTest(unittest.TestCase):
