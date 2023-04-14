@@ -5336,7 +5336,9 @@ class CallSiteTest(unittest.TestCase):
 
         print_call_site = self._call_site_from_call(print_call)
         keywords = CallContext(print_call.args, print_call.keywords).keywords
-        self.assertEqual(print_call_site._unpack_keywords(keywords), {None: Uninferable})
+        self.assertEqual(
+            print_call_site._unpack_keywords(keywords), {None: Uninferable}
+        )
 
 
 class ObjectDunderNewTest(unittest.TestCase):
