@@ -5332,11 +5332,11 @@ class CallSiteTest(unittest.TestCase):
         *_, add_call, print_call = list(ast.nodes_of_class(nodes.Call))
         nums_arg = add_call.args[0]
         add_call_site = self._call_site_from_call(add_call)
-        assert add_call_site._unpack_args([nums_arg]) == [Uninferable]
+        self.assertEqual(add_call_site._unpack_args([nums_arg]), [Uninferable])
 
         print_call_site = self._call_site_from_call(print_call)
         keywords = CallContext(print_call.args, print_call.keywords).keywords
-        assert print_call_site._unpack_keywords(keywords) == {None: Uninferable}
+        self.assertEqual(print_call_site._unpack_keywords(keywords), {None: Uninferable})
 
 
 class ObjectDunderNewTest(unittest.TestCase):
