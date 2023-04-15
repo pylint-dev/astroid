@@ -1452,10 +1452,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         node = extract_node(code)
         assert isinstance(node, nodes.NodeNG)
-        result = node.inferred()
-        assert len(result) == 2
-        assert isinstance(result[0], nodes.Dict)
-        assert result[1] is util.Uninferable
+        results = node.inferred()
+        assert len(results) == 2
+        assert all(isinstance(result, nodes.Dict) for result in results)
 
     def test_python25_no_relative_import(self) -> None:
         ast = resources.build_file("data/package/absimport.py")
