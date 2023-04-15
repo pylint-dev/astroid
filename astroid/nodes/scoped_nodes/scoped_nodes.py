@@ -1692,10 +1692,13 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         # generators, and filter it out later.
         if (
             self.name == "with_metaclass"
+            and caller is not None
+            and isinstance(caller.args, Arguments)
+            and caller.args.args
             and len(self.args.args) == 1
             and self.args.vararg is not None
         ):
-            metaclass = next(caller.args[0].infer(context), None)
+            metaclass = next(caller.args.args[0].infer(context), None)
             if isinstance(metaclass, ClassDef):
                 try:
                     class_bases = [
