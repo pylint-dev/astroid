@@ -1697,10 +1697,18 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         # generators, and filter it out later.
         if (
             self.name == "with_metaclass"
+            and caller is not None
             and len(self.args.args) == 1
             and self.args.vararg is not None
         ):
-            metaclass = next(caller.args[0].infer(context), None)
+            if isinstance(caller.args, Arguments):
+                metaclass = next(caller.args.args[0].infer(context), None)
+            elif isinstance(caller.args, list):
+                metaclass = next(caller.args[0].infer(context), None)
+            else:
+                raise TypeError(  # pragma: no cover
+                    f"caller.args was neither Arguments nor list; got {type(caller.args)}"
+                )
             if isinstance(metaclass, ClassDef):
                 try:
                     class_bases = [
