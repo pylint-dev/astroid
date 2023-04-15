@@ -52,6 +52,8 @@ Release date: TBA
 
 * Remove dependency on ``wrapt``.
 
+* ``CallSite._unpack_args`` and ``CallSite._unpack_keywords`` now use ``safe_infer()`` for
+  better inference and fewer false positives.
 
 What's New in astroid 2.15.3?
 =============================
