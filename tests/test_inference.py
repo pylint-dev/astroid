@@ -4055,6 +4055,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(node.infer())
             self.assertRaises(InferenceError, next, inferred.infer_call_result(node))
 
+    def test_infer_call_result_with_metaclass(self) -> None:
+        node = extract_node("def with_metaclass(meta, *bases): return 42")
+        inferred = next(node.infer_call_result(caller=node))
+        self.assertIsInstance(inferred, nodes.Const)
+
     def test_context_call_for_context_managers(self) -> None:
         ast_nodes = extract_node(
             """

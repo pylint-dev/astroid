@@ -61,6 +61,9 @@ What's New in astroid 2.15.3?
 =============================
 Release date: TBA
 
+* Fix ``infer_call_result()`` crash on methods called ``with_metaclass()``.
+
+  Closes #1735
 
 
 What's New in astroid 2.15.2?
