@@ -1701,7 +1701,7 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
             elif isinstance(caller.args, list):
                 metaclass = next(caller.args[0].infer(context), None)
             else:
-                raise TypeError(
+                raise TypeError(  # pragma: no cover
                     f"caller.args was neither Arguments nor list; got {type(caller.args)}"
                 )
             if isinstance(metaclass, ClassDef):
