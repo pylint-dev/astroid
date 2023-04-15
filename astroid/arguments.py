@@ -8,6 +8,7 @@ from astroid import nodes
 from astroid.bases import Instance
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import InferenceError, NoDefault
+from astroid.helpers import safe_infer
 from astroid.util import Uninferable, UninferableBase
 
 
@@ -91,27 +92,14 @@ class CallSite:
         for name, value in keywords:
             if name is None:
                 # Then it's an unpacking operation (**)
-                try:
-                    inferred = next(value.infer(context=context))
-                except InferenceError:
-                    values[name] = Uninferable
-                    continue
-                except StopIteration:
-                    continue
-
+                inferred = safe_infer(value, context=context)
                 if not isinstance(inferred, nodes.Dict):
                     # Not something we can work with.
                     values[name] = Uninferable
                     continue
 
                 for dict_key, dict_value in inferred.items:
-                    try:
-                        dict_key = next(dict_key.infer(context=context))
-                    except InferenceError:
-                        values[name] = Uninferable
-                        continue
-                    except StopIteration:
-                        continue
+                    dict_key = safe_infer(dict_key, context=context)
                     if not isinstance(dict_key, nodes.Const):
                         values[name] = Uninferable
                         continue
@@ -134,14 +122,7 @@ class CallSite:
         context.extra_context = self.argument_context_map
         for arg in args:
             if isinstance(arg, nodes.Starred):
-                try:
-                    inferred = next(arg.value.infer(context=context))
-                except InferenceError:
-                    values.append(Uninferable)
-                    continue
-                except StopIteration:
-                    continue
-
+                inferred = safe_infer(arg.value, context=context)
                 if isinstance(inferred, UninferableBase):
                     values.append(Uninferable)
                     continue

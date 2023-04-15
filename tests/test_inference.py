@@ -17,13 +17,22 @@ from unittest.mock import patch
 
 import pytest
 
-from astroid import Slice, arguments, helpers, nodes, objects, test_utils, util
+from astroid import (
+    Slice,
+    Uninferable,
+    arguments,
+    helpers,
+    nodes,
+    objects,
+    test_utils,
+    util,
+)
 from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod, UnionType
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
 from astroid.const import PY38_PLUS, PY39_PLUS, PY310_PLUS
-from astroid.context import InferenceContext
+from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
@@ -1443,10 +1452,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         node = extract_node(code)
         assert isinstance(node, nodes.NodeNG)
-        result = node.inferred()
-        assert len(result) == 2
-        assert isinstance(result[0], nodes.Dict)
-        assert result[1] is util.Uninferable
+        results = node.inferred()
+        assert len(results) == 2
+        assert all(isinstance(result, nodes.Dict) for result in results)
 
     def test_python25_no_relative_import(self) -> None:
         ast = resources.build_file("data/package/absimport.py")
@@ -5295,6 +5303,41 @@ class CallSiteTest(unittest.TestCase):
         ast_node = extract_node('f(f=24, **{"f": 25})')
         site = self._call_site_from_call(ast_node)
         self.assertIn("f", site.duplicated_keywords)
+
+    def test_call_site_uninferable(self) -> None:
+        code = """
+            def get_nums():
+                nums = ()
+                if x == '1':
+                    nums = (1, 2)
+                return nums
+
+            def add(x, y):
+                return x + y
+
+            nums = get_nums()
+
+            if x:
+                kwargs = {1: bar}
+            else:
+                kwargs = {}
+
+            if nums:
+                add(*nums)
+                print(**kwargs)
+        """
+        # Test that `*nums` argument should be Uninferable
+        ast = parse(code, __name__)
+        *_, add_call, print_call = list(ast.nodes_of_class(nodes.Call))
+        nums_arg = add_call.args[0]
+        add_call_site = self._call_site_from_call(add_call)
+        self.assertEqual(add_call_site._unpack_args([nums_arg]), [Uninferable])
+
+        print_call_site = self._call_site_from_call(print_call)
+        keywords = CallContext(print_call.args, print_call.keywords).keywords
+        self.assertEqual(
+            print_call_site._unpack_keywords(keywords), {None: Uninferable}
+        )
 
 
 class ObjectDunderNewTest(unittest.TestCase):
