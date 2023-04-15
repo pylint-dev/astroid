@@ -55,6 +55,8 @@ Release date: TBA
 * ``CallSite._unpack_args`` and ``CallSite._unpack_keywords`` now use ``safe_infer()`` for
   better inference and fewer false positives.
 
+  Closes pylint-dev/pylint#8544
+
 What's New in astroid 2.15.3?
 =============================
 Release date: TBA
