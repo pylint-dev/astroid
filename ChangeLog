@@ -69,6 +69,10 @@ Release date: TBA
 
   Closes #1735
 
+* Suppress ``UserWarning`` when finding module specs.
+
+  Closes pylint-dev/pylint#7906
+
 
 What's New in astroid 2.15.2?
 =============================

@@ -13,6 +13,7 @@ import os
 import pathlib
 import sys
 import types
+import warnings
 import zipimport
 from collections.abc import Iterator, Sequence
 from pathlib import Path
@@ -147,7 +148,9 @@ class ImportlibFinder(Finder):
             )
         else:
             try:
-                spec = importlib.util.find_spec(modname)
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=UserWarning)
+                    spec = importlib.util.find_spec(modname)
                 if (
                     spec
                     and spec.loader  # type: ignore[comparison-overlap] # noqa: E501
