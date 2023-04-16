@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.15.3?
+What's New in astroid 2.15.4?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.15.3?
+=============================
+Release date: 2023-04-16
 
 * Fix ``infer_call_result()`` crash on methods called ``with_metaclass()``.
 
