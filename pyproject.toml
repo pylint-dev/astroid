@@ -7,9 +7,6 @@ name        = "astroid"
 license     = {text = "LGPL-2.1-or-later"}
 description = "An abstract syntax tree for Python with inference support."
 readme      = "README.rst"
-authors     = [
-    {name = "Python Code Quality Authority", email = "code-quality@python.org"}
-]
 keywords    = ["static code analysis", "python", "abstract syntax tree"]
 classifiers = [
     "Development Status :: 6 - Mature",
