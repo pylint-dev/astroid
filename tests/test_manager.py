@@ -7,6 +7,7 @@ import site
 import sys
 import time
 import unittest
+import warnings
 from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest import mock
@@ -381,6 +382,15 @@ class AstroidManagerTest(
     def test_raises_exception_for_empty_modname(self) -> None:
         with pytest.raises(AstroidBuildingError):
             self.manager.ast_from_module_name(None)
+
+
+class IsolatedAstroidManagerTest(resources.AstroidCacheSetupMixin, unittest.TestCase):
+    def test_no_user_warning(self):
+        mgr = manager.AstroidManager()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("error", category=UserWarning)
+            mgr.ast_from_module_name("setuptools")
+            mgr.ast_from_module_name("pip")
 
 
 class BorgAstroidManagerTC(unittest.TestCase):
