@@ -562,9 +562,10 @@ def infer_property(
         function=inferred,
         name=inferred.name,
         lineno=node.lineno,
-        parent=node,
         col_offset=node.col_offset,
     )
+    # Set parent outside __init__: https://github.com/pylint-dev/astroid/issues/1490
+    prop_func.parent = node
     prop_func.postinit(
         body=[],
         args=inferred.args,

@@ -24,6 +24,14 @@ class BuiltinsTest(unittest.TestCase):
         )
         inferred_property = list(class_with_property.value.infer())[0]
         self.assertTrue(isinstance(inferred_property, objects.Property))
+        class_parent = inferred_property.parent.parent.parent
+        self.assertIsInstance(class_parent, nodes.ClassDef)
+        self.assertFalse(
+            any(
+                isinstance(getter, objects.Property)
+                for getter in class_parent.locals["getter"]
+            )
+        )
         self.assertTrue(hasattr(inferred_property, "args"))
 
 
