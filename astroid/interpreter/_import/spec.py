@@ -148,7 +148,8 @@ class ImportlibFinder(Finder):
             )
         else:
             try:
-                with warnings.catch_warnings(action="ignore"):
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=UserWarning)
                     spec = importlib.util.find_spec(modname)
                 if (
                     spec
