@@ -13,11 +13,11 @@ import os
 import pathlib
 import sys
 import types
+import warnings
 import zipimport
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple
-from warnings import catch_warnings
 
 from astroid.const import PY310_PLUS
 from astroid.modutils import EXT_LIB_DIRS
@@ -148,7 +148,7 @@ class ImportlibFinder(Finder):
             )
         else:
             try:
-                with catch_warnings(category=UserWarning, action="ignore"):
+                with warnings.catch_warnings(action="ignore"):
                     spec = importlib.util.find_spec(modname)
                 if (
                     spec

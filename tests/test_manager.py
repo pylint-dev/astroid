@@ -7,10 +7,10 @@ import site
 import sys
 import time
 import unittest
+import warnings
 from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest import mock
-from warnings import catch_warnings
 
 import pytest
 
@@ -387,7 +387,7 @@ class AstroidManagerTest(
 class IsolatedAstroidManagerTest(resources.AstroidCacheSetupMixin, unittest.TestCase):
     def test_no_user_warning(self):
         mgr = manager.AstroidManager()
-        with catch_warnings(category=UserWarning, action="error"):
+        with warnings.catch_warnings(action="error"):
             mgr.ast_from_module_name("setuptools")
             mgr.ast_from_module_name("pip")
 
