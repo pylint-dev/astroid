@@ -17,6 +17,7 @@ import zipimport
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple
+from warnings import catch_warnings
 
 from astroid.const import PY310_PLUS
 from astroid.modutils import EXT_LIB_DIRS
@@ -147,7 +148,8 @@ class ImportlibFinder(Finder):
             )
         else:
             try:
-                spec = importlib.util.find_spec(modname)
+                with catch_warnings(category=UserWarning, action="ignore"):
+                    spec = importlib.util.find_spec(modname)
                 if (
                     spec
                     and spec.loader  # type: ignore[comparison-overlap] # noqa: E501
