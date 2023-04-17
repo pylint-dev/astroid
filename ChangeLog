@@ -10,6 +10,13 @@ Release date: TBA
 
   Closes #1780
 
+* ``nodes.FunctionDef`` no longer inherits from ``nodes.Lambda``.
+  This is a breaking change but considered a bug fix as the nodes did not share the same
+  API and were not interchangeable.
+
+  We have tried to minimize the amount of breaking changes caused by this change
+  but some are unavoidable.
+
 * Improved signature of the ``__init__`` and ``__postinit__`` methods of the following nodes:
   - ``nodes.AnnAssign``
   - ``nodes.Arguments``

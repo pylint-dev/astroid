@@ -1244,7 +1244,12 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         raise AttributeInferenceError(target=self, attribute=name)
 
 
-class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda):
+class FunctionDef(
+    _base_nodes.MultiLineBlockNode,
+    _base_nodes.FilterStmtsBaseNode,
+    _base_nodes.Statement,
+    LocalsDictNodeNG,
+):
     """Class representing an :class:`ast.FunctionDef`.
 
     >>> import astroid
@@ -1290,6 +1295,13 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         "type_comment_args",
     )
     _type = None
+
+    name = "<functiondef>"
+
+    is_lambda = True
+
+    special_attributes = FunctionModel()
+    """The names of special attributes that this function has."""
 
     @decorators_mod.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
@@ -1338,7 +1350,20 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
         self.doc_node: Const | None = None
         """The doc node associated with this node."""
 
-        self.instance_attrs = {}
+        self.locals = {}
+        """A map of the name of a local variable to the node defining it."""
+
+        self.args: Arguments
+        """The arguments that the function takes."""
+
+        self.body = []
+        """The contents of the function body.
+
+        :type: list(NodeNG)
+        """
+
+        self.instance_attrs: dict[str, list[NodeNG]] = {}
+
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -1453,6 +1478,62 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
                         ):
                             decorators.append(assign.value)
         return decorators
+
+    def pytype(self) -> Literal["builtins.instancemethod", "builtins.function"]:
+        """Get the name of the type that this node represents.
+
+        :returns: The name of the type.
+        """
+        if "method" in self.type:
+            return "builtins.instancemethod"
+        return "builtins.function"
+
+    def display_type(self) -> str:
+        """A human readable type of this node.
+
+        :returns: The type of this node.
+        :rtype: str
+        """
+        if "method" in self.type:
+            return "Method"
+        return "Function"
+
+    def callable(self) -> Literal[True]:
+        return True
+
+    def argnames(self) -> list[str]:
+        """Get the names of each of the arguments, including that
+        of the collections of variable-length arguments ("args", "kwargs",
+        etc.), as well as positional-only and keyword-only arguments.
+
+        :returns: The names of the arguments.
+        :rtype: list(str)
+        """
+        if self.args.arguments:  # maybe None with builtin functions
+            names = _rec_get_names(self.args.arguments)
+        else:
+            names = []
+        if self.args.vararg:
+            names.append(self.args.vararg)
+        names += [elt.name for elt in self.args.kwonlyargs]
+        if self.args.kwarg:
+            names.append(self.args.kwarg)
+        return names
+
+    def getattr(
+        self, name: str, context: InferenceContext | None = None
+    ) -> list[NodeNG]:
+        if not name:
+            raise AttributeInferenceError(target=self, attribute=name, context=context)
+
+        found_attrs = []
+        if name in self.instance_attrs:
+            found_attrs = self.instance_attrs[name]
+        if name in self.special_attributes:
+            found_attrs.append(self.special_attributes.lookup(name))
+        if found_attrs:
+            return found_attrs
+        raise AttributeInferenceError(target=self, attribute=name)
 
     @cached_property
     def type(self) -> str:  # pylint: disable=too-many-return-statements # noqa: C901
@@ -1785,7 +1866,16 @@ class FunctionDef(_base_nodes.MultiLineBlockNode, _base_nodes.Statement, Lambda)
             frame = self.parent.frame(future=True)
             if isinstance(frame, ClassDef):
                 return self, [frame]
-        return super().scope_lookup(node, name, offset)
+
+        if node in self.args.defaults or node in self.args.kw_defaults:
+            frame = self.parent.frame(future=True)
+            # line offset to avoid that def func(f=func) resolve the default
+            # value to the defined function
+            offset = -1
+        else:
+            # check this is not used in function decorators
+            frame = self
+        return frame._scope_lookup(node, name, offset)
 
     def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
         """The node's frame node.
