@@ -930,6 +930,29 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
         assert func.doc_node is None
 
+    @staticmethod
+    def test_display_type() -> None:
+        code = textwrap.dedent(
+            """\
+            def foo():
+                bar = 1
+        """
+        )
+        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
+        assert func.display_type() == "Function"
+
+    @staticmethod
+    def test_inference_error() -> None:
+        code = textwrap.dedent(
+            """\
+            def foo():
+                bar = 1
+        """
+        )
+        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
+        with pytest.raises(AttributeInferenceError):
+            func.getattr("")
+
 
 class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_dict_interface(self) -> None:
