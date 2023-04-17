@@ -941,6 +941,16 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
         assert func.display_type() == "Function"
 
+        code = textwrap.dedent(
+            """\
+            class A:
+                def foo(self):  #@
+                    bar = 1
+        """
+        )
+        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
+        assert func.display_type() == "Method"
+
     @staticmethod
     def test_inference_error() -> None:
         code = textwrap.dedent(
