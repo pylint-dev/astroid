@@ -270,13 +270,6 @@ def _get_relative_base_path(filename: str, path_to_check: str) -> list[str] | No
     if os.path.normcase(abs_filename).startswith(path_to_check):
         importable_path = abs_filename
 
-    real_filename = os.path.realpath(filename)
-    if os.path.normcase(real_filename).startswith(path_to_check):
-        importable_path = real_filename
-
-    # if "var" in path_to_check:
-    #     breakpoint()
-
     if importable_path:
         base_path = os.path.splitext(importable_path)[0]
         relative_base_path = base_path[len(path_to_check) :]

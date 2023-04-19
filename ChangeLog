@@ -6,6 +6,10 @@ What's New in astroid 2.16.0?
 =============================
 Release date: TBA
 
+* No longer resolve symlinks to modules.
+
+  Closes #2127
+
 * Remove ``@cached`` decorator (just use ``@cached_property`` from the stdlib).
 
   Closes #1780
