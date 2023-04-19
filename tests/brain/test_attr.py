@@ -74,10 +74,16 @@ class AttrsTest(unittest.TestCase):
 
         l = Eggs(d=1)
         l.d['answer'] = 42
+
+        @attr.attrs(auto_attribs=True)
+        class Eggs:
+            d: int = attr.Factory(lambda: 3)
+
+        m = Eggs(d=1)
         """
         )
 
-        for name in ("f", "g", "h", "i", "j", "k", "l"):
+        for name in ("f", "g", "h", "i", "j", "k", "l", "m"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
             self.assertIsInstance(should_be_unknown, astroid.Unknown)
 

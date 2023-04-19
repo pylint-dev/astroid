@@ -64,6 +64,10 @@ Release date: TBA
 
   Closes pylint-dev/pylint#8544
 
+* Add ``attr.Factory`` to the recognized class attributes for classes decorated with ``attrs``.
+
+  Closes pylint-dev/pylint#4341
+
 * ``infer_property()`` now observes the same property-specific workaround as ``infer_functiondef``.
 
   Refs #1490
