@@ -248,7 +248,6 @@ class TreeRebuilder:
             file=modpath,
             path=[modpath],
             package=package,
-            parent=None,
         )
         newnode.postinit(
             [self.visit(child, newnode) for child in node.body],

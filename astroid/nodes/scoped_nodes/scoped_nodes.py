@@ -15,12 +15,11 @@ import itertools
 import os
 import sys
 import warnings
-from collections.abc import Generator, Iterator
+from collections.abc import Generator, Iterator, Sequence
 from functools import lru_cache
 from typing import TYPE_CHECKING, ClassVar, NoReturn, TypeVar, overload
 
 from astroid import bases, util
-from astroid import decorators as decorators_mod
 from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS, PYPY_7_3_11_PLUS
 from astroid.context import (
     CallContext,
@@ -188,11 +187,8 @@ class Module(LocalsDictNodeNG):
 
     _astroid_fields = ("doc_node", "body")
 
-    fromlineno: Literal[0] = 0
-    """The first line that this node appears on in the source code."""
-
-    lineno: Literal[0] = 0
-    """The line that this node appears on in the source code."""
+    doc_node: Const | None
+    """The doc node associated with this node."""
 
     # attributes below are set by the builder module or by raw factories
 
@@ -224,41 +220,18 @@ class Module(LocalsDictNodeNG):
     )
     _other_other_fields = ("locals", "globals")
 
-    col_offset: None
-    end_lineno: None
-    end_col_offset: None
-    parent: None
-
-    @decorators_mod.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
         self,
         name: str,
-        doc: str | None = None,
         file: str | None = None,
-        path: list[str] | None = None,
-        package: bool | None = None,
-        parent: None = None,
-        pure_python: bool | None = True,
+        path: Sequence[str] | None = None,
+        package: bool = False,
+        pure_python: bool = True,
     ) -> None:
-        """
-        :param name: The name of the module.
-
-        :param doc: The module docstring.
-
-        :param file: The path to the file that this ast has been extracted from.
-
-        :param path:
-
-        :param package: Whether the node represents a package or a module.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param pure_python: Whether the ast was built from source.
-        """
         self.name = name
         """The name of the module."""
 
-        self._doc = doc
+        self._doc = None
         """The module docstring."""
 
         self.file = file
@@ -282,26 +255,21 @@ class Module(LocalsDictNodeNG):
         self.locals = self.globals = {}
         """A map of the name of a local variable to the node defining the local."""
 
-        self.body: list[node_classes.NodeNG] | None = []
+        self.body: list[node_classes.NodeNG] = []
         """The contents of the module."""
-
-        self.doc_node: Const | None = None
-        """The doc node associated with this node."""
 
         self.future_imports: set[str] = set()
         """The imports from ``__future__``."""
 
-        super().__init__(lineno=0, parent=parent)
+        super().__init__(
+            lineno=0, parent=None, col_offset=0, end_lineno=None, end_col_offset=None
+        )
 
     # pylint: enable=redefined-builtin
 
-    def postinit(self, body=None, *, doc_node: Const | None = None):
-        """Do some setup after initialisation.
-
-        :param body: The contents of the module.
-        :type body: list(NodeNG) or None
-        :param doc_node: The doc node associated with this node.
-        """
+    def postinit(
+        self, body: list[node_classes.NodeNG], *, doc_node: Const | None = None
+    ):
         self.body = body
         self.doc_node = doc_node
         if doc_node:
