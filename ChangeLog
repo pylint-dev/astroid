@@ -40,6 +40,7 @@ Release date: TBA
   - ``nodes.Expr``
   - ``nodes.For``
   - ``nodes.FunctionDef``
+  - ``nodes.GeneratorExp``
   - ``nodes.If``
   - ``nodes.IfExp``
   - ``nodes.Keyword``
