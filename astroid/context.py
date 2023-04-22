@@ -10,6 +10,8 @@ import contextlib
 import pprint
 from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple
 
+from astroid.typing import InferenceResult
+
 if TYPE_CHECKING:
     from astroid import constraint, nodes
     from astroid.nodes.node_classes import Keyword, NodeNG
@@ -167,7 +169,7 @@ class CallContext:
         self,
         args: list[NodeNG],
         keywords: list[Keyword] | None = None,
-        callee: NodeNG | None = None,
+        callee: InferenceResult | None = None,
     ):
         self.args = args  # Call positional arguments
         if keywords:
