@@ -1049,6 +1049,12 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
     special_attributes = FunctionModel()
     """The names of special attributes that this function has."""
 
+    args: Arguments
+    """The arguments that the function takes."""
+
+    body: NodeNG
+    """The contents of the function body."""
+
     def implicit_parameters(self) -> Literal[0]:
         return 0
 
@@ -1065,42 +1071,15 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
 
     def __init__(
         self,
-        lineno=None,
-        col_offset=None,
-        parent=None,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno=None,
-        end_col_offset=None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ):
-        """
-        :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-        :type col_offset: int or None
-
-        :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
-
-        :param end_lineno: The last line this node appears on in the source code.
-        :type end_lineno: Optional[int]
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        :type end_col_offset: Optional[int]
-        """
         self.locals = {}
         """A map of the name of a local variable to the node defining it."""
-
-        self.args: Arguments
-        """The arguments that the function takes."""
-
-        self.body = []
-        """The contents of the function body.
-
-        :type: list(NodeNG)
-        """
 
         self.instance_attrs: dict[str, list[NodeNG]] = {}
 
@@ -1112,14 +1091,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             parent=parent,
         )
 
-    def postinit(self, args: Arguments, body):
-        """Do some setup after initialisation.
-
-        :param args: The arguments that the function takes.
-
-        :param body: The contents of the function body.
-        :type body: list(NodeNG)
-        """
+    def postinit(self, args: Arguments, body: NodeNG) -> None:
         self.args = args
         self.body = body
 
@@ -1175,9 +1147,6 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         :param caller: Unused
         :type caller: object
         """
-        # pylint: disable=no-member; github.com/pylint-dev/astroid/issues/291
-        # args is in fact redefined later on by postinit. Can't be changed
-        # to None due to a strong interaction between Lambda and FunctionDef.
         return self.body.infer(context)
 
     def scope_lookup(
