@@ -27,8 +27,14 @@ from astroid.exceptions import (
     InferenceError,
     NameInferenceError,
 )
-from astroid.typing import InferBinaryOp, InferenceErrorInfo, InferenceResult
-from astroid.util import Uninferable, UninferableBase, lazy_descriptor, lazy_import
+from astroid.interpreter import objectmodel
+from astroid.typing import (
+    InferBinaryOp,
+    InferenceErrorInfo,
+    InferenceResult,
+    SuccessfulInferenceResult,
+)
+from astroid.util import Uninferable, UninferableBase, lazy_descriptor
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -37,10 +43,6 @@ else:
 
 if TYPE_CHECKING:
     from astroid.constraint import Constraint
-
-objectmodel = lazy_import("interpreter.objectmodel")
-helpers = lazy_import("helpers")
-manager = lazy_import("manager")
 
 
 # TODO: check if needs special treatment
@@ -75,6 +77,8 @@ POSSIBLE_PROPERTIES = {
 
 
 def _is_property(meth, context: InferenceContext | None = None) -> bool:
+    from astroid import helpers  # pylint: disable=import-outside-toplevel
+
     decoratornames = meth.decoratornames(context=context)
     if PROPERTIES.intersection(decoratornames):
         return True
@@ -93,9 +97,9 @@ def _is_property(meth, context: InferenceContext | None = None) -> bool:
         inferred = helpers.safe_infer(decorator, context=context)
         if inferred is None or isinstance(inferred, UninferableBase):
             continue
-        if inferred.__class__.__name__ == "ClassDef":
+        if isinstance(inferred, nodes.ClassDef):
             for base_class in inferred.bases:
-                if base_class.__class__.__name__ != "Name":
+                if not isinstance(base_class, nodes.Name):
                     continue
                 module, _ = base_class.lookup(base_class.name)
                 if module.name == "builtins" and base_class.name == "property":
@@ -113,12 +117,10 @@ class Proxy:
     if new instance attributes are created. See the Const class
     """
 
-    _proxied: nodes.ClassDef | nodes.Lambda | Proxy | None = (
-        None  # proxied object may be set by class or by instance
-    )
+    _proxied: nodes.ClassDef | nodes.FunctionDef
 
     def __init__(
-        self, proxied: nodes.ClassDef | nodes.Lambda | Proxy | None = None
+        self, proxied: nodes.ClassDef | nodes.FunctionDef | None = None
     ) -> None:
         if proxied is None:
             # This is a hack to allow calling this __init__ during bootstrapping of
@@ -132,7 +134,7 @@ class Proxy:
         else:
             self._proxied = proxied
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         if name == "_proxied":
             return self.__class__._proxied
         if name in self.__dict__:
@@ -148,7 +150,7 @@ class Proxy:
 def _infer_stmts(
     stmts: Sequence[nodes.NodeNG | UninferableBase | Instance],
     context: InferenceContext | None,
-    frame: nodes.NodeNG | Instance | None = None,
+    frame: nodes.NodeNG | BaseInstance | None = None,
 ) -> collections.abc.Generator[InferenceResult, None, None]:
     """Return an iterator on statements inferred by each statement in *stmts*."""
     inferred = False
@@ -197,7 +199,9 @@ def _infer_stmts(
         )
 
 
-def _infer_method_result_truth(instance, method_name, context):
+def _infer_method_result_truth(
+    instance: Instance, method_name: str, context: InferenceContext
+) -> bool | UninferableBase:
     # Get the method from the instance and try to infer
     # its return's truth value.
     meth = next(instance.igetattr(method_name, context=context), None)
@@ -224,12 +228,19 @@ class BaseInstance(Proxy):
     instances.
     """
 
-    special_attributes = None
+    _proxied: nodes.ClassDef
+
+    special_attributes: objectmodel.ObjectModel
 
     def display_type(self) -> str:
         return "Instance of"
 
-    def getattr(self, name, context: InferenceContext | None = None, lookupclass=True):
+    def getattr(
+        self,
+        name: str,
+        context: InferenceContext | None = None,
+        lookupclass: bool = True,
+    ) -> list[SuccessfulInferenceResult]:
         try:
             values = self._proxied.instance_attr(name, context)
         except AttributeInferenceError as exc:
@@ -331,10 +342,7 @@ class BaseInstance(Proxy):
 class Instance(BaseInstance):
     """A special node representing a class instance."""
 
-    _proxied: nodes.ClassDef
-
-    # pylint: disable=unnecessary-lambda
-    special_attributes = lazy_descriptor(lambda: objectmodel.InstanceModel())
+    special_attributes = objectmodel.InstanceModel()
 
     def __init__(self, proxied: nodes.ClassDef | None) -> None:
         super().__init__(proxied)
@@ -362,7 +370,9 @@ class Instance(BaseInstance):
     def display_type(self) -> str:
         return "Instance of"
 
-    def bool_value(self, context: InferenceContext | None = None):
+    def bool_value(
+        self, context: InferenceContext | None = None
+    ) -> bool | UninferableBase:
         """Infer the truth value for an Instance.
 
         The truth value of an instance is determined by these conditions:
@@ -411,8 +421,11 @@ class Instance(BaseInstance):
 class UnboundMethod(Proxy):
     """A special node representing a method not bound to an instance."""
 
-    # pylint: disable=unnecessary-lambda
-    special_attributes = lazy_descriptor(lambda: objectmodel.UnboundMethodModel())
+    _proxied: nodes.FunctionDef
+
+    special_attributes: objectmodel.BoundMethodModel | objectmodel.UnboundMethodModel = (
+        objectmodel.UnboundMethodModel()
+    )
 
     def __repr__(self) -> str:
         frame = self._proxied.parent.frame(future=True)
@@ -477,7 +490,9 @@ class UnboundMethod(Proxy):
                 if isinstance(inferred_arg, nodes.Const):
                     value = inferred_arg.value
             if value is not None:
-                yield nodes.const_factory(value)
+                const = nodes.const_factory(value)
+                assert not isinstance(const, nodes.EmptyNode)
+                yield const
                 return
 
         node_context = context.extra_context.get(caller.args[0])
@@ -495,8 +510,7 @@ class UnboundMethod(Proxy):
 class BoundMethod(UnboundMethod):
     """A special node representing a method bound to an instance."""
 
-    # pylint: disable=unnecessary-lambda
-    special_attributes = lazy_descriptor(lambda: objectmodel.BoundMethodModel())
+    special_attributes = objectmodel.BoundMethodModel()
 
     def __init__(self, proxy, bound):
         super().__init__(proxy)
@@ -627,8 +641,6 @@ class Generator(BaseInstance):
     Proxied class is set once for all in raw_building.
     """
 
-    _proxied: nodes.ClassDef
-
     special_attributes = lazy_descriptor(objectmodel.GeneratorModel)
 
     def __init__(
@@ -681,8 +693,6 @@ class UnionType(BaseInstance):
 
     Proxied class is set once for all in raw_building.
     """
-
-    _proxied: nodes.ClassDef
 
     def __init__(
         self,
