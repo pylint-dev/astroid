@@ -42,7 +42,7 @@ from astroid.exceptions import (
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
-from astroid.nodes import Arguments, Const, NodeNG, _base_nodes, node_classes
+from astroid.nodes import Arguments, Const, NodeNG, Unknown, _base_nodes, node_classes
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
@@ -1233,8 +1233,15 @@ class FunctionDef(
     _astroid_fields = ("decorators", "args", "returns", "doc_node", "body")
     _multi_line_block_fields = ("body",)
     returns = None
-    decorators: node_classes.Decorators | None = None
+
+    decorators: node_classes.Decorators | None
     """The decorators that are applied to this method or function."""
+
+    doc_node: Const | None
+    """The doc node associated with this node."""
+
+    args: Arguments
+    """The arguments that the function takes."""
 
     is_function = True
     """Whether this node indicates a function.
@@ -1272,64 +1279,27 @@ class FunctionDef(
     special_attributes = FunctionModel()
     """The names of special attributes that this function has."""
 
-    @decorators_mod.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
         self,
-        name=None,
-        doc: str | None = None,
-        lineno=None,
-        col_offset=None,
-        parent=None,
+        name: str,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno=None,
-        end_col_offset=None,
-    ):
-        """
-        :param name: The name of the function.
-        :type name: str or None
-
-        :param doc: The function docstring.
-
-        :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-        :type col_offset: int or None
-
-        :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
-
-        :param end_lineno: The last line this node appears on in the source code.
-        :type end_lineno: Optional[int]
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        :type end_col_offset: Optional[int]
-        """
+        end_lineno: int | None,
+        end_col_offset: int | None,
+    ) -> None:
         self.name = name
-        """The name of the function.
+        """The name of the function."""
 
-        :type name: str or None
-        """
-
-        self._doc = doc
-        """The function docstring."""
-
-        self.doc_node: Const | None = None
-        """The doc node associated with this node."""
+        self._doc = None
+        """DEPRECATED: The function docstring."""
 
         self.locals = {}
         """A map of the name of a local variable to the node defining it."""
 
-        self.args: Arguments
-        """The arguments that the function takes."""
-
-        self.body = []
-        """The contents of the function body.
-
-        :type: list(NodeNG)
-        """
+        self.body: list[NodeNG] = []
+        """The contents of the function body."""
 
         self.instance_attrs: dict[str, list[NodeNG]] = {}
 
@@ -1340,14 +1310,14 @@ class FunctionDef(
             end_col_offset=end_col_offset,
             parent=parent,
         )
-        if parent:
+        if parent and not isinstance(parent, Unknown):
             frame = parent.frame(future=True)
             frame.set_local(name, self)
 
     def postinit(
         self,
         args: Arguments,
-        body,
+        body: list[NodeNG],
         decorators: node_classes.Decorators | None = None,
         returns=None,
         type_comment_returns=None,
@@ -1361,11 +1331,9 @@ class FunctionDef(
         :param args: The arguments that the function takes.
 
         :param body: The contents of the function body.
-        :type body: list(NodeNG)
 
         :param decorators: The decorators that are applied to this
             method or function.
-        :type decorators: Decorators or None
         :params type_comment_returns:
             The return type annotation passed via a type comment.
         :params type_comment_args:
