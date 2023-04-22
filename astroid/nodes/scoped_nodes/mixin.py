@@ -39,7 +39,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         :rtype: str
         """
         # pylint: disable=no-member; github.com/pylint-dev/astroid/issues/278
-        if self.parent is None:
+        if self.parent is None or isinstance(self.parent, node_classes.Unknown):
             return self.name
         return f"{self.parent.frame(future=True).qname()}.{self.name}"
 

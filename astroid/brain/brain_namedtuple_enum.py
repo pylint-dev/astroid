@@ -155,7 +155,14 @@ def infer_func_form(
     # we know it is a namedtuple anyway.
     name = name or "Uninferable"
     # we want to return a Class node instance with proper attributes set
-    class_node = nodes.ClassDef(name)
+    class_node = nodes.ClassDef(
+        name,
+        lineno=node.lineno,
+        col_offset=node.col_offset,
+        end_lineno=node.end_lineno,
+        end_col_offset=node.end_col_offset,
+        parent=nodes.Unknown(),
+    )
     # A typical ClassDef automatically adds its name to the parent scope,
     # but doing so causes problems, so defer setting parent until after init
     # see: https://github.com/pylint-dev/pylint/issues/5982

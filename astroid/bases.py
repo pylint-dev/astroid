@@ -603,6 +603,8 @@ class BoundMethod(UnboundMethod):
             lineno=caller.lineno,
             col_offset=caller.col_offset,
             parent=caller,
+            end_lineno=caller.end_lineno,
+            end_col_offset=caller.end_col_offset,
         )
         empty = Pass()
         cls.postinit(

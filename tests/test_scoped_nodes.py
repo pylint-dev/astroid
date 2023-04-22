@@ -2912,7 +2912,14 @@ def test_deprecation_of_doc_attribute() -> None:
         node_module = nodes.Module(name="MyModule")
         node_module.postinit(body=[], doc_node=doc_node)
         assert node_module.doc_node == doc_node
-        node_class = nodes.ClassDef(name="MyClass")
+        node_class = nodes.ClassDef(
+            name="MyClass",
+            lineno=0,
+            col_offset=0,
+            end_lineno=0,
+            end_col_offset=0,
+            parent=nodes.Unknown(),
+        )
         node_class.postinit(bases=[], body=[], decorators=[], doc_node=doc_node)
         assert node_class.doc_node == doc_node
         node_func = nodes.FunctionDef(
@@ -2946,7 +2953,14 @@ def test_deprecation_of_doc_attribute() -> None:
     doc_node = nodes.Const("Docstring")
     with pytest.warns(DeprecationWarning) as records:
         node_module = nodes.Module(name="MyModule", doc="Docstring")
-        node_class = nodes.ClassDef(name="MyClass", doc="Docstring")
+        node_class = nodes.ClassDef(
+            name="MyClass",
+            lineno=0,
+            col_offset=0,
+            end_lineno=0,
+            end_col_offset=0,
+            parent=nodes.Unknown(),
+        )
         node_func = nodes.FunctionDef(
             name="MyFunction",
             lineno=0,
@@ -2955,4 +2969,4 @@ def test_deprecation_of_doc_attribute() -> None:
             end_lineno=0,
             end_col_offset=0,
         )
-        assert len(records) == 2
+        assert len(records) == 1

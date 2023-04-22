@@ -28,6 +28,7 @@ Release date: TBA
   - ``nodes.Await``
   - ``nodes.BinOp``
   - ``nodes.Call``
+  - ``nodes.ClassDef``
   - ``nodes.Compare``
   - ``nodes.Comprehension``
   - ``nodes.Decorators``
