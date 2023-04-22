@@ -35,6 +35,7 @@ Release date: TBA
   - ``nodes.Delete``
   - ``nodes.DelAttr``
   - ``nodes.DelName``
+  - ``nodes.DictComp``
   - ``nodes.ExceptHandler``
   - ``nodes.Expr``
   - ``nodes.For``
