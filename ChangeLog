@@ -35,18 +35,22 @@ Release date: TBA
   - ``nodes.Delete``
   - ``nodes.DelAttr``
   - ``nodes.DelName``
+  - ``nodes.DictComp``
   - ``nodes.ExceptHandler``
   - ``nodes.Expr``
   - ``nodes.For``
   - ``nodes.FunctionDef``
+  - ``nodes.GeneratorExp``
   - ``nodes.If``
   - ``nodes.IfExp``
   - ``nodes.Keyword``
   - ``nodes.Lambda``
+  - ``nodes.ListComp``
   - ``nodes.Module``
   - ``nodes.Name``
   - ``nodes.Raise``
   - ``nodes.Return``
+  - ``nodes.SetComp``
   - ``nodes.Slice``
   - ``nodes.Starred``
   - ``nodes.TryExcept``

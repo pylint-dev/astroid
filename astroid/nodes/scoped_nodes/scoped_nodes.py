@@ -641,41 +641,23 @@ class GeneratorExp(ComprehensionScope):
 
     _astroid_fields = ("elt", "generators")
     _other_other_fields = ("locals",)
-    elt = None
-    """The element that forms the output of the expression.
-
-    :type: NodeNG or None
-    """
+    elt: NodeNG
+    """The element that forms the output of the expression."""
 
     def __init__(
         self,
-        lineno=None,
-        col_offset=None,
-        parent=None,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno=None,
-        end_col_offset=None,
-    ):
-        """
-        :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-        :type col_offset: int or None
-
-        :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
-
-        :param end_lineno: The last line this node appears on in the source code.
-        :type end_lineno: Optional[int]
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        :type end_col_offset: Optional[int]
-        """
+        end_lineno: int | None,
+        end_col_offset: int | None,
+    ) -> None:
         self.locals = {}
         """A map of the name of a local variable to the node defining the local."""
+
+        self.generators: list[nodes.Comprehension] = []
+        """The generators that are looped through."""
 
         super().__init__(
             lineno=lineno,
@@ -685,19 +667,9 @@ class GeneratorExp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(self, elt=None, generators: list[nodes.Comprehension] | None = None):
-        """Do some setup after initialisation.
-
-        :param elt: The element that forms the output of the expression.
-        :type elt: NodeNG or None
-
-        :param generators: The generators that are looped through.
-        """
+    def postinit(self, elt: NodeNG, generators: list[nodes.Comprehension]) -> None:
         self.elt = elt
-        if generators is None:
-            self.generators = []
-        else:
-            self.generators = generators
+        self.generators = generators
 
     def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
         """Determine the boolean value of this node.
@@ -724,44 +696,21 @@ class DictComp(ComprehensionScope):
 
     _astroid_fields = ("key", "value", "generators")
     _other_other_fields = ("locals",)
-    key = None
-    """What produces the keys.
+    key: NodeNG
+    """What produces the keys."""
 
-    :type: NodeNG or None
-    """
-    value = None
-    """What produces the values.
-
-    :type: NodeNG or None
-    """
+    value: NodeNG
+    """What produces the values."""
 
     def __init__(
         self,
-        lineno=None,
-        col_offset=None,
-        parent=None,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno=None,
-        end_col_offset=None,
-    ):
-        """
-        :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-        :type col_offset: int or None
-
-        :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
-
-        :param end_lineno: The last line this node appears on in the source code.
-        :type end_lineno: Optional[int]
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        :type end_col_offset: Optional[int]
-        """
+        end_lineno: int | None,
+        end_col_offset: int | None,
+    ) -> None:
         self.locals = {}
         """A map of the name of a local variable to the node defining the local."""
 
@@ -774,27 +723,11 @@ class DictComp(ComprehensionScope):
         )
 
     def postinit(
-        self,
-        key=None,
-        value=None,
-        generators: list[nodes.Comprehension] | None = None,
-    ):
-        """Do some setup after initialisation.
-
-        :param key: What produces the keys.
-        :type key: NodeNG or None
-
-        :param value: What produces the values.
-        :type value: NodeNG or None
-
-        :param generators: The generators that are looped through.
-        """
+        self, key: NodeNG, value: NodeNG, generators: list[nodes.Comprehension]
+    ) -> None:
         self.key = key
         self.value = value
-        if generators is None:
-            self.generators = []
-        else:
-            self.generators = generators
+        self.generators = generators
 
     def bool_value(self, context: InferenceContext | None = None):
         """Determine the boolean value of this node.
@@ -823,41 +756,23 @@ class SetComp(ComprehensionScope):
 
     _astroid_fields = ("elt", "generators")
     _other_other_fields = ("locals",)
-    elt = None
-    """The element that forms the output of the expression.
-
-    :type: NodeNG or None
-    """
+    elt: NodeNG
+    """The element that forms the output of the expression."""
 
     def __init__(
         self,
-        lineno=None,
-        col_offset=None,
-        parent=None,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno=None,
-        end_col_offset=None,
-    ):
-        """
-        :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-        :type col_offset: int or None
-
-        :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
-
-        :param end_lineno: The last line this node appears on in the source code.
-        :type end_lineno: Optional[int]
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        :type end_col_offset: Optional[int]
-        """
+        end_lineno: int | None,
+        end_col_offset: int | None,
+    ) -> None:
         self.locals = {}
         """A map of the name of a local variable to the node defining the local."""
+
+        self.generators: list[nodes.Comprehension] = []
+        """The generators that are looped through."""
 
         super().__init__(
             lineno=lineno,
@@ -867,19 +782,9 @@ class SetComp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(self, elt=None, generators: list[nodes.Comprehension] | None = None):
-        """Do some setup after initialisation.
-
-        :param elt: The element that forms the output of the expression.
-        :type elt: NodeNG or None
-
-        :param generators: The generators that are looped through.
-        """
+    def postinit(self, elt: NodeNG, generators: list[nodes.Comprehension]) -> None:
         self.elt = elt
-        if generators is None:
-            self.generators = []
-        else:
-            self.generators = generators
+        self.generators = generators
 
     def bool_value(self, context: InferenceContext | None = None):
         """Determine the boolean value of this node.
@@ -908,23 +813,23 @@ class ListComp(ComprehensionScope):
     _astroid_fields = ("elt", "generators")
     _other_other_fields = ("locals",)
 
-    elt = None
-    """The element that forms the output of the expression.
-
-    :type: NodeNG or None
-    """
+    elt: NodeNG
+    """The element that forms the output of the expression."""
 
     def __init__(
         self,
-        lineno=None,
-        col_offset=None,
-        parent=None,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno=None,
-        end_col_offset=None,
-    ):
+        end_lineno: int | None,
+        end_col_offset: int | None,
+    ) -> None:
         self.locals = {}
         """A map of the name of a local variable to the node defining it."""
+
+        self.generators: list[nodes.Comprehension] = []
+        """The generators that are looped through."""
 
         super().__init__(
             lineno=lineno,
@@ -934,20 +839,9 @@ class ListComp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(self, elt=None, generators: list[nodes.Comprehension] | None = None):
-        """Do some setup after initialisation.
-
-        :param elt: The element that forms the output of the expression.
-        :type elt: NodeNG or None
-
-        :param generators: The generators that are looped through.
-        :type generators: list(Comprehension) or None
-        """
+    def postinit(self, elt: NodeNG, generators: list[nodes.Comprehension]):
         self.elt = elt
-        if generators is None:
-            self.generators = []
-        else:
-            self.generators = generators
+        self.generators = generators
 
     def bool_value(self, context: InferenceContext | None = None):
         """Determine the boolean value of this node.
