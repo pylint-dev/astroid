@@ -2099,12 +2099,7 @@ class ClassDef(
         *,
         position: Position | None = None,
         doc_node: Const | None = None,
-    ):
-        """Do some setup after initialisation.
-
-        :param keywords: The keywords given to the class definition.
-        :type keywords: list(Keyword) or None
-        """
+    ) -> None:
         if keywords is not None:
             self.keywords = keywords
         self.bases = bases
