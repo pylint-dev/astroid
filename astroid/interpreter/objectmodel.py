@@ -376,6 +376,8 @@ class FunctionModel(ObjectModel):
                     lineno=func.lineno,
                     col_offset=func.col_offset,
                     parent=func.parent,
+                    end_lineno=func.end_lineno,
+                    end_col_offset=func.end_col_offset,
                 )
                 # pylint: disable=no-member
                 new_func.postinit(
@@ -860,7 +862,14 @@ class PropertyModel(ObjectModel):
     """Model for a builtin property."""
 
     def _init_function(self, name):
-        function = nodes.FunctionDef(name=name, parent=self._instance)
+        function = nodes.FunctionDef(
+            name=name,
+            parent=self._instance,
+            lineno=self._instance.lineno,
+            col_offset=self._instance.col_offset,
+            end_lineno=self._instance.end_lineno,
+            end_col_offset=self._instance.end_col_offset,
+        )
 
         args = nodes.Arguments(parent=function, vararg=None, kwarg=None)
         args.postinit(
@@ -895,7 +904,14 @@ class PropertyModel(ObjectModel):
                     caller=caller, context=context
                 )
 
-        property_accessor = PropertyFuncAccessor(name="fget", parent=self._instance)
+        property_accessor = PropertyFuncAccessor(
+            name="fget",
+            parent=self._instance,
+            lineno=self._instance.lineno,
+            col_offset=self._instance.col_offset,
+            end_lineno=self._instance.end_lineno,
+            end_col_offset=self._instance.end_col_offset,
+        )
         property_accessor.postinit(args=func.args, body=func.body)
         return property_accessor
 
@@ -935,7 +951,14 @@ class PropertyModel(ObjectModel):
                     )
                 yield from func_setter.infer_call_result(caller=caller, context=context)
 
-        property_accessor = PropertyFuncAccessor(name="fset", parent=self._instance)
+        property_accessor = PropertyFuncAccessor(
+            name="fset",
+            parent=self._instance,
+            lineno=self._instance.lineno,
+            col_offset=self._instance.col_offset,
+            end_lineno=self._instance.end_lineno,
+            end_col_offset=self._instance.end_col_offset,
+        )
         property_accessor.postinit(args=func_setter.args, body=func_setter.body)
         return property_accessor
 

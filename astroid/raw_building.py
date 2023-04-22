@@ -131,7 +131,14 @@ def build_function(
 ) -> nodes.FunctionDef:
     """create and initialize an astroid FunctionDef node"""
     # first argument is now a list of decorators
-    func = nodes.FunctionDef(name)
+    func = nodes.FunctionDef(
+        name,
+        lineno=0,
+        col_offset=0,
+        parent=node_classes.Unknown(),
+        end_col_offset=0,
+        end_lineno=0,
+    )
     argsnode = nodes.Arguments(parent=func, vararg=None, kwarg=None)
 
     # If args is None we don't have any information about the signature

@@ -278,8 +278,15 @@ class PartialFunction(scoped_nodes.FunctionDef):
     def __init__(
         self, call, name=None, doc=None, lineno=None, col_offset=None, parent=None
     ):
-        # TODO: Pass end_lineno and end_col_offset as well
-        super().__init__(name, lineno=lineno, col_offset=col_offset, parent=None)
+        # TODO: Pass end_lineno, end_col_offset and parent as well
+        super().__init__(
+            name,
+            lineno=lineno,
+            col_offset=col_offset,
+            parent=node_classes.Unknown(),
+            end_col_offset=0,
+            end_lineno=0,
+        )
         # Assigned directly to prevent triggering the DeprecationWarning.
         self._doc = doc
         # A typical FunctionDef automatically adds its name to the parent scope,
@@ -330,7 +337,14 @@ class Property(scoped_nodes.FunctionDef):
         self, function, name=None, doc=None, lineno=None, col_offset=None, parent=None
     ):
         self.function = function
-        super().__init__(name, lineno=lineno, col_offset=col_offset, parent=parent)
+        super().__init__(
+            name,
+            lineno=lineno,
+            col_offset=col_offset,
+            parent=parent,
+            end_col_offset=function.end_col_offset,
+            end_lineno=function.end_lineno,
+        )
         # Assigned directly to prevent triggering the DeprecationWarning.
         self._doc = doc
 
