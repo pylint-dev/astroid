@@ -1735,9 +1735,15 @@ class FunctionDef(
                     ]
                 except StopIteration as e:
                     raise InferenceError(node=caller.args[1:], context=context) from e
-                new_class = ClassDef(name="temporary_class")
+                new_class = ClassDef(
+                    name="temporary_class",
+                    lineno=0,
+                    col_offset=0,
+                    end_lineno=0,
+                    end_col_offset=0,
+                    parent=self,
+                )
                 new_class.hide = True
-                new_class.parent = self
                 new_class.postinit(
                     bases=[
                         base
@@ -1988,72 +1994,42 @@ class ClassDef(
     )
     _other_fields = ("name", "doc", "is_dataclass", "position")
     _other_other_fields = ("locals", "_newstyle")
-    _newstyle = None
+    _newstyle: bool | None = None
 
-    @decorators_mod.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
     def __init__(
         self,
-        name=None,
-        doc: str | None = None,
-        lineno=None,
-        col_offset=None,
-        parent=None,
+        name: str,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno=None,
-        end_col_offset=None,
-    ):
-        """
-        :param name: The name of the class.
-        :type name: str or None
-
-        :param doc: The class docstring.
-
-        :param lineno: The line that this node appears on in the source code.
-        :type lineno: int or None
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-        :type col_offset: int or None
-
-        :param parent: The parent node in the syntax tree.
-        :type parent: NodeNG or None
-
-        :param end_lineno: The last line this node appears on in the source code.
-        :type end_lineno: Optional[int]
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        :type end_col_offset: Optional[int]
-        """
+        end_lineno: int | None,
+        end_col_offset: int | None,
+    ) -> None:
         self.instance_attrs = {}
         self.locals = {}
         """A map of the name of a local variable to the node defining it."""
 
-        self.keywords = []
+        self.keywords: list[node_classes.Keyword] = []
         """The keywords given to the class definition.
 
         This is usually for :pep:`3115` style metaclass declaration.
-
-        :type: list(Keyword) or None
         """
 
         self.bases: list[NodeNG] = []
         """What the class inherits from."""
 
-        self.body = []
-        """The contents of the class body.
-
-        :type: list(NodeNG)
-        """
+        self.body: list[NodeNG] = []
+        """The contents of the class body."""
 
         self.name = name
-        """The name of the class.
+        """The name of the class."""
 
-        :type name: str or None
-        """
+        self.decorators: node_classes.Decorators | None = None
+        """The decorators that are applied to this class."""
 
-        self._doc = doc
-        """The class docstring."""
+        self._doc = None
+        """DEPRECATED: The class docstring."""
 
         self.doc_node: Const | None = None
         """The doc node associated with this node."""
@@ -2068,7 +2044,7 @@ class ClassDef(
             end_col_offset=end_col_offset,
             parent=parent,
         )
-        if parent is not None:
+        if parent and not isinstance(parent, Unknown):
             parent.frame(future=True).set_local(name, self)
 
         for local_name, node in self.implicit_locals():
@@ -2114,48 +2090,28 @@ class ClassDef(
     # pylint: disable=redefined-outer-name
     def postinit(
         self,
-        bases,
-        body,
-        decorators,
-        newstyle=None,
+        bases: list[NodeNG],
+        body: list[NodeNG],
+        decorators: node_classes.Decorators | None,
+        newstyle: bool | None = None,
         metaclass: NodeNG | None = None,
-        keywords=None,
+        keywords: list[node_classes.Keyword] | None = None,
         *,
         position: Position | None = None,
         doc_node: Const | None = None,
     ):
         """Do some setup after initialisation.
 
-        :param bases: What the class inherits from.
-        :type bases: list(NodeNG)
-
-        :param body: The contents of the class body.
-        :type body: list(NodeNG)
-
-        :param decorators: The decorators that are applied to this class.
-        :type decorators: Decorators or None
-
-        :param newstyle: Whether this is a new style class or not.
-        :type newstyle: bool or None
-
-        :param metaclass: The metaclass of this class.
-
         :param keywords: The keywords given to the class definition.
         :type keywords: list(Keyword) or None
-
-        :param position: Position of class keyword and name.
-
-        :param doc_node: The doc node associated with this node.
         """
         if keywords is not None:
             self.keywords = keywords
         self.bases = bases
         self.body = body
         self.decorators = decorators
-        if newstyle is not None:
-            self._newstyle = newstyle
-        if metaclass is not None:
-            self._metaclass = metaclass
+        self._newstyle = newstyle
+        self._metaclass = metaclass
         self.position = position
         self.doc_node = doc_node
         if doc_node:
@@ -2274,7 +2230,14 @@ class ClassDef(
         else:
             return util.Uninferable
 
-        result = ClassDef(name)
+        result = ClassDef(
+            name,
+            lineno=0,
+            col_offset=0,
+            end_lineno=0,
+            end_col_offset=0,
+            parent=Unknown(),
+        )
 
         # Get the bases of the class.
         try:

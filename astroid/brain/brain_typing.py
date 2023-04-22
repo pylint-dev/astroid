@@ -215,6 +215,8 @@ def infer_typedDict(  # pylint: disable=invalid-name
         lineno=node.lineno,
         col_offset=node.col_offset,
         parent=node.parent,
+        end_lineno=node.end_lineno,
+        end_col_offset=node.end_col_offset,
     )
     class_def.postinit(bases=[extract_node("dict")], body=[], decorators=None)
     func_to_add = _extract_single_node("dict")
@@ -295,6 +297,8 @@ def infer_typing_alias(
         lineno=assign_name.lineno,
         col_offset=assign_name.col_offset,
         parent=node.parent,
+        end_lineno=assign_name.end_lineno,
+        end_col_offset=assign_name.end_col_offset,
     )
     if isinstance(res, ClassDef):
         # Only add `res` as base if it's a `ClassDef`
@@ -372,6 +376,10 @@ def infer_special_alias(
     class_def = ClassDef(
         name=assign_name.name,
         parent=node.parent,
+        lineno=assign_name.lineno,
+        col_offset=assign_name.col_offset,
+        end_lineno=assign_name.end_lineno,
+        end_col_offset=assign_name.end_col_offset,
     )
     class_def.postinit(bases=[res], body=[], decorators=None)
     func_to_add = _extract_single_node(CLASS_GETITEM_TEMPLATE)

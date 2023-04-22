@@ -84,6 +84,8 @@ def infer_pattern_match(node: nodes.Call, ctx: context.InferenceContext | None =
         lineno=node.lineno,
         col_offset=node.col_offset,
         parent=node.parent,
+        end_lineno=node.end_lineno,
+        end_col_offset=node.end_col_offset,
     )
     if PY39_PLUS:
         func_to_add = _extract_single_node(CLASS_GETITEM_TEMPLATE)

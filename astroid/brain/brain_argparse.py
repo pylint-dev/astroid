@@ -16,7 +16,14 @@ def infer_namespace(node, context: InferenceContext | None = None):
         # Cannot make sense of it.
         raise UseInferenceDefault()
 
-    class_node = nodes.ClassDef("Namespace")
+    class_node = nodes.ClassDef(
+        "Namespace",
+        lineno=node.lineno,
+        col_offset=node.col_offset,
+        parent=nodes.Unknown(),
+        end_lineno=node.end_lineno,
+        end_col_offset=node.end_col_offset,
+    )
     # Set parent manually until ClassDef constructor fixed:
     # https://github.com/pylint-dev/astroid/issues/1490
     class_node.parent = node.parent

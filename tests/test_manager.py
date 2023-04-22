@@ -25,7 +25,7 @@ from astroid.exceptions import (
 from astroid.interpreter._import import util
 from astroid.modutils import EXT_LIB_DIRS, module_in_path
 from astroid.nodes import Const
-from astroid.nodes.scoped_nodes import ClassDef
+from astroid.nodes.scoped_nodes import ClassDef, Module
 
 from . import resources
 
@@ -420,12 +420,27 @@ class ClearCacheTest(unittest.TestCase):
         baseline_cache_infos = [lru.cache_info() for lru in lrus]
 
         # Generate some hits and misses
-        ClassDef().lookup("garbage")
+        module = Module("", file="", path=[], package=False)
+        ClassDef(
+            "",
+            lineno=0,
+            col_offset=0,
+            end_lineno=0,
+            end_col_offset=0,
+            parent=module,
+        ).lookup("garbage")
         module_in_path("unittest", "garbage_path")
         util.is_namespace("unittest")
         astroid.interpreter.objectmodel.ObjectModel().attributes()
         with pytest.raises(AttributeInferenceError):
-            ClassDef().getattr("garbage")
+            ClassDef(
+                "",
+                lineno=0,
+                col_offset=0,
+                end_lineno=0,
+                end_col_offset=0,
+                parent=module,
+            ).getattr("garbage")
 
         # Did the hits or misses actually happen?
         incremented_cache_infos = [lru.cache_info() for lru in lrus]

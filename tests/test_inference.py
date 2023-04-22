@@ -1264,7 +1264,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             assert i0.pytype() == "types.UnionType"
             assert i0.display_type() == "UnionType"
             assert str(i0) == "UnionType(UnionType)"
-            assert repr(i0) == f"<UnionType(UnionType) l.None at 0x{id(i0)}>"
+            assert repr(i0) == f"<UnionType(UnionType) l.0 at 0x{id(i0)}>"
 
             i1 = ast_nodes[1].inferred()[0]
             assert isinstance(i1, UnionType)

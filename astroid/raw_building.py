@@ -100,7 +100,14 @@ def build_class(
     name: str, basenames: Iterable[str] = (), doc: str | None = None
 ) -> nodes.ClassDef:
     """Create and initialize an astroid ClassDef node."""
-    node = nodes.ClassDef(name)
+    node = nodes.ClassDef(
+        name,
+        lineno=0,
+        col_offset=0,
+        end_lineno=0,
+        end_col_offset=0,
+        parent=nodes.Unknown(),
+    )
     node.postinit(
         bases=[
             nodes.Name(
@@ -615,7 +622,14 @@ def _astroid_bootstrapping() -> None:
     # Set the builtin module as parent for some builtins.
     nodes.Const._proxied = property(_set_proxied)
 
-    _GeneratorType = nodes.ClassDef(types.GeneratorType.__name__)
+    _GeneratorType = nodes.ClassDef(
+        types.GeneratorType.__name__,
+        lineno=0,
+        col_offset=0,
+        end_lineno=0,
+        end_col_offset=0,
+        parent=nodes.Unknown(),
+    )
     _GeneratorType.parent = astroid_builtin
     generator_doc_node = (
         nodes.Const(value=types.GeneratorType.__doc__)
@@ -632,7 +646,14 @@ def _astroid_bootstrapping() -> None:
     builder.object_build(bases.Generator._proxied, types.GeneratorType)
 
     if hasattr(types, "AsyncGeneratorType"):
-        _AsyncGeneratorType = nodes.ClassDef(types.AsyncGeneratorType.__name__)
+        _AsyncGeneratorType = nodes.ClassDef(
+            types.AsyncGeneratorType.__name__,
+            lineno=0,
+            col_offset=0,
+            end_lineno=0,
+            end_col_offset=0,
+            parent=nodes.Unknown(),
+        )
         _AsyncGeneratorType.parent = astroid_builtin
         async_generator_doc_node = (
             nodes.Const(value=types.AsyncGeneratorType.__doc__)
@@ -649,7 +670,14 @@ def _astroid_bootstrapping() -> None:
         builder.object_build(bases.AsyncGenerator._proxied, types.AsyncGeneratorType)
 
     if hasattr(types, "UnionType"):
-        _UnionTypeType = nodes.ClassDef(types.UnionType.__name__)
+        _UnionTypeType = nodes.ClassDef(
+            types.UnionType.__name__,
+            lineno=0,
+            col_offset=0,
+            end_lineno=0,
+            end_col_offset=0,
+            parent=nodes.Unknown(),
+        )
         _UnionTypeType.parent = astroid_builtin
         union_type_doc_node = (
             nodes.Const(value=types.UnionType.__doc__)
@@ -679,7 +707,14 @@ def _astroid_bootstrapping() -> None:
     )
     for _type in builtin_types:
         if _type.__name__ not in astroid_builtin:
-            klass = nodes.ClassDef(_type.__name__)
+            klass = nodes.ClassDef(
+                _type.__name__,
+                lineno=0,
+                col_offset=0,
+                end_lineno=0,
+                end_col_offset=0,
+                parent=nodes.Unknown(),
+            )
             klass.parent = astroid_builtin
             klass.postinit(
                 bases=[],
