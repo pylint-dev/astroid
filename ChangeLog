@@ -47,6 +47,7 @@ Release date: TBA
   - ``nodes.Name``
   - ``nodes.Raise``
   - ``nodes.Return``
+  - ``nodes.SetComp``
   - ``nodes.Slice``
   - ``nodes.Starred``
   - ``nodes.TryExcept``
