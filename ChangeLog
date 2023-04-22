@@ -46,6 +46,7 @@ Release date: TBA
   - ``nodes.Keyword``
   - ``nodes.Lambda``
   - ``nodes.ListComp``
+  - ``nodes.Module``
   - ``nodes.Name``
   - ``nodes.Raise``
   - ``nodes.Return``
