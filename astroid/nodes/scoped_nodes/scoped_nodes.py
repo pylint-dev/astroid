@@ -940,23 +940,23 @@ class ListComp(ComprehensionScope):
     _astroid_fields = ("elt", "generators")
     _other_other_fields = ("locals",)
 
-    elt = None
-    """The element that forms the output of the expression.
-
-    :type: NodeNG or None
-    """
+    elt: NodeNG
+    """The element that forms the output of the expression."""
 
     def __init__(
         self,
-        lineno=None,
-        col_offset=None,
-        parent=None,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
-        end_lineno=None,
-        end_col_offset=None,
-    ):
+        end_lineno: int | None,
+        end_col_offset: int | None,
+    ) -> None:
         self.locals = {}
         """A map of the name of a local variable to the node defining it."""
+
+        self.generators: list[nodes.Comprehension] = []
+        """The generators that are looped through."""
 
         super().__init__(
             lineno=lineno,
@@ -966,20 +966,9 @@ class ListComp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(self, elt=None, generators: list[nodes.Comprehension] | None = None):
-        """Do some setup after initialisation.
-
-        :param elt: The element that forms the output of the expression.
-        :type elt: NodeNG or None
-
-        :param generators: The generators that are looped through.
-        :type generators: list(Comprehension) or None
-        """
+    def postinit(self, elt: NodeNG, generators: list[nodes.Comprehension]):
         self.elt = elt
-        if generators is None:
-            self.generators = []
-        else:
-            self.generators = generators
+        self.generators = generators
 
     def bool_value(self, context: InferenceContext | None = None):
         """Determine the boolean value of this node.

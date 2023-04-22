@@ -43,6 +43,7 @@ Release date: TBA
   - ``nodes.IfExp``
   - ``nodes.Keyword``
   - ``nodes.Lambda``
+  - ``nodes.ListComp``
   - ``nodes.Name``
   - ``nodes.Raise``
   - ``nodes.Return``
