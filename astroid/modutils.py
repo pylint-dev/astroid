@@ -488,9 +488,8 @@ def get_module_files(
 
 def get_source_file(filename: str, include_no_ext: bool = False) -> str:
     """Given a python module's file name return the matching source file
-    name (the filename will be returned identically if it's already an.
-
-    absolute path to a python source file...)
+    name (the filename will be returned identically if it's already an
+    absolute path to a python source file).
 
     :param filename: python module's file name
 
