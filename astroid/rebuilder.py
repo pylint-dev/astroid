@@ -1799,8 +1799,8 @@ class TreeRebuilder:
                 node.lineno,
                 node.col_offset,
                 parent,
-                end_lineno=node.end_lineno,
-                end_col_offset=node.end_col_offset,
+                end_lineno=None,
+                end_col_offset=None,
             )
         newnode.postinit(
             [self.visit(child, newnode) for child in node.body],
