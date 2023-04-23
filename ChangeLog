@@ -53,6 +53,7 @@ Release date: TBA
   - ``nodes.SetComp``
   - ``nodes.Slice``
   - ``nodes.Starred``
+  - ``nodes.Super``, we also added the ``call`` parameter to its ``__init__`` method.
   - ``nodes.TryExcept``
   - ``nodes.Subscript``
   - ``nodes.UnaryOp``

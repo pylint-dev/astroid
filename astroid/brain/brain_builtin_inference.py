@@ -379,7 +379,9 @@ def infer_dict(node, context: InferenceContext | None = None):
     return value
 
 
-def infer_super(node, context: InferenceContext | None = None):
+def infer_super(
+    node: nodes.Call, context: InferenceContext | None = None
+) -> objects.Super:
     """Understand super calls.
 
     There are some restrictions for what can be understood:
@@ -405,6 +407,7 @@ def infer_super(node, context: InferenceContext | None = None):
         raise UseInferenceDefault
 
     cls = scoped_nodes.get_wrapping_class(scope)
+    assert cls is not None
     if not node.args:
         mro_pointer = cls
         # In we are in a classmethod, the interpreter will fill
@@ -430,7 +433,11 @@ def infer_super(node, context: InferenceContext | None = None):
         raise UseInferenceDefault
 
     super_obj = objects.Super(
-        mro_pointer=mro_pointer, mro_type=mro_type, self_class=cls, scope=scope
+        mro_pointer=mro_pointer,
+        mro_type=mro_type,
+        self_class=cls,
+        scope=scope,
+        call=node,
     )
     super_obj.parent = node
     return super_obj
