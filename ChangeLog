@@ -88,8 +88,14 @@ Release date: TBA
 
   Refs #1490
 
-* Remove ``astroid.const.PY38_PLUS`` and the previously deprecated ``astroid.const.BUILTINS``,
-  ``astroid.bases.BUILTINS``, as well as ``astroid.const.Load``, ``..Store``, and ``..Del``.
+* Remove unused and / or deprecated constants:
+  - ``astroid.bases.BOOL_SPECIAL_METHOD``
+  - ``astroid.bases.BUILTINS``
+  - ``astroid.const.BUILTINS``
+  - ``astroid.const.PY38_PLUS``
+  - ``astroid.const.Load``
+  - ``astroid.const.Store``
+  - ``astroid.const.Del``
 
   Refs #2141
 
