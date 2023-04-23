@@ -15,7 +15,7 @@ import itertools
 import os
 import sys
 import warnings
-from collections.abc import Generator, Iterator, Sequence
+from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import lru_cache
 from typing import TYPE_CHECKING, ClassVar, NoReturn, TypeVar, overload
 
@@ -231,7 +231,7 @@ class Module(LocalsDictNodeNG):
         self.name = name
         """The name of the module."""
 
-        self._doc = None
+        self._doc: str | None = None
         """The module docstring."""
 
         self.file = file
@@ -249,7 +249,7 @@ class Module(LocalsDictNodeNG):
         self.pure_python = pure_python
         """Whether the ast was built from source."""
 
-        self.globals: dict[str, list[node_classes.NodeNG]]
+        self.globals: dict[str, list[SuccessfulInferenceResult]]
         """A map of the name of a global variable to the node defining the global."""
 
         self.locals = self.globals = {}
@@ -312,7 +312,7 @@ class Module(LocalsDictNodeNG):
         """
         return self._get_stream()
 
-    def block_range(self, lineno: int) -> tuple[Literal[0], Literal[0]]:
+    def block_range(self, lineno: int) -> tuple[int, int]:
         """Get a range from where this node starts to where this node ends.
 
         :param lineno: Unused.
@@ -341,7 +341,7 @@ class Module(LocalsDictNodeNG):
             try:
                 return self, self.getattr(name)
             except AttributeInferenceError:
-                return self, ()
+                return self, []
         return self._scope_lookup(node, name, offset)
 
     def pytype(self) -> Literal["builtins.module"]:
@@ -468,7 +468,7 @@ class Module(LocalsDictNodeNG):
 
     def import_module(
         self,
-        modname: str | None,
+        modname: str,
         relative_only: bool = False,
         level: int | None = None,
         use_cache: bool = True,
@@ -500,9 +500,7 @@ class Module(LocalsDictNodeNG):
                 raise
         return AstroidManager().ast_from_module_name(modname)
 
-    def relative_to_absolute_name(
-        self, modname: str | None, level: int | None
-    ) -> str | None:
+    def relative_to_absolute_name(self, modname: str, level: int | None) -> str:
         """Get the absolute module name for a relative import.
 
         The relative import can be implicit or explicit.
@@ -1027,7 +1025,9 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             given name according to the scope where it has been found (locals,
             globals or builtin).
         """
-        if node in self.args.defaults or node in self.args.kw_defaults:
+        if (self.args.defaults and node in self.args.defaults) or (
+            self.args.kw_defaults and node in self.args.kw_defaults
+        ):
             frame = self.parent.frame(future=True)
             # line offset to avoid that def func(f=func) resolve the default
             # value to the defined function
@@ -1154,7 +1154,7 @@ class FunctionDef(
         self.name = name
         """The name of the function."""
 
-        self._doc = None
+        self._doc: str | None = None
         """DEPRECATED: The function docstring."""
 
         self.locals = {}
@@ -1412,10 +1412,10 @@ class FunctionDef(
         """
         # lineno is the line number of the first decorator, we want the def
         # statement lineno. Similar to 'ClassDef.fromlineno'
-        lineno = self.lineno
+        lineno = self.lineno or 0
         if self.decorators is not None:
             lineno += sum(
-                node.tolineno - node.lineno + 1 for node in self.decorators.nodes
+                node.tolineno - (node.lineno or 0) + 1 for node in self.decorators.nodes
             )
 
         return lineno or 0
@@ -1558,7 +1558,7 @@ class FunctionDef(
         """
         if self.is_generator():
             if isinstance(self, AsyncFunctionDef):
-                generator_cls = bases.AsyncGenerator
+                generator_cls: type[bases.Generator] = bases.AsyncGenerator
             else:
                 generator_cls = bases.Generator
             result = generator_cls(self, generator_initial_context=context)
@@ -1573,10 +1573,12 @@ class FunctionDef(
         if (
             self.name == "with_metaclass"
             and caller is not None
+            and self.args.args
             and len(self.args.args) == 1
             and self.args.vararg is not None
         ):
             if isinstance(caller.args, Arguments):
+                assert caller.args.args is not None
                 metaclass = next(caller.args.args[0].infer(context), None)
             elif isinstance(caller.args, list):
                 metaclass = next(caller.args[0].infer(context), None)
@@ -1590,7 +1592,9 @@ class FunctionDef(
                         # Find the first non-None inferred base value
                         next(
                             b
-                            for b in arg.infer(context=context.clone())
+                            for b in arg.infer(
+                                context=context.clone() if context else context
+                            )
                             if not (isinstance(b, Const) and b.value is None)
                         )
                         for arg in caller.args[1:]
@@ -1613,7 +1617,7 @@ class FunctionDef(
                         if not isinstance(base, util.UninferableBase)
                     ],
                     body=[],
-                    decorators=[],
+                    decorators=None,
                     metaclass=metaclass,
                 )
                 yield new_class
@@ -1672,7 +1676,9 @@ class FunctionDef(
             if isinstance(frame, ClassDef):
                 return self, [frame]
 
-        if node in self.args.defaults or node in self.args.kw_defaults:
+        if (self.args.defaults and node in self.args.defaults) or (
+            self.args.kw_defaults and node in self.args.kw_defaults
+        ):
             frame = self.parent.frame(future=True)
             # line offset to avoid that def func(f=func) resolve the default
             # value to the defined function
@@ -1868,7 +1874,7 @@ class ClassDef(
         end_lineno: int | None,
         end_col_offset: int | None,
     ) -> None:
-        self.instance_attrs = {}
+        self.instance_attrs: dict[str, NodeNG] = {}
         self.locals = {}
         """A map of the name of a local variable to the node defining it."""
 
@@ -1887,10 +1893,10 @@ class ClassDef(
         self.name = name
         """The name of the class."""
 
-        self.decorators: node_classes.Decorators | None = None
+        self.decorators = None
         """The decorators that are applied to this class."""
 
-        self._doc = None
+        self._doc: str | None = None
         """DEPRECATED: The class docstring."""
 
         self.doc_node: Const | None = None
@@ -2008,10 +2014,11 @@ class ClassDef(
             # For Python < 3.8 the lineno is the line number of the first decorator.
             # We want the class statement lineno. Similar to 'FunctionDef.fromlineno'
             # PyPy (3.8): Fixed with version v7.3.11
-            lineno = self.lineno
+            lineno = self.lineno or 0
             if self.decorators is not None:
                 lineno += sum(
-                    node.tolineno - node.lineno + 1 for node in self.decorators.nodes
+                    node.tolineno - (node.lineno or 0) + 1
+                    for node in self.decorators.nodes
                 )
 
             return lineno or 0
@@ -2275,7 +2282,7 @@ class ClassDef(
         # Look up in the mro if we can. This will result in the
         # attribute being looked up just as Python does it.
         try:
-            ancestors = self.mro(context)[1:]
+            ancestors: Iterable[ClassDef] = self.mro(context)[1:]
         except MroError:
             # Fallback to use ancestors, we can't determine
             # a sane MRO.
@@ -2657,7 +2664,7 @@ class ClassDef(
 
     def declared_metaclass(
         self, context: InferenceContext | None = None
-    ) -> NodeNG | None:
+    ) -> SuccessfulInferenceResult | None:
         """Return the explicit declared metaclass for the current class.
 
         An explicit declared metaclass is defined
@@ -2694,7 +2701,7 @@ class ClassDef(
 
     def _find_metaclass(
         self, seen: set[ClassDef] | None = None, context: InferenceContext | None = None
-    ) -> NodeNG | None:
+    ) -> SuccessfulInferenceResult | None:
         if seen is None:
             seen = set()
         seen.add(self)
@@ -2708,7 +2715,9 @@ class ClassDef(
                         break
         return klass
 
-    def metaclass(self, context: InferenceContext | None = None) -> NodeNG | None:
+    def metaclass(
+        self, context: InferenceContext | None = None
+    ) -> SuccessfulInferenceResult | None:
         """Get the metaclass of this class.
 
         If this class does not define explicitly a metaclass,
