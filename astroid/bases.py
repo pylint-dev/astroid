@@ -9,9 +9,8 @@ from __future__ import annotations
 
 import collections
 import collections.abc
-import sys
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from astroid import nodes
 from astroid.const import PY310_PLUS
@@ -35,11 +34,6 @@ from astroid.typing import (
     SuccessfulInferenceResult,
 )
 from astroid.util import Uninferable, UninferableBase
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
 
 if TYPE_CHECKING:
     from astroid.constraint import Constraint

@@ -181,13 +181,13 @@ from astroid.nodes import (  # pylint: disable=redefined-builtin (Ellipsis)
 from astroid.util import Uninferable
 
 # Performance hack for tokenize. See https://bugs.python.org/issue43014
-# Adapted from https://github.com/pylint-dev/pycodestyle/pull/993
+# Adapted from https://github.com/PyCQA/pycodestyle/pull/993
 if (
     not PY310_PLUS
     and callable(getattr(tokenize, "_compile", None))
     and getattr(tokenize._compile, "__wrapped__", None) is None  # type: ignore[attr-defined]
 ):
-    tokenize._compile = functools.lru_cache()(tokenize._compile)  # type: ignore[attr-defined]
+    tokenize._compile = functools.lru_cache(tokenize._compile)  # type: ignore[attr-defined]
 
 # load brain plugins
 for module in BRAIN_MODULES_DIRECTORY.iterdir():

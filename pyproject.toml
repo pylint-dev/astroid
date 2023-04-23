@@ -17,7 +17,6 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -28,9 +27,8 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
     "Topic :: Software Development :: Testing",
 ]
-requires-python = ">=3.7.2"
+requires-python = ">=3.8.0"
 dependencies = [
-    "typed-ast>=1.4.0,<2.0;implementation_name=='cpython' and python_version<'3.8'",
     "typing-extensions>=4.0.0;python_version<'3.11'",
 ]
 dynamic = ["version"]

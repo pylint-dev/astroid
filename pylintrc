@@ -39,7 +39,7 @@ unsafe-load-any-extension=no
 extension-pkg-whitelist=
 
 # Minimum supported python version
-py-version = 3.7.2
+py-version = 3.8.0
 
 
 [REPORTS]
@@ -107,6 +107,7 @@ disable=fixme,
         # This one would help performance but we need to fix the pipeline first
         # and there are a lot of warning for it
         consider-using-f-string,
+        consider-using-assignment-expr,
 
 enable=useless-suppression
 

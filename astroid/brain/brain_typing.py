@@ -6,10 +6,10 @@
 
 from __future__ import annotations
 
-import sys
 import typing
 from collections.abc import Iterator
 from functools import partial
+from typing import Final
 
 from astroid import context, extract_node, inference_tip
 from astroid.builder import _extract_single_node
@@ -33,11 +33,6 @@ from astroid.nodes.node_classes import (
     Tuple,
 )
 from astroid.nodes.scoped_nodes import ClassDef, FunctionDef
-
-if sys.version_info >= (3, 8):
-    from typing import Final
-else:
-    from typing_extensions import Final
 
 TYPING_TYPEVARS = {"TypeVar", "NewType"}
 TYPING_TYPEVARS_QUALIFIED: Final = {
