@@ -88,6 +88,11 @@ Release date: TBA
 
   Refs #1490
 
+* Remove ``astroid.const.PY38_PLUS`` and the previously deprecated ``astroid.const.BUILTINS`` as well
+  as ``astroid.bases.BUILTINS``.
+
+  Refs #2141
+
 
 What's New in astroid 2.15.4?
 =============================
