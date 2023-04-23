@@ -101,16 +101,24 @@ class AstroidManager:
         source: bool = False,
     ) -> nodes.Module:
         """Given a module name, return the astroid object."""
-        try:
-            filepath = get_source_file(filepath, include_no_ext=True)
-            source = True
-        except NoSourceFile:
-            pass
         if modname is None:
             try:
                 modname = ".".join(modpath_from_file(filepath))
             except ImportError:
                 modname = filepath
+        if (
+            modname in self.astroid_cache
+            and self.astroid_cache[modname].file == filepath
+        ):
+            return self.astroid_cache[modname]
+        # Call get_source_file() only after a cache miss,
+        # since it calls os.path.exists().
+        try:
+            filepath = get_source_file(filepath, include_no_ext=True)
+            source = True
+        except NoSourceFile:
+            pass
+        # Second attempt on the cache after get_source_file().
         if (
             modname in self.astroid_cache
             and self.astroid_cache[modname].file == filepath
