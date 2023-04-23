@@ -27,8 +27,7 @@ _R = TypeVar("_R")
 _P = ParamSpec("_P")
 
 
-# TODO: Remove when support for 3.7 is dropped
-# TODO: astroid 3.0 -> move class behind sys.version_info < (3, 8) guard
+# TODO: Remove for astroid 3.0
 class cachedproperty:
     """Provides a cached property equivalent to the stacking of
     @cached and @property, but more efficient.
@@ -48,7 +47,7 @@ class cachedproperty:
 
     def __init__(self, wrapped):
         warnings.warn(
-            "cachedproperty has been deprecated and will be removed in astroid 3.0 for Python 3.8+. "
+            "cachedproperty has been deprecated and will be removed in astroid 3.0"
             "Use functools.cached_property instead.",
             DeprecationWarning,
             stacklevel=2,
