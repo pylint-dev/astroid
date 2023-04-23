@@ -30,7 +30,7 @@ from astroid import (
     util,
 )
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import IS_PYPY, PY38, PY38_PLUS
+from astroid.const import IS_PYPY, PY38
 from astroid.exceptions import (
     AttributeInferenceError,
     DuplicateBasesError,
@@ -530,7 +530,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             astroid["f"].argnames(), ["a", "b", "args", "c", "d", "kwargs"]
         )
 
-    @unittest.skipUnless(PY38_PLUS, "positional-only argument syntax")
     def test_positional_only_argnames(self) -> None:
         code = "def f(a, b, /, c=None, *args, d, **kwargs): pass"
         astroid = builder.parse(code, __name__)
@@ -1333,7 +1332,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         astroid = builder.parse(data)
         self.assertEqual(astroid["g1"].fromlineno, 4)
         self.assertEqual(astroid["g1"].tolineno, 5)
-        if not PY38_PLUS or PY38 and IS_PYPY:
+        if PY38 and IS_PYPY:
             self.assertEqual(astroid["g2"].fromlineno, 9)
         else:
             self.assertEqual(astroid["g2"].fromlineno, 10)
@@ -1943,7 +1942,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls.mro()
 
     def test_mro_typing_extensions(self):
-        """Regression test for mro() inference on typing_extesnions.
+        """Regression test for mro() inference on typing_extensions.
 
         Regression reported in:
         https://github.com/pylint-dev/astroid/issues/1124
@@ -1973,9 +1972,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             "Protocol",
             "object",
         ]
-        if not PY38_PLUS:
-            class_names.pop(-2)
-
         final_def = module.body[-1]
         self.assertEqual(class_names, sorted(i.name for i in final_def.mro()))
 
@@ -2799,7 +2795,6 @@ def test_slots_duplicate_bases_issue_1089() -> None:
 
 class TestFrameNodes:
     @staticmethod
-    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
     def test_frame_node():
         """Test if the frame of FunctionDef, ClassDef and Module is correctly set."""
         module = builder.parse(

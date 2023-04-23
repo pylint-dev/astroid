@@ -88,6 +88,17 @@ Release date: TBA
 
   Refs #1490
 
+* Remove unused and / or deprecated constants:
+  - ``astroid.bases.BOOL_SPECIAL_METHOD``
+  - ``astroid.bases.BUILTINS``
+  - ``astroid.const.BUILTINS``
+  - ``astroid.const.PY38_PLUS``
+  - ``astroid.const.Load``
+  - ``astroid.const.Store``
+  - ``astroid.const.Del``
+
+  Refs #2141
+
 
 What's New in astroid 2.15.4?
 =============================

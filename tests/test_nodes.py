@@ -26,7 +26,7 @@ from astroid import (
     transforms,
     util,
 )
-from astroid.const import PY38_PLUS, PY310_PLUS, Context
+from astroid.const import PY310_PLUS, Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -48,13 +48,6 @@ from astroid.nodes.scoped_nodes import ClassDef, FunctionDef, GeneratorExp, Modu
 from . import resources
 
 abuilder = builder.AstroidBuilder()
-try:
-    import typed_ast  # pylint: disable=unused-import
-
-    HAS_TYPED_AST = True
-except ImportError:
-    # typed_ast merged in `ast` in Python 3.8
-    HAS_TYPED_AST = PY38_PLUS
 
 
 class AsStringTest(resources.SysPathSetup, unittest.TestCase):
@@ -641,9 +634,6 @@ class ConstNodeTest(unittest.TestCase):
     def test_unicode(self) -> None:
         self._test("a")
 
-    @pytest.mark.skipif(
-        not PY38_PLUS, reason="kind attribute for ast.Constant was added in 3.8"
-    )
     def test_str_kind(self):
         node = builder.extract_node(
             """
@@ -673,7 +663,6 @@ class NameNodeTest(unittest.TestCase):
             builder.parse(code)
 
 
-@pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
 class TestNamedExprNode:
     """Tests for the NamedExpr node."""
 
@@ -1237,7 +1226,6 @@ def test_unknown() -> None:
     assert isinstance(nodes.Unknown().qname(), str)
 
 
-@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
 def test_type_comments_with() -> None:
     module = builder.parse(
         """
@@ -1254,7 +1242,6 @@ def test_type_comments_with() -> None:
     assert ignored_node.type_annotation is None
 
 
-@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
 def test_type_comments_for() -> None:
     module = builder.parse(
         """
@@ -1272,7 +1259,6 @@ def test_type_comments_for() -> None:
     assert ignored_node.type_annotation is None
 
 
-@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
 def test_type_coments_assign() -> None:
     module = builder.parse(
         """
@@ -1288,7 +1274,6 @@ def test_type_coments_assign() -> None:
     assert ignored_node.type_annotation is None
 
 
-@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
 def test_type_comments_invalid_expression() -> None:
     module = builder.parse(
         """
@@ -1301,7 +1286,6 @@ def test_type_comments_invalid_expression() -> None:
         assert node.type_annotation is None
 
 
-@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
 def test_type_comments_invalid_function_comments() -> None:
     module = builder.parse(
         """
@@ -1321,7 +1305,6 @@ def test_type_comments_invalid_function_comments() -> None:
         assert node.type_comment_args is None
 
 
-@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
 def test_type_comments_function() -> None:
     module = builder.parse(
         """
@@ -1352,7 +1335,6 @@ def test_type_comments_function() -> None:
         assert node.type_comment_returns.as_string() == expected_returns_string
 
 
-@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
 def test_type_comments_arguments() -> None:
     module = builder.parse(
         """
@@ -1392,9 +1374,6 @@ def test_type_comments_arguments() -> None:
             assert actual_arg.as_string() == expected_arg
 
 
-@pytest.mark.skipif(
-    not PY38_PLUS, reason="needs to be able to parse positional only arguments"
-)
 def test_type_comments_posonly_arguments() -> None:
     module = builder.parse(
         """
@@ -1430,7 +1409,6 @@ def test_type_comments_posonly_arguments() -> None:
                 assert actual_arg.as_string() == expected_arg
 
 
-@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
 def test_correct_function_type_comment_parent() -> None:
     data = """
         def f(a):
@@ -1512,7 +1490,6 @@ def test_f_string_correct_line_numbering() -> None:
     assert node.last_child().last_child().lineno == 5
 
 
-@pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
 def test_assignment_expression() -> None:
     code = """
     if __(a := 1):
@@ -1535,7 +1512,6 @@ def test_assignment_expression() -> None:
     assert second.as_string() == "b := test"
 
 
-@pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
 def test_assignment_expression_in_functiondef() -> None:
     code = """
     def function(param = (assignment := "walrus")):
@@ -1650,7 +1626,6 @@ def test_parse_fstring_debug_mode() -> None:
     assert node.as_string() == "f'3={3!r}'"
 
 
-@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
 def test_parse_type_comments_with_proper_parent() -> None:
     code = """
     class D: #@

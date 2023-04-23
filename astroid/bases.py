@@ -39,10 +39,6 @@ if TYPE_CHECKING:
     from astroid.constraint import Constraint
 
 
-# TODO: check if needs special treatment
-BOOL_SPECIAL_METHOD = "__bool__"
-BUILTINS = "builtins"  # TODO Remove in 2.8
-
 PROPERTIES = {"builtins.property", "abc.abstractproperty"}
 if PY310_PLUS:
     PROPERTIES.add("enum.property")
@@ -383,7 +379,7 @@ class Instance(BaseInstance):
         context.boundnode = self
 
         try:
-            result = _infer_method_result_truth(self, BOOL_SPECIAL_METHOD, context)
+            result = _infer_method_result_truth(self, "__bool__", context)
         except (InferenceError, AttributeInferenceError):
             # Fallback to __len__.
             try:

@@ -31,7 +31,7 @@ from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod, UnionType
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
-from astroid.const import PY38_PLUS, PY39_PLUS, PY310_PLUS
+from astroid.const import PY39_PLUS, PY310_PLUS
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -959,8 +959,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual("module.C", should_be_c[0].qname())
         self.assertEqual("module.D", should_be_d[0].qname())
 
-    @pytest.mark.skipif(
-        PY38_PLUS,
+    @pytest.mark.xfail(
         reason="pathlib.Path cannot be inferred on Python 3.8",
     )
     def test_factory_methods_inside_binary_operation(self):
@@ -6588,7 +6587,6 @@ def test_custom_decorators_for_classmethod_and_staticmethods(code, obj, obj_type
     assert inferred.type == obj_type
 
 
-@pytest.mark.skipif(not PY38_PLUS, reason="Needs dataclasses available")
 @pytest.mark.skipif(
     PY39_PLUS,
     reason="Exact inference with dataclasses (replace function) in python3.9",

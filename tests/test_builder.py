@@ -19,7 +19,7 @@ import unittest.mock
 import pytest
 
 from astroid import Instance, builder, nodes, test_utils, util
-from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS, PYPY_7_3_11_PLUS
+from astroid.const import IS_PYPY, PY38, PY39_PLUS, PYPY_7_3_11_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -62,10 +62,7 @@ class FromToLineNoTest(unittest.TestCase):
             else:
                 self.assertEqual(strarg.tolineno, 5)
         else:
-            if not PY38_PLUS:
-                self.assertEqual(strarg.fromlineno, 5)
-            else:
-                self.assertEqual(strarg.fromlineno, 4)
+            self.assertEqual(strarg.fromlineno, 4)
             self.assertEqual(strarg.tolineno, 5)
         namearg = callfunc.args[1]
         self.assertIsInstance(namearg, nodes.Name)
@@ -160,8 +157,8 @@ class FromToLineNoTest(unittest.TestCase):
 
         c = ast_module.body[2]
         assert isinstance(c, nodes.ClassDef)
-        if not PY38_PLUS or IS_PYPY and PY38 and not PYPY_7_3_11_PLUS:
-            # Not perfect, but best we can do for Python 3.7 and PyPy 3.8 (< v7.3.11).
+        if IS_PYPY and PY38 and not PYPY_7_3_11_PLUS:
+            # Not perfect, but best we can do for PyPy 3.8 (< v7.3.11).
             # Can't detect closing bracket on new line.
             assert c.fromlineno == 12
         else:
@@ -923,8 +920,7 @@ def test_module_build_dunder_file() -> None:
     assert module.path[0] == collections.__file__
 
 
-@pytest.mark.skipif(
-    PY38_PLUS,
+@pytest.mark.xfail(
     reason=(
         "The builtin ast module does not fail with a specific error "
         "for syntax error caused by invalid type comments."

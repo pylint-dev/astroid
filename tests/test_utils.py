@@ -4,10 +4,7 @@
 
 import unittest
 
-import pytest
-
 from astroid import Uninferable, builder, extract_node, nodes
-from astroid.const import PY38_PLUS
 from astroid.exceptions import InferenceError
 
 
@@ -33,7 +30,6 @@ class InferenceUtil(unittest.TestCase):
         self.assertEqual(nodes.are_exclusive(xass1, xnames[1]), False)
         self.assertEqual(nodes.are_exclusive(xass1, xnames[2]), False)
 
-    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
     def test_not_exclusive_walrus_operator(self) -> None:
         node_if, node_body, node_or_else = extract_node(
             """
@@ -54,7 +50,6 @@ class InferenceUtil(unittest.TestCase):
         assert nodes.are_exclusive(node_if, node_or_else) is False
         assert nodes.are_exclusive(node_body, node_or_else) is True
 
-    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
     def test_not_exclusive_walrus_multiple(self) -> None:
         node_if, body_1, body_2, or_else_1, or_else_2 = extract_node(
             """
@@ -84,7 +79,6 @@ class InferenceUtil(unittest.TestCase):
         assert nodes.are_exclusive(walruses[1], or_else_1) is False
         assert nodes.are_exclusive(walruses[1], or_else_2) is False
 
-    @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
     def test_not_exclusive_walrus_operator_nested(self) -> None:
         node_if, node_body, node_or_else = extract_node(
             """
