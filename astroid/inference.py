@@ -14,7 +14,16 @@ import typing
 from collections.abc import Callable, Generator, Iterable, Iterator
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
 
-from astroid import bases, constraint, decorators, helpers, nodes, protocols, util
+from astroid import (
+    bases,
+    constraint,
+    decorators,
+    helpers,
+    nodes,
+    objects,
+    protocols,
+    util,
+)
 from astroid.const import PY310_PLUS
 from astroid.context import (
     CallContext,
@@ -44,8 +53,6 @@ from astroid.typing import (
 if TYPE_CHECKING:
     from astroid.objects import Property
 
-# Prevents circular imports
-objects = util.lazy_import("objects")
 
 _T = TypeVar("_T")
 _BaseContainerT = TypeVar("_BaseContainerT", bound=nodes.BaseContainer)

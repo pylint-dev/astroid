@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import importlib
 import sys
 import warnings
 from typing import Any
@@ -24,12 +23,6 @@ def lazy_descriptor(obj):
             return self.__class__.__get__(self, instance)
 
     return DescriptorProxy(obj)
-
-
-def lazy_import(module_name: str) -> lazy_object_proxy.Proxy:
-    return lazy_object_proxy.Proxy(
-        lambda: importlib.import_module("." + module_name, "astroid")
-    )
 
 
 class UninferableBase:
@@ -85,7 +78,8 @@ class BadUnaryOperationMessage(BadOperationMessage):
 
     @property
     def _object_type_helper(self):
-        helpers = lazy_import("helpers")
+        from astroid import helpers  # pylint: disable=import-outside-toplevel
+
         return helpers.object_type
 
     def _object_type(self, obj):

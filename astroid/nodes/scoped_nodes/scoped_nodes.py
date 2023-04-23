@@ -61,7 +61,6 @@ if TYPE_CHECKING:
 
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
-objects = util.lazy_import("objects")
 BUILTIN_DESCRIPTORS = frozenset(
     {"classmethod", "staticmethod", "builtins.classmethod", "builtins.staticmethod"}
 )
@@ -2365,6 +2364,8 @@ class ClassDef(
 
         :returns: An :class:`Instance` of the :class:`ClassDef` node
         """
+        from astroid import objects  # pylint: disable=import-outside-toplevel
+
         try:
             if any(cls.name in EXCEPTION_BASE_CLASSES for cls in self.mro()):
                 # Subclasses of exceptions can be exception instances
@@ -2446,6 +2447,8 @@ class ClassDef(
         return attrs
 
     def _get_attribute_from_metaclass(self, cls, name, context):
+        from astroid import objects  # pylint: disable=import-outside-toplevel
+
         try:
             attrs = cls.getattr(name, context=context, class_context=True)
         except AttributeInferenceError:
@@ -2484,6 +2487,8 @@ class ClassDef(
 
         :returns: The inferred possible values.
         """
+        from astroid import objects  # pylint: disable=import-outside-toplevel
+
         # set lookup name since this is necessary to infer on import nodes for
         # instance
         context = copy_context(context)

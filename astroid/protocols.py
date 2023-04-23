@@ -14,7 +14,7 @@ import operator as operator_mod
 from collections.abc import Callable, Generator, Iterator, Sequence
 from typing import Any, TypeVar
 
-from astroid import arguments, bases, decorators, helpers, nodes, util
+from astroid import arguments, bases, decorators, helpers, nodes, objects, util
 from astroid.const import Context
 from astroid.context import InferenceContext, copy_context
 from astroid.exceptions import (
@@ -30,10 +30,6 @@ from astroid.typing import (
     InferenceResult,
     SuccessfulInferenceResult,
 )
-
-raw_building = util.lazy_import("raw_building")
-objects = util.lazy_import("objects")
-
 
 _TupleListNodeT = TypeVar("_TupleListNodeT", nodes.Tuple, nodes.List)
 
