@@ -13,9 +13,9 @@ leads to an inferred FrozenSet:
 
 from __future__ import annotations
 
-import sys
 from collections.abc import Generator, Iterator
-from typing import Any, TypeVar
+from functools import cached_property
+from typing import Any, Literal, TypeVar
 
 from astroid import bases, decorators, util
 from astroid.context import InferenceContext
@@ -29,14 +29,6 @@ from astroid.interpreter import objectmodel
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes, scoped_nodes
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
-
-if sys.version_info >= (3, 8):
-    from functools import cached_property
-    from typing import Literal
-else:
-    from typing_extensions import Literal
-
-    from astroid.decorators import cachedproperty as cached_property
 
 _T = TypeVar("_T")
 

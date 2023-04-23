@@ -17,17 +17,12 @@ import warnings
 import zipimport
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any, Literal, NamedTuple, Protocol
 
 from astroid.const import PY310_PLUS
 from astroid.modutils import EXT_LIB_DIRS
 
 from . import util
-
-if sys.version_info >= (3, 8):
-    from typing import Literal, Protocol
-else:
-    from typing_extensions import Literal, Protocol
 
 
 # The MetaPathFinder protocol comes from typeshed, which says:

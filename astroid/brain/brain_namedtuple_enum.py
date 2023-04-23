@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import functools
 import keyword
-import sys
 from collections.abc import Iterator
 from textwrap import dedent
+from typing import Final
 
 import astroid
 from astroid import arguments, bases, inference_tip, nodes, util
@@ -24,12 +24,6 @@ from astroid.exceptions import (
     UseInferenceDefault,
 )
 from astroid.manager import AstroidManager
-
-if sys.version_info >= (3, 8):
-    from typing import Final
-else:
-    from typing_extensions import Final
-
 
 ENUM_BASE_NAMES = {
     "Enum",

@@ -14,9 +14,8 @@ dataclasses. References:
 
 from __future__ import annotations
 
-import sys
 from collections.abc import Iterator
-from typing import Tuple, Union
+from typing import Literal, Tuple, Union
 
 from astroid import bases, context, helpers, nodes
 from astroid.builder import parse
@@ -26,11 +25,6 @@ from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.typing import InferenceResult
 from astroid.util import Uninferable, UninferableBase
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
 
 _FieldDefaultReturn = Union[
     None,

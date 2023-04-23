@@ -13,11 +13,10 @@ from __future__ import annotations
 import io
 import itertools
 import os
-import sys
 import warnings
 from collections.abc import Generator, Iterable, Iterator, Sequence
-from functools import lru_cache
-from typing import TYPE_CHECKING, ClassVar, NoReturn, TypeVar, overload
+from functools import cached_property, lru_cache
+from typing import TYPE_CHECKING, ClassVar, Literal, NoReturn, TypeVar, overload
 
 from astroid import bases, util
 from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS, PYPY_7_3_11_PLUS
@@ -46,14 +45,6 @@ from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeN
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
 from astroid.typing import InferBinaryOp, InferenceResult, SuccessfulInferenceResult
-
-if sys.version_info >= (3, 8):
-    from functools import cached_property
-    from typing import Literal
-else:
-    from typing_extensions import Literal
-
-    from astroid.decorators import cachedproperty as cached_property
 
 if TYPE_CHECKING:
     from astroid import nodes
