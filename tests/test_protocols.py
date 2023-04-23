@@ -13,7 +13,7 @@ import pytest
 
 import astroid
 from astroid import extract_node, nodes
-from astroid.const import PY38_PLUS, PY310_PLUS
+from astroid.const import PY310_PLUS
 from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
 from astroid.util import Uninferable, UninferableBase
@@ -280,7 +280,6 @@ class ProtocolTests(unittest.TestCase):
         assert parsed.inferred() == [Uninferable]
 
 
-@pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
 def test_named_expr_inference() -> None:
     code = """
     if (a := 2) == 2:

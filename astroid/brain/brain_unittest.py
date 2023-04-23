@@ -5,7 +5,6 @@
 """Astroid hooks for unittest module."""
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
-from astroid.const import PY38_PLUS
 from astroid.manager import AstroidManager
 
 
@@ -27,7 +26,4 @@ def IsolatedAsyncioTestCaseImport():
     )
 
 
-if PY38_PLUS:
-    register_module_extender(
-        AstroidManager(), "unittest", IsolatedAsyncioTestCaseImport
-    )
+register_module_extender(AstroidManager(), "unittest", IsolatedAsyncioTestCaseImport)

@@ -13,7 +13,7 @@ from typing import Final
 
 from astroid import context, extract_node, inference_tip
 from astroid.builder import _extract_single_node
-from astroid.const import PY38_PLUS, PY39_PLUS
+from astroid.const import PY39_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -428,7 +428,7 @@ if PY39_PLUS:
     AstroidManager().register_transform(
         FunctionDef, inference_tip(infer_typedDict), _looks_like_typedDict
     )
-elif PY38_PLUS:
+else:
     AstroidManager().register_transform(
         ClassDef, inference_tip(infer_old_typedDict), _looks_like_typedDict
     )

@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Final, TypeVar, Union, cast, overload
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import IS_PYPY, PY38, PY38_PLUS, PY39_PLUS, Context
+from astroid.const import IS_PYPY, PY38, PY39_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 from astroid.nodes.utils import Position
@@ -74,10 +74,8 @@ class TreeRebuilder:
         try:
             if node.body and isinstance(node.body[0], ast.Expr):
                 first_value = node.body[0].value
-                if isinstance(first_value, ast.Str) or (
-                    PY38_PLUS
-                    and isinstance(first_value, ast.Constant)
-                    and isinstance(first_value.value, str)
+                if isinstance(first_value, ast.Constant) and isinstance(
+                    first_value.value, str
                 ):
                     doc_ast_node = first_value
                     node.body = node.body[1:]
@@ -158,56 +156,6 @@ class TreeRebuilder:
             end_col_offset=t.end[1],
         )
 
-    def _fix_doc_node_position(self, node: NodesWithDocsType) -> None:
-        """Fix start and end position of doc nodes for Python < 3.8."""
-        if not self._data or not node.doc_node or node.lineno is None:
-            return
-        if PY38_PLUS:
-            return
-
-        lineno = node.lineno or 1  # lineno of modules is 0
-        end_range: int | None = node.doc_node.lineno
-        if IS_PYPY and not PY39_PLUS:
-            end_range = None
-        # pylint: disable-next=unsubscriptable-object
-        data = "\n".join(self._data[lineno - 1 : end_range])
-
-        found_start, found_end = False, False
-        open_brackets = 0
-        skip_token: set[int] = {token.NEWLINE, token.INDENT, token.NL, token.COMMENT}
-
-        if isinstance(node, nodes.Module):
-            found_end = True
-
-        for t in generate_tokens(StringIO(data).readline):
-            if found_end is False:
-                if (
-                    found_start is False
-                    and t.type == token.NAME
-                    and t.string in {"def", "class"}
-                ):
-                    found_start = True
-                elif found_start is True and t.type == token.OP:
-                    if t.exact_type == token.COLON and open_brackets == 0:
-                        found_end = True
-                    elif t.exact_type == token.LPAR:
-                        open_brackets += 1
-                    elif t.exact_type == token.RPAR:
-                        open_brackets -= 1
-                continue
-            if t.type in skip_token:
-                continue
-            if t.type == token.STRING:
-                break
-            return
-        else:
-            return
-
-        node.doc_node.lineno = lineno + t.start[0] - 1
-        node.doc_node.col_offset = t.start[1]
-        node.doc_node.end_lineno = lineno + t.end[0] - 1
-        node.doc_node.end_col_offset = t.end[1]
-
     def _reset_end_lineno(self, newnode: nodes.NodeNG) -> None:
         """Reset end_lineno and end_col_offset attributes for PyPy 3.8.
 
@@ -246,7 +194,6 @@ class TreeRebuilder:
             [self.visit(child, newnode) for child in node.body],
             doc_node=self.visit(doc_ast_node, newnode),
         )
-        self._fix_doc_node_position(newnode)
         if IS_PYPY and PY38:
             self._reset_end_lineno(newnode)
         return newnode
@@ -953,7 +900,6 @@ class TreeRebuilder:
             position=self._get_position_info(node, newnode),
             doc_node=self.visit(doc_ast_node, newnode),
         )
-        self._fix_doc_node_position(newnode)
         return newnode
 
     def visit_continue(self, node: ast.Continue, parent: NodeNG) -> nodes.Continue:
@@ -1225,7 +1171,7 @@ class TreeRebuilder:
         node, doc_ast_node = self._get_doc(node)
 
         lineno = node.lineno
-        if PY38_PLUS and node.decorator_list:
+        if node.decorator_list:
             # Python 3.8 sets the line number of a decorated function
             # to be the actual line number of the function, but the
             # previous versions expected the decorator's line number instead.
@@ -1265,7 +1211,6 @@ class TreeRebuilder:
             position=self._get_position_info(node, newnode),
             doc_node=self.visit(doc_ast_node, newnode),
         )
-        self._fix_doc_node_position(newnode)
         self._global_names.pop()
         return newnode
 
