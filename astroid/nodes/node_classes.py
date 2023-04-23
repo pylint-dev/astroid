@@ -4000,6 +4000,23 @@ class Unknown(_base_nodes.AssignTypeNode):
 
     name = "Unknown"
 
+    def __init__(
+        self,
+        lineno: None = None,
+        col_offset: None = None,
+        parent: None = None,
+        *,
+        end_lineno: None = None,
+        end_col_offset: None = None,
+    ) -> None:
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
     def qname(self) -> Literal["Unknown"]:
         return "Unknown"
 
