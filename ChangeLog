@@ -2,7 +2,7 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.16.0?
+What's New in astroid 3.0.0?
 =============================
 Release date: TBA
 
@@ -10,9 +10,10 @@ Release date: TBA
 
   Refs #2137
 
-* Remove ``@cached`` decorator (just use ``@cached_property`` from the stdlib).
+* Remove ``@cached`` and ``@cachedproperty`` decorator (just use ``@cached_property`` from the stdlib).
 
   Closes #1780
+  Refs #2140
 
 * Reduce file system access in ``ast_from_file()``.
 
