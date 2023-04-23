@@ -27,52 +27,6 @@ _R = TypeVar("_R")
 _P = ParamSpec("_P")
 
 
-# TODO: Remove for astroid 3.0
-class cachedproperty:
-    """Provides a cached property equivalent to the stacking of
-    @cached and @property, but more efficient.
-
-    After first usage, the <property_name> becomes part of the object's
-    __dict__. Doing:
-
-      del obj.<property_name> empties the cache.
-
-    Idea taken from the pyramid_ framework and the mercurial_ project.
-
-    .. _pyramid: http://pypi.python.org/pypi/pyramid
-    .. _mercurial: http://pypi.python.org/pypi/Mercurial
-    """
-
-    __slots__ = ("wrapped",)
-
-    def __init__(self, wrapped):
-        warnings.warn(
-            "cachedproperty has been deprecated and will be removed in astroid 3.0"
-            "Use functools.cached_property instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        try:
-            wrapped.__name__  # noqa[B018]
-        except AttributeError as exc:
-            raise TypeError(f"{wrapped} must have a __name__ attribute") from exc
-        self.wrapped = wrapped
-
-    @property
-    def __doc__(self):
-        doc = getattr(self.wrapped, "__doc__", None)
-        return "<wrapped by the cachedproperty decorator>%s" % (
-            "\n%s" % doc if doc else ""
-        )
-
-    def __get__(self, inst, objtype=None):
-        if inst is None:
-            return self
-        val = self.wrapped(inst)
-        setattr(inst, self.wrapped.__name__, val)
-        return val
-
-
 def path_wrapper(func):
     """Return the given infer function wrapped to handle the path.
 
