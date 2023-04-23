@@ -26,12 +26,6 @@ class Context(enum.Enum):
     Del = 3
 
 
-# TODO Remove in 3.0 in favor of Context
-Load = Context.Load
-Store = Context.Store
-Del = Context.Del
-
-
 ASTROID_INSTALL_DIRECTORY = Path(__file__).parent
 BRAIN_MODULES_DIRECTORY = ASTROID_INSTALL_DIRECTORY / "brain"
 

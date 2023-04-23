@@ -46,7 +46,7 @@ from astroid.astroid_manager import MANAGER
 from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
-from astroid.const import BRAIN_MODULES_DIRECTORY, PY310_PLUS, Context, Del, Load, Store
+from astroid.const import BRAIN_MODULES_DIRECTORY, PY310_PLUS, Context
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidBuildingException,

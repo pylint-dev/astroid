@@ -88,8 +88,8 @@ Release date: TBA
 
   Refs #1490
 
-* Remove ``astroid.const.PY38_PLUS`` and the previously deprecated ``astroid.const.BUILTINS`` as well
-  as ``astroid.bases.BUILTINS``.
+* Remove ``astroid.const.PY38_PLUS`` and the previously deprecated ``astroid.const.BUILTINS``,
+  ``astroid.bases.BUILTINS``, as well as ``astroid.const.Load``, ``..Store``, and ``..Del``.
 
   Refs #2141
 
