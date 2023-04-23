@@ -12,6 +12,10 @@ What's New in astroid 2.15.4?
 =============================
 Release date: TBA
 
+* Add visitor function for ``TryStar`` to ``AsStringVisitor`` and
+  add ``TryStar`` to ``astroid.nodes.ALL_NODE_CLASSES``.
+
+  Refs #2142
 
 
 What's New in astroid 2.15.3?

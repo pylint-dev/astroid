@@ -9,6 +9,8 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
+from astroid import nodes
+
 if TYPE_CHECKING:
     from astroid.nodes import Const
     from astroid.nodes.node_classes import (
@@ -254,13 +256,16 @@ class AsStringVisitor:
         return ""
 
     def visit_excepthandler(self, node) -> str:
+        n = "except"
+        if isinstance(getattr(node, "parent", None), nodes.TryStar):
+            n = "except*"
         if node.type:
             if node.name:
-                excs = f"except {node.type.accept(self)} as {node.name.accept(self)}"
+                excs = f"{n} {node.type.accept(self)} as {node.name.accept(self)}"
             else:
-                excs = f"except {node.type.accept(self)}"
+                excs = f"{n} {node.type.accept(self)}"
         else:
-            excs = "except"
+            excs = f"{n}"
         return f"{excs}:\n{self._stmt_list(node.body)}"
 
     def visit_empty(self, node) -> str:
@@ -494,6 +499,17 @@ class AsStringVisitor:
         return "try:\n{}\nfinally:\n{}".format(
             self._stmt_list(node.body), self._stmt_list(node.finalbody)
         )
+
+    def visit_trystar(self, node) -> str:
+        """return an astroid.TryStar node as string"""
+        trys = [f"try:\n{self._stmt_list(node.body)}"]
+        for handler in node.handlers:
+            trys.append(handler.accept(self))
+        if node.orelse:
+            trys.append(f"else:\n{self._stmt_list(node.orelse)}")
+        if node.finalbody:
+            trys.append(f"finally:\n{self._stmt_list(node.finalbody)}")
+        return "\n".join(trys)
 
     def visit_tuple(self, node) -> str:
         """return an astroid.Tuple node as string"""
