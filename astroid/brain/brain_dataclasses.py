@@ -532,6 +532,8 @@ def _get_field_default(field_call: nodes.Call) -> _FieldDefaultReturn:
             lineno=field_call.lineno,
             col_offset=field_call.col_offset,
             parent=field_call.parent,
+            end_lineno=field_call.end_lineno,
+            end_col_offset=field_call.end_col_offset,
         )
         new_call.postinit(func=default_factory, args=[], keywords=[])
         return "default_factory", new_call
