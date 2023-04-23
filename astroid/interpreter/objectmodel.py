@@ -38,16 +38,12 @@ from astroid.exceptions import AttributeInferenceError, InferenceError, NoDefaul
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
 
-objects = util.lazy_import("objects")
-builder = util.lazy_import("builder")
-
 if sys.version_info >= (3, 8):
     from typing import Literal
 else:
     from typing_extensions import Literal
 
 if TYPE_CHECKING:
-    from astroid import builder
     from astroid.objects import Property
 
 IMPL_PREFIX = "attr_"
@@ -137,6 +133,8 @@ class ObjectModel:
     @property
     def attr___new__(self) -> bases.BoundMethod:
         """Calling cls.__new__(type) on an object returns an instance of 'type'."""
+        from astroid import builder  # pylint: disable=import-outside-toplevel
+
         node: nodes.FunctionDef = builder.extract_node(
             """def __new__(self, cls): return cls()"""
         )
@@ -149,6 +147,8 @@ class ObjectModel:
     @property
     def attr___init__(self) -> bases.BoundMethod:
         """Calling cls.__init__() normally returns None."""
+        from astroid import builder  # pylint: disable=import-outside-toplevel
+
         # The *args and **kwargs are necessary not to trigger warnings about missing
         # or extra parameters for '__init__' methods we don't infer correctly.
         # This BoundMethod is the fallback value for those.
@@ -628,6 +628,8 @@ class ContextManagerModel(ObjectModel):
         will bind this method's return value to the target(s) specified in the
         as clause of the statement, if any.
         """
+        from astroid import builder  # pylint: disable=import-outside-toplevel
+
         node: nodes.FunctionDef = builder.extract_node("""def __enter__(self): ...""")
         # We set the parent as being the ClassDef of 'object' as that
         # is where this method originally comes from
@@ -644,6 +646,8 @@ class ContextManagerModel(ObjectModel):
         exception that caused the context to be exited. If the context was exited
         without an exception, all three arguments will be None.
         """
+        from astroid import builder  # pylint: disable=import-outside-toplevel
+
         node: nodes.FunctionDef = builder.extract_node(
             """def __exit__(self, exc_type, exc_value, traceback): ..."""
         )
@@ -828,6 +832,8 @@ class DictModel(ObjectModel):
 
     @property
     def attr_items(self):
+        from astroid import objects  # pylint: disable=import-outside-toplevel
+
         elems = []
         obj = node_classes.List(parent=self._instance)
         for key, value in self._instance.items:
@@ -836,26 +842,30 @@ class DictModel(ObjectModel):
             elems.append(elem)
         obj.postinit(elts=elems)
 
-        obj = objects.DictItems(obj)
-        return self._generic_dict_attribute(obj, "items")
+        items_obj = objects.DictItems(obj)
+        return self._generic_dict_attribute(items_obj, "items")
 
     @property
     def attr_keys(self):
+        from astroid import objects  # pylint: disable=import-outside-toplevel
+
         keys = [key for (key, _) in self._instance.items]
         obj = node_classes.List(parent=self._instance)
         obj.postinit(elts=keys)
 
-        obj = objects.DictKeys(obj)
-        return self._generic_dict_attribute(obj, "keys")
+        keys_obj = objects.DictKeys(obj)
+        return self._generic_dict_attribute(keys_obj, "keys")
 
     @property
     def attr_values(self):
+        from astroid import objects  # pylint: disable=import-outside-toplevel
+
         values = [value for (_, value) in self._instance.items]
         obj = node_classes.List(parent=self._instance)
         obj.postinit(values)
 
-        obj = objects.DictValues(obj)
-        return self._generic_dict_attribute(obj, "values")
+        values_obj = objects.DictValues(obj)
+        return self._generic_dict_attribute(values_obj, "values")
 
 
 class PropertyModel(ObjectModel):
