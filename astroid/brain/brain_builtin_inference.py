@@ -633,7 +633,11 @@ def infer_slice(node, context: InferenceContext | None = None):
         args.extend([None] * (3 - len(args)))
 
     slice_node = nodes.Slice(
-        lineno=node.lineno, col_offset=node.col_offset, parent=node.parent
+        lineno=node.lineno,
+        col_offset=node.col_offset,
+        parent=node.parent,
+        end_lineno=node.end_lineno,
+        end_col_offset=node.end_col_offset,
     )
     slice_node.postinit(*args)
     return slice_node

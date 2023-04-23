@@ -307,7 +307,17 @@ class ModuleModelTest(unittest.TestCase):
 
         init_ = next(ast_nodes[9].infer())
         assert isinstance(init_, bases.BoundMethod)
-        init_result = next(init_.infer_call_result(nodes.Call()))
+        init_result = next(
+            init_.infer_call_result(
+                nodes.Call(
+                    parent=None,
+                    lineno=None,
+                    col_offset=None,
+                    end_lineno=None,
+                    end_col_offset=None,
+                )
+            )
+        )
         assert isinstance(init_result, nodes.Const)
         assert init_result.value is None
 
@@ -485,7 +495,17 @@ class FunctionModelTest(unittest.TestCase):
 
         init_ = next(ast_nodes[9].infer())
         assert isinstance(init_, bases.BoundMethod)
-        init_result = next(init_.infer_call_result(nodes.Call()))
+        init_result = next(
+            init_.infer_call_result(
+                nodes.Call(
+                    parent=None,
+                    lineno=None,
+                    col_offset=None,
+                    end_lineno=None,
+                    end_col_offset=None,
+                )
+            )
+        )
         assert isinstance(init_result, nodes.Const)
         assert init_result.value is None
 

@@ -19,7 +19,13 @@ def _clone_node_with_lineno(
     cls = node.__class__
     other_fields = node._other_fields
     _astroid_fields = node._astroid_fields
-    init_params = {"lineno": lineno, "col_offset": node.col_offset, "parent": parent}
+    init_params = {
+        "lineno": lineno,
+        "col_offset": node.col_offset,
+        "parent": parent,
+        "end_lineno": node.end_lineno,
+        "end_col_offset": node.end_col_offset,
+    }
     postinit_params = {param: getattr(node, param) for param in _astroid_fields}
     if other_fields:
         init_params.update({param: getattr(node, param) for param in other_fields})
@@ -41,7 +47,11 @@ def _transform_formatted_value(  # pylint: disable=inconsistent-return-statement
     if node.value and node.value.lineno == 1:
         if node.lineno != node.value.lineno:
             new_node = nodes.FormattedValue(
-                lineno=node.lineno, col_offset=node.col_offset, parent=node.parent
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                parent=node.parent,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
             )
             new_value = _clone_node_with_lineno(
                 node=node.value, lineno=node.lineno, parent=new_node

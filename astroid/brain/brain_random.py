@@ -31,7 +31,13 @@ def _clone_node_with_lineno(node, parent, lineno):
     cls = node.__class__
     other_fields = node._other_fields
     _astroid_fields = node._astroid_fields
-    init_params = {"lineno": lineno, "col_offset": node.col_offset, "parent": parent}
+    init_params = {
+        "lineno": lineno,
+        "col_offset": node.col_offset,
+        "parent": parent,
+        "end_lineno": node.end_lineno,
+        "end_col_offset": node.end_col_offset,
+    }
     postinit_params = {param: getattr(node, param) for param in _astroid_fields}
     if other_fields:
         init_params.update({param: getattr(node, param) for param in other_fields})
@@ -67,7 +73,13 @@ def infer_random_sample(node, context: InferenceContext | None = None):
     except ValueError as exc:
         raise UseInferenceDefault from exc
 
-    new_node = List(lineno=node.lineno, col_offset=node.col_offset, parent=node.scope())
+    new_node = List(
+        lineno=node.lineno,
+        col_offset=node.col_offset,
+        parent=node.scope(),
+        end_lineno=node.end_lineno,
+        end_col_offset=node.end_col_offset,
+    )
     new_elts = [
         _clone_node_with_lineno(elt, parent=new_node, lineno=new_node.lineno)
         for elt in elts
