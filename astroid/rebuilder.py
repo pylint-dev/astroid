@@ -1795,7 +1795,13 @@ class TreeRebuilder:
                 parent=parent,
             )
         else:
-            newnode = nodes.TryExcept(node.lineno, node.col_offset, parent)
+            newnode = nodes.TryExcept(
+                node.lineno,
+                node.col_offset,
+                parent,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+            )
         newnode.postinit(
             [self.visit(child, newnode) for child in node.body],
             [self.visit(child, newnode) for child in node.handlers],
