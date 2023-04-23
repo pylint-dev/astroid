@@ -26,8 +26,8 @@ repos:
     rev: v3.3.1
     hooks:
       - id: pyupgrade
-        exclude: tests/testdata
-        args: [--py37-plus]
+        exclude: astroid/__init__.py|tests/testdata
+        args: [--py38-plus]
   - repo: https://github.com/Pierre-Sassoulas/black-disable-checker/
     rev: v1.1.3
     hooks:

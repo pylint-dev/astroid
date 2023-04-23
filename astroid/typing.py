@@ -4,18 +4,13 @@
 
 from __future__ import annotations
 
-import sys
-from typing import TYPE_CHECKING, Any, Callable, Generator, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Generator, TypedDict, TypeVar, Union
 
 if TYPE_CHECKING:
     from astroid import bases, exceptions, nodes, transforms, util
     from astroid.context import InferenceContext
     from astroid.interpreter._import import spec
 
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
 
 _NodesT = TypeVar("_NodesT", bound="nodes.NodeNG")
 

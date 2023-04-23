@@ -47,13 +47,12 @@ class cachedproperty:
     __slots__ = ("wrapped",)
 
     def __init__(self, wrapped):
-        if sys.version_info >= (3, 8):
-            warnings.warn(
-                "cachedproperty has been deprecated and will be removed in astroid 3.0 for Python 3.8+. "
-                "Use functools.cached_property instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
+        warnings.warn(
+            "cachedproperty has been deprecated and will be removed in astroid 3.0 for Python 3.8+. "
+            "Use functools.cached_property instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         try:
             wrapped.__name__  # noqa[B018]
         except AttributeError as exc:

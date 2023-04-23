@@ -10,8 +10,8 @@ Previously these were called Mixin nodes.
 from __future__ import annotations
 
 import itertools
-import sys
 from collections.abc import Iterator
+from functools import cached_property
 from typing import TYPE_CHECKING, ClassVar
 
 from astroid.exceptions import AttributeInferenceError
@@ -19,11 +19,6 @@ from astroid.nodes.node_ng import NodeNG
 
 if TYPE_CHECKING:
     from astroid import nodes
-
-if sys.version_info >= (3, 8):
-    from functools import cached_property
-else:
-    from astroid.decorators import cachedproperty as cached_property
 
 
 class Statement(NodeNG):

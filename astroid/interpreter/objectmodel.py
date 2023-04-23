@@ -26,10 +26,9 @@ from __future__ import annotations
 import itertools
 import os
 import pprint
-import sys
 import types
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import astroid
 from astroid import bases, nodes, util
@@ -37,11 +36,6 @@ from astroid.context import InferenceContext, copy_context
 from astroid.exceptions import AttributeInferenceError, InferenceError, NoDefault
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
 
 if TYPE_CHECKING:
     from astroid.objects import Property
@@ -115,7 +109,7 @@ class ObjectModel:
     def __contains__(self, name) -> bool:
         return name in self.attributes()
 
-    @lru_cache()  # noqa
+    @lru_cache  # noqa
     def attributes(self) -> list[str]:
         """Get the attributes which are exported by this object model."""
         return [o[LEN_OF_IMPL_PREFIX:] for o in dir(self) if o.startswith(IMPL_PREFIX)]

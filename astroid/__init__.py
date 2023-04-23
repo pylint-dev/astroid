@@ -181,7 +181,7 @@ from astroid.nodes import (  # pylint: disable=redefined-builtin (Ellipsis)
 from astroid.util import Uninferable
 
 # Performance hack for tokenize. See https://bugs.python.org/issue43014
-# Adapted from https://github.com/pylint-dev/pycodestyle/pull/993
+# Adapted from https://github.com/PyCQA/pycodestyle/pull/993
 if (
     not PY310_PLUS
     and callable(getattr(tokenize, "_compile", None))

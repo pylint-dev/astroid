@@ -5,14 +5,15 @@
 from __future__ import annotations
 
 import pprint
-import sys
 import warnings
 from collections.abc import Generator, Iterator
+from functools import cached_property
 from functools import singledispatch as _singledispatch
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    Literal,
     Tuple,
     Type,
     TypeVar,
@@ -39,15 +40,6 @@ from astroid.typing import InferenceErrorInfo, InferenceResult, InferFn
 if TYPE_CHECKING:
     from astroid import nodes
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
-
-if sys.version_info >= (3, 8):
-    from functools import cached_property
-else:
-    from astroid.decorators import cachedproperty as cached_property
 
 # Types for 'NodeNG.nodes_of_class()'
 _NodesT = TypeVar("_NodesT", bound="NodeNG")
