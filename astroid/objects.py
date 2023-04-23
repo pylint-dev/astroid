@@ -25,11 +25,10 @@ from astroid.exceptions import (
     MroError,
     SuperError,
 )
+from astroid.interpreter import objectmodel
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes, scoped_nodes
-from astroid.typing import InferenceResult
-
-objectmodel = util.lazy_import("interpreter.objectmodel")
+from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 if sys.version_info >= (3, 8):
     from functools import cached_property
@@ -70,16 +69,28 @@ class Super(node_classes.NodeNG):
     *scope* is the function where the super call is.
     """
 
-    # pylint: disable=unnecessary-lambda
-    special_attributes = util.lazy_descriptor(lambda: objectmodel.SuperModel())
+    special_attributes = objectmodel.SuperModel()
 
-    def __init__(self, mro_pointer, mro_type, self_class, scope):
+    def __init__(
+        self,
+        mro_pointer: SuccessfulInferenceResult,
+        mro_type: SuccessfulInferenceResult,
+        self_class: scoped_nodes.ClassDef,
+        scope: scoped_nodes.FunctionDef,
+        call: node_classes.Call,
+    ) -> None:
         self.type = mro_type
         self.mro_pointer = mro_pointer
         self._class_based = False
         self._self_class = self_class
         self._scope = scope
-        super().__init__()
+        super().__init__(
+            parent=scope,
+            lineno=scope.lineno,
+            col_offset=scope.col_offset,
+            end_lineno=scope.end_lineno,
+            end_col_offset=scope.end_col_offset,
+        )
 
     def _infer(self, context: InferenceContext | None = None, **kwargs: Any):
         yield self
@@ -249,8 +260,7 @@ class DictInstance(bases.Instance):
     that methods such as .values or .items can be properly inferred.
     """
 
-    # pylint: disable=unnecessary-lambda
-    special_attributes = util.lazy_descriptor(lambda: objectmodel.DictModel())
+    special_attributes = objectmodel.DictModel()
 
 
 # Custom objects tailored for dictionaries, which are used to
@@ -348,8 +358,7 @@ class Property(scoped_nodes.FunctionDef):
         # Assigned directly to prevent triggering the DeprecationWarning.
         self._doc = doc
 
-    # pylint: disable=unnecessary-lambda
-    special_attributes = util.lazy_descriptor(lambda: objectmodel.PropertyModel())
+    special_attributes = objectmodel.PropertyModel()
     type = "property"
 
     def pytype(self) -> Literal["builtins.property"]:
