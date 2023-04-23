@@ -14,7 +14,7 @@ import token
 from collections.abc import Callable, Generator
 from io import StringIO
 from tokenize import TokenInfo, generate_tokens
-from typing import TYPE_CHECKING, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Final, TypeVar, Union, cast, overload
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
@@ -23,12 +23,6 @@ from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 from astroid.nodes.utils import Position
 from astroid.typing import SuccessfulInferenceResult
-
-if sys.version_info >= (3, 8):
-    from typing import Final
-else:
-    from typing_extensions import Final
-
 
 REDIRECT: Final[dict[str, str]] = {
     "arguments": "Arguments",
@@ -74,16 +68,15 @@ class TreeRebuilder:
             self._parser_module = get_parser_module()
         else:
             self._parser_module = parser_module
-        self._module = self._parser_module.module
 
     def _get_doc(self, node: T_Doc) -> tuple[T_Doc, ast.Constant | ast.Str | None]:
         """Return the doc ast node."""
         try:
-            if node.body and isinstance(node.body[0], self._module.Expr):
+            if node.body and isinstance(node.body[0], ast.Expr):
                 first_value = node.body[0].value
-                if isinstance(first_value, self._module.Str) or (
+                if isinstance(first_value, ast.Str) or (
                     PY38_PLUS
-                    and isinstance(first_value, self._module.Constant)
+                    and isinstance(first_value, ast.Constant)
                     and isinstance(first_value.value, str)
                 ):
                     doc_ast_node = first_value
@@ -400,11 +393,9 @@ class TreeRebuilder:
         ) -> nodes.FormattedValue:
             ...
 
-        if sys.version_info >= (3, 8):
-
-            @overload
-            def visit(self, node: ast.NamedExpr, parent: NodeNG) -> nodes.NamedExpr:
-                ...
+        @overload
+        def visit(self, node: ast.NamedExpr, parent: NodeNG) -> nodes.NamedExpr:
+            ...
 
         if sys.version_info < (3, 9):
             # Not used in Python 3.9+
@@ -629,7 +620,6 @@ class TreeRebuilder:
         defaults = [self.visit(child, newnode) for child in node.defaults]
         varargannotation: NodeNG | None = None
         kwargannotation: NodeNG | None = None
-        posonlyargs: list[nodes.AssignName] = []
         if node.vararg:
             vararg = node.vararg.arg
             varargannotation = self.visit(node.vararg.annotation, newnode)
@@ -652,24 +642,19 @@ class TreeRebuilder:
             self.visit(arg.annotation, newnode) for arg in node.kwonlyargs
         ]
 
-        posonlyargs_annotations: list[NodeNG | None] = []
-        if PY38_PLUS:
-            posonlyargs = [self.visit(child, newnode) for child in node.posonlyargs]
-            posonlyargs_annotations = [
-                self.visit(arg.annotation, newnode) for arg in node.posonlyargs
-            ]
+        posonlyargs = [self.visit(child, newnode) for child in node.posonlyargs]
+        posonlyargs_annotations = [
+            self.visit(arg.annotation, newnode) for arg in node.posonlyargs
+        ]
         type_comment_args = [
             self.check_type_comment(child, parent=newnode) for child in node.args
         ]
         type_comment_kwonlyargs = [
             self.check_type_comment(child, parent=newnode) for child in node.kwonlyargs
         ]
-        type_comment_posonlyargs: list[NodeNG | None] = []
-        if PY38_PLUS:
-            type_comment_posonlyargs = [
-                self.check_type_comment(child, parent=newnode)
-                for child in node.posonlyargs
-            ]
+        type_comment_posonlyargs = [
+            self.check_type_comment(child, parent=newnode) for child in node.posonlyargs
+        ]
 
         newnode.postinit(
             args=args,
@@ -1038,15 +1023,12 @@ class TreeRebuilder:
             return None
         # /!\ node is actually an _ast.FunctionDef node while
         # parent is an astroid.nodes.FunctionDef node
-        if sys.version_info >= (3, 8):
-            # Set the line number of the first decorator for Python 3.8+.
-            lineno = node.decorator_list[0].lineno
-            end_lineno = node.decorator_list[-1].end_lineno
-            end_col_offset = node.decorator_list[-1].end_col_offset
-        else:
-            lineno = node.lineno
-            end_lineno = None
-            end_col_offset = None
+
+        # Set the line number of the first decorator for Python 3.8+.
+        lineno = node.decorator_list[0].lineno
+        end_lineno = node.decorator_list[-1].end_lineno
+        end_col_offset = node.decorator_list[-1].end_col_offset
+
         newnode = nodes.Decorators(
             lineno=lineno,
             col_offset=node.col_offset,
@@ -1455,23 +1437,19 @@ class TreeRebuilder:
         )
         return newnode
 
-    if sys.version_info >= (3, 8):
-
-        def visit_namedexpr(
-            self, node: ast.NamedExpr, parent: NodeNG
-        ) -> nodes.NamedExpr:
-            newnode = nodes.NamedExpr(
-                lineno=node.lineno,
-                col_offset=node.col_offset,
-                # end_lineno and end_col_offset added in 3.8
-                end_lineno=getattr(node, "end_lineno", None),
-                end_col_offset=getattr(node, "end_col_offset", None),
-                parent=parent,
-            )
-            newnode.postinit(
-                self.visit(node.target, newnode), self.visit(node.value, newnode)
-            )
-            return newnode
+    def visit_namedexpr(self, node: ast.NamedExpr, parent: NodeNG) -> nodes.NamedExpr:
+        newnode = nodes.NamedExpr(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            # end_lineno and end_col_offset added in 3.8
+            end_lineno=getattr(node, "end_lineno", None),
+            end_col_offset=getattr(node, "end_col_offset", None),
+            parent=parent,
+        )
+        newnode.postinit(
+            self.visit(node.target, newnode), self.visit(node.value, newnode)
+        )
+        return newnode
 
     if sys.version_info < (3, 9):
         # Not used in Python 3.9+.
@@ -1776,32 +1754,23 @@ class TreeRebuilder:
 
     def visit_tryexcept(self, node: ast.Try, parent: NodeNG) -> nodes.TryExcept:
         """Visit a TryExcept node by returning a fresh instance of it."""
-        if sys.version_info >= (3, 8):
-            # TryExcept excludes the 'finally' but that will be included in the
-            # end_lineno from 'node'. Therefore, we check all non 'finally'
-            # children to find the correct end_lineno and column.
-            end_lineno = node.end_lineno
-            end_col_offset = node.end_col_offset
-            all_children: list[ast.AST] = [*node.body, *node.handlers, *node.orelse]
-            for child in reversed(all_children):
-                end_lineno = child.end_lineno
-                end_col_offset = child.end_col_offset
-                break
-            newnode = nodes.TryExcept(
-                lineno=node.lineno,
-                col_offset=node.col_offset,
-                end_lineno=end_lineno,
-                end_col_offset=end_col_offset,
-                parent=parent,
-            )
-        else:
-            newnode = nodes.TryExcept(
-                node.lineno,
-                node.col_offset,
-                parent,
-                end_lineno=None,
-                end_col_offset=None,
-            )
+        # TryExcept excludes the 'finally' but that will be included in the
+        # end_lineno from 'node'. Therefore, we check all non 'finally'
+        # children to find the correct end_lineno and column.
+        end_lineno = node.end_lineno
+        end_col_offset = node.end_col_offset
+        all_children: list[ast.AST] = [*node.body, *node.handlers, *node.orelse]
+        for child in reversed(all_children):
+            end_lineno = child.end_lineno
+            end_col_offset = child.end_col_offset
+            break
+        newnode = nodes.TryExcept(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
         newnode.postinit(
             [self.visit(child, newnode) for child in node.body],
             [self.visit(child, newnode) for child in node.handlers],

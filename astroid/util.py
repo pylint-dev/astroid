@@ -5,16 +5,10 @@
 
 from __future__ import annotations
 
-import sys
 import warnings
-from typing import Any
+from typing import Any, Final, Literal
 
 import lazy_object_proxy
-
-if sys.version_info >= (3, 8):
-    from typing import Final, Literal
-else:
-    from typing_extensions import Final, Literal
 
 
 def lazy_descriptor(obj):

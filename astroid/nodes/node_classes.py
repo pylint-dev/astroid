@@ -8,12 +8,20 @@ from __future__ import annotations
 
 import abc
 import itertools
-import sys
 import typing
 import warnings
 from collections.abc import Generator, Iterable, Iterator, Mapping
-from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar, Union
+from functools import cached_property, lru_cache
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from astroid import decorators, util
 from astroid.bases import Instance, _infer_stmts
@@ -39,19 +47,9 @@ from astroid.typing import (
     SuccessfulInferenceResult,
 )
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
-
 if TYPE_CHECKING:
     from astroid import nodes
     from astroid.nodes import LocalsDictNodeNG
-
-if sys.version_info >= (3, 8):
-    from functools import cached_property
-else:
-    from astroid.decorators import cachedproperty as cached_property
 
 
 def _is_const(value) -> bool:
@@ -354,7 +352,7 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
 class LookupMixIn(NodeNG):
     """Mixin to look up a name in the right scope."""
 
-    @lru_cache()  # noqa
+    @lru_cache  # noqa
     def lookup(self, name: str) -> tuple[LocalsDictNodeNG, list[NodeNG]]:
         """Lookup where the given variable is assigned.
 
