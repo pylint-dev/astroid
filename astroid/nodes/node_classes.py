@@ -2052,6 +2052,23 @@ class EmptyNode(_base_nodes.NoChildrenNode):
 
     object = None
 
+    def __init__(
+        self,
+        lineno: None = None,
+        col_offset: None = None,
+        parent: None = None,
+        *,
+        end_lineno: None = None,
+        end_col_offset: None = None,
+    ) -> None:
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
     def has_underlying_object(self) -> bool:
         return self.object is not None and self.object is not _EMPTY_OBJECT_MARKER
 
