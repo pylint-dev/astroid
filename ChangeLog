@@ -10,6 +10,8 @@ Release date: TBA
 
   Closes #1780
 
+* Reduce file system access in ``ast_from_file()``.
+
 * ``nodes.FunctionDef`` no longer inherits from ``nodes.Lambda``.
   This is a breaking change but considered a bug fix as the nodes did not share the same
   API and were not interchangeable.
