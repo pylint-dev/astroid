@@ -83,6 +83,8 @@ Release date: TBA
 
 * Remove support for Python 3.7.
 
+  Refs #2137
+
 
 What's New in astroid 2.15.4?
 =============================
