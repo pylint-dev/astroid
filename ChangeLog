@@ -6,6 +6,10 @@ What's New in astroid 2.16.0?
 =============================
 Release date: TBA
 
+* Remove support for Python 3.7.
+
+  Refs #2137
+
 * Remove ``@cached`` decorator (just use ``@cached_property`` from the stdlib).
 
   Closes #1780
@@ -80,10 +84,6 @@ Release date: TBA
 * ``infer_property()`` now observes the same property-specific workaround as ``infer_functiondef``.
 
   Refs #1490
-
-* Remove support for Python 3.7.
-
-  Refs #2137
 
 
 What's New in astroid 2.15.4?
