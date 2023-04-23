@@ -70,6 +70,9 @@ Release date: TBA
 
 * Remove dependency on ``wrapt``.
 
+* Remove dependency on ``lazy_object_proxy``. This includes the removal
+  of the assosicated ``lazy_import``, ``lazy_descriptor`` and ``proxy_alias`` utility functions.
+
 * ``CallSite._unpack_args`` and ``CallSite._unpack_keywords`` now use ``safe_infer()`` for
   better inference and fewer false positives.
 
