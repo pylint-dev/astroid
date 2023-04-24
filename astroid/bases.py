@@ -33,7 +33,7 @@ from astroid.typing import (
     InferenceResult,
     SuccessfulInferenceResult,
 )
-from astroid.util import Uninferable, UninferableBase, lazy_descriptor
+from astroid.util import Uninferable, UninferableBase
 
 if TYPE_CHECKING:
     from astroid.constraint import Constraint
@@ -633,7 +633,10 @@ class Generator(BaseInstance):
     Proxied class is set once for all in raw_building.
     """
 
-    special_attributes = lazy_descriptor(objectmodel.GeneratorModel)
+    # We defer initialization of special_attributes to the __init__ method since the constructor
+    # of GeneratorModel requires the raw_building to be complete
+    # TODO: This should probably be refactored.
+    special_attributes: objectmodel.GeneratorModel
 
     def __init__(
         self, parent=None, generator_initial_context: InferenceContext | None = None
@@ -641,6 +644,9 @@ class Generator(BaseInstance):
         super().__init__()
         self.parent = parent
         self._call_context = copy_context(generator_initial_context)
+
+        # See comment above: this is a deferred initialization.
+        Generator.special_attributes = objectmodel.GeneratorModel()
 
     def infer_yield_types(self):
         yield from self.parent.infer_yield_result(self._call_context)

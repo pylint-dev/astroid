@@ -29,7 +29,6 @@ classifiers = [
 ]
 requires-python = ">=3.8.0"
 dependencies = [
-    "lazy_object_proxy>=1.4.0",
     "typing-extensions>=4.0.0;python_version<'3.11'",
 ]
 dynamic = ["version"]
@@ -71,7 +70,6 @@ module = [
     "_io.*",
     "gi.*",
     "importlib.*",
-    "lazy_object_proxy.*",
     "nose.*",
     "numpy.*",
     "pytest",
