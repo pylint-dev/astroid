@@ -117,7 +117,7 @@ class TreeRebuilder:
         """
         if not self._data:
             return None
-        end_lineno: int | None = getattr(node, "end_lineno", None)
+        end_lineno = node.end_lineno
         if node.body:
             end_lineno = node.body[0].lineno
         # pylint: disable-next=unsubscriptable-object
@@ -380,28 +380,6 @@ class TreeRebuilder:
         def visit(self, node: ast.Nonlocal, parent: NodeNG) -> nodes.Nonlocal:
             ...
 
-        if sys.version_info < (3, 8):
-            # Not used in Python 3.8+
-            @overload
-            def visit(self, node: ast.Ellipsis, parent: NodeNG) -> nodes.Const:
-                ...
-
-            @overload
-            def visit(self, node: ast.NameConstant, parent: NodeNG) -> nodes.Const:
-                ...
-
-            @overload
-            def visit(self, node: ast.Str, parent: NodeNG) -> nodes.Const:
-                ...
-
-            @overload
-            def visit(self, node: ast.Bytes, parent: NodeNG) -> nodes.Const:
-                ...
-
-            @overload
-            def visit(self, node: ast.Num, parent: NodeNG) -> nodes.Const:
-                ...
-
         @overload
         def visit(self, node: ast.Constant, parent: NodeNG) -> nodes.Const:
             ...
@@ -631,9 +609,8 @@ class TreeRebuilder:
         newnode = nodes.Assert(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         msg: NodeNG | None = None
@@ -656,12 +633,11 @@ class TreeRebuilder:
             | nodes.AsyncWith
         ),
     ) -> NodeNG | None:
-        type_comment = getattr(node, "type_comment", None)  # Added in Python 3.8
-        if not type_comment:
+        if not node.type_comment:
             return None
 
         try:
-            type_comment_ast = self._parser_module.parse(type_comment)
+            type_comment_ast = self._parser_module.parse(node.type_comment)
         except SyntaxError:
             # Invalid type comment, just skip it.
             return None
@@ -680,12 +656,11 @@ class TreeRebuilder:
     def check_function_type_comment(
         self, node: ast.FunctionDef | ast.AsyncFunctionDef, parent: NodeNG
     ) -> tuple[NodeNG | None, list[NodeNG]] | None:
-        type_comment = getattr(node, "type_comment", None)  # Added in Python 3.8
-        if not type_comment:
+        if not node.type_comment:
             return None
 
         try:
-            type_comment_ast = parse_function_type_comment(type_comment)
+            type_comment_ast = parse_function_type_comment(node.type_comment)
         except SyntaxError:
             # Invalid type comment, just skip it.
             return None
@@ -714,9 +689,8 @@ class TreeRebuilder:
         newnode = nodes.Await(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(value=self.visit(node.value, newnode))
@@ -730,9 +704,8 @@ class TreeRebuilder:
         newnode = nodes.Assign(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         type_annotation = self.check_type_comment(node, parent=newnode)
@@ -748,9 +721,8 @@ class TreeRebuilder:
         newnode = nodes.AnnAssign(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -784,9 +756,8 @@ class TreeRebuilder:
             name=node_name,
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         self._save_assignment(newnode)
@@ -798,9 +769,8 @@ class TreeRebuilder:
             op=self._parser_module.bin_op_classes[type(node.op)] + "=",
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -814,9 +784,8 @@ class TreeRebuilder:
             op=self._parser_module.bin_op_classes[type(node.op)],
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -830,9 +799,8 @@ class TreeRebuilder:
             op=self._parser_module.bool_op_classes[type(node.op)],
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit([self.visit(child, newnode) for child in node.values])
@@ -843,9 +811,8 @@ class TreeRebuilder:
         return nodes.Break(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
 
@@ -854,9 +821,8 @@ class TreeRebuilder:
         newnode = nodes.Call(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -875,9 +841,8 @@ class TreeRebuilder:
             name=node.name,
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         metaclass = None
@@ -907,9 +872,8 @@ class TreeRebuilder:
         return nodes.Continue(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
 
@@ -918,9 +882,8 @@ class TreeRebuilder:
         newnode = nodes.Compare(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -990,9 +953,8 @@ class TreeRebuilder:
         newnode = nodes.Delete(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit([self.visit(child, newnode) for child in node.targets])
@@ -1009,9 +971,8 @@ class TreeRebuilder:
                 rebuilt_key = nodes.DictUnpack(
                     lineno=rebuilt_value.lineno,
                     col_offset=rebuilt_value.col_offset,
-                    # end_lineno and end_col_offset added in 3.8
-                    end_lineno=getattr(rebuilt_value, "end_lineno", None),
-                    end_col_offset=getattr(rebuilt_value, "end_col_offset", None),
+                    end_lineno=rebuilt_value.end_lineno,
+                    end_col_offset=rebuilt_value.end_col_offset,
                     parent=parent,
                 )
             else:
@@ -1023,9 +984,8 @@ class TreeRebuilder:
         newnode = nodes.Dict(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         items: list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]] = list(
@@ -1039,9 +999,8 @@ class TreeRebuilder:
         newnode = nodes.DictComp(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -1056,9 +1015,8 @@ class TreeRebuilder:
         newnode = nodes.Expr(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(self.visit(node.value, newnode))
@@ -1071,9 +1029,8 @@ class TreeRebuilder:
         newnode = nodes.ExceptHandler(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -1107,9 +1064,8 @@ class TreeRebuilder:
         newnode = cls(
             lineno=node.lineno,
             col_offset=col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         type_annotation = self.check_type_comment(node, parent=newnode)
@@ -1136,9 +1092,8 @@ class TreeRebuilder:
             level=node.level or None,
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         # store From names to add them to locals after building
@@ -1185,9 +1140,8 @@ class TreeRebuilder:
             name=node.name,
             lineno=lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         decorators = self.visit_decorators(node, newnode)
@@ -1226,9 +1180,8 @@ class TreeRebuilder:
         newnode = nodes.GeneratorExp(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -1250,9 +1203,8 @@ class TreeRebuilder:
                 attrname=node.attr,
                 lineno=node.lineno,
                 col_offset=node.col_offset,
-                # end_lineno and end_col_offset added in 3.8
-                end_lineno=getattr(node, "end_lineno", None),
-                end_col_offset=getattr(node, "end_col_offset", None),
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
                 parent=parent,
             )
         elif context == Context.Store:
@@ -1260,9 +1212,8 @@ class TreeRebuilder:
                 attrname=node.attr,
                 lineno=node.lineno,
                 col_offset=node.col_offset,
-                # end_lineno and end_col_offset added in 3.8
-                end_lineno=getattr(node, "end_lineno", None),
-                end_col_offset=getattr(node, "end_col_offset", None),
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
                 parent=parent,
             )
             # Prohibit a local save if we are in an ExceptHandler.
@@ -1276,9 +1227,8 @@ class TreeRebuilder:
                 attrname=node.attr,
                 lineno=node.lineno,
                 col_offset=node.col_offset,
-                # end_lineno and end_col_offset added in 3.8
-                end_lineno=getattr(node, "end_lineno", None),
-                end_col_offset=getattr(node, "end_col_offset", None),
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
                 parent=parent,
             )
         newnode.postinit(self.visit(node.value, newnode))
@@ -1290,9 +1240,8 @@ class TreeRebuilder:
             names=node.names,
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         if self._global_names:  # global at the module level, no effect
@@ -1305,9 +1254,8 @@ class TreeRebuilder:
         newnode = nodes.If(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -1322,9 +1270,8 @@ class TreeRebuilder:
         newnode = nodes.IfExp(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -1341,9 +1288,8 @@ class TreeRebuilder:
             names=names,
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         # save import names in parent's locals:
@@ -1356,9 +1302,8 @@ class TreeRebuilder:
         newnode = nodes.JoinedStr(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit([self.visit(child, newnode) for child in node.values])
@@ -1370,9 +1315,8 @@ class TreeRebuilder:
         newnode = nodes.FormattedValue(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -1386,9 +1330,8 @@ class TreeRebuilder:
         newnode = nodes.NamedExpr(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -1430,9 +1373,8 @@ class TreeRebuilder:
         newnode = nodes.Lambda(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(self.visit(node.args, newnode), self.visit(node.body, newnode))
@@ -1445,9 +1387,8 @@ class TreeRebuilder:
             ctx=context,
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit([self.visit(child, newnode) for child in node.elts])
@@ -1458,9 +1399,8 @@ class TreeRebuilder:
         newnode = nodes.ListComp(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -1480,9 +1420,8 @@ class TreeRebuilder:
                 name=node.id,
                 lineno=node.lineno,
                 col_offset=node.col_offset,
-                # end_lineno and end_col_offset added in 3.8
-                end_lineno=getattr(node, "end_lineno", None),
-                end_col_offset=getattr(node, "end_col_offset", None),
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
                 parent=parent,
             )
         elif context == Context.Store:
@@ -1490,9 +1429,8 @@ class TreeRebuilder:
                 name=node.id,
                 lineno=node.lineno,
                 col_offset=node.col_offset,
-                # end_lineno and end_col_offset added in 3.8
-                end_lineno=getattr(node, "end_lineno", None),
-                end_col_offset=getattr(node, "end_col_offset", None),
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
                 parent=parent,
             )
         else:
@@ -1500,9 +1438,8 @@ class TreeRebuilder:
                 name=node.id,
                 lineno=node.lineno,
                 col_offset=node.col_offset,
-                # end_lineno and end_col_offset added in 3.8
-                end_lineno=getattr(node, "end_lineno", None),
-                end_col_offset=getattr(node, "end_col_offset", None),
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
                 parent=parent,
             )
         # XXX REMOVE me :
@@ -1517,9 +1454,8 @@ class TreeRebuilder:
             names=node.names,
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
 
@@ -1530,62 +1466,18 @@ class TreeRebuilder:
             kind=node.kind,
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
-
-    if sys.version_info < (3, 8):
-        # Not used in Python 3.8+.
-        def visit_ellipsis(self, node: ast.Ellipsis, parent: NodeNG) -> nodes.Const:
-            """Visit an Ellipsis node by returning a fresh instance of Const."""
-            return nodes.Const(
-                value=Ellipsis,
-                lineno=node.lineno,
-                col_offset=node.col_offset,
-                parent=parent,
-            )
-
-        def visit_nameconstant(
-            self, node: ast.NameConstant, parent: NodeNG
-        ) -> nodes.Const:
-            # For singleton values True / False / None
-            return nodes.Const(
-                node.value,
-                node.lineno,
-                node.col_offset,
-                parent,
-            )
-
-        def visit_str(self, node: ast.Str | ast.Bytes, parent: NodeNG) -> nodes.Const:
-            """Visit a String/Bytes node by returning a fresh instance of Const."""
-            return nodes.Const(
-                node.s,
-                node.lineno,
-                node.col_offset,
-                parent,
-            )
-
-        visit_bytes = visit_str
-
-        def visit_num(self, node: ast.Num, parent: NodeNG) -> nodes.Const:
-            """Visit a Num node by returning a fresh instance of Const."""
-            return nodes.Const(
-                node.n,
-                node.lineno,
-                node.col_offset,
-                parent,
-            )
 
     def visit_pass(self, node: ast.Pass, parent: NodeNG) -> nodes.Pass:
         """Visit a Pass node by returning a fresh instance of it."""
         return nodes.Pass(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
 
@@ -1594,9 +1486,8 @@ class TreeRebuilder:
         newnode = nodes.Raise(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         # no traceback; anyway it is not used in Pylint
@@ -1611,9 +1502,8 @@ class TreeRebuilder:
         newnode = nodes.Return(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(self.visit(node.value, newnode))
@@ -1624,9 +1514,8 @@ class TreeRebuilder:
         newnode = nodes.Set(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit([self.visit(child, newnode) for child in node.elts])
@@ -1637,9 +1526,8 @@ class TreeRebuilder:
         newnode = nodes.SetComp(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -1672,9 +1560,8 @@ class TreeRebuilder:
             ctx=context,
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -1689,9 +1576,8 @@ class TreeRebuilder:
             ctx=context,
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(self.visit(node.value, newnode))
@@ -1732,9 +1618,8 @@ class TreeRebuilder:
             newnode = nodes.TryFinally(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
-                # end_lineno and end_col_offset added in 3.8
-                end_lineno=getattr(node, "end_lineno", None),
-                end_col_offset=getattr(node, "end_col_offset", None),
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
                 parent=parent,
             )
             body: list[NodeNG | nodes.TryExcept]
@@ -1752,8 +1637,8 @@ class TreeRebuilder:
         newnode = nodes.TryStar(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -1771,9 +1656,8 @@ class TreeRebuilder:
             ctx=context,
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit([self.visit(child, newnode) for child in node.elts])
@@ -1785,9 +1669,8 @@ class TreeRebuilder:
             op=self._parser_module.unary_op_classes[node.op.__class__],
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(self.visit(node.operand, newnode))
@@ -1798,9 +1681,8 @@ class TreeRebuilder:
         newnode = nodes.While(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
@@ -1836,9 +1718,8 @@ class TreeRebuilder:
         newnode = cls(
             lineno=node.lineno,
             col_offset=col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
 
@@ -1863,9 +1744,8 @@ class TreeRebuilder:
         newnode = nodes.Yield(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(self.visit(node.value, newnode))
@@ -1875,9 +1755,8 @@ class TreeRebuilder:
         newnode = nodes.YieldFrom(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            # end_lineno and end_col_offset added in 3.8
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(self.visit(node.value, newnode))
