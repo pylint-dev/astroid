@@ -80,6 +80,7 @@ Nodes
    astroid.nodes.Subscript
    astroid.nodes.TryExcept
    astroid.nodes.TryFinally
+   astroid.nodes.TryStar
    astroid.nodes.Tuple
    astroid.nodes.UnaryOp
    astroid.nodes.Unknown
@@ -229,6 +230,8 @@ Nodes
 .. autoclass:: astroid.nodes.TryExcept
 
 .. autoclass:: astroid.nodes.TryFinally
+
+.. autoclass:: astroid.nodes.TryStar
 
 .. autoclass:: astroid.nodes.Tuple
 

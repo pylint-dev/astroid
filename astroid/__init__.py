@@ -163,6 +163,7 @@ from astroid.nodes import (  # pylint: disable=redefined-builtin (Ellipsis)
     Subscript,
     TryExcept,
     TryFinally,
+    TryStar,
     Tuple,
     UnaryOp,
     Unknown,
