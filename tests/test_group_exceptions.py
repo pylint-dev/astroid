@@ -54,9 +54,8 @@ def test_group_exceptions() -> None:
 
 @pytest.mark.skipif(not PY311_PLUS, reason="Requires Python 3.11 or higher")
 def test_star_exceptions() -> None:
-    node = extract_node(
-        textwrap.dedent(
-            """
+    code = textwrap.dedent(
+        """
     try:
         raise ExceptionGroup("group", [ValueError(654)])
     except* ValueError:
@@ -67,9 +66,10 @@ def test_star_exceptions() -> None:
         sys.exit(127)
     finally:
         sys.exit(0)"""
-        )
     )
+    node = extract_node(code)
     assert isinstance(node, TryStar)
+    assert node.as_string() == code.replace('"', "'").strip()
     assert isinstance(node.body[0], Raise)
     assert node.block_range(1) == (1, 11)
     assert node.block_range(2) == (2, 2)

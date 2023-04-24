@@ -100,10 +100,20 @@ Release date: TBA
   Refs #2141
 
 
-What's New in astroid 2.15.4?
+What's New in astroid 2.15.5?
 =============================
 Release date: TBA
 
+
+
+What's New in astroid 2.15.4?
+=============================
+Release date: 2023-04-24
+
+* Add visitor function for ``TryStar`` to ``AsStringVisitor`` and
+  add ``TryStar`` to ``astroid.nodes.ALL_NODE_CLASSES``.
+
+  Refs #2142
 
 
 What's New in astroid 2.15.3?
