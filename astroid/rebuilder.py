@@ -507,6 +507,12 @@ class TreeRebuilder:
         ) -> nodes.TryExcept | nodes.TryFinally:
             ...
 
+        if sys.version_info >= (3, 11):
+
+            @overload
+            def visit(self, node: ast.TryStar, parent: NodeNG) -> nodes.TryStar:
+                ...
+
         @overload
         def visit(self, node: ast.Tuple, parent: NodeNG) -> nodes.Tuple:
             ...
