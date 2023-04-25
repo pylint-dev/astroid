@@ -121,7 +121,7 @@ Release date: TBA
 
   Refs #2141
 
-* Remove deprecated ``If.is_sys_guard`` and ``If.is_typing_guard`` methods.
+* Remove deprecated ``is_sys_guard`` and ``is_typing_guard`` methods.
 
   Refs #2153
 
