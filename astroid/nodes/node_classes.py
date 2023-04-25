@@ -3048,11 +3048,11 @@ class Try(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     def __init__(
         self,
         *,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        lineno: int,
+        col_offset: int,
+        end_lineno: int,
+        end_col_offset: int,
+        parent: NodeNG,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3090,10 +3090,10 @@ class Try(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     def postinit(
         self,
         *,
-        body: list[NodeNG] | None = None,
-        handlers: list[ExceptHandler] | None = None,
-        orelse: list[NodeNG] | None = None,
-        finalbody: list[NodeNG] | None = None,
+        body: list[NodeNG],
+        handlers: list[ExceptHandler],
+        orelse: list[NodeNG],
+        finalbody: list[NodeNG],
     ) -> None:
         """Do some setup after initialisation.
 
@@ -3105,14 +3105,10 @@ class Try(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
 
         :param finalbody: The contents of the ``finally`` block.
         """
-        if body:
-            self.body = body
-        if handlers:
-            self.handlers = handlers
-        if orelse:
-            self.orelse = orelse
-        if finalbody:
-            self.finalbody = finalbody
+        self.body = body
+        self.handlers = handlers
+        self.orelse = orelse
+        self.finalbody = finalbody
 
     def _infer_name(self, frame, name):
         return name
