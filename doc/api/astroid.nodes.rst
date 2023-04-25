@@ -37,11 +37,9 @@ Nodes
    astroid.nodes.Dict
    astroid.nodes.DictComp
    astroid.nodes.DictUnpack
-   astroid.nodes.Ellipsis
    astroid.nodes.EmptyNode
    astroid.nodes.ExceptHandler
    astroid.nodes.Expr
-   astroid.nodes.ExtSlice
    astroid.nodes.For
    astroid.nodes.FormattedValue
    astroid.nodes.FunctionDef
@@ -51,7 +49,6 @@ Nodes
    astroid.nodes.IfExp
    astroid.nodes.Import
    astroid.nodes.ImportFrom
-   astroid.nodes.Index
    astroid.nodes.JoinedStr
    astroid.nodes.Keyword
    astroid.nodes.Lambda
@@ -145,15 +142,11 @@ Nodes
 
 .. autoclass:: astroid.nodes.DictUnpack
 
-.. autoclass:: astroid.nodes.Ellipsis
-
 .. autoclass:: astroid.nodes.EmptyNode
 
 .. autoclass:: astroid.nodes.ExceptHandler
 
 .. autoclass:: astroid.nodes.Expr
-
-.. autoclass:: astroid.nodes.ExtSlice
 
 .. autoclass:: astroid.nodes.For
 
@@ -172,8 +165,6 @@ Nodes
 .. autoclass:: astroid.nodes.Import
 
 .. autoclass:: astroid.nodes.ImportFrom
-
-.. autoclass:: astroid.nodes.Index
 
 .. autoclass:: astroid.nodes.JoinedStr
 

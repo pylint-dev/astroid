@@ -6,7 +6,7 @@
 
 import warnings
 
-from astroid.nodes.node_classes import (  # pylint: disable=redefined-builtin (Ellipsis)
+from astroid.nodes.node_classes import (
     CONST_CLS,
     AnnAssign,
     Arguments,
@@ -34,12 +34,10 @@ from astroid.nodes.node_classes import (  # pylint: disable=redefined-builtin (E
     DelName,
     Dict,
     DictUnpack,
-    Ellipsis,
     EmptyNode,
     EvaluatedObject,
     ExceptHandler,
     Expr,
-    ExtSlice,
     For,
     FormattedValue,
     Global,
@@ -47,7 +45,6 @@ from astroid.nodes.node_classes import (  # pylint: disable=redefined-builtin (E
     IfExp,
     Import,
     ImportFrom,
-    Index,
     JoinedStr,
     Keyword,
     List,

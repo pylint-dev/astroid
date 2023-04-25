@@ -86,7 +86,7 @@ from astroid.objects import ExceptionInstance
 # and we need astroid/scoped_nodes and astroid/node_classes to work. So
 # importing with a wildcard would clash with astroid/nodes/scoped_nodes
 # and astroid/nodes/node_classes.
-from astroid.nodes import (  # pylint: disable=redefined-builtin (Ellipsis)
+from astroid.nodes import (
     CONST_CLS,
     AnnAssign,
     Arguments,
@@ -117,12 +117,10 @@ from astroid.nodes import (  # pylint: disable=redefined-builtin (Ellipsis)
     Dict,
     DictComp,
     DictUnpack,
-    Ellipsis,
     EmptyNode,
     EvaluatedObject,
     ExceptHandler,
     Expr,
-    ExtSlice,
     For,
     FormattedValue,
     FunctionDef,
@@ -132,7 +130,6 @@ from astroid.nodes import (  # pylint: disable=redefined-builtin (Ellipsis)
     IfExp,
     Import,
     ImportFrom,
-    Index,
     JoinedStr,
     Keyword,
     Lambda,
