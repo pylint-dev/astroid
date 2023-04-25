@@ -121,13 +121,18 @@ Release date: TBA
 
   Refs #2141
 
+* Remove deprecated ``Ellipsis``, ``ExtSlice``, ``Index`` nodes.
+
+  Refs #2152
+
 * Remove deprecated ``is_sys_guard`` and ``is_typing_guard`` methods.
 
   Refs #2153
 
-* Remove deprecated ``Ellipsis``, ``ExtSlice``, ``Index`` nodes.
+* Remove deprecated ``doc`` attribute for ``Module``, ``ClassDef``, and ``FunctionDef``.
+  Use the ``doc_node`` attribute instead.
 
-  Refs #2152
+  Refs #2154
 
 
 What's New in astroid 2.15.5?

@@ -50,17 +50,11 @@ class RawBuildingTC(unittest.TestCase):
     def test_build_class(self) -> None:
         node = build_class("MyClass")
         self.assertEqual(node.name, "MyClass")
-        with pytest.warns(DeprecationWarning) as records:
-            self.assertEqual(node.doc, None)
-            assert len(records) == 1
         self.assertEqual(node.doc_node, None)
 
     def test_build_function(self) -> None:
         node = build_function("MyFunction")
         self.assertEqual(node.name, "MyFunction")
-        with pytest.warns(DeprecationWarning) as records:
-            self.assertEqual(node.doc, None)
-            assert len(records) == 1
         self.assertEqual(node.doc_node, None)
 
     def test_build_function_args(self) -> None:

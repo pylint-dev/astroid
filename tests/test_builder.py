@@ -751,9 +751,6 @@ class FileBuildTest(unittest.TestCase):
         """Test base properties and method of an astroid module."""
         module = self.module
         self.assertEqual(module.name, "data.module")
-        with pytest.warns(DeprecationWarning) as records:
-            self.assertEqual(module.doc, "test module for astroid\n")
-            assert len(records) == 1
         assert isinstance(module.doc_node, nodes.Const)
         self.assertEqual(module.doc_node.value, "test module for astroid\n")
         self.assertEqual(module.fromlineno, 0)
@@ -797,9 +794,6 @@ class FileBuildTest(unittest.TestCase):
         module = self.module
         function = module["global_access"]
         self.assertEqual(function.name, "global_access")
-        with pytest.warns(DeprecationWarning) as records:
-            self.assertEqual(function.doc, "function test")
-            assert len(records)
         assert isinstance(function.doc_node, nodes.Const)
         self.assertEqual(function.doc_node.value, "function test")
         self.assertEqual(function.fromlineno, 11)
@@ -824,9 +818,6 @@ class FileBuildTest(unittest.TestCase):
         module = self.module
         klass = module["YO"]
         self.assertEqual(klass.name, "YO")
-        with pytest.warns(DeprecationWarning) as records:
-            self.assertEqual(klass.doc, "hehe\n    haha")
-            assert len(records) == 1
         assert isinstance(klass.doc_node, nodes.Const)
         self.assertEqual(klass.doc_node.value, "hehe\n    haha")
         self.assertEqual(klass.fromlineno, 25)
@@ -882,9 +873,6 @@ class FileBuildTest(unittest.TestCase):
         method = klass2["method"]
         self.assertEqual(method.name, "method")
         self.assertEqual([n.name for n in method.args.args], ["self"])
-        with pytest.warns(DeprecationWarning) as records:
-            self.assertEqual(method.doc, "method\n        test")
-            assert len(records) == 1
         assert isinstance(method.doc_node, nodes.Const)
         self.assertEqual(method.doc_node.value, "method\n        test")
         self.assertEqual(method.fromlineno, 48)

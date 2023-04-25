@@ -1777,9 +1777,6 @@ class TestFunctoolsPartial:
         assert isinstance(partial, objects.PartialFunction)
         assert isinstance(partial.doc_node, nodes.Const)
         assert partial.doc_node.value == "Docstring"
-        with pytest.warns(DeprecationWarning) as records:
-            assert partial.doc == "Docstring"
-            assert len(records) == 1
         assert partial.lineno == 3
         assert partial.col_offset == 0
 

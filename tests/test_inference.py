@@ -6440,9 +6440,6 @@ def test_property_docstring() -> None:
     assert isinstance(inferred, objects.Property)
     assert isinstance(inferred.doc_node, nodes.Const)
     assert inferred.doc_node.value == "Docstring"
-    with pytest.warns(DeprecationWarning) as records:
-        assert inferred.doc == "Docstring"
-        assert len(records) == 1
 
 
 def test_recursion_error_inferring_builtin_containers() -> None:

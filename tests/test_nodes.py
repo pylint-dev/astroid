@@ -1535,9 +1535,6 @@ def test_get_doc() -> None:
     """
     )
     node: nodes.FunctionDef = astroid.extract_node(code)  # type: ignore[assignment]
-    with pytest.warns(DeprecationWarning) as records:
-        assert node.doc == "Docstring"
-        assert len(records) == 1
     assert isinstance(node.doc_node, nodes.Const)
     assert node.doc_node.value == "Docstring"
     assert node.doc_node.lineno == 2
@@ -1553,9 +1550,6 @@ def test_get_doc() -> None:
     """
     )
     node = astroid.extract_node(code)
-    with pytest.warns(DeprecationWarning) as records:
-        assert node.doc is None
-        assert len(records) == 1
     assert node.doc_node is None
 
 
