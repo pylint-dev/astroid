@@ -121,6 +121,10 @@ Release date: TBA
 
   Refs #2141
 
+* Remove deprecated ``If.is_sys_guard`` and ``If.is_typing_guard`` methods.
+
+  Refs #2153
+
 
 What's New in astroid 2.15.5?
 =============================
