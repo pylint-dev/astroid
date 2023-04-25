@@ -24,7 +24,12 @@ Release date: TBA
   We have tried to minimize the amount of breaking changes caused by this change
   but some are unavoidable.
 
-* Improved signature of the ``__init__`` and ``__postinit__`` methods of the following nodes:
+* Improved signature of the ``__init__`` and ``__postinit__`` methods of most nodes.
+  This includes makes ``lineno``, ``col_offset``, ``end_lineno``, ``end_col_offset`` and ``parent``
+  required arguments for ``nodes.NodeNG`` and its subclasses.
+  For most other nodes, arguments of their ``__postinit__`` methods have been made required to better
+  represent how they would normally be constructed by the standard library ``ast`` module.
+  The following nodes were changed or updated:
   - ``nodes.AnnAssign``
   - ``nodes.Arguments``
   - ``nodes.Assign``
@@ -55,12 +60,13 @@ Release date: TBA
   - ``nodes.ListComp``
   - ``nodes.Module``
   - ``nodes.Name``
+  - ``nodes.NodeNG``
   - ``nodes.Raise``
   - ``nodes.Return``
   - ``nodes.SetComp``
   - ``nodes.Slice``
   - ``nodes.Starred``
-  - ``nodes.Super``, we also added the ``call`` parameter to its ``__init__`` method.
+  - ``objects.Super``, we also added the ``call`` parameter to its ``__init__`` method.
   - ``nodes.TryExcept``
   - ``nodes.Subscript``
   - ``nodes.UnaryOp``

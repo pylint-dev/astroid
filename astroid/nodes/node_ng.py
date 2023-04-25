@@ -84,39 +84,26 @@ class NodeNG:
 
     def __init__(
         self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        lineno: int | None,
+        col_offset: int | None,
+        parent: NodeNG | None,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
-        self.lineno: int | None = lineno
+        self.lineno = lineno
         """The line that this node appears on in the source code."""
 
-        self.col_offset: int | None = col_offset
+        self.col_offset = col_offset
         """The column that this node appears on in the source code."""
 
-        self.parent: NodeNG | None = parent
+        self.parent = parent
         """The parent node in the syntax tree."""
 
-        self.end_lineno: int | None = end_lineno
+        self.end_lineno = end_lineno
         """The last line this node appears on in the source code."""
 
-        self.end_col_offset: int | None = end_col_offset
+        self.end_col_offset = end_col_offset
         """The end column this node appears on in the source code.
 
         Note: This is after the last symbol.

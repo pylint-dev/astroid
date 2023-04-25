@@ -87,7 +87,13 @@ class TestTransforms(unittest.TestCase):
 
     def test_transform_patches_locals(self) -> None:
         def transform_function(node: FunctionDef) -> None:
-            assign = nodes.Assign()
+            assign = nodes.Assign(
+                parent=node,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+            )
             name = nodes.AssignName(
                 name="value",
                 lineno=0,

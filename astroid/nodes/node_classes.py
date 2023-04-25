@@ -4045,6 +4045,8 @@ class EvaluatedObject(NodeNG):
             lineno=self.original.lineno,
             col_offset=self.original.col_offset,
             parent=self.original.parent,
+            end_lineno=self.original.end_lineno,
+            end_col_offset=self.original.end_col_offset,
         )
 
     def _infer(
@@ -4132,7 +4134,13 @@ class MatchCase(_base_nodes.MultiLineBlockNode):
         self.pattern: Pattern
         self.guard: NodeNG | None
         self.body: list[NodeNG]
-        super().__init__(parent=parent)
+        super().__init__(
+            parent=parent,
+            lineno=None,
+            col_offset=None,
+            end_lineno=None,
+            end_col_offset=None,
+        )
 
     def postinit(
         self,
