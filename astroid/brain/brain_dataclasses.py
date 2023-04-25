@@ -314,7 +314,9 @@ def _generate_dataclass_init(  # pylint: disable=too-many-locals
             # But we can't represent those as string
             try:
                 # Call str to make sure also Uninferable gets stringified
-                default_str = str(next(property_node.infer_call_result()).as_string())
+                default_str = str(
+                    next(property_node.infer_call_result(None)).as_string()
+                )
             except (InferenceError, StopIteration):
                 pass
         else:

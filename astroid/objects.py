@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from collections.abc import Generator, Iterator
 from functools import cached_property
-from typing import Any, Literal, TypeVar
+from typing import Any, Literal, NoReturn, TypeVar
 
 from astroid import bases, decorators, util
 from astroid.context import InferenceContext
@@ -308,7 +308,11 @@ class PartialFunction(scoped_nodes.FunctionDef):
 
         self.filled_positionals = len(self.filled_args)
 
-    def infer_call_result(self, caller=None, context: InferenceContext | None = None):
+    def infer_call_result(
+        self,
+        caller: SuccessfulInferenceResult | None,
+        context: InferenceContext | None = None,
+    ) -> Iterator[InferenceResult]:
         if context:
             current_passed_keywords = {
                 keyword for (keyword, _) in context.callcontext.keywords
@@ -356,7 +360,11 @@ class Property(scoped_nodes.FunctionDef):
     def pytype(self) -> Literal["builtins.property"]:
         return "builtins.property"
 
-    def infer_call_result(self, caller=None, context: InferenceContext | None = None):
+    def infer_call_result(
+        self,
+        caller: SuccessfulInferenceResult | None,
+        context: InferenceContext | None = None,
+    ) -> NoReturn:
         raise InferenceError("Properties are not callable")
 
     def _infer(

@@ -24,6 +24,19 @@ Release date: TBA
   We have tried to minimize the amount of breaking changes caused by this change
   but some are unavoidable.
 
+* ``infer_call_result`` now shares the same interface across all implemenations. Namely:
+  ```python
+  def infer_call_result(
+                self,
+                caller: SuccessfulInferenceResult | None,
+                context: InferenceContext | None = None,
+            ) -> Iterator[InferenceResult]:
+  ```
+
+  This is a breaking change for ``nodes.FunctionDef`` where previously ``caller`` had a default of
+  ``None``. Passing ``None`` again will not create a behaviour change.
+  The breaking change allows us to better type and re-use the method within ``astroid``.
+
 * Improved signature of the ``__init__`` and ``__postinit__`` methods of most nodes.
   This includes makes ``lineno``, ``col_offset``, ``end_lineno``, ``end_col_offset`` and ``parent``
   required arguments for ``nodes.NodeNG`` and its subclasses.

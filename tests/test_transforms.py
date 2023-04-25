@@ -164,7 +164,7 @@ class TestTransforms(unittest.TestCase):
                 for decorator in node.decorators.nodes:
                     inferred = next(decorator.infer())
                     if inferred.qname() == "abc.abstractmethod":
-                        return next(node.infer_call_result())
+                        return next(node.infer_call_result(None))
             return None
 
         manager = MANAGER
