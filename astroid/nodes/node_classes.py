@@ -9,7 +9,6 @@ from __future__ import annotations
 import abc
 import itertools
 import typing
-import warnings
 from collections.abc import Generator, Iterable, Iterator, Mapping
 from functools import cached_property, lru_cache
 from typing import (
@@ -2482,59 +2481,6 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         """An If node can contain a Yield node in the test"""
         yield from self.test._get_yield_nodes_skip_lambdas()
         yield from super()._get_yield_nodes_skip_lambdas()
-
-    def is_sys_guard(self) -> bool:
-        """Return True if IF stmt is a sys.version_info guard.
-
-        >>> import astroid
-        >>> node = astroid.extract_node('''
-        import sys
-        if sys.version_info > (3, 8):
-            from typing import Literal
-        else:
-            from typing_extensions import Literal
-        ''')
-        >>> node.is_sys_guard()
-        True
-        """
-        warnings.warn(
-            "The 'is_sys_guard' function is deprecated and will be removed in astroid 3.0.0 "
-            "It has been moved to pylint and can be imported from 'pylint.checkers.utils' "
-            "starting with pylint 2.12",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        if isinstance(self.test, Compare):
-            value = self.test.left
-            if isinstance(value, Subscript):
-                value = value.value
-            if isinstance(value, Attribute) and value.as_string() == "sys.version_info":
-                return True
-
-        return False
-
-    def is_typing_guard(self) -> bool:
-        """Return True if IF stmt is a typing guard.
-
-        >>> import astroid
-        >>> node = astroid.extract_node('''
-        from typing import TYPE_CHECKING
-        if TYPE_CHECKING:
-            from xyz import a
-        ''')
-        >>> node.is_typing_guard()
-        True
-        """
-        warnings.warn(
-            "The 'is_typing_guard' function is deprecated and will be removed in astroid 3.0.0 "
-            "It has been moved to pylint and can be imported from 'pylint.checkers.utils' "
-            "starting with pylint 2.12",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return isinstance(
-            self.test, (Name, Attribute)
-        ) and self.test.as_string().endswith("TYPE_CHECKING")
 
 
 class IfExp(NodeNG):

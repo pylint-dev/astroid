@@ -121,6 +121,10 @@ Release date: TBA
 
   Refs #2141
 
+* Remove deprecated ``is_sys_guard`` and ``is_typing_guard`` methods.
+
+  Refs #2153
+
 * Remove deprecated ``Ellipsis``, ``ExtSlice``, ``Index`` nodes.
 
   Refs #2152
