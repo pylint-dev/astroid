@@ -201,7 +201,6 @@ class Module(LocalsDictNodeNG):
 
     _other_fields = (
         "name",
-        "doc",
         "file",
         "path",
         "package",
@@ -220,9 +219,6 @@ class Module(LocalsDictNodeNG):
     ) -> None:
         self.name = name
         """The name of the module."""
-
-        self._doc: str | None = None
-        """The module docstring."""
 
         self.file = file
         """The path to the file that this ast has been extracted from.
@@ -262,29 +258,6 @@ class Module(LocalsDictNodeNG):
     ):
         self.body = body
         self.doc_node = doc_node
-        if doc_node:
-            self._doc = doc_node.value
-
-    @property
-    def doc(self) -> str | None:
-        """The module docstring."""
-        warnings.warn(
-            "The 'Module.doc' attribute is deprecated, "
-            "use 'Module.doc_node' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._doc
-
-    @doc.setter
-    def doc(self, value: str | None) -> None:
-        warnings.warn(
-            "Setting the 'Module.doc' attribute is deprecated, "
-            "use 'Module.doc_node' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self._doc = value
 
     def _get_stream(self):
         if self.file_bytes is not None:
@@ -1115,7 +1088,7 @@ class FunctionDef(
     type_comment_returns = None
     """If present, this will contain the return type annotation, passed by a type comment"""
     # attributes below are set by the builder module or by raw factories
-    _other_fields = ("name", "doc", "position")
+    _other_fields = ("name", "position")
     _other_other_fields = (
         "locals",
         "_type",
@@ -1143,9 +1116,6 @@ class FunctionDef(
     ) -> None:
         self.name = name
         """The name of the function."""
-
-        self._doc: str | None = None
-        """DEPRECATED: The function docstring."""
 
         self.locals = {}
         """A map of the name of a local variable to the node defining it."""
@@ -1203,29 +1173,6 @@ class FunctionDef(
         self.type_comment_args = type_comment_args
         self.position = position
         self.doc_node = doc_node
-        if doc_node:
-            self._doc = doc_node.value
-
-    @property
-    def doc(self) -> str | None:
-        """The function docstring."""
-        warnings.warn(
-            "The 'FunctionDef.doc' attribute is deprecated, "
-            "use 'FunctionDef.doc_node' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._doc
-
-    @doc.setter
-    def doc(self, value: str | None) -> None:
-        warnings.warn(
-            "Setting the 'FunctionDef.doc' attribute is deprecated, "
-            "use 'FunctionDef.doc_node' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self._doc = value
 
     @cached_property
     def extra_decorators(self) -> list[node_classes.Call]:
@@ -1850,7 +1797,7 @@ class ClassDef(
             ":type: str"
         ),
     )
-    _other_fields = ("name", "doc", "is_dataclass", "position")
+    _other_fields = ("name", "is_dataclass", "position")
     _other_other_fields = ("locals", "_newstyle")
     _newstyle: bool | None = None
 
@@ -1886,9 +1833,6 @@ class ClassDef(
         self.decorators = None
         """The decorators that are applied to this class."""
 
-        self._doc: str | None = None
-        """DEPRECATED: The class docstring."""
-
         self.doc_node: Const | None = None
         """The doc node associated with this node."""
 
@@ -1909,27 +1853,6 @@ class ClassDef(
             self.add_local_node(node, local_name)
 
     infer_binary_op: ClassVar[InferBinaryOp[ClassDef]]
-
-    @property
-    def doc(self) -> str | None:
-        """The class docstring."""
-        warnings.warn(
-            "The 'ClassDef.doc' attribute is deprecated, "
-            "use 'ClassDef.doc_node' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._doc
-
-    @doc.setter
-    def doc(self, value: str | None) -> None:
-        warnings.warn(
-            "Setting the 'ClassDef.doc' attribute is deprecated, "
-            "use 'ClassDef.doc_node.value' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self._doc = value
 
     def implicit_parameters(self) -> Literal[1]:
         return 1
@@ -1967,8 +1890,6 @@ class ClassDef(
         self._metaclass = metaclass
         self.position = position
         self.doc_node = doc_node
-        if doc_node:
-            self._doc = doc_node.value
 
     def _newstyle_impl(self, context: InferenceContext | None = None):
         if context is None:
