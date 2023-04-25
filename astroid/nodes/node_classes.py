@@ -2035,16 +2035,6 @@ class Expr(_base_nodes.Statement):
             yield from self.value._get_yield_nodes_skip_lambdas()
 
 
-class Ellipsis(_base_nodes.NoChildrenNode):  # pylint: disable=redefined-builtin
-    """Class representing an :class:`ast.Ellipsis` node.
-
-    An :class:`Ellipsis` is the ``...`` syntax.
-
-    Deprecated since v2.6.0 - Use :class:`Const` instead.
-    Will be removed with the release v2.7.0
-    """
-
-
 class EmptyNode(_base_nodes.NoChildrenNode):
     """Holds an arbitrary object in the :attr:`LocalsDictNodeNG.locals`."""
 
@@ -2147,16 +2137,6 @@ class ExceptHandler(
         if self.type is None or exceptions is None:
             return True
         return any(node.name in exceptions for node in self.type._get_name_nodes())
-
-
-class ExtSlice(NodeNG):
-    """Class representing an :class:`ast.ExtSlice` node.
-
-    An :class:`ExtSlice` is a complex slice expression.
-
-    Deprecated since v2.6.0 - Now part of the :class:`Subscript` node.
-    Will be removed with the release of v2.7.0
-    """
 
 
 class For(
@@ -2642,16 +2622,6 @@ class Import(_base_nodes.ImportNode):
             end_col_offset=end_col_offset,
             parent=parent,
         )
-
-
-class Index(NodeNG):
-    """Class representing an :class:`ast.Index` node.
-
-    An :class:`Index` is a simple subscript.
-
-    Deprecated since v2.6.0 - Now part of the :class:`Subscript` node.
-    Will be removed with the release of v2.7.0
-    """
 
 
 class Keyword(NodeNG):
