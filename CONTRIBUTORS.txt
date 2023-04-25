@@ -40,7 +40,7 @@ Contributors
 - David Gilman <davidgilman1@gmail.com>
 - Julien Jehannet <julien.jehannet@logilab.fr>
 - Calen Pennington <calen.pennington@gmail.com>
-- Tushar Sadhwani <86737547+tushar-deepsource@users.noreply.github.com>
+- Tushar Sadhwani <tushar.sadhwani000@gmail.com> <86737547+tushar-deepsource@users.noreply.github.com>
 - Hugo van Kemenade <hugovk@users.noreply.github.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Phil Schaf <flying-sheep@web.de>
@@ -186,6 +186,7 @@ Contributors
 - Alexander Scheel <alexander.m.scheel@gmail.com>
 - Alexander Presnyakov <flagist0@gmail.com>
 - Ahmed Azzaoui <ahmed.azzaoui@engie.com>
+- alm <alonme@users.noreply.github.com
 
 Co-Author
 ---------
