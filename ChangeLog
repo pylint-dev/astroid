@@ -125,6 +125,10 @@ Release date: TBA
 
   Refs #2153
 
+* Remove deprecated ``Ellipsis``, ``ExtSlice``, ``Index`` nodes.
+
+  Refs #2152
+
 
 What's New in astroid 2.15.5?
 =============================
