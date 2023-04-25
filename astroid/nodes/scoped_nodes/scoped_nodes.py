@@ -991,12 +991,12 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             names.append(self.args.kwarg)
         return names
 
-    def infer_call_result(self, caller, context: InferenceContext | None = None):
-        """Infer what the function returns when called.
-
-        :param caller: Unused
-        :type caller: object
-        """
+    def infer_call_result(
+        self,
+        caller: SuccessfulInferenceResult | None,
+        context: InferenceContext | None = None,
+    ) -> Iterator[InferenceResult]:
+        """Infer what the function returns when called."""
         return self.body.infer(context)
 
     def scope_lookup(
@@ -1540,12 +1540,12 @@ class FunctionDef(
             elif yield_.scope() == self:
                 yield from yield_.value.infer(context=context)
 
-    def infer_call_result(self, caller=None, context: InferenceContext | None = None):
-        """Infer what the function returns when called.
-
-        :returns: What the function returns.
-        :rtype: iterable(NodeNG or Uninferable) or None
-        """
+    def infer_call_result(
+        self,
+        caller: SuccessfulInferenceResult | None,
+        context: InferenceContext | None = None,
+    ) -> Iterator[InferenceResult]:
+        """Infer what the function returns when called."""
         if self.is_generator():
             if isinstance(self, AsyncFunctionDef):
                 generator_cls: type[bases.Generator] = bases.AsyncGenerator
@@ -2127,7 +2127,11 @@ class ClassDef(
         result.parent = caller.parent
         return result
 
-    def infer_call_result(self, caller, context: InferenceContext | None = None):
+    def infer_call_result(
+        self,
+        caller: SuccessfulInferenceResult | None,
+        context: InferenceContext | None = None,
+    ) -> Iterator[InferenceResult]:
         """infer what a class is returning when called"""
         if self.is_subtype_of("builtins.type", context) and len(caller.args) == 3:
             result = self._infer_type_call(caller, context)

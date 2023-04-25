@@ -27,6 +27,7 @@ import itertools
 import os
 import pprint
 import types
+from collections.abc import Iterator
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -36,6 +37,7 @@ from astroid.context import InferenceContext, copy_context
 from astroid.exceptions import AttributeInferenceError, InferenceError, NoDefault
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
+from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 if TYPE_CHECKING:
     from astroid.objects import Property
@@ -337,8 +339,10 @@ class FunctionModel(ObjectModel):
                 return 0
 
             def infer_call_result(
-                self, caller, context: InferenceContext | None = None
-            ):
+                self,
+                caller: SuccessfulInferenceResult | None,
+                context: InferenceContext | None = None,
+            ) -> Iterator[bases.BoundMethod]:
                 if len(caller.args) > 2 or len(caller.args) < 1:
                     raise InferenceError(
                         "Invalid arguments for descriptor binding",
@@ -501,8 +505,10 @@ class ClassModel(ObjectModel):
         # The method we're returning is capable of inferring the underlying MRO though.
         class MroBoundMethod(bases.BoundMethod):
             def infer_call_result(
-                self, caller, context: InferenceContext | None = None
-            ):
+                self,
+                caller: SuccessfulInferenceResult | None,
+                context: InferenceContext | None = None,
+            ) -> Iterator[node_classes.Tuple]:
                 yield other_self.attr___mro__
 
         implicit_metaclass = self._instance.implicit_metaclass()
@@ -549,8 +555,10 @@ class ClassModel(ObjectModel):
 
         class SubclassesBoundMethod(bases.BoundMethod):
             def infer_call_result(
-                self, caller, context: InferenceContext | None = None
-            ):
+                self,
+                caller: SuccessfulInferenceResult | None,
+                context: InferenceContext | None = None,
+            ) -> Iterator[node_classes.List]:
                 yield obj
 
         implicit_metaclass = self._instance.implicit_metaclass()
@@ -817,8 +825,10 @@ class DictModel(ObjectModel):
 
         class DictMethodBoundMethod(astroid.BoundMethod):
             def infer_call_result(
-                self, caller, context: InferenceContext | None = None
-            ):
+                self,
+                caller: SuccessfulInferenceResult | None,
+                context: InferenceContext | None = None,
+            ) -> Iterator[InferenceResult]:
                 yield obj
 
         meth = next(self._instance._proxied.igetattr(name), None)
@@ -896,8 +906,10 @@ class PropertyModel(ObjectModel):
 
         class PropertyFuncAccessor(nodes.FunctionDef):
             def infer_call_result(
-                self, caller=None, context: InferenceContext | None = None
-            ):
+                self,
+                caller: SuccessfulInferenceResult | None,
+                context: InferenceContext | None = None,
+            ) -> Iterator[InferenceResult]:
                 nonlocal func
                 if caller and len(caller.args) != 1:
                     raise InferenceError(
@@ -946,8 +958,10 @@ class PropertyModel(ObjectModel):
 
         class PropertyFuncAccessor(nodes.FunctionDef):
             def infer_call_result(
-                self, caller=None, context: InferenceContext | None = None
-            ):
+                self,
+                caller: SuccessfulInferenceResult | None,
+                context: InferenceContext | None = None,
+            ) -> Iterator[InferenceResult]:
                 nonlocal func_setter
                 if caller and len(caller.args) != 2:
                     raise InferenceError(

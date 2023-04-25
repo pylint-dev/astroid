@@ -18,6 +18,7 @@ from astroid.interpreter import objectmodel
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import AssignName, Attribute, Call, Name
 from astroid.nodes.scoped_nodes import FunctionDef
+from astroid.typing import InferenceResult, SuccessfulInferenceResult
 from astroid.util import UninferableBase
 
 LRU_CACHE = "functools.lru_cache"
@@ -45,9 +46,13 @@ class LruWrappedModel(objectmodel.FunctionModel):
 
         class CacheInfoBoundMethod(BoundMethod):
             def infer_call_result(
-                self, caller, context: InferenceContext | None = None
-            ):
-                yield helpers.safe_infer(cache_info)
+                self,
+                caller: SuccessfulInferenceResult | None,
+                context: InferenceContext | None = None,
+            ) -> Iterator[InferenceResult]:
+                res = helpers.safe_infer(cache_info)
+                assert res is not None
+                yield res
 
         return CacheInfoBoundMethod(proxy=self._instance, bound=self._instance)
 

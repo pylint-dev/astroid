@@ -306,8 +306,10 @@ class BaseInstance(Proxy):
                 yield attr
 
     def infer_call_result(
-        self, caller: nodes.Call | Proxy, context: InferenceContext | None = None
-    ):
+        self,
+        caller: SuccessfulInferenceResult | None,
+        context: InferenceContext | None = None,
+    ) -> Iterator[InferenceResult]:
         """Infer what a class instance is returning when called."""
         context = bind_context_to_node(context, self)
         inferred = False
@@ -441,7 +443,11 @@ class UnboundMethod(Proxy):
             return iter((self.special_attributes.lookup(name),))
         return self._proxied.igetattr(name, context)
 
-    def infer_call_result(self, caller, context):
+    def infer_call_result(
+        self,
+        caller: SuccessfulInferenceResult | None,
+        context: InferenceContext | None = None,
+    ) -> Iterator[InferenceResult]:
         """
         The boundnode of the regular context with a function called
         on ``object.__new__`` will be of type ``object``,
@@ -614,7 +620,11 @@ class BoundMethod(UnboundMethod):
         cls.locals = cls_locals
         return cls
 
-    def infer_call_result(self, caller, context: InferenceContext | None = None):
+    def infer_call_result(
+        self,
+        caller: SuccessfulInferenceResult | None,
+        context: InferenceContext | None = None,
+    ) -> Iterator[InferenceResult]:
         context = bind_context_to_node(context, self.bound)
         if (
             self.bound.__class__.__name__ == "ClassDef"

@@ -1986,7 +1986,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """
         )
         assert isinstance(func, nodes.FunctionDef)
-        result = next(func.infer_call_result())
+        result = next(func.infer_call_result(None))
         self.assertIsInstance(result, Generator)
         self.assertEqual(result.parent, func)
 
