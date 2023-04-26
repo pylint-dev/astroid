@@ -35,9 +35,8 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=base-venv-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_test.txt',
-          'requirements_test_min.txt', 'requirements_test_brain.txt',
-          'requirements_test_pre_commit.txt') }}" >> $GITHUB_OUTPUT
+            hashFiles('pyproject.toml', 'requirements_dev.txt',
+          'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
         uses: actions/cache@v3.3.1
@@ -52,7 +51,7 @@ jobs:
           python -m venv venv
           . venv/bin/activate
           python -m pip install -U pip setuptools wheel
-          pip install -U -r requirements_test.txt -r requirements_test_brain.txt
+          pip install -U -r requirements_full.txt
       - name: Generate pre-commit restore key
         id: generate-pre-commit-key
         run: >-
@@ -103,9 +102,8 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_test.txt',
-          'requirements_test_min.txt', 'requirements_test_brain.txt',
-          'requirements_test_pre_commit.txt') }}" >> $GITHUB_OUTPUT
+            hashFiles('pyproject.toml', 'requirements_dev.txt',
+          'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
         uses: actions/cache@v3.3.1
@@ -120,7 +118,7 @@ jobs:
           python -m venv venv
           . venv/bin/activate
           python -m pip install -U pip setuptools wheel
-          pip install -U -r requirements_test.txt -r requirements_test_brain.txt
+          pip install -U -r requirements_full.txt
           pip install -e .
       - name: Run pytest
         run: |
@@ -158,8 +156,8 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_test_min.txt',
-          'requirements_test_brain.txt') }}" >> $env:GITHUB_OUTPUT
+            hashFiles('pyproject.toml', 'requirements_dev.txt',
+          'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
         uses: actions/cache@v3.3.1
@@ -174,7 +172,7 @@ jobs:
           python -m venv venv
           . venv\\Scripts\\activate
           python -m pip install -U pip setuptools wheel
-          pip install -U -r requirements_test_min.txt -r requirements_test_brain.txt
+          pip install -U -r requirements_full.txt
           pip install -e .
       - name: Run pytest
         run: |
@@ -207,7 +205,7 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_test_min.txt')
+            hashFiles('pyproject.toml', 'requirements_minimal.txt')
           }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
@@ -223,7 +221,7 @@ jobs:
           python -m venv venv
           . venv/bin/activate
           python -m pip install -U pip setuptools wheel
-          pip install -U -r requirements_test_min.txt
+          pip install -U -r requirements_minimal.txt
           pip install -e .
       - name: Run pytest
         run: |
@@ -250,7 +248,7 @@ jobs:
           python-version: "3.11"
           check-latest: true
       - name: Install dependencies
-        run: pip install -U -r requirements_test_min.txt
+        run: pip install -U -r requirements_minimal.txt
       - name: Download all coverage artifacts
         uses: actions/download-artifact@v3.0.2
       - name: Combine Linux coverage results
