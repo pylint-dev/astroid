@@ -6,11 +6,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any
 
 from astroid import util
-from astroid.typing import InferenceResult
+from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 if TYPE_CHECKING:
     from astroid import arguments, bases, nodes, objects
@@ -245,8 +245,8 @@ class InferenceError(ResolveError):  # pylint: disable=too-many-instance-attribu
         attribute: str | None = None,
         unknown: InferenceResult | None = None,
         assign_path: list[int] | None = None,
-        caller: nodes.Call | None = None,
-        stmts: Sequence[InferenceResult] | None = None,
+        caller: SuccessfulInferenceResult | None = None,
+        stmts: Iterator[InferenceResult] | None = None,
         frame: InferenceResult | None = None,
         call_site: arguments.CallSite | None = None,
         func: InferenceResult | None = None,

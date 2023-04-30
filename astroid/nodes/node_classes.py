@@ -1875,9 +1875,7 @@ class Dict(NodeNG, Instance):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.items: list[
-            tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]
-        ] = []
+        self.items: list[tuple[InferenceResult, InferenceResult]] = []
         """The key-value pairs contained in the dictionary."""
 
         super().__init__(
