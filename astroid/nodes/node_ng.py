@@ -136,11 +136,12 @@ class NodeNG:
         if self._explicit_inference is not None:
             # explicit_inference is not bound, give it self explicitly
             try:
-                # pylint: disable=not-callable
-                results = list(self._explicit_inference(self, context, **kwargs))
-                if context is not None:
-                    context.nodes_inferred += len(results)
-                yield from results
+                if context is None:
+                    yield from self._explicit_inference(self, context, **kwargs)
+                    return
+                for result in self._explicit_inference(self, context, **kwargs):
+                    context.nodes_inferred += 1
+                    yield result
                 return
             except UseInferenceDefault:
                 pass
