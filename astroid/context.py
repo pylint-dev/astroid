@@ -154,7 +154,7 @@ class InferenceContext:
 
     def __hash__(self) -> int:
         """Deliberately omit nodes_inferred and constraints.
-        
+
         TODO: determine the performance upside of omitting more."""
         return hash(
             (
