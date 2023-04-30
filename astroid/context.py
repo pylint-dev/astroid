@@ -152,6 +152,18 @@ class InferenceContext:
         yield
         self.path = path
 
+    def is_empty(self) -> bool:
+        return (
+            not self.path
+            and not self.nodes_inferred
+            and not self.callcontext
+            and not self.boundnode
+            and not self.lookupname
+            and not self.callcontext
+            and not self.extra_context
+            and not self.constraints
+        )
+
     def __str__(self) -> str:
         state = (
             f"{field}={pprint.pformat(getattr(self, field), width=80 - len(field))}"

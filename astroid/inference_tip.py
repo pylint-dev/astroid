@@ -35,6 +35,9 @@ def _inference_tip_cached(
     def inner(*args: _P.args, **kwargs: _P.kwargs) -> Iterator[InferenceResult]:
         node = args[0]
         context = args[1]
+        if context.is_empty():
+            # Fresh, empty contexts will defeat the cache.
+            context = None
         try:
             result = _cache[func, node, context]
             # If through recursion we end up trying to infer the same
