@@ -21,6 +21,8 @@ _cache: dict[
     tuple[InferFn, NodeNG, InferenceContext | None], list[InferenceResult] | None
 ] = {}
 
+_CURRENTLY_INFERRING: set[tuple[InferFn, NodeNG]] = set()
+
 
 def clear_inference_tip_cache() -> None:
     """Clear the inference tips cache."""
@@ -35,23 +37,20 @@ def _inference_tip_cached(
     def inner(*args: _P.args, **kwargs: _P.kwargs) -> Iterator[InferenceResult]:
         node = args[0]
         context = args[1]
-        try:
-            _cache[func, node]
-        except KeyError:
-            # Good, no recursion issues.
-            try:
-                return _cache[func, node, context]  # actual result
-            except KeyError:
-                # Recursion guard with a partial cache key.
-                _cache[func, node] = None
-                result = _cache[func, node, context] = list(func(*args, **kwargs))
-                assert result
-                # Remove recursion guard.
-                del _cache[func, node]
-        else:
+        partial_cache_key = (func, node)
+        if partial_cache_key in _CURRENTLY_INFERRING:
             # If through recursion we end up trying to infer the same
             # func + node we raise here.
             raise UseInferenceDefault()
+        try:
+            return _cache[func, node, context]
+        except KeyError:
+            # Recursion guard with a partial cache key.
+            _CURRENTLY_INFERRING.add(partial_cache_key)
+            result = _cache[func, node, context] = list(func(*args, **kwargs))
+            assert result
+            # Remove recursion guard.
+            _CURRENTLY_INFERRING.remove(partial_cache_key)
 
         return iter(result)
 
