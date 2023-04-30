@@ -223,7 +223,9 @@ def infer_named_tuple(
     except StopIteration as e:
         raise InferenceError(node=node) from e
     try:
-        rename = next(call_site.infer_argument(func, "rename", context)).bool_value()
+        rename = next(
+            call_site.infer_argument(func, "rename", context or InferenceContext())
+        ).bool_value()
     except (InferenceError, StopIteration):
         rename = False
 

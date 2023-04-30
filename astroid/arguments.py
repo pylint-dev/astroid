@@ -9,6 +9,7 @@ from astroid.bases import Instance
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import InferenceError, NoDefault
 from astroid.helpers import safe_infer
+from astroid.typing import InferenceResult
 from astroid.util import Uninferable, UninferableBase
 
 
@@ -134,14 +135,19 @@ class CallSite:
                 values.append(arg)
         return values
 
-    def infer_argument(self, funcnode, name, context):  # noqa: C901
-        """Infer a function argument value according to the call context.
+    def infer_argument(
+        self, funcnode: InferenceResult, name: str, context: InferenceContext
+    ):  # noqa: C901
+        """Infer a function argument value according to the call context."""
+        if not isinstance(funcnode, (nodes.FunctionDef, nodes.Lambda)):
+            raise InferenceError(
+                f"Can not infer function argument value for non-function node {funcnode!r}.",
+                call_site=self,
+                func=funcnode,
+                arg=name,
+                context=context,
+            )
 
-        Arguments:
-            funcnode: The function being called.
-            name: The name of the argument whose value is being inferred.
-            context: Inference context object
-        """
         if name in self.duplicated_keywords:
             raise InferenceError(
                 "The arguments passed to {func!r} have duplicate keywords.",
@@ -191,7 +197,7 @@ class CallSite:
                     positional.append(arg)
 
         if argindex is not None:
-            boundnode = getattr(context, "boundnode", None)
+            boundnode = context.boundnode
             # 2. first argument of instance/class method
             if argindex == 0 and funcnode.type in {"method", "classmethod"}:
                 # context.boundnode is None when an instance method is called with
