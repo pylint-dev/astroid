@@ -18,7 +18,7 @@ from astroid.exceptions import (
     _NonDeducibleTypeHierarchy,
 )
 from astroid.nodes import scoped_nodes
-from astroid.typing import InferenceResult, SuccessfulInferenceResult
+from astroid.typing import InferenceResult
 
 
 def _build_proxy_class(cls_name: str, builtins: nodes.Module) -> nodes.ClassDef:
@@ -43,7 +43,7 @@ def _function_type(
 
 
 def _object_type(
-    node: SuccessfulInferenceResult, context: InferenceContext | None = None
+    node: InferenceResult, context: InferenceContext | None = None
 ) -> Generator[InferenceResult | None, None, None]:
     astroid_manager = manager.AstroidManager()
     builtins = astroid_manager.builtins_module
@@ -75,7 +75,7 @@ def _object_type(
 
 
 def object_type(
-    node: SuccessfulInferenceResult, context: InferenceContext | None = None
+    node: InferenceResult, context: InferenceContext | None = None
 ) -> InferenceResult | None:
     """Obtain the type of the given node.
 
