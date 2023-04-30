@@ -258,3 +258,8 @@ class TestHelpers(unittest.TestCase):
         builtin_type = self._extract("type")
         self.assertTrue(helpers.is_supertype(builtin_type, cls_a))
         self.assertTrue(helpers.is_subtype(cls_a, builtin_type))
+
+
+def test_uninferable_for_safe_infer() -> None:
+    uninfer = util.Uninferable
+    assert helpers.safe_infer(util.Uninferable) == uninfer
