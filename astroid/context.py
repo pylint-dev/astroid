@@ -152,16 +152,29 @@ class InferenceContext:
         yield
         self.path = path
 
-    def is_empty(self) -> bool:
+    def __hash__(self) -> int:
+        """Deliberately omit nodes_inferred and constraints.
+        
+        TODO: determine the performance upside of omitting more."""
+        return hash(
+            (
+                ((id(node), name) for node, name in self.path),
+                self.callcontext,
+                self.boundnode,
+                self.lookupname,
+                tuple(**self.extra_context),
+            )
+        )
+
+    def __eq__(self, other) -> bool:
         return (
-            not self.path
-            and not self.nodes_inferred
-            and not self.callcontext
-            and not self.boundnode
-            and not self.lookupname
-            and not self.callcontext
-            and not self.extra_context
-            and not self.constraints
+            self.path == other.path
+            and self.nodes_inferred == other.nodes_inferred
+            and self.callcontext == other.callcontext
+            and self.boundnode == other.boundnode
+            and self.lookupname == other.lookupname
+            and self.extra_context == other.extra_context
+            and self.constraints == other.constraints
         )
 
     def __str__(self) -> str:
