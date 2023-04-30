@@ -145,7 +145,7 @@ class TransformVisitor:
         """Unregister the given transform."""
         self.transforms[node_class].remove((transform, predicate))  # type: ignore[index, arg-type]
 
-    def visit(self, module: nodes.Module) -> SuccessfulInferenceResult:
+    def visit(self, module: nodes.NodeNG) -> SuccessfulInferenceResult:
         """Walk the given astroid *tree* and transform each encountered node.
 
         Only the nodes which have transforms registered will actually
