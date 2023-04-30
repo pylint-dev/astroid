@@ -1399,13 +1399,12 @@ class FunctionDef(
             self.parent.frame(future=True), ClassDef
         )
 
-    def decoratornames(self, context: InferenceContext | None = None):
+    def decoratornames(self, context: InferenceContext | None = None) -> set[str]:
         """Get the qualified names of each of the decorators on this function.
 
         :param context:
             An inference context that can be passed to inference functions
         :returns: The names of the decorators.
-        :rtype: set(str)
         """
         result = set()
         decoratornodes = []
