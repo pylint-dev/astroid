@@ -1821,7 +1821,7 @@ class ClassDef(
         This is usually for :pep:`3115` style metaclass declaration.
         """
 
-        self.bases: list[NodeNG] = []
+        self.bases: list[SuccessfulInferenceResult] = []
         """What the class inherits from."""
 
         self.body: list[NodeNG] = []
@@ -1871,7 +1871,7 @@ class ClassDef(
     # pylint: disable=redefined-outer-name
     def postinit(
         self,
-        bases: list[NodeNG],
+        bases: list[SuccessfulInferenceResult],
         body: list[NodeNG],
         decorators: node_classes.Decorators | None,
         newstyle: bool | None = None,

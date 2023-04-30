@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, TypeVar, overload
 from astroid.filter_statements import _filter_stmts
 from astroid.nodes import node_classes, scoped_nodes
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
-from astroid.typing import SuccessfulInferenceResult
+from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -27,7 +27,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
 
     # attributes below are set by the builder module or by raw factories
 
-    locals: dict[str, list[SuccessfulInferenceResult]] = {}
+    locals: dict[str, list[InferenceResult]] = {}
     """A map of the name of a local variable to the node defining the local."""
 
     def qname(self) -> str:
