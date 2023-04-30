@@ -930,13 +930,7 @@ class TypingBrain(unittest.TestCase):
         assert inferred.value == 42
 
     def test_typing_cast_multiple_inference_calls(self) -> None:
-        """Inference of an outer function should not store the result for cast.
-
-        https://github.com/pylint-dev/pylint/issues/8074
-
-        Possible solution caused RecursionErrors with Python 3.8 and CPython + PyPy.
-        https://github.com/pylint-dev/astroid/pull/1982
-        """
+        """Inference of an outer function should not store the result for cast."""
         ast_nodes = builder.extract_node(
             """
         from typing import TypeVar, cast
@@ -954,7 +948,7 @@ class TypingBrain(unittest.TestCase):
 
         i1 = next(ast_nodes[1].infer())
         assert isinstance(i1, nodes.Const)
-        assert i1.value == 2  # should be "Hello"!
+        assert i1.value == "Hello"
 
 
 class ReBrainTest(unittest.TestCase):
