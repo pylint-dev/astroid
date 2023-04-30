@@ -35,7 +35,7 @@ def _inference_tip_cached(
     def inner(*args: _P.args, **kwargs: _P.kwargs) -> Iterator[InferenceResult]:
         node = args[0]
         context = args[1]
-        if context.is_empty():
+        if context is not None and context.is_empty():
             # Fresh, empty contexts will defeat the cache.
             context = None
         try:
