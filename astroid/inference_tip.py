@@ -36,15 +36,23 @@ def _inference_tip_cached(
         node = args[0]
         context = args[1]
         try:
-            result = _cache[func, node, context]
+            _cache[func, node]
+        except KeyError:
+            # Good, no recursion issues.
+            try:
+                return _cache[func, node, context]  # actual result
+            except KeyError:
+                # Recursion guard with a partial cache key.
+                _cache[func, node] = None
+                result = _cache[func, node, context] = list(func(*args, **kwargs))
+                assert result
+                # Remove recursion guard.
+                del _cache[func, node]
+        else:
             # If through recursion we end up trying to infer the same
             # func + node we raise here.
-            if result is None:
-                raise UseInferenceDefault()
-        except KeyError:
-            _cache[func, node, context] = None
-            result = _cache[func, node, context] = list(func(*args, **kwargs))
-            assert result
+            raise UseInferenceDefault()
+
         return iter(result)
 
     return inner
