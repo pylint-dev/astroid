@@ -162,7 +162,7 @@ class InferenceContext:
                 self.callcontext,
                 self.boundnode,
                 self.lookupname,
-                tuple(**self.extra_context),
+                tuple(self.extra_context.items()),
             )
         )
 
