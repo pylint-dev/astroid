@@ -10,13 +10,16 @@ from collections.abc import Callable, Iterator
 
 from typing_extensions import ParamSpec
 
+from astroid.context import InferenceContext
 from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
 from astroid.nodes import NodeNG
 from astroid.typing import InferenceResult, InferFn
 
 _P = ParamSpec("_P")
 
-_cache: dict[tuple[InferFn, NodeNG], list[InferenceResult] | None] = {}
+_cache: dict[
+    tuple[InferFn, NodeNG, InferenceContext | None], list[InferenceResult] | None
+] = {}
 
 
 def clear_inference_tip_cache() -> None:
