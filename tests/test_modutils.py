@@ -28,9 +28,9 @@ from . import resources
 try:
     import urllib3  # type: ignore[import]  # pylint: disable=unused-import
 
-    HAS_URLLIB3 = True
+    HAS_URLLIB3_V1 = urllib3.__version__.startswith("1")
 except ImportError:
-    HAS_URLLIB3 = False
+    HAS_URLLIB3_V1 = False
 
 
 def _get_file_from_object(obj) -> str:
@@ -547,8 +547,9 @@ class ExtensionPackageWhitelistTest(unittest.TestCase):
         )
 
 
-@pytest.mark.skipif(not HAS_URLLIB3, reason="This test requires urllib3.")
+@pytest.mark.skipif(not HAS_URLLIB3_V1, reason="This test requires urllib3 < 2.")
 def test_file_info_from_modpath__SixMetaPathImporter() -> None:
+    """Six is not backported anymore in urllib3 v2.0.0+"""
     assert modutils.file_info_from_modpath(["urllib3.packages.six.moves.http_client"])
 
 
