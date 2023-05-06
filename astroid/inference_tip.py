@@ -52,7 +52,6 @@ def _inference_tip_cached(
             # test cases included with this commit.
             _CURRENTLY_INFERRING.add(partial_cache_key)
             result = _cache[func, node, context] = list(func(*args, **kwargs))
-            assert result
             # Remove recursion guard.
             _CURRENTLY_INFERRING.remove(partial_cache_key)
 
