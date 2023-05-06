@@ -80,6 +80,5 @@ InferBinaryOp = Callable[
 ]
 
 InferFn = Callable[..., Iterator[InferenceResult]]
-# pylint: disable-next=unsupported-binary-operation
-InferFnExplicit = Callable[_P, Iterator[InferenceResult] | list[InferenceResult]]
+InferFnExplicit = Callable[_P, Union[Iterator[InferenceResult], list[InferenceResult]]]
 InferFnTransform = Callable[[_NodesT, InferFn], _NodesT]
