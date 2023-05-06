@@ -6,20 +6,19 @@
 
 from __future__ import annotations
 
-import sys
 from collections.abc import Callable, Iterator
+from typing import TYPE_CHECKING
 
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
 from astroid.nodes import NodeNG
-from astroid.typing import InferenceResult, InferFn
-
-if sys.version_info >= (3, 11):
-    from typing import ParamSpec
-else:
-    from typing_extensions import ParamSpec
-
-_P = ParamSpec("_P")
+from astroid.typing import (
+    _P,
+    InferenceResult,
+    InferFn,
+    InferFnExplicit,
+    InferFnTransform,
+)
 
 _cache: dict[
     tuple[InferFn, NodeNG, InferenceContext | None], list[InferenceResult]
@@ -35,12 +34,18 @@ def clear_inference_tip_cache() -> None:
 
 def _inference_tip_cached(
     func: Callable[_P, Iterator[InferenceResult]],
-) -> Callable[_P, Iterator[InferenceResult]]:
+) -> InferFnExplicit:
     """Cache decorator used for inference tips."""
 
-    def inner(*args: _P.args, **kwargs: _P.kwargs) -> Iterator[InferenceResult]:
+    def inner(
+        *args: _P.args, **kwargs: _P.kwargs
+    ) -> Iterator[InferenceResult] | list[InferenceResult]:
         node = args[0]
         context = args[1]
+        if TYPE_CHECKING:
+            assert isinstance(node, NodeNG)
+            assert context is None or isinstance(context, InferenceContext)
+
         partial_cache_key = (func, node)
         if partial_cache_key in _CURRENTLY_INFERRING:
             # If through recursion we end up trying to infer the same
@@ -64,7 +69,9 @@ def _inference_tip_cached(
     return inner
 
 
-def inference_tip(infer_function: InferFn, raise_on_overwrite: bool = False) -> InferFn:
+def inference_tip(
+    infer_function: InferFn, raise_on_overwrite: bool = False
+) -> InferFnTransform:
     """Given an instance specific inference function, return a function to be
     given to AstroidManager().register_transform to set this inference function.
 
@@ -100,7 +107,6 @@ def inference_tip(infer_function: InferFn, raise_on_overwrite: bool = False) -> 
                     node=node,
                 )
             )
-        # pylint: disable=no-value-for-parameter
         node._explicit_inference = _inference_tip_cached(infer_function)
         return node
 

@@ -4,14 +4,28 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Generator, TypedDict, TypeVar, Union
+import sys
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Generator,
+    Iterator,
+    TypedDict,
+    TypeVar,
+    Union,
+)
 
 if TYPE_CHECKING:
     from astroid import bases, exceptions, nodes, transforms, util
     from astroid.context import InferenceContext
     from astroid.interpreter._import import spec
 
+if sys.version_info >= (3, 11):
+    from typing import ParamSpec
+else:
+    from typing_extensions import ParamSpec
 
+_P = ParamSpec("_P")
 _NodesT = TypeVar("_NodesT", bound="nodes.NodeNG")
 
 
@@ -22,9 +36,6 @@ class InferenceErrorInfo(TypedDict):
 
     node: nodes.NodeNG
     context: InferenceContext | None
-
-
-InferFn = Callable[..., Any]
 
 
 class AstroidManagerBrain(TypedDict):
@@ -67,3 +78,8 @@ InferBinaryOp = Callable[
     ],
     Generator[InferenceResult, None, None],
 ]
+
+InferFn = Callable[..., Iterator[InferenceResult]]
+# pylint: disable-next=unsupported-binary-operation
+InferFnExplicit = Callable[_P, Iterator[InferenceResult] | list[InferenceResult]]
+InferFnTransform = Callable[[_NodesT, InferFn], _NodesT]

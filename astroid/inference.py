@@ -254,7 +254,6 @@ def infer_name(
     return bases._infer_stmts(stmts, context, frame)
 
 
-# pylint: disable=no-value-for-parameter
 # The order of the decorators here is important
 # See https://github.com/pylint-dev/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
 nodes.Name._infer = decorators.raise_if_nothing_inferred(

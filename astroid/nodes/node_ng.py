@@ -35,7 +35,7 @@ from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.utils import Position
-from astroid.typing import InferenceErrorInfo, InferenceResult, InferFn
+from astroid.typing import InferenceErrorInfo, InferenceResult, InferFnExplicit
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -80,7 +80,7 @@ class NodeNG:
     _other_other_fields: ClassVar[tuple[str, ...]] = ()
     """Attributes that contain AST-dependent fields."""
     # instance specific inference function infer(node, context)
-    _explicit_inference: InferFn | None = None
+    _explicit_inference: InferFnExplicit | None = None
 
     def __init__(
         self,
