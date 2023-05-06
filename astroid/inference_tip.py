@@ -22,7 +22,7 @@ else:
 _P = ParamSpec("_P")
 
 _cache: dict[
-    tuple[InferFn, NodeNG, InferenceContext | None], list[InferenceResult] | None
+    tuple[InferFn, NodeNG, InferenceContext | None], list[InferenceResult]
 ] = {}
 
 _CURRENTLY_INFERRING: set[tuple[InferFn, NodeNG]] = set()
