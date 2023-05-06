@@ -41,11 +41,15 @@ def _inference_tip_cached(
         if partial_cache_key in _CURRENTLY_INFERRING:
             # If through recursion we end up trying to infer the same
             # func + node we raise here.
-            raise UseInferenceDefault()
+            raise UseInferenceDefault
         try:
             return _cache[func, node, context]
         except KeyError:
             # Recursion guard with a partial cache key.
+            # Using the full key causes a recursion error on PyPy.
+            # It's a pragmatic compromise to avoid so much recursive inference
+            # with slightly different contexts while still passing the simple
+            # test cases included with this commit.
             _CURRENTLY_INFERRING.add(partial_cache_key)
             result = _cache[func, node, context] = list(func(*args, **kwargs))
             assert result
