@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator
+from typing import Any
 
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
@@ -31,7 +32,7 @@ def _inference_tip_cached(
     """Cache decorator used for inference tips."""
 
     def inner(
-        node: NodeNG, context: InferenceContext | None
+        node: NodeNG, context: InferenceContext | None, **kwargs: Any,
     ) -> Iterator[InferenceResult] | list[InferenceResult]:
         partial_cache_key = (func, node)
         if partial_cache_key in _CURRENTLY_INFERRING:
@@ -47,7 +48,7 @@ def _inference_tip_cached(
             # with slightly different contexts while still passing the simple
             # test cases included with this commit.
             _CURRENTLY_INFERRING.add(partial_cache_key)
-            result = _cache[func, node, context] = list(func(node, context))
+            result = _cache[func, node, context] = list(func(node, context, **kwargs))
             # Remove recursion guard.
             _CURRENTLY_INFERRING.remove(partial_cache_key)
 
