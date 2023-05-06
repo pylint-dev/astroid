@@ -40,11 +40,8 @@ def _inference_tip_cached(
     def inner(
         *args: _P.args, **kwargs: _P.kwargs
     ) -> Iterator[InferenceResult] | list[InferenceResult]:
-        node = args[0]
-        context = args[1]
-        if TYPE_CHECKING:
-            assert isinstance(node, NodeNG)
-            assert context is None or isinstance(context, InferenceContext)
+        node: NodeNG = args[0]
+        context: InferenceContext | None = args[1]
 
         partial_cache_key = (func, node)
         if partial_cache_key in _CURRENTLY_INFERRING:
