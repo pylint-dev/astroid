@@ -32,7 +32,9 @@ def _inference_tip_cached(
     """Cache decorator used for inference tips."""
 
     def inner(
-        node: NodeNG, context: InferenceContext | None, **kwargs: Any,
+        node: NodeNG,
+        context: InferenceContext | None,
+        **kwargs: Any,
     ) -> Iterator[InferenceResult] | list[InferenceResult]:
         partial_cache_key = (func, node)
         if partial_cache_key in _CURRENTLY_INFERRING:
