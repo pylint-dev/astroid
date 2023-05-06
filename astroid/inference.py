@@ -40,6 +40,7 @@ from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
     NameInferenceError,
+    UseInferenceDefault,
     _NonDeducibleTypeHierarchy,
 )
 from astroid.interpreter import dunder_lookup
@@ -254,6 +255,16 @@ def infer_name(
     return bases._infer_stmts(stmts, context, frame)
 
 
+@decorators.raise_if_nothing_inferred
+@decorators.path_wrapper
+def _infer_name(
+    self: nodes.Name | nodes.AssignName,
+    context: InferenceContext | None = None,
+    **kwargs: Any,
+) -> Generator[InferenceResult, None, None]:
+    return infer_name(self, context, **kwargs)
+
+
 # pylint: disable=no-value-for-parameter
 # The order of the decorators here is important
 # See https://github.com/pylint-dev/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
@@ -388,6 +399,16 @@ def infer_attribute(
     return InferenceErrorInfo(node=self, context=context)
 
 
+@decorators.raise_if_nothing_inferred
+@decorators.path_wrapper
+def _infer_attribute(
+    self: nodes.Attribute | nodes.AssignAttr,
+    context: InferenceContext | None = None,
+    **kwargs: Any,
+) -> Generator[InferenceResult, None, InferenceErrorInfo]:
+    return infer_attribute(self, context, **kwargs)
+
+
 # The order of the decorators here is important
 # See https://github.com/pylint-dev/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
 nodes.Attribute._infer = decorators.raise_if_nothing_inferred(
@@ -475,6 +496,14 @@ def infer_subscript(
     if found_one:
         return InferenceErrorInfo(node=self, context=context)
     return None
+
+
+@decorators.raise_if_nothing_inferred
+@decorators.path_wrapper
+def _infer_subscript(
+    self: nodes.Subscript, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+    return infer_subscript(self, context=context, **kwargs)
 
 
 # The order of the decorators here is important
@@ -1278,3 +1307,128 @@ def infer_functiondef(
 
 
 nodes.FunctionDef._infer = infer_functiondef
+
+
+# pylint: disable-next=too-many-return-statements
+def _infer_node(
+    node: nodes.NodeNG, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
+    """Find the infer method for the given node and call it."""
+    if isinstance(
+        node,
+        (
+            nodes.Module,
+            nodes.ClassDef,
+            nodes.Lambda,
+            nodes.Const,
+            nodes.Slice,
+            objects.Property,
+            objects.FrozenSet,
+            objects.Super,
+        ),
+    ):
+        return infer_end(node, context=context, **kwargs)
+    if isinstance(node, (nodes.List, nodes.Tuple, nodes.Set)):
+        return infer_sequence(node, context=context, **kwargs)
+    if isinstance(node, nodes.Dict):
+        return infer_map(node, context=context, **kwargs)
+    if isinstance(node, nodes.Name):
+        return _infer_name(node, context=context, **kwargs)
+    if isinstance(node, nodes.Call):
+        return infer_call(node, context=context, **kwargs)
+    if isinstance(node, nodes.Import):
+        return infer_import(node, context=context, **kwargs)
+    if isinstance(node, nodes.ImportFrom):
+        return infer_import_from(node, context=context, **kwargs)
+    if isinstance(node, nodes.Attribute):
+        return _infer_attribute(node, context=context, **kwargs)
+    if isinstance(node, nodes.Global):
+        return infer_global(node, context=context, **kwargs)
+    if isinstance(node, nodes.Subscript):
+        return _infer_subscript(node, context=context, **kwargs)
+    if isinstance(node, nodes.BoolOp):
+        return _infer_boolop(node, context=context, **kwargs)
+    if isinstance(node, nodes.UnaryOp):
+        return infer_unaryop(node, context=context, **kwargs)
+    if isinstance(node, nodes.BinOp):
+        return infer_binop(node, context=context, **kwargs)
+    if isinstance(node, nodes.Compare):
+        return _infer_compare(node, context=context, **kwargs)
+    if isinstance(node, nodes.AugAssign):
+        return infer_augassign(node, context=context, **kwargs)
+    if isinstance(node, nodes.Arguments):
+        return infer_arguments(node, context=context, **kwargs)
+    if isinstance(node, (nodes.AssignName, nodes.AssignAttr)):
+        return infer_assign(node, context=context, **kwargs)
+    if isinstance(node, nodes.EmptyNode):
+        return infer_empty_node(node, context=context, **kwargs)
+    if isinstance(node, nodes.IfExp):
+        return infer_ifexp(node, context=context, **kwargs)
+    if isinstance(node, nodes.FunctionDef):
+        return infer_functiondef(node, context=context, **kwargs)
+    if isinstance(node, nodes.Unknown):
+        return iter((util.Uninferable,))
+    if isinstance(node, nodes.EvaluatedObject):
+        return iter((node.value,))
+    raise InferenceError(
+        "No inference function for {node!r}.", node=node, context=context
+    )
+
+
+def infer_object(
+    node: nodes.NodeNG, context: InferenceContext | None = None, **kwargs: Any
+) -> Generator[InferenceResult, None, None]:
+    """Get a generator of the inferred values.
+
+    This is the main entry point to the inference system.
+
+    .. seealso:: :ref:`inference`
+
+    If the instance has some explicit inference function set, it will be
+    called instead of the default interface.
+
+    :returns: The inferred values.
+    """
+    if context is not None:
+        context = context.extra_context.get(node, context)
+    if node._explicit_inference is not None:
+        # explicit_inference is not bound, give it self explicitly
+        try:
+            if context is None:
+                yield from node._explicit_inference(node, context, **kwargs)
+                return
+            for result in node._explicit_inference(node, context, **kwargs):
+                context.nodes_inferred += 1
+                yield result
+            return
+        except UseInferenceDefault:
+            pass
+
+    if not context:
+        # nodes_inferred?
+        yield from _infer_node(node, context=context, **kwargs)
+        return
+
+    key = (node, context.lookupname, context.callcontext, context.boundnode)
+    if key in context.inferred:
+        yield from context.inferred[key]
+        return
+
+    results = []
+
+    # Limit inference amount to help with performance issues with
+    # exponentially exploding possible results.
+    limit = AstroidManager.max_inferable_values
+    for i, result in enumerate(_infer_node(node, context=context, **kwargs)):
+        if i >= limit or (context.nodes_inferred > context.max_inferred):
+            results.append(util.Uninferable)
+            yield util.Uninferable
+            break
+        results.append(result)
+        yield result
+        context.nodes_inferred += 1
+
+    # Cache generated results for subsequent inferences of the
+    # same node using the same context
+    context.inferred[key] = tuple(results)
+    return

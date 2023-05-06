@@ -444,7 +444,7 @@ def test_max_inferred_for_complicated_class_hierarchy() -> None:
 
 
 @mock.patch(
-    "astroid.nodes.ImportFrom._infer",
+    "astroid.inference.infer_import_from",
     side_effect=RecursionError,
 )
 def test_recursion_during_inference(mocked) -> None:

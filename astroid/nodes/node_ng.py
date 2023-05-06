@@ -29,9 +29,7 @@ from astroid.exceptions import (
     InferenceError,
     ParentMissingError,
     StatementMissing,
-    UseInferenceDefault,
 )
-from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.utils import Position
@@ -131,49 +129,10 @@ class NodeNG:
         :returns: The inferred values.
         :rtype: iterable
         """
-        if context is not None:
-            context = context.extra_context.get(self, context)
-        if self._explicit_inference is not None:
-            # explicit_inference is not bound, give it self explicitly
-            try:
-                if context is None:
-                    yield from self._explicit_inference(self, context, **kwargs)
-                    return
-                for result in self._explicit_inference(self, context, **kwargs):
-                    context.nodes_inferred += 1
-                    yield result
-                return
-            except UseInferenceDefault:
-                pass
+        # pylint: disable-next=import-outside-toplevel
+        from astroid import inference
 
-        if not context:
-            # nodes_inferred?
-            yield from self._infer(context=context, **kwargs)
-            return
-
-        key = (self, context.lookupname, context.callcontext, context.boundnode)
-        if key in context.inferred:
-            yield from context.inferred[key]
-            return
-
-        results = []
-
-        # Limit inference amount to help with performance issues with
-        # exponentially exploding possible results.
-        limit = AstroidManager.max_inferable_values
-        for i, result in enumerate(self._infer(context=context, **kwargs)):
-            if i >= limit or (context.nodes_inferred > context.max_inferred):
-                results.append(util.Uninferable)
-                yield util.Uninferable
-                break
-            results.append(result)
-            yield result
-            context.nodes_inferred += 1
-
-        # Cache generated results for subsequent inferences of the
-        # same node using the same context
-        context.inferred[key] = tuple(results)
-        return
+        return inference.infer_object(self, context, **kwargs)
 
     def _repr_name(self) -> str:
         """Get a name for nice representation.
