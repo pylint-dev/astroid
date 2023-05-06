@@ -6,18 +6,21 @@
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Callable, Iterator
+from typing import cast
 
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
 from astroid.nodes import NodeNG
-from astroid.typing import (
-    _P,
-    InferenceResult,
-    InferFn,
-    InferFnExplicit,
-    InferFnTransform,
-)
+from astroid.typing import InferenceResult, InferFn, InferFnExplicit, InferFnTransform
+
+if sys.version_info >= (3, 11):
+    from typing import ParamSpec
+else:
+    from typing_extensions import ParamSpec
+
+_P = ParamSpec("_P")
 
 _cache: dict[
     tuple[InferFn, NodeNG, InferenceContext | None], list[InferenceResult]
@@ -39,8 +42,8 @@ def _inference_tip_cached(
     def inner(
         *args: _P.args, **kwargs: _P.kwargs
     ) -> Iterator[InferenceResult] | list[InferenceResult]:
-        node: NodeNG = args[0]
-        context: InferenceContext | None = args[1]
+        node = cast(NodeNG, args[0])
+        context = cast(InferenceContext | None, args[1])
 
         partial_cache_key = (func, node)
         if partial_cache_key in _CURRENTLY_INFERRING:
