@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator
-from typing import TYPE_CHECKING
 
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
