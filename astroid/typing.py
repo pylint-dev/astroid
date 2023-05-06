@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from astroid.context import InferenceContext
     from astroid.interpreter._import import spec
 
+
 _NodesT = TypeVar("_NodesT", bound="nodes.NodeNG")
 
 
