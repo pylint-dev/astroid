@@ -1771,9 +1771,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 "FinalClass",
                 "ClassB",
                 "MixinB",
-                # We don't recognize what 'cls' is at time of .format() call, only
-                # what it is at the end.
-                # "strMixin",
+                "strMixin",
                 "ClassA",
                 "MixinA",
                 "intMixin",

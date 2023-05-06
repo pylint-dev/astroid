@@ -17,6 +17,13 @@ Release date: TBA
 
 * Reduce file system access in ``ast_from_file()``.
 
+* Fix incorrect cache keys for inference results, thereby correctly inferring types
+  for calls instantiating types dynamically.
+
+  Closes #1828
+  Closes pylint-dev/pylint#7464
+  Closes pylint-dev/pylint#8074
+
 * ``nodes.FunctionDef`` no longer inherits from ``nodes.Lambda``.
   This is a breaking change but considered a bug fix as the nodes did not share the same
   API and were not interchangeable.
