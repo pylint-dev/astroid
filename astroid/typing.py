@@ -4,12 +4,12 @@
 
 from __future__ import annotations
 
-import sys
 from typing import (
     TYPE_CHECKING,
     Callable,
     Generator,
     Iterator,
+    Optional,
     TypedDict,
     TypeVar,
     Union,
@@ -20,12 +20,6 @@ if TYPE_CHECKING:
     from astroid.context import InferenceContext
     from astroid.interpreter._import import spec
 
-if sys.version_info >= (3, 11):
-    from typing import ParamSpec
-else:
-    from typing_extensions import ParamSpec
-
-_P = ParamSpec("_P")
 _NodesT = TypeVar("_NodesT", bound="nodes.NodeNG")
 
 
@@ -79,6 +73,9 @@ InferBinaryOp = Callable[
     Generator[InferenceResult, None, None],
 ]
 
-InferFn = Callable[..., Iterator[InferenceResult]]
-InferFnExplicit = Callable[_P, Union[Iterator[InferenceResult], list[InferenceResult]]]
+InferFn = Callable[[_NodesT, Optional["InferenceContext"]], Iterator[InferenceResult]]
+InferFnExplicit = Callable[
+    [_NodesT, Optional["InferenceContext"]],
+    Union[Iterator[InferenceResult], list[InferenceResult]],
+]
 InferFnTransform = Callable[[_NodesT, InferFn], _NodesT]

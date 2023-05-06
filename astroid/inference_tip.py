@@ -6,21 +6,12 @@
 
 from __future__ import annotations
 
-import sys
 from collections.abc import Callable, Iterator
-from typing import Optional, cast
 
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
 from astroid.nodes import NodeNG
 from astroid.typing import InferenceResult, InferFn, InferFnExplicit, InferFnTransform
-
-if sys.version_info >= (3, 11):
-    from typing import ParamSpec
-else:
-    from typing_extensions import ParamSpec
-
-_P = ParamSpec("_P")
 
 _cache: dict[
     tuple[InferFn, NodeNG, InferenceContext | None], list[InferenceResult]
@@ -35,16 +26,13 @@ def clear_inference_tip_cache() -> None:
 
 
 def _inference_tip_cached(
-    func: Callable[_P, Iterator[InferenceResult]],
+    func: Callable[[NodeNG, InferenceContext | None], Iterator[InferenceResult]],
 ) -> InferFnExplicit:
     """Cache decorator used for inference tips."""
 
     def inner(
-        *args: _P.args, **kwargs: _P.kwargs
+        node: NodeNG, context: InferenceContext | None
     ) -> Iterator[InferenceResult] | list[InferenceResult]:
-        node = cast(NodeNG, args[0])
-        context = cast(Optional[InferenceContext], args[1])
-
         partial_cache_key = (func, node)
         if partial_cache_key in _CURRENTLY_INFERRING:
             # If through recursion we end up trying to infer the same
@@ -59,7 +47,7 @@ def _inference_tip_cached(
             # with slightly different contexts while still passing the simple
             # test cases included with this commit.
             _CURRENTLY_INFERRING.add(partial_cache_key)
-            result = _cache[func, node, context] = list(func(*args, **kwargs))
+            result = _cache[func, node, context] = list(func(node, context))
             # Remove recursion guard.
             _CURRENTLY_INFERRING.remove(partial_cache_key)
 
