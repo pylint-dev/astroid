@@ -1009,7 +1009,7 @@ UNINFERABLE_OPS = {
 }
 
 
-def _to_literal(node: nodes.NodeNG) -> Any:
+def _to_literal(node: SuccessfulInferenceResult) -> Any:
     # Can raise SyntaxError or ValueError from ast.literal_eval
     # Can raise AttributeError from node.as_string() as not all nodes have a visitor
     # Is this the stupidest idea or the simplest idea?
@@ -1017,7 +1017,7 @@ def _to_literal(node: nodes.NodeNG) -> Any:
 
 
 def _do_compare(
-    left_iter: Iterable[nodes.NodeNG], op: str, right_iter: Iterable[nodes.NodeNG]
+    left_iter: Iterable[InferenceResult], op: str, right_iter: Iterable[InferenceResult]
 ) -> bool | util.UninferableBase:
     """
     If all possible combinations are either True or False, return that:

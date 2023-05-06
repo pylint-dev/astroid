@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import collections
 import collections.abc
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from astroid import nodes
@@ -66,7 +66,9 @@ POSSIBLE_PROPERTIES = {
 }
 
 
-def _is_property(meth, context: InferenceContext | None = None) -> bool:
+def _is_property(
+    meth: nodes.FunctionDef | UnboundMethod, context: InferenceContext | None = None
+) -> bool:
     from astroid import helpers  # pylint: disable=import-outside-toplevel
 
     decoratornames = meth.decoratornames(context=context)
@@ -92,7 +94,11 @@ def _is_property(meth, context: InferenceContext | None = None) -> bool:
                 if not isinstance(base_class, nodes.Name):
                     continue
                 module, _ = base_class.lookup(base_class.name)
-                if module.name == "builtins" and base_class.name == "property":
+                if (
+                    isinstance(module, nodes.Module)
+                    and module.name == "builtins"
+                    and base_class.name == "property"
+                ):
                     return True
 
     return False
@@ -107,10 +113,15 @@ class Proxy:
     if new instance attributes are created. See the Const class
     """
 
-    _proxied: nodes.ClassDef | nodes.FunctionDef
+    _proxied: nodes.ClassDef | nodes.FunctionDef | nodes.Lambda | UnboundMethod
 
     def __init__(
-        self, proxied: nodes.ClassDef | nodes.FunctionDef | None = None
+        self,
+        proxied: nodes.ClassDef
+        | nodes.FunctionDef
+        | nodes.Lambda
+        | UnboundMethod
+        | None = None,
     ) -> None:
         if proxied is None:
             # This is a hack to allow calling this __init__ during bootstrapping of
@@ -138,7 +149,7 @@ class Proxy:
 
 
 def _infer_stmts(
-    stmts: Sequence[InferenceResult],
+    stmts: Iterator[InferenceResult],
     context: InferenceContext | None,
     frame: nodes.NodeNG | BaseInstance | None = None,
 ) -> collections.abc.Generator[InferenceResult, None, None]:
@@ -148,7 +159,10 @@ def _infer_stmts(
     if context is not None:
         name = context.lookupname
         context = context.clone()
-        constraints = context.constraints.get(name, {})
+        if name is not None:
+            constraints = context.constraints.get(name, {})
+        else:
+            constraints = {}
     else:
         name = None
         constraints = {}
@@ -159,8 +173,7 @@ def _infer_stmts(
             yield stmt
             inferred = True
             continue
-        # 'context' is always InferenceContext and Instances get '_infer_name' from ClassDef
-        context.lookupname = stmt._infer_name(frame, name)  # type: ignore[union-attr]
+        context.lookupname = stmt._infer_name(frame, name)
         try:
             stmt_constraints: set[Constraint] = set()
             for constraint_stmt, potential_constraints in constraints.items():
@@ -289,7 +302,9 @@ class BaseInstance(Proxy):
             except AttributeInferenceError as error:
                 raise InferenceError(**vars(error)) from error
 
-    def _wrap_attr(self, attrs, context: InferenceContext | None = None):
+    def _wrap_attr(
+        self, attrs: Iterable[InferenceResult], context: InferenceContext | None = None
+    ) -> Iterator[InferenceResult]:
         """Wrap bound methods of attrs in a InstanceMethod proxies."""
         for attr in attrs:
             if isinstance(attr, UnboundMethod):
@@ -297,7 +312,7 @@ class BaseInstance(Proxy):
                     yield from attr.infer_call_result(self, context)
                 else:
                     yield BoundMethod(attr, self)
-            elif hasattr(attr, "name") and attr.name == "<lambda>":
+            elif isinstance(attr, nodes.Lambda):
                 if attr.args.arguments and attr.args.arguments[0].name == "self":
                     yield BoundMethod(attr, self)
                     continue
@@ -390,7 +405,9 @@ class Instance(BaseInstance):
                 return True
         return result
 
-    def getitem(self, index, context: InferenceContext | None = None):
+    def getitem(
+        self, index: nodes.Const, context: InferenceContext | None = None
+    ) -> InferenceResult | None:
         new_context = bind_context_to_node(context, self)
         if not context:
             context = new_context
@@ -413,13 +430,14 @@ class Instance(BaseInstance):
 class UnboundMethod(Proxy):
     """A special node representing a method not bound to an instance."""
 
-    _proxied: nodes.FunctionDef
+    _proxied: nodes.FunctionDef | UnboundMethod
 
     special_attributes: objectmodel.BoundMethodModel | objectmodel.UnboundMethodModel = (
         objectmodel.UnboundMethodModel()
     )
 
     def __repr__(self) -> str:
+        assert self._proxied.parent, "Expected a parent node"
         frame = self._proxied.parent.frame(future=True)
         return "<{} {} of {} at 0x{}".format(
             self.__class__.__name__, self._proxied.name, frame.qname(), id(self)
@@ -431,7 +449,7 @@ class UnboundMethod(Proxy):
     def is_bound(self) -> bool:
         return False
 
-    def getattr(self, name, context: InferenceContext | None = None):
+    def getattr(self, name: str, context: InferenceContext | None = None):
         if name in self.special_attributes:
             return [self.special_attributes.lookup(name)]
         return self._proxied.getattr(name, context)
@@ -461,19 +479,22 @@ class UnboundMethod(Proxy):
         # If we're unbound method __new__ of a builtin, the result is an
         # instance of the class given as first argument.
         if self._proxied.name == "__new__":
+            assert self._proxied.parent, "Expected a parent node"
             qname = self._proxied.parent.frame(future=True).qname()
             # Avoid checking builtins.type: _infer_type_new_call() does more validation
             if qname.startswith("builtins.") and qname != "builtins.type":
-                return self._infer_builtin_new(caller, context)
+                return self._infer_builtin_new(caller, context or InferenceContext())
         return self._proxied.infer_call_result(caller, context)
 
     def _infer_builtin_new(
         self,
-        caller: nodes.Call,
+        caller: SuccessfulInferenceResult | None,
         context: InferenceContext,
     ) -> collections.abc.Generator[
         nodes.Const | Instance | UninferableBase, None, None
     ]:
+        if not isinstance(caller, nodes.Call):
+            return
         if not caller.args:
             return
         # Attempt to create a constant
@@ -508,7 +529,11 @@ class BoundMethod(UnboundMethod):
 
     special_attributes = objectmodel.BoundMethodModel()
 
-    def __init__(self, proxy, bound):
+    def __init__(
+        self,
+        proxy: nodes.FunctionDef | nodes.Lambda | UnboundMethod,
+        bound: SuccessfulInferenceResult,
+    ) -> None:
         super().__init__(proxy)
         self.bound = bound
 
@@ -521,7 +546,9 @@ class BoundMethod(UnboundMethod):
     def is_bound(self) -> Literal[True]:
         return True
 
-    def _infer_type_new_call(self, caller, context):  # noqa: C901
+    def _infer_type_new_call(
+        self, caller: nodes.Call, context: InferenceContext
+    ) -> nodes.ClassDef | None:  # noqa: C901
         """Try to infer what type.__new__(mcs, name, bases, attrs) returns.
 
         In order for such call to be valid, the metaclass needs to be
@@ -536,7 +563,7 @@ class BoundMethod(UnboundMethod):
             mcs = next(caller.args[0].infer(context=context))
         except StopIteration as e:
             raise InferenceError(context=context) from e
-        if mcs.__class__.__name__ != "ClassDef":
+        if not isinstance(mcs, nodes.ClassDef):
             # Not a valid first argument.
             return None
         if not mcs.is_subtype_of("builtins.type"):
@@ -548,7 +575,7 @@ class BoundMethod(UnboundMethod):
             name = next(caller.args[1].infer(context=context))
         except StopIteration as e:
             raise InferenceError(context=context) from e
-        if name.__class__.__name__ != "Const":
+        if not isinstance(name, nodes.Const):
             # Not a valid name, needs to be a const.
             return None
         if not isinstance(name.value, str):
@@ -560,14 +587,14 @@ class BoundMethod(UnboundMethod):
             bases = next(caller.args[2].infer(context=context))
         except StopIteration as e:
             raise InferenceError(context=context) from e
-        if bases.__class__.__name__ != "Tuple":
+        if not isinstance(bases, nodes.Tuple):
             # Needs to be a tuple.
             return None
         try:
             inferred_bases = [next(elt.infer(context=context)) for elt in bases.elts]
         except StopIteration as e:
             raise InferenceError(context=context) from e
-        if any(base.__class__.__name__ != "ClassDef" for base in inferred_bases):
+        if any(not isinstance(base, nodes.ClassDef) for base in inferred_bases):
             # All the bases needs to be Classes
             return None
 
@@ -576,10 +603,10 @@ class BoundMethod(UnboundMethod):
             attrs = next(caller.args[3].infer(context=context))
         except StopIteration as e:
             raise InferenceError(context=context) from e
-        if attrs.__class__.__name__ != "Dict":
+        if not isinstance(attrs, nodes.Dict):
             # Needs to be a dictionary.
             return None
-        cls_locals = collections.defaultdict(list)
+        cls_locals: dict[str, list[InferenceResult]] = collections.defaultdict(list)
         for key, value in attrs.items:
             try:
                 key = next(key.infer(context=context))
@@ -590,14 +617,14 @@ class BoundMethod(UnboundMethod):
             except StopIteration as e:
                 raise InferenceError(context=context) from e
             # Ignore non string keys
-            if key.__class__.__name__ == "Const" and isinstance(key.value, str):
+            if isinstance(key, nodes.Const) and isinstance(key.value, str):
                 cls_locals[key.value].append(value)
 
         # Build the class from now.
         cls = mcs.__class__(
             name=name.value,
-            lineno=caller.lineno,
-            col_offset=caller.col_offset,
+            lineno=caller.lineno or 0,
+            col_offset=caller.col_offset or 0,
             parent=caller,
             end_lineno=caller.end_lineno,
             end_col_offset=caller.end_col_offset,
@@ -612,7 +639,7 @@ class BoundMethod(UnboundMethod):
         cls.postinit(
             bases=bases.elts,
             body=[empty],
-            decorators=[],
+            decorators=None,
             newstyle=True,
             metaclass=mcs,
             keywords=[],
@@ -627,9 +654,10 @@ class BoundMethod(UnboundMethod):
     ) -> Iterator[InferenceResult]:
         context = bind_context_to_node(context, self.bound)
         if (
-            self.bound.__class__.__name__ == "ClassDef"
+            isinstance(self.bound, nodes.ClassDef)
             and self.bound.name == "type"
             and self.name == "__new__"
+            and isinstance(caller, nodes.Call)
             and len(caller.args) == 4
         ):
             # Check if we have a ``type.__new__(mcs, name, bases, attrs)`` call.
@@ -655,8 +683,10 @@ class Generator(BaseInstance):
     special_attributes: objectmodel.GeneratorModel
 
     def __init__(
-        self, parent=None, generator_initial_context: InferenceContext | None = None
-    ):
+        self,
+        parent: nodes.FunctionDef,
+        generator_initial_context: InferenceContext | None = None,
+    ) -> None:
         super().__init__()
         self.parent = parent
         self._call_context = copy_context(generator_initial_context)
@@ -664,7 +694,7 @@ class Generator(BaseInstance):
         # See comment above: this is a deferred initialization.
         Generator.special_attributes = objectmodel.GeneratorModel()
 
-    def infer_yield_types(self):
+    def infer_yield_types(self) -> Iterator[InferenceResult]:
         yield from self.parent.infer_yield_result(self._call_context)
 
     def callable(self) -> Literal[False]:

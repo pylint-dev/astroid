@@ -1399,13 +1399,12 @@ class FunctionDef(
             self.parent.frame(future=True), ClassDef
         )
 
-    def decoratornames(self, context: InferenceContext | None = None):
+    def decoratornames(self, context: InferenceContext | None = None) -> set[str]:
         """Get the qualified names of each of the decorators on this function.
 
         :param context:
             An inference context that can be passed to inference functions
         :returns: The names of the decorators.
-        :rtype: set(str)
         """
         result = set()
         decoratornodes = []
@@ -1821,7 +1820,7 @@ class ClassDef(
         This is usually for :pep:`3115` style metaclass declaration.
         """
 
-        self.bases: list[NodeNG] = []
+        self.bases: list[SuccessfulInferenceResult] = []
         """What the class inherits from."""
 
         self.body: list[NodeNG] = []
@@ -1871,7 +1870,7 @@ class ClassDef(
     # pylint: disable=redefined-outer-name
     def postinit(
         self,
-        bases: list[NodeNG],
+        bases: list[SuccessfulInferenceResult],
         body: list[NodeNG],
         decorators: node_classes.Decorators | None,
         newstyle: bool | None = None,

@@ -6,14 +6,18 @@
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Callable, Iterator
-
-from typing_extensions import ParamSpec
 
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
 from astroid.nodes import NodeNG
 from astroid.typing import InferenceResult, InferFn
+
+if sys.version_info >= (3, 11):
+    from typing import ParamSpec
+else:
+    from typing_extensions import ParamSpec
 
 _P = ParamSpec("_P")
 

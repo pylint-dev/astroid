@@ -9,5 +9,5 @@ python-dateutil
 PyQt6
 regex
 six
-urllib3
+urllib3>1,<2
 typing_extensions>=4.4.0

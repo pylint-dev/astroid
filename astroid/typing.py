@@ -43,6 +43,9 @@ class AstroidManagerBrain(TypedDict):
 
 InferenceResult = Union["nodes.NodeNG", "util.UninferableBase", "bases.Proxy"]
 SuccessfulInferenceResult = Union["nodes.NodeNG", "bases.Proxy"]
+_SuccessfulInferenceResultT = TypeVar(
+    "_SuccessfulInferenceResultT", bound=SuccessfulInferenceResult
+)
 
 ConstFactoryResult = Union[
     "nodes.List",
@@ -55,7 +58,7 @@ ConstFactoryResult = Union[
 
 InferBinaryOp = Callable[
     [
-        Union[_NodesT, "bases.Instance"],
+        _SuccessfulInferenceResultT,
         Union["nodes.AugAssign", "nodes.BinOp"],
         str,
         InferenceResult,
