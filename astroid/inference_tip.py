@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Callable, Iterator
-from typing import cast
+from typing import Optional, cast
 
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
@@ -43,7 +43,7 @@ def _inference_tip_cached(
         *args: _P.args, **kwargs: _P.kwargs
     ) -> Iterator[InferenceResult] | list[InferenceResult]:
         node = cast(NodeNG, args[0])
-        context = cast(InferenceContext | None, args[1])
+        context = cast(Optional[InferenceContext], args[1])
 
         partial_cache_key = (func, node)
         if partial_cache_key in _CURRENTLY_INFERRING:
