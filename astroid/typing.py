@@ -9,6 +9,7 @@ from typing import (
     Callable,
     Generator,
     Iterator,
+    List,
     Optional,
     TypedDict,
     TypeVar,
@@ -77,6 +78,6 @@ InferBinaryOp = Callable[
 InferFn = Callable[[_NodesT, Optional["InferenceContext"]], Iterator[InferenceResult]]
 InferFnExplicit = Callable[
     [_NodesT, Optional["InferenceContext"]],
-    Union[Iterator[InferenceResult], list[InferenceResult]],
+    Union[Iterator[InferenceResult], List[InferenceResult]],
 ]
 InferFnTransform = Callable[[_NodesT, InferFn], _NodesT]
