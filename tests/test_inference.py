@@ -40,6 +40,7 @@ from astroid.exceptions import (
     NotFoundError,
 )
 from astroid.inference import infer_end as inference_infer_end
+from astroid.inference import infer_object
 from astroid.objects import ExceptionInstance
 
 from . import resources
@@ -7022,7 +7023,7 @@ def test_recursion_on_inference_tip() -> None:
 def test_function_def_cached_generator() -> None:
     """Regression test for https://github.com/pylint-dev/astroid/issues/817."""
     funcdef: nodes.FunctionDef = extract_node("def func(): pass")
-    next(funcdef._infer())
+    next(infer_object(funcdef))
 
 
 class TestOldStyleStringFormatting:

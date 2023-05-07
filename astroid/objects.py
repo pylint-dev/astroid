@@ -13,9 +13,9 @@ leads to an inferred FrozenSet:
 
 from __future__ import annotations
 
-from collections.abc import Generator, Iterator
+from collections.abc import Iterator
 from functools import cached_property
-from typing import Any, Literal, NoReturn, TypeVar
+from typing import Literal, NoReturn, TypeVar
 
 from astroid import bases, decorators, util
 from astroid.context import InferenceContext
@@ -38,9 +38,6 @@ class FrozenSet(node_classes.BaseContainer):
 
     def pytype(self) -> Literal["builtins.frozenset"]:
         return "builtins.frozenset"
-
-    def _infer(self, context: InferenceContext | None = None, **kwargs: Any):
-        yield self
 
     @cached_property
     def _proxied(self):  # pylint: disable=method-hidden
@@ -83,9 +80,6 @@ class Super(node_classes.NodeNG):
             end_lineno=scope.end_lineno,
             end_col_offset=scope.end_col_offset,
         )
-
-    def _infer(self, context: InferenceContext | None = None, **kwargs: Any):
-        yield self
 
     def super_mro(self):
         """Get the MRO which will be used to lookup attributes in this super."""
@@ -366,8 +360,3 @@ class Property(scoped_nodes.FunctionDef):
         context: InferenceContext | None = None,
     ) -> NoReturn:
         raise InferenceError("Properties are not callable")
-
-    def _infer(
-        self: _T, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[_T, None, None]:
-        yield self

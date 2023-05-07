@@ -3932,10 +3932,6 @@ class Unknown(_base_nodes.AssignTypeNode):
     def qname(self) -> Literal["Unknown"]:
         return "Unknown"
 
-    def _infer(self, context: InferenceContext | None = None, **kwargs):
-        """Inference on an Unknown node immediately terminates."""
-        yield util.Uninferable
-
 
 class EvaluatedObject(NodeNG):
     """Contains an object that has already been inferred
@@ -3962,11 +3958,6 @@ class EvaluatedObject(NodeNG):
             end_lineno=self.original.end_lineno,
             end_col_offset=self.original.end_col_offset,
         )
-
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[NodeNG | util.UninferableBase, None, None]:
-        yield self.value
 
 
 # Pattern matching #######################################################

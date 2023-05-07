@@ -86,15 +86,6 @@ def infer_end(
     yield self
 
 
-# We add ignores to all assignments to methods
-# See https://github.com/python/mypy/issues/2427
-nodes.Module._infer = infer_end
-nodes.ClassDef._infer = infer_end
-nodes.Lambda._infer = infer_end  # type: ignore[assignment]
-nodes.Const._infer = infer_end  # type: ignore[assignment]
-nodes.Slice._infer = infer_end  # type: ignore[assignment]
-
-
 def _infer_sequence_helper(
     node: _BaseContainerT, context: InferenceContext | None = None
 ) -> list[SuccessfulInferenceResult]:
@@ -138,11 +129,6 @@ def infer_sequence(
         yield new_seq
     else:
         yield self
-
-
-nodes.List._infer = infer_sequence  # type: ignore[assignment]
-nodes.Tuple._infer = infer_sequence  # type: ignore[assignment]
-nodes.Set._infer = infer_sequence  # type: ignore[assignment]
 
 
 def infer_map(
@@ -207,9 +193,6 @@ def _infer_map(
     return values
 
 
-nodes.Dict._infer = infer_map  # type: ignore[assignment]
-
-
 def _higher_function_scope(node: nodes.NodeNG) -> nodes.FunctionDef | None:
     """Search for the first function which encloses the given
     scope. This can be used for looking up in that function's
@@ -255,6 +238,8 @@ def infer_name(
     return bases._infer_stmts(stmts, context, frame)
 
 
+# The order of the decorators here is important
+# See https://github.com/pylint-dev/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def _infer_name(
@@ -265,12 +250,6 @@ def _infer_name(
     return infer_name(self, context, **kwargs)
 
 
-# pylint: disable=no-value-for-parameter
-# The order of the decorators here is important
-# See https://github.com/pylint-dev/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
-nodes.Name._infer = decorators.raise_if_nothing_inferred(
-    decorators.path_wrapper(infer_name)
-)
 nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper
 
 
@@ -300,9 +279,6 @@ def infer_call(
     return InferenceErrorInfo(node=self, context=context)
 
 
-nodes.Call._infer = infer_call  # type: ignore[assignment]
-
-
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_import(
@@ -324,9 +300,6 @@ def infer_import(
             yield self.do_import_module(name)
     except AstroidBuildingError as exc:
         raise InferenceError(node=self, context=context) from exc
-
-
-nodes.Import._infer = infer_import
 
 
 @decorators.raise_if_nothing_inferred
@@ -364,9 +337,6 @@ def infer_import_from(
         ) from error
 
 
-nodes.ImportFrom._infer = infer_import_from  # type: ignore[assignment]
-
-
 def infer_attribute(
     self: nodes.Attribute | nodes.AssignAttr,
     context: InferenceContext | None = None,
@@ -399,6 +369,8 @@ def infer_attribute(
     return InferenceErrorInfo(node=self, context=context)
 
 
+# The order of the decorators here is important
+# See https://github.com/pylint-dev/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def _infer_attribute(
@@ -409,11 +381,6 @@ def _infer_attribute(
     return infer_attribute(self, context, **kwargs)
 
 
-# The order of the decorators here is important
-# See https://github.com/pylint-dev/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
-nodes.Attribute._infer = decorators.raise_if_nothing_inferred(
-    decorators.path_wrapper(infer_attribute)
-)
 # won't work with a path wrapper
 nodes.AssignAttr.infer_lhs = decorators.raise_if_nothing_inferred(infer_attribute)
 
@@ -431,9 +398,6 @@ def infer_global(
         raise InferenceError(
             str(error), target=self, attribute=context.lookupname, context=context
         ) from error
-
-
-nodes.Global._infer = infer_global  # type: ignore[assignment]
 
 
 _SUBSCRIPT_SENTINEL = object()
@@ -498,6 +462,8 @@ def infer_subscript(
     return None
 
 
+# The order of the decorators here is important
+# See https://github.com/pylint-dev/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def _infer_subscript(
@@ -506,11 +472,6 @@ def _infer_subscript(
     return infer_subscript(self, context=context, **kwargs)
 
 
-# The order of the decorators here is important
-# See https://github.com/pylint-dev/astroid/commit/0a8a75db30da060a24922e05048bc270230f5
-nodes.Subscript._infer = decorators.raise_if_nothing_inferred(  # type: ignore[assignment]
-    decorators.path_wrapper(infer_subscript)
-)
 nodes.Subscript.infer_lhs = decorators.raise_if_nothing_inferred(infer_subscript)
 
 
@@ -567,9 +528,6 @@ def _infer_boolop(
             yield value
 
     return InferenceErrorInfo(node=self, context=context)
-
-
-nodes.BoolOp._infer = _infer_boolop
 
 
 # UnaryOp, BinOp and AugAssign inferences
@@ -668,7 +626,6 @@ def infer_unaryop(
 
 
 nodes.UnaryOp._infer_unaryop = _infer_unaryop
-nodes.UnaryOp._infer = infer_unaryop
 
 
 def _is_not_implemented(const) -> bool:
@@ -1020,7 +977,6 @@ def infer_binop(
 
 
 nodes.BinOp._infer_binop = _infer_binop
-nodes.BinOp._infer = infer_binop
 
 COMPARE_OPS: dict[str, Callable[[Any, Any], bool]] = {
     "==": operator.eq,
@@ -1118,9 +1074,6 @@ def _infer_compare(
         yield nodes.Const(retval)
 
 
-nodes.Compare._infer = _infer_compare  # type: ignore[assignment]
-
-
 def _infer_augassign(
     self: nodes.AugAssign, context: InferenceContext | None = None
 ) -> Generator[InferenceResult | util.BadBinaryOperationMessage, None, None]:
@@ -1160,7 +1113,6 @@ def infer_augassign(
 
 
 nodes.AugAssign._infer_augassign = _infer_augassign
-nodes.AugAssign._infer = infer_augassign
 
 # End of binary operation inference.
 
@@ -1172,9 +1124,6 @@ def infer_arguments(
     if context is None or context.lookupname is None:
         raise InferenceError(node=self, context=context)
     return protocols._arguments_infer_argname(self, context.lookupname, context)
-
-
-nodes.Arguments._infer = infer_arguments  # type: ignore[assignment]
 
 
 @decorators.raise_if_nothing_inferred
@@ -1194,10 +1143,6 @@ def infer_assign(
     return bases._infer_stmts(stmts, context)
 
 
-nodes.AssignName._infer = infer_assign
-nodes.AssignAttr._infer = infer_assign
-
-
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_empty_node(
@@ -1212,9 +1157,6 @@ def infer_empty_node(
             )
         except AstroidError:
             yield util.Uninferable
-
-
-nodes.EmptyNode._infer = infer_empty_node  # type: ignore[assignment]
 
 
 def _populate_context_lookup(call: nodes.Call, context: InferenceContext | None):
@@ -1269,9 +1211,6 @@ def infer_ifexp(
         yield from self.orelse.infer(context=rhs_context)
 
 
-nodes.IfExp._infer = infer_ifexp  # type: ignore[assignment]
-
-
 def infer_functiondef(
     self: _FunctionDefT, context: InferenceContext | None = None, **kwargs: Any
 ) -> Generator[Property | _FunctionDefT, None, InferenceErrorInfo]:
@@ -1304,9 +1243,6 @@ def infer_functiondef(
     prop_func.postinit(body=[], args=self.args, doc_node=self.doc_node)
     yield prop_func
     return InferenceErrorInfo(node=self, context=context)
-
-
-nodes.FunctionDef._infer = infer_functiondef
 
 
 # pylint: disable-next=too-many-return-statements
