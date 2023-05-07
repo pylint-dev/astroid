@@ -144,9 +144,17 @@ class NodeNG:
             # explicit_inference is not bound, give it self explicitly
             try:
                 if context is None:
-                    yield from self._explicit_inference(self, context, **kwargs)
+                    yield from self._explicit_inference(
+                        self,  # type: ignore[arg-type]
+                        context,
+                        **kwargs,
+                    )
                     return
-                for result in self._explicit_inference(self, context, **kwargs):
+                for result in self._explicit_inference(
+                    self,  # type: ignore[arg-type]
+                    context,
+                    **kwargs,
+                ):
                     context.nodes_inferred += 1
                     yield result
                 return
