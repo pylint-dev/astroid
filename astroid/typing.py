@@ -88,16 +88,6 @@ class InferFn(Protocol, Generic[_SuccessfulInferenceResultT_contra]):
         ...
 
 
-class SuccessfulInferFn(Protocol, Generic[_SuccessfulInferenceResultT_contra]):
-    def __call__(
-        self,
-        node: _SuccessfulInferenceResultT_contra,
-        context: InferenceContext | None = None,
-        **kwargs: Any,
-    ) -> Generator[SuccessfulInferenceResult, None, None]:
-        ...
-
-
 class TransformFn(Protocol, Generic[_SuccessfulInferenceResultT]):
     def __call__(
         self,
