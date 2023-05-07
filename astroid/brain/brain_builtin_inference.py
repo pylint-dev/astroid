@@ -22,6 +22,7 @@ from astroid.exceptions import (
 )
 from astroid.manager import AstroidManager
 from astroid.nodes import scoped_nodes
+from astroid.typing import InferenceResult
 
 OBJECT_DUNDER_NEW = "object.__new__"
 
@@ -707,12 +708,12 @@ def infer_issubclass(callnode, context: InferenceContext | None = None):
     return nodes.Const(issubclass_bool)
 
 
-def infer_isinstance(callnode, context: InferenceContext | None = None):
+def infer_isinstance(
+    callnode: nodes.Call, context: InferenceContext | None = None
+) -> nodes.Const:
     """Infer isinstance calls.
 
     :param nodes.Call callnode: an isinstance call
-    :rtype nodes.Const: Boolean Const value of isinstance call
-
     :raises UseInferenceDefault: If the node cannot be inferred
     """
     call = arguments.CallSite.from_call(callnode, context=context)
@@ -744,7 +745,9 @@ def infer_isinstance(callnode, context: InferenceContext | None = None):
     return nodes.Const(isinstance_bool)
 
 
-def _class_or_tuple_to_container(node, context: InferenceContext | None = None):
+def _class_or_tuple_to_container(
+    node: InferenceResult, context: InferenceContext | None = None
+) -> list[InferenceResult]:
     # Move inferences results into container
     # to simplify later logic
     # raises InferenceError if any of the inferences fall through
@@ -761,9 +764,6 @@ def _class_or_tuple_to_container(node, context: InferenceContext | None = None):
             ]
         except StopIteration as e:
             raise InferenceError(node=node, context=context) from e
-        class_container = [
-            klass_node for klass_node in class_container if klass_node is not None
-        ]
     else:
         class_container = [node_infer]
     return class_container

@@ -28,7 +28,8 @@ def _build_proxy_class(cls_name: str, builtins: nodes.Module) -> nodes.ClassDef:
 
 
 def _function_type(
-    function: nodes.Lambda | bases.UnboundMethod, builtins: nodes.Module
+    function: nodes.Lambda | nodes.FunctionDef | bases.UnboundMethod,
+    builtins: nodes.Module,
 ) -> nodes.ClassDef:
     if isinstance(function, (scoped_nodes.Lambda, scoped_nodes.FunctionDef)):
         if function.root().name == "builtins":
@@ -96,20 +97,19 @@ def object_type(
 
 
 def _object_type_is_subclass(
-    obj_type, class_or_seq, context: InferenceContext | None = None
-):
-    if not isinstance(class_or_seq, (tuple, list)):
-        class_seq = (class_or_seq,)
-    else:
-        class_seq = class_or_seq
-
-    if isinstance(obj_type, util.UninferableBase):
+    obj_type: InferenceResult | None,
+    class_or_seq: list[InferenceResult],
+    context: InferenceContext | None = None,
+) -> util.UninferableBase | bool:
+    if isinstance(obj_type, util.UninferableBase) or not isinstance(
+        obj_type, nodes.ClassDef
+    ):
         return util.Uninferable
 
     # Instances are not types
     class_seq = [
         item if not isinstance(item, bases.Instance) else util.Uninferable
-        for item in class_seq
+        for item in class_or_seq
     ]
     # strict compatibility with issubclass
     # issubclass(type, (object, 1)) evaluates to true
@@ -124,12 +124,12 @@ def _object_type_is_subclass(
     return False
 
 
-def object_isinstance(node, class_or_seq, context: InferenceContext | None = None):
+def object_isinstance(
+    node: InferenceResult,
+    class_or_seq: list[InferenceResult],
+    context: InferenceContext | None = None,
+) -> util.UninferableBase | bool:
     """Check if a node 'isinstance' any node in class_or_seq.
-
-    :param node: A given node
-    :param class_or_seq: Union[nodes.NodeNG, Sequence[nodes.NodeNG]]
-    :rtype: bool
 
     :raises AstroidTypeError: if the given ``classes_or_seq`` are not types
     """
@@ -139,12 +139,12 @@ def object_isinstance(node, class_or_seq, context: InferenceContext | None = Non
     return _object_type_is_subclass(obj_type, class_or_seq, context=context)
 
 
-def object_issubclass(node, class_or_seq, context: InferenceContext | None = None):
+def object_issubclass(
+    node: nodes.NodeNG,
+    class_or_seq: list[InferenceResult],
+    context: InferenceContext | None = None,
+) -> util.UninferableBase | bool:
     """Check if a type is a subclass of any node in class_or_seq.
-
-    :param node: A given node
-    :param class_or_seq: Union[Nodes.NodeNG, Sequence[nodes.NodeNG]]
-    :rtype: bool
 
     :raises AstroidTypeError: if the given ``classes_or_seq`` are not types
     :raises AstroidError: if the type of the given node cannot be inferred
@@ -270,7 +270,7 @@ def object_len(node, context: InferenceContext | None = None):
     if (
         isinstance(node_frame, scoped_nodes.FunctionDef)
         and node_frame.name == "__len__"
-        and hasattr(inferred_node, "_proxied")
+        and isinstance(inferred_node, bases.Proxy)
         and inferred_node._proxied == node_frame.parent
     ):
         message = (
