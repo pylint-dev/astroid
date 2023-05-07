@@ -85,7 +85,7 @@ class InferFn(Protocol, Generic[_SuccessfulInferenceResultT_contra]):
         context: InferenceContext | None = None,
         **kwargs: Any,
     ) -> Generator[InferenceResult, None, None]:
-        ...
+        ...  # pragma: no cover
 
 
 class TransformFn(Protocol, Generic[_SuccessfulInferenceResultT]):
@@ -94,4 +94,4 @@ class TransformFn(Protocol, Generic[_SuccessfulInferenceResultT]):
         node: _SuccessfulInferenceResultT,
         infer_function: InferFn[_SuccessfulInferenceResultT] = ...,
     ) -> _SuccessfulInferenceResultT | None:
-        ...
+        ...  # pragma: no cover

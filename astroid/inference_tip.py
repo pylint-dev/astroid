@@ -55,11 +55,11 @@ def _inference_tip_cached(func: InferFn[_NodesT]) -> InferFn[_NodesT]:
             # with slightly different contexts while still passing the simple
             # test cases included with this commit.
             _CURRENTLY_INFERRING.add(partial_cache_key)
-            _cache[func, node, context] = list(func(node, context, **kwargs))
+            result = _cache[func, node, context] = list(func(node, context, **kwargs))
             # Remove recursion guard.
             _CURRENTLY_INFERRING.remove(partial_cache_key)
 
-        yield from _cache[func, node, context]
+        yield from result
 
     return inner
 
