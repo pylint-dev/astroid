@@ -26,9 +26,7 @@ def clear_inference_tip_cache() -> None:
     _cache.clear()
 
 
-def _inference_tip_cached(
-    func: Callable[[NodeNG, InferenceContext | None], Iterator[InferenceResult]],
-) -> InferFnExplicit:
+def _inference_tip_cached(func: InferFn) -> InferFnExplicit:
     """Cache decorator used for inference tips."""
 
     def inner(
