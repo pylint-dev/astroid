@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import pprint
+import sys
 import warnings
 from collections.abc import Generator, Iterator
 from functools import cached_property
@@ -35,7 +36,13 @@ from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.utils import Position
-from astroid.typing import InferenceErrorInfo, InferenceResult, InferFnExplicit
+from astroid.typing import InferenceErrorInfo, InferenceResult, InferFn
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -80,7 +87,7 @@ class NodeNG:
     _other_other_fields: ClassVar[tuple[str, ...]] = ()
     """Attributes that contain AST-dependent fields."""
     # instance specific inference function infer(node, context)
-    _explicit_inference: InferFnExplicit | None = None
+    _explicit_inference: InferFn[Self] | None = None
 
     def __init__(
         self,
