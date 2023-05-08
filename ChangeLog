@@ -58,6 +58,7 @@ Release date: TBA
   - ``nodes.Attribute``
   - ``nodes.AugAssign``
   - ``nodes.Await``
+  - ``nodes.BaseContainer``
   - ``nodes.BinOp``
   - ``nodes.Call``
   - ``nodes.ClassDef``
@@ -67,6 +68,7 @@ Release date: TBA
   - ``nodes.Delete``
   - ``nodes.DelAttr``
   - ``nodes.DelName``
+  - ``nodes.Dict``
   - ``nodes.DictComp``
   - ``nodes.ExceptHandler``
   - ``nodes.Expr``

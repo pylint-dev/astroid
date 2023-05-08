@@ -47,7 +47,13 @@ LEN_OF_IMPL_PREFIX = len(IMPL_PREFIX)
 
 
 def _dunder_dict(instance, attributes):
-    obj = node_classes.Dict(parent=instance)
+    obj = node_classes.Dict(
+        parent=instance,
+        lineno=instance.lineno,
+        col_offset=instance.col_offset,
+        end_lineno=instance.end_lineno,
+        end_col_offset=instance.end_col_offset,
+    )
 
     # Convert the keys to node strings
     keys = [
@@ -263,7 +269,13 @@ class FunctionModel(ObjectModel):
 
     @property
     def attr___annotations__(self):
-        obj = node_classes.Dict(parent=self._instance)
+        obj = node_classes.Dict(
+            parent=self._instance,
+            lineno=self._instance.lineno,
+            col_offset=self._instance.col_offset,
+            end_lineno=self._instance.end_lineno,
+            end_col_offset=self._instance.end_col_offset,
+        )
 
         if not self._instance.returns:
             returns = None
@@ -297,7 +309,13 @@ class FunctionModel(ObjectModel):
 
     @property
     def attr___dict__(self):
-        return node_classes.Dict(parent=self._instance)
+        return node_classes.Dict(
+            parent=self._instance,
+            lineno=self._instance.lineno,
+            col_offset=self._instance.col_offset,
+            end_lineno=self._instance.end_lineno,
+            end_col_offset=self._instance.end_col_offset,
+        )
 
     attr___globals__ = attr___dict__
 
@@ -314,7 +332,13 @@ class FunctionModel(ObjectModel):
                 yield name, default
 
         args = self._instance.args
-        obj = node_classes.Dict(parent=self._instance)
+        obj = node_classes.Dict(
+            parent=self._instance,
+            lineno=self._instance.lineno,
+            col_offset=self._instance.col_offset,
+            end_lineno=self._instance.end_lineno,
+            end_col_offset=self._instance.end_col_offset,
+        )
         defaults = dict(_default_args(args, obj))
 
         obj.postinit(list(defaults.items()))
@@ -567,7 +591,13 @@ class ClassModel(ObjectModel):
 
     @property
     def attr___dict__(self):
-        return node_classes.Dict(parent=self._instance)
+        return node_classes.Dict(
+            parent=self._instance,
+            lineno=self._instance.lineno,
+            col_offset=self._instance.col_offset,
+            end_lineno=self._instance.end_lineno,
+            end_col_offset=self._instance.end_col_offset,
+        )
 
     @property
     def attr___call__(self):
