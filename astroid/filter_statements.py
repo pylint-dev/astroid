@@ -10,9 +10,13 @@ It is not considered public.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from astroid import nodes
-from astroid.nodes import node_classes
 from astroid.typing import SuccessfulInferenceResult
+
+if TYPE_CHECKING:
+    from astroid.nodes import _base_nodes
 
 
 def _get_filtered_node_statements(
@@ -44,7 +48,7 @@ def _get_if_statement_ancestor(node: nodes.NodeNG) -> nodes.If | None:
 
 
 def _filter_stmts(
-    base_node: node_classes.LookupMixIn,
+    base_node: _base_nodes.LookupMixIn,
     stmts: list[SuccessfulInferenceResult],
     frame: nodes.LocalsDictNodeNG,
     offset: int,

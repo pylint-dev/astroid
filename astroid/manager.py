@@ -434,7 +434,7 @@ class AstroidManager:
         # pylint: disable=import-outside-toplevel
         from astroid.inference_tip import clear_inference_tip_cache
         from astroid.interpreter.objectmodel import ObjectModel
-        from astroid.nodes.node_classes import LookupMixIn
+        from astroid.nodes._base_nodes import LookupMixIn
         from astroid.nodes.scoped_nodes import ClassDef
 
         clear_inference_tip_cache()

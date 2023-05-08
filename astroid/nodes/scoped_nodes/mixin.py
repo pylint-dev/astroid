@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, TypeVar, overload
 
 from astroid.filter_statements import _filter_stmts
-from astroid.nodes import node_classes, scoped_nodes
+from astroid.nodes import _base_nodes, node_classes, scoped_nodes
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 
 
-class LocalsDictNodeNG(node_classes.LookupMixIn):
+class LocalsDictNodeNG(_base_nodes.LookupMixIn):
     """this class provides locals handling common to Module, FunctionDef
     and ClassDef nodes, including a dict like interface for direct access
     to locals information
@@ -52,7 +52,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         return self
 
     def scope_lookup(
-        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+        self, node: _base_nodes.LookupMixIn, name: str, offset: int = 0
     ) -> tuple[LocalsDictNodeNG, list[nodes.NodeNG]]:
         """Lookup where the given variable is assigned.
 
@@ -70,7 +70,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         raise NotImplementedError
 
     def _scope_lookup(
-        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+        self, node: _base_nodes.LookupMixIn, name: str, offset: int = 0
     ) -> tuple[LocalsDictNodeNG, list[nodes.NodeNG]]:
         """XXX method for interfacing the scope lookup"""
         try:

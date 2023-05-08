@@ -11,12 +11,17 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Generator, Iterator
-from functools import cached_property, partial
+from functools import cached_property, lru_cache, partial
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Union
 
 from astroid import bases, decorators, nodes, util
 from astroid.const import PY310_PLUS
-from astroid.context import CallContext, bind_context_to_node, copy_context
+from astroid.context import (
+    CallContext,
+    InferenceContext,
+    bind_context_to_node,
+    copy_context,
+)
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -27,8 +32,7 @@ from astroid.nodes.node_ng import NodeNG
 from astroid.typing import InferenceErrorInfo, InferenceResult
 
 if TYPE_CHECKING:
-    from astroid.context import InferenceContext
-    from astroid.nodes.node_classes import AssignedStmtsPossibleNode
+    from astroid.nodes.node_classes import AssignedStmtsPossibleNode, LocalsDictNodeNG
 
     GetFlowFactory = Callable[
         [
@@ -248,6 +252,72 @@ class MultiLineWithElseBlockNode(MultiLineBlockNode):
         return lineno, last or self.tolineno
 
 
+class LookupMixIn(NodeNG):
+    """Mixin to look up a name in the right scope."""
+
+    @lru_cache  # noqa
+    def lookup(self, name: str) -> tuple[LocalsDictNodeNG, list[NodeNG]]:
+        """Lookup where the given variable is assigned.
+
+        The lookup starts from self's scope. If self is not a frame itself
+        and the name is found in the inner frame locals, statements will be
+        filtered to remove ignorable statements according to self's location.
+
+        :param name: The name of the variable to find assignments for.
+
+        :returns: The scope node and the list of assignments associated to the
+            given name according to the scope where it has been found (locals,
+            globals or builtin).
+        """
+        return self.scope().scope_lookup(self, name)
+
+    def ilookup(self, name):
+        """Lookup the inferred values of the given variable.
+
+        :param name: The variable name to find values for.
+        :type name: str
+
+        :returns: The inferred values of the statements returned from
+            :meth:`lookup`.
+        :rtype: iterable
+        """
+        frame, stmts = self.lookup(name)
+        context = InferenceContext()
+        return bases._infer_stmts(stmts, context, frame)
+
+
+def _reflected_name(name) -> str:
+    return "__r" + name[2:]
+
+
+def _augmented_name(name) -> str:
+    return "__i" + name[2:]
+
+
+BIN_OP_METHOD = {
+    "+": "__add__",
+    "-": "__sub__",
+    "/": "__truediv__",
+    "//": "__floordiv__",
+    "*": "__mul__",
+    "**": "__pow__",
+    "%": "__mod__",
+    "&": "__and__",
+    "|": "__or__",
+    "^": "__xor__",
+    "<<": "__lshift__",
+    ">>": "__rshift__",
+    "@": "__matmul__",
+}
+
+REFLECTED_BIN_OP_METHOD = {
+    key: _reflected_name(value) for (key, value) in BIN_OP_METHOD.items()
+}
+AUGMENTED_OP_METHOD = {
+    key + "=": _augmented_name(value) for (key, value) in BIN_OP_METHOD.items()
+}
+
+
 class OperatorNode(NodeNG):
     @staticmethod
     def _filter_operation_errors(
@@ -281,7 +351,7 @@ class OperatorNode(NodeNG):
         TODO: Instead of returning Uninferable we should rely
         on the call to '%' to see if the result is actually uninferable.
         """
-        from astroid import helpers
+        from astroid import helpers  # pylint: disable=import-outside-toplevel
 
         if isinstance(other, nodes.Tuple):
             if util.Uninferable in other.elts:
@@ -360,9 +430,7 @@ class OperatorNode(NodeNG):
         reverse: bool = False,
     ) -> partial[Generator[InferenceResult, None, None]]:
         """Get an inference callable for an augmented binary operation."""
-        from astroid import protocols
-
-        method_name = protocols.AUGMENTED_OP_METHOD[op]
+        method_name = AUGMENTED_OP_METHOD[op]
         return partial(
             OperatorNode._invoke_binop_inference,
             instance=instance,
@@ -386,12 +454,10 @@ class OperatorNode(NodeNG):
 
         If *reverse* is True, then the reflected method will be used instead.
         """
-        from astroid import protocols
-
         if reverse:
-            method_name = protocols.REFLECTED_BIN_OP_METHOD[op]
+            method_name = REFLECTED_BIN_OP_METHOD[op]
         else:
-            method_name = protocols.BIN_OP_METHOD[op]
+            method_name = BIN_OP_METHOD[op]
         return partial(
             OperatorNode._invoke_binop_inference,
             instance=instance,
@@ -456,7 +522,7 @@ class OperatorNode(NodeNG):
             is tried, then right.__rop__(left) and then
             left.__op__(right)
         """
-        from astroid import helpers
+        from astroid import helpers  # pylint: disable=import-outside-toplevel
 
         bin_op = aug_opnode.op.strip("=")
         aug_op = aug_opnode.op
@@ -512,7 +578,7 @@ class OperatorNode(NodeNG):
             * if left is a supertype of right, then right.__rop__(left)
             is first tried and then left.__op__(right)
         """
-        from astroid import helpers
+        from astroid import helpers  # pylint: disable=import-outside-toplevel
 
         op = binary_opnode.op
         if OperatorNode._same_type(left_type, right_type):
@@ -564,7 +630,7 @@ class OperatorNode(NodeNG):
         This is used by both normal binary operations and augmented binary
         operations, the only difference is the flow factory used.
         """
-        from astroid import helpers
+        from astroid import helpers  # pylint: disable=import-outside-toplevel
 
         context, reverse_context = OperatorNode._get_binop_contexts(
             context, left, right
@@ -617,6 +683,7 @@ class AttributeNode(NodeNG):
         **kwargs: Any,
     ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
         """Infer an Attribute node by using getattr on the associated object."""
+        # pylint: disable=import-outside-toplevel
         from astroid.constraint import get_constraints
 
         for owner in self.expr.infer(context):
@@ -674,14 +741,17 @@ class AssignNode(NodeNG):
         return self.parent.assigned_stmts(node=self, context=context)
 
 
-class NameNode(NodeNG):
+class NameNode(LookupMixIn):
+    name: str
+
     @decorators.raise_if_nothing_inferred
-    def _infer_name(
+    def _infer_name_node(
         self,
         context: InferenceContext | None = None,
         **kwargs: Any,
     ) -> Generator[InferenceResult, None, None]:
         """Infer a Name: use name lookup rules."""
+        # pylint: disable=import-outside-toplevel
         from astroid.constraint import get_constraints
         from astroid.helpers import _higher_function_scope
 

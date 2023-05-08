@@ -34,45 +34,8 @@ from astroid.typing import (
 if TYPE_CHECKING:
     _TupleListNodeT = TypeVar("_TupleListNodeT", nodes.Tuple, nodes.List)
 
-
-def _reflected_name(name) -> str:
-    return "__r" + name[2:]
-
-
-def _augmented_name(name) -> str:
-    return "__i" + name[2:]
-
-
 _CONTEXTLIB_MGR = "contextlib.contextmanager"
-BIN_OP_METHOD = {
-    "+": "__add__",
-    "-": "__sub__",
-    "/": "__truediv__",
-    "//": "__floordiv__",
-    "*": "__mul__",
-    "**": "__pow__",
-    "%": "__mod__",
-    "&": "__and__",
-    "|": "__or__",
-    "^": "__xor__",
-    "<<": "__lshift__",
-    ">>": "__rshift__",
-    "@": "__matmul__",
-}
 
-REFLECTED_BIN_OP_METHOD = {
-    key: _reflected_name(value) for (key, value) in BIN_OP_METHOD.items()
-}
-AUGMENTED_OP_METHOD = {
-    key + "=": _augmented_name(value) for (key, value) in BIN_OP_METHOD.items()
-}
-
-UNARY_OP_METHOD = {
-    "+": "__pos__",
-    "-": "__neg__",
-    "~": "__invert__",
-    "not": None,  # XXX not '__nonzero__'
-}
 _UNARY_OPERATORS: dict[str, Callable[[Any], Any]] = {
     "+": operator_mod.pos,
     "-": operator_mod.neg,
@@ -178,7 +141,7 @@ def _multiply_seq_by_int(
     other: nodes.Const,
     context: InferenceContext,
 ) -> _TupleListNodeT:
-    from astroid import helpers
+    from astroid import helpers  # pylint: disable=import-outside-toplevel
 
     node = self.__class__(parent=opnode)
     filtered_elts = (
@@ -219,7 +182,7 @@ def tl_infer_binary_op(
     or list. This refers to the left-hand side of the operation, so:
     'tuple() + 1' or '[] + A()'
     """
-    from astroid import helpers
+    from astroid import helpers  # pylint: disable=import-outside-toplevel
 
     # For tuples and list the boundnode is no longer the tuple or list instance
     context.boundnode = None
@@ -383,7 +346,7 @@ def _arguments_infer_argname(
 ) -> Generator[InferenceResult, None, None]:
     # arguments information may be missing, in which case we can't do anything
     # more
-    from astroid import arguments
+    from astroid import arguments  # pylint: disable=import-outside-toplevel
 
     if not (self.arguments or self.vararg or self.kwarg):
         yield util.Uninferable
@@ -447,7 +410,7 @@ def arguments_assigned_stmts(
     context: InferenceContext | None = None,
     assign_path: list[int] | None = None,
 ) -> Any:
-    from astroid import arguments
+    from astroid import arguments  # pylint: disable=import-outside-toplevel
 
     try:
         node_name = node.name  # type: ignore[union-attr]
@@ -554,7 +517,7 @@ def excepthandler_assigned_stmts(
     context: InferenceContext | None = None,
     assign_path: list[int] | None = None,
 ) -> Any:
-    from astroid import objects
+    from astroid import objects  # pylint: disable=import-outside-toplevel
 
     for assigned in node_classes.unpack_infer(self.type):
         if isinstance(assigned, nodes.ClassDef):
