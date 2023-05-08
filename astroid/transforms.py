@@ -9,7 +9,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, List, Optional, Tuple, TypeVar, Union, cast, overload
 
 from astroid.context import _invalidate_cache
-from astroid.typing import SuccessfulInferenceResult
+from astroid.typing import SuccessfulInferenceResult, TransformFn
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -17,9 +17,6 @@ if TYPE_CHECKING:
     _SuccessfulInferenceResultT = TypeVar(
         "_SuccessfulInferenceResultT", bound=SuccessfulInferenceResult
     )
-    _Transform = Callable[
-        [_SuccessfulInferenceResultT], Optional[SuccessfulInferenceResult]
-    ]
     _Predicate = Optional[Callable[[_SuccessfulInferenceResultT], bool]]
 
 _Vistables = Union[
@@ -52,7 +49,7 @@ class TransformVisitor:
             type[SuccessfulInferenceResult],
             list[
                 tuple[
-                    _Transform[SuccessfulInferenceResult],
+                    TransformFn[SuccessfulInferenceResult],
                     _Predicate[SuccessfulInferenceResult],
                 ]
             ],
@@ -123,7 +120,7 @@ class TransformVisitor:
     def register_transform(
         self,
         node_class: type[_SuccessfulInferenceResultT],
-        transform: _Transform[_SuccessfulInferenceResultT],
+        transform: TransformFn[_SuccessfulInferenceResultT],
         predicate: _Predicate[_SuccessfulInferenceResultT] | None = None,
     ) -> None:
         """Register `transform(node)` function to be applied on the given node.
@@ -139,7 +136,7 @@ class TransformVisitor:
     def unregister_transform(
         self,
         node_class: type[_SuccessfulInferenceResultT],
-        transform: _Transform[_SuccessfulInferenceResultT],
+        transform: TransformFn[_SuccessfulInferenceResultT],
         predicate: _Predicate[_SuccessfulInferenceResultT] | None = None,
     ) -> None:
         """Unregister the given transform."""

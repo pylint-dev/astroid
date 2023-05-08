@@ -4,15 +4,22 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Generator, TypedDict, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generator,
+    Generic,
+    Protocol,
+    TypedDict,
+    TypeVar,
+    Union,
+)
 
 if TYPE_CHECKING:
     from astroid import bases, exceptions, nodes, transforms, util
     from astroid.context import InferenceContext
     from astroid.interpreter._import import spec
-
-
-_NodesT = TypeVar("_NodesT", bound="nodes.NodeNG")
 
 
 class InferenceErrorInfo(TypedDict):
@@ -22,9 +29,6 @@ class InferenceErrorInfo(TypedDict):
 
     node: nodes.NodeNG
     context: InferenceContext | None
-
-
-InferFn = Callable[..., Any]
 
 
 class AstroidManagerBrain(TypedDict):
@@ -45,6 +49,11 @@ InferenceResult = Union["nodes.NodeNG", "util.UninferableBase", "bases.Proxy"]
 SuccessfulInferenceResult = Union["nodes.NodeNG", "bases.Proxy"]
 _SuccessfulInferenceResultT = TypeVar(
     "_SuccessfulInferenceResultT", bound=SuccessfulInferenceResult
+)
+_SuccessfulInferenceResultT_contra = TypeVar(
+    "_SuccessfulInferenceResultT_contra",
+    bound=SuccessfulInferenceResult,
+    contravariant=True,
 )
 
 ConstFactoryResult = Union[
@@ -67,3 +76,22 @@ InferBinaryOp = Callable[
     ],
     Generator[InferenceResult, None, None],
 ]
+
+
+class InferFn(Protocol, Generic[_SuccessfulInferenceResultT_contra]):
+    def __call__(
+        self,
+        node: _SuccessfulInferenceResultT_contra,
+        context: InferenceContext | None = None,
+        **kwargs: Any,
+    ) -> Generator[InferenceResult, None, None]:
+        ...  # pragma: no cover
+
+
+class TransformFn(Protocol, Generic[_SuccessfulInferenceResultT]):
+    def __call__(
+        self,
+        node: _SuccessfulInferenceResultT,
+        infer_function: InferFn[_SuccessfulInferenceResultT] = ...,
+    ) -> _SuccessfulInferenceResultT | None:
+        ...  # pragma: no cover
