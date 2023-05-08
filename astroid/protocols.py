@@ -12,9 +12,9 @@ import collections
 import itertools
 import operator as operator_mod
 from collections.abc import Callable, Generator, Iterator, Sequence
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
-from astroid import arguments, bases, decorators, helpers, nodes, objects, util
+from astroid import bases, decorators, nodes, util
 from astroid.const import Context
 from astroid.context import InferenceContext, copy_context
 from astroid.exceptions import (
@@ -31,7 +31,8 @@ from astroid.typing import (
     SuccessfulInferenceResult,
 )
 
-_TupleListNodeT = TypeVar("_TupleListNodeT", nodes.Tuple, nodes.List)
+if TYPE_CHECKING:
+    _TupleListNodeT = TypeVar("_TupleListNodeT", nodes.Tuple, nodes.List)
 
 
 def _reflected_name(name) -> str:
@@ -93,11 +94,25 @@ def _infer_unary_op(obj: Any, op: str) -> ConstFactoryResult:
     return nodes.const_factory(value)
 
 
-nodes.Tuple.infer_unary_op = lambda self, op: _infer_unary_op(tuple(self.elts), op)
-nodes.List.infer_unary_op = lambda self, op: _infer_unary_op(self.elts, op)
-nodes.Set.infer_unary_op = lambda self, op: _infer_unary_op(set(self.elts), op)
-nodes.Const.infer_unary_op = lambda self, op: _infer_unary_op(self.value, op)
-nodes.Dict.infer_unary_op = lambda self, op: _infer_unary_op(dict(self.items), op)
+def tuple_infer_unary_op(self, op):
+    return _infer_unary_op(tuple(self.elts), op)
+
+
+def list_infer_unary_op(self, op):
+    return _infer_unary_op(self.elts, op)
+
+
+def set_infer_unary_op(self, op):
+    return _infer_unary_op(set(self.elts), op)
+
+
+def const_infer_unary_op(self, op):
+    return _infer_unary_op(self.value, op)
+
+
+def dict_infer_unary_op(self, op):
+    return _infer_unary_op(dict(self.items), op)
+
 
 # Binary operations
 
@@ -157,15 +172,14 @@ def const_infer_binary_op(
         yield not_implemented
 
 
-nodes.Const.infer_binary_op = const_infer_binary_op
-
-
 def _multiply_seq_by_int(
     self: _TupleListNodeT,
     opnode: nodes.AugAssign | nodes.BinOp,
     other: nodes.Const,
     context: InferenceContext,
 ) -> _TupleListNodeT:
+    from astroid import helpers
+
     node = self.__class__(parent=opnode)
     filtered_elts = (
         helpers.safe_infer(elt, context) or util.Uninferable
@@ -205,6 +219,8 @@ def tl_infer_binary_op(
     or list. This refers to the left-hand side of the operation, so:
     'tuple() + 1' or '[] + A()'
     """
+    from astroid import helpers
+
     # For tuples and list the boundnode is no longer the tuple or list instance
     context.boundnode = None
     not_implemented = nodes.Const(NotImplemented)
@@ -233,10 +249,6 @@ def tl_infer_binary_op(
         yield not_implemented
 
 
-nodes.Tuple.infer_binary_op = tl_infer_binary_op
-nodes.List.infer_binary_op = tl_infer_binary_op
-
-
 @decorators.yes_if_nothing_inferred
 def instance_class_infer_binary_op(
     self: bases.Instance | nodes.ClassDef,
@@ -247,10 +259,6 @@ def instance_class_infer_binary_op(
     method: SuccessfulInferenceResult,
 ) -> Generator[InferenceResult, None, None]:
     return method.infer_call_result(self, context)
-
-
-bases.Instance.infer_binary_op = instance_class_infer_binary_op
-nodes.ClassDef.infer_binary_op = instance_class_infer_binary_op
 
 
 # assignment ##################################################################
@@ -337,10 +345,6 @@ def for_assigned_stmts(
     }
 
 
-nodes.For.assigned_stmts = for_assigned_stmts
-nodes.Comprehension.assigned_stmts = for_assigned_stmts
-
-
 def sequence_assigned_stmts(
     self: nodes.Tuple | nodes.List,
     node: node_classes.AssignedStmtsPossibleNode = None,
@@ -365,10 +369,6 @@ def sequence_assigned_stmts(
     )
 
 
-nodes.Tuple.assigned_stmts = sequence_assigned_stmts
-nodes.List.assigned_stmts = sequence_assigned_stmts
-
-
 def assend_assigned_stmts(
     self: nodes.AssignName | nodes.AssignAttr,
     node: node_classes.AssignedStmtsPossibleNode = None,
@@ -378,15 +378,13 @@ def assend_assigned_stmts(
     return self.parent.assigned_stmts(node=self, context=context)
 
 
-nodes.AssignName.assigned_stmts = assend_assigned_stmts
-nodes.AssignAttr.assigned_stmts = assend_assigned_stmts
-
-
 def _arguments_infer_argname(
     self, name: str | None, context: InferenceContext
 ) -> Generator[InferenceResult, None, None]:
     # arguments information may be missing, in which case we can't do anything
     # more
+    from astroid import arguments
+
     if not (self.arguments or self.vararg or self.kwarg):
         yield util.Uninferable
         return
@@ -449,6 +447,8 @@ def arguments_assigned_stmts(
     context: InferenceContext | None = None,
     assign_path: list[int] | None = None,
 ) -> Any:
+    from astroid import arguments
+
     try:
         node_name = node.name  # type: ignore[union-attr]
     except AttributeError:
@@ -470,9 +470,6 @@ def arguments_assigned_stmts(
         args = arguments.CallSite(callcontext, context=context)
         return args.infer_argument(self.parent, node_name, context)
     return _arguments_infer_argname(self, node_name, context)
-
-
-nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 
 
 @decorators.raise_if_nothing_inferred
@@ -508,11 +505,6 @@ def assign_annassigned_stmts(
             yield util.Uninferable
         else:
             yield inferred
-
-
-nodes.Assign.assigned_stmts = assign_assigned_stmts
-nodes.AnnAssign.assigned_stmts = assign_annassigned_stmts
-nodes.AugAssign.assigned_stmts = assign_assigned_stmts
 
 
 def _resolve_assignment_parts(parts, assign_path, context):
@@ -562,6 +554,8 @@ def excepthandler_assigned_stmts(
     context: InferenceContext | None = None,
     assign_path: list[int] | None = None,
 ) -> Any:
+    from astroid import objects
+
     for assigned in node_classes.unpack_infer(self.type):
         if isinstance(assigned, nodes.ClassDef):
             assigned = objects.ExceptionInstance(assigned)
@@ -573,9 +567,6 @@ def excepthandler_assigned_stmts(
         "assign_path": assign_path,
         "context": context,
     }
-
-
-nodes.ExceptHandler.assigned_stmts = excepthandler_assigned_stmts
 
 
 def _infer_context_manager(self, mgr, context):
@@ -696,9 +687,6 @@ def with_assigned_stmts(
     }
 
 
-nodes.With.assigned_stmts = with_assigned_stmts
-
-
 @decorators.raise_if_nothing_inferred
 def named_expr_assigned_stmts(
     self: nodes.NamedExpr,
@@ -716,9 +704,6 @@ def named_expr_assigned_stmts(
             assign_path=assign_path,
             context=context,
         )
-
-
-nodes.NamedExpr.assigned_stmts = named_expr_assigned_stmts
 
 
 @decorators.yes_if_nothing_inferred
@@ -918,9 +903,6 @@ def starred_assigned_stmts(  # noqa: C901
         yield util.Uninferable
 
 
-nodes.Starred.assigned_stmts = starred_assigned_stmts
-
-
 @decorators.yes_if_nothing_inferred
 def match_mapping_assigned_stmts(
     self: nodes.MatchMapping,
@@ -935,9 +917,6 @@ def match_mapping_assigned_stmts(
     yield
 
 
-nodes.MatchMapping.assigned_stmts = match_mapping_assigned_stmts
-
-
 @decorators.yes_if_nothing_inferred
 def match_star_assigned_stmts(
     self: nodes.MatchStar,
@@ -950,9 +929,6 @@ def match_star_assigned_stmts(
     """
     return
     yield
-
-
-nodes.MatchStar.assigned_stmts = match_star_assigned_stmts
 
 
 @decorators.yes_if_nothing_inferred
@@ -971,6 +947,3 @@ def match_as_assigned_stmts(
         and self.pattern is None
     ):
         yield self.parent.parent.subject
-
-
-nodes.MatchAs.assigned_stmts = match_as_assigned_stmts

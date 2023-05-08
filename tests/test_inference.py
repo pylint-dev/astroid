@@ -41,7 +41,6 @@ from astroid.exceptions import (
     InferenceError,
     NotFoundError,
 )
-from astroid.inference import infer_end as inference_infer_end
 from astroid.objects import ExceptionInstance
 
 from . import resources
@@ -71,7 +70,7 @@ class InferenceUtilsTest(unittest.TestCase):
             raise InferenceError
 
         infer_default = decoratorsmod.path_wrapper(infer_default)
-        infer_end = decoratorsmod.path_wrapper(inference_infer_end)
+        infer_end = decoratorsmod.path_wrapper(Slice._infer)
         with self.assertRaises(InferenceError):
             next(infer_default(1))
         self.assertEqual(next(infer_end(1)), 1)

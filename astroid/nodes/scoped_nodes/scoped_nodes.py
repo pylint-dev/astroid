@@ -16,9 +16,9 @@ import os
 import warnings
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import cached_property, lru_cache
-from typing import TYPE_CHECKING, ClassVar, Literal, NoReturn, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypeVar
 
-from astroid import bases, util
+from astroid import bases, protocols, util
 from astroid.const import IS_PYPY, PY38, PY39_PLUS, PYPY_7_3_11_PLUS
 from astroid.context import (
     CallContext,
@@ -44,10 +44,15 @@ from astroid.nodes import Arguments, Const, NodeNG, Unknown, _base_nodes, node_c
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
-from astroid.typing import InferBinaryOp, InferenceResult, SuccessfulInferenceResult
+from astroid.typing import (
+    InferBinaryOp,
+    InferenceErrorInfo,
+    InferenceResult,
+    SuccessfulInferenceResult,
+)
 
 if TYPE_CHECKING:
-    from astroid import nodes
+    from astroid import nodes, objects
 
 
 ITER_METHODS = ("__iter__", "__getitem__")
@@ -578,6 +583,11 @@ class Module(LocalsDictNodeNG):
         """
         return self
 
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Iterator[Module]:
+        yield self
+
 
 class GeneratorExp(ComprehensionScope):
     """Class representing an :class:`ast.GeneratorExp` node.
@@ -1025,6 +1035,11 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             return found_attrs
         raise AttributeInferenceError(target=self, attribute=name)
 
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Iterator[Lambda]:
+        yield self
+
 
 class FunctionDef(
     _base_nodes.MultiLineBlockNode,
@@ -1469,6 +1484,44 @@ class FunctionDef(
         """
         return bool(next(self._get_yield_nodes_skip_lambdas(), False))
 
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[objects.Property | FunctionDef, None, InferenceErrorInfo]:
+        from astroid import objects  # pylint: disable=import-outside-toplevel
+
+        if not self.decorators or not bases._is_property(self):
+            yield self
+            return InferenceErrorInfo(node=self, context=context)
+
+        # When inferring a property, we instantiate a new `objects.Property` object,
+        # which in turn, because it inherits from `FunctionDef`, sets itself in the locals
+        # of the wrapping frame. This means that every time we infer a property, the locals
+        # are mutated with a new instance of the property. To avoid this, we detect this
+        # scenario and avoid passing the `parent` argument to the constructor.
+        parent_frame = self.parent.frame()
+        property_already_in_parent_locals = self.name in parent_frame.locals and any(
+            isinstance(val, objects.Property) for val in parent_frame.locals[self.name]
+        )
+        # We also don't want to pass parent if the definition is within a Try node
+        if isinstance(
+            self.parent,
+            (node_classes.TryExcept, node_classes.TryFinally, node_classes.If),
+        ):
+            property_already_in_parent_locals = True
+
+        prop_func = objects.Property(
+            function=self,
+            name=self.name,
+            lineno=self.lineno,
+            parent=self.parent if not property_already_in_parent_locals else None,
+            col_offset=self.col_offset,
+        )
+        if property_already_in_parent_locals:
+            prop_func.parent = self.parent
+        prop_func.postinit(body=[], args=self.args, doc_node=self.doc_node)
+        yield prop_func
+        return InferenceErrorInfo(node=self, context=context)
+
     def infer_yield_result(self, context: InferenceContext | None = None):
         """Infer what the function yields when called
 
@@ -1848,7 +1901,9 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)
 
-    infer_binary_op: ClassVar[InferBinaryOp[ClassDef]]
+    infer_binary_op: ClassVar[
+        InferBinaryOp[ClassDef]
+    ] = protocols.instance_class_infer_binary_op
 
     def implicit_parameters(self) -> Literal[1]:
         return 1
@@ -2875,3 +2930,8 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         :returns: The node itself.
         """
         return self
+
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Iterator[ClassDef]:
+        yield self

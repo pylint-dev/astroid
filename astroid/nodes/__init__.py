@@ -11,10 +11,6 @@ All nodes inherit from :class:`~astroid.nodes.node_classes.NodeNG`.
 """
 
 # Nodes not present in the builtin ast module:  DictUnpack, Unknown, and EvaluatedObject.
-
-# This is the only node we re-export from the private _base_nodes module. This
-# is because it was originally part of the public API and hasn't been deprecated.
-from astroid.nodes._base_nodes import Statement
 from astroid.nodes.node_classes import (
     CONST_CLS,
     AnnAssign,
@@ -115,10 +111,7 @@ from astroid.nodes.scoped_nodes import (
 )
 from astroid.nodes.utils import Position
 
-_BaseContainer = BaseContainer  # TODO Remove for astroid 3.0
-
 ALL_NODE_CLASSES = (
-    _BaseContainer,
     BaseContainer,
     AnnAssign,
     Arguments,
@@ -223,6 +216,7 @@ __all__ = (
     "Attribute",
     "AugAssign",
     "Await",
+    "BaseContainer",
     "BinOp",
     "BoolOp",
     "Break",
@@ -288,7 +282,6 @@ __all__ = (
     "SetComp",
     "Slice",
     "Starred",
-    "Statement",
     "Subscript",
     "TryExcept",
     "TryFinally",
