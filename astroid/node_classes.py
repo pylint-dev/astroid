@@ -48,7 +48,6 @@ from astroid.nodes.node_classes import (
     JoinedStr,
     Keyword,
     List,
-    LookupMixIn,
     Match,
     MatchAs,
     MatchCase,

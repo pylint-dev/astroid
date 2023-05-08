@@ -53,6 +53,7 @@ from astroid.typing import (
 
 if TYPE_CHECKING:
     from astroid import nodes, objects
+    from astroid.nodes._base_nodes import LookupMixIn
 
 
 ITER_METHODS = ("__iter__", "__getitem__")
@@ -290,7 +291,7 @@ class Module(LocalsDictNodeNG):
         return self.fromlineno, self.tolineno
 
     def scope_lookup(
-        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+        self, node: LookupMixIn, name: str, offset: int = 0
     ) -> tuple[LocalsDictNodeNG, list[node_classes.NodeNG]]:
         """Lookup where the given variable is assigned.
 
@@ -971,7 +972,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         return self.body.infer(context)
 
     def scope_lookup(
-        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+        self, node: LookupMixIn, name: str, offset: int = 0
     ) -> tuple[LocalsDictNodeNG, list[NodeNG]]:
         """Lookup where the given names is assigned.
 
@@ -1653,7 +1654,7 @@ class FunctionDef(
         yield from self.body
 
     def scope_lookup(
-        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+        self, node: LookupMixIn, name: str, offset: int = 0
     ) -> tuple[LocalsDictNodeNG, list[nodes.NodeNG]]:
         """Lookup where the given name is assigned."""
         if name == "__class__":
@@ -2135,7 +2136,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
             yield self.instantiate_class()
 
     def scope_lookup(
-        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+        self, node: LookupMixIn, name: str, offset: int = 0
     ) -> tuple[LocalsDictNodeNG, list[nodes.NodeNG]]:
         """Lookup where the given name is assigned.
 

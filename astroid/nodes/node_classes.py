@@ -14,7 +14,7 @@ import sys
 import typing
 import warnings
 from collections.abc import Generator, Iterable, Iterator, Mapping
-from functools import cached_property, lru_cache
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -37,7 +37,6 @@ from astroid.exceptions import (
     AstroidValueError,
     AttributeInferenceError,
     InferenceError,
-    NameInferenceError,
     NoDefault,
     ParentMissingError,
     _NonDeducibleTypeHierarchy,
@@ -372,7 +371,7 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         self, context: InferenceContext | None = None
     ) -> list[SuccessfulInferenceResult]:
         """Infer all values based on BaseContainer.elts."""
-        from astroid import helpers
+        from astroid import helpers  # pylint: disable=import-outside-toplevel
 
         values = []
 
@@ -395,41 +394,6 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         return values
 
 
-# TODO: Move into _base_nodes. Blocked by import of _infer_stmts from bases.
-class LookupMixIn(NodeNG):
-    """Mixin to look up a name in the right scope."""
-
-    @lru_cache  # noqa
-    def lookup(self, name: str) -> tuple[LocalsDictNodeNG, list[NodeNG]]:
-        """Lookup where the given variable is assigned.
-
-        The lookup starts from self's scope. If self is not a frame itself
-        and the name is found in the inner frame locals, statements will be
-        filtered to remove ignorable statements according to self's location.
-
-        :param name: The name of the variable to find assignments for.
-
-        :returns: The scope node and the list of assignments associated to the
-            given name according to the scope where it has been found (locals,
-            globals or builtin).
-        """
-        return self.scope().scope_lookup(self, name)
-
-    def ilookup(self, name):
-        """Lookup the inferred values of the given variable.
-
-        :param name: The variable name to find values for.
-        :type name: str
-
-        :returns: The inferred values of the statements returned from
-            :meth:`lookup`.
-        :rtype: iterable
-        """
-        frame, stmts = self.lookup(name)
-        context = InferenceContext()
-        return _infer_stmts(stmts, context, frame)
-
-
 # Name classes
 
 
@@ -437,7 +401,7 @@ class AssignName(
     _base_nodes.NameNode,
     _base_nodes.AssignNode,
     _base_nodes.NoChildrenNode,
-    LookupMixIn,
+    _base_nodes.LookupMixIn,
     _base_nodes.ParentAssignNode,
 ):
     """Variation of :class:`ast.Assign` representing assignment to a name.
@@ -494,10 +458,12 @@ class AssignName(
     def infer_lhs(
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-        return self._infer_name(context, **kwargs)
+        return self._infer_name_node(context, **kwargs)
 
 
-class DelName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssignNode):
+class DelName(
+    _base_nodes.NoChildrenNode, _base_nodes.LookupMixIn, _base_nodes.ParentAssignNode
+):
     """Variation of :class:`ast.Delete` representing deletion of a name.
 
     A :class:`DelName` is the name of something that is deleted.
@@ -534,7 +500,7 @@ class DelName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssignN
         )
 
 
-class Name(_base_nodes.NameNode, _base_nodes.NoChildrenNode, LookupMixIn):
+class Name(_base_nodes.NameNode, _base_nodes.NoChildrenNode):
     """Class representing an :class:`ast.Name` node.
 
     A :class:`Name` node is something that is named, but not covered by
@@ -583,7 +549,7 @@ class Name(_base_nodes.NameNode, _base_nodes.NoChildrenNode, LookupMixIn):
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-        return self._infer_name(context, **kwargs)
+        return self._infer_name_node(context, **kwargs)
 
 
 DEPRECATED_ARGUMENT_DEFAULT = object()
@@ -2300,7 +2266,7 @@ class Dict(NodeNG, Instance):
         :raises AstroidIndexError: If the given index does not exist in the
             dictionary.
         """
-        from astroid import helpers
+        from astroid import helpers  # pylint: disable=import-outside-toplevel
 
         for key, value in self.items:
             # TODO(cpopa): no support for overriding yet, {1:2, **{1: 3}}.
@@ -2376,7 +2342,7 @@ class Dict(NodeNG, Instance):
         self, context: InferenceContext | None
     ) -> dict[SuccessfulInferenceResult, SuccessfulInferenceResult]:
         """Infer all values based on Dict.items."""
-        from astroid import helpers
+        from astroid import helpers  # pylint: disable=import-outside-toplevel
 
         values: dict[SuccessfulInferenceResult, SuccessfulInferenceResult] = {}
         for name, value in self.items:
@@ -3600,7 +3566,7 @@ class Subscript(NodeNG):
         to the value's `getitem` method, which should
         handle each supported index type accordingly.
         """
-        from astroid import helpers
+        from astroid import helpers  # pylint: disable=import-outside-toplevel
 
         found_one = False
         for value in self.value.infer(context):
@@ -4120,6 +4086,14 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
         yield self
 
 
+UNARY_OP_METHOD = {
+    "+": "__pos__",
+    "-": "__neg__",
+    "~": "__invert__",
+    "not": None,  # XXX not '__nonzero__'
+}
+
+
 class UnaryOp(_base_nodes.OperatorNode):
     """Class representing an :class:`ast.UnaryOp` node.
 
@@ -4191,7 +4165,7 @@ class UnaryOp(_base_nodes.OperatorNode):
         self: nodes.UnaryOp, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
         """Infer what an UnaryOp should return when evaluated."""
-        from astroid.nodes import ClassDef
+        from astroid.nodes import ClassDef  # pylint: disable=import-outside-toplevel
 
         for operand in self.operand.infer(context):
             try:
@@ -4200,7 +4174,7 @@ class UnaryOp(_base_nodes.OperatorNode):
                 # The operand doesn't support this operation.
                 yield util.BadUnaryOperationMessage(operand, self.op, exc)
             except AttributeError as exc:
-                meth = protocols.UNARY_OP_METHOD[self.op]
+                meth = UNARY_OP_METHOD[self.op]
                 if meth is None:
                     # `not node`. Determine node's boolean
                     # value and negate its result, unless it is
