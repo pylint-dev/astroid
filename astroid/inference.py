@@ -130,7 +130,11 @@ def infer_sequence(
     if has_starred_named_expr:
         values = _infer_sequence_helper(self, context)
         new_seq = type(self)(
-            lineno=self.lineno, col_offset=self.col_offset, parent=self.parent
+            lineno=self.lineno,
+            col_offset=self.col_offset,
+            parent=self.parent,
+            end_lineno=self.end_lineno,
+            end_col_offset=self.end_col_offset,
         )
         new_seq.postinit(values)
 
@@ -151,7 +155,13 @@ def infer_map(
         yield self
     else:
         items = _infer_map(self, context)
-        new_seq = type(self)(self.lineno, self.col_offset, self.parent)
+        new_seq = type(self)(
+            self.lineno,
+            self.col_offset,
+            self.parent,
+            end_lineno=self.end_lineno,
+            end_col_offset=self.end_col_offset,
+        )
         new_seq.postinit(list(items.items()))
         yield new_seq
 

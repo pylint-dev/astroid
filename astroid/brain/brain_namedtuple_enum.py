@@ -466,9 +466,23 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
             node.locals[local] = new_targets
 
         # The undocumented `_value2member_map_` member:
-        node.locals["_value2member_map_"] = [nodes.Dict(parent=node)]
+        node.locals["_value2member_map_"] = [
+            nodes.Dict(
+                parent=node,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+            )
+        ]
 
-        members = nodes.Dict(parent=node)
+        members = nodes.Dict(
+            parent=node,
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+        )
         members.postinit(
             [
                 (

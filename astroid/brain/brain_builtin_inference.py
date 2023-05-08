@@ -7,10 +7,11 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Iterator
+from collections.abc import Callable, Iterable, Iterator
 from functools import partial
+from typing import Any
 
-from astroid import arguments, helpers, inference_tip, nodes, objects, util
+from astroid import arguments, bases, helpers, inference_tip, nodes, objects, util
 from astroid.builder import AstroidBuilder
 from astroid.context import InferenceContext
 from astroid.exceptions import (
@@ -22,7 +23,7 @@ from astroid.exceptions import (
 )
 from astroid.manager import AstroidManager
 from astroid.nodes import scoped_nodes
-from astroid.typing import InferenceResult
+from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 OBJECT_DUNDER_NEW = "object.__new__"
 
@@ -196,10 +197,21 @@ def register_builtin_transform(transform, builtin_name) -> None:
     )
 
 
-def _container_generic_inference(node, context, node_type, transform):
+def _container_generic_inference(
+    node: nodes.Call,
+    context: InferenceContext | None,
+    node_type: type[nodes.BaseContainer],
+    transform: Callable[[SuccessfulInferenceResult], nodes.BaseContainer | None],
+) -> nodes.BaseContainer:
     args = node.args
     if not args:
-        return node_type()
+        return node_type(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            parent=node.parent,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+        )
     if len(node.args) > 1:
         raise UseInferenceDefault()
 
@@ -219,8 +231,12 @@ def _container_generic_inference(node, context, node_type, transform):
 
 
 def _container_generic_transform(  # pylint: disable=inconsistent-return-statements
-    arg, context, klass, iterables, build_elts
-):
+    arg: SuccessfulInferenceResult,
+    context: InferenceContext | None,
+    klass: type[nodes.BaseContainer],
+    iterables: tuple[type[nodes.NodeNG] | type[bases.Proxy], ...],
+    build_elts: type[Iterable[Any]],
+) -> nodes.BaseContainer | None:
     if isinstance(arg, klass):
         return arg
     if isinstance(arg, iterables):
@@ -251,8 +267,12 @@ def _container_generic_transform(  # pylint: disable=inconsistent-return-stateme
 
 
 def _infer_builtin_container(
-    node, context, klass=None, iterables=None, build_elts=None
-):
+    node: nodes.Call,
+    context: InferenceContext | None,
+    klass: type[nodes.BaseContainer],
+    iterables: tuple[type[nodes.NodeNG] | type[bases.Proxy], ...],
+    build_elts: type[Iterable[Any]],
+) -> nodes.BaseContainer:
     transform_func = partial(
         _container_generic_transform,
         context=context,
@@ -337,7 +357,7 @@ def _get_elts(arg, context):
     return items
 
 
-def infer_dict(node, context: InferenceContext | None = None):
+def infer_dict(node: nodes.Call, context: InferenceContext | None = None) -> nodes.Dict:
     """Try to infer a dict call to a Dict node.
 
     The function treats the following cases:
@@ -360,7 +380,13 @@ def infer_dict(node, context: InferenceContext | None = None):
 
     if not args and not kwargs:
         # dict()
-        return nodes.Dict()
+        return nodes.Dict(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            parent=node.parent,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+        )
     if kwargs and not args:
         # dict(a=1, b=2, c=4)
         items = [(nodes.Const(key), value) for key, value in kwargs]
@@ -374,7 +400,11 @@ def infer_dict(node, context: InferenceContext | None = None):
     else:
         raise UseInferenceDefault()
     value = nodes.Dict(
-        col_offset=node.col_offset, lineno=node.lineno, parent=node.parent
+        col_offset=node.col_offset,
+        lineno=node.lineno,
+        parent=node.parent,
+        end_lineno=node.end_lineno,
+        end_col_offset=node.end_col_offset,
     )
     value.postinit(items)
     return value
@@ -853,7 +883,11 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
 
     def _build_dict_with_elements(elements):
         new_node = nodes.Dict(
-            col_offset=node.col_offset, lineno=node.lineno, parent=node.parent
+            col_offset=node.col_offset,
+            lineno=node.lineno,
+            parent=node.parent,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
         )
         new_node.postinit(elements)
         return new_node

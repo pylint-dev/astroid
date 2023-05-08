@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import abc
 import itertools
+import sys
 import typing
 from collections.abc import Generator, Iterable, Iterator, Mapping
 from functools import cached_property, lru_cache
@@ -45,6 +46,12 @@ from astroid.typing import (
     InferenceResult,
     SuccessfulInferenceResult,
 )
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -266,26 +273,13 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
 
     def __init__(
         self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        lineno: int | None,
+        col_offset: int | None,
+        parent: NodeNG | None,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
         self.elts: list[SuccessfulInferenceResult] = []
         """The elements in the node."""
 
@@ -297,28 +291,25 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
             parent=parent,
         )
 
-    def postinit(self, elts: list[NodeNG]) -> None:
-        """Do some setup after initialisation.
-
-        :param elts: The list of elements the that node contains.
-        """
+    def postinit(self, elts: list[SuccessfulInferenceResult]) -> None:
         self.elts = elts
 
     @classmethod
-    def from_elements(cls, elts=None):
+    def from_elements(cls, elts: Iterable[Any]) -> Self:
         """Create a node of this type from the given list of elements.
 
         :param elts: The list of elements that the node should contain.
-        :type elts: list(NodeNG)
 
         :returns: A new node containing the given elements.
-        :rtype: NodeNG
         """
-        node = cls()
-        if elts is None:
-            node.elts = []
-        else:
-            node.elts = [const_factory(e) if _is_const(e) else e for e in elts]
+        node = cls(
+            lineno=None,
+            col_offset=None,
+            parent=None,
+            end_lineno=None,
+            end_col_offset=None,
+        )
+        node.elts = [const_factory(e) if _is_const(e) else e for e in elts]
         return node
 
     def itered(self):
@@ -1855,26 +1846,13 @@ class Dict(NodeNG, Instance):
 
     def __init__(
         self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        lineno: int | None,
+        col_offset: int | None,
+        parent: NodeNG | None,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        """
-        :param lineno: The line that this node appears on in the source code.
-
-        :param col_offset: The column that this node appears on in the
-            source code.
-
-        :param parent: The parent node in the syntax tree.
-
-        :param end_lineno: The last line this node appears on in the source code.
-
-        :param end_col_offset: The end column this node appears on in the
-            source code. Note: This is after the last symbol.
-        """
         self.items: list[tuple[InferenceResult, InferenceResult]] = []
         """The key-value pairs contained in the dictionary."""
 
@@ -1896,28 +1874,6 @@ class Dict(NodeNG, Instance):
         self.items = items
 
     infer_unary_op: ClassVar[InferUnaryOp[Dict]]
-
-    @classmethod
-    def from_elements(cls, items=None):
-        """Create a :class:`Dict` of constants from a live dictionary.
-
-        :param items: The items to store in the node.
-        :type items: dict
-
-        :returns: The created dictionary node.
-        :rtype: Dict
-        """
-        node = cls()
-        if items is None:
-            node.items = []
-        else:
-            node.items = [
-                (const_factory(k), const_factory(v) if _is_const(v) else v)
-                for k, v in items.items()
-                # The keys need to be constants
-                if _is_const(k)
-            ]
-        return node
 
     def pytype(self) -> Literal["builtins.dict"]:
         """Get the name of the type that this node represents.
@@ -4528,11 +4484,23 @@ def const_factory(value: Any) -> ConstFactoryResult:
     instance: List | Set | Tuple | Dict
     initializer_cls = CONST_CLS[value.__class__]
     if issubclass(initializer_cls, (List, Set, Tuple)):
-        instance = initializer_cls()
+        instance = initializer_cls(
+            lineno=None,
+            col_offset=None,
+            parent=None,
+            end_lineno=None,
+            end_col_offset=None,
+        )
         instance.postinit(_create_basic_elements(value, instance))
         return instance
     if issubclass(initializer_cls, Dict):
-        instance = initializer_cls()
+        instance = initializer_cls(
+            lineno=None,
+            col_offset=None,
+            parent=None,
+            end_lineno=None,
+            end_col_offset=None,
+        )
         instance.postinit(_create_dict_items(value, instance))
         return instance
     return Const(value)

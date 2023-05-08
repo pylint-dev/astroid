@@ -254,6 +254,8 @@ class CallSite:
                 lineno=funcnode.args.lineno,
                 col_offset=funcnode.args.col_offset,
                 parent=funcnode.args,
+                end_lineno=funcnode.args.end_lineno,
+                end_col_offset=funcnode.args.end_col_offset,
             )
             kwarg.postinit(
                 [(nodes.const_factory(key), value) for key, value in kwargs.items()]
