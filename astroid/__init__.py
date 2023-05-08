@@ -40,7 +40,7 @@ from astroid.nodes import node_classes, scoped_nodes
 
 # isort: on
 
-from astroid import inference, raw_building
+from astroid import raw_building
 from astroid.__pkginfo__ import __version__, version
 from astroid.astroid_manager import MANAGER
 from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod

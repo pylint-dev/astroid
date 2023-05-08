@@ -7,7 +7,9 @@
 from __future__ import annotations
 
 import abc
+import ast
 import itertools
+import operator
 import sys
 import typing
 import warnings
@@ -23,18 +25,24 @@ from typing import (
     Union,
 )
 
-from astroid import decorators, util
+from astroid import decorators, protocols, util
 from astroid.bases import Instance, _infer_stmts
 from astroid.const import _EMPTY_OBJECT_MARKER, Context
-from astroid.context import InferenceContext
+from astroid.context import CallContext, InferenceContext, copy_context
 from astroid.exceptions import (
+    AstroidBuildingError,
+    AstroidError,
     AstroidIndexError,
     AstroidTypeError,
     AstroidValueError,
+    AttributeInferenceError,
     InferenceError,
+    NameInferenceError,
     NoDefault,
     ParentMissingError,
+    _NonDeducibleTypeHierarchy,
 )
+from astroid.interpreter import dunder_lookup
 from astroid.manager import AstroidManager
 from astroid.nodes import _base_nodes
 from astroid.nodes.const import OP_PRECEDENCE
@@ -51,7 +59,6 @@ if sys.version_info >= (3, 11):
     from typing import Self
 else:
     from typing_extensions import Self
-
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -337,6 +344,56 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
     def get_children(self):
         yield from self.elts
 
+    @decorators.raise_if_nothing_inferred
+    def _infer(
+        self,
+        context: InferenceContext | None = None,
+        **kwargs: Any,
+    ) -> Iterator[Self]:
+        has_starred_named_expr = any(
+            isinstance(e, (Starred, NamedExpr)) for e in self.elts
+        )
+        if has_starred_named_expr:
+            values = self._infer_sequence_helper(context)
+            new_seq = type(self)(
+                lineno=self.lineno,
+                col_offset=self.col_offset,
+                parent=self.parent,
+                end_lineno=self.end_lineno,
+                end_col_offset=self.end_col_offset,
+            )
+            new_seq.postinit(values)
+
+            yield new_seq
+        else:
+            yield self
+
+    def _infer_sequence_helper(
+        self, context: InferenceContext | None = None
+    ) -> list[SuccessfulInferenceResult]:
+        """Infer all values based on BaseContainer.elts."""
+        from astroid import helpers
+
+        values = []
+
+        for elt in self.elts:
+            if isinstance(elt, Starred):
+                starred = helpers.safe_infer(elt.value, context)
+                if not starred:
+                    raise InferenceError(node=self, context=context)
+                if not hasattr(starred, "elts"):
+                    raise InferenceError(node=self, context=context)
+                # TODO: fresh context?
+                values.extend(starred._infer_sequence_helper(context))
+            elif isinstance(elt, NamedExpr):
+                value = helpers.safe_infer(elt.value, context)
+                if not value:
+                    raise InferenceError(node=self, context=context)
+                values.append(value)
+            else:
+                values.append(elt)
+        return values
+
 
 # TODO: Move into _base_nodes. Blocked by import of _infer_stmts from bases.
 class LookupMixIn(NodeNG):
@@ -376,7 +433,13 @@ class LookupMixIn(NodeNG):
 # Name classes
 
 
-class AssignName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssignNode):
+class AssignName(
+    _base_nodes.NameNode,
+    _base_nodes.AssignNode,
+    _base_nodes.NoChildrenNode,
+    LookupMixIn,
+    _base_nodes.ParentAssignNode,
+):
     """Variation of :class:`ast.Assign` representing assignment to a name.
 
     An :class:`AssignName` is the name of something that is assigned to.
@@ -393,8 +456,6 @@ class AssignName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssi
     """
 
     _other_fields = ("name",)
-
-    infer_lhs: ClassVar[InferLHS[AssignName]]
 
     def __init__(
         self,
@@ -417,10 +478,23 @@ class AssignName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssi
             parent=parent,
         )
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[AssignName]]
+    assigned_stmts: ClassVar[
+        AssignedStmtsCall[AssignName]
+    ] = protocols.assend_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
+
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        return self._infer_assign(context, **kwargs)
+
+    @decorators.raise_if_nothing_inferred
+    def infer_lhs(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        return self._infer_name(context, **kwargs)
 
 
 class DelName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssignNode):
@@ -460,7 +534,7 @@ class DelName(_base_nodes.NoChildrenNode, LookupMixIn, _base_nodes.ParentAssignN
         )
 
 
-class Name(_base_nodes.NoChildrenNode, LookupMixIn):
+class Name(_base_nodes.NameNode, _base_nodes.NoChildrenNode, LookupMixIn):
     """Class representing an :class:`ast.Name` node.
 
     A :class:`Name` node is something that is named, but not covered by
@@ -504,6 +578,12 @@ class Name(_base_nodes.NoChildrenNode, LookupMixIn):
 
         for child_node in self.get_children():
             yield from child_node._get_name_nodes()
+
+    @decorators.path_wrapper
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        return self._infer_name(context, **kwargs)
 
 
 DEPRECATED_ARGUMENT_DEFAULT = object()
@@ -663,7 +743,9 @@ class Arguments(_base_nodes.AssignTypeNode):
             type_comment_posonlyargs = []
         self.type_comment_posonlyargs = type_comment_posonlyargs
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[Arguments]]
+    assigned_stmts: ClassVar[
+        AssignedStmtsCall[Arguments]
+    ] = protocols.arguments_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -894,6 +976,17 @@ class Arguments(_base_nodes.AssignTypeNode):
             if elt is not None:
                 yield elt
 
+    @decorators.raise_if_nothing_inferred
+    def _infer(
+        self: nodes.Arguments, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, None]:
+        # pylint: disable-next=import-outside-toplevel
+        from astroid.protocols import _arguments_infer_argname
+
+        if context is None or context.lookupname is None:
+            raise InferenceError(node=self, context=context)
+        return _arguments_infer_argname(self, context.lookupname, context)
+
 
 def _find_arg(argname, args):
     for i, arg in enumerate(args):
@@ -934,7 +1027,9 @@ def _format_args(
     return ", ".join(values)
 
 
-class AssignAttr(_base_nodes.ParentAssignNode):
+class AssignAttr(
+    _base_nodes.AttributeNode, _base_nodes.AssignNode, _base_nodes.ParentAssignNode
+):
     """Variation of :class:`ast.Assign` representing assignment to an attribute.
 
     >>> import astroid
@@ -949,11 +1044,6 @@ class AssignAttr(_base_nodes.ParentAssignNode):
 
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
-
-    infer_lhs: ClassVar[InferLHS[AssignAttr]]
-
-    expr: NodeNG
-    """What has the attribute that is being assigned to."""
 
     def __init__(
         self,
@@ -979,13 +1069,25 @@ class AssignAttr(_base_nodes.ParentAssignNode):
     def postinit(self, expr: NodeNG) -> None:
         self.expr = expr
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[AssignAttr]]
+    assigned_stmts: ClassVar[
+        AssignedStmtsCall[AssignAttr]
+    ] = protocols.assend_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
 
     def get_children(self):
         yield self.expr
+
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        return self._infer_assign(context, **kwargs)
+
+    def infer_lhs(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        return self._infer_attribute(context, **kwargs)
 
 
 class Assert(_base_nodes.Statement):
@@ -1052,7 +1154,9 @@ class Assign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         self.value = value
         self.type_annotation = type_annotation
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[Assign]]
+    assigned_stmts: ClassVar[
+        AssignedStmtsCall[Assign]
+    ] = protocols.assign_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -1108,7 +1212,9 @@ class AnnAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         self.value = value
         self.simple = simple
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[AnnAssign]]
+    assigned_stmts: ClassVar[
+        AssignedStmtsCall[AnnAssign]
+    ] = protocols.assign_annassigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -1121,7 +1227,9 @@ class AnnAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
             yield self.value
 
 
-class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
+class AugAssign(
+    _base_nodes.AssignTypeNode, _base_nodes.OperatorNode, _base_nodes.Statement
+):
     """Class representing an :class:`ast.AugAssign` node.
 
     An :class:`AugAssign` is an assignment paired with an operator.
@@ -1169,15 +1277,12 @@ class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         self.target = target
         self.value = value
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[AugAssign]]
+    assigned_stmts: ClassVar[
+        AssignedStmtsCall[AugAssign]
+    ] = protocols.assign_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
-
-    # This is set by inference.py
-    _infer_augassign: ClassVar[
-        InferBinaryOperation[AugAssign, util.BadBinaryOperationMessage]
-    ]
 
     def type_errors(self, context: InferenceContext | None = None):
         """Get a list of type errors which can occur during inference.
@@ -1207,8 +1312,45 @@ class AugAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         yield from self.value._get_yield_nodes_skip_lambdas()
         yield from super()._get_yield_nodes_skip_lambdas()
 
+    def _infer_augassign(
+        self, context: InferenceContext | None = None
+    ) -> Generator[InferenceResult, None, None]:
+        """Inference logic for augmented binary operations."""
+        context = context or InferenceContext()
 
-class BinOp(NodeNG):
+        rhs_context = context.clone()
+
+        lhs_iter = self.target.infer_lhs(context=context)
+        rhs_iter = self.value.infer(context=rhs_context)
+
+        for lhs, rhs in itertools.product(lhs_iter, rhs_iter):
+            if any(isinstance(value, util.UninferableBase) for value in (rhs, lhs)):
+                # Don't know how to process this.
+                yield util.Uninferable
+                return
+
+            try:
+                yield from self._infer_binary_operation(
+                    left=lhs,
+                    right=rhs,
+                    binary_opnode=self,
+                    context=context,
+                    flow_factory=self._get_aug_flow,
+                )
+            except _NonDeducibleTypeHierarchy:
+                yield util.Uninferable
+
+    @decorators.raise_if_nothing_inferred
+    @decorators.path_wrapper
+    def _infer(
+        self: nodes.AugAssign, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, None]:
+        return self._filter_operation_errors(
+            self._infer_augassign, context, util.BadBinaryOperationMessage
+        )
+
+
+class BinOp(_base_nodes.OperatorNode):
     """Class representing an :class:`ast.BinOp` node.
 
     A :class:`BinOp` node is an application of a binary operator.
@@ -1253,9 +1395,6 @@ class BinOp(NodeNG):
         self.left = left
         self.right = right
 
-    # This is set by inference.py
-    _infer_binop: ClassVar[InferBinaryOperation[BinOp, util.BadBinaryOperationMessage]]
-
     def type_errors(self, context: InferenceContext | None = None):
         """Get a list of type errors which can occur during inference.
 
@@ -1285,6 +1424,43 @@ class BinOp(NodeNG):
     def op_left_associative(self) -> bool:
         # 2**3**4 == 2**(3**4)
         return self.op != "**"
+
+    def _infer_binop(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, None]:
+        """Binary operation inference logic."""
+        left = self.left
+        right = self.right
+
+        # we use two separate contexts for evaluating lhs and rhs because
+        # 1. evaluating lhs may leave some undesired entries in context.path
+        #    which may not let us infer right value of rhs
+        context = context or InferenceContext()
+        lhs_context = copy_context(context)
+        rhs_context = copy_context(context)
+        lhs_iter = left.infer(context=lhs_context)
+        rhs_iter = right.infer(context=rhs_context)
+        for lhs, rhs in itertools.product(lhs_iter, rhs_iter):
+            if any(isinstance(value, util.UninferableBase) for value in (rhs, lhs)):
+                # Don't know how to process this.
+                yield util.Uninferable
+                return
+
+            try:
+                yield from self._infer_binary_operation(
+                    lhs, rhs, self, context, self._get_binop_flow
+                )
+            except _NonDeducibleTypeHierarchy:
+                yield util.Uninferable
+
+    @decorators.yes_if_nothing_inferred
+    @decorators.path_wrapper
+    def _infer(
+        self: nodes.BinOp, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, None]:
+        return self._filter_operation_errors(
+            self._infer_binop, context, util.BadBinaryOperationMessage
+        )
 
 
 class BoolOp(NodeNG):
@@ -1355,6 +1531,60 @@ class BoolOp(NodeNG):
     def op_precedence(self):
         return OP_PRECEDENCE[self.op]
 
+    @decorators.raise_if_nothing_inferred
+    @decorators.path_wrapper
+    def _infer(
+        self: nodes.BoolOp, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        """Infer a boolean operation (and / or / not).
+
+        The function will calculate the boolean operation
+        for all pairs generated through inference for each component
+        node.
+        """
+        values = self.values
+        if self.op == "or":
+            predicate = operator.truth
+        else:
+            predicate = operator.not_
+
+        try:
+            inferred_values = [value.infer(context=context) for value in values]
+        except InferenceError:
+            yield util.Uninferable
+            return None
+
+        for pair in itertools.product(*inferred_values):
+            if any(isinstance(item, util.UninferableBase) for item in pair):
+                # Can't infer the final result, just yield Uninferable.
+                yield util.Uninferable
+                continue
+
+            bool_values = [item.bool_value() for item in pair]
+            if any(isinstance(item, util.UninferableBase) for item in bool_values):
+                # Can't infer the final result, just yield Uninferable.
+                yield util.Uninferable
+                continue
+
+            # Since the boolean operations are short circuited operations,
+            # this code yields the first value for which the predicate is True
+            # and if no value respected the predicate, then the last value will
+            # be returned (or Uninferable if there was no last value).
+            # This is conforming to the semantics of `and` and `or`:
+            #   1 and 0 -> 1
+            #   0 and 1 -> 0
+            #   1 or 0 -> 1
+            #   0 or 1 -> 1
+            value = util.Uninferable
+            for value, bool_value in zip(pair, bool_values):
+                if predicate(bool_value):
+                    yield value
+                    break
+            else:
+                yield value
+
+        return InferenceErrorInfo(node=self, context=context)
+
 
 class Break(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Break` node.
@@ -1412,6 +1642,64 @@ class Call(NodeNG):
 
         yield from self.keywords
 
+    @decorators.raise_if_nothing_inferred
+    @decorators.path_wrapper
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
+        """Infer a Call node by trying to guess what the function returns."""
+        callcontext = copy_context(context)
+        callcontext.boundnode = None
+        if context is not None:
+            callcontext.extra_context = self._populate_context_lookup(context.clone())
+
+        for callee in self.func.infer(context):
+            if isinstance(callee, util.UninferableBase):
+                yield callee
+                continue
+            try:
+                if hasattr(callee, "infer_call_result"):
+                    callcontext.callcontext = CallContext(
+                        args=self.args, keywords=self.keywords, callee=callee
+                    )
+                    yield from callee.infer_call_result(
+                        caller=self, context=callcontext
+                    )
+            except InferenceError:
+                continue
+        return InferenceErrorInfo(node=self, context=context)
+
+    def _populate_context_lookup(self, context: InferenceContext | None):
+        """Allows context to be saved for later for inference inside a function."""
+        context_lookup: dict[InferenceResult, InferenceContext] = {}
+        if context is None:
+            return context_lookup
+        for arg in self.args:
+            if isinstance(arg, Starred):
+                context_lookup[arg.value] = context
+            else:
+                context_lookup[arg] = context
+        keywords = self.keywords if self.keywords is not None else []
+        for keyword in keywords:
+            context_lookup[keyword.value] = context
+        return context_lookup
+
+
+COMPARE_OPS: dict[str, Callable[[Any, Any], bool]] = {
+    "==": operator.eq,
+    "!=": operator.ne,
+    "<": operator.lt,
+    "<=": operator.le,
+    ">": operator.gt,
+    ">=": operator.ge,
+    "in": lambda a, b: a in b,
+    "not in": lambda a, b: a not in b,
+}
+UNINFERABLE_OPS = {
+    "is",
+    "is not",
+}
+
 
 class Compare(NodeNG):
     """Class representing an :class:`ast.Compare` node.
@@ -1461,6 +1749,88 @@ class Compare(NodeNG):
         return self.ops[-1][1]
         # return self.left
 
+    # TODO: move to util?
+    @staticmethod
+    def _to_literal(node: SuccessfulInferenceResult) -> Any:
+        # Can raise SyntaxError or ValueError from ast.literal_eval
+        # Can raise AttributeError from node.as_string() as not all nodes have a visitor
+        # Is this the stupidest idea or the simplest idea?
+        return ast.literal_eval(node.as_string())
+
+    def _do_compare(
+        self,
+        left_iter: Iterable[InferenceResult],
+        op: str,
+        right_iter: Iterable[InferenceResult],
+    ) -> bool | util.UninferableBase:
+        """
+        If all possible combinations are either True or False, return that:
+        >>> _do_compare([1, 2], '<=', [3, 4])
+        True
+        >>> _do_compare([1, 2], '==', [3, 4])
+        False
+
+        If any item is uninferable, or if some combinations are True and some
+        are False, return Uninferable:
+        >>> _do_compare([1, 3], '<=', [2, 4])
+        util.Uninferable
+        """
+        retval: bool | None = None
+        if op in UNINFERABLE_OPS:
+            return util.Uninferable
+        op_func = COMPARE_OPS[op]
+
+        for left, right in itertools.product(left_iter, right_iter):
+            if isinstance(left, util.UninferableBase) or isinstance(
+                right, util.UninferableBase
+            ):
+                return util.Uninferable
+
+            try:
+                left, right = self._to_literal(left), self._to_literal(right)
+            except (SyntaxError, ValueError, AttributeError):
+                return util.Uninferable
+
+            try:
+                expr = op_func(left, right)
+            except TypeError as exc:
+                raise AstroidTypeError from exc
+
+            if retval is None:
+                retval = expr
+            elif retval != expr:
+                return util.Uninferable
+                # (or both, but "True | False" is basically the same)
+
+        assert retval is not None
+        return retval  # it was all the same value
+
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[nodes.Const | util.UninferableBase, None, None]:
+        """Chained comparison inference logic."""
+        retval: bool | util.UninferableBase = True
+
+        ops = self.ops
+        left_node = self.left
+        lhs = list(left_node.infer(context=context))
+        # should we break early if first element is uninferable?
+        for op, right_node in ops:
+            # eagerly evaluate rhs so that values can be re-used as lhs
+            rhs = list(right_node.infer(context=context))
+            try:
+                retval = self._do_compare(lhs, op, rhs)
+            except AstroidTypeError:
+                retval = util.Uninferable
+                break
+            if retval is not True:
+                break  # short-circuit
+            lhs = rhs  # continue
+        if retval is util.Uninferable:
+            yield retval  # type: ignore[misc]
+        else:
+            yield Const(retval)
+
 
 class Comprehension(NodeNG):
     """Class representing an :class:`ast.comprehension` node.
@@ -1506,7 +1876,9 @@ class Comprehension(NodeNG):
         self.ifs = ifs
         self.is_async = is_async
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[Comprehension]]
+    assigned_stmts: ClassVar[
+        AssignedStmtsCall[Comprehension]
+    ] = protocols.for_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -1603,8 +1975,8 @@ class Const(_base_nodes.NoChildrenNode, Instance):
 
         Instance.__init__(self, None)
 
-    infer_unary_op: ClassVar[InferUnaryOp[Const]]
-    infer_binary_op: ClassVar[InferBinaryOp[Const]]
+    infer_unary_op: ClassVar[InferUnaryOp[Const]] = protocols.const_infer_unary_op
+    infer_binary_op: ClassVar[InferBinaryOp[Const]] = protocols.const_infer_binary_op
 
     def __getattr__(self, name):
         # This is needed because of Proxy's __getattr__ method.
@@ -1691,6 +2063,11 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         :rtype: bool
         """
         return bool(self.value)
+
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Iterator[Const]:
+        yield self
 
 
 class Continue(_base_nodes.NoChildrenNode, _base_nodes.Statement):
@@ -1871,7 +2248,7 @@ class Dict(NodeNG, Instance):
         """
         self.items = items
 
-    infer_unary_op: ClassVar[InferUnaryOp[Dict]]
+    infer_unary_op: ClassVar[InferUnaryOp[Dict]] = protocols.dict_infer_unary_op
 
     def pytype(self) -> Literal["builtins.dict"]:
         """Get the name of the type that this node represents.
@@ -1923,13 +2300,12 @@ class Dict(NodeNG, Instance):
         :raises AstroidIndexError: If the given index does not exist in the
             dictionary.
         """
-        # pylint: disable-next=import-outside-toplevel; circular import
-        from astroid.helpers import safe_infer
+        from astroid import helpers
 
         for key, value in self.items:
             # TODO(cpopa): no support for overriding yet, {1:2, **{1: 3}}.
             if isinstance(key, DictUnpack):
-                inferred_value = safe_infer(value, context)
+                inferred_value = helpers.safe_infer(value, context)
                 if not isinstance(inferred_value, Dict):
                     continue
 
@@ -1954,6 +2330,72 @@ class Dict(NodeNG, Instance):
         :rtype: bool
         """
         return bool(self.items)
+
+    def _infer(self, context: InferenceContext | None = None) -> Iterator[nodes.Dict]:
+        if not any(isinstance(k, DictUnpack) for k, _ in self.items):
+            yield self
+        else:
+            items = self._infer_map(context)
+            new_seq = type(self)(
+                lineno=self.lineno,
+                col_offset=self.col_offset,
+                parent=self.parent,
+                end_lineno=self.end_lineno,
+                end_col_offset=self.end_col_offset,
+            )
+            new_seq.postinit(list(items.items()))
+            yield new_seq
+
+    @staticmethod
+    def _update_with_replacement(
+        lhs_dict: dict[SuccessfulInferenceResult, SuccessfulInferenceResult],
+        rhs_dict: dict[SuccessfulInferenceResult, SuccessfulInferenceResult],
+    ) -> dict[SuccessfulInferenceResult, SuccessfulInferenceResult]:
+        """Delete nodes that equate to duplicate keys.
+
+        Since an astroid node doesn't 'equal' another node with the same value,
+        this function uses the as_string method to make sure duplicate keys
+        don't get through
+
+        Note that both the key and the value are astroid nodes
+
+        Fixes issue with DictUnpack causing duplicate keys
+        in inferred Dict items
+
+        :param lhs_dict: Dictionary to 'merge' nodes into
+        :param rhs_dict: Dictionary with nodes to pull from
+        :return : merged dictionary of nodes
+        """
+        combined_dict = itertools.chain(lhs_dict.items(), rhs_dict.items())
+        # Overwrite keys which have the same string values
+        string_map = {key.as_string(): (key, value) for key, value in combined_dict}
+        # Return to dictionary
+        return dict(string_map.values())
+
+    def _infer_map(
+        self, context: InferenceContext | None
+    ) -> dict[SuccessfulInferenceResult, SuccessfulInferenceResult]:
+        """Infer all values based on Dict.items."""
+        from astroid import helpers
+
+        values: dict[SuccessfulInferenceResult, SuccessfulInferenceResult] = {}
+        for name, value in self.items:
+            if isinstance(name, DictUnpack):
+                double_starred = helpers.safe_infer(value, context)
+                if not double_starred:
+                    raise InferenceError
+                if not isinstance(double_starred, Dict):
+                    raise InferenceError(node=self, context=context)
+                unpack_items = double_starred._infer_map(context)
+                values = self._update_with_replacement(values, unpack_items)
+            else:
+                key = helpers.safe_infer(name, context=context)
+                safe_value = helpers.safe_infer(value, context=context)
+                if any(not elem for elem in (key, safe_value)):
+                    raise InferenceError(node=self, context=context)
+                # safe_value is SuccessfulInferenceResult as bool(Uninferable) == False
+                values = self._update_with_replacement(values, {key: safe_value})
+        return values
 
 
 class Expr(_base_nodes.Statement):
@@ -2011,6 +2453,21 @@ class EmptyNode(_base_nodes.NoChildrenNode):
     def has_underlying_object(self) -> bool:
         return self.object is not None and self.object is not _EMPTY_OBJECT_MARKER
 
+    @decorators.raise_if_nothing_inferred
+    @decorators.path_wrapper
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, None]:
+        if not self.has_underlying_object():
+            yield util.Uninferable
+        else:
+            try:
+                yield from AstroidManager().infer_ast_from_something(
+                    self.object, context=context
+                )
+            except AstroidError:
+                yield util.Uninferable
+
 
 class ExceptHandler(
     _base_nodes.MultiLineBlockNode, _base_nodes.AssignTypeNode, _base_nodes.Statement
@@ -2044,7 +2501,9 @@ class ExceptHandler(
     body: list[NodeNG]
     """The contents of the block."""
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[ExceptHandler]]
+    assigned_stmts: ClassVar[
+        AssignedStmtsCall[ExceptHandler]
+    ] = protocols.excepthandler_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -2142,7 +2601,7 @@ class For(
         self.orelse = orelse
         self.type_annotation = type_annotation
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[For]]
+    assigned_stmts: ClassVar[AssignedStmtsCall[For]] = protocols.for_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -2283,15 +2742,46 @@ class ImportFrom(_base_nodes.ImportNode):
             parent=parent,
         )
 
+    @decorators.raise_if_nothing_inferred
+    @decorators.path_wrapper
+    def _infer(
+        self,
+        context: InferenceContext | None = None,
+        asname: bool = True,
+        **kwargs: Any,
+    ) -> Generator[InferenceResult, None, None]:
+        """Infer a ImportFrom node: return the imported module/object."""
+        context = context or InferenceContext()
+        name = context.lookupname
+        if name is None:
+            raise InferenceError(node=self, context=context)
+        if asname:
+            try:
+                name = self.real_name(name)
+            except AttributeInferenceError as exc:
+                # See https://github.com/pylint-dev/pylint/issues/4692
+                raise InferenceError(node=self, context=context) from exc
+        try:
+            module = self.do_import_module()
+        except AstroidBuildingError as exc:
+            raise InferenceError(node=self, context=context) from exc
 
-class Attribute(NodeNG):
+        try:
+            context = copy_context(context)
+            context.lookupname = name
+            stmts = module.getattr(name, ignore_locals=module is self.root())
+            return _infer_stmts(stmts, context)
+        except AttributeInferenceError as error:
+            raise InferenceError(
+                str(error), target=self, attribute=name, context=context
+            ) from error
+
+
+class Attribute(_base_nodes.AttributeNode):
     """Class representing an :class:`ast.Attribute` node."""
 
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
-
-    expr: NodeNG
-    """The name that this node represents."""
 
     def __init__(
         self,
@@ -2319,6 +2809,12 @@ class Attribute(NodeNG):
 
     def get_children(self):
         yield self.expr
+
+    @decorators.path_wrapper
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, None]:
+        return self._infer_attribute(context, **kwargs)
 
 
 class Global(_base_nodes.NoChildrenNode, _base_nodes.Statement):
@@ -2370,6 +2866,20 @@ class Global(_base_nodes.NoChildrenNode, _base_nodes.Statement):
 
     def _infer_name(self, frame, name):
         return name
+
+    @decorators.raise_if_nothing_inferred
+    @decorators.path_wrapper
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, None]:
+        if context is None or context.lookupname is None:
+            raise InferenceError(node=self, context=context)
+        try:
+            return _infer_stmts(self.root().getattr(context.lookupname), context)
+        except AttributeInferenceError as error:
+            raise InferenceError(
+                str(error), target=self, attribute=context.lookupname, context=context
+            ) from error
 
 
 class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
@@ -2469,6 +2979,40 @@ class IfExp(NodeNG):
         # `1 if True else (2 if False else 3)`
         return False
 
+    @decorators.raise_if_nothing_inferred
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, None]:
+        """Support IfExp inference.
+
+        If we can't infer the truthiness of the condition, we default
+        to inferring both branches. Otherwise, we infer either branch
+        depending on the condition.
+        """
+        both_branches = False
+        # We use two separate contexts for evaluating lhs and rhs because
+        # evaluating lhs may leave some undesired entries in context.path
+        # which may not let us infer right value of rhs.
+
+        context = context or InferenceContext()
+        lhs_context = copy_context(context)
+        rhs_context = copy_context(context)
+        try:
+            test = next(self.test.infer(context=context.clone()))
+        except (InferenceError, StopIteration):
+            both_branches = True
+        else:
+            if not isinstance(test, util.UninferableBase):
+                if test.bool_value():
+                    yield from self.body.infer(context=lhs_context)
+                else:
+                    yield from self.orelse.infer(context=rhs_context)
+            else:
+                both_branches = True
+        if both_branches:
+            yield from self.body.infer(context=lhs_context)
+            yield from self.orelse.infer(context=rhs_context)
+
 
 class Import(_base_nodes.ImportNode):
     """Class representing an :class:`ast.Import` node.
@@ -2520,6 +3064,28 @@ class Import(_base_nodes.ImportNode):
             end_col_offset=end_col_offset,
             parent=parent,
         )
+
+    @decorators.raise_if_nothing_inferred
+    @decorators.path_wrapper
+    def _infer(
+        self,
+        context: InferenceContext | None = None,
+        asname: bool = True,
+        **kwargs: Any,
+    ) -> Generator[nodes.Module, None, None]:
+        """Infer an Import node: return the imported module/object."""
+        context = context or InferenceContext()
+        name = context.lookupname
+        if name is None:
+            raise InferenceError(node=self, context=context)
+
+        try:
+            if asname:
+                yield self.do_import_module(self.real_name(name))
+            else:
+                yield self.do_import_module(name)
+        except AstroidBuildingError as exc:
+            raise InferenceError(node=self, context=context) from exc
 
 
 class Keyword(NodeNG):
@@ -2614,13 +3180,15 @@ class List(BaseContainer):
             parent=parent,
         )
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[List]]
+    assigned_stmts: ClassVar[
+        AssignedStmtsCall[List]
+    ] = protocols.sequence_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
 
-    infer_unary_op: ClassVar[InferUnaryOp[List]]
-    infer_binary_op: ClassVar[InferBinaryOp[List]]
+    infer_unary_op: ClassVar[InferUnaryOp[List]] = protocols.list_infer_unary_op
+    infer_binary_op: ClassVar[InferBinaryOp[List]] = protocols.tl_infer_binary_op
 
     def pytype(self) -> Literal["builtins.list"]:
         """Get the name of the type that this node represents.
@@ -2727,6 +3295,11 @@ class ParamSpec(_base_nodes.AssignTypeNode):
     def postinit(self, *, name: AssignName) -> None:
         self.name = name
 
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Iterator[ParamSpec]:
+        yield self
+
 
 class Pass(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Pass` node.
@@ -2819,7 +3392,7 @@ class Set(BaseContainer):
     <Set.set l.1 at 0x7f23b2e71d68>
     """
 
-    infer_unary_op: ClassVar[InferUnaryOp[Set]]
+    infer_unary_op: ClassVar[InferUnaryOp[Set]] = protocols.set_infer_unary_op
 
     def pytype(self) -> Literal["builtins.set"]:
         """Get the name of the type that this node represents.
@@ -2912,6 +3485,11 @@ class Slice(NodeNG):
         if self.step is not None:
             yield self.step
 
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Iterator[Slice]:
+        yield self
+
 
 class Starred(_base_nodes.ParentAssignNode):
     """Class representing an :class:`ast.Starred` node.
@@ -2952,7 +3530,9 @@ class Starred(_base_nodes.ParentAssignNode):
     def postinit(self, value: NodeNG) -> None:
         self.value = value
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[Starred]]
+    assigned_stmts: ClassVar[
+        AssignedStmtsCall[Starred]
+    ] = protocols.starred_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -2970,10 +3550,9 @@ class Subscript(NodeNG):
     <Subscript l.1 at 0x7f23b2e71f60>
     """
 
+    _SUBSCRIPT_SENTINEL = object()
     _astroid_fields = ("value", "slice")
     _other_fields = ("ctx",)
-
-    infer_lhs: ClassVar[InferLHS[Subscript]]
 
     value: NodeNG
     """What is being indexed."""
@@ -3010,6 +3589,74 @@ class Subscript(NodeNG):
     def get_children(self):
         yield self.value
         yield self.slice
+
+    def _infer_subscript(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        """Inference for subscripts.
+
+        We're understanding if the index is a Const
+        or a slice, passing the result of inference
+        to the value's `getitem` method, which should
+        handle each supported index type accordingly.
+        """
+        from astroid import helpers
+
+        found_one = False
+        for value in self.value.infer(context):
+            if isinstance(value, util.UninferableBase):
+                yield util.Uninferable
+                return None
+            for index in self.slice.infer(context):
+                if isinstance(index, util.UninferableBase):
+                    yield util.Uninferable
+                    return None
+
+                # Try to deduce the index value.
+                index_value = self._SUBSCRIPT_SENTINEL
+                if value.__class__ == Instance:
+                    index_value = index
+                elif index.__class__ == Instance:
+                    instance_as_index = helpers.class_instance_as_index(index)
+                    if instance_as_index:
+                        index_value = instance_as_index
+                else:
+                    index_value = index
+
+                if index_value is self._SUBSCRIPT_SENTINEL:
+                    raise InferenceError(node=self, context=context)
+
+                try:
+                    assigned = value.getitem(index_value, context)
+                except (
+                    AstroidTypeError,
+                    AstroidIndexError,
+                    AstroidValueError,
+                    AttributeInferenceError,
+                    AttributeError,
+                ) as exc:
+                    raise InferenceError(node=self, context=context) from exc
+
+                # Prevent inferring if the inferred subscript
+                # is the same as the original subscripted object.
+                if self is assigned or isinstance(assigned, util.UninferableBase):
+                    yield util.Uninferable
+                    return None
+                yield from assigned.infer(context)
+                found_one = True
+
+        if found_one:
+            return InferenceErrorInfo(node=self, context=context)
+        return None
+
+    @decorators.raise_if_nothing_inferred
+    @decorators.path_wrapper
+    def _infer(self, context: InferenceContext | None = None, **kwargs: Any):
+        return self._infer_subscript(context, **kwargs)
+
+    @decorators.raise_if_nothing_inferred
+    def infer_lhs(self, context: InferenceContext | None = None, **kwargs: Any):
+        return self._infer_subscript(context, **kwargs)
 
 
 class TryExcept(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
@@ -3318,13 +3965,15 @@ class Tuple(BaseContainer):
             parent=parent,
         )
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[Tuple]]
+    assigned_stmts: ClassVar[
+        AssignedStmtsCall[Tuple]
+    ] = protocols.sequence_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
 
-    infer_unary_op: ClassVar[InferUnaryOp[Tuple]]
-    infer_binary_op: ClassVar[InferBinaryOp[Tuple]]
+    infer_unary_op: ClassVar[InferUnaryOp[Tuple]] = protocols.tuple_infer_unary_op
+    infer_binary_op: ClassVar[InferBinaryOp[Tuple]] = protocols.tl_infer_binary_op
 
     def pytype(self) -> Literal["builtins.tuple"]:
         """Get the name of the type that this node represents.
@@ -3385,6 +4034,11 @@ class TypeAlias(_base_nodes.AssignTypeNode):
         self.type_params = type_params
         self.value = value
 
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Iterator[TypeAlias]:
+        yield self
+
 
 class TypeVar(_base_nodes.AssignTypeNode):
     """Class representing a :class:`ast.TypeVar` node.
@@ -3421,6 +4075,11 @@ class TypeVar(_base_nodes.AssignTypeNode):
         self.name = name
         self.bound = bound
 
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Iterator[TypeVar]:
+        yield self
+
 
 class TypeVarTuple(_base_nodes.AssignTypeNode):
     """Class representing a :class:`ast.TypeVarTuple` node.
@@ -3455,8 +4114,13 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
     def postinit(self, *, name: AssignName) -> None:
         self.name = name
 
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Iterator[TypeVarTuple]:
+        yield self
 
-class UnaryOp(NodeNG):
+
+class UnaryOp(_base_nodes.OperatorNode):
     """Class representing an :class:`ast.UnaryOp` node.
 
     >>> import astroid
@@ -3495,19 +4159,14 @@ class UnaryOp(NodeNG):
     def postinit(self, operand: NodeNG) -> None:
         self.operand = operand
 
-    # This is set by inference.py
-    _infer_unaryop: ClassVar[
-        InferBinaryOperation[UnaryOp, util.BadUnaryOperationMessage]
-    ]
-
     def type_errors(self, context: InferenceContext | None = None):
         """Get a list of type errors which can occur during inference.
 
-        Each TypeError is represented by a :class:`BadBinaryOperationMessage`,
+        Each TypeError is represented by a :class:`BadUnaryOperationMessage`,
         which holds the original exception.
 
         :returns: The list of possible type errors.
-        :rtype: list(BadBinaryOperationMessage)
+        :rtype: list(BadUnaryOperationMessage)
         """
         try:
             results = self._infer_unaryop(context=context)
@@ -3527,6 +4186,79 @@ class UnaryOp(NodeNG):
             return OP_PRECEDENCE[self.op]
 
         return super().op_precedence()
+
+    def _infer_unaryop(
+        self: nodes.UnaryOp, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
+        """Infer what an UnaryOp should return when evaluated."""
+        from astroid.nodes import ClassDef
+
+        for operand in self.operand.infer(context):
+            try:
+                yield operand.infer_unary_op(self.op)
+            except TypeError as exc:
+                # The operand doesn't support this operation.
+                yield util.BadUnaryOperationMessage(operand, self.op, exc)
+            except AttributeError as exc:
+                meth = protocols.UNARY_OP_METHOD[self.op]
+                if meth is None:
+                    # `not node`. Determine node's boolean
+                    # value and negate its result, unless it is
+                    # Uninferable, which will be returned as is.
+                    bool_value = operand.bool_value()
+                    if not isinstance(bool_value, util.UninferableBase):
+                        yield const_factory(not bool_value)
+                    else:
+                        yield util.Uninferable
+                else:
+                    if not isinstance(operand, (Instance, ClassDef)):
+                        # The operation was used on something which
+                        # doesn't support it.
+                        yield util.BadUnaryOperationMessage(operand, self.op, exc)
+                        continue
+
+                    try:
+                        try:
+                            methods = dunder_lookup.lookup(operand, meth)
+                        except AttributeInferenceError:
+                            yield util.BadUnaryOperationMessage(operand, self.op, exc)
+                            continue
+
+                        meth = methods[0]
+                        inferred = next(meth.infer(context=context), None)
+                        if (
+                            isinstance(inferred, util.UninferableBase)
+                            or not inferred.callable()
+                        ):
+                            continue
+
+                        context = copy_context(context)
+                        context.boundnode = operand
+                        context.callcontext = CallContext(args=[], callee=inferred)
+
+                        call_results = inferred.infer_call_result(self, context=context)
+                        result = next(call_results, None)
+                        if result is None:
+                            # Failed to infer, return the same type.
+                            yield operand
+                        else:
+                            yield result
+                    except AttributeInferenceError as inner_exc:
+                        # The unary operation special method was not found.
+                        yield util.BadUnaryOperationMessage(operand, self.op, inner_exc)
+                    except InferenceError:
+                        yield util.Uninferable
+
+    @decorators.raise_if_nothing_inferred
+    @decorators.path_wrapper
+    def _infer(
+        self: nodes.UnaryOp, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
+        """Infer what an UnaryOp should return when evaluated."""
+        yield from self._filter_operation_errors(
+            self._infer_unaryop, context, util.BadUnaryOperationMessage
+        )
+        return InferenceErrorInfo(node=self, context=context)
 
 
 class While(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
@@ -3671,7 +4403,7 @@ class With(
             self.body = body
         self.type_annotation = type_annotation
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[With]]
+    assigned_stmts: ClassVar[AssignedStmtsCall[With]] = protocols.with_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -3944,7 +4676,9 @@ class NamedExpr(_base_nodes.AssignTypeNode):
         self.target = target
         self.value = value
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[NamedExpr]]
+    assigned_stmts: ClassVar[
+        AssignedStmtsCall[NamedExpr]
+    ] = protocols.named_expr_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -4355,7 +5089,7 @@ class MatchMapping(_base_nodes.AssignTypeNode, Pattern):
             ],
             Generator[NodeNG, None, None],
         ]
-    ]
+    ] = protocols.match_mapping_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -4462,7 +5196,7 @@ class MatchStar(_base_nodes.AssignTypeNode, Pattern):
             ],
             Generator[NodeNG, None, None],
         ]
-    ]
+    ] = protocols.match_star_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -4533,7 +5267,7 @@ class MatchAs(_base_nodes.AssignTypeNode, Pattern):
             ],
             Generator[NodeNG, None, None],
         ]
-    ]
+    ] = protocols.match_as_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """

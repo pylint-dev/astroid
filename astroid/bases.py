@@ -10,9 +10,9 @@ from __future__ import annotations
 import collections
 import collections.abc
 from collections.abc import Iterable, Iterator
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
-from astroid import nodes
+from astroid import decorators, nodes
 from astroid.const import PY310_PLUS
 from astroid.context import (
     CallContext,
@@ -28,7 +28,6 @@ from astroid.exceptions import (
 )
 from astroid.interpreter import objectmodel
 from astroid.typing import (
-    InferBinaryOp,
     InferenceErrorInfo,
     InferenceResult,
     SuccessfulInferenceResult,
@@ -346,7 +345,16 @@ class Instance(BaseInstance):
     def __init__(self, proxied: nodes.ClassDef | None) -> None:
         super().__init__(proxied)
 
-    infer_binary_op: ClassVar[InferBinaryOp[Instance]]
+    @decorators.yes_if_nothing_inferred
+    def infer_binary_op(
+        self: Instance | nodes.ClassDef,
+        opnode: nodes.AugAssign | nodes.BinOp,
+        operator: str,
+        other: InferenceResult,
+        context: InferenceContext,
+        method: SuccessfulInferenceResult,
+    ) -> Generator[InferenceResult, None, None]:
+        return method.infer_call_result(self, context)
 
     def __repr__(self) -> str:
         return "<Instance of {}.{} at 0x{}>".format(
