@@ -8,9 +8,15 @@ from astroid.exceptions import AstroidBuildingError
 
 def _tensorflow_fail_hook(modname: str):
     parts = modname.split(".", 1)
+    fallbacks = ("python", "_api.v2")
     if parts[0] == "tensorflow":
-        parts[0] = "tensorflow.python"
-        return MANAGER.ast_from_module_name(".".join(parts))
+        for fallback in fallbacks:
+            if parts[1].startswith(fallbacks):
+                continue
+            try:
+                return MANAGER.ast_from_module_name(f"tensorflow.{fallback}.{parts[1]}")
+            except AstroidBuildingError:
+                continue
     raise AstroidBuildingError(modname=modname)
 
 
