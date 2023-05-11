@@ -19,7 +19,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    ClassVar,
     Literal,
     Optional,
     Union,
@@ -48,7 +47,6 @@ from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
 from astroid.typing import (
     ConstFactoryResult,
-    InferBinaryOp,
     InferenceErrorInfo,
     InferenceResult,
     SuccessfulInferenceResult,
@@ -442,9 +440,7 @@ class AssignName(
             parent=parent,
         )
 
-    assigned_stmts: ClassVar[
-        AssignedStmtsCall[AssignName]
-    ] = protocols.assend_assigned_stmts
+    assigned_stmts = protocols.assend_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -709,9 +705,7 @@ class Arguments(_base_nodes.AssignTypeNode):
             type_comment_posonlyargs = []
         self.type_comment_posonlyargs = type_comment_posonlyargs
 
-    assigned_stmts: ClassVar[
-        AssignedStmtsCall[Arguments]
-    ] = protocols.arguments_assigned_stmts
+    assigned_stmts = protocols.arguments_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -1035,9 +1029,7 @@ class AssignAttr(
     def postinit(self, expr: NodeNG) -> None:
         self.expr = expr
 
-    assigned_stmts: ClassVar[
-        AssignedStmtsCall[AssignAttr]
-    ] = protocols.assend_assigned_stmts
+    assigned_stmts = protocols.assend_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -1120,9 +1112,7 @@ class Assign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         self.value = value
         self.type_annotation = type_annotation
 
-    assigned_stmts: ClassVar[
-        AssignedStmtsCall[Assign]
-    ] = protocols.assign_assigned_stmts
+    assigned_stmts = protocols.assign_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -1178,9 +1168,7 @@ class AnnAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         self.value = value
         self.simple = simple
 
-    assigned_stmts: ClassVar[
-        AssignedStmtsCall[AnnAssign]
-    ] = protocols.assign_annassigned_stmts
+    assigned_stmts = protocols.assign_annassigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -1243,9 +1231,7 @@ class AugAssign(
         self.target = target
         self.value = value
 
-    assigned_stmts: ClassVar[
-        AssignedStmtsCall[AugAssign]
-    ] = protocols.assign_assigned_stmts
+    assigned_stmts = protocols.assign_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -1842,9 +1828,7 @@ class Comprehension(NodeNG):
         self.ifs = ifs
         self.is_async = is_async
 
-    assigned_stmts: ClassVar[
-        AssignedStmtsCall[Comprehension]
-    ] = protocols.for_assigned_stmts
+    assigned_stmts = protocols.for_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -1941,8 +1925,8 @@ class Const(_base_nodes.NoChildrenNode, Instance):
 
         Instance.__init__(self, None)
 
-    infer_unary_op: ClassVar[InferUnaryOp[Const]] = protocols.const_infer_unary_op
-    infer_binary_op: ClassVar[InferBinaryOp[Const]] = protocols.const_infer_binary_op
+    infer_unary_op = protocols.const_infer_unary_op
+    infer_binary_op = protocols.const_infer_binary_op
 
     def __getattr__(self, name):
         # This is needed because of Proxy's __getattr__ method.
@@ -2214,7 +2198,7 @@ class Dict(NodeNG, Instance):
         """
         self.items = items
 
-    infer_unary_op: ClassVar[InferUnaryOp[Dict]] = protocols.dict_infer_unary_op
+    infer_unary_op = protocols.dict_infer_unary_op
 
     def pytype(self) -> Literal["builtins.dict"]:
         """Get the name of the type that this node represents.
@@ -2467,9 +2451,7 @@ class ExceptHandler(
     body: list[NodeNG]
     """The contents of the block."""
 
-    assigned_stmts: ClassVar[
-        AssignedStmtsCall[ExceptHandler]
-    ] = protocols.excepthandler_assigned_stmts
+    assigned_stmts = protocols.excepthandler_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -2567,7 +2549,7 @@ class For(
         self.orelse = orelse
         self.type_annotation = type_annotation
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[For]] = protocols.for_assigned_stmts
+    assigned_stmts = protocols.for_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -3146,15 +3128,13 @@ class List(BaseContainer):
             parent=parent,
         )
 
-    assigned_stmts: ClassVar[
-        AssignedStmtsCall[List]
-    ] = protocols.sequence_assigned_stmts
+    assigned_stmts = protocols.sequence_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
 
-    infer_unary_op: ClassVar[InferUnaryOp[List]] = protocols.list_infer_unary_op
-    infer_binary_op: ClassVar[InferBinaryOp[List]] = protocols.tl_infer_binary_op
+    infer_unary_op = protocols.list_infer_unary_op
+    infer_binary_op = protocols.tl_infer_binary_op
 
     def pytype(self) -> Literal["builtins.list"]:
         """Get the name of the type that this node represents.
@@ -3358,7 +3338,7 @@ class Set(BaseContainer):
     <Set.set l.1 at 0x7f23b2e71d68>
     """
 
-    infer_unary_op: ClassVar[InferUnaryOp[Set]] = protocols.set_infer_unary_op
+    infer_unary_op = protocols.set_infer_unary_op
 
     def pytype(self) -> Literal["builtins.set"]:
         """Get the name of the type that this node represents.
@@ -3496,9 +3476,7 @@ class Starred(_base_nodes.ParentAssignNode):
     def postinit(self, value: NodeNG) -> None:
         self.value = value
 
-    assigned_stmts: ClassVar[
-        AssignedStmtsCall[Starred]
-    ] = protocols.starred_assigned_stmts
+    assigned_stmts = protocols.starred_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -3931,15 +3909,13 @@ class Tuple(BaseContainer):
             parent=parent,
         )
 
-    assigned_stmts: ClassVar[
-        AssignedStmtsCall[Tuple]
-    ] = protocols.sequence_assigned_stmts
+    assigned_stmts = protocols.sequence_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
 
-    infer_unary_op: ClassVar[InferUnaryOp[Tuple]] = protocols.tuple_infer_unary_op
-    infer_binary_op: ClassVar[InferBinaryOp[Tuple]] = protocols.tl_infer_binary_op
+    infer_unary_op = protocols.tuple_infer_unary_op
+    infer_binary_op = protocols.tl_infer_binary_op
 
     def pytype(self) -> Literal["builtins.tuple"]:
         """Get the name of the type that this node represents.
@@ -4377,7 +4353,7 @@ class With(
             self.body = body
         self.type_annotation = type_annotation
 
-    assigned_stmts: ClassVar[AssignedStmtsCall[With]] = protocols.with_assigned_stmts
+    assigned_stmts = protocols.with_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -4650,9 +4626,7 @@ class NamedExpr(_base_nodes.AssignTypeNode):
         self.target = target
         self.value = value
 
-    assigned_stmts: ClassVar[
-        AssignedStmtsCall[NamedExpr]
-    ] = protocols.named_expr_assigned_stmts
+    assigned_stmts = protocols.named_expr_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -5053,17 +5027,7 @@ class MatchMapping(_base_nodes.AssignTypeNode, Pattern):
         self.patterns = patterns
         self.rest = rest
 
-    assigned_stmts: ClassVar[
-        Callable[
-            [
-                MatchMapping,
-                AssignName,
-                InferenceContext | None,
-                None,
-            ],
-            Generator[NodeNG, None, None],
-        ]
-    ] = protocols.match_mapping_assigned_stmts
+    assigned_stmts = protocols.match_mapping_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -5160,17 +5124,7 @@ class MatchStar(_base_nodes.AssignTypeNode, Pattern):
     def postinit(self, *, name: AssignName | None) -> None:
         self.name = name
 
-    assigned_stmts: ClassVar[
-        Callable[
-            [
-                MatchStar,
-                AssignName,
-                InferenceContext | None,
-                None,
-            ],
-            Generator[NodeNG, None, None],
-        ]
-    ] = protocols.match_star_assigned_stmts
+    assigned_stmts = protocols.match_star_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
@@ -5231,17 +5185,7 @@ class MatchAs(_base_nodes.AssignTypeNode, Pattern):
         self.pattern = pattern
         self.name = name
 
-    assigned_stmts: ClassVar[
-        Callable[
-            [
-                MatchAs,
-                AssignName,
-                InferenceContext | None,
-                None,
-            ],
-            Generator[NodeNG, None, None],
-        ]
-    ] = protocols.match_as_assigned_stmts
+    assigned_stmts = protocols.match_as_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
     See astroid/protocols.py for actual implementation.
     """
