@@ -9,7 +9,7 @@ import pytest
 from astroid import builder, nodes
 
 try:
-    import typing_extensions  # pylint: disable=unused-import
+    import typing_extensions
 
     HAS_TYPING_EXTENSIONS = True
     HAS_TYPING_EXTENSIONS_TYPEVAR = hasattr(typing_extensions, "TypeVar")
