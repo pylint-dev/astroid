@@ -19,6 +19,13 @@ Release date: TBA
   Closes #1780
   Refs #2140
 
+* Remove the ``inference`` module. Node inference methods are now in the module
+  defining the node, rather than being associated to the node afterward.
+
+  Closes #679
+
+* Move ``LookupMixIn`` to ``astroid.nodes._base_nodes`` and make it private.
+
 * Reduce file system access in ``ast_from_file()``.
 
 * Reduce time to ``import astroid`` by delaying ``astroid_bootstrapping()`` until
