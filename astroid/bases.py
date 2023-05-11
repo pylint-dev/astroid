@@ -347,7 +347,7 @@ class Instance(BaseInstance):
 
     @decorators.yes_if_nothing_inferred
     def infer_binary_op(
-        self: Instance | nodes.ClassDef,
+        self,
         opnode: nodes.AugAssign | nodes.BinOp,
         operator: str,
         other: InferenceResult,

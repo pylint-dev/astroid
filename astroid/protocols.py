@@ -220,7 +220,7 @@ def tl_infer_binary_op(
 
 @decorators.yes_if_nothing_inferred
 def instance_class_infer_binary_op(
-    self: bases.Instance | nodes.ClassDef,
+    self: nodes.ClassDef,
     opnode: nodes.AugAssign | nodes.BinOp,
     operator: str,
     other: InferenceResult,
