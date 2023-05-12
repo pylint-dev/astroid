@@ -624,7 +624,7 @@ class OperatorNode(NodeNG):
         binary_opnode: nodes.AugAssign | nodes.BinOp,
         context: InferenceContext,
         flow_factory: GetFlowFactory,
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult | util.BadBinaryOperationMessage, None, None]:
         """Infer a binary operation between a left operand and a right operand.
 
         This is used by both normal binary operations and augmented binary
