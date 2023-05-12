@@ -2281,7 +2281,9 @@ class Dict(NodeNG, Instance):
         """
         return bool(self.items)
 
-    def _infer(self, context: InferenceContext | None = None) -> Iterator[nodes.Dict]:
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Iterator[nodes.Dict]:
         if not any(isinstance(k, DictUnpack) for k, _ in self.items):
             yield self
         else:
