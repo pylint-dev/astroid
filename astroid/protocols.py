@@ -231,7 +231,7 @@ def instance_class_infer_binary_op(
 
 
 # assignment ##################################################################
-
+# pylint: disable-next=pointless-string-statement
 """The assigned_stmts method is responsible to return the assigned statement
 (e.g. not inferred) according to the assignment type.
 
