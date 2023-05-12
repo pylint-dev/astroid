@@ -1266,7 +1266,7 @@ class AugAssign(
 
     def _infer_augassign(
         self, context: InferenceContext | None = None
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult | util.BadBinaryOperationMessage, None, None]:
         """Inference logic for augmented binary operations."""
         context = context or InferenceContext()
 
@@ -4141,7 +4141,9 @@ class UnaryOp(_base_nodes.OperatorNode):
 
     def _infer_unaryop(
         self: nodes.UnaryOp, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
+    ) -> Generator[
+        InferenceResult | util.BadUnaryOperationMessage, None, InferenceErrorInfo
+    ]:
         """Infer what an UnaryOp should return when evaluated."""
         from astroid.nodes import ClassDef  # pylint: disable=import-outside-toplevel
 
