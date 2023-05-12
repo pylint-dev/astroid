@@ -2825,6 +2825,7 @@ class Global(_base_nodes.NoChildrenNode, _base_nodes.Statement):
         if context is None or context.lookupname is None:
             raise InferenceError(node=self, context=context)
         try:
+            # pylint: disable-next=no-member
             return _infer_stmts(self.root().getattr(context.lookupname), context)
         except AttributeInferenceError as error:
             raise InferenceError(

@@ -329,7 +329,7 @@ def object_len(node, context: InferenceContext | None = None):
 def _higher_function_scope(node: nodes.NodeNG) -> nodes.FunctionDef | None:
     """Search for the first function which encloses the given
     scope.
-    
+
     This can be used for looking up in that function's
     scope, in case looking up in a lower scope for a particular
     name fails.
