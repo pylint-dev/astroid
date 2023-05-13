@@ -190,20 +190,17 @@ class NodeNG:
         context.inferred[key] = tuple(results)
         return
 
-    def _repr_name(self) -> str:
+    def repr_name(self) -> str:
         """Get a name for nice representation.
 
         This is either :attr:`name`, :attr:`attrname`, or the empty string.
-
-        :returns: The nice name.
-        :rtype: str
         """
         if all(name not in self._astroid_fields for name in ("name", "attrname")):
             return getattr(self, "name", "") or getattr(self, "attrname", "")
         return ""
 
     def __str__(self) -> str:
-        rname = self._repr_name()
+        rname = self.repr_name()
         cname = type(self).__name__
         if rname:
             string = "%(cname)s.%(rname)s(%(fields)s)"
@@ -229,7 +226,7 @@ class NodeNG:
         }
 
     def __repr__(self) -> str:
-        rname = self._repr_name()
+        rname = self.repr_name()
         if rname:
             string = "<%(cname)s.%(rname)s l.%(lineno)s at 0x%(id)x>"
         else:
