@@ -7,8 +7,8 @@
 import functools
 
 from astroid.brain.brain_numpy_utils import (
-    infer_numpy_member,
     attribute_looks_like_numpy_member,
+    infer_numpy_member,
 )
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
