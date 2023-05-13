@@ -287,7 +287,7 @@ def _container_generic_transform(
             for element in arg.elts:
                 if not element:
                     continue
-                inferred = helpers.safe_infer(element, context=context)
+                inferred = util.safe_infer(element, context=context)
                 if inferred:
                     evaluated_object = nodes.EvaluatedObject(
                         original=element, value=inferred
@@ -690,7 +690,7 @@ def infer_slice(node, context: InferenceContext | None = None):
     if not 0 < len(args) <= 3:
         raise UseInferenceDefault
 
-    infer_func = partial(helpers.safe_infer, context=context)
+    infer_func = partial(util.safe_infer, context=context)
     args = [infer_func(arg) for arg in args]
     for arg in args:
         if not arg or isinstance(arg, util.UninferableBase):
@@ -1006,7 +1006,7 @@ def _is_str_format_call(node: nodes.Call) -> bool:
         return False
 
     if isinstance(node.func.expr, nodes.Name):
-        value = helpers.safe_infer(node.func.expr)
+        value = util.safe_infer(node.func.expr)
     else:
         value = node.func.expr
 
@@ -1022,7 +1022,7 @@ def _infer_str_format_call(
 
     value: nodes.Const
     if isinstance(node.func.expr, nodes.Name):
-        if not (inferred := helpers.safe_infer(node.func.expr)) or not isinstance(
+        if not (inferred := util.safe_infer(node.func.expr)) or not isinstance(
             inferred, nodes.Const
         ):
             return iter([util.Uninferable])
@@ -1037,7 +1037,7 @@ def _infer_str_format_call(
     # Get the positional arguments passed
     inferred_positional: list[nodes.Const] = []
     for i in call.positional_arguments:
-        one_inferred = helpers.safe_infer(i, context)
+        one_inferred = util.safe_infer(i, context)
         if not isinstance(one_inferred, nodes.Const):
             return iter([util.Uninferable])
         inferred_positional.append(one_inferred)
@@ -1047,7 +1047,7 @@ def _infer_str_format_call(
     # Get the keyword arguments passed
     inferred_keyword: dict[str, nodes.Const] = {}
     for k, v in call.keyword_arguments.items():
-        one_inferred = helpers.safe_infer(v, context)
+        one_inferred = util.safe_infer(v, context)
         if not isinstance(one_inferred, nodes.Const):
             return iter([util.Uninferable])
         inferred_keyword[k] = one_inferred

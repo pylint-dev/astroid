@@ -32,7 +32,7 @@ from astroid.typing import (
     InferenceResult,
     SuccessfulInferenceResult,
 )
-from astroid.util import Uninferable, UninferableBase
+from astroid.util import Uninferable, UninferableBase, safe_infer
 
 if TYPE_CHECKING:
     from astroid.constraint import Constraint
@@ -68,8 +68,6 @@ POSSIBLE_PROPERTIES = {
 def _is_property(
     meth: nodes.FunctionDef | UnboundMethod, context: InferenceContext | None = None
 ) -> bool:
-    from astroid import helpers  # pylint: disable=import-outside-toplevel
-
     decoratornames = meth.decoratornames(context=context)
     if PROPERTIES.intersection(decoratornames):
         return True
@@ -85,7 +83,7 @@ def _is_property(
     if not meth.decorators:
         return False
     for decorator in meth.decorators.nodes or ():
-        inferred = helpers.safe_infer(decorator, context=context)
+        inferred = safe_infer(decorator, context=context)
         if inferred is None or isinstance(inferred, UninferableBase):
             continue
         if isinstance(inferred, nodes.ClassDef):

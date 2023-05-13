@@ -8,9 +8,8 @@ from astroid import nodes
 from astroid.bases import Instance
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import InferenceError, NoDefault
-from astroid.helpers import safe_infer
 from astroid.typing import InferenceResult
-from astroid.util import Uninferable, UninferableBase
+from astroid.util import Uninferable, UninferableBase, safe_infer
 
 
 class CallSite:

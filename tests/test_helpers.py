@@ -263,4 +263,4 @@ class TestHelpers(unittest.TestCase):
 
 def test_uninferable_for_safe_infer() -> None:
     uninfer = util.Uninferable
-    assert helpers.safe_infer(util.Uninferable) == uninfer
+    assert util.safe_infer(util.Uninferable) == uninfer
