@@ -39,7 +39,6 @@ _FunctionTypes = Union[
 
 # the keys of CONST_CLS eg python builtin types
 _CONSTANTS = tuple(node_classes.CONST_CLS)
-_BUILTINS = vars(builtins)
 TYPE_NONE = type(None)
 TYPE_NOTIMPLEMENTED = type(NotImplemented)
 TYPE_ELLIPSIS = type(...)
