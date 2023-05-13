@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from astroid.builder import extract_node
 from astroid.context import InferenceContext
-from astroid.nodes.node_classes import Attribute, Import, Name, NodeNG
+from astroid.nodes.node_classes import Attribute, Import, Name
 
 # Class subscript is available in numpy starting with version 1.20.0
 NUMPY_VERSION_TYPE_HINTS_SUPPORT = ("1", "20", "0")
