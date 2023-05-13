@@ -143,6 +143,10 @@ Release date: TBA
 
   Refs #2154
 
+* Publicize ``NodeNG.repr_name()`` to facilitate finding a node's nice name.
+
+  Refs pylint-dev/pylint#8598
+
 
 What's New in astroid 2.15.5?
 =============================
