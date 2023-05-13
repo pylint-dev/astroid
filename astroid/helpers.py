@@ -20,6 +20,10 @@ from astroid.exceptions import (
 from astroid.nodes import scoped_nodes
 from astroid.typing import InferenceResult
 
+# Don't remove the following safe_infer import without a deprecation notice.
+# safe_infer was moved to util in #2232, but can be accessed here via this.
+from astroid.util import safe_infer
+
 
 def _build_proxy_class(cls_name: str, builtins: nodes.Module) -> nodes.ClassDef:
     proxy = raw_building.build_class(cls_name)
@@ -153,31 +157,6 @@ def object_issubclass(
     if not isinstance(node, nodes.ClassDef):
         raise TypeError(f"{node} needs to be a ClassDef node")
     return _object_type_is_subclass(node, class_or_seq, context=context)
-
-
-def safe_infer(
-    node: nodes.NodeNG | bases.Proxy | util.UninferableBase,
-    context: InferenceContext | None = None,
-) -> InferenceResult | None:
-    """Return the inferred value for the given node.
-
-    Return None if inference failed or if there is some ambiguity (more than
-    one node has been inferred).
-    """
-    if isinstance(node, util.UninferableBase):
-        return node
-    try:
-        inferit = node.infer(context=context)
-        value = next(inferit)
-    except (InferenceError, StopIteration):
-        return None
-    try:
-        next(inferit)
-        return None  # None if there is ambiguity on the inferred node
-    except InferenceError:
-        return None  # there is some kind of ambiguity
-    except StopIteration:
-        return value
 
 
 def has_known_bases(klass, context: InferenceContext | None = None) -> bool:

@@ -370,13 +370,11 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         self, context: InferenceContext | None = None
     ) -> list[SuccessfulInferenceResult]:
         """Infer all values based on BaseContainer.elts."""
-        from astroid import helpers  # pylint: disable=import-outside-toplevel
-
         values = []
 
         for elt in self.elts:
             if isinstance(elt, Starred):
-                starred = helpers.safe_infer(elt.value, context)
+                starred = util.safe_infer(elt.value, context)
                 if not starred:
                     raise InferenceError(node=self, context=context)
                 if not hasattr(starred, "elts"):
@@ -384,7 +382,7 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
                 # TODO: fresh context?
                 values.extend(starred._infer_sequence_helper(context))
             elif isinstance(elt, NamedExpr):
-                value = helpers.safe_infer(elt.value, context)
+                value = util.safe_infer(elt.value, context)
                 if not value:
                     raise InferenceError(node=self, context=context)
                 values.append(value)
@@ -2308,12 +2306,10 @@ class Dict(NodeNG, Instance):
         :raises AstroidIndexError: If the given index does not exist in the
             dictionary.
         """
-        from astroid import helpers  # pylint: disable=import-outside-toplevel
-
         for key, value in self.items:
             # TODO(cpopa): no support for overriding yet, {1:2, **{1: 3}}.
             if isinstance(key, DictUnpack):
-                inferred_value = helpers.safe_infer(value, context)
+                inferred_value = util.safe_infer(value, context)
                 if not isinstance(inferred_value, Dict):
                     continue
 
@@ -2386,12 +2382,10 @@ class Dict(NodeNG, Instance):
         self, context: InferenceContext | None
     ) -> dict[SuccessfulInferenceResult, SuccessfulInferenceResult]:
         """Infer all values based on Dict.items."""
-        from astroid import helpers  # pylint: disable=import-outside-toplevel
-
         values: dict[SuccessfulInferenceResult, SuccessfulInferenceResult] = {}
         for name, value in self.items:
             if isinstance(name, DictUnpack):
-                double_starred = helpers.safe_infer(value, context)
+                double_starred = util.safe_infer(value, context)
                 if not double_starred:
                     raise InferenceError
                 if not isinstance(double_starred, Dict):
@@ -2399,8 +2393,8 @@ class Dict(NodeNG, Instance):
                 unpack_items = double_starred._infer_map(context)
                 values = self._update_with_replacement(values, unpack_items)
             else:
-                key = helpers.safe_infer(name, context=context)
-                safe_value = helpers.safe_infer(value, context=context)
+                key = util.safe_infer(name, context=context)
+                safe_value = util.safe_infer(value, context=context)
                 if any(not elem for elem in (key, safe_value)):
                     raise InferenceError(node=self, context=context)
                 # safe_value is SuccessfulInferenceResult as bool(Uninferable) == False

@@ -141,14 +141,12 @@ def _multiply_seq_by_int(
     value: int,
     context: InferenceContext,
 ) -> _TupleListNodeT:
-    from astroid import helpers  # pylint: disable=import-outside-toplevel
-
     node = self.__class__(parent=opnode)
     if value > 1e8:
         node.elts = [util.Uninferable]
         return node
     filtered_elts = (
-        helpers.safe_infer(elt, context) or util.Uninferable
+        util.safe_infer(elt, context) or util.Uninferable
         for elt in self.elts
         if not isinstance(elt, util.UninferableBase)
     )

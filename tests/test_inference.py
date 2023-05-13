@@ -22,7 +22,6 @@ from astroid import (
     Slice,
     Uninferable,
     arguments,
-    helpers,
     manager,
     nodes,
     objects,
@@ -4029,7 +4028,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         flow['app']['config']['doffing'] = AttributeDict() #@
         """
         )
-        self.assertIsInstance(helpers.safe_infer(ast_node.targets[0]), Instance)
+        self.assertIsInstance(util.safe_infer(ast_node.targets[0]), Instance)
 
     def test_classmethod_inferred_by_context(self) -> None:
         ast_node = extract_node(
@@ -6498,7 +6497,7 @@ def test_recursion_error_inferring_builtin_containers() -> None:
     inst.a = b
     """
     )
-    helpers.safe_infer(node.targets[0])
+    util.safe_infer(node.targets[0])
 
 
 def test_inferaugassign_picking_parent_instead_of_stmt() -> None:
@@ -6650,7 +6649,7 @@ def test_dataclasses_subscript_inference_recursion_error():
     """
     node = extract_node(code)
     # Reproduces only with safe_infer()
-    assert helpers.safe_infer(node) is None
+    assert util.safe_infer(node) is None
 
 
 @pytest.mark.skipif(
@@ -6673,7 +6672,7 @@ def test_dataclasses_subscript_inference_recursion_error_39():
     replace(a, **test_dict['proxy']) # This fails
     """
     node = extract_node(code)
-    infer_val = helpers.safe_infer(node)
+    infer_val = util.safe_infer(node)
     assert isinstance(infer_val, Instance)
     assert infer_val.pytype() == ".ProxyConfig"
 

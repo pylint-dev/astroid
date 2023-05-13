@@ -6,7 +6,14 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Final, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
+
+from astroid.exceptions import InferenceError
+
+if TYPE_CHECKING:
+    from astroid import bases, nodes
+    from astroid.context import InferenceContext
+    from astroid.typing import InferenceResult
 
 
 class UninferableBase:
@@ -125,3 +132,28 @@ def check_warnings_filter() -> bool:
         and filter[3] != "__main__"
         for filter in warnings.filters
     )
+
+
+def safe_infer(
+    node: nodes.NodeNG | bases.Proxy | UninferableBase,
+    context: InferenceContext | None = None,
+) -> InferenceResult | None:
+    """Return the inferred value for the given node.
+
+    Return None if inference failed or if there is some ambiguity (more than
+    one node has been inferred).
+    """
+    if isinstance(node, UninferableBase):
+        return node
+    try:
+        inferit = node.infer(context=context)
+        value = next(inferit)
+    except (InferenceError, StopIteration):
+        return None
+    try:
+        next(inferit)
+        return None  # None if there is ambiguity on the inferred node
+    except InferenceError:
+        return None  # there is some kind of ambiguity
+    except StopIteration:
+        return value

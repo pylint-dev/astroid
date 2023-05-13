@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import random
 
-from astroid import helpers
 from astroid.context import InferenceContext
 from astroid.exceptions import UseInferenceDefault
 from astroid.inference_tip import inference_tip
@@ -21,6 +20,7 @@ from astroid.nodes.node_classes import (
     Set,
     Tuple,
 )
+from astroid.util import safe_infer
 
 ACCEPTED_ITERABLES_FOR_SAMPLE = (List, Set, Tuple)
 
@@ -51,13 +51,13 @@ def infer_random_sample(node, context: InferenceContext | None = None):
     if len(node.args) != 2:
         raise UseInferenceDefault
 
-    inferred_length = helpers.safe_infer(node.args[1], context=context)
+    inferred_length = safe_infer(node.args[1], context=context)
     if not isinstance(inferred_length, Const):
         raise UseInferenceDefault
     if not isinstance(inferred_length.value, int):
         raise UseInferenceDefault
 
-    inferred_sequence = helpers.safe_infer(node.args[0], context=context)
+    inferred_sequence = safe_infer(node.args[0], context=context)
     if not inferred_sequence:
         raise UseInferenceDefault
 
