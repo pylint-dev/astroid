@@ -9,7 +9,6 @@ from __future__ import annotations
 from collections.abc import Iterable, Iterator
 from typing import TYPE_CHECKING, Any
 
-from astroid import util
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 if TYPE_CHECKING:
@@ -26,7 +25,6 @@ __all__ = (
     "AstroidTypeError",
     "AstroidValueError",
     "AttributeInferenceError",
-    "BinaryOperationError",
     "DuplicateBasesError",
     "InconsistentMroError",
     "InferenceError",
@@ -35,14 +33,12 @@ __all__ = (
     "NameInferenceError",
     "NoDefault",
     "NotFoundError",
-    "OperationError",
     "ParentMissingError",
     "ResolveError",
     "StatementMissing",
     "SuperArgumentTypeError",
     "SuperError",
     "TooManyLevelsError",
-    "UnaryOperationError",
     "UnresolvableName",
     "UseInferenceDefault",
 )
@@ -415,11 +411,6 @@ class StatementMissing(ParentMissingError):
             message=f"Statement not found on {target!r}"
         )
 
-
-# Backwards-compatibility aliases
-OperationError = util.BadOperationMessage
-UnaryOperationError = util.BadUnaryOperationMessage
-BinaryOperationError = util.BadBinaryOperationMessage
 
 SuperArgumentTypeError = SuperError
 UnresolvableName = NameInferenceError

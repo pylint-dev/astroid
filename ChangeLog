@@ -26,6 +26,9 @@ Release date: TBA
 
 * Move ``LookupMixIn`` to ``astroid.nodes._base_nodes`` and make it private.
 
+* Remove the shims for ``OperationError``, ``BinaryOperationError``, and ``UnaryOperationError``
+  in ``exceptions``. They were moved to ``util`` in astroid 1.5.0.
+
 * Reduce file system access in ``ast_from_file()``.
 
 * Reduce time to ``import astroid`` by delaying ``astroid_bootstrapping()`` until
