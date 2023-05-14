@@ -42,6 +42,7 @@ class TestHelpers(unittest.TestCase):
             ("type", self._extract("type")),
             ("object", self._extract("type")),
             ("object()", self._extract("object")),
+            ("super()", self._extract("super")),
             ("lambda: None", self._build_custom_builtin("function")),
             ("len", self._build_custom_builtin("builtin_function_or_method")),
             ("None", self._build_custom_builtin("NoneType")),

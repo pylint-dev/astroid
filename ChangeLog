@@ -12,6 +12,9 @@ What's New in astroid 2.15.5?
 =============================
 Release date: TBA
 
+* Handle ``objects.Super`` in ``helpers.object_type()``.
+
+  Refs pylint-dev/pylint#8554
 
 
 What's New in astroid 2.15.4?
