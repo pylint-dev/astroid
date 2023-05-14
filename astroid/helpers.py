@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 
-from astroid import bases, manager, nodes, raw_building, util
+from astroid import bases, manager, nodes, objects, raw_building, util
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -65,7 +65,7 @@ def _object_type(
             raise InferenceError
         elif isinstance(inferred, util.UninferableBase):
             yield inferred
-        elif isinstance(inferred, (bases.Proxy, nodes.Slice)):
+        elif isinstance(inferred, (bases.Proxy, nodes.Slice, objects.Super)):
             yield inferred._proxied
         else:  # pragma: no cover
             raise AssertionError(f"We don't handle {type(inferred)} currently")
