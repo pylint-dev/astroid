@@ -8,9 +8,15 @@ Release date: TBA
 
 
 
-What's New in astroid 2.15.5?
+What's New in astroid 2.15.6?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 2.15.5?
+=============================
+Release date: 2023-05-14
 
 * Handle ``objects.Super`` in ``helpers.object_type()``.
 
