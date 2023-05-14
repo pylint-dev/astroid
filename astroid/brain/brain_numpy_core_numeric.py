@@ -6,7 +6,10 @@
 
 import functools
 
-from astroid.brain.brain_numpy_utils import infer_numpy_member, looks_like_numpy_member
+from astroid.brain.brain_numpy_utils import (
+    attribute_looks_like_numpy_member,
+    infer_numpy_member,
+)
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.inference_tip import inference_tip
@@ -42,5 +45,5 @@ for method_name, function_src in METHODS_TO_BE_INFERRED.items():
     AstroidManager().register_transform(
         Attribute,
         inference_tip(inference_function),
-        functools.partial(looks_like_numpy_member, method_name),
+        functools.partial(attribute_looks_like_numpy_member, method_name),
     )
