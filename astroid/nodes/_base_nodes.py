@@ -675,6 +675,7 @@ class OperatorNode(NodeNG):
 class AttributeNode(NodeNG):
     expr: NodeNG
     """The name that this node represents."""
+    attrname: str
 
     @decorators.raise_if_nothing_inferred
     def _infer_attribute(
