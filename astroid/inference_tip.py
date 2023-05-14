@@ -44,6 +44,7 @@ def _inference_tip_cached(func: InferFn[_NodesT]) -> InferFn[_NodesT]:
         if partial_cache_key in _CURRENTLY_INFERRING:
             # If through recursion we end up trying to infer the same
             # func + node we raise here.
+            _CURRENTLY_INFERRING.remove(partial_cache_key)
             raise UseInferenceDefault
         try:
             yield from _cache[func, node, context]
@@ -55,9 +56,15 @@ def _inference_tip_cached(func: InferFn[_NodesT]) -> InferFn[_NodesT]:
             # with slightly different contexts while still passing the simple
             # test cases included with this commit.
             _CURRENTLY_INFERRING.add(partial_cache_key)
-            result = _cache[func, node, context] = list(func(node, context, **kwargs))
-            # Remove recursion guard.
-            _CURRENTLY_INFERRING.remove(partial_cache_key)
+            try:
+                # May raise UseInferenceDefault
+                result = _cache[func, node, context] = list(func(node, context, **kwargs))
+            finally:
+                # Remove recursion guard.
+                try:
+                    _CURRENTLY_INFERRING.remove(partial_cache_key)
+                except KeyError:
+                    pass  # Recursion may beat us to the punch.
 
         yield from result
 
