@@ -75,7 +75,8 @@ def _inference_tip_cached(func: InferFn[_NodesT]) -> InferFn[_NodesT]:
                 if len(_cache) > 64:
                     _cache.popitem(last=False)
 
-        yield from result
+        # https://github.com/pylint-dev/pylint/issues/8686
+        yield from result  # pylint: disable=used-before-assignment
 
     return inner
 
