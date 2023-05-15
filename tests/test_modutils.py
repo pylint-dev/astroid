@@ -509,6 +509,7 @@ class GetModuleFilesTest(unittest.TestCase):
         package = resources.find("pyi_data/find_test")
         modules = set(modutils.get_module_files(package, []))
         expected = [
+            "__init__.py",
             "__init__.pyi",
             "module.py",
             "module2.py",
