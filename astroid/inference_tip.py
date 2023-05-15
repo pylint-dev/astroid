@@ -46,6 +46,9 @@ def _inference_tip_cached(func: InferFn[_NodesT]) -> InferFn[_NodesT]:
             # func + node we raise here.
             _CURRENTLY_INFERRING.remove(partial_cache_key)
             raise UseInferenceDefault
+        if context is not None and context.is_empty():
+            # Fresh, empty contexts will defeat the cache.
+            context = None
         try:
             yield from _cache[func, node, context]
             return
