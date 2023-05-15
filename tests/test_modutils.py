@@ -287,6 +287,11 @@ class GetSourceFileTest(unittest.TestCase):
     def test_raise(self) -> None:
         self.assertRaises(modutils.NoSourceFile, modutils.get_source_file, "whatever")
 
+    def test_(self) -> None:
+        package = resources.find("pyi_data")
+        module = os.path.join(package, "__init__.pyi")
+        self.assertEqual(modutils.get_source_file(module), os.path.normpath(module))
+
 
 class IsStandardModuleTest(resources.SysPathSetup, unittest.TestCase):
     """
