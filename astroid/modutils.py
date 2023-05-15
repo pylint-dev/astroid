@@ -476,7 +476,7 @@ def get_module_files(
             continue
         _handle_blacklist(blacklist, dirnames, filenames)
         # check for __init__.py
-        if not list_all and not {"__init__.py", "__init__.pyi"}.intersection(filenames):
+        if not list_all and {"__init__.py", "__init__.pyi"}.isdisjoint(filenames):
             dirnames[:] = ()
             continue
         for filename in filenames:
