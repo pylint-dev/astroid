@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from collections import OrderedDict
 from collections.abc import Generator
 from typing import Any, TypeVar
 
@@ -18,9 +19,9 @@ from astroid.typing import (
     TransformFn,
 )
 
-_cache: dict[
+_cache: OrderedDict[
     tuple[InferFn[Any], NodeNG, InferenceContext | None], list[InferenceResult]
-] = {}
+] = OrderedDict()
 
 _CURRENTLY_INFERRING: set[tuple[InferFn[Any], NodeNG]] = set()
 
@@ -61,13 +62,18 @@ def _inference_tip_cached(func: InferFn[_NodesT]) -> InferFn[_NodesT]:
             _CURRENTLY_INFERRING.add(partial_cache_key)
             try:
                 # May raise UseInferenceDefault
-                result = _cache[func, node, context] = list(func(node, context, **kwargs))
+                result = _cache[func, node, context] = list(
+                    func(node, context, **kwargs)
+                )
             finally:
                 # Remove recursion guard.
                 try:
                     _CURRENTLY_INFERRING.remove(partial_cache_key)
                 except KeyError:
                     pass  # Recursion may beat us to the punch.
+
+                if len(_cache) > 64:
+                    _cache.popitem(last=False)
 
         yield from result
 
