@@ -44,10 +44,10 @@ logger = logging.getLogger(__name__)
 
 
 if sys.platform.startswith("win"):
-    PY_SOURCE_EXTS = ("py", "pyw")
+    PY_SOURCE_EXTS = ("py", "pyw", "pyi")
     PY_COMPILED_EXTS = ("dll", "pyd")
 else:
-    PY_SOURCE_EXTS = ("py",)
+    PY_SOURCE_EXTS = ("py", "pyi")
     PY_COMPILED_EXTS = ("so",)
 
 
@@ -476,7 +476,7 @@ def get_module_files(
             continue
         _handle_blacklist(blacklist, dirnames, filenames)
         # check for __init__.py
-        if not list_all and "__init__.py" not in filenames:
+        if not list_all and not {"__init__.py", "__init__.pyi"}.intersection(filenames):
             dirnames[:] = ()
             continue
         for filename in filenames:
@@ -499,6 +499,8 @@ def get_source_file(filename: str, include_no_ext: bool = False) -> str:
     """
     filename = os.path.abspath(_path_from_filename(filename))
     base, orig_ext = os.path.splitext(filename)
+    if orig_ext == ".pyi" and os.path.exists(f"{base}{orig_ext}"):
+        return f"{base}{orig_ext}"
     for ext in PY_SOURCE_EXTS:
         source_path = f"{base}.{ext}"
         if os.path.exists(source_path):
@@ -663,7 +665,7 @@ def _is_python_file(filename: str) -> bool:
 
     .pyc and .pyo are ignored
     """
-    return filename.endswith((".py", ".so", ".pyd", ".pyw"))
+    return filename.endswith((".py", ".pyi", ".so", ".pyd", ".pyw"))
 
 
 def _has_init(directory: str) -> str | None:
