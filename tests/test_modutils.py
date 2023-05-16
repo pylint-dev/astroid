@@ -287,6 +287,11 @@ class GetSourceFileTest(unittest.TestCase):
     def test_raise(self) -> None:
         self.assertRaises(modutils.NoSourceFile, modutils.get_source_file, "whatever")
 
+    def test_(self) -> None:
+        package = resources.find("pyi_data")
+        module = os.path.join(package, "__init__.pyi")
+        self.assertEqual(modutils.get_source_file(module), os.path.normpath(module))
+
 
 class IsStandardModuleTest(resources.SysPathSetup, unittest.TestCase):
     """
@@ -417,8 +422,12 @@ class ModuleInPathTest(resources.SysPathSetup, unittest.TestCase):
         assert modutils.module_in_path("data.module", datadir)
         assert modutils.module_in_path("data.module", (datadir,))
         assert modutils.module_in_path("data.module", os.path.abspath(datadir))
+        assert modutils.module_in_path("pyi_data.module", datadir)
+        assert modutils.module_in_path("pyi_data.module", (datadir,))
+        assert modutils.module_in_path("pyi_data.module", os.path.abspath(datadir))
         # "" will evaluate to cwd
         assert modutils.module_in_path("data.module", "")
+        assert modutils.module_in_path("pyi_data.module", "")
 
     def test_bad_import(self) -> None:
         datadir = resources.find("")
@@ -489,6 +498,19 @@ class GetModuleFilesTest(unittest.TestCase):
         modules = set(modutils.get_module_files(package, []))
         expected = [
             "__init__.py",
+            "module.py",
+            "module2.py",
+            "noendingnewline.py",
+            "nonregr.py",
+        ]
+        self.assertEqual(modules, {os.path.join(package, x) for x in expected})
+
+    def test_get_module_files_2(self) -> None:
+        package = resources.find("pyi_data/find_test")
+        modules = set(modutils.get_module_files(package, []))
+        expected = [
+            "__init__.py",
+            "__init__.pyi",
             "module.py",
             "module2.py",
             "noendingnewline.py",

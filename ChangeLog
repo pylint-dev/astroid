@@ -156,6 +156,10 @@ Release date: TBA
 
   Refs pylint-dev/pylint#8554
 
+* Recognize stub ``pyi`` Python files.
+
+  Refs pylint-dev/pylint#4987
+
 
 What's New in astroid 2.15.4?
 =============================
