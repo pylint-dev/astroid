@@ -316,6 +316,9 @@ def infer_typing_alias(
         # This is an issue in cases where the aliased class implements it,
         # but the typing alias isn't subscriptable. E.g., `typing.ByteString` for PY39+
         _forbid_class_getitem_access(class_def)
+
+    # Avoid re-instantiating this class every time it's seen
+    node._explicit_inference = lambda node, context: iter([class_def])
     return iter([class_def])
 
 

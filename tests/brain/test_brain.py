@@ -650,6 +650,16 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(slots[0], nodes.Const)
         assert slots[0].value == "value"
 
+    @test_utils.require_version(minver="3.9")
+    def test_typing_no_duplicates(self):
+        node = builder.extract_node(
+            """
+        from typing import List
+        List[int]
+        """
+        )
+        assert len(node.inferred()) == 1
+
     def test_collections_generic_alias_slots(self):
         """Test slots for a class which is a subclass of a generic alias type."""
         node = builder.extract_node(
