@@ -314,6 +314,9 @@ class PartialFunction(scoped_nodes.FunctionDef):
         context: InferenceContext | None = None,
     ) -> Iterator[InferenceResult]:
         if context:
+            assert (
+                context.callcontext
+            ), "CallContext should be set before inferring call result"
             current_passed_keywords = {
                 keyword for (keyword, _) in context.callcontext.keywords
             }
