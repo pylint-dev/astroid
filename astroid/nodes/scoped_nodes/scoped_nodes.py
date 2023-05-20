@@ -133,24 +133,24 @@ def clean_typing_generic_mro(sequences: list[list[ClassDef]]) -> None:
     bases_mro.pop(position_in_inferred_bases)
 
 
-def clean_duplicates_mro(sequences, cls, context):
+def clean_duplicates_mro(
+    sequences: Iterable[Iterable[ClassDef]],
+    cls: ClassDef,
+    context: InferenceContext | None,
+) -> Iterable[Iterable[ClassDef]]:
     for sequence in sequences:
-        names = [
-            (node.lineno, node.qname()) if node.name else None for node in sequence
-        ]
-        last_index = dict(map(reversed, enumerate(names)))
-        if names and names[0] is not None and last_index[names[0]] != 0:
-            raise DuplicateBasesError(
-                message="Duplicates found in MROs {mros} for {cls!r}.",
-                mros=sequences,
-                cls=cls,
-                context=context,
-            )
-        yield [
-            node
-            for i, (node, name) in enumerate(zip(sequence, names))
-            if name is None or last_index[name] == i
-        ]
+        seen = set()
+        for node in sequence:
+            lineno_and_qname = (node.lineno, node.qname())
+            if lineno_and_qname in seen:
+                raise DuplicateBasesError(
+                    message="Duplicates found in MROs {mros} for {cls!r}.",
+                    mros=sequences,
+                    cls=cls,
+                    context=context,
+                )
+            seen.add(lineno_and_qname)
+    return sequences
 
 
 def function_to_method(n, klass):
@@ -2825,7 +2825,7 @@ class ClassDef(
                 bases_mro.append(ancestors)
 
         unmerged_mro = [[self], *bases_mro, inferred_bases]
-        unmerged_mro = list(clean_duplicates_mro(unmerged_mro, self, context))
+        unmerged_mro = clean_duplicates_mro(unmerged_mro, self, context)
         clean_typing_generic_mro(unmerged_mro)
         return _c3_merge(unmerged_mro, self, context)
 
