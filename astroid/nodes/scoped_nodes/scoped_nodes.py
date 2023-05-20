@@ -2806,6 +2806,9 @@ class ClassDef(
                 yield from baseobj.bases
 
     def _compute_mro(self, context: InferenceContext | None = None):
+        if self.qname() == "builtins.object":
+            return [self]
+
         inferred_bases = list(self._inferred_bases(context=context))
         bases_mro = []
         for base in inferred_bases:
