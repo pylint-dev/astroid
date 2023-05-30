@@ -122,7 +122,10 @@ class ImportlibFinder(Finder):
 
     _SUFFIXES: Sequence[tuple[str, ModuleType]] = (
         [(s, ModuleType.C_EXTENSION) for s in importlib.machinery.EXTENSION_SUFFIXES]
-        + [(s, ModuleType.PY_SOURCE) for s in ['.pyi'] + importlib.machinery.SOURCE_SUFFIXES]
+        + [
+            (s, ModuleType.PY_SOURCE)
+            for s in [".pyi", *importlib.machinery.SOURCE_SUFFIXES]
+        ]
         + [(s, ModuleType.PY_COMPILED) for s in importlib.machinery.BYTECODE_SUFFIXES]
     )
 
