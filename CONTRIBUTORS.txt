@@ -38,9 +38,9 @@ Contributors
 - Alexandre Fayolle <alexandre.fayolle@logilab.fr>
 - Eevee (Alex Munroe) <amunroe@yelp.com>
 - David Gilman <davidgilman1@gmail.com>
+- Tushar Sadhwani <tushar.sadhwani000@gmail.com>
 - Julien Jehannet <julien.jehannet@logilab.fr>
 - Calen Pennington <calen.pennington@gmail.com>
-- Tushar Sadhwani <tushar.sadhwani000@gmail.com> <86737547+tushar-deepsource@users.noreply.github.com>
 - Hugo van Kemenade <hugovk@users.noreply.github.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Phil Schaf <flying-sheep@web.de>
@@ -107,6 +107,7 @@ Contributors
 - markmcclain <markmcclain@users.noreply.github.com>
 - ioanatia <ioanatia@users.noreply.github.com>
 - grayjk <grayjk@gmail.com>
+- alm <alonme@users.noreply.github.com>
 - adam-grant-hendry <59346180+adam-grant-hendry@users.noreply.github.com>
 - Zbigniew Jędrzejewski-Szmek <zbyszek@in.waw.pl>
 - Zac Hatfield-Dodds <Zac-HD@users.noreply.github.com>
@@ -186,7 +187,6 @@ Contributors
 - Alexander Scheel <alexander.m.scheel@gmail.com>
 - Alexander Presnyakov <flagist0@gmail.com>
 - Ahmed Azzaoui <ahmed.azzaoui@engie.com>
-- alm <alonme@users.noreply.github.com
 
 Co-Author
 ---------
