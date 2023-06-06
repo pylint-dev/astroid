@@ -7,7 +7,9 @@
 from __future__ import annotations
 
 import copy
+import inspect
 import os
+import random
 import sys
 import textwrap
 import unittest
@@ -1880,3 +1882,35 @@ class TestPatternMatching:
         inferred = node.inferred()
         assert len(inferred) == 2
         assert [inf.value for inf in inferred] == [10, -1]
+
+
+@pytest.mark.parametrize(
+    "node",
+    [
+        node
+        for node in astroid.nodes.ALL_NODE_CLASSES
+        if node.__name__
+        not in ["_BaseContainer", "BaseContainer", "NodeNG", "const_factory"]
+    ],
+)
+@pytest.mark.filterwarnings("error")
+def test_str_repr_no_warnings(node):
+    parameters = inspect.signature(node.__init__).parameters
+
+    args = {}
+    for name, param_type in parameters.items():
+        if name == "self":
+            continue
+
+        if "int" in param_type.annotation:
+            args[name] = random.randint(0, 50)
+        elif "NodeNG" in param_type.annotation:
+            args[name] = nodes.Unknown()
+        elif "str" in param_type.annotation:
+            args[name] = ""
+        else:
+            args[name] = None
+
+    test_node = node(**args)
+    str(test_node)
+    repr(test_node)
