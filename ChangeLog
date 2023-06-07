@@ -148,9 +148,18 @@ Release date: TBA
   Refs pylint-dev/pylint#8598
 
 
-What's New in astroid 2.15.5?
+What's New in astroid 2.15.6?
 =============================
 Release date: TBA
+
+* Harden ``get_module_part()`` against ``"."``.
+
+  Closes pylint-dev/pylint#8749
+
+
+What's New in astroid 2.15.5?
+=============================
+Release date: 2023-05-14
 
 * Handle ``objects.Super`` in ``helpers.object_type()``.
 
