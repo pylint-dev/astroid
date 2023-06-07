@@ -22,6 +22,7 @@ from astroid import (
     Uninferable,
     arguments,
     helpers,
+    manager,
     nodes,
     objects,
     test_utils,
@@ -990,6 +991,16 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
         self.assertEqual(inferred[0].name, "exists")
+
+    def test_do_import_module_performance(self) -> None:
+        import_node = extract_node("import importlib")
+        import_node.modname = ""
+        import_node.do_import_module()
+        # calling file_from_module_name() indicates we didn't hit the cache
+        with unittest.mock.patch.object(
+            manager.AstroidManager, "file_from_module_name", side_effect=AssertionError
+        ):
+            import_node.do_import_module()
 
     def _test_const_inferred(self, node: nodes.AssignName, value: float | str) -> None:
         inferred = list(node.infer())
