@@ -36,7 +36,6 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
         sys.path.pop(0)
         sys.path_importer_cache.pop(resources.find("data"), None)
 
-    @pytest.mark.xfail(reason="pylint-dev/astroid#2200", strict=True)
     def test_manager_instance_attributes_reference_global_MANAGER(self) -> None:
         for expected in (True, False):
             with mock.patch.dict(
