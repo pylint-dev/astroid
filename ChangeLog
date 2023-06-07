@@ -14,6 +14,15 @@ Release date: TBA
 
 
 
+What's New in astroid 2.15.6?
+=============================
+Release date: 2023-05-14
+
+* Harden ``get_module_part()`` against ``"."``.
+
+  Closes pylint-dev/pylint#8749
+
+
 What's New in astroid 2.15.5?
 =============================
 Release date: 2023-05-14

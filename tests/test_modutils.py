@@ -147,6 +147,9 @@ class GetModulePartTest(unittest.TestCase):
             ImportError, modutils.get_module_part, "unknown.module", modutils.__file__
         )
 
+    def test_get_module_part_only_dot(self) -> None:
+        self.assertEqual(modutils.get_module_part(".", modutils.__file__), ".")
+
 
 class ModPathFromFileTest(unittest.TestCase):
     """Given an absolute file path return the python module's path as a list."""
