@@ -130,8 +130,11 @@ class ImportNode(FilterStmtsBaseNode, NoChildrenNode, Statement):
         # If the module ImportNode is importing is a module with the same name
         # as the file that contains the ImportNode we don't want to use the cache
         # to make sure we use the import system to get the correct module.
-        # pylint: disable-next=no-member # pylint doesn't recognize type of mymodule
-        if mymodule.relative_to_absolute_name(modname, level) == mymodule.name:
+        if (
+            modname
+            # pylint: disable-next=no-member # pylint doesn't recognize type of mymodule
+            and mymodule.relative_to_absolute_name(modname, level) == mymodule.name
+        ):
             use_cache = False
         else:
             use_cache = True
