@@ -63,7 +63,11 @@ test = "pytest"
 addopts = '-m "not acceptance"'
 python_files = ["*test_*.py"]
 testpaths = ["tests"]
-filterwarnings = "error"
+filterwarnings = [
+    'error',
+    # Work around https://github.com/pytest-dev/pytest/issues/10977 for Python 3.12
+    'ignore:(ast\.Str|ast\.NameConstant|ast\.Num|Attribute s) is deprecated and will be removed.*:DeprecationWarning:',
+]
 
 [tool.mypy]
 enable_error_code = "ignore-without-code"
