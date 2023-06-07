@@ -65,6 +65,9 @@ def _inference_tip_cached(func: InferFn[_NodesT]) -> InferFn[_NodesT]:
                 result = _cache[func, node, context] = list(
                     func(node, context, **kwargs)
                 )
+            except Exception as e:
+                # Suppress the KeyError from the cache miss.
+                raise e from None
             finally:
                 # Remove recursion guard.
                 try:
