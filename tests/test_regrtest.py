@@ -46,6 +46,14 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
                     MANAGER.always_load_extensions
                     == manager.AstroidManager.brain["always_load_extensions"]
                 )
+            with mock.patch.dict(
+                manager.AstroidManager.brain,
+                values={"optimize_ast": expected},
+            ):
+                assert (
+                    MANAGER.optimize_ast
+                    == manager.AstroidManager.brain["optimize_ast"]
+                )
 
     def test_module_path(self) -> None:
         man = test_utils.brainless_manager()
