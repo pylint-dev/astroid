@@ -70,12 +70,26 @@ class AstroidManager:
         self.astroid_cache = AstroidManager.brain["astroid_cache"]
         self._mod_file_cache = AstroidManager.brain["_mod_file_cache"]
         self._failed_import_hooks = AstroidManager.brain["_failed_import_hooks"]
-        self.always_load_extensions = AstroidManager.brain["always_load_extensions"]
-        self.optimize_ast = AstroidManager.brain["optimize_ast"]
         self.extension_package_whitelist = AstroidManager.brain[
             "extension_package_whitelist"
         ]
         self._transform = AstroidManager.brain["_transform"]
+
+    @property
+    def always_load_extensions(self) -> bool:
+        return AstroidManager.brain["always_load_extensions"]
+
+    @always_load_extensions.setter
+    def always_load_extensions(self, value: bool) -> None:
+        AstroidManager.brain["always_load_extensions"] = value
+
+    @property
+    def optimize_ast(self) -> bool:
+        return AstroidManager.brain["optimize_ast"]
+
+    @optimize_ast.setter
+    def optimize_ast(self, value: bool) -> None:
+        AstroidManager.brain["optimize_ast"] = value
 
     @property
     def register_transform(self):
