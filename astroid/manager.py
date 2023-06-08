@@ -75,19 +75,19 @@ class AstroidManager:
         self._transform = AstroidManager.brain["_transform"]
 
     @property
-    def always_load_extensions(self):
+    def always_load_extensions(self) -> bool:
         return AstroidManager.brain["always_load_extensions"]
 
     @always_load_extensions.setter
-    def always_load_extensions(self, value):
+    def always_load_extensions(self, value: bool) -> None:
         AstroidManager.brain["always_load_extensions"] = value
 
     @property
-    def optimize_ast(self):
+    def optimize_ast(self) -> bool:
         return AstroidManager.brain["optimize_ast"]
 
     @optimize_ast.setter
-    def optimize_ast(self, value):
+    def optimize_ast(self, value: bool) -> None:
         AstroidManager.brain["optimize_ast"] = value
 
     @property
