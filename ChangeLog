@@ -147,6 +147,11 @@ Release date: TBA
 
   Refs pylint-dev/pylint#8598
 
+* Fix a regression in 2.12.0 where settings in AstroidManager would be ignored.
+  Most notably this addresses pylint-dev/pylint#7433.
+
+  Refs #2204
+
 
 What's New in astroid 2.15.6?
 =============================
