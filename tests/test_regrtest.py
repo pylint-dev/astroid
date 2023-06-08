@@ -51,8 +51,7 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
                 values={"optimize_ast": expected},
             ):
                 assert (
-                    MANAGER.optimize_ast
-                    == manager.AstroidManager.brain["optimize_ast"]
+                    MANAGER.optimize_ast == manager.AstroidManager.brain["optimize_ast"]
                 )
 
     def test_module_path(self) -> None:
