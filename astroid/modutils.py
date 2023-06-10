@@ -433,7 +433,8 @@ def get_module_part(dotted_name: str, context_file: str | None = None) -> str:
         ), "explicit relative import, but no context_file?"
         path = []  # prevent resolving the import non-relatively
         starti = 1
-    while parts[starti] == "":  # for all further dots: change context
+    # for all further dots: change context
+    while starti < len(parts) and parts[starti] == "":
         starti += 1
         assert (
             context_file is not None
