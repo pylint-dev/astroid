@@ -4024,7 +4024,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         flow['app']['config']['doffing'] = AttributeDict() #@
         """
         )
-        self.assertIsNone(helpers.safe_infer(ast_node.targets[0]))
+        self.assertIsInstance(helpers.safe_infer(ast_node.targets[0]), Instance)
 
     def test_classmethod_inferred_by_context(self) -> None:
         ast_node = extract_node(
@@ -6118,6 +6118,20 @@ def test_prevent_recursion_error_in_igetattr_and_context_manager_inference() -> 
     # causing a RuntimeError. Hence, here just consume the inferred value
     # without checking it and rely on pytest to fail on raise
     next(node.infer())
+
+
+def test_igetattr_idempotent() -> None:
+    code = """
+    class InferMeTwice:
+        item = 10
+
+    InferMeTwice()
+    """
+    call = extract_node(code)
+    instance = call.inferred()[0]
+    context_to_be_used_twice = InferenceContext()
+    assert util.Uninferable not in instance.igetattr("item", context_to_be_used_twice)
+    assert util.Uninferable not in instance.igetattr("item", context_to_be_used_twice)
 
 
 def test_infer_context_manager_with_unknown_args() -> None:

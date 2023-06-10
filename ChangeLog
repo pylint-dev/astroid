@@ -17,6 +17,12 @@ Release date: TBA
 
 * Reduce file system access in ``ast_from_file()``.
 
+* Make ``igetattr()`` idempotent. This addresses some reports of varying results
+  when running pylint with ``--jobs``.
+
+  Closes pylint-dev/pylint#4356
+  Refs #7
+
 * Fix incorrect cache keys for inference results, thereby correctly inferring types
   for calls instantiating types dynamically.
 
