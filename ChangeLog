@@ -22,6 +22,12 @@ Release date: TBA
 
   Closes #2161
 
+* Make ``igetattr()`` idempotent. This addresses some reports of varying results
+  when running pylint with ``--jobs``.
+
+  Closes pylint-dev/pylint#4356
+  Refs #7
+
 * Fix incorrect cache keys for inference results, thereby correctly inferring types
   for calls instantiating types dynamically.
 
@@ -151,6 +157,11 @@ Release date: TBA
 * Publicize ``NodeNG.repr_name()`` to facilitate finding a node's nice name.
 
   Refs pylint-dev/pylint#8598
+
+* Fix a regression in 2.12.0 where settings in AstroidManager would be ignored.
+  Most notably this addresses pylint-dev/pylint#7433.
+
+  Refs #2204
 
 
 What's New in astroid 2.15.6?
