@@ -69,6 +69,8 @@ class AstroidBuilder(raw_building.InspectBuilder):
     ) -> None:
         super().__init__(manager)
         self._apply_transforms = apply_transforms
+        if not raw_building.InspectBuilder.bootstrapped:
+            raw_building._astroid_bootstrapping()
 
     def module_build(
         self, module: types.ModuleType, modname: str | None = None

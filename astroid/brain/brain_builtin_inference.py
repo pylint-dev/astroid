@@ -129,12 +129,14 @@ def _extend_builtins(class_transforms):
         transform(builtin_ast[class_name])
 
 
-_extend_builtins(
-    {
-        "bytes": partial(_extend_string_class, code=BYTES_CLASS, rvalue="b''"),
-        "str": partial(_extend_string_class, code=STR_CLASS, rvalue="''"),
-    }
-)
+def on_bootstrap():
+    """Called by astroid_bootstrapping()."""
+    _extend_builtins(
+        {
+            "bytes": partial(_extend_string_class, code=BYTES_CLASS, rvalue="b''"),
+            "str": partial(_extend_string_class, code=STR_CLASS, rvalue="''"),
+        }
+    )
 
 
 def _builtin_filter_predicate(node, builtin_name) -> bool:
