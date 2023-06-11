@@ -4235,7 +4235,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         Clazz() #@
         """
         ).inferred()[0]
-        assert isinstance(cls, nodes.ClassDef) and cls.name == "Clazz"
+        assert isinstance(cls, Instance) and cls.name == "Clazz"
 
     def test_infer_subclass_attr_outer_class(self) -> None:
         node = extract_node(
@@ -4907,6 +4907,21 @@ class TestBool(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "Foo")
+
+    def test_class_subscript_inference_context(self) -> None:
+        """Context path has a reference to any parents inferred by getitem()."""
+        code = """
+        class Parent: pass
+
+        class A(Parent):
+            def __class_getitem__(self, value):
+                return cls
+        """
+        klass = extract_node(code)
+        context = InferenceContext()
+        _ = klass.getitem(0, context=context)
+
+        assert list(context.path)[0][0].name == "Parent"
 
 
 class TestType(unittest.TestCase):
