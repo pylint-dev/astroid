@@ -17,6 +17,11 @@ Release date: TBA
 
 * Reduce file system access in ``ast_from_file()``.
 
+* Reduce time to ``import astroid`` by delaying ``astroid_bootstrapping()`` until
+  the first instantiation of ``AstroidBuilder``.
+
+  Closes #2161
+
 * Make ``igetattr()`` idempotent. This addresses some reports of varying results
   when running pylint with ``--jobs``.
 
@@ -42,7 +47,7 @@ Release date: TBA
   We have tried to minimize the amount of breaking changes caused by this change
   but some are unavoidable.
 
-* ``infer_call_result`` now shares the same interface across all implemenations. Namely:
+* ``infer_call_result`` now shares the same interface across all implementations. Namely:
   ```python
   def infer_call_result(
                 self,
