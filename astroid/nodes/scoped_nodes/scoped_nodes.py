@@ -1666,7 +1666,7 @@ def _rec_get_names(args, names: list[str] | None = None) -> list[str]:
     return names
 
 
-def _is_metaclass(klass, seen=None) -> bool:
+def _is_metaclass(klass, seen=None, context: InferenceContext | None = None) -> bool:
     """Return if the given class can be
     used as a metaclass.
     """
@@ -1676,7 +1676,7 @@ def _is_metaclass(klass, seen=None) -> bool:
         seen = set()
     for base in klass.bases:
         try:
-            for baseobj in base.infer():
+            for baseobj in base.infer(context=context):
                 baseobj_name = baseobj.qname()
                 if baseobj_name in seen:
                     continue
@@ -1691,21 +1691,21 @@ def _is_metaclass(klass, seen=None) -> bool:
                     continue
                 if baseobj._type == "metaclass":
                     return True
-                if _is_metaclass(baseobj, seen):
+                if _is_metaclass(baseobj, seen, context=context):
                     return True
         except InferenceError:
             continue
     return False
 
 
-def _class_type(klass, ancestors=None):
+def _class_type(klass, ancestors=None, context: InferenceContext | None = None):
     """return a ClassDef node type to differ metaclass and exception
     from 'regular' classes
     """
     # XXX we have to store ancestors in case we have an ancestor loop
     if klass._type is not None:
         return klass._type
-    if _is_metaclass(klass):
+    if _is_metaclass(klass, context=context):
         klass._type = "metaclass"
     elif klass.name.endswith("Exception"):
         klass._type = "exception"
@@ -2502,7 +2502,7 @@ class ClassDef(
             ``__getitem__`` method.
         """
         try:
-            methods = lookup(self, "__getitem__")
+            methods = lookup(self, "__getitem__", context=context)
         except AttributeInferenceError as exc:
             if isinstance(self, ClassDef):
                 # subscripting a class definition may be

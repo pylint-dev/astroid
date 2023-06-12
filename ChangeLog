@@ -30,6 +30,11 @@ Release date: TBA
   Closes pylint-dev/pylint#7464
   Closes pylint-dev/pylint#8074
 
+* Fix interrupted ``InferenceContext`` call chains, thereby addressing performance
+  problems when linting ``sqlalchemy``.
+
+  Closes pylint-dev/pylint#8150
+
 * ``nodes.FunctionDef`` no longer inherits from ``nodes.Lambda``.
   This is a breaking change but considered a bug fix as the nodes did not share the same
   API and were not interchangeable.
