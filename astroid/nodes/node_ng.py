@@ -210,7 +210,7 @@ class NodeNG:
             alignment = len(cname) + 1
         result = []
         for field in self._other_fields + self._astroid_fields:
-            value = getattr(self, field)
+            value = getattr(self, field, "Unknown")
             width = 80 - len(field) - alignment
             lines = pprint.pformat(value, indent=2, width=width).splitlines(True)
 
@@ -227,6 +227,11 @@ class NodeNG:
 
     def __repr__(self) -> str:
         rname = self.repr_name()
+        # The dependencies used to calculate fromlineno (if not cached) may not exist at the time
+        try:
+            lineno = self.fromlineno
+        except AttributeError:
+            lineno = 0
         if rname:
             string = "<%(cname)s.%(rname)s l.%(lineno)s at 0x%(id)x>"
         else:
@@ -234,7 +239,7 @@ class NodeNG:
         return string % {
             "cname": type(self).__name__,
             "rname": rname,
-            "lineno": self.fromlineno,
+            "lineno": lineno,
             "id": id(self),
         }
 
