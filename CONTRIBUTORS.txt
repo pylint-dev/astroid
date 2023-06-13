@@ -137,6 +137,7 @@ Contributors
 - Kian Meng, Ang <kianmeng.ang@gmail.com>
 - Kai Mueller <15907922+kasium@users.noreply.github.com>
 - Jörg Thalheim <Mic92@users.noreply.github.com>
+- Josef Kemetmüller <josef.kemetmueller@gmail.com>
 - Jonathan Striebel <jstriebel@users.noreply.github.com>
 - John Belmonte <john@neggie.net>
 - Jeff Widman <jeff@jeffwidman.com>
@@ -182,6 +183,7 @@ Contributors
 - Aru Sahni <arusahni@gmail.com>
 - Artsiom Kaval <lezeroq@gmail.com>
 - Anubhav <35621759+anubh-v@users.noreply.github.com>
+- Antonio <antonioglez-23@hotmail.com>
 - Antoine Boellinger <aboellinger@hotmail.com>
 - Alphadelta14 <alpha@alphaservcomputing.solutions>
 - Alexander Scheel <alexander.m.scheel@gmail.com>
