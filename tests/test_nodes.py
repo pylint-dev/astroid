@@ -1916,8 +1916,7 @@ class TestPatternMatching:
     [
         node
         for node in astroid.nodes.ALL_NODE_CLASSES
-        if node.__name__
-        not in ["_BaseContainer", "BaseContainer", "NodeNG", "const_factory"]
+        if node.__name__ not in ["BaseContainer", "NodeNG", "const_factory"]
     ],
 )
 @pytest.mark.filterwarnings("error")
