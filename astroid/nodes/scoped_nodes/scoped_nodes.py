@@ -954,7 +954,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         :rtype: list(str)
         """
         if self.args.arguments:  # maybe None with builtin functions
-            names = _rec_get_names(self.args.arguments)
+            names = [elt.name for elt in self.args.arguments]
         else:
             names = []
         if self.args.vararg:
@@ -1246,7 +1246,7 @@ class FunctionDef(
         :rtype: list(str)
         """
         if self.args.arguments:  # maybe None with builtin functions
-            names = _rec_get_names(self.args.arguments)
+            names = [elt.name for elt in self.args.arguments]
         else:
             names = []
         if self.args.vararg:
@@ -1652,18 +1652,6 @@ class AsyncFunctionDef(FunctionDef):
     >>> node.body[0]
     <AsyncFor l.3 at 0x7f23b2e417b8>
     """
-
-
-def _rec_get_names(args, names: list[str] | None = None) -> list[str]:
-    """return a list of all argument names"""
-    if names is None:
-        names = []
-    for arg in args:
-        if isinstance(arg, node_classes.Tuple):
-            _rec_get_names(arg.elts, names)
-        else:
-            names.append(arg.name)
-    return names
 
 
 def _is_metaclass(klass, seen=None, context: InferenceContext | None = None) -> bool:
