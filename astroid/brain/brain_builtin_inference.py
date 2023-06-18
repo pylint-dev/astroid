@@ -1007,7 +1007,7 @@ def _infer_str_format_call(
         value = inferred
     elif isinstance(node.func.expr, nodes.Const):
         value = node.func.expr
-    else:
+    else:  # pragma: no cover
         return iter([util.Uninferable])
 
     format_template = value.value
