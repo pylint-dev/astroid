@@ -4488,6 +4488,24 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         with self.assertRaises(InferenceError):
             _ = next(node.infer())
 
+    def test_infer_parameters_from_type_hints(self) -> None:
+        node = extract_node(
+            """
+        class Logger:
+            def info(self, msg: str) -> None:
+                ...
+
+        class MyClassThatLogs:
+            def __init__(self, logger: Logger) -> None:
+                self.logger = logger
+
+        my_class_that_logs = MyClassThatLogs(Logger())
+        my_class_that_logs.logger
+        """
+        )
+        inferred = list(node.infer())
+        assert isinstance(inferred[1], Instance)
+
 
 class GetattrTest(unittest.TestCase):
     def test_yes_when_unknown(self) -> None:
