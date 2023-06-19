@@ -6,6 +6,11 @@ What's New in astroid 3.0.0?
 =============================
 Release date: TBA
 
+* Use type annotations for type inference.
+
+  Closes pylint-dev/pylint#4813
+  Closes pylint-dev/pylint#8781
+
 * Remove support for Python 3.7.
 
   Refs #2137
