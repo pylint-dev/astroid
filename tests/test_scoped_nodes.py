@@ -529,6 +529,10 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             astroid["f"].argnames(), ["a", "b", "args", "c", "d", "kwargs"]
         )
 
+    def test_argnames_lambda(self) -> None:
+        lambda_node = extract_node("lambda a, b, c, *args, **kwargs: ...")
+        self.assertEqual(lambda_node.argnames(), ["a", "b", "c", "args", "kwargs"])
+
     def test_positional_only_argnames(self) -> None:
         code = "def f(a, b, /, c=None, *args, d, **kwargs): pass"
         astroid = builder.parse(code, __name__)
