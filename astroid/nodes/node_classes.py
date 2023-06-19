@@ -509,6 +509,7 @@ class Name(_base_nodes.NoChildrenNode, LookupMixIn):
 
 DEPRECATED_ARGUMENT_DEFAULT = object()
 
+
 class Arguments(_base_nodes.AssignTypeNode):
     """Class representing an :class:`ast.arguments` node.
 
@@ -855,9 +856,9 @@ class Arguments(_base_nodes.AssignTypeNode):
         """
         if rec is not DEPRECATED_ARGUMENT_DEFAULT:
             warnings.warn(
-                'The rec argument will be removed in a future version.',
+                "The rec argument will be removed in a future version.",
                 DeprecationWarning,
-                stacklevel=2
+                stacklevel=2,
             )
         if self.arguments:
             return _find_arg(argname, self.arguments)
