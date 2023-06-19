@@ -10,6 +10,7 @@ import abc
 import itertools
 import sys
 import typing
+import warnings
 from collections.abc import Generator, Iterable, Iterator, Mapping
 from functools import cached_property, lru_cache
 from typing import (
@@ -506,6 +507,8 @@ class Name(_base_nodes.NoChildrenNode, LookupMixIn):
             yield from child_node._get_name_nodes()
 
 
+DEPRECATED_ARGUMENT_DEFAULT = object()
+
 class Arguments(_base_nodes.AssignTypeNode):
     """Class representing an :class:`ast.arguments` node.
 
@@ -836,26 +839,28 @@ class Arguments(_base_nodes.AssignTypeNode):
         if name == self.kwarg:
             return True
         return (
-            self.find_argname(name, rec=True)[1] is not None
+            self.find_argname(name)[1] is not None
             or self.kwonlyargs
-            and _find_arg(name, self.kwonlyargs, rec=True)[1] is not None
+            and _find_arg(name, self.kwonlyargs)[1] is not None
         )
 
-    def find_argname(self, argname, rec=False):
+    def find_argname(self, argname, rec=DEPRECATED_ARGUMENT_DEFAULT):
         """Get the index and :class:`AssignName` node for given name.
 
         :param argname: The name of the argument to search for.
         :type argname: str
 
-        :param rec: Whether or not to include arguments in unpacked tuples
-            in the search.
-        :type rec: bool
-
         :returns: The index and node for the argument.
         :rtype: tuple(str or None, AssignName or None)
         """
+        if rec is not DEPRECATED_ARGUMENT_DEFAULT:
+            warnings.warn(
+                'The rec argument will be removed in a future version.',
+                DeprecationWarning,
+                stacklevel=2
+            )
         if self.arguments:
-            return _find_arg(argname, self.arguments, rec)
+            return _find_arg(argname, self.arguments)
         return None, None
 
     def get_children(self):
@@ -890,14 +895,9 @@ class Arguments(_base_nodes.AssignTypeNode):
                 yield elt
 
 
-def _find_arg(argname, args, rec=False):
+def _find_arg(argname, args):
     for i, arg in enumerate(args):
-        if isinstance(arg, Tuple):
-            if rec:
-                found = _find_arg(argname, arg.elts)
-                if found[0] is not None:
-                    return found
-        elif arg.name == argname:
+        if arg.name == argname:
             return i, arg
     return None, None
 
