@@ -854,9 +854,9 @@ class Arguments(_base_nodes.AssignTypeNode):
         :returns: The index and node for the argument.
         :rtype: tuple(str or None, AssignName or None)
         """
-        if rec is not DEPRECATED_ARGUMENT_DEFAULT:
+        if rec is not DEPRECATED_ARGUMENT_DEFAULT:  # pragma: no cover
             warnings.warn(
-                "The rec argument will be removed in a future version.",
+                "The rec argument will be removed in astroid 3.1.",
                 DeprecationWarning,
                 stacklevel=2,
             )
