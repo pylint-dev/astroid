@@ -86,7 +86,11 @@ class CallSite:
         """
         return len(self.keyword_arguments) != len(self._unpacked_kwargs)
 
-    def _unpack_keywords(self, keywords, context: InferenceContext | None = None):
+    def _unpack_keywords(
+        self,
+        keywords: list[tuple[str | None, nodes.NodeNG]],
+        context: InferenceContext | None = None,
+    ):
         values = {}
         context = context or InferenceContext()
         context.extra_context = self.argument_context_map
