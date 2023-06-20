@@ -23,7 +23,7 @@ repos:
         exclude: tests/testdata|setup.py
         types: [python]
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.6.0
+    rev: v3.7.0
     hooks:
       - id: pyupgrade
         exclude: tests/testdata
