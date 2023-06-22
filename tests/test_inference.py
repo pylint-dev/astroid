@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import sys
 import textwrap
 import unittest
 from abc import ABCMeta
@@ -32,7 +33,7 @@ from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod, UnionType
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
-from astroid.const import IS_PYPY, PY39_PLUS, PY310_PLUS
+from astroid.const import IS_PYPY, PY39_PLUS, PY310_PLUS, PY312_PLUS
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -988,7 +989,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred[0], nodes.Module)
         self.assertEqual(inferred[0].name, "os.path")
         inferred = list(ast.igetattr("e"))
-        self.assertEqual(len(inferred), 1)
+        if PY312_PLUS and sys.platform.startswith("win"):
+            # There are two os.path.exists exported, likely due to
+            # https://github.com/python/cpython/pull/101324
+            self.assertEqual(len(inferred), 2)
+        else:
+            self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
         self.assertEqual(inferred[0].name, "exists")
 
