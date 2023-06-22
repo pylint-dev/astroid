@@ -2707,9 +2707,9 @@ class ParamSpec(_base_nodes.AssignTypeNode):
 
     def __init__(
         self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
         end_lineno: int | None = None,
         end_col_offset: int | None = None,
@@ -3354,9 +3354,9 @@ class TypeAlias(_base_nodes.AssignTypeNode):
 
     def __init__(
         self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
         end_lineno: int | None = None,
         end_col_offset: int | None = None,
@@ -3397,9 +3397,9 @@ class TypeVar(_base_nodes.AssignTypeNode):
 
     def __init__(
         self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
         end_lineno: int | None = None,
         end_col_offset: int | None = None,
@@ -3430,9 +3430,9 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
 
     def __init__(
         self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
         *,
         end_lineno: int | None = None,
         end_col_offset: int | None = None,
