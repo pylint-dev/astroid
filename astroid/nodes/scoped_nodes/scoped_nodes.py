@@ -1130,7 +1130,7 @@ class FunctionDef(
         self.body: list[NodeNG] = []
         """The contents of the function body."""
 
-        self.type_params: list[nodes.TypeVar] = []
+        self.type_params: list[nodes.TypeVar, nodes.ParamSpec, nodes.TypeVarTuple] = []
         """PEP 695 (Python 3.12+) type params, e.g. first 'T' in def func[T]() -> T: ..."""
 
         self.instance_attrs: dict[str, list[NodeNG]] = {}
@@ -1846,7 +1846,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         self.is_dataclass: bool = False
         """Whether this class is a dataclass."""
 
-        self.type_params: list[nodes.TypeVar] = []
+        self.type_params: list[nodes.TypeVar, nodes.ParamSpec, nodes.TypeVarTuple] = []
         """PEP 695 (Python 3.12+) type params, e.g. class MyClass[T]: ..."""
 
         super().__init__(

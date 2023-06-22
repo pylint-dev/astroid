@@ -448,6 +448,12 @@ class TreeRebuilder:
             def visit(self, node: ast.TypeVar, parent: NodeNG) -> nodes.TypeVar:
                 ...
 
+            @overload
+            def visit(
+                self, node: ast.TypeVarTuple, parent: NodeNG
+            ) -> nodes.TypeVarTuple:
+                ...
+
         @overload
         def visit(self, node: ast.UnaryOp, parent: NodeNG) -> nodes.UnaryOp:
             ...
@@ -1736,6 +1742,22 @@ class TreeRebuilder:
             name=self.visit_assignname(node, newnode, node.name),
             bound=self.visit(node.bound, newnode),
         )
+        return newnode
+
+    def visit_typevartuple(
+        self, node: ast.TypeVarTuple, parent: NodeNG
+    ) -> nodes.TypeVarTuple:
+        """Visit a TypeVarTuple node by returning a fresh instance of it."""
+        newnode = nodes.TypeVarTuple(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+            parent=parent,
+        )
+        # Add AssignName node for 'node.name'
+        # https://bugs.python.org/issue43994
+        newnode.postinit(name=self.visit_assignname(node, newnode, node.name))
         return newnode
 
     def visit_unaryop(self, node: ast.UnaryOp, parent: NodeNG) -> nodes.UnaryOp:

@@ -531,6 +531,10 @@ class AsStringVisitor:
         """return an astroid.TypeVar node as string"""
         return node.name.accept(self) if node.name else "_"
 
+    def visit_typevartuple(self, node: nodes.TypeVarTuple) -> str:
+        """return an astroid.TypeVarTuple node as string"""
+        return "*" + node.name.accept(self) if node.name else ""
+
     def visit_unaryop(self, node) -> str:
         """return an astroid.UnaryOp node as string"""
         if node.op == "not":

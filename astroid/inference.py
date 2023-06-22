@@ -95,6 +95,7 @@ nodes.Slice._infer = infer_end  # type: ignore[assignment]
 nodes.TypeAlias._infer = infer_end  # type: ignore[assignment]
 nodes.TypeVar._infer = infer_end  # type: ignore[assignment]
 nodes.ParamSpec._infer = infer_end  # type: ignore[assignment]
+nodes.TypeVarTuple._infer = infer_end  # type: ignore[assignment]
 
 
 def _infer_sequence_helper(
