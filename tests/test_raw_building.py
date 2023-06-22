@@ -24,7 +24,7 @@ import pytest
 import tests.testdata.python3.data.fake_module_with_broken_getattr as fm_getattr
 import tests.testdata.python3.data.fake_module_with_warnings as fm
 from astroid.builder import AstroidBuilder
-from astroid.const import IS_PYPY
+from astroid.const import IS_PYPY, PY312_PLUS
 from astroid.raw_building import (
     attach_dummy_node,
     build_class,
@@ -86,7 +86,7 @@ class RawBuildingTC(unittest.TestCase):
 
     @unittest.skipIf(IS_PYPY, "Only affects CPython")
     def test_io_is__io(self):
-        # _io module calls itself io. This leads
+        # _io module calls itself io before Python 3.12. This leads
         # to cyclic dependencies when astroid tries to resolve
         # what io.BufferedReader is. The code that handles this
         # is in astroid.raw_building.imported_member, which verifies
@@ -94,7 +94,8 @@ class RawBuildingTC(unittest.TestCase):
         builder = AstroidBuilder()
         module = builder.inspect_build(_io)
         buffered_reader = module.getattr("BufferedReader")[0]
-        self.assertEqual(buffered_reader.root().name, "io")
+        expected = "_io" if PY312_PLUS else "io"
+        self.assertEqual(buffered_reader.root().name, expected)
 
     def test_build_function_deepinspect_deprecation(self) -> None:
         # Tests https://github.com/pylint-dev/astroid/issues/1717
