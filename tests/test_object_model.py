@@ -589,6 +589,10 @@ class FunctionModelTest(unittest.TestCase):
         self.assertEqual(annotations.getitem(astroid.Const("b")).value, 2)
         self.assertEqual(annotations.getitem(astroid.Const("c")).value, 3)
 
+    def test_is_not_lambda(self):
+        ast_node = builder.extract_node("def func(): pass")
+        self.assertIs(ast_node.is_lambda, False)
+
 
 class TestContextManagerModel:
     def test_model(self) -> None:

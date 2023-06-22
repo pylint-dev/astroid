@@ -1182,6 +1182,9 @@ class Assign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     def _assign_nodes_in_scope(self) -> list[nodes.Assign]:
         return [self, *self.value._assign_nodes_in_scope]
 
+    def _get_yield_nodes_skip_functions(self):
+        yield from self.value._get_yield_nodes_skip_functions()
+
     def _get_yield_nodes_skip_lambdas(self):
         yield from self.value._get_yield_nodes_skip_lambdas()
 
@@ -1314,6 +1317,11 @@ class AugAssign(
     def get_children(self):
         yield self.target
         yield self.value
+
+    def _get_yield_nodes_skip_functions(self):
+        """An AugAssign node can contain a Yield node in the value"""
+        yield from self.value._get_yield_nodes_skip_functions()
+        yield from super()._get_yield_nodes_skip_functions()
 
     def _get_yield_nodes_skip_lambdas(self):
         """An AugAssign node can contain a Yield node in the value"""
@@ -2427,6 +2435,10 @@ class Expr(_base_nodes.Statement):
     def get_children(self):
         yield self.value
 
+    def _get_yield_nodes_skip_functions(self):
+        if not self.value.is_function:
+            yield from self.value._get_yield_nodes_skip_functions()
+
     def _get_yield_nodes_skip_lambdas(self):
         if not self.value.is_lambda:
             yield from self.value._get_yield_nodes_skip_lambdas()
@@ -2972,6 +2984,11 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
 
     def has_elif_block(self):
         return len(self.orelse) == 1 and isinstance(self.orelse[0], If)
+
+    def _get_yield_nodes_skip_functions(self):
+        """An If node can contain a Yield node in the test"""
+        yield from self.test._get_yield_nodes_skip_functions()
+        yield from super()._get_yield_nodes_skip_functions()
 
     def _get_yield_nodes_skip_lambdas(self):
         """An If node can contain a Yield node in the test"""
@@ -4357,6 +4374,11 @@ class While(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         yield from self.body
         yield from self.orelse
 
+    def _get_yield_nodes_skip_functions(self):
+        """A While node can contain a Yield node in the test"""
+        yield from self.test._get_yield_nodes_skip_functions()
+        yield from super()._get_yield_nodes_skip_functions()
+
     def _get_yield_nodes_skip_lambdas(self):
         """A While node can contain a Yield node in the test"""
         yield from self.test._get_yield_nodes_skip_lambdas()
@@ -4491,6 +4513,9 @@ class Yield(NodeNG):
     def get_children(self):
         if self.value is not None:
             yield self.value
+
+    def _get_yield_nodes_skip_functions(self):
+        yield self
 
     def _get_yield_nodes_skip_lambdas(self):
         yield self
