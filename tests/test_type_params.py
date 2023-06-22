@@ -6,7 +6,7 @@ import pytest
 
 from astroid import extract_node
 from astroid.const import PY312_PLUS
-from astroid.nodes import ParamSpec, Subscript, TypeAlias, TypeVar
+from astroid.nodes import AssignName, ParamSpec, Subscript, TypeAlias, TypeVar
 
 
 @pytest.mark.skipif(not PY312_PLUS, reason="Requires Python 3.12 or higher")
@@ -14,7 +14,8 @@ def test_type_alias() -> None:
     node = extract_node("type Point[T] = list[float, float]")
     assert isinstance(node, TypeAlias)
     assert isinstance(node.type_params[0], TypeVar)
-    assert node.type_params[0].name == "T"
+    assert isinstance(node.type_params[0].name, AssignName)
+    assert node.type_params[0].name.name == "T"
     assert node.type_params[0].bound is None
 
     assert isinstance(node.value, Subscript)
@@ -31,7 +32,8 @@ def test_type_param_spec() -> None:
     node = extract_node("type Alias[**P] = Callable[P, int]")
     params = node.type_params[0]
     assert isinstance(params, ParamSpec)
-    assert params.name == "P"
+    assert isinstance(params.name, AssignName)
+    assert params.name.name == "P"
 
     assert node.inferred()[0] is node
 
@@ -40,10 +42,10 @@ def test_type_param_spec() -> None:
 def test_type_param() -> None:
     func_node = extract_node("def func[T]() -> T: ...")
     assert isinstance(func_node.type_params[0], TypeVar)
-    assert func_node.type_params[0].name == "T"
+    assert func_node.type_params[0].name.name == "T"
     assert func_node.type_params[0].bound is None
 
     class_node = extract_node("class MyClass[T]: ...")
     assert isinstance(class_node.type_params[0], TypeVar)
-    assert class_node.type_params[0].name == "T"
+    assert class_node.type_params[0].name.name == "T"
     assert class_node.type_params[0].bound is None

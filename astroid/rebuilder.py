@@ -1508,7 +1508,9 @@ class TreeRebuilder:
             end_col_offset=node.end_col_offset,
             parent=parent,
         )
-        newnode.postinit(node.name)
+        # Add AssignName node for 'node.name'
+        # https://bugs.python.org/issue43994
+        newnode.postinit(name=self.visit_assignname(node, newnode, node.name))
         return newnode
 
     def visit_pass(self, node: ast.Pass, parent: NodeNG) -> nodes.Pass:
@@ -1713,6 +1715,7 @@ class TreeRebuilder:
             parent=parent,
         )
         newnode.postinit(
+            name=self.visit(node.name, newnode),
             type_params=[self.visit(p, newnode) for p in node.type_params],
             value=self.visit(node.value, newnode),
         )
@@ -1727,7 +1730,12 @@ class TreeRebuilder:
             end_col_offset=node.end_col_offset,
             parent=parent,
         )
-        newnode.postinit(name=node.name, bound=self.visit(node.bound, newnode))
+        # Add AssignName node for 'node.name'
+        # https://bugs.python.org/issue43994
+        newnode.postinit(
+            name=self.visit_assignname(node, newnode, node.name),
+            bound=self.visit(node.bound, newnode),
+        )
         return newnode
 
     def visit_unaryop(self, node: ast.UnaryOp, parent: NodeNG) -> nodes.UnaryOp:
