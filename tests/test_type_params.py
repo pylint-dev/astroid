@@ -6,7 +6,7 @@ import pytest
 
 from astroid import extract_node
 from astroid.const import PY312_PLUS
-from astroid.nodes import AssignName, ParamSpec, Subscript, TypeAlias, TypeVar
+from astroid.nodes import AssignName, ParamSpec, Subscript, TypeAlias, TypeVar, TypeVarTuple
 
 
 @pytest.mark.skipif(not PY312_PLUS, reason="Requires Python 3.12 or higher")
@@ -34,6 +34,17 @@ def test_type_param_spec() -> None:
     assert isinstance(params, ParamSpec)
     assert isinstance(params.name, AssignName)
     assert params.name.name == "P"
+
+    assert node.inferred()[0] is node
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="Requires Python 3.12 or higher")
+def test_type_var_tuple() -> None:
+    node = extract_node("type Alias[*Ts] = tuple[*Ts]")
+    params = node.type_params[0]
+    assert isinstance(params, TypeVarTuple)
+    assert isinstance(params.name, AssignName)
+    assert params.name.name == "Ts"
 
     assert node.inferred()[0] is node
 

@@ -82,6 +82,7 @@ Nodes
    astroid.nodes.Tuple
    astroid.nodes.TypeAlias
    astroid.nodes.TypeVar
+   astroid.nodes.TypeVarTuple
    astroid.nodes.UnaryOp
    astroid.nodes.Unknown
    astroid.nodes.While
@@ -234,6 +235,8 @@ Nodes
 .. autoclass:: astroid.nodes.TypeAlias
 
 .. autoclass:: astroid.nodes.TypeVar
+
+.. autoclass:: astroid.nodes.TypeVarTuple
 
 .. autoclass:: astroid.nodes.UnaryOp
 

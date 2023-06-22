@@ -3377,7 +3377,7 @@ class TypeAlias(_base_nodes.AssignTypeNode):
         end_col_offset: int | None = None,
     ) -> None:
         self.name: AssignName | None
-        self.type_params: list[TypeVar, ParamSpec]
+        self.type_params: list[TypeVar, ParamSpec, TypeVarTuple]
         self.value: NodeNG
         super().__init__(
             lineno=lineno,
@@ -3391,7 +3391,7 @@ class TypeAlias(_base_nodes.AssignTypeNode):
         self,
         *,
         name: AssignName | None,
-        type_params: list[TypeVar, ParamSpec],
+        type_params: list[TypeVar, ParamSpec, TypeVarTuple],
         value: NodeNG,
     ) -> None:
         self.name = name
@@ -3447,6 +3447,37 @@ class TypeVar(_base_nodes.AssignTypeNode):
     def postinit(self, *, name: AssignName | None, bound: NodeNG | None) -> None:
         self.name = name
         self.bound = bound
+
+
+class TypeVarTuple(_base_nodes.AssignTypeNode):
+    """Class representing a :class:`ast.TypeVarTuple` node.
+
+    >>> import astroid
+    >>> node = astroid.extract_node('type Alias[*Ts] = tuple[*Ts]')
+    >>> node.type_params[0]
+    <TypeVarTuple l.1 at 0x7f23b2e4e198>
+    """
+
+    def __init__(
+        self,
+        lineno: int | None = None,
+        col_offset: int | None = None,
+        parent: NodeNG | None = None,
+        *,
+        end_lineno: int | None = None,
+        end_col_offset: int | None = None,
+    ) -> None:
+        self.name: AssignName | None
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
+    def postinit(self, *, name: AssignName | None) -> None:
+        self.name = name
 
 
 class UnaryOp(NodeNG):
