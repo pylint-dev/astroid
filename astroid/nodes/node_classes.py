@@ -2726,21 +2726,6 @@ class ParamSpec(_base_nodes.AssignTypeNode):
     def postinit(self, *, name: AssignName | None) -> None:
         self.name = name
 
-    assigned_stmts: ClassVar[
-        Callable[
-            [
-                ParamSpec,
-                AssignName,
-                InferenceContext | None,
-                None,
-            ],
-            Generator[NodeNG, None, None],
-        ]
-    ]
-    """Returns the assigned statement (non inferred) according to the assignment type.
-    See astroid/protocols.py for actual implementation.
-    """
-
 
 class Pass(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Pass` node.
@@ -3397,21 +3382,6 @@ class TypeAlias(_base_nodes.AssignTypeNode):
         self.name = name
         self.type_params = type_params
         self.value = value
-
-    assigned_stmts: ClassVar[
-        Callable[
-            [
-                TypeAlias,
-                AssignName,
-                InferenceContext | None,
-                None,
-            ],
-            Generator[NodeNG, None, None],
-        ]
-    ]
-    """Returns the assigned statement (non inferred) according to the assignment type.
-    See astroid/protocols.py for actual implementation.
-    """
 
 
 class TypeVar(_base_nodes.AssignTypeNode):
