@@ -1055,7 +1055,14 @@ class FunctionDef(
     <FunctionDef.my_func l.2 at 0x7f23b2e71e10>
     """
 
-    _astroid_fields = ("decorators", "args", "returns", "doc_node", "body")
+    _astroid_fields = (
+        "decorators",
+        "args",
+        "returns",
+        "type_params",
+        "doc_node",
+        "body",
+    )
     _multi_line_block_fields = ("body",)
     returns = None
 
@@ -1123,6 +1130,9 @@ class FunctionDef(
         self.body: list[NodeNG] = []
         """The contents of the function body."""
 
+        self.type_params: list[nodes.TypeVar] = []
+        """PEP 695 (Python 3.12+) type params, e.g. first 'T' in def func[T]() -> T: ..."""
+
         self.instance_attrs: dict[str, list[NodeNG]] = {}
 
         super().__init__(
@@ -1147,6 +1157,7 @@ class FunctionDef(
         *,
         position: Position | None = None,
         doc_node: Const | None = None,
+        type_params: list[nodes.TypeVar] | None = None,
     ):
         """Do some setup after initialisation.
 
@@ -1164,6 +1175,8 @@ class FunctionDef(
             Position of function keyword(s) and name.
         :param doc_node:
             The doc node associated with this node.
+        :param type_params:
+            The type_params associated with this node.
         """
         self.args = args
         self.body = body
@@ -1173,6 +1186,7 @@ class FunctionDef(
         self.type_comment_args = type_comment_args
         self.position = position
         self.doc_node = doc_node
+        self.type_params = type_params or []
 
     @cached_property
     def extra_decorators(self) -> list[node_classes.Call]:
@@ -1739,7 +1753,7 @@ def get_wrapping_class(node):
     return klass
 
 
-class ClassDef(
+class ClassDef(  # pylint: disable=too-many-instance-attributes
     _base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG, _base_nodes.Statement
 ):
     """Class representing an :class:`ast.ClassDef` node.
@@ -1758,7 +1772,14 @@ class ClassDef(
     # by a raw factories
 
     # a dictionary of class instances attributes
-    _astroid_fields = ("decorators", "bases", "keywords", "doc_node", "body")  # name
+    _astroid_fields = (
+        "decorators",
+        "bases",
+        "keywords",
+        "doc_node",
+        "body",
+        "type_params",
+    )  # name
 
     decorators = None
     """The decorators that are applied to this class.
@@ -1825,6 +1846,9 @@ class ClassDef(
         self.is_dataclass: bool = False
         """Whether this class is a dataclass."""
 
+        self.type_params: list[nodes.TypeVar] = []
+        """PEP 695 (Python 3.12+) type params, e.g. class MyClass[T]: ..."""
+
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -1866,6 +1890,7 @@ class ClassDef(
         *,
         position: Position | None = None,
         doc_node: Const | None = None,
+        type_params: list[nodes.TypeVar] | None = None,
     ) -> None:
         if keywords is not None:
             self.keywords = keywords
@@ -1876,6 +1901,7 @@ class ClassDef(
         self._metaclass = metaclass
         self.position = position
         self.doc_node = doc_node
+        self.type_params = type_params or []
 
     def _newstyle_impl(self, context: InferenceContext | None = None):
         if context is None:

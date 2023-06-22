@@ -19,7 +19,6 @@ from typing import (
     ClassVar,
     Literal,
     Optional,
-    TypeVar,
     Union,
 )
 
@@ -62,8 +61,8 @@ def _is_const(value) -> bool:
     return isinstance(value, tuple(CONST_CLS))
 
 
-_NodesT = TypeVar("_NodesT", bound=NodeNG)
-_BadOpMessageT = TypeVar("_BadOpMessageT", bound=util.BadOperationMessage)
+_NodesT = typing.TypeVar("_NodesT", bound=NodeNG)
+_BadOpMessageT = typing.TypeVar("_BadOpMessageT", bound=util.BadOperationMessage)
 
 AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
 AssignedStmtsCall = Callable[
@@ -3308,6 +3307,96 @@ class Tuple(BaseContainer):
         :type index: Const or Slice
         """
         return _container_getitem(self, self.elts, index, context=context)
+
+
+class TypeAlias(_base_nodes.AssignTypeNode):
+    """Class representing a :class:`ast.TypeAlias` node.
+
+    >>> import astroid
+    >>> node = astroid.extract_node('type Point = tuple[float, float]')
+    >>> node
+    <TypeAlias l.1 at 0x7f23b2e4e198>
+    """
+
+    _astroid_fields = ("type_params", "value")
+
+    def __init__(
+        self,
+        lineno: int | None = None,
+        col_offset: int | None = None,
+        parent: NodeNG | None = None,
+        *,
+        end_lineno: int | None = None,
+        end_col_offset: int | None = None,
+    ) -> None:
+        self.type_params: list[TypeVar]
+        self.value: NodeNG
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
+    def postinit(
+        self,
+        *,
+        type_params: list[TypeVar],
+        value: NodeNG,
+    ) -> None:
+        self.type_params = type_params
+        self.value = value
+
+    assigned_stmts: ClassVar[
+        Callable[
+            [
+                TypeAlias,
+                AssignName,
+                InferenceContext | None,
+                None,
+            ],
+            Generator[NodeNG, None, None],
+        ]
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
+
+class TypeVar(_base_nodes.AssignTypeNode):
+    """Class representing a :class:`ast.TypeVar` node.
+
+    >>> import astroid
+    >>> node = astroid.extract_node('type Point[T] = tuple[float, float]')
+    >>> node.type_params[0]
+    <TypeVar l.1 at 0x7f23b2e4e198>
+    """
+
+    _astroid_fields = ("bound",)
+
+    def __init__(
+        self,
+        lineno: int | None = None,
+        col_offset: int | None = None,
+        parent: NodeNG | None = None,
+        *,
+        end_lineno: int | None = None,
+        end_col_offset: int | None = None,
+    ) -> None:
+        self.name: str
+        self.bound: NodeNG | None
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
+    def postinit(self, *, name: str, bound: NodeNG | None) -> None:
+        self.name = name
+        self.bound = bound
 
 
 class UnaryOp(NodeNG):
