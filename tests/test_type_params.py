@@ -22,6 +22,9 @@ def test_type_alias() -> None:
     assert node.value.slice.name == "tuple"
     assert all(elt.name == "float" for elt in node.value.slice.elts)
 
+    assert node.inferred()[0] is node
+    assert node.type_params[0].inferred()[0] is node.type_params[0]
+
 
 @pytest.mark.skipif(not PY312_PLUS, reason="Requires Python 3.12 or higher")
 def test_type_param_spec() -> None:
@@ -29,7 +32,9 @@ def test_type_param_spec() -> None:
     params = node.type_params[0]
     assert isinstance(params, ParamSpec)
     assert params.name == "P"
-    
+
+    assert node.inferred()[0] is node
+
 
 @pytest.mark.skipif(not PY312_PLUS, reason="Requires Python 3.12 or higher")
 def test_type_param() -> None:
