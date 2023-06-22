@@ -8,7 +8,7 @@ import pytest
 
 import astroid
 from astroid import builder, nodes
-from astroid.const import IS_PYPY, PY38, PY39_PLUS, PY310_PLUS
+from astroid.const import IS_PYPY, PY38, PY39_PLUS, PY310_PLUS, PY312_PLUS
 
 
 @pytest.mark.skipif(
@@ -977,13 +977,24 @@ class TestLinenoColOffset:
         assert isinstance(s1.values[0], nodes.Const)
         assert (s1.lineno, s1.col_offset) == (1, 0)
         assert (s1.end_lineno, s1.end_col_offset) == (1, 29)
-        assert (s1.values[0].lineno, s1.values[0].col_offset) == (1, 0)
-        assert (s1.values[0].end_lineno, s1.values[0].end_col_offset) == (1, 29)
+        if PY312_PLUS:
+            assert (s1.values[0].lineno, s1.values[0].col_offset) == (1, 2)
+            assert (s1.values[0].end_lineno, s1.values[0].end_col_offset) == (1, 15)
+        else:
+            # Bug in Python 3.11
+            # https://github.com/python/cpython/issues/81639
+            assert (s1.values[0].lineno, s1.values[0].col_offset) == (1, 0)
+            assert (s1.values[0].end_lineno, s1.values[0].end_col_offset) == (1, 29)
 
         s2 = s1.values[1]
         assert isinstance(s2, nodes.FormattedValue)
-        assert (s2.lineno, s2.col_offset) == (1, 0)
-        assert (s2.end_lineno, s2.end_col_offset) == (1, 29)
+        if PY312_PLUS:
+            assert (s2.lineno, s2.col_offset) == (1, 15)
+            assert (s2.end_lineno, s2.end_col_offset) == (1, 28)
+        else:
+            assert (s2.lineno, s2.col_offset) == (1, 0)
+            assert (s2.end_lineno, s2.end_col_offset) == (1, 29)
+
         assert isinstance(s2.value, nodes.Const)  # 42.1234
         if PY39_PLUS:
             assert (s2.value.lineno, s2.value.col_offset) == (1, 16)
@@ -993,22 +1004,35 @@ class TestLinenoColOffset:
             # https://bugs.python.org/issue44885
             assert (s2.value.lineno, s2.value.col_offset) == (1, 1)
             assert (s2.value.end_lineno, s2.value.end_col_offset) == (1, 8)
-        assert isinstance(s2.format_spec, nodes.JoinedStr)  # '02d'
-        assert (s2.format_spec.lineno, s2.format_spec.col_offset) == (1, 0)
-        assert (s2.format_spec.end_lineno, s2.format_spec.end_col_offset) == (1, 29)
+        assert isinstance(s2.format_spec, nodes.JoinedStr)  # ':02d'
+        if PY312_PLUS:
+            assert (s2.format_spec.lineno, s2.format_spec.col_offset) == (1, 23)
+            assert (s2.format_spec.end_lineno, s2.format_spec.end_col_offset) == (1, 27)
+        else:
+            assert (s2.format_spec.lineno, s2.format_spec.col_offset) == (1, 0)
+            assert (s2.format_spec.end_lineno, s2.format_spec.end_col_offset) == (1, 29)
 
         s3 = ast_nodes[1]
         assert isinstance(s3, nodes.JoinedStr)
         assert isinstance(s3.values[0], nodes.Const)
         assert (s3.lineno, s3.col_offset) == (2, 0)
         assert (s3.end_lineno, s3.end_col_offset) == (2, 17)
-        assert (s3.values[0].lineno, s3.values[0].col_offset) == (2, 0)
-        assert (s3.values[0].end_lineno, s3.values[0].end_col_offset) == (2, 17)
+        if PY312_PLUS:
+            assert (s3.values[0].lineno, s3.values[0].col_offset) == (2, 2)
+            assert (s3.values[0].end_lineno, s3.values[0].end_col_offset) == (2, 15)
+        else:
+            assert (s3.values[0].lineno, s3.values[0].col_offset) == (2, 0)
+            assert (s3.values[0].end_lineno, s3.values[0].end_col_offset) == (2, 17)
 
         s4 = s3.values[1]
         assert isinstance(s4, nodes.FormattedValue)
-        assert (s4.lineno, s4.col_offset) == (2, 0)
-        assert (s4.end_lineno, s4.end_col_offset) == (2, 17)
+        if PY312_PLUS:
+            assert (s4.lineno, s4.col_offset) == (2, 9)
+            assert (s4.end_lineno, s4.end_col_offset) == (2, 16)
+        else:
+            assert (s4.lineno, s4.col_offset) == (2, 0)
+            assert (s4.end_lineno, s4.end_col_offset) == (2, 17)
+
         assert isinstance(s4.value, nodes.Name)  # 'name'
         if PY39_PLUS:
             assert (s4.value.lineno, s4.value.col_offset) == (2, 10)
