@@ -6,6 +6,10 @@ What's New in astroid 3.0.0?
 =============================
 Release date: TBA
 
+* Add support for Python 3.12, including PEP 695 type parameter syntax.
+
+  Closes #2201
+
 * Remove support for Python 3.7.
 
   Refs #2137
