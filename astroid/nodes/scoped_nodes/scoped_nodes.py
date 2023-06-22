@@ -16,7 +16,7 @@ import os
 import warnings
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import cached_property, lru_cache
-from typing import TYPE_CHECKING, ClassVar, Literal, NoReturn, TypeVar, overload
+from typing import TYPE_CHECKING, ClassVar, Literal, NoReturn, TypeVar
 
 from astroid import bases, util
 from astroid.const import IS_PYPY, PY38, PY39_PLUS, PYPY_7_3_11_PLUS
@@ -377,34 +377,12 @@ class Module(LocalsDictNodeNG):
         """
         return self.file is not None and self.file.endswith(".py")
 
-    @overload
-    def statement(self, *, future: None = ...) -> Module:
-        ...
-
-    @overload
-    def statement(self, *, future: Literal[True]) -> NoReturn:
-        ...
-
-    def statement(self, *, future: Literal[None, True] = None) -> Module | NoReturn:
+    def statement(self, *, future: Literal[None, True] = None) -> NoReturn:
         """The first parent node, including self, marked as statement node.
 
-        When called on a :class:`Module` with the future parameter this raises an error.
-
-        TODO: Deprecate the future parameter and only raise StatementMissing
-
-        :raises StatementMissing: If no self has no parent attribute and future is True
+        When called on a :class:`Module` this raises a StatementMissing.
         """
-        if future:
-            raise StatementMissing(target=self)
-        warnings.warn(
-            "In astroid 3.0.0 NodeNG.statement() will return either a nodes.Statement "
-            "or raise a StatementMissing exception. nodes.Module will no longer be "
-            "considered a statement. This behaviour can already be triggered "
-            "by passing 'future=True' to a statement() call.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self
+        raise StatementMissing(target=self)
 
     def previous_sibling(self):
         """The previous sibling statement.
