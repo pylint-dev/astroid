@@ -384,6 +384,12 @@ class TreeRebuilder:
         def visit(self, node: ast.Constant, parent: NodeNG) -> nodes.Const:
             ...
 
+        if sys.version_info >= (3, 12):
+
+            @overload
+            def visit(self, node: ast.ParamSpec, parent: NodeNG) -> nodes.ParamSpec:
+                ...
+
         @overload
         def visit(self, node: ast.Pass, parent: NodeNG) -> nodes.Pass:
             ...
@@ -1492,6 +1498,18 @@ class TreeRebuilder:
             end_col_offset=node.end_col_offset,
             parent=parent,
         )
+
+    def visit_paramspec(self, node: ast.ParamSpec, parent: NodeNG) -> nodes.ParamSpec:
+        """Visit a ParamSpec node by returning a fresh instance of it."""
+        newnode = nodes.ParamSpec(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+            parent=parent,
+        )
+        newnode.postinit(node.name)
+        return newnode
 
     def visit_pass(self, node: ast.Pass, parent: NodeNG) -> nodes.Pass:
         """Visit a Pass node by returning a fresh instance of it."""

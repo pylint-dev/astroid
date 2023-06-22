@@ -433,6 +433,10 @@ class AsStringVisitor:
         """return an astroid.Nonlocal node as string"""
         return f"nonlocal {', '.join(node.names)}"
 
+    def visit_paramspec(self, node: nodes.ParamSpec) -> str:
+        """return an astroid.ParamSpec node as string"""
+        return node.name
+
     def visit_pass(self, node) -> str:
         """return an astroid.Pass node as string"""
         return "pass"

@@ -6,7 +6,7 @@ import pytest
 
 from astroid import extract_node
 from astroid.const import PY312_PLUS
-from astroid.nodes import Subscript, TypeAlias, TypeVar
+from astroid.nodes import ParamSpec, Subscript, TypeAlias, TypeVar
 
 
 @pytest.mark.skipif(not PY312_PLUS, reason="Requires Python 3.12 or higher")
@@ -22,6 +22,14 @@ def test_type_alias() -> None:
     assert node.value.slice.name == "tuple"
     assert all(elt.name == "float" for elt in node.value.slice.elts)
 
+
+@pytest.mark.skipif(not PY312_PLUS, reason="Requires Python 3.12 or higher")
+def test_type_param_spec() -> None:
+    node = extract_node("type Alias[**P] = Callable[P, int]")
+    params = node.type_params[0]
+    assert isinstance(params, ParamSpec)
+    assert params.name == "P"
+    
 
 @pytest.mark.skipif(not PY312_PLUS, reason="Requires Python 3.12 or higher")
 def test_type_param() -> None:
