@@ -1050,6 +1050,10 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
     ) -> Generator[Lambda, None, None]:
         yield self
 
+    def _get_yield_nodes_skip_functions(self):
+        """A Lambda node can contain a Yield node in the body."""
+        yield from self.body._get_yield_nodes_skip_functions()
+
 
 class FunctionDef(
     _base_nodes.MultiLineBlockNode,
