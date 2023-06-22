@@ -1119,8 +1119,6 @@ class FunctionDef(
 
     name = "<functiondef>"
 
-    is_lambda = True
-
     special_attributes = FunctionModel()
     """The names of special attributes that this function has."""
 
@@ -1501,7 +1499,7 @@ class FunctionDef(
 
         :returns: Whether this is a generator function.
         """
-        return bool(next(self._get_yield_nodes_skip_lambdas(), False))
+        return bool(next(self._get_yield_nodes_skip_functions(), False))
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any

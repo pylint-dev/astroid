@@ -566,6 +566,9 @@ class NodeNG:
     def _get_return_nodes_skip_functions(self):
         yield from ()
 
+    def _get_yield_nodes_skip_functions(self):
+        yield from ()
+
     def _get_yield_nodes_skip_lambdas(self):
         yield from ()
 
