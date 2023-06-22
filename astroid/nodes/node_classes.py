@@ -2713,7 +2713,7 @@ class ParamSpec(_base_nodes.AssignTypeNode):
         end_lineno: int | None = None,
         end_col_offset: int | None = None,
     ) -> None:
-        self.name: str
+        self.name: AssignName | None
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -2722,7 +2722,7 @@ class ParamSpec(_base_nodes.AssignTypeNode):
             parent=parent,
         )
 
-    def postinit(self, name: str) -> None:
+    def postinit(self, *, name: AssignName | None) -> None:
         self.name = name
 
     assigned_stmts: ClassVar[
@@ -3375,6 +3375,7 @@ class TypeAlias(_base_nodes.AssignTypeNode):
         end_lineno: int | None = None,
         end_col_offset: int | None = None,
     ) -> None:
+        self.name: AssignName | None
         self.type_params: list[TypeVar, ParamSpec]
         self.value: NodeNG
         super().__init__(
@@ -3388,9 +3389,11 @@ class TypeAlias(_base_nodes.AssignTypeNode):
     def postinit(
         self,
         *,
+        name: AssignName | None,
         type_params: list[TypeVar, ParamSpec],
         value: NodeNG,
     ) -> None:
+        self.name = name
         self.type_params = type_params
         self.value = value
 
@@ -3430,7 +3433,7 @@ class TypeVar(_base_nodes.AssignTypeNode):
         end_lineno: int | None = None,
         end_col_offset: int | None = None,
     ) -> None:
-        self.name: str
+        self.name: AssignName | None
         self.bound: NodeNG | None
         super().__init__(
             lineno=lineno,
@@ -3440,7 +3443,7 @@ class TypeVar(_base_nodes.AssignTypeNode):
             parent=parent,
         )
 
-    def postinit(self, *, name: str, bound: NodeNG | None) -> None:
+    def postinit(self, *, name: AssignName | None, bound: NodeNG | None) -> None:
         self.name = name
         self.bound = bound
 

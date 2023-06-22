@@ -525,11 +525,11 @@ class AsStringVisitor:
 
     def visit_typealias(self, node: nodes.TypeAlias) -> str:
         """return an astroid.TypeAlias node as string"""
-        return f"{node.value}{node.type_params or ''}"
+        return node.name.accept(self) if node.name else "_"
 
     def visit_typevar(self, node: nodes.TypeVar) -> str:
         """return an astroid.TypeVar node as string"""
-        return node.name
+        return node.name.accept(self) if node.name else "_"
 
     def visit_unaryop(self, node) -> str:
         """return an astroid.UnaryOp node as string"""
