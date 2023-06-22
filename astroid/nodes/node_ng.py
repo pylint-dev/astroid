@@ -297,7 +297,7 @@ class NodeNG:
             return cast("nodes.Statement", self)
         if not self.parent:
             raise StatementMissing(target=self)
-        return self.parent.statement(future=future)
+        return self.parent.statement()
 
     def frame(
         self, *, future: Literal[None, True] = None

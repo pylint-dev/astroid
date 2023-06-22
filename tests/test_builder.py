@@ -756,7 +756,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(module.fromlineno, 0)
         self.assertIsNone(module.parent)
         self.assertEqual(module.frame(), module)
-        self.assertEqual(module.frame(future=True), module)
+        self.assertEqual(module.frame(), module)
         self.assertEqual(module.root(), module)
         self.assertEqual(module.file, os.path.abspath(resources.find("data/module.py")))
         self.assertEqual(module.pure_python, 1)
@@ -766,7 +766,7 @@ class FileBuildTest(unittest.TestCase):
             self.assertEqual(module.statement(), module)
             assert len(records) == 1
         with self.assertRaises(StatementMissing):
-            module.statement(future=True)
+            module.statement()
 
     def test_module_locals(self) -> None:
         """Test the 'locals' dictionary of an astroid module."""
@@ -800,8 +800,8 @@ class FileBuildTest(unittest.TestCase):
         self.assertTrue(function.parent)
         self.assertEqual(function.frame(), function)
         self.assertEqual(function.parent.frame(), module)
-        self.assertEqual(function.frame(future=True), function)
-        self.assertEqual(function.parent.frame(future=True), module)
+        self.assertEqual(function.frame(), function)
+        self.assertEqual(function.parent.frame(), module)
         self.assertEqual(function.root(), module)
         self.assertEqual([n.name for n in function.args.args], ["key", "val"])
         self.assertEqual(function.type, "function")
@@ -824,8 +824,8 @@ class FileBuildTest(unittest.TestCase):
         self.assertTrue(klass.parent)
         self.assertEqual(klass.frame(), klass)
         self.assertEqual(klass.parent.frame(), module)
-        self.assertEqual(klass.frame(future=True), klass)
-        self.assertEqual(klass.parent.frame(future=True), module)
+        self.assertEqual(klass.frame(), klass)
+        self.assertEqual(klass.parent.frame(), module)
         self.assertEqual(klass.root(), module)
         self.assertEqual(klass.basenames, [])
         self.assertTrue(klass.newstyle)

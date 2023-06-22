@@ -462,7 +462,7 @@ def arguments_assigned_stmts(
             callee = callee._proxied
     else:
         return _arguments_infer_argname(self, node_name, context)
-    if node and getattr(callee, "name", None) == node.frame(future=True).name:
+    if node and getattr(callee, "name", None) == node.frame().name:
         # reset call context/name
         callcontext = context.callcontext
         context = copy_context(context)
@@ -755,7 +755,7 @@ def starred_assigned_stmts(  # noqa: C901
                 lookups.append((index, len(element.itered())))
                 _determine_starred_iteration_lookups(starred, element, lookups)
 
-    stmt = self.statement(future=True)
+    stmt = self.statement()
     if not isinstance(stmt, (nodes.Assign, nodes.For)):
         raise InferenceError(
             "Statement {stmt!r} enclosing {node!r} must be an Assign or For node.",

@@ -482,7 +482,7 @@ def _looks_like_dataclass_field_call(
     If check_scope is False, skips checking the statement and body.
     """
     if check_scope:
-        stmt = node.statement(future=True)
+        stmt = node.statement()
         scope = stmt.scope()
         if not (
             isinstance(stmt, nodes.AnnAssign)

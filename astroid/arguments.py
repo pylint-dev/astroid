@@ -211,7 +211,7 @@ class CallSite:
                     return positional[0].infer(context=context)
                 if boundnode is None:
                     # XXX can do better ?
-                    boundnode = funcnode.parent.frame(future=True)
+                    boundnode = funcnode.parent.frame()
 
                 if isinstance(boundnode, nodes.ClassDef):
                     # Verify that we're accessing a method

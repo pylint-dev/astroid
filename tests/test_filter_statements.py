@@ -11,7 +11,5 @@ def test_empty_node() -> None:
     enum_mod = extract_node("import enum")
     empty = EmptyNode(parent=enum_mod)
     empty.is_statement = True
-    filtered_statements = _filter_stmts(
-        empty, [empty.statement(future=True)], empty.frame(future=True), 0
-    )
+    filtered_statements = _filter_stmts(empty, [empty.statement()], empty.frame(), 0)
     assert filtered_statements[0] is empty

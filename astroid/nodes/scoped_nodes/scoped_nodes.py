@@ -969,7 +969,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         if (self.args.defaults and node in self.args.defaults) or (
             self.args.kw_defaults and node in self.args.kw_defaults
         ):
-            frame = self.parent.frame(future=True)
+            frame = self.parent.frame()
             # line offset to avoid that def func(f=func) resolve the default
             # value to the defined function
             offset = -1
@@ -1111,7 +1111,7 @@ class FunctionDef(
             parent=parent,
         )
         if parent and not isinstance(parent, Unknown):
-            frame = parent.frame(future=True)
+            frame = parent.frame()
             frame.set_local(name, self)
 
     def postinit(
@@ -1161,7 +1161,7 @@ class FunctionDef(
         The property will return all the callables that are used for
         decoration.
         """
-        frame = self.parent.frame(future=True)
+        frame = self.parent.frame()
         if not isinstance(frame, ClassDef):
             return []
 
@@ -1188,7 +1188,7 @@ class FunctionDef(
                         # original method.
                         if (
                             isinstance(meth, FunctionDef)
-                            and assign_node.frame(future=True) == frame
+                            and assign_node.frame() == frame
                         ):
                             decorators.append(assign.value)
         return decorators
@@ -1259,7 +1259,7 @@ class FunctionDef(
             if decorator.func.name in BUILTIN_DESCRIPTORS:
                 return decorator.func.name
 
-        frame = self.parent.frame(future=True)
+        frame = self.parent.frame()
         type_name = "function"
         if isinstance(frame, ClassDef):
             if self.name == "__new__":
@@ -1373,9 +1373,7 @@ class FunctionDef(
         """
         # check we are defined in a ClassDef, because this is usually expected
         # (e.g. pylint...) when is_method() return True
-        return self.type != "function" and isinstance(
-            self.parent.frame(future=True), ClassDef
-        )
+        return self.type != "function" and isinstance(self.parent.frame(), ClassDef)
 
     def decoratornames(self, context: InferenceContext | None = None) -> set[str]:
         """Get the qualified names of each of the decorators on this function.
@@ -1586,14 +1584,14 @@ class FunctionDef(
             # if any methods in a class body refer to either __class__ or super.
             # In our case, we want to be able to look it up in the current scope
             # when `__class__` is being used.
-            frame = self.parent.frame(future=True)
+            frame = self.parent.frame()
             if isinstance(frame, ClassDef):
                 return self, [frame]
 
         if (self.args.defaults and node in self.args.defaults) or (
             self.args.kw_defaults and node in self.args.kw_defaults
         ):
-            frame = self.parent.frame(future=True)
+            frame = self.parent.frame()
             # line offset to avoid that def func(f=func) resolve the default
             # value to the defined function
             offset = -1
@@ -1708,12 +1706,12 @@ def get_wrapping_class(node):
     :rtype: ClassDef or None
     """
 
-    klass = node.frame(future=True)
+    klass = node.frame()
     while klass is not None and not isinstance(klass, ClassDef):
         if klass.parent is None:
             klass = None
         else:
-            klass = klass.parent.frame(future=True)
+            klass = klass.parent.frame()
     return klass
 
 
@@ -1811,7 +1809,7 @@ class ClassDef(
             parent=parent,
         )
         if parent and not isinstance(parent, Unknown):
-            parent.frame(future=True).set_local(name, self)
+            parent.frame().set_local(name, self)
 
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)
@@ -2086,7 +2084,7 @@ class ClassDef(
             # class A(name.Name):
             #     def name(self): ...
 
-            frame = self.parent.frame(future=True)
+            frame = self.parent.frame()
             # line offset to avoid that class A(A) resolve the ancestor to
             # the defined class
             offset = -1
@@ -2304,7 +2302,7 @@ class ClassDef(
         # Remove AnnAssigns without value, which are not attributes in the purest sense.
         for value in values.copy():
             if isinstance(value, node_classes.AssignName):
-                stmt = value.statement(future=True)
+                stmt = value.statement()
                 if isinstance(stmt, node_classes.AnnAssign) and stmt.value is None:
                     values.pop(values.index(value))
 
