@@ -2696,6 +2696,52 @@ class Nonlocal(_base_nodes.NoChildrenNode, _base_nodes.Statement):
         return name
 
 
+class ParamSpec(_base_nodes.AssignTypeNode):
+    """Class representing a :class:`ast.ParamSpec` node.
+
+    >>> import astroid
+    >>> node = astroid.extract_node('type Alias[**P] = Callable[P, int]')
+    >>> node.type_params[0]
+    <ParamSpec l.1 at 0x7f23b2e4e198>
+    """
+
+    def __init__(
+        self,
+        lineno: int | None = None,
+        col_offset: int | None = None,
+        parent: NodeNG | None = None,
+        *,
+        end_lineno: int | None = None,
+        end_col_offset: int | None = None,
+    ) -> None:
+        self.name: str
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
+    def postinit(self, name: str) -> None:
+        self.name = name
+
+    assigned_stmts: ClassVar[
+        Callable[
+            [
+                ParamSpec,
+                AssignName,
+                InferenceContext | None,
+                None,
+            ],
+            Generator[NodeNG, None, None],
+        ]
+    ]
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
+
 class Pass(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Pass` node.
 
@@ -3330,7 +3376,7 @@ class TypeAlias(_base_nodes.AssignTypeNode):
         end_lineno: int | None = None,
         end_col_offset: int | None = None,
     ) -> None:
-        self.type_params: list[TypeVar]
+        self.type_params: list[TypeVar, ParamSpec]
         self.value: NodeNG
         super().__init__(
             lineno=lineno,
@@ -3343,7 +3389,7 @@ class TypeAlias(_base_nodes.AssignTypeNode):
     def postinit(
         self,
         *,
-        type_params: list[TypeVar],
+        type_params: list[TypeVar, ParamSpec],
         value: NodeNG,
     ) -> None:
         self.type_params = type_params

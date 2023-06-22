@@ -67,6 +67,7 @@ Nodes
    astroid.nodes.Module
    astroid.nodes.Name
    astroid.nodes.Nonlocal
+   astroid.nodes.ParamSpec
    astroid.nodes.Pass
    astroid.nodes.Raise
    astroid.nodes.Return
@@ -203,6 +204,8 @@ Nodes
 .. autoclass:: astroid.nodes.Name
 
 .. autoclass:: astroid.nodes.Nonlocal
+
+.. autoclass:: astroid.nodes.ParamSpec
 
 .. autoclass:: astroid.nodes.Pass
 
