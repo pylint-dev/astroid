@@ -368,7 +368,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
     def test_navigation(self) -> None:
         function = self.module["global_access"]
         self.assertEqual(function.statement(), function)
-        self.assertEqual(function.statement(future=True), function)
+        self.assertEqual(function.statement(), function)
         l_sibling = function.previous_sibling()
         # check taking parent if child is not a stmt
         self.assertIsInstance(l_sibling, nodes.Assign)
@@ -1053,7 +1053,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_navigation(self) -> None:
         klass = self.module["YO"]
         self.assertEqual(klass.statement(), klass)
-        self.assertEqual(klass.statement(future=True), klass)
+        self.assertEqual(klass.statement(), klass)
         l_sibling = klass.previous_sibling()
         self.assertTrue(isinstance(l_sibling, nodes.FunctionDef), l_sibling)
         self.assertEqual(l_sibling.name, "global_access")
@@ -2813,24 +2813,24 @@ class TestFrameNodes:
         )
         function = module.body[0]
         assert function.frame() == function
-        assert function.frame(future=True) == function
+        assert function.frame() == function
         assert function.body[0].frame() == function
-        assert function.body[0].frame(future=True) == function
+        assert function.body[0].frame() == function
 
         class_node = module.body[1]
         assert class_node.frame() == class_node
-        assert class_node.frame(future=True) == class_node
+        assert class_node.frame() == class_node
         assert class_node.body[0].frame() == class_node
-        assert class_node.body[0].frame(future=True) == class_node
+        assert class_node.body[0].frame() == class_node
         assert class_node.body[1].frame() == class_node.body[1]
-        assert class_node.body[1].frame(future=True) == class_node.body[1]
+        assert class_node.body[1].frame() == class_node.body[1]
 
         lambda_assignment = module.body[2].value
         assert lambda_assignment.args.args[0].frame() == lambda_assignment
-        assert lambda_assignment.args.args[0].frame(future=True) == lambda_assignment
+        assert lambda_assignment.args.args[0].frame() == lambda_assignment
 
         assert module.frame() == module
-        assert module.frame(future=True) == module
+        assert module.frame() == module
 
     @staticmethod
     def test_non_frame_node():
@@ -2843,7 +2843,7 @@ class TestFrameNodes:
         """
         )
         assert module.body[0].frame() == module
-        assert module.body[0].frame(future=True) == module
+        assert module.body[0].frame() == module
 
         assert module.body[1].value.locals["x"][0].frame() == module
-        assert module.body[1].value.locals["x"][0].frame(future=True) == module
+        assert module.body[1].value.locals["x"][0].frame() == module

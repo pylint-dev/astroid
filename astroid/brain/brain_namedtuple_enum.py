@@ -406,7 +406,7 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
             if any(not isinstance(value, nodes.AssignName) for value in values):
                 continue
 
-            stmt = values[0].statement(future=True)
+            stmt = values[0].statement()
             if isinstance(stmt, nodes.Assign):
                 if isinstance(stmt.targets[0], nodes.Tuple):
                     targets = stmt.targets[0].itered()

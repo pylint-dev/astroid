@@ -266,7 +266,7 @@ def object_len(node, context: InferenceContext | None = None):
 
     # prevent self referential length calls from causing a recursion error
     # see https://github.com/pylint-dev/astroid/issues/777
-    node_frame = node.frame(future=True)
+    node_frame = node.frame()
     if (
         isinstance(node_frame, scoped_nodes.FunctionDef)
         and node_frame.name == "__len__"

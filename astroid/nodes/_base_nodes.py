@@ -68,7 +68,7 @@ class FilterStmtsBaseNode(NodeNG):
 
     def _get_filtered_stmts(self, _, node, _stmts, mystmt: Statement | None):
         """Method used in _filter_stmts to get statements and trigger break."""
-        if self.statement(future=True) is mystmt:
+        if self.statement() is mystmt:
             # original node's statement is the assignment, only keep
             # current node (gen exp, list comp)
             return [node], True
@@ -88,7 +88,7 @@ class AssignTypeNode(NodeNG):
         """Method used in filter_stmts."""
         if self is mystmt:
             return _stmts, True
-        if self.statement(future=True) is mystmt:
+        if self.statement() is mystmt:
             # original node's statement is the assignment, only keep
             # current node (gen exp, list comp)
             return [node], True

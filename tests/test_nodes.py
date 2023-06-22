@@ -546,14 +546,14 @@ class ConstNodeTest(unittest.TestCase):
                 node.statement()
                 assert len(records) == 1
         with self.assertRaises(StatementMissing):
-            node.statement(future=True)
+            node.statement()
 
         with self.assertRaises(AttributeError):
             with pytest.warns(DeprecationWarning) as records:
                 node.frame()
                 assert len(records) == 1
         with self.assertRaises(ParentMissingError):
-            node.frame(future=True)
+            node.frame()
 
     def test_none(self) -> None:
         self._test(None)
@@ -641,35 +641,35 @@ class TestNamedExprNode:
         )
         function = module.body[0]
         assert function.args.frame() == function
-        assert function.args.frame(future=True) == function
+        assert function.args.frame() == function
 
         function_two = module.body[1]
         assert function_two.args.args[0].frame() == function_two
-        assert function_two.args.args[0].frame(future=True) == function_two
+        assert function_two.args.args[0].frame() == function_two
         assert function_two.args.args[1].frame() == function_two
-        assert function_two.args.args[1].frame(future=True) == function_two
+        assert function_two.args.args[1].frame() == function_two
         assert function_two.args.defaults[0].frame() == module
-        assert function_two.args.defaults[0].frame(future=True) == module
+        assert function_two.args.defaults[0].frame() == module
 
         inherited_class = module.body[3]
         assert inherited_class.keywords[0].frame() == inherited_class
-        assert inherited_class.keywords[0].frame(future=True) == inherited_class
+        assert inherited_class.keywords[0].frame() == inherited_class
         assert inherited_class.keywords[0].value.frame() == module
-        assert inherited_class.keywords[0].value.frame(future=True) == module
+        assert inherited_class.keywords[0].value.frame() == module
 
         lambda_assignment = module.body[4].value
         assert lambda_assignment.args.args[0].frame() == lambda_assignment
-        assert lambda_assignment.args.args[0].frame(future=True) == lambda_assignment
+        assert lambda_assignment.args.args[0].frame() == lambda_assignment
         assert lambda_assignment.args.defaults[0].frame() == module
-        assert lambda_assignment.args.defaults[0].frame(future=True) == module
+        assert lambda_assignment.args.defaults[0].frame() == module
 
         lambda_named_expr = module.body[5].args.defaults[0]
         assert lambda_named_expr.value.args.defaults[0].frame() == module
-        assert lambda_named_expr.value.args.defaults[0].frame(future=True) == module
+        assert lambda_named_expr.value.args.defaults[0].frame() == module
 
         comprehension = module.body[6].value
         assert comprehension.generators[0].ifs[0].frame() == module
-        assert comprehension.generators[0].ifs[0].frame(future=True) == module
+        assert comprehension.generators[0].ifs[0].frame() == module
 
     @staticmethod
     def test_scope() -> None:

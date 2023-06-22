@@ -1528,7 +1528,7 @@ class Comprehension(NodeNG):
             if isinstance(lookup_node, (Const, Name)):
                 return [lookup_node], True
 
-        elif self.statement(future=True) is mystmt:
+        elif self.statement() is mystmt:
             # original node's statement is the assignment, only keeps
             # current node (gen exp, list comp)
 
@@ -3823,9 +3823,9 @@ class NamedExpr(_base_nodes.AssignTypeNode):
                 raise ParentMissingError(target=self.parent)
             if not self.parent.parent.parent:
                 raise ParentMissingError(target=self.parent.parent)
-            return self.parent.parent.parent.frame(future=True)
+            return self.parent.parent.parent.frame()
 
-        return self.parent.frame(future=True)
+        return self.parent.frame()
 
     def scope(self) -> LocalsDictNodeNG:
         """The first parent node defining a new scope.
@@ -3857,7 +3857,7 @@ class NamedExpr(_base_nodes.AssignTypeNode):
 
         :param stmt: The statement that defines the given name.
         """
-        self.frame(future=True).set_local(name, stmt)
+        self.frame().set_local(name, stmt)
 
 
 class Unknown(_base_nodes.AssignTypeNode):

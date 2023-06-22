@@ -430,7 +430,7 @@ class UnboundMethod(Proxy):
 
     def __repr__(self) -> str:
         assert self._proxied.parent, "Expected a parent node"
-        frame = self._proxied.parent.frame(future=True)
+        frame = self._proxied.parent.frame()
         return "<{} {} of {} at 0x{}".format(
             self.__class__.__name__, self._proxied.name, frame.qname(), id(self)
         )
@@ -472,7 +472,7 @@ class UnboundMethod(Proxy):
         # instance of the class given as first argument.
         if self._proxied.name == "__new__":
             assert self._proxied.parent, "Expected a parent node"
-            qname = self._proxied.parent.frame(future=True).qname()
+            qname = self._proxied.parent.frame().qname()
             # Avoid checking builtins.type: _infer_type_new_call() does more validation
             if qname.startswith("builtins.") and qname != "builtins.type":
                 return self._infer_builtin_new(caller, context or InferenceContext())
