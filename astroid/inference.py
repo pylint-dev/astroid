@@ -1168,10 +1168,30 @@ def infer_assign(
     assign node.
     """
     if isinstance(self.parent, nodes.AugAssign):
-        return self.parent.infer(context)
+        yield from self.parent.infer(context)
+        return
 
     stmts = list(self.assigned_stmts(context=context))
-    return bases._infer_stmts(stmts, context)
+    yield from bases._infer_stmts(stmts, context)
+
+    # Infer function parameter types using their annotations, if present.
+    if (
+        isinstance(self, nodes.AssignName)
+        and isinstance(self.parent, nodes.Arguments)
+        and self.parent.args is not None
+    ):
+        try:
+            annotation_index = self.parent.args.index(self)
+        except ValueError:
+            annotation_index = None
+
+        if (
+            annotation_index is not None
+            and (annotation := self.parent.annotations[annotation_index]) is not None
+        ):
+            for annotation_result in annotation.infer(context=context):
+                if isinstance(annotation_result, nodes.ClassDef):
+                    yield bases.Instance(annotation_result)
 
 
 nodes.AssignName._infer = infer_assign
