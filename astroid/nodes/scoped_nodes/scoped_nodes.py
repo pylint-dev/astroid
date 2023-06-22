@@ -382,6 +382,12 @@ class Module(LocalsDictNodeNG):
 
         When called on a :class:`Module` this raises a StatementMissing.
         """
+        if future is not None:
+            warnings.warn(
+                "The future arg will be removed in astroid 4.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         raise StatementMissing(target=self)
 
     def previous_sibling(self):

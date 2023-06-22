@@ -293,6 +293,12 @@ class NodeNG:
 
         :raises StatementMissing: If self has no parent attribute.
         """
+        if future is not None:
+            warnings.warn(
+                "The future arg will be removed in astroid 4.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if self.is_statement:
             return cast("nodes.Statement", self)
         if not self.parent:
@@ -310,6 +316,12 @@ class NodeNG:
         :returns: The first parent frame node.
         :raises ParentMissingError: If self has no parent attribute.
         """
+        if future is not None:
+            warnings.warn(
+                "The future arg will be removed in astroid 4.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if self.parent is None:
             raise ParentMissingError(target=self)
         return self.parent.frame(future=future)

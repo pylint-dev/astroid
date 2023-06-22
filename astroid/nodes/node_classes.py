@@ -3814,6 +3814,12 @@ class NamedExpr(_base_nodes.AssignTypeNode):
 
         :returns: The first parent frame node.
         """
+        if future is not None:
+            warnings.warn(
+                "The future arg will be removed in astroid 4.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if not self.parent:
             raise ParentMissingError(target=self)
 

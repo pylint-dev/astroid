@@ -150,6 +150,8 @@ Release date: TBA
   missing parents regardless of the value of the ``future`` argument (which gave this behavior
   already).
 
+  The ``future`` argument to each method is deprecated and will be removed in astroid 4.0.
+
   Refs #1217
 
 * Remove deprecated ``Ellipsis``, ``ExtSlice``, ``Index`` nodes.
