@@ -15,6 +15,7 @@ import astroid
 from astroid import MANAGER, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
 from astroid.brain.brain_namedtuple_enum import _get_namedtuple_fields
+from astroid.const import PY312_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -186,9 +187,16 @@ class TypeBrain(unittest.TestCase):
 
 
 def check_metaclass_is_abc(node: nodes.ClassDef):
-    meta = node.metaclass()
-    assert isinstance(meta, nodes.ClassDef)
-    assert meta.name == "ABCMeta"
+    if PY312_PLUS and node.name == "ByteString":
+        # .metaclass() finds the first metaclass in the mro(),
+        # which, from 3.12, is _DeprecateByteStringMeta (unhelpful)
+        # until ByteString is removed in 3.14.
+        # Jump over the first two ByteString classes in the mro().
+        check_metaclass_is_abc(node.mro()[2])
+    else:
+        meta = node.metaclass()
+        assert isinstance(meta, nodes.ClassDef)
+        assert meta.name == "ABCMeta"
 
 
 class CollectionsBrain(unittest.TestCase):
@@ -323,7 +331,7 @@ class CollectionsBrain(unittest.TestCase):
 
     @test_utils.require_version(minver="3.9")
     def test_collections_object_subscriptable_3(self):
-        """With Python 3.9 the ByteString class of the collections module is subscritable
+        """With Python 3.9 the ByteString class of the collections module is subscriptable
         (but not the same class from typing module)"""
         right_node = builder.extract_node(
             """
