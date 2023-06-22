@@ -8,7 +8,7 @@ function).
 
 from __future__ import annotations
 
-import datetime
+import difflib
 import os
 import sys
 import textwrap
@@ -2141,8 +2141,8 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         # Test that objects analyzed through the live introspection
         # aren't considered to have dynamic getattr implemented.
         astroid_builder = builder.AstroidBuilder()
-        module = astroid_builder.module_build(datetime)
-        self.assertFalse(module["timedelta"].has_dynamic_getattr())
+        module = astroid_builder.module_build(difflib)
+        self.assertFalse(module["SequenceMatcher"].has_dynamic_getattr())
 
     def test_duplicate_bases_namedtuple(self) -> None:
         module = builder.parse(
