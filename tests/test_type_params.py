@@ -6,10 +6,19 @@ import pytest
 
 from astroid import extract_node
 from astroid.const import PY312_PLUS
-from astroid.nodes import AssignName, ParamSpec, Subscript, TypeAlias, TypeVar, TypeVarTuple
+from astroid.nodes import (
+    AssignName,
+    ParamSpec,
+    Subscript,
+    TypeAlias,
+    TypeVar,
+    TypeVarTuple,
+)
+
+if not PY312_PLUS:
+    pytest.skip("Requires Python 3.12 or higher", allow_module_level=True)
 
 
-@pytest.mark.skipif(not PY312_PLUS, reason="Requires Python 3.12 or higher")
 def test_type_alias() -> None:
     node = extract_node("type Point[T] = list[float, float]")
     assert isinstance(node, TypeAlias)
@@ -27,7 +36,6 @@ def test_type_alias() -> None:
     assert node.type_params[0].inferred()[0] is node.type_params[0]
 
 
-@pytest.mark.skipif(not PY312_PLUS, reason="Requires Python 3.12 or higher")
 def test_type_param_spec() -> None:
     node = extract_node("type Alias[**P] = Callable[P, int]")
     params = node.type_params[0]
@@ -38,7 +46,6 @@ def test_type_param_spec() -> None:
     assert node.inferred()[0] is node
 
 
-@pytest.mark.skipif(not PY312_PLUS, reason="Requires Python 3.12 or higher")
 def test_type_var_tuple() -> None:
     node = extract_node("type Alias[*Ts] = tuple[*Ts]")
     params = node.type_params[0]
@@ -49,7 +56,6 @@ def test_type_var_tuple() -> None:
     assert node.inferred()[0] is node
 
 
-@pytest.mark.skipif(not PY312_PLUS, reason="Requires Python 3.12 or higher")
 def test_type_param() -> None:
     func_node = extract_node("def func[T]() -> T: ...")
     assert isinstance(func_node.type_params[0], TypeVar)
