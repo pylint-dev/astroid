@@ -1503,7 +1503,10 @@ class FunctionDef(
 
         :returns: Whether this is a generator function.
         """
-        return bool(next(self._get_yield_nodes_skip_functions(), False))
+        yields_without_lambdas = set(self._get_yield_nodes_skip_lambdas())
+        yields_without_functions = set(self._get_yield_nodes_skip_functions())
+        # Want an intersecting member that is neither in a lambda nor a function
+        return bool(yields_without_lambdas & yields_without_functions)
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
