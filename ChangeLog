@@ -146,6 +146,12 @@ Release date: TBA
 
   Refs #2141
 
+* ``frame()`` raises ``ParentMissingError`` and ``statement()`` raises ``StatementMissing`` for
+  missing parents regardless of the value of the ``future`` argument (which gave this behavior
+  already).
+
+  Refs #1217
+
 * Remove deprecated ``Ellipsis``, ``ExtSlice``, ``Index`` nodes.
 
   Refs #2152

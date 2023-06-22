@@ -288,39 +288,15 @@ class NodeNG:
         """
         return any(self is parent for parent in node.node_ancestors())
 
-    @overload
-    def statement(self, *, future: None = ...) -> nodes.Statement | nodes.Module:
-        ...
-
-    @overload
-    def statement(self, *, future: Literal[True]) -> nodes.Statement:
-        ...
-
-    def statement(
-        self, *, future: Literal[None, True] = None
-    ) -> nodes.Statement | nodes.Module:
+    def statement(self, *, future: Literal[None, True] = None) -> nodes.Statement:
         """The first parent node, including self, marked as statement node.
 
-        TODO: Deprecate the future parameter and only raise StatementMissing and return
-        nodes.Statement
-
-        :raises AttributeError: If self has no parent attribute
-        :raises StatementMissing: If self has no parent attribute and future is True
+        :raises StatementMissing: If self has no parent attribute.
         """
         if self.is_statement:
             return cast("nodes.Statement", self)
         if not self.parent:
-            if future:
-                raise StatementMissing(target=self)
-            warnings.warn(
-                "In astroid 3.0.0 NodeNG.statement() will return either a nodes.Statement "
-                "or raise a StatementMissing exception. AttributeError will no longer be raised. "
-                "This behaviour can already be triggered "
-                "by passing 'future=True' to a statement() call.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            raise AttributeError(f"{self} object has no attribute 'parent'")
+            raise StatementMissing(target=self)
         return self.parent.statement(future=future)
 
     def frame(
@@ -332,20 +308,10 @@ class NodeNG:
         :class:`ClassDef` or :class:`Lambda`.
 
         :returns: The first parent frame node.
+        :raises ParentMissingError: If self has no parent attribute.
         """
         if self.parent is None:
-            if future:
-                raise ParentMissingError(target=self)
-            warnings.warn(
-                "In astroid 3.0.0 NodeNG.frame() will return either a Frame node, "
-                "or raise ParentMissingError. AttributeError will no longer be raised. "
-                "This behaviour can already be triggered "
-                "by passing 'future=True' to a frame() call.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            raise AttributeError(f"{self} object has no attribute 'parent'")
-
+            raise ParentMissingError(target=self)
         return self.parent.frame(future=future)
 
     def scope(self) -> nodes.LocalsDictNodeNG:
