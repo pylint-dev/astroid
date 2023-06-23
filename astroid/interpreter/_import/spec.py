@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Literal, NamedTuple, Protocol
 
 from astroid.const import PY310_PLUS
-from astroid.modutils import EXT_LIB_DIRS
+from astroid.modutils import EXT_LIB_DIRS, STD_LIB_DIRS
 
 from . import util
 
@@ -156,6 +156,19 @@ class ImportlibFinder(Finder):
                         name=modname,
                         location=getattr(spec.loader_state, "filename", None),
                         type=ModuleType.PY_FROZEN,
+                    )
+                if (
+                    spec
+                    and isinstance(spec.loader, importlib.machinery.SourceFileLoader)
+                    and any(spec.origin.startswith(std_lib) for std_lib in STD_LIB_DIRS)
+                    and not spec.origin.endswith("__init__.py")
+                ):
+                    # Return standard library modules before local modules
+                    # https://github.com/pylint-dev/pylint/issues/6535
+                    return ModuleSpec(
+                        name=modname,
+                        location=spec.origin,
+                        type=ModuleType.PY_SOURCE,
                     )
             except ValueError:
                 pass

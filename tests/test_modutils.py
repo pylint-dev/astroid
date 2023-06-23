@@ -20,7 +20,7 @@ from pytest import CaptureFixture, LogCaptureFixture
 
 import astroid
 from astroid import modutils
-from astroid.const import PY310_PLUS
+from astroid.const import PY310_PLUS, WIN32
 from astroid.interpreter._import import spec
 
 from . import resources
@@ -267,6 +267,19 @@ class FileFromModPathTest(resources.SysPathSetup, unittest.TestCase):
             os.path.realpath(path),
             os.path.realpath(os.path.__file__.replace(".pyc", ".py")),
         )
+
+    def test_std_lib_found_before_same_named_package_on_path(self) -> None:
+        realpath = str(resources.RESOURCE_PATH)
+        if WIN32:
+            # Escape backslashes.
+            realpath = realpath.replace("\\", "\\\\")
+        sys.path.insert(0, realpath)
+        self.addCleanup(sys.path.pop, 0)
+
+        file = modutils.file_from_modpath(["copy"])
+
+        self.assertNotIn("test", file)  # tests/testdata/python3/data/copy.py
+        self.assertTrue(any(stdlib in file for stdlib in modutils.STD_LIB_DIRS))
 
     def test_builtin(self) -> None:
         self.assertIsNone(modutils.file_from_modpath(["sys"]))

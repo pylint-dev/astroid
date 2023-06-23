@@ -15,6 +15,11 @@ Release date: TBA
   Closes #1780
   Refs #2140
 
+* Prefer standard library modules over same-named modules on sys.path. For example
+  ``import copy`` now finds ``copy`` instead of ``copy.py``. Solves ``no-member`` issues.
+
+  Closes pylint-dev/pylint#6535
+
 * Reduce file system access in ``ast_from_file()``.
 
 * Reduce time to ``import astroid`` by delaying ``astroid_bootstrapping()`` until
