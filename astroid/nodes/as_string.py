@@ -435,7 +435,7 @@ class AsStringVisitor:
 
     def visit_paramspec(self, node: nodes.ParamSpec) -> str:
         """return an astroid.ParamSpec node as string"""
-        return node.name
+        return node.name.accept(self)
 
     def visit_pass(self, node) -> str:
         """return an astroid.Pass node as string"""
