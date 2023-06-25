@@ -28,7 +28,7 @@ from astroid import (
     transforms,
     util,
 )
-from astroid.const import PY310_PLUS, Context
+from astroid.const import PY310_PLUS, PY312_PLUS, Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -277,6 +277,33 @@ everything = f""" " \' \r \t \\ {{ }} {'x' + x!r:a} {["'"]!s:{a}}"""
     def test_as_string_unknown() -> None:
         assert nodes.Unknown().as_string() == "Unknown.Unknown()"
         assert nodes.Unknown(lineno=1, col_offset=0).as_string() == "Unknown.Unknown()"
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="Uses 3.12 type param nodes")
+class AsStringTypeParamNodes(unittest.TestCase):
+    @staticmethod
+    def test_as_string_type_alias() -> None:
+        ast = abuilder.string_build("type Point = tuple[float, float]")
+        type_alias = ast.body[0]
+        assert type_alias.as_string().strip() == "Point"
+
+    @staticmethod
+    def test_as_string_type_var() -> None:
+        ast = abuilder.string_build("type Point[T] = tuple[float, float]")
+        type_var = ast.body[0].type_params[0]
+        assert type_var.as_string().strip() == "T"
+
+    @staticmethod
+    def test_as_string_type_var_tuple() -> None:
+        ast = abuilder.string_build("type Alias[*Ts] = tuple[*Ts]")
+        type_var_tuple = ast.body[0].type_params[0]
+        assert type_var_tuple.as_string().strip() == "*Ts"
+
+    @staticmethod
+    def test_as_string_param_spec() -> None:
+        ast = abuilder.string_build("type Alias[**P] = Callable[P, int]")
+        param_spec = ast.body[0].type_params[0]
+        assert param_spec.as_string().strip() == "P"
 
 
 class _NodeTest(unittest.TestCase):
