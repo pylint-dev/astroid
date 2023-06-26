@@ -20,7 +20,7 @@ from pytest import CaptureFixture, LogCaptureFixture
 
 import astroid
 from astroid import modutils
-from astroid.const import PY310_PLUS, WIN32
+from astroid.const import PY310_PLUS, PY311_PLUS, WIN32
 from astroid.interpreter._import import spec
 
 from . import resources
@@ -268,12 +268,14 @@ class FileFromModPathTest(resources.SysPathSetup, unittest.TestCase):
             os.path.realpath(os.path.__file__.replace(".pyc", ".py")),
         )
 
+    @pytest.mark.skipif(
+        WIN32 and not PY311_PLUS,
+        reason="Fails on Windows below 3.11 for what seems like a test setup/isolation issue "
+        "rather than a functional issue. Possibly related: "
+        "https://github.com/python/cpython/pull/93653 (other surrounding tests add '.' to sys.path)",
+    )
     def test_std_lib_found_before_same_named_package_on_path(self) -> None:
-        realpath = str(resources.RESOURCE_PATH)
-        if WIN32:
-            # Escape backslashes.
-            realpath = realpath.replace("\\", "\\\\")
-        sys.path.insert(0, realpath)
+        sys.path.insert(0, str(resources.RESOURCE_PATH))
         self.addCleanup(sys.path.pop, 0)
 
         file = modutils.file_from_modpath(["copy"])
