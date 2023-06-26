@@ -3911,11 +3911,13 @@ class EvaluatedObject(NodeNG):
     _astroid_fields = ("original",)
     _other_fields = ("value",)
 
-    def __init__(self, original: NodeNG, value: NodeNG | util.UninferableBase) -> None:
-        self.original: NodeNG = original
+    def __init__(
+        self, original: SuccessfulInferenceResult, value: InferenceResult
+    ) -> None:
+        self.original: SuccessfulInferenceResult = original
         """The original node that has already been evaluated"""
 
-        self.value: NodeNG | util.UninferableBase = value
+        self.value: InferenceResult = value
         """The inferred value"""
 
         super().__init__(

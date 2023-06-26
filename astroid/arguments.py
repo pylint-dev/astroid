@@ -91,7 +91,7 @@ class CallSite:
         keywords: list[tuple[str | None, nodes.NodeNG]],
         context: InferenceContext | None = None,
     ):
-        values = {}
+        values: dict[str | None, InferenceResult] = {}
         context = context or InferenceContext()
         context.extra_context = self.argument_context_map
         for name, value in keywords:

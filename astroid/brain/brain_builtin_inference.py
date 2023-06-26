@@ -9,7 +9,7 @@ from __future__ import annotations
 import itertools
 from collections.abc import Callable, Iterator
 from functools import partial
-from typing import Any, Type, Union, cast
+from typing import Any, Iterable, Type, Union, cast
 
 from astroid import arguments, helpers, inference_tip, nodes, objects, util
 from astroid.builder import AstroidBuilder
@@ -26,6 +26,7 @@ from astroid.nodes import scoped_nodes
 from astroid.typing import (
     ConstFactoryResult,
     InferenceResult,
+    InferFn,
     SuccessfulInferenceResult,
 )
 
@@ -127,6 +128,10 @@ class whatever(object):
 """
 
 
+def _use_default():
+    raise UseInferenceDefault()
+
+
 def _extend_string_class(class_node, code, rvalue):
     """Function to extend builtin str/unicode class."""
     code = code.format(rvalue=rvalue)
@@ -212,7 +217,7 @@ def register_builtin_transform(transform, builtin_name) -> None:
 
     AstroidManager().register_transform(
         nodes.Call,
-        inference_tip(_transform_wrapper),
+        inference_tip(cast(InferFn, _transform_wrapper)),
         partial(_builtin_filter_predicate, builtin_name=builtin_name),
     )
 
@@ -257,10 +262,12 @@ def _container_generic_transform(
     iterables: tuple[type[nodes.BaseContainer] | type[ContainerObjects], ...],
     build_elts: BuiltContainers,
 ) -> nodes.BaseContainer | None:
+    elts: Iterable
+
     if isinstance(arg, klass):
         return arg
     if isinstance(arg, iterables):
-        arg = cast(ContainerObjects, arg)
+        arg = cast(nodes.BaseContainer, arg)
         if all(isinstance(elt, nodes.Const) for elt in arg.elts):
             elts = [cast(nodes.Const, elt).value for elt in arg.elts]
         else:
@@ -277,9 +284,10 @@ def _container_generic_transform(
                     elts.append(evaluated_object)
     elif isinstance(arg, nodes.Dict):
         # Dicts need to have consts as strings already.
-        if not all(isinstance(elt[0], nodes.Const) for elt in arg.items):
-            raise UseInferenceDefault()
-        elts = [item[0].value for item in arg.items]
+        elts = [
+            item[0].value if isinstance(item[0], nodes.Const) else _use_default()
+            for item in arg.items
+        ]
     elif isinstance(arg, nodes.Const) and isinstance(arg.value, (str, bytes)):
         elts = arg.value
     else:
@@ -399,6 +407,7 @@ def infer_dict(node: nodes.Call, context: InferenceContext | None = None) -> nod
     args = call.positional_arguments
     kwargs = list(call.keyword_arguments.items())
 
+    items: list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]]
     if not args and not kwargs:
         # dict()
         return nodes.Dict(
@@ -944,10 +953,10 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
     if isinstance(inferred_values, nodes.Const) and isinstance(
         inferred_values.value, (str, bytes)
     ):
-        elements = [
+        elements_with_value = [
             (nodes.Const(element), default) for element in inferred_values.value
         ]
-        return _build_dict_with_elements(elements)
+        return _build_dict_with_elements(elements_with_value)
     if isinstance(inferred_values, nodes.Dict):
         keys = inferred_values.itered()
         for key in keys:
@@ -1069,17 +1078,19 @@ register_builtin_transform(infer_dict_fromkeys, "dict.fromkeys")
 # Infer object.__new__ calls
 AstroidManager().register_transform(
     nodes.ClassDef,
-    inference_tip(_infer_object__new__decorator),
+    inference_tip(cast(InferFn, _infer_object__new__decorator)),
     _infer_object__new__decorator_check,
 )
 
 AstroidManager().register_transform(
     nodes.Call,
-    inference_tip(_infer_copy_method),
+    inference_tip(cast(InferFn, _infer_copy_method)),
     lambda node: isinstance(node.func, nodes.Attribute)
     and node.func.attrname == "copy",
 )
 
 AstroidManager().register_transform(
-    nodes.Call, inference_tip(_infer_str_format_call), _is_str_format_call
+    nodes.Call,
+    inference_tip(cast(InferFn, _infer_str_format_call)),
+    _is_str_format_call,
 )
