@@ -7,9 +7,9 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from functools import partial
-from typing import Any, Iterable, Type, Union, cast
+from typing import Any, Type, Union, cast
 
 from astroid import arguments, helpers, inference_tip, nodes, objects, util
 from astroid.builder import AstroidBuilder

@@ -1904,7 +1904,10 @@ def test_str_repr_no_warnings(node):
 
         if "int" in param_type.annotation:
             args[name] = random.randint(0, 50)
-        elif "NodeNG" in param_type.annotation:
+        elif (
+            "NodeNG" in param_type.annotation
+            or "SuccessfulInferenceResult" in param_type.annotation
+        ):
             args[name] = nodes.Unknown()
         elif "str" in param_type.annotation:
             args[name] = ""
