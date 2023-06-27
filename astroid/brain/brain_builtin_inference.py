@@ -134,7 +134,7 @@ class whatever(object):
 """
 
 
-def _use_default() -> NoReturn:
+def _use_default() -> NoReturn:  # pragma: no cover
     raise UseInferenceDefault()
 
 
