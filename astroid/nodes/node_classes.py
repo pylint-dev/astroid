@@ -2705,16 +2705,19 @@ class ParamSpec(_base_nodes.AssignTypeNode):
     <ParamSpec l.1 at 0x7f23b2e4e198>
     """
 
+    _astroid_fields = ("name",)
+
+    name: AssignName
+
     def __init__(
         self,
         lineno: int,
         col_offset: int,
         parent: NodeNG,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        self.name: AssignName | None
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -2723,7 +2726,7 @@ class ParamSpec(_base_nodes.AssignTypeNode):
             parent=parent,
         )
 
-    def postinit(self, *, name: AssignName | None) -> None:
+    def postinit(self, *, name: AssignName) -> None:
         self.name = name
 
 
@@ -3350,7 +3353,11 @@ class TypeAlias(_base_nodes.AssignTypeNode):
     <TypeAlias l.1 at 0x7f23b2e4e198>
     """
 
-    _astroid_fields = ("type_params", "value")
+    _astroid_fields = ("name", "type_params", "value")
+
+    name: AssignName
+    type_params: list[TypeVar | ParamSpec | TypeVarTuple]
+    value: NodeNG
 
     def __init__(
         self,
@@ -3358,12 +3365,9 @@ class TypeAlias(_base_nodes.AssignTypeNode):
         col_offset: int,
         parent: NodeNG,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        self.name: AssignName | None
-        self.type_params: list[TypeVar, ParamSpec, TypeVarTuple]
-        self.value: NodeNG
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -3375,8 +3379,8 @@ class TypeAlias(_base_nodes.AssignTypeNode):
     def postinit(
         self,
         *,
-        name: AssignName | None,
-        type_params: list[TypeVar, ParamSpec, TypeVarTuple],
+        name: AssignName,
+        type_params: list[TypeVar | ParamSpec | TypeVarTuple],
         value: NodeNG,
     ) -> None:
         self.name = name
@@ -3393,7 +3397,10 @@ class TypeVar(_base_nodes.AssignTypeNode):
     <TypeVar l.1 at 0x7f23b2e4e198>
     """
 
-    _astroid_fields = ("bound",)
+    _astroid_fields = ("name", "bound")
+
+    name: AssignName
+    bound: NodeNG | None
 
     def __init__(
         self,
@@ -3401,11 +3408,9 @@ class TypeVar(_base_nodes.AssignTypeNode):
         col_offset: int,
         parent: NodeNG,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        self.name: AssignName | None
-        self.bound: NodeNG | None
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -3414,7 +3419,7 @@ class TypeVar(_base_nodes.AssignTypeNode):
             parent=parent,
         )
 
-    def postinit(self, *, name: AssignName | None, bound: NodeNG | None) -> None:
+    def postinit(self, *, name: AssignName, bound: NodeNG | None) -> None:
         self.name = name
         self.bound = bound
 
@@ -3428,16 +3433,19 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
     <TypeVarTuple l.1 at 0x7f23b2e4e198>
     """
 
+    _astroid_fields = ("name",)
+
+    name: AssignName
+
     def __init__(
         self,
         lineno: int,
         col_offset: int,
         parent: NodeNG,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        end_lineno: int | None,
+        end_col_offset: int | None,
     ) -> None:
-        self.name: AssignName | None
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -3446,7 +3454,7 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
             parent=parent,
         )
 
-    def postinit(self, *, name: AssignName | None) -> None:
+    def postinit(self, *, name: AssignName) -> None:
         self.name = name
 
 
