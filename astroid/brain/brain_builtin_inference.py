@@ -128,7 +128,7 @@ class whatever(object):
 """
 
 
-def _use_default():
+def _use_default() -> NoReturn:
     raise UseInferenceDefault()
 
 
