@@ -15,6 +15,7 @@ import textwrap
 import unittest
 from functools import partial
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 
@@ -29,8 +30,9 @@ from astroid import (
     util,
 )
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import IS_PYPY, PY38
+from astroid.const import IS_PYPY, PY38, WIN32
 from astroid.exceptions import (
+    AstroidBuildingError,
     AttributeInferenceError,
     DuplicateBasesError,
     InconsistentMroError,
@@ -243,6 +245,19 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
             self.assertEqual(inferred[0].name, "package.subpackage")
         finally:
             del sys.path[0]
+
+    @patch(
+        "astroid.nodes.scoped_nodes.scoped_nodes.AstroidManager.ast_from_module_name"
+    )
+    def test_import_unavailable_module(self, mock) -> None:
+        unavailable_modname = "posixpath" if WIN32 else "ntpath"
+        module = builder.parse(f"import {unavailable_modname}")
+        mock.side_effect = AstroidBuildingError
+
+        with pytest.raises(AstroidBuildingError):
+            module.import_module(unavailable_modname)
+
+        mock.assert_called_once()
 
     def test_file_stream_in_memory(self) -> None:
         data = """irrelevant_variable is irrelevant"""
