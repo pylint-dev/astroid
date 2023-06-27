@@ -10,7 +10,6 @@ from typing import (
     Callable,
     Generator,
     Generic,
-    Iterator,
     Protocol,
     TypedDict,
     TypeVar,
@@ -18,6 +17,8 @@ from typing import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from astroid import bases, exceptions, nodes, transforms, util
     from astroid.context import InferenceContext
     from astroid.interpreter._import import spec
