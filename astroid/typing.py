@@ -8,6 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Iterator,
     Generator,
     Generic,
     Protocol,
@@ -84,7 +85,7 @@ class InferFn(Protocol, Generic[_SuccessfulInferenceResultT_contra]):
         node: _SuccessfulInferenceResultT_contra,
         context: InferenceContext | None = None,
         **kwargs: Any,
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Iterator[InferenceResult]:
         ...  # pragma: no cover
 
 

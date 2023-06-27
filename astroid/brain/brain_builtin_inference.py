@@ -9,7 +9,7 @@ from __future__ import annotations
 import itertools
 from collections.abc import Callable, Iterable, Iterator
 from functools import partial
-from typing import Any, NoReturn, Type, Union, cast
+from typing import Any, NoReturn, Type, Union, cast, TYPE_CHECKING
 
 from astroid import arguments, helpers, inference_tip, nodes, objects, util
 from astroid.builder import AstroidBuilder
@@ -28,6 +28,9 @@ from astroid.typing import (
     InferenceResult,
     SuccessfulInferenceResult,
 )
+
+if TYPE_CHECKING:
+    from astroid.bases import Instance
 
 ContainerObjects = Union[
     objects.FrozenSet,
@@ -206,7 +209,7 @@ def register_builtin_transform(transform, builtin_name) -> None:
 
     def _transform_wrapper(
         node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
-    ):
+    ) -> Iterator:
         result = transform(node, context=context)
         if result:
             if not result.parent:
@@ -714,7 +717,7 @@ def infer_slice(node, context: InferenceContext | None = None):
 
 def _infer_object__new__decorator(
     node: nodes.ClassDef, context: InferenceContext | None = None, **kwargs: Any
-):
+) -> Iterator[Instance]:
     # Instantiate class immediately
     # since that's what @object.__new__ does
     return iter((node.instantiate_class(),))
@@ -1094,13 +1097,13 @@ AstroidManager().register_transform(
 
 AstroidManager().register_transform(
     nodes.Call,
-    inference_tip(_infer_copy_method),  # type: ignore[arg-type]
+    inference_tip(_infer_copy_method),
     lambda node: isinstance(node.func, nodes.Attribute)
     and node.func.attrname == "copy",
 )
 
 AstroidManager().register_transform(
     nodes.Call,
-    inference_tip(_infer_str_format_call),  # type: ignore[arg-type]
+    inference_tip(_infer_str_format_call),
     _is_str_format_call,
 )
