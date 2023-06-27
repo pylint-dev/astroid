@@ -167,6 +167,9 @@ def _multiply_seq_by_int(
     context: InferenceContext,
 ) -> _TupleListNodeT:
     node = self.__class__(parent=opnode)
+    if other.value > 1e8:
+        node.elts = [nodes.Const(NotImplemented)]
+        return node
     filtered_elts = (
         helpers.safe_infer(elt, context) or util.Uninferable
         for elt in self.elts
