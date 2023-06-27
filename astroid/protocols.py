@@ -167,7 +167,7 @@ def _multiply_seq_by_int(
     context: InferenceContext,
 ) -> _TupleListNodeT:
     node = self.__class__(parent=opnode)
-    if other.value > 1e8:
+    if isinstance(other.value, int) and other.value > 1e8:
         node.elts = [nodes.Const(NotImplemented)]
         return node
     filtered_elts = (
