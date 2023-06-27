@@ -275,7 +275,7 @@ def _container_generic_transform(
     if isinstance(arg, klass):
         return arg
     if isinstance(arg, iterables):
-        arg = cast(nodes.BaseContainer | ContainerObjects, arg)
+        arg = cast(Union[nodes.BaseContainer, ContainerObjects], arg)
         if all(isinstance(elt, nodes.Const) for elt in arg.elts):
             elts = [cast(nodes.Const, elt).value for elt in arg.elts]
         else:
