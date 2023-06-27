@@ -270,12 +270,12 @@ def _container_generic_transform(
     iterables: tuple[type[nodes.BaseContainer] | type[ContainerObjects], ...],
     build_elts: BuiltContainers,
 ) -> nodes.BaseContainer | None:
-    elts: Iterable
+    elts: Iterable | str | bytes
 
     if isinstance(arg, klass):
         return arg
     if isinstance(arg, iterables):
-        arg = cast(nodes.BaseContainer, arg)
+        arg = cast(nodes.BaseContainer | ContainerObjects, arg)
         if all(isinstance(elt, nodes.Const) for elt in arg.elts):
             elts = [cast(nodes.Const, elt).value for elt in arg.elts]
         else:
@@ -415,7 +415,7 @@ def infer_dict(node: nodes.Call, context: InferenceContext | None = None) -> nod
     args = call.positional_arguments
     kwargs = list(call.keyword_arguments.items())
 
-    items: list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]]
+    items: list[tuple[InferenceResult, InferenceResult]]
     if not args and not kwargs:
         # dict()
         return nodes.Dict(
@@ -992,7 +992,7 @@ def _infer_copy_method(
         )
         for inferred_node in inferred_orig
     ):
-        return inferred_copy
+        return cast(Iterator[CopyResult], inferred_copy)
 
     raise UseInferenceDefault
 

@@ -1865,9 +1865,7 @@ class Dict(NodeNG, Instance):
             parent=parent,
         )
 
-    def postinit(
-        self, items: list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]]
-    ) -> None:
+    def postinit(self, items: list[tuple[InferenceResult, InferenceResult]]) -> None:
         """Do some setup after initialisation.
 
         :param items: The key-value pairs contained in the dictionary.
