@@ -26,7 +26,6 @@ from astroid.nodes import scoped_nodes
 from astroid.typing import (
     ConstFactoryResult,
     InferenceResult,
-    InferFn,
     SuccessfulInferenceResult,
 )
 
@@ -42,6 +41,13 @@ BuiltContainers = Union[
     Type[list],
     Type[set],
     Type[frozenset],
+]
+
+CopyResult = Union[
+    nodes.Dict,
+    nodes.List,
+    nodes.Set,
+    objects.FrozenSet,
 ]
 
 OBJECT_DUNDER_NEW = "object.__new__"
@@ -198,7 +204,9 @@ def register_builtin_transform(transform, builtin_name) -> None:
     an optional context.
     """
 
-    def _transform_wrapper(node, context: InferenceContext | None = None):
+    def _transform_wrapper(
+        node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
+    ):
         result = transform(node, context=context)
         if result:
             if not result.parent:
@@ -217,7 +225,7 @@ def register_builtin_transform(transform, builtin_name) -> None:
 
     AstroidManager().register_transform(
         nodes.Call,
-        inference_tip(cast(InferFn, _transform_wrapper)),
+        inference_tip(_transform_wrapper),
         partial(_builtin_filter_predicate, builtin_name=builtin_name),
     )
 
@@ -704,7 +712,9 @@ def infer_slice(node, context: InferenceContext | None = None):
     return slice_node
 
 
-def _infer_object__new__decorator(node, context: InferenceContext | None = None):
+def _infer_object__new__decorator(
+    node: nodes.ClassDef, context: InferenceContext | None = None, **kwargs: Any
+):
     # Instantiate class immediately
     # since that's what @object.__new__ does
     return iter((node.instantiate_class(),))
@@ -973,7 +983,7 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
 
 def _infer_copy_method(
     node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
-) -> Iterator[InferenceResult]:
+) -> Iterator[CopyResult]:
     assert isinstance(node.func, nodes.Attribute)
     inferred_orig, inferred_copy = itertools.tee(node.func.expr.infer(context=context))
     if all(
@@ -984,7 +994,7 @@ def _infer_copy_method(
     ):
         return inferred_copy
 
-    raise UseInferenceDefault()
+    raise UseInferenceDefault
 
 
 def _is_str_format_call(node: nodes.Call) -> bool:
@@ -1078,19 +1088,19 @@ register_builtin_transform(infer_dict_fromkeys, "dict.fromkeys")
 # Infer object.__new__ calls
 AstroidManager().register_transform(
     nodes.ClassDef,
-    inference_tip(cast(InferFn, _infer_object__new__decorator)),
+    inference_tip(_infer_object__new__decorator),
     _infer_object__new__decorator_check,
 )
 
 AstroidManager().register_transform(
     nodes.Call,
-    inference_tip(cast(InferFn, _infer_copy_method)),
+    inference_tip(_infer_copy_method),  # type: ignore[arg-type]
     lambda node: isinstance(node.func, nodes.Attribute)
     and node.func.attrname == "copy",
 )
 
 AstroidManager().register_transform(
     nodes.Call,
-    inference_tip(cast(InferFn, _infer_str_format_call)),
+    inference_tip(_infer_str_format_call),  # type: ignore[arg-type]
     _is_str_format_call,
 )
