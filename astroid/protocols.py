@@ -230,7 +230,7 @@ def tl_infer_binary_op(
         as_index = helpers.class_instance_as_index(other)
         if not as_index:
             yield util.Uninferable
-        elif not isinstance(as_index.value, int):
+        elif not isinstance(as_index.value, int):  # pragma: no cover
             # already checked by class_instance_as_index() but faster than casting
             raise AssertionError("Please open a bug report.")
         else:
