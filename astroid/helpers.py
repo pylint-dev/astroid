@@ -344,5 +344,5 @@ def _higher_function_scope(node: nodes.NodeNG) -> nodes.FunctionDef | None:
     while current.parent and not isinstance(current.parent, nodes.FunctionDef):
         current = current.parent
     if current and current.parent:
-        return current.parent  # type: ignore[no-any-return]
+        return current.parent
     return None
