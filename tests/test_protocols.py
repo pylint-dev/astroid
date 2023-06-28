@@ -284,7 +284,7 @@ class ProtocolTests(unittest.TestCase):
         """Attempting to calculate the result is prohibitively expensive."""
         parsed = extract_node("[0] * 123456789")
         element = parsed.inferred()[0].elts[0]
-        assert element.value is NotImplemented
+        assert element.value is Uninferable
 
 
 def test_named_expr_inference() -> None:
