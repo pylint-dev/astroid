@@ -27,6 +27,10 @@ Release date: 2023-05-14
 
   Closes pylint-dev/pylint#8749
 
+* Avoid expensive list/tuple multiplication operations that would result in ``MemoryError``.
+
+  Closes pylint-dev/pylint#8748
+
 
 What's New in astroid 2.15.5?
 =============================

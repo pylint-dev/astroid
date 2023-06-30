@@ -279,6 +279,13 @@ class ProtocolTests(unittest.TestCase):
         parsed = extract_node("None ** 2")
         assert parsed.inferred() == [Uninferable]
 
+    @staticmethod
+    def test_uninferable_list_multiplication() -> None:
+        """Attempting to calculate the result is prohibitively expensive."""
+        parsed = extract_node("[0] * 123456789")
+        element = parsed.inferred()[0].elts[0]
+        assert element.value is Uninferable
+
 
 @pytest.mark.skipif(not PY38_PLUS, reason="needs assignment expressions")
 def test_named_expr_inference() -> None:
