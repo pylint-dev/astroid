@@ -65,7 +65,7 @@ Release date: TBA
   The breaking change allows us to better type and re-use the method within ``astroid``.
 
 * Improved signature of the ``__init__`` and ``__postinit__`` methods of most nodes.
-  This includes makes ``lineno``, ``col_offset``, ``end_lineno``, ``end_col_offset`` and ``parent``
+  This includes making ``lineno``, ``col_offset``, ``end_lineno``, ``end_col_offset`` and ``parent``
   required arguments for ``nodes.NodeNG`` and its subclasses.
   For most other nodes, arguments of their ``__postinit__`` methods have been made required to better
   represent how they would normally be constructed by the standard library ``ast`` module.
@@ -124,7 +124,7 @@ Release date: TBA
 * Remove dependency on ``wrapt``.
 
 * Remove dependency on ``lazy_object_proxy``. This includes the removal
-  of the assosicated ``lazy_import``, ``lazy_descriptor`` and ``proxy_alias`` utility functions.
+  of the associated ``lazy_import``, ``lazy_descriptor`` and ``proxy_alias`` utility functions.
 
 * ``CallSite._unpack_args`` and ``CallSite._unpack_keywords`` now use ``safe_infer()`` for
   better inference and fewer false positives.
