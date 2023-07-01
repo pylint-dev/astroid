@@ -167,16 +167,19 @@ nodes.Const.infer_binary_op = const_infer_binary_op
 def _multiply_seq_by_int(
     self: _TupleListNodeT,
     opnode: nodes.AugAssign | nodes.BinOp,
-    other: nodes.Const,
+    value: int,
     context: InferenceContext,
 ) -> _TupleListNodeT:
     node = self.__class__(parent=opnode)
+    if value > 1e8:
+        node.elts = [util.Uninferable]
+        return node
     filtered_elts = (
         helpers.safe_infer(elt, context) or util.Uninferable
         for elt in self.elts
         if not isinstance(elt, util.UninferableBase)
     )
-    node.elts = list(filtered_elts) * other.value
+    node.elts = list(filtered_elts) * value
     return node
 
 
@@ -225,14 +228,17 @@ def tl_infer_binary_op(
         if not isinstance(other.value, int):
             yield not_implemented
             return
-        yield _multiply_seq_by_int(self, opnode, other, context)
+        yield _multiply_seq_by_int(self, opnode, other.value, context)
     elif isinstance(other, bases.Instance) and operator == "*":
         # Verify if the instance supports __index__.
         as_index = helpers.class_instance_as_index(other)
         if not as_index:
             yield util.Uninferable
+        elif not isinstance(as_index.value, int):  # pragma: no cover
+            # already checked by class_instance_as_index() but faster than casting
+            raise AssertionError("Please open a bug report.")
         else:
-            yield _multiply_seq_by_int(self, opnode, as_index, context)
+            yield _multiply_seq_by_int(self, opnode, as_index.value, context)
     else:
         yield not_implemented
 
