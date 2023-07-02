@@ -464,7 +464,7 @@ class AssignName(
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """Infer a Name: use name lookup rules.
 
-        Same implementation as Name."""
+        Same implementation as Name._infer."""
         # pylint: disable=import-outside-toplevel
         from astroid.constraint import get_constraints
         from astroid.helpers import _higher_function_scope
@@ -578,7 +578,7 @@ class Name(_base_nodes.LookupMixIn, _base_nodes.NoChildrenNode):
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """Infer a Name: use name lookup rules
 
-        Same implementation as AssignName."""
+        Same implementation as AssignName._infer_lhs."""
         # pylint: disable=import-outside-toplevel
         from astroid.constraint import get_constraints
         from astroid.helpers import _higher_function_scope
