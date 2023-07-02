@@ -2369,7 +2369,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         name: str,
         context: InferenceContext | None = None,
         class_context: bool = True,
-    ) -> list[SuccessfulInferenceResult]:
+    ) -> list[InferenceResult]:
         """Get an attribute from this class, using Python's attribute semantic.
 
         This method doesn't look in the :attr:`instance_attrs` dictionary

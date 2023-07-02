@@ -242,7 +242,7 @@ class BaseInstance(Proxy):
         name: str,
         context: InferenceContext | None = None,
         lookupclass: bool = True,
-    ) -> list[SuccessfulInferenceResult]:
+    ) -> list[InferenceResult]:
         try:
             values = self._proxied.instance_attr(name, context)
         except AttributeInferenceError as exc:
