@@ -16,7 +16,7 @@ compatible with python's _ast.
 Instance attributes are added by a
 builder object, which can either generate extended ast (let's call
 them astroid ;) by visiting an existent ast tree or by inspecting living
-object. Methods are added by monkey patching ast classes.
+object.
 
 Main modules are:
 

@@ -36,6 +36,7 @@ from astroid.exceptions import (
     AstroidValueError,
     AttributeInferenceError,
     InferenceError,
+    NameInferenceError,
     NoDefault,
     ParentMissingError,
     _NonDeducibleTypeHierarchy,
@@ -396,8 +397,6 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
 
 
 class AssignName(
-    _base_nodes.NameNode,
-    _base_nodes.AssignNode,
     _base_nodes.NoChildrenNode,
     _base_nodes.LookupMixIn,
     _base_nodes.ParentAssignNode,
@@ -445,16 +444,48 @@ class AssignName(
     See astroid/protocols.py for actual implementation.
     """
 
+    @decorators.raise_if_nothing_inferred
+    @decorators.path_wrapper
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-        return self._infer_assign(context, **kwargs)
+        """Infer an AssignName: need to inspect the RHS part of the
+        assign node.
+        """
+        if isinstance(self.parent, AugAssign):
+            return self.parent.infer(context)
+
+        stmts = list(self.assigned_stmts(context=context))
+        return _infer_stmts(stmts, context)
 
     @decorators.raise_if_nothing_inferred
     def infer_lhs(
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-        return self._infer_name_node(context, **kwargs)
+        """Infer a Name: use name lookup rules.
+
+        Same implementation as Name._infer."""
+        # pylint: disable=import-outside-toplevel
+        from astroid.constraint import get_constraints
+        from astroid.helpers import _higher_function_scope
+
+        frame, stmts = self.lookup(self.name)
+        if not stmts:
+            # Try to see if the name is enclosed in a nested function
+            # and use the higher (first function) scope for searching.
+            parent_function = _higher_function_scope(self.scope())
+            if parent_function:
+                _, stmts = parent_function.lookup(self.name)
+
+            if not stmts:
+                raise NameInferenceError(
+                    name=self.name, scope=self.scope(), context=context
+                )
+        context = copy_context(context)
+        context.lookupname = self.name
+        context.constraints[self.name] = get_constraints(self, frame)
+
+        return _infer_stmts(stmts, context, frame)
 
 
 class DelName(
@@ -496,7 +527,7 @@ class DelName(
         )
 
 
-class Name(_base_nodes.NameNode, _base_nodes.NoChildrenNode):
+class Name(_base_nodes.LookupMixIn, _base_nodes.NoChildrenNode):
     """Class representing an :class:`ast.Name` node.
 
     A :class:`Name` node is something that is named, but not covered by
@@ -545,7 +576,30 @@ class Name(_base_nodes.NameNode, _base_nodes.NoChildrenNode):
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-        return self._infer_name_node(context, **kwargs)
+        """Infer a Name: use name lookup rules
+
+        Same implementation as AssignName._infer_lhs."""
+        # pylint: disable=import-outside-toplevel
+        from astroid.constraint import get_constraints
+        from astroid.helpers import _higher_function_scope
+
+        frame, stmts = self.lookup(self.name)
+        if not stmts:
+            # Try to see if the name is enclosed in a nested function
+            # and use the higher (first function) scope for searching.
+            parent_function = _higher_function_scope(self.scope())
+            if parent_function:
+                _, stmts = parent_function.lookup(self.name)
+
+            if not stmts:
+                raise NameInferenceError(
+                    name=self.name, scope=self.scope(), context=context
+                )
+        context = copy_context(context)
+        context.lookupname = self.name
+        context.constraints[self.name] = get_constraints(self, frame)
+
+        return _infer_stmts(stmts, context, frame)
 
 
 DEPRECATED_ARGUMENT_DEFAULT = object()
@@ -987,9 +1041,7 @@ def _format_args(
     return ", ".join(values)
 
 
-class AssignAttr(
-    _base_nodes.AttributeNode, _base_nodes.AssignNode, _base_nodes.ParentAssignNode
-):
+class AssignAttr(_base_nodes.LookupMixIn, _base_nodes.ParentAssignNode):
     """Variation of :class:`ast.Assign` representing assignment to an attribute.
 
     >>> import astroid
@@ -1001,6 +1053,8 @@ class AssignAttr(
     >>> list(node.get_children())[0].as_string()
     'self.attribute'
     """
+
+    expr: NodeNG
 
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
@@ -1037,15 +1091,19 @@ class AssignAttr(
     def get_children(self):
         yield self.expr
 
+    @decorators.raise_if_nothing_inferred
+    @decorators.path_wrapper
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-        return self._infer_assign(context, **kwargs)
+        """Infer an AssignAttr: need to inspect the RHS part of the
+        assign node.
+        """
+        if isinstance(self.parent, AugAssign):
+            return self.parent.infer(context)
 
-    def infer_lhs(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-        return self._infer_attribute(context, **kwargs)
+        stmts = list(self.assigned_stmts(context=context))
+        return _infer_stmts(stmts, context)
 
 
 class Assert(_base_nodes.Statement):
@@ -2727,8 +2785,10 @@ class ImportFrom(_base_nodes.ImportNode):
             ) from error
 
 
-class Attribute(_base_nodes.AttributeNode):
+class Attribute(NodeNG):
     """Class representing an :class:`ast.Attribute` node."""
+
+    expr: NodeNG
 
     _astroid_fields = ("expr",)
     _other_fields = ("attrname",)
@@ -2760,11 +2820,40 @@ class Attribute(_base_nodes.AttributeNode):
     def get_children(self):
         yield self.expr
 
+    @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[InferenceResult, None, None]:
-        return self._infer_attribute(context, **kwargs)
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
+        """Infer an Attribute node by using getattr on the associated object."""
+        # pylint: disable=import-outside-toplevel
+        from astroid.constraint import get_constraints
+        from astroid.nodes import ClassDef
+
+        for owner in self.expr.infer(context):
+            if isinstance(owner, util.UninferableBase):
+                yield owner
+                continue
+
+            context = copy_context(context)
+            old_boundnode = context.boundnode
+            try:
+                context.boundnode = owner
+                if isinstance(owner, (ClassDef, Instance)):
+                    frame = owner if isinstance(owner, ClassDef) else owner._proxied
+                    context.constraints[self.attrname] = get_constraints(
+                        self, frame=frame
+                    )
+                yield from owner.igetattr(self.attrname, context)
+            except (
+                AttributeInferenceError,
+                InferenceError,
+                AttributeError,
+            ):
+                pass
+            finally:
+                context.boundnode = old_boundnode
+        return InferenceErrorInfo(node=self, context=context)
 
 
 class Global(_base_nodes.NoChildrenNode, _base_nodes.Statement):

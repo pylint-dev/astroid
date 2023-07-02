@@ -14,25 +14,23 @@ from collections.abc import Generator, Iterator
 from functools import cached_property, lru_cache, partial
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Union
 
-from astroid import bases, decorators, nodes, util
+from astroid import bases, nodes, util
 from astroid.const import PY310_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
     bind_context_to_node,
-    copy_context,
 )
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
-    NameInferenceError,
 )
 from astroid.interpreter import dunder_lookup
 from astroid.nodes.node_ng import NodeNG
-from astroid.typing import InferenceErrorInfo, InferenceResult
+from astroid.typing import InferenceResult
 
 if TYPE_CHECKING:
-    from astroid.nodes.node_classes import AssignedStmtsPossibleNode, LocalsDictNodeNG
+    from astroid.nodes.node_classes import LocalsDictNodeNG
 
     GetFlowFactory = Callable[
         [
@@ -331,7 +329,7 @@ class OperatorNode(NodeNG):
         for result in infer_callable(context):
             if isinstance(result, error):
                 # For the sake of .infer(), we don't care about operation
-                # errors, which is the job of pylint. So return something
+                # errors, which is the job of a linter. So return something
                 # which shows that we can't infer the result.
                 yield util.Uninferable
             else:
@@ -670,106 +668,3 @@ class OperatorNode(NodeNG):
 
         # The operation doesn't seem to be supported so let the caller know about it
         yield util.BadBinaryOperationMessage(left_type, binary_opnode.op, right_type)
-
-
-class AttributeNode(NodeNG):
-    expr: NodeNG
-    """The name that this node represents."""
-    attrname: str
-
-    @decorators.raise_if_nothing_inferred
-    def _infer_attribute(
-        self,
-        context: InferenceContext | None = None,
-        **kwargs: Any,
-    ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
-        """Infer an Attribute node by using getattr on the associated object."""
-        # pylint: disable=import-outside-toplevel
-        from astroid.constraint import get_constraints
-
-        for owner in self.expr.infer(context):
-            if isinstance(owner, util.UninferableBase):
-                yield owner
-                continue
-
-            context = copy_context(context)
-            old_boundnode = context.boundnode
-            try:
-                context.boundnode = owner
-                if isinstance(owner, (nodes.ClassDef, bases.Instance)):
-                    frame = (
-                        owner if isinstance(owner, nodes.ClassDef) else owner._proxied
-                    )
-                    context.constraints[self.attrname] = get_constraints(
-                        self, frame=frame
-                    )
-                yield from owner.igetattr(self.attrname, context)
-            except (
-                AttributeInferenceError,
-                InferenceError,
-                AttributeError,
-            ):
-                pass
-            finally:
-                context.boundnode = old_boundnode
-        return InferenceErrorInfo(node=self, context=context)
-
-
-class AssignNode(NodeNG):
-    @decorators.raise_if_nothing_inferred
-    @decorators.path_wrapper
-    def _infer_assign(
-        self,
-        context: InferenceContext | None = None,
-        **kwargs: Any,
-    ) -> Generator[InferenceResult, None, None]:
-        """Infer a AssignName/AssignAttr: need to inspect the RHS part of the
-        assign node.
-        """
-        if isinstance(self.parent, nodes.AugAssign):
-            return self.parent.infer(context)
-
-        stmts = list(self.assigned_stmts(context=context))
-        return bases._infer_stmts(stmts, context)
-
-    def assigned_stmts(
-        self: nodes.AssignName | nodes.AssignAttr,
-        node: AssignedStmtsPossibleNode = None,
-        context: InferenceContext | None = None,
-        assign_path: list[int] | None = None,
-    ) -> Any:
-        """Returns the assigned statement (non inferred) according to the assignment type."""
-        return self.parent.assigned_stmts(node=self, context=context)
-
-
-class NameNode(LookupMixIn):
-    name: str
-
-    @decorators.raise_if_nothing_inferred
-    def _infer_name_node(
-        self,
-        context: InferenceContext | None = None,
-        **kwargs: Any,
-    ) -> Generator[InferenceResult, None, None]:
-        """Infer a Name: use name lookup rules."""
-        # pylint: disable=import-outside-toplevel
-        from astroid.constraint import get_constraints
-        from astroid.helpers import _higher_function_scope
-
-        frame, stmts = self.lookup(self.name)
-        if not stmts:
-            # Try to see if the name is enclosed in a nested function
-            # and use the higher (first function) scope for searching.
-            parent_function = _higher_function_scope(self.scope())
-            if parent_function:
-                _, stmts = parent_function.lookup(self.name)
-
-            if not stmts:
-                raise NameInferenceError(
-                    name=self.name, scope=self.scope(), context=context
-                )
-        context = copy_context(context)
-        context.lookupname = self.name
-        context.constraints[self.name] = get_constraints(self, frame)
-
-        return bases._infer_stmts(stmts, context, frame)
