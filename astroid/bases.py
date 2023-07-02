@@ -148,7 +148,7 @@ class Proxy:
 
 
 def _infer_stmts(
-    stmts: Iterator[InferenceResult],
+    stmts: Iterable[InferenceResult],
     context: InferenceContext | None,
     frame: nodes.NodeNG | BaseInstance | None = None,
 ) -> collections.abc.Generator[InferenceResult, None, None]:

@@ -34,6 +34,7 @@ from astroid.exceptions import (
     InconsistentMroError,
     InferenceError,
     MroError,
+    ParentMissingError,
     StatementMissing,
     TooManyLevelsError,
 )
@@ -140,10 +141,10 @@ def clean_typing_generic_mro(sequences: list[list[ClassDef]]) -> None:
 
 
 def clean_duplicates_mro(
-    sequences: Iterable[Iterable[ClassDef]],
+    sequences: list[list[ClassDef]],
     cls: ClassDef,
     context: InferenceContext | None,
-) -> Iterable[Iterable[ClassDef]]:
+) -> list[list[ClassDef]]:
     for sequence in sequences:
         seen = set()
         for node in sequence:
@@ -241,7 +242,7 @@ class Module(LocalsDictNodeNG):
         self.pure_python = pure_python
         """Whether the ast was built from source."""
 
-        self.globals: dict[str, list[SuccessfulInferenceResult]]
+        self.globals: dict[str, list[InferenceResult]]
         """A map of the name of a global variable to the node defining the global."""
 
         self.locals = self.globals = {}
@@ -586,7 +587,7 @@ class Module(LocalsDictNodeNG):
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator[Module]:
+    ) -> Generator[Module, None, None]:
         yield self
 
 
@@ -887,7 +888,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         :returns: 'method' if this is a method, 'function' otherwise.
         """
         if self.args.arguments and self.args.arguments[0].name == "self":
-            if isinstance(self.parent.scope(), ClassDef):
+            if self.parent and isinstance(self.parent.scope(), ClassDef):
                 return "method"
         return "function"
 
@@ -990,6 +991,8 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         if (self.args.defaults and node in self.args.defaults) or (
             self.args.kw_defaults and node in self.args.kw_defaults
         ):
+            if not self.parent:
+                raise ParentMissingError(target=self)
             frame = self.parent.frame()
             # line offset to avoid that def func(f=func) resolve the default
             # value to the defined function
@@ -1038,7 +1041,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator[Lambda]:
+    ) -> Generator[Lambda, None, None]:
         yield self
 
 
@@ -1134,7 +1137,9 @@ class FunctionDef(
         self.body: list[NodeNG] = []
         """The contents of the function body."""
 
-        self.type_params: list[nodes.TypeVar, nodes.ParamSpec, nodes.TypeVarTuple] = []
+        self.type_params: list[
+            nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple
+        ] = []
         """PEP 695 (Python 3.12+) type params, e.g. first 'T' in def func[T]() -> T: ..."""
 
         self.instance_attrs: dict[str, list[NodeNG]] = {}
@@ -1161,7 +1166,8 @@ class FunctionDef(
         *,
         position: Position | None = None,
         doc_node: Const | None = None,
-        type_params: list[nodes.TypeVar] | None = None,
+        type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple]
+        | None = None,
     ):
         """Do some setup after initialisation.
 
@@ -1201,8 +1207,7 @@ class FunctionDef(
         The property will return all the callables that are used for
         decoration.
         """
-        frame = self.parent.frame()
-        if not isinstance(frame, ClassDef):
+        if not self.parent or not isinstance(frame := self.parent.frame(), ClassDef):
             return []
 
         decorators: list[node_classes.Call] = []
@@ -1298,6 +1303,9 @@ class FunctionDef(
         for decorator in self.extra_decorators:
             if decorator.func.name in BUILTIN_DESCRIPTORS:
                 return decorator.func.name
+
+        if not self.parent:
+            raise ParentMissingError(target=self)
 
         frame = self.parent.frame()
         type_name = "function"
@@ -1413,7 +1421,11 @@ class FunctionDef(
         """
         # check we are defined in a ClassDef, because this is usually expected
         # (e.g. pylint...) when is_method() return True
-        return self.type != "function" and isinstance(self.parent.frame(), ClassDef)
+        return (
+            self.type != "function"
+            and self.parent is not None
+            and isinstance(self.parent.frame(), ClassDef)
+        )
 
     def decoratornames(self, context: InferenceContext | None = None) -> set[str]:
         """Get the qualified names of each of the decorators on this function.
@@ -1499,6 +1511,8 @@ class FunctionDef(
         # of the wrapping frame. This means that every time we infer a property, the locals
         # are mutated with a new instance of the property. To avoid this, we detect this
         # scenario and avoid passing the `parent` argument to the constructor.
+        if not self.parent:
+            raise ParentMissingError(target=self)
         parent_frame = self.parent.frame()
         property_already_in_parent_locals = self.name in parent_frame.locals and any(
             isinstance(val, objects.Property) for val in parent_frame.locals[self.name]
@@ -1662,13 +1676,14 @@ class FunctionDef(
             # if any methods in a class body refer to either __class__ or super.
             # In our case, we want to be able to look it up in the current scope
             # when `__class__` is being used.
-            frame = self.parent.frame()
-            if isinstance(frame, ClassDef):
+            if self.parent and isinstance(frame := self.parent.frame(), ClassDef):
                 return self, [frame]
 
         if (self.args.defaults and node in self.args.defaults) or (
             self.args.kw_defaults and node in self.args.kw_defaults
         ):
+            if not self.parent:
+                raise ParentMissingError(target=self)
             frame = self.parent.frame()
             # line offset to avoid that def func(f=func) resolve the default
             # value to the defined function
@@ -1886,7 +1901,9 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         self.is_dataclass: bool = False
         """Whether this class is a dataclass."""
 
-        self.type_params: list[nodes.TypeVar, nodes.ParamSpec, nodes.TypeVarTuple] = []
+        self.type_params: list[
+            nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple
+        ] = []
         """PEP 695 (Python 3.12+) type params, e.g. class MyClass[T]: ..."""
 
         super().__init__(
@@ -1932,7 +1949,8 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         *,
         position: Position | None = None,
         doc_node: Const | None = None,
-        type_params: list[nodes.TypeVar] | None = None,
+        type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple]
+        | None = None,
     ) -> None:
         if keywords is not None:
             self.keywords = keywords
@@ -2175,7 +2193,8 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
             # import name
             # class A(name.Name):
             #     def name(self): ...
-
+            if not self.parent:
+                raise ParentMissingError(target=self)
             frame = self.parent.frame()
             # line offset to avoid that class A(A) resolve the ancestor to
             # the defined class
@@ -2209,7 +2228,8 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         if context is None:
             context = InferenceContext()
         if not self.bases and self.qname() != "builtins.object":
-            yield builtin_lookup("object")[1][0]
+            # This should always be a ClassDef (which we don't assert for)
+            yield builtin_lookup("object")[1][0]  # type: ignore[misc]
             return
 
         for stmt in self.bases:
@@ -2376,7 +2396,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
         # don't modify the list in self.locals!
-        values: list[SuccessfulInferenceResult] = list(self.locals.get(name, []))
+        values: list[InferenceResult] = list(self.locals.get(name, []))
         for classnode in self.ancestors(recurs=True, context=context):
             values += classnode.locals.get(name, [])
 
@@ -2883,7 +2903,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
                 ancestors = list(base.ancestors(context=context))
                 bases_mro.append(ancestors)
 
-        unmerged_mro = [[self], *bases_mro, inferred_bases]
+        unmerged_mro: list[list[ClassDef]] = [[self], *bases_mro, inferred_bases]
         unmerged_mro = clean_duplicates_mro(unmerged_mro, self, context)
         clean_typing_generic_mro(unmerged_mro)
         return _c3_merge(unmerged_mro, self, context)
@@ -2934,5 +2954,5 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator[ClassDef]:
+    ) -> Generator[ClassDef, None, None]:
         yield self
