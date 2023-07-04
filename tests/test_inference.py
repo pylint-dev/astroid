@@ -6319,6 +6319,20 @@ def test_infer_exception_instance_attributes() -> None:
     assert isinstance(index[0], nodes.AssignAttr)
 
 
+def test_infer_assign_attr() -> None:
+    code = """
+    class Counter:
+        def __init__(self):
+            self.count = 0
+
+        def increment(self):
+            self.count += 1  #@
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred.value == 1
+
+
 @pytest.mark.parametrize(
     "code,instance_name",
     [
