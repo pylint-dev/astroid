@@ -9,8 +9,8 @@ repos:
         exclude: .github/|tests/testdata
       - id: end-of-file-fixer
         exclude: tests/testdata
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.0.272"
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: "v0.0.276"
     hooks:
       - id: ruff
         exclude: tests/testdata
@@ -23,7 +23,7 @@ repos:
         exclude: tests/testdata|setup.py
         types: [python]
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.7.0
+    rev: v3.8.0
     hooks:
       - id: pyupgrade
         exclude: tests/testdata
@@ -54,7 +54,7 @@ repos:
           ]
         exclude: tests/testdata|conf.py
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.3.0
+    rev: v1.4.1
     hooks:
       - id: mypy
         name: mypy
