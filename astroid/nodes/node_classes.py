@@ -600,7 +600,7 @@ class Name(_base_nodes.LookupMixIn, _base_nodes.NoChildrenNode):
         return _infer_stmts(stmts, context, frame)
 
 
-DEPRECATED_ARGUMENT_DEFAULT = object()
+DEPRECATED_ARGUMENT_DEFAULT = "DEPRECATED_ARGUMENT_DEFAULT"
 
 
 class Arguments(_base_nodes.AssignTypeNode):
@@ -947,7 +947,7 @@ class Arguments(_base_nodes.AssignTypeNode):
         :returns: The index and node for the argument.
         :rtype: tuple(str or None, AssignName or None)
         """
-        if rec is not DEPRECATED_ARGUMENT_DEFAULT:  # pragma: no cover
+        if rec != DEPRECATED_ARGUMENT_DEFAULT:  # pragma: no cover
             warnings.warn(
                 "The rec argument will be removed in astroid 3.1.",
                 DeprecationWarning,
