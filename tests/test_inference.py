@@ -6329,9 +6329,8 @@ def test_infer_assign_attr() -> None:
             self.count += 1  #@
     """
     node = extract_node(code)
-    # A refactor caused this to raise AttributeError
-    with pytest.raises(InferenceError):
-        next(node.infer())
+    inferred = next(node.infer())
+    assert inferred.value == 1
 
 
 @pytest.mark.parametrize(
