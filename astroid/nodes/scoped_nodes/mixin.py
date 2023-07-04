@@ -26,8 +26,7 @@ class LocalsDictNodeNG(_base_nodes.LookupMixIn):
     """
 
     # attributes below are set by the builder module or by raw factories
-
-    locals: dict[str, list[InferenceResult]] = {}
+    locals: dict[str, list[InferenceResult]]
     """A map of the name of a local variable to the node defining the local."""
 
     def qname(self) -> str:

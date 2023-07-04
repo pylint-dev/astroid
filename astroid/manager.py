@@ -53,7 +53,7 @@ class AstroidManager:
     """
 
     name = "astroid loader"
-    brain: AstroidManagerBrain = {
+    brain: ClassVar[AstroidManagerBrain] = {
         "astroid_cache": {},
         "_mod_file_cache": {},
         "_failed_import_hooks": [],

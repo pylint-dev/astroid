@@ -203,7 +203,13 @@ class Module(LocalsDictNodeNG):
     """The names of special attributes that this module has."""
 
     # names of module attributes available through the global scope
-    scope_attrs = {"__name__", "__doc__", "__file__", "__path__", "__package__"}
+    scope_attrs: ClassVar[set[str]] = {
+        "__name__",
+        "__doc__",
+        "__file__",
+        "__path__",
+        "__package__",
+    }
     """The names of module attributes available through the global scope."""
 
     _other_fields = (
