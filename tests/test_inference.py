@@ -6331,7 +6331,7 @@ def test_infer_assign_attr() -> None:
     node = extract_node(code)
     # A refactor caused this to raise AttributeError
     with pytest.raises(InferenceError):
-        next(node.target.infer())
+        next(node.infer())
 
 
 @pytest.mark.parametrize(
