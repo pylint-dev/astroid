@@ -1470,6 +1470,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         assert len(results) == 2
         assert all(isinstance(result, nodes.Dict) for result in results)
 
+    def test_name_repeat_inference(self) -> None:
+        node = extract_node("print")
+        context = InferenceContext()
+        _inferred = next(node.infer(context=context))
+        with pytest.raises(InferenceError):
+            next(node.infer(context=context))
+
     def test_python25_no_relative_import(self) -> None:
         ast = resources.build_file("data/package/absimport.py")
         self.assertTrue(ast.absolute_import_activated(), True)

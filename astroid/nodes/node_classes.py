@@ -570,6 +570,7 @@ class Name(_base_nodes.LookupMixIn, _base_nodes.NoChildrenNode):
         for child_node in self.get_children():
             yield from child_node._get_name_nodes()
 
+    @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
