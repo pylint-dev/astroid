@@ -1473,7 +1473,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     def test_name_repeat_inference(self) -> None:
         node = extract_node("print")
         context = InferenceContext()
-        _inferred = next(node.infer(context=context))
+        _ = next(node.infer(context=context))
         with pytest.raises(InferenceError):
             next(node.infer(context=context))
 
