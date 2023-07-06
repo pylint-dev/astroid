@@ -781,7 +781,25 @@ class Arguments(_base_nodes.AssignTypeNode):
     @cached_property
     def arguments(self):
         """Get all the arguments for this node, including positional only and positional and keyword"""
-        return list(itertools.chain((self.posonlyargs or ()), self.args or ()))
+        retval = list(itertools.chain((self.posonlyargs or ()), (self.args or ())))
+        if self.vararg:
+            retval.append(
+                Name(
+                    self.vararg,
+                    -1,
+                    -1,
+                    self,
+                    end_lineno=-1,
+                    end_col_offset=-1,
+                )
+            )
+        retval += self.kwonlyargs or ()
+        if self.kwarg:
+            retval.append(
+                Name(self.kwarg, -1, -1, self, end_lineno=-1, end_col_offset=-1)
+            )
+
+        return retval
 
     def format_args(self, *, skippable_names: set[str] | None = None) -> str:
         """Get the arguments formatted as string.
@@ -911,15 +929,30 @@ class Arguments(_base_nodes.AssignTypeNode):
         :raises NoDefault: If there is no default value defined for the
             given argument.
         """
-        args = self.arguments
-        index = _find_arg(argname, args)[0]
-        if index is not None:
-            idx = index - (len(args) - len(self.defaults))
-            if idx >= 0:
-                return self.defaults[idx]
-        index = _find_arg(argname, self.kwonlyargs)[0]
-        if index is not None and self.kw_defaults[index] is not None:
-            return self.kw_defaults[index]
+        _, req_arg = _find_arg(argname, self.arguments)
+        match = None
+        match_col_diff = 1000
+
+        # find the value declared closest to the requested argument
+        for value in itertools.chain(self.defaults, self.kw_defaults):
+            if getattr(value, "lineno", None) == req_arg.lineno:
+                col_diff = value.col_offset - req_arg.end_col_offset
+                if col_diff == 1:  # no point in looking anymore, nothing can get closer
+                    return value
+                if 0 < col_diff < match_col_diff:
+                    match = value
+                    match_col_diff = col_diff
+
+        if match:
+            # ensure no arg is closer to the default value found
+            # would mean it is not the default value for req. arg
+            for arg in self.arguments:
+                if (arg.end_col_offset < match.col_offset) and (
+                    arg.end_col_offset > req_arg.end_col_offset
+                ):
+                    raise NoDefault(func=self.parent, name=argname)
+            return match
+
         raise NoDefault(func=self.parent, name=argname)
 
     def is_argument(self, name) -> bool:
@@ -956,7 +989,9 @@ class Arguments(_base_nodes.AssignTypeNode):
                 stacklevel=2,
             )
         if self.arguments:
-            return _find_arg(argname, self.arguments)
+            index, argument = _find_arg(argname, self.arguments)
+            if not isinstance(argument, Name):
+                return index, argument
         return None, None
 
     def get_children(self):

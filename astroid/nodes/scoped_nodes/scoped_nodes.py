@@ -963,11 +963,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             names = [elt.name for elt in self.args.arguments]
         else:
             names = []
-        if self.args.vararg:
-            names.append(self.args.vararg)
-        names += [elt.name for elt in self.args.kwonlyargs]
-        if self.args.kwarg:
-            names.append(self.args.kwarg)
+
         return names
 
     def infer_call_result(
@@ -1280,11 +1276,7 @@ class FunctionDef(
             names = [elt.name for elt in self.args.arguments]
         else:
             names = []
-        if self.args.vararg:
-            names.append(self.args.vararg)
-        names += [elt.name for elt in self.args.kwonlyargs]
-        if self.args.kwarg:
-            names.append(self.args.kwarg)
+
         return names
 
     def getattr(
