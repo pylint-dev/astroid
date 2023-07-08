@@ -58,8 +58,6 @@ def get_node_of_class(start_from: nodes.FunctionDef, klass: type) -> nodes.Attri
 
 builder = AstroidBuilder()
 
-EXC_MODULE = "builtins"
-BOOL_SPECIAL_METHOD = "__bool__"
 DATA_DIR = Path(__file__).parent / "testdata" / "python3" / "data"
 
 
@@ -199,7 +197,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         exc = next(inferred)
         self.assertIsInstance(exc, Instance)
         self.assertEqual(exc.name, "Exception")
-        self.assertEqual(exc.root().name, EXC_MODULE)
+        self.assertEqual(exc.root().name, "builtins")
         self.assertRaises(StopIteration, partial(next, inferred))
         inferred = self.ast["b"].infer()
         const = next(inferred)
@@ -217,7 +215,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         exc = next(inferred)
         self.assertIsInstance(exc, Instance)
         self.assertEqual(exc.name, "Exception")
-        self.assertEqual(exc.root().name, EXC_MODULE)
+        self.assertEqual(exc.root().name, "builtins")
         self.assertRaises(StopIteration, partial(next, inferred))
         inferred = self.ast["e"].infer()
         const = next(inferred)
@@ -268,7 +266,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         exc = next(inferred)
         self.assertIsInstance(exc, Instance)
         self.assertEqual(exc.name, "Exception")
-        self.assertEqual(exc.root().name, EXC_MODULE)
+        self.assertEqual(exc.root().name, "builtins")
         self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_getattr_inference1(self) -> None:
@@ -276,7 +274,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         exc = next(inferred)
         self.assertIsInstance(exc, Instance)
         self.assertEqual(exc.name, "Exception")
-        self.assertEqual(exc.root().name, EXC_MODULE)
+        self.assertEqual(exc.root().name, "builtins")
         self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_getattr_inference2(self) -> None:
@@ -536,13 +534,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ancestors = w.ancestors()
         ancestor = next(ancestors)
         self.assertEqual(ancestor.name, "Warning")
-        self.assertEqual(ancestor.root().name, EXC_MODULE)
+        self.assertEqual(ancestor.root().name, "builtins")
         ancestor = next(ancestors)
         self.assertEqual(ancestor.name, "Exception")
-        self.assertEqual(ancestor.root().name, EXC_MODULE)
+        self.assertEqual(ancestor.root().name, "builtins")
         ancestor = next(ancestors)
         self.assertEqual(ancestor.name, "BaseException")
-        self.assertEqual(ancestor.root().name, EXC_MODULE)
+        self.assertEqual(ancestor.root().name, "builtins")
         ancestor = next(ancestors)
         self.assertEqual(ancestor.name, "object")
         self.assertEqual(ancestor.root().name, "builtins")
@@ -2889,12 +2887,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_bool_value_instances(self) -> None:
         instances = extract_node(
-            f"""
+            """
         class FalseBoolInstance(object):
-            def {BOOL_SPECIAL_METHOD}(self):
+            def __bool__(self):
                 return False
         class TrueBoolInstance(object):
-            def {BOOL_SPECIAL_METHOD}(self):
+            def __bool__(self):
                 return True
         class FalseLenInstance(object):
             def __len__(self):
@@ -2927,11 +2925,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_bool_value_variable(self) -> None:
         instance = extract_node(
-            f"""
+            """
         class VariableBoolInstance(object):
             def __init__(self, value):
                 self.value = value
-            def {BOOL_SPECIAL_METHOD}(self):
+            def __bool__(self):
                 return self.value
 
         not VariableBoolInstance(True)
@@ -4856,20 +4854,20 @@ class TestBool(unittest.TestCase):
 
     def test_bool_bool_special_method(self) -> None:
         ast_nodes = extract_node(
-            f"""
+            """
         class FalseClass:
-           def {BOOL_SPECIAL_METHOD}(self):
+           def __bool__(self):
                return False
         class TrueClass:
-           def {BOOL_SPECIAL_METHOD}(self):
+           def __bool__(self):
                return True
         class C(object):
            def __call__(self):
                return False
         class B(object):
-           {BOOL_SPECIAL_METHOD} = C()
+           __bool__ = C()
         class LambdaBoolFalse(object):
-            {BOOL_SPECIAL_METHOD} = lambda self: self.foo
+            __bool__ = lambda self: self.foo
             @property
             def foo(self): return 0
         class FalseBoolLen(object):
@@ -4892,9 +4890,9 @@ class TestBool(unittest.TestCase):
 
     def test_bool_instance_not_callable(self) -> None:
         ast_nodes = extract_node(
-            f"""
+            """
         class BoolInvalid(object):
-           {BOOL_SPECIAL_METHOD} = 42
+           __bool__ = 42
         class LenInvalid(object):
            __len__ = "a"
         bool(BoolInvalid()) #@
