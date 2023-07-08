@@ -6,14 +6,16 @@
 
 from __future__ import annotations
 
+import textwrap
 import typing
 from collections.abc import Iterator
 from functools import partial
 from typing import Final
 
 from astroid import context, extract_node, inference_tip
-from astroid.builder import _extract_single_node
-from astroid.const import PY39_PLUS
+from astroid.brain.helpers import register_module_extender
+from astroid.builder import AstroidBuilder, _extract_single_node
+from astroid.const import PY39_PLUS, PY312_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -231,7 +233,8 @@ def _looks_like_typing_alias(node: Call) -> bool:
     """
     return (
         isinstance(node.func, Name)
-        and node.func.name == "_alias"
+        # TODO: remove _DeprecatedGenericAlias when Py3.14 min
+        and node.func.name in {"_alias", "_DeprecatedGenericAlias"}
         and (
             # _alias function works also for builtins object such as list and dict
             isinstance(node.args[0], (Attribute, Name))
@@ -273,6 +276,8 @@ def infer_typing_alias(
 
     :param node: call node
     :param context: inference context
+
+    # TODO: evaluate if still necessary when Py3.12 is minimum
     """
     if (
         not isinstance(node.parent, Assign)
@@ -316,6 +321,9 @@ def infer_typing_alias(
         # This is an issue in cases where the aliased class implements it,
         # but the typing alias isn't subscriptable. E.g., `typing.ByteString` for PY39+
         _forbid_class_getitem_access(class_def)
+
+    # Avoid re-instantiating this class every time it's seen
+    node._explicit_inference = lambda node, context: iter([class_def])
     return iter([class_def])
 
 
@@ -412,6 +420,29 @@ def infer_typing_cast(
     return node.args[1].infer(context=ctx)
 
 
+def _typing_transform():
+    return AstroidBuilder(AstroidManager()).string_build(
+        textwrap.dedent(
+            """
+    class Generic:
+        @classmethod
+        def __class_getitem__(cls, item):  return cls
+    class ParamSpec: ...
+    class ParamSpecArgs: ...
+    class ParamSpecKwargs: ...
+    class TypeAlias: ...
+    class Type:
+        @classmethod
+        def __class_getitem__(cls, item):  return cls
+    class TypeVar:
+        @classmethod
+        def __class_getitem__(cls, item):  return cls
+    class TypeVarTuple: ...
+    """
+        )
+    )
+
+
 AstroidManager().register_transform(
     Call,
     inference_tip(infer_typing_typevar_or_newtype),
@@ -439,3 +470,6 @@ AstroidManager().register_transform(
 AstroidManager().register_transform(
     Call, inference_tip(infer_special_alias), _looks_like_special_alias
 )
+
+if PY312_PLUS:
+    register_module_extender(AstroidManager(), "typing", _typing_transform)

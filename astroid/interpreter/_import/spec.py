@@ -163,7 +163,7 @@ class ImportlibFinder(Finder):
 
         for entry in submodule_path:
             package_directory = os.path.join(entry, modname)
-            for suffix in (".py", importlib.machinery.BYTECODE_SUFFIXES[0]):
+            for suffix in (".py", ".pyi", importlib.machinery.BYTECODE_SUFFIXES[0]):
                 package_file_name = "__init__" + suffix
                 file_path = os.path.join(package_directory, package_file_name)
                 if os.path.isfile(file_path):
@@ -393,7 +393,7 @@ def _find_spec_with_path(
             # "type" as their __class__.__name__. We check __name__ as well
             # to see if we can support the finder.
             try:
-                meta_finder_name = meta_finder.__name__
+                meta_finder_name = meta_finder.__name__  # type: ignore[attr-defined]
             except AttributeError:
                 continue
             if meta_finder_name not in _MetaPathFinderModuleTypes:
@@ -461,7 +461,8 @@ def find_spec(modpath: list[str], path: Sequence[str] | None = None) -> ModuleSp
                 submodule_path = finder.contribute_to_path(spec, processed)
             # If modname is a package from an editable install, update submodule_path
             # so that the next module in the path will be found inside of it using importlib.
-            elif finder.__name__ in _EditableFinderClasses:
+            # Existence of __name__ is guaranteed by _find_spec_with_path.
+            elif finder.__name__ in _EditableFinderClasses:  # type: ignore[attr-defined]
                 submodule_path = spec.submodule_search_locations
 
         if spec.type == ModuleType.PKG_DIRECTORY:

@@ -10,15 +10,19 @@ It is not considered public.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from astroid import nodes
-from astroid.nodes import node_classes
 from astroid.typing import SuccessfulInferenceResult
+
+if TYPE_CHECKING:
+    from astroid.nodes import _base_nodes
 
 
 def _get_filtered_node_statements(
     base_node: nodes.NodeNG, stmt_nodes: list[nodes.NodeNG]
 ) -> list[tuple[nodes.NodeNG, nodes.Statement]]:
-    statements = [(node, node.statement(future=True)) for node in stmt_nodes]
+    statements = [(node, node.statement()) for node in stmt_nodes]
     # Next we check if we have ExceptHandlers that are parent
     # of the underlying variable, in which case the last one survives
     if len(statements) > 1 and all(
@@ -44,7 +48,7 @@ def _get_if_statement_ancestor(node: nodes.NodeNG) -> nodes.If | None:
 
 
 def _filter_stmts(
-    base_node: node_classes.LookupMixIn,
+    base_node: _base_nodes.LookupMixIn,
     stmts: list[SuccessfulInferenceResult],
     frame: nodes.LocalsDictNodeNG,
     offset: int,
@@ -83,16 +87,12 @@ def _filter_stmts(
         #
         # def test(b=1):
         #     ...
-        if (
-            base_node.parent
-            and base_node.statement(future=True) is myframe
-            and myframe.parent
-        ):
+        if base_node.parent and base_node.statement() is myframe and myframe.parent:
             myframe = myframe.parent.frame()
 
     mystmt: nodes.Statement | None = None
     if base_node.parent:
-        mystmt = base_node.statement(future=True)
+        mystmt = base_node.statement()
 
     # line filtering if we are in the same frame
     #

@@ -53,7 +53,7 @@ class AstroidManager:
     """
 
     name = "astroid loader"
-    brain: AstroidManagerBrain = {
+    brain: ClassVar[AstroidManagerBrain] = {
         "astroid_cache": {},
         "_mod_file_cache": {},
         "_failed_import_hooks": [],
@@ -69,12 +69,26 @@ class AstroidManager:
         self.astroid_cache = AstroidManager.brain["astroid_cache"]
         self._mod_file_cache = AstroidManager.brain["_mod_file_cache"]
         self._failed_import_hooks = AstroidManager.brain["_failed_import_hooks"]
-        self.always_load_extensions = AstroidManager.brain["always_load_extensions"]
-        self.optimize_ast = AstroidManager.brain["optimize_ast"]
         self.extension_package_whitelist = AstroidManager.brain[
             "extension_package_whitelist"
         ]
         self._transform = AstroidManager.brain["_transform"]
+
+    @property
+    def always_load_extensions(self) -> bool:
+        return AstroidManager.brain["always_load_extensions"]
+
+    @always_load_extensions.setter
+    def always_load_extensions(self, value: bool) -> None:
+        AstroidManager.brain["always_load_extensions"] = value
+
+    @property
+    def optimize_ast(self) -> bool:
+        return AstroidManager.brain["optimize_ast"]
+
+    @optimize_ast.setter
+    def optimize_ast(self, value: bool) -> None:
+        AstroidManager.brain["optimize_ast"] = value
 
     @property
     def register_transform(self):
@@ -262,7 +276,6 @@ class AstroidManager:
             except ValueError:
                 continue
             try:
-                # pylint: disable-next=no-member
                 importer = zipimport.zipimporter(eggpath + ext)
                 zmodname = resource.replace(os.path.sep, ".")
                 if importer.is_package(resource):
@@ -421,7 +434,7 @@ class AstroidManager:
         # pylint: disable=import-outside-toplevel
         from astroid.inference_tip import clear_inference_tip_cache
         from astroid.interpreter.objectmodel import ObjectModel
-        from astroid.nodes.node_classes import LookupMixIn
+        from astroid.nodes._base_nodes import LookupMixIn
         from astroid.nodes.scoped_nodes import ClassDef
 
         clear_inference_tip_cache()

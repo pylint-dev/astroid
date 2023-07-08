@@ -7,7 +7,9 @@
 from __future__ import annotations
 
 import copy
+import inspect
 import os
+import random
 import sys
 import textwrap
 import unittest
@@ -26,7 +28,7 @@ from astroid import (
     transforms,
     util,
 )
-from astroid.const import PY310_PLUS, Context
+from astroid.const import PY310_PLUS, PY312_PLUS, Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -275,6 +277,33 @@ everything = f""" " \' \r \t \\ {{ }} {'x' + x!r:a} {["'"]!s:{a}}"""
     def test_as_string_unknown() -> None:
         assert nodes.Unknown().as_string() == "Unknown.Unknown()"
         assert nodes.Unknown(lineno=1, col_offset=0).as_string() == "Unknown.Unknown()"
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="Uses 3.12 type param nodes")
+class AsStringTypeParamNodes(unittest.TestCase):
+    @staticmethod
+    def test_as_string_type_alias() -> None:
+        ast = abuilder.string_build("type Point = tuple[float, float]")
+        type_alias = ast.body[0]
+        assert type_alias.as_string().strip() == "Point"
+
+    @staticmethod
+    def test_as_string_type_var() -> None:
+        ast = abuilder.string_build("type Point[T] = tuple[float, float]")
+        type_var = ast.body[0].type_params[0]
+        assert type_var.as_string().strip() == "T"
+
+    @staticmethod
+    def test_as_string_type_var_tuple() -> None:
+        ast = abuilder.string_build("type Alias[*Ts] = tuple[*Ts]")
+        type_var_tuple = ast.body[0].type_params[0]
+        assert type_var_tuple.as_string().strip() == "*Ts"
+
+    @staticmethod
+    def test_as_string_param_spec() -> None:
+        ast = abuilder.string_build("type Alias[**P] = Callable[P, int]")
+        param_spec = ast.body[0].type_params[0]
+        assert param_spec.as_string().strip() == "P"
 
 
 class _NodeTest(unittest.TestCase):
@@ -571,19 +600,19 @@ class ConstNodeTest(unittest.TestCase):
         self.assertIs(node.value, value)
         self.assertTrue(node._proxied.parent)
         self.assertEqual(node._proxied.root().name, value.__class__.__module__)
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(StatementMissing):
             with pytest.warns(DeprecationWarning) as records:
-                node.statement()
+                node.statement(future=True)
                 assert len(records) == 1
         with self.assertRaises(StatementMissing):
-            node.statement(future=True)
+            node.statement()
 
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(ParentMissingError):
             with pytest.warns(DeprecationWarning) as records:
-                node.frame()
+                node.frame(future=True)
                 assert len(records) == 1
         with self.assertRaises(ParentMissingError):
-            node.frame(future=True)
+            node.frame()
 
     def test_none(self) -> None:
         self._test(None)
@@ -671,35 +700,35 @@ class TestNamedExprNode:
         )
         function = module.body[0]
         assert function.args.frame() == function
-        assert function.args.frame(future=True) == function
+        assert function.args.frame() == function
 
         function_two = module.body[1]
         assert function_two.args.args[0].frame() == function_two
-        assert function_two.args.args[0].frame(future=True) == function_two
+        assert function_two.args.args[0].frame() == function_two
         assert function_two.args.args[1].frame() == function_two
-        assert function_two.args.args[1].frame(future=True) == function_two
+        assert function_two.args.args[1].frame() == function_two
         assert function_two.args.defaults[0].frame() == module
-        assert function_two.args.defaults[0].frame(future=True) == module
+        assert function_two.args.defaults[0].frame() == module
 
         inherited_class = module.body[3]
         assert inherited_class.keywords[0].frame() == inherited_class
-        assert inherited_class.keywords[0].frame(future=True) == inherited_class
+        assert inherited_class.keywords[0].frame() == inherited_class
         assert inherited_class.keywords[0].value.frame() == module
-        assert inherited_class.keywords[0].value.frame(future=True) == module
+        assert inherited_class.keywords[0].value.frame() == module
 
         lambda_assignment = module.body[4].value
         assert lambda_assignment.args.args[0].frame() == lambda_assignment
-        assert lambda_assignment.args.args[0].frame(future=True) == lambda_assignment
+        assert lambda_assignment.args.args[0].frame() == lambda_assignment
         assert lambda_assignment.args.defaults[0].frame() == module
-        assert lambda_assignment.args.defaults[0].frame(future=True) == module
+        assert lambda_assignment.args.defaults[0].frame() == module
 
         lambda_named_expr = module.body[5].args.defaults[0]
         assert lambda_named_expr.value.args.defaults[0].frame() == module
-        assert lambda_named_expr.value.args.defaults[0].frame(future=True) == module
+        assert lambda_named_expr.value.args.defaults[0].frame() == module
 
         comprehension = module.body[6].value
         assert comprehension.generators[0].ifs[0].frame() == module
-        assert comprehension.generators[0].ifs[0].frame(future=True) == module
+        assert comprehension.generators[0].ifs[0].frame() == module
 
     @staticmethod
     def test_scope() -> None:
@@ -1912,3 +1941,37 @@ class TestPatternMatching:
         inferred = node.inferred()
         assert len(inferred) == 2
         assert [inf.value for inf in inferred] == [10, -1]
+
+
+@pytest.mark.parametrize(
+    "node",
+    [
+        node
+        for node in astroid.nodes.ALL_NODE_CLASSES
+        if node.__name__ not in ["BaseContainer", "NodeNG", "const_factory"]
+    ],
+)
+@pytest.mark.filterwarnings("error")
+def test_str_repr_no_warnings(node):
+    parameters = inspect.signature(node.__init__).parameters
+
+    args = {}
+    for name, param_type in parameters.items():
+        if name == "self":
+            continue
+
+        if "int" in param_type.annotation:
+            args[name] = random.randint(0, 50)
+        elif (
+            "NodeNG" in param_type.annotation
+            or "SuccessfulInferenceResult" in param_type.annotation
+        ):
+            args[name] = nodes.Unknown()
+        elif "str" in param_type.annotation:
+            args[name] = ""
+        else:
+            args[name] = None
+
+    test_node = node(**args)
+    str(test_node)
+    repr(test_node)

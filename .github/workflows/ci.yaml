@@ -24,10 +24,10 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v3.5.3
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         id: python
-        uses: actions/setup-python@v4.6.0
+        uses: actions/setup-python@v4.6.1
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
           check-latest: true
@@ -35,9 +35,8 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=base-venv-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_test.txt',
-          'requirements_test_min.txt', 'requirements_test_brain.txt',
-          'requirements_test_pre_commit.txt') }}" >> $GITHUB_OUTPUT
+            hashFiles('pyproject.toml', 'requirements_dev.txt',
+          'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
         uses: actions/cache@v3.3.1
@@ -52,7 +51,7 @@ jobs:
           python -m venv venv
           . venv/bin/activate
           python -m pip install -U pip setuptools wheel
-          pip install -U -r requirements_test.txt -r requirements_test_brain.txt
+          pip install -U -r requirements_full.txt
       - name: Generate pre-commit restore key
         id: generate-pre-commit-key
         run: >-
@@ -82,15 +81,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.8, 3.9, "3.10", "3.11"]
+        python-version: [3.8, 3.9, "3.10", "3.11", "3.12-dev"]
     outputs:
       python-key: ${{ steps.generate-python-key.outputs.key }}
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v3.5.3
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v4.6.0
+        uses: actions/setup-python@v4.6.1
         with:
           python-version: ${{ matrix.python-version }}
           check-latest: true
@@ -103,9 +102,8 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_test.txt',
-          'requirements_test_min.txt', 'requirements_test_brain.txt',
-          'requirements_test_pre_commit.txt') }}" >> $GITHUB_OUTPUT
+            hashFiles('pyproject.toml', 'requirements_dev.txt',
+          'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
         uses: actions/cache@v3.3.1
@@ -120,7 +118,7 @@ jobs:
           python -m venv venv
           . venv/bin/activate
           python -m pip install -U pip setuptools wheel
-          pip install -U -r requirements_test.txt -r requirements_test_brain.txt
+          pip install -U -r requirements_full.txt
           pip install -e .
       - name: Run pytest
         run: |
@@ -140,17 +138,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.8, 3.9, "3.10", "3.11"]
+        python-version: [3.8, 3.9, "3.10", "3.11", "3.12-dev"]
     steps:
       - name: Set temp directory
         run: echo "TEMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
         # Workaround to set correct temp directory on Windows
         # https://github.com/actions/virtual-environments/issues/712
       - name: Check out code from GitHub
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v3.5.3
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v4.6.0
+        uses: actions/setup-python@v4.6.1
         with:
           python-version: ${{ matrix.python-version }}
           check-latest: true
@@ -158,8 +156,8 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_test_min.txt',
-          'requirements_test_brain.txt') }}" >> $env:GITHUB_OUTPUT
+            hashFiles('pyproject.toml', 'requirements_dev.txt',
+          'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
         uses: actions/cache@v3.3.1
@@ -174,7 +172,7 @@ jobs:
           python -m venv venv
           . venv\\Scripts\\activate
           python -m pip install -U pip setuptools wheel
-          pip install -U -r requirements_test_min.txt -r requirements_test_brain.txt
+          pip install -U -r requirements_full.txt
           pip install -e .
       - name: Run pytest
         run: |
@@ -193,13 +191,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["pypy3.8", "pypy3.9"]
+        # We only test on the lowest and highest supported PyPy versions
+        python-version: ["pypy3.8", "pypy3.10"]
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v3.5.3
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v4.6.0
+        uses: actions/setup-python@v4.6.1
         with:
           python-version: ${{ matrix.python-version }}
           check-latest: true
@@ -207,7 +206,7 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_test_min.txt')
+            hashFiles('pyproject.toml', 'requirements_minimal.txt')
           }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
@@ -223,7 +222,7 @@ jobs:
           python -m venv venv
           . venv/bin/activate
           python -m pip install -U pip setuptools wheel
-          pip install -U -r requirements_test_min.txt
+          pip install -U -r requirements_minimal.txt
           pip install -e .
       - name: Run pytest
         run: |
@@ -242,15 +241,15 @@ jobs:
     needs: ["tests-linux", "tests-windows", "tests-pypy"]
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v3.5.3
       - name: Set up Python 3.11
         id: python
-        uses: actions/setup-python@v4.6.0
+        uses: actions/setup-python@v4.6.1
         with:
           python-version: "3.11"
           check-latest: true
       - name: Install dependencies
-        run: pip install -U -r requirements_test_min.txt
+        run: pip install -U -r requirements_minimal.txt
       - name: Download all coverage artifacts
         uses: actions/download-artifact@v3.0.2
       - name: Combine Linux coverage results

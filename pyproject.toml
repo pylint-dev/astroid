@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -44,6 +45,14 @@ license-files = ["LICENSE", "CONTRIBUTORS.txt"]  # Keep in sync with setup.cfg
 
 [tool.setuptools.packages.find]
 include = ["astroid*"]
+
+[tool.setuptools.package-data]
+"*" = [
+    "../requirements*.txt",
+    "../tox.ini",
+    "../tests/__init__.py",
+    "../tests/resources.py",
+]
 
 [tool.setuptools.dynamic]
 version = {attr = "astroid.__pkginfo__.__version__"}

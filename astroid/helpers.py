@@ -6,9 +6,10 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Generator
 
-from astroid import bases, manager, nodes, raw_building, util
+from astroid import bases, manager, nodes, objects, raw_building, util
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -18,7 +19,21 @@ from astroid.exceptions import (
     _NonDeducibleTypeHierarchy,
 )
 from astroid.nodes import scoped_nodes
-from astroid.typing import InferenceResult, SuccessfulInferenceResult
+from astroid.typing import InferenceResult
+from astroid.util import safe_infer as real_safe_infer
+
+
+def safe_infer(
+    node: nodes.NodeNG | bases.Proxy | util.UninferableBase,
+    context: InferenceContext | None = None,
+) -> InferenceResult | None:
+    # When removing, also remove the real_safe_infer alias
+    warnings.warn(
+        "Import safe_infer from astroid.util; this shim in astroid.helpers will be removed.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return real_safe_infer(node, context=context)
 
 
 def _build_proxy_class(cls_name: str, builtins: nodes.Module) -> nodes.ClassDef:
@@ -28,7 +43,8 @@ def _build_proxy_class(cls_name: str, builtins: nodes.Module) -> nodes.ClassDef:
 
 
 def _function_type(
-    function: nodes.Lambda | bases.UnboundMethod, builtins: nodes.Module
+    function: nodes.Lambda | nodes.FunctionDef | bases.UnboundMethod,
+    builtins: nodes.Module,
 ) -> nodes.ClassDef:
     if isinstance(function, (scoped_nodes.Lambda, scoped_nodes.FunctionDef)):
         if function.root().name == "builtins":
@@ -43,7 +59,7 @@ def _function_type(
 
 
 def _object_type(
-    node: SuccessfulInferenceResult, context: InferenceContext | None = None
+    node: InferenceResult, context: InferenceContext | None = None
 ) -> Generator[InferenceResult | None, None, None]:
     astroid_manager = manager.AstroidManager()
     builtins = astroid_manager.builtins_module
@@ -68,14 +84,14 @@ def _object_type(
             raise InferenceError
         elif isinstance(inferred, util.UninferableBase):
             yield inferred
-        elif isinstance(inferred, (bases.Proxy, nodes.Slice)):
+        elif isinstance(inferred, (bases.Proxy, nodes.Slice, objects.Super)):
             yield inferred._proxied
         else:  # pragma: no cover
             raise AssertionError(f"We don't handle {type(inferred)} currently")
 
 
 def object_type(
-    node: SuccessfulInferenceResult, context: InferenceContext | None = None
+    node: InferenceResult, context: InferenceContext | None = None
 ) -> InferenceResult | None:
     """Obtain the type of the given node.
 
@@ -96,20 +112,19 @@ def object_type(
 
 
 def _object_type_is_subclass(
-    obj_type, class_or_seq, context: InferenceContext | None = None
-):
-    if not isinstance(class_or_seq, (tuple, list)):
-        class_seq = (class_or_seq,)
-    else:
-        class_seq = class_or_seq
-
-    if isinstance(obj_type, util.UninferableBase):
+    obj_type: InferenceResult | None,
+    class_or_seq: list[InferenceResult],
+    context: InferenceContext | None = None,
+) -> util.UninferableBase | bool:
+    if isinstance(obj_type, util.UninferableBase) or not isinstance(
+        obj_type, nodes.ClassDef
+    ):
         return util.Uninferable
 
     # Instances are not types
     class_seq = [
         item if not isinstance(item, bases.Instance) else util.Uninferable
-        for item in class_seq
+        for item in class_or_seq
     ]
     # strict compatibility with issubclass
     # issubclass(type, (object, 1)) evaluates to true
@@ -124,12 +139,12 @@ def _object_type_is_subclass(
     return False
 
 
-def object_isinstance(node, class_or_seq, context: InferenceContext | None = None):
+def object_isinstance(
+    node: InferenceResult,
+    class_or_seq: list[InferenceResult],
+    context: InferenceContext | None = None,
+) -> util.UninferableBase | bool:
     """Check if a node 'isinstance' any node in class_or_seq.
-
-    :param node: A given node
-    :param class_or_seq: Union[nodes.NodeNG, Sequence[nodes.NodeNG]]
-    :rtype: bool
 
     :raises AstroidTypeError: if the given ``classes_or_seq`` are not types
     """
@@ -139,12 +154,12 @@ def object_isinstance(node, class_or_seq, context: InferenceContext | None = Non
     return _object_type_is_subclass(obj_type, class_or_seq, context=context)
 
 
-def object_issubclass(node, class_or_seq, context: InferenceContext | None = None):
+def object_issubclass(
+    node: nodes.NodeNG,
+    class_or_seq: list[InferenceResult],
+    context: InferenceContext | None = None,
+) -> util.UninferableBase | bool:
     """Check if a type is a subclass of any node in class_or_seq.
-
-    :param node: A given node
-    :param class_or_seq: Union[Nodes.NodeNG, Sequence[nodes.NodeNG]]
-    :rtype: bool
 
     :raises AstroidTypeError: if the given ``classes_or_seq`` are not types
     :raises AstroidError: if the type of the given node cannot be inferred
@@ -155,28 +170,6 @@ def object_issubclass(node, class_or_seq, context: InferenceContext | None = Non
     return _object_type_is_subclass(node, class_or_seq, context=context)
 
 
-def safe_infer(
-    node: nodes.NodeNG | bases.Proxy, context: InferenceContext | None = None
-) -> InferenceResult | None:
-    """Return the inferred value for the given node.
-
-    Return None if inference failed or if there is some ambiguity (more than
-    one node has been inferred).
-    """
-    try:
-        inferit = node.infer(context=context)
-        value = next(inferit)
-    except (InferenceError, StopIteration):
-        return None
-    try:
-        next(inferit)
-        return None  # None if there is ambiguity on the inferred node
-    except InferenceError:
-        return None  # there is some kind of ambiguity
-    except StopIteration:
-        return value
-
-
 def has_known_bases(klass, context: InferenceContext | None = None) -> bool:
     """Return whether all base classes of a class could be inferred."""
     try:
@@ -184,7 +177,7 @@ def has_known_bases(klass, context: InferenceContext | None = None) -> bool:
     except AttributeError:
         pass
     for base in klass.bases:
-        result = safe_infer(base, context=context)
+        result = real_safe_infer(base, context=context)
         # TODO: check for A->B->A->B pattern in class structure too?
         if (
             not isinstance(result, scoped_nodes.ClassDef)
@@ -259,15 +252,15 @@ def object_len(node, context: InferenceContext | None = None):
     # pylint: disable=import-outside-toplevel; circular import
     from astroid.objects import FrozenSet
 
-    inferred_node = safe_infer(node, context=context)
+    inferred_node = real_safe_infer(node, context=context)
 
     # prevent self referential length calls from causing a recursion error
     # see https://github.com/pylint-dev/astroid/issues/777
-    node_frame = node.frame(future=True)
+    node_frame = node.frame()
     if (
         isinstance(node_frame, scoped_nodes.FunctionDef)
         and node_frame.name == "__len__"
-        and hasattr(inferred_node, "_proxied")
+        and isinstance(inferred_node, bases.Proxy)
         and inferred_node._proxied == node_frame.parent
     ):
         message = (
@@ -321,3 +314,25 @@ def object_len(node, context: InferenceContext | None = None):
     raise AstroidTypeError(
         f"'{result_of_len}' object cannot be interpreted as an integer"
     )
+
+
+def _higher_function_scope(node: nodes.NodeNG) -> nodes.FunctionDef | None:
+    """Search for the first function which encloses the given
+    scope.
+
+    This can be used for looking up in that function's
+    scope, in case looking up in a lower scope for a particular
+    name fails.
+
+    :param node: A scope node.
+    :returns:
+        ``None``, if no parent function scope was found,
+        otherwise an instance of :class:`astroid.nodes.scoped_nodes.Function`,
+        which encloses the given node.
+    """
+    current = node
+    while current.parent and not isinstance(current.parent, nodes.FunctionDef):
+        current = current.parent
+    if current and current.parent:
+        return current.parent
+    return None

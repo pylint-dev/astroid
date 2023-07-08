@@ -8,8 +8,8 @@ from astroid import nodes
 from astroid.bases import Instance
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import InferenceError, NoDefault
-from astroid.helpers import safe_infer
-from astroid.util import Uninferable, UninferableBase
+from astroid.typing import InferenceResult
+from astroid.util import Uninferable, UninferableBase, safe_infer
 
 
 class CallSite:
@@ -85,8 +85,12 @@ class CallSite:
         """
         return len(self.keyword_arguments) != len(self._unpacked_kwargs)
 
-    def _unpack_keywords(self, keywords, context: InferenceContext | None = None):
-        values = {}
+    def _unpack_keywords(
+        self,
+        keywords: list[tuple[str | None, nodes.NodeNG]],
+        context: InferenceContext | None = None,
+    ):
+        values: dict[str | None, InferenceResult] = {}
         context = context or InferenceContext()
         context.extra_context = self.argument_context_map
         for name, value in keywords:
@@ -134,14 +138,19 @@ class CallSite:
                 values.append(arg)
         return values
 
-    def infer_argument(self, funcnode, name, context):  # noqa: C901
-        """Infer a function argument value according to the call context.
+    def infer_argument(
+        self, funcnode: InferenceResult, name: str, context: InferenceContext
+    ):  # noqa: C901
+        """Infer a function argument value according to the call context."""
+        if not isinstance(funcnode, (nodes.FunctionDef, nodes.Lambda)):
+            raise InferenceError(
+                f"Can not infer function argument value for non-function node {funcnode!r}.",
+                call_site=self,
+                func=funcnode,
+                arg=name,
+                context=context,
+            )
 
-        Arguments:
-            funcnode: The function being called.
-            name: The name of the argument whose value is being inferred.
-            context: Inference context object
-        """
         if name in self.duplicated_keywords:
             raise InferenceError(
                 "The arguments passed to {func!r} have duplicate keywords.",
@@ -191,7 +200,7 @@ class CallSite:
                     positional.append(arg)
 
         if argindex is not None:
-            boundnode = getattr(context, "boundnode", None)
+            boundnode = context.boundnode
             # 2. first argument of instance/class method
             if argindex == 0 and funcnode.type in {"method", "classmethod"}:
                 # context.boundnode is None when an instance method is called with
@@ -201,7 +210,7 @@ class CallSite:
                     return positional[0].infer(context=context)
                 if boundnode is None:
                     # XXX can do better ?
-                    boundnode = funcnode.parent.frame(future=True)
+                    boundnode = funcnode.parent.frame()
 
                 if isinstance(boundnode, nodes.ClassDef):
                     # Verify that we're accessing a method
@@ -209,7 +218,7 @@ class CallSite:
                     # `cls.metaclass_method`. In this case, the
                     # first argument is always the class.
                     method_scope = funcnode.parent.scope()
-                    if method_scope is boundnode.metaclass():
+                    if method_scope is boundnode.metaclass(context=context):
                         return iter((boundnode,))
 
                 if funcnode.type == "method":
@@ -248,6 +257,8 @@ class CallSite:
                 lineno=funcnode.args.lineno,
                 col_offset=funcnode.args.col_offset,
                 parent=funcnode.args,
+                end_lineno=funcnode.args.end_lineno,
+                end_col_offset=funcnode.args.end_col_offset,
             )
             kwarg.postinit(
                 [(nodes.const_factory(key), value) for key, value in kwargs.items()]

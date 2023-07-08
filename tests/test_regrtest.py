@@ -9,7 +9,7 @@ from unittest import mock
 
 import pytest
 
-from astroid import MANAGER, Instance, bases, nodes, parse, test_utils
+from astroid import MANAGER, Instance, bases, manager, nodes, parse, test_utils
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
@@ -36,6 +36,24 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
         sys.path.pop(0)
         sys.path_importer_cache.pop(resources.find("data"), None)
 
+    def test_manager_instance_attributes_reference_global_MANAGER(self) -> None:
+        for expected in (True, False):
+            with mock.patch.dict(
+                manager.AstroidManager.brain,
+                values={"always_load_extensions": expected},
+            ):
+                assert (
+                    MANAGER.always_load_extensions
+                    == manager.AstroidManager.brain["always_load_extensions"]
+                )
+            with mock.patch.dict(
+                manager.AstroidManager.brain,
+                values={"optimize_ast": expected},
+            ):
+                assert (
+                    MANAGER.optimize_ast == manager.AstroidManager.brain["optimize_ast"]
+                )
+
     def test_module_path(self) -> None:
         man = test_utils.brainless_manager()
         mod = man.ast_from_module_name("package.import_package_subpackage_module")
@@ -49,9 +67,9 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
         self.assertEqual(module.name, "package.subpackage.module")
 
     def test_package_sidepackage(self) -> None:
-        manager = test_utils.brainless_manager()
+        brainless_manager = test_utils.brainless_manager()
         assert "package.sidepackage" not in MANAGER.astroid_cache
-        package = manager.ast_from_module_name("absimp")
+        package = brainless_manager.ast_from_module_name("absimp")
         self.assertIsInstance(package, nodes.Module)
         self.assertTrue(package.package)
         subpackage = next(package.getattr("sidepackage")[0].infer())
@@ -335,6 +353,27 @@ def test(val):
         inferred = next(node.infer())
         assert isinstance(inferred, Instance)
         assert inferred.qname() == ".A"
+
+    def test_inference_context_consideration(self) -> None:
+        """https://github.com/PyCQA/astroid/issues/1828"""
+        code = """
+        class Base:
+            def return_type(self):
+                return type(self)()
+        class A(Base):
+            def method(self):
+                return self.return_type()
+        class B(Base):
+            def method(self):
+                return self.return_type()
+        A().method() #@
+        B().method() #@
+        """
+        node1, node2 = extract_node(code)
+        inferred1 = next(node1.infer())
+        assert inferred1.qname() == ".A"
+        inferred2 = next(node2.infer())
+        assert inferred2.qname() == ".B"
 
 
 class Whatever:

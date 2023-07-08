@@ -178,6 +178,7 @@ class AsStringVisitor:
         args += [n.accept(self) for n in node.keywords]
         args_str = f"({', '.join(args)})" if args else ""
         docs = self._docs_dedent(node.doc_node)
+        # TODO: handle type_params
         return "\n\n{}class {}{}:{}\n{}\n".format(
             decorate, node.name, args_str, docs, self._stmt_list(node.body)
         )
@@ -330,6 +331,7 @@ class AsStringVisitor:
         if node.returns:
             return_annotation = " -> " + node.returns.as_string()
             trailer = return_annotation + ":"
+        # TODO: handle type_params
         def_format = "\n%s%s %s(%s)%s%s\n%s"
         return def_format % (
             decorate,
@@ -431,6 +433,10 @@ class AsStringVisitor:
         """return an astroid.Nonlocal node as string"""
         return f"nonlocal {', '.join(node.names)}"
 
+    def visit_paramspec(self, node: nodes.ParamSpec) -> str:
+        """return an astroid.ParamSpec node as string"""
+        return node.name.accept(self)
+
     def visit_pass(self, node) -> str:
         """return an astroid.Pass node as string"""
         return "pass"
@@ -512,6 +518,18 @@ class AsStringVisitor:
         if len(node.elts) == 1:
             return f"({node.elts[0].accept(self)}, )"
         return f"({', '.join(child.accept(self) for child in node.elts)})"
+
+    def visit_typealias(self, node: nodes.TypeAlias) -> str:
+        """return an astroid.TypeAlias node as string"""
+        return node.name.accept(self) if node.name else "_"
+
+    def visit_typevar(self, node: nodes.TypeVar) -> str:
+        """return an astroid.TypeVar node as string"""
+        return node.name.accept(self) if node.name else "_"
+
+    def visit_typevartuple(self, node: nodes.TypeVarTuple) -> str:
+        """return an astroid.TypeVarTuple node as string"""
+        return "*" + node.name.accept(self) if node.name else ""
 
     def visit_unaryop(self, node) -> str:
         """return an astroid.UnaryOp node as string"""

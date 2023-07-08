@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import pprint
+import sys
 import warnings
 from collections.abc import Generator, Iterator
 from functools import cached_property
@@ -36,6 +37,12 @@ from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.utils import Position
 from astroid.typing import InferenceErrorInfo, InferenceResult, InferFn
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -80,7 +87,7 @@ class NodeNG:
     _other_other_fields: ClassVar[tuple[str, ...]] = ()
     """Attributes that contain AST-dependent fields."""
     # instance specific inference function infer(node, context)
-    _explicit_inference: InferFn | None = None
+    _explicit_inference: InferFn[Self] | None = None
 
     def __init__(
         self,
@@ -136,11 +143,20 @@ class NodeNG:
         if self._explicit_inference is not None:
             # explicit_inference is not bound, give it self explicitly
             try:
-                # pylint: disable=not-callable
-                results = list(self._explicit_inference(self, context, **kwargs))
-                if context is not None:
-                    context.nodes_inferred += len(results)
-                yield from results
+                if context is None:
+                    yield from self._explicit_inference(
+                        self,  # type: ignore[arg-type]
+                        context,
+                        **kwargs,
+                    )
+                    return
+                for result in self._explicit_inference(
+                    self,  # type: ignore[arg-type]
+                    context,
+                    **kwargs,
+                ):
+                    context.nodes_inferred += 1
+                    yield result
                 return
             except UseInferenceDefault:
                 pass
@@ -174,20 +190,17 @@ class NodeNG:
         context.inferred[key] = tuple(results)
         return
 
-    def _repr_name(self) -> str:
+    def repr_name(self) -> str:
         """Get a name for nice representation.
 
         This is either :attr:`name`, :attr:`attrname`, or the empty string.
-
-        :returns: The nice name.
-        :rtype: str
         """
         if all(name not in self._astroid_fields for name in ("name", "attrname")):
             return getattr(self, "name", "") or getattr(self, "attrname", "")
         return ""
 
     def __str__(self) -> str:
-        rname = self._repr_name()
+        rname = self.repr_name()
         cname = type(self).__name__
         if rname:
             string = "%(cname)s.%(rname)s(%(fields)s)"
@@ -197,7 +210,7 @@ class NodeNG:
             alignment = len(cname) + 1
         result = []
         for field in self._other_fields + self._astroid_fields:
-            value = getattr(self, field)
+            value = getattr(self, field, "Unknown")
             width = 80 - len(field) - alignment
             lines = pprint.pformat(value, indent=2, width=width).splitlines(True)
 
@@ -213,7 +226,12 @@ class NodeNG:
         }
 
     def __repr__(self) -> str:
-        rname = self._repr_name()
+        rname = self.repr_name()
+        # The dependencies used to calculate fromlineno (if not cached) may not exist at the time
+        try:
+            lineno = self.fromlineno
+        except AttributeError:
+            lineno = 0
         if rname:
             string = "<%(cname)s.%(rname)s l.%(lineno)s at 0x%(id)x>"
         else:
@@ -221,7 +239,7 @@ class NodeNG:
         return string % {
             "cname": type(self).__name__,
             "rname": rname,
-            "lineno": self.fromlineno,
+            "lineno": lineno,
             "id": id(self),
         }
 
@@ -270,40 +288,22 @@ class NodeNG:
         """
         return any(self is parent for parent in node.node_ancestors())
 
-    @overload
-    def statement(self, *, future: None = ...) -> nodes.Statement | nodes.Module:
-        ...
-
-    @overload
-    def statement(self, *, future: Literal[True]) -> nodes.Statement:
-        ...
-
-    def statement(
-        self, *, future: Literal[None, True] = None
-    ) -> nodes.Statement | nodes.Module:
+    def statement(self, *, future: Literal[None, True] = None) -> nodes.Statement:
         """The first parent node, including self, marked as statement node.
 
-        TODO: Deprecate the future parameter and only raise StatementMissing and return
-        nodes.Statement
-
-        :raises AttributeError: If self has no parent attribute
-        :raises StatementMissing: If self has no parent attribute and future is True
+        :raises StatementMissing: If self has no parent attribute.
         """
-        if self.is_statement:
-            return cast("nodes.Statement", self)
-        if not self.parent:
-            if future:
-                raise StatementMissing(target=self)
+        if future is not None:
             warnings.warn(
-                "In astroid 3.0.0 NodeNG.statement() will return either a nodes.Statement "
-                "or raise a StatementMissing exception. AttributeError will no longer be raised. "
-                "This behaviour can already be triggered "
-                "by passing 'future=True' to a statement() call.",
+                "The future arg will be removed in astroid 4.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            raise AttributeError(f"{self} object has no attribute 'parent'")
-        return self.parent.statement(future=future)
+        if self.is_statement:
+            return cast("nodes.Statement", self)
+        if not self.parent:
+            raise StatementMissing(target=self)
+        return self.parent.statement()
 
     def frame(
         self, *, future: Literal[None, True] = None
@@ -314,20 +314,16 @@ class NodeNG:
         :class:`ClassDef` or :class:`Lambda`.
 
         :returns: The first parent frame node.
+        :raises ParentMissingError: If self has no parent attribute.
         """
-        if self.parent is None:
-            if future:
-                raise ParentMissingError(target=self)
+        if future is not None:
             warnings.warn(
-                "In astroid 3.0.0 NodeNG.frame() will return either a Frame node, "
-                "or raise ParentMissingError. AttributeError will no longer be raised. "
-                "This behaviour can already be triggered "
-                "by passing 'future=True' to a frame() call.",
+                "The future arg will be removed in astroid 4.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            raise AttributeError(f"{self} object has no attribute 'parent'")
-
+        if self.parent is None:
+            raise ParentMissingError(target=self)
         return self.parent.frame(future=future)
 
     def scope(self) -> nodes.LocalsDictNodeNG:
@@ -568,6 +564,9 @@ class NodeNG:
             yield from child_node._get_name_nodes()
 
     def _get_return_nodes_skip_functions(self):
+        yield from ()
+
+    def _get_yield_nodes_skip_functions(self):
         yield from ()
 
     def _get_yield_nodes_skip_lambdas(self):

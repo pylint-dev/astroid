@@ -9,9 +9,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, TypeVar, overload
 
 from astroid.filter_statements import _filter_stmts
-from astroid.nodes import node_classes, scoped_nodes
+from astroid.nodes import _base_nodes, node_classes, scoped_nodes
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
-from astroid.typing import SuccessfulInferenceResult
+from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -19,15 +19,14 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 
 
-class LocalsDictNodeNG(node_classes.LookupMixIn):
+class LocalsDictNodeNG(_base_nodes.LookupMixIn):
     """this class provides locals handling common to Module, FunctionDef
     and ClassDef nodes, including a dict like interface for direct access
     to locals information
     """
 
     # attributes below are set by the builder module or by raw factories
-
-    locals: dict[str, list[SuccessfulInferenceResult]] = {}
+    locals: dict[str, list[InferenceResult]]
     """A map of the name of a local variable to the node defining the local."""
 
     def qname(self) -> str:
@@ -41,7 +40,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         # pylint: disable=no-member; github.com/pylint-dev/astroid/issues/278
         if self.parent is None or isinstance(self.parent, node_classes.Unknown):
             return self.name
-        return f"{self.parent.frame(future=True).qname()}.{self.name}"
+        return f"{self.parent.frame().qname()}.{self.name}"
 
     def scope(self: _T) -> _T:
         """The first parent node defining a new scope.
@@ -52,7 +51,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         return self
 
     def scope_lookup(
-        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+        self, node: _base_nodes.LookupMixIn, name: str, offset: int = 0
     ) -> tuple[LocalsDictNodeNG, list[nodes.NodeNG]]:
         """Lookup where the given variable is assigned.
 
@@ -70,7 +69,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn):
         raise NotImplementedError
 
     def _scope_lookup(
-        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+        self, node: _base_nodes.LookupMixIn, name: str, offset: int = 0
     ) -> tuple[LocalsDictNodeNG, list[nodes.NodeNG]]:
         """XXX method for interfacing the scope lookup"""
         try:

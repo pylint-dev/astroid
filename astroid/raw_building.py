@@ -39,7 +39,6 @@ _FunctionTypes = Union[
 
 # the keys of CONST_CLS eg python builtin types
 _CONSTANTS = tuple(node_classes.CONST_CLS)
-_BUILTINS = vars(builtins)
 TYPE_NONE = type(None)
 TYPE_NOTIMPLEMENTED = type(NotImplemented)
 TYPE_ELLIPSIS = type(...)
@@ -427,6 +426,8 @@ class InspectBuilder:
     FunctionDef and ClassDef nodes and some others as guessed.
     """
 
+    bootstrapped: bool = False
+
     def __init__(self, manager_instance: AstroidManager | None = None) -> None:
         self._manager = manager_instance or AstroidManager()
         self._done: dict[types.ModuleType | type, nodes.Module | nodes.ClassDef] = {}
@@ -725,5 +726,11 @@ def _astroid_bootstrapping() -> None:
             builder.object_build(klass, _type)
             astroid_builtin[_type.__name__] = klass
 
+    InspectBuilder.bootstrapped = True
 
-_astroid_bootstrapping()
+    # pylint: disable-next=import-outside-toplevel
+    from astroid.brain.brain_builtin_inference import on_bootstrap
+
+    # Instantiates an AstroidBuilder(), which is where
+    # InspectBuilder.bootstrapped is checked, so place after bootstrapped=True.
+    on_bootstrap()

@@ -10,7 +10,7 @@ from collections.abc import Iterator
 from functools import partial
 from itertools import chain
 
-from astroid import BoundMethod, arguments, extract_node, helpers, nodes, objects
+from astroid import BoundMethod, arguments, extract_node, nodes, objects
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
@@ -19,7 +19,7 @@ from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import AssignName, Attribute, Call, Name
 from astroid.nodes.scoped_nodes import FunctionDef
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
-from astroid.util import UninferableBase
+from astroid.util import UninferableBase, safe_infer
 
 LRU_CACHE = "functools.lru_cache"
 
@@ -50,7 +50,7 @@ class LruWrappedModel(objectmodel.FunctionModel):
                 caller: SuccessfulInferenceResult | None,
                 context: InferenceContext | None = None,
             ) -> Iterator[InferenceResult]:
-                res = helpers.safe_infer(cache_info)
+                res = safe_infer(cache_info)
                 assert res is not None
                 yield res
 

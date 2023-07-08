@@ -1,0 +1,8 @@
+# Tools used when releasing
+contributors-txt>=0.7.4
+tbump~=6.10
+
+# Tools used to run tests
+coverage~=7.2
+pytest
+pytest-cov~=4.1

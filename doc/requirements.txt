@@ -1,2 +1,2 @@
 -e .
-sphinx~=6.2
+sphinx~=7.0

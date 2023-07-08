@@ -13,10 +13,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v3.5.3
       - name: Set up Python 3.9
         id: python
-        uses: actions/setup-python@v4.6.0
+        uses: actions/setup-python@v4.6.1
         with:
           # virtualenv 15.1.0 cannot be installed on Python 3.10+
           python-version: 3.9

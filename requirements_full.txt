@@ -1,0 +1,13 @@
+-r requirements_minimal.txt
+-r requirements_dev.txt
+
+# Packages used to run additional tests
+attrs
+nose
+numpy>=1.17.0; python_version<"3.11"
+python-dateutil
+PyQt6
+regex
+six
+urllib3>1,<2
+typing_extensions>=4.4.0

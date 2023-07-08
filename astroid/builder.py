@@ -69,6 +69,8 @@ class AstroidBuilder(raw_building.InspectBuilder):
     ) -> None:
         super().__init__(manager)
         self._apply_transforms = apply_transforms
+        if not raw_building.InspectBuilder.bootstrapped:
+            raw_building._astroid_bootstrapping()
 
     def module_build(
         self, module: types.ModuleType, modname: str | None = None
@@ -231,7 +233,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         from astroid import objects  # pylint: disable=import-outside-toplevel
 
         try:
-            frame = node.frame(future=True)
+            frame = node.frame()
             for inferred in node.expr.infer():
                 if isinstance(inferred, util.UninferableBase):
                     continue
@@ -266,7 +268,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 if (
                     frame.name == "__init__"
                     and values
-                    and values[0].frame(future=True).name != "__init__"
+                    and values[0].frame().name != "__init__"
                 ):
                     values.insert(0, node)
                 else:

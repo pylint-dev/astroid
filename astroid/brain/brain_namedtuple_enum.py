@@ -223,7 +223,9 @@ def infer_named_tuple(
     except StopIteration as e:
         raise InferenceError(node=node) from e
     try:
-        rename = next(call_site.infer_argument(func, "rename", context)).bool_value()
+        rename = next(
+            call_site.infer_argument(func, "rename", context or InferenceContext())
+        ).bool_value()
     except (InferenceError, StopIteration):
         rename = False
 
@@ -404,7 +406,7 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
             if any(not isinstance(value, nodes.AssignName) for value in values):
                 continue
 
-            stmt = values[0].statement(future=True)
+            stmt = values[0].statement()
             if isinstance(stmt, nodes.Assign):
                 if isinstance(stmt.targets[0], nodes.Tuple):
                     targets = stmt.targets[0].itered()
@@ -464,9 +466,23 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
             node.locals[local] = new_targets
 
         # The undocumented `_value2member_map_` member:
-        node.locals["_value2member_map_"] = [nodes.Dict(parent=node)]
+        node.locals["_value2member_map_"] = [
+            nodes.Dict(
+                parent=node,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+            )
+        ]
 
-        members = nodes.Dict(parent=node)
+        members = nodes.Dict(
+            parent=node,
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+        )
         members.postinit(
             [
                 (

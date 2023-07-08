@@ -12,7 +12,7 @@ the maintenance branch. If so, release a last patch release first. See
   example: `v2.3.5`)
 - Check the result of `git diff vX.Y-1.Z' ChangeLog`. (For example:
   `git diff v2.3.4 ChangeLog`)
-- Install the release dependencies: `pip3 install -r requirements_test.txt`
+- Install the release dependencies: `pip3 install -r requirements_minimal.txt`
 - Bump the version and release by using `tbump X.Y.0 --no-push --no-tag`. (For example:
   `tbump 2.4.0 --no-push --no-tag`)
 - Check the commit created with `git show` amend the commit if required.
@@ -67,7 +67,7 @@ cherry-picked on the maintenance branch.
 
 - Check the result of `git diff vX.Y-1.Z-1 ChangeLog`. (For example:
   `git diff v2.3.4 ChangeLog`)
-- Install the release dependencies: `pip3 install -r requirements_test.txt`
+- Install the release dependencies: `pip3 install -r requirements_minimal.txt`
 - Bump the version and release by using `tbump X.Y-1.Z --no-push`. (For example:
   `tbump 2.3.5 --no-push`)
 - Check the result visually with `git show`.

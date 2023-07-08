@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import sys
 import textwrap
 import unittest
 from abc import ABCMeta
@@ -21,7 +22,7 @@ from astroid import (
     Slice,
     Uninferable,
     arguments,
-    helpers,
+    manager,
     nodes,
     objects,
     test_utils,
@@ -31,7 +32,7 @@ from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Instance, UnboundMethod, UnionType
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
-from astroid.const import PY39_PLUS, PY310_PLUS
+from astroid.const import IS_PYPY, PY39_PLUS, PY310_PLUS, PY312_PLUS
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -39,7 +40,6 @@ from astroid.exceptions import (
     InferenceError,
     NotFoundError,
 )
-from astroid.inference import infer_end as inference_infer_end
 from astroid.objects import ExceptionInstance
 
 from . import resources
@@ -69,7 +69,7 @@ class InferenceUtilsTest(unittest.TestCase):
             raise InferenceError
 
         infer_default = decoratorsmod.path_wrapper(infer_default)
-        infer_end = decoratorsmod.path_wrapper(inference_infer_end)
+        infer_end = decoratorsmod.path_wrapper(Slice._infer)
         with self.assertRaises(InferenceError):
             next(infer_default(1))
         self.assertEqual(next(infer_end(1)), 1)
@@ -314,7 +314,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(meth1, UnboundMethod)
         self.assertEqual(meth1.name, "meth1")
         self.assertEqual(meth1.parent.frame().name, "C")
-        self.assertEqual(meth1.parent.frame(future=True).name, "C")
+        self.assertEqual(meth1.parent.frame().name, "C")
         self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_bound_method_inference(self) -> None:
@@ -323,7 +323,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(meth1, BoundMethod)
         self.assertEqual(meth1.name, "meth1")
         self.assertEqual(meth1.parent.frame().name, "C")
-        self.assertEqual(meth1.parent.frame(future=True).name, "C")
+        self.assertEqual(meth1.parent.frame().name, "C")
         self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_args_default_inference1(self) -> None:
@@ -987,9 +987,24 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred[0], nodes.Module)
         self.assertEqual(inferred[0].name, "os.path")
         inferred = list(ast.igetattr("e"))
-        self.assertEqual(len(inferred), 1)
+        if PY312_PLUS and sys.platform.startswith("win"):
+            # There are two os.path.exists exported, likely due to
+            # https://github.com/python/cpython/pull/101324
+            self.assertEqual(len(inferred), 2)
+        else:
+            self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
         self.assertEqual(inferred[0].name, "exists")
+
+    def test_do_import_module_performance(self) -> None:
+        import_node = extract_node("import importlib")
+        import_node.modname = ""
+        import_node.do_import_module()
+        # calling file_from_module_name() indicates we didn't hit the cache
+        with unittest.mock.patch.object(
+            manager.AstroidManager, "file_from_module_name", side_effect=AssertionError
+        ):
+            import_node.do_import_module()
 
     def _test_const_inferred(self, node: nodes.AssignName, value: float | str) -> None:
         inferred = list(node.infer())
@@ -1454,6 +1469,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         results = node.inferred()
         assert len(results) == 2
         assert all(isinstance(result, nodes.Dict) for result in results)
+
+    def test_name_repeat_inference(self) -> None:
+        node = extract_node("print")
+        context = InferenceContext()
+        _ = next(node.infer(context=context))
+        with pytest.raises(InferenceError):
+            next(node.infer(context=context))
 
     def test_python25_no_relative_import(self) -> None:
         ast = resources.build_file("data/package/absimport.py")
@@ -4013,7 +4035,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         flow['app']['config']['doffing'] = AttributeDict() #@
         """
         )
-        self.assertIsNone(helpers.safe_infer(ast_node.targets[0]))
+        self.assertIsInstance(util.safe_infer(ast_node.targets[0]), Instance)
 
     def test_classmethod_inferred_by_context(self) -> None:
         ast_node = extract_node(
@@ -4224,7 +4246,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         Clazz() #@
         """
         ).inferred()[0]
-        assert isinstance(cls, nodes.ClassDef) and cls.name == "Clazz"
+        assert isinstance(cls, Instance) and cls.name == "Clazz"
 
     def test_infer_subclass_attr_outer_class(self) -> None:
         node = extract_node(
@@ -4896,6 +4918,21 @@ class TestBool(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "Foo")
+
+    def test_class_subscript_inference_context(self) -> None:
+        """Context path has a reference to any parents inferred by getitem()."""
+        code = """
+        class Parent: pass
+
+        class A(Parent):
+            def __class_getitem__(self, value):
+                return cls
+        """
+        klass = extract_node(code)
+        context = InferenceContext()
+        _ = klass.getitem(0, context=context)
+
+        assert list(context.path)[0][0].name == "Parent"
 
 
 class TestType(unittest.TestCase):
@@ -6109,6 +6146,20 @@ def test_prevent_recursion_error_in_igetattr_and_context_manager_inference() -> 
     next(node.infer())
 
 
+def test_igetattr_idempotent() -> None:
+    code = """
+    class InferMeTwice:
+        item = 10
+
+    InferMeTwice()
+    """
+    call = extract_node(code)
+    instance = call.inferred()[0]
+    context_to_be_used_twice = InferenceContext()
+    assert util.Uninferable not in instance.igetattr("item", context_to_be_used_twice)
+    assert util.Uninferable not in instance.igetattr("item", context_to_be_used_twice)
+
+
 def test_infer_context_manager_with_unknown_args() -> None:
     code = """
     class client_log(object):
@@ -6273,6 +6324,20 @@ def test_infer_exception_instance_attributes() -> None:
     index = inferred.getattr("index")
     assert len(index) == 1
     assert isinstance(index[0], nodes.AssignAttr)
+
+
+def test_infer_assign_attr() -> None:
+    code = """
+    class Counter:
+        def __init__(self):
+            self.count = 0
+
+        def increment(self):
+            self.count += 1  #@
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred.value == 1
 
 
 @pytest.mark.parametrize(
@@ -6453,7 +6518,7 @@ def test_recursion_error_inferring_builtin_containers() -> None:
     inst.a = b
     """
     )
-    helpers.safe_infer(node.targets[0])
+    util.safe_infer(node.targets[0])
 
 
 def test_inferaugassign_picking_parent_instead_of_stmt() -> None:
@@ -6605,7 +6670,7 @@ def test_dataclasses_subscript_inference_recursion_error():
     """
     node = extract_node(code)
     # Reproduces only with safe_infer()
-    assert helpers.safe_infer(node) is None
+    assert util.safe_infer(node) is None
 
 
 @pytest.mark.skipif(
@@ -6628,7 +6693,7 @@ def test_dataclasses_subscript_inference_recursion_error_39():
     replace(a, **test_dict['proxy']) # This fails
     """
     node = extract_node(code)
-    infer_val = helpers.safe_infer(node)
+    infer_val = util.safe_infer(node)
     assert isinstance(infer_val, Instance)
     assert infer_val.pytype() == ".ProxyConfig"
 
@@ -6976,6 +7041,9 @@ def test_imported_module_var_inferable3() -> None:
     assert i_w_val.as_string() == "['w', 'v']"
 
 
+@pytest.mark.skipif(
+    IS_PYPY, reason="Test run with coverage on PyPy sometimes raises a RecursionError"
+)
 def test_recursion_on_inference_tip() -> None:
     """Regression test for recursion in inference tip.
 

@@ -67,6 +67,7 @@ Nodes
    astroid.nodes.Module
    astroid.nodes.Name
    astroid.nodes.Nonlocal
+   astroid.nodes.ParamSpec
    astroid.nodes.Pass
    astroid.nodes.Raise
    astroid.nodes.Return
@@ -79,6 +80,9 @@ Nodes
    astroid.nodes.TryFinally
    astroid.nodes.TryStar
    astroid.nodes.Tuple
+   astroid.nodes.TypeAlias
+   astroid.nodes.TypeVar
+   astroid.nodes.TypeVarTuple
    astroid.nodes.UnaryOp
    astroid.nodes.Unknown
    astroid.nodes.While
@@ -202,6 +206,8 @@ Nodes
 
 .. autoclass:: astroid.nodes.Nonlocal
 
+.. autoclass:: astroid.nodes.ParamSpec
+
 .. autoclass:: astroid.nodes.Pass
 
 .. autoclass:: astroid.nodes.Raise
@@ -225,6 +231,12 @@ Nodes
 .. autoclass:: astroid.nodes.TryStar
 
 .. autoclass:: astroid.nodes.Tuple
+
+.. autoclass:: astroid.nodes.TypeAlias
+
+.. autoclass:: astroid.nodes.TypeVar
+
+.. autoclass:: astroid.nodes.TypeVarTuple
 
 .. autoclass:: astroid.nodes.UnaryOp
 

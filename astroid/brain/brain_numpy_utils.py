@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from astroid.builder import extract_node
 from astroid.context import InferenceContext
-from astroid.nodes.node_classes import Attribute, Import, Name, NodeNG
+from astroid.nodes.node_classes import Attribute, Import, Name
 
 # Class subscript is available in numpy starting with version 1.20.0
 NUMPY_VERSION_TYPE_HINTS_SUPPORT = ("1", "20", "0")
@@ -61,26 +61,21 @@ def _is_a_numpy_module(node: Name) -> bool:
     )
 
 
-def looks_like_numpy_member(member_name: str, node: NodeNG) -> bool:
+def name_looks_like_numpy_member(member_name: str, node: Name) -> bool:
     """
-    Returns True if the node is a member of numpy whose
+    Returns True if the Name is a member of numpy whose
     name is member_name.
-
-    :param member_name: name of the member
-    :param node: node to test
-    :return: True if the node is a member of numpy
     """
-    if (
-        isinstance(node, Attribute)
-        and node.attrname == member_name
+    return node.name == member_name and node.root().name.startswith("numpy")
+
+
+def attribute_looks_like_numpy_member(member_name: str, node: Attribute) -> bool:
+    """
+    Returns True if the Attribute is a member of numpy whose
+    name is member_name.
+    """
+    return (
+        node.attrname == member_name
         and isinstance(node.expr, Name)
         and _is_a_numpy_module(node.expr)
-    ):
-        return True
-    if (
-        isinstance(node, Name)
-        and node.name == member_name
-        and node.root().name.startswith("numpy")
-    ):
-        return True
-    return False
+    )

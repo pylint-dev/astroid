@@ -6,6 +6,10 @@ What's New in astroid 3.0.0?
 =============================
 Release date: TBA
 
+* Add support for Python 3.12, including PEP 695 type parameter syntax.
+
+  Closes #2201
+
 * Remove support for Python 3.7.
 
   Refs #2137
@@ -15,7 +19,42 @@ Release date: TBA
   Closes #1780
   Refs #2140
 
+* Remove the ``inference`` module. Node inference methods are now in the module
+  defining the node, rather than being associated to the node afterward.
+
+  Closes #679
+
+* Move ``LookupMixIn`` to ``astroid.nodes._base_nodes`` and make it private.
+
+* Remove the shims for ``OperationError``, ``BinaryOperationError``, and ``UnaryOperationError``
+  in ``exceptions``. They were moved to ``util`` in astroid 1.5.0.
+
+* Move ``safe_infer()`` from ``helpers`` to ``util``. This avoids some circular imports.
+
 * Reduce file system access in ``ast_from_file()``.
+
+* Reduce time to ``import astroid`` by delaying ``astroid_bootstrapping()`` until
+  the first instantiation of ``AstroidBuilder``.
+
+  Closes #2161
+
+* Make ``igetattr()`` idempotent. This addresses some reports of varying results
+  when running pylint with ``--jobs``.
+
+  Closes pylint-dev/pylint#4356
+  Refs #7
+
+* Fix incorrect cache keys for inference results, thereby correctly inferring types
+  for calls instantiating types dynamically.
+
+  Closes #1828
+  Closes pylint-dev/pylint#7464
+  Closes pylint-dev/pylint#8074
+
+* Fix interrupted ``InferenceContext`` call chains, thereby addressing performance
+  problems when linting ``sqlalchemy``.
+
+  Closes pylint-dev/pylint#8150
 
 * ``nodes.FunctionDef`` no longer inherits from ``nodes.Lambda``.
   This is a breaking change but considered a bug fix as the nodes did not share the same
@@ -24,7 +63,7 @@ Release date: TBA
   We have tried to minimize the amount of breaking changes caused by this change
   but some are unavoidable.
 
-* ``infer_call_result`` now shares the same interface across all implemenations. Namely:
+* ``infer_call_result`` now shares the same interface across all implementations. Namely:
   ```python
   def infer_call_result(
                 self,
@@ -38,7 +77,7 @@ Release date: TBA
   The breaking change allows us to better type and re-use the method within ``astroid``.
 
 * Improved signature of the ``__init__`` and ``__postinit__`` methods of most nodes.
-  This includes makes ``lineno``, ``col_offset``, ``end_lineno``, ``end_col_offset`` and ``parent``
+  This includes making ``lineno``, ``col_offset``, ``end_lineno``, ``end_col_offset`` and ``parent``
   required arguments for ``nodes.NodeNG`` and its subclasses.
   For most other nodes, arguments of their ``__postinit__`` methods have been made required to better
   represent how they would normally be constructed by the standard library ``ast`` module.
@@ -51,6 +90,7 @@ Release date: TBA
   - ``nodes.Attribute``
   - ``nodes.AugAssign``
   - ``nodes.Await``
+  - ``nodes.BaseContainer``
   - ``nodes.BinOp``
   - ``nodes.Call``
   - ``nodes.ClassDef``
@@ -60,6 +100,7 @@ Release date: TBA
   - ``nodes.Delete``
   - ``nodes.DelAttr``
   - ``nodes.DelName``
+  - ``nodes.Dict``
   - ``nodes.DictComp``
   - ``nodes.ExceptHandler``
   - ``nodes.Expr``
@@ -95,7 +136,7 @@ Release date: TBA
 * Remove dependency on ``wrapt``.
 
 * Remove dependency on ``lazy_object_proxy``. This includes the removal
-  of the assosicated ``lazy_import``, ``lazy_descriptor`` and ``proxy_alias`` utility functions.
+  of the associated ``lazy_import``, ``lazy_descriptor`` and ``proxy_alias`` utility functions.
 
 * ``CallSite._unpack_args`` and ``CallSite._unpack_keywords`` now use ``safe_infer()`` for
   better inference and fewer false positives.
@@ -121,6 +162,14 @@ Release date: TBA
 
   Refs #2141
 
+* ``frame()`` raises ``ParentMissingError`` and ``statement()`` raises ``StatementMissing`` for
+  missing parents regardless of the value of the ``future`` argument (which gave this behavior
+  already).
+
+  The ``future`` argument to each method is deprecated and will be removed in astroid 4.0.
+
+  Refs #1217
+
 * Remove deprecated ``Ellipsis``, ``ExtSlice``, ``Index`` nodes.
 
   Refs #2152
@@ -137,11 +186,40 @@ Release date: TBA
 * Add new ``nodes.Try`` to better match Python AST. Replaces the ``TryExcept``
   and ``TryFinally`` nodes which have been removed.
 
+* Publicize ``NodeNG.repr_name()`` to facilitate finding a node's nice name.
 
-What's New in astroid 2.15.5?
+  Refs pylint-dev/pylint#8598
+
+* Fix a regression in 2.12.0 where settings in AstroidManager would be ignored.
+  Most notably this addresses pylint-dev/pylint#7433.
+
+  Refs #2204
+
+
+What's New in astroid 2.15.6?
 =============================
 Release date: TBA
 
+* Harden ``get_module_part()`` against ``"."``.
+
+  Closes pylint-dev/pylint#8749
+
+* Avoid expensive list/tuple multiplication operations that would result in ``MemoryError``.
+
+  Closes pylint-dev/pylint#8748
+
+
+What's New in astroid 2.15.5?
+=============================
+Release date: 2023-05-14
+
+* Handle ``objects.Super`` in ``helpers.object_type()``.
+
+  Refs pylint-dev/pylint#8554
+
+* Recognize stub ``pyi`` Python files.
+
+  Refs pylint-dev/pylint#4987
 
 
 What's New in astroid 2.15.4?

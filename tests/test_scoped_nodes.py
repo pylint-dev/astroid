@@ -8,13 +8,14 @@ function).
 
 from __future__ import annotations
 
-import datetime
+import difflib
 import os
 import sys
 import textwrap
 import unittest
 from functools import partial
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 
@@ -29,8 +30,9 @@ from astroid import (
     util,
 )
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import IS_PYPY, PY38
+from astroid.const import IS_PYPY, PY38, WIN32
 from astroid.exceptions import (
+    AstroidBuildingError,
     AttributeInferenceError,
     DuplicateBasesError,
     InconsistentMroError,
@@ -244,6 +246,19 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         finally:
             del sys.path[0]
 
+    @patch(
+        "astroid.nodes.scoped_nodes.scoped_nodes.AstroidManager.ast_from_module_name"
+    )
+    def test_import_unavailable_module(self, mock) -> None:
+        unavailable_modname = "posixpath" if WIN32 else "ntpath"
+        module = builder.parse(f"import {unavailable_modname}")
+        mock.side_effect = AstroidBuildingError
+
+        with pytest.raises(AstroidBuildingError):
+            module.import_module(unavailable_modname)
+
+        mock.assert_called_once()
+
     def test_file_stream_in_memory(self) -> None:
         data = """irrelevant_variable is irrelevant"""
         astroid = builder.parse(data, "in_memory")
@@ -368,7 +383,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
     def test_navigation(self) -> None:
         function = self.module["global_access"]
         self.assertEqual(function.statement(), function)
-        self.assertEqual(function.statement(future=True), function)
+        self.assertEqual(function.statement(), function)
         l_sibling = function.previous_sibling()
         # check taking parent if child is not a stmt
         self.assertIsInstance(l_sibling, nodes.Assign)
@@ -528,6 +543,10 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(
             astroid["f"].argnames(), ["a", "b", "args", "c", "d", "kwargs"]
         )
+
+    def test_argnames_lambda(self) -> None:
+        lambda_node = extract_node("lambda a, b, c, *args, **kwargs: ...")
+        self.assertEqual(lambda_node.argnames(), ["a", "b", "c", "args", "kwargs"])
 
     def test_positional_only_argnames(self) -> None:
         code = "def f(a, b, /, c=None, *args, d, **kwargs): pass"
@@ -1049,7 +1068,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_navigation(self) -> None:
         klass = self.module["YO"]
         self.assertEqual(klass.statement(), klass)
-        self.assertEqual(klass.statement(future=True), klass)
+        self.assertEqual(klass.statement(), klass)
         l_sibling = klass.previous_sibling()
         self.assertTrue(isinstance(l_sibling, nodes.FunctionDef), l_sibling)
         self.assertEqual(l_sibling.name, "global_access")
@@ -1771,9 +1790,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 "FinalClass",
                 "ClassB",
                 "MixinB",
-                # We don't recognize what 'cls' is at time of .format() call, only
-                # what it is at the end.
-                # "strMixin",
+                "strMixin",
                 "ClassA",
                 "MixinA",
                 "intMixin",
@@ -2139,8 +2156,8 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         # Test that objects analyzed through the live introspection
         # aren't considered to have dynamic getattr implemented.
         astroid_builder = builder.AstroidBuilder()
-        module = astroid_builder.module_build(datetime)
-        self.assertFalse(module["timedelta"].has_dynamic_getattr())
+        module = astroid_builder.module_build(difflib)
+        self.assertFalse(module["SequenceMatcher"].has_dynamic_getattr())
 
     def test_duplicate_bases_namedtuple(self) -> None:
         module = builder.parse(
@@ -2811,24 +2828,24 @@ class TestFrameNodes:
         )
         function = module.body[0]
         assert function.frame() == function
-        assert function.frame(future=True) == function
+        assert function.frame() == function
         assert function.body[0].frame() == function
-        assert function.body[0].frame(future=True) == function
+        assert function.body[0].frame() == function
 
         class_node = module.body[1]
         assert class_node.frame() == class_node
-        assert class_node.frame(future=True) == class_node
+        assert class_node.frame() == class_node
         assert class_node.body[0].frame() == class_node
-        assert class_node.body[0].frame(future=True) == class_node
+        assert class_node.body[0].frame() == class_node
         assert class_node.body[1].frame() == class_node.body[1]
-        assert class_node.body[1].frame(future=True) == class_node.body[1]
+        assert class_node.body[1].frame() == class_node.body[1]
 
         lambda_assignment = module.body[2].value
         assert lambda_assignment.args.args[0].frame() == lambda_assignment
-        assert lambda_assignment.args.args[0].frame(future=True) == lambda_assignment
+        assert lambda_assignment.args.args[0].frame() == lambda_assignment
 
         assert module.frame() == module
-        assert module.frame(future=True) == module
+        assert module.frame() == module
 
     @staticmethod
     def test_non_frame_node():
@@ -2841,7 +2858,7 @@ class TestFrameNodes:
         """
         )
         assert module.body[0].frame() == module
-        assert module.body[0].frame(future=True) == module
+        assert module.body[0].frame() == module
 
         assert module.body[1].value.locals["x"][0].frame() == module
-        assert module.body[1].value.locals["x"][0].frame(future=True) == module
+        assert module.body[1].value.locals["x"][0].frame() == module

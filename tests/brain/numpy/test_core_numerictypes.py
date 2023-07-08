@@ -2,7 +2,10 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
 import unittest
+from typing import ClassVar
 
 try:
     import numpy  # pylint: disable=unused-import
@@ -23,7 +26,7 @@ from astroid.brain.brain_numpy_utils import (
 class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
     """Test of all the missing types defined in numerictypes module."""
 
-    all_types = [
+    all_types: ClassVar[list[str]] = [
         "uint16",
         "uint32",
         "uint64",

@@ -1,6 +1,0 @@
--r requirements_test_min.txt
-black
-pylint
-mypy
-ruff
-pre-commit

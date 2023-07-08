@@ -42,6 +42,7 @@ class TestHelpers(unittest.TestCase):
             ("type", self._extract("type")),
             ("object", self._extract("type")),
             ("object()", self._extract("object")),
+            ("super()", self._extract("super")),
             ("lambda: None", self._build_custom_builtin("function")),
             ("len", self._build_custom_builtin("builtin_function_or_method")),
             ("None", self._build_custom_builtin("NoneType")),
@@ -258,3 +259,18 @@ class TestHelpers(unittest.TestCase):
         builtin_type = self._extract("type")
         self.assertTrue(helpers.is_supertype(builtin_type, cls_a))
         self.assertTrue(helpers.is_subtype(cls_a, builtin_type))
+
+
+def test_uninferable_for_safe_infer() -> None:
+    uninfer = util.Uninferable
+    assert util.safe_infer(util.Uninferable) == uninfer
+
+
+def test_safe_infer_shim() -> None:
+    with pytest.warns(DeprecationWarning) as records:
+        helpers.safe_infer(nodes.Unknown())
+
+    assert (
+        "Import safe_infer from astroid.util; this shim in astroid.helpers will be removed."
+        in records[0].message.args[0]
+    )

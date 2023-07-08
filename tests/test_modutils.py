@@ -26,11 +26,11 @@ from astroid.interpreter._import import spec
 from . import resources
 
 try:
-    import urllib3  # type: ignore[import]  # pylint: disable=unused-import
+    import urllib3  # type: ignore[import]
 
-    HAS_URLLIB3 = True
+    HAS_URLLIB3_V1 = urllib3.__version__.startswith("1")
 except ImportError:
-    HAS_URLLIB3 = False
+    HAS_URLLIB3_V1 = False
 
 
 def _get_file_from_object(obj) -> str:
@@ -146,6 +146,9 @@ class GetModulePartTest(unittest.TestCase):
         self.assertRaises(
             ImportError, modutils.get_module_part, "unknown.module", modutils.__file__
         )
+
+    def test_get_module_part_only_dot(self) -> None:
+        self.assertEqual(modutils.get_module_part(".", modutils.__file__), ".")
 
 
 class ModPathFromFileTest(unittest.TestCase):
@@ -287,6 +290,11 @@ class GetSourceFileTest(unittest.TestCase):
     def test_raise(self) -> None:
         self.assertRaises(modutils.NoSourceFile, modutils.get_source_file, "whatever")
 
+    def test_(self) -> None:
+        package = resources.find("pyi_data")
+        module = os.path.join(package, "__init__.pyi")
+        self.assertEqual(modutils.get_source_file(module), os.path.normpath(module))
+
 
 class IsStandardModuleTest(resources.SysPathSetup, unittest.TestCase):
     """
@@ -417,8 +425,12 @@ class ModuleInPathTest(resources.SysPathSetup, unittest.TestCase):
         assert modutils.module_in_path("data.module", datadir)
         assert modutils.module_in_path("data.module", (datadir,))
         assert modutils.module_in_path("data.module", os.path.abspath(datadir))
+        assert modutils.module_in_path("pyi_data.module", datadir)
+        assert modutils.module_in_path("pyi_data.module", (datadir,))
+        assert modutils.module_in_path("pyi_data.module", os.path.abspath(datadir))
         # "" will evaluate to cwd
         assert modutils.module_in_path("data.module", "")
+        assert modutils.module_in_path("pyi_data.module", "")
 
     def test_bad_import(self) -> None:
         datadir = resources.find("")
@@ -496,6 +508,19 @@ class GetModuleFilesTest(unittest.TestCase):
         ]
         self.assertEqual(modules, {os.path.join(package, x) for x in expected})
 
+    def test_get_module_files_2(self) -> None:
+        package = resources.find("pyi_data/find_test")
+        modules = set(modutils.get_module_files(package, []))
+        expected = [
+            "__init__.py",
+            "__init__.pyi",
+            "module.py",
+            "module2.py",
+            "noendingnewline.py",
+            "nonregr.py",
+        ]
+        self.assertEqual(modules, {os.path.join(package, x) for x in expected})
+
     def test_get_all_files(self) -> None:
         """Test that list_all returns all Python files from given location."""
         non_package = resources.find("data/notamodule")
@@ -547,8 +572,9 @@ class ExtensionPackageWhitelistTest(unittest.TestCase):
         )
 
 
-@pytest.mark.skipif(not HAS_URLLIB3, reason="This test requires urllib3.")
+@pytest.mark.skipif(not HAS_URLLIB3_V1, reason="This test requires urllib3 < 2.")
 def test_file_info_from_modpath__SixMetaPathImporter() -> None:
+    """Six is not backported anymore in urllib3 v2.0.0+"""
     assert modutils.file_info_from_modpath(["urllib3.packages.six.moves.http_client"])
 
 
