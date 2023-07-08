@@ -143,7 +143,7 @@ def are_exclusive(stmt1, stmt2, exceptions: list[str] | None = None) -> bool:
     previous = stmt2
     for node in stmt2.node_ancestors():
         if node in stmt1_parents:
-            # if the common parent is a If or TryExcept statement, look if
+            # if the common parent is a If or Try statement, look if
             # nodes are in exclusive branches
             if isinstance(node, If) and exceptions is None:
                 c2attr, c2node = node.locate_child(previous)
@@ -155,7 +155,7 @@ def are_exclusive(stmt1, stmt2, exceptions: list[str] | None = None) -> bool:
                 if c1attr != c2attr:
                     # different `If` branches (`If.body` and `If.orelse`)
                     return True
-            elif isinstance(node, TryExcept):
+            elif isinstance(node, Try):
                 c2attr, c2node = node.locate_child(previous)
                 c1attr, c1node = node.locate_child(children[node])
                 if c1node is not c2node:
@@ -3720,8 +3720,8 @@ class Subscript(NodeNG):
         return self._infer_subscript(context, **kwargs)
 
 
-class TryExcept(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
-    """Class representing an :class:`ast.TryExcept` node.
+class Try(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
+    """Class representing a :class:`ast.Try` node.
 
     >>> import astroid
     >>> node = astroid.extract_node('''
@@ -3729,88 +3729,24 @@ class TryExcept(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
             do_something()
         except Exception as error:
             print("Error!")
+        finally:
+            print("Cleanup!")
         ''')
     >>> node
-    <TryExcept l.2 at 0x7f23b2e9d908>
+    <Try l.2 at 0x7f23b2e41d68>
     """
 
-    _astroid_fields = ("body", "handlers", "orelse")
-    _multi_line_block_fields = ("body", "handlers", "orelse")
-
-    body: list[NodeNG]
-    """The contents of the block to catch exceptions from."""
-
-    handlers: list[ExceptHandler]
-    """The exception handlers."""
-
-    orelse: list[NodeNG]
-    """The contents of the ``else`` block."""
-
-    def postinit(
-        self,
-        body: list[NodeNG],
-        handlers: list[ExceptHandler],
-        orelse: list[NodeNG],
-    ) -> None:
-        self.body = body
-        self.handlers = handlers
-        self.orelse = orelse
-
-    def _infer_name(self, frame, name):
-        return name
-
-    def block_range(self, lineno: int) -> tuple[int, int]:
-        """Get a range from the given line number to where this node ends.
-
-        :param lineno: The line number to start the range at.
-
-        :returns: The range of line numbers that this node belongs to,
-            starting at the given line number.
-        """
-        last = None
-        for exhandler in self.handlers:
-            if exhandler.type and lineno == exhandler.type.fromlineno:
-                return lineno, lineno
-            if exhandler.body[0].fromlineno <= lineno <= exhandler.body[-1].tolineno:
-                return lineno, exhandler.body[-1].tolineno
-            if last is None:
-                last = exhandler.body[0].fromlineno - 1
-        return self._elsed_block_range(lineno, self.orelse, last)
-
-    def get_children(self):
-        yield from self.body
-
-        yield from self.handlers or ()
-        yield from self.orelse or ()
-
-
-class TryFinally(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
-    """Class representing an :class:`ast.TryFinally` node.
-
-    >>> import astroid
-    >>> node = astroid.extract_node('''
-    try:
-        do_something()
-    except Exception as error:
-        print("Error!")
-    finally:
-        print("Cleanup!")
-    ''')
-    >>> node
-    <TryFinally l.2 at 0x7f23b2e41d68>
-    """
-
-    _astroid_fields = ("body", "finalbody")
-    _multi_line_block_fields = ("body", "finalbody")
+    _astroid_fields = ("body", "handlers", "orelse", "finalbody")
+    _multi_line_block_fields = ("body", "handlers", "orelse", "finalbody")
 
     def __init__(
         self,
-        lineno: int | None = None,
-        col_offset: int | None = None,
-        parent: NodeNG | None = None,
         *,
-        end_lineno: int | None = None,
-        end_col_offset: int | None = None,
+        lineno: int,
+        col_offset: int,
+        end_lineno: int,
+        end_col_offset: int,
+        parent: NodeNG,
     ) -> None:
         """
         :param lineno: The line that this node appears on in the source code.
@@ -3825,8 +3761,14 @@ class TryFinally(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.body: list[NodeNG | TryExcept] = []
-        """The try-except that the finally is attached to."""
+        self.body: list[NodeNG] = []
+        """The contents of the block to catch exceptions from."""
+
+        self.handlers: list[ExceptHandler] = []
+        """The exception handlers."""
+
+        self.orelse: list[NodeNG] = []
+        """The contents of the ``else`` block."""
 
         self.finalbody: list[NodeNG] = []
         """The contents of the ``finally`` block."""
@@ -3841,40 +3783,58 @@ class TryFinally(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
 
     def postinit(
         self,
-        body: list[NodeNG | TryExcept] | None = None,
-        finalbody: list[NodeNG] | None = None,
+        *,
+        body: list[NodeNG],
+        handlers: list[ExceptHandler],
+        orelse: list[NodeNG],
+        finalbody: list[NodeNG],
     ) -> None:
         """Do some setup after initialisation.
 
-        :param body: The try-except that the finally is attached to.
+        :param body: The contents of the block to catch exceptions from.
+
+        :param handlers: The exception handlers.
+
+        :param orelse: The contents of the ``else`` block.
 
         :param finalbody: The contents of the ``finally`` block.
         """
-        if body is not None:
-            self.body = body
-        if finalbody is not None:
-            self.finalbody = finalbody
+        self.body = body
+        self.handlers = handlers
+        self.orelse = orelse
+        self.finalbody = finalbody
+
+    def _infer_name(self, frame, name):
+        return name
 
     def block_range(self, lineno: int) -> tuple[int, int]:
-        """Get a range from the given line number to where this node ends.
-
-        :param lineno: The line number to start the range at.
-
-        :returns: The range of line numbers that this node belongs to,
-            starting at the given line number.
-        """
-        child = self.body[0]
-        # py2.5 try: except: finally:
-        if (
-            isinstance(child, TryExcept)
-            and child.fromlineno == self.fromlineno
-            and child.tolineno >= lineno > self.fromlineno
-        ):
-            return child.block_range(lineno)
-        return self._elsed_block_range(lineno, self.finalbody)
+        """Get a range from a given line number to where this node ends."""
+        if lineno == self.fromlineno:
+            return lineno, lineno
+        if self.body and self.body[0].fromlineno <= lineno <= self.body[-1].tolineno:
+            # Inside try body - return from lineno till end of try body
+            return lineno, self.body[-1].tolineno
+        for exhandler in self.handlers:
+            if exhandler.type and lineno == exhandler.type.fromlineno:
+                return lineno, lineno
+            if exhandler.body[0].fromlineno <= lineno <= exhandler.body[-1].tolineno:
+                return lineno, exhandler.body[-1].tolineno
+        if self.orelse:
+            if self.orelse[0].fromlineno - 1 == lineno:
+                return lineno, lineno
+            if self.orelse[0].fromlineno <= lineno <= self.orelse[-1].tolineno:
+                return lineno, self.orelse[-1].tolineno
+        if self.finalbody:
+            if self.finalbody[0].fromlineno - 1 == lineno:
+                return lineno, lineno
+            if self.finalbody[0].fromlineno <= lineno <= self.finalbody[-1].tolineno:
+                return lineno, self.finalbody[-1].tolineno
+        return lineno, self.tolineno
 
     def get_children(self):
         yield from self.body
+        yield from self.handlers
+        yield from self.orelse
         yield from self.finalbody
 
 

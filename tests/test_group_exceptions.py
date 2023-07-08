@@ -10,7 +10,7 @@ from astroid import (
     ExceptHandler,
     For,
     Name,
-    TryExcept,
+    Try,
     Uninferable,
     bases,
     extract_node,
@@ -35,10 +35,9 @@ def test_group_exceptions() -> None:
                     print("Handling TypeError")"""
         )
     )
-    assert isinstance(node, TryExcept)
+    assert isinstance(node, Try)
     handler = node.handlers[0]
-    exception_group_block_range = (1, 4)
-    assert node.block_range(lineno=1) == exception_group_block_range
+    assert node.block_range(lineno=1) == (1, 9)
     assert node.block_range(lineno=2) == (2, 2)
     assert node.block_range(lineno=5) == (5, 9)
     assert isinstance(handler, ExceptHandler)
@@ -47,7 +46,7 @@ def test_group_exceptions() -> None:
     assert len(children) == 3
     exception_group, short_name, for_loop = children
     assert isinstance(exception_group, Name)
-    assert exception_group.block_range(1) == exception_group_block_range
+    assert exception_group.block_range(1) == (1, 4)
     assert isinstance(short_name, AssignName)
     assert isinstance(for_loop, For)
 

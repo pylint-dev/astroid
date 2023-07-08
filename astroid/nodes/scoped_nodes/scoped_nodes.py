@@ -1531,7 +1531,7 @@ class FunctionDef(
         # We also don't want to pass parent if the definition is within a Try node
         if isinstance(
             self.parent,
-            (node_classes.TryExcept, node_classes.TryFinally, node_classes.If),
+            (node_classes.Try, node_classes.If),
         ):
             property_already_in_parent_locals = True
 

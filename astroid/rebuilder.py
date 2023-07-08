@@ -167,9 +167,8 @@ class TreeRebuilder:
             - ClassDef          - For
             - FunctionDef       - While
             - Call              - If
-            - Decorators        - TryExcept
-            - With              - TryFinally
-            - Assign
+            - Decorators        - Try
+            - With              - Assign
         """
         newnode.end_lineno = None
         newnode.end_col_offset = None
@@ -423,9 +422,7 @@ class TreeRebuilder:
             ...
 
         @overload
-        def visit(
-            self, node: ast.Try, parent: NodeNG
-        ) -> nodes.TryExcept | nodes.TryFinally:
+        def visit(self, node: ast.Try, parent: NodeNG) -> nodes.Try:
             ...
 
         if sys.version_info >= (3, 11):
@@ -1631,55 +1628,22 @@ class TreeRebuilder:
         newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
-    def visit_tryexcept(self, node: ast.Try, parent: NodeNG) -> nodes.TryExcept:
-        """Visit a TryExcept node by returning a fresh instance of it."""
-        # TryExcept excludes the 'finally' but that will be included in the
-        # end_lineno from 'node'. Therefore, we check all non 'finally'
-        # children to find the correct end_lineno and column.
-        end_lineno = node.end_lineno
-        end_col_offset = node.end_col_offset
-        all_children: list[ast.AST] = [*node.body, *node.handlers, *node.orelse]
-        for child in reversed(all_children):
-            end_lineno = child.end_lineno
-            end_col_offset = child.end_col_offset
-            break
-        newnode = nodes.TryExcept(
+    def visit_try(self, node: ast.Try, parent: NodeNG) -> nodes.Try:
+        """Visit a Try node by returning a fresh instance of it"""
+        newnode = nodes.Try(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
-            [self.visit(child, newnode) for child in node.body],
-            [self.visit(child, newnode) for child in node.handlers],
-            [self.visit(child, newnode) for child in node.orelse],
+            body=[self.visit(child, newnode) for child in node.body],
+            handlers=[self.visit(child, newnode) for child in node.handlers],
+            orelse=[self.visit(child, newnode) for child in node.orelse],
+            finalbody=[self.visit(child, newnode) for child in node.finalbody],
         )
         return newnode
-
-    def visit_try(
-        self, node: ast.Try, parent: NodeNG
-    ) -> nodes.TryExcept | nodes.TryFinally | None:
-        # python 3.3 introduce a new Try node replacing
-        # TryFinally/TryExcept nodes
-        if node.finalbody:
-            newnode = nodes.TryFinally(
-                lineno=node.lineno,
-                col_offset=node.col_offset,
-                end_lineno=node.end_lineno,
-                end_col_offset=node.end_col_offset,
-                parent=parent,
-            )
-            body: list[NodeNG | nodes.TryExcept]
-            if node.handlers:
-                body = [self.visit_tryexcept(node, newnode)]
-            else:
-                body = [self.visit(child, newnode) for child in node.body]
-            newnode.postinit(body, [self.visit(n, newnode) for n in node.finalbody])
-            return newnode
-        if node.handlers:
-            return self.visit_tryexcept(node, parent)
-        return None
 
     def visit_trystar(self, node: ast.TryStar, parent: NodeNG) -> nodes.TryStar:
         newnode = nodes.TryStar(

@@ -183,6 +183,9 @@ Release date: TBA
 
   Refs #2154
 
+* Add new ``nodes.Try`` to better match Python AST. Replaces the ``TryExcept``
+  and ``TryFinally`` nodes which have been removed.
+
 * Publicize ``NodeNG.repr_name()`` to facilitate finding a node's nice name.
 
   Refs pylint-dev/pylint#8598
