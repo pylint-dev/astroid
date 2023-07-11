@@ -34,7 +34,7 @@ inferred to be an instance of some known class.
 Crash course into astroid's inference
 --------------------------------------
 
-Let's see some examples on how the inference might work in in ``astroid``.
+Let's see some examples on how the inference might work in ``astroid``.
 
 First we'll need to do a detour through some of the ``astroid``'s APIs.
 
