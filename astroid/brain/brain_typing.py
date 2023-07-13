@@ -118,7 +118,9 @@ def looks_like_typing_typevar_or_newtype(node) -> bool:
     return False
 
 
-def infer_typing_typevar_or_newtype(node, context_itton=None):
+def infer_typing_typevar_or_newtype(
+    node: Call, context_itton: context.InferenceContext | None = None
+) -> Iterator[ClassDef]:
     """Infer a typing.TypeVar(...) or typing.NewType(...) call."""
     try:
         func = next(node.func.infer(context=context_itton))
