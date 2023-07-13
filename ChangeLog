@@ -31,10 +31,6 @@ Release date: TBA
 
 * Move ``safe_infer()`` from ``helpers`` to ``util``. This avoids some circular imports.
 
-* Fix a crash when inferring a `typing.TypeVar` call.
-
-  Closes pylint-dev/pylint#8802
-
 * Reduce file system access in ``ast_from_file()``.
 
 * Reduce time to ``import astroid`` by delaying ``astroid_bootstrapping()`` until
@@ -207,6 +203,10 @@ Release date: TBA
 * Harden ``get_module_part()`` against ``"."``.
 
   Closes pylint-dev/pylint#8749
+
+* Fix a crash when inferring a `typing.TypeVar` call.
+
+  Closes pylint-dev/pylint#8802
 
 * Avoid expensive list/tuple multiplication operations that would result in ``MemoryError``.
 
