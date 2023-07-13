@@ -128,7 +128,7 @@ def are_exclusive(stmt1, stmt2, exceptions: list[str] | None = None) -> bool:
     algorithm :
      1) index stmt1's parents
      2) climb among stmt2's parents until we find a common parent
-     3) if the common parent is a If or TryExcept statement, look if nodes are
+     3) if the common parent is a If or Try statement, look if nodes are
         in exclusive branches
     """
     # index stmt1's parents
@@ -2542,7 +2542,7 @@ class ExceptHandler(
             print("Error!")
         ''')
     >>> node
-    <TryExcept l.2 at 0x7f23b2e9d908>
+    <Try l.2 at 0x7f23b2e9d908>
     >>> node.handlers
     [<ExceptHandler l.4 at 0x7f23b2e9e860>]
     """

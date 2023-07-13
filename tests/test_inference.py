@@ -6025,8 +6025,7 @@ def test_exception_lookup_last_except_handler_wins() -> None:
     assert isinstance(inferred_exc, Instance)
     assert inferred_exc.name == "OSError"
 
-    # Check that two except handlers on the same TryExcept works the same as separate
-    # TryExcepts
+    # Two except handlers on the same Try work the same as separate
     node = extract_node(
         """
     try:

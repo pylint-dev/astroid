@@ -121,7 +121,6 @@ Release date: TBA
   - ``nodes.Slice``
   - ``nodes.Starred``
   - ``objects.Super``, we also added the ``call`` parameter to its ``__init__`` method.
-  - ``nodes.TryExcept``
   - ``nodes.Subscript``
   - ``nodes.UnaryOp``
   - ``nodes.While``

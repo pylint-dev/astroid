@@ -737,7 +737,7 @@ class TestLinenoColOffset:
 
     @staticmethod
     def test_end_lineno_try() -> None:
-        """TryExcept, TryFinally, ExceptHandler."""
+        """Try, ExceptHandler."""
         code = textwrap.dedent(
             """
         try:  #@
