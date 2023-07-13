@@ -3,14 +3,6 @@ Exceptions
 
 .. automodule:: astroid.exceptions
 
-   .. rubric:: Classes
-
-   .. autosummary::
-
-      BinaryOperationError
-      OperationError
-      UnaryOperationError
-
    .. rubric:: Exceptions
 
    .. autosummary::
