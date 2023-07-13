@@ -207,7 +207,7 @@ Release date: TBA
 
 What's New in astroid 2.15.6?
 =============================
-Release date: TBA
+Release date: 2023-07-08
 
 * Harden ``get_module_part()`` against ``"."``.
 
