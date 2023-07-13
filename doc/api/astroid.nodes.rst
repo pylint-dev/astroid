@@ -76,8 +76,7 @@ Nodes
    astroid.nodes.Slice
    astroid.nodes.Starred
    astroid.nodes.Subscript
-   astroid.nodes.TryExcept
-   astroid.nodes.TryFinally
+   astroid.nodes.Try
    astroid.nodes.TryStar
    astroid.nodes.Tuple
    astroid.nodes.TypeAlias
@@ -224,9 +223,7 @@ Nodes
 
 .. autoclass:: astroid.nodes.Subscript
 
-.. autoclass:: astroid.nodes.TryExcept
-
-.. autoclass:: astroid.nodes.TryFinally
+.. autoclass:: astroid.nodes.Try
 
 .. autoclass:: astroid.nodes.TryStar
 
