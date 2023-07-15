@@ -132,6 +132,7 @@ Contributors
 - Neil Girdhar <mistersheik@gmail.com>
 - Michał Masłowski <m.maslowski@clearcode.cc>
 - Mateusz Bysiek <mb@mbdev.pl>
+- Marcelo Trylesinski <marcelotryle@gmail.com>
 - Leandro T. C. Melo <ltcmelo@gmail.com>
 - Konrad Weihmann <kweihmann@outlook.com>
 - Kian Meng, Ang <kianmeng.ang@gmail.com>
