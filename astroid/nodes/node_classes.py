@@ -4010,7 +4010,7 @@ class Tuple(BaseContainer):
         return _container_getitem(self, self.elts, index, context=context)
 
 
-class TypeAlias(_base_nodes.AssignTypeNode):
+class TypeAlias(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """Class representing a :class:`ast.TypeAlias` node.
 
     >>> import astroid
