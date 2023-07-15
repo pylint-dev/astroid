@@ -35,6 +35,8 @@ def test_type_alias() -> None:
     assert node.inferred()[0] is node
     assert node.type_params[0].inferred()[0] is node.type_params[0]
 
+    assert node.statement() is node
+
 
 def test_type_param_spec() -> None:
     node = extract_node("type Alias[**P] = Callable[P, int]")
