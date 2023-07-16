@@ -356,13 +356,11 @@ def _arguments_infer_argname(
         yield util.Uninferable
         return
 
-    filtered_args = list(
-        filter(lambda arg: not isinstance(arg, nodes.Name), self.arguments)
-    )
+    args = [arg for arg in self.arguments if arg.lineno >= 0]
     functype = self.parent.type
     # first argument of instance/class method
     if (
-        filtered_args
+        args
         and getattr(self.arguments[0], "name", None) == name
         and functype != "staticmethod"
     ):
@@ -391,7 +389,7 @@ def _arguments_infer_argname(
     if name == self.vararg:
         vararg = nodes.const_factory(())
         vararg.parent = self
-        if not filtered_args and self.parent.name == "__init__":
+        if not args and self.parent.name == "__init__":
             cls = self.parent.parent.scope()
             vararg.elts = [cls.instantiate_class()]
         yield vararg

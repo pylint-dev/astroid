@@ -43,7 +43,6 @@ from astroid.nodes.node_classes import (
     AssignName,
     Attribute,
     Call,
-    Const,
     ImportFrom,
     Tuple,
 )
@@ -2008,7 +2007,7 @@ def test_arguments_default_value():
     node = extract_node(
         "def fruit(eat='please', *, peel='no', trim='yes', **kwargs): ..."
     )
-    assert isinstance(node.args.default_value("eat"), Const)
+    assert node.args.default_value("eat").value == "please"
 
     node = extract_node("def fruit(seeds, flavor='good', *, peel='maybe'): ...")
-    assert isinstance(node.args.default_value("flavor"), Const)
+    assert node.args.default_value("flavor").value == "good"

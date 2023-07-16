@@ -784,7 +784,7 @@ class Arguments(_base_nodes.AssignTypeNode):
         retval = list(itertools.chain((self.posonlyargs or ()), (self.args or ())))
         if self.vararg:
             retval.append(
-                Name(
+                AssignName(
                     self.vararg,
                     -1,
                     -1,
@@ -796,7 +796,7 @@ class Arguments(_base_nodes.AssignTypeNode):
         retval += self.kwonlyargs or ()
         if self.kwarg:
             retval.append(
-                Name(self.kwarg, -1, -1, self, end_lineno=-1, end_col_offset=-1)
+                AssignName(self.kwarg, -1, -1, self, end_lineno=-1, end_col_offset=-1)
             )
 
         return retval
@@ -929,29 +929,17 @@ class Arguments(_base_nodes.AssignTypeNode):
         :raises NoDefault: If there is no default value defined for the
             given argument.
         """
-        _, req_arg = _find_arg(argname, self.arguments)
-        match = None
-        match_col_diff = 1000
+        args = [arg for arg in self.arguments if arg.lineno >= 0]
 
-        # find the value declared closest to the requested argument
-        for value in itertools.chain(self.defaults, self.kw_defaults):
-            if getattr(value, "lineno", None) == req_arg.lineno:
-                col_diff = value.col_offset - req_arg.end_col_offset
-                if col_diff == 1:  # no point in looking anymore, nothing can get closer
-                    return value
-                if 0 < col_diff < match_col_diff:
-                    match = value
-                    match_col_diff = col_diff
+        index = _find_arg(argname, self.kwonlyargs)[0]
+        if index is not None and self.kw_defaults[index] is not None:
+            return self.kw_defaults[index]
 
-        if match:
-            # ensure no arg is closer to the default value found
-            # would mean it is not the default value for req. arg
-            for arg in self.arguments:
-                if (arg.end_col_offset < match.col_offset) and (
-                    arg.end_col_offset > req_arg.end_col_offset
-                ):
-                    raise NoDefault(func=self.parent, name=argname)
-            return match
+        index = _find_arg(argname, args)[0]
+        if index is not None:
+            idx = index - (len(args) - len(self.defaults) - len(self.kw_defaults))
+            if idx >= 0:
+                return self.defaults[idx]
 
         raise NoDefault(func=self.parent, name=argname)
 
@@ -990,7 +978,7 @@ class Arguments(_base_nodes.AssignTypeNode):
             )
         if self.arguments:
             index, argument = _find_arg(argname, self.arguments)
-            if not isinstance(argument, Name):
+            if argument and argument.lineno >= 0:
                 return index, argument
         return None, None
 
