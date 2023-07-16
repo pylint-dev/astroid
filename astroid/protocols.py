@@ -441,7 +441,7 @@ def arguments_assigned_stmts(
 
 @decorators.raise_if_nothing_inferred
 def assign_assigned_stmts(
-    self: nodes.AugAssign | nodes.Assign | nodes.AnnAssign,
+    self: nodes.AugAssign | nodes.Assign | nodes.AnnAssign | nodes.TypeAlias,
     node: node_classes.AssignedStmtsPossibleNode = None,
     context: InferenceContext | None = None,
     assign_path: list[int] | None = None,
