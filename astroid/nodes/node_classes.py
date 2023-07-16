@@ -19,6 +19,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    ClassVar,
     Literal,
     Optional,
     Union,
@@ -4057,6 +4058,18 @@ class TypeAlias(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Iterator[TypeAlias]:
         yield self
+
+    assigned_stmts: ClassVar[
+        Callable[
+            [
+                TypeAlias,
+                AssignName,
+                InferenceContext | None,
+                None,
+            ],
+            Generator[NodeNG, None, None],
+        ]
+    ] = protocols.assign_assigned_stmts
 
 
 class TypeVar(_base_nodes.AssignTypeNode):

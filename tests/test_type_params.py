@@ -37,6 +37,9 @@ def test_type_alias() -> None:
 
     assert node.statement() is node
 
+    assigned = next(node.assigned_stmts())
+    assert assigned is node.value
+
 
 def test_type_param_spec() -> None:
     node = extract_node("type Alias[**P] = Callable[P, int]")
