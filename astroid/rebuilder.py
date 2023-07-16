@@ -21,6 +21,7 @@ from astroid._ast import ParserModule, get_parser_module, parse_function_type_co
 from astroid.const import IS_PYPY, PY38, PY39_PLUS, PY312_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
+from astroid.nodes.node_classes import AssignName
 from astroid.nodes.utils import Position
 from astroid.typing import InferenceResult
 
@@ -561,10 +562,33 @@ class TreeRebuilder:
         """Visit an Arguments node by returning a fresh instance of it."""
         vararg: str | None = None
         kwarg: str | None = None
+        vararg_node = node.vararg
+        kwarg_node = node.kwarg
+
         newnode = nodes.Arguments(
             node.vararg.arg if node.vararg else None,
             node.kwarg.arg if node.kwarg else None,
             parent,
+            AssignName(
+                vararg_node.arg,
+                vararg_node.lineno,
+                vararg_node.col_offset,
+                parent,
+                end_lineno=vararg_node.end_lineno,
+                end_col_offset=vararg_node.end_col_offset,
+            )
+            if vararg_node
+            else None,
+            AssignName(
+                kwarg_node.arg,
+                kwarg_node.lineno,
+                kwarg_node.col_offset,
+                parent,
+                end_lineno=kwarg_node.end_lineno,
+                end_col_offset=kwarg_node.end_col_offset,
+            )
+            if kwarg_node
+            else None,
         )
         args = [self.visit(child, newnode) for child in node.args]
         defaults = [self.visit(child, newnode) for child in node.defaults]

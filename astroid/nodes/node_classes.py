@@ -605,7 +605,9 @@ class Name(_base_nodes.LookupMixIn, _base_nodes.NoChildrenNode):
 DEPRECATED_ARGUMENT_DEFAULT = "DEPRECATED_ARGUMENT_DEFAULT"
 
 
-class Arguments(_base_nodes.AssignTypeNode):
+class Arguments(
+    _base_nodes.AssignTypeNode
+):  # pylint: disable=too-many-instance-attributes
     """Class representing an :class:`ast.arguments` node.
 
     An :class:`Arguments` node represents that arguments in a
@@ -704,7 +706,20 @@ class Arguments(_base_nodes.AssignTypeNode):
     kwargannotation: NodeNG | None
     """The type annotation for the variable length keyword arguments."""
 
-    def __init__(self, vararg: str | None, kwarg: str | None, parent: NodeNG) -> None:
+    vararg_node: NodeNG | None
+    """The node for variable length arguments"""
+
+    kwarg_node: NodeNG | None
+    """The node for keyword arguments"""
+
+    def __init__(
+        self,
+        vararg: str | None,
+        kwarg: str | None,
+        parent: NodeNG,
+        vararg_node: NodeNG | None = None,
+        kwarg_node: NodeNG | None = None,
+    ) -> None:
         """Almost all attributes can be None for living objects where introspection failed."""
         super().__init__(
             parent=parent,
@@ -719,6 +734,9 @@ class Arguments(_base_nodes.AssignTypeNode):
 
         self.kwarg = kwarg
         """The name of the variable length keyword arguments."""
+
+        self.vararg_node = vararg_node
+        self.kwarg_node = kwarg_node
 
     # pylint: disable=too-many-arguments
     def postinit(
@@ -788,22 +806,11 @@ class Arguments(_base_nodes.AssignTypeNode):
         * Keyword only arguments (e.g **kwargs)
         """
         retval = list(itertools.chain((self.posonlyargs or ()), (self.args or ())))
-        if self.vararg:
-            retval.append(
-                AssignName(
-                    self.vararg,
-                    -1,
-                    -1,
-                    self,
-                    end_lineno=-1,
-                    end_col_offset=-1,
-                )
-            )
+        if self.vararg_node:
+            retval.append(self.vararg_node)
         retval += self.kwonlyargs or ()
-        if self.kwarg:
-            retval.append(
-                AssignName(self.kwarg, -1, -1, self, end_lineno=-1, end_col_offset=-1)
-            )
+        if self.kwarg_node:
+            retval.append(self.kwarg_node)
 
         return retval
 
@@ -935,7 +942,9 @@ class Arguments(_base_nodes.AssignTypeNode):
         :raises NoDefault: If there is no default value defined for the
             given argument.
         """
-        args = [arg for arg in self.arguments if arg.lineno >= 0]
+        args = [
+            arg for arg in self.arguments if arg.name not in [self.vararg, self.kwarg]
+        ]
 
         index = _find_arg(argname, self.kwonlyargs)[0]
         if index is not None and self.kw_defaults[index] is not None:
@@ -984,7 +993,7 @@ class Arguments(_base_nodes.AssignTypeNode):
             )
         if self.arguments:
             index, argument = _find_arg(argname, self.arguments)
-            if argument and argument.lineno >= 0:
+            if argument and argument.name not in [self.vararg, self.kwarg]:
                 return index, argument
         return None, None
 

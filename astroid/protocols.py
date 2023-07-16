@@ -356,7 +356,7 @@ def _arguments_infer_argname(
         yield util.Uninferable
         return
 
-    args = [arg for arg in self.arguments if arg.lineno >= 0]
+    args = [arg for arg in self.arguments if arg.name not in [self.vararg, self.kwarg]]
     functype = self.parent.type
     # first argument of instance/class method
     if (
