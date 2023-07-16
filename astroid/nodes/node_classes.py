@@ -780,7 +780,13 @@ class Arguments(_base_nodes.AssignTypeNode):
 
     @cached_property
     def arguments(self):
-        """Get all the arguments for this node, including positional only and positional and keyword"""
+        """Get all the arguments for this node. This includes:
+        * Positional only arguments
+        * Positional arguments
+        * Keyword arguments
+        * Variable arguments (.e.g *args)
+        * Keyword only arguments (e.g **kwargs)
+        """
         retval = list(itertools.chain((self.posonlyargs or ()), (self.args or ())))
         if self.vararg:
             retval.append(
