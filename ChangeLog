@@ -195,9 +195,18 @@ Release date: TBA
   Refs #2204
 
 
-What's New in astroid 2.15.6?
+What's New in astroid 2.15.7?
 =============================
 Release date: TBA
+
+* Fix a crash when inferring a ``typing.TypeVar`` call.
+
+  Closes pylint-dev/pylint#8802
+
+
+What's New in astroid 2.15.6?
+=============================
+Release date: 2023-07-08
 
 * Harden ``get_module_part()`` against ``"."``.
 
