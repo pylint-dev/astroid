@@ -121,7 +121,9 @@ def looks_like_typing_typevar_or_newtype(node) -> bool:
     return False
 
 
-def infer_typing_typevar_or_newtype(node, context_itton=None):
+def infer_typing_typevar_or_newtype(
+    node: Call, context_itton: context.InferenceContext | None = None
+) -> Iterator[ClassDef]:
     """Infer a typing.TypeVar(...) or typing.NewType(...) call."""
     try:
         func = next(node.func.infer(context=context_itton))
@@ -137,7 +139,14 @@ def infer_typing_typevar_or_newtype(node, context_itton=None):
         raise UseInferenceDefault
 
     typename = node.args[0].as_string().strip("'")
-    node = extract_node(TYPING_TYPE_TEMPLATE.format(typename))
+    node = ClassDef(
+        name=typename,
+        lineno=node.lineno,
+        col_offset=node.col_offset,
+        parent=node.parent,
+        end_lineno=node.end_lineno,
+        end_col_offset=node.end_col_offset,
+    )
     return node.infer(context=context_itton)
 
 
