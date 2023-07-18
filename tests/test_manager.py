@@ -137,7 +137,7 @@ class AstroidManagerTest(
         self.assertFalse(util.is_namespace("tests.testdata.python3.data.all"))
         self.assertFalse(util.is_namespace("__main__"))
         self.assertFalse(
-            util.is_namespace(list(EXT_LIB_DIRS)[0].rsplit("/", maxsplit=1)[-1]),
+            util.is_namespace(next(iter(EXT_LIB_DIRS)).rsplit("/", maxsplit=1)[-1]),
         )
         self.assertFalse(util.is_namespace("importlib._bootstrap"))
 

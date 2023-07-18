@@ -108,7 +108,7 @@ def object_type(
         return util.Uninferable
     if len(types) > 1 or not types:
         return util.Uninferable
-    return list(types)[0]
+    return next(iter(types))
 
 
 def _object_type_is_subclass(
