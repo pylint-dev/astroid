@@ -6157,6 +6157,24 @@ def test_igetattr_idempotent() -> None:
     assert util.Uninferable not in instance.igetattr("item", context_to_be_used_twice)
 
 
+@patch("astroid.nodes.Call._infer")
+def test_cache_usage_without_explicit_context(mock) -> None:
+    code = """
+    class InferMeTwice:
+        item = 10
+
+    InferMeTwice()
+    """
+    call = extract_node(code)
+    mock.return_value = [Uninferable]
+
+    # no explicit InferenceContext
+    call.inferred()
+    call.inferred()
+
+    mock.assert_called_once()
+
+
 def test_infer_context_manager_with_unknown_args() -> None:
     code = """
     class client_log(object):

@@ -138,18 +138,13 @@ class NodeNG:
         :returns: The inferred values.
         :rtype: iterable
         """
-        if context is not None:
+        if context is None:
+            context = InferenceContext()
+        else:
             context = context.extra_context.get(self, context)
         if self._explicit_inference is not None:
             # explicit_inference is not bound, give it self explicitly
             try:
-                if context is None:
-                    yield from self._explicit_inference(
-                        self,  # type: ignore[arg-type]
-                        context,
-                        **kwargs,
-                    )
-                    return
                 for result in self._explicit_inference(
                     self,  # type: ignore[arg-type]
                     context,
@@ -160,11 +155,6 @@ class NodeNG:
                 return
             except UseInferenceDefault:
                 pass
-
-        if not context:
-            # nodes_inferred?
-            yield from self._infer(context=context, **kwargs)
-            return
 
         key = (self, context.lookupname, context.callcontext, context.boundnode)
         if key in context.inferred:
