@@ -51,6 +51,14 @@ Release date: TBA
   Closes pylint-dev/pylint#7464
   Closes pylint-dev/pylint#8074
 
+* Use the global inference cache when inferring, even without an explicit
+  ``InferenceContext``. This is a significant performance improvement given how
+  often methods default to ``None`` for the context argument. (Linting ``astroid``
+  itself now takes ~5% less time on Python 3.12; other projects requiring more
+  complex inference calculations will see greater speedups.)
+
+  Refs #529
+
 * Fix interrupted ``InferenceContext`` call chains, thereby addressing performance
   problems when linting ``sqlalchemy``.
 
