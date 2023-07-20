@@ -706,19 +706,19 @@ class Arguments(
     kwargannotation: NodeNG | None
     """The type annotation for the variable length keyword arguments."""
 
-    vararg_node: NodeNG | None
+    vararg_node: AssignName | None
     """The node for variable length arguments"""
 
-    kwarg_node: NodeNG | None
-    """The node for keyword arguments"""
+    kwarg_node: AssignName | None
+    """The node for variable keyword arguments"""
 
     def __init__(
         self,
         vararg: str | None,
         kwarg: str | None,
         parent: NodeNG,
-        vararg_node: NodeNG | None = None,
-        kwarg_node: NodeNG | None = None,
+        vararg_node: AssignName | None = None,
+        kwarg_node: AssignName | None = None,
     ) -> None:
         """Almost all attributes can be None for living objects where introspection failed."""
         super().__init__(
@@ -803,7 +803,7 @@ class Arguments(
         * Positional arguments
         * Keyword arguments
         * Variable arguments (.e.g *args)
-        * Keyword only arguments (e.g **kwargs)
+        * Variable keyword arguments (e.g **kwargs)
         """
         retval = list(itertools.chain((self.posonlyargs or ()), (self.args or ())))
         if self.vararg_node:
@@ -970,11 +970,7 @@ class Arguments(
             return True
         if name == self.kwarg:
             return True
-        return (
-            self.find_argname(name)[1] is not None
-            or self.kwonlyargs
-            and _find_arg(name, self.kwonlyargs)[1] is not None
-        )
+        return self.find_argname(name)[1] is not None
 
     def find_argname(self, argname, rec=DEPRECATED_ARGUMENT_DEFAULT):
         """Get the index and :class:`AssignName` node for given name.
@@ -993,7 +989,7 @@ class Arguments(
             )
         if self.arguments:
             index, argument = _find_arg(argname, self.arguments)
-            if argument and argument.name not in [self.vararg, self.kwarg]:
+            if argument:
                 return index, argument
         return None, None
 
