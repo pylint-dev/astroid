@@ -6,6 +6,11 @@ What's New in astroid 3.0.0?
 =============================
 Release date: TBA
 
+* Return all existing arguments when calling ``Arguments.arguments()``. This also means ``find_argname`` will now
+  use the whole list of arguments for its search.
+
+  Closes #2213
+
 * Add support for Python 3.12, including PEP 695 type parameter syntax.
 
   Closes #2201

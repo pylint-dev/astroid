@@ -22,6 +22,7 @@ from astroid import (
     Uninferable,
     bases,
     builder,
+    extract_node,
     nodes,
     parse,
     test_utils,
@@ -1975,3 +1976,38 @@ def test_str_repr_no_warnings(node):
     test_node = node(**args)
     str(test_node)
     repr(test_node)
+
+
+def test_arguments_contains_all():
+    """Ensure Arguments.arguments actually returns all available arguments"""
+
+    def manually_get_args(arg_node) -> set:
+        names = set()
+        if arg_node.args.vararg:
+            names.add(arg_node.args.vararg)
+        if arg_node.args.kwarg:
+            names.add(arg_node.args.kwarg)
+
+        names.update([x.name for x in arg_node.args.args])
+        names.update([x.name for x in arg_node.args.kwonlyargs])
+
+        return names
+
+    node = extract_node("""def a(fruit: str, *args, b=None, c=None, **kwargs): ...""")
+    assert manually_get_args(node) == {x.name for x in node.args.arguments}
+
+    node = extract_node("""def a(mango: int, b="banana", c=None, **kwargs): ...""")
+    assert manually_get_args(node) == {x.name for x in node.args.arguments}
+
+    node = extract_node("""def a(self, num = 10, *args): ...""")
+    assert manually_get_args(node) == {x.name for x in node.args.arguments}
+
+
+def test_arguments_default_value():
+    node = extract_node(
+        "def fruit(eat='please', *, peel='no', trim='yes', **kwargs): ..."
+    )
+    assert node.args.default_value("eat").value == "please"
+
+    node = extract_node("def fruit(seeds, flavor='good', *, peel='maybe'): ...")
+    assert node.args.default_value("flavor").value == "good"

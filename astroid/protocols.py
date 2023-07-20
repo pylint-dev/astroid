@@ -352,14 +352,15 @@ def _arguments_infer_argname(
     # more
     from astroid import arguments  # pylint: disable=import-outside-toplevel
 
-    if not (self.arguments or self.vararg or self.kwarg):
+    if not self.arguments:
         yield util.Uninferable
         return
 
+    args = [arg for arg in self.arguments if arg.name not in [self.vararg, self.kwarg]]
     functype = self.parent.type
     # first argument of instance/class method
     if (
-        self.arguments
+        args
         and getattr(self.arguments[0], "name", None) == name
         and functype != "staticmethod"
     ):
@@ -388,7 +389,7 @@ def _arguments_infer_argname(
     if name == self.vararg:
         vararg = nodes.const_factory(())
         vararg.parent = self
-        if not self.arguments and self.parent.name == "__init__":
+        if not args and self.parent.name == "__init__":
             cls = self.parent.parent.scope()
             vararg.elts = [cls.instantiate_class()]
         yield vararg

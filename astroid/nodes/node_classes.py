@@ -605,7 +605,9 @@ class Name(_base_nodes.LookupMixIn, _base_nodes.NoChildrenNode):
 DEPRECATED_ARGUMENT_DEFAULT = "DEPRECATED_ARGUMENT_DEFAULT"
 
 
-class Arguments(_base_nodes.AssignTypeNode):
+class Arguments(
+    _base_nodes.AssignTypeNode
+):  # pylint: disable=too-many-instance-attributes
     """Class representing an :class:`ast.arguments` node.
 
     An :class:`Arguments` node represents that arguments in a
@@ -704,7 +706,20 @@ class Arguments(_base_nodes.AssignTypeNode):
     kwargannotation: NodeNG | None
     """The type annotation for the variable length keyword arguments."""
 
-    def __init__(self, vararg: str | None, kwarg: str | None, parent: NodeNG) -> None:
+    vararg_node: AssignName | None
+    """The node for variable length arguments"""
+
+    kwarg_node: AssignName | None
+    """The node for variable keyword arguments"""
+
+    def __init__(
+        self,
+        vararg: str | None,
+        kwarg: str | None,
+        parent: NodeNG,
+        vararg_node: AssignName | None = None,
+        kwarg_node: AssignName | None = None,
+    ) -> None:
         """Almost all attributes can be None for living objects where introspection failed."""
         super().__init__(
             parent=parent,
@@ -719,6 +734,9 @@ class Arguments(_base_nodes.AssignTypeNode):
 
         self.kwarg = kwarg
         """The name of the variable length keyword arguments."""
+
+        self.vararg_node = vararg_node
+        self.kwarg_node = kwarg_node
 
     # pylint: disable=too-many-arguments
     def postinit(
@@ -780,8 +798,21 @@ class Arguments(_base_nodes.AssignTypeNode):
 
     @cached_property
     def arguments(self):
-        """Get all the arguments for this node, including positional only and positional and keyword"""
-        return list(itertools.chain((self.posonlyargs or ()), self.args or ()))
+        """Get all the arguments for this node. This includes:
+        * Positional only arguments
+        * Positional arguments
+        * Keyword arguments
+        * Variable arguments (.e.g *args)
+        * Variable keyword arguments (e.g **kwargs)
+        """
+        retval = list(itertools.chain((self.posonlyargs or ()), (self.args or ())))
+        if self.vararg_node:
+            retval.append(self.vararg_node)
+        retval += self.kwonlyargs or ()
+        if self.kwarg_node:
+            retval.append(self.kwarg_node)
+
+        return retval
 
     def format_args(self, *, skippable_names: set[str] | None = None) -> str:
         """Get the arguments formatted as string.
@@ -911,15 +942,20 @@ class Arguments(_base_nodes.AssignTypeNode):
         :raises NoDefault: If there is no default value defined for the
             given argument.
         """
-        args = self.arguments
-        index = _find_arg(argname, args)[0]
-        if index is not None:
-            idx = index - (len(args) - len(self.defaults))
-            if idx >= 0:
-                return self.defaults[idx]
+        args = [
+            arg for arg in self.arguments if arg.name not in [self.vararg, self.kwarg]
+        ]
+
         index = _find_arg(argname, self.kwonlyargs)[0]
         if index is not None and self.kw_defaults[index] is not None:
             return self.kw_defaults[index]
+
+        index = _find_arg(argname, args)[0]
+        if index is not None:
+            idx = index - (len(args) - len(self.defaults) - len(self.kw_defaults))
+            if idx >= 0:
+                return self.defaults[idx]
+
         raise NoDefault(func=self.parent, name=argname)
 
     def is_argument(self, name) -> bool:
@@ -934,11 +970,7 @@ class Arguments(_base_nodes.AssignTypeNode):
             return True
         if name == self.kwarg:
             return True
-        return (
-            self.find_argname(name)[1] is not None
-            or self.kwonlyargs
-            and _find_arg(name, self.kwonlyargs)[1] is not None
-        )
+        return self.find_argname(name)[1] is not None
 
     def find_argname(self, argname, rec=DEPRECATED_ARGUMENT_DEFAULT):
         """Get the index and :class:`AssignName` node for given name.
@@ -956,7 +988,9 @@ class Arguments(_base_nodes.AssignTypeNode):
                 stacklevel=2,
             )
         if self.arguments:
-            return _find_arg(argname, self.arguments)
+            index, argument = _find_arg(argname, self.arguments)
+            if argument:
+                return index, argument
         return None, None
 
     def get_children(self):
