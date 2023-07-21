@@ -16,15 +16,14 @@ What's New in astroid 2.15.7?
 =============================
 Release date: TBA
 
-
-
-What's New in astroid 2.15.7?
-=============================
-Release date: 2023-07-08
-
 * Fix a crash when inferring a ``typing.TypeVar`` call.
 
   Closes pylint-dev/pylint#8802
+
+* Fix inference of functions with ``@functools.lru_cache`` decorators without
+  parentheses.
+
+  Closes pylint-dev/pylint#8868
 
 
 What's New in astroid 2.15.6?

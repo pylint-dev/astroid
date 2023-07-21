@@ -129,15 +129,17 @@ def _looks_like_lru_cache(node) -> bool:
     if not node.decorators:
         return False
     for decorator in node.decorators.nodes:
-        if not isinstance(decorator, Call):
+        if not isinstance(decorator, (Attribute, Call)):
             continue
         if _looks_like_functools_member(decorator, "lru_cache"):
             return True
     return False
 
 
-def _looks_like_functools_member(node, member) -> bool:
-    """Check if the given Call node is a functools.partial call."""
+def _looks_like_functools_member(node: Attribute | Call, member: str) -> bool:
+    """Check if the given Call node is the wanted member of functools."""
+    if isinstance(node, Attribute):
+        return node.attrname == member
     if isinstance(node.func, Name):
         return node.func.name == member
     if isinstance(node.func, Attribute):

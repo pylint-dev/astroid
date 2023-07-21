@@ -809,13 +809,13 @@ class TestExceptionInstanceModel:
         assert not args.elts
 
 
-class LruCacheModelTest(unittest.TestCase):
-    def test_lru_cache(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+@pytest.mark.parametrize("parentheses", (True, False))
+def test_lru_cache(parentheses) -> None:
+    ast_nodes = builder.extract_node(
+        f"""
         import functools
         class Foo(object):
-            @functools.lru_cache()
+            @functools.lru_cache{"()" if parentheses else ""}
             def foo():
                 pass
         f = Foo()
@@ -823,12 +823,12 @@ class LruCacheModelTest(unittest.TestCase):
         f.foo.__wrapped__ #@
         f.foo.cache_info() #@
         """
-        )
-        assert isinstance(ast_nodes, list)
-        cache_clear = next(ast_nodes[0].infer())
-        self.assertIsInstance(cache_clear, astroid.BoundMethod)
-        wrapped = next(ast_nodes[1].infer())
-        self.assertIsInstance(wrapped, astroid.FunctionDef)
-        self.assertEqual(wrapped.name, "foo")
-        cache_info = next(ast_nodes[2].infer())
-        self.assertIsInstance(cache_info, astroid.Instance)
+    )
+    assert isinstance(ast_nodes, list)
+    cache_clear = next(ast_nodes[0].infer())
+    assert isinstance(cache_clear, astroid.BoundMethod)
+    wrapped = next(ast_nodes[1].infer())
+    assert isinstance(wrapped, astroid.FunctionDef)
+    assert wrapped.name == "foo"
+    cache_info = next(ast_nodes[2].infer())
+    assert isinstance(cache_info, astroid.Instance)
