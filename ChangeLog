@@ -216,6 +216,11 @@ Release date: TBA
 
   Closes pylint-dev/pylint#8802
 
+* Fix inference of functions with ``@functools.lru_cache`` decorators without
+  parentheses.
+
+  Closes pylint-dev/pylint#8868
+
 
 What's New in astroid 2.15.6?
 =============================
