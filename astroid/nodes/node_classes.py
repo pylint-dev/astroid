@@ -947,8 +947,10 @@ class Arguments(
         ]
 
         index = _find_arg(argname, self.kwonlyargs)[0]
-        if index is not None and self.kw_defaults[index] is not None:
-            return self.kw_defaults[index]
+        if (index is not None) and (len(self.kw_defaults) > index):
+            if self.kw_defaults[index] is not None:
+                return self.kw_defaults[index]
+            raise NoDefault(func=self.parent, name=argname)
 
         index = _find_arg(argname, args)[0]
         if index is not None:
