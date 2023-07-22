@@ -38,6 +38,7 @@ from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
     InferenceError,
+    NoDefault,
     NotFoundError,
 )
 from astroid.objects import ExceptionInstance
@@ -145,6 +146,21 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
 
     ast = parse(CODE, __name__)
+
+    def test_arg_keyword_no_default_value(self):
+        node = extract_node(
+            """
+        class Sensor:
+            def __init__(self, *, description): #@
+                self._id = description.key
+        """
+        )
+        with self.assertRaises(NoDefault):
+            node.args.default_value("description")
+
+        node = extract_node("def apple(color, *args, name: str, **kwargs): ...")
+        with self.assertRaises(NoDefault):
+            node.args.default_value("name")
 
     def test_infer_abstract_property_return_values(self) -> None:
         module = parse(
