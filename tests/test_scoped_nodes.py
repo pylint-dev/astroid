@@ -494,7 +494,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                 g = lambda: None
         """
         astroid = builder.parse(data)
-        g = list(astroid["f"].ilookup("g"))[0]
+        g = next(iter(astroid["f"].ilookup("g")))
         self.assertEqual(g.pytype(), "builtins.function")
 
     def test_lambda_qname(self) -> None:

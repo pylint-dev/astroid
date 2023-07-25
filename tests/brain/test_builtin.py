@@ -22,7 +22,7 @@ class BuiltinsTest(unittest.TestCase):
             asd = property(getter) #@
         """
         )
-        inferred_property = list(class_with_property.value.infer())[0]
+        inferred_property = next(iter(class_with_property.value.infer()))
         self.assertTrue(isinstance(inferred_property, objects.Property))
         class_parent = inferred_property.parent.parent.parent
         self.assertIsInstance(class_parent, nodes.ClassDef)
