@@ -4946,7 +4946,7 @@ class TestBool(unittest.TestCase):
         context = InferenceContext()
         _ = klass.getitem(0, context=context)
 
-        assert list(context.path)[0][0].name == "Parent"
+        assert next(iter(context.path))[0].name == "Parent"
 
 
 class TestType(unittest.TestCase):
