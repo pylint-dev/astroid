@@ -496,10 +496,10 @@ class EnumBrainTest(unittest.TestCase):
 
     def test_enum_members_uppercase_only(self) -> None:
         """Originally reported in https://github.com/pylint-dev/pylint/issues/7402.
-           ``nodes.AnnAssign`` nodes with no assigned values do not appear inside ``__members__``.
+        ``nodes.AnnAssign`` nodes with no assigned values do not appear inside ``__members__``.
 
-           Test that only enum member `MARS` appears in the `__members__` container while
-           attributes `radius` and `mass` do not.
+        Test that only enum member `MARS` appears in the `__members__` container while
+        attributes `radius` and `mass` do not.
         """
         enum_class, enum_member = astroid.extract_node(
             """
@@ -516,8 +516,7 @@ class EnumBrainTest(unittest.TestCase):
         Planet.MARS.value
         """
         )
-        inferred_class = enum_class.infer()
-        inferred_member = enum_member
+        enum_class.infer()
         enum_members = next(enum_class.igetattr("__members__"))
         assert len(enum_members.items) == 2
         mars, radius = enum_members.items
