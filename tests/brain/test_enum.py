@@ -493,3 +493,33 @@ class EnumBrainTest(unittest.TestCase):
         for node in (attribute_nodes[1], name_nodes[1]):
             with pytest.raises(InferenceError):
                 node.inferred()
+
+    def test_enum_members_uppercase_only(self) -> None:
+        """Originally reported in https://github.com/pylint-dev/pylint/issues/7402.
+           ``nodes.AnnAssign`` nodes with no assigned values do not appear inside ``__members__``.
+
+           Test that only enum member `MARS` appears in the `__members__` container while
+           attributes `radius` and `mass` do not.
+        """
+        enum_class, enum_member = astroid.extract_node(
+            """
+        from enum import Enum
+        class Planet(Enum): #@
+            MARS = (1, 2) #@
+            radius: int = 1
+            mass: int
+
+            def __init__(self, mass, radius):
+                self.mass = mass
+                self.radius = radius
+
+        Planet.MARS.value
+        """
+        )
+        inferred_class = enum_class.infer()
+        inferred_member = enum_member
+        enum_members = next(enum_class.igetattr("__members__"))
+        assert len(enum_members.items) == 2
+        mars, radius = enum_members.items
+        assert mars[1].name == "MARS"
+        assert radius[1].name == "radius"
