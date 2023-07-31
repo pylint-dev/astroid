@@ -413,7 +413,7 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                 else:
                     targets = stmt.targets
             elif isinstance(stmt, nodes.AnnAssign):
-                if all(s is astroid.Uninferable for s in stmt.assigned_stmts()):
+                if stmt.value is None:
                     continue
                 targets = [stmt.target]
             else:
