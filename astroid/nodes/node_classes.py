@@ -3381,8 +3381,8 @@ class ParamSpec(_base_nodes.AssignTypeNode):
         col_offset: int,
         parent: NodeNG,
         *,
-        end_lineno: int | None,
-        end_col_offset: int | None,
+        end_lineno: int,
+        end_col_offset: int,
     ) -> None:
         super().__init__(
             lineno=lineno,
@@ -4068,8 +4068,8 @@ class TypeAlias(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         col_offset: int,
         parent: NodeNG,
         *,
-        end_lineno: int | None,
-        end_col_offset: int | None,
+        end_lineno: int,
+        end_col_offset: int,
     ) -> None:
         super().__init__(
             lineno=lineno,
@@ -4128,8 +4128,8 @@ class TypeVar(_base_nodes.AssignTypeNode):
         col_offset: int,
         parent: NodeNG,
         *,
-        end_lineno: int | None,
-        end_col_offset: int | None,
+        end_lineno: int,
+        end_col_offset: int,
     ) -> None:
         super().__init__(
             lineno=lineno,
@@ -4168,8 +4168,8 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
         col_offset: int,
         parent: NodeNG,
         *,
-        end_lineno: int | None,
-        end_col_offset: int | None,
+        end_lineno: int,
+        end_col_offset: int,
     ) -> None:
         super().__init__(
             lineno=lineno,
