@@ -498,14 +498,14 @@ class EnumBrainTest(unittest.TestCase):
         """Originally reported in https://github.com/pylint-dev/pylint/issues/7402.
         ``nodes.AnnAssign`` nodes with no assigned values do not appear inside ``__members__``.
 
-        Test that only enum member `MARS` appears in the `__members__` container while
-        attributes `radius` and `mass` do not.
+        Test that only enum members `MARS` and `radius` appear in the `__members__` container while
+        the attribute `mass` does not.
         """
-        enum_class, enum_member = astroid.extract_node(
+        enum_class = astroid.extract_node(
             """
         from enum import Enum
         class Planet(Enum): #@
-            MARS = (1, 2) #@
+            MARS = (1, 2)
             radius: int = 1
             mass: int
 
@@ -516,7 +516,6 @@ class EnumBrainTest(unittest.TestCase):
         Planet.MARS.value
         """
         )
-        enum_class.infer()
         enum_members = next(enum_class.igetattr("__members__"))
         assert len(enum_members.items) == 2
         mars, radius = enum_members.items

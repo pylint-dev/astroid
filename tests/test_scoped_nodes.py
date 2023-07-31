@@ -2616,7 +2616,7 @@ def test_enums_type_annotation_no_value(annotation) -> None:
     """
     )
     inferred_member_value = node.inferred()[0]
-    assert inferred_member_value.value is util.Uninferable
+    assert inferred_member_value is util.Uninferable
 
 
 def test_enums_value2member_map_() -> None:
