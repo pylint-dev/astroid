@@ -280,7 +280,7 @@ def test(val):
 
         class MyClass(object):
             def method(self):
-                "With unicode : {'’'} "
+                "With unicode : {'`'} "
 
         instance = MyClass()
         """  # noqa[RUF001]
