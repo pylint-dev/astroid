@@ -413,8 +413,6 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                 else:
                     targets = stmt.targets
             elif isinstance(stmt, nodes.AnnAssign):
-                if stmt.value is None:
-                    continue
                 targets = [stmt.target]
             else:
                 continue
@@ -464,6 +462,8 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                 for method in node.mymethods():
                     fake.locals[method.name] = [method]
                 new_targets.append(fake.instantiate_class())
+                if stmt.value == None:
+                    continue
                 dunder_members[local] = fake
             node.locals[local] = new_targets
 

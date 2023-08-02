@@ -2615,8 +2615,8 @@ def test_enums_type_annotation_no_value(annotation) -> None:
     Veg.TOMATO.value
     """
     )
-    inferred_member_value = next(node.infer())
-    assert inferred_member_value is util.Uninferable
+    inferred_member_value = node.inferred()[0]
+    assert inferred_member_value.value is None
 
 
 def test_enums_value2member_map_() -> None:
