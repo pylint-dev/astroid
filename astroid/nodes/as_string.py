@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 from astroid import nodes
 
 if TYPE_CHECKING:
+    from astroid import objects
     from astroid.nodes import Const
     from astroid.nodes.node_classes import (
         Match,
@@ -323,7 +324,7 @@ class AsStringVisitor:
             result += ":" + node.format_spec.accept(self)[2:-1]
         return "{%s}" % result
 
-    def handle_functiondef(self, node, keyword) -> str:
+    def handle_functiondef(self, node: nodes.FunctionDef, keyword: str) -> str:
         """return a (possibly async) function definition node as string"""
         decorate = node.decorators.accept(self) if node.decorators else ""
         docs = self._docs_dedent(node.doc_node)
@@ -343,11 +344,11 @@ class AsStringVisitor:
             self._stmt_list(node.body),
         )
 
-    def visit_functiondef(self, node) -> str:
+    def visit_functiondef(self, node: nodes.FunctionDef) -> str:
         """return an astroid.FunctionDef node as string"""
         return self.handle_functiondef(node, "def")
 
-    def visit_asyncfunctiondef(self, node) -> str:
+    def visit_asyncfunctiondef(self, node: nodes.AsyncFunctionDef) -> str:
         """return an astroid.AsyncFunction node as string"""
         return self.handle_functiondef(node, "async def")
 
@@ -440,6 +441,10 @@ class AsStringVisitor:
     def visit_pass(self, node) -> str:
         """return an astroid.Pass node as string"""
         return "pass"
+
+    def visit_partialfunction(self, node: objects.PartialFunction) -> str:
+        """Return an objects.PartialFunction as string."""
+        return self.visit_functiondef(node)
 
     def visit_raise(self, node) -> str:
         """return an astroid.Raise node as string"""

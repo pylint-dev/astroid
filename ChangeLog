@@ -230,6 +230,10 @@ Release date: 2023-07-08
 
   Closes pylint-dev/pylint#8749
 
+* Allow ``AsStringVisitor`` to visit ``objects.PartialFunction``.
+
+  Closes pylint-dev/pylint#8881
+
 * Avoid expensive list/tuple multiplication operations that would result in ``MemoryError``.
 
   Closes pylint-dev/pylint#8748
