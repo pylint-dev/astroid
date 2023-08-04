@@ -233,7 +233,7 @@ class NodeNG:
             "id": id(self),
         }
 
-    def accept(self, visitor):
+    def accept(self, visitor: AsStringVisitor) -> str:
         """Visit this node using the given visitor."""
         func = getattr(visitor, "visit_" + self.__class__.__name__.lower())
         return func(self)
