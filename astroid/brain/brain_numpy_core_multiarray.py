@@ -31,11 +31,6 @@ def numpy_core_multiarray_transform():
     )
 
 
-register_module_extender(
-    AstroidManager(), "numpy.core.multiarray", numpy_core_multiarray_transform
-)
-
-
 METHODS_TO_BE_INFERRED = {
     "array": """def array(object, dtype=None, copy=True, order='K', subok=False, ndmin=0):
             return numpy.ndarray([0, 0])""",
@@ -90,15 +85,21 @@ METHODS_TO_BE_INFERRED = {
             return numpy.ndarray([0, 0])""",
 }
 
-for method_name, function_src in METHODS_TO_BE_INFERRED.items():
-    inference_function = functools.partial(infer_numpy_member, function_src)
-    AstroidManager().register_transform(
-        Attribute,
-        inference_tip(inference_function),
-        functools.partial(attribute_looks_like_numpy_member, method_name),
+
+def register(manager: AstroidManager) -> None:
+    register_module_extender(
+        manager, "numpy.core.multiarray", numpy_core_multiarray_transform
     )
-    AstroidManager().register_transform(
-        Name,
-        inference_tip(inference_function),
-        functools.partial(name_looks_like_numpy_member, method_name),
-    )
+
+    for method_name, function_src in METHODS_TO_BE_INFERRED.items():
+        inference_function = functools.partial(infer_numpy_member, function_src)
+        manager.register_transform(
+            Attribute,
+            inference_tip(inference_function),
+            functools.partial(attribute_looks_like_numpy_member, method_name),
+        )
+        manager.register_transform(
+            Name,
+            inference_tip(inference_function),
+            functools.partial(name_looks_like_numpy_member, method_name),
+        )

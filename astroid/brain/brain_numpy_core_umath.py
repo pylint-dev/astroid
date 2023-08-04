@@ -149,6 +149,5 @@ def numpy_core_umath_transform():
     )
 
 
-register_module_extender(
-    AstroidManager(), "numpy.core.umath", numpy_core_umath_transform
-)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "numpy.core.umath", numpy_core_umath_transform)

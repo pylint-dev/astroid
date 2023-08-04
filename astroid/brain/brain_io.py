@@ -35,9 +35,10 @@ def _transform_buffered(node):
     return _generic_io_transform(node, name="raw", cls=FileIO)
 
 
-AstroidManager().register_transform(
-    ClassDef, _transform_buffered, lambda node: node.name in BUFFERED
-)
-AstroidManager().register_transform(
-    ClassDef, _transform_text_io_wrapper, lambda node: node.name == TextIOWrapper
-)
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(
+        ClassDef, _transform_buffered, lambda node: node.name in BUFFERED
+    )
+    manager.register_transform(
+        ClassDef, _transform_text_io_wrapper, lambda node: node.name == TextIOWrapper
+    )

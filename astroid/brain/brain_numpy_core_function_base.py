@@ -23,10 +23,12 @@ METHODS_TO_BE_INFERRED = {
             return numpy.ndarray([0, 0])""",
 }
 
-for func_name, func_src in METHODS_TO_BE_INFERRED.items():
-    inference_function = functools.partial(infer_numpy_member, func_src)
-    AstroidManager().register_transform(
-        Attribute,
-        inference_tip(inference_function),
-        functools.partial(attribute_looks_like_numpy_member, func_name),
-    )
+
+def register(manager: AstroidManager) -> None:
+    for func_name, func_src in METHODS_TO_BE_INFERRED.items():
+        inference_function = functools.partial(infer_numpy_member, func_src)
+        manager.register_transform(
+            Attribute,
+            inference_tip(inference_function),
+            functools.partial(attribute_looks_like_numpy_member, func_name),
+        )

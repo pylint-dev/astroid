@@ -77,12 +77,13 @@ class QObject(object):
     )
 
 
-register_module_extender(AstroidManager(), "PyQt4.QtCore", pyqt4_qtcore_transform)
-AstroidManager().register_transform(
-    nodes.FunctionDef, transform_pyqt_signal, _looks_like_signal
-)
-AstroidManager().register_transform(
-    nodes.ClassDef,
-    transform_pyside_signal,
-    lambda node: node.qname() in {"PySide.QtCore.Signal", "PySide2.QtCore.Signal"},
-)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "PyQt4.QtCore", pyqt4_qtcore_transform)
+    manager.register_transform(
+        nodes.FunctionDef, transform_pyqt_signal, _looks_like_signal
+    )
+    manager.register_transform(
+        nodes.ClassDef,
+        transform_pyside_signal,
+        lambda node: node.qname() in {"PySide.QtCore.Signal", "PySide2.QtCore.Signal"},
+    )

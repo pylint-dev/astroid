@@ -617,18 +617,19 @@ def _infer_instance_from_annotation(
         yield klass.instantiate_class()
 
 
-AstroidManager().register_transform(
-    nodes.ClassDef, dataclass_transform, is_decorated_with_dataclass
-)
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(
+        nodes.ClassDef, dataclass_transform, is_decorated_with_dataclass
+    )
 
-AstroidManager().register_transform(
-    nodes.Call,
-    inference_tip(infer_dataclass_field_call, raise_on_overwrite=True),
-    _looks_like_dataclass_field_call,
-)
+    manager.register_transform(
+        nodes.Call,
+        inference_tip(infer_dataclass_field_call, raise_on_overwrite=True),
+        _looks_like_dataclass_field_call,
+    )
 
-AstroidManager().register_transform(
-    nodes.Unknown,
-    inference_tip(infer_dataclass_attribute, raise_on_overwrite=True),
-    _looks_like_dataclass_attribute,
-)
+    manager.register_transform(
+        nodes.Unknown,
+        inference_tip(infer_dataclass_attribute, raise_on_overwrite=True),
+        _looks_like_dataclass_attribute,
+    )

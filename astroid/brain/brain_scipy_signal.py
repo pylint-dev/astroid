@@ -85,4 +85,5 @@ def scipy_signal():
     )
 
 
-register_module_extender(AstroidManager(), "scipy.signal", scipy_signal)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "scipy.signal", scipy_signal)

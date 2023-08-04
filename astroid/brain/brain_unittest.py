@@ -26,4 +26,5 @@ def IsolatedAsyncioTestCaseImport():
     )
 
 
-register_module_extender(AstroidManager(), "unittest", IsolatedAsyncioTestCaseImport)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "unittest", IsolatedAsyncioTestCaseImport)

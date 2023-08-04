@@ -652,24 +652,27 @@ def _is_enum_subclass(cls: astroid.ClassDef) -> bool:
         return False
 
 
-AstroidManager().register_transform(
-    nodes.Call, inference_tip(infer_named_tuple), _looks_like_namedtuple
-)
-AstroidManager().register_transform(
-    nodes.Call, inference_tip(infer_enum), _looks_like_enum
-)
-AstroidManager().register_transform(
-    nodes.ClassDef, infer_enum_class, predicate=_is_enum_subclass
-)
-AstroidManager().register_transform(
-    nodes.ClassDef, inference_tip(infer_typing_namedtuple_class), _has_namedtuple_base
-)
-AstroidManager().register_transform(
-    nodes.FunctionDef,
-    inference_tip(infer_typing_namedtuple_function),
-    lambda node: node.name == "NamedTuple"
-    and getattr(node.root(), "name", None) == "typing",
-)
-AstroidManager().register_transform(
-    nodes.Call, inference_tip(infer_typing_namedtuple), _looks_like_typing_namedtuple
-)
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(
+        nodes.Call, inference_tip(infer_named_tuple), _looks_like_namedtuple
+    )
+    manager.register_transform(nodes.Call, inference_tip(infer_enum), _looks_like_enum)
+    manager.register_transform(
+        nodes.ClassDef, infer_enum_class, predicate=_is_enum_subclass
+    )
+    manager.register_transform(
+        nodes.ClassDef,
+        inference_tip(infer_typing_namedtuple_class),
+        _has_namedtuple_base,
+    )
+    manager.register_transform(
+        nodes.FunctionDef,
+        inference_tip(infer_typing_namedtuple_function),
+        lambda node: node.name == "NamedTuple"
+        and getattr(node.root(), "name", None) == "typing",
+    )
+    manager.register_transform(
+        nodes.Call,
+        inference_tip(infer_typing_namedtuple),
+        _looks_like_typing_namedtuple,
+    )

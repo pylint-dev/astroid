@@ -208,5 +208,6 @@ def _http_client_transform():
     )
 
 
-register_module_extender(AstroidManager(), "http", _http_transform)
-register_module_extender(AstroidManager(), "http.client", _http_client_transform)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "http", _http_transform)
+    register_module_extender(manager, "http.client", _http_client_transform)

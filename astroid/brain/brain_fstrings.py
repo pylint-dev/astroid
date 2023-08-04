@@ -68,4 +68,5 @@ def _transform_formatted_value(  # pylint: disable=inconsistent-return-statement
 # The problem is that FormattedValue.value, which is a Name node,
 # has wrong line numbers, usually 1. This creates problems for pylint,
 # which expects correct line numbers for things such as message control.
-AstroidManager().register_transform(nodes.FormattedValue, _transform_formatted_value)
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(nodes.FormattedValue, _transform_formatted_value)

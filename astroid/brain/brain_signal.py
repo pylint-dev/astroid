@@ -116,4 +116,5 @@ def _sigmasks_enum() -> str:
     return ""
 
 
-register_module_extender(AstroidManager(), "signal", _signals_enums_transform)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "signal", _signals_enums_transform)

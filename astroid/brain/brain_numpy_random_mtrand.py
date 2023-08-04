@@ -66,6 +66,7 @@ def numpy_random_mtrand_transform():
     )
 
 
-register_module_extender(
-    AstroidManager(), "numpy.random.mtrand", numpy_random_mtrand_transform
-)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(
+        manager, "numpy.random.mtrand", numpy_random_mtrand_transform
+    )

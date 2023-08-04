@@ -27,5 +27,6 @@ def datetime_transform():
     )
 
 
-if PY312_PLUS:
-    register_module_extender(AstroidManager(), "datetime", datetime_transform)
+def register(manager: AstroidManager) -> None:
+    if PY312_PLUS:
+        register_module_extender(manager, "datetime", datetime_transform)

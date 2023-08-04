@@ -180,4 +180,5 @@ def _curses_transform():
     )
 
 
-register_module_extender(AstroidManager(), "curses", _curses_transform)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "curses", _curses_transform)

@@ -67,4 +67,5 @@ _namespace_packages = {}
     )
 
 
-register_module_extender(AstroidManager(), "pkg_resources", pkg_resources_transform)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "pkg_resources", pkg_resources_transform)

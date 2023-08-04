@@ -93,4 +93,5 @@ def _hashlib_transform():
     return parse(classes)
 
 
-register_module_extender(AstroidManager(), "hashlib", _hashlib_transform)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "hashlib", _hashlib_transform)

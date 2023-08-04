@@ -243,7 +243,8 @@ def _register_require_version(node):
     return node
 
 
-AstroidManager().register_failed_import_hook(_import_gi_module)
-AstroidManager().register_transform(
-    nodes.Call, _register_require_version, _looks_like_require_version
-)
+def register(manager: AstroidManager) -> None:
+    manager.register_failed_import_hook(_import_gi_module)
+    manager.register_transform(
+        nodes.Call, _register_require_version, _looks_like_require_version
+    )

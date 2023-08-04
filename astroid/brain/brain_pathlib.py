@@ -44,8 +44,9 @@ def infer_parents_subscript(
     raise UseInferenceDefault
 
 
-AstroidManager().register_transform(
-    nodes.Subscript,
-    inference_tip(infer_parents_subscript),
-    _looks_like_parents_subscript,
-)
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(
+        nodes.Subscript,
+        inference_tip(infer_parents_subscript),
+        _looks_like_parents_subscript,
+    )
