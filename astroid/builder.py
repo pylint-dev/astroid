@@ -233,7 +233,6 @@ class AstroidBuilder(raw_building.InspectBuilder):
         from astroid import objects  # pylint: disable=import-outside-toplevel
 
         try:
-            frame = node.frame()
             for inferred in node.expr.infer():
                 if isinstance(inferred, util.UninferableBase):
                     continue
@@ -264,15 +263,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 values = iattrs.setdefault(node.attrname, [])
                 if node in values:
                     continue
-                # get assign in __init__ first XXX useful ?
-                if (
-                    frame.name == "__init__"
-                    and values
-                    and values[0].frame().name != "__init__"
-                ):
-                    values.insert(0, node)
-                else:
-                    values.append(node)
+                values.append(node)
         except InferenceError:
             pass
 
