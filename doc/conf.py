@@ -251,12 +251,8 @@ autodoc_default_options = {
     "undoc-members": True,
     "show-inheritance": True,
 }
-autoclass_content = "both"
-autodoc_member_order = "groupwise"
-autodoc_typehints = "description"
 intersphinx_mapping = {
-    "green_tree_snakes": (
-        "http://greentreesnakes.readthedocs.io/en/latest/",
-        "ast_objects.inv",
-    ),
+    # Use dev so that the documentation builds when we are adding support for
+    # upcoming Python versions.
+    "python": ("https://docs.python.org/dev", None),
 }
