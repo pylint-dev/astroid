@@ -454,5 +454,5 @@ class AstroidManager:
 
         self.bootstrap()
 
-        # Reload brain plugins. During initialisation this is done in astroid.__init__.py
+        # Reload brain plugins. During initialisation this is done in astroid.manager.py
         register_all_brains(self)
