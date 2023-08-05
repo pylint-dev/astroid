@@ -16,3 +16,5 @@ astroid.egg-info/
 .mypy_cache/
 venv
 doc/_build/
+doc/api/base_nodes/
+doc/api/nodes/
