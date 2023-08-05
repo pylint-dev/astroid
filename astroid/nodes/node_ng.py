@@ -332,9 +332,12 @@ class NodeNG:
 
         :returns: The root node.
         """
-        if self.parent:
-            return self.parent.root()
-        return self  # type: ignore[return-value] # Only 'Module' does not have a parent node.
+        if not (parent := self.parent):
+            return self  # type: ignore[return-value] # Only 'Module' does not have a parent node.
+
+        while parent.parent:
+            parent = parent.parent
+        return parent  # type: ignore[return-value] # Only 'Module' does not have a parent node.
 
     def child_sequence(self, child):
         """Search for the sequence that contains this child.
