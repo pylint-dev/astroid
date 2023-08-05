@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, TypeVar, overload
 
+from astroid.exceptions import ParentMissingError
 from astroid.filter_statements import _filter_stmts
 from astroid.nodes import _base_nodes, scoped_nodes
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
-from astroid.exceptions import ParentMissingError
 
 if TYPE_CHECKING:
     from astroid import nodes
