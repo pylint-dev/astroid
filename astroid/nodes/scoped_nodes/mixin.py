@@ -8,8 +8,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, TypeVar, overload
 
+from astroid.exceptions import ParentMissingError
 from astroid.filter_statements import _filter_stmts
-from astroid.nodes import _base_nodes, node_classes, scoped_nodes
+from astroid.nodes import _base_nodes, scoped_nodes
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
@@ -38,9 +39,12 @@ class LocalsDictNodeNG(_base_nodes.LookupMixIn):
         :rtype: str
         """
         # pylint: disable=no-member; github.com/pylint-dev/astroid/issues/278
-        if self.parent is None or isinstance(self.parent, node_classes.Unknown):
+        if self.parent is None:
             return self.name
-        return f"{self.parent.frame().qname()}.{self.name}"
+        try:
+            return f"{self.parent.frame().qname()}.{self.name}"
+        except ParentMissingError:
+            return self.name
 
     def scope(self: _T) -> _T:
         """The first parent node defining a new scope.
