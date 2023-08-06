@@ -26,4 +26,4 @@ class DateutilBrainTest(unittest.TestCase):
         """
         )
         d_type = next(module["d"].infer())
-        self.assertEqual(d_type.qname(), "datetime.datetime")
+        self.assertIn(d_type.qname(), {"_pydatetime.datetime", "datetime.datetime"})
