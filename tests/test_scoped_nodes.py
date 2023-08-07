@@ -277,7 +277,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         file_build = builder.AstroidBuilder().file_build(path, "all")
         with self.assertRaises(AttributeError):
             # pylint: disable=pointless-statement, no-member
-            file_build.file_stream  # noqa[B018]
+            file_build.file_stream  # noqa: B018
 
     def test_stream_api(self) -> None:
         path = resources.find("data/all.py")

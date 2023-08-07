@@ -143,7 +143,7 @@ def run():
         classes = astroid.nodes_of_class(nodes.ClassDef)
         for klass in classes:
             # triggers the _is_metaclass call
-            klass.type  # pylint: disable=pointless-statement  # noqa[B018]
+            klass.type  # pylint: disable=pointless-statement  # noqa: B018
 
     def test_decorator_callchain_issue42(self) -> None:
         builder = AstroidBuilder()
@@ -283,7 +283,7 @@ def test(val):
                 "With unicode : {'`'} "
 
         instance = MyClass()
-        """  # noqa[RUF001]
+        """  # noqa: RUF001
         )
 
         next(node.value.infer()).as_string()
