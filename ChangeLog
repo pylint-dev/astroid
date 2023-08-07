@@ -221,6 +221,10 @@ Release date: TBA
 
   Closes pylint-dev/pylint#8802
 
+* Infer user-defined enum classes by checking if the class is a subtype of ``enum.Enum``.
+
+  Closes pylint-dev/pylint#8897
+
 * Fix inference of functions with ``@functools.lru_cache`` decorators without
   parentheses.
 
