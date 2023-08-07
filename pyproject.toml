@@ -116,5 +116,9 @@ fixable = [
     "I",  # isort
     "RUF", # ruff
 ]
-unfixable = []
-target-version = "py37"
+unfixable = ["RUF001"]
+target-version = "py38"
+
+[tool.ruff.per-file-ignores]
+# Ruff is autofixing a tests with a voluntarily sneaky unicode
+"tests/test_regrtest.py" = ["RUF001"]
