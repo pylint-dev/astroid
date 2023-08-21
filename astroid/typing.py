@@ -43,6 +43,7 @@ class AstroidManagerBrain(TypedDict):
     _failed_import_hooks: list[Callable[[str], nodes.Module]]
     always_load_extensions: bool
     optimize_ast: bool
+    max_inferable_values: int
     extension_package_whitelist: set[str]
     _transform: transforms.TransformVisitor
 
