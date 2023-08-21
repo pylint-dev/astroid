@@ -329,7 +329,7 @@ Release date: 2023-03-06
 * ``max_inferable_values`` can now be set on ``AstroidManager`` instances, e.g. ``astroid.MANAGER``
   besides just the ``AstroidManager`` class itself.
 
-  Closes # 2280
+  Closes #2280
 
 * ``Astroid`` now retrieves the default values of keyword only arguments and sets them on
   ``Arguments.kw_defaults``.
