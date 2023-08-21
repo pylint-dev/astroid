@@ -407,6 +407,12 @@ class BorgAstroidManagerTC(unittest.TestCase):
 
     def test_max_inferable_values(self) -> None:
         mgr = manager.AstroidManager()
+        original_limit = mgr.max_inferable_values
+        def reset_limit():
+            nonlocal original_limit
+            manager.AstroidManager().max_inferable_values = original_limit
+        self.addCleanup(reset_limit)
+
         mgr.max_inferable_values = 4
         self.assertEqual(manager.AstroidManager.brain["max_inferable_values"], 4)
 
