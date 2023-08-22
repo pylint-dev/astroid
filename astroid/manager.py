@@ -59,10 +59,10 @@ class AstroidManager:
         "_failed_import_hooks": [],
         "always_load_extensions": False,
         "optimize_ast": False,
+        "max_inferable_values": 100,
         "extension_package_whitelist": set(),
         "_transform": TransformVisitor(),
     }
-    max_inferable_values: ClassVar[int] = 100
 
     def __init__(self) -> None:
         # NOTE: cache entries are added by the [re]builder
@@ -89,6 +89,14 @@ class AstroidManager:
     @optimize_ast.setter
     def optimize_ast(self, value: bool) -> None:
         AstroidManager.brain["optimize_ast"] = value
+
+    @property
+    def max_inferable_values(self) -> int:
+        return AstroidManager.brain["max_inferable_values"]
+
+    @max_inferable_values.setter
+    def max_inferable_values(self, value: int) -> None:
+        AstroidManager.brain["max_inferable_values"] = value
 
     @property
     def register_transform(self):
