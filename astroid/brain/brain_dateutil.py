@@ -23,4 +23,5 @@ def dateutil_transform():
     )
 
 
-register_module_extender(AstroidManager(), "dateutil.parser", dateutil_transform)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "dateutil.parser", dateutil_transform)

@@ -159,13 +159,11 @@ def _looks_like_functools_member(node: Attribute | Call, member: str) -> bool:
 _looks_like_partial = partial(_looks_like_functools_member, member="partial")
 
 
-AstroidManager().register_transform(
-    FunctionDef, _transform_lru_cache, _looks_like_lru_cache
-)
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(FunctionDef, _transform_lru_cache, _looks_like_lru_cache)
 
-
-AstroidManager().register_transform(
-    Call,
-    inference_tip(_functools_partial_inference),
-    _looks_like_partial,
-)
+    manager.register_transform(
+        Call,
+        inference_tip(_functools_partial_inference),
+        _looks_like_partial,
+    )

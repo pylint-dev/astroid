@@ -102,4 +102,5 @@ def _subprocess_transform():
     return parse(code)
 
 
-register_module_extender(AstroidManager(), "subprocess", _subprocess_transform)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "subprocess", _subprocess_transform)

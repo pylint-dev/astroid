@@ -91,6 +91,7 @@ def attr_attributes_transform(node: ClassDef) -> None:
                 node.instance_attrs[target.name] = [rhs_node]
 
 
-AstroidManager().register_transform(
-    ClassDef, attr_attributes_transform, is_decorated_with_attrs
-)
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(
+        ClassDef, attr_attributes_transform, is_decorated_with_attrs
+    )

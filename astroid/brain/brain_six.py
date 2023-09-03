@@ -222,18 +222,19 @@ def transform_six_with_metaclass(node):
     return node
 
 
-register_module_extender(AstroidManager(), "six", six_moves_transform)
-register_module_extender(
-    AstroidManager(), "requests.packages.urllib3.packages.six", six_moves_transform
-)
-AstroidManager().register_failed_import_hook(_six_fail_hook)
-AstroidManager().register_transform(
-    nodes.ClassDef,
-    transform_six_add_metaclass,
-    _looks_like_decorated_with_six_add_metaclass,
-)
-AstroidManager().register_transform(
-    nodes.ClassDef,
-    transform_six_with_metaclass,
-    _looks_like_nested_from_six_with_metaclass,
-)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "six", six_moves_transform)
+    register_module_extender(
+        manager, "requests.packages.urllib3.packages.six", six_moves_transform
+    )
+    manager.register_failed_import_hook(_six_fail_hook)
+    manager.register_transform(
+        nodes.ClassDef,
+        transform_six_add_metaclass,
+        _looks_like_decorated_with_six_add_metaclass,
+    )
+    manager.register_transform(
+        nodes.ClassDef,
+        transform_six_with_metaclass,
+        _looks_like_nested_from_six_with_metaclass,
+    )

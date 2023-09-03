@@ -75,4 +75,5 @@ def responses_funcs():
     )
 
 
-register_module_extender(AstroidManager(), "responses", responses_funcs)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "responses", responses_funcs)

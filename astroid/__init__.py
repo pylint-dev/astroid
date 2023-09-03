@@ -42,11 +42,10 @@ from astroid.nodes import node_classes, scoped_nodes
 
 from astroid import raw_building
 from astroid.__pkginfo__ import __version__, version
-from astroid.astroid_manager import MANAGER
 from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
-from astroid.const import BRAIN_MODULES_DIRECTORY, PY310_PLUS, Context
+from astroid.const import PY310_PLUS, Context
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidBuildingException,
@@ -83,6 +82,7 @@ from astroid.objects import ExceptionInstance
 # and we need astroid/scoped_nodes and astroid/node_classes to work. So
 # importing with a wildcard would clash with astroid/nodes/scoped_nodes
 # and astroid/nodes/node_classes.
+from astroid.astroid_manager import MANAGER
 from astroid.nodes import (
     CONST_CLS,
     AnnAssign,
@@ -186,8 +186,3 @@ if (
     and getattr(tokenize._compile, "__wrapped__", None) is None  # type: ignore[attr-defined]
 ):
     tokenize._compile = functools.lru_cache(tokenize._compile)  # type: ignore[attr-defined]
-
-# load brain plugins
-for module in BRAIN_MODULES_DIRECTORY.iterdir():
-    if module.suffix == ".py":
-        import_module(f"astroid.brain.{module.stem}")

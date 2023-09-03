@@ -43,9 +43,6 @@ def _regex_transform() -> nodes.Module:
     )
 
 
-register_module_extender(AstroidManager(), "regex", _regex_transform)
-
-
 CLASS_GETITEM_TEMPLATE = """
 @classmethod
 def __class_getitem__(cls, item):
@@ -92,6 +89,8 @@ def infer_pattern_match(node: nodes.Call, ctx: context.InferenceContext | None =
     return iter([class_def])
 
 
-AstroidManager().register_transform(
-    nodes.Call, inference_tip(infer_pattern_match), _looks_like_pattern_or_match
-)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "regex", _regex_transform)
+    manager.register_transform(
+        nodes.Call, inference_tip(infer_pattern_match), _looks_like_pattern_or_match
+    )

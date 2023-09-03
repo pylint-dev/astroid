@@ -47,8 +47,9 @@ def remove_draw_parameter_from_composite_strategy(node):
     return node
 
 
-AstroidManager().register_transform(
-    node_class=FunctionDef,
-    transform=remove_draw_parameter_from_composite_strategy,
-    predicate=is_decorated_with_st_composite,
-)
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(
+        node_class=FunctionDef,
+        transform=remove_draw_parameter_from_composite_strategy,
+        predicate=is_decorated_with_st_composite,
+    )

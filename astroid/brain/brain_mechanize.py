@@ -120,4 +120,5 @@ def mechanize_transform():
     )
 
 
-register_module_extender(AstroidManager(), "mechanize", mechanize_transform)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "mechanize", mechanize_transform)

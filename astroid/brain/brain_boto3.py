@@ -26,6 +26,7 @@ def _looks_like_boto3_service_request(node) -> bool:
     return node.qname() == BOTO_SERVICE_FACTORY_QUALIFIED_NAME
 
 
-AstroidManager().register_transform(
-    ClassDef, service_request_transform, _looks_like_boto3_service_request
-)
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(
+        ClassDef, service_request_transform, _looks_like_boto3_service_request
+    )

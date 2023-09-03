@@ -14,11 +14,9 @@ import os
 import types
 import zipimport
 from collections.abc import Callable, Iterator, Sequence
-from importlib.util import find_spec, module_from_spec
 from typing import Any, ClassVar
 
 from astroid import nodes
-from astroid.const import BRAIN_MODULES_DIRECTORY
 from astroid.context import InferenceContext, _invalidate_cache
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec, util
@@ -440,6 +438,7 @@ class AstroidManager:
         """
         # import here because of cyclic imports
         # pylint: disable=import-outside-toplevel
+        from astroid.brain.helpers import register_all_brains
         from astroid.inference_tip import clear_inference_tip_cache
         from astroid.interpreter.objectmodel import ObjectModel
         from astroid.nodes._base_nodes import LookupMixIn
@@ -463,11 +462,5 @@ class AstroidManager:
 
         self.bootstrap()
 
-        # Reload brain plugins. During initialisation this is done in astroid.__init__.py
-        for module in BRAIN_MODULES_DIRECTORY.iterdir():
-            if module.suffix == ".py":
-                module_spec = find_spec(f"astroid.brain.{module.stem}")
-                assert module_spec
-                module_object = module_from_spec(module_spec)
-                assert module_spec.loader
-                module_spec.loader.exec_module(module_object)
+        # Reload brain plugins. During initialisation this is done in astroid.manager.py
+        register_all_brains(self)

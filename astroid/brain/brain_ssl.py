@@ -155,4 +155,5 @@ def ssl_transform():
     )
 
 
-register_module_extender(AstroidManager(), "ssl", ssl_transform)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "ssl", ssl_transform)

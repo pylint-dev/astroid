@@ -22,4 +22,5 @@ def _re_transform():
     )
 
 
-register_module_extender(AstroidManager(), "crypt", _re_transform)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "crypt", _re_transform)

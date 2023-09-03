@@ -79,5 +79,6 @@ except ImportError:
     )
 
 
-register_module_extender(AstroidManager(), "pytest", pytest_transform)
-register_module_extender(AstroidManager(), "py.test", pytest_transform)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "pytest", pytest_transform)
+    register_module_extender(manager, "py.test", pytest_transform)

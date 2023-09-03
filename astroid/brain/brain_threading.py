@@ -28,4 +28,5 @@ def _thread_transform():
     )
 
 
-register_module_extender(AstroidManager(), "threading", _thread_transform)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "threading", _thread_transform)
