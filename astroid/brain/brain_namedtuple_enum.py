@@ -403,7 +403,10 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
         dunder_members = {}
         target_names = set()
         for local, values in node.locals.items():
-            if any(not isinstance(value, nodes.AssignName) for value in values):
+            if (
+                any(not isinstance(value, nodes.AssignName) for value in values)
+                or local == "_ignore_"
+            ):
                 continue
 
             stmt = values[0].statement()

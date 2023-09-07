@@ -221,6 +221,11 @@ Release date: TBA
 
   Closes pylint-dev/pylint#8802
 
+
+* Exclude the ``_ignore_`` attribute from the ``__members__`` container.
+
+  Closes pylint-dev/pylint#9015
+
 * Fix inference of functions with ``@functools.lru_cache`` decorators without
   parentheses.
 
