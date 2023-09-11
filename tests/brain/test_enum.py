@@ -543,3 +543,23 @@ class EnumBrainTest(unittest.TestCase):
         inferred = next(ast_node.infer())
         members_names = [const_node.value for const_node, name_obj in inferred.items]
         assert members_names == ["FOO", "BAR", "BAZ"]
+
+    def test_enum_sunder_names(self) -> None:
+        """Test that both `_name_` and `_value_` sunder names exist"""
+
+        sunder_name, sunder_value = builder.extract_node(
+            """
+        import enum
+
+
+        class MyEnum(enum.Enum):
+            APPLE = 42
+        MyEnum.APPLE._name_ #@
+        MyEnum.APPLE._value_ #@
+        """
+        )
+        inferred_name = next(sunder_name.infer())
+        assert inferred_name.value == "APPLE"
+
+        inferred_value = next(sunder_value.infer())
+        assert inferred_value.value == 42

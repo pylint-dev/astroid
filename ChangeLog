@@ -22,6 +22,8 @@ Release date: TBA
 * Exclude class attributes from the ``__members__`` container of an ``Enum`` class when they are
   ``nodes.AnnAssign`` nodes with no assigned value.
 
+* Fix a false positive for ``no-member`` when accessing the ``_name_`` and ``_value_`` sunders of an Enum member value.
+
   Refs pylint-dev/pylint#7402
 
 * Remove ``@cached`` and ``@cachedproperty`` decorator (just use ``@cached_property`` from the stdlib).
