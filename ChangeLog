@@ -221,6 +221,11 @@ Release date: TBA
 
   Closes pylint-dev/pylint#8802
 
+
+* Fix false positives for ``no-member`` and ``invalid-name`` when using the ``_name_``, ``_value_`` and ``_ignore_`` sunders in Enums.
+
+  Closes pylint-dev/pylint#9015
+
 * Fix inference of functions with ``@functools.lru_cache`` decorators without
   parentheses.
 

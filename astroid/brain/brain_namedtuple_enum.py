@@ -403,7 +403,10 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
         dunder_members = {}
         target_names = set()
         for local, values in node.locals.items():
-            if any(not isinstance(value, nodes.AssignName) for value in values):
+            if (
+                any(not isinstance(value, nodes.AssignName) for value in values)
+                or local == "_ignore_"
+            ):
                 continue
 
             stmt = values[0].statement()
@@ -440,7 +443,13 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                     def value(self):
                         return {return_value}
                     @property
+                    def _value_(self):
+                        return {return_value}
+                    @property
                     def name(self):
+                        return "{name}"
+                    @property
+                    def _name_(self):
                         return "{name}"
                 """.format(
                         name=target.name,
