@@ -493,3 +493,39 @@ class EnumBrainTest(unittest.TestCase):
         for node in (attribute_nodes[1], name_nodes[1]):
             with pytest.raises(InferenceError):
                 node.inferred()
+
+    def test_local_enum_child_class_inference(self) -> None:
+        """Originally reported in https://github.com/pylint-dev/pylint/issues/8897
+
+        Test that a user-defined enum class is inferred when it subclasses
+        another user-defined enum class.
+        """
+        enum_class_node, enum_member_value_node = astroid.extract_node(
+            """
+        import sys
+
+        from enum import Enum
+
+        if sys.version_info >= (3, 11):
+            from enum import StrEnum
+        else:
+            class StrEnum(str, Enum):
+                pass
+
+
+        class Color(StrEnum): #@
+            RED = "red"
+
+
+        Color.RED.value #@
+        """
+        )
+        assert "RED" in enum_class_node.locals
+
+        enum_members = enum_class_node.locals["__members__"][0].items
+        assert len(enum_members) == 1
+        _, name = enum_members[0]
+        assert name.name == "RED"
+
+        inferred_enum_member_value_node = next(enum_member_value_node.infer())
+        assert inferred_enum_member_value_node.value == "red"
