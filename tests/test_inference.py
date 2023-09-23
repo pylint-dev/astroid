@@ -7116,4 +7116,4 @@ def test_sys_argv_uninferable() -> None:
     )
     sys_argv_value = list(a._infer())
     assert len(sys_argv_value) == 1
-    assert sys_argv_value[0] is Uninferable
+    assert sys_argv_value[0] is util.Uninferable
