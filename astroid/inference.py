@@ -369,7 +369,12 @@ def infer_attribute(
                 context.constraints[self.attrname] = constraint.get_constraints(
                     self, frame=frame
                 )
-            yield from owner.igetattr(self.attrname, context)
+            if self.attrname == "argv" and owner.name == "sys":
+                # sys.argv will never be inferable during static analysis
+                # It's value would be the args passed to the linter itself
+                yield util.Uninferable
+            else:
+                yield from owner.igetattr(self.attrname, context)
         except (
             AttributeInferenceError,
             InferenceError,
