@@ -20,19 +20,10 @@ from astroid.exceptions import (
     AstroidTypeError,
     AstroidValueError,
     InferenceError,
-    MroError,
     UseInferenceDefault,
 )
 from astroid.manager import AstroidManager
 
-ENUM_BASE_NAMES = {
-    "Enum",
-    "IntEnum",
-    "enum.Enum",
-    "enum.IntEnum",
-    "IntFlag",
-    "enum.IntFlag",
-}
 ENUM_QNAME: Final[str] = "enum.Enum"
 TYPING_NAMEDTUPLE_QUALIFIED: Final = {
     "typing.NamedTuple",
@@ -653,14 +644,7 @@ def _get_namedtuple_fields(node: nodes.Call) -> str:
 
 def _is_enum_subclass(cls: astroid.ClassDef) -> bool:
     """Return whether cls is a subclass of an Enum."""
-    try:
-        return any(
-            klass.name in ENUM_BASE_NAMES
-            and getattr(klass.root(), "name", None) == "enum"
-            for klass in cls.mro()
-        )
-    except MroError:
-        return False
+    return cls.is_subtype_of("enum.Enum")
 
 
 def register(manager: AstroidManager) -> None:

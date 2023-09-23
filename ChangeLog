@@ -221,6 +221,9 @@ Release date: TBA
 
   Closes pylint-dev/pylint#8802
 
+* Infer user-defined enum classes by checking if the class is a subtype of ``enum.Enum``.
+
+  Closes pylint-dev/pylint#8897
 
 * Fix false positives for ``no-member`` and ``invalid-name`` when using the ``_name_``, ``_value_`` and ``_ignore_`` sunders in Enums.
 
