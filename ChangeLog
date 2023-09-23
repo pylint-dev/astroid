@@ -225,6 +225,10 @@ Release date: TBA
 
   Closes pylint-dev/pylint#8897
 
+* Fix false positives for ``no-member`` and ``invalid-name`` when using the ``_name_``, ``_value_`` and ``_ignore_`` sunders in Enums.
+
+  Closes pylint-dev/pylint#9015
+
 * Fix inference of functions with ``@functools.lru_cache`` decorators without
   parentheses.
 
@@ -329,6 +333,11 @@ Release date: 2023-03-06
 * ``AstroidManager.clear_cache`` now also clears the inference context cache.
 
   Refs #1780
+
+* ``max_inferable_values`` can now be set on ``AstroidManager`` instances, e.g. ``astroid.MANAGER``
+  besides just the ``AstroidManager`` class itself.
+
+  Closes #2280
 
 * ``Astroid`` now retrieves the default values of keyword only arguments and sets them on
   ``Arguments.kw_defaults``.

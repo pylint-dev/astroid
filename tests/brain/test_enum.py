@@ -557,3 +557,45 @@ class EnumBrainTest(unittest.TestCase):
 
         inferred_enum_member_value_node = next(enum_member_value_node.infer())
         assert inferred_enum_member_value_node.value == "red"
+
+    def test_enum_with_ignore(self) -> None:
+        """Exclude ``_ignore_`` from the ``__members__`` container
+        Originally reported in https://github.com/pylint-dev/pylint/issues/9015
+        """
+
+        ast_node: nodes.Attribute = builder.extract_node(
+            """
+        import enum
+
+
+        class MyEnum(enum.Enum):
+            FOO = enum.auto()
+            BAR = enum.auto()
+            _ignore_ = ["BAZ"]
+            BAZ = 42
+        MyEnum.__members__
+        """
+        )
+        inferred = next(ast_node.infer())
+        members_names = [const_node.value for const_node, name_obj in inferred.items]
+        assert members_names == ["FOO", "BAR", "BAZ"]
+
+    def test_enum_sunder_names(self) -> None:
+        """Test that both `_name_` and `_value_` sunder names exist"""
+
+        sunder_name, sunder_value = builder.extract_node(
+            """
+        import enum
+
+
+        class MyEnum(enum.Enum):
+            APPLE = 42
+        MyEnum.APPLE._name_ #@
+        MyEnum.APPLE._value_ #@
+        """
+        )
+        inferred_name = next(sunder_name.infer())
+        assert inferred_name.value == "APPLE"
+
+        inferred_value = next(sunder_value.infer())
+        assert inferred_value.value == 42

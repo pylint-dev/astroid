@@ -155,8 +155,9 @@ def _looks_like_numpy_ndarray(node) -> bool:
     return isinstance(node, Attribute) and node.attrname == "ndarray"
 
 
-AstroidManager().register_transform(
-    Attribute,
-    inference_tip(infer_numpy_ndarray),
-    _looks_like_numpy_ndarray,
-)
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(
+        Attribute,
+        inference_tip(infer_numpy_ndarray),
+        _looks_like_numpy_ndarray,
+    )

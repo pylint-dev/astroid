@@ -36,4 +36,5 @@ def _session_transform():
     )
 
 
-register_module_extender(AstroidManager(), "sqlalchemy.orm.session", _session_transform)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "sqlalchemy.orm.session", _session_transform)

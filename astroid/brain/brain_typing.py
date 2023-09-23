@@ -452,33 +452,34 @@ def _typing_transform():
     )
 
 
-AstroidManager().register_transform(
-    Call,
-    inference_tip(infer_typing_typevar_or_newtype),
-    looks_like_typing_typevar_or_newtype,
-)
-AstroidManager().register_transform(
-    Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript
-)
-AstroidManager().register_transform(
-    Call, inference_tip(infer_typing_cast), _looks_like_typing_cast
-)
-
-if PY39_PLUS:
-    AstroidManager().register_transform(
-        FunctionDef, inference_tip(infer_typedDict), _looks_like_typedDict
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(
+        Call,
+        inference_tip(infer_typing_typevar_or_newtype),
+        looks_like_typing_typevar_or_newtype,
     )
-else:
-    AstroidManager().register_transform(
-        ClassDef, inference_tip(infer_old_typedDict), _looks_like_typedDict
+    manager.register_transform(
+        Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript
+    )
+    manager.register_transform(
+        Call, inference_tip(infer_typing_cast), _looks_like_typing_cast
     )
 
-AstroidManager().register_transform(
-    Call, inference_tip(infer_typing_alias), _looks_like_typing_alias
-)
-AstroidManager().register_transform(
-    Call, inference_tip(infer_special_alias), _looks_like_special_alias
-)
+    if PY39_PLUS:
+        manager.register_transform(
+            FunctionDef, inference_tip(infer_typedDict), _looks_like_typedDict
+        )
+    else:
+        manager.register_transform(
+            ClassDef, inference_tip(infer_old_typedDict), _looks_like_typedDict
+        )
 
-if PY312_PLUS:
-    register_module_extender(AstroidManager(), "typing", _typing_transform)
+    manager.register_transform(
+        Call, inference_tip(infer_typing_alias), _looks_like_typing_alias
+    )
+    manager.register_transform(
+        Call, inference_tip(infer_special_alias), _looks_like_special_alias
+    )
+
+    if PY312_PLUS:
+        register_module_extender(manager, "typing", _typing_transform)

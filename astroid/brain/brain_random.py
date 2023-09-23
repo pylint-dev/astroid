@@ -97,6 +97,7 @@ def _looks_like_random_sample(node) -> bool:
     return False
 
 
-AstroidManager().register_transform(
-    Call, inference_tip(infer_random_sample), _looks_like_random_sample
-)
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(
+        Call, inference_tip(infer_random_sample), _looks_like_random_sample
+    )

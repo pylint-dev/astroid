@@ -22,6 +22,7 @@ def numpy_core_einsumfunc_transform() -> nodes.Module:
     )
 
 
-register_module_extender(
-    AstroidManager(), "numpy.core.einsumfunc", numpy_core_einsumfunc_transform
-)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(
+        manager, "numpy.core.einsumfunc", numpy_core_einsumfunc_transform
+    )

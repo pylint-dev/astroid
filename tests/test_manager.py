@@ -405,6 +405,19 @@ class BorgAstroidManagerTC(unittest.TestCase):
         second_built = second_manager.ast_from_module_name("builtins")
         self.assertIs(built, second_built)
 
+    def test_max_inferable_values(self) -> None:
+        mgr = manager.AstroidManager()
+        original_limit = mgr.max_inferable_values
+
+        def reset_limit():
+            nonlocal original_limit
+            manager.AstroidManager().max_inferable_values = original_limit
+
+        self.addCleanup(reset_limit)
+
+        mgr.max_inferable_values = 4
+        self.assertEqual(manager.AstroidManager.brain["max_inferable_values"], 4)
+
 
 class ClearCacheTest(unittest.TestCase):
     def test_clear_cache_clears_other_lru_caches(self) -> None:

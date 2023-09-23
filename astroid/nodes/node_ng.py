@@ -165,7 +165,7 @@ class NodeNG:
 
         # Limit inference amount to help with performance issues with
         # exponentially exploding possible results.
-        limit = AstroidManager.max_inferable_values
+        limit = AstroidManager().max_inferable_values
         for i, result in enumerate(self._infer(context=context, **kwargs)):
             if i >= limit or (context.nodes_inferred > context.max_inferred):
                 results.append(util.Uninferable)

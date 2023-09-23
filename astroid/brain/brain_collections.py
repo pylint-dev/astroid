@@ -81,9 +81,6 @@ def _ordered_dict_mock():
     return base_ordered_dict_class
 
 
-register_module_extender(AstroidManager(), "collections", _collections_transform)
-
-
 def _looks_like_subscriptable(node: ClassDef) -> bool:
     """
     Returns True if the node corresponds to a ClassDef of the Collections.abc module
@@ -116,11 +113,14 @@ def easy_class_getitem_inference(node, context: InferenceContext | None = None):
     node.locals["__class_getitem__"] = [func_to_add]
 
 
-if PY39_PLUS:
-    # Starting with Python39 some objects of the collection module are subscriptable
-    # thanks to the __class_getitem__ method but the way it is implemented in
-    # _collection_abc makes it difficult to infer. (We would have to handle AssignName inference in the
-    # getitem method of the ClassDef class) Instead we put here a mock of the __class_getitem__ method
-    AstroidManager().register_transform(
-        ClassDef, easy_class_getitem_inference, _looks_like_subscriptable
-    )
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "collections", _collections_transform)
+
+    if PY39_PLUS:
+        # Starting with Python39 some objects of the collection module are subscriptable
+        # thanks to the __class_getitem__ method but the way it is implemented in
+        # _collection_abc makes it difficult to infer. (We would have to handle AssignName inference in the
+        # getitem method of the ClassDef class) Instead we put here a mock of the __class_getitem__ method
+        manager.register_transform(
+            ClassDef, easy_class_getitem_inference, _looks_like_subscriptable
+        )

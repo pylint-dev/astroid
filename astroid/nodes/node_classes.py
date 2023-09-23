@@ -1099,7 +1099,12 @@ def _infer_attribute(
             if isinstance(owner, (ClassDef, Instance)):
                 frame = owner if isinstance(owner, ClassDef) else owner._proxied
                 context.constraints[node.attrname] = get_constraints(node, frame=frame)
-            yield from owner.igetattr(node.attrname, context)
+            if node.attrname == "argv" and owner.name == "sys":
+                # sys.argv will never be inferable during static analysis
+                # It's value would be the args passed to the linter itself
+                yield util.Uninferable
+            else:
+                yield from owner.igetattr(node.attrname, context)
         except (
             AttributeInferenceError,
             InferenceError,

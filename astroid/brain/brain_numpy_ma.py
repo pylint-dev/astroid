@@ -28,4 +28,5 @@ def numpy_ma_transform():
     )
 
 
-register_module_extender(AstroidManager(), "numpy.ma", numpy_ma_transform)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(manager, "numpy.ma", numpy_ma_transform)
