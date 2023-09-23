@@ -7238,3 +7238,18 @@ class TestOldStyleStringFormatting:
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "My name is Daniel, I'm 12.00"
+
+
+def test_sys_argv_uninferable() -> None:
+    """Regression test for https://github.com/pylint-dev/pylint/issues/7710."""
+    a: nodes.List = extract_node(
+        textwrap.dedent(
+            """
+    import sys
+
+    sys.argv"""
+        )
+    )
+    sys_argv_value = list(a._infer())
+    assert len(sys_argv_value) == 1
+    assert sys_argv_value[0] is Uninferable
