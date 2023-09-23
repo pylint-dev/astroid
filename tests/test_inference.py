@@ -4944,6 +4944,9 @@ class TestBool(unittest.TestCase):
         """
         klass = extract_node(code)
         context = InferenceContext()
+        # For this test, we want a fresh inference, rather than a cache hit on
+        # the inference done at brain time in _is_enum_subclass()
+        context.lookupname = "Fresh lookup!"
         _ = klass.getitem(0, context=context)
 
         assert next(iter(context.path))[0].name == "Parent"
