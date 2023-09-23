@@ -32,7 +32,6 @@ Main modules are:
 
 import functools
 import tokenize
-from importlib import import_module
 
 # isort: off
 # We have an isort: off on 'astroid.nodes' because of a circular import.
