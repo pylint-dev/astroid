@@ -6,11 +6,6 @@ What's New in astroid 3.0.0?
 =============================
 Release date: TBA
 
-* Return all existing arguments when calling ``Arguments.arguments()``. This also means ``find_argname`` will now
-  use the whole list of arguments for its search.
-
-  Closes #2213
-
 * Add support for Python 3.12, including PEP 695 type parameter syntax.
 
   Closes #2201
@@ -18,6 +13,17 @@ Release date: TBA
 * Remove support for Python 3.7.
 
   Refs #2137
+
+* Following a deprecation period starting in astroid 2.7.0, the ``astroid.node_classes``
+  and ``astroid.scoped_nodes`` modules have been removed in favor of ``astroid.nodes.node_classes``
+  and ``astroid.nodes.scoped_nodes``.
+
+  Closes #1072
+
+* Return all existing arguments when calling ``Arguments.arguments()``. This also means ``find_argname`` will now
+  use the whole list of arguments for its search.
+
+  Closes #2213
 
 * Exclude class attributes from the ``__members__`` container of an ``Enum`` class when they are
   ``nodes.AnnAssign`` nodes with no assigned value.
