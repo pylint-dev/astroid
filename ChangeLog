@@ -20,6 +20,11 @@ Release date: TBA
 
   Closes #1072
 
+* Following a deprecation period starting in astroid 2.12.0, the ``astroid.mixins`` module
+  has been removed in favor of ``astroid.nodes._base_nodes`` (private).
+
+  Refs #1633
+
 * Return all existing arguments when calling ``Arguments.arguments()``. This also means ``find_argname`` will now
   use the whole list of arguments for its search.
 
