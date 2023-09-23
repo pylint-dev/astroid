@@ -218,10 +218,14 @@ Release date: TBA
 
   Refs pylint-dev/pylint#8598
 
+* Fix false positives for ``no-member`` and ``invalid-name`` when using the ``_name_``, ``_value_`` and ``_ignore_`` sunders in Enums.
+
+  Closes pylint-dev/pylint#9015
+
 
 What's New in astroid 2.15.7?
 =============================
-Release date: TBA
+Release date: 2023-09-23
 
 * Fix a crash when inferring a ``typing.TypeVar`` call.
 
@@ -231,9 +235,49 @@ Release date: TBA
 
   Closes pylint-dev/pylint#8897
 
-* Fix false positives for ``no-member`` and ``invalid-name`` when using the ``_name_``, ``_value_`` and ``_ignore_`` sunders in Enums.
+* Fix inference of functions with ``@functools.lru_cache`` decorators without
+  parentheses.
 
-  Closes pylint-dev/pylint#9015
+  Closes pylint-dev/pylint#8868
+
+* Make ``sys.argv`` uninferable because it never is. (It's impossible to infer
+  the value it will have outside of static analysis where it's our own value.)
+
+  Refs pylint-dev/pylint#7710
+
+
+What's New in astroid 2.15.6?
+=============================
+Release date: 2023-07-08
+
+* Harden ``get_module_part()`` against ``"."``.
+
+  Closes pylint-dev/pylint#8749
+
+* Allow ``AsStringVisitor`` to visit ``objects.PartialFunction``.
+
+  Closes pylint-dev/pylint#8881
+
+* Avoid expensive list/tuple multiplication operations that would result in ``MemoryError``.
+
+  Closes pylint-dev/pylint#8748
+
+* Fix a regression in 2.12.0 where settings in AstroidManager would be ignored.
+  Most notably this addresses pylint-dev/pylint#7433.
+
+  Refs #2204
+
+What's New in astroid 2.15.7?
+=============================
+Release date: 2023-09-23
+
+* Fix a crash when inferring a ``typing.TypeVar`` call.
+
+  Closes pylint-dev/pylint#8802
+
+* Infer user-defined enum classes by checking if the class is a subtype of ``enum.Enum``.
+
+  Closes pylint-dev/pylint#8897
 
 * Fix inference of functions with ``@functools.lru_cache`` decorators without
   parentheses.
@@ -248,10 +292,6 @@ Release date: 2023-07-08
 * Harden ``get_module_part()`` against ``"."``.
 
   Closes pylint-dev/pylint#8749
-
-* Allow ``AsStringVisitor`` to visit ``objects.PartialFunction``.
-
-  Closes pylint-dev/pylint#8881
 
 * Avoid expensive list/tuple multiplication operations that would result in ``MemoryError``.
 
