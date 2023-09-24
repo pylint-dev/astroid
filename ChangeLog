@@ -218,10 +218,14 @@ Release date: TBA
 
   Refs pylint-dev/pylint#8598
 
+* Fix false positives for ``no-member`` and ``invalid-name`` when using the ``_name_``, ``_value_`` and ``_ignore_`` sunders in Enums.
+
+  Closes pylint-dev/pylint#9015
+
 
 What's New in astroid 2.15.7?
 =============================
-Release date: TBA
+Release date: 2023-09-23
 
 * Fix a crash when inferring a ``typing.TypeVar`` call.
 
@@ -231,14 +235,15 @@ Release date: TBA
 
   Closes pylint-dev/pylint#8897
 
-* Fix false positives for ``no-member`` and ``invalid-name`` when using the ``_name_``, ``_value_`` and ``_ignore_`` sunders in Enums.
-
-  Closes pylint-dev/pylint#9015
-
 * Fix inference of functions with ``@functools.lru_cache`` decorators without
   parentheses.
 
   Closes pylint-dev/pylint#8868
+
+* Make ``sys.argv`` uninferable because it never is. (It's impossible to infer
+  the value it will have outside of static analysis where it's our own value.)
+
+  Refs pylint-dev/pylint#7710
 
 
 What's New in astroid 2.15.6?
