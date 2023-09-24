@@ -8,6 +8,7 @@ import pytest
 
 from astroid import Uninferable, extract_node
 from astroid.bases import UnboundMethod
+from astroid.const import PY312_PLUS
 from astroid.manager import AstroidManager
 from astroid.nodes import FunctionDef
 
@@ -15,8 +16,10 @@ HAS_PYQT6 = find_spec("PyQt6")
 
 
 @pytest.mark.skipif(HAS_PYQT6 is None, reason="These tests require the PyQt6 library.")
+# TODO: enable for Python 3.12 as soon as PyQt6 release is compatible
+@pytest.mark.skipif(PY312_PLUS, reason="This test was segfaulting with Python 3.12.")
 class TestBrainQt:
-    AstroidManager.brain["extension_package_whitelist"] = {"PyQt6"}
+    AstroidManager.brain["extension_package_whitelist"] = {"PyQt6"}  # noqa: RUF012
 
     @staticmethod
     def test_value_of_lambda_instance_attrs_is_list():

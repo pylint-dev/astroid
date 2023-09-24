@@ -20,19 +20,10 @@ from astroid.exceptions import (
     AstroidTypeError,
     AstroidValueError,
     InferenceError,
-    MroError,
     UseInferenceDefault,
 )
 from astroid.manager import AstroidManager
 
-ENUM_BASE_NAMES = {
-    "Enum",
-    "IntEnum",
-    "enum.Enum",
-    "enum.IntEnum",
-    "IntFlag",
-    "enum.IntFlag",
-}
 ENUM_QNAME: Final[str] = "enum.Enum"
 TYPING_NAMEDTUPLE_QUALIFIED: Final = {
     "typing.NamedTuple",
@@ -403,7 +394,10 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
         dunder_members = {}
         target_names = set()
         for local, values in node.locals.items():
-            if any(not isinstance(value, nodes.AssignName) for value in values):
+            if (
+                any(not isinstance(value, nodes.AssignName) for value in values)
+                or local == "_ignore_"
+            ):
                 continue
 
             stmt = values[0].statement()
@@ -440,7 +434,13 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                     def value(self):
                         return {return_value}
                     @property
+                    def _value_(self):
+                        return {return_value}
+                    @property
                     def name(self):
+                        return "{name}"
+                    @property
+                    def _name_(self):
                         return "{name}"
                 """.format(
                         name=target.name,
@@ -462,6 +462,8 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                 for method in node.mymethods():
                     fake.locals[method.name] = [method]
                 new_targets.append(fake.instantiate_class())
+                if stmt.value is None:
+                    continue
                 dunder_members[local] = fake
             node.locals[local] = new_targets
 
@@ -642,34 +644,30 @@ def _get_namedtuple_fields(node: nodes.Call) -> str:
 
 def _is_enum_subclass(cls: astroid.ClassDef) -> bool:
     """Return whether cls is a subclass of an Enum."""
-    try:
-        return any(
-            klass.name in ENUM_BASE_NAMES
-            and getattr(klass.root(), "name", None) == "enum"
-            for klass in cls.mro()
-        )
-    except MroError:
-        return False
+    return cls.is_subtype_of("enum.Enum")
 
 
-AstroidManager().register_transform(
-    nodes.Call, inference_tip(infer_named_tuple), _looks_like_namedtuple
-)
-AstroidManager().register_transform(
-    nodes.Call, inference_tip(infer_enum), _looks_like_enum
-)
-AstroidManager().register_transform(
-    nodes.ClassDef, infer_enum_class, predicate=_is_enum_subclass
-)
-AstroidManager().register_transform(
-    nodes.ClassDef, inference_tip(infer_typing_namedtuple_class), _has_namedtuple_base
-)
-AstroidManager().register_transform(
-    nodes.FunctionDef,
-    inference_tip(infer_typing_namedtuple_function),
-    lambda node: node.name == "NamedTuple"
-    and getattr(node.root(), "name", None) == "typing",
-)
-AstroidManager().register_transform(
-    nodes.Call, inference_tip(infer_typing_namedtuple), _looks_like_typing_namedtuple
-)
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(
+        nodes.Call, inference_tip(infer_named_tuple), _looks_like_namedtuple
+    )
+    manager.register_transform(nodes.Call, inference_tip(infer_enum), _looks_like_enum)
+    manager.register_transform(
+        nodes.ClassDef, infer_enum_class, predicate=_is_enum_subclass
+    )
+    manager.register_transform(
+        nodes.ClassDef,
+        inference_tip(infer_typing_namedtuple_class),
+        _has_namedtuple_base,
+    )
+    manager.register_transform(
+        nodes.FunctionDef,
+        inference_tip(infer_typing_namedtuple_function),
+        lambda node: node.name == "NamedTuple"
+        and getattr(node.root(), "name", None) == "typing",
+    )
+    manager.register_transform(
+        nodes.Call,
+        inference_tip(infer_typing_namedtuple),
+        _looks_like_typing_namedtuple,
+    )

@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Generator
 
 from astroid import bases, manager, nodes, objects, raw_building, util
@@ -19,6 +20,20 @@ from astroid.exceptions import (
 )
 from astroid.nodes import scoped_nodes
 from astroid.typing import InferenceResult
+from astroid.util import safe_infer as real_safe_infer
+
+
+def safe_infer(
+    node: nodes.NodeNG | bases.Proxy | util.UninferableBase,
+    context: InferenceContext | None = None,
+) -> InferenceResult | None:
+    # When removing, also remove the real_safe_infer alias
+    warnings.warn(
+        "Import safe_infer from astroid.util; this shim in astroid.helpers will be removed.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return real_safe_infer(node, context=context)
 
 
 def _build_proxy_class(cls_name: str, builtins: nodes.Module) -> nodes.ClassDef:
@@ -93,7 +108,7 @@ def object_type(
         return util.Uninferable
     if len(types) > 1 or not types:
         return util.Uninferable
-    return list(types)[0]
+    return next(iter(types))
 
 
 def _object_type_is_subclass(
@@ -155,31 +170,6 @@ def object_issubclass(
     return _object_type_is_subclass(node, class_or_seq, context=context)
 
 
-def safe_infer(
-    node: nodes.NodeNG | bases.Proxy | util.UninferableBase,
-    context: InferenceContext | None = None,
-) -> InferenceResult | None:
-    """Return the inferred value for the given node.
-
-    Return None if inference failed or if there is some ambiguity (more than
-    one node has been inferred).
-    """
-    if isinstance(node, util.UninferableBase):
-        return node
-    try:
-        inferit = node.infer(context=context)
-        value = next(inferit)
-    except (InferenceError, StopIteration):
-        return None
-    try:
-        next(inferit)
-        return None  # None if there is ambiguity on the inferred node
-    except InferenceError:
-        return None  # there is some kind of ambiguity
-    except StopIteration:
-        return value
-
-
 def has_known_bases(klass, context: InferenceContext | None = None) -> bool:
     """Return whether all base classes of a class could be inferred."""
     try:
@@ -187,7 +177,7 @@ def has_known_bases(klass, context: InferenceContext | None = None) -> bool:
     except AttributeError:
         pass
     for base in klass.bases:
-        result = safe_infer(base, context=context)
+        result = real_safe_infer(base, context=context)
         # TODO: check for A->B->A->B pattern in class structure too?
         if (
             not isinstance(result, scoped_nodes.ClassDef)
@@ -262,7 +252,7 @@ def object_len(node, context: InferenceContext | None = None):
     # pylint: disable=import-outside-toplevel; circular import
     from astroid.objects import FrozenSet
 
-    inferred_node = safe_infer(node, context=context)
+    inferred_node = real_safe_infer(node, context=context)
 
     # prevent self referential length calls from causing a recursion error
     # see https://github.com/pylint-dev/astroid/issues/777
@@ -324,3 +314,25 @@ def object_len(node, context: InferenceContext | None = None):
     raise AstroidTypeError(
         f"'{result_of_len}' object cannot be interpreted as an integer"
     )
+
+
+def _higher_function_scope(node: nodes.NodeNG) -> nodes.FunctionDef | None:
+    """Search for the first function which encloses the given
+    scope.
+
+    This can be used for looking up in that function's
+    scope, in case looking up in a lower scope for a particular
+    name fails.
+
+    :param node: A scope node.
+    :returns:
+        ``None``, if no parent function scope was found,
+        otherwise an instance of :class:`astroid.nodes.scoped_nodes.Function`,
+        which encloses the given node.
+    """
+    current = node
+    while current.parent and not isinstance(current.parent, nodes.FunctionDef):
+        current = current.parent
+    if current and current.parent:
+        return current.parent
+    return None

@@ -6,14 +6,16 @@
 
 from __future__ import annotations
 
+import textwrap
 import typing
 from collections.abc import Iterator
 from functools import partial
 from typing import Final
 
 from astroid import context, extract_node, inference_tip
-from astroid.builder import _extract_single_node
-from astroid.const import PY39_PLUS
+from astroid.brain.helpers import register_module_extender
+from astroid.builder import AstroidBuilder, _extract_single_node
+from astroid.const import PY39_PLUS, PY312_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -116,7 +118,9 @@ def looks_like_typing_typevar_or_newtype(node) -> bool:
     return False
 
 
-def infer_typing_typevar_or_newtype(node, context_itton=None):
+def infer_typing_typevar_or_newtype(
+    node: Call, context_itton: context.InferenceContext | None = None
+) -> Iterator[ClassDef]:
     """Infer a typing.TypeVar(...) or typing.NewType(...) call."""
     try:
         func = next(node.func.infer(context=context_itton))
@@ -132,7 +136,14 @@ def infer_typing_typevar_or_newtype(node, context_itton=None):
         raise UseInferenceDefault
 
     typename = node.args[0].as_string().strip("'")
-    node = extract_node(TYPING_TYPE_TEMPLATE.format(typename))
+    node = ClassDef(
+        name=typename,
+        lineno=node.lineno,
+        col_offset=node.col_offset,
+        parent=node.parent,
+        end_lineno=node.end_lineno,
+        end_col_offset=node.end_col_offset,
+    )
     return node.infer(context=context_itton)
 
 
@@ -231,7 +242,8 @@ def _looks_like_typing_alias(node: Call) -> bool:
     """
     return (
         isinstance(node.func, Name)
-        and node.func.name == "_alias"
+        # TODO: remove _DeprecatedGenericAlias when Py3.14 min
+        and node.func.name in {"_alias", "_DeprecatedGenericAlias"}
         and (
             # _alias function works also for builtins object such as list and dict
             isinstance(node.args[0], (Attribute, Name))
@@ -273,6 +285,8 @@ def infer_typing_alias(
 
     :param node: call node
     :param context: inference context
+
+    # TODO: evaluate if still necessary when Py3.12 is minimum
     """
     if (
         not isinstance(node.parent, Assign)
@@ -415,30 +429,57 @@ def infer_typing_cast(
     return node.args[1].infer(context=ctx)
 
 
-AstroidManager().register_transform(
-    Call,
-    inference_tip(infer_typing_typevar_or_newtype),
-    looks_like_typing_typevar_or_newtype,
-)
-AstroidManager().register_transform(
-    Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript
-)
-AstroidManager().register_transform(
-    Call, inference_tip(infer_typing_cast), _looks_like_typing_cast
-)
-
-if PY39_PLUS:
-    AstroidManager().register_transform(
-        FunctionDef, inference_tip(infer_typedDict), _looks_like_typedDict
+def _typing_transform():
+    return AstroidBuilder(AstroidManager()).string_build(
+        textwrap.dedent(
+            """
+    class Generic:
+        @classmethod
+        def __class_getitem__(cls, item):  return cls
+    class ParamSpec: ...
+    class ParamSpecArgs: ...
+    class ParamSpecKwargs: ...
+    class TypeAlias: ...
+    class Type:
+        @classmethod
+        def __class_getitem__(cls, item):  return cls
+    class TypeVar:
+        @classmethod
+        def __class_getitem__(cls, item):  return cls
+    class TypeVarTuple: ...
+    """
+        )
     )
-else:
-    AstroidManager().register_transform(
-        ClassDef, inference_tip(infer_old_typedDict), _looks_like_typedDict
+
+
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(
+        Call,
+        inference_tip(infer_typing_typevar_or_newtype),
+        looks_like_typing_typevar_or_newtype,
+    )
+    manager.register_transform(
+        Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript
+    )
+    manager.register_transform(
+        Call, inference_tip(infer_typing_cast), _looks_like_typing_cast
     )
 
-AstroidManager().register_transform(
-    Call, inference_tip(infer_typing_alias), _looks_like_typing_alias
-)
-AstroidManager().register_transform(
-    Call, inference_tip(infer_special_alias), _looks_like_special_alias
-)
+    if PY39_PLUS:
+        manager.register_transform(
+            FunctionDef, inference_tip(infer_typedDict), _looks_like_typedDict
+        )
+    else:
+        manager.register_transform(
+            ClassDef, inference_tip(infer_old_typedDict), _looks_like_typedDict
+        )
+
+    manager.register_transform(
+        Call, inference_tip(infer_typing_alias), _looks_like_typing_alias
+    )
+    manager.register_transform(
+        Call, inference_tip(infer_special_alias), _looks_like_special_alias
+    )
+
+    if PY312_PLUS:
+        register_module_extender(manager, "typing", _typing_transform)

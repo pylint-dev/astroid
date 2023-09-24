@@ -263,4 +263,14 @@ class TestHelpers(unittest.TestCase):
 
 def test_uninferable_for_safe_infer() -> None:
     uninfer = util.Uninferable
-    assert helpers.safe_infer(util.Uninferable) == uninfer
+    assert util.safe_infer(util.Uninferable) == uninfer
+
+
+def test_safe_infer_shim() -> None:
+    with pytest.warns(DeprecationWarning) as records:
+        helpers.safe_infer(nodes.Unknown())
+
+    assert (
+        "Import safe_infer from astroid.util; this shim in astroid.helpers will be removed."
+        in records[0].message.args[0]
+    )

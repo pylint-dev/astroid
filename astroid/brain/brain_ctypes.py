@@ -79,6 +79,7 @@ class {c_type}(_SimpleCData):
     return parse("\n".join(src))
 
 
-if not hasattr(sys, "pypy_version_info"):
-    # No need of this module in pypy where everything is written in python
-    register_module_extender(AstroidManager(), "ctypes", enrich_ctypes_redefined_types)
+def register(manager: AstroidManager) -> None:
+    if not hasattr(sys, "pypy_version_info"):
+        # No need of this module in pypy where everything is written in python
+        register_module_extender(manager, "ctypes", enrich_ctypes_redefined_types)

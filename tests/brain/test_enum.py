@@ -493,3 +493,109 @@ class EnumBrainTest(unittest.TestCase):
         for node in (attribute_nodes[1], name_nodes[1]):
             with pytest.raises(InferenceError):
                 node.inferred()
+
+    def test_enum_members_uppercase_only(self) -> None:
+        """Originally reported in https://github.com/pylint-dev/pylint/issues/7402.
+        ``nodes.AnnAssign`` nodes with no assigned values do not appear inside ``__members__``.
+
+        Test that only enum members `MARS` and `radius` appear in the `__members__` container while
+        the attribute `mass` does not.
+        """
+        enum_class = astroid.extract_node(
+            """
+        from enum import Enum
+        class Planet(Enum): #@
+            MARS = (1, 2)
+            radius: int = 1
+            mass: int
+
+            def __init__(self, mass, radius):
+                self.mass = mass
+                self.radius = radius
+
+        Planet.MARS.value
+        """
+        )
+        enum_members = next(enum_class.igetattr("__members__"))
+        assert len(enum_members.items) == 2
+        mars, radius = enum_members.items
+        assert mars[1].name == "MARS"
+        assert radius[1].name == "radius"
+
+    def test_local_enum_child_class_inference(self) -> None:
+        """Originally reported in https://github.com/pylint-dev/pylint/issues/8897
+
+        Test that a user-defined enum class is inferred when it subclasses
+        another user-defined enum class.
+        """
+        enum_class_node, enum_member_value_node = astroid.extract_node(
+            """
+        import sys
+
+        from enum import Enum
+
+        if sys.version_info >= (3, 11):
+            from enum import StrEnum
+        else:
+            class StrEnum(str, Enum):
+                pass
+
+
+        class Color(StrEnum): #@
+            RED = "red"
+
+
+        Color.RED.value #@
+        """
+        )
+        assert "RED" in enum_class_node.locals
+
+        enum_members = enum_class_node.locals["__members__"][0].items
+        assert len(enum_members) == 1
+        _, name = enum_members[0]
+        assert name.name == "RED"
+
+        inferred_enum_member_value_node = next(enum_member_value_node.infer())
+        assert inferred_enum_member_value_node.value == "red"
+
+    def test_enum_with_ignore(self) -> None:
+        """Exclude ``_ignore_`` from the ``__members__`` container
+        Originally reported in https://github.com/pylint-dev/pylint/issues/9015
+        """
+
+        ast_node: nodes.Attribute = builder.extract_node(
+            """
+        import enum
+
+
+        class MyEnum(enum.Enum):
+            FOO = enum.auto()
+            BAR = enum.auto()
+            _ignore_ = ["BAZ"]
+            BAZ = 42
+        MyEnum.__members__
+        """
+        )
+        inferred = next(ast_node.infer())
+        members_names = [const_node.value for const_node, name_obj in inferred.items]
+        assert members_names == ["FOO", "BAR", "BAZ"]
+
+    def test_enum_sunder_names(self) -> None:
+        """Test that both `_name_` and `_value_` sunder names exist"""
+
+        sunder_name, sunder_value = builder.extract_node(
+            """
+        import enum
+
+
+        class MyEnum(enum.Enum):
+            APPLE = 42
+        MyEnum.APPLE._name_ #@
+        MyEnum.APPLE._value_ #@
+        """
+        )
+        inferred_name = next(sunder_name.infer())
+        assert inferred_name.value == "APPLE"
+
+        inferred_value = next(sunder_value.infer())
+        assert inferred_value.value == 42

@@ -138,18 +138,13 @@ class NodeNG:
         :returns: The inferred values.
         :rtype: iterable
         """
-        if context is not None:
+        if context is None:
+            context = InferenceContext()
+        else:
             context = context.extra_context.get(self, context)
         if self._explicit_inference is not None:
             # explicit_inference is not bound, give it self explicitly
             try:
-                if context is None:
-                    yield from self._explicit_inference(
-                        self,  # type: ignore[arg-type]
-                        context,
-                        **kwargs,
-                    )
-                    return
                 for result in self._explicit_inference(
                     self,  # type: ignore[arg-type]
                     context,
@@ -161,11 +156,6 @@ class NodeNG:
             except UseInferenceDefault:
                 pass
 
-        if not context:
-            # nodes_inferred?
-            yield from self._infer(context=context, **kwargs)
-            return
-
         key = (self, context.lookupname, context.callcontext, context.boundnode)
         if key in context.inferred:
             yield from context.inferred[key]
@@ -175,7 +165,7 @@ class NodeNG:
 
         # Limit inference amount to help with performance issues with
         # exponentially exploding possible results.
-        limit = AstroidManager.max_inferable_values
+        limit = AstroidManager().max_inferable_values
         for i, result in enumerate(self._infer(context=context, **kwargs)):
             if i >= limit or (context.nodes_inferred > context.max_inferred):
                 results.append(util.Uninferable)
@@ -243,7 +233,7 @@ class NodeNG:
             "id": id(self),
         }
 
-    def accept(self, visitor):
+    def accept(self, visitor: AsStringVisitor) -> str:
         """Visit this node using the given visitor."""
         func = getattr(visitor, "visit_" + self.__class__.__name__.lower())
         return func(self)
@@ -342,9 +332,12 @@ class NodeNG:
 
         :returns: The root node.
         """
-        if self.parent:
-            return self.parent.root()
-        return self  # type: ignore[return-value] # Only 'Module' does not have a parent node.
+        if not (parent := self.parent):
+            return self  # type: ignore[return-value] # Only 'Module' does not have a parent node.
+
+        while parent.parent:
+            parent = parent.parent
+        return parent  # type: ignore[return-value] # Only 'Module' does not have a parent node.
 
     def child_sequence(self, child):
         """Search for the sequence that contains this child.
@@ -566,11 +559,14 @@ class NodeNG:
     def _get_return_nodes_skip_functions(self):
         yield from ()
 
+    def _get_yield_nodes_skip_functions(self):
+        yield from ()
+
     def _get_yield_nodes_skip_lambdas(self):
         yield from ()
 
     def _infer_name(self, frame, name):
-        # overridden for ImportFrom, Import, Global, TryExcept, TryStar and Arguments
+        # overridden for ImportFrom, Import, Global, Try, TryStar and Arguments
         pass
 
     def _infer(

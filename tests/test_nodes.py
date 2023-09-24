@@ -22,13 +22,14 @@ from astroid import (
     Uninferable,
     bases,
     builder,
+    extract_node,
     nodes,
     parse,
     test_utils,
     transforms,
     util,
 )
-from astroid.const import PY310_PLUS, Context
+from astroid.const import PY310_PLUS, PY312_PLUS, Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -279,6 +280,33 @@ everything = f""" " \' \r \t \\ {{ }} {'x' + x!r:a} {["'"]!s:{a}}"""
         assert nodes.Unknown(lineno=1, col_offset=0).as_string() == "Unknown.Unknown()"
 
 
+@pytest.mark.skipif(not PY312_PLUS, reason="Uses 3.12 type param nodes")
+class AsStringTypeParamNodes(unittest.TestCase):
+    @staticmethod
+    def test_as_string_type_alias() -> None:
+        ast = abuilder.string_build("type Point = tuple[float, float]")
+        type_alias = ast.body[0]
+        assert type_alias.as_string().strip() == "Point"
+
+    @staticmethod
+    def test_as_string_type_var() -> None:
+        ast = abuilder.string_build("type Point[T] = tuple[float, float]")
+        type_var = ast.body[0].type_params[0]
+        assert type_var.as_string().strip() == "T"
+
+    @staticmethod
+    def test_as_string_type_var_tuple() -> None:
+        ast = abuilder.string_build("type Alias[*Ts] = tuple[*Ts]")
+        type_var_tuple = ast.body[0].type_params[0]
+        assert type_var_tuple.as_string().strip() == "*Ts"
+
+    @staticmethod
+    def test_as_string_param_spec() -> None:
+        ast = abuilder.string_build("type Alias[**P] = Callable[P, int]")
+        param_spec = ast.body[0].type_params[0]
+        assert param_spec.as_string().strip() == "P"
+
+
 class _NodeTest(unittest.TestCase):
     """Test transformation of If Node."""
 
@@ -341,6 +369,35 @@ class IfNodeTest(_NodeTest):
         self.assertEqual(self.astroid.body[1].orelse[0].block_range(8), (8, 8))
 
 
+class TryNodeTest(_NodeTest):
+    CODE = """
+        try:  # L2
+            print("Hello")
+        except IOError:
+            pass
+        except UnicodeError:
+            pass
+        else:
+            print()
+        finally:
+            print()
+    """
+
+    def test_block_range(self) -> None:
+        try_node = self.astroid.body[0]
+        assert try_node.block_range(1) == (1, 11)
+        assert try_node.block_range(2) == (2, 2)
+        assert try_node.block_range(3) == (3, 3)
+        assert try_node.block_range(4) == (4, 4)
+        assert try_node.block_range(5) == (5, 5)
+        assert try_node.block_range(6) == (6, 6)
+        assert try_node.block_range(7) == (7, 7)
+        assert try_node.block_range(8) == (8, 8)
+        assert try_node.block_range(9) == (9, 9)
+        assert try_node.block_range(10) == (10, 10)
+        assert try_node.block_range(11) == (11, 11)
+
+
 class TryExceptNodeTest(_NodeTest):
     CODE = """
         try:
@@ -355,14 +412,15 @@ class TryExceptNodeTest(_NodeTest):
 
     def test_block_range(self) -> None:
         # XXX ensure expected values
-        self.assertEqual(self.astroid.body[0].block_range(1), (1, 8))
+        self.assertEqual(self.astroid.body[0].block_range(1), (1, 9))
         self.assertEqual(self.astroid.body[0].block_range(2), (2, 2))
-        self.assertEqual(self.astroid.body[0].block_range(3), (3, 8))
+        self.assertEqual(self.astroid.body[0].block_range(3), (3, 3))
         self.assertEqual(self.astroid.body[0].block_range(4), (4, 4))
         self.assertEqual(self.astroid.body[0].block_range(5), (5, 5))
         self.assertEqual(self.astroid.body[0].block_range(6), (6, 6))
         self.assertEqual(self.astroid.body[0].block_range(7), (7, 7))
         self.assertEqual(self.astroid.body[0].block_range(8), (8, 8))
+        self.assertEqual(self.astroid.body[0].block_range(9), (9, 9))
 
 
 class TryFinallyNodeTest(_NodeTest):
@@ -375,10 +433,11 @@ class TryFinallyNodeTest(_NodeTest):
 
     def test_block_range(self) -> None:
         # XXX ensure expected values
-        self.assertEqual(self.astroid.body[0].block_range(1), (1, 4))
+        self.assertEqual(self.astroid.body[0].block_range(1), (1, 5))
         self.assertEqual(self.astroid.body[0].block_range(2), (2, 2))
-        self.assertEqual(self.astroid.body[0].block_range(3), (3, 4))
+        self.assertEqual(self.astroid.body[0].block_range(3), (3, 3))
         self.assertEqual(self.astroid.body[0].block_range(4), (4, 4))
+        self.assertEqual(self.astroid.body[0].block_range(5), (5, 5))
 
 
 class TryExceptFinallyNodeTest(_NodeTest):
@@ -393,12 +452,13 @@ class TryExceptFinallyNodeTest(_NodeTest):
 
     def test_block_range(self) -> None:
         # XXX ensure expected values
-        self.assertEqual(self.astroid.body[0].block_range(1), (1, 6))
+        self.assertEqual(self.astroid.body[0].block_range(1), (1, 7))
         self.assertEqual(self.astroid.body[0].block_range(2), (2, 2))
-        self.assertEqual(self.astroid.body[0].block_range(3), (3, 4))
+        self.assertEqual(self.astroid.body[0].block_range(3), (3, 3))
         self.assertEqual(self.astroid.body[0].block_range(4), (4, 4))
         self.assertEqual(self.astroid.body[0].block_range(5), (5, 5))
         self.assertEqual(self.astroid.body[0].block_range(6), (6, 6))
+        self.assertEqual(self.astroid.body[0].block_range(7), (7, 7))
 
 
 class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
@@ -1889,8 +1949,7 @@ class TestPatternMatching:
     [
         node
         for node in astroid.nodes.ALL_NODE_CLASSES
-        if node.__name__
-        not in ["_BaseContainer", "BaseContainer", "NodeNG", "const_factory"]
+        if node.__name__ not in ["BaseContainer", "NodeNG", "const_factory"]
     ],
 )
 @pytest.mark.filterwarnings("error")
@@ -1904,7 +1963,10 @@ def test_str_repr_no_warnings(node):
 
         if "int" in param_type.annotation:
             args[name] = random.randint(0, 50)
-        elif "NodeNG" in param_type.annotation:
+        elif (
+            "NodeNG" in param_type.annotation
+            or "SuccessfulInferenceResult" in param_type.annotation
+        ):
             args[name] = nodes.Unknown()
         elif "str" in param_type.annotation:
             args[name] = ""
@@ -1914,3 +1976,38 @@ def test_str_repr_no_warnings(node):
     test_node = node(**args)
     str(test_node)
     repr(test_node)
+
+
+def test_arguments_contains_all():
+    """Ensure Arguments.arguments actually returns all available arguments"""
+
+    def manually_get_args(arg_node) -> set:
+        names = set()
+        if arg_node.args.vararg:
+            names.add(arg_node.args.vararg)
+        if arg_node.args.kwarg:
+            names.add(arg_node.args.kwarg)
+
+        names.update([x.name for x in arg_node.args.args])
+        names.update([x.name for x in arg_node.args.kwonlyargs])
+
+        return names
+
+    node = extract_node("""def a(fruit: str, *args, b=None, c=None, **kwargs): ...""")
+    assert manually_get_args(node) == {x.name for x in node.args.arguments}
+
+    node = extract_node("""def a(mango: int, b="banana", c=None, **kwargs): ...""")
+    assert manually_get_args(node) == {x.name for x in node.args.arguments}
+
+    node = extract_node("""def a(self, num = 10, *args): ...""")
+    assert manually_get_args(node) == {x.name for x in node.args.arguments}
+
+
+def test_arguments_default_value():
+    node = extract_node(
+        "def fruit(eat='please', *, peel='no', trim='yes', **kwargs): ..."
+    )
+    assert node.args.default_value("eat").value == "please"
+
+    node = extract_node("def fruit(seeds, flavor='good', *, peel='maybe'): ...")
+    assert node.args.default_value("flavor").value == "good"

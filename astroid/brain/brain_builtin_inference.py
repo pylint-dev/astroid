@@ -7,9 +7,9 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable
 from functools import partial
-from typing import Any, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Iterator, NoReturn, Type, Union, cast
 
 from astroid import arguments, helpers, inference_tip, nodes, objects, util
 from astroid.builder import AstroidBuilder
@@ -29,6 +29,9 @@ from astroid.typing import (
     SuccessfulInferenceResult,
 )
 
+if TYPE_CHECKING:
+    from astroid.bases import Instance
+
 ContainerObjects = Union[
     objects.FrozenSet,
     objects.DictItems,
@@ -41,6 +44,13 @@ BuiltContainers = Union[
     Type[list],
     Type[set],
     Type[frozenset],
+]
+
+CopyResult = Union[
+    nodes.Dict,
+    nodes.List,
+    nodes.Set,
+    objects.FrozenSet,
 ]
 
 OBJECT_DUNDER_NEW = "object.__new__"
@@ -127,6 +137,10 @@ class whatever(object):
 """
 
 
+def _use_default() -> NoReturn:  # pragma: no cover
+    raise UseInferenceDefault()
+
+
 def _extend_string_class(class_node, code, rvalue):
     """Function to extend builtin str/unicode class."""
     code = code.format(rvalue=rvalue)
@@ -186,14 +200,18 @@ def _builtin_filter_predicate(node, builtin_name) -> bool:
     return False
 
 
-def register_builtin_transform(transform, builtin_name) -> None:
+def register_builtin_transform(
+    manager: AstroidManager, transform, builtin_name
+) -> None:
     """Register a new transform function for the given *builtin_name*.
 
     The transform function must accept two parameters, a node and
     an optional context.
     """
 
-    def _transform_wrapper(node, context: InferenceContext | None = None):
+    def _transform_wrapper(
+        node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Iterator:
         result = transform(node, context=context)
         if result:
             if not result.parent:
@@ -210,7 +228,7 @@ def register_builtin_transform(transform, builtin_name) -> None:
                 result.col_offset = node.col_offset
         return iter([result])
 
-    AstroidManager().register_transform(
+    manager.register_transform(
         nodes.Call,
         inference_tip(_transform_wrapper),
         partial(_builtin_filter_predicate, builtin_name=builtin_name),
@@ -257,10 +275,12 @@ def _container_generic_transform(
     iterables: tuple[type[nodes.BaseContainer] | type[ContainerObjects], ...],
     build_elts: BuiltContainers,
 ) -> nodes.BaseContainer | None:
+    elts: Iterable | str | bytes
+
     if isinstance(arg, klass):
         return arg
     if isinstance(arg, iterables):
-        arg = cast(ContainerObjects, arg)
+        arg = cast(Union[nodes.BaseContainer, ContainerObjects], arg)
         if all(isinstance(elt, nodes.Const) for elt in arg.elts):
             elts = [cast(nodes.Const, elt).value for elt in arg.elts]
         else:
@@ -269,7 +289,7 @@ def _container_generic_transform(
             for element in arg.elts:
                 if not element:
                     continue
-                inferred = helpers.safe_infer(element, context=context)
+                inferred = util.safe_infer(element, context=context)
                 if inferred:
                     evaluated_object = nodes.EvaluatedObject(
                         original=element, value=inferred
@@ -277,9 +297,10 @@ def _container_generic_transform(
                     elts.append(evaluated_object)
     elif isinstance(arg, nodes.Dict):
         # Dicts need to have consts as strings already.
-        if not all(isinstance(elt[0], nodes.Const) for elt in arg.items):
-            raise UseInferenceDefault()
-        elts = [item[0].value for item in arg.items]
+        elts = [
+            item[0].value if isinstance(item[0], nodes.Const) else _use_default()
+            for item in arg.items
+        ]
     elif isinstance(arg, nodes.Const) and isinstance(arg.value, (str, bytes)):
         elts = arg.value
     else:
@@ -399,6 +420,7 @@ def infer_dict(node: nodes.Call, context: InferenceContext | None = None) -> nod
     args = call.positional_arguments
     kwargs = list(call.keyword_arguments.items())
 
+    items: list[tuple[InferenceResult, InferenceResult]]
     if not args and not kwargs:
         # dict()
         return nodes.Dict(
@@ -670,7 +692,7 @@ def infer_slice(node, context: InferenceContext | None = None):
     if not 0 < len(args) <= 3:
         raise UseInferenceDefault
 
-    infer_func = partial(helpers.safe_infer, context=context)
+    infer_func = partial(util.safe_infer, context=context)
     args = [infer_func(arg) for arg in args]
     for arg in args:
         if not arg or isinstance(arg, util.UninferableBase):
@@ -695,7 +717,9 @@ def infer_slice(node, context: InferenceContext | None = None):
     return slice_node
 
 
-def _infer_object__new__decorator(node, context: InferenceContext | None = None):
+def _infer_object__new__decorator(
+    node: nodes.ClassDef, context: InferenceContext | None = None, **kwargs: Any
+) -> Iterator[Instance]:
     # Instantiate class immediately
     # since that's what @object.__new__ does
     return iter((node.instantiate_class(),))
@@ -944,10 +968,10 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
     if isinstance(inferred_values, nodes.Const) and isinstance(
         inferred_values.value, (str, bytes)
     ):
-        elements = [
+        elements_with_value = [
             (nodes.Const(element), default) for element in inferred_values.value
         ]
-        return _build_dict_with_elements(elements)
+        return _build_dict_with_elements(elements_with_value)
     if isinstance(inferred_values, nodes.Dict):
         keys = inferred_values.itered()
         for key in keys:
@@ -964,7 +988,7 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
 
 def _infer_copy_method(
     node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
-) -> Iterator[InferenceResult]:
+) -> Iterator[CopyResult]:
     assert isinstance(node.func, nodes.Attribute)
     inferred_orig, inferred_copy = itertools.tee(node.func.expr.infer(context=context))
     if all(
@@ -973,9 +997,9 @@ def _infer_copy_method(
         )
         for inferred_node in inferred_orig
     ):
-        return inferred_copy
+        return cast(Iterator[CopyResult], inferred_copy)
 
-    raise UseInferenceDefault()
+    raise UseInferenceDefault
 
 
 def _is_str_format_call(node: nodes.Call) -> bool:
@@ -984,7 +1008,7 @@ def _is_str_format_call(node: nodes.Call) -> bool:
         return False
 
     if isinstance(node.func.expr, nodes.Name):
-        value = helpers.safe_infer(node.func.expr)
+        value = util.safe_infer(node.func.expr)
     else:
         value = node.func.expr
 
@@ -1000,7 +1024,7 @@ def _infer_str_format_call(
 
     value: nodes.Const
     if isinstance(node.func.expr, nodes.Name):
-        if not (inferred := helpers.safe_infer(node.func.expr)) or not isinstance(
+        if not (inferred := util.safe_infer(node.func.expr)) or not isinstance(
             inferred, nodes.Const
         ):
             return iter([util.Uninferable])
@@ -1015,7 +1039,7 @@ def _infer_str_format_call(
     # Get the positional arguments passed
     inferred_positional: list[nodes.Const] = []
     for i in call.positional_arguments:
-        one_inferred = helpers.safe_infer(i, context)
+        one_inferred = util.safe_infer(i, context)
         if not isinstance(one_inferred, nodes.Const):
             return iter([util.Uninferable])
         inferred_positional.append(one_inferred)
@@ -1025,7 +1049,7 @@ def _infer_str_format_call(
     # Get the keyword arguments passed
     inferred_keyword: dict[str, nodes.Const] = {}
     for k, v in call.keyword_arguments.items():
-        one_inferred = helpers.safe_infer(v, context)
+        one_inferred = util.safe_infer(v, context)
         if not isinstance(one_inferred, nodes.Const):
             return iter([util.Uninferable])
         inferred_keyword[k] = one_inferred
@@ -1044,42 +1068,44 @@ def _infer_str_format_call(
     return iter([nodes.const_factory(formatted_string)])
 
 
-# Builtins inference
-register_builtin_transform(infer_bool, "bool")
-register_builtin_transform(infer_super, "super")
-register_builtin_transform(infer_callable, "callable")
-register_builtin_transform(infer_property, "property")
-register_builtin_transform(infer_getattr, "getattr")
-register_builtin_transform(infer_hasattr, "hasattr")
-register_builtin_transform(infer_tuple, "tuple")
-register_builtin_transform(infer_set, "set")
-register_builtin_transform(infer_list, "list")
-register_builtin_transform(infer_dict, "dict")
-register_builtin_transform(infer_frozenset, "frozenset")
-register_builtin_transform(infer_type, "type")
-register_builtin_transform(infer_slice, "slice")
-register_builtin_transform(infer_isinstance, "isinstance")
-register_builtin_transform(infer_issubclass, "issubclass")
-register_builtin_transform(infer_len, "len")
-register_builtin_transform(infer_str, "str")
-register_builtin_transform(infer_int, "int")
-register_builtin_transform(infer_dict_fromkeys, "dict.fromkeys")
+def register(manager: AstroidManager) -> None:
+    # Builtins inference
+    register_builtin_transform(manager, infer_bool, "bool")
+    register_builtin_transform(manager, infer_super, "super")
+    register_builtin_transform(manager, infer_callable, "callable")
+    register_builtin_transform(manager, infer_property, "property")
+    register_builtin_transform(manager, infer_getattr, "getattr")
+    register_builtin_transform(manager, infer_hasattr, "hasattr")
+    register_builtin_transform(manager, infer_tuple, "tuple")
+    register_builtin_transform(manager, infer_set, "set")
+    register_builtin_transform(manager, infer_list, "list")
+    register_builtin_transform(manager, infer_dict, "dict")
+    register_builtin_transform(manager, infer_frozenset, "frozenset")
+    register_builtin_transform(manager, infer_type, "type")
+    register_builtin_transform(manager, infer_slice, "slice")
+    register_builtin_transform(manager, infer_isinstance, "isinstance")
+    register_builtin_transform(manager, infer_issubclass, "issubclass")
+    register_builtin_transform(manager, infer_len, "len")
+    register_builtin_transform(manager, infer_str, "str")
+    register_builtin_transform(manager, infer_int, "int")
+    register_builtin_transform(manager, infer_dict_fromkeys, "dict.fromkeys")
 
+    # Infer object.__new__ calls
+    manager.register_transform(
+        nodes.ClassDef,
+        inference_tip(_infer_object__new__decorator),
+        _infer_object__new__decorator_check,
+    )
 
-# Infer object.__new__ calls
-AstroidManager().register_transform(
-    nodes.ClassDef,
-    inference_tip(_infer_object__new__decorator),
-    _infer_object__new__decorator_check,
-)
+    manager.register_transform(
+        nodes.Call,
+        inference_tip(_infer_copy_method),
+        lambda node: isinstance(node.func, nodes.Attribute)
+        and node.func.attrname == "copy",
+    )
 
-AstroidManager().register_transform(
-    nodes.Call,
-    inference_tip(_infer_copy_method),
-    lambda node: isinstance(node.func, nodes.Attribute)
-    and node.func.attrname == "copy",
-)
-
-AstroidManager().register_transform(
-    nodes.Call, inference_tip(_infer_str_format_call), _is_str_format_call
-)
+    manager.register_transform(
+        nodes.Call,
+        inference_tip(_infer_str_format_call),
+        _is_str_format_call,
+    )

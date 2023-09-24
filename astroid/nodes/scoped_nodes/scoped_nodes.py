@@ -16,9 +16,9 @@ import os
 import warnings
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import cached_property, lru_cache
-from typing import TYPE_CHECKING, ClassVar, Literal, NoReturn, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypeVar
 
-from astroid import bases, util
+from astroid import bases, protocols, util
 from astroid.const import IS_PYPY, PY38, PY39_PLUS, PYPY_7_3_11_PLUS
 from astroid.context import (
     CallContext,
@@ -34,6 +34,7 @@ from astroid.exceptions import (
     InconsistentMroError,
     InferenceError,
     MroError,
+    ParentMissingError,
     StatementMissing,
     TooManyLevelsError,
 )
@@ -44,10 +45,16 @@ from astroid.nodes import Arguments, Const, NodeNG, Unknown, _base_nodes, node_c
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
-from astroid.typing import InferBinaryOp, InferenceResult, SuccessfulInferenceResult
+from astroid.typing import (
+    InferBinaryOp,
+    InferenceErrorInfo,
+    InferenceResult,
+    SuccessfulInferenceResult,
+)
 
 if TYPE_CHECKING:
-    from astroid import nodes
+    from astroid import nodes, objects
+    from astroid.nodes._base_nodes import LookupMixIn
 
 
 ITER_METHODS = ("__iter__", "__getitem__")
@@ -134,10 +141,10 @@ def clean_typing_generic_mro(sequences: list[list[ClassDef]]) -> None:
 
 
 def clean_duplicates_mro(
-    sequences: Iterable[Iterable[ClassDef]],
+    sequences: list[list[ClassDef]],
     cls: ClassDef,
     context: InferenceContext | None,
-) -> Iterable[Iterable[ClassDef]]:
+) -> list[list[ClassDef]]:
     for sequence in sequences:
         seen = set()
         for node in sequence:
@@ -196,7 +203,13 @@ class Module(LocalsDictNodeNG):
     """The names of special attributes that this module has."""
 
     # names of module attributes available through the global scope
-    scope_attrs = {"__name__", "__doc__", "__file__", "__path__", "__package__"}
+    scope_attrs: ClassVar[set[str]] = {
+        "__name__",
+        "__doc__",
+        "__file__",
+        "__path__",
+        "__package__",
+    }
     """The names of module attributes available through the global scope."""
 
     _other_fields = (
@@ -235,7 +248,7 @@ class Module(LocalsDictNodeNG):
         self.pure_python = pure_python
         """Whether the ast was built from source."""
 
-        self.globals: dict[str, list[SuccessfulInferenceResult]]
+        self.globals: dict[str, list[InferenceResult]]
         """A map of the name of a global variable to the node defining the global."""
 
         self.locals = self.globals = {}
@@ -285,7 +298,7 @@ class Module(LocalsDictNodeNG):
         return self.fromlineno, self.tolineno
 
     def scope_lookup(
-        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+        self, node: LookupMixIn, name: str, offset: int = 0
     ) -> tuple[LocalsDictNodeNG, list[node_classes.NodeNG]]:
         """Lookup where the given variable is assigned.
 
@@ -445,7 +458,11 @@ class Module(LocalsDictNodeNG):
             # skip here
             if relative_only:
                 raise
-        return AstroidManager().ast_from_module_name(modname)
+            # Don't repeat the same operation, e.g. for missing modules
+            # like "_winapi" or "nt" on POSIX systems.
+            if modname == absmodname:
+                raise
+        return AstroidManager().ast_from_module_name(modname, use_cache=use_cache)
 
     def relative_to_absolute_name(self, modname: str, level: int | None) -> str:
         """Get the absolute module name for a relative import.
@@ -573,6 +590,11 @@ class Module(LocalsDictNodeNG):
         :returns: The node itself.
         """
         return self
+
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[Module, None, None]:
+        yield self
 
 
 class GeneratorExp(ComprehensionScope):
@@ -872,7 +894,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         :returns: 'method' if this is a method, 'function' otherwise.
         """
         if self.args.arguments and self.args.arguments[0].name == "self":
-            if isinstance(self.parent.scope(), ClassDef):
+            if self.parent and isinstance(self.parent.scope(), ClassDef):
                 return "method"
         return "function"
 
@@ -941,11 +963,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             names = [elt.name for elt in self.args.arguments]
         else:
             names = []
-        if self.args.vararg:
-            names.append(self.args.vararg)
-        names += [elt.name for elt in self.args.kwonlyargs]
-        if self.args.kwarg:
-            names.append(self.args.kwarg)
+
         return names
 
     def infer_call_result(
@@ -957,7 +975,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         return self.body.infer(context)
 
     def scope_lookup(
-        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+        self, node: LookupMixIn, name: str, offset: int = 0
     ) -> tuple[LocalsDictNodeNG, list[NodeNG]]:
         """Lookup where the given names is assigned.
 
@@ -975,6 +993,8 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         if (self.args.defaults and node in self.args.defaults) or (
             self.args.kw_defaults and node in self.args.kw_defaults
         ):
+            if not self.parent:
+                raise ParentMissingError(target=self)
             frame = self.parent.frame()
             # line offset to avoid that def func(f=func) resolve the default
             # value to the defined function
@@ -1021,6 +1041,15 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             return found_attrs
         raise AttributeInferenceError(target=self, attribute=name)
 
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[Lambda, None, None]:
+        yield self
+
+    def _get_yield_nodes_skip_functions(self):
+        """A Lambda node can contain a Yield node in the body."""
+        yield from self.body._get_yield_nodes_skip_functions()
+
 
 class FunctionDef(
     _base_nodes.MultiLineBlockNode,
@@ -1039,7 +1068,14 @@ class FunctionDef(
     <FunctionDef.my_func l.2 at 0x7f23b2e71e10>
     """
 
-    _astroid_fields = ("decorators", "args", "returns", "doc_node", "body")
+    _astroid_fields = (
+        "decorators",
+        "args",
+        "returns",
+        "type_params",
+        "doc_node",
+        "body",
+    )
     _multi_line_block_fields = ("body",)
     returns = None
 
@@ -1083,8 +1119,6 @@ class FunctionDef(
 
     name = "<functiondef>"
 
-    is_lambda = True
-
     special_attributes = FunctionModel()
     """The names of special attributes that this function has."""
 
@@ -1106,6 +1140,11 @@ class FunctionDef(
 
         self.body: list[NodeNG] = []
         """The contents of the function body."""
+
+        self.type_params: list[
+            nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple
+        ] = []
+        """PEP 695 (Python 3.12+) type params, e.g. first 'T' in def func[T]() -> T: ..."""
 
         self.instance_attrs: dict[str, list[NodeNG]] = {}
 
@@ -1131,6 +1170,8 @@ class FunctionDef(
         *,
         position: Position | None = None,
         doc_node: Const | None = None,
+        type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple]
+        | None = None,
     ):
         """Do some setup after initialisation.
 
@@ -1148,6 +1189,8 @@ class FunctionDef(
             Position of function keyword(s) and name.
         :param doc_node:
             The doc node associated with this node.
+        :param type_params:
+            The type_params associated with this node.
         """
         self.args = args
         self.body = body
@@ -1157,6 +1200,7 @@ class FunctionDef(
         self.type_comment_args = type_comment_args
         self.position = position
         self.doc_node = doc_node
+        self.type_params = type_params or []
 
     @cached_property
     def extra_decorators(self) -> list[node_classes.Call]:
@@ -1167,8 +1211,7 @@ class FunctionDef(
         The property will return all the callables that are used for
         decoration.
         """
-        frame = self.parent.frame()
-        if not isinstance(frame, ClassDef):
+        if not self.parent or not isinstance(frame := self.parent.frame(), ClassDef):
             return []
 
         decorators: list[node_classes.Call] = []
@@ -1233,11 +1276,7 @@ class FunctionDef(
             names = [elt.name for elt in self.args.arguments]
         else:
             names = []
-        if self.args.vararg:
-            names.append(self.args.vararg)
-        names += [elt.name for elt in self.args.kwonlyargs]
-        if self.args.kwarg:
-            names.append(self.args.kwarg)
+
         return names
 
     def getattr(
@@ -1264,6 +1303,9 @@ class FunctionDef(
         for decorator in self.extra_decorators:
             if decorator.func.name in BUILTIN_DESCRIPTORS:
                 return decorator.func.name
+
+        if not self.parent:
+            raise ParentMissingError(target=self)
 
         frame = self.parent.frame()
         type_name = "function"
@@ -1379,7 +1421,11 @@ class FunctionDef(
         """
         # check we are defined in a ClassDef, because this is usually expected
         # (e.g. pylint...) when is_method() return True
-        return self.type != "function" and isinstance(self.parent.frame(), ClassDef)
+        return (
+            self.type != "function"
+            and self.parent is not None
+            and isinstance(self.parent.frame(), ClassDef)
+        )
 
     def decoratornames(self, context: InferenceContext | None = None) -> set[str]:
         """Get the qualified names of each of the decorators on this function.
@@ -1449,7 +1495,50 @@ class FunctionDef(
 
         :returns: Whether this is a generator function.
         """
-        return bool(next(self._get_yield_nodes_skip_lambdas(), False))
+        yields_without_lambdas = set(self._get_yield_nodes_skip_lambdas())
+        yields_without_functions = set(self._get_yield_nodes_skip_functions())
+        # Want an intersecting member that is neither in a lambda nor a function
+        return bool(yields_without_lambdas & yields_without_functions)
+
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[objects.Property | FunctionDef, None, InferenceErrorInfo]:
+        from astroid import objects  # pylint: disable=import-outside-toplevel
+
+        if not self.decorators or not bases._is_property(self):
+            yield self
+            return InferenceErrorInfo(node=self, context=context)
+
+        # When inferring a property, we instantiate a new `objects.Property` object,
+        # which in turn, because it inherits from `FunctionDef`, sets itself in the locals
+        # of the wrapping frame. This means that every time we infer a property, the locals
+        # are mutated with a new instance of the property. To avoid this, we detect this
+        # scenario and avoid passing the `parent` argument to the constructor.
+        if not self.parent:
+            raise ParentMissingError(target=self)
+        parent_frame = self.parent.frame()
+        property_already_in_parent_locals = self.name in parent_frame.locals and any(
+            isinstance(val, objects.Property) for val in parent_frame.locals[self.name]
+        )
+        # We also don't want to pass parent if the definition is within a Try node
+        if isinstance(
+            self.parent,
+            (node_classes.Try, node_classes.If),
+        ):
+            property_already_in_parent_locals = True
+
+        prop_func = objects.Property(
+            function=self,
+            name=self.name,
+            lineno=self.lineno,
+            parent=self.parent if not property_already_in_parent_locals else None,
+            col_offset=self.col_offset,
+        )
+        if property_already_in_parent_locals:
+            prop_func.parent = self.parent
+        prop_func.postinit(body=[], args=self.args, doc_node=self.doc_node)
+        yield prop_func
+        return InferenceErrorInfo(node=self, context=context)
 
     def infer_yield_result(self, context: InferenceContext | None = None):
         """Infer what the function yields when called
@@ -1582,7 +1671,7 @@ class FunctionDef(
         yield from self.body
 
     def scope_lookup(
-        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+        self, node: LookupMixIn, name: str, offset: int = 0
     ) -> tuple[LocalsDictNodeNG, list[nodes.NodeNG]]:
         """Lookup where the given name is assigned."""
         if name == "__class__":
@@ -1590,13 +1679,14 @@ class FunctionDef(
             # if any methods in a class body refer to either __class__ or super.
             # In our case, we want to be able to look it up in the current scope
             # when `__class__` is being used.
-            frame = self.parent.frame()
-            if isinstance(frame, ClassDef):
+            if self.parent and isinstance(frame := self.parent.frame(), ClassDef):
                 return self, [frame]
 
         if (self.args.defaults and node in self.args.defaults) or (
             self.args.kw_defaults and node in self.args.kw_defaults
         ):
+            if not self.parent:
+                raise ParentMissingError(target=self)
             frame = self.parent.frame()
             # line offset to avoid that def func(f=func) resolve the default
             # value to the defined function
@@ -1721,7 +1811,7 @@ def get_wrapping_class(node):
     return klass
 
 
-class ClassDef(
+class ClassDef(  # pylint: disable=too-many-instance-attributes
     _base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG, _base_nodes.Statement
 ):
     """Class representing an :class:`ast.ClassDef` node.
@@ -1740,7 +1830,14 @@ class ClassDef(
     # by a raw factories
 
     # a dictionary of class instances attributes
-    _astroid_fields = ("decorators", "bases", "keywords", "doc_node", "body")  # name
+    _astroid_fields = (
+        "decorators",
+        "bases",
+        "keywords",
+        "doc_node",
+        "body",
+        "type_params",
+    )  # name
 
     decorators = None
     """The decorators that are applied to this class.
@@ -1807,6 +1904,11 @@ class ClassDef(
         self.is_dataclass: bool = False
         """Whether this class is a dataclass."""
 
+        self.type_params: list[
+            nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple
+        ] = []
+        """PEP 695 (Python 3.12+) type params, e.g. class MyClass[T]: ..."""
+
         super().__init__(
             lineno=lineno,
             col_offset=col_offset,
@@ -1820,7 +1922,9 @@ class ClassDef(
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)
 
-    infer_binary_op: ClassVar[InferBinaryOp[ClassDef]]
+    infer_binary_op: ClassVar[
+        InferBinaryOp[ClassDef]
+    ] = protocols.instance_class_infer_binary_op
 
     def implicit_parameters(self) -> Literal[1]:
         return 1
@@ -1848,6 +1952,8 @@ class ClassDef(
         *,
         position: Position | None = None,
         doc_node: Const | None = None,
+        type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple]
+        | None = None,
     ) -> None:
         if keywords is not None:
             self.keywords = keywords
@@ -1858,6 +1964,7 @@ class ClassDef(
         self._metaclass = metaclass
         self.position = position
         self.doc_node = doc_node
+        self.type_params = type_params or []
 
     def _newstyle_impl(self, context: InferenceContext | None = None):
         if context is None:
@@ -2050,7 +2157,7 @@ class ClassDef(
             yield self.instantiate_class()
 
     def scope_lookup(
-        self, node: node_classes.LookupMixIn, name: str, offset: int = 0
+        self, node: LookupMixIn, name: str, offset: int = 0
     ) -> tuple[LocalsDictNodeNG, list[nodes.NodeNG]]:
         """Lookup where the given name is assigned.
 
@@ -2089,7 +2196,8 @@ class ClassDef(
             # import name
             # class A(name.Name):
             #     def name(self): ...
-
+            if not self.parent:
+                raise ParentMissingError(target=self)
             frame = self.parent.frame()
             # line offset to avoid that class A(A) resolve the ancestor to
             # the defined class
@@ -2123,7 +2231,8 @@ class ClassDef(
         if context is None:
             context = InferenceContext()
         if not self.bases and self.qname() != "builtins.object":
-            yield builtin_lookup("object")[1][0]
+            # This should always be a ClassDef (which we don't assert for)
+            yield builtin_lookup("object")[1][0]  # type: ignore[misc]
             return
 
         for stmt in self.bases:
@@ -2263,7 +2372,7 @@ class ClassDef(
         name: str,
         context: InferenceContext | None = None,
         class_context: bool = True,
-    ) -> list[SuccessfulInferenceResult]:
+    ) -> list[InferenceResult]:
         """Get an attribute from this class, using Python's attribute semantic.
 
         This method doesn't look in the :attr:`instance_attrs` dictionary
@@ -2290,7 +2399,7 @@ class ClassDef(
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
         # don't modify the list in self.locals!
-        values: list[SuccessfulInferenceResult] = list(self.locals.get(name, []))
+        values: list[InferenceResult] = list(self.locals.get(name, []))
         for classnode in self.ancestors(recurs=True, context=context):
             values += classnode.locals.get(name, [])
 
@@ -2797,7 +2906,7 @@ class ClassDef(
                 ancestors = list(base.ancestors(context=context))
                 bases_mro.append(ancestors)
 
-        unmerged_mro = [[self], *bases_mro, inferred_bases]
+        unmerged_mro: list[list[ClassDef]] = [[self], *bases_mro, inferred_bases]
         unmerged_mro = clean_duplicates_mro(unmerged_mro, self, context)
         clean_typing_generic_mro(unmerged_mro)
         return _c3_merge(unmerged_mro, self, context)
@@ -2845,3 +2954,8 @@ class ClassDef(
         :returns: The node itself.
         """
         return self
+
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[ClassDef, None, None]:
+        yield self

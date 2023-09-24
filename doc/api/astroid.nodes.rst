@@ -1,13 +1,13 @@
 Nodes
 =====
 
-For a list of available nodes see :ref:`nodes`.
-
 .. _nodes:
 
 Nodes
 -----
 .. autosummary::
+   :toctree: nodes
+   :template: autosummary_class.rst
 
    astroid.nodes.AnnAssign
    astroid.nodes.Arguments
@@ -67,6 +67,7 @@ Nodes
    astroid.nodes.Module
    astroid.nodes.Name
    astroid.nodes.Nonlocal
+   astroid.nodes.ParamSpec
    astroid.nodes.Pass
    astroid.nodes.Raise
    astroid.nodes.Return
@@ -75,165 +76,15 @@ Nodes
    astroid.nodes.Slice
    astroid.nodes.Starred
    astroid.nodes.Subscript
-   astroid.nodes.TryExcept
-   astroid.nodes.TryFinally
+   astroid.nodes.Try
    astroid.nodes.TryStar
    astroid.nodes.Tuple
+   astroid.nodes.TypeAlias
+   astroid.nodes.TypeVar
+   astroid.nodes.TypeVarTuple
    astroid.nodes.UnaryOp
    astroid.nodes.Unknown
    astroid.nodes.While
    astroid.nodes.With
    astroid.nodes.Yield
    astroid.nodes.YieldFrom
-
-.. autoclass:: astroid.nodes.AnnAssign
-
-.. autoclass:: astroid.nodes.Arguments
-
-.. autoclass:: astroid.nodes.Assert
-
-.. autoclass:: astroid.nodes.Assign
-
-.. autoclass:: astroid.nodes.AssignAttr
-
-.. autoclass:: astroid.nodes.AssignName
-
-.. autoclass:: astroid.nodes.AsyncFor
-
-.. autoclass:: astroid.nodes.AsyncFunctionDef
-
-.. autoclass:: astroid.nodes.AsyncWith
-
-.. autoclass:: astroid.nodes.Attribute
-
-.. autoclass:: astroid.nodes.AugAssign
-
-.. autoclass:: astroid.nodes.Await
-
-.. autoclass:: astroid.nodes.BinOp
-
-.. autoclass:: astroid.nodes.BoolOp
-
-.. autoclass:: astroid.nodes.Break
-
-.. autoclass:: astroid.nodes.Call
-
-.. autoclass:: astroid.nodes.ClassDef
-
-.. autoclass:: astroid.nodes.Compare
-
-.. autoclass:: astroid.nodes.Comprehension
-
-.. autoclass:: astroid.nodes.Const
-
-.. autoclass:: astroid.nodes.Continue
-
-.. autoclass:: astroid.nodes.Decorators
-
-.. autoclass:: astroid.nodes.DelAttr
-
-.. autoclass:: astroid.nodes.DelName
-
-.. autoclass:: astroid.nodes.Delete
-
-.. autoclass:: astroid.nodes.Dict
-
-.. autoclass:: astroid.nodes.DictComp
-
-.. autoclass:: astroid.nodes.DictUnpack
-
-.. autoclass:: astroid.nodes.EmptyNode
-
-.. autoclass:: astroid.nodes.ExceptHandler
-
-.. autoclass:: astroid.nodes.Expr
-
-.. autoclass:: astroid.nodes.For
-
-.. autoclass:: astroid.nodes.FormattedValue
-
-.. autoclass:: astroid.nodes.FunctionDef
-
-.. autoclass:: astroid.nodes.GeneratorExp
-
-.. autoclass:: astroid.nodes.Global
-
-.. autoclass:: astroid.nodes.If
-
-.. autoclass:: astroid.nodes.IfExp
-
-.. autoclass:: astroid.nodes.Import
-
-.. autoclass:: astroid.nodes.ImportFrom
-
-.. autoclass:: astroid.nodes.JoinedStr
-
-.. autoclass:: astroid.nodes.Keyword
-
-.. autoclass:: astroid.nodes.Lambda
-
-.. autoclass:: astroid.nodes.List
-
-.. autoclass:: astroid.nodes.ListComp
-
-.. autoclass:: astroid.nodes.Match
-
-.. autoclass:: astroid.nodes.MatchAs
-
-.. autoclass:: astroid.nodes.MatchCase
-
-.. autoclass:: astroid.nodes.MatchClass
-
-.. autoclass:: astroid.nodes.MatchMapping
-
-.. autoclass:: astroid.nodes.MatchOr
-
-.. autoclass:: astroid.nodes.MatchSequence
-
-.. autoclass:: astroid.nodes.MatchSingleton
-
-.. autoclass:: astroid.nodes.MatchStar
-
-.. autoclass:: astroid.nodes.MatchValue
-
-.. autoclass:: astroid.nodes.Module
-
-.. autoclass:: astroid.nodes.Name
-
-.. autoclass:: astroid.nodes.Nonlocal
-
-.. autoclass:: astroid.nodes.Pass
-
-.. autoclass:: astroid.nodes.Raise
-
-.. autoclass:: astroid.nodes.Return
-
-.. autoclass:: astroid.nodes.Set
-
-.. autoclass:: astroid.nodes.SetComp
-
-.. autoclass:: astroid.nodes.Slice
-
-.. autoclass:: astroid.nodes.Starred
-
-.. autoclass:: astroid.nodes.Subscript
-
-.. autoclass:: astroid.nodes.TryExcept
-
-.. autoclass:: astroid.nodes.TryFinally
-
-.. autoclass:: astroid.nodes.TryStar
-
-.. autoclass:: astroid.nodes.Tuple
-
-.. autoclass:: astroid.nodes.UnaryOp
-
-.. autoclass:: astroid.nodes.Unknown
-
-.. autoclass:: astroid.nodes.While
-
-.. autoclass:: astroid.nodes.With
-
-.. autoclass:: astroid.nodes.Yield
-
-.. autoclass:: astroid.nodes.YieldFrom

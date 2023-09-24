@@ -17,6 +17,8 @@ from typing import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from astroid import bases, exceptions, nodes, transforms, util
     from astroid.context import InferenceContext
     from astroid.interpreter._import import spec
@@ -41,6 +43,7 @@ class AstroidManagerBrain(TypedDict):
     _failed_import_hooks: list[Callable[[str], nodes.Module]]
     always_load_extensions: bool
     optimize_ast: bool
+    max_inferable_values: int
     extension_package_whitelist: set[str]
     _transform: transforms.TransformVisitor
 
@@ -84,7 +87,7 @@ class InferFn(Protocol, Generic[_SuccessfulInferenceResultT_contra]):
         node: _SuccessfulInferenceResultT_contra,
         context: InferenceContext | None = None,
         **kwargs: Any,
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Iterator[InferenceResult]:
         ...  # pragma: no cover
 
 

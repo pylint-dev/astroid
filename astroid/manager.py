@@ -14,11 +14,9 @@ import os
 import types
 import zipimport
 from collections.abc import Callable, Iterator, Sequence
-from importlib.util import find_spec, module_from_spec
 from typing import Any, ClassVar
 
 from astroid import nodes
-from astroid.const import BRAIN_MODULES_DIRECTORY
 from astroid.context import InferenceContext, _invalidate_cache
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec, util
@@ -53,16 +51,16 @@ class AstroidManager:
     """
 
     name = "astroid loader"
-    brain: AstroidManagerBrain = {
+    brain: ClassVar[AstroidManagerBrain] = {
         "astroid_cache": {},
         "_mod_file_cache": {},
         "_failed_import_hooks": [],
         "always_load_extensions": False,
         "optimize_ast": False,
+        "max_inferable_values": 100,
         "extension_package_whitelist": set(),
         "_transform": TransformVisitor(),
     }
-    max_inferable_values: ClassVar[int] = 100
 
     def __init__(self) -> None:
         # NOTE: cache entries are added by the [re]builder
@@ -89,6 +87,14 @@ class AstroidManager:
     @optimize_ast.setter
     def optimize_ast(self, value: bool) -> None:
         AstroidManager.brain["optimize_ast"] = value
+
+    @property
+    def max_inferable_values(self) -> int:
+        return AstroidManager.brain["max_inferable_values"]
+
+    @max_inferable_values.setter
+    def max_inferable_values(self, value: int) -> None:
+        AstroidManager.brain["max_inferable_values"] = value
 
     @property
     def register_transform(self):
@@ -432,9 +438,10 @@ class AstroidManager:
         """
         # import here because of cyclic imports
         # pylint: disable=import-outside-toplevel
+        from astroid.brain.helpers import register_all_brains
         from astroid.inference_tip import clear_inference_tip_cache
         from astroid.interpreter.objectmodel import ObjectModel
-        from astroid.nodes.node_classes import LookupMixIn
+        from astroid.nodes._base_nodes import LookupMixIn
         from astroid.nodes.scoped_nodes import ClassDef
 
         clear_inference_tip_cache()
@@ -455,11 +462,5 @@ class AstroidManager:
 
         self.bootstrap()
 
-        # Reload brain plugins. During initialisation this is done in astroid.__init__.py
-        for module in BRAIN_MODULES_DIRECTORY.iterdir():
-            if module.suffix == ".py":
-                module_spec = find_spec(f"astroid.brain.{module.stem}")
-                assert module_spec
-                module_object = module_from_spec(module_spec)
-                assert module_spec.loader
-                module_spec.loader.exec_module(module_object)
+        # Reload brain plugins. During initialisation this is done in astroid.manager.py
+        register_all_brains(self)

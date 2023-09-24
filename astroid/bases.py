@@ -10,9 +10,9 @@ from __future__ import annotations
 import collections
 import collections.abc
 from collections.abc import Iterable, Iterator
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
-from astroid import nodes
+from astroid import decorators, nodes
 from astroid.const import PY310_PLUS
 from astroid.context import (
     CallContext,
@@ -28,12 +28,11 @@ from astroid.exceptions import (
 )
 from astroid.interpreter import objectmodel
 from astroid.typing import (
-    InferBinaryOp,
     InferenceErrorInfo,
     InferenceResult,
     SuccessfulInferenceResult,
 )
-from astroid.util import Uninferable, UninferableBase
+from astroid.util import Uninferable, UninferableBase, safe_infer
 
 if TYPE_CHECKING:
     from astroid.constraint import Constraint
@@ -69,8 +68,6 @@ POSSIBLE_PROPERTIES = {
 def _is_property(
     meth: nodes.FunctionDef | UnboundMethod, context: InferenceContext | None = None
 ) -> bool:
-    from astroid import helpers  # pylint: disable=import-outside-toplevel
-
     decoratornames = meth.decoratornames(context=context)
     if PROPERTIES.intersection(decoratornames):
         return True
@@ -86,7 +83,7 @@ def _is_property(
     if not meth.decorators:
         return False
     for decorator in meth.decorators.nodes or ():
-        inferred = helpers.safe_infer(decorator, context=context)
+        inferred = safe_infer(decorator, context=context)
         if inferred is None or isinstance(inferred, UninferableBase):
             continue
         if isinstance(inferred, nodes.ClassDef):
@@ -149,7 +146,7 @@ class Proxy:
 
 
 def _infer_stmts(
-    stmts: Iterator[InferenceResult],
+    stmts: Iterable[InferenceResult],
     context: InferenceContext | None,
     frame: nodes.NodeNG | BaseInstance | None = None,
 ) -> collections.abc.Generator[InferenceResult, None, None]:
@@ -243,7 +240,7 @@ class BaseInstance(Proxy):
         name: str,
         context: InferenceContext | None = None,
         lookupclass: bool = True,
-    ) -> list[SuccessfulInferenceResult]:
+    ) -> list[InferenceResult]:
         try:
             values = self._proxied.instance_attr(name, context)
         except AttributeInferenceError as exc:
@@ -346,7 +343,16 @@ class Instance(BaseInstance):
     def __init__(self, proxied: nodes.ClassDef | None) -> None:
         super().__init__(proxied)
 
-    infer_binary_op: ClassVar[InferBinaryOp[Instance]]
+    @decorators.yes_if_nothing_inferred
+    def infer_binary_op(
+        self,
+        opnode: nodes.AugAssign | nodes.BinOp,
+        operator: str,
+        other: InferenceResult,
+        context: InferenceContext,
+        method: SuccessfulInferenceResult,
+    ) -> Generator[InferenceResult, None, None]:
+        return method.infer_call_result(self, context)
 
     def __repr__(self) -> str:
         return "<Instance of {}.{} at 0x{}>".format(

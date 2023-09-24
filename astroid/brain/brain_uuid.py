@@ -13,6 +13,7 @@ def _patch_uuid_class(node: ClassDef) -> None:
     node.locals["int"] = [Const(0, parent=node)]
 
 
-AstroidManager().register_transform(
-    ClassDef, _patch_uuid_class, lambda node: node.qname() == "uuid.UUID"
-)
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(
+        ClassDef, _patch_uuid_class, lambda node: node.qname() == "uuid.UUID"
+    )

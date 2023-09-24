@@ -6,9 +6,34 @@ What's New in astroid 3.0.0?
 =============================
 Release date: TBA
 
+* Add support for Python 3.12, including PEP 695 type parameter syntax.
+
+  Closes #2201
+
 * Remove support for Python 3.7.
 
   Refs #2137
+
+* Following a deprecation period starting in astroid 2.7.0, the ``astroid.node_classes``
+  and ``astroid.scoped_nodes`` modules have been removed in favor of ``astroid.nodes.node_classes``
+  and ``astroid.nodes.scoped_nodes``.
+
+  Closes #1072
+
+* Following a deprecation period starting in astroid 2.12.0, the ``astroid.mixins`` module
+  has been removed in favor of ``astroid.nodes._base_nodes`` (private).
+
+  Refs #1633
+
+* Return all existing arguments when calling ``Arguments.arguments()``. This also means ``find_argname`` will now
+  use the whole list of arguments for its search.
+
+  Closes #2213
+
+* Exclude class attributes from the ``__members__`` container of an ``Enum`` class when they are
+  ``nodes.AnnAssign`` nodes with no assigned value.
+
+  Refs pylint-dev/pylint#7402
 
 * Remove ``@cached`` and ``@cachedproperty`` decorator (just use ``@cached_property`` from the stdlib).
 
@@ -19,6 +44,18 @@ Release date: TBA
   ``import copy`` now finds ``copy`` instead of ``copy.py``. Solves ``no-member`` issues.
 
   Closes pylint-dev/pylint#6535
+
+* Remove the ``inference`` module. Node inference methods are now in the module
+  defining the node, rather than being associated to the node afterward.
+
+  Closes #679
+
+* Move ``LookupMixIn`` to ``astroid.nodes._base_nodes`` and make it private.
+
+* Remove the shims for ``OperationError``, ``BinaryOperationError``, and ``UnaryOperationError``
+  in ``exceptions``. They were moved to ``util`` in astroid 1.5.0.
+
+* Move ``safe_infer()`` from ``helpers`` to ``util``. This avoids some circular imports.
 
 * Reduce file system access in ``ast_from_file()``.
 
@@ -39,6 +76,14 @@ Release date: TBA
   Closes #1828
   Closes pylint-dev/pylint#7464
   Closes pylint-dev/pylint#8074
+
+* Use the global inference cache when inferring, even without an explicit
+  ``InferenceContext``. This is a significant performance improvement given how
+  often methods default to ``None`` for the context argument. (Linting ``astroid``
+  itself now takes ~5% less time on Python 3.12; other projects requiring more
+  complex inference calculations will see greater speedups.)
+
+  Refs #529
 
 * Fix interrupted ``InferenceContext`` call chains, thereby addressing performance
   problems when linting ``sqlalchemy``.
@@ -66,7 +111,7 @@ Release date: TBA
   The breaking change allows us to better type and re-use the method within ``astroid``.
 
 * Improved signature of the ``__init__`` and ``__postinit__`` methods of most nodes.
-  This includes makes ``lineno``, ``col_offset``, ``end_lineno``, ``end_col_offset`` and ``parent``
+  This includes making ``lineno``, ``col_offset``, ``end_lineno``, ``end_col_offset`` and ``parent``
   required arguments for ``nodes.NodeNG`` and its subclasses.
   For most other nodes, arguments of their ``__postinit__`` methods have been made required to better
   represent how they would normally be constructed by the standard library ``ast`` module.
@@ -110,7 +155,6 @@ Release date: TBA
   - ``nodes.Slice``
   - ``nodes.Starred``
   - ``objects.Super``, we also added the ``call`` parameter to its ``__init__`` method.
-  - ``nodes.TryExcept``
   - ``nodes.Subscript``
   - ``nodes.UnaryOp``
   - ``nodes.While``
@@ -125,7 +169,7 @@ Release date: TBA
 * Remove dependency on ``wrapt``.
 
 * Remove dependency on ``lazy_object_proxy``. This includes the removal
-  of the assosicated ``lazy_import``, ``lazy_descriptor`` and ``proxy_alias`` utility functions.
+  of the associated ``lazy_import``, ``lazy_descriptor`` and ``proxy_alias`` utility functions.
 
 * ``CallSite._unpack_args`` and ``CallSite._unpack_keywords`` now use ``safe_infer()`` for
   better inference and fewer false positives.
@@ -172,23 +216,61 @@ Release date: TBA
 
   Refs #2154
 
+* Add new ``nodes.Try`` to better match Python AST. Replaces the ``TryExcept``
+  and ``TryFinally`` nodes which have been removed.
+
 * Publicize ``NodeNG.repr_name()`` to facilitate finding a node's nice name.
 
   Refs pylint-dev/pylint#8598
+
+* Fix false positives for ``no-member`` and ``invalid-name`` when using the ``_name_``, ``_value_`` and ``_ignore_`` sunders in Enums.
+
+  Closes pylint-dev/pylint#9015
+
+
+What's New in astroid 2.15.7?
+=============================
+Release date: 2023-09-23
+
+* Fix a crash when inferring a ``typing.TypeVar`` call.
+
+  Closes pylint-dev/pylint#8802
+
+* Infer user-defined enum classes by checking if the class is a subtype of ``enum.Enum``.
+
+  Closes pylint-dev/pylint#8897
+
+* Fix inference of functions with ``@functools.lru_cache`` decorators without
+  parentheses.
+
+  Closes pylint-dev/pylint#8868
+
+* Make ``sys.argv`` uninferable because it never is. (It's impossible to infer
+  the value it will have outside of static analysis where it's our own value.)
+
+  Refs pylint-dev/pylint#7710
+
+
+What's New in astroid 2.15.6?
+=============================
+Release date: 2023-07-08
+
+* Harden ``get_module_part()`` against ``"."``.
+
+  Closes pylint-dev/pylint#8749
+
+* Allow ``AsStringVisitor`` to visit ``objects.PartialFunction``.
+
+  Closes pylint-dev/pylint#8881
+
+* Avoid expensive list/tuple multiplication operations that would result in ``MemoryError``.
+
+  Closes pylint-dev/pylint#8748
 
 * Fix a regression in 2.12.0 where settings in AstroidManager would be ignored.
   Most notably this addresses pylint-dev/pylint#7433.
 
   Refs #2204
-
-
-What's New in astroid 2.15.6?
-=============================
-Release date: TBA
-
-* Harden ``get_module_part()`` against ``"."``.
-
-  Closes pylint-dev/pylint#8749
 
 
 What's New in astroid 2.15.5?
@@ -272,6 +354,11 @@ Release date: 2023-03-06
 * ``AstroidManager.clear_cache`` now also clears the inference context cache.
 
   Refs #1780
+
+* ``max_inferable_values`` can now be set on ``AstroidManager`` instances, e.g. ``astroid.MANAGER``
+  besides just the ``AstroidManager`` class itself.
+
+  Closes #2280
 
 * ``Astroid`` now retrieves the default values of keyword only arguments and sets them on
   ``Arguments.kw_defaults``.

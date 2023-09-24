@@ -17,14 +17,14 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Literal, Tuple, Union
 
-from astroid import bases, context, helpers, nodes
+from astroid import bases, context, nodes
 from astroid.builder import parse
 from astroid.const import PY39_PLUS, PY310_PLUS
 from astroid.exceptions import AstroidSyntaxError, InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.typing import InferenceResult
-from astroid.util import Uninferable, UninferableBase
+from astroid.util import Uninferable, UninferableBase, safe_infer
 
 _FieldDefaultReturn = Union[
     None,
@@ -561,7 +561,7 @@ def _is_keyword_only_sentinel(node: nodes.NodeNG) -> bool:
     """Return True if node is the KW_ONLY sentinel."""
     if not PY310_PLUS:
         return False
-    inferred = helpers.safe_infer(node)
+    inferred = safe_infer(node)
     return (
         isinstance(inferred, bases.Instance)
         and inferred.qname() == "dataclasses._KW_ONLY_TYPE"
@@ -617,18 +617,19 @@ def _infer_instance_from_annotation(
         yield klass.instantiate_class()
 
 
-AstroidManager().register_transform(
-    nodes.ClassDef, dataclass_transform, is_decorated_with_dataclass
-)
+def register(manager: AstroidManager) -> None:
+    manager.register_transform(
+        nodes.ClassDef, dataclass_transform, is_decorated_with_dataclass
+    )
 
-AstroidManager().register_transform(
-    nodes.Call,
-    inference_tip(infer_dataclass_field_call, raise_on_overwrite=True),
-    _looks_like_dataclass_field_call,
-)
+    manager.register_transform(
+        nodes.Call,
+        inference_tip(infer_dataclass_field_call, raise_on_overwrite=True),
+        _looks_like_dataclass_field_call,
+    )
 
-AstroidManager().register_transform(
-    nodes.Unknown,
-    inference_tip(infer_dataclass_attribute, raise_on_overwrite=True),
-    _looks_like_dataclass_attribute,
-)
+    manager.register_transform(
+        nodes.Unknown,
+        inference_tip(infer_dataclass_attribute, raise_on_overwrite=True),
+        _looks_like_dataclass_attribute,
+    )

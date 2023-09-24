@@ -2,26 +2,18 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
-"""Astroid hooks for dateutil."""
-
-import textwrap
-
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
+from astroid.const import PY312_PLUS
 from astroid.manager import AstroidManager
 
 
-def dateutil_transform():
-    return AstroidBuilder(AstroidManager()).string_build(
-        textwrap.dedent(
-            """
-    import datetime
-    def parse(timestr, parserinfo=None, **kwargs):
-        return datetime.datetime()
-    """
-        )
-    )
+def datetime_transform():
+    """The datetime module was C-accelerated in Python 3.12, so use the
+    Python source."""
+    return AstroidBuilder(AstroidManager()).string_build("from _pydatetime import *")
 
 
 def register(manager: AstroidManager) -> None:
-    register_module_extender(manager, "dateutil.parser", dateutil_transform)
+    if PY312_PLUS:
+        register_module_extender(manager, "datetime", datetime_transform)

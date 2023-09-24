@@ -59,11 +59,10 @@ tools.
 .. _Tidelift Subscription: https://tidelift.com/subscription/pkg/pypi-astroid?utm_source=pypi-astroid&utm_medium=referral&utm_campaign=readme
 
 
-More information
-----------------
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
 
    inference
 
@@ -73,10 +72,10 @@ More information
 
    whatsnew
 
+.. toctree::
+   :hidden:
+   :caption: Indices
 
-Indices and tables
-==================
+   genindex
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   modindex

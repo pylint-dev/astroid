@@ -137,7 +137,7 @@ class AstroidManagerTest(
         self.assertFalse(util.is_namespace("tests.testdata.python3.data.all"))
         self.assertFalse(util.is_namespace("__main__"))
         self.assertFalse(
-            util.is_namespace(list(EXT_LIB_DIRS)[0].rsplit("/", maxsplit=1)[-1]),
+            util.is_namespace(next(iter(EXT_LIB_DIRS)).rsplit("/", maxsplit=1)[-1]),
         )
         self.assertFalse(util.is_namespace("importlib._bootstrap"))
 
@@ -405,11 +405,24 @@ class BorgAstroidManagerTC(unittest.TestCase):
         second_built = second_manager.ast_from_module_name("builtins")
         self.assertIs(built, second_built)
 
+    def test_max_inferable_values(self) -> None:
+        mgr = manager.AstroidManager()
+        original_limit = mgr.max_inferable_values
+
+        def reset_limit():
+            nonlocal original_limit
+            manager.AstroidManager().max_inferable_values = original_limit
+
+        self.addCleanup(reset_limit)
+
+        mgr.max_inferable_values = 4
+        self.assertEqual(manager.AstroidManager.brain["max_inferable_values"], 4)
+
 
 class ClearCacheTest(unittest.TestCase):
     def test_clear_cache_clears_other_lru_caches(self) -> None:
         lrus = (
-            astroid.nodes.node_classes.LookupMixIn.lookup,
+            astroid.nodes._base_nodes.LookupMixIn.lookup,
             astroid.modutils._cache_normalize_path_,
             util.is_namespace,
             astroid.interpreter.objectmodel.ObjectModel.attributes,

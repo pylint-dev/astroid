@@ -70,9 +70,10 @@ def _nose_tools_trivial_transform():
     return stub
 
 
-register_module_extender(
-    AstroidManager(), "nose.tools.trivial", _nose_tools_trivial_transform
-)
-AstroidManager().register_transform(
-    Module, _nose_tools_transform, lambda n: n.name == "nose.tools"
-)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(
+        manager, "nose.tools.trivial", _nose_tools_trivial_transform
+    )
+    manager.register_transform(
+        Module, _nose_tools_transform, lambda n: n.name == "nose.tools"
+    )

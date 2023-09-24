@@ -18,11 +18,12 @@ from typing import TYPE_CHECKING, Final, TypeVar, Union, cast, overload
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import IS_PYPY, PY38, PY39_PLUS, Context
+from astroid.const import IS_PYPY, PY38, PY39_PLUS, PY312_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
+from astroid.nodes.node_classes import AssignName
 from astroid.nodes.utils import Position
-from astroid.typing import SuccessfulInferenceResult
+from astroid.typing import InferenceResult
 
 REDIRECT: Final[dict[str, str]] = {
     "arguments": "Arguments",
@@ -167,9 +168,8 @@ class TreeRebuilder:
             - ClassDef          - For
             - FunctionDef       - While
             - Call              - If
-            - Decorators        - TryExcept
-            - With              - TryFinally
-            - Assign
+            - Decorators        - Try
+            - With              - Assign
         """
         newnode.end_lineno = None
         newnode.end_col_offset = None
@@ -384,6 +384,12 @@ class TreeRebuilder:
         def visit(self, node: ast.Constant, parent: NodeNG) -> nodes.Const:
             ...
 
+        if sys.version_info >= (3, 12):
+
+            @overload
+            def visit(self, node: ast.ParamSpec, parent: NodeNG) -> nodes.ParamSpec:
+                ...
+
         @overload
         def visit(self, node: ast.Pass, parent: NodeNG) -> nodes.Pass:
             ...
@@ -417,9 +423,7 @@ class TreeRebuilder:
             ...
 
         @overload
-        def visit(
-            self, node: ast.Try, parent: NodeNG
-        ) -> nodes.TryExcept | nodes.TryFinally:
+        def visit(self, node: ast.Try, parent: NodeNG) -> nodes.Try:
             ...
 
         if sys.version_info >= (3, 11):
@@ -431,6 +435,22 @@ class TreeRebuilder:
         @overload
         def visit(self, node: ast.Tuple, parent: NodeNG) -> nodes.Tuple:
             ...
+
+        if sys.version_info >= (3, 12):
+
+            @overload
+            def visit(self, node: ast.TypeAlias, parent: NodeNG) -> nodes.TypeAlias:
+                ...
+
+            @overload
+            def visit(self, node: ast.TypeVar, parent: NodeNG) -> nodes.TypeVar:
+                ...
+
+            @overload
+            def visit(
+                self, node: ast.TypeVarTuple, parent: NodeNG
+            ) -> nodes.TypeVarTuple:
+                ...
 
         @overload
         def visit(self, node: ast.UnaryOp, parent: NodeNG) -> nodes.UnaryOp:
@@ -542,10 +562,33 @@ class TreeRebuilder:
         """Visit an Arguments node by returning a fresh instance of it."""
         vararg: str | None = None
         kwarg: str | None = None
+        vararg_node = node.vararg
+        kwarg_node = node.kwarg
+
         newnode = nodes.Arguments(
             node.vararg.arg if node.vararg else None,
             node.kwarg.arg if node.kwarg else None,
             parent,
+            AssignName(
+                vararg_node.arg,
+                vararg_node.lineno,
+                vararg_node.col_offset,
+                parent,
+                end_lineno=vararg_node.end_lineno,
+                end_col_offset=vararg_node.end_col_offset,
+            )
+            if vararg_node
+            else None,
+            AssignName(
+                kwarg_node.arg,
+                kwarg_node.lineno,
+                kwarg_node.col_offset,
+                parent,
+                end_lineno=kwarg_node.end_lineno,
+                end_col_offset=kwarg_node.end_col_offset,
+            )
+            if kwarg_node
+            else None,
         )
         args = [self.visit(child, newnode) for child in node.args]
         defaults = [self.visit(child, newnode) for child in node.defaults]
@@ -870,6 +913,9 @@ class TreeRebuilder:
             ],
             position=self._get_position_info(node, newnode),
             doc_node=self.visit(doc_ast_node, newnode),
+            type_params=[self.visit(param, newnode) for param in node.type_params]
+            if PY312_PLUS
+            else [],
         )
         return newnode
 
@@ -994,7 +1040,7 @@ class TreeRebuilder:
             end_col_offset=node.end_col_offset,
             parent=parent,
         )
-        items: list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]] = list(
+        items: list[tuple[InferenceResult, InferenceResult]] = list(
             self._visit_dict_items(node, parent, newnode)
         )
         newnode.postinit(items)
@@ -1170,6 +1216,9 @@ class TreeRebuilder:
             type_comment_args=type_comment_args,
             position=self._get_position_info(node, newnode),
             doc_node=self.visit(doc_ast_node, newnode),
+            type_params=[self.visit(param, newnode) for param in node.type_params]
+            if PY312_PLUS
+            else [],
         )
         self._global_names.pop()
         return newnode
@@ -1477,6 +1526,20 @@ class TreeRebuilder:
             parent=parent,
         )
 
+    def visit_paramspec(self, node: ast.ParamSpec, parent: NodeNG) -> nodes.ParamSpec:
+        """Visit a ParamSpec node by returning a fresh instance of it."""
+        newnode = nodes.ParamSpec(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+            parent=parent,
+        )
+        # Add AssignName node for 'node.name'
+        # https://bugs.python.org/issue43994
+        newnode.postinit(name=self.visit_assignname(node, newnode, node.name))
+        return newnode
+
     def visit_pass(self, node: ast.Pass, parent: NodeNG) -> nodes.Pass:
         """Visit a Pass node by returning a fresh instance of it."""
         return nodes.Pass(
@@ -1589,55 +1652,22 @@ class TreeRebuilder:
         newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
-    def visit_tryexcept(self, node: ast.Try, parent: NodeNG) -> nodes.TryExcept:
-        """Visit a TryExcept node by returning a fresh instance of it."""
-        # TryExcept excludes the 'finally' but that will be included in the
-        # end_lineno from 'node'. Therefore, we check all non 'finally'
-        # children to find the correct end_lineno and column.
-        end_lineno = node.end_lineno
-        end_col_offset = node.end_col_offset
-        all_children: list[ast.AST] = [*node.body, *node.handlers, *node.orelse]
-        for child in reversed(all_children):
-            end_lineno = child.end_lineno
-            end_col_offset = child.end_col_offset
-            break
-        newnode = nodes.TryExcept(
+    def visit_try(self, node: ast.Try, parent: NodeNG) -> nodes.Try:
+        """Visit a Try node by returning a fresh instance of it"""
+        newnode = nodes.Try(
             lineno=node.lineno,
             col_offset=node.col_offset,
-            end_lineno=end_lineno,
-            end_col_offset=end_col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
-            [self.visit(child, newnode) for child in node.body],
-            [self.visit(child, newnode) for child in node.handlers],
-            [self.visit(child, newnode) for child in node.orelse],
+            body=[self.visit(child, newnode) for child in node.body],
+            handlers=[self.visit(child, newnode) for child in node.handlers],
+            orelse=[self.visit(child, newnode) for child in node.orelse],
+            finalbody=[self.visit(child, newnode) for child in node.finalbody],
         )
         return newnode
-
-    def visit_try(
-        self, node: ast.Try, parent: NodeNG
-    ) -> nodes.TryExcept | nodes.TryFinally | None:
-        # python 3.3 introduce a new Try node replacing
-        # TryFinally/TryExcept nodes
-        if node.finalbody:
-            newnode = nodes.TryFinally(
-                lineno=node.lineno,
-                col_offset=node.col_offset,
-                end_lineno=node.end_lineno,
-                end_col_offset=node.end_col_offset,
-                parent=parent,
-            )
-            body: list[NodeNG | nodes.TryExcept]
-            if node.handlers:
-                body = [self.visit_tryexcept(node, newnode)]
-            else:
-                body = [self.visit(child, newnode) for child in node.body]
-            newnode.postinit(body, [self.visit(n, newnode) for n in node.finalbody])
-            return newnode
-        if node.handlers:
-            return self.visit_tryexcept(node, parent)
-        return None
 
     def visit_trystar(self, node: ast.TryStar, parent: NodeNG) -> nodes.TryStar:
         newnode = nodes.TryStar(
@@ -1667,6 +1697,55 @@ class TreeRebuilder:
             parent=parent,
         )
         newnode.postinit([self.visit(child, newnode) for child in node.elts])
+        return newnode
+
+    def visit_typealias(self, node: ast.TypeAlias, parent: NodeNG) -> nodes.TypeAlias:
+        """Visit a TypeAlias node by returning a fresh instance of it."""
+        newnode = nodes.TypeAlias(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+            parent=parent,
+        )
+        newnode.postinit(
+            name=self.visit(node.name, newnode),
+            type_params=[self.visit(p, newnode) for p in node.type_params],
+            value=self.visit(node.value, newnode),
+        )
+        return newnode
+
+    def visit_typevar(self, node: ast.TypeVar, parent: NodeNG) -> nodes.TypeVar:
+        """Visit a TypeVar node by returning a fresh instance of it."""
+        newnode = nodes.TypeVar(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+            parent=parent,
+        )
+        # Add AssignName node for 'node.name'
+        # https://bugs.python.org/issue43994
+        newnode.postinit(
+            name=self.visit_assignname(node, newnode, node.name),
+            bound=self.visit(node.bound, newnode),
+        )
+        return newnode
+
+    def visit_typevartuple(
+        self, node: ast.TypeVarTuple, parent: NodeNG
+    ) -> nodes.TypeVarTuple:
+        """Visit a TypeVarTuple node by returning a fresh instance of it."""
+        newnode = nodes.TypeVarTuple(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+            parent=parent,
+        )
+        # Add AssignName node for 'node.name'
+        # https://bugs.python.org/issue43994
+        newnode.postinit(name=self.visit_assignname(node, newnode, node.name))
         return newnode
 
     def visit_unaryop(self, node: ast.UnaryOp, parent: NodeNG) -> nodes.UnaryOp:

@@ -8,9 +8,8 @@ from astroid import nodes
 from astroid.bases import Instance
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import InferenceError, NoDefault
-from astroid.helpers import safe_infer
 from astroid.typing import InferenceResult
-from astroid.util import Uninferable, UninferableBase
+from astroid.util import Uninferable, UninferableBase, safe_infer
 
 
 class CallSite:
@@ -91,7 +90,7 @@ class CallSite:
         keywords: list[tuple[str | None, nodes.NodeNG]],
         context: InferenceContext | None = None,
     ):
-        values = {}
+        values: dict[str | None, InferenceResult] = {}
         context = context or InferenceContext()
         context.extra_context = self.argument_context_map
         for name, value in keywords:
@@ -182,7 +181,13 @@ class CallSite:
 
         positional = self.positional_arguments[: len(funcnode.args.args)]
         vararg = self.positional_arguments[len(funcnode.args.args) :]
-        argindex = funcnode.args.find_argname(name)[0]
+
+        # preserving previous behavior, when vararg and kwarg were not included in find_argname results
+        if name in [funcnode.args.vararg, funcnode.args.kwarg]:
+            argindex = None
+        else:
+            argindex = funcnode.args.find_argname(name)[0]
+
         kwonlyargs = {arg.name for arg in funcnode.args.kwonlyargs}
         kwargs = {
             key: value

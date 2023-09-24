@@ -63,7 +63,8 @@ def infer_type_sub(node, context: InferenceContext | None = None):
     return node.infer(context=context)
 
 
-if PY39_PLUS:
-    AstroidManager().register_transform(
-        nodes.Name, inference_tip(infer_type_sub), _looks_like_type_subscript
-    )
+def register(manager: AstroidManager) -> None:
+    if PY39_PLUS:
+        manager.register_transform(
+            nodes.Name, inference_tip(infer_type_sub), _looks_like_type_subscript
+        )

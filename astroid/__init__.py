@@ -16,7 +16,7 @@ compatible with python's _ast.
 Instance attributes are added by a
 builder object, which can either generate extended ast (let's call
 them astroid ;) by visiting an existent ast tree or by inspecting living
-object. Methods are added by monkey patching ast classes.
+object.
 
 Main modules are:
 
@@ -32,21 +32,19 @@ Main modules are:
 
 import functools
 import tokenize
-from importlib import import_module
 
 # isort: off
-# We have an isort: off on '__version__' because of a circular import in nodes.
+# We have an isort: off on 'astroid.nodes' because of a circular import.
 from astroid.nodes import node_classes, scoped_nodes
 
 # isort: on
 
-from astroid import inference, raw_building
+from astroid import raw_building
 from astroid.__pkginfo__ import __version__, version
-from astroid.astroid_manager import MANAGER
 from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
-from astroid.const import BRAIN_MODULES_DIRECTORY, PY310_PLUS, Context
+from astroid.const import PY310_PLUS, Context
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidBuildingException,
@@ -57,7 +55,6 @@ from astroid.exceptions import (
     AstroidTypeError,
     AstroidValueError,
     AttributeInferenceError,
-    BinaryOperationError,
     DuplicateBasesError,
     InconsistentMroError,
     InferenceError,
@@ -66,14 +63,12 @@ from astroid.exceptions import (
     NameInferenceError,
     NoDefault,
     NotFoundError,
-    OperationError,
     ParentMissingError,
     ResolveError,
     StatementMissing,
     SuperArgumentTypeError,
     SuperError,
     TooManyLevelsError,
-    UnaryOperationError,
     UnresolvableName,
     UseInferenceDefault,
 )
@@ -86,6 +81,7 @@ from astroid.objects import ExceptionInstance
 # and we need astroid/scoped_nodes and astroid/node_classes to work. So
 # importing with a wildcard would clash with astroid/nodes/scoped_nodes
 # and astroid/nodes/node_classes.
+from astroid.astroid_manager import MANAGER
 from astroid.nodes import (
     CONST_CLS,
     AnnAssign,
@@ -150,6 +146,7 @@ from astroid.nodes import (
     NamedExpr,
     NodeNG,
     Nonlocal,
+    ParamSpec,
     Pass,
     Raise,
     Return,
@@ -158,10 +155,12 @@ from astroid.nodes import (
     Slice,
     Starred,
     Subscript,
-    TryExcept,
-    TryFinally,
+    Try,
     TryStar,
     Tuple,
+    TypeAlias,
+    TypeVar,
+    TypeVarTuple,
     UnaryOp,
     Unknown,
     While,
@@ -186,8 +185,3 @@ if (
     and getattr(tokenize._compile, "__wrapped__", None) is None  # type: ignore[attr-defined]
 ):
     tokenize._compile = functools.lru_cache(tokenize._compile)  # type: ignore[attr-defined]
-
-# load brain plugins
-for module in BRAIN_MODULES_DIRECTORY.iterdir():
-    if module.suffix == ".py":
-        import_module(f"astroid.brain.{module.stem}")

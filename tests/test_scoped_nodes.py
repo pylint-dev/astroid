@@ -8,13 +8,14 @@ function).
 
 from __future__ import annotations
 
-import datetime
+import difflib
 import os
 import sys
 import textwrap
 import unittest
 from functools import partial
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 
@@ -29,8 +30,9 @@ from astroid import (
     util,
 )
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import IS_PYPY, PY38
+from astroid.const import IS_PYPY, PY38, WIN32
 from astroid.exceptions import (
+    AstroidBuildingError,
     AttributeInferenceError,
     DuplicateBasesError,
     InconsistentMroError,
@@ -244,6 +246,19 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         finally:
             del sys.path[0]
 
+    @patch(
+        "astroid.nodes.scoped_nodes.scoped_nodes.AstroidManager.ast_from_module_name"
+    )
+    def test_import_unavailable_module(self, mock) -> None:
+        unavailable_modname = "posixpath" if WIN32 else "ntpath"
+        module = builder.parse(f"import {unavailable_modname}")
+        mock.side_effect = AstroidBuildingError
+
+        with pytest.raises(AstroidBuildingError):
+            module.import_module(unavailable_modname)
+
+        mock.assert_called_once()
+
     def test_file_stream_in_memory(self) -> None:
         data = """irrelevant_variable is irrelevant"""
         astroid = builder.parse(data, "in_memory")
@@ -262,7 +277,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         file_build = builder.AstroidBuilder().file_build(path, "all")
         with self.assertRaises(AttributeError):
             # pylint: disable=pointless-statement, no-member
-            file_build.file_stream  # noqa[B018]
+            file_build.file_stream  # noqa: B018
 
     def test_stream_api(self) -> None:
         path = resources.find("data/all.py")
@@ -479,7 +494,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                 g = lambda: None
         """
         astroid = builder.parse(data)
-        g = list(astroid["f"].ilookup("g"))[0]
+        g = next(iter(astroid["f"].ilookup("g")))
         self.assertEqual(g.pytype(), "builtins.function")
 
     def test_lambda_qname(self) -> None:
@@ -2141,8 +2156,8 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         # Test that objects analyzed through the live introspection
         # aren't considered to have dynamic getattr implemented.
         astroid_builder = builder.AstroidBuilder()
-        module = astroid_builder.module_build(datetime)
-        self.assertFalse(module["timedelta"].has_dynamic_getattr())
+        module = astroid_builder.module_build(difflib)
+        self.assertFalse(module["SequenceMatcher"].has_dynamic_getattr())
 
     def test_duplicate_bases_namedtuple(self) -> None:
         module = builder.parse(

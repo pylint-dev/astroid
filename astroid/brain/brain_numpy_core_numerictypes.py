@@ -258,6 +258,7 @@ def numpy_core_numerictypes_transform():
     )
 
 
-register_module_extender(
-    AstroidManager(), "numpy.core.numerictypes", numpy_core_numerictypes_transform
-)
+def register(manager: AstroidManager) -> None:
+    register_module_extender(
+        manager, "numpy.core.numerictypes", numpy_core_numerictypes_transform
+    )
