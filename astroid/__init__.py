@@ -32,10 +32,9 @@ Main modules are:
 
 import functools
 import tokenize
-from importlib import import_module
 
 # isort: off
-# We have an isort: off on '__version__' because of a circular import in nodes.
+# We have an isort: off on 'astroid.nodes' because of a circular import.
 from astroid.nodes import node_classes, scoped_nodes
 
 # isort: on
