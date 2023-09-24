@@ -65,6 +65,7 @@ Contributors
 - FELD Boris <lothiraldan@gmail.com>
 - Enji Cooper <yaneurabeya@gmail.com>
 - Dani Alcala <112832187+clavedeluna@users.noreply.github.com>
+- Antonio <antonio@zoftko.com>
 - Adrien Di Mascio <Adrien.DiMascio@logilab.fr>
 - tristanlatr <19967168+tristanlatr@users.noreply.github.com>
 - emile@crater.logilab.fr <emile@crater.logilab.fr>
@@ -130,6 +131,7 @@ Contributors
 - Ovidiu Sabou <ovidiu@sabou.org>
 - Nicolas Noirbent <nicolas@noirbent.fr>
 - Neil Girdhar <mistersheik@gmail.com>
+- Miro Hrončok <miro@hroncok.cz>
 - Michał Masłowski <m.maslowski@clearcode.cc>
 - Mateusz Bysiek <mb@mbdev.pl>
 - Marcelo Trylesinski <marcelotryle@gmail.com>
@@ -184,7 +186,6 @@ Contributors
 - Aru Sahni <arusahni@gmail.com>
 - Artsiom Kaval <lezeroq@gmail.com>
 - Anubhav <35621759+anubh-v@users.noreply.github.com>
-- Antonio <antonioglez-23@hotmail.com>
 - Antoine Boellinger <aboellinger@hotmail.com>
 - Alphadelta14 <alpha@alphaservcomputing.solutions>
 - Alexander Scheel <alexander.m.scheel@gmail.com>
