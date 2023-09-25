@@ -223,9 +223,23 @@ Release date: TBA
   Closes pylint-dev/pylint#9015
 
 
+What's New in astroid 2.15.8?
+=============================
+Release date: TBA
+
+* Fix a regression in 2.15.7 for ``unsubscriptable-object``.
+
+  Closes #2305
+  Closes pylint-dev/pylint#9069
+
+
 What's New in astroid 2.15.7?
 =============================
 Release date: 2023-09-23
+
+* Fix a crash when inferring a ``typing.TypeVar`` call.
+
+  Closes pylint-dev/pylint#8802
 
 * Infer user-defined enum classes by checking if the class is a subtype of ``enum.Enum``.
 
@@ -244,7 +258,7 @@ Release date: 2023-09-23
 
 What's New in astroid 2.15.6?
 =============================
-Release date: TBA
+Release date: 2023-07-08
 
 * Harden ``get_module_part()`` against ``"."``.
 

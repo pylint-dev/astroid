@@ -17,6 +17,7 @@ from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder, _extract_single_node
 from astroid.const import PY39_PLUS, PY312_PLUS
 from astroid.exceptions import (
+    AstroidSyntaxError,
     AttributeInferenceError,
     InferenceError,
     UseInferenceDefault,
@@ -134,7 +135,10 @@ def infer_typing_typevar_or_newtype(node, context_itton=None):
         raise UseInferenceDefault
 
     typename = node.args[0].as_string().strip("'")
-    node = extract_node(TYPING_TYPE_TEMPLATE.format(typename))
+    try:
+        node = extract_node(TYPING_TYPE_TEMPLATE.format(typename))
+    except AstroidSyntaxError as exc:
+        raise InferenceError from exc
     return node.infer(context=context_itton)
 
 
