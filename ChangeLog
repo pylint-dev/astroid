@@ -227,10 +227,6 @@ What's New in astroid 2.15.7?
 =============================
 Release date: 2023-09-23
 
-* Fix a crash when inferring a ``typing.TypeVar`` call.
-
-  Closes pylint-dev/pylint#8802
-
 * Infer user-defined enum classes by checking if the class is a subtype of ``enum.Enum``.
 
   Closes pylint-dev/pylint#8897
@@ -248,7 +244,7 @@ Release date: 2023-09-23
 
 What's New in astroid 2.15.6?
 =============================
-Release date: 2023-07-08
+Release date: TBA
 
 * Harden ``get_module_part()`` against ``"."``.
 
