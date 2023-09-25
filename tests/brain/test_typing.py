@@ -4,7 +4,7 @@
 
 import pytest
 
-from astroid import builder, nodes
+from astroid import builder
 from astroid.exceptions import InferenceError
 
 
