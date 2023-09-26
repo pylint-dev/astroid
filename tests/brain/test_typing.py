@@ -5,7 +5,10 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
-from astroid import builder, nodes
+import pytest
+
+from astroid import builder
+from astroid.exceptions import InferenceError
 
 
 def test_infer_typevar() -> None:
@@ -15,13 +18,11 @@ def test_infer_typevar() -> None:
     Test that an inferred `typing.TypeVar()` call produces a `nodes.ClassDef`
     node.
     """
-    assign_node = builder.extract_node(
+    call_node = builder.extract_node(
         """
     from typing import TypeVar
-    MyType = TypeVar('My.Type')
+    TypeVar('My.Type')
     """
     )
-    call = assign_node.value
-    inferred = next(call.infer())
-    assert isinstance(inferred, nodes.ClassDef)
-    assert inferred.name == "My.Type"
+    with pytest.raises(InferenceError):
+        call_node.inferred()
