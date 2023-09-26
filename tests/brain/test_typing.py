@@ -15,11 +15,11 @@ def test_infer_typevar() -> None:
     Test that an inferred `typing.TypeVar()` call produces a `nodes.ClassDef`
     node.
     """
-    assign_node = builder.extract_node(
+    call_node = builder.extract_node(
         """
     from typing import TypeVar
     TypeVar('My.Type')
     """
     )
     with pytest.raises(InferenceError):
-        assign_node.inferred()
+        call_node.inferred()
