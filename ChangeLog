@@ -4,12 +4,7 @@ astroid's ChangeLog
 
 What's New in astroid 2.15.8?
 =============================
-Release date: TBA
-
-
-What's New in astroid 2.15.8?
-=============================
-Release date: TBA
+Release date: 2023-09-26
 
 * Fix a regression in 2.15.7 for ``unsubscriptable-object``.
 
