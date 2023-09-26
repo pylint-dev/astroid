@@ -223,6 +223,16 @@ Release date: TBA
   Closes pylint-dev/pylint#9015
 
 
+What's New in astroid 2.15.8?
+=============================
+Release date: TBA
+
+* Fix a regression in 2.15.7 for ``unsubscriptable-object``.
+
+  Closes #2305
+  Closes pylint-dev/pylint#9069
+
+
 What's New in astroid 2.15.7?
 =============================
 Release date: 2023-09-23
