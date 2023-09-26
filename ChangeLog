@@ -17,7 +17,7 @@ Release date: TBA
 
 What's New in astroid 3.0.0?
 =============================
-Release date: 2023-09-25
+Release date: 2023-09-26
 
 * Add support for Python 3.12, including PEP 695 type parameter syntax.
 
