@@ -23,7 +23,7 @@ def _pep8(name, caps=CAPITALS):
 
 def _nose_tools_functions():
     """Get an iterator of names and bound methods."""
-    module = AstroidBuilder().string_build(
+    module = AstroidBuilder(AstroidManager()).string_build(
         textwrap.dedent(
             """
     import unittest
@@ -54,7 +54,7 @@ def _nose_tools_transform(node):
 
 def _nose_tools_trivial_transform():
     """Custom transform for the nose.tools module."""
-    stub = AstroidBuilder().string_build("""__all__ = []""")
+    stub = AstroidBuilder(AstroidManager()).string_build("""__all__ = []""")
     all_entries = ["ok_", "eq_"]
 
     for pep8_name, method in _nose_tools_functions():

@@ -22,7 +22,6 @@ from typing import Any, Union
 
 from astroid import bases, nodes
 from astroid.const import _EMPTY_OBJECT_MARKER, IS_PYPY
-from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
 
 logger = logging.getLogger(__name__)
@@ -37,8 +36,6 @@ _FunctionTypes = Union[
     types.ClassMethodDescriptorType,
 ]
 
-# the keys of CONST_CLS eg python builtin types
-_CONSTANTS = tuple(node_classes.CONST_CLS)
 TYPE_NONE = type(None)
 TYPE_NOTIMPLEMENTED = type(NotImplemented)
 TYPE_ELLIPSIS = type(...)
@@ -428,8 +425,8 @@ class InspectBuilder:
 
     bootstrapped: bool = False
 
-    def __init__(self, manager_instance: AstroidManager | None = None) -> None:
-        self._manager = manager_instance or AstroidManager()
+    def __init__(self, manager_instance) -> None:
+        self._manager = manager_instance
         self._done: dict[types.ModuleType | type, nodes.Module | nodes.ClassDef] = {}
         self._module: types.ModuleType
 
@@ -510,7 +507,7 @@ class InspectBuilder:
                 object_build_methoddescriptor(node, member, name)
             elif inspect.isdatadescriptor(member):
                 object_build_datadescriptor(node, member, name)
-            elif isinstance(member, _CONSTANTS):
+            elif isinstance(member, tuple(node_classes.CONST_CLS)):
                 attach_const_node(node, name, member)
             elif inspect.isroutine(member):
                 # This should be called for Jython, where some builtin
@@ -599,7 +596,10 @@ def _astroid_bootstrapping() -> None:
     """astroid bootstrapping the builtins module"""
     # this boot strapping is necessary since we need the Const nodes to
     # inspect_build builtins, and then we can proxy Const
-    builder = InspectBuilder()
+    # pylint: disable-next=import-outside-toplevel
+    from astroid.manager import AstroidManager
+
+    builder = InspectBuilder(AstroidManager())
     astroid_builtin = builder.inspect_build(builtins)
 
     for cls, node_cls in node_classes.CONST_CLS.items():

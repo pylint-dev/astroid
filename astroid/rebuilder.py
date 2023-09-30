@@ -19,11 +19,24 @@ from typing import TYPE_CHECKING, Final, TypeVar, Union, cast, overload
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
 from astroid.const import IS_PYPY, PY38, PY39_PLUS, PY312_PLUS, Context
-from astroid.manager import AstroidManager
-from astroid.nodes import NodeNG
-from astroid.nodes.node_classes import AssignName
 from astroid.nodes.utils import Position
 from astroid.typing import InferenceResult
+
+if TYPE_CHECKING:
+    from astroid.manager import AstroidManager
+    from astroid.nodes import NodeNG, AssignName
+
+    T_Doc = TypeVar(
+        "T_Doc",
+        "ast.Module",
+        "ast.ClassDef",
+        Union["ast.FunctionDef", "ast.AsyncFunctionDef"],
+    )
+    _FunctionT = TypeVar("_FunctionT", nodes.FunctionDef, nodes.AsyncFunctionDef)
+    _ForT = TypeVar("_ForT", nodes.For, nodes.AsyncFor)
+    _WithT = TypeVar("_WithT", nodes.With, nodes.AsyncWith)
+    NodesWithDocsType = Union[nodes.Module, nodes.ClassDef, nodes.FunctionDef]
+
 
 REDIRECT: Final[dict[str, str]] = {
     "arguments": "Arguments",
@@ -34,18 +47,6 @@ REDIRECT: Final[dict[str, str]] = {
     "keyword": "Keyword",
     "match_case": "MatchCase",
 }
-
-
-T_Doc = TypeVar(
-    "T_Doc",
-    "ast.Module",
-    "ast.ClassDef",
-    Union["ast.FunctionDef", "ast.AsyncFunctionDef"],
-)
-_FunctionT = TypeVar("_FunctionT", nodes.FunctionDef, nodes.AsyncFunctionDef)
-_ForT = TypeVar("_ForT", nodes.For, nodes.AsyncFor)
-_WithT = TypeVar("_WithT", nodes.With, nodes.AsyncWith)
-NodesWithDocsType = Union[nodes.Module, nodes.ClassDef, nodes.FunctionDef]
 
 
 # noinspection PyMethodMayBeStatic
@@ -569,7 +570,7 @@ class TreeRebuilder:
             node.vararg.arg if node.vararg else None,
             node.kwarg.arg if node.kwarg else None,
             parent,
-            AssignName(
+            nodes.AssignName(
                 vararg_node.arg,
                 vararg_node.lineno,
                 vararg_node.col_offset,
@@ -579,7 +580,7 @@ class TreeRebuilder:
             )
             if vararg_node
             else None,
-            AssignName(
+            nodes.AssignName(
                 kwarg_node.arg,
                 kwarg_node.lineno,
                 kwarg_node.col_offset,

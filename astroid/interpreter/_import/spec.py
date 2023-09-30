@@ -20,7 +20,6 @@ from pathlib import Path
 from typing import Any, Literal, NamedTuple, Protocol
 
 from astroid.const import PY310_PLUS
-from astroid.modutils import EXT_LIB_DIRS
 
 from . import util
 
@@ -185,6 +184,8 @@ class ImportlibFinder(Finder):
         if spec.location is None:
             # Builtin.
             return None
+        # pylint: disable-next=import-outside-toplevel
+        from astroid.modutils import EXT_LIB_DIRS
 
         if _is_setuptools_namespace(Path(spec.location)):
             # extend_path is called, search sys.path for module/packages
