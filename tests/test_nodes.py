@@ -50,7 +50,7 @@ from astroid.nodes.scoped_nodes import ClassDef, FunctionDef, GeneratorExp, Modu
 
 from . import resources
 
-abuilder = builder.AstroidBuilder()
+abuilder = builder.AstroidBuilder(astroid.MANAGER)
 
 
 class AsStringTest(resources.SysPathSetup, unittest.TestCase):

@@ -13,6 +13,7 @@ from astroid import MANAGER, Instance, bases, manager, nodes, parse, test_utils
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
+from astroid.manager import AstroidManager
 from astroid.raw_building import build_module
 from astroid.util import Uninferable
 
@@ -78,7 +79,7 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
         self.assertEqual(subpackage.name, "absimp.sidepackage")
 
     def test_living_property(self) -> None:
-        builder = AstroidBuilder()
+        builder = AstroidBuilder(AstroidManager())
         builder._done = {}
         builder._module = sys.modules[__name__]
         builder.object_build(build_module("module_name", ""), Whatever)
@@ -88,7 +89,7 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
         """Test don't crash on numpy."""
         # a crash occurred somewhere in the past, and an
         # InferenceError instead of a crash was better, but now we even infer!
-        builder = AstroidBuilder()
+        builder = AstroidBuilder(AstroidManager())
         data = """
 from numpy import multiply
 
@@ -118,14 +119,14 @@ is_sequence("ABC") #@
 
     def test_nameconstant(self) -> None:
         # used to fail for Python 3.4
-        builder = AstroidBuilder()
+        builder = AstroidBuilder(AstroidManager())
         astroid = builder.string_build("def test(x=True): pass")
         default = astroid.body[0].args.args[0]
         self.assertEqual(default.name, "x")
         self.assertEqual(next(default.infer()).value, True)
 
     def test_recursion_regression_issue25(self) -> None:
-        builder = AstroidBuilder()
+        builder = AstroidBuilder(AstroidManager())
         data = """
 import recursion as base
 
@@ -146,7 +147,7 @@ def run():
             klass.type  # pylint: disable=pointless-statement  # noqa: B018
 
     def test_decorator_callchain_issue42(self) -> None:
-        builder = AstroidBuilder()
+        builder = AstroidBuilder(AstroidManager())
         data = """
 
 def test():
@@ -164,7 +165,7 @@ def crash():
         self.assertEqual(astroid["crash"].type, "function")
 
     def test_filter_stmts_scoping(self) -> None:
-        builder = AstroidBuilder()
+        builder = AstroidBuilder(AstroidManager())
         data = """
 def test():
     compiler = int()
@@ -181,7 +182,7 @@ def test():
         self.assertEqual(base.name, "int")
 
     def test_filter_stmts_nested_if(self) -> None:
-        builder = AstroidBuilder()
+        builder = AstroidBuilder(AstroidManager())
         data = """
 def test(val):
     variable = None
@@ -212,7 +213,7 @@ def test(val):
         assert result[2].lineno == 12
 
     def test_ancestors_patching_class_recursion(self) -> None:
-        node = AstroidBuilder().string_build(
+        node = AstroidBuilder(AstroidManager()).string_build(
             textwrap.dedent(
                 """
         import string
