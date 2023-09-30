@@ -21,7 +21,6 @@ from pathlib import Path
 from typing import Literal, NamedTuple, Protocol
 
 from astroid.const import PY310_PLUS
-from astroid.modutils import EXT_LIB_DIRS, cached_os_path_isfile
 
 from . import util
 
@@ -134,6 +133,9 @@ class ImportlibFinder(Finder):
         processed: tuple[str, ...],
         submodule_path: tuple[str, ...] | None,
     ) -> ModuleSpec | None:
+        # pylint: disable-next=import-outside-toplevel
+        from astroid.modutils import cached_os_path_isfile
+
         # Although we should be able to use `find_spec` this doesn't work on PyPy for builtins.
         # Therefore, we use the `builtin_module_nams` heuristic for these.
         if submodule_path is None and modname in sys.builtin_module_names:
@@ -225,6 +227,8 @@ class ImportlibFinder(Finder):
         if spec.location is None:
             # Builtin.
             return None
+        # pylint: disable-next=import-outside-toplevel
+        from astroid.modutils import EXT_LIB_DIRS
 
         if _is_setuptools_namespace(Path(spec.location)):
             # extend_path is called, search sys.path for module/packages

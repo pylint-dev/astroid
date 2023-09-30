@@ -11,6 +11,7 @@ from collections.abc import Iterator, Sequence
 from pathlib import Path
 
 from astroid import builder
+from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import Module
 
 DATA_DIR = Path("testdata") / "python3"
@@ -22,7 +23,7 @@ def find(name: str) -> str:
 
 
 def build_file(path: str, modname: str | None = None) -> Module:
-    return builder.AstroidBuilder().file_build(find(path), modname)
+    return builder.AstroidBuilder(AstroidManager()).file_build(find(path), modname)
 
 
 class SysPathSetup:

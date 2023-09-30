@@ -27,6 +27,7 @@ from astroid.exceptions import (
     InferenceError,
     StatementMissing,
 )
+from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import Module
 
 from . import resources
@@ -879,7 +880,7 @@ def test_module_build_dunder_file() -> None:
     """Test that module_build() can work with modules that have the *__file__*
     attribute.
     """
-    module = builder.AstroidBuilder().module_build(collections)
+    module = builder.AstroidBuilder(AstroidManager()).module_build(collections)
     assert module.path[0] == collections.__file__
 
 
@@ -964,7 +965,7 @@ class HermeticInterpreterTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             _ = self.imported_module.__file__
 
-        my_builder = builder.AstroidBuilder()
+        my_builder = builder.AstroidBuilder(AstroidManager())
         with unittest.mock.patch.object(
             self.imported_module.__loader__,
             "get_source",

@@ -55,7 +55,7 @@ from tests.testdata.python3.recursion_error import LONG_CHAINED_METHOD_CALL
 
 from . import resources
 
-abuilder = builder.AstroidBuilder()
+abuilder = builder.AstroidBuilder(astroid.MANAGER)
 
 
 class AsStringTest(resources.SysPathSetup, unittest.TestCase):

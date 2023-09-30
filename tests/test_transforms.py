@@ -219,7 +219,7 @@ class TestTransforms(unittest.TestCase):
             return node.root().name == "time"
 
         with add_transform(manager, nodes.FunctionDef, transform_function, predicate):
-            builder_instance = builder.AstroidBuilder()
+            builder_instance = builder.AstroidBuilder(AstroidManager())
             module = builder_instance.module_build(time)
 
         asctime = module["asctime"]
@@ -233,7 +233,9 @@ class TestTransforms(unittest.TestCase):
 
         manager = MANAGER
         with add_transform(manager, nodes.FunctionDef, transform_function):
-            astroid_builder = builder.AstroidBuilder(apply_transforms=False)
+            astroid_builder = builder.AstroidBuilder(
+                AstroidManager(), apply_transforms=False
+            )
             module = astroid_builder.string_build("""def test(): pass""")
 
         # The transform wasn't applied.
