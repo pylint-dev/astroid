@@ -13,6 +13,10 @@ What's New in astroid 3.0.1?
 ============================
 Release date: TBA
 
+* Prevent unraisable ``ValueError`` exceptions in generator cleanup by removing
+  ``context.restore_path()`` decorator.
+
+  Refs pylint-dev/pylint#9138
 
 
 What's New in astroid 3.0.0?

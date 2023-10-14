@@ -6,9 +6,7 @@
 
 from __future__ import annotations
 
-import contextlib
 import pprint
-from collections.abc import Iterator
 from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple
 
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
@@ -133,12 +131,6 @@ class InferenceContext:
         clone.extra_context = self.extra_context
         clone.constraints = self.constraints.copy()
         return clone
-
-    @contextlib.contextmanager
-    def restore_path(self) -> Iterator[None]:
-        path = set(self.path)
-        yield
-        self.path = path
 
     def is_empty(self) -> bool:
         return (
