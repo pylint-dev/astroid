@@ -915,3 +915,17 @@ def match_as_assigned_stmts(
         and self.pattern is None
     ):
         yield self.parent.parent.subject
+
+
+@decorators.yes_if_nothing_inferred
+def generic_type_assigned_stmts(
+    self: nodes.TypeVar | nodes.TypeVarTuple | nodes.ParamSpec,
+    node: nodes.AssignName,
+    context: InferenceContext | None = None,
+    assign_path: None = None,
+) -> Generator[nodes.NodeNG, None, None]:
+    """Return empty generator (return -> raises StopIteration) so inferred value
+    is Uninferable.
+    """
+    return
+    yield
