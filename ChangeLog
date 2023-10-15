@@ -17,6 +17,11 @@ Release date: TBA
 
   Closes #2071
 
+* Following a deprecation period, the ``names`` arg to the ``Import`` constructor and
+  the ``op`` arg to the ``BoolOp`` constructor are now required, and the ``doc`` args
+  to the ``PartialFunction`` and ``Property`` constructors have been removed (call
+  ``postinit(doc_node=...)`` instead.)
+
 
 What's New in astroid 3.0.3?
 ============================
