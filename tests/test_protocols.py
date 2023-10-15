@@ -13,7 +13,7 @@ import pytest
 
 import astroid
 from astroid import extract_node, nodes
-from astroid.const import PY310_PLUS
+from astroid.const import PY310_PLUS, PY312_PLUS
 from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
 from astroid.util import Uninferable, UninferableBase
@@ -415,3 +415,30 @@ class TestPatternMatching:
         assert match_as.name
         assigned_match_as = next(match_as.name.assigned_stmts())
         assert assigned_match_as == subject
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="Generic typing syntax requires python 3.12")
+class TestGenericTypeSyntax:
+    @staticmethod
+    def test_assigned_stmts_type_var():
+        """The result is 'Uninferable' and no exception is raised."""
+        assign_stmts = extract_node("type Point[T] = tuple[float, float]")
+        type_var: nodes.TypeVar = assign_stmts.type_params[0]
+        assigned = next(type_var.name.assigned_stmts())
+        assert assigned is Uninferable
+
+    @staticmethod
+    def test_assigned_stmts_type_var_tuple():
+        """The result is 'Uninferable' and no exception is raised."""
+        assign_stmts = extract_node("type Alias[*Ts] = tuple[*Ts]")
+        type_var_tuple: nodes.TypeVarTuple = assign_stmts.type_params[0]
+        assigned = next(type_var_tuple.name.assigned_stmts())
+        assert assigned is Uninferable
+
+    @staticmethod
+    def test_assigned_stmts_param_spec():
+        """The result is 'Uninferable' and no exception is raised."""
+        assign_stmts = extract_node("type Alias[**P] = Callable[P, int]")
+        param_spec: nodes.ParamSpec = assign_stmts.type_params[0]
+        assigned = next(param_spec.name.assigned_stmts())
+        assert assigned is Uninferable
