@@ -3405,6 +3405,11 @@ class ParamSpec(_base_nodes.AssignTypeNode):
     ) -> Iterator[ParamSpec]:
         yield self
 
+    assigned_stmts = protocols.generic_type_assigned_stmts
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
 
 class Pass(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Pass` node.
@@ -4153,6 +4158,11 @@ class TypeVar(_base_nodes.AssignTypeNode):
     ) -> Iterator[TypeVar]:
         yield self
 
+    assigned_stmts = protocols.generic_type_assigned_stmts
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
+
 
 class TypeVarTuple(_base_nodes.AssignTypeNode):
     """Class representing a :class:`ast.TypeVarTuple` node.
@@ -4191,6 +4201,11 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Iterator[TypeVarTuple]:
         yield self
+
+    assigned_stmts = protocols.generic_type_assigned_stmts
+    """Returns the assigned statement (non inferred) according to the assignment type.
+    See astroid/protocols.py for actual implementation.
+    """
 
 
 UNARY_OP_METHOD = {

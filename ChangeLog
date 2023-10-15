@@ -13,6 +13,9 @@ What's New in astroid 3.0.1?
 ============================
 Release date: TBA
 
+* Fix crashes linting code using PEP 695 (Python 3.12) generic type syntax.
+
+  Closes pylint-dev/pylint#9098
 
 
 What's New in astroid 3.0.0?
