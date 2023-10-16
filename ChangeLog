@@ -9,9 +9,15 @@ Release date: TBA
 
 
 
-What's New in astroid 3.0.1?
+What's New in astroid 3.0.2?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 3.0.1?
+============================
+Release date: 2023-10-15
 
 * Fix crashes linting code using PEP 695 (Python 3.12) generic type syntax.
 
