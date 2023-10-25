@@ -1976,7 +1976,7 @@ def test_oserror_model() -> None:
     assert strerror.value == ""
 
 
-@pytest.mark.skipif(PY313_PLUS, reason="Python >= 3.13")
+@pytest.mark.skipif(PY313_PLUS, reason="Python >= 3.13 no longer has a crypt module")
 def test_crypt_brain() -> None:
     module = MANAGER.ast_from_module_name("crypt")
     dynamic_attrs = [
