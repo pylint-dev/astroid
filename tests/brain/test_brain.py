@@ -15,7 +15,7 @@ import astroid
 from astroid import MANAGER, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
 from astroid.brain.brain_namedtuple_enum import _get_namedtuple_fields
-from astroid.const import PY312_PLUS
+from astroid.const import PY312_PLUS, PY313_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -1975,7 +1975,7 @@ def test_oserror_model() -> None:
     assert isinstance(strerror, astroid.Const)
     assert strerror.value == ""
 
-@pytest.mark.skipif(sys.hexversion < 51576832, reason="Python >= 3.13")
+@pytest.mark.skipif(PY313_PLUS, reason="Python >= 3.13")
 def test_crypt_brain() -> None:
     module = MANAGER.ast_from_module_name("crypt")
     dynamic_attrs = [
