@@ -1975,6 +1975,7 @@ def test_oserror_model() -> None:
     assert isinstance(strerror, astroid.Const)
     assert strerror.value == ""
 
+
 @pytest.mark.skipif(sys.hexversion < 51576832, reason="Python >= 3.13")
 def test_crypt_brain() -> None:
     module = MANAGER.ast_from_module_name("crypt")
