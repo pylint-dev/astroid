@@ -71,3 +71,13 @@ def test_type_param() -> None:
     assert isinstance(class_node.type_params[0], TypeVar)
     assert class_node.type_params[0].name.name == "T"
     assert class_node.type_params[0].bound is None
+
+
+def test_get_children() -> None:
+    func_node = extract_node("def func[T]() -> T: ...")
+    func_children = tuple(func_node.get_children())
+    assert isinstance(func_children[2], TypeVar)
+
+    class_node = extract_node("class MyClass[T]: ...")
+    class_children = tuple(class_node.get_children())
+    assert isinstance(class_children[0], TypeVar)

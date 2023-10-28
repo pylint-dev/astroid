@@ -1667,6 +1667,7 @@ class FunctionDef(
 
         if self.returns is not None:
             yield self.returns
+        yield from self.type_params
 
         yield from self.body
 
@@ -2936,6 +2937,8 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         yield from self.bases
         if self.keywords is not None:
             yield from self.keywords
+        yield from self.type_params
+
         yield from self.body
 
     @cached_property
