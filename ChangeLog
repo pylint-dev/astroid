@@ -7,16 +7,16 @@ What's New in astroid 3.1.0?
 ============================
 Release date: TBA
 
+* Include PEP 695 (Python 3.12) generic type syntax nodes in ``get_children()``,
+  allowing checkers to visit them.
+
+  Refs pylint-dev/pylint#9193
 
 
 What's New in astroid 3.0.2?
 ============================
 Release date: TBA
 
-* Include PEP 695 (Python 3.12) generic type syntax nodes in ``get_children()``,
-  allowing checkers to visit them.
-
-  Refs pylint-dev/pylint#9193
 
 
 What's New in astroid 3.0.1?
