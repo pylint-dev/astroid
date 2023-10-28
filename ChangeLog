@@ -13,9 +13,10 @@ What's New in astroid 3.0.2?
 ============================
 Release date: TBA
 
-* Fix crashes linting code using PEP 695 (Python 3.12) generic type syntax.
+* Include PEP 695 (Python 3.12) generic type syntax nodes in ``get_children()``,
+  allowing checkers to visit them.
 
-  Closes pylint-dev/pylint#9098
+  Refs pylint-dev/pylint#9193
 
 
 What's New in astroid 3.0.1?
