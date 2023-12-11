@@ -17,6 +17,11 @@ What's New in astroid 3.0.2?
 ============================
 Release date: TBA
 
+* Avoid duplicate inference results for some uses of ``typing.X`` constructs like
+  ``Tuple[Optional[int], ...]``. This was causing pylint to occasionally omit
+  messages like ``deprecated-typing-alias``.
+
+  Closes pylint-dev/pylint#9220
 
 
 What's New in astroid 3.0.1?

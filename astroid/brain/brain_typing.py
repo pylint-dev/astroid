@@ -188,6 +188,8 @@ def infer_typing_attr(
             cache = node.parent.__cache  # type: ignore[attr-defined] # Unrecognized getattr
             if cache.get(node.parent.slots) is not None:
                 del cache[node.parent.slots]
+        # Avoid re-instantiating this class every time it's seen
+        node._explicit_inference = lambda node, context: iter([value])
         return iter([value])
 
     node = extract_node(TYPING_TYPE_TEMPLATE.format(value.qname().split(".")[-1]))
@@ -393,6 +395,8 @@ def infer_special_alias(
     class_def.postinit(bases=[res], body=[], decorators=None)
     func_to_add = _extract_single_node(CLASS_GETITEM_TEMPLATE)
     class_def.locals["__class_getitem__"] = [func_to_add]
+    # Avoid re-instantiating this class every time it's seen
+    node._explicit_inference = lambda node, context: iter([class_def])
     return iter([class_def])
 
 
