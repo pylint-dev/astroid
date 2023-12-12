@@ -12,6 +12,11 @@ Release date: TBA
 
   Refs pylint-dev/pylint#9193
 
+* Add ``__main__`` as a possible inferred value for ``__name__`` to improve
+  control flow inference around ``if __name__ == "__main__":`` guards.
+
+  Closes #2071
+
 
 What's New in astroid 3.0.2?
 ============================
