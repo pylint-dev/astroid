@@ -9,9 +9,15 @@ Release date: TBA
 
 
 
-What's New in astroid 3.0.2?
+What's New in astroid 3.0.3?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 3.0.2?
+============================
+Release date: 2023-12-12
 
 * Avoid duplicate inference results for some uses of ``typing.X`` constructs like
   ``Tuple[Optional[int], ...]``. This was causing pylint to occasionally omit
