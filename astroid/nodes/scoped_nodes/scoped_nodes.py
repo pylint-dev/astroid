@@ -41,7 +41,15 @@ from astroid.exceptions import (
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
-from astroid.nodes import Arguments, Const, NodeNG, Unknown, _base_nodes, node_classes
+from astroid.nodes import (
+    Arguments,
+    Const,
+    NodeNG,
+    Unknown,
+    _base_nodes,
+    const_factory,
+    node_classes,
+)
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
@@ -346,6 +354,8 @@ class Module(LocalsDictNodeNG):
 
         if name in self.special_attributes and not ignore_locals and not name_in_locals:
             result = [self.special_attributes.lookup(name)]
+            if name == "__name__":
+                result.append(const_factory("__main__"))
         elif not ignore_locals and name_in_locals:
             result = self.locals[name]
         elif self.package:
