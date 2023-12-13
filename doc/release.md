@@ -91,10 +91,10 @@ is the version under development on `main`.)
   example `v2.3.6`). This merge is required so `pre-commit autoupdate` works for pylint.
 - Fix version conflicts properly, meaning preserve the version numbers of the form
   `X.Y.0-devZ` (For example: `2.4.0-dev6`).
-- Open a merge request against main. Ensure a merge commit is used, because pre-commit need
-  the patch release tag to be in the main branch history to consider the patch release as the latest 
-  version and this won't be the case with rebase or squash. You can
-  defend against trigger-happy future selves by enabling auto-merge with the merge
+- Open a merge request against main. Ensure a merge commit is used, because pre-commit
+  need the patch release tag to be in the main branch history to consider the patch
+  release as the latest version and this won't be the case with rebase or squash. You
+  can defend against trigger-happy future selves by enabling auto-merge with the merge
   commit strategy.
 - Wait for approval. Again, use a merge commit.
 - Unblock the main branch.
