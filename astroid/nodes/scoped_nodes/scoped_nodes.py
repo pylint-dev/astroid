@@ -355,7 +355,9 @@ class Module(LocalsDictNodeNG):
         if name in self.special_attributes and not ignore_locals and not name_in_locals:
             result = [self.special_attributes.lookup(name)]
             if name == "__name__":
-                result.append(const_factory("__main__"))
+                str_node = const_factory("__main__")
+                str_node.parent = self
+                result.append(str_node)
         elif not ignore_locals and name_in_locals:
             result = self.locals[name]
         elif self.package:
