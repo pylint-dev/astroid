@@ -17,11 +17,14 @@ import types
 from collections.abc import Iterator, Sequence
 from io import TextIOWrapper
 from tokenize import detect_encoding
+from typing import TYPE_CHECKING
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import ParserModule, get_parser_module
 from astroid.exceptions import AstroidBuildingError, AstroidSyntaxError, InferenceError
-from astroid.manager import AstroidManager
+
+if TYPE_CHECKING:
+    from astroid.manager import AstroidManager
 
 # The name of the transient function that is used to
 # wrap expressions to be extracted when calling
@@ -64,13 +67,11 @@ class AstroidBuilder(raw_building.InspectBuilder):
     by default being True.
     """
 
-    def __init__(
-        self, manager: AstroidManager | None = None, apply_transforms: bool = True
-    ) -> None:
+    def __init__(self, manager: AstroidManager, apply_transforms: bool = True) -> None:
         super().__init__(manager)
         self._apply_transforms = apply_transforms
         if not raw_building.InspectBuilder.bootstrapped:
-            raw_building._astroid_bootstrapping()
+            manager.bootstrap()
 
     def module_build(
         self, module: types.ModuleType, modname: str | None = None
@@ -289,10 +290,11 @@ def parse(
         Apply the transforms for the give code. Use it if you
         don't want the default transforms to be applied.
     """
+    # pylint: disable-next=import-outside-toplevel
+    from astroid.manager import AstroidManager
+
     code = textwrap.dedent(code)
-    builder = AstroidBuilder(
-        manager=AstroidManager(), apply_transforms=apply_transforms
-    )
+    builder = AstroidBuilder(AstroidManager(), apply_transforms=apply_transforms)
     return builder.string_build(code, modname=module_name, path=path)
 
 
