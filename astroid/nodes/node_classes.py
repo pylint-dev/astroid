@@ -3513,7 +3513,7 @@ class Set(BaseContainer):
 
 
 class Slice(NodeNG):
-    """Class representing an :class:`ast.Slice` node.
+    """Class representing a :class:`ast.Slice` node.
 
     >>> import astroid
     >>> node = astroid.extract_node('things[1:3]')
@@ -3563,6 +3563,13 @@ class Slice(NodeNG):
         :returns: The name of the type.
         """
         return "builtins.slice"
+
+    def display_type(self) -> Literal["Slice"]:
+        """A human readable type of this node.
+
+        :returns: The type of this node.
+        """
+        return "Slice"
 
     def igetattr(
         self, attrname: str, context: InferenceContext | None = None
