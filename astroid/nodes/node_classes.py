@@ -3513,7 +3513,7 @@ class Set(BaseContainer):
 
 
 class Slice(NodeNG):
-    """Class representing a :class:`ast.Slice` node.
+    """Class representing an :class:`ast.Slice` node.
 
     >>> import astroid
     >>> node = astroid.extract_node('things[1:3]')
