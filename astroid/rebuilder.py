@@ -201,336 +201,273 @@ class TreeRebuilder:
     if TYPE_CHECKING:  # noqa: C901
 
         @overload
-        def visit(self, node: ast.arg, parent: NodeNG) -> nodes.AssignName:
-            ...
+        def visit(self, node: ast.arg, parent: NodeNG) -> nodes.AssignName: ...
 
         @overload
-        def visit(self, node: ast.arguments, parent: NodeNG) -> nodes.Arguments:
-            ...
+        def visit(self, node: ast.arguments, parent: NodeNG) -> nodes.Arguments: ...
 
         @overload
-        def visit(self, node: ast.Assert, parent: NodeNG) -> nodes.Assert:
-            ...
+        def visit(self, node: ast.Assert, parent: NodeNG) -> nodes.Assert: ...
 
         @overload
         def visit(
             self, node: ast.AsyncFunctionDef, parent: NodeNG
-        ) -> nodes.AsyncFunctionDef:
-            ...
+        ) -> nodes.AsyncFunctionDef: ...
 
         @overload
-        def visit(self, node: ast.AsyncFor, parent: NodeNG) -> nodes.AsyncFor:
-            ...
+        def visit(self, node: ast.AsyncFor, parent: NodeNG) -> nodes.AsyncFor: ...
 
         @overload
-        def visit(self, node: ast.Await, parent: NodeNG) -> nodes.Await:
-            ...
+        def visit(self, node: ast.Await, parent: NodeNG) -> nodes.Await: ...
 
         @overload
-        def visit(self, node: ast.AsyncWith, parent: NodeNG) -> nodes.AsyncWith:
-            ...
+        def visit(self, node: ast.AsyncWith, parent: NodeNG) -> nodes.AsyncWith: ...
 
         @overload
-        def visit(self, node: ast.Assign, parent: NodeNG) -> nodes.Assign:
-            ...
+        def visit(self, node: ast.Assign, parent: NodeNG) -> nodes.Assign: ...
 
         @overload
-        def visit(self, node: ast.AnnAssign, parent: NodeNG) -> nodes.AnnAssign:
-            ...
+        def visit(self, node: ast.AnnAssign, parent: NodeNG) -> nodes.AnnAssign: ...
 
         @overload
-        def visit(self, node: ast.AugAssign, parent: NodeNG) -> nodes.AugAssign:
-            ...
+        def visit(self, node: ast.AugAssign, parent: NodeNG) -> nodes.AugAssign: ...
 
         @overload
-        def visit(self, node: ast.BinOp, parent: NodeNG) -> nodes.BinOp:
-            ...
+        def visit(self, node: ast.BinOp, parent: NodeNG) -> nodes.BinOp: ...
 
         @overload
-        def visit(self, node: ast.BoolOp, parent: NodeNG) -> nodes.BoolOp:
-            ...
+        def visit(self, node: ast.BoolOp, parent: NodeNG) -> nodes.BoolOp: ...
 
         @overload
-        def visit(self, node: ast.Break, parent: NodeNG) -> nodes.Break:
-            ...
+        def visit(self, node: ast.Break, parent: NodeNG) -> nodes.Break: ...
 
         @overload
-        def visit(self, node: ast.Call, parent: NodeNG) -> nodes.Call:
-            ...
+        def visit(self, node: ast.Call, parent: NodeNG) -> nodes.Call: ...
 
         @overload
-        def visit(self, node: ast.ClassDef, parent: NodeNG) -> nodes.ClassDef:
-            ...
+        def visit(self, node: ast.ClassDef, parent: NodeNG) -> nodes.ClassDef: ...
 
         @overload
-        def visit(self, node: ast.Continue, parent: NodeNG) -> nodes.Continue:
-            ...
+        def visit(self, node: ast.Continue, parent: NodeNG) -> nodes.Continue: ...
 
         @overload
-        def visit(self, node: ast.Compare, parent: NodeNG) -> nodes.Compare:
-            ...
+        def visit(self, node: ast.Compare, parent: NodeNG) -> nodes.Compare: ...
 
         @overload
-        def visit(self, node: ast.comprehension, parent: NodeNG) -> nodes.Comprehension:
-            ...
+        def visit(
+            self, node: ast.comprehension, parent: NodeNG
+        ) -> nodes.Comprehension: ...
 
         @overload
-        def visit(self, node: ast.Delete, parent: NodeNG) -> nodes.Delete:
-            ...
+        def visit(self, node: ast.Delete, parent: NodeNG) -> nodes.Delete: ...
 
         @overload
-        def visit(self, node: ast.Dict, parent: NodeNG) -> nodes.Dict:
-            ...
+        def visit(self, node: ast.Dict, parent: NodeNG) -> nodes.Dict: ...
 
         @overload
-        def visit(self, node: ast.DictComp, parent: NodeNG) -> nodes.DictComp:
-            ...
+        def visit(self, node: ast.DictComp, parent: NodeNG) -> nodes.DictComp: ...
 
         @overload
-        def visit(self, node: ast.Expr, parent: NodeNG) -> nodes.Expr:
-            ...
+        def visit(self, node: ast.Expr, parent: NodeNG) -> nodes.Expr: ...
 
         @overload
-        def visit(self, node: ast.ExceptHandler, parent: NodeNG) -> nodes.ExceptHandler:
-            ...
+        def visit(
+            self, node: ast.ExceptHandler, parent: NodeNG
+        ) -> nodes.ExceptHandler: ...
 
         @overload
-        def visit(self, node: ast.For, parent: NodeNG) -> nodes.For:
-            ...
+        def visit(self, node: ast.For, parent: NodeNG) -> nodes.For: ...
 
         @overload
-        def visit(self, node: ast.ImportFrom, parent: NodeNG) -> nodes.ImportFrom:
-            ...
+        def visit(self, node: ast.ImportFrom, parent: NodeNG) -> nodes.ImportFrom: ...
 
         @overload
-        def visit(self, node: ast.FunctionDef, parent: NodeNG) -> nodes.FunctionDef:
-            ...
+        def visit(self, node: ast.FunctionDef, parent: NodeNG) -> nodes.FunctionDef: ...
 
         @overload
-        def visit(self, node: ast.GeneratorExp, parent: NodeNG) -> nodes.GeneratorExp:
-            ...
+        def visit(
+            self, node: ast.GeneratorExp, parent: NodeNG
+        ) -> nodes.GeneratorExp: ...
 
         @overload
-        def visit(self, node: ast.Attribute, parent: NodeNG) -> nodes.Attribute:
-            ...
+        def visit(self, node: ast.Attribute, parent: NodeNG) -> nodes.Attribute: ...
 
         @overload
-        def visit(self, node: ast.Global, parent: NodeNG) -> nodes.Global:
-            ...
+        def visit(self, node: ast.Global, parent: NodeNG) -> nodes.Global: ...
 
         @overload
-        def visit(self, node: ast.If, parent: NodeNG) -> nodes.If:
-            ...
+        def visit(self, node: ast.If, parent: NodeNG) -> nodes.If: ...
 
         @overload
-        def visit(self, node: ast.IfExp, parent: NodeNG) -> nodes.IfExp:
-            ...
+        def visit(self, node: ast.IfExp, parent: NodeNG) -> nodes.IfExp: ...
 
         @overload
-        def visit(self, node: ast.Import, parent: NodeNG) -> nodes.Import:
-            ...
+        def visit(self, node: ast.Import, parent: NodeNG) -> nodes.Import: ...
 
         @overload
-        def visit(self, node: ast.JoinedStr, parent: NodeNG) -> nodes.JoinedStr:
-            ...
+        def visit(self, node: ast.JoinedStr, parent: NodeNG) -> nodes.JoinedStr: ...
 
         @overload
         def visit(
             self, node: ast.FormattedValue, parent: NodeNG
-        ) -> nodes.FormattedValue:
-            ...
+        ) -> nodes.FormattedValue: ...
 
         @overload
-        def visit(self, node: ast.NamedExpr, parent: NodeNG) -> nodes.NamedExpr:
-            ...
+        def visit(self, node: ast.NamedExpr, parent: NodeNG) -> nodes.NamedExpr: ...
 
         if sys.version_info < (3, 9):
             # Not used in Python 3.9+
             @overload
-            def visit(self, node: ast.ExtSlice, parent: nodes.Subscript) -> nodes.Tuple:
-                ...
+            def visit(
+                self, node: ast.ExtSlice, parent: nodes.Subscript
+            ) -> nodes.Tuple: ...
 
             @overload
-            def visit(self, node: ast.Index, parent: nodes.Subscript) -> NodeNG:
-                ...
+            def visit(self, node: ast.Index, parent: nodes.Subscript) -> NodeNG: ...
 
         @overload
-        def visit(self, node: ast.keyword, parent: NodeNG) -> nodes.Keyword:
-            ...
+        def visit(self, node: ast.keyword, parent: NodeNG) -> nodes.Keyword: ...
 
         @overload
-        def visit(self, node: ast.Lambda, parent: NodeNG) -> nodes.Lambda:
-            ...
+        def visit(self, node: ast.Lambda, parent: NodeNG) -> nodes.Lambda: ...
 
         @overload
-        def visit(self, node: ast.List, parent: NodeNG) -> nodes.List:
-            ...
+        def visit(self, node: ast.List, parent: NodeNG) -> nodes.List: ...
 
         @overload
-        def visit(self, node: ast.ListComp, parent: NodeNG) -> nodes.ListComp:
-            ...
+        def visit(self, node: ast.ListComp, parent: NodeNG) -> nodes.ListComp: ...
 
         @overload
         def visit(
             self, node: ast.Name, parent: NodeNG
-        ) -> nodes.Name | nodes.Const | nodes.AssignName | nodes.DelName:
-            ...
+        ) -> nodes.Name | nodes.Const | nodes.AssignName | nodes.DelName: ...
 
         @overload
-        def visit(self, node: ast.Nonlocal, parent: NodeNG) -> nodes.Nonlocal:
-            ...
+        def visit(self, node: ast.Nonlocal, parent: NodeNG) -> nodes.Nonlocal: ...
 
         @overload
-        def visit(self, node: ast.Constant, parent: NodeNG) -> nodes.Const:
-            ...
+        def visit(self, node: ast.Constant, parent: NodeNG) -> nodes.Const: ...
 
         if sys.version_info >= (3, 12):
 
             @overload
-            def visit(self, node: ast.ParamSpec, parent: NodeNG) -> nodes.ParamSpec:
-                ...
+            def visit(self, node: ast.ParamSpec, parent: NodeNG) -> nodes.ParamSpec: ...
 
         @overload
-        def visit(self, node: ast.Pass, parent: NodeNG) -> nodes.Pass:
-            ...
+        def visit(self, node: ast.Pass, parent: NodeNG) -> nodes.Pass: ...
 
         @overload
-        def visit(self, node: ast.Raise, parent: NodeNG) -> nodes.Raise:
-            ...
+        def visit(self, node: ast.Raise, parent: NodeNG) -> nodes.Raise: ...
 
         @overload
-        def visit(self, node: ast.Return, parent: NodeNG) -> nodes.Return:
-            ...
+        def visit(self, node: ast.Return, parent: NodeNG) -> nodes.Return: ...
 
         @overload
-        def visit(self, node: ast.Set, parent: NodeNG) -> nodes.Set:
-            ...
+        def visit(self, node: ast.Set, parent: NodeNG) -> nodes.Set: ...
 
         @overload
-        def visit(self, node: ast.SetComp, parent: NodeNG) -> nodes.SetComp:
-            ...
+        def visit(self, node: ast.SetComp, parent: NodeNG) -> nodes.SetComp: ...
 
         @overload
-        def visit(self, node: ast.Slice, parent: nodes.Subscript) -> nodes.Slice:
-            ...
+        def visit(self, node: ast.Slice, parent: nodes.Subscript) -> nodes.Slice: ...
 
         @overload
-        def visit(self, node: ast.Subscript, parent: NodeNG) -> nodes.Subscript:
-            ...
+        def visit(self, node: ast.Subscript, parent: NodeNG) -> nodes.Subscript: ...
 
         @overload
-        def visit(self, node: ast.Starred, parent: NodeNG) -> nodes.Starred:
-            ...
+        def visit(self, node: ast.Starred, parent: NodeNG) -> nodes.Starred: ...
 
         @overload
-        def visit(self, node: ast.Try, parent: NodeNG) -> nodes.Try:
-            ...
+        def visit(self, node: ast.Try, parent: NodeNG) -> nodes.Try: ...
 
         if sys.version_info >= (3, 11):
 
             @overload
-            def visit(self, node: ast.TryStar, parent: NodeNG) -> nodes.TryStar:
-                ...
+            def visit(self, node: ast.TryStar, parent: NodeNG) -> nodes.TryStar: ...
 
         @overload
-        def visit(self, node: ast.Tuple, parent: NodeNG) -> nodes.Tuple:
-            ...
+        def visit(self, node: ast.Tuple, parent: NodeNG) -> nodes.Tuple: ...
 
         if sys.version_info >= (3, 12):
 
             @overload
-            def visit(self, node: ast.TypeAlias, parent: NodeNG) -> nodes.TypeAlias:
-                ...
+            def visit(self, node: ast.TypeAlias, parent: NodeNG) -> nodes.TypeAlias: ...
 
             @overload
-            def visit(self, node: ast.TypeVar, parent: NodeNG) -> nodes.TypeVar:
-                ...
+            def visit(self, node: ast.TypeVar, parent: NodeNG) -> nodes.TypeVar: ...
 
             @overload
             def visit(
                 self, node: ast.TypeVarTuple, parent: NodeNG
-            ) -> nodes.TypeVarTuple:
-                ...
+            ) -> nodes.TypeVarTuple: ...
 
         @overload
-        def visit(self, node: ast.UnaryOp, parent: NodeNG) -> nodes.UnaryOp:
-            ...
+        def visit(self, node: ast.UnaryOp, parent: NodeNG) -> nodes.UnaryOp: ...
 
         @overload
-        def visit(self, node: ast.While, parent: NodeNG) -> nodes.While:
-            ...
+        def visit(self, node: ast.While, parent: NodeNG) -> nodes.While: ...
 
         @overload
-        def visit(self, node: ast.With, parent: NodeNG) -> nodes.With:
-            ...
+        def visit(self, node: ast.With, parent: NodeNG) -> nodes.With: ...
 
         @overload
-        def visit(self, node: ast.Yield, parent: NodeNG) -> nodes.Yield:
-            ...
+        def visit(self, node: ast.Yield, parent: NodeNG) -> nodes.Yield: ...
 
         @overload
-        def visit(self, node: ast.YieldFrom, parent: NodeNG) -> nodes.YieldFrom:
-            ...
+        def visit(self, node: ast.YieldFrom, parent: NodeNG) -> nodes.YieldFrom: ...
 
         if sys.version_info >= (3, 10):
 
             @overload
-            def visit(self, node: ast.Match, parent: NodeNG) -> nodes.Match:
-                ...
+            def visit(self, node: ast.Match, parent: NodeNG) -> nodes.Match: ...
 
             @overload
-            def visit(self, node: ast.match_case, parent: NodeNG) -> nodes.MatchCase:
-                ...
+            def visit(
+                self, node: ast.match_case, parent: NodeNG
+            ) -> nodes.MatchCase: ...
 
             @overload
-            def visit(self, node: ast.MatchValue, parent: NodeNG) -> nodes.MatchValue:
-                ...
+            def visit(
+                self, node: ast.MatchValue, parent: NodeNG
+            ) -> nodes.MatchValue: ...
 
             @overload
             def visit(
                 self, node: ast.MatchSingleton, parent: NodeNG
-            ) -> nodes.MatchSingleton:
-                ...
+            ) -> nodes.MatchSingleton: ...
 
             @overload
             def visit(
                 self, node: ast.MatchSequence, parent: NodeNG
-            ) -> nodes.MatchSequence:
-                ...
+            ) -> nodes.MatchSequence: ...
 
             @overload
             def visit(
                 self, node: ast.MatchMapping, parent: NodeNG
-            ) -> nodes.MatchMapping:
-                ...
+            ) -> nodes.MatchMapping: ...
 
             @overload
-            def visit(self, node: ast.MatchClass, parent: NodeNG) -> nodes.MatchClass:
-                ...
+            def visit(
+                self, node: ast.MatchClass, parent: NodeNG
+            ) -> nodes.MatchClass: ...
 
             @overload
-            def visit(self, node: ast.MatchStar, parent: NodeNG) -> nodes.MatchStar:
-                ...
+            def visit(self, node: ast.MatchStar, parent: NodeNG) -> nodes.MatchStar: ...
 
             @overload
-            def visit(self, node: ast.MatchAs, parent: NodeNG) -> nodes.MatchAs:
-                ...
+            def visit(self, node: ast.MatchAs, parent: NodeNG) -> nodes.MatchAs: ...
 
             @overload
-            def visit(self, node: ast.MatchOr, parent: NodeNG) -> nodes.MatchOr:
-                ...
+            def visit(self, node: ast.MatchOr, parent: NodeNG) -> nodes.MatchOr: ...
 
             @overload
-            def visit(self, node: ast.pattern, parent: NodeNG) -> nodes.Pattern:
-                ...
+            def visit(self, node: ast.pattern, parent: NodeNG) -> nodes.Pattern: ...
 
         @overload
-        def visit(self, node: ast.AST, parent: NodeNG) -> NodeNG:
-            ...
+        def visit(self, node: ast.AST, parent: NodeNG) -> NodeNG: ...
 
         @overload
-        def visit(self, node: None, parent: NodeNG) -> None:
-            ...
+        def visit(self, node: None, parent: NodeNG) -> None: ...
 
     def visit(self, node: ast.AST | None, parent: NodeNG) -> NodeNG | None:
         if node is None:
@@ -569,26 +506,30 @@ class TreeRebuilder:
             node.vararg.arg if node.vararg else None,
             node.kwarg.arg if node.kwarg else None,
             parent,
-            AssignName(
-                vararg_node.arg,
-                vararg_node.lineno,
-                vararg_node.col_offset,
-                parent,
-                end_lineno=vararg_node.end_lineno,
-                end_col_offset=vararg_node.end_col_offset,
-            )
-            if vararg_node
-            else None,
-            AssignName(
-                kwarg_node.arg,
-                kwarg_node.lineno,
-                kwarg_node.col_offset,
-                parent,
-                end_lineno=kwarg_node.end_lineno,
-                end_col_offset=kwarg_node.end_col_offset,
-            )
-            if kwarg_node
-            else None,
+            (
+                AssignName(
+                    vararg_node.arg,
+                    vararg_node.lineno,
+                    vararg_node.col_offset,
+                    parent,
+                    end_lineno=vararg_node.end_lineno,
+                    end_col_offset=vararg_node.end_col_offset,
+                )
+                if vararg_node
+                else None
+            ),
+            (
+                AssignName(
+                    kwarg_node.arg,
+                    kwarg_node.lineno,
+                    kwarg_node.col_offset,
+                    parent,
+                    end_lineno=kwarg_node.end_lineno,
+                    end_col_offset=kwarg_node.end_col_offset,
+                )
+                if kwarg_node
+                else None
+            ),
         )
         args = [self.visit(child, newnode) for child in node.args]
         defaults = [self.visit(child, newnode) for child in node.defaults]
@@ -670,9 +611,7 @@ class TreeRebuilder:
 
     def check_type_comment(
         self,
-        node: (
-            ast.Assign | ast.arg | ast.For | ast.AsyncFor | ast.With | ast.AsyncWith
-        ),
+        node: ast.Assign | ast.arg | ast.For | ast.AsyncFor | ast.With | ast.AsyncWith,
         parent: (
             nodes.Assign
             | nodes.Arguments
@@ -785,12 +724,12 @@ class TreeRebuilder:
     @overload
     def visit_assignname(
         self, node: ast.AST, parent: NodeNG, node_name: str
-    ) -> nodes.AssignName:
-        ...
+    ) -> nodes.AssignName: ...
 
     @overload
-    def visit_assignname(self, node: ast.AST, parent: NodeNG, node_name: None) -> None:
-        ...
+    def visit_assignname(
+        self, node: ast.AST, parent: NodeNG, node_name: None
+    ) -> None: ...
 
     def visit_assignname(
         self, node: ast.AST, parent: NodeNG, node_name: str | None
@@ -913,9 +852,11 @@ class TreeRebuilder:
             ],
             position=self._get_position_info(node, newnode),
             doc_node=self.visit(doc_ast_node, newnode),
-            type_params=[self.visit(param, newnode) for param in node.type_params]
-            if PY312_PLUS
-            else [],
+            type_params=(
+                [self.visit(param, newnode) for param in node.type_params]
+                if PY312_PLUS
+                else []
+            ),
         )
         return newnode
 
@@ -1095,14 +1036,12 @@ class TreeRebuilder:
     @overload
     def _visit_for(
         self, cls: type[nodes.For], node: ast.For, parent: NodeNG
-    ) -> nodes.For:
-        ...
+    ) -> nodes.For: ...
 
     @overload
     def _visit_for(
         self, cls: type[nodes.AsyncFor], node: ast.AsyncFor, parent: NodeNG
-    ) -> nodes.AsyncFor:
-        ...
+    ) -> nodes.AsyncFor: ...
 
     def _visit_for(
         self, cls: type[_ForT], node: ast.For | ast.AsyncFor, parent: NodeNG
@@ -1155,8 +1094,7 @@ class TreeRebuilder:
     @overload
     def _visit_functiondef(
         self, cls: type[nodes.FunctionDef], node: ast.FunctionDef, parent: NodeNG
-    ) -> nodes.FunctionDef:
-        ...
+    ) -> nodes.FunctionDef: ...
 
     @overload
     def _visit_functiondef(
@@ -1164,8 +1102,7 @@ class TreeRebuilder:
         cls: type[nodes.AsyncFunctionDef],
         node: ast.AsyncFunctionDef,
         parent: NodeNG,
-    ) -> nodes.AsyncFunctionDef:
-        ...
+    ) -> nodes.AsyncFunctionDef: ...
 
     def _visit_functiondef(
         self,
@@ -1216,9 +1153,11 @@ class TreeRebuilder:
             type_comment_args=type_comment_args,
             position=self._get_position_info(node, newnode),
             doc_node=self.visit(doc_ast_node, newnode),
-            type_params=[self.visit(param, newnode) for param in node.type_params]
-            if PY312_PLUS
-            else [],
+            type_params=(
+                [self.visit(param, newnode) for param in node.type_params]
+                if PY312_PLUS
+                else []
+            ),
         )
         self._global_names.pop()
         return newnode
@@ -1780,14 +1719,12 @@ class TreeRebuilder:
     @overload
     def _visit_with(
         self, cls: type[nodes.With], node: ast.With, parent: NodeNG
-    ) -> nodes.With:
-        ...
+    ) -> nodes.With: ...
 
     @overload
     def _visit_with(
         self, cls: type[nodes.AsyncWith], node: ast.AsyncWith, parent: NodeNG
-    ) -> nodes.AsyncWith:
-        ...
+    ) -> nodes.AsyncWith: ...
 
     def _visit_with(
         self,

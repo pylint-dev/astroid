@@ -180,9 +180,9 @@ class ModuleModel(ObjectModel):
 
         path_objs = [
             node_classes.Const(
-                value=path
-                if not path.endswith("__init__.py")
-                else os.path.dirname(path),
+                value=(
+                    path if not path.endswith("__init__.py") else os.path.dirname(path)
+                ),
                 parent=self._instance,
             )
             for path in self._instance.path

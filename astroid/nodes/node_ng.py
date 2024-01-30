@@ -63,9 +63,9 @@ class NodeNG:
 
     is_statement: ClassVar[bool] = False
     """Whether this node indicates a statement."""
-    optional_assign: ClassVar[
-        bool
-    ] = False  # True for For (and for Comprehension if py <3.0)
+    optional_assign: ClassVar[bool] = (
+        False  # True for For (and for Comprehension if py <3.0)
+    )
     """Whether this node optionally assigns a variable.
 
     This is for loop assignments because loop won't necessarily perform an
@@ -488,32 +488,28 @@ class NodeNG:
         self,
         klass: type[_NodesT],
         skip_klass: SkipKlassT = ...,
-    ) -> Iterator[_NodesT]:
-        ...
+    ) -> Iterator[_NodesT]: ...
 
     @overload
     def nodes_of_class(
         self,
         klass: tuple[type[_NodesT], type[_NodesT2]],
         skip_klass: SkipKlassT = ...,
-    ) -> Iterator[_NodesT] | Iterator[_NodesT2]:
-        ...
+    ) -> Iterator[_NodesT] | Iterator[_NodesT2]: ...
 
     @overload
     def nodes_of_class(
         self,
         klass: tuple[type[_NodesT], type[_NodesT2], type[_NodesT3]],
         skip_klass: SkipKlassT = ...,
-    ) -> Iterator[_NodesT] | Iterator[_NodesT2] | Iterator[_NodesT3]:
-        ...
+    ) -> Iterator[_NodesT] | Iterator[_NodesT2] | Iterator[_NodesT3]: ...
 
     @overload
     def nodes_of_class(
         self,
         klass: tuple[type[_NodesT], ...],
         skip_klass: SkipKlassT = ...,
-    ) -> Iterator[_NodesT]:
-        ...
+    ) -> Iterator[_NodesT]: ...
 
     def nodes_of_class(  # type: ignore[misc] # mypy doesn't correctly recognize the overloads
         self,

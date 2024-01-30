@@ -1151,9 +1151,9 @@ class FunctionDef(
         self.body: list[NodeNG] = []
         """The contents of the function body."""
 
-        self.type_params: list[
-            nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple
-        ] = []
+        self.type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] = (
+            []
+        )
         """PEP 695 (Python 3.12+) type params, e.g. first 'T' in def func[T]() -> T: ..."""
 
         self.instance_attrs: dict[str, list[NodeNG]] = {}
@@ -1180,8 +1180,9 @@ class FunctionDef(
         *,
         position: Position | None = None,
         doc_node: Const | None = None,
-        type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple]
-        | None = None,
+        type_params: (
+            list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] | None
+        ) = None,
     ):
         """Do some setup after initialisation.
 
@@ -1915,9 +1916,9 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         self.is_dataclass: bool = False
         """Whether this class is a dataclass."""
 
-        self.type_params: list[
-            nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple
-        ] = []
+        self.type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] = (
+            []
+        )
         """PEP 695 (Python 3.12+) type params, e.g. class MyClass[T]: ..."""
 
         super().__init__(
@@ -1933,9 +1934,9 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)
 
-    infer_binary_op: ClassVar[
-        InferBinaryOp[ClassDef]
-    ] = protocols.instance_class_infer_binary_op
+    infer_binary_op: ClassVar[InferBinaryOp[ClassDef]] = (
+        protocols.instance_class_infer_binary_op
+    )
 
     def implicit_parameters(self) -> Literal[1]:
         return 1
@@ -1963,8 +1964,9 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         *,
         position: Position | None = None,
         doc_node: Const | None = None,
-        type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple]
-        | None = None,
+        type_params: (
+            list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] | None
+        ) = None,
     ) -> None:
         if keywords is not None:
             self.keywords = keywords

@@ -10,12 +10,10 @@ from astroid.decorators import deprecate_default_argument_values
 
 class SomeClass:
     @deprecate_default_argument_values(name="str")
-    def __init__(self, name=None, lineno=None):
-        ...
+    def __init__(self, name=None, lineno=None): ...
 
     @deprecate_default_argument_values("3.2", name="str", var="int")
-    def func(self, name=None, var=None, type_annotation=None):
-        ...
+    def func(self, name=None, var=None, type_annotation=None): ...
 
 
 class TestDeprecationDecorators:
