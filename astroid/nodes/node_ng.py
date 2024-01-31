@@ -46,6 +46,7 @@ else:
 
 if TYPE_CHECKING:
     from astroid import nodes
+    from astroid.nodes import _base_nodes
 
 
 # Types for 'NodeNG.nodes_of_class()'
@@ -278,7 +279,7 @@ class NodeNG:
         """
         return any(self is parent for parent in node.node_ancestors())
 
-    def statement(self, *, future: Literal[None, True] = None) -> nodes.Statement:
+    def statement(self, *, future: Literal[None, True] = None) -> _base_nodes.Statement:
         """The first parent node, including self, marked as statement node.
 
         :raises StatementMissing: If self has no parent attribute.
@@ -290,7 +291,7 @@ class NodeNG:
                 stacklevel=2,
             )
         if self.is_statement:
-            return cast("nodes.Statement", self)
+            return cast("_base_nodes.Statement", self)
         if not self.parent:
             raise StatementMissing(target=self)
         return self.parent.statement()

@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 def _get_filtered_node_statements(
     base_node: nodes.NodeNG, stmt_nodes: list[nodes.NodeNG]
-) -> list[tuple[nodes.NodeNG, nodes.Statement]]:
+) -> list[tuple[nodes.NodeNG, _base_nodes.Statement]]:
     statements = [(node, node.statement()) for node in stmt_nodes]
     # Next we check if we have ExceptHandlers that are parent
     # of the underlying variable, in which case the last one survives
@@ -90,7 +90,7 @@ def _filter_stmts(
         if base_node.parent and base_node.statement() is myframe and myframe.parent:
             myframe = myframe.parent.frame()
 
-    mystmt: nodes.Statement | None = None
+    mystmt: _base_nodes.Statement | None = None
     if base_node.parent:
         mystmt = base_node.statement()
 
