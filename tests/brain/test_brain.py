@@ -678,6 +678,7 @@ class TypingBrain(unittest.TestCase):
         )
         assert len(node.inferred()) == 1
 
+    @test_utils.require_version(minver="3.9")
     def test_typing_param_spec(self):
         node = builder.extract_node(
             """
