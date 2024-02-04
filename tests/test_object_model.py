@@ -742,13 +742,14 @@ class ExceptionModelTest(unittest.TestCase):
     def test_unicodedecodeerror(self) -> None:
         code = """
         try:
-            raise UnicodeDecodeError("utf-8", "blob", 0, 1, "reason")
+            raise UnicodeDecodeError("utf-8", b"blob", 0, 1, "reason")
         except UnicodeDecodeError as error:
-            error.object[:1] #@
+            error.object #@
         """
         node = builder.extract_node(code)
         inferred = next(node.infer())
         assert isinstance(inferred, astroid.Const)
+        assert inferred.value == b""
 
     def test_import_error(self) -> None:
         ast_nodes = builder.extract_node(
