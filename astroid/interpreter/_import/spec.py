@@ -162,6 +162,8 @@ class ImportlibFinder(Finder):
 
         for entry in submodule_path:
             package_directory = os.path.join(entry, modname)
+            # We're looping on pyi first because if a pyi exists there's probably a reason
+            # (i.e. the code is hard or impossible to parse), so we take pyi into account
             for suffix in (".pyi", ".py", importlib.machinery.BYTECODE_SUFFIXES[0]):
                 package_file_name = "__init__" + suffix
                 file_path = os.path.join(package_directory, package_file_name)
