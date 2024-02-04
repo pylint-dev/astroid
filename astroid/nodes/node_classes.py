@@ -1577,10 +1577,9 @@ class BoolOp(NodeNG):
     _astroid_fields = ("values",)
     _other_fields = ("op",)
 
-    @decorators.deprecate_default_argument_values(op="str")
     def __init__(
         self,
-        op: str | None = None,
+        op: str,
         lineno: int | None = None,
         col_offset: int | None = None,
         parent: NodeNG | None = None,
@@ -1603,7 +1602,7 @@ class BoolOp(NodeNG):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.op: str | None = op
+        self.op: str = op
         """The operator."""
 
         self.values: list[NodeNG] = []
@@ -3131,10 +3130,9 @@ class Import(_base_nodes.ImportNode):
 
     _other_fields = ("names",)
 
-    @decorators.deprecate_default_argument_values(names="list[tuple[str, str | None]]")
     def __init__(
         self,
-        names: list[tuple[str, str | None]] | None = None,
+        names: list[tuple[str, str | None]],
         lineno: int | None = None,
         col_offset: int | None = None,
         parent: NodeNG | None = None,
@@ -3157,7 +3155,7 @@ class Import(_base_nodes.ImportNode):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.names: list[tuple[str, str | None]] = names or []
+        self.names: list[tuple[str, str | None]] = names
         """The names being imported.
 
         Each entry is a :class:`tuple` of the name being imported,

@@ -17,7 +17,7 @@ from collections.abc import Generator, Iterator
 from functools import cached_property
 from typing import Any, Literal, NoReturn, TypeVar
 
-from astroid import bases, decorators, util
+from astroid import bases, util
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AttributeInferenceError,
@@ -276,10 +276,7 @@ class DictValues(bases.Proxy):
 class PartialFunction(scoped_nodes.FunctionDef):
     """A class representing partial function obtained via functools.partial."""
 
-    @decorators.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
-    def __init__(
-        self, call, name=None, doc=None, lineno=None, col_offset=None, parent=None
-    ):
+    def __init__(self, call, name=None, lineno=None, col_offset=None, parent=None):
         # TODO: Pass end_lineno, end_col_offset and parent as well
         super().__init__(
             name,
@@ -289,8 +286,6 @@ class PartialFunction(scoped_nodes.FunctionDef):
             end_col_offset=0,
             end_lineno=0,
         )
-        # Assigned directly to prevent triggering the DeprecationWarning.
-        self._doc = doc
         # A typical FunctionDef automatically adds its name to the parent scope,
         # but a partial should not, so defer setting parent until after init
         self.parent = parent
@@ -341,10 +336,7 @@ node_classes.Dict.__bases__ = (node_classes.NodeNG, DictInstance)
 class Property(scoped_nodes.FunctionDef):
     """Class representing a Python property."""
 
-    @decorators.deprecate_arguments(doc="Use the postinit arg 'doc_node' instead")
-    def __init__(
-        self, function, name=None, doc=None, lineno=None, col_offset=None, parent=None
-    ):
+    def __init__(self, function, name=None, lineno=None, col_offset=None, parent=None):
         self.function = function
         super().__init__(
             name,
@@ -354,8 +346,6 @@ class Property(scoped_nodes.FunctionDef):
             end_col_offset=function.end_col_offset,
             end_lineno=function.end_lineno,
         )
-        # Assigned directly to prevent triggering the DeprecationWarning.
-        self._doc = doc
 
     special_attributes = objectmodel.PropertyModel()
     type = "property"
