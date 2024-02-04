@@ -818,7 +818,7 @@ class ImportErrorInstanceModel(ExceptionInstanceModel):
 class UnicodeDecodeErrorInstanceModel(ExceptionInstanceModel):
     @property
     def attr_object(self):
-        return node_classes.Const("")
+        return node_classes.Const(b"")
 
 
 BUILTIN_EXCEPTIONS = {
