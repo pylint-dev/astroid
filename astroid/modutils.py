@@ -44,10 +44,10 @@ logger = logging.getLogger(__name__)
 
 
 if sys.platform.startswith("win"):
-    PY_SOURCE_EXTS = ("py", "pyw", "pyi")
+    PY_SOURCE_EXTS = ("pyi", "pyw", "py")
     PY_COMPILED_EXTS = ("dll", "pyd")
 else:
-    PY_SOURCE_EXTS = ("py", "pyi")
+    PY_SOURCE_EXTS = ("pyi", "py")
     PY_COMPILED_EXTS = ("so",)
 
 
