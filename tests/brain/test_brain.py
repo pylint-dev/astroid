@@ -678,6 +678,19 @@ class TypingBrain(unittest.TestCase):
         )
         assert len(node.inferred()) == 1
 
+    @test_utils.require_version(minver="3.10")
+    def test_typing_param_spec(self):
+        node = builder.extract_node(
+            """
+        from typing import ParamSpec
+
+        P = ParamSpec("P")
+        """
+        )
+        inferred = next(node.targets[0].infer())
+        assert next(inferred.igetattr("args")) is not None
+        assert next(inferred.igetattr("kwargs")) is not None
+
     def test_collections_generic_alias_slots(self):
         """Test slots for a class which is a subclass of a generic alias type."""
         node = builder.extract_node(

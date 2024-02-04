@@ -437,7 +437,13 @@ def _typing_transform():
     class Generic:
         @classmethod
         def __class_getitem__(cls, item):  return cls
-    class ParamSpec: ...
+    class ParamSpec:
+        @property
+        def args(self):
+            return ParamSpecArgs(self)
+        @property
+        def kwargs(self):
+            return ParamSpecKwargs(self)
     class ParamSpecArgs: ...
     class ParamSpecKwargs: ...
     class TypeAlias: ...
