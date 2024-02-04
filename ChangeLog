@@ -23,10 +23,10 @@ Release date: TBA
   ``postinit(doc_node=...)`` instead.)
 
 
+
 What's New in astroid 3.0.3?
 ============================
-Release date: TBA
-
+Release date: 2024-02-04
 
 * Fix type of ``UnicodeDecodeError.object`` inferred as ``str`` instead of ``bytes``.
 
