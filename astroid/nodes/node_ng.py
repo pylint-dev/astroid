@@ -46,6 +46,7 @@ else:
 
 if TYPE_CHECKING:
     from astroid import nodes
+    from astroid.nodes import _base_nodes
 
 
 # Types for 'NodeNG.nodes_of_class()'
@@ -63,9 +64,9 @@ class NodeNG:
 
     is_statement: ClassVar[bool] = False
     """Whether this node indicates a statement."""
-    optional_assign: ClassVar[
-        bool
-    ] = False  # True for For (and for Comprehension if py <3.0)
+    optional_assign: ClassVar[bool] = (
+        False  # True for For (and for Comprehension if py <3.0)
+    )
     """Whether this node optionally assigns a variable.
 
     This is for loop assignments because loop won't necessarily perform an
@@ -278,7 +279,7 @@ class NodeNG:
         """
         return any(self is parent for parent in node.node_ancestors())
 
-    def statement(self, *, future: Literal[None, True] = None) -> nodes.Statement:
+    def statement(self, *, future: Literal[None, True] = None) -> _base_nodes.Statement:
         """The first parent node, including self, marked as statement node.
 
         :raises StatementMissing: If self has no parent attribute.
@@ -290,7 +291,7 @@ class NodeNG:
                 stacklevel=2,
             )
         if self.is_statement:
-            return cast("nodes.Statement", self)
+            return cast("_base_nodes.Statement", self)
         if not self.parent:
             raise StatementMissing(target=self)
         return self.parent.statement()
@@ -488,32 +489,28 @@ class NodeNG:
         self,
         klass: type[_NodesT],
         skip_klass: SkipKlassT = ...,
-    ) -> Iterator[_NodesT]:
-        ...
+    ) -> Iterator[_NodesT]: ...
 
     @overload
     def nodes_of_class(
         self,
         klass: tuple[type[_NodesT], type[_NodesT2]],
         skip_klass: SkipKlassT = ...,
-    ) -> Iterator[_NodesT] | Iterator[_NodesT2]:
-        ...
+    ) -> Iterator[_NodesT] | Iterator[_NodesT2]: ...
 
     @overload
     def nodes_of_class(
         self,
         klass: tuple[type[_NodesT], type[_NodesT2], type[_NodesT3]],
         skip_klass: SkipKlassT = ...,
-    ) -> Iterator[_NodesT] | Iterator[_NodesT2] | Iterator[_NodesT3]:
-        ...
+    ) -> Iterator[_NodesT] | Iterator[_NodesT2] | Iterator[_NodesT3]: ...
 
     @overload
     def nodes_of_class(
         self,
         klass: tuple[type[_NodesT], ...],
         skip_klass: SkipKlassT = ...,
-    ) -> Iterator[_NodesT]:
-        ...
+    ) -> Iterator[_NodesT]: ...
 
     def nodes_of_class(  # type: ignore[misc] # mypy doesn't correctly recognize the overloads
         self,

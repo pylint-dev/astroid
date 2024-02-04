@@ -3564,6 +3564,13 @@ class Slice(NodeNG):
         """
         return "builtins.slice"
 
+    def display_type(self) -> Literal["Slice"]:
+        """A human readable type of this node.
+
+        :returns: The type of this node.
+        """
+        return "Slice"
+
     def igetattr(
         self, attrname: str, context: InferenceContext | None = None
     ) -> Iterator[SuccessfulInferenceResult]:

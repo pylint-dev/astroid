@@ -84,28 +84,23 @@ class TransformVisitor:
         return self._transform(node)
 
     @overload
-    def _visit_generic(self, node: None) -> None:
-        ...
+    def _visit_generic(self, node: None) -> None: ...
 
     @overload
-    def _visit_generic(self, node: str) -> str:
-        ...
+    def _visit_generic(self, node: str) -> str: ...
 
     @overload
     def _visit_generic(
         self, node: list[nodes.NodeNG]
-    ) -> list[SuccessfulInferenceResult]:
-        ...
+    ) -> list[SuccessfulInferenceResult]: ...
 
     @overload
     def _visit_generic(
         self, node: tuple[nodes.NodeNG, ...]
-    ) -> tuple[SuccessfulInferenceResult, ...]:
-        ...
+    ) -> tuple[SuccessfulInferenceResult, ...]: ...
 
     @overload
-    def _visit_generic(self, node: nodes.NodeNG) -> SuccessfulInferenceResult:
-        ...
+    def _visit_generic(self, node: nodes.NodeNG) -> SuccessfulInferenceResult: ...
 
     def _visit_generic(self, node: _Vistables) -> _VisitReturns:
         if isinstance(node, list):

@@ -333,10 +333,6 @@ def test_if_comprehension_shadow(
             ]
     """
     )
-    # Hack for Python 3.7 where the ListComp starts on L5 instead of L4
-    # Extract_node doesn't handle this correctly
-    if isinstance(node, nodes.ListComp):
-        node = node.elt
     inferred = node.inferred()
     assert len(inferred) == 2
 

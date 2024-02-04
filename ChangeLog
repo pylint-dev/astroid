@@ -22,9 +22,14 @@ What's New in astroid 3.0.3?
 ============================
 Release date: TBA
 
+
 * Fix type of ``UnicodeDecodeError.object`` inferred as ``str`` instead of ``bytes``.
 
   Closes pylint-dev/pylint#9342
+
+* Fix ``no-member`` false positives for ``args`` and ``kwargs`` on ``ParamSpec`` under Python 3.12.
+
+  Closes pylint-dev/pylint#9401
 
 
 What's New in astroid 3.0.2?

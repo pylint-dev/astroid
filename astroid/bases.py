@@ -114,11 +114,9 @@ class Proxy:
 
     def __init__(
         self,
-        proxied: nodes.ClassDef
-        | nodes.FunctionDef
-        | nodes.Lambda
-        | UnboundMethod
-        | None = None,
+        proxied: (
+            nodes.ClassDef | nodes.FunctionDef | nodes.Lambda | UnboundMethod | None
+        ) = None,
     ) -> None:
         if proxied is None:
             # This is a hack to allow calling this __init__ during bootstrapping of
@@ -430,9 +428,9 @@ class UnboundMethod(Proxy):
 
     _proxied: nodes.FunctionDef | UnboundMethod
 
-    special_attributes: objectmodel.BoundMethodModel | objectmodel.UnboundMethodModel = (
-        objectmodel.UnboundMethodModel()
-    )
+    special_attributes: (
+        objectmodel.BoundMethodModel | objectmodel.UnboundMethodModel
+    ) = objectmodel.UnboundMethodModel()
 
     def __repr__(self) -> str:
         assert self._proxied.parent, "Expected a parent node"

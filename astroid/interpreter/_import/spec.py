@@ -33,8 +33,7 @@ class _MetaPathFinder(Protocol):
         fullname: str,
         path: Sequence[str] | None,
         target: types.ModuleType | None = ...,
-    ) -> importlib.machinery.ModuleSpec | None:
-        ...  # pragma: no cover
+    ) -> importlib.machinery.ModuleSpec | None: ...  # pragma: no cover
 
 
 class ModuleType(enum.Enum):
