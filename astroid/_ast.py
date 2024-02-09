@@ -22,7 +22,11 @@ class ParserModule(NamedTuple):
     bin_op_classes: dict[type[ast.operator], str]
     context_classes: dict[type[ast.expr_context], Context]
 
-    def parse(self, string: str, type_comments: bool = True) -> ast.Module:
+    def parse(
+        self, string: str, type_comments: bool = True, filename: str | None = None
+    ) -> ast.Module:
+        if filename:
+            return ast.parse(string, filename=filename, type_comments=type_comments)
         return ast.parse(string, type_comments=type_comments)
 
 

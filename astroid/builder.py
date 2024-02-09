@@ -173,7 +173,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
     ) -> tuple[nodes.Module, rebuilder.TreeRebuilder]:
         """Build tree node from data and add some informations."""
         try:
-            node, parser_module = _parse_string(data, type_comments=True)
+            node, parser_module = _parse_string(
+                data, type_comments=True, modname=modname
+            )
         except (TypeError, ValueError, SyntaxError) as exc:
             raise AstroidSyntaxError(
                 "Parsing Python code failed:\n{error}",
@@ -466,11 +468,13 @@ def _extract_single_node(code: str, module_name: str = "") -> nodes.NodeNG:
 
 
 def _parse_string(
-    data: str, type_comments: bool = True
+    data: str, type_comments: bool = True, modname: str | None = None
 ) -> tuple[ast.Module, ParserModule]:
     parser_module = get_parser_module(type_comments=type_comments)
     try:
-        parsed = parser_module.parse(data + "\n", type_comments=type_comments)
+        parsed = parser_module.parse(
+            data + "\n", type_comments=type_comments, filename=modname
+        )
     except SyntaxError as exc:
         # If the type annotations are misplaced for some reason, we do not want
         # to fail the entire parsing of the file, so we need to retry the parsing without

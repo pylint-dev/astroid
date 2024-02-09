@@ -22,6 +22,9 @@ Release date: TBA
   to the ``PartialFunction`` and ``Property`` constructors have been removed (call
   ``postinit(doc_node=...)`` instead.)
 
+* Include modname in AST warnings. Useful for ``invalid escape sequence`` warnings
+  with Python 3.12.
+
 
 
 What's New in astroid 3.0.3?
