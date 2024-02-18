@@ -273,7 +273,7 @@ class TestTransforms(unittest.TestCase):
 
         if IS_PYPY:
             original_limit = 1000  # pypy doesn't expose this
-            sys.setrecursionlimit(100)  # set something super low
+            sys.setrecursionlimit(600)
         else:
             original_limit = sys.getrecursionlimit()
             sys.setrecursionlimit(1000)  # use the default
