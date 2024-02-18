@@ -8,7 +8,6 @@ Exceptions
    .. autosummary::
 
       AstroidBuildingError
-      AstroidBuildingException
       AstroidError
       AstroidImportError
       AstroidIndexError
