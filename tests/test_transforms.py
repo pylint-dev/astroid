@@ -12,6 +12,7 @@ from collections.abc import Callable, Iterator
 
 from astroid import MANAGER, builder, nodes, parse, transforms
 from astroid.brain.brain_dataclasses import _looks_like_dataclass_field_call
+from astroid.const import IS_PYPY
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import Call, Compare, Const, Name
 from astroid.nodes.scoped_nodes import FunctionDef, Module
@@ -269,8 +270,13 @@ class TestTransforms(unittest.TestCase):
         self.transformer.register_transform(
             nodes.Call, transform_call, _looks_like_dataclass_field_call
         )
-        original_limit = sys.getrecursionlimit()
-        sys.setrecursionlimit(1000)
+
+        if IS_PYPY:
+            original_limit = 1000  # pypy doesn't expose this
+            sys.setrecursionlimit(100)  # set something super low
+        else:
+            original_limit = sys.getrecursionlimit()
+            sys.setrecursionlimit(1000)  # use the default
 
         try:
             with self.assertWarns(UserWarning):
