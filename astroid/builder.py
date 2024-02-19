@@ -14,6 +14,7 @@ import ast
 import os
 import textwrap
 import types
+import warnings
 from collections.abc import Iterator, Sequence
 from io import TextIOWrapper
 from tokenize import detect_encoding
@@ -173,9 +174,11 @@ class AstroidBuilder(raw_building.InspectBuilder):
     ) -> tuple[nodes.Module, rebuilder.TreeRebuilder]:
         """Build tree node from data and add some informations."""
         try:
-            node, parser_module = _parse_string(
-                data, type_comments=True, modname=modname
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SyntaxWarning)
+                node, parser_module = _parse_string(
+                    data, type_comments=True, modname=modname
+                )
         except (TypeError, ValueError, SyntaxError) as exc:
             raise AstroidSyntaxError(
                 "Parsing Python code failed:\n{error}",
