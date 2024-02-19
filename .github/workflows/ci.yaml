@@ -254,7 +254,9 @@ jobs:
         uses: actions/download-artifact@v4.1.2
       - name: Unzip artifacts
         run: |
-          for fp in coverage-*/*.zip; do
+          ls coverage*
+          for fp in c-*/*.zip; do
+            echo $fp | cut -d/ -f 1
             cd $(echo $fp | cut -d/ -f 1)
             unzip *.zip
             cd ..
