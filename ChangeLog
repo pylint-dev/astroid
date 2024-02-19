@@ -27,7 +27,7 @@ Release date: TBA
 * Include modname in AST warnings. Useful for ``invalid escape sequence`` warnings
   with Python 3.12.
 
-* Suppress ``SyntaxWarnings`` when parsing modules.
+* Suppress ``SyntaxWarning`` for invalid escape sequences on Python 3.12 when parsing modules.
 
   Closes pylint-dev/pylint#9322
 
