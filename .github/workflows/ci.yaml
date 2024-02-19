@@ -252,9 +252,14 @@ jobs:
         run: pip install -U -r requirements_minimal.txt
       - name: Download all coverage artifacts
         uses: actions/download-artifact@v4.1.2
+      - name: Unzip artifacts into distinct directories
+        run: |
+          for newDir in coverage-*; do
+            unzip $newDir/$newDir -d $newDir
+          done
       - name: Combine Linux coverage results
         run: |
-          coverage combine coverage-linux*
+          coverage combine coverage-linux*/.coverage
           coverage xml -o coverage-linux.xml
       - uses: codecov/codecov-action@v3
         with:
@@ -265,7 +270,7 @@ jobs:
           files: coverage-linux.xml
       - name: Combine Windows coverage results
         run: |
-          coverage combine coverage-windows*
+          coverage combine coverage-windows*/.coverage
           coverage xml -o coverage-windows.xml
       - uses: codecov/codecov-action@v3
         with:
@@ -276,7 +281,7 @@ jobs:
           files: coverage-windows.xml
       - name: Combine PyPy coverage results
         run: |
-          coverage combine coverage-pypy*
+          coverage combine coverage-pypy*/.coverage
           coverage xml -o coverage-pypy.xml
       - uses: codecov/codecov-action@v3
         with:
