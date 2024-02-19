@@ -271,15 +271,13 @@ class TestTransforms(unittest.TestCase):
             nodes.Call, transform_call, _looks_like_dataclass_field_call
         )
 
-        if IS_PYPY:
-            original_limit = 1000  # pypy doesn't expose this
-            sys.setrecursionlimit(600)
-        else:
-            original_limit = sys.getrecursionlimit()
-            sys.setrecursionlimit(1000)  # use the default
+        original_limit = sys.getrecursionlimit()
+        sys.setrecursionlimit(600 if IS_PYPY else 1000)
 
         try:
-            with self.assertWarns(UserWarning):
+            with self.assertWarns(
+                UserWarning, msg="try: --init-hook='import sys; sys.setrecursionlimit"
+            ):
                 self.parse_transform(LONG_CHAINED_METHOD_CALL)
         finally:
             sys.setrecursionlimit(original_limit)
