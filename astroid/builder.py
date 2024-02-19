@@ -14,12 +14,14 @@ import ast
 import os
 import textwrap
 import types
+import warnings
 from collections.abc import Iterator, Sequence
 from io import TextIOWrapper
 from tokenize import detect_encoding
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import ParserModule, get_parser_module
+from astroid.const import PY312_PLUS
 from astroid.exceptions import AstroidBuildingError, AstroidSyntaxError, InferenceError
 from astroid.manager import AstroidManager
 
@@ -32,6 +34,9 @@ _TRANSIENT_FUNCTION = "__"
 # when calling extract_node.
 _STATEMENT_SELECTOR = "#@"
 MISPLACED_TYPE_ANNOTATION_ERROR = "misplaced type annotation"
+
+if PY312_PLUS:
+    warnings.filterwarnings("ignore", "invalid escape sequence", SyntaxWarning)
 
 
 def open_source_file(filename: str) -> tuple[TextIOWrapper, str, str]:
