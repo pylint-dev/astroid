@@ -252,14 +252,10 @@ jobs:
         run: pip install -U -r requirements_minimal.txt
       - name: Download all coverage artifacts
         uses: actions/download-artifact@v4.1.2
-      - name: Unzip artifacts
+      - name: Unzip artifacts into distinct directories
         run: |
-          ls coverage*
-          for fp in c-*/*.zip; do
-            echo $fp | cut -d/ -f 1
-            cd $(echo $fp | cut -d/ -f 1)
-            unzip *.zip
-            cd ..
+          for newDir in coverage-*; do
+            unzip $newDir -d $newDir
           done
       - name: Combine Linux coverage results
         run: |
