@@ -19,7 +19,7 @@ import unittest.mock
 import pytest
 
 from astroid import Instance, builder, nodes, test_utils, util
-from astroid.const import IS_PYPY, PY38, PY39_PLUS, PYPY_7_3_11_PLUS
+from astroid.const import IS_PYPY, PY38, PY39_PLUS, PY312_PLUS, PYPY_7_3_11_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
@@ -416,6 +416,7 @@ class BuilderTest(unittest.TestCase):
         with self.assertRaises(AstroidSyntaxError):
             self.builder.string_build('"\\x1"')
 
+    @pytest.mark.skipif(PY312_PLUS, reason="Ignoring SyntaxWarnings triggered by 3.12+")
     def test_data_build_error_filename(self) -> None:
         """Check that error filename is set to modname if given."""
         with pytest.raises(AstroidSyntaxError, match="invalid escape sequence") as ctx:
