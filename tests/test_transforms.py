@@ -272,7 +272,7 @@ class TestTransforms(unittest.TestCase):
         )
 
         original_limit = sys.getrecursionlimit()
-        sys.setrecursionlimit(600 if IS_PYPY else 1000)
+        sys.setrecursionlimit(400 if IS_PYPY else 1000)
 
         try:
             with self.assertWarns(
