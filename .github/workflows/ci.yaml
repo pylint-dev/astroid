@@ -125,7 +125,7 @@ jobs:
           . venv/bin/activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4.0.0
+        uses: actions/upload-artifact@v4.3.1
         with:
           name: coverage-linux-${{ matrix.python-version }}
           path: .coverage
@@ -179,7 +179,7 @@ jobs:
           . venv\\Scripts\\activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4.0.0
+        uses: actions/upload-artifact@v4.3.1
         with:
           name: coverage-windows-${{ matrix.python-version }}
           path: .coverage
@@ -229,7 +229,7 @@ jobs:
           . venv/bin/activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4.0.0
+        uses: actions/upload-artifact@v4.3.1
         with:
           name: coverage-pypy-${{ matrix.python-version }}
           path: .coverage
@@ -251,10 +251,14 @@ jobs:
       - name: Install dependencies
         run: pip install -U -r requirements_minimal.txt
       - name: Download all coverage artifacts
-        uses: actions/download-artifact@v4.1.0
-        with:
-          pattern: coverage-*
-          merge-multiple: true
+        uses: actions/download-artifact@v4.1.2
+      - name: Unzip artifacts
+        run: |
+          for fp in coverage-*/*.zip; do
+            cd $(echo $fp | cut -d/ -f 1)
+            unzip *.zip
+            cd ..
+          done
       - name: Combine Linux coverage results
         run: |
           coverage combine coverage-linux*/.coverage
