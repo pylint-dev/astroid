@@ -21,6 +21,7 @@ from tokenize import detect_encoding
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import ParserModule, get_parser_module
+from astroid.const import PY312_PLUS
 from astroid.exceptions import AstroidBuildingError, AstroidSyntaxError, InferenceError
 from astroid.manager import AstroidManager
 
@@ -33,6 +34,9 @@ _TRANSIENT_FUNCTION = "__"
 # when calling extract_node.
 _STATEMENT_SELECTOR = "#@"
 MISPLACED_TYPE_ANNOTATION_ERROR = "misplaced type annotation"
+
+if PY312_PLUS:
+    warnings.filterwarnings("ignore", "invalid escape sequence", SyntaxWarning)
 
 
 def open_source_file(filename: str) -> tuple[TextIOWrapper, str, str]:
@@ -174,11 +178,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
     ) -> tuple[nodes.Module, rebuilder.TreeRebuilder]:
         """Build tree node from data and add some informations."""
         try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", SyntaxWarning)
-                node, parser_module = _parse_string(
-                    data, type_comments=True, modname=modname
-                )
+            node, parser_module = _parse_string(
+                data, type_comments=True, modname=modname
+            )
         except (TypeError, ValueError, SyntaxError) as exc:
             raise AstroidSyntaxError(
                 "Parsing Python code failed:\n{error}",
