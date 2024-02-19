@@ -43,6 +43,9 @@ dynamic = ["version"]
 [tool.setuptools]
 license-files = ["LICENSE", "CONTRIBUTORS.txt"]  # Keep in sync with setup.cfg
 
+[tool.setuptools.package-dir]
+"" = "."
+
 [tool.setuptools.packages.find]
 include = ["astroid*"]
 
