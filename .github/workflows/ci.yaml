@@ -255,7 +255,7 @@ jobs:
       - name: Unzip artifacts into distinct directories
         run: |
           for newDir in coverage-*; do
-            ls newDir -a
+            ls -a newDir
             unzip $newDir/.coverage -d $newDir
           done
       - name: Combine Linux coverage results
