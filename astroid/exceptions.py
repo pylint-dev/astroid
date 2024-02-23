@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
 __all__ = (
     "AstroidBuildingError",
-    "AstroidBuildingException",
     "AstroidError",
     "AstroidImportError",
     "AstroidIndexError",
@@ -415,4 +414,3 @@ class StatementMissing(ParentMissingError):
 SuperArgumentTypeError = SuperError
 UnresolvableName = NameInferenceError
 NotFoundError = AttributeInferenceError
-AstroidBuildingException = AstroidBuildingError

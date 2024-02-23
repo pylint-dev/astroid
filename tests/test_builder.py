@@ -416,6 +416,18 @@ class BuilderTest(unittest.TestCase):
         with self.assertRaises(AstroidSyntaxError):
             self.builder.string_build('"\\x1"')
 
+    def test_data_build_error_filename(self) -> None:
+        """Check that error filename is set to modname if given."""
+        with pytest.raises(AstroidSyntaxError, match="invalid escape sequence") as ctx:
+            self.builder.string_build("'\\d+\\.\\d+'")
+        assert isinstance(ctx.value.error, SyntaxError)
+        assert ctx.value.error.filename == "<unknown>"
+
+        with pytest.raises(AstroidSyntaxError, match="invalid escape sequence") as ctx:
+            self.builder.string_build("'\\d+\\.\\d+'", modname="mymodule")
+        assert isinstance(ctx.value.error, SyntaxError)
+        assert ctx.value.error.filename == "mymodule"
+
     def test_missing_newline(self) -> None:
         """Check that a file with no trailing new line is parseable."""
         resources.build_file("data/noendingnewline.py")

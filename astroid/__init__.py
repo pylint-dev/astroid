@@ -47,7 +47,6 @@ from astroid.builder import extract_node, parse
 from astroid.const import PY310_PLUS, Context
 from astroid.exceptions import (
     AstroidBuildingError,
-    AstroidBuildingException,
     AstroidError,
     AstroidImportError,
     AstroidIndexError,

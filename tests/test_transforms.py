@@ -5,14 +5,20 @@
 from __future__ import annotations
 
 import contextlib
+import sys
 import time
 import unittest
 from collections.abc import Callable, Iterator
 
+import pytest
+
 from astroid import MANAGER, builder, nodes, parse, transforms
+from astroid.brain.brain_dataclasses import _looks_like_dataclass_field_call
+from astroid.const import IS_PYPY
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import Call, Compare, Const, Name
 from astroid.nodes.scoped_nodes import FunctionDef, Module
+from tests.testdata.python3.recursion_error import LONG_CHAINED_METHOD_CALL
 
 
 @contextlib.contextmanager
@@ -258,3 +264,21 @@ class TestTransforms(unittest.TestCase):
                 import UserDict
         """
         )
+
+    def test_transform_aborted_if_recursion_limited(self):
+        def transform_call(node: Call) -> Const:
+            return node
+
+        self.transformer.register_transform(
+            nodes.Call, transform_call, _looks_like_dataclass_field_call
+        )
+
+        original_limit = sys.getrecursionlimit()
+        sys.setrecursionlimit(500 if IS_PYPY else 1000)
+
+        try:
+            with pytest.warns(UserWarning) as records:
+                self.parse_transform(LONG_CHAINED_METHOD_CALL)
+                assert "sys.setrecursionlimit" in records[0].message.args[0]
+        finally:
+            sys.setrecursionlimit(original_limit)

@@ -29,7 +29,7 @@ from astroid import (
     transforms,
     util,
 )
-from astroid.const import PY310_PLUS, PY312_PLUS, Context
+from astroid.const import IS_PYPY, PY310_PLUS, PY312_PLUS, Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -47,6 +47,7 @@ from astroid.nodes.node_classes import (
     Tuple,
 )
 from astroid.nodes.scoped_nodes import ClassDef, FunctionDef, GeneratorExp, Module
+from tests.testdata.python3.recursion_error import LONG_CHAINED_METHOD_CALL
 
 from . import resources
 
@@ -278,6 +279,20 @@ everything = f""" " \' \r \t \\ {{ }} {'x' + x!r:a} {["'"]!s:{a}}"""
     def test_as_string_unknown() -> None:
         assert nodes.Unknown().as_string() == "Unknown.Unknown()"
         assert nodes.Unknown(lineno=1, col_offset=0).as_string() == "Unknown.Unknown()"
+
+    @staticmethod
+    @pytest.mark.skipif(
+        IS_PYPY,
+        reason="Test requires manipulating the recursion limit, which cannot "
+        "be undone in a finally block without polluting other tests on PyPy.",
+    )
+    def test_recursion_error_trapped() -> None:
+        with pytest.warns(UserWarning, match="unable to transform"):
+            ast = abuilder.string_build(LONG_CHAINED_METHOD_CALL)
+
+        attribute = ast.body[1].value.func
+        with pytest.raises(UserWarning):
+            attribute.as_string()
 
 
 @pytest.mark.skipif(not PY312_PLUS, reason="Uses 3.12 type param nodes")
