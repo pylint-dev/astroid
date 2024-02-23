@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import warnings
 from collections import defaultdict
 from collections.abc import Callable
 from typing import TYPE_CHECKING, List, Optional, Tuple, TypeVar, Union, cast, overload
@@ -110,7 +111,18 @@ class TransformVisitor:
         if not node or isinstance(node, str):
             return node
 
-        return self._visit(node)
+        try:
+            return self._visit(node)
+        except RecursionError:
+            # Returning the node untransformed is better than giving up.
+            warnings.warn(
+                f"Astroid was unable to transform {node}.\n"
+                "Some functionality will be missing unless the system recursion limit is lifted.\n"
+                "From pylint, try: --init-hook='import sys; sys.setrecursionlimit(2000)' or higher.",
+                UserWarning,
+                stacklevel=0,
+            )
+            return node
 
     def register_transform(
         self,

@@ -27,10 +27,13 @@ Release date: TBA
 * Include modname in AST warnings. Useful for ``invalid escape sequence`` warnings
   with Python 3.12.
 
+* ``RecursionError`` is now trapped and logged out as ``UserWarning`` during astroid node transformations with instructions about raising the system recursion limit.
+
+  Closes pylint-dev/pylint#8842
+
 * Suppress ``SyntaxWarning`` for invalid escape sequences on Python 3.12 when parsing modules.
 
   Closes pylint-dev/pylint#9322
-
 
 
 What's New in astroid 3.0.3?
