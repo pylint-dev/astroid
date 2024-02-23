@@ -10,6 +10,8 @@ import time
 import unittest
 from collections.abc import Callable, Iterator
 
+import pytest
+
 from astroid import MANAGER, builder, nodes, parse, transforms
 from astroid.brain.brain_dataclasses import _looks_like_dataclass_field_call
 from astroid.const import IS_PYPY
@@ -275,9 +277,8 @@ class TestTransforms(unittest.TestCase):
         sys.setrecursionlimit(500 if IS_PYPY else 1000)
 
         try:
-            with self.assertWarns(
-                UserWarning, msg="try: --init-hook='import sys; sys.setrecursionlimit"
-            ):
+            with pytest.warns(UserWarning) as records:
                 self.parse_transform(LONG_CHAINED_METHOD_CALL)
+                assert "sys.setrecursionlimit" in records[0].message.args[0]
         finally:
             sys.setrecursionlimit(original_limit)
