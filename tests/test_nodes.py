@@ -29,7 +29,7 @@ from astroid import (
     transforms,
     util,
 )
-from astroid.const import IS_PYPY, PY310_PLUS, PY312_PLUS, Context
+from astroid.const import PY310_PLUS, PY312_PLUS, Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -282,19 +282,12 @@ everything = f""" " \' \r \t \\ {{ }} {'x' + x!r:a} {["'"]!s:{a}}"""
 
     @staticmethod
     def test_recursion_error_trapped() -> None:
-        original_limit = sys.getrecursionlimit()
-        if IS_PYPY:
-            sys.setrecursionlimit(500)
+        with pytest.warns(UserWarning, match="unable to transform"):
+            ast = abuilder.string_build(LONG_CHAINED_METHOD_CALL)
 
-        try:
-            with pytest.warns(UserWarning, match="unable to transform"):
-                ast = abuilder.string_build(LONG_CHAINED_METHOD_CALL)
-
-            with pytest.raises(UserWarning):
-                attribute = ast.body[1].value.func
-                assert attribute.as_string()
-        finally:
-            sys.setrecursionlimit(original_limit)
+        attribute = ast.body[1].value.func
+        with pytest.raises(UserWarning):
+            attribute.as_string()
 
 
 @pytest.mark.skipif(not PY312_PLUS, reason="Uses 3.12 type param nodes")
