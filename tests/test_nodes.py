@@ -281,12 +281,12 @@ everything = f""" " \' \r \t \\ {{ }} {'x' + x!r:a} {["'"]!s:{a}}"""
         assert nodes.Unknown(lineno=1, col_offset=0).as_string() == "Unknown.Unknown()"
 
     @staticmethod
+    @pytest.mark.skipif(
+        IS_PYPY,
+        reason="Test requires manipulating the recursion limit, which cannot "
+        "be undone in a finally block without polluting other tests on PyPy.",
+    )
     def test_recursion_error_trapped() -> None:
-        if IS_PYPY:
-            pytest.skip(
-                "Test requires manipulating the recursion limit, which cannot "
-                "be undone in a finally block without polluting other tests on PyPy."
-            )
         with pytest.warns(UserWarning, match="unable to transform"):
             ast = abuilder.string_build(LONG_CHAINED_METHOD_CALL)
 
