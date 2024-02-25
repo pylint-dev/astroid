@@ -4349,9 +4349,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         )
         inferred = list(node.infer())
-        assert len(inferred) == 2
-        assert isinstance(inferred[0], nodes.Const)
-        assert isinstance(inferred[1], Generator)
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Generator)
 
     def test_delayed_attributes_without_slots(self) -> None:
         ast_node = extract_node(

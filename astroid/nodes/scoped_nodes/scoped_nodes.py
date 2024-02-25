@@ -2514,6 +2514,15 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
                     for attr in attributes
                     if attr.parent and attr.parent.scope() == first_scope
                 ]
+            functions = [attr for attr in attributes if isinstance(attr, FunctionDef)]
+            if functions:
+                # Prefer only the last function, unless a property is involved.
+                last_function = functions[-1]
+                attributes = [
+                    a
+                    for a in attributes
+                    if a not in functions or a is last_function or bases._is_property(a)
+                ]
 
             for inferred in bases._infer_stmts(attributes, context, frame=self):
                 # yield Uninferable object instead of descriptors when necessary
