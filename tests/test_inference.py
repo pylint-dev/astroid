@@ -4352,6 +4352,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         assert len(inferred) == 1
         assert isinstance(inferred[0], Generator)
 
+    def test_infer_function_under_if(self) -> None:
+        node = extract_node(
+            """
+        if 1 in [1]:
+            def func():
+                return 42
+        else:
+            def func():
+                return False
+
+        func()  #@
+        """
+        )
+        inferred = list(node.inferred())
+        assert [const.value for const in inferred] == [42, False]
+
     def test_delayed_attributes_without_slots(self) -> None:
         ast_node = extract_node(
             """
