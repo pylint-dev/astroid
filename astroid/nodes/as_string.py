@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
@@ -363,7 +364,15 @@ class AsStringVisitor:
 
     def visit_attribute(self, node) -> str:
         """return an astroid.Getattr node as string"""
-        left = self._precedence_parens(node, node.expr)
+        try:
+            left = self._precedence_parens(node, node.expr)
+        except RecursionError:
+            warnings.warn(
+                "Recursion limit exhausted; defaulting to adding parentheses.",
+                UserWarning,
+                stacklevel=2,
+            )
+            left = f"({node.expr.accept(self)})"
         if left.isdigit():
             left = f"({left})"
         return f"{left}.{node.attrname}"

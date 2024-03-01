@@ -191,6 +191,8 @@ Contributors
 - Alexander Scheel <alexander.m.scheel@gmail.com>
 - Alexander Presnyakov <flagist0@gmail.com>
 - Ahmed Azzaoui <ahmed.azzaoui@engie.com>
+- JulianJvn <128477611+JulianJvn@users.noreply.github.com>
+- Gwyn Ciesla <gwync@protonmail.com>
 
 Co-Author
 ---------
