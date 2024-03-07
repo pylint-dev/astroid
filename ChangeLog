@@ -7,6 +7,9 @@ What's New in astroid 3.2.0?
 ============================
 Release date: TBA
 
+* ``.pyi`` stub files are now preferred over ``.py`` files when resolving imports.
+
+  Closes pylint-dev/#9185
 
 
 What's New in astroid 3.1.1?
@@ -15,9 +18,11 @@ Release date: TBA
 
 
 
+
 What's New in astroid 3.1.0?
 ============================
 Release date: 2024-02-23
+
 
 * Include PEP 695 (Python 3.12) generic type syntax nodes in ``get_children()``,
   allowing checkers to visit them.
