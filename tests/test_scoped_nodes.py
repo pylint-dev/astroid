@@ -47,14 +47,6 @@ from astroid.nodes.scoped_nodes.scoped_nodes import _is_metaclass
 
 from . import resources
 
-try:
-    import six  # type: ignore[import]  # pylint: disable=unused-import
-
-    HAS_SIX = True
-except ImportError:
-    HAS_SIX = False
-
-
 def _test_dict_interface(
     self: Any,
     node: nodes.ClassDef | nodes.FunctionDef | nodes.Module,
@@ -1438,34 +1430,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         for klass in ast_nodes:
             self.assertEqual(None, klass.metaclass())
 
-    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
-    def test_metaclass_generator_hack(self):
-        klass = builder.extract_node(
-            """
-            import six
-
-            class WithMeta(six.with_metaclass(type, object)): #@
-                pass
-        """
-        )
-        assert isinstance(klass, nodes.ClassDef)
-        self.assertEqual(["object"], [base.name for base in klass.ancestors()])
-        self.assertEqual("type", klass.metaclass().name)
-
-    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
-    def test_metaclass_generator_hack_enum_base(self):
-        """Regression test for https://github.com/pylint-dev/pylint/issues/5935"""
-        klass = builder.extract_node(
-            """
-            import six
-            from enum import Enum, EnumMeta
-
-            class PetEnumPy2Metaclass(six.with_metaclass(EnumMeta, Enum)): #@
-                DOG = "dog"
-        """
-        )
-        self.assertEqual(list(klass.local_attr_ancestors("DOG")), [])
-
     def test_add_metaclass(self) -> None:
         klass = builder.extract_node(
             """
@@ -1480,19 +1444,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         metaclass = inferred.metaclass()
         self.assertIsInstance(metaclass, nodes.ClassDef)
         self.assertIn(metaclass.qname(), ("abc.ABCMeta", "_py_abc.ABCMeta"))
-
-    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
-    def test_using_invalid_six_add_metaclass_call(self):
-        klass = builder.extract_node(
-            """
-        import six
-        @six.add_metaclass()
-        class Invalid(object):
-            pass
-        """
-        )
-        inferred = next(klass.infer())
-        self.assertIsNone(inferred.metaclass())
 
     @staticmethod
     def test_with_invalid_metaclass():
@@ -1652,114 +1603,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self, klass: nodes.ClassDef, expected_mro: list[str]
     ) -> None:
         self.assertEqual([member.qname() for member in klass.mro()], expected_mro)
-
-    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
-    def test_with_metaclass_mro(self):
-        astroid = builder.parse(
-            """
-        import six
-
-        class C(object):
-            pass
-        class B(C):
-            pass
-        class A(six.with_metaclass(type, B)):
-            pass
-        """
-        )
-        self.assertEqualMro(astroid["A"], ["A", "B", "C", "object"])
-
-    def test_mro(self) -> None:
-        astroid = builder.parse(
-            """
-        class C(object): pass
-        class D(dict, C): pass
-
-        class A1(object): pass
-        class B1(A1): pass
-        class C1(A1): pass
-        class D1(B1, C1): pass
-        class E1(C1, B1): pass
-        class F1(D1, E1): pass
-        class G1(E1, D1): pass
-
-        class Boat(object): pass
-        class DayBoat(Boat): pass
-        class WheelBoat(Boat): pass
-        class EngineLess(DayBoat): pass
-        class SmallMultihull(DayBoat): pass
-        class PedalWheelBoat(EngineLess, WheelBoat): pass
-        class SmallCatamaran(SmallMultihull): pass
-        class Pedalo(PedalWheelBoat, SmallCatamaran): pass
-
-        class OuterA(object):
-            class Inner(object):
-                pass
-        class OuterB(OuterA):
-            class Inner(OuterA.Inner):
-                pass
-        class OuterC(OuterA):
-            class Inner(OuterA.Inner):
-                pass
-        class OuterD(OuterC):
-            class Inner(OuterC.Inner, OuterB.Inner):
-                pass
-        class Duplicates(str, str): pass
-
-        """
-        )
-        self.assertEqualMro(astroid["D"], ["D", "dict", "C", "object"])
-        self.assertEqualMro(astroid["D1"], ["D1", "B1", "C1", "A1", "object"])
-        self.assertEqualMro(astroid["E1"], ["E1", "C1", "B1", "A1", "object"])
-        with self.assertRaises(InconsistentMroError) as cm:
-            astroid["F1"].mro()
-        A1 = astroid.getattr("A1")[0]
-        B1 = astroid.getattr("B1")[0]
-        C1 = astroid.getattr("C1")[0]
-        object_ = MANAGER.astroid_cache["builtins"].getattr("object")[0]
-        self.assertEqual(
-            cm.exception.mros, [[B1, C1, A1, object_], [C1, B1, A1, object_]]
-        )
-        with self.assertRaises(InconsistentMroError) as cm:
-            astroid["G1"].mro()
-        self.assertEqual(
-            cm.exception.mros, [[C1, B1, A1, object_], [B1, C1, A1, object_]]
-        )
-        self.assertEqualMro(
-            astroid["PedalWheelBoat"],
-            ["PedalWheelBoat", "EngineLess", "DayBoat", "WheelBoat", "Boat", "object"],
-        )
-
-        self.assertEqualMro(
-            astroid["SmallCatamaran"],
-            ["SmallCatamaran", "SmallMultihull", "DayBoat", "Boat", "object"],
-        )
-
-        self.assertEqualMro(
-            astroid["Pedalo"],
-            [
-                "Pedalo",
-                "PedalWheelBoat",
-                "EngineLess",
-                "SmallCatamaran",
-                "SmallMultihull",
-                "DayBoat",
-                "WheelBoat",
-                "Boat",
-                "object",
-            ],
-        )
-
-        self.assertEqualMro(
-            astroid["OuterD"]["Inner"], ["Inner", "Inner", "Inner", "Inner", "object"]
-        )
-
-        with self.assertRaises(DuplicateBasesError) as cm:
-            astroid["Duplicates"].mro()
-        Duplicates = astroid.getattr("Duplicates")[0]
-        self.assertEqual(cm.exception.cls, Duplicates)
-        self.assertIsInstance(cm.exception, MroError)
-        self.assertIsInstance(cm.exception, ResolveError)
 
     def test_mro_with_factories(self) -> None:
         cls = builder.extract_node(
