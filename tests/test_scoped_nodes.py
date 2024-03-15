@@ -47,6 +47,7 @@ from astroid.nodes.scoped_nodes.scoped_nodes import _is_metaclass
 
 from . import resources
 
+
 def _test_dict_interface(
     self: Any,
     node: nodes.ClassDef | nodes.FunctionDef | nodes.Module,
