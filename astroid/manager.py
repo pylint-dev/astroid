@@ -59,6 +59,7 @@ class AstroidManager:
         "optimize_ast": False,
         "max_inferable_values": 100,
         "extension_package_whitelist": set(),
+        "module_denylist": set(),
         "_transform": TransformVisitor(),
     }
 
@@ -70,6 +71,7 @@ class AstroidManager:
         self.extension_package_whitelist = AstroidManager.brain[
             "extension_package_whitelist"
         ]
+        self.module_denylist = AstroidManager.brain["module_denylist"]
         self._transform = AstroidManager.brain["_transform"]
 
     @property
@@ -200,6 +202,8 @@ class AstroidManager:
         # importing a module with the same name as the file that is importing
         # we want to fallback on the import system to make sure we get the correct
         # module.
+        if modname in self.module_denylist:
+            raise AstroidImportError("Skipping ignored module")
         if modname in self.astroid_cache and use_cache:
             return self.astroid_cache[modname]
         if modname == "__main__":
