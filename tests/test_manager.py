@@ -385,7 +385,7 @@ class AstroidManagerTest(
 
     def test_denied_modules_raise(self) -> None:
         self.manager.module_denylist.add("random")
-        with pytest.raises(AstroidImportError):
+        with pytest.raises(AstroidImportError, match="random"):
             self.manager.ast_from_module_name("random")
         # and module not in the deny list shouldn't raise
         self.manager.ast_from_module_name("math")

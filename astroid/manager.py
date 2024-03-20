@@ -203,7 +203,7 @@ class AstroidManager:
         # we want to fallback on the import system to make sure we get the correct
         # module.
         if modname in self.module_denylist:
-            raise AstroidImportError("Skipping ignored module")
+            raise AstroidImportError(f"Skipping ignored module {modname!r}")
         if modname in self.astroid_cache and use_cache:
             return self.astroid_cache[modname]
         if modname == "__main__":
