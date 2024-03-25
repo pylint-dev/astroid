@@ -383,6 +383,13 @@ class AstroidManagerTest(
         with pytest.raises(AstroidBuildingError):
             self.manager.ast_from_module_name(None)
 
+    def test_denied_modules_raise(self) -> None:
+        self.manager.module_denylist.add("random")
+        with pytest.raises(AstroidImportError, match="random"):
+            self.manager.ast_from_module_name("random")
+        # and module not in the deny list shouldn't raise
+        self.manager.ast_from_module_name("math")
+
 
 class IsolatedAstroidManagerTest(resources.AstroidCacheSetupMixin, unittest.TestCase):
     def test_no_user_warning(self):

@@ -13,6 +13,12 @@ Release date: TBA
   Closes #1015
   Refs pylint-dev/pylint#4696
 
+* Adds ``module_denylist`` to ``AstroidManager`` for modules to be skipped during AST
+  generation. Modules in this list will cause an ``AstroidImportError`` to be raised
+  when an AST for them is requested.
+
+  Refs pylint-dev/pylint#9442
+
 
 What's New in astroid 3.1.1?
 ============================
