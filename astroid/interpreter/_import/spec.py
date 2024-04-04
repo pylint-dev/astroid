@@ -16,6 +16,7 @@ import types
 import warnings
 import zipimport
 from collections.abc import Iterator, Sequence
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal, NamedTuple, Protocol
 
@@ -440,10 +441,15 @@ def find_spec(modpath: list[str], path: Sequence[str] | None = None) -> ModuleSp
     :return: A module spec, which describes how the module was
              found and where.
     """
+    return _find_spec(tuple(modpath), tuple(path) if path else None)
+
+
+@lru_cache(maxsize=1024)
+def _find_spec(modpath: tuple, path: tuple) -> ModuleSpec:
     _path = path or sys.path
 
     # Need a copy for not mutating the argument.
-    modpath = modpath[:]
+    modpath = list(modpath)
 
     submodule_path = None
     module_parts = modpath[:]
@@ -468,3 +474,7 @@ def find_spec(modpath: list[str], path: Sequence[str] | None = None) -> ModuleSp
             spec = spec._replace(submodule_search_locations=submodule_path)
 
     return spec
+
+
+def clear_spec_cache() -> None:
+    _find_spec.cache_clear()

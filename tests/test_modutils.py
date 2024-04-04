@@ -22,6 +22,7 @@ import astroid
 from astroid import modutils
 from astroid.const import PY310_PLUS
 from astroid.interpreter._import import spec
+from astroid.interpreter._import.spec import clear_spec_cache
 
 from . import resources
 
@@ -41,6 +42,7 @@ class ModuleFileTest(unittest.TestCase):
     package = "mypypa"
 
     def tearDown(self) -> None:
+        clear_spec_cache()
         for k in list(sys.path_importer_cache):
             if "MyPyPa" in k:
                 del sys.path_importer_cache[k]

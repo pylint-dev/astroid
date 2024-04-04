@@ -23,6 +23,7 @@ from astroid.exceptions import (
     AttributeInferenceError,
 )
 from astroid.interpreter._import import util
+from astroid.interpreter._import.spec import clear_spec_cache
 from astroid.modutils import EXT_LIB_DIRS, module_in_path
 from astroid.nodes import Const
 from astroid.nodes.scoped_nodes import ClassDef, Module
@@ -41,6 +42,7 @@ class AstroidManagerTest(
 ):
     def setUp(self) -> None:
         super().setUp()
+        clear_spec_cache()
         self.manager = test_utils.brainless_manager()
 
     def test_ast_from_file(self) -> None:
