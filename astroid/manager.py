@@ -309,7 +309,6 @@ class AstroidManager:
                     modname.split("."), context_file=contextfile
                 )
             except ImportError as e:
-                # pylint: disable-next=redefined-variable-type
                 value = AstroidImportError(
                     "Failed to import module {modname} with error:\n{error}.",
                     modname=modname,
@@ -406,8 +405,7 @@ class AstroidManager:
         # take care, on living object __module__ is regularly wrong :(
         modastroid = self.ast_from_module_name(modname)
         if klass is obj:
-            for inferred in modastroid.igetattr(name, context):
-                yield inferred
+            yield from modastroid.igetattr(name, context)
         else:
             for inferred in modastroid.igetattr(name, context):
                 yield inferred.instantiate_class()
