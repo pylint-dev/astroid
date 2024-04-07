@@ -19,6 +19,11 @@ Release date: TBA
 
   Refs pylint-dev/pylint#9442
 
+* use failed-import hooks on namespace modules. This fixes a problems that ``six.moves``
+  brain was not effective if ``six.moves`` was already imported.
+
+  Closes #107
+
 
 What's New in astroid 3.1.1?
 ============================

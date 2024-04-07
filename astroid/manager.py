@@ -189,6 +189,16 @@ class AstroidManager:
             modname, self.extension_package_whitelist
         )
 
+    def _build_module_from_failed_import_hooks(
+        self, modname: str
+    ) -> nodes.Module | None:
+        for hook in self._failed_import_hooks:
+            try:
+                return hook(modname)
+            except AstroidBuildingError:
+                pass
+        return None
+
     def ast_from_module_name(  # noqa: C901
         self,
         modname: str | None,
@@ -245,9 +255,14 @@ class AstroidManager:
                 )
 
             elif found_spec.type == spec.ModuleType.PY_NAMESPACE:
-                return self._build_namespace_module(
-                    modname, found_spec.submodule_search_locations or []
-                )
+                # before returning an empty namespace module, allow a fail import hook
+                # to return a dynamic module instead.
+                module = self._build_module_from_failed_import_hooks(modname)
+                if module is None:
+                    module = self._build_namespace_module(
+                        modname, found_spec.submodule_search_locations or []
+                    )
+                return module
             elif found_spec.type == spec.ModuleType.PY_FROZEN:
                 if found_spec.location is None:
                     return self._build_stub_module(modname)
@@ -262,12 +277,10 @@ class AstroidManager:
 
             return self.ast_from_file(found_spec.location, modname, fallback=False)
         except AstroidBuildingError as e:
-            for hook in self._failed_import_hooks:
-                try:
-                    return hook(modname)
-                except AstroidBuildingError:
-                    pass
-            raise e
+            module = self._build_module_from_failed_import_hooks(modname)
+            if module is None:
+                raise e
+            return module
         finally:
             if context_file:
                 os.chdir(old_cwd)
