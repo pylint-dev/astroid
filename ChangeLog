@@ -19,6 +19,12 @@ Release date: TBA
 
   Refs pylint-dev/pylint#9442
 
+* Make ``astroid.interpreter._import.util.is_namespace`` only consider modules
+  with ``submodule_search_locations`` a namespace. This fixes a problems that ``six.moves``
+  brain was not effective if ``six.moves`` was already imported.
+
+  Closes #1107
+
 
 What's New in astroid 3.1.1?
 ============================

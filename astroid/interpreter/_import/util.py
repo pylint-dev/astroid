@@ -99,6 +99,6 @@ def is_namespace(modname: str) -> bool:
 
     return (
         found_spec is not None
-        and found_spec.submodule_search_locations is not None
+        and found_spec.submodule_search_locations
         and found_spec.origin is None
     )
