@@ -8,6 +8,11 @@ import pathlib
 import sys
 from functools import lru_cache
 from importlib._bootstrap_external import _NamespacePath
+
+if sys.version_info >= (3, 11):
+    from importlib.machinery import NamespaceLoader
+else:
+    from importlib._bootstrap_external import _NamespaceLoader as NamespaceLoader
 from importlib.util import _find_spec_from_path  # type: ignore[attr-defined]
 
 from astroid.const import IS_PYPY
@@ -99,6 +104,9 @@ def is_namespace(modname: str) -> bool:
 
     return (
         found_spec is not None
-        and found_spec.submodule_search_locations
+        and found_spec.submodule_search_locations is not None
         and found_spec.origin is None
+        and (
+            found_spec.loader is None or isinstance(found_spec.loader, NamespaceLoader)
+        )
     )
