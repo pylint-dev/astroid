@@ -23,7 +23,6 @@ from astroid.exceptions import (
     AttributeInferenceError,
 )
 from astroid.interpreter._import import util
-from astroid.interpreter._import.spec import clear_spec_cache
 from astroid.modutils import EXT_LIB_DIRS, module_in_path
 from astroid.nodes import Const
 from astroid.nodes.scoped_nodes import ClassDef, Module
@@ -37,13 +36,11 @@ def _get_file_from_object(obj) -> str:
     return obj.__file__
 
 
-class AstroidManagerTest(
-    resources.SysPathSetup, resources.AstroidCacheSetupMixin, unittest.TestCase
-):
+class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
-        clear_spec_cache()
         self.manager = test_utils.brainless_manager()
+        self.manager.clear_cache()
 
     def test_ast_from_file(self) -> None:
         filepath = unittest.__file__
@@ -393,9 +390,10 @@ class AstroidManagerTest(
         self.manager.ast_from_module_name("math")
 
 
-class IsolatedAstroidManagerTest(resources.AstroidCacheSetupMixin, unittest.TestCase):
+class IsolatedAstroidManagerTest(unittest.TestCase):
     def test_no_user_warning(self):
         mgr = manager.AstroidManager()
+        self.addCleanup(mgr.clear_cache)
         with warnings.catch_warnings():
             warnings.filterwarnings("error", category=UserWarning)
             mgr.ast_from_module_name("setuptools")
