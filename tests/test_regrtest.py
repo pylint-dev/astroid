@@ -26,10 +26,11 @@ else:
     HAS_NUMPY = True
 
 
-class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
+class NonRegressionTests(unittest.TestCase):
     def setUp(self) -> None:
         sys.path.insert(0, resources.find("data"))
         MANAGER.always_load_extensions = True
+        self.addCleanup(MANAGER.clear_cache)
 
     def tearDown(self) -> None:
         MANAGER.always_load_extensions = False

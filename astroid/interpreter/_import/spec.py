@@ -474,7 +474,3 @@ def _find_spec(modpath: tuple, path: tuple) -> ModuleSpec:
             spec = spec._replace(submodule_search_locations=submodule_path)
 
     return spec
-
-
-def clear_spec_cache() -> None:
-    _find_spec.cache_clear()

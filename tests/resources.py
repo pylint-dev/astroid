@@ -9,7 +9,6 @@ import sys
 from pathlib import Path
 
 from astroid import builder
-from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import Module
 
 DATA_DIR = Path("testdata") / "python3"
@@ -34,28 +33,3 @@ class SysPathSetup:
         for key in list(sys.path_importer_cache):
             if key.startswith(datadir):
                 del sys.path_importer_cache[key]
-
-
-class AstroidCacheSetupMixin:
-    """Mixin for handling test isolation issues with the astroid cache.
-
-    When clearing the astroid cache, some tests fail due to
-    cache inconsistencies, where some objects had a different
-    builtins object referenced.
-    This saves the builtins module and TransformVisitor and
-    replaces them after the tests finish.
-    The builtins module is special, since some of the
-    transforms for a couple of its objects (str, bytes etc)
-    are executed only once, so astroid_bootstrapping will be
-    useless for retrieving the original builtins module.
-    """
-
-    @classmethod
-    def setup_class(cls):
-        cls._builtins = AstroidManager().astroid_cache.get("builtins")
-        cls._transforms = AstroidManager.brain["_transform"]
-
-    @classmethod
-    def teardown_class(cls):
-        AstroidManager().astroid_cache["builtins"] = cls._builtins
-        AstroidManager.brain["_transform"] = cls._transforms
