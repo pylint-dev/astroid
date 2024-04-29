@@ -125,7 +125,7 @@ jobs:
           . venv/bin/activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4.3.1
+        uses: actions/upload-artifact@v4.3.3
         with:
           name: coverage-linux-${{ matrix.python-version }}
           path: .coverage
@@ -179,7 +179,7 @@ jobs:
           . venv\\Scripts\\activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4.3.1
+        uses: actions/upload-artifact@v4.3.3
         with:
           name: coverage-windows-${{ matrix.python-version }}
           path: .coverage
@@ -229,7 +229,7 @@ jobs:
           . venv/bin/activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4.3.1
+        uses: actions/upload-artifact@v4.3.3
         with:
           name: coverage-pypy-${{ matrix.python-version }}
           path: .coverage
@@ -251,12 +251,12 @@ jobs:
       - name: Install dependencies
         run: pip install -U -r requirements_minimal.txt
       - name: Download all coverage artifacts
-        uses: actions/download-artifact@v4.1.4
+        uses: actions/download-artifact@v4.1.7
       - name: Combine Linux coverage results
         run: |
           coverage combine coverage-linux*/.coverage
           coverage xml -o coverage-linux.xml
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
@@ -267,7 +267,7 @@ jobs:
         run: |
           coverage combine coverage-windows*/.coverage
           coverage xml -o coverage-windows.xml
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
@@ -278,7 +278,7 @@ jobs:
         run: |
           coverage combine coverage-pypy*/.coverage
           coverage xml -o coverage-pypy.xml
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
