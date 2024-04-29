@@ -21,7 +21,7 @@ Release date: TBA
 
 * Make ``astroid.interpreter._import.util.is_namespace`` only consider modules
   using a loader set to ``NamespaceLoader`` or ``None`` as namespaces.
-  This fixes a problems that ``six.moves`` brain was not effective if ``six.moves``
+  This fixes a problem that ``six.moves`` brain was not effective if ``six.moves``
   was already imported.
 
   Closes #1107
