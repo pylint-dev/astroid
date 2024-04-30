@@ -29,6 +29,8 @@ class SixBrainTest(unittest.TestCase):
         six.moves.urllib_parse #@
         six.moves.urllib_error #@
         six.moves.urllib.request #@
+        from six.moves import StringIO
+        StringIO #@
         """
         )
         assert isinstance(ast_nodes, list)
@@ -63,6 +65,18 @@ class SixBrainTest(unittest.TestCase):
         self.assertEqual(urlopen.qname(), "urllib.request.urlopen")
         self.assertIsInstance(urlretrieve, nodes.FunctionDef)
         self.assertEqual(urlretrieve.qname(), "urllib.request.urlretrieve")
+
+        StringIO = next(ast_nodes[4].infer())
+        self.assertIsInstance(StringIO, nodes.ClassDef)
+        self.assertEqual(StringIO.qname(), "_io.StringIO")
+        self.assertTrue(StringIO.callable())
+
+    def test_attribute_access_with_six_moves_imported(self) -> None:
+        astroid.MANAGER.clear_cache()
+        astroid.MANAGER._mod_file_cache.clear()
+        import six.moves  # type: ignore[import]  # pylint: disable=import-outside-toplevel,unused-import,redefined-outer-name
+
+        self.test_attribute_access()
 
     def test_from_imports(self) -> None:
         ast_node = builder.extract_node(
