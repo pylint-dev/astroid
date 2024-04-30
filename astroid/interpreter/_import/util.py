@@ -8,14 +8,14 @@ import pathlib
 import sys
 from functools import lru_cache
 from importlib._bootstrap_external import _NamespacePath
+from importlib.util import _find_spec_from_path  # type: ignore[attr-defined]
+
+from astroid.const import IS_PYPY
 
 if sys.version_info >= (3, 11):
     from importlib.machinery import NamespaceLoader
 else:
     from importlib._bootstrap_external import _NamespaceLoader as NamespaceLoader
-from importlib.util import _find_spec_from_path  # type: ignore[attr-defined]
-
-from astroid.const import IS_PYPY
 
 
 @lru_cache(maxsize=4096)
