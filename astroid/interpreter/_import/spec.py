@@ -15,7 +15,7 @@ import sys
 import types
 import warnings
 import zipimport
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal, NamedTuple, Protocol
@@ -424,7 +424,7 @@ def _find_spec_with_path(
     raise ImportError(f"No module named {'.'.join(module_parts)}")
 
 
-def find_spec(modpath: list[str], path: Sequence[str] | None = None) -> ModuleSpec:
+def find_spec(modpath: Iterable[str], path: Iterable[str] | None = None) -> ModuleSpec:
     """Find a spec for the given module.
 
     :type modpath: list or tuple
@@ -445,11 +445,11 @@ def find_spec(modpath: list[str], path: Sequence[str] | None = None) -> ModuleSp
 
 
 @lru_cache(maxsize=1024)
-def _find_spec(modpath: tuple, path: tuple) -> ModuleSpec:
+def _find_spec(module_path: tuple, path: tuple) -> ModuleSpec:
     _path = path or sys.path
 
     # Need a copy for not mutating the argument.
-    modpath = list(modpath)
+    modpath = list(module_path)
 
     submodule_path = None
     module_parts = modpath[:]
