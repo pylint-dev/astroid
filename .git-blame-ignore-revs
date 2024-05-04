@@ -2,3 +2,5 @@
 add5f7b8eba427de9d39caae864bbc6dc37ef980
 # Apply black on doc/conf.py
 2dd9027054db541871713ef1cb1ae89513d05555
+# Black's 2024 style
+396f01a15d1cb0351b33654acdeedde64f537a0c
