@@ -44,10 +44,10 @@ logger = logging.getLogger(__name__)
 
 
 if sys.platform.startswith("win"):
-    PY_SOURCE_EXTS = ("py", "pyw", "pyi")
+    PY_SOURCE_EXTS = ("pyi", "pyw", "py")
     PY_COMPILED_EXTS = ("dll", "pyd")
 else:
-    PY_SOURCE_EXTS = ("py", "pyi")
+    PY_SOURCE_EXTS = ("pyi", "py")
     PY_COMPILED_EXTS = ("so",)
 
 
@@ -499,7 +499,7 @@ def get_source_file(filename: str, include_no_ext: bool = False) -> str:
     base, orig_ext = os.path.splitext(filename)
     if orig_ext == ".pyi" and os.path.exists(f"{base}{orig_ext}"):
         return f"{base}{orig_ext}"
-    for ext in PY_SOURCE_EXTS:
+    for ext in PY_SOURCE_EXTS if "numpy" not in filename else reversed(PY_SOURCE_EXTS):
         source_path = f"{base}.{ext}"
         if os.path.exists(source_path):
             return source_path
@@ -671,7 +671,8 @@ def _has_init(directory: str) -> str | None:
     else return None.
     """
     mod_or_pack = os.path.join(directory, "__init__")
-    for ext in (*PY_SOURCE_EXTS, "pyc", "pyo"):
+    exts = reversed(PY_SOURCE_EXTS) if "numpy" in directory else PY_SOURCE_EXTS
+    for ext in (*exts, "pyc", "pyo"):
         if os.path.exists(mod_or_pack + "." + ext):
             return mod_or_pack + "." + ext
     return None

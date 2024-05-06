@@ -7,6 +7,10 @@ What's New in astroid 3.2.0?
 ============================
 Release date: TBA
 
+* ``.pyi`` stub files are now preferred over ``.py`` files when resolving imports, (except for numpy).
+
+  Closes pylint-dev/#9185
+
 * ``igetattr()`` returns the last same-named function in a class (instead of
   the first). This avoids false positives in pylint with ``@overload``.
 
