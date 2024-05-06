@@ -162,7 +162,7 @@ class ImportlibFinder(Finder):
 
         # We're looping on pyi first because if a pyi exists there's probably a reason
         # (i.e. the code is hard or impossible to parse), so we take pyi into account
-        # But we're not quite ready to do this for numpy
+        # But we're not quite ready to do this for numpy, see https://github.com/pylint-dev/astroid/pull/2375
         suffixes = (".pyi", ".py", importlib.machinery.BYTECODE_SUFFIXES[0])
         numpy_suffixes = (".py", ".pyi", importlib.machinery.BYTECODE_SUFFIXES[0])
         for entry in submodule_path:
