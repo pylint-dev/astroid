@@ -204,3 +204,5 @@ under this name, or we did not manage to find their commits in the history.
 - carl
 - alain lefroy
 - Mark Gius
+- Jérome Perrin <perrinjerome@gmail.com>
+- Jamie Scott <jamie@jami.org.uk>
