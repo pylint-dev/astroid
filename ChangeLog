@@ -3,9 +3,21 @@ astroid's ChangeLog
 ===================
 
 
-What's New in astroid 3.2.0?
+What's New in astroid 3.3.0?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 3.2.1?
+============================
+Release date: TBA
+
+
+
+What's New in astroid 3.2.0?
+============================
+Release date: 2024-05-07
 
 * ``.pyi`` stub files are now preferred over ``.py`` files when resolving imports, (except for numpy).
 
@@ -29,12 +41,6 @@ Release date: TBA
   was already imported.
 
   Closes #1107
-
-
-What's New in astroid 3.1.1?
-============================
-Release date: TBA
-
 
 
 What's New in astroid 3.1.0?
