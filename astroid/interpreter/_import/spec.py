@@ -341,7 +341,7 @@ def _is_setuptools_namespace(location: pathlib.Path) -> bool:
 
 def _get_zipimporters() -> Iterator[tuple[str, zipimport.zipimporter]]:
     for filepath, importer in sys.path_importer_cache.items():
-        if isinstance(importer, zipimport.zipimporter):
+        if importer is not None and isinstance(importer, zipimport.zipimporter):
             yield filepath, importer
 
 
