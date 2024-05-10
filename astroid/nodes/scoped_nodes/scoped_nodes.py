@@ -1949,7 +1949,10 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         """
         locals_ = (("__module__", self.special_attributes.attr___module__),)
         # __qualname__ is defined in PEP3155
-        locals_ += (("__qualname__", self.special_attributes.attr___qualname__),)
+        locals_ += (
+            ("__qualname__", self.special_attributes.attr___qualname__),
+            ("__annotations__", self.special_attributes.attr___annotations__),
+        )
         return locals_
 
     # pylint: disable=redefined-outer-name
