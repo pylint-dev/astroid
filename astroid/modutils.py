@@ -666,6 +666,7 @@ def _is_python_file(filename: str) -> bool:
     return filename.endswith((".py", ".pyi", ".so", ".pyd", ".pyw"))
 
 
+@lru_cache(maxsize=1024)
 def _has_init(directory: str) -> str | None:
     """If the given directory has a valid __init__ file, return its path,
     else return None.

@@ -23,6 +23,7 @@ from astroid.interpreter._import import spec, util
 from astroid.modutils import (
     NoSourceFile,
     _cache_normalize_path_,
+    _has_init,
     file_info_from_modpath,
     get_source_file,
     is_module_name_part_of_extension_package_whitelist,
@@ -457,6 +458,7 @@ class AstroidManager:
         for lru_cache in (
             LookupMixIn.lookup,
             _cache_normalize_path_,
+            _has_init,
             util.is_namespace,
             ObjectModel.attributes,
             ClassDef._metaclass_lookup_attribute,
