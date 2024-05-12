@@ -627,6 +627,18 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(inferred, nodes.ClassDef)
         assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
 
+    @test_utils.require_version(minver="3.12")
+    def test_typing_generic_subscriptable_pep695(self):
+        """Test class using type parameters is subscriptable with __class_getitem__ (added in PY312)"""
+        node = builder.extract_node(
+            """
+        class Foo[T]: ...
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+        assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
+
     @test_utils.require_version(minver="3.9")
     def test_typing_annotated_subscriptable(self):
         """Test typing.Annotated is subscriptable with __class_getitem__"""
