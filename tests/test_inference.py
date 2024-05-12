@@ -4101,8 +4101,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        inferred_call = next(inferred.infer_call_result(node))
-        assert inferred_call.name == "A"
+        fully_evaluated_inference_results = list(inferred.infer_call_result(node))
+        assert fully_evaluated_inference_results[0].name == "A"
 
     def test_infer_call_result_with_metaclass(self) -> None:
         node = extract_node("def with_metaclass(meta, *bases): return 42")
