@@ -4095,9 +4095,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             """
         class A:
             __call__ = A()
-        class B:
-            __call__ = A().__call__
-        B() #@
+        A() #@
         """
         )
         inferred = next(node.infer())
