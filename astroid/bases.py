@@ -326,6 +326,11 @@ class BaseInstance(Proxy):
         for node in self._proxied.igetattr("__call__", context):
             if isinstance(node, UninferableBase) or not node.callable():
                 continue
+            if isinstance(node, BaseInstance) and node._proxied is self._proxied:
+                inferred = True
+                yield node
+                # Prevent recursion.
+                continue
             for res in node.infer_call_result(caller, context):
                 inferred = True
                 yield res
