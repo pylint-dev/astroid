@@ -4090,6 +4090,18 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(node.infer())
             self.assertRaises(InferenceError, next, inferred.infer_call_result(node))
 
+    def test_infer_call_result_same_proxied_class(self) -> None:
+        node = extract_node(
+            """
+        class A:
+            __call__ = A()
+        A() #@
+        """
+        )
+        inferred = next(node.infer())
+        fully_evaluated_inference_results = list(inferred.infer_call_result(node))
+        assert fully_evaluated_inference_results[0].name == "A"
+
     def test_infer_call_result_with_metaclass(self) -> None:
         node = extract_node("def with_metaclass(meta, *bases): return 42")
         inferred = next(node.infer_call_result(caller=node))
