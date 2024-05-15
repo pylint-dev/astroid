@@ -17,6 +17,11 @@ Release date: TBA
 
   Closes pylint-dev/pylint#9139
 
+* Add ``AstroidManager.prefer_stubs`` attribute to control the astroid 3.2.0 feature that prefers stubs.
+
+  Refs pylint-dev/#9626
+  Refs pylint-dev/#9623
+
 
 What's New in astroid 3.2.0?
 ============================
