@@ -61,6 +61,7 @@ class AstroidManager:
         "extension_package_whitelist": set(),
         "module_denylist": set(),
         "_transform": TransformVisitor(),
+        "prefer_stubs": False,
     }
 
     def __init__(self) -> None:
@@ -73,6 +74,7 @@ class AstroidManager:
         ]
         self.module_denylist = AstroidManager.brain["module_denylist"]
         self._transform = AstroidManager.brain["_transform"]
+        self.prefer_stubs = AstroidManager.brain["prefer_stubs"]
 
     @property
     def always_load_extensions(self) -> bool:
@@ -111,6 +113,14 @@ class AstroidManager:
     def builtins_module(self) -> nodes.Module:
         return self.astroid_cache["builtins"]
 
+    @property
+    def prefer_stubs(self) -> bool:
+        return AstroidManager.brain["prefer_stubs"]
+
+    @prefer_stubs.setter
+    def prefer_stubs(self, value: bool) -> None:
+        AstroidManager.brain["prefer_stubs"] = value
+
     def visit_transforms(self, node: nodes.NodeNG) -> InferenceResult:
         """Visit the transforms and apply them to the given *node*."""
         return self._transform.visit(node)
@@ -136,7 +146,9 @@ class AstroidManager:
         # Call get_source_file() only after a cache miss,
         # since it calls os.path.exists().
         try:
-            filepath = get_source_file(filepath, include_no_ext=True)
+            filepath = get_source_file(
+                filepath, include_no_ext=True, prefer_stubs=self.prefer_stubs
+            )
             source = True
         except NoSourceFile:
             pass
