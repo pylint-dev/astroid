@@ -300,7 +300,8 @@ class GetSourceFileTest(unittest.TestCase):
         package = resources.find("pyi_data/find_test")
         module = os.path.join(package, "__init__.py")
         self.assertEqual(
-            modutils.get_source_file(module), os.path.normpath(module) + "i"
+            modutils.get_source_file(module, prefer_stubs=True),
+            os.path.normpath(module) + "i",
         )
 
 
