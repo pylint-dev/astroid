@@ -633,11 +633,17 @@ class TypingBrain(unittest.TestCase):
         node = builder.extract_node(
             """
         class Foo[T]: ...
+        class Bar[T](Foo[T]): ...
         """
         )
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.ClassDef)
+        assert inferred.name == "Bar"
         assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
+        ancestors = list(inferred.ancestors())
+        assert len(ancestors) == 2
+        assert ancestors[0].name == "Foo"
+        assert ancestors[1].name == "object"
 
     @test_utils.require_version(minver="3.9")
     def test_typing_annotated_subscriptable(self):

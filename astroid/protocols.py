@@ -924,8 +924,7 @@ def generic_type_assigned_stmts(
     context: InferenceContext | None = None,
     assign_path: None = None,
 ) -> Generator[nodes.NodeNG, None, None]:
-    """Return empty generator (return -> raises StopIteration) so inferred value
-    is Uninferable.
+    """Hack. Return any Node so inference doesn't fail
+    when evaluating __class_getitem__. Replace with 'return' if it causes issues.
     """
-    return
-    yield
+    yield nodes.Const(None)
