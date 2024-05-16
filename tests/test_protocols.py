@@ -425,7 +425,10 @@ class TestGenericTypeSyntax:
         assign_stmts = extract_node("type Point[T] = tuple[float, float]")
         type_var: nodes.TypeVar = assign_stmts.type_params[0]
         assigned = next(type_var.name.assigned_stmts())
-        assert assigned is Uninferable
+        # Hack so inference doesn't fail when evaluating __class_getitem__
+        # Revert if it's causing issues.
+        assert isinstance(assigned, nodes.Const)
+        assert assigned.value is None
 
     @staticmethod
     def test_assigned_stmts_type_var_tuple():
@@ -433,7 +436,10 @@ class TestGenericTypeSyntax:
         assign_stmts = extract_node("type Alias[*Ts] = tuple[*Ts]")
         type_var_tuple: nodes.TypeVarTuple = assign_stmts.type_params[0]
         assigned = next(type_var_tuple.name.assigned_stmts())
-        assert assigned is Uninferable
+        # Hack so inference doesn't fail when evaluating __class_getitem__
+        # Revert if it's causing issues.
+        assert isinstance(assigned, nodes.Const)
+        assert assigned.value is None
 
     @staticmethod
     def test_assigned_stmts_param_spec():
@@ -441,4 +447,7 @@ class TestGenericTypeSyntax:
         assign_stmts = extract_node("type Alias[**P] = Callable[P, int]")
         param_spec: nodes.ParamSpec = assign_stmts.type_params[0]
         assigned = next(param_spec.name.assigned_stmts())
-        assert assigned is Uninferable
+        # Hack so inference doesn't fail when evaluating __class_getitem__
+        # Revert if it's causing issues.
+        assert isinstance(assigned, nodes.Const)
+        assert assigned.value is None

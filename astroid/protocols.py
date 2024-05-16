@@ -925,6 +925,6 @@ def generic_type_assigned_stmts(
     assign_path: None = None,
 ) -> Generator[nodes.NodeNG, None, None]:
     """Hack. Return any Node so inference doesn't fail
-    when evaluating __class_getitem__. Replace with 'return' if it causes issues.
+    when evaluating __class_getitem__. Revert if it's causing issues.
     """
     yield nodes.Const(None)
