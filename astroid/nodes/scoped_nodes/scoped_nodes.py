@@ -2171,7 +2171,10 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
             and name in AstroidManager().builtins_module
         )
         if (
-            any(node == base or base.parent_of(node) for base in self.bases)
+            any(
+                node == base or base.parent_of(node) and not self.type_params
+                for base in self.bases
+            )
             or lookup_upper_frame
         ):
             # Handle the case where we have either a name
