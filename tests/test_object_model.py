@@ -8,7 +8,7 @@ import xml
 import pytest
 
 import astroid
-from astroid import bases, builder, nodes, objects, test_utils, util
+from astroid import bases, builder, nodes, objects, util
 from astroid.const import PY311_PLUS
 from astroid.exceptions import InferenceError
 
@@ -362,7 +362,6 @@ class FunctionModelTest(unittest.TestCase):
         self.assertEqual(len(args), 2)
         self.assertEqual([arg.name for arg in args], ["self", "type"])
 
-    @test_utils.require_version(minver="3.8")
     def test__get__and_positional_only_args(self):
         node = builder.extract_node(
             """
@@ -573,7 +572,6 @@ class FunctionModelTest(unittest.TestCase):
         self.assertIsInstance(kwdefaults, astroid.Dict)
         # self.assertEqual(kwdefaults.getitem('f').value, 'lala')
 
-    @test_utils.require_version(minver="3.8")
     def test_annotation_positional_only(self):
         ast_node = builder.extract_node(
             """

@@ -32,7 +32,7 @@ from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod, UnionType
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
-from astroid.const import IS_PYPY, PY39_PLUS, PY310_PLUS, PY312_PLUS
+from astroid.const import IS_PYPY, PY310_PLUS, PY312_PLUS
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -2732,11 +2732,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             msg.format(op="+=", lhs="int", rhs="list"),
         ]
 
-        # PEP-584 supports | for dictionary union
-        if not PY39_PLUS:
-            ast_nodes.append(extract_node("{} | {} #@"))
-            expected.append(msg.format(op="|", lhs="dict", rhs="dict"))
-
         for node, expected_value in zip(ast_nodes, expected):
             errors = node.type_errors()
             self.assertEqual(len(errors), 1)
@@ -4489,7 +4484,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(node.infer())
         assert inferred is util.Uninferable
 
-    @test_utils.require_version(minver="3.9")
     def test_infer_arg_called_type_when_used_as_index_is_uninferable(self):
         # https://github.com/pylint-dev/astroid/pull/958
         node = extract_node(
@@ -4504,7 +4498,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         assert not isinstance(inferred, nodes.ClassDef)  # was inferred as builtins.type
         assert inferred is util.Uninferable
 
-    @test_utils.require_version(minver="3.9")
     def test_infer_arg_called_type_when_used_as_subscript_is_uninferable(self):
         # https://github.com/pylint-dev/astroid/pull/958
         node = extract_node(
@@ -4517,7 +4510,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         assert not isinstance(inferred, nodes.ClassDef)  # was inferred as builtins.type
         assert inferred is util.Uninferable
 
-    @test_utils.require_version(minver="3.9")
     def test_infer_arg_called_type_defined_in_outer_scope_is_uninferable(self):
         # https://github.com/pylint-dev/astroid/pull/958
         node = extract_node(
@@ -6354,7 +6346,6 @@ def test_assert_last_function_returns_none_on_inference() -> None:
     assert inferred.value is None
 
 
-@test_utils.require_version(minver="3.8")
 def test_posonlyargs_inference() -> None:
     code = """
     class A:
@@ -6742,34 +6733,6 @@ def test_custom_decorators_for_classmethod_and_staticmethods(code, obj, obj_type
     assert inferred.type == obj_type
 
 
-@pytest.mark.skipif(
-    PY39_PLUS,
-    reason="Exact inference with dataclasses (replace function) in python3.9",
-)
-def test_dataclasses_subscript_inference_recursion_error():
-    code = """
-    from dataclasses import dataclass, replace
-
-    @dataclass
-    class ProxyConfig:
-        auth: str = "/auth"
-
-
-    a = ProxyConfig("")
-    test_dict = {"proxy" : {"auth" : "", "bla" : "f"}}
-
-    foo = test_dict['proxy']
-    replace(a, **test_dict['proxy']) # This fails
-    """
-    node = extract_node(code)
-    # Reproduces only with safe_infer()
-    assert util.safe_infer(node) is None
-
-
-@pytest.mark.skipif(
-    not PY39_PLUS,
-    reason="Exact inference with dataclasses (replace function) in python3.9",
-)
 def test_dataclasses_subscript_inference_recursion_error_39():
     code = """
     from dataclasses import dataclass, replace

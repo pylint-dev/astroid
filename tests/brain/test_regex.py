@@ -11,7 +11,7 @@ except ImportError:
 
 import pytest
 
-from astroid import MANAGER, builder, nodes, test_utils
+from astroid import MANAGER, builder, nodes
 
 
 @pytest.mark.skipif(not HAS_REGEX, reason="This test requires the regex library.")
@@ -27,7 +27,6 @@ class TestRegexBrain:
     @pytest.mark.xfail(
         reason="Started failing on main, but no one reproduced locally yet"
     )
-    @test_utils.require_version(minver="3.9")
     def test_regex_pattern_and_match_subscriptable(self):
         """Test regex.Pattern and regex.Match are subscriptable in PY39+."""
         node1 = builder.extract_node(

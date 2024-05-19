@@ -6,7 +6,7 @@
 import functools
 import unittest
 
-from astroid import builder, nodes, test_utils
+from astroid import builder, nodes
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -789,7 +789,6 @@ class LookupControlFlowTest(unittest.TestCase):
         self.assertEqual(len(stmts2), 1)
         self.assertEqual(stmts2[0].lineno, 7)
 
-    @test_utils.require_version(minver="3.8")
     def test_assign_after_posonly_param(self):
         """When an assignment statement overwrites a function positional-only parameter,
         only the assignment is returned, even when the variable and assignment do

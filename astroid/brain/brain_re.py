@@ -7,7 +7,7 @@ from __future__ import annotations
 from astroid import context, inference_tip, nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import _extract_single_node, parse
-from astroid.const import PY39_PLUS, PY311_PLUS
+from astroid.const import PY311_PLUS
 from astroid.manager import AstroidManager
 
 
@@ -84,9 +84,8 @@ def infer_pattern_match(node: nodes.Call, ctx: context.InferenceContext | None =
         end_lineno=node.end_lineno,
         end_col_offset=node.end_col_offset,
     )
-    if PY39_PLUS:
-        func_to_add = _extract_single_node(CLASS_GETITEM_TEMPLATE)
-        class_def.locals["__class_getitem__"] = [func_to_add]
+    func_to_add = _extract_single_node(CLASS_GETITEM_TEMPLATE)
+    class_def.locals["__class_getitem__"] = [func_to_add]
     return iter([class_def])
 
 

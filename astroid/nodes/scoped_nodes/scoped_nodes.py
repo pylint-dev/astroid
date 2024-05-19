@@ -19,7 +19,7 @@ from functools import cached_property, lru_cache
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypeVar
 
 from astroid import bases, protocols, util
-from astroid.const import IS_PYPY, PY38, PY39_PLUS, PYPY_7_3_11_PLUS
+from astroid.const import IS_PYPY
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -2007,7 +2007,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
 
         Can also return 0 if the line can not be determined.
         """
-        if IS_PYPY and PY38 and not PYPY_7_3_11_PLUS:
+        if IS_PYPY:
             # For Python < 3.8 the lineno is the line number of the first decorator.
             # We want the class statement lineno. Similar to 'FunctionDef.fromlineno'
             # PyPy (3.8): Fixed with version v7.3.11
@@ -2635,7 +2635,6 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
             if (
                 isinstance(method, node_classes.EmptyNode)
                 and self.pytype() == "builtins.type"
-                and PY39_PLUS
             ):
                 return self
             raise

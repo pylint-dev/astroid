@@ -4,12 +4,11 @@
 
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
-from astroid.const import PY39_PLUS
 from astroid.manager import AstroidManager
 
 
 def _hashlib_transform():
-    maybe_usedforsecurity = ", usedforsecurity=True" if PY39_PLUS else ""
+    maybe_usedforsecurity = ", usedforsecurity=True"
     init_signature = f"value=''{maybe_usedforsecurity}"
     digest_signature = "self"
     shake_digest_signature = "self, length"

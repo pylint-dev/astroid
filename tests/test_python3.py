@@ -9,7 +9,6 @@ import pytest
 
 from astroid import exceptions, nodes
 from astroid.builder import AstroidBuilder, extract_node
-from astroid.test_utils import require_version
 
 
 class Python3TC(unittest.TestCase):
@@ -351,7 +350,6 @@ class Python3TC(unittest.TestCase):
         for comp in non_async_comprehensions:
             self.assertFalse(comp.generators[0].is_async)
 
-    @require_version("3.7")
     def test_async_comprehensions_outside_coroutine(self):
         # When async and await will become keywords, async comprehensions
         # will be allowed outside of coroutines body

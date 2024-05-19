@@ -30,9 +30,8 @@ import warnings
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import redirect_stderr, redirect_stdout
 from functools import lru_cache
-from pathlib import Path
 
-from astroid.const import IS_JYTHON, IS_PYPY, PY310_PLUS
+from astroid.const import IS_JYTHON, PY310_PLUS
 from astroid.interpreter._import import spec, util
 
 if PY310_PLUS:
@@ -73,20 +72,6 @@ if os.name == "nt":
             STD_LIB_DIRS.add(os.path.join(sys.base_exec_prefix, "dlls"))
         except AttributeError:
             pass
-
-if IS_PYPY and sys.version_info < (3, 8):
-    # PyPy stores the stdlib in two places: sys.prefix/lib_pypy and sys.prefix/lib-python/3
-    # sysconfig.get_path on PyPy returns the first, but without an underscore so we patch this manually.
-    # Beginning with 3.8 the stdlib is only stored in: sys.prefix/pypy{py_version_short}
-    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("stdlib")).parent / "lib_pypy"))
-    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("stdlib")).parent / "lib-python/3"))
-
-    # TODO: This is a fix for a workaround in virtualenv. At some point we should revisit
-    # whether this is still necessary. See https://github.com/pylint-dev/astroid/pull/1324.
-    STD_LIB_DIRS.add(str(Path(sysconfig.get_path("platstdlib")).parent / "lib_pypy"))
-    STD_LIB_DIRS.add(
-        str(Path(sysconfig.get_path("platstdlib")).parent / "lib-python/3")
-    )
 
 if os.name == "posix":
     # Need the real prefix if we're in a virtualenv, otherwise
@@ -190,9 +175,10 @@ def load_module_from_name(dotted_name: str) -> types.ModuleType:
 
     # Capture and log anything emitted during import to avoid
     # contaminating JSON reports in pylint
-    with redirect_stderr(io.StringIO()) as stderr, redirect_stdout(
-        io.StringIO()
-    ) as stdout:
+    with (
+        redirect_stderr(io.StringIO()) as stderr,
+        redirect_stdout(io.StringIO()) as stdout,
+    ):
         module = importlib.import_module(dotted_name)
 
     stderr_value = stderr.getvalue()
