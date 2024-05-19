@@ -7,7 +7,7 @@ What's New in astroid 3.3.0?
 ============================
 Release date: TBA
 
-* Remove support for Python 3.8.
+* Remove support for Python 3.8 (and constants `PY38`, `PY39_PLUS`, and `PYPY_7_3_11_PLUS`).
 
   Refs #2443
 

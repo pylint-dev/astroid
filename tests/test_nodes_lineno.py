@@ -8,40 +8,9 @@ import pytest
 
 import astroid
 from astroid import builder, nodes
-from astroid.const import IS_PYPY, PY310_PLUS, PY312_PLUS
+from astroid.const import PY310_PLUS, PY312_PLUS
 
 
-@pytest.mark.skipif(
-    not IS_PYPY, reason="end_lineno and end_col_offset were added in PY38"
-)
-class TestEndLinenoNotSet:
-    """Test 'end_lineno' and 'end_col_offset' are initialized as 'None' for Python <
-    3.8.
-    """
-
-    @staticmethod
-    def test_end_lineno_not_set() -> None:
-        code = textwrap.dedent(
-            """
-        [1, 2, 3]  #@
-        var  #@
-        """
-        ).strip()
-        ast_nodes = builder.extract_node(code)
-        assert isinstance(ast_nodes, list) and len(ast_nodes) == 2
-
-        n1 = ast_nodes[0]
-        assert isinstance(n1, nodes.List)
-        assert (n1.lineno, n1.col_offset) == (1, 0)
-        assert (n1.end_lineno, n1.end_col_offset) == (None, None)
-
-        n2 = ast_nodes[1]
-        assert isinstance(n2, nodes.Name)
-        assert (n2.lineno, n2.col_offset) == (2, 0)
-        assert (n2.end_lineno, n2.end_col_offset) == (None, None)
-
-
-@pytest.mark.skipif(IS_PYPY, reason="end_lineno and end_col_offset were added in PY38")
 class TestLinenoColOffset:
     """Test 'lineno', 'col_offset', 'end_lineno', and 'end_col_offset' for all
     nodes.

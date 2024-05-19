@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Final, TypeVar, Union, cast, overload
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import IS_PYPY, PY312_PLUS, Context
+from astroid.const import PY312_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 from astroid.nodes.node_classes import AssignName
@@ -153,25 +153,6 @@ class TreeRebuilder:
             end_col_offset=t.end[1],
         )
 
-    def _reset_end_lineno(self, newnode: nodes.NodeNG) -> None:
-        """Reset end_lineno and end_col_offset attributes for PyPy 3.8.
-
-        For some nodes, these are either set to -1 or only partially assigned.
-        To keep consistency across astroid and pylint, reset all.
-
-        This has been fixed in PyPy 3.9.
-        For reference, an (incomplete) list of nodes with issues:
-            - ClassDef          - For
-            - FunctionDef       - While
-            - Call              - If
-            - Decorators        - Try
-            - With              - Assign
-        """
-        newnode.end_lineno = None
-        newnode.end_col_offset = None
-        for child_node in newnode.get_children():
-            self._reset_end_lineno(child_node)
-
     def visit_module(
         self, node: ast.Module, modname: str, modpath: str, package: bool
     ) -> nodes.Module:
@@ -190,8 +171,6 @@ class TreeRebuilder:
             [self.visit(child, newnode) for child in node.body],
             doc_node=self.visit(doc_ast_node, newnode),
         )
-        if IS_PYPY:
-            self._reset_end_lineno(newnode)
         return newnode
 
     if TYPE_CHECKING:  # noqa: C901
@@ -527,13 +506,6 @@ class TreeRebuilder:
         if node.kwarg:
             kwarg = node.kwarg.arg
             kwargannotation = self.visit(node.kwarg.annotation, newnode)
-
-        # In Python 3.8 'end_lineno' and 'end_col_offset'
-        # for 'kwonlyargs' don't include the annotation.
-        for arg in node.kwonlyargs:
-            if arg.annotation is not None:
-                arg.end_lineno = arg.annotation.end_lineno
-                arg.end_col_offset = arg.annotation.end_col_offset
 
         kwonlyargs = [self.visit(child, newnode) for child in node.kwonlyargs]
         kw_defaults = [self.visit(child, newnode) for child in node.kw_defaults]

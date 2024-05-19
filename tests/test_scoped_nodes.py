@@ -29,7 +29,7 @@ from astroid import (
     util,
 )
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import IS_PYPY, WIN32
+from astroid.const import WIN32
 from astroid.exceptions import (
     AstroidBuildingError,
     AttributeInferenceError,
@@ -1348,10 +1348,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         astroid = builder.parse(data)
         self.assertEqual(astroid["g1"].fromlineno, 4)
         self.assertEqual(astroid["g1"].tolineno, 5)
-        if IS_PYPY:
-            self.assertEqual(astroid["g2"].fromlineno, 9)
-        else:
-            self.assertEqual(astroid["g2"].fromlineno, 10)
+        self.assertEqual(astroid["g2"].fromlineno, 10)
         self.assertEqual(astroid["g2"].tolineno, 11)
 
     def test_metaclass_error(self) -> None:
