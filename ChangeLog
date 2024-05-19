@@ -22,6 +22,10 @@ Release date: TBA
   Refs pylint-dev/#9626
   Refs pylint-dev/#9623
 
+* Improve inference for generic classes using the PEP 695 syntax (Python 3.12).
+
+  Closes pylint-dev/#9406
+
 
 What's New in astroid 3.2.1?
 ============================
