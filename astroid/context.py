@@ -9,7 +9,7 @@ from __future__ import annotations
 import contextlib
 import pprint
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
 

@@ -7,7 +7,7 @@ from __future__ import annotations
 import warnings
 from collections import defaultdict
 from collections.abc import Callable
-from typing import TYPE_CHECKING, List, Optional, Tuple, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Optional, TypeVar, Union, cast, overload
 
 from astroid.context import _invalidate_cache
 from astroid.typing import SuccessfulInferenceResult, TransformFn

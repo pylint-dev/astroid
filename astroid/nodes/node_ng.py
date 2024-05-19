@@ -15,8 +15,6 @@ from typing import (
     Any,
     ClassVar,
     Literal,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     cast,
