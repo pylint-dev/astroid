@@ -196,6 +196,20 @@ def infer_typing_attr(
     return node.infer(context=ctx)
 
 
+def _looks_like_generic_class_pep695(node: ClassDef) -> bool:
+    """Check if class is using type parameter. Python 3.12+."""
+    return len(node.type_params) > 0
+
+
+def infer_typing_generic_class_pep695(
+    node: ClassDef, ctx: context.InferenceContext | None = None
+) -> Iterator[ClassDef]:
+    """Add __class_getitem__ for generic classes. Python 3.12+."""
+    func_to_add = _extract_single_node(CLASS_GETITEM_TEMPLATE)
+    node.locals["__class_getitem__"] = [func_to_add]
+    return iter([node])
+
+
 def _looks_like_typedDict(  # pylint: disable=invalid-name
     node: FunctionDef | ClassDef,
 ) -> bool:
@@ -490,3 +504,8 @@ def register(manager: AstroidManager) -> None:
 
     if PY312_PLUS:
         register_module_extender(manager, "typing", _typing_transform)
+        manager.register_transform(
+            ClassDef,
+            inference_tip(infer_typing_generic_class_pep695),
+            _looks_like_generic_class_pep695,
+        )

@@ -14,6 +14,10 @@ What's New in astroid 3.2.2?
 Release date: TBA
 
 
+* Improve inference for generic classes using the PEP 695 syntax (Python 3.12).
+
+  Closes pylint-dev/#9406
+
 
 What's New in astroid 3.2.1?
 ============================
