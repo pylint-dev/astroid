@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -14,7 +15,6 @@ from typing import (
     TypeVar,
     Union,
 )
-from collections.abc import Generator
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

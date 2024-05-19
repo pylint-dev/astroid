@@ -8,9 +8,8 @@ from __future__ import annotations
 
 import contextlib
 import pprint
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Dict, Optional, Tuple
-from collections.abc import Sequence
 
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
