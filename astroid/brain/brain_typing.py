@@ -205,17 +205,9 @@ def infer_typing_generic_class_pep695(
     node: ClassDef, ctx: context.InferenceContext | None = None
 ) -> Iterator[ClassDef]:
     """Add __class_getitem__ for generic classes. Python 3.12+."""
-    try:
-        value = next(node.infer())
-    except (InferenceError, StopIteration) as exc:
-        raise UseInferenceDefault from exc
-
-    if not (isinstance(value, ClassDef) and value.type_params):
-        raise UseInferenceDefault
-
     func_to_add = _extract_single_node(CLASS_GETITEM_TEMPLATE)
-    value.locals["__class_getitem__"] = [func_to_add]
-    return iter([value])
+    node.locals["__class_getitem__"] = [func_to_add]
+    return iter([node])
 
 
 def _looks_like_typedDict(  # pylint: disable=invalid-name
