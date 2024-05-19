@@ -557,9 +557,10 @@ class InspectBuilder:
             # check if it sounds valid and then add an import node, else use a
             # dummy node
             try:
-                with redirect_stderr(io.StringIO()) as stderr, redirect_stdout(
-                    io.StringIO()
-                ) as stdout:
+                with (
+                    redirect_stderr(io.StringIO()) as stderr,
+                    redirect_stdout(io.StringIO()) as stdout,
+                ):
                     getattr(sys.modules[modname], name)
                     stderr_value = stderr.getvalue()
                     if stderr_value:

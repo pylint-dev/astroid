@@ -21,12 +21,12 @@ if TYPE_CHECKING:
     _Predicate = Optional[Callable[[_SuccessfulInferenceResultT], bool]]
 
 _Vistables = Union[
-    "nodes.NodeNG", List["nodes.NodeNG"], Tuple["nodes.NodeNG", ...], str, None
+    "nodes.NodeNG", list["nodes.NodeNG"], tuple["nodes.NodeNG", ...], str, None
 ]
 _VisitReturns = Union[
     SuccessfulInferenceResult,
-    List[SuccessfulInferenceResult],
-    Tuple[SuccessfulInferenceResult, ...],
+    list[SuccessfulInferenceResult],
+    tuple[SuccessfulInferenceResult, ...],
     str,
     None,
 ]

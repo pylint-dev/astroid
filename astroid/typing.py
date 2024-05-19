@@ -8,13 +8,13 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Generator,
     Generic,
     Protocol,
     TypedDict,
     TypeVar,
     Union,
 )
+from collections.abc import Generator
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

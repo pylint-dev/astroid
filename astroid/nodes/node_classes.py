@@ -77,7 +77,7 @@ AssignedStmtsCall = Callable[
         _NodesT,
         AssignedStmtsPossibleNode,
         Optional[InferenceContext],
-        Optional[typing.List[int]],
+        Optional[list[int]],
     ],
     Any,
 ]
