@@ -9,22 +9,19 @@ Release date: TBA
 
 
 
-What's New in astroid 3.2.2?
+What's New in astroid 3.2.3?
 ============================
 Release date: TBA
 
-* Fix ``RecursionError`` in ``infer_call_result()`` for certain ``__call__`` methods.
 
-  Closes pylint-dev/pylint#9139
 
-* Add ``AstroidManager.prefer_stubs`` attribute to control the astroid 3.2.0 feature that prefers stubs.
-
-  Refs pylint-dev/#9626
-  Refs pylint-dev/#9623
+What's New in astroid 3.2.2?
+============================
+Release date: 2024-05-20
 
 * Improve inference for generic classes using the PEP 695 syntax (Python 3.12).
 
-  Closes pylint-dev/#9406
+  Closes pylint-dev/pylint#9406
 
 
 What's New in astroid 3.2.1?
