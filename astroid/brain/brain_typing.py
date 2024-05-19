@@ -202,14 +202,6 @@ def _looks_like_typedDict(  # pylint: disable=invalid-name
     return node.qname() in TYPING_TYPEDDICT_QUALIFIED
 
 
-def infer_old_typedDict(  # pylint: disable=invalid-name
-    node: ClassDef, ctx: context.InferenceContext | None = None
-) -> Iterator[ClassDef]:
-    func_to_add = _extract_single_node("dict")
-    node.locals["__call__"] = [func_to_add]
-    return iter([node])
-
-
 def infer_typedDict(  # pylint: disable=invalid-name
     node: FunctionDef, ctx: context.InferenceContext | None = None
 ) -> Iterator[ClassDef]:

@@ -165,7 +165,6 @@ class TestLinenoColOffset:
         assert (c1.args[0].end_lineno, c1.args[0].end_col_offset) == (1, 9)
 
         # fmt: off
-        # 'lineno' and 'col_offset' information only added in Python 3.9
         assert (c1.keywords[0].lineno, c1.keywords[0].col_offset) == (1, 11)
         assert (c1.keywords[0].end_lineno, c1.keywords[0].end_col_offset) == (1, 21)
         assert (c1.keywords[0].value.lineno, c1.keywords[0].value.col_offset) == (1, 16)
@@ -803,7 +802,6 @@ class TestLinenoColOffset:
         assert isinstance(s3.slice, nodes.Tuple)
         assert (s3.lineno, s3.col_offset) == (3, 0)
         assert (s3.end_lineno, s3.end_col_offset) == (3, 11)
-        # 'lineno' and 'col_offset' information only added in Python 3.9
         assert (s3.slice.lineno, s3.slice.col_offset) == (3, 4)
         assert (s3.slice.end_lineno, s3.slice.end_col_offset) == (3, 10)
 
@@ -1191,7 +1189,6 @@ class TestLinenoColOffset:
         assert (c1.decorators.end_lineno, c1.decorators.end_col_offset) == (2, 11)
         assert (c1.bases[0].lineno, c1.bases[0].col_offset) == (3, 8)
         assert (c1.bases[0].end_lineno, c1.bases[0].end_col_offset) == (3, 14)
-        # 'lineno' and 'col_offset' information only added in Python 3.9
         assert (c1.keywords[0].lineno, c1.keywords[0].col_offset) == (3, 16)
         assert (c1.keywords[0].end_lineno, c1.keywords[0].end_col_offset) == (3, 22)
         assert (c1.body[0].lineno, c1.body[0].col_offset) == (4, 4)

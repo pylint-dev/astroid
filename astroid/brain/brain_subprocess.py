@@ -86,13 +86,11 @@ def _subprocess_transform():
         def kill(self):
             pass
         {ctx_manager}
-       """
-    )
-    code += """
-    @classmethod
-    def __class_getitem__(cls, item):
-        pass
+        @classmethod
+        def __class_getitem__(cls, item):
+            pass
         """
+    )
 
     init_lines = textwrap.dedent(init).splitlines()
     indented_init = "\n".join(" " * 4 + line for line in init_lines)

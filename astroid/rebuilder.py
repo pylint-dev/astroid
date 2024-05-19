@@ -1004,11 +1004,9 @@ class TreeRebuilder:
         self, cls: type[_ForT], node: ast.For | ast.AsyncFor, parent: NodeNG
     ) -> _ForT:
         """Visit a For node by returning a fresh instance of it."""
-        col_offset = node.col_offset
-
         newnode = cls(
             lineno=node.lineno,
-            col_offset=col_offset,
+            col_offset=node.col_offset,
             end_lineno=node.end_lineno,
             end_col_offset=node.end_col_offset,
             parent=parent,
@@ -1671,11 +1669,9 @@ class TreeRebuilder:
         node: ast.With | ast.AsyncWith,
         parent: NodeNG,
     ) -> _WithT:
-        col_offset = node.col_offset
-
         newnode = cls(
             lineno=node.lineno,
-            col_offset=col_offset,
+            col_offset=node.col_offset,
             end_lineno=node.end_lineno,
             end_col_offset=node.end_col_offset,
             parent=parent,
