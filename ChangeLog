@@ -180,6 +180,11 @@ Release date: 2023-09-26
   Closes #1780
   Refs #2140
 
+* Prefer standard library modules over same-named modules on sys.path. For example
+  ``import copy`` now finds ``copy`` instead of ``copy.py``. Solves ``no-member`` issues.
+
+  Closes pylint-dev/pylint#6535
+
 * Remove the ``inference`` module. Node inference methods are now in the module
   defining the node, rather than being associated to the node afterward.
 
