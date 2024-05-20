@@ -346,11 +346,7 @@ PY_3_9 = frozenset(
     }
 )
 
-if sys.version_info[:2] == (3, 7):
-    stdlib_module_names = PY_3_7
-elif sys.version_info[:2] == (3, 8):
-    stdlib_module_names = PY_3_8
-elif sys.version_info[:2] == (3, 9):
+if sys.version_info[:2] == (3, 9):
     stdlib_module_names = PY_3_9
 else:
     raise AssertionError("This module is only intended as a backport for Python <= 3.9")

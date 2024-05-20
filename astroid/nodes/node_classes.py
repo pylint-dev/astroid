@@ -13,12 +13,11 @@ import operator
 import sys
 import typing
 import warnings
-from collections.abc import Generator, Iterable, Iterator, Mapping
+from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
     Literal,
     Optional,
@@ -77,17 +76,17 @@ AssignedStmtsCall = Callable[
         _NodesT,
         AssignedStmtsPossibleNode,
         Optional[InferenceContext],
-        Optional[typing.List[int]],
+        Optional[list[int]],
     ],
     Any,
 ]
 InferBinaryOperation = Callable[
     [_NodesT, Optional[InferenceContext]],
-    typing.Generator[Union[InferenceResult, _BadOpMessageT], None, None],
+    Generator[Union[InferenceResult, _BadOpMessageT], None, None],
 ]
 InferLHS = Callable[
     [_NodesT, Optional[InferenceContext]],
-    typing.Generator[InferenceResult, None, Optional[InferenceErrorInfo]],
+    Generator[InferenceResult, None, Optional[InferenceErrorInfo]],
 ]
 InferUnaryOp = Callable[[_NodesT, str], ConstFactoryResult]
 

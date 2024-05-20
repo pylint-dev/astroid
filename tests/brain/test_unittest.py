@@ -5,13 +5,11 @@
 import unittest
 
 from astroid import builder
-from astroid.test_utils import require_version
 
 
 class UnittestTest(unittest.TestCase):
     """A class that tests the brain_unittest module."""
 
-    @require_version(minver="3.8.0")
     def test_isolatedasynciotestcase(self):
         """
         Tests that the IsolatedAsyncioTestCase class is statically imported

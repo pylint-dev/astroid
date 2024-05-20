@@ -6,7 +6,7 @@ import textwrap
 
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
-from astroid.const import PY39_PLUS, PY310_PLUS, PY311_PLUS
+from astroid.const import PY310_PLUS, PY311_PLUS
 from astroid.manager import AstroidManager
 
 
@@ -17,10 +17,9 @@ def _subprocess_transform():
         self, args, bufsize=-1, executable=None, stdin=None, stdout=None, stderr=None,
         preexec_fn=None, close_fds=True, shell=False, cwd=None, env=None,
         universal_newlines=None, startupinfo=None, creationflags=0, restore_signals=True,
-        start_new_session=False, pass_fds=(), *, encoding=None, errors=None, text=None"""
+        start_new_session=False, pass_fds=(), *, encoding=None, errors=None, text=None,
+        user=None, group=None, extra_groups=None, umask=-1"""
 
-    if PY39_PLUS:
-        args += ", user=None, group=None, extra_groups=None, umask=-1"
     if PY310_PLUS:
         args += ", pipesize=-1"
     if PY311_PLUS:
@@ -87,14 +86,11 @@ def _subprocess_transform():
         def kill(self):
             pass
         {ctx_manager}
-       """
-    )
-    if PY39_PLUS:
-        code += """
-    @classmethod
-    def __class_getitem__(cls, item):
-        pass
+        @classmethod
+        def __class_getitem__(cls, item):
+            pass
         """
+    )
 
     init_lines = textwrap.dedent(init).splitlines()
     indented_init = "\n".join(" " * 4 + line for line in init_lines)

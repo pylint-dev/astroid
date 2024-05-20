@@ -7,7 +7,6 @@ from __future__ import annotations
 import unittest
 
 from astroid import MANAGER
-from astroid.const import PY39_PLUS
 from astroid.nodes.scoped_nodes import ClassDef
 
 
@@ -19,10 +18,8 @@ class HashlibTest(unittest.TestCase):
         self.assertIn("block_size", class_obj)
         self.assertIn("digest_size", class_obj)
         # usedforsecurity was added in Python 3.9, see 8e7174a9
-        self.assertEqual(len(class_obj["__init__"].args.args), 3 if PY39_PLUS else 2)
-        self.assertEqual(
-            len(class_obj["__init__"].args.defaults), 2 if PY39_PLUS else 1
-        )
+        self.assertEqual(len(class_obj["__init__"].args.args), 3)
+        self.assertEqual(len(class_obj["__init__"].args.defaults), 2)
         self.assertEqual(len(class_obj["update"].args.args), 2)
 
     def test_hashlib(self) -> None:

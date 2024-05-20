@@ -51,13 +51,6 @@ class CollectionsDequeTests(unittest.TestCase):
         self.assertIn("insert", inferred.locals)
         self.assertIn("index", inferred.locals)
 
-    @test_utils.require_version(maxver="3.8")
-    def test_deque_not_py39methods(self):
-        inferred = self._inferred_queue_instance()
-        with self.assertRaises(AttributeInferenceError):
-            inferred.getattr("__class_getitem__")
-
-    @test_utils.require_version(minver="3.9")
     def test_deque_py39methods(self):
         inferred = self._inferred_queue_instance()
         self.assertTrue(inferred.getattr("__class_getitem__"))
@@ -172,7 +165,6 @@ class TypeBrain(unittest.TestCase):
             # noinspection PyStatementEffect
             val_inf.getattr("__class_getitem__")[0]
 
-    @test_utils.require_version(minver="3.9")
     def test_builtin_subscriptable(self):
         """Starting with python3.9 builtin types such as list are subscriptable.
         Any builtin class such as "enumerate" or "staticmethod" also works."""
@@ -231,7 +223,6 @@ class CollectionsBrain(unittest.TestCase):
         with self.assertRaises(AttributeInferenceError):
             inferred.getattr("__class_getitem__")
 
-    @test_utils.require_version(minver="3.9")
     def test_collections_object_subscriptable(self):
         """Starting with python39 some object of collections module are subscriptable. Test one of them"""
         right_node = builder.extract_node(
@@ -295,7 +286,6 @@ class CollectionsBrain(unittest.TestCase):
         with self.assertRaises(AttributeInferenceError):
             inferred.getattr("__class_getitem__")
 
-    @test_utils.require_version(minver="3.9")
     def test_collections_object_subscriptable_2(self):
         """Starting with python39 Iterator in the collection.abc module is subscriptable"""
         node = builder.extract_node(
@@ -329,7 +319,6 @@ class CollectionsBrain(unittest.TestCase):
         with self.assertRaises(InferenceError):
             next(node.infer())
 
-    @test_utils.require_version(minver="3.9")
     def test_collections_object_subscriptable_3(self):
         """With Python 3.9 the ByteString class of the collections module is subscriptable
         (but not the same class from typing module)"""
@@ -345,7 +334,6 @@ class CollectionsBrain(unittest.TestCase):
             inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
         )
 
-    @test_utils.require_version(minver="3.9")
     def test_collections_object_subscriptable_4(self):
         """Multiple inheritance with subscriptable collection class"""
         node = builder.extract_node(
@@ -645,7 +633,6 @@ class TypingBrain(unittest.TestCase):
         assert ancestors[0].name == "Foo"
         assert ancestors[1].name == "object"
 
-    @test_utils.require_version(minver="3.9")
     def test_typing_annotated_subscriptable(self):
         """Test typing.Annotated is subscriptable with __class_getitem__"""
         node = builder.extract_node(
@@ -676,7 +663,6 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(slots[0], nodes.Const)
         assert slots[0].value == "value"
 
-    @test_utils.require_version(minver="3.9")
     def test_typing_no_duplicates(self):
         node = builder.extract_node(
             """
@@ -686,7 +672,6 @@ class TypingBrain(unittest.TestCase):
         )
         assert len(node.inferred()) == 1
 
-    @test_utils.require_version(minver="3.9")
     def test_typing_no_duplicates_2(self):
         node = builder.extract_node(
             """
@@ -753,7 +738,6 @@ class TypingBrain(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIsInstance(inferred, astroid.Instance)
 
-    @test_utils.require_version("3.8")
     def test_typed_dict(self):
         code = builder.extract_node(
             """
@@ -929,7 +913,6 @@ class TypingBrain(unittest.TestCase):
                 inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
             )
 
-    @test_utils.require_version(minver="3.9")
     def test_typing_object_builtin_subscriptable(self):
         """
         Test that builtins alias, such as typing.List, are subscriptable
@@ -945,7 +928,6 @@ class TypingBrain(unittest.TestCase):
             self.assertIsInstance(inferred.getattr("__iter__")[0], nodes.FunctionDef)
 
     @staticmethod
-    @test_utils.require_version(minver="3.9")
     def test_typing_type_subscriptable():
         node = builder.extract_node(
             """
@@ -1067,7 +1049,6 @@ class ReBrainTest(unittest.TestCase):
         with self.assertRaises(InferenceError):
             next(wrong_node2.infer())
 
-    @test_utils.require_version(minver="3.9")
     def test_re_pattern_subscriptable(self):
         """Test re.Pattern and re.Match are subscriptable in PY39+"""
         node1 = builder.extract_node(

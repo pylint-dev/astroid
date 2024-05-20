@@ -15,11 +15,11 @@ dataclasses. References:
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import Literal, Tuple, Union
+from typing import Literal, Union
 
 from astroid import bases, context, nodes
 from astroid.builder import parse
-from astroid.const import PY39_PLUS, PY310_PLUS
+from astroid.const import PY310_PLUS
 from astroid.exceptions import AstroidSyntaxError, InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
@@ -28,8 +28,8 @@ from astroid.util import Uninferable, UninferableBase, safe_infer
 
 _FieldDefaultReturn = Union[
     None,
-    Tuple[Literal["default"], nodes.NodeNG],
-    Tuple[Literal["default_factory"], nodes.Call],
+    tuple[Literal["default"], nodes.NodeNG],
+    tuple[Literal["default_factory"], nodes.Call],
 ]
 
 DATACLASSES_DECORATORS = frozenset(("dataclass",))
@@ -539,22 +539,12 @@ def _get_field_default(field_call: nodes.Call) -> _FieldDefaultReturn:
 
 def _is_class_var(node: nodes.NodeNG) -> bool:
     """Return True if node is a ClassVar, with or without subscripting."""
-    if PY39_PLUS:
-        try:
-            inferred = next(node.infer())
-        except (InferenceError, StopIteration):
-            return False
+    try:
+        inferred = next(node.infer())
+    except (InferenceError, StopIteration):
+        return False
 
-        return getattr(inferred, "name", "") == "ClassVar"
-
-    # Before Python 3.9, inference returns typing._SpecialForm instead of ClassVar.
-    # Our backup is to inspect the node's structure.
-    return isinstance(node, nodes.Subscript) and (
-        isinstance(node.value, nodes.Name)
-        and node.value.name == "ClassVar"
-        or isinstance(node.value, nodes.Attribute)
-        and node.value.attrname == "ClassVar"
-    )
+    return getattr(inferred, "name", "") == "ClassVar"
 
 
 def _is_keyword_only_sentinel(node: nodes.NodeNG) -> bool:

@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Final, TypeVar, Union, cast, overload
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import IS_PYPY, PY38, PY39_PLUS, PY312_PLUS, Context
+from astroid.const import PY312_PLUS, Context
 from astroid.manager import AstroidManager
 from astroid.nodes import NodeNG
 from astroid.nodes.node_classes import AssignName
@@ -80,10 +80,6 @@ class TreeRebuilder:
                 ):
                     doc_ast_node = first_value
                     node.body = node.body[1:]
-                    # The ast parser of python < 3.8 sets col_offset of multi-line strings to -1
-                    # as it is unable to determine the value correctly. We reset this to None.
-                    if doc_ast_node.col_offset == -1:
-                        doc_ast_node.col_offset = None
                     return node, doc_ast_node
         except IndexError:
             pass  # ast built from scratch
@@ -157,25 +153,6 @@ class TreeRebuilder:
             end_col_offset=t.end[1],
         )
 
-    def _reset_end_lineno(self, newnode: nodes.NodeNG) -> None:
-        """Reset end_lineno and end_col_offset attributes for PyPy 3.8.
-
-        For some nodes, these are either set to -1 or only partially assigned.
-        To keep consistency across astroid and pylint, reset all.
-
-        This has been fixed in PyPy 3.9.
-        For reference, an (incomplete) list of nodes with issues:
-            - ClassDef          - For
-            - FunctionDef       - While
-            - Call              - If
-            - Decorators        - Try
-            - With              - Assign
-        """
-        newnode.end_lineno = None
-        newnode.end_col_offset = None
-        for child_node in newnode.get_children():
-            self._reset_end_lineno(child_node)
-
     def visit_module(
         self, node: ast.Module, modname: str, modpath: str, package: bool
     ) -> nodes.Module:
@@ -194,8 +171,6 @@ class TreeRebuilder:
             [self.visit(child, newnode) for child in node.body],
             doc_node=self.visit(doc_ast_node, newnode),
         )
-        if IS_PYPY and PY38:
-            self._reset_end_lineno(newnode)
         return newnode
 
     if TYPE_CHECKING:  # noqa: C901
@@ -314,16 +289,6 @@ class TreeRebuilder:
 
         @overload
         def visit(self, node: ast.NamedExpr, parent: NodeNG) -> nodes.NamedExpr: ...
-
-        if sys.version_info < (3, 9):
-            # Not used in Python 3.9+
-            @overload
-            def visit(
-                self, node: ast.ExtSlice, parent: nodes.Subscript
-            ) -> nodes.Tuple: ...
-
-            @overload
-            def visit(self, node: ast.Index, parent: nodes.Subscript) -> NodeNG: ...
 
         @overload
         def visit(self, node: ast.keyword, parent: NodeNG) -> nodes.Keyword: ...
@@ -541,14 +506,6 @@ class TreeRebuilder:
         if node.kwarg:
             kwarg = node.kwarg.arg
             kwargannotation = self.visit(node.kwarg.annotation, newnode)
-
-        if PY38:
-            # In Python 3.8 'end_lineno' and 'end_col_offset'
-            # for 'kwonlyargs' don't include the annotation.
-            for arg in node.kwonlyargs:
-                if arg.annotation is not None:
-                    arg.end_lineno = arg.annotation.end_lineno
-                    arg.end_col_offset = arg.annotation.end_col_offset
 
         kwonlyargs = [self.visit(child, newnode) for child in node.kwonlyargs]
         kw_defaults = [self.visit(child, newnode) for child in node.kw_defaults]
@@ -1047,14 +1004,9 @@ class TreeRebuilder:
         self, cls: type[_ForT], node: ast.For | ast.AsyncFor, parent: NodeNG
     ) -> _ForT:
         """Visit a For node by returning a fresh instance of it."""
-        col_offset = node.col_offset
-        if IS_PYPY and not PY39_PLUS and isinstance(node, ast.AsyncFor) and self._data:
-            # pylint: disable-next=unsubscriptable-object
-            col_offset = self._data[node.lineno - 1].index("async")
-
         newnode = cls(
             lineno=node.lineno,
-            col_offset=col_offset,
+            col_offset=node.col_offset,
             end_lineno=node.end_lineno,
             end_col_offset=node.end_col_offset,
             parent=parent,
@@ -1332,21 +1284,6 @@ class TreeRebuilder:
             self.visit(node.target, newnode), self.visit(node.value, newnode)
         )
         return newnode
-
-    if sys.version_info < (3, 9):
-        # Not used in Python 3.9+.
-        def visit_extslice(
-            self, node: ast.ExtSlice, parent: nodes.Subscript
-        ) -> nodes.Tuple:
-            """Visit an ExtSlice node by returning a fresh instance of Tuple."""
-            # ExtSlice doesn't have lineno or col_offset information
-            newnode = nodes.Tuple(ctx=Context.Load, parent=parent)
-            newnode.postinit([self.visit(dim, newnode) for dim in node.dims])
-            return newnode
-
-        def visit_index(self, node: ast.Index, parent: nodes.Subscript) -> NodeNG:
-            """Visit a Index node by returning a fresh instance of NodeNG."""
-            return self.visit(node.value, parent)
 
     def visit_keyword(self, node: ast.keyword, parent: NodeNG) -> nodes.Keyword:
         """Visit a Keyword node by returning a fresh instance of it."""
@@ -1732,14 +1669,9 @@ class TreeRebuilder:
         node: ast.With | ast.AsyncWith,
         parent: NodeNG,
     ) -> _WithT:
-        col_offset = node.col_offset
-        if IS_PYPY and not PY39_PLUS and isinstance(node, ast.AsyncWith) and self._data:
-            # pylint: disable-next=unsubscriptable-object
-            col_offset = self._data[node.lineno - 1].index("async")
-
         newnode = cls(
             lineno=node.lineno,
-            col_offset=col_offset,
+            col_offset=node.col_offset,
             end_lineno=node.end_lineno,
             end_col_offset=node.end_col_offset,
             parent=parent,

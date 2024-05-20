@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import contextlib
 import pprint
-from collections.abc import Iterator
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple
+from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, Optional
 
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
@@ -17,8 +17,8 @@ if TYPE_CHECKING:
     from astroid import constraint, nodes
     from astroid.nodes.node_classes import Keyword, NodeNG
 
-_InferenceCache = Dict[
-    Tuple["NodeNG", Optional[str], Optional[str], Optional[str]], Sequence["NodeNG"]
+_InferenceCache = dict[
+    tuple["NodeNG", Optional[str], Optional[str], Optional[str]], Sequence["NodeNG"]
 ]
 
 _INFERENCE_CACHE: _InferenceCache = {}

@@ -19,7 +19,6 @@ from functools import cached_property, lru_cache
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypeVar
 
 from astroid import bases, protocols, util
-from astroid.const import IS_PYPY, PY38, PY39_PLUS, PYPY_7_3_11_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -2002,26 +2001,6 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
     )
 
     @cached_property
-    def fromlineno(self) -> int:
-        """The first line that this node appears on in the source code.
-
-        Can also return 0 if the line can not be determined.
-        """
-        if IS_PYPY and PY38 and not PYPY_7_3_11_PLUS:
-            # For Python < 3.8 the lineno is the line number of the first decorator.
-            # We want the class statement lineno. Similar to 'FunctionDef.fromlineno'
-            # PyPy (3.8): Fixed with version v7.3.11
-            lineno = self.lineno or 0
-            if self.decorators is not None:
-                lineno += sum(
-                    node.tolineno - (node.lineno or 0) + 1
-                    for node in self.decorators.nodes
-                )
-
-            return lineno or 0
-        return super().fromlineno
-
-    @cached_property
     def blockstart_tolineno(self):
         """The line on which the beginning of this block ends.
 
@@ -2638,7 +2617,6 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
             if (
                 isinstance(method, node_classes.EmptyNode)
                 and self.pytype() == "builtins.type"
-                and PY39_PLUS
             ):
                 return self
             raise

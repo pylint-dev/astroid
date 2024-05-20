@@ -25,7 +25,6 @@ from astroid import (
     extract_node,
     nodes,
     parse,
-    test_utils,
     transforms,
     util,
 )
@@ -892,7 +891,6 @@ class ArgumentsNodeTC(unittest.TestCase):
         assert isinstance(args.kw_defaults[0], nodes.Const)
         assert args.kw_defaults[0].value == "default"
 
-    @test_utils.require_version(minver="3.8")
     def test_positional_only(self):
         ast = builder.parse(
             """
@@ -1630,7 +1628,6 @@ def test_get_doc() -> None:
     assert node.doc_node is None
 
 
-@test_utils.require_version(minver="3.8")
 def test_parse_fstring_debug_mode() -> None:
     node = astroid.extract_node('f"{3=}"')
     assert isinstance(node, nodes.JoinedStr)

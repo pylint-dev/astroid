@@ -4,13 +4,11 @@
 
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
-from astroid.const import PY39_PLUS
 from astroid.manager import AstroidManager
 
 
 def _hashlib_transform():
-    maybe_usedforsecurity = ", usedforsecurity=True" if PY39_PLUS else ""
-    init_signature = f"value=''{maybe_usedforsecurity}"
+    init_signature = "value='', usedforsecurity=True"
     digest_signature = "self"
     shake_digest_signature = "self, length"
 
@@ -54,13 +52,13 @@ def _hashlib_transform():
     blake2b_signature = (
         "data=b'', *, digest_size=64, key=b'', salt=b'', "
         "person=b'', fanout=1, depth=1, leaf_size=0, node_offset=0, "
-        f"node_depth=0, inner_size=0, last_node=False{maybe_usedforsecurity}"
+        "node_depth=0, inner_size=0, last_node=False, usedforsecurity=True"
     )
 
     blake2s_signature = (
         "data=b'', *, digest_size=32, key=b'', salt=b'', "
         "person=b'', fanout=1, depth=1, leaf_size=0, node_offset=0, "
-        f"node_depth=0, inner_size=0, last_node=False{maybe_usedforsecurity}"
+        "node_depth=0, inner_size=0, last_node=False, usedforsecurity=True"
     )
 
     shake_algorithms = dict.fromkeys(

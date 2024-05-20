@@ -7,7 +7,7 @@ from __future__ import annotations
 import warnings
 from collections import defaultdict
 from collections.abc import Callable
-from typing import TYPE_CHECKING, List, Optional, Tuple, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Optional, TypeVar, Union, cast, overload
 
 from astroid.context import _invalidate_cache
 from astroid.typing import SuccessfulInferenceResult, TransformFn
@@ -21,12 +21,12 @@ if TYPE_CHECKING:
     _Predicate = Optional[Callable[[_SuccessfulInferenceResultT], bool]]
 
 _Vistables = Union[
-    "nodes.NodeNG", List["nodes.NodeNG"], Tuple["nodes.NodeNG", ...], str, None
+    "nodes.NodeNG", list["nodes.NodeNG"], tuple["nodes.NodeNG", ...], str, None
 ]
 _VisitReturns = Union[
     SuccessfulInferenceResult,
-    List[SuccessfulInferenceResult],
-    Tuple[SuccessfulInferenceResult, ...],
+    list[SuccessfulInferenceResult],
+    tuple[SuccessfulInferenceResult, ...],
     str,
     None,
 ]

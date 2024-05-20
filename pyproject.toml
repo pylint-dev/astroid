@@ -17,7 +17,6 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -28,7 +27,7 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
     "Topic :: Software Development :: Testing",
 ]
-requires-python = ">=3.8.0"
+requires-python = ">=3.9.0"
 dependencies = [
     "typing-extensions>=4.0.0;python_version<'3.11'",
 ]
@@ -83,7 +82,7 @@ ignore_missing_imports = true
 
 
 [tool.ruff]
-target-version = "py38"
+target-version = "py39"
 
 # ruff is less lenient than pylint and does not make any exceptions
 # (for docstrings, strings and comments in particular).

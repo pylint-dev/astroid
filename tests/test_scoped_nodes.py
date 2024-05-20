@@ -26,11 +26,10 @@ from astroid import (
     nodes,
     objects,
     parse,
-    test_utils,
     util,
 )
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import IS_PYPY, PY38, WIN32
+from astroid.const import WIN32
 from astroid.exceptions import (
     AstroidBuildingError,
     AttributeInferenceError,
@@ -1349,10 +1348,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         astroid = builder.parse(data)
         self.assertEqual(astroid["g1"].fromlineno, 4)
         self.assertEqual(astroid["g1"].tolineno, 5)
-        if PY38 and IS_PYPY:
-            self.assertEqual(astroid["g2"].fromlineno, 9)
-        else:
-            self.assertEqual(astroid["g2"].fromlineno, 10)
+        self.assertEqual(astroid["g2"].fromlineno, 10)
         self.assertEqual(astroid["g2"].tolineno, 11)
 
     def test_metaclass_error(self) -> None:
@@ -2750,13 +2746,11 @@ def test_metaclass_cannot_infer_call_yields_an_instance() -> None:
         ),
     ],
 )
-@test_utils.require_version("3.8")
 def test_posonlyargs_python_38(func):
     ast_node = builder.extract_node(func)
     assert ast_node.as_string().strip() == func.strip()
 
 
-@test_utils.require_version("3.8")
 def test_posonlyargs_default_value() -> None:
     ast_node = builder.extract_node(
         """
