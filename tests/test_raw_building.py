@@ -10,6 +10,7 @@ to simulate issues in unittest below
 
 from __future__ import annotations
 
+import _io
 import logging
 import os
 import sys
@@ -18,7 +19,6 @@ import unittest
 from typing import Any
 from unittest import mock
 
-import _io
 import pytest
 
 import tests.testdata.python3.data.fake_module_with_broken_getattr as fm_getattr
