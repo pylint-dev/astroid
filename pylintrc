@@ -348,6 +348,9 @@ ext-import-graph=
 # not be disabled)
 int-import-graph=
 
+# Force import order to recognize a module as part of the standard
+# compatibility libraries.
+known-standard-library=_io
 
 [EXCEPTIONS]
 
