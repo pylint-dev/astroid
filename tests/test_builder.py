@@ -777,7 +777,7 @@ class FileBuildTest(unittest.TestCase):
         with self.assertRaises(StatementMissing):
             with pytest.warns(DeprecationWarning) as records:
                 self.assertEqual(module.statement(future=True), module)
-                assert len(records) == 1
+        assert len(records) == 1
         with self.assertRaises(StatementMissing):
             module.statement()
 
