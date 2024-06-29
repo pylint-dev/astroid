@@ -4453,8 +4453,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         # and reraise it as a TypeError in Class.getitem
         node = extract_node(
             """
-        def test():
-            yield
+        def test(): ...
         test()
         """
         )
