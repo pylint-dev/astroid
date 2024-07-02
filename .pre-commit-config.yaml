@@ -10,7 +10,7 @@ repos:
       - id: end-of-file-fixer
         exclude: tests/testdata
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.4.10"
+    rev: "v0.5.0"
     hooks:
       - id: ruff
         exclude: tests/testdata
@@ -54,7 +54,7 @@ repos:
           ]
         exclude: tests/testdata|conf.py
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.0
+    rev: v1.10.1
     hooks:
       - id: mypy
         name: mypy
