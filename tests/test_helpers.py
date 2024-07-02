@@ -8,6 +8,7 @@ import unittest
 import pytest
 
 from astroid import builder, helpers, manager, nodes, raw_building, util
+from astroid.builder import AstroidBuilder
 from astroid.const import IS_PYPY
 from astroid.exceptions import _NonDeducibleTypeHierarchy
 from astroid.nodes.scoped_nodes import ClassDef
@@ -17,6 +18,7 @@ class TestHelpers(unittest.TestCase):
     def setUp(self) -> None:
         builtins_name = builtins.__name__
         astroid_manager = manager.AstroidManager()
+        AstroidBuilder(astroid_manager)  # Only to ensure boostrap
         self.builtins = astroid_manager.astroid_cache[builtins_name]
         self.manager = manager.AstroidManager()
 
