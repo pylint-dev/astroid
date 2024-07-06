@@ -15,7 +15,7 @@ from typing import Final
 from astroid import context, extract_node, inference_tip
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder, _extract_single_node
-from astroid.const import PY312_PLUS
+from astroid.const import PY312_PLUS, PY313_PLUS
 from astroid.exceptions import (
     AstroidSyntaxError,
     AttributeInferenceError,
@@ -166,6 +166,15 @@ def infer_typing_attr(
     if not value.qname().startswith("typing.") or value.qname() in TYPING_ALIAS:
         # If typing subscript belongs to an alias handle it separately.
         raise UseInferenceDefault
+
+    if (
+        PY313_PLUS
+        and isinstance(value, FunctionDef)
+        and value.qname() == "typing.Annotated"
+    ):
+        # typing.Annotated is a FunctionDef on 3.13+
+        node._explicit_inference = lambda node, context: iter([value])
+        return iter([value])
 
     if isinstance(value, ClassDef) and value.qname() in {
         "typing.Generic",
