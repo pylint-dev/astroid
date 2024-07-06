@@ -24,7 +24,7 @@ def test_inference_parents() -> None:
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
     if PY313_PLUS:
-        assert inferred[0].qname() == "pathlib._abc._PathParents"
+        assert inferred[0].qname() == "builtins.tuple"
     else:
         assert inferred[0].qname() == "pathlib._PathParents"
 
@@ -43,7 +43,10 @@ def test_inference_parents_subscript_index() -> None:
     inferred = path.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
-    assert inferred[0].qname() == "pathlib.Path"
+    if PY313_PLUS:
+        assert inferred[0].qname() == "pathlib._local.Path"
+    else:
+        assert inferred[0].qname() == "pathlib.Path"
 
 
 def test_inference_parents_subscript_slice() -> None:
