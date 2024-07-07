@@ -16,6 +16,10 @@ What's New in astroid 3.2.3?
 ============================
 Release date: TBA
 
+* Fix ``AssertionError`` when inferring a property consisting of a partial function.
+
+Closes pylint-dev/pylint#9214
+
 
 What's New in astroid 3.2.2?
 ============================
