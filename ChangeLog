@@ -7,6 +7,8 @@ What's New in astroid 3.3.0?
 ============================
 Release date: TBA
 
+* Add support for Python 3.13.
+
 * Remove support for Python 3.8 (and constants `PY38`, `PY39_PLUS`, and `PYPY_7_3_11_PLUS`).
 
   Refs #2443
@@ -16,7 +18,13 @@ What's New in astroid 3.2.3?
 ============================
 Release date: TBA
 
+
 * Implement inference for JoinedStr and FormattedValue
+
+
+* Fix ``AssertionError`` when inferring a property consisting of a partial function.
+
+Closes pylint-dev/pylint#9214
 
 
 What's New in astroid 3.2.2?

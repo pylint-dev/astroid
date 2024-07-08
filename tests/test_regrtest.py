@@ -477,3 +477,22 @@ def test_recursion_during_inference(mocked) -> None:
     with pytest.raises(InferenceError) as error:
         next(node.infer())
     assert error.value.message.startswith("RecursionError raised")
+
+
+def test_regression_missing_callcontext() -> None:
+    node: nodes.Attribute = _extract_single_node(
+        textwrap.dedent(
+            """
+        import functools
+
+        class MockClass:
+            def _get_option(self, option):
+                return "mystr"
+
+            enabled = property(functools.partial(_get_option, option='myopt'))
+
+        MockClass().enabled
+        """
+        )
+    )
+    assert node.inferred()[0].value == "mystr"

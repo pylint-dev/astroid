@@ -19,7 +19,7 @@ from typing import Literal, Union
 
 from astroid import bases, context, nodes
 from astroid.builder import parse
-from astroid.const import PY310_PLUS
+from astroid.const import PY310_PLUS, PY313_PLUS
 from astroid.exceptions import AstroidSyntaxError, InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
@@ -503,6 +503,17 @@ def _looks_like_dataclass_field_call(
     return inferred.name == FIELD_NAME and inferred.root().name in DATACLASS_MODULES
 
 
+def _looks_like_dataclasses(node: nodes.Module) -> bool:
+    return node.qname() == "dataclasses"
+
+
+def _resolve_private_replace_to_public(node: nodes.Module) -> None:
+    """In python/cpython@6f3c138, a _replace() method was extracted from
+    replace(), and this indirection made replace() uninferable."""
+    if "_replace" in node.locals:
+        node.locals["replace"] = node.locals["_replace"]
+
+
 def _get_field_default(field_call: nodes.Call) -> _FieldDefaultReturn:
     """Return a the default value of a field call, and the corresponding keyword
     argument name.
@@ -608,6 +619,13 @@ def _infer_instance_from_annotation(
 
 
 def register(manager: AstroidManager) -> None:
+    if PY313_PLUS:
+        manager.register_transform(
+            nodes.Module,
+            _resolve_private_replace_to_public,
+            _looks_like_dataclasses,
+        )
+
     manager.register_transform(
         nodes.ClassDef, dataclass_transform, is_decorated_with_dataclass
     )

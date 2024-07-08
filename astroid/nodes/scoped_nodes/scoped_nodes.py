@@ -2518,6 +2518,10 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
                 elif isinstance(inferred, objects.Property):
                     function = inferred.function
                     if not class_context:
+                        if not context.callcontext:
+                            context.callcontext = CallContext(
+                                args=function.args.arguments, callee=function
+                            )
                         # Through an instance so we can solve the property
                         yield from function.infer_call_result(
                             caller=self, context=context

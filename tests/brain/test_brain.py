@@ -634,7 +634,7 @@ class TypingBrain(unittest.TestCase):
         assert ancestors[1].name == "object"
 
     def test_typing_annotated_subscriptable(self):
-        """Test typing.Annotated is subscriptable with __class_getitem__"""
+        """typing.Annotated is subscriptable with __class_getitem__ below 3.13."""
         node = builder.extract_node(
             """
         import typing
@@ -642,8 +642,13 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        assert isinstance(inferred, nodes.ClassDef)
-        assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
+        if PY313_PLUS:
+            assert isinstance(inferred, nodes.FunctionDef)
+        else:
+            assert isinstance(inferred, nodes.ClassDef)
+            assert isinstance(
+                inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
+            )
 
     def test_typing_generic_slots(self):
         """Test slots for Generic subclass."""
