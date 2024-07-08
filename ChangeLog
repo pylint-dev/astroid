@@ -16,6 +16,8 @@ What's New in astroid 3.2.3?
 ============================
 Release date: TBA
 
+* Implement inference for JoinedStr and FormattedValue
+
 
 What's New in astroid 3.2.2?
 ============================
