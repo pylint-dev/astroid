@@ -654,10 +654,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         )
 
     def test_fstring_inference(self) -> None:
-        code = '''
+        code = """
             name = "John"
             result = f"Hello {name}!"
-            '''
+            """
         ast = parse(code, __name__)
         node = ast["result"]
         inferred = node.inferred()
@@ -667,12 +667,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(value_node.value, "Hello John!")
 
     def test_formatted_fstring_inference(self) -> None:
-        code = '''
+        code = """
             width = 10
             precision = 4
             value = 12.34567
             result = f"result: {value:{width}.{precision}}!"
-            '''
+            """
         ast = parse(code, __name__)
         node = ast["result"]
         inferred = node.inferred()
