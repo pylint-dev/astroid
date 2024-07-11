@@ -14,9 +14,14 @@ Release date: TBA
   Refs #2443
 
 
-What's New in astroid 3.2.3?
+What's New in astroid 3.2.4?
 ============================
 Release date: TBA
+
+
+What's New in astroid 3.2.3?
+============================
+Release date: 2024-07-11
 
 * Fix ``AssertionError`` when inferring a property consisting of a partial function.
 
