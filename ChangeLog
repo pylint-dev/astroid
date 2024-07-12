@@ -18,6 +18,10 @@ What's New in astroid 3.2.4?
 ============================
 Release date: TBA
 
+* Avoid reporting unary/binary op type errors when inference is ambiguous.
+
+  Closes #2467
+
 
 What's New in astroid 3.2.3?
 ============================
