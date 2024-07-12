@@ -1395,7 +1395,7 @@ class AugAssign(
         try:
             for result in self._infer_augassign(context=context):
                 if result is util.Uninferable:
-                    return []
+                    raise InferenceError
                 if isinstance(result, util.BadBinaryOperationMessage):
                     bad.append(result)
         except InferenceError:
@@ -1514,7 +1514,7 @@ class BinOp(_base_nodes.OperatorNode):
         try:
             for result in self._infer_binop(context=context):
                 if result is util.Uninferable:
-                    return []
+                    raise InferenceError
                 if isinstance(result, util.BadBinaryOperationMessage):
                     bad.append(result)
         except InferenceError:
@@ -4282,7 +4282,7 @@ class UnaryOp(_base_nodes.OperatorNode):
         try:
             for result in self._infer_unaryop(context=context):
                 if result is util.Uninferable:
-                    return []
+                    raise InferenceError
                 if isinstance(result, util.BadUnaryOperationMessage):
                     bad.append(result)
         except InferenceError:
