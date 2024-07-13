@@ -50,6 +50,7 @@ repos:
             "-rn",
             "-sn",
             "--rcfile=pylintrc",
+            "--output-format=github",
             # "--load-plugins=pylint.extensions.docparams", We're not ready for that
           ]
         exclude: tests/testdata|conf.py
