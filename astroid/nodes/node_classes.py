@@ -1380,16 +1380,15 @@ class AugAssign(
     See astroid/protocols.py for actual implementation.
     """
 
-    def type_errors(self, context: InferenceContext | None = None):
+    def type_errors(
+        self, context: InferenceContext | None = None
+    ) -> list[util.BadBinaryOperationMessage]:
         """Get a list of type errors which can occur during inference.
 
         Each TypeError is represented by a :class:`BadBinaryOperationMessage` ,
         which holds the original exception.
 
         If any inferred result is uninferable, an empty list is returned.
-
-        :returns: The list of possible type errors.
-        :rtype: list(BadBinaryOperationMessage)
         """
         bad = []
         try:
@@ -1499,16 +1498,15 @@ class BinOp(_base_nodes.OperatorNode):
         self.left = left
         self.right = right
 
-    def type_errors(self, context: InferenceContext | None = None):
+    def type_errors(
+        self, context: InferenceContext | None = None
+    ) -> list[util.BadBinaryOperationMessage]:
         """Get a list of type errors which can occur during inference.
 
         Each TypeError is represented by a :class:`BadBinaryOperationMessage`,
         which holds the original exception.
 
         If any inferred result is uninferable, an empty list is returned.
-
-        :returns: The list of possible type errors.
-        :rtype: list(BadBinaryOperationMessage)
         """
         bad = []
         try:
@@ -4267,16 +4265,15 @@ class UnaryOp(_base_nodes.OperatorNode):
     def postinit(self, operand: NodeNG) -> None:
         self.operand = operand
 
-    def type_errors(self, context: InferenceContext | None = None):
+    def type_errors(
+        self, context: InferenceContext | None = None
+    ) -> list[util.BadUnaryOperationMessage]:
         """Get a list of type errors which can occur during inference.
 
         Each TypeError is represented by a :class:`BadUnaryOperationMessage`,
         which holds the original exception.
 
         If any inferred result is uninferable, an empty list is returned.
-
-        :returns: The list of possible type errors.
-        :rtype: list(BadUnaryOperationMessage)
         """
         bad = []
         try:
