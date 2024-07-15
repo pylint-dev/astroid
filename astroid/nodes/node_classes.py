@@ -1380,24 +1380,26 @@ class AugAssign(
     See astroid/protocols.py for actual implementation.
     """
 
-    def type_errors(self, context: InferenceContext | None = None):
+    def type_errors(
+        self, context: InferenceContext | None = None
+    ) -> list[util.BadBinaryOperationMessage]:
         """Get a list of type errors which can occur during inference.
 
         Each TypeError is represented by a :class:`BadBinaryOperationMessage` ,
         which holds the original exception.
 
-        :returns: The list of possible type errors.
-        :rtype: list(BadBinaryOperationMessage)
+        If any inferred result is uninferable, an empty list is returned.
         """
+        bad = []
         try:
-            results = self._infer_augassign(context=context)
-            return [
-                result
-                for result in results
-                if isinstance(result, util.BadBinaryOperationMessage)
-            ]
+            for result in self._infer_augassign(context=context):
+                if result is util.Uninferable:
+                    raise InferenceError
+                if isinstance(result, util.BadBinaryOperationMessage):
+                    bad.append(result)
         except InferenceError:
             return []
+        return bad
 
     def get_children(self):
         yield self.target
@@ -1496,24 +1498,26 @@ class BinOp(_base_nodes.OperatorNode):
         self.left = left
         self.right = right
 
-    def type_errors(self, context: InferenceContext | None = None):
+    def type_errors(
+        self, context: InferenceContext | None = None
+    ) -> list[util.BadBinaryOperationMessage]:
         """Get a list of type errors which can occur during inference.
 
         Each TypeError is represented by a :class:`BadBinaryOperationMessage`,
         which holds the original exception.
 
-        :returns: The list of possible type errors.
-        :rtype: list(BadBinaryOperationMessage)
+        If any inferred result is uninferable, an empty list is returned.
         """
+        bad = []
         try:
-            results = self._infer_binop(context=context)
-            return [
-                result
-                for result in results
-                if isinstance(result, util.BadBinaryOperationMessage)
-            ]
+            for result in self._infer_binop(context=context):
+                if result is util.Uninferable:
+                    raise InferenceError
+                if isinstance(result, util.BadBinaryOperationMessage):
+                    bad.append(result)
         except InferenceError:
             return []
+        return bad
 
     def get_children(self):
         yield self.left
@@ -4261,24 +4265,26 @@ class UnaryOp(_base_nodes.OperatorNode):
     def postinit(self, operand: NodeNG) -> None:
         self.operand = operand
 
-    def type_errors(self, context: InferenceContext | None = None):
+    def type_errors(
+        self, context: InferenceContext | None = None
+    ) -> list[util.BadUnaryOperationMessage]:
         """Get a list of type errors which can occur during inference.
 
         Each TypeError is represented by a :class:`BadUnaryOperationMessage`,
         which holds the original exception.
 
-        :returns: The list of possible type errors.
-        :rtype: list(BadUnaryOperationMessage)
+        If any inferred result is uninferable, an empty list is returned.
         """
+        bad = []
         try:
-            results = self._infer_unaryop(context=context)
-            return [
-                result
-                for result in results
-                if isinstance(result, util.BadUnaryOperationMessage)
-            ]
+            for result in self._infer_unaryop(context=context):
+                if result is util.Uninferable:
+                    raise InferenceError
+                if isinstance(result, util.BadUnaryOperationMessage):
+                    bad.append(result)
         except InferenceError:
             return []
+        return bad
 
     def get_children(self):
         yield self.operand
