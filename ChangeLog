@@ -9,9 +9,15 @@ Release date: TBA
 
 
 
-What's New in astroid 3.2.4?
+What's New in astroid 3.2.5?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 3.2.4?
+============================
+Release date: 2024-07-20
 
 * Avoid reporting unary/binary op type errors when inference is ambiguous.
 
