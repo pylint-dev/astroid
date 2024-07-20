@@ -2743,6 +2743,15 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             error = errors[0]
             self.assertEqual(str(error), expected_value)
 
+    def test_binary_type_errors_partially_uninferable(self) -> None:
+        def patched_infer_binop(context):
+            return iter([util.BadBinaryOperationMessage(None, None, None), Uninferable])
+
+        binary_op_node = extract_node("0 + 0")
+        binary_op_node._infer_binop = patched_infer_binop
+        errors = binary_op_node.type_errors()
+        self.assertEqual(errors, [])
+
     def test_unary_type_errors(self) -> None:
         ast_nodes = extract_node(
             """
@@ -2809,6 +2818,15 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         errors = node.type_errors()
         self.assertEqual(len(errors), 1)
         self.assertEqual(str(errors[0]), "bad operand type for unary ~: slice")
+
+    def test_unary_type_errors_partially_uninferable(self) -> None:
+        def patched_infer_unary_op(context):
+            return iter([util.BadUnaryOperationMessage(None, None, "msg"), Uninferable])
+
+        unary_op_node = extract_node("~0")
+        unary_op_node._infer_unaryop = patched_infer_unary_op
+        errors = unary_op_node.type_errors()
+        self.assertEqual(errors, [])
 
     def test_bool_value_recursive(self) -> None:
         pairs = [
@@ -3527,6 +3545,15 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "B")
+
+    def test_augop_type_errors_partially_uninferable(self) -> None:
+        def patched_infer_augassign(context) -> None:
+            return iter([util.BadBinaryOperationMessage(None, None, None), Uninferable])
+
+        aug_op_node = extract_node("__name__ += 'test'")
+        aug_op_node._infer_augassign = patched_infer_augassign
+        errors = aug_op_node.type_errors()
+        self.assertEqual(errors, [])
 
     def test_string_interpolation(self):
         ast_nodes = extract_node(
