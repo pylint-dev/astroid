@@ -55,7 +55,7 @@ repos:
           ]
         exclude: tests/testdata|conf.py
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.1
+    rev: v1.11.0
     hooks:
       - id: mypy
         name: mypy
