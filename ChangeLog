@@ -13,6 +13,10 @@ Release date: TBA
 
   Refs #2443
 
+* Add the ``__annotations__`` attribute to the ``ClassDef`` object model.
+
+  Closes pylint-dev/pylint#7126
+
 
 What's New in astroid 3.2.5?
 ============================
