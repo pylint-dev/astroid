@@ -38,7 +38,6 @@ def register_all_brains(manager: AstroidManager) -> None:
         brain_dataclasses,
         brain_datetime,
         brain_dateutil,
-        brain_fstrings,
         brain_functools,
         brain_gi,
         brain_hashlib,
@@ -91,7 +90,6 @@ def register_all_brains(manager: AstroidManager) -> None:
     brain_dataclasses.register(manager)
     brain_datetime.register(manager)
     brain_dateutil.register(manager)
-    brain_fstrings.register(manager)
     brain_functools.register(manager)
     brain_gi.register(manager)
     brain_hashlib.register(manager)

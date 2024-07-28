@@ -1077,23 +1077,6 @@ class ReBrainTest(unittest.TestCase):
         assert isinstance(inferred2.getattr("__class_getitem__")[0], nodes.FunctionDef)
 
 
-class BrainFStrings(unittest.TestCase):
-    def test_no_crash_on_const_reconstruction(self) -> None:
-        node = builder.extract_node(
-            """
-        max_width = 10
-
-        test1 = f'{" ":{max_width+4}}'
-        print(f'"{test1}"')
-
-        test2 = f'[{"7":>{max_width}}:0]'
-        test2
-        """
-        )
-        inferred = next(node.infer())
-        self.assertIs(inferred, util.Uninferable)
-
-
 class BrainNamedtupleAnnAssignTest(unittest.TestCase):
     def test_no_crash_on_ann_assign_in_namedtuple(self) -> None:
         node = builder.extract_node(
