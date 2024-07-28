@@ -855,3 +855,47 @@ def test_lru_cache(parentheses) -> None:
     assert wrapped.name == "foo"
     cache_info = next(ast_nodes[2].infer())
     assert isinstance(cache_info, astroid.Instance)
+
+
+def test_class_annotations() -> None:
+    """Test that the `__annotations__` attribute is avaiable in the class scope"""
+    annotations, klass_attribute = builder.extract_node(
+        """
+        class Test:
+            __annotations__  #@
+        Test.__annotations__  #@
+        """
+    )
+    # Test that `__annotations__` attribute is available in the class scope:
+    assert isinstance(annotations, nodes.Name)
+    # The `__annotations__` attribute is `Uninferable`:
+    assert next(annotations.infer()) is astroid.Uninferable
+
+    # Test that we can access the class annotations:
+    assert isinstance(klass_attribute, nodes.Attribute)
+
+
+def test_class_annotations_typed_dict() -> None:
+    """Test that we can access class annotations on various TypedDicts"""
+    apple, pear = builder.extract_node(
+        """
+        from typing import TypedDict
+
+
+        class Apple(TypedDict):
+            a: int
+            b: str
+
+
+        Pear = TypedDict('OtherTypedDict', {'a': int, 'b': str})
+
+
+        Apple.__annotations__  #@
+        Pear.__annotations__  #@
+        """
+    )
+
+    assert isinstance(apple, nodes.Attribute)
+    assert next(apple.infer()) is astroid.Uninferable
+    assert isinstance(pear, nodes.Attribute)
+    assert next(pear.infer()) is astroid.Uninferable

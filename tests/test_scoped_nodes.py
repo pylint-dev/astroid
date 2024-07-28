@@ -1209,6 +1209,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         astroid = builder.parse(data, __name__)
         cls = astroid["WebAppObject"]
         assert_keys = [
+            "__annotations__",
             "__module__",
             "__qualname__",
             "appli",
