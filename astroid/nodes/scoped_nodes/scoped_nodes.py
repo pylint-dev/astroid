@@ -1775,7 +1775,7 @@ def _class_type(
     klass: ClassDef,
     ancestors: set[str] | None = None,
     context: InferenceContext | None = None,
-):
+) -> Literal["class", "exception", "metaclass"]:
     """return a ClassDef node type to differ metaclass and exception
     from 'regular' classes
     """
@@ -1798,7 +1798,7 @@ def _class_type(
         for base in klass.ancestors(recurs=False):
             name = _class_type(base, ancestors)
             if name != "class":
-                if name == "metaclass" and not _is_metaclass(klass):
+                if name == "metaclass" and klass._type != "metaclass":
                     # don't propagate it if the current class
                     # can't be a metaclass
                     continue
