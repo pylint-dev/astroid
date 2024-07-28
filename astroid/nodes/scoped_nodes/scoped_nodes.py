@@ -1735,7 +1735,11 @@ class AsyncFunctionDef(FunctionDef):
     """
 
 
-def _is_metaclass(klass, seen=None, context: InferenceContext | None = None) -> bool:
+def _is_metaclass(
+    klass: ClassDef,
+    seen: set[str] | None = None,
+    context: InferenceContext | None = None,
+) -> bool:
     """Return if the given class can be
     used as a metaclass.
     """
@@ -1767,7 +1771,11 @@ def _is_metaclass(klass, seen=None, context: InferenceContext | None = None) -> 
     return False
 
 
-def _class_type(klass, ancestors=None, context: InferenceContext | None = None):
+def _class_type(
+    klass: ClassDef,
+    ancestors: set[str] | None = None,
+    context: InferenceContext | None = None,
+):
     """return a ClassDef node type to differ metaclass and exception
     from 'regular' classes
     """
@@ -1859,7 +1867,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
     :type: objectmodel.ClassModel
     """
 
-    _type = None
+    _type: Literal["class", "exception", "metaclass"] | None = None
     _metaclass: NodeNG | None = None
     _metaclass_hack = False
     hide = False
