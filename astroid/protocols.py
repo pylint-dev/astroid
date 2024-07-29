@@ -106,7 +106,7 @@ def const_infer_binary_op(
     other: InferenceResult,
     context: InferenceContext,
     _: SuccessfulInferenceResult,
-) -> Generator[ConstFactoryResult | util.UninferableBase, None, None]:
+) -> Generator[ConstFactoryResult | util.UninferableBase]:
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, nodes.Const):
         if (
@@ -176,7 +176,7 @@ def tl_infer_binary_op(
     other: InferenceResult,
     context: InferenceContext,
     method: SuccessfulInferenceResult,
-) -> Generator[_TupleListNodeT | nodes.Const | util.UninferableBase, None, None]:
+) -> Generator[_TupleListNodeT | nodes.Const | util.UninferableBase]:
     """Infer a binary operation on a tuple or list.
 
     The instance on which the binary operation is performed is a tuple
@@ -224,7 +224,7 @@ def instance_class_infer_binary_op(
     other: InferenceResult,
     context: InferenceContext,
     method: SuccessfulInferenceResult,
-) -> Generator[InferenceResult, None, None]:
+) -> Generator[InferenceResult]:
     return method.infer_call_result(self, context)
 
 
@@ -347,7 +347,7 @@ def assend_assigned_stmts(
 
 def _arguments_infer_argname(
     self, name: str | None, context: InferenceContext
-) -> Generator[InferenceResult, None, None]:
+) -> Generator[InferenceResult]:
     # arguments information may be missing, in which case we can't do anything
     # more
     from astroid import arguments  # pylint: disable=import-outside-toplevel
@@ -877,7 +877,7 @@ def match_mapping_assigned_stmts(
     node: nodes.AssignName,
     context: InferenceContext | None = None,
     assign_path: None = None,
-) -> Generator[nodes.NodeNG, None, None]:
+) -> Generator[nodes.NodeNG]:
     """Return empty generator (return -> raises StopIteration) so inferred value
     is Uninferable.
     """
@@ -891,7 +891,7 @@ def match_star_assigned_stmts(
     node: nodes.AssignName,
     context: InferenceContext | None = None,
     assign_path: None = None,
-) -> Generator[nodes.NodeNG, None, None]:
+) -> Generator[nodes.NodeNG]:
     """Return empty generator (return -> raises StopIteration) so inferred value
     is Uninferable.
     """
@@ -905,7 +905,7 @@ def match_as_assigned_stmts(
     node: nodes.AssignName,
     context: InferenceContext | None = None,
     assign_path: None = None,
-) -> Generator[nodes.NodeNG, None, None]:
+) -> Generator[nodes.NodeNG]:
     """Infer MatchAs as the Match subject if it's the only MatchCase pattern
     else raise StopIteration to yield Uninferable.
     """
@@ -923,7 +923,7 @@ def generic_type_assigned_stmts(
     node: nodes.AssignName,
     context: InferenceContext | None = None,
     assign_path: None = None,
-) -> Generator[nodes.NodeNG, None, None]:
+) -> Generator[nodes.NodeNG]:
     """Hack. Return any Node so inference doesn't fail
     when evaluating __class_getitem__. Revert if it's causing issues.
     """

@@ -1028,7 +1028,7 @@ class Arguments(
     @decorators.raise_if_nothing_inferred
     def _infer(
         self: nodes.Arguments, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult]:
         # pylint: disable-next=import-outside-toplevel
         from astroid.protocols import _arguments_infer_argname
 
@@ -1417,7 +1417,7 @@ class AugAssign(
 
     def _infer_augassign(
         self, context: InferenceContext | None = None
-    ) -> Generator[InferenceResult | util.BadBinaryOperationMessage, None, None]:
+    ) -> Generator[InferenceResult | util.BadBinaryOperationMessage]:
         """Inference logic for augmented binary operations."""
         context = context or InferenceContext()
 
@@ -1447,7 +1447,7 @@ class AugAssign(
     @decorators.path_wrapper
     def _infer(
         self: nodes.AugAssign, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult]:
         return self._filter_operation_errors(
             self._infer_augassign, context, util.BadBinaryOperationMessage
         )
@@ -1532,7 +1532,7 @@ class BinOp(_base_nodes.OperatorNode):
 
     def _infer_binop(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult]:
         """Binary operation inference logic."""
         left = self.left
         right = self.right
@@ -1562,7 +1562,7 @@ class BinOp(_base_nodes.OperatorNode):
     @decorators.path_wrapper
     def _infer(
         self: nodes.BinOp, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult]:
         return self._filter_operation_errors(
             self._infer_binop, context, util.BadBinaryOperationMessage
         )
@@ -1911,7 +1911,7 @@ class Compare(NodeNG):
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[nodes.Const | util.UninferableBase, None, None]:
+    ) -> Generator[nodes.Const | util.UninferableBase]:
         """Chained comparison inference logic."""
         retval: bool | util.UninferableBase = True
 
@@ -2561,7 +2561,7 @@ class EmptyNode(_base_nodes.NoChildrenNode):
     @decorators.path_wrapper
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult]:
         if not self.has_underlying_object():
             yield util.Uninferable
         else:
@@ -2851,7 +2851,7 @@ class ImportFrom(_base_nodes.ImportNode):
         context: InferenceContext | None = None,
         asname: bool = True,
         **kwargs: Any,
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult]:
         """Infer a ImportFrom node: return the imported module/object."""
         context = context or InferenceContext()
         name = context.lookupname
@@ -2976,7 +2976,7 @@ class Global(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     @decorators.path_wrapper
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult]:
         if context is None or context.lookupname is None:
             raise InferenceError(node=self, context=context)
         try:
@@ -3093,7 +3093,7 @@ class IfExp(NodeNG):
     @decorators.raise_if_nothing_inferred
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult]:
         """Support IfExp inference.
 
         If we can't infer the truthiness of the condition, we default
@@ -3182,7 +3182,7 @@ class Import(_base_nodes.ImportNode):
         context: InferenceContext | None = None,
         asname: bool = True,
         **kwargs: Any,
-    ) -> Generator[nodes.Module, None, None]:
+    ) -> Generator[nodes.Module]:
         """Infer an Import node: return the imported module/object."""
         context = context or InferenceContext()
         name = context.lookupname
@@ -4123,7 +4123,7 @@ class TypeAlias(_base_nodes.AssignTypeNode, _base_nodes.Statement):
                 InferenceContext | None,
                 None,
             ],
-            Generator[NodeNG, None, None],
+            Generator[NodeNG],
         ]
     ] = protocols.assign_assigned_stmts
 
@@ -4984,7 +4984,7 @@ class EvaluatedObject(NodeNG):
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[NodeNG | util.UninferableBase, None, None]:
+    ) -> Generator[NodeNG | util.UninferableBase]:
         yield self.value
 
 

@@ -362,5 +362,5 @@ class Property(scoped_nodes.FunctionDef):
 
     def _infer(
         self: _T, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[_T, None, None]:
+    ) -> Generator[_T]:
         yield self

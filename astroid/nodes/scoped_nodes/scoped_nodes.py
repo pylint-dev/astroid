@@ -602,7 +602,7 @@ class Module(LocalsDictNodeNG):
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[Module, None, None]:
+    ) -> Generator[Module]:
         yield self
 
 
@@ -1052,7 +1052,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[Lambda, None, None]:
+    ) -> Generator[Lambda]:
         yield self
 
     def _get_yield_nodes_skip_functions(self):
@@ -2222,7 +2222,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
 
     def ancestors(
         self, recurs: bool = True, context: InferenceContext | None = None
-    ) -> Generator[ClassDef, None, None]:
+    ) -> Generator[ClassDef]:
         """Iterate over the base classes in prefixed depth first order.
 
         :param recurs: Whether to recurse or return direct ancestors only.
@@ -2975,5 +2975,5 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[ClassDef, None, None]:
+    ) -> Generator[ClassDef]:
         yield self

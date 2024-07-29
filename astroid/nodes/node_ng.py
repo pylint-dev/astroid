@@ -124,7 +124,7 @@ class NodeNG:
 
     def infer(
         self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult]:
         """Get a generator of the inferred values.
 
         This is the main entry point to the inference system.
