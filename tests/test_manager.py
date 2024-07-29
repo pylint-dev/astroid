@@ -16,7 +16,7 @@ import pytest
 
 import astroid
 from astroid import manager, test_utils
-from astroid.const import IS_JYTHON, IS_PYPY
+from astroid.const import IS_JYTHON, IS_PYPY, PY312_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidImportError,
@@ -391,13 +391,18 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
 
 
 class IsolatedAstroidManagerTest(unittest.TestCase):
+    @pytest.mark.skipif(PY312_PLUS, reason="distutils was removed in python 3.12")
     def test_no_user_warning(self):
+        """When Python 3.12 is minimum, this test will no longer provide value."""
         mgr = manager.AstroidManager()
         self.addCleanup(mgr.clear_cache)
         with warnings.catch_warnings():
             warnings.filterwarnings("error", category=UserWarning)
             mgr.ast_from_module_name("setuptools")
-            mgr.ast_from_module_name("pip")
+            try:
+                mgr.ast_from_module_name("pip")
+            except astroid.AstroidImportError:
+                pytest.skip("pip is not installed")
 
 
 class BorgAstroidManagerTC(unittest.TestCase):
