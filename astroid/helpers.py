@@ -60,7 +60,7 @@ def _function_type(
 
 def _object_type(
     node: InferenceResult, context: InferenceContext | None = None
-) -> Generator[InferenceResult | None, None, None]:
+) -> Generator[InferenceResult | None]:
     astroid_manager = manager.AstroidManager()
     builtins = astroid_manager.builtins_module
     context = context or InferenceContext()

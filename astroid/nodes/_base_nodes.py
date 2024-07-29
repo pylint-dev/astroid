@@ -328,11 +328,11 @@ class OperatorNode(NodeNG):
     def _filter_operation_errors(
         infer_callable: Callable[
             [InferenceContext | None],
-            Generator[InferenceResult | util.BadOperationMessage, None, None],
+            Generator[InferenceResult | util.BadOperationMessage],
         ],
         context: InferenceContext | None,
         error: type[util.BadOperationMessage],
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult]:
         for result in infer_callable(context):
             if isinstance(result, error):
                 # For the sake of .infer(), we don't care about operation
@@ -392,7 +392,7 @@ class OperatorNode(NodeNG):
         other: InferenceResult,
         context: InferenceContext,
         method_name: str,
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult]:
         """Invoke binary operation inference on the given instance."""
         methods = dunder_lookup.lookup(instance, method_name)
         context = bind_context_to_node(context, instance)
@@ -431,7 +431,7 @@ class OperatorNode(NodeNG):
         other: InferenceResult,
         context: InferenceContext,
         reverse: bool = False,
-    ) -> partial[Generator[InferenceResult, None, None]]:
+    ) -> partial[Generator[InferenceResult]]:
         """Get an inference callable for an augmented binary operation."""
         method_name = AUGMENTED_OP_METHOD[op]
         return partial(
@@ -452,7 +452,7 @@ class OperatorNode(NodeNG):
         other: InferenceResult,
         context: InferenceContext,
         reverse: bool = False,
-    ) -> partial[Generator[InferenceResult, None, None]]:
+    ) -> partial[Generator[InferenceResult]]:
         """Get an inference callable for a normal binary operation.
 
         If *reverse* is True, then the reflected method will be used instead.
@@ -475,7 +475,7 @@ class OperatorNode(NodeNG):
     def _bin_op_or_union_type(
         left: bases.UnionType | nodes.ClassDef | nodes.Const,
         right: bases.UnionType | nodes.ClassDef | nodes.Const,
-    ) -> Generator[InferenceResult, None, None]:
+    ) -> Generator[InferenceResult]:
         """Create a new UnionType instance for binary or, e.g. int | str."""
         yield bases.UnionType(left, right)
 
@@ -509,7 +509,7 @@ class OperatorNode(NodeNG):
         right_type: InferenceResult | None,
         context: InferenceContext,
         reverse_context: InferenceContext,
-    ) -> list[partial[Generator[InferenceResult, None, None]]]:
+    ) -> list[partial[Generator[InferenceResult]]]:
         """Get the flow for augmented binary operations.
 
         The rules are a bit messy:
@@ -566,7 +566,7 @@ class OperatorNode(NodeNG):
         right_type: InferenceResult | None,
         context: InferenceContext,
         reverse_context: InferenceContext,
-    ) -> list[partial[Generator[InferenceResult, None, None]]]:
+    ) -> list[partial[Generator[InferenceResult]]]:
         """Get the flow for binary operations.
 
         The rules are a bit messy:
@@ -627,7 +627,7 @@ class OperatorNode(NodeNG):
         binary_opnode: nodes.AugAssign | nodes.BinOp,
         context: InferenceContext,
         flow_factory: GetFlowFactory,
-    ) -> Generator[InferenceResult | util.BadBinaryOperationMessage, None, None]:
+    ) -> Generator[InferenceResult | util.BadBinaryOperationMessage]:
         """Infer a binary operation between a left operand and a right operand.
 
         This is used by both normal binary operations and augmented binary

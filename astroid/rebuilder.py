@@ -912,7 +912,7 @@ class TreeRebuilder:
 
     def _visit_dict_items(
         self, node: ast.Dict, parent: NodeNG, newnode: nodes.Dict
-    ) -> Generator[tuple[NodeNG, NodeNG], None, None]:
+    ) -> Generator[tuple[NodeNG, NodeNG]]:
         for key, value in zip(node.keys, node.values):
             rebuilt_key: NodeNG
             rebuilt_value = self.visit(value, newnode)
