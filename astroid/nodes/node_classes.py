@@ -4759,7 +4759,7 @@ class JoinedStr(NodeNG):
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-        yield from self._infer_from_values(self.values)
+        yield from self._infer_from_values(self.values, context)
 
     @classmethod
     def _infer_from_values(
