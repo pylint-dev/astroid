@@ -4695,6 +4695,7 @@ class FormattedValue(NodeNG):
                     end_col_offset=self.end_col_offset,
                 )
 
+MISSING_VALUE = "{MISSING_VALUE}"
 
 class JoinedStr(NodeNG):
     """Represents a list of string expressions to be joined.
@@ -4772,13 +4773,12 @@ class JoinedStr(NodeNG):
             for suffix in cls._infer_from_values(nodes[1:], context, **kwargs):
                 result = ""
                 for node in (prefix, suffix):
-                    if node is util.Uninferable:
-                        result += "{Uninferable}"
-                    elif isinstance(node, Const):
+                    if isinstance(node, Const):
                         result += str(node.value)
-                    else:
-                        result += node.as_string()
-                yield Const(result)
+                        continue
+                    result += MISSING_VALUE
+                if not MISSING_VALUE in result:
+                    yield Const(result)
 
 
 class NamedExpr(_base_nodes.AssignTypeNode):
