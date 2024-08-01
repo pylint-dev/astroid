@@ -1735,7 +1735,11 @@ class AsyncFunctionDef(FunctionDef):
     """
 
 
-def _is_metaclass(klass, seen=None, context: InferenceContext | None = None) -> bool:
+def _is_metaclass(
+    klass: ClassDef,
+    seen: set[str] | None = None,
+    context: InferenceContext | None = None,
+) -> bool:
     """Return if the given class can be
     used as a metaclass.
     """
@@ -1767,7 +1771,11 @@ def _is_metaclass(klass, seen=None, context: InferenceContext | None = None) -> 
     return False
 
 
-def _class_type(klass, ancestors=None, context: InferenceContext | None = None):
+def _class_type(
+    klass: ClassDef,
+    ancestors: set[str] | None = None,
+    context: InferenceContext | None = None,
+) -> Literal["class", "exception", "metaclass"]:
     """return a ClassDef node type to differ metaclass and exception
     from 'regular' classes
     """
@@ -1790,7 +1798,7 @@ def _class_type(klass, ancestors=None, context: InferenceContext | None = None):
         for base in klass.ancestors(recurs=False):
             name = _class_type(base, ancestors)
             if name != "class":
-                if name == "metaclass" and not _is_metaclass(klass):
+                if name == "metaclass" and klass._type != "metaclass":
                     # don't propagate it if the current class
                     # can't be a metaclass
                     continue
@@ -1859,7 +1867,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
     :type: objectmodel.ClassModel
     """
 
-    _type = None
+    _type: Literal["class", "exception", "metaclass"] | None = None
     _metaclass: NodeNG | None = None
     _metaclass_hack = False
     hide = False
@@ -1946,7 +1954,10 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         """
         locals_ = (("__module__", self.special_attributes.attr___module__),)
         # __qualname__ is defined in PEP3155
-        locals_ += (("__qualname__", self.special_attributes.attr___qualname__),)
+        locals_ += (
+            ("__qualname__", self.special_attributes.attr___qualname__),
+            ("__annotations__", self.special_attributes.attr___annotations__),
+        )
         return locals_
 
     # pylint: disable=redefined-outer-name

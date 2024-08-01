@@ -841,12 +841,13 @@ class FileBuildTest(unittest.TestCase):
         klass1 = module["YO"]
         locals1 = klass1.locals
         keys = sorted(locals1.keys())
-        assert_keys = ["__init__", "__module__", "__qualname__", "a"]
+        assert_keys = ["__annotations__", "__init__", "__module__", "__qualname__", "a"]
         self.assertEqual(keys, assert_keys)
         klass2 = module["YOUPI"]
         locals2 = klass2.locals
         keys = locals2.keys()
         assert_keys = [
+            "__annotations__",
             "__init__",
             "__module__",
             "__qualname__",
