@@ -4771,6 +4771,7 @@ class JoinedStr(NodeNG):
         if len(nodes) == 1:
             yield from nodes[0]._infer(context, **kwargs)
             return
+        uninferable_already_generated = False
         for prefix in nodes[0]._infer(context, **kwargs):
             for suffix in cls._infer_from_values(nodes[1:], context, **kwargs):
                 result = ""
@@ -4780,7 +4781,9 @@ class JoinedStr(NodeNG):
                         continue
                     result += MISSING_VALUE
                 if MISSING_VALUE in result:
-                    yield util.Uninferable
+                    if not uninferable_already_generated:
+                        uninferable_already_generated = True
+                        yield util.Uninferable
                 else:
                     yield Const(result)
 
