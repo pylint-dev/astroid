@@ -4695,7 +4695,9 @@ class FormattedValue(NodeNG):
                     end_col_offset=self.end_col_offset,
                 )
 
+
 MISSING_VALUE = "{MISSING_VALUE}"
+
 
 class JoinedStr(NodeNG):
     """Represents a list of string expressions to be joined.
@@ -4777,7 +4779,7 @@ class JoinedStr(NodeNG):
                         result += str(node.value)
                         continue
                     result += MISSING_VALUE
-                if not MISSING_VALUE in result:
+                if MISSING_VALUE not in result:
                     yield Const(result)
 
 
