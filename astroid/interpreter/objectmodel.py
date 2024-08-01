@@ -493,6 +493,10 @@ class ClassModel(ObjectModel):
         super().__init__()
 
     @property
+    def attr___annotations__(self) -> node_classes.Unkown:
+        return node_classes.Unknown()
+
+    @property
     def attr___module__(self):
         return node_classes.Const(self._instance.root().qname())
 

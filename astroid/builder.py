@@ -246,10 +246,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 try:
                     # pylint: disable=unidiomatic-typecheck # We want a narrow check on the
                     # parent type, not all of its subclasses
-                    if (
-                        type(inferred) == bases.Instance
-                        or type(inferred) == objects.ExceptionInstance
-                    ):
+                    if type(inferred) in {bases.Instance, objects.ExceptionInstance}:
                         inferred = inferred._proxied
                         iattrs = inferred.instance_attrs
                         if not _can_assign_attr(inferred, node.attrname):
