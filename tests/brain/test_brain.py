@@ -1091,7 +1091,7 @@ class BrainFStrings(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        self.assertIs(inferred, util.Uninferable)
+        assert isinstance(inferred, Const)
 
 
 class BrainNamedtupleAnnAssignTest(unittest.TestCase):
