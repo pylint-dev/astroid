@@ -4779,7 +4779,9 @@ class JoinedStr(NodeNG):
                         result += str(node.value)
                         continue
                     result += MISSING_VALUE
-                if MISSING_VALUE not in result:
+                if MISSING_VALUE in result:
+                    yield util.Uninferable
+                else:
                     yield Const(result)
 
 
