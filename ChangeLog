@@ -17,6 +17,9 @@ Release date: TBA
 
   Closes pylint-dev/pylint#7126
 
+* Implement inference for JoinedStr and FormattedValue
+
+
 
 What's New in astroid 3.2.5?
 ============================

@@ -19,6 +19,7 @@ from unittest.mock import patch
 import pytest
 
 from astroid import (
+    Const,
     Slice,
     Uninferable,
     arguments,
@@ -651,6 +652,34 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 for inferred, value in zip(ast["fct"].infer(), values)
             )
         )
+
+    def test_fstring_inference(self) -> None:
+        code = """
+            name = "John"
+            result = f"Hello {name}!"
+            """
+        ast = parse(code, __name__)
+        node = ast["result"]
+        inferred = node.inferred()
+        self.assertEqual(len(inferred), 1)
+        value_node = inferred[0]
+        self.assertIsInstance(value_node, Const)
+        self.assertEqual(value_node.value, "Hello John!")
+
+    def test_formatted_fstring_inference(self) -> None:
+        code = """
+            width = 10
+            precision = 4
+            value = 12.34567
+            result = f"result: {value:{width}.{precision}}!"
+            """
+        ast = parse(code, __name__)
+        node = ast["result"]
+        inferred = node.inferred()
+        self.assertEqual(len(inferred), 1)
+        value_node = inferred[0]
+        self.assertIsInstance(value_node, Const)
+        self.assertEqual(value_node.value, "result:      12.35!")
 
     def test_float_complex_ambiguity(self) -> None:
         code = '''

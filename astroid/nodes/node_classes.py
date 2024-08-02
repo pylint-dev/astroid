@@ -4673,6 +4673,37 @@ class FormattedValue(NodeNG):
         if self.format_spec is not None:
             yield self.format_spec
 
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        if self.format_spec is None:
+            yield from self.value.infer(context, **kwargs)
+            return
+        uninferable_already_generated = False
+        for format_spec in self.format_spec.infer(context, **kwargs):
+            if not isinstance(format_spec, Const):
+                if not uninferable_already_generated:
+                    yield util.Uninferable
+                    uninferable_already_generated = True
+                continue
+            for value in self.value.infer(context, **kwargs):
+                if not isinstance(value, Const):
+                    if not uninferable_already_generated:
+                        yield util.Uninferable
+                        uninferable_already_generated = True
+                    continue
+                formatted = format(value.value, format_spec.value)
+                yield Const(
+                    formatted,
+                    lineno=self.lineno,
+                    col_offset=self.col_offset,
+                    end_lineno=self.end_lineno,
+                    end_col_offset=self.end_col_offset,
+                )
+
+
+MISSING_VALUE = "{MISSING_VALUE}"
+
 
 class JoinedStr(NodeNG):
     """Represents a list of string expressions to be joined.
@@ -4733,6 +4764,34 @@ class JoinedStr(NodeNG):
 
     def get_children(self):
         yield from self.values
+
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        yield from self._infer_from_values(self.values, context)
+
+    @classmethod
+    def _infer_from_values(
+        cls, nodes: list[NodeNG], context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        if len(nodes) == 1:
+            yield from nodes[0]._infer(context, **kwargs)
+            return
+        uninferable_already_generated = False
+        for prefix in nodes[0]._infer(context, **kwargs):
+            for suffix in cls._infer_from_values(nodes[1:], context, **kwargs):
+                result = ""
+                for node in (prefix, suffix):
+                    if isinstance(node, Const):
+                        result += str(node.value)
+                        continue
+                    result += MISSING_VALUE
+                if MISSING_VALUE in result:
+                    if not uninferable_already_generated:
+                        uninferable_already_generated = True
+                        yield util.Uninferable
+                else:
+                    yield Const(result)
 
 
 class NamedExpr(_base_nodes.AssignTypeNode):
