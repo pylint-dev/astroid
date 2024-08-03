@@ -19,6 +19,9 @@ Release date: TBA
 
 * Implement inference for JoinedStr and FormattedValue
 
+* Add support for ``ssl.OP_LEGACY_SERVER_CONNECT`` (new in Python 3.12).
+
+  Closes pylint-dev/pylint#9849
 
 
 What's New in astroid 3.2.5?

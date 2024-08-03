@@ -6,7 +6,7 @@
 
 from astroid import parse
 from astroid.brain.helpers import register_module_extender
-from astroid.const import PY310_PLUS
+from astroid.const import PY310_PLUS, PY312_PLUS
 from astroid.manager import AstroidManager
 
 
@@ -42,13 +42,16 @@ def _options_enum() -> str:
         OP_NO_COMPRESSION = 11
         OP_NO_TICKET = 12
         OP_NO_RENEGOTIATION = 13
-        OP_ENABLE_MIDDLEBOX_COMPAT = 14"""
+        OP_ENABLE_MIDDLEBOX_COMPAT = 14
+        """
+    if PY312_PLUS:
+        enum += "OP_LEGACY_SERVER_CONNECT = 15"
     return enum
 
 
 def ssl_transform():
     return parse(
-        """
+        f"""
     # Import necessary for conversion of objects defined in C into enums
     from enum import IntEnum as _IntEnum, IntFlag as _IntFlag
 
@@ -70,6 +73,8 @@ def ssl_transform():
                       OP_NO_COMPRESSION, OP_NO_SSLv2, OP_NO_SSLv3,
                       OP_NO_TLSv1, OP_NO_TLSv1_1, OP_NO_TLSv1_2,
                       OP_SINGLE_DH_USE, OP_SINGLE_ECDH_USE)
+
+    {"from _ssl import OP_LEGACY_SERVER_CONNECT" if PY312_PLUS else ""}
 
     from _ssl import (ALERT_DESCRIPTION_ACCESS_DENIED, ALERT_DESCRIPTION_BAD_CERTIFICATE,
                       ALERT_DESCRIPTION_BAD_CERTIFICATE_HASH_VALUE,
