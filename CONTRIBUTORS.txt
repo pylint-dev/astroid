@@ -206,3 +206,6 @@ under this name, or we did not manage to find their commits in the history.
 - Mark Gius
 - Jérome Perrin <perrinjerome@gmail.com>
 - Jamie Scott <jamie@jami.org.uk>
+- correctmost <134317971+correctmost@users.noreply.github.com>
+- Oleh Prypin <oleh@pryp.in>
+- Eric Vergnaud <eric.vergnaud@wanadoo.fr>

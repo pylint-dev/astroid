@@ -3,9 +3,21 @@ astroid's ChangeLog
 ===================
 
 
-What's New in astroid 3.3.0?
+What's New in astroid 3.4.0?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 3.3.1?
+============================
+Release date: TBA
+
+
+
+What's New in astroid 3.3.0?
+============================
+Release date: 2024-08-04
 
 * Add support for Python 3.13.
 
@@ -22,12 +34,6 @@ Release date: TBA
 * Add support for ``ssl.OP_LEGACY_SERVER_CONNECT`` (new in Python 3.12).
 
   Closes pylint-dev/pylint#9849
-
-
-What's New in astroid 3.2.5?
-============================
-Release date: TBA
-
 
 
 What's New in astroid 3.2.4?
