@@ -6750,7 +6750,7 @@ def test_infer_dict_passes_context() -> None:
                 def inner(cls):
                     return method(cls)
                 return inner
-    
+
             class X(object):
                 @klassmethod1
                 def x(cls):
