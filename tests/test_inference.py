@@ -5510,6 +5510,11 @@ precision = 4
 value = 12.34567
 result = f"result: {value:{width}.{precision}}!"
 """, "result:      12.35!"),
+("""width = 10
+precision = 4
+value = None
+result = f"result: {value:{width}.{precision}}!"
+""", None),
     ("""width = None
 precision = 4
 value = 12.34567

@@ -4698,7 +4698,7 @@ class FormattedValue(NodeNG):
                             end_col_offset=self.end_col_offset,
                         )
                         continue
-                    except ValueError:  # happens when format_spec.value is invalid
+                    except (ValueError, TypeError):  # happens when format_spec.value is invalid
                         pass  # fall through
                 if not uninferable_already_generated:
                     yield util.Uninferable
