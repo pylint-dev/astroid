@@ -6528,16 +6528,16 @@ def test_infer_assign_attr() -> None:
         ),
         (
             """
-        class A:
-            def __enter__(self):
-                return A()
-            def __exit__(self, err_type, err, traceback):
-                return
-        class B(A):
-                pass
-        with B() as b:
-            b #@
-        """,
+    class A:
+        def __enter__(self):
+            return A()
+        def __exit__(self, err_type, err, traceback):
+            return
+    class B(A):
+            pass
+    with B() as b:
+        b #@
+    """,
             "A",
         ),
         (
@@ -6750,7 +6750,7 @@ def test_infer_dict_passes_context() -> None:
                 def inner(cls):
                     return method(cls)
                 return inner
-    
+
             class X(object):
                 @klassmethod1
                 def x(cls):
