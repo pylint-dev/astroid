@@ -6514,16 +6514,16 @@ def test_infer_assign_attr() -> None:
     [
         (
             """
-            class A:
-                def __enter__(self):
-                    return self
-                def __exit__(self, err_type, err, traceback):
-                    return
-            class B(A):
-                pass
-            with B() as b:
-                b #@
-            """,
+        class A:
+            def __enter__(self):
+                return self
+            def __exit__(self, err_type, err, traceback):
+                return
+        class B(A):
+            pass
+        with B() as b:
+            b #@
+        """,
             "B",
         ),
         (
@@ -6542,14 +6542,14 @@ def test_infer_assign_attr() -> None:
         ),
         (
             """
-            class A:
-                def test(self):
-                    return A()
-            class B(A):
-                def test(self):
-                    return A.test(self)
-            B().test()
-            """,
+        class A:
+            def test(self):
+                return A()
+        class B(A):
+            def test(self):
+                return A.test(self)
+        B().test()
+        """,
             "A",
         ),
     ],
@@ -6745,67 +6745,67 @@ def test_infer_dict_passes_context() -> None:
     [
         (
             """
-                def klassmethod1(method):
-                    @classmethod
-                    def inner(cls):
-                        return method(cls)
-                    return inner
-
-                class X(object):
-                    @klassmethod1
-                    def x(cls):
-                        return 'X'
-                X.x
-                """,
+            def klassmethod1(method):
+                @classmethod
+                def inner(cls):
+                    return method(cls)
+                return inner
+    
+            class X(object):
+                @klassmethod1
+                def x(cls):
+                    return 'X'
+            X.x
+            """,
             BoundMethod,
             "classmethod",
         ),
         (
             """
-                def staticmethod1(method):
-                    @staticmethod
-                    def inner(cls):
-                        return method(cls)
-                    return inner
+            def staticmethod1(method):
+                @staticmethod
+                def inner(cls):
+                    return method(cls)
+                return inner
 
-                class X(object):
-                    @staticmethod1
-                    def x(cls):
-                        return 'X'
-                X.x
-                """,
+            class X(object):
+                @staticmethod1
+                def x(cls):
+                    return 'X'
+            X.x
+            """,
             nodes.FunctionDef,
             "staticmethod",
         ),
         (
             """
-                def klassmethod1(method):
-                    def inner(cls):
-                        return method(cls)
-                    return classmethod(inner)
+            def klassmethod1(method):
+                def inner(cls):
+                    return method(cls)
+                return classmethod(inner)
 
-                class X(object):
-                    @klassmethod1
-                    def x(cls):
-                        return 'X'
-                X.x
-                """,
+            class X(object):
+                @klassmethod1
+                def x(cls):
+                    return 'X'
+            X.x
+            """,
             BoundMethod,
             "classmethod",
         ),
         (
             """
-                def staticmethod1(method):
-                    def inner(cls):
-                        return method(cls)
-                    return staticmethod(inner)
+            def staticmethod1(method):
+                def inner(cls):
+                    return method(cls)
+                return staticmethod(inner)
 
-                class X(object):
-                    @staticmethod1
-                    def x(cls):
-                        return 'X'
-                X.x
-                """,
+            class X(object):
+                @staticmethod1
+                def x(cls):
+                    return 'X'
+            X.x
+            """,
             nodes.FunctionDef,
             "staticmethod",
         ),
