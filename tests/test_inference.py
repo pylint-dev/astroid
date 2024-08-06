@@ -76,10 +76,10 @@ class InferenceUtilsTest(unittest.TestCase):
 
 
 def _assertInferElts(
-    node_type: ABCMeta,
-    self: InferenceTest,
-    node: Any,
-    elts: list[int] | list[str],
+        node_type: ABCMeta,
+        self: InferenceTest,
+        node: Any,
+        elts: list[int] | list[str],
 ) -> None:
     inferred = next(node.infer())
     self.assertIsInstance(inferred, node_type)
@@ -102,7 +102,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.value, expected)
 
     def assertInferDict(
-        self, node: nodes.Call | nodes.Dict | nodes.NodeNG, expected: Any
+            self, node: nodes.Call | nodes.Dict | nodes.NodeNG, expected: Any
     ) -> None:
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Dict)
@@ -666,8 +666,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(value_node, Const)
         self.assertEqual(value_node.value, "Hello John!")
 
-
-
     def test_float_complex_ambiguity(self) -> None:
         code = '''
             def no_conjugate_member(magic_flag):  #@
@@ -1032,7 +1030,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         import_node.do_import_module()
         # calling file_from_module_name() indicates we didn't hit the cache
         with unittest.mock.patch.object(
-            manager.AstroidManager, "file_from_module_name", side_effect=AssertionError
+                manager.AstroidManager, "file_from_module_name", side_effect=AssertionError
         ):
             import_node.do_import_module()
 
@@ -1044,13 +1042,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_unary_not(self) -> None:
         for code in (
-            "a = not (1,); b = not ()",
-            "a = not {1:2}; b = not {}",
-            "a = not [1, 2]; b = not []",
-            "a = not {1, 2}; b = not set()",
-            "a = not 1; b = not 0",
-            'a = not "a"; b = not ""',
-            'a = not b"a"; b = not b""',
+                "a = not (1,); b = not ()",
+                "a = not {1:2}; b = not {}",
+                "a = not [1, 2]; b = not []",
+                "a = not {1, 2}; b = not set()",
+                "a = not 1; b = not 0",
+                'a = not "a"; b = not ""',
+                'a = not b"a"; b = not b""',
         ):
             ast = builder.string_build(code, __name__, __file__)
             self._test_const_inferred(ast["a"], False)
@@ -3691,21 +3689,21 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.value, 42)
 
     def _slicing_test_helper(
-        self,
-        pairs: tuple[
-            tuple[str, list[int] | str],
-            tuple[str, list[int] | str],
-            tuple[str, list[int] | str],
-            tuple[str, list[int] | str],
-            tuple[str, list[int] | str],
-            tuple[str, list[int] | str],
-            tuple[str, list[int] | str],
-            tuple[str, list[int] | str],
-            tuple[str, list[int] | str],
-            tuple[str, list[int] | str],
-        ],
-        cls: ABCMeta | type,
-        get_elts: Callable,
+            self,
+            pairs: tuple[
+                tuple[str, list[int] | str],
+                tuple[str, list[int] | str],
+                tuple[str, list[int] | str],
+                tuple[str, list[int] | str],
+                tuple[str, list[int] | str],
+                tuple[str, list[int] | str],
+                tuple[str, list[int] | str],
+                tuple[str, list[int] | str],
+                tuple[str, list[int] | str],
+                tuple[str, list[int] | str],
+            ],
+            cls: ABCMeta | type,
+            get_elts: Callable,
     ) -> None:
         for code, expected in pairs:
             ast_node = extract_node(code)
@@ -5066,7 +5064,7 @@ class TestType(unittest.TestCase):
 class ArgumentsTest(unittest.TestCase):
     @staticmethod
     def _get_dict_value(
-        inferred: dict,
+            inferred: dict,
     ) -> list[tuple[str, int]] | list[tuple[str, str]]:
         items = inferred.items
         return sorted((key.value, value.value) for key, value in items)
@@ -5394,7 +5392,7 @@ class CallSiteTest(unittest.TestCase):
         return arguments.CallSite.from_call(call)
 
     def _test_call_site_pair(
-        self, code: str, expected_args: list[int], expected_keywords: dict[str, int]
+            self, code: str, expected_args: list[int], expected_keywords: dict[str, int]
     ) -> None:
         ast_node = extract_node(code)
         call_site = self._call_site_from_call(ast_node)
@@ -5408,7 +5406,7 @@ class CallSiteTest(unittest.TestCase):
             self.assertEqual(call_site.keyword_arguments[keyword].value, value)
 
     def _test_call_site(
-        self, pairs: list[tuple[str, list[int], dict[str, int]]]
+            self, pairs: list[tuple[str, list[int], dict[str, int]]]
     ) -> None:
         for pair in pairs:
             self._test_call_site_pair(*pair)
@@ -5504,23 +5502,38 @@ class ObjectDunderNewTest(unittest.TestCase):
         self.assertIsInstance(inferred, Instance)
 
 
-@pytest.mark.parametrize("code, result", [
-    ("""width = 10
+@pytest.mark.parametrize(
+    "code, result",
+    [
+        # regular f-string
+        (
+                """width = 10
 precision = 4
 value = 12.34567
 result = f"result: {value:{width}.{precision}}!"
-""", "result:      12.35!"),
-("""width = 10
+""",
+                "result:      12.35!",
+        ),
+        # unsupported format
+        (
+                """width = None
+precision = 4
+value = 12.34567
+result = f"result: {value:{width}.{precision}}!"
+""",
+                None
+        ),
+        # unsupported value
+        (
+                """width = 10
 precision = 4
 value = None
 result = f"result: {value:{width}.{precision}}!"
-""", None),
-    ("""width = None
-precision = 4
-value = 12.34567
-result = f"result: {value:{width}.{precision}}!"
-""", None)
-])
+""",
+                None
+        ),
+    ],
+)
 def test_formatted_fstring_inference(code, result) -> None:
     ast = parse(code, __name__)
     node = ast["result"]
@@ -6500,44 +6513,44 @@ def test_infer_assign_attr() -> None:
     "code,instance_name",
     [
         (
-            """
+                """
+            class A:
+                def __enter__(self):
+                    return self
+                def __exit__(self, err_type, err, traceback):
+                    return
+            class B(A):
+                pass
+            with B() as b:
+                b #@
+            """,
+                "B",
+        ),
+        (
+                """
         class A:
             def __enter__(self):
-                return self
+                return A()
             def __exit__(self, err_type, err, traceback):
                 return
         class B(A):
-            pass
+                pass
         with B() as b:
             b #@
         """,
-            "B",
+                "A",
         ),
         (
-            """
-    class A:
-        def __enter__(self):
-            return A()
-        def __exit__(self, err_type, err, traceback):
-            return
-    class B(A):
-            pass
-    with B() as b:
-        b #@
-    """,
-            "A",
-        ),
-        (
-            """
-        class A:
-            def test(self):
-                return A()
-        class B(A):
-            def test(self):
-                return A.test(self)
-        B().test()
-        """,
-            "A",
+                """
+            class A:
+                def test(self):
+                    return A()
+            class B(A):
+                def test(self):
+                    return A.test(self)
+            B().test()
+            """,
+                "A",
         ),
     ],
 )
@@ -6731,70 +6744,70 @@ def test_infer_dict_passes_context() -> None:
     "code,obj,obj_type",
     [
         (
-            """
-            def klassmethod1(method):
-                @classmethod
-                def inner(cls):
-                    return method(cls)
-                return inner
-
-            class X(object):
-                @klassmethod1
-                def x(cls):
-                    return 'X'
-            X.x
-            """,
-            BoundMethod,
-            "classmethod",
+                """
+                def klassmethod1(method):
+                    @classmethod
+                    def inner(cls):
+                        return method(cls)
+                    return inner
+    
+                class X(object):
+                    @klassmethod1
+                    def x(cls):
+                        return 'X'
+                X.x
+                """,
+                BoundMethod,
+                "classmethod",
         ),
         (
-            """
-            def staticmethod1(method):
-                @staticmethod
-                def inner(cls):
-                    return method(cls)
-                return inner
-
-            class X(object):
-                @staticmethod1
-                def x(cls):
-                    return 'X'
-            X.x
-            """,
-            nodes.FunctionDef,
-            "staticmethod",
+                """
+                def staticmethod1(method):
+                    @staticmethod
+                    def inner(cls):
+                        return method(cls)
+                    return inner
+    
+                class X(object):
+                    @staticmethod1
+                    def x(cls):
+                        return 'X'
+                X.x
+                """,
+                nodes.FunctionDef,
+                "staticmethod",
         ),
         (
-            """
-            def klassmethod1(method):
-                def inner(cls):
-                    return method(cls)
-                return classmethod(inner)
-
-            class X(object):
-                @klassmethod1
-                def x(cls):
-                    return 'X'
-            X.x
-            """,
-            BoundMethod,
-            "classmethod",
+                """
+                def klassmethod1(method):
+                    def inner(cls):
+                        return method(cls)
+                    return classmethod(inner)
+    
+                class X(object):
+                    @klassmethod1
+                    def x(cls):
+                        return 'X'
+                X.x
+                """,
+                BoundMethod,
+                "classmethod",
         ),
         (
-            """
-            def staticmethod1(method):
-                def inner(cls):
-                    return method(cls)
-                return staticmethod(inner)
-
-            class X(object):
-                @staticmethod1
-                def x(cls):
-                    return 'X'
-            X.x
-            """,
-            nodes.FunctionDef,
-            "staticmethod",
+                """
+                def staticmethod1(method):
+                    def inner(cls):
+                        return method(cls)
+                    return staticmethod(inner)
+    
+                class X(object):
+                    @staticmethod1
+                    def x(cls):
+                        return 'X'
+                X.x
+                """,
+                nodes.FunctionDef,
+                "staticmethod",
         ),
     ],
 )
