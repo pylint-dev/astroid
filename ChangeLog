@@ -9,9 +9,15 @@ Release date: TBA
 
 
 
-What's New in astroid 3.3.1?
+What's New in astroid 3.3.2?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 3.3.1?
+============================
+Release date: 2024-08-06
 
 * Fix a crash introduced in 3.3.0 involving invalid format strings.
 
