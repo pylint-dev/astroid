@@ -4687,19 +4687,24 @@ class FormattedValue(NodeNG):
                     uninferable_already_generated = True
                 continue
             for value in self.value.infer(context, **kwargs):
-                if not isinstance(value, Const):
-                    if not uninferable_already_generated:
-                        yield util.Uninferable
-                        uninferable_already_generated = True
-                    continue
-                formatted = format(value.value, format_spec.value)
-                yield Const(
-                    formatted,
-                    lineno=self.lineno,
-                    col_offset=self.col_offset,
-                    end_lineno=self.end_lineno,
-                    end_col_offset=self.end_col_offset,
-                )
+                if isinstance(value, Const):
+                    try:
+                        formatted = format(value.value, format_spec.value)
+                        yield Const(
+                            formatted,
+                            lineno=self.lineno,
+                            col_offset=self.col_offset,
+                            end_lineno=self.end_lineno,
+                            end_col_offset=self.end_col_offset,
+                        )
+                        continue
+                    except (ValueError, TypeError):
+                        # happens when format_spec.value is invalid
+                        pass  # fall through
+                if not uninferable_already_generated:
+                    yield util.Uninferable
+                    uninferable_already_generated = True
+                continue
 
 
 MISSING_VALUE = "{MISSING_VALUE}"

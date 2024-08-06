@@ -13,6 +13,9 @@ What's New in astroid 3.3.1?
 ============================
 Release date: TBA
 
+* Fix a crash introduced in 3.3.0 involving invalid format strings.
+
+  Closes #2492
 
 
 What's New in astroid 3.3.0?
