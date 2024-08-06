@@ -666,8 +666,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(value_node, Const)
         self.assertEqual(value_node.value, "Hello John!")
 
-
-
     def test_float_complex_ambiguity(self) -> None:
         code = '''
             def no_conjugate_member(magic_flag):  #@
@@ -5504,18 +5502,27 @@ class ObjectDunderNewTest(unittest.TestCase):
         self.assertIsInstance(inferred, Instance)
 
 
-@pytest.mark.parametrize("code, result", [
-    ("""width = 10
+@pytest.mark.parametrize(
+    "code, result",
+    [
+        (
+            """width = 10
 precision = 4
 value = 12.34567
 result = f"result: {value:{width}.{precision}}!"
-""", "result:      12.35!"),
-    ("""width = None
+""",
+            "result:      12.35!",
+        ),
+        (
+            """width = None
 precision = 4
 value = 12.34567
 result = f"result: {value:{width}.{precision}}!"
-""", None)
-])
+""",
+            None,
+        ),
+    ],
+)
 def test_formatted_fstring_inference(code, result) -> None:
     ast = parse(code, __name__)
     node = ast["result"]
