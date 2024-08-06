@@ -666,21 +666,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(value_node, Const)
         self.assertEqual(value_node.value, "Hello John!")
 
-    def test_formatted_fstring_inference(self) -> None:
-        code = """
-            width = 10
-            precision = 4
-            value = 12.34567
-            result = f"result: {value:{width}.{precision}}!"
-            """
-        ast = parse(code, __name__)
-        node = ast["result"]
-        inferred = node.inferred()
-        self.assertEqual(len(inferred), 1)
-        value_node = inferred[0]
-        self.assertIsInstance(value_node, Const)
-        self.assertEqual(value_node.value, "result:      12.35!")
-
     def test_float_complex_ambiguity(self) -> None:
         code = '''
             def no_conjugate_member(magic_flag):  #@
@@ -5515,6 +5500,51 @@ class ObjectDunderNewTest(unittest.TestCase):
         )
         inferred = next(node.infer())
         self.assertIsInstance(inferred, Instance)
+
+
+@pytest.mark.parametrize(
+    "code, result",
+    [
+        # regular f-string
+        (
+            """width = 10
+precision = 4
+value = 12.34567
+result = f"result: {value:{width}.{precision}}!"
+""",
+            "result:      12.35!",
+        ),
+        # unsupported format
+        (
+            """width = None
+precision = 4
+value = 12.34567
+result = f"result: {value:{width}.{precision}}!"
+""",
+            None,
+        ),
+        # unsupported value
+        (
+            """width = 10
+precision = 4
+value = None
+result = f"result: {value:{width}.{precision}}!"
+""",
+            None,
+        ),
+    ],
+)
+def test_formatted_fstring_inference(code, result) -> None:
+    ast = parse(code, __name__)
+    node = ast["result"]
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    value_node = inferred[0]
+    if result is None:
+        assert value_node is util.Uninferable
+    else:
+        assert isinstance(value_node, Const)
+        assert value_node.value == result
 
 
 def test_augassign_recursion() -> None:
