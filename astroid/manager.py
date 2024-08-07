@@ -29,6 +29,7 @@ from astroid.modutils import (
     is_module_name_part_of_extension_package_whitelist,
     is_python_source,
     is_stdlib_module,
+    isfile,
     load_module_from_name,
     modpath_from_file,
 )
@@ -471,6 +472,7 @@ class AstroidManager:
             LookupMixIn.lookup,
             _cache_normalize_path_,
             _has_init,
+            isfile,
             util.is_namespace,
             ObjectModel.attributes,
             ClassDef._metaclass_lookup_attribute,

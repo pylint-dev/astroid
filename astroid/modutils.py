@@ -30,6 +30,7 @@ import warnings
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import redirect_stderr, redirect_stdout
 from functools import lru_cache
+from typing import Union
 
 from astroid.const import IS_JYTHON, PY310_PLUS
 from astroid.interpreter._import import spec, util
@@ -602,6 +603,12 @@ def is_relative(modname: str, from_file: str) -> bool:
             modname.split(".", maxsplit=1)[0], [from_file]
         )
     )
+
+
+@lru_cache(maxsize=1024)
+def isfile(path: Union[str, os.PathLike]) -> bool:
+    """A cached version of os.path.isfile that helps avoid repetitive I/O"""
+    return os.path.isfile(path)
 
 
 # internal only functions #####################################################
