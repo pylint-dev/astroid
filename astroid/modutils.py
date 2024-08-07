@@ -30,7 +30,6 @@ import warnings
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import redirect_stderr, redirect_stdout
 from functools import lru_cache
-from typing import Union
 
 from astroid.const import IS_JYTHON, PY310_PLUS
 from astroid.interpreter._import import spec, util
