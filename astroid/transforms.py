@@ -78,7 +78,9 @@ class TransformVisitor:
     def _visit(self, node: nodes.NodeNG) -> SuccessfulInferenceResult:
         for name in node._astroid_fields:
             value = getattr(node, name)
-            value = cast(_Vistables, value)
+            if TYPE_CHECKING:
+                value = cast(_Vistables, value)
+
             visited = self._visit_generic(value)
             if visited != value:
                 setattr(node, name, visited)
