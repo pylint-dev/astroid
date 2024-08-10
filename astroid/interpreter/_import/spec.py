@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any, Literal, NamedTuple, Protocol
 
 from astroid.const import PY310_PLUS
-from astroid.modutils import EXT_LIB_DIRS, isfile
+from astroid.modutils import EXT_LIB_DIRS, cached_os_path_isfile
 
 from . import util
 
@@ -167,7 +167,7 @@ class ImportlibFinder(Finder):
             for suffix in suffixes:
                 package_file_name = "__init__" + suffix
                 file_path = os.path.join(package_directory, package_file_name)
-                if isfile(file_path):
+                if cached_os_path_isfile(file_path):
                     return ModuleSpec(
                         name=modname,
                         location=package_directory,
@@ -176,7 +176,7 @@ class ImportlibFinder(Finder):
             for suffix, type_ in ImportlibFinder._SUFFIXES:
                 file_name = modname + suffix
                 file_path = os.path.join(entry, file_name)
-                if isfile(file_path):
+                if cached_os_path_isfile(file_path):
                     return ModuleSpec(name=modname, location=file_path, type=type_)
         return None
 
