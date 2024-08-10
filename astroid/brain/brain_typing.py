@@ -451,6 +451,18 @@ def _typing_transform():
         @classmethod
         def __class_getitem__(cls, item):  return cls
     class TypeVarTuple: ...
+    class ContextManager:
+        @classmethod
+        def __class_getitem__(cls, item):  return cls
+    class AsyncContextManager:
+        @classmethod
+        def __class_getitem__(cls, item):  return cls
+    class Pattern:
+        @classmethod
+        def __class_getitem__(cls, item):  return cls
+    class Match:
+        @classmethod
+        def __class_getitem__(cls, item):  return cls
     """
         )
     )
