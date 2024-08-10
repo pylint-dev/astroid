@@ -13,6 +13,9 @@ What's New in astroid 3.3.2?
 ============================
 Release date: TBA
 
+* Restore support for soft-deprecated members of the ``typing`` module with python 3.13.
+
+  Refs pylint-dev/pylint#9852
 
 
 What's New in astroid 3.3.1?
