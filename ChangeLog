@@ -9,9 +9,15 @@ Release date: TBA
 
 
 
-What's New in astroid 3.3.2?
+What's New in astroid 3.3.3?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 3.3.2?
+============================
+Release date: 2024-08-11
 
 * Restore support for soft-deprecated members of the ``typing`` module with python 3.13.
 
