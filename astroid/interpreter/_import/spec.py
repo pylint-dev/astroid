@@ -86,9 +86,9 @@ class Finder:
     def __init__(self, path: Sequence[str] | None = None) -> None:
         self._path = path or sys.path
 
+    @staticmethod
     @abc.abstractmethod
     def find_module(
-        self,
         modname: str,
         module_parts: Sequence[str],
         processed: list[str],
@@ -126,8 +126,8 @@ class ImportlibFinder(Finder):
         + [(s, ModuleType.PY_COMPILED) for s in importlib.machinery.BYTECODE_SUFFIXES]
     )
 
+    @staticmethod
     def find_module(
-        self,
         modname: str,
         module_parts: Sequence[str],
         processed: list[str],
@@ -221,8 +221,8 @@ class ImportlibFinder(Finder):
 class ExplicitNamespacePackageFinder(ImportlibFinder):
     """A finder for the explicit namespace packages."""
 
+    @staticmethod
     def find_module(
-        self,
         modname: str,
         module_parts: Sequence[str],
         processed: list[str],
@@ -261,8 +261,8 @@ class ZipFinder(Finder):
                 except zipimport.ZipImportError:
                     continue
 
+    @staticmethod
     def find_module(
-        self,
         modname: str,
         module_parts: Sequence[str],
         processed: list[str],
@@ -285,8 +285,8 @@ class ZipFinder(Finder):
 class PathSpecFinder(Finder):
     """Finder based on importlib.machinery.PathFinder."""
 
+    @staticmethod
     def find_module(
-        self,
         modname: str,
         module_parts: Sequence[str],
         processed: list[str],
@@ -378,7 +378,7 @@ def _find_spec_with_path(
 ) -> tuple[Finder | _MetaPathFinder, ModuleSpec]:
     for finder in _SPEC_FINDERS:
         finder_instance = finder(search_path)
-        spec = finder_instance.find_module(
+        spec = finder.find_module(
             modname, module_parts, processed, submodule_path
         )
         if spec is None:
