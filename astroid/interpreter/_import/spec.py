@@ -378,9 +378,7 @@ def _find_spec_with_path(
 ) -> tuple[Finder | _MetaPathFinder, ModuleSpec]:
     for finder in _SPEC_FINDERS:
         finder_instance = finder(search_path)
-        spec = finder.find_module(
-            modname, module_parts, processed, submodule_path
-        )
+        spec = finder.find_module(modname, module_parts, processed, submodule_path)
         if spec is None:
             continue
         return finder_instance, spec
