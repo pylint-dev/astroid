@@ -151,8 +151,8 @@ def infer_numpy_ndarray(node, context: InferenceContext | None = None):
     return node.infer(context=context)
 
 
-def _looks_like_numpy_ndarray(node) -> bool:
-    return isinstance(node, Attribute) and node.attrname == "ndarray"
+def _looks_like_numpy_ndarray(node: Attribute) -> bool:
+    return node.attrname == "ndarray"
 
 
 def register(manager: AstroidManager) -> None:
