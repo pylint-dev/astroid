@@ -90,7 +90,7 @@ class Finder:
     @abc.abstractmethod
     def find_module(
         modname: str,
-        module_parts: Sequence[str],
+        module_parts: tuple[str],
         processed: list[str],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
@@ -100,7 +100,7 @@ class Finder:
         they all return a ModuleSpec.
 
         :param modname: The module which needs to be searched.
-        :param module_parts: It should be a list of strings,
+        :param module_parts: It should be a tuple of strings,
                                   where each part contributes to the module's
                                   namespace.
         :param processed: What parts from the module parts were processed
@@ -129,7 +129,7 @@ class ImportlibFinder(Finder):
     @staticmethod
     def find_module(
         modname: str,
-        module_parts: Sequence[str],
+        module_parts: tuple[str],
         processed: list[str],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
@@ -224,7 +224,7 @@ class ExplicitNamespacePackageFinder(ImportlibFinder):
     @staticmethod
     def find_module(
         modname: str,
-        module_parts: Sequence[str],
+        module_parts: tuple[str],
         processed: list[str],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
@@ -264,7 +264,7 @@ class ZipFinder(Finder):
     @staticmethod
     def find_module(
         modname: str,
-        module_parts: Sequence[str],
+        module_parts: tuple[str],
         processed: list[str],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
@@ -288,7 +288,7 @@ class PathSpecFinder(Finder):
     @staticmethod
     def find_module(
         modname: str,
-        module_parts: Sequence[str],
+        module_parts: tuple[str],
         processed: list[str],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
@@ -342,7 +342,7 @@ def _get_zipimporters() -> Iterator[tuple[str, zipimport.zipimporter]]:
 
 
 def _search_zip(
-    modpath: Sequence[str],
+    modpath: tuple[str],
 ) -> tuple[Literal[ModuleType.PY_ZIPMODULE], str, str]:
     for filepath, importer in _get_zipimporters():
         if PY310_PLUS:
@@ -372,7 +372,7 @@ def _search_zip(
 def _find_spec_with_path(
     search_path: Sequence[str],
     modname: str,
-    module_parts: list[str],
+    module_parts: tuple[str],
     processed: list[str],
     submodule_path: Sequence[str] | None,
 ) -> tuple[Finder | _MetaPathFinder, ModuleSpec]:
@@ -451,7 +451,7 @@ def _find_spec(module_path: tuple, path: tuple) -> ModuleSpec:
     modpath = list(module_path)
 
     submodule_path = None
-    module_parts = modpath[:]
+    module_parts = tuple(modpath)
     processed: list[str] = []
 
     while modpath:
