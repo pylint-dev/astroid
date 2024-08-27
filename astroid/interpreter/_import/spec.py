@@ -91,7 +91,7 @@ class Finder:
     def find_module(
         modname: str,
         module_parts: tuple[str],
-        processed: list[str],
+        processed: tuple[str],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
         """Find the given module.
@@ -130,7 +130,7 @@ class ImportlibFinder(Finder):
     def find_module(
         modname: str,
         module_parts: tuple[str],
-        processed: list[str],
+        processed: tuple[str],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
         if submodule_path is not None:
@@ -225,7 +225,7 @@ class ExplicitNamespacePackageFinder(ImportlibFinder):
     def find_module(
         modname: str,
         module_parts: tuple[str],
-        processed: list[str],
+        processed: tuple[str],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
         if processed:
@@ -265,7 +265,7 @@ class ZipFinder(Finder):
     def find_module(
         modname: str,
         module_parts: tuple[str],
-        processed: list[str],
+        processed: tuple[str],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
         try:
@@ -289,7 +289,7 @@ class PathSpecFinder(Finder):
     def find_module(
         modname: str,
         module_parts: tuple[str],
-        processed: list[str],
+        processed: tuple[str],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
         spec = importlib.machinery.PathFinder.find_spec(modname, path=submodule_path)
@@ -373,7 +373,7 @@ def _find_spec_with_path(
     search_path: Sequence[str],
     modname: str,
     module_parts: tuple[str],
-    processed: list[str],
+    processed: tuple[str],
     submodule_path: Sequence[str] | None,
 ) -> tuple[Finder | _MetaPathFinder, ModuleSpec]:
     for finder in _SPEC_FINDERS:
@@ -457,7 +457,7 @@ def _find_spec(module_path: tuple, path: tuple) -> ModuleSpec:
     while modpath:
         modname = modpath.pop(0)
         finder, spec = _find_spec_with_path(
-            _path, modname, module_parts, processed, submodule_path or path
+            _path, modname, module_parts, tuple(processed), submodule_path or path
         )
         processed.append(modname)
         if modpath:
