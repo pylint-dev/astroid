@@ -13,6 +13,10 @@ What's New in astroid 3.3.3?
 ============================
 Release date: TBA
 
+* Add annotation-only instance attributes to attrs classes to fix `no-member` false positives.
+
+  Closes #2514
+
 
 
 What's New in astroid 3.3.2?
