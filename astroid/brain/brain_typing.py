@@ -398,7 +398,7 @@ def infer_special_alias(
 
 
 def _looks_like_typing_cast(node: Call) -> bool:
-    return isinstance(node, Call) and (
+    return (
         isinstance(node.func, Name)
         and node.func.name == "cast"
         or isinstance(node.func, Attribute)
