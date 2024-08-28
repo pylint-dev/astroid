@@ -164,6 +164,7 @@ class ImportNode(FilterStmtsBaseNode, NoChildrenNode, Statement):
         else:
             use_cache = True
 
+        # pylint: disable-next=no-member # pylint doesn't recognize type of mymodule
         context_file = mymodule.path[0] if mymodule.path else None
         if context_file == "<?>":
             context_file = None
