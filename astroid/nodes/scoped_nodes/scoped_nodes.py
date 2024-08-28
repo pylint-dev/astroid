@@ -472,9 +472,9 @@ class Module(LocalsDictNodeNG):
             # like "_winapi" or "nt" on POSIX systems.
             if modname == absmodname:
                 raise
-        return AstroidManager().ast_from_module_name(modname,
-                                                     context_file, 
-                                                     use_cache=use_cache)
+        return AstroidManager().ast_from_module_name(
+            modname, context_file, use_cache=use_cache
+        )
 
     def relative_to_absolute_name(self, modname: str, level: int | None) -> str:
         """Get the absolute module name for a relative import.
