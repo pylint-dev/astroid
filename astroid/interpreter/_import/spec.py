@@ -18,7 +18,7 @@ import zipimport
 from collections.abc import Iterable, Iterator, Sequence
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, Protocol
+from typing import Literal, NamedTuple, Protocol
 
 from astroid.const import PY310_PLUS
 from astroid.modutils import EXT_LIB_DIRS, cached_os_path_isfile
@@ -91,7 +91,7 @@ class Finder:
     def find_module(
         modname: str,
         module_parts: tuple[str],
-        processed: tuple[str],
+        processed: tuple[str, ...],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
         """Find the given module.
@@ -130,7 +130,7 @@ class ImportlibFinder(Finder):
     def find_module(
         modname: str,
         module_parts: tuple[str],
-        processed: tuple[str],
+        processed: tuple[str, ...],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
         if submodule_path is not None:
@@ -225,7 +225,7 @@ class ExplicitNamespacePackageFinder(ImportlibFinder):
     def find_module(
         modname: str,
         module_parts: tuple[str],
-        processed: tuple[str],
+        processed: tuple[str, ...],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
         if processed:
@@ -265,7 +265,7 @@ class ZipFinder(Finder):
     def find_module(
         modname: str,
         module_parts: tuple[str],
-        processed: tuple[str],
+        processed: tuple[str, ...],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
         try:
@@ -289,7 +289,7 @@ class PathSpecFinder(Finder):
     def find_module(
         modname: str,
         module_parts: tuple[str],
-        processed: tuple[str],
+        processed: tuple[str, ...],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
         spec = importlib.machinery.PathFinder.find_spec(modname, path=submodule_path)
@@ -346,7 +346,7 @@ def _search_zip(
 ) -> tuple[Literal[ModuleType.PY_ZIPMODULE], str, str]:
     for filepath, importer in _get_zipimporters():
         if PY310_PLUS:
-            found: Any = importer.find_spec(modpath[0])
+            found = importer.find_spec(modpath[0])
         else:
             found = importer.find_module(modpath[0])
         if found:
@@ -373,15 +373,15 @@ def _find_spec_with_path(
     search_path: Sequence[str],
     modname: str,
     module_parts: tuple[str],
-    processed: tuple[str],
+    processed: tuple[str, ...],
     submodule_path: Sequence[str] | None,
 ) -> tuple[Finder | _MetaPathFinder, ModuleSpec]:
     for finder in _SPEC_FINDERS:
         finder_instance = finder(search_path)
-        spec = finder.find_module(modname, module_parts, processed, submodule_path)
-        if spec is None:
+        mod_spec = finder.find_module(modname, module_parts, processed, submodule_path)
+        if mod_spec is None:
             continue
-        return finder_instance, spec
+        return finder_instance, mod_spec
 
     # Support for custom finders
     for meta_finder in sys.meta_path:
@@ -444,20 +444,19 @@ def find_spec(modpath: Iterable[str], path: Iterable[str] | None = None) -> Modu
 
 
 @lru_cache(maxsize=1024)
-def _find_spec(module_path: tuple, path: tuple) -> ModuleSpec:
+def _find_spec(module_path: tuple[str], path: tuple[str, ...]) -> ModuleSpec:
     _path = path or sys.path
 
     # Need a copy for not mutating the argument.
     modpath = list(module_path)
 
     submodule_path = None
-    module_parts = tuple(modpath)
     processed: list[str] = []
 
     while modpath:
         modname = modpath.pop(0)
         finder, spec = _find_spec_with_path(
-            _path, modname, module_parts, tuple(processed), submodule_path or path
+            _path, modname, module_path, tuple(processed), submodule_path or path
         )
         processed.append(modname)
         if modpath:
