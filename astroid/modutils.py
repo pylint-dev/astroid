@@ -292,7 +292,9 @@ def modpath_from_file_with_callback(
             return modpath
 
     raise ImportError(
-        "Unable to find module for {} in {}".format(filename, ", \n".join(sys.path))
+        "Unable to find module for {} in {}".format(
+            filename, ", \n".join(paths_to_check)
+        )
     )
 
 
@@ -305,8 +307,8 @@ def modpath_from_file(filename: str, path: Sequence[str] | None = None) -> list[
     :param filename: file's path for which we want the module's name
 
     :type Optional[List[str]] path:
-      Optional list of path where the module or package should be
-      searched (use sys.path if nothing or None is given)
+      Optional list of paths where the module or package should be
+      searched, additionally to sys.path
 
     :raise ImportError:
       if the corresponding module's name has not been found
