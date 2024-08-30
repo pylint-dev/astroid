@@ -62,11 +62,24 @@ testpaths = ["tests"]
 filterwarnings = "error"
 
 [tool.mypy]
-enable_error_code = "ignore-without-code"
-no_implicit_optional = true
+python_version = "3.9"
+files = [
+    "astroid/interpreter/_import/",
+]
+always_false = [
+    "PY310_PLUS",
+    "PY311_PLUS",
+    "PY312_PLUS",
+    "PY313_PLUS",
+]
+disallow_any_decorated = true
+disallow_any_explicit = true
+follow_imports = "silent"
 scripts_are_modules = true
 show_error_codes = true
+strict = true
 warn_redundant_casts = true
+warn_unreachable = true
 
 [[tool.mypy.overrides]]
 # Importlib typeshed stubs do not include the private functions we use
