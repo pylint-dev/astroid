@@ -593,7 +593,7 @@ class Module(LocalsDictNodeNG):
 
     def get_children(self):
         yield from self.body
-    
+
     def get_parent_path(self) -> str | None:
         """Given the module, return its parent path"""
         module_parts = self.name.split(".")
@@ -601,7 +601,6 @@ class Module(LocalsDictNodeNG):
             return str(Path(self.file).parents[len(module_parts)])
         else:
             return None
-
 
     def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
         """The node's frame node.
