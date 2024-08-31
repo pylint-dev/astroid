@@ -16,6 +16,7 @@ import os
 import warnings
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import cached_property, lru_cache
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypeVar
 
 from astroid import bases, protocols, util
@@ -592,6 +593,15 @@ class Module(LocalsDictNodeNG):
 
     def get_children(self):
         yield from self.body
+    
+    def get_parent_path(self) -> str | None:
+        """Given the module, return its parent path"""
+        module_parts = self.name.split(".")
+        if self.file and self.file != "<?>":
+            return str(Path(self.file).parents[len(module_parts)])
+        else:
+            return None
+
 
     def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
         """The node's frame node.
