@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v4.1.7
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         id: python
-        uses: actions/setup-python@v5.1.1
+        uses: actions/setup-python@v5.2.0
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
           check-latest: true
@@ -89,7 +89,7 @@ jobs:
         uses: actions/checkout@v4.1.7
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v5.1.1
+        uses: actions/setup-python@v5.2.0
         with:
           python-version: ${{ matrix.python-version }}
           check-latest: true
@@ -148,7 +148,7 @@ jobs:
         uses: actions/checkout@v4.1.7
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v5.1.1
+        uses: actions/setup-python@v5.2.0
         with:
           python-version: ${{ matrix.python-version }}
           check-latest: true
@@ -198,7 +198,7 @@ jobs:
         uses: actions/checkout@v4.1.7
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v5.1.1
+        uses: actions/setup-python@v5.2.0
         with:
           python-version: ${{ matrix.python-version }}
           check-latest: true
@@ -244,7 +244,7 @@ jobs:
         uses: actions/checkout@v4.1.7
       - name: Set up Python 3.12
         id: python
-        uses: actions/setup-python@v5.1.1
+        uses: actions/setup-python@v5.2.0
         with:
           python-version: "3.12"
           check-latest: true
