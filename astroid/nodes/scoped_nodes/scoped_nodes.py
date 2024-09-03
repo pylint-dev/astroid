@@ -354,7 +354,9 @@ class Module(LocalsDictNodeNG):
         if name in self.special_attributes and not ignore_locals and not name_in_locals:
             result = [self.special_attributes.lookup(name)]
             if name == "__name__":
-                result.append(const_factory("__main__"))
+                main_const = const_factory("__main__")
+                main_const.parent = AstroidManager().builtins_module
+                result.append(main_const)
         elif not ignore_locals and name_in_locals:
             result = self.locals[name]
         elif self.package:
