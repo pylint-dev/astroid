@@ -21,7 +21,7 @@ from typing import (
     overload,
 )
 
-from astroid import util
+from astroid import nodes, util
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidError,
@@ -43,7 +43,6 @@ else:
 
 
 if TYPE_CHECKING:
-    from astroid import nodes
     from astroid.nodes import _base_nodes
 
 
@@ -332,11 +331,13 @@ class NodeNG:
         :returns: The root node.
         """
         if not (parent := self.parent):
-            return self  # type: ignore[return-value] # Only 'Module' does not have a parent node.
+            assert isinstance(self, nodes.Module)
+            return self
 
         while parent.parent:
             parent = parent.parent
-        return parent  # type: ignore[return-value] # Only 'Module' does not have a parent node.
+        assert isinstance(parent, nodes.Module)
+        return parent
 
     def child_sequence(self, child):
         """Search for the sequence that contains this child.
