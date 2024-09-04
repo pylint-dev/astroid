@@ -7,12 +7,13 @@
 # typecheck in `_emit_no_member` function)
 
 """Astroid hooks for numpy.core.umath module."""
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
 
 
-def numpy_core_umath_transform():
+def numpy_core_umath_transform() -> nodes.Module:
     ufunc_optional_keyword_arguments = (
         """out=None, where=True, casting='same_kind', order='K', """
         """dtype=None, subok=True"""

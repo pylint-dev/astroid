@@ -3,12 +3,13 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid hooks for scipy.signal module."""
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
 
 
-def scipy_signal():
+def scipy_signal() -> nodes.Module:
     return parse(
         """
     # different functions defined in scipy.signals

@@ -4,9 +4,10 @@
 
 from __future__ import annotations
 
-from astroid import arguments, inference_tip, nodes
+from astroid import arguments, nodes
 from astroid.context import InferenceContext
 from astroid.exceptions import UseInferenceDefault
+from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 
 

@@ -6,6 +6,7 @@
 
 import functools
 
+from astroid import nodes
 from astroid.brain.brain_numpy_utils import (
     attribute_looks_like_numpy_member,
     infer_numpy_member,
@@ -18,7 +19,7 @@ from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import Attribute, Name
 
 
-def numpy_core_multiarray_transform():
+def numpy_core_multiarray_transform() -> nodes.Module:
     return parse(
         """
     # different functions defined in multiarray.py

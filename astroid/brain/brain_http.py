@@ -5,12 +5,13 @@
 """Astroid brain hints for some of the `http` module."""
 import textwrap
 
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
 from astroid.manager import AstroidManager
 
 
-def _http_transform():
+def _http_transform() -> nodes.Module:
     code = textwrap.dedent(
         """
     from enum import IntEnum
@@ -140,7 +141,7 @@ def _http_transform():
     return AstroidBuilder(AstroidManager()).string_build(code)
 
 
-def _http_client_transform():
+def _http_client_transform() -> nodes.Module:
     return AstroidBuilder(AstroidManager()).string_build(
         textwrap.dedent(
             """

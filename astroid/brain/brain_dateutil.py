@@ -6,12 +6,13 @@
 
 import textwrap
 
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
 from astroid.manager import AstroidManager
 
 
-def dateutil_transform():
+def dateutil_transform() -> nodes.Module:
     return AstroidBuilder(AstroidManager()).string_build(
         textwrap.dedent(
             """

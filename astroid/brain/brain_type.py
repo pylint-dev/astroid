@@ -22,9 +22,11 @@ Thanks to Lukasz Langa for fruitful discussion.
 
 from __future__ import annotations
 
-from astroid import extract_node, inference_tip, nodes
+from astroid import nodes
+from astroid.builder import extract_node
 from astroid.context import InferenceContext
 from astroid.exceptions import UseInferenceDefault
+from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 
 

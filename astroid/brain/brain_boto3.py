@@ -4,14 +4,14 @@
 
 """Astroid hooks for understanding ``boto3.ServiceRequest()``."""
 
-from astroid import extract_node
+from astroid.builder import extract_node
 from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import ClassDef
 
 BOTO_SERVICE_FACTORY_QUALIFIED_NAME = "boto3.resources.base.ServiceResource"
 
 
-def service_request_transform(node):
+def service_request_transform(node: ClassDef) -> ClassDef:
     """Transform ServiceResource to look like dynamic classes."""
     code = """
     def __getattr__(self, attr):
@@ -22,7 +22,7 @@ def service_request_transform(node):
     return node
 
 
-def _looks_like_boto3_service_request(node) -> bool:
+def _looks_like_boto3_service_request(node: ClassDef) -> bool:
     return node.qname() == BOTO_SERVICE_FACTORY_QUALIFIED_NAME
 
 

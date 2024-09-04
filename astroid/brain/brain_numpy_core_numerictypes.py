@@ -5,13 +5,14 @@
 # TODO(hippo91) : correct the methods signature.
 
 """Astroid hooks for numpy.core.numerictypes module."""
+from astroid import nodes
 from astroid.brain.brain_numpy_utils import numpy_supports_type_hints
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
 
 
-def numpy_core_numerictypes_transform():
+def numpy_core_numerictypes_transform() -> nodes.Module:
     # TODO: Uniformize the generic API with the ndarray one.
     #       According to numpy doc the generic object should expose
     #       the same API than ndarray. This has been done here partially
