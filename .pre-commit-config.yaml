@@ -13,7 +13,6 @@ repos:
     rev: "v0.6.3"
     hooks:
       - id: ruff
-        exclude: tests/testdata
         args: ["--fix"]
   - repo: https://github.com/Pierre-Sassoulas/copyright_notice_precommit
     rev: 0.1.2
