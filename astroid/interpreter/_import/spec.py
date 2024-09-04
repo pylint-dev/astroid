@@ -83,8 +83,8 @@ class ModuleSpec(NamedTuple):
 class Finder:
     """A finder is a class which knows how to find a particular module."""
 
-    def __init__(self, path: Sequence[str] | None = None) -> None:
-        self._path = path or sys.path
+    def __init__(self, path: Sequence[str]) -> None:
+        pass
 
     @staticmethod
     @abc.abstractmethod
