@@ -111,9 +111,7 @@ class Finder:
                   None, otherwise.
         """
 
-    def contribute_to_path(
-        self, spec: ModuleSpec, processed: list[str]
-    ) -> Sequence[str] | None:
+    def contribute_to_path(self, spec: ModuleSpec, processed: list[str]) -> Sequence[str] | None:
         """Get a list of extra paths where this finder can search."""
 
 
@@ -147,9 +145,7 @@ class ImportlibFinder(Finder):
             # If the module is a stdlib module, check whether this is a frozen module. Note that
             # `find_spec` actually imports the module, so we want to make sure we only run this code
             # for stuff that can be expected to be frozen. For now this is only stdlib.
-            if modname in sys.stdlib_module_names or (
-                processed and processed[0] in sys.stdlib_module_names
-            ):
+            if modname in sys.stdlib_module_names or (processed and processed[0] in sys.stdlib_module_names):
                 spec = importlib.util.find_spec(".".join((*processed, modname)))
                 if (
                     spec
@@ -192,7 +188,7 @@ class ImportlibFinder(Finder):
             search_paths = sys.path
 
         suffixes = (".py", ".pyi", importlib.machinery.BYTECODE_SUFFIXES[0])
-        for entry in submodule_path:
+        for entry in search_paths:
             package_directory = os.path.join(entry, modname)
             for suffix in suffixes:
                 package_file_name = "__init__" + suffix
@@ -210,9 +206,7 @@ class ImportlibFinder(Finder):
                     return ModuleSpec(name=modname, location=file_path, type=type_)
         return None
 
-    def contribute_to_path(
-        self, spec: ModuleSpec, processed: list[str]
-    ) -> Sequence[str] | None:
+    def contribute_to_path(self, spec: ModuleSpec, processed: list[str]) -> Sequence[str] | None:
         if spec.location is None:
             # Builtin.
             return None
@@ -221,13 +215,10 @@ class ImportlibFinder(Finder):
             # extend_path is called, search sys.path for module/packages
             # of this name see pkgutil.extend_path documentation
             path = [
-                os.path.join(p, *processed)
-                for p in sys.path
-                if os.path.isdir(os.path.join(p, *processed))
+                os.path.join(p, *processed) for p in sys.path if os.path.isdir(os.path.join(p, *processed))
             ]
         elif spec.name == "distutils" and not any(
-            spec.location.lower().startswith(ext_lib_dir.lower())
-            for ext_lib_dir in EXT_LIB_DIRS
+            spec.location.lower().startswith(ext_lib_dir.lower()) for ext_lib_dir in EXT_LIB_DIRS
         ):
             # virtualenv below 20.0 patches distutils in an unexpected way
             # so we just find the location of distutils that will be
@@ -237,9 +228,7 @@ class ImportlibFinder(Finder):
             # and can be triggered manually from GitHub Actions
             distutils_spec = importlib.util.find_spec("distutils")
             if distutils_spec and distutils_spec.origin:
-                origin_path = Path(
-                    distutils_spec.origin
-                )  # e.g. .../distutils/__init__.py
+                origin_path = Path(distutils_spec.origin)  # e.g. .../distutils/__init__.py
                 path = [str(origin_path.parent)]  # e.g. .../distutils
             else:
                 path = [spec.location]
@@ -261,19 +250,16 @@ class ExplicitNamespacePackageFinder(ImportlibFinder):
         if processed:
             modname = ".".join([*processed, modname])
         if util.is_namespace(modname) and modname in sys.modules:
-            submodule_path = sys.modules[modname].__path__
             return ModuleSpec(
                 name=modname,
                 location="",
                 origin="namespace",
                 type=ModuleType.PY_NAMESPACE,
-                submodule_search_locations=submodule_path,
+                submodule_search_locations=sys.modules[modname].__path__,
             )
         return None
 
-    def contribute_to_path(
-        self, spec: ModuleSpec, processed: list[str]
-    ) -> Sequence[str] | None:
+    def contribute_to_path(self, spec: ModuleSpec, processed: list[str]) -> Sequence[str] | None:
         return spec.submodule_search_locations
 
 
@@ -336,9 +322,7 @@ class PathSpecFinder(Finder):
             )
         return spec
 
-    def contribute_to_path(
-        self, spec: ModuleSpec, processed: list[str]
-    ) -> Sequence[str] | None:
+    def contribute_to_path(self, spec: ModuleSpec, processed: list[str]) -> Sequence[str] | None:
         if spec.type == ModuleType.PY_NAMESPACE:
             return spec.submodule_search_locations
         return None
@@ -359,9 +343,7 @@ def _is_setuptools_namespace(location: pathlib.Path) -> bool:
     except OSError:
         return False
     extend_path = b"pkgutil" in data and b"extend_path" in data
-    declare_namespace = (
-        b"pkg_resources" in data and b"declare_namespace(__name__)" in data
-    )
+    declare_namespace = b"pkg_resources" in data and b"declare_namespace(__name__)" in data
     return extend_path or declare_namespace
 
 
@@ -383,14 +365,10 @@ def _search_zip(
             if PY310_PLUS:
                 if not importer.find_spec(os.path.sep.join(modpath)):
                     raise ImportError(
-                        "No module named %s in %s/%s"
-                        % (".".join(modpath[1:]), filepath, modpath)
+                        "No module named %s in %s/%s" % (".".join(modpath[1:]), filepath, modpath)
                     )
             elif not importer.find_module(os.path.sep.join(modpath)):
-                raise ImportError(
-                    "No module named %s in %s/%s"
-                    % (".".join(modpath[1:]), filepath, modpath)
-                )
+                raise ImportError("No module named %s in %s/%s" % (".".join(modpath[1:]), filepath, modpath))
             return (
                 ModuleType.PY_ZIPMODULE,
                 os.path.abspath(filepath) + os.path.sep + os.path.sep.join(modpath),
@@ -408,9 +386,7 @@ def _find_spec_with_path(
 ) -> tuple[Finder | _MetaPathFinder, ModuleSpec]:
     for finder in _SPEC_FINDERS:
         finder_instance = finder(search_path)
-        spec = finder_instance.find_module(
-            modname, module_parts, processed, submodule_path
-        )
+        spec = finder_instance.find_module(modname, module_parts, processed, submodule_path)
         if spec is None:
             continue
         return finder_instance, spec
@@ -488,9 +464,7 @@ def _find_spec(module_path: tuple, path: tuple) -> ModuleSpec:
 
     while modpath:
         modname = modpath.pop(0)
-        finder, spec = _find_spec_with_path(
-            _path, modname, module_parts, processed, submodule_path or path
-        )
+        finder, spec = _find_spec_with_path(_path, modname, module_parts, processed, submodule_path or path)
         processed.append(modname)
         if modpath:
             if isinstance(finder, Finder):
