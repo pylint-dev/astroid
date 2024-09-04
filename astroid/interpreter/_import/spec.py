@@ -90,7 +90,7 @@ class Finder:
     @abc.abstractmethod
     def find_module(
         modname: str,
-        module_parts: tuple[str],
+        module_parts: tuple[str, ...],
         processed: tuple[str, ...],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
@@ -129,7 +129,7 @@ class ImportlibFinder(Finder):
     @staticmethod
     def find_module(
         modname: str,
-        module_parts: tuple[str],
+        module_parts: tuple[str, ...],
         processed: tuple[str, ...],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
@@ -224,7 +224,7 @@ class ExplicitNamespacePackageFinder(ImportlibFinder):
     @staticmethod
     def find_module(
         modname: str,
-        module_parts: tuple[str],
+        module_parts: tuple[str, ...],
         processed: tuple[str, ...],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
@@ -264,7 +264,7 @@ class ZipFinder(Finder):
     @staticmethod
     def find_module(
         modname: str,
-        module_parts: tuple[str],
+        module_parts: tuple[str, ...],
         processed: tuple[str, ...],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
@@ -288,7 +288,7 @@ class PathSpecFinder(Finder):
     @staticmethod
     def find_module(
         modname: str,
-        module_parts: tuple[str],
+        module_parts: tuple[str, ...],
         processed: tuple[str, ...],
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
@@ -342,7 +342,7 @@ def _get_zipimporters() -> Iterator[tuple[str, zipimport.zipimporter]]:
 
 
 def _search_zip(
-    modpath: tuple[str],
+    modpath: tuple[str, ...],
 ) -> tuple[Literal[ModuleType.PY_ZIPMODULE], str, str]:
     for filepath, importer in _get_zipimporters():
         if PY310_PLUS:
@@ -372,7 +372,7 @@ def _search_zip(
 def _find_spec_with_path(
     search_path: Sequence[str],
     modname: str,
-    module_parts: tuple[str],
+    module_parts: tuple[str, ...],
     processed: tuple[str, ...],
     submodule_path: Sequence[str] | None,
 ) -> tuple[Finder | _MetaPathFinder, ModuleSpec]:
@@ -444,7 +444,9 @@ def find_spec(modpath: Iterable[str], path: Iterable[str] | None = None) -> Modu
 
 
 @lru_cache(maxsize=1024)
-def _find_spec(module_path: tuple[str], path: tuple[str, ...]) -> ModuleSpec:
+def _find_spec(
+    module_path: tuple[str, ...], path: tuple[str, ...] | None
+) -> ModuleSpec:
     _path = path or sys.path
 
     # Need a copy for not mutating the argument.
