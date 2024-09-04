@@ -134,7 +134,7 @@ class ImportlibFinder(Finder):
         submodule_path: Sequence[str] | None,
     ) -> ModuleSpec | None:
         if submodule_path is not None:
-            submodule_path = list(submodule_path)
+            search_paths = list(submodule_path)
         elif modname in sys.builtin_module_names:
             return ModuleSpec(
                 name=modname,
@@ -159,10 +159,10 @@ class ImportlibFinder(Finder):
                     )
             except ValueError:
                 pass
-            submodule_path = sys.path
+            search_paths = sys.path
 
         suffixes = (".py", ".pyi", importlib.machinery.BYTECODE_SUFFIXES[0])
-        for entry in submodule_path:
+        for entry in search_paths:
             package_directory = os.path.join(entry, modname)
             for suffix in suffixes:
                 package_file_name = "__init__" + suffix
@@ -231,13 +231,12 @@ class ExplicitNamespacePackageFinder(ImportlibFinder):
         if processed:
             modname = ".".join([*processed, modname])
         if util.is_namespace(modname) and modname in sys.modules:
-            submodule_path = sys.modules[modname].__path__
             return ModuleSpec(
                 name=modname,
                 location="",
                 origin="namespace",
                 type=ModuleType.PY_NAMESPACE,
-                submodule_search_locations=submodule_path,
+                submodule_search_locations=sys.modules[modname].__path__,
             )
         return None
 
