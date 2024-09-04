@@ -480,6 +480,9 @@ class AstroidManager:
         ):
             lru_cache.cache_clear()  # type: ignore[attr-defined]
 
+        for finder in spec._SPEC_FINDERS:
+            finder.find_module.cache_clear()
+
         self.bootstrap()
 
         # Reload brain plugins. During initialisation this is done in astroid.manager.py
