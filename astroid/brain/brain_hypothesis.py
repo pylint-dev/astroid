@@ -16,8 +16,6 @@ defined using the `@hypothesis.strategies.composite` decorator.  For example:
 
     a_strategy()
 """
-from typing import TYPE_CHECKING
-
 from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import FunctionDef
 
@@ -43,9 +41,7 @@ def remove_draw_parameter_from_composite_strategy(node: FunctionDef) -> Function
     first argument (`draw`) - it's always supplied by Hypothesis so we don't
     need to emit the no-value-for-parameter lint.
     """
-    if TYPE_CHECKING:
-        assert isinstance(node.args.args, list)
-
+    assert isinstance(node.args.args, list)
     del node.args.args[0]
     del node.args.annotations[0]
     del node.args.type_comment_args[0]
