@@ -189,8 +189,8 @@ def _builtin_filter_predicate(node, builtin_name) -> bool:
         # Match = type(...)
         # ```
         return False
-    if isinstance(node.func, nodes.Name) and node.func.name == builtin_name:
-        return True
+    if isinstance(node.func, nodes.Name):
+        return node.func.name == builtin_name
     if isinstance(node.func, nodes.Attribute):
         return (
             node.func.attrname == "fromkeys"
