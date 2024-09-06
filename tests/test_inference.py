@@ -6880,20 +6880,15 @@ def test_inferring_properties_multiple_time_does_not_mutate_locals() -> None:
         @property
         def a(self):
             return 42
-
-    A()
     """
-    node = extract_node(code)
-    # Infer the class
-    cls = next(node.infer())
+    cls = extract_node(code)
     (prop,) = cls.getattr("a")
 
-    # Try to infer the property function *multiple* times. `A.locals` should be modified only once
+    assert len(cls.locals["a"]) == 1
     for _ in range(3):
         prop.inferred()
     a_locals = cls.locals["a"]
-    # [FunctionDef, Property]
-    assert len(a_locals) == 2
+    assert len(a_locals) == 1
 
 
 def test_getattr_fails_on_empty_values() -> None:

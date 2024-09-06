@@ -61,13 +61,17 @@ def _add_dunder_class(func, parent: nodes.NodeNG, member) -> None:
     func.instance_attrs["__class__"] = [ast_klass]
 
 
+def build_dummy(runtime_object) -> nodes.EmptyNode:
+    enode = nodes.EmptyNode()
+    enode.object = runtime_object
+    return enode
+
+
 def attach_dummy_node(node, name: str, runtime_object=_EMPTY_OBJECT_MARKER) -> None:
     """create a dummy node and register it in the locals of the given
     node with the specified name
     """
-    enode = nodes.EmptyNode()
-    enode.object = runtime_object
-    _attach_local_node(node, enode, name)
+    _attach_local_node(node, build_dummy(runtime_object), name)
 
 
 def attach_const_node(node, name: str, value) -> None:
@@ -262,11 +266,11 @@ def register_arguments(func: nodes.FunctionDef, args: list | None = None) -> Non
 
 
 def object_build_class(
-    node: nodes.Module | nodes.ClassDef, member: type, localname: str
+    node: nodes.Module | nodes.ClassDef, member: type
 ) -> nodes.ClassDef:
     """create astroid for a living class object"""
     basenames = [base.__name__ for base in member.__bases__]
-    return _base_class_object_build(node, member, basenames, localname=localname)
+    return _base_class_object_build(node, member, basenames)
 
 
 def _get_args_info_from_callable(
@@ -304,8 +308,8 @@ def _get_args_info_from_callable(
 
 
 def object_build_function(
-    node: nodes.Module | nodes.ClassDef, member: _FunctionTypes, localname: str
-) -> None:
+    node: nodes.Module | nodes.ClassDef, member: _FunctionTypes
+) -> nodes.FunctionDef:
     """create astroid for a living function object"""
     (
         args,
@@ -315,8 +319,8 @@ def object_build_function(
         kwonly_defaults,
     ) = _get_args_info_from_callable(member)
 
-    func = build_function(
-        getattr(member, "__name__", None) or localname,
+    return build_function(
+        getattr(member, "__name__", "<no-name>"),
         args,
         posonlyargs,
         defaults,
@@ -325,44 +329,37 @@ def object_build_function(
         kwonlydefaults=kwonly_defaults,
     )
 
-    node.add_local_node(func, localname)
-
 
 def object_build_datadescriptor(
-    node: nodes.Module | nodes.ClassDef, member: type, name: str
+    node: nodes.Module | nodes.ClassDef, member: type
 ) -> nodes.ClassDef:
     """create astroid for a living data descriptor object"""
-    return _base_class_object_build(node, member, [], name)
+    return _base_class_object_build(node, member, [])
 
 
 def object_build_methoddescriptor(
     node: nodes.Module | nodes.ClassDef,
     member: _FunctionTypes,
-    localname: str,
-) -> None:
+) -> nodes.FunctionDef:
     """create astroid for a living method descriptor object"""
     # FIXME get arguments ?
-    func = build_function(
-        getattr(member, "__name__", None) or localname, doc=member.__doc__
-    )
-    node.add_local_node(func, localname)
+    name = getattr(member, "__name__", "<no-name>")
+    func = build_function(name, doc=member.__doc__)
     _add_dunder_class(func, node, member)
+    return func
 
 
 def _base_class_object_build(
     node: nodes.Module | nodes.ClassDef,
     member: type,
     basenames: list[str],
-    name: str | None = None,
-    localname: str | None = None,
 ) -> nodes.ClassDef:
     """create astroid for a living class object, with a given set of base names
     (e.g. ancestors)
     """
-    class_name = name or getattr(member, "__name__", None) or localname
-    assert isinstance(class_name, str)
+    name = getattr(member, "__name__", "<no-name>")
     doc = member.__doc__ if isinstance(member.__doc__, str) else None
-    klass = build_class(class_name, node, basenames, doc)
+    klass = build_class(name, node, basenames, doc)
     klass._newstyle = isinstance(member, type)
     try:
         # limit the instantiation trick since it's too dangerous
@@ -387,10 +384,9 @@ def _base_class_object_build(
 
 def _build_from_function(
     node: nodes.Module | nodes.ClassDef,
-    name: str,
     member: _FunctionTypes,
     module: types.ModuleType,
-) -> None:
+) -> nodes.FunctionDef | nodes.EmptyNode:
     # verify this is not an imported function
     try:
         code = member.__code__  # type: ignore[union-attr]
@@ -400,12 +396,10 @@ def _build_from_function(
         code = None
     filename = getattr(code, "co_filename", None)
     if filename is None:
-        assert isinstance(member, object)
-        object_build_methoddescriptor(node, member, name)
-    elif filename != getattr(module, "__file__", None):
-        attach_dummy_node(node, name, member)
-    else:
-        object_build_function(node, member, name)
+        return object_build_methoddescriptor(node, member)
+    if filename == getattr(module, "__file__", None):
+        return object_build_function(node, member)
+    return build_dummy(member)
 
 
 def _safe_has_attribute(obj, member: str) -> bool:
@@ -472,58 +466,57 @@ class InspectBuilder:
         if obj in self._done:
             return None
         self._done[obj] = node
-        for name in dir(obj):
+        for alias in dir(obj):
             # inspect.ismethod() and inspect.isbuiltin() in PyPy return
             # the opposite of what they do in CPython for __class_getitem__.
-            pypy__class_getitem__ = IS_PYPY and name == "__class_getitem__"
+            pypy__class_getitem__ = IS_PYPY and alias == "__class_getitem__"
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    member = getattr(obj, name)
+                    member = getattr(obj, alias)
             except AttributeError:
                 # damned ExtensionClass.Base, I know you're there !
-                attach_dummy_node(node, name)
+                attach_dummy_node(node, alias)
                 continue
             if inspect.ismethod(member) and not pypy__class_getitem__:
                 member = member.__func__
             if inspect.isfunction(member):
-                _build_from_function(node, name, member, self._module)
+                child = _build_from_function(node, member, self._module)
             elif inspect.isbuiltin(member) or pypy__class_getitem__:
-                if self.imported_member(node, member, name):
+                if self.imported_member(node, member, alias):
                     continue
-                object_build_methoddescriptor(node, member, name)
+                child = object_build_methoddescriptor(node, member)
             elif inspect.isclass(member):
-                if self.imported_member(node, member, name):
+                if self.imported_member(node, member, alias):
                     continue
                 if member in self._done:
-                    class_node = self._done[member]
-                    assert isinstance(class_node, nodes.ClassDef)
-                    if class_node not in node.locals.get(name, ()):
-                        node.add_local_node(class_node, name)
+                    child = self._done[member]
+                    assert isinstance(child, nodes.ClassDef)
                 else:
-                    class_node = object_build_class(node, member, name)
+                    child = object_build_class(node, member)
                     # recursion
-                    self.object_build(class_node, member)
-                if name == "__class__" and class_node.parent is None:
-                    class_node.parent = self._done[self._module]
+                    self.object_build(child, member)
             elif inspect.ismethoddescriptor(member):
-                object_build_methoddescriptor(node, member, name)
+                child: nodes.NodeNG = object_build_methoddescriptor(node, member)
             elif inspect.isdatadescriptor(member):
-                object_build_datadescriptor(node, member, name)
+                child = object_build_datadescriptor(node, member)
             elif isinstance(member, _CONSTANTS):
-                attach_const_node(node, name, member)
+                if alias in node.special_attributes:
+                    continue
+                child = nodes.const_factory(member)
             elif inspect.isroutine(member):
                 # This should be called for Jython, where some builtin
                 # methods aren't caught by isbuiltin branch.
-                _build_from_function(node, name, member, self._module)
+                child = _build_from_function(node, member, self._module)
             elif _safe_has_attribute(member, "__all__"):
-                module = build_module(name)
-                _attach_local_node(node, module, name)
+                child: nodes.NodeNG = build_module(alias)
                 # recursion
-                self.object_build(module, member)
+                self.object_build(child, member)
             else:
                 # create an empty node so that the name is actually defined
-                attach_dummy_node(node, name, member)
+                child: nodes.NodeNG = build_dummy(member)
+            if child not in node.locals.get(alias, ()):
+                node.add_local_node(child, alias)
         return None
 
     def imported_member(self, node, member, name: str) -> bool:
@@ -629,6 +622,7 @@ def _astroid_bootstrapping() -> None:
         end_col_offset=0,
         parent=astroid_builtin,
     )
+    astroid_builtin.set_local(_GeneratorType.name, _GeneratorType)
     generator_doc_node = (
         nodes.Const(value=types.GeneratorType.__doc__)
         if types.GeneratorType.__doc__
@@ -652,6 +646,7 @@ def _astroid_bootstrapping() -> None:
             end_col_offset=0,
             parent=astroid_builtin,
         )
+        astroid_builtin.set_local(_AsyncGeneratorType.name, _AsyncGeneratorType)
         async_generator_doc_node = (
             nodes.Const(value=types.AsyncGeneratorType.__doc__)
             if types.AsyncGeneratorType.__doc__

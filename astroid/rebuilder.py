@@ -815,6 +815,7 @@ class TreeRebuilder:
                 else []
             ),
         )
+        parent.set_local(newnode.name, newnode)
         return newnode
 
     def visit_continue(self, node: ast.Continue, parent: NodeNG) -> nodes.Continue:
@@ -1112,6 +1113,7 @@ class TreeRebuilder:
             ),
         )
         self._global_names.pop()
+        parent.set_local(newnode.name, newnode)
         return newnode
 
     def visit_functiondef(
