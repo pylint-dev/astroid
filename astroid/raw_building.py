@@ -266,7 +266,9 @@ def object_build_class(
 ) -> nodes.ClassDef:
     """create astroid for a living class object"""
     basenames = [base.__name__ for base in member.__bases__]
-    return _base_class_object_build(node, member, basenames, localname=localname)
+    # N.B. ↓ why do we need to override the localname?
+    name = getattr(member, "__name__", localname)
+    return _base_class_object_build(node, member, basenames, name)
 
 
 def _get_args_info_from_callable(
@@ -316,7 +318,7 @@ def object_build_function(
     ) = _get_args_info_from_callable(member)
 
     func = build_function(
-        getattr(member, "__name__", None) or localname,
+        localname,
         args,
         posonlyargs,
         defaults,
@@ -342,9 +344,7 @@ def object_build_methoddescriptor(
 ) -> None:
     """create astroid for a living method descriptor object"""
     # FIXME get arguments ?
-    func = build_function(
-        getattr(member, "__name__", None) or localname, doc=member.__doc__
-    )
+    func = build_function(localname, doc=member.__doc__)
     node.add_local_node(func, localname)
     _add_dunder_class(func, node, member)
 
@@ -353,16 +353,13 @@ def _base_class_object_build(
     node: nodes.Module | nodes.ClassDef,
     member: type,
     basenames: list[str],
-    name: str | None = None,
-    localname: str | None = None,
+    name: str,
 ) -> nodes.ClassDef:
     """create astroid for a living class object, with a given set of base names
     (e.g. ancestors)
     """
-    class_name = name or getattr(member, "__name__", None) or localname
-    assert isinstance(class_name, str)
     doc = member.__doc__ if isinstance(member.__doc__, str) else None
-    klass = build_class(class_name, node, basenames, doc)
+    klass = build_class(name, node, basenames, doc)
     klass._newstyle = isinstance(member, type)
     try:
         # limit the instantiation trick since it's too dangerous
