@@ -98,7 +98,7 @@ ignore_missing_imports = true
 [tool.ruff]
 target-version = "py39"
 
-exclude = ["tests/testdata/"]
+extend-exclude = ["tests/testdata/"]
 
 # ruff is less lenient than pylint and does not make any exceptions
 # (for docstrings, strings and comments in particular).
