@@ -776,7 +776,7 @@ class NodeNG:
         """
         return util.Uninferable
 
-    def op_precedence(self):
+    def op_precedence(self) -> int:
         # Look up by class name or default to highest precedence
         return OP_PRECEDENCE.get(self.__class__.__name__, len(OP_PRECEDENCE))
 

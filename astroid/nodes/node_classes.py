@@ -1523,7 +1523,7 @@ class BinOp(_base_nodes.OperatorNode):
         yield self.left
         yield self.right
 
-    def op_precedence(self):
+    def op_precedence(self) -> int:
         return OP_PRECEDENCE[self.op]
 
     def op_left_associative(self) -> bool:
@@ -1632,7 +1632,7 @@ class BoolOp(NodeNG):
     def get_children(self):
         yield from self.values
 
-    def op_precedence(self):
+    def op_precedence(self) -> int:
         return OP_PRECEDENCE[self.op]
 
     @decorators.raise_if_nothing_inferred
@@ -3042,7 +3042,7 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         yield from self.body
         yield from self.orelse
 
-    def has_elif_block(self):
+    def has_elif_block(self) -> bool:
         return len(self.orelse) == 1 and isinstance(self.orelse[0], If)
 
     def _get_yield_nodes_skip_functions(self):
@@ -3489,7 +3489,7 @@ class Return(_base_nodes.Statement):
         if self.value is not None:
             yield self.value
 
-    def is_tuple_return(self):
+    def is_tuple_return(self) -> bool:
         return isinstance(self.value, Tuple)
 
     def _get_return_nodes_skip_functions(self):
@@ -4289,7 +4289,7 @@ class UnaryOp(_base_nodes.OperatorNode):
     def get_children(self):
         yield self.operand
 
-    def op_precedence(self):
+    def op_precedence(self) -> int:
         if self.op == "not":
             return OP_PRECEDENCE[self.op]
 
