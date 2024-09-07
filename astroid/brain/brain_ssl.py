@@ -4,8 +4,9 @@
 
 """Astroid hooks for the ssl library."""
 
-from astroid import parse
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
+from astroid.builder import parse
 from astroid.const import PY310_PLUS, PY312_PLUS
 from astroid.manager import AstroidManager
 
@@ -49,7 +50,7 @@ def _options_enum() -> str:
     return enum
 
 
-def ssl_transform():
+def ssl_transform() -> nodes.Module:
     return parse(
         f"""
     # Import necessary for conversion of objects defined in C into enums

@@ -4,9 +4,10 @@
 
 from __future__ import annotations
 
-from astroid import context, inference_tip, nodes
+from astroid import context, nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import _extract_single_node, parse
+from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 
 

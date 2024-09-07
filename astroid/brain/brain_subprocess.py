@@ -4,13 +4,14 @@
 
 import textwrap
 
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.const import PY310_PLUS, PY311_PLUS
 from astroid.manager import AstroidManager
 
 
-def _subprocess_transform():
+def _subprocess_transform() -> nodes.Module:
     communicate = (bytes("string", "ascii"), bytes("string", "ascii"))
     communicate_signature = "def communicate(self, input=None, timeout=None)"
     args = """\

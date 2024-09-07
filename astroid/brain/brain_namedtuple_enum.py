@@ -13,7 +13,7 @@ from textwrap import dedent
 from typing import Final
 
 import astroid
-from astroid import arguments, bases, inference_tip, nodes, util
+from astroid import arguments, bases, nodes, util
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
 from astroid.context import InferenceContext
 from astroid.exceptions import (
@@ -22,6 +22,7 @@ from astroid.exceptions import (
     InferenceError,
     UseInferenceDefault,
 )
+from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 
 ENUM_QNAME: Final[str] = "enum.Enum"

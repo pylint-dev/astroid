@@ -4,12 +4,13 @@
 
 """Astroid hooks for numpy ma module."""
 
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
 
 
-def numpy_ma_transform():
+def numpy_ma_transform() -> nodes.Module:
     """
     Infer the call of various numpy.ma functions.
 

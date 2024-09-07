@@ -11,7 +11,7 @@ from collections.abc import Callable, Iterable, Iterator
 from functools import partial
 from typing import TYPE_CHECKING, Any, NoReturn, Union, cast
 
-from astroid import arguments, helpers, inference_tip, nodes, objects, util
+from astroid import arguments, helpers, nodes, objects, util
 from astroid.builder import AstroidBuilder
 from astroid.context import InferenceContext
 from astroid.exceptions import (
@@ -21,6 +21,7 @@ from astroid.exceptions import (
     MroError,
     UseInferenceDefault,
 )
+from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.nodes import scoped_nodes
 from astroid.typing import (
@@ -844,7 +845,7 @@ def _class_or_tuple_to_container(
     return class_container
 
 
-def infer_len(node, context: InferenceContext | None = None):
+def infer_len(node, context: InferenceContext | None = None) -> nodes.Const:
     """Infer length calls.
 
     :param nodes.Call node: len call to infer
@@ -867,7 +868,7 @@ def infer_len(node, context: InferenceContext | None = None):
         raise UseInferenceDefault(str(exc)) from exc
 
 
-def infer_str(node, context: InferenceContext | None = None):
+def infer_str(node, context: InferenceContext | None = None) -> nodes.Const:
     """Infer str() calls.
 
     :param nodes.Call node: str() call to infer
@@ -926,7 +927,7 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
         will be inferred instead.
     """
 
-    def _build_dict_with_elements(elements):
+    def _build_dict_with_elements(elements: list) -> nodes.Dict:
         new_node = nodes.Dict(
             col_offset=node.col_offset,
             lineno=node.lineno,
