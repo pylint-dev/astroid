@@ -233,7 +233,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 sort_locals(node.parent.scope().locals[asname or name])  # type: ignore[arg-type]
 
     def delayed_assattr(self, node: nodes.AssignAttr) -> None:
-        """Visit a AssAttr node.
+        """Visit an AssignAttr node.
 
         This adds name to locals and handle members definition.
         """

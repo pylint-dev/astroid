@@ -2742,7 +2742,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         """
         return self._find_metaclass(context=context)
 
-    def has_metaclass_hack(self):
+    def has_metaclass_hack(self) -> bool:
         return self._metaclass_hack
 
     def _islots(self):
