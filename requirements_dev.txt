@@ -3,6 +3,6 @@
 # Tools used during development, prefer running these with pre-commit
 black
 pre-commit
-pylint>=3.2.0
+pylint>=3.2.7
 mypy
 ruff
