@@ -21,13 +21,10 @@ def infer_namespace(node, context: InferenceContext | None = None):
         "Namespace",
         lineno=node.lineno,
         col_offset=node.col_offset,
-        parent=nodes.Unknown(),
+        parent=AstroidManager().adhoc_module,  # this class is not real
         end_lineno=node.end_lineno,
         end_col_offset=node.end_col_offset,
     )
-    # Set parent manually until ClassDef constructor fixed:
-    # https://github.com/pylint-dev/astroid/issues/1490
-    class_node.parent = node.parent
     for attr in set(callsite.keyword_arguments):
         fake_node = nodes.EmptyNode()
         fake_node.parent = class_node
