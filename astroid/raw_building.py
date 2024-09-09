@@ -56,7 +56,8 @@ def _add_dunder_class(func, member) -> None:
     if not cls_name:
         return
     cls_bases = [ancestor.__name__ for ancestor in python_cls.__bases__]
-    ast_klass = build_class(cls_name, cls_bases, python_cls.__doc__)
+    doc = python_cls.__doc__ if isinstance(python_cls.__doc__, str) else None
+    ast_klass = build_class(cls_name, cls_bases, doc)
     func.instance_attrs["__class__"] = [ast_klass]
 
 
@@ -316,7 +317,7 @@ def object_build_function(
         args,
         posonlyargs,
         defaults,
-        member.__doc__,
+        member.__doc__ if isinstance(member.__doc__, str) else None,
         kwonlyargs=kwonlyargs,
         kwonlydefaults=kwonly_defaults,
     )
@@ -357,11 +358,8 @@ def _base_class_object_build(
     """
     class_name = name or getattr(member, "__name__", None) or localname
     assert isinstance(class_name, str)
-    klass = build_class(
-        class_name,
-        basenames,
-        member.__doc__,
-    )
+    doc = member.__doc__ if isinstance(member.__doc__, str) else None
+    klass = build_class(class_name, basenames, doc)
     klass._newstyle = isinstance(member, type)
     node.add_local_node(klass, localname)
     try:
@@ -718,11 +716,12 @@ def _astroid_bootstrapping() -> None:
                 parent=nodes.Unknown(),
             )
             klass.parent = astroid_builtin
+            doc = _type.__doc__ if isinstance(_type.__doc__, str) else None
             klass.postinit(
                 bases=[],
                 body=[],
                 decorators=None,
-                doc_node=nodes.Const(value=_type.__doc__) if _type.__doc__ else None,
+                doc_node=nodes.Const(doc) if doc else None,
             )
             builder.object_build(klass, _type)
             astroid_builtin[_type.__name__] = klass

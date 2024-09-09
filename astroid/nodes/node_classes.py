@@ -2061,7 +2061,16 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.value: Any = value
+        if getattr(value, "__name__", None) == "__doc__":
+            warnings.warn(  # pragma: no cover
+                "You have most likely called a __doc__ field of some object "
+                "and it didn't return a string. "
+                "That happens to some symbols from the standard library. "
+                "Check for isinstance(<X>.__doc__, str).",
+                RuntimeWarning,
+                stacklevel=0,
+            )
+        self.value = value
         """The value that the constant represents."""
 
         self.kind: str | None = kind  # can be None
