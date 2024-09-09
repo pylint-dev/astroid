@@ -117,7 +117,7 @@ jobs:
         run: |
           python -m venv venv
           . venv/bin/activate
-          python -m pip install -U pip setuptools wheel
+          python -m pip install -U pip wheel
           pip install -U -r requirements_full.txt
           pip install -e .
       - name: Run pytest
