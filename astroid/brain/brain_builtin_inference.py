@@ -24,6 +24,7 @@ from astroid.exceptions import (
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.nodes import scoped_nodes
+from astroid.raw_building import build_module
 from astroid.typing import (
     ConstFactoryResult,
     InferenceResult,
@@ -164,6 +165,8 @@ def _extend_builtins(class_transforms):
 
 def on_bootstrap():
     """Called by astroid_bootstrapping()."""
+    AstroidManager().cache_module(build_module("__astroid_adhoc"))
+
     _extend_builtins(
         {
             "bytes": partial(_extend_string_class, code=BYTES_CLASS, rvalue="b''"),

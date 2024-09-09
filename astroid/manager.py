@@ -116,6 +116,10 @@ class AstroidManager:
         return self.astroid_cache["builtins"]
 
     @property
+    def adhoc_module(self) -> nodes.Module:
+        return self.astroid_cache["__astroid_adhoc"]
+
+    @property
     def prefer_stubs(self) -> bool:
         return AstroidManager.brain["prefer_stubs"]
 
