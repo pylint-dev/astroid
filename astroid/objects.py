@@ -282,7 +282,7 @@ class PartialFunction(scoped_nodes.FunctionDef):
             name,
             lineno=lineno,
             col_offset=col_offset,
-            parent=node_classes.Unknown(),
+            parent=AstroidManager().adhoc_module,
             end_col_offset=0,
             end_lineno=0,
         )
