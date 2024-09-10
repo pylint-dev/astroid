@@ -645,12 +645,15 @@ def infer_property(
 
     prop_func = objects.Property(
         function=inferred,
-        name=inferred.name,
+        name="<property>",
         lineno=node.lineno,
         col_offset=node.col_offset,
+        # ↓ semantically, the definition of the class of property isn't within
+        # node.frame. It's somewhere in the builtins module, but we are special
+        # casing it for each "property()" call, so we are making up the
+        # definition on the spot, ad-hoc.
+        parent=AstroidManager().adhoc_module,
     )
-    # Set parent outside __init__: https://github.com/pylint-dev/astroid/issues/1490
-    prop_func.parent = node
     prop_func.postinit(
         body=[],
         args=inferred.args,
