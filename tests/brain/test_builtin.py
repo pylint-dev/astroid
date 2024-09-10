@@ -28,8 +28,9 @@ class BuiltinsTest(unittest.TestCase):
         self.assertIsInstance(class_parent, nodes.ClassDef)
         self.assertFalse(
             any(
-                isinstance(getter, objects.Property)
-                for getter in class_parent.locals["getter"]
+                isinstance(def_, objects.Property)
+                for def_list in class_parent.locals.values()
+                for def_ in def_list
             )
         )
         self.assertTrue(hasattr(inferred_property, "args"))

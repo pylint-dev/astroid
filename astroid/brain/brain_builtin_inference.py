@@ -648,8 +648,10 @@ def infer_property(
         name="<property>",
         lineno=node.lineno,
         col_offset=node.col_offset,
-        # ↓ semantically, the definition of this property isn't within
-        # node.frame (or anywhere else, really)
+        # ↓ semantically, the definition of the class of property isn't within
+        # node.frame. It's somewhere in the builtins module, but we are special
+        # casing it for each "property()" call, so we are making up the
+        # definition on the spot, ad-hoc.
         parent=AstroidManager().adhoc_module,
     )
     prop_func.postinit(
