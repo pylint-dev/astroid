@@ -1882,8 +1882,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         ),
     )
     _other_fields = ("name", "is_dataclass", "position")
-    _other_other_fields = ("locals", "_newstyle")
-    _newstyle: bool | None = None
+    _other_other_fields = "locals"
 
     def __init__(
         self,
@@ -1983,35 +1982,10 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         self.bases = bases
         self.body = body
         self.decorators = decorators
-        self._newstyle = newstyle
         self._metaclass = metaclass
         self.position = position
         self.doc_node = doc_node
         self.type_params = type_params or []
-
-    def _newstyle_impl(self, context: InferenceContext | None = None):
-        if context is None:
-            context = InferenceContext()
-        if self._newstyle is not None:
-            return self._newstyle
-        for base in self.ancestors(recurs=False, context=context):
-            if base._newstyle_impl(context):
-                self._newstyle = True
-                break
-        klass = self.declared_metaclass()
-        # could be any callable, we'd need to infer the result of klass(name,
-        # bases, dict).  punt if it's not a class node.
-        if klass is not None and isinstance(klass, ClassDef):
-            self._newstyle = klass._newstyle_impl(context)
-        if self._newstyle is None:
-            self._newstyle = False
-        return self._newstyle
-
-    _newstyle = None
-    newstyle = property(
-        _newstyle_impl,
-        doc=("Whether this is a new style class or not\n\n" ":type: bool or None"),
-    )
 
     @cached_property
     def blockstart_tolineno(self):
@@ -2033,14 +2007,12 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         """
         return self.fromlineno, self.tolineno
 
-    def pytype(self) -> Literal["builtins.type", "builtins.classobj"]:
+    def pytype(self) -> Literal["builtins.type"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
         """
-        if self.newstyle:
-            return "builtins.type"
-        return "builtins.classobj"
+        return "builtins.type"
 
     def display_type(self) -> str:
         """A human readable type of this node.
@@ -2580,7 +2552,6 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         try:
             return _valid_getattr(self.getattr("__getattr__", context)[0])
         except AttributeInferenceError:
-            # if self.newstyle: XXX cause an infinite recursion error
             try:
                 getattribute = self.getattr("__getattribute__", context)[0]
                 return _valid_getattr(getattribute)
@@ -2667,16 +2638,12 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
     def implicit_metaclass(self):
         """Get the implicit metaclass of the current class.
 
-        For newstyle classes, this will return an instance of builtins.type.
-        For oldstyle classes, it will simply return None, since there's
-        no implicit metaclass there.
+        This will return an instance of builtins.type.
 
         :returns: The metaclass.
-        :rtype: builtins.type or None
+        :rtype: builtins.type
         """
-        if self.newstyle:
-            return builtin_lookup("type")[1][0]
-        return None
+        return builtin_lookup("type")[1][0]
 
     def declared_metaclass(
         self, context: InferenceContext | None = None
@@ -2799,10 +2766,6 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         return None
 
     def _slots(self):
-        if not self.newstyle:
-            raise NotImplementedError(
-                "The concept of slots is undefined for old-style classes."
-            )
 
         slots = self._islots()
         try:
@@ -2841,11 +2804,6 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
                     yield from cls_slots
                 else:
                     yield None
-
-        if not self.newstyle:
-            raise NotImplementedError(
-                "The concept of slots is undefined for old-style classes."
-            )
 
         try:
             mro = self.mro()
@@ -2912,17 +2870,8 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
             if base is self:
                 continue
 
-            try:
-                mro = base._compute_mro(context=context)
-                bases_mro.append(mro)
-            except NotImplementedError:
-                # Some classes have in their ancestors both newstyle and
-                # old style classes. For these we can't retrieve the .mro,
-                # although in Python it's possible, since the class we are
-                # currently working is in fact new style.
-                # So, we fallback to ancestors here.
-                ancestors = list(base.ancestors(context=context))
-                bases_mro.append(ancestors)
+            mro = base._compute_mro(context=context)
+            bases_mro.append(mro)
 
         unmerged_mro: list[list[ClassDef]] = [[self], *bases_mro, inferred_bases]
         unmerged_mro = clean_duplicates_mro(unmerged_mro, self, context)

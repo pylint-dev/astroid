@@ -514,9 +514,6 @@ class ClassModel(ObjectModel):
 
     @property
     def attr___mro__(self):
-        if not self._instance.newstyle:
-            raise AttributeInferenceError(target=self._instance, attribute="__mro__")
-
         mro = self._instance.mro()
         obj = node_classes.Tuple(parent=self._instance)
         obj.postinit(mro)
@@ -524,9 +521,6 @@ class ClassModel(ObjectModel):
 
     @property
     def attr_mro(self):
-        if not self._instance.newstyle:
-            raise AttributeInferenceError(target=self._instance, attribute="mro")
-
         other_self = self
 
         # Cls.mro is a method and we need to return one in order to have a proper inference.
@@ -565,10 +559,6 @@ class ClassModel(ObjectModel):
         This looks only in the current module for retrieving the subclasses,
         thus it might miss a couple of them.
         """
-        if not self._instance.newstyle:
-            raise AttributeInferenceError(
-                target=self._instance, attribute="__subclasses__"
-            )
 
         qname = self._instance.qname()
         root = self._instance.root()
