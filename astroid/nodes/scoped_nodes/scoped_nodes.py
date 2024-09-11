@@ -1882,7 +1882,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         ),
     )
     _other_fields = ("name", "is_dataclass", "position")
-    _other_other_fields = ("locals")
+    _other_other_fields = "locals"
 
     def __init__(
         self,
