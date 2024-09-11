@@ -44,7 +44,6 @@ from astroid.nodes import (
     Arguments,
     Const,
     NodeNG,
-    Unknown,
     _base_nodes,
     const_factory,
     node_classes,
@@ -2037,7 +2036,7 @@ class ClassDef(
             col_offset=0,
             end_lineno=0,
             end_col_offset=0,
-            parent=Unknown(),
+            parent=caller.parent,
         )
 
         # Get the bases of the class.
@@ -2071,7 +2070,6 @@ class ClassDef(
                 if isinstance(attr, node_classes.Const) and isinstance(attr.value, str):
                     result.locals[attr.value] = [value]
 
-        result.parent = caller.parent
         return result
 
     def infer_call_result(

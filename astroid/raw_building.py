@@ -670,9 +670,8 @@ def _astroid_bootstrapping() -> None:
             col_offset=0,
             end_lineno=0,
             end_col_offset=0,
-            parent=nodes.Unknown(),
+            parent=astroid_builtin,
         )
-        _UnionTypeType.parent = astroid_builtin
         union_type_doc_node = (
             nodes.Const(value=types.UnionType.__doc__)
             if types.UnionType.__doc__
@@ -707,9 +706,8 @@ def _astroid_bootstrapping() -> None:
                 col_offset=0,
                 end_lineno=0,
                 end_col_offset=0,
-                parent=nodes.Unknown(),
+                parent=astroid_builtin,
             )
-            klass.parent = astroid_builtin
             doc = _type.__doc__ if isinstance(_type.__doc__, str) else None
             klass.postinit(
                 bases=[],

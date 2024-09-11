@@ -37,6 +37,7 @@ from astroid.exceptions import (
     ParentMissingError,
     StatementMissing,
 )
+from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import (
     AssignAttr,
     AssignName,
@@ -1960,7 +1961,9 @@ def test_str_repr_no_warnings(node):
         if name == "self":
             continue
 
-        if "int" in param_type.annotation:
+        if name == "parent" and "NodeNG" in param_type.annotation:
+            args[name] = AstroidManager().adhoc_module
+        elif "int" in param_type.annotation:
             args[name] = random.randint(0, 50)
         elif (
             "NodeNG" in param_type.annotation
