@@ -178,6 +178,13 @@ def function_to_method(n, klass):
     return n
 
 
+def _attach_to_parent(node: NodeNG, name: str, parent: NodeNG):
+    frame = parent.frame()
+    frame.set_local(name, node)
+    if frame is parent:
+        frame._append_node(node)
+
+
 class Module(LocalsDictNodeNG):
     """Class representing an :class:`ast.Module` node.
 
@@ -1935,7 +1942,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
             parent=parent,
         )
         if parent and not isinstance(parent, Unknown):
-            parent.frame().set_local(name, self)
+            _attach_to_parent(self, name, parent)
 
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)

@@ -49,7 +49,7 @@ def _attach_local_node(parent, node, name: str) -> None:
     parent.add_local_node(node)
 
 
-def _add_dunder_class(func, member) -> None:
+def _add_dunder_class(func, parent: nodes.NodeNG, member) -> None:
     """Add a __class__ member to the given func node, if we can determine it."""
     python_cls = member.__class__
     cls_name = getattr(python_cls, "__name__", None)
@@ -57,7 +57,7 @@ def _add_dunder_class(func, member) -> None:
         return
     cls_bases = [ancestor.__name__ for ancestor in python_cls.__bases__]
     doc = python_cls.__doc__ if isinstance(python_cls.__doc__, str) else None
-    ast_klass = build_class(cls_name, cls_bases, doc)
+    ast_klass = build_class(cls_name, parent, cls_bases, doc)
     func.instance_attrs["__class__"] = [ast_klass]
 
 
@@ -97,7 +97,10 @@ def build_module(name: str, doc: str | None = None) -> nodes.Module:
 
 
 def build_class(
-    name: str, basenames: Iterable[str] = (), doc: str | None = None
+    name: str,
+    parent: nodes.NodeNG,
+    basenames: Iterable[str] = (),
+    doc: str | None = None,
 ) -> nodes.ClassDef:
     """Create and initialize an astroid ClassDef node."""
     node = nodes.ClassDef(
@@ -106,7 +109,7 @@ def build_class(
         col_offset=0,
         end_lineno=0,
         end_col_offset=0,
-        parent=nodes.Unknown(),
+        parent=parent,
     )
     node.postinit(
         bases=[
@@ -343,7 +346,7 @@ def object_build_methoddescriptor(
         getattr(member, "__name__", None) or localname, doc=member.__doc__
     )
     node.add_local_node(func, localname)
-    _add_dunder_class(func, member)
+    _add_dunder_class(func, node, member)
 
 
 def _base_class_object_build(
@@ -359,9 +362,8 @@ def _base_class_object_build(
     class_name = name or getattr(member, "__name__", None) or localname
     assert isinstance(class_name, str)
     doc = member.__doc__ if isinstance(member.__doc__, str) else None
-    klass = build_class(class_name, basenames, doc)
+    klass = build_class(class_name, node, basenames, doc)
     klass._newstyle = isinstance(member, type)
-    node.add_local_node(klass, localname)
     try:
         # limit the instantiation trick since it's too dangerous
         # (such as infinite test execution...)
@@ -603,14 +605,11 @@ def _astroid_bootstrapping() -> None:
 
     for cls, node_cls in node_classes.CONST_CLS.items():
         if cls is TYPE_NONE:
-            proxy = build_class("NoneType")
-            proxy.parent = astroid_builtin
+            proxy = build_class("NoneType", astroid_builtin)
         elif cls is TYPE_NOTIMPLEMENTED:
-            proxy = build_class("NotImplementedType")
-            proxy.parent = astroid_builtin
+            proxy = build_class("NotImplementedType", astroid_builtin)
         elif cls is TYPE_ELLIPSIS:
-            proxy = build_class("Ellipsis")
-            proxy.parent = astroid_builtin
+            proxy = build_class("Ellipsis", astroid_builtin)
         else:
             proxy = astroid_builtin.getattr(cls.__name__)[0]
             assert isinstance(proxy, nodes.ClassDef)

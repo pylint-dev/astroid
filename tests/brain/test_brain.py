@@ -1704,8 +1704,7 @@ def test_infer_dict_from_keys() -> None:
     """
     )
     for node in bad_nodes:
-        with pytest.raises(InferenceError):
-            next(node.infer())
+        assert isinstance(next(node.infer()), util.UninferableBase)
 
     # Test uninferable values
     good_nodes = astroid.extract_node(

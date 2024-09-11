@@ -26,8 +26,7 @@ class TestHelpers(unittest.TestCase):
         return self.builtins.getattr(obj_name)[0]
 
     def _build_custom_builtin(self, obj_name: str) -> ClassDef:
-        proxy = raw_building.build_class(obj_name)
-        proxy.parent = self.builtins
+        proxy = raw_building.build_class(obj_name, self.builtins)
         return proxy
 
     def assert_classes_equal(self, cls: ClassDef, other: ClassDef) -> None:
