@@ -2465,14 +2465,11 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
 
         :returns: The inferred possible values.
         """
-        from astroid import objects  # pylint: disable=import-outside-toplevel
-
         # set lookup name since this is necessary to infer on import nodes for
         # instance
         context = copy_context(context)
         context.lookupname = name
 
-        metaclass = self.metaclass(context=context)
         try:
             attributes = self.getattr(name, context, class_context=class_context)
             # If we have more than one attribute, make sure that those starting from
@@ -2495,44 +2492,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
                     for a in attributes
                     if a not in functions or a is last_function or bases._is_property(a)
                 ]
-
-            for inferred in bases._infer_stmts(attributes, context, frame=self):
-                # yield Uninferable object instead of descriptors when necessary
-                if not isinstance(inferred, node_classes.Const) and isinstance(
-                    inferred, bases.Instance
-                ):
-                    try:
-                        inferred._proxied.getattr("__get__", context)
-                    except AttributeInferenceError:
-                        yield inferred
-                    else:
-                        yield util.Uninferable
-                elif isinstance(inferred, objects.Property):
-                    function = inferred.function
-                    if not class_context:
-                        if not context.callcontext:
-                            context.callcontext = CallContext(
-                                args=function.args.arguments, callee=function
-                            )
-                        # Through an instance so we can solve the property
-                        yield from function.infer_call_result(
-                            caller=self, context=context
-                        )
-                    # If we're in a class context, we need to determine if the property
-                    # was defined in the metaclass (a derived class must be a subclass of
-                    # the metaclass of all its bases), in which case we can resolve the
-                    # property. If not, i.e. the property is defined in some base class
-                    # instead, then we return the property object
-                    elif metaclass and function.parent.scope() is metaclass:
-                        # Resolve a property as long as it is not accessed through
-                        # the class itself.
-                        yield from function.infer_call_result(
-                            caller=self, context=context
-                        )
-                    else:
-                        yield inferred
-                else:
-                    yield function_to_method(inferred, self)
+            yield from self._infer_attrs(attributes, context, class_context)
         except AttributeInferenceError as error:
             if not name.startswith("__") and self.has_dynamic_getattr(context):
                 # class handle some dynamic attributes, return a Uninferable object
@@ -2541,6 +2501,49 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
                 raise InferenceError(
                     str(error), target=self, attribute=name, context=context
                 ) from error
+
+    def _infer_attrs(
+        self,
+        attributes: list[InferenceResult],
+        context: InferenceContext,
+        class_context: bool = True,
+    ) -> Iterator[InferenceResult]:
+        from astroid import objects  # pylint: disable=import-outside-toplevel
+
+        metaclass = self.metaclass(context=context)
+        for inferred in bases._infer_stmts(attributes, context, frame=self):
+            # yield Uninferable object instead of descriptors when necessary
+            if not isinstance(inferred, node_classes.Const) and isinstance(
+                inferred, bases.Instance
+            ):
+                try:
+                    inferred._proxied.getattr("__get__", context)
+                except AttributeInferenceError:
+                    yield inferred
+                else:
+                    yield util.Uninferable
+            elif isinstance(inferred, objects.Property):
+                function = inferred.function
+                if not class_context:
+                    if not context.callcontext:
+                        context.callcontext = CallContext(
+                            args=function.args.arguments, callee=function
+                        )
+                    # Through an instance so we can solve the property
+                    yield from function.infer_call_result(caller=self, context=context)
+                # If we're in a class context, we need to determine if the property
+                # was defined in the metaclass (a derived class must be a subclass of
+                # the metaclass of all its bases), in which case we can resolve the
+                # property. If not, i.e. the property is defined in some base class
+                # instead, then we return the property object
+                elif metaclass and function.parent.scope() is metaclass:
+                    # Resolve a property as long as it is not accessed through
+                    # the class itself.
+                    yield from function.infer_call_result(caller=self, context=context)
+                else:
+                    yield inferred
+            else:
+                yield function_to_method(inferred, self)
 
     def has_dynamic_getattr(self, context: InferenceContext | None = None) -> bool:
         """Check if the class has a custom __getattr__ or __getattribute__.

@@ -1295,7 +1295,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertIsInstance(inferred[0], BoundMethod)
         inferred = list(Instance(cls).igetattr("m4"))
         self.assertEqual(len(inferred), 1)
-        self.assertIsInstance(inferred[0], nodes.FunctionDef)
+        self.assertIsInstance(inferred[0], BoundMethod)
 
     def test_getattr_from_grandpa(self) -> None:
         data = """

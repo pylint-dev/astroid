@@ -273,10 +273,9 @@ class BaseInstance(Proxy):
         try:
             context.lookupname = name
             # XXX frame should be self._proxied, or not ?
-            get_attr = self.getattr(name, context, lookupclass=False)
-            yield from _infer_stmts(
-                self._wrap_attr(get_attr, context), context, frame=self
-            )
+            attrs = self.getattr(name, context, lookupclass=False)
+            iattrs = self._proxied._infer_attrs(attrs, context, class_context=False)
+            yield from self._wrap_attr(iattrs)
         except AttributeInferenceError:
             try:
                 # fallback to class.igetattr since it has some logic to handle
@@ -284,16 +283,16 @@ class BaseInstance(Proxy):
                 # But only if the _proxied is the Class.
                 if self._proxied.__class__.__name__ != "ClassDef":
                     raise
-                attrs = self._proxied.igetattr(name, context, class_context=False)
-                yield from self._wrap_attr(attrs, context)
+                iattrs = self._proxied.igetattr(name, context, class_context=False)
+                yield from self._wrap_attr(iattrs, context)
             except AttributeInferenceError as error:
                 raise InferenceError(**vars(error)) from error
 
     def _wrap_attr(
-        self, attrs: Iterable[InferenceResult], context: InferenceContext | None = None
+        self, iattrs: Iterable[InferenceResult], context: InferenceContext | None = None
     ) -> Iterator[InferenceResult]:
         """Wrap bound methods of attrs in a InstanceMethod proxies."""
-        for attr in attrs:
+        for attr in iattrs:
             if isinstance(attr, UnboundMethod):
                 if _is_property(attr):
                     yield from attr.infer_call_result(self, context)
