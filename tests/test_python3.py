@@ -155,7 +155,6 @@ class Python3TC(unittest.TestCase):
             )
         )
         klass = astroid["SubTest"]
-        self.assertTrue(klass.newstyle)
         metaclass = klass.metaclass()
         self.assertIsInstance(metaclass, nodes.ClassDef)
         self.assertEqual(metaclass.name, "ABCMeta")

@@ -109,9 +109,6 @@ class Super(node_classes.NodeNG):
                     super_=self,
                 )
 
-        if not mro_type.newstyle:
-            raise SuperError("Unable to call super on old-style classes.", super_=self)
-
         mro = mro_type.mro()
         if self.mro_pointer not in mro:
             raise SuperError(
