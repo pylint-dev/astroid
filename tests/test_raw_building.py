@@ -33,6 +33,8 @@ from astroid.raw_building import (
     build_module,
 )
 
+DUMMY_MOD = build_module("DUMMY")
+
 
 class RawBuildingTC(unittest.TestCase):
     def test_attach_dummy_node(self) -> None:
@@ -48,7 +50,7 @@ class RawBuildingTC(unittest.TestCase):
         self.assertEqual(node.parent, None)
 
     def test_build_class(self) -> None:
-        node = build_class("MyClass")
+        node = build_class("MyClass", DUMMY_MOD)
         self.assertEqual(node.name, "MyClass")
         self.assertEqual(node.doc_node, None)
 
