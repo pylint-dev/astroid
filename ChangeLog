@@ -13,6 +13,9 @@ What's New in astroid 3.3.3?
 ============================
 Release date: TBA
 
+* Fix inference regression with property setters
+
+  Closes pylint-dev/pylint#9811
 
 
 What's New in astroid 3.3.2?
