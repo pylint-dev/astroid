@@ -2506,6 +2506,16 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
                     if attr.parent and attr.parent.scope() == first_scope
                 ]
             functions = [attr for attr in attributes if isinstance(attr, FunctionDef)]
+            setter = None
+            for function in functions:
+                dec_names = function.decoratornames(context=context)
+                for dec_name in dec_names:
+                    if dec_name is util.Uninferable:
+                        continue
+                    if dec_name.split(".")[-1] == "setter":
+                        setter = function
+                if setter:
+                    break
             if functions:
                 # Prefer only the last function, unless a property is involved.
                 last_function = functions[-1]
@@ -2529,7 +2539,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
                 elif isinstance(inferred, objects.Property):
                     function = inferred.function
                     if not class_context:
-                        if not context.callcontext:
+                        if not context.callcontext and not setter:
                             context.callcontext = CallContext(
                                 args=function.args.arguments, callee=function
                             )
