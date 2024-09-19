@@ -4416,6 +4416,23 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = list(node.inferred())
         assert [const.value for const in inferred] == [42, False]
 
+    def test_infer_property_setter(self) -> None:
+        node = extract_node(
+            """
+        class PropertyWithSetter:
+            @property
+            def host(self):
+                return self._host
+
+            @host.setter
+            def host(self, value: str):
+                self._host = value
+
+        PropertyWithSetter().host #@
+        """
+        )
+        assert not isinstance(next(node.infer()), Instance)
+
     def test_delayed_attributes_without_slots(self) -> None:
         ast_node = extract_node(
             """
