@@ -125,10 +125,11 @@ jobs:
           . venv/bin/activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4.3.6
+        uses: actions/upload-artifact@v4.4.0
         with:
           name: coverage-linux-${{ matrix.python-version }}
           path: .coverage
+          include-hidden-files: true
 
   tests-windows:
     name: tests / run / ${{ matrix.python-version }} / Windows
@@ -179,10 +180,11 @@ jobs:
           . venv\\Scripts\\activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4.3.6
+        uses: actions/upload-artifact@v4.4.0
         with:
           name: coverage-windows-${{ matrix.python-version }}
           path: .coverage
+          include-hidden-files: true
 
   tests-pypy:
     name: tests / run / ${{ matrix.python-version }} / Linux
@@ -229,10 +231,11 @@ jobs:
           . venv/bin/activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4.3.6
+        uses: actions/upload-artifact@v4.4.0
         with:
           name: coverage-pypy-${{ matrix.python-version }}
           path: .coverage
+          include-hidden-files: true
 
   coverage:
     name: tests / process / coverage
