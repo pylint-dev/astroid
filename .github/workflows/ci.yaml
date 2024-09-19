@@ -129,6 +129,7 @@ jobs:
         with:
           name: coverage-linux-${{ matrix.python-version }}
           path: .coverage
+          include-hidden-files: true
 
   tests-windows:
     name: tests / run / ${{ matrix.python-version }} / Windows
@@ -183,6 +184,7 @@ jobs:
         with:
           name: coverage-windows-${{ matrix.python-version }}
           path: .coverage
+          include-hidden-files: true
 
   tests-pypy:
     name: tests / run / ${{ matrix.python-version }} / Linux
@@ -233,6 +235,7 @@ jobs:
         with:
           name: coverage-pypy-${{ matrix.python-version }}
           path: .coverage
+          include-hidden-files: true
 
   coverage:
     name: tests / process / coverage
