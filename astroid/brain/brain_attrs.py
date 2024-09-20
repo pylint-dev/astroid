@@ -24,6 +24,13 @@ ATTRIB_NAMES = frozenset(
         "field",
     )
 )
+NEW_ATTRS_NAMES = frozenset(
+    (
+        "attrs.define",
+        "attrs.mutable",
+        "attrs.frozen",
+    )
+)
 ATTRS_NAMES = frozenset(
     (
         "attr.s",
@@ -33,9 +40,7 @@ ATTRS_NAMES = frozenset(
         "attr.define",
         "attr.mutable",
         "attr.frozen",
-        "attrs.define",
-        "attrs.mutable",
-        "attrs.frozen",
+        *NEW_ATTRS_NAMES,
     )
 )
 
@@ -64,13 +69,14 @@ def attr_attributes_transform(node: ClassDef) -> None:
     # Prevents https://github.com/pylint-dev/pylint/issues/1884
     node.locals["__attrs_attrs__"] = [Unknown(parent=node)]
 
+    use_bare_annotations = is_decorated_with_attrs(node, NEW_ATTRS_NAMES)
     for cdef_body_node in node.body:
         if not isinstance(cdef_body_node, (Assign, AnnAssign)):
             continue
         if isinstance(cdef_body_node.value, Call):
             if cdef_body_node.value.func.as_string() not in ATTRIB_NAMES:
                 continue
-        else:
+        elif not use_bare_annotations:
             continue
         targets = (
             cdef_body_node.targets

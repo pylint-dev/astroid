@@ -7,7 +7,7 @@ from __future__ import annotations
 import unittest
 
 import astroid
-from astroid import nodes
+from astroid import exceptions, nodes
 
 try:
     import attr  # type: ignore[import]  # pylint: disable=unused-import
@@ -201,3 +201,31 @@ class AttrsTest(unittest.TestCase):
         """
         should_be_unknown = next(astroid.extract_node(code).infer()).getattr("bar")[0]
         self.assertIsInstance(should_be_unknown, astroid.Unknown)
+
+    def test_attr_with_only_annotation_fails(self) -> None:
+        code = """
+        import attr
+
+        @attr.s
+        class Foo:
+            bar: int
+        Foo()
+        """
+        with self.assertRaises(exceptions.AttributeInferenceError):
+            next(astroid.extract_node(code).infer()).getattr("bar")
+
+    def test_attrs_with_only_annotation_works(self) -> None:
+        code = """
+        import attrs
+
+        @attrs.define
+        class Foo:
+            bar: int
+            baz: str = "hello"
+        Foo(1)
+        """
+        for attr_name in ("bar", "baz"):
+            should_be_unknown = next(astroid.extract_node(code).infer()).getattr(
+                attr_name
+            )[0]
+            self.assertIsInstance(should_be_unknown, astroid.Unknown)
