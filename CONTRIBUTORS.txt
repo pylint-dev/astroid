@@ -209,3 +209,4 @@ under this name, or we did not manage to find their commits in the history.
 - correctmost <134317971+correctmost@users.noreply.github.com>
 - Oleh Prypin <oleh@pryp.in>
 - Eric Vergnaud <eric.vergnaud@wanadoo.fr>
+- Hashem Nasarat <Hnasar@users.noreply.github.com>
