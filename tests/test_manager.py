@@ -507,7 +507,7 @@ class ClearCacheTest(unittest.TestCase):
 
             # This import from statement should succeed and update the astroid cache
             importfrom_node = astroid.extract_node("from cache import a")
-            module = importfrom_node.do_import_module(importfrom_node.modname)
+            importfrom_node.do_import_module(importfrom_node.modname)
         finally:
             sys.path = orig_sys_path
 
