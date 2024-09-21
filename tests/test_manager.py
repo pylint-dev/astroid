@@ -12,10 +12,10 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest import mock
 
-import astroid.manager
 import pytest
 
 import astroid
+import astroid.manager
 from astroid import manager, test_utils
 from astroid.const import IS_JYTHON, IS_PYPY, PY312_PLUS
 from astroid.exceptions import (
@@ -493,7 +493,7 @@ class ClearCacheTest(unittest.TestCase):
                 self.assertLessEqual(cleared_cache.currsize, baseline_cache.currsize)
 
     def test_file_cache_after_clear_cache(self) -> None:
-        """ Test to mimic the behavior of how pylint lints file and
+        """Test to mimic the behavior of how pylint lints file and
         ensure clear cache clears everything stored in the cache.
         See https://github.com/pylint-dev/pylint/pull/9932#issuecomment-2364985551
         for more information.
@@ -501,9 +501,9 @@ class ClearCacheTest(unittest.TestCase):
         orig_sys_path = sys.path[:]
         try:
             search_path = resources.RESOURCE_PATH
-            sys.path.insert(0,search_path)
+            sys.path.insert(0, search_path)
             node = astroid.MANAGER.ast_from_file(resources.find("data/cache/a.py"))
-            self.assertEqual(node.name,"cache.a")
+            self.assertEqual(node.name, "cache.a")
 
             # This import from statement should succeed and update the astroid cache
             importfrom_node = astroid.extract_node("from cache import a")
