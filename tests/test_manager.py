@@ -15,7 +15,6 @@ from unittest import mock
 import pytest
 
 import astroid
-import astroid.manager
 from astroid import manager, test_utils
 from astroid.const import IS_JYTHON, IS_PYPY, PY312_PLUS
 from astroid.exceptions import (
