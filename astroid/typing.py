@@ -76,7 +76,7 @@ InferBinaryOp = Callable[
         "InferenceContext",
         SuccessfulInferenceResult,
     ],
-    Generator[InferenceResult, None, None],
+    Generator[InferenceResult],
 ]
 
 
