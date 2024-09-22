@@ -491,6 +491,32 @@ class ClearCacheTest(unittest.TestCase):
                 # less equal because the "baseline" might have had multiple calls to bootstrap()
                 self.assertLessEqual(cleared_cache.currsize, baseline_cache.currsize)
 
+    def test_file_cache_after_clear_cache(self) -> None:
+        """Test to mimic the behavior of how pylint lints file and
+        ensure clear cache clears everything stored in the cache.
+        See https://github.com/pylint-dev/pylint/pull/9932#issuecomment-2364985551
+        for more information.
+        """
+        orig_sys_path = sys.path[:]
+        try:
+            search_path = resources.RESOURCE_PATH
+            sys.path.insert(0, search_path)
+            node = astroid.MANAGER.ast_from_file(resources.find("data/cache/a.py"))
+            self.assertEqual(node.name, "cache.a")
+
+            # This import from statement should succeed and update the astroid cache
+            importfrom_node = astroid.extract_node("from cache import a")
+            importfrom_node.do_import_module(importfrom_node.modname)
+        finally:
+            sys.path = orig_sys_path
+
+        astroid.MANAGER.clear_cache()
+
+        importfrom_node = astroid.extract_node("from cache import a")
+        # Try import from again after clear cache, this should raise an error
+        with self.assertRaises(AstroidBuildingError):
+            importfrom_node.do_import_module(importfrom_node.modname)
+
     def test_brain_plugins_reloaded_after_clearing_cache(self) -> None:
         astroid.MANAGER.clear_cache()
         format_call = astroid.extract_node("''.format()")

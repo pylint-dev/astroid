@@ -13,7 +13,9 @@ What's New in astroid 3.3.4?
 ============================
 Release date: TBA
 
+* Fix bug with ``manager.clear_cache()`` not fully clearing cache
 
+  Refs https://github.com/pylint-dev/pylint/pull/9932#issuecomment-2364985551
 
 What's New in astroid 3.3.3?
 ============================
