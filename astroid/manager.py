@@ -469,6 +469,8 @@ class AstroidManager:
         _invalidate_cache()  # inference context cache
 
         self.astroid_cache.clear()
+        self._mod_file_cache.clear()
+
         # NB: not a new TransformVisitor()
         AstroidManager.brain["_transform"].transforms = collections.defaultdict(list)
 
