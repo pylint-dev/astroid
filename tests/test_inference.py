@@ -7387,5 +7387,4 @@ def test_empty_format_spec() -> None:
     node = extract_node('f"{x:}"')
     assert isinstance(node, nodes.JoinedStr)
 
-    with pytest.raises(IndexError):
-        assert len(list(node.infer())) == 0
+    assert list(node.infer()) == [util.Uninferable]

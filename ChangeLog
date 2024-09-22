@@ -7,6 +7,9 @@ What's New in astroid 3.4.0?
 ============================
 Release date: TBA
 
+* Fix a crash from inferring empty format specs
+
+  Closes pylint-dev/pylint#9945
 
 
 What's New in astroid 3.3.4?
