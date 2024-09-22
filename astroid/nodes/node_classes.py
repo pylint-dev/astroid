@@ -82,7 +82,7 @@ AssignedStmtsCall = Callable[
 ]
 InferBinaryOperation = Callable[
     [_NodesT, Optional[InferenceContext]],
-    Generator[Union[InferenceResult, _BadOpMessageT], None, None],
+    Generator[Union[InferenceResult, _BadOpMessageT]],
 ]
 InferLHS = Callable[
     [_NodesT, Optional[InferenceContext]],
@@ -737,7 +737,7 @@ class Arguments(
         self.vararg_node = vararg_node
         self.kwarg_node = kwarg_node
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def postinit(
         self,
         args: list[AssignName] | None,

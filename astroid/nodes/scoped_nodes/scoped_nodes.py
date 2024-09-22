@@ -1828,7 +1828,7 @@ def get_wrapping_class(node):
     return klass
 
 
-class ClassDef(  # pylint: disable=too-many-instance-attributes
+class ClassDef(
     _base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG, _base_nodes.Statement
 ):
     """Class representing an :class:`ast.ClassDef` node.
