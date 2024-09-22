@@ -230,7 +230,7 @@ class InferenceError(ResolveError):  # pylint: disable=too-many-instance-attribu
         context: InferenceContext object.
     """
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         message: str = "Inference failed for {node!r}.",
         node: InferenceResult | None = None,

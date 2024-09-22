@@ -42,7 +42,7 @@ if TYPE_CHECKING:
             InferenceContext,
             InferenceContext,
         ],
-        list[partial[Generator[InferenceResult, None, None]]],
+        list[partial[Generator[InferenceResult]]],
     ]
 
 

@@ -307,6 +307,9 @@ exclude-protected=_asdict,_fields,_replace,_source,_make
 # Maximum number of arguments for function / method
 max-args=10
 
+# Maximum number of positional arguments for function / method.
+max-positional-arguments=8
+
 # Argument names that match this expression will be ignored. Default to name
 
 # with leading underscore
