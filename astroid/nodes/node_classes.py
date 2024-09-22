@@ -4779,6 +4779,9 @@ class JoinedStr(NodeNG):
     def _infer_from_values(
         cls, nodes: list[NodeNG], context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        if not nodes:
+            yield
+            return
         if len(nodes) == 1:
             yield from nodes[0]._infer(context, **kwargs)
             return
