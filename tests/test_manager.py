@@ -512,9 +512,9 @@ class ClearCacheTest(unittest.TestCase):
 
         astroid.MANAGER.clear_cache()
 
+        importfrom_node = astroid.extract_node("from cache import a")
         # Try import from again after clear cache, this should raise an error
         with self.assertRaises(AstroidBuildingError):
-            importfrom_node = astroid.extract_node("from cache import a")
             importfrom_node.do_import_module(importfrom_node.modname)
 
     def test_brain_plugins_reloaded_after_clearing_cache(self) -> None:
