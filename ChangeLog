@@ -17,6 +17,11 @@ Release date: TBA
 
   Refs https://github.com/pylint-dev/pylint/pull/9932#issuecomment-2364985551
 
+* Fix a crash from inferring empty format specs.
+
+  Closes pylint-dev/pylint#9945
+
+
 What's New in astroid 3.3.3?
 ============================
 Release date: 2024-09-20
