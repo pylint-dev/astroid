@@ -4685,32 +4685,30 @@ class FormattedValue(NodeNG):
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-        if self.format_spec is None:
-            yield from self.value.infer(context, **kwargs)
-            return
+        format_specs = Const("") if self.format_spec is None else self.format_spec
         uninferable_already_generated = False
-        for format_spec in self.format_spec.infer(context, **kwargs):
+        for format_spec in format_specs.infer(context, **kwargs):
             if not isinstance(format_spec, Const):
                 if not uninferable_already_generated:
                     yield util.Uninferable
                     uninferable_already_generated = True
                 continue
             for value in self.value.infer(context, **kwargs):
+                value_to_format = value
                 if isinstance(value, Const):
-                    try:
-                        formatted = format(value.value, format_spec.value)
-                        yield Const(
-                            formatted,
-                            lineno=self.lineno,
-                            col_offset=self.col_offset,
-                            end_lineno=self.end_lineno,
-                            end_col_offset=self.end_col_offset,
-                        )
-                        continue
-                    except (ValueError, TypeError):
-                        # happens when format_spec.value is invalid
-                        pass  # fall through
-                if not uninferable_already_generated:
+                    value_to_format = value.value
+                try:
+                    formatted = format(value_to_format, format_spec.value)
+                    yield Const(
+                        formatted,
+                        lineno=self.lineno,
+                        col_offset=self.col_offset,
+                        end_lineno=self.end_lineno,
+                        end_col_offset=self.end_col_offset,
+                    )
+                    continue
+                except (ValueError, TypeError):
+                    # happens when format_spec.value is invalid
                     yield util.Uninferable
                     uninferable_already_generated = True
                 continue
