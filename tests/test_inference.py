@@ -19,6 +19,7 @@ from unittest.mock import patch
 import pytest
 
 from astroid import (
+    Assign,
     Const,
     Slice,
     Uninferable,
@@ -27,7 +28,7 @@ from astroid import (
     nodes,
     objects,
     test_utils,
-    util, Assign,
+    util,
 )
 from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
@@ -7393,7 +7394,8 @@ def test_empty_format_spec() -> None:
 @pytest.mark.parametrize(
     "source, expected",
     [
-        ("""
+        (
+            """
 class Cls:
     # pylint: disable=too-few-public-methods
     pass
@@ -7401,9 +7403,11 @@ class Cls:
 c_obj = Cls()
 
 s1 = f'{c_obj!r}' #@
-""", '<__main__.Cls'),
-        ("s1 = f'{5}' #@", "5")
-    ]
+""",
+            "<__main__.Cls",
+        ),
+        ("s1 = f'{5}' #@", "5"),
+    ],
 )
 def test_joined_str_returns_string(source, expected) -> None:
     """Regression test for https://github.com/pylint-dev/pylint/issues/9947."""
@@ -7415,4 +7419,3 @@ def test_joined_str_returns_string(source, expected) -> None:
     assert len(inferred) == 1
     assert isinstance(inferred[0], Const)
     inferred[0].value.startswith(expected)
-
