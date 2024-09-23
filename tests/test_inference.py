@@ -27,7 +27,7 @@ from astroid import (
     nodes,
     objects,
     test_utils,
-    util,
+    util, Assign,
 )
 from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
@@ -7388,3 +7388,31 @@ def test_empty_format_spec() -> None:
     assert isinstance(node, nodes.JoinedStr)
 
     assert list(node.infer()) == [util.Uninferable]
+
+
+@pytest.mark.parametrize(
+    "source, expected",
+    [
+        ("""
+class Cls:
+    # pylint: disable=too-few-public-methods
+    pass
+
+c_obj = Cls()
+
+s1 = f'{c_obj!r}' #@
+""", '<__main__.Cls'),
+        ("s1 = f'{5}' #@", "5")
+    ]
+)
+def test_joined_str_returns_string(source, expected) -> None:
+    """Regression test for https://github.com/pylint-dev/pylint/issues/9947."""
+    node = extract_node(source)
+    assert isinstance(node, Assign)
+    target = node.targets[0]
+    assert target
+    inferred = list(target.inferred())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], Const)
+    inferred[0].value.startswith(expected)
+
