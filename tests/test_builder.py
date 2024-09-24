@@ -883,12 +883,6 @@ def test_module_build_dunder_file() -> None:
     assert module.path[0] == collections.__file__
 
 
-@pytest.mark.xfail(
-    reason=(
-        "The builtin ast module does not fail with a specific error "
-        "for syntax error caused by invalid type comments."
-    ),
-)
 def test_parse_module_with_invalid_type_comments_does_not_crash():
     node = builder.parse(
         """
