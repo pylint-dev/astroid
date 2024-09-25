@@ -695,19 +695,19 @@ class BoundMethodModel(FunctionModel):
 
 
 class GeneratorModel(FunctionModel, ContextManagerModel):
-    def __new__(cls, *args, **kwargs):
+    def __init__(self):
         # Append the values from the GeneratorType unto this object.
-        ret = super().__new__(cls, *args, **kwargs)
+        super().__init__()
         generator = AstroidManager().builtins_module["generator"]
         for name, values in generator.locals.items():
             method = values[0]
+            if isinstance(method, nodes.FunctionDef):
+                method = bases.BoundMethod(method, _get_bound_node(self))
 
             def patched(cls, meth=method):
                 return meth
 
-            setattr(type(ret), IMPL_PREFIX + name, property(patched))
-
-        return ret
+            setattr(type(self), IMPL_PREFIX + name, property(patched))
 
     @property
     def attr___name__(self):
@@ -724,24 +724,20 @@ class GeneratorModel(FunctionModel, ContextManagerModel):
 
 
 class AsyncGeneratorModel(GeneratorModel):
-    def __new__(cls, *args, **kwargs):
+    def __init__(self):
         # Append the values from the AGeneratorType unto this object.
-        ret = super().__new__(cls, *args, **kwargs)
+        super().__init__()
         astroid_builtins = AstroidManager().builtins_module
-        generator = astroid_builtins.get("async_generator")
-        if generator is None:
-            # Make it backward compatible.
-            generator = astroid_builtins.get("generator")
-
+        generator = astroid_builtins["async_generator"]
         for name, values in generator.locals.items():
             method = values[0]
+            if isinstance(method, nodes.FunctionDef):
+                method = bases.BoundMethod(method, _get_bound_node(self))
 
             def patched(cls, meth=method):
                 return meth
 
-            setattr(type(ret), IMPL_PREFIX + name, property(patched))
-
-        return ret
+            setattr(type(self), IMPL_PREFIX + name, property(patched))
 
 
 class InstanceModel(ObjectModel):

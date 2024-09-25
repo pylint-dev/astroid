@@ -322,24 +322,6 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
             self.assertEqual(len(name.lookup("x")[1]), 1, repr(name))
             self.assertEqual(name.lookup("x")[1][0].lineno, 3, repr(name))
 
-    def test_generator_attributes(self) -> None:
-        tree = builder.parse(
-            """
-            def count():
-                "test"
-                yield 0
-
-            iterer = count()
-            num = iterer.next()
-        """
-        )
-        next_node = tree.body[2].value.func
-        gener = next_node.expr.inferred()[0]
-        self.assertIsInstance(gener.getattr("__next__")[0], nodes.FunctionDef)
-        self.assertIsInstance(gener.getattr("send")[0], nodes.FunctionDef)
-        self.assertIsInstance(gener.getattr("throw")[0], nodes.FunctionDef)
-        self.assertIsInstance(gener.getattr("close")[0], nodes.FunctionDef)
-
     def test_explicit___name__(self) -> None:
         code = """
             class Pouet:

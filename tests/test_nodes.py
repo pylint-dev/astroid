@@ -1454,7 +1454,7 @@ def test_is_generator_for_yield_assignments() -> None:
     assert bool(inferred.is_generator())
 
 
-class AsyncGeneratorTest:
+class AsyncGeneratorTest(unittest.TestCase):
     def test_async_generator(self):
         node = astroid.extract_node(
             """
@@ -1471,23 +1471,6 @@ class AsyncGeneratorTest:
         assert inferred.getattr("__anext__")
         assert inferred.pytype() == "builtins.async_generator"
         assert inferred.display_type() == "AsyncGenerator"
-
-    def test_async_generator_is_generator_on_older_python(self):
-        node = astroid.extract_node(
-            """
-        async def a_iter(n):
-            for i in range(1, n + 1):
-                yield i
-                await asyncio.sleep(1)
-        a_iter(2) #@
-        """
-        )
-        inferred = next(node.infer())
-        assert isinstance(inferred, bases.Generator)
-        assert inferred.getattr("__iter__")
-        assert inferred.getattr("__next__")
-        assert inferred.pytype() == "builtins.generator"
-        assert inferred.display_type() == "Generator"
 
 
 def test_f_string_correct_line_numbering() -> None:
