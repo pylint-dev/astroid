@@ -13,8 +13,8 @@ leads to an inferred FrozenSet:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 from astroid import bases, util
 from astroid.exceptions import (

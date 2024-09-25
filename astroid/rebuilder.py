@@ -13,7 +13,7 @@ import sys
 import token
 from io import StringIO
 from tokenize import generate_tokens
-from typing import TYPE_CHECKING, cast, overload, Union
+from typing import TYPE_CHECKING, Union, cast, overload
 
 from astroid import nodes
 from astroid._ast import get_parser_module, parse_function_type_comment
@@ -22,13 +22,13 @@ from astroid.nodes.node_classes import AssignName
 from astroid.nodes.utils import Position
 
 if TYPE_CHECKING:
-    from tokenize import TokenInfo
     from collections.abc import Callable, Generator
+    from tokenize import TokenInfo
     from typing import Final, TypeVar
 
-    from astroid.nodes import NodeNG
     from astroid._ast import ParserModule
     from astroid.manager import AstroidManager
+    from astroid.nodes import NodeNG
     from astroid.typing import InferenceResult
 
     T_Doc = TypeVar(

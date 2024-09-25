@@ -29,8 +29,8 @@ from astroid.interpreter import objectmodel
 from astroid.util import Uninferable, UninferableBase, safe_infer
 
 if TYPE_CHECKING:
-    from typing import Any, Literal
     from collections.abc import Iterable, Iterator
+    from typing import Any, Literal
 
     from astroid.constraint import Constraint
     from astroid.typing import (

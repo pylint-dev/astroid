@@ -23,8 +23,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from astroid import nodes
-    from astroid.manager import AstroidManager
     from astroid.context import InferenceContext
+    from astroid.manager import AstroidManager
     from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 

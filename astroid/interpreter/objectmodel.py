@@ -38,8 +38,8 @@ from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
 
 if TYPE_CHECKING:
-    from typing import Any, Literal
     from collections.abc import Iterator
+    from typing import Any, Literal
 
     from astroid.objects import Property
     from astroid.typing import InferenceResult, SuccessfulInferenceResult

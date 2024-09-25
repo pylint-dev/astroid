@@ -24,8 +24,8 @@ from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 
 if TYPE_CHECKING:
-    from typing import Final
     from collections.abc import Iterator
+    from typing import Final
 
     import astroid
     from astroid import bases

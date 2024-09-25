@@ -25,8 +25,8 @@ from astroid.manager import AstroidManager
 if TYPE_CHECKING:
     import ast
     import types
-    from io import TextIOWrapper
     from collections.abc import Iterator, Sequence
+    from io import TextIOWrapper
 
     from astroid._ast import ParserModule
 

@@ -26,8 +26,8 @@ from astroid.nodes import scoped_nodes
 from astroid.raw_building import build_module
 
 if TYPE_CHECKING:
-    from typing import Any, NoReturn
     from collections.abc import Callable, Iterable
+    from typing import Any, NoReturn
 
     from astroid.bases import Instance
     from astroid.context import InferenceContext

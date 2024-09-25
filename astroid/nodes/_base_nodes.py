@@ -29,8 +29,8 @@ from astroid.nodes.node_ng import NodeNG
 from astroid.typing import InferenceResult
 
 if TYPE_CHECKING:
-    from typing import Any, ClassVar, Optional, Union
     from collections.abc import Callable, Generator, Iterator
+    from typing import Any, ClassVar, Optional, Union
 
     from astroid.nodes.node_classes import LocalsDictNodeNG
 

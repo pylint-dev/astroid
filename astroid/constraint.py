@@ -12,8 +12,8 @@ from astroid import nodes, util
 
 if TYPE_CHECKING:
     import sys
-    from typing import Union
     from collections.abc import Iterator
+    from typing import Union
 
     from astroid import bases
     from astroid.typing import InferenceResult

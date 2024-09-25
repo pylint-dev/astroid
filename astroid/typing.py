@@ -15,8 +15,8 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any
     from collections.abc import Iterator
+    from typing import Any
 
     from astroid import bases, exceptions, nodes, transforms, util
     from astroid.context import InferenceContext

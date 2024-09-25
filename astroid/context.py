@@ -11,8 +11,8 @@ import pprint
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Optional
     from collections.abc import Iterator, Sequence
+    from typing import Optional
 
     from astroid import constraint, nodes
     from astroid.nodes.node_classes import Keyword, NodeNG

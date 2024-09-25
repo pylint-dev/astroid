@@ -35,8 +35,8 @@ from astroid.nodes.node_classes import (
 from astroid.nodes.scoped_nodes import ClassDef, FunctionDef
 
 if TYPE_CHECKING:
-    from typing import Final
     from collections.abc import Iterator
+    from typing import Final
 
     from astroid import context
     from astroid.nodes.node_classes import NodeNG

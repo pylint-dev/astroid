@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import pprint
-
 import warnings
 from functools import cached_property
 from functools import singledispatch as _singledispatch
@@ -31,9 +30,9 @@ from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 
 if TYPE_CHECKING:
+    from collections.abc import Generator, Iterator
     from sys import version_info
     from typing import Any, ClassVar, Literal
-    from collections.abc import Generator, Iterator
 
     from astroid import nodes
     from astroid.nodes import _base_nodes

@@ -24,8 +24,8 @@ from . import util
 
 if TYPE_CHECKING:
     import types
-    from typing import Literal
     from collections.abc import Iterable, Iterator, Sequence
+    from typing import Literal
 
 
 # The MetaPathFinder protocol comes from typeshed, which says:

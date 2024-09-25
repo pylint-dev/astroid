@@ -13,8 +13,8 @@ from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
 from astroid.nodes import NodeNG
 
 if TYPE_CHECKING:
-    from typing import Any, TypeVar
     from collections.abc import Generator
+    from typing import Any, TypeVar
 
     from astroid.context import InferenceContext
     from astroid.typing import (

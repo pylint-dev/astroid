@@ -18,7 +18,6 @@ from typing import TYPE_CHECKING
 from astroid import decorators, protocols, util
 from astroid.bases import Instance, _infer_stmts
 from astroid.const import _EMPTY_OBJECT_MARKER
-from astroid.typing import InferenceErrorInfo
 from astroid.context import CallContext, InferenceContext, copy_context
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -38,11 +37,12 @@ from astroid.manager import AstroidManager
 from astroid.nodes import _base_nodes
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
+from astroid.typing import InferenceErrorInfo
 
 if TYPE_CHECKING:
     import sys
-    from typing import Any, ClassVar, Literal, Optional, Union
     from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
+    from typing import Any, ClassVar, Literal, Optional, Union
 
     from astroid import nodes
     from astroid.const import Context

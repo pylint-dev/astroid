@@ -10,7 +10,7 @@ import functools
 import inspect
 import sys
 import warnings
-from typing import TypeVar, TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 
 from astroid import util
 from astroid.context import InferenceContext

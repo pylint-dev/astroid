@@ -9,8 +9,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Any
     from collections.abc import Iterable, Iterator
+    from typing import Any
 
     from astroid import arguments, bases, nodes, objects
     from astroid.context import InferenceContext

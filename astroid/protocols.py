@@ -26,8 +26,8 @@ from astroid.exceptions import (
 from astroid.nodes import node_classes
 
 if TYPE_CHECKING:
-    from typing import Any, TypeVar
     from collections.abc import Callable, Generator, Iterator, Sequence
+    from typing import Any, TypeVar
 
     from astroid.typing import (
         ConstFactoryResult,

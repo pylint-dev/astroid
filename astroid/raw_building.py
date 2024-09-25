@@ -25,8 +25,8 @@ from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
 
 if TYPE_CHECKING:
-    from typing import Any, Union
     from collections.abc import Iterable
+    from typing import Any, Union
 
     _FunctionTypes = Union[
         types.FunctionType,

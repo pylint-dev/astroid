@@ -30,8 +30,8 @@ from astroid.exceptions import UseInferenceDefault
 from astroid.inference_tip import inference_tip
 
 if TYPE_CHECKING:
-    from astroid.manager import AstroidManager
     from astroid.context import InferenceContext
+    from astroid.manager import AstroidManager
 
 
 def _looks_like_type_subscript(node: nodes.Name) -> bool:

@@ -12,8 +12,8 @@ from astroid.exceptions import AttributeInferenceError
 from astroid.nodes.scoped_nodes import ClassDef
 
 if TYPE_CHECKING:
-    from astroid.manager import AstroidManager
     from astroid.context import InferenceContext
+    from astroid.manager import AstroidManager
 
 
 def _collections_transform():

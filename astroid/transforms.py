@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import warnings
 from collections import defaultdict
-from typing import TYPE_CHECKING, overload, cast
+from typing import TYPE_CHECKING, cast, overload
 
 from astroid.context import _invalidate_cache
 

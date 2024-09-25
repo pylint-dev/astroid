@@ -7,7 +7,6 @@ from __future__ import annotations
 import textwrap
 from typing import TYPE_CHECKING
 
-
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.const import PY310_PLUS, PY311_PLUS

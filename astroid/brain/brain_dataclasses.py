@@ -25,8 +25,8 @@ from astroid.manager import AstroidManager
 from astroid.util import Uninferable, UninferableBase, safe_infer
 
 if TYPE_CHECKING:
-    from typing import Literal, Union
     from collections.abc import Iterator
+    from typing import Literal, Union
 
     from astroid import context
     from astroid.typing import InferenceResult

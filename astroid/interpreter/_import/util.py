@@ -7,8 +7,8 @@ from __future__ import annotations
 import pathlib
 import sys
 from functools import lru_cache
-from typing import TYPE_CHECKING
 from importlib.util import _find_spec_from_path  # type: ignore[attr-defined]
+from typing import TYPE_CHECKING
 
 from astroid.const import IS_PYPY
 

@@ -52,13 +52,13 @@ from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.typing import InferenceErrorInfo
 
 if TYPE_CHECKING:
-    from typing import Any, ClassVar, Literal, NoReturn, TypeVar
     from collections.abc import Generator, Iterable, Iterator, Sequence
+    from typing import Any, ClassVar, Literal, NoReturn, TypeVar
 
     from astroid import nodes, objects
     from astroid.nodes import NodeNG
-    from astroid.nodes.utils import Position
     from astroid.nodes._base_nodes import LookupMixIn
+    from astroid.nodes.utils import Position
     from astroid.typing import (
         InferBinaryOp,
         InferenceResult,

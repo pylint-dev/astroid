@@ -35,8 +35,8 @@ from astroid.transforms import TransformVisitor
 
 if TYPE_CHECKING:
     import types
-    from typing import Any, ClassVar
     from collections.abc import Callable, Iterator, Sequence
+    from typing import Any, ClassVar
 
     from astroid.context import InferenceContext
     from astroid.typing import AstroidManagerBrain, InferenceResult
