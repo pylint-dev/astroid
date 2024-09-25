@@ -4,9 +4,11 @@
 
 """Astroid hooks for numpy.core.multiarray module."""
 
-import functools
+from __future__ import annotations
 
-from astroid import nodes
+import functools
+from typing import TYPE_CHECKING
+
 from astroid.brain.brain_numpy_utils import (
     attribute_looks_like_numpy_member,
     infer_numpy_member,
@@ -15,8 +17,11 @@ from astroid.brain.brain_numpy_utils import (
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.inference_tip import inference_tip
-from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import Attribute, Name
+
+if TYPE_CHECKING:
+    from astroid import nodes
+    from astroid.manager import AstroidManager
 
 
 def numpy_core_multiarray_transform() -> nodes.Module:

@@ -11,19 +11,37 @@ from __future__ import annotations
 import ast
 import sys
 import token
-from collections.abc import Callable, Generator
 from io import StringIO
-from tokenize import TokenInfo, generate_tokens
-from typing import TYPE_CHECKING, Final, TypeVar, Union, cast, overload
+from tokenize import generate_tokens
+from typing import TYPE_CHECKING, cast, overload, Union
 
 from astroid import nodes
-from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
+from astroid._ast import get_parser_module, parse_function_type_comment
 from astroid.const import PY312_PLUS, Context
-from astroid.manager import AstroidManager
-from astroid.nodes import NodeNG
 from astroid.nodes.node_classes import AssignName
 from astroid.nodes.utils import Position
-from astroid.typing import InferenceResult
+
+if TYPE_CHECKING:
+    from tokenize import TokenInfo
+    from collections.abc import Callable, Generator
+    from typing import Final, TypeVar
+
+    from astroid.nodes import NodeNG
+    from astroid._ast import ParserModule
+    from astroid.manager import AstroidManager
+    from astroid.typing import InferenceResult
+
+    T_Doc = TypeVar(
+        "T_Doc",
+        "ast.Module",
+        "ast.ClassDef",
+        Union["ast.FunctionDef", "ast.AsyncFunctionDef"],
+    )
+    _FunctionT = TypeVar("_FunctionT", nodes.FunctionDef, nodes.AsyncFunctionDef)
+    _ForT = TypeVar("_ForT", nodes.For, nodes.AsyncFor)
+    _WithT = TypeVar("_WithT", nodes.With, nodes.AsyncWith)
+    NodesWithDocsType = Union[nodes.Module, nodes.ClassDef, nodes.FunctionDef]
+
 
 REDIRECT: Final[dict[str, str]] = {
     "arguments": "Arguments",
@@ -34,18 +52,6 @@ REDIRECT: Final[dict[str, str]] = {
     "keyword": "Keyword",
     "match_case": "MatchCase",
 }
-
-
-T_Doc = TypeVar(
-    "T_Doc",
-    "ast.Module",
-    "ast.ClassDef",
-    Union["ast.FunctionDef", "ast.AsyncFunctionDef"],
-)
-_FunctionT = TypeVar("_FunctionT", nodes.FunctionDef, nodes.AsyncFunctionDef)
-_ForT = TypeVar("_ForT", nodes.For, nodes.AsyncFor)
-_WithT = TypeVar("_WithT", nodes.With, nodes.AsyncWith)
-NodesWithDocsType = Union[nodes.Module, nodes.ClassDef, nodes.FunctionDef]
 
 
 # noinspection PyMethodMayBeStatic

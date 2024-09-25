@@ -22,12 +22,16 @@ Thanks to Lukasz Langa for fruitful discussion.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from astroid import nodes
 from astroid.builder import extract_node
-from astroid.context import InferenceContext
 from astroid.exceptions import UseInferenceDefault
 from astroid.inference_tip import inference_tip
-from astroid.manager import AstroidManager
+
+if TYPE_CHECKING:
+    from astroid.manager import AstroidManager
+    from astroid.context import InferenceContext
 
 
 def _looks_like_type_subscript(node: nodes.Name) -> bool:

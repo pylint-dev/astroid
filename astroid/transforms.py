@@ -6,30 +6,34 @@ from __future__ import annotations
 
 import warnings
 from collections import defaultdict
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Optional, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, overload, cast
 
 from astroid.context import _invalidate_cache
-from astroid.typing import SuccessfulInferenceResult, TransformFn
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import Optional, TypeVar, Union
+
     from astroid import nodes
+    from astroid.typing import SuccessfulInferenceResult, TransformFn
 
     _SuccessfulInferenceResultT = TypeVar(
         "_SuccessfulInferenceResultT", bound=SuccessfulInferenceResult
     )
+
     _Predicate = Optional[Callable[[_SuccessfulInferenceResultT], bool]]
 
-_Vistables = Union[
-    "nodes.NodeNG", list["nodes.NodeNG"], tuple["nodes.NodeNG", ...], str, None
-]
-_VisitReturns = Union[
-    SuccessfulInferenceResult,
-    list[SuccessfulInferenceResult],
-    tuple[SuccessfulInferenceResult, ...],
-    str,
-    None,
-]
+    _Vistables = Union[
+        "nodes.NodeNG", list["nodes.NodeNG"], tuple["nodes.NodeNG", ...], str, None
+    ]
+
+    _VisitReturns = Union[
+        SuccessfulInferenceResult,
+        list[SuccessfulInferenceResult],
+        tuple[SuccessfulInferenceResult, ...],
+        str,
+        None,
+    ]
 
 
 class TransformVisitor:

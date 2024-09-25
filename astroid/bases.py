@@ -9,8 +9,7 @@ from __future__ import annotations
 
 import collections
 import collections.abc
-from collections.abc import Iterable, Iterator
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING
 
 from astroid import decorators, nodes
 from astroid.const import PY310_PLUS
@@ -27,15 +26,18 @@ from astroid.exceptions import (
     NameInferenceError,
 )
 from astroid.interpreter import objectmodel
-from astroid.typing import (
-    InferenceErrorInfo,
-    InferenceResult,
-    SuccessfulInferenceResult,
-)
 from astroid.util import Uninferable, UninferableBase, safe_infer
 
 if TYPE_CHECKING:
+    from typing import Any, Literal
+    from collections.abc import Iterable, Iterator
+
     from astroid.constraint import Constraint
+    from astroid.typing import (
+        InferenceErrorInfo,
+        InferenceResult,
+        SuccessfulInferenceResult,
+    )
 
 
 PROPERTIES = {"builtins.property", "abc.abstractproperty"}

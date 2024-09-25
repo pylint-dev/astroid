@@ -14,23 +14,29 @@ dataclasses. References:
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-from typing import Literal, Union
+from typing import TYPE_CHECKING
 
-from astroid import bases, context, nodes
+from astroid import bases, nodes
 from astroid.builder import parse
 from astroid.const import PY310_PLUS, PY313_PLUS
 from astroid.exceptions import AstroidSyntaxError, InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
-from astroid.typing import InferenceResult
 from astroid.util import Uninferable, UninferableBase, safe_infer
 
-_FieldDefaultReturn = Union[
-    None,
-    tuple[Literal["default"], nodes.NodeNG],
-    tuple[Literal["default_factory"], nodes.Call],
-]
+if TYPE_CHECKING:
+    from typing import Literal, Union
+    from collections.abc import Iterator
+
+    from astroid import context
+    from astroid.typing import InferenceResult
+
+    _FieldDefaultReturn = Union[
+        None,
+        tuple[Literal["default"], nodes.NodeNG],
+        tuple[Literal["default_factory"], nodes.Call],
+    ]
+
 
 DATACLASSES_DECORATORS = frozenset(("dataclass",))
 FIELD_NAME = "field"

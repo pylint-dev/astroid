@@ -5,23 +5,25 @@
 """Classes representing different types of constraints on inference values."""
 from __future__ import annotations
 
-import sys
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from astroid import nodes, util
-from astroid.typing import InferenceResult
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from astroid import bases
+    import sys
+    from typing import Union
+    from collections.abc import Iterator
 
-_NameNodes = Union[nodes.AssignAttr, nodes.Attribute, nodes.AssignName, nodes.Name]
+    from astroid import bases
+    from astroid.typing import InferenceResult
+
+    if sys.version_info >= (3, 11):
+        from typing import Self
+    else:
+        from typing_extensions import Self
+
+    _NameNodes = Union[nodes.AssignAttr, nodes.Attribute, nodes.AssignName, nodes.Name]
 
 
 class Constraint(ABC):

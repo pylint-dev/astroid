@@ -6,11 +6,13 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Final, Literal
+from typing import TYPE_CHECKING
 
 from astroid.exceptions import InferenceError
 
 if TYPE_CHECKING:
+    from typing import Any, Final, Literal
+
     from astroid import bases, nodes
     from astroid.context import InferenceContext
     from astroid.typing import InferenceResult

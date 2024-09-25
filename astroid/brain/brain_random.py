@@ -5,11 +5,10 @@
 from __future__ import annotations
 
 import random
+from typing import TYPE_CHECKING
 
-from astroid.context import InferenceContext
 from astroid.exceptions import UseInferenceDefault
 from astroid.inference_tip import inference_tip
-from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import (
     Attribute,
     Call,
@@ -21,6 +20,11 @@ from astroid.nodes.node_classes import (
     Tuple,
 )
 from astroid.util import safe_infer
+
+if TYPE_CHECKING:
+    from astroid.context import InferenceContext
+    from astroid.manager import AstroidManager
+
 
 ACCEPTED_ITERABLES_FOR_SAMPLE = (List, Set, Tuple)
 

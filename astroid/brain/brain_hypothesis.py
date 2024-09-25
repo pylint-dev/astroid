@@ -16,8 +16,15 @@ defined using the `@hypothesis.strategies.composite` decorator.  For example:
 
     a_strategy()
 """
-from astroid.manager import AstroidManager
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from astroid.nodes.scoped_nodes import FunctionDef
+
+if TYPE_CHECKING:
+    from astroid.manager import AstroidManager
+
 
 COMPOSITE_NAMES = (
     "composite",

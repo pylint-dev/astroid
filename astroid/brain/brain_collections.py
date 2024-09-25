@@ -4,12 +4,16 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
-from astroid.context import InferenceContext
 from astroid.exceptions import AttributeInferenceError
-from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import ClassDef
+
+if TYPE_CHECKING:
+    from astroid.manager import AstroidManager
+    from astroid.context import InferenceContext
 
 
 def _collections_transform():

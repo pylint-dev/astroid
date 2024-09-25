@@ -6,21 +6,27 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
 from functools import partial
 from itertools import chain
+from typing import TYPE_CHECKING
 
-from astroid import BoundMethod, arguments, nodes, objects
+from astroid import BoundMethod, arguments, objects
 from astroid.builder import extract_node
-from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.interpreter import objectmodel
-from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import AssignName, Attribute, Call, Name
 from astroid.nodes.scoped_nodes import FunctionDef
-from astroid.typing import InferenceResult, SuccessfulInferenceResult
 from astroid.util import UninferableBase, safe_infer
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from astroid import nodes
+    from astroid.manager import AstroidManager
+    from astroid.context import InferenceContext
+    from astroid.typing import InferenceResult, SuccessfulInferenceResult
+
 
 LRU_CACHE = "functools.lru_cache"
 

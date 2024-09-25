@@ -25,11 +25,16 @@ actual standard signal numbers - which may vary depending on the system.
 """
 
 
+from __future__ import annotations
+
 import sys
+from typing import TYPE_CHECKING
 
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
-from astroid.manager import AstroidManager
+
+if TYPE_CHECKING:
+    from astroid.manager import AstroidManager
 
 
 def _signals_enums_transform():

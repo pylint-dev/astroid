@@ -2,13 +2,19 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
-import textwrap
+from __future__ import annotations
 
-from astroid import nodes
+import textwrap
+from typing import TYPE_CHECKING
+
+
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.const import PY310_PLUS, PY311_PLUS
-from astroid.manager import AstroidManager
+
+if TYPE_CHECKING:
+    from astroid import nodes
+    from astroid.manager import AstroidManager
 
 
 def _subprocess_transform() -> nodes.Module:

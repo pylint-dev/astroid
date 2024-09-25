@@ -11,13 +11,11 @@ from __future__ import annotations
 
 import collections
 import os
-import types
 import zipimport
-from collections.abc import Callable, Iterator, Sequence
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING
 
 from astroid import nodes
-from astroid.context import InferenceContext, _invalidate_cache
+from astroid.context import _invalidate_cache
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec, util
 from astroid.modutils import (
@@ -34,7 +32,15 @@ from astroid.modutils import (
     modpath_from_file,
 )
 from astroid.transforms import TransformVisitor
-from astroid.typing import AstroidManagerBrain, InferenceResult
+
+if TYPE_CHECKING:
+    import types
+    from typing import Any, ClassVar
+    from collections.abc import Callable, Iterator, Sequence
+
+    from astroid.context import InferenceContext
+    from astroid.typing import AstroidManagerBrain, InferenceResult
+
 
 ZIP_IMPORT_EXTS = (".zip", ".egg", ".whl", ".pyz", ".pyzw")
 

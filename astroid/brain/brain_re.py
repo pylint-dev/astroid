@@ -4,12 +4,17 @@
 
 from __future__ import annotations
 
-from astroid import context, nodes
+from typing import TYPE_CHECKING
+
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import _extract_single_node, parse
 from astroid.const import PY311_PLUS
 from astroid.inference_tip import inference_tip
-from astroid.manager import AstroidManager
+
+if TYPE_CHECKING:
+    from astroid import context
+    from astroid.manager import AstroidManager
 
 
 def _re_transform() -> nodes.Module:

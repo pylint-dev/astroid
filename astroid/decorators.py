@@ -10,13 +10,16 @@ import functools
 import inspect
 import sys
 import warnings
-from collections.abc import Callable, Generator
-from typing import TypeVar
+from typing import TypeVar, TYPE_CHECKING
 
 from astroid import util
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
-from astroid.typing import InferenceResult
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
+
+    from astroid.typing import InferenceResult
 
 if sys.version_info >= (3, 10):
     from typing import ParamSpec

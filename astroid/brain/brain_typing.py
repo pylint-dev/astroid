@@ -8,11 +8,9 @@ from __future__ import annotations
 
 import textwrap
 import typing
-from collections.abc import Iterator
 from functools import partial
-from typing import Final
+from typing import TYPE_CHECKING
 
-from astroid import context
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
 from astroid.const import PY312_PLUS, PY313_PLUS
@@ -32,10 +30,16 @@ from astroid.nodes.node_classes import (
     Const,
     JoinedStr,
     Name,
-    NodeNG,
     Subscript,
 )
 from astroid.nodes.scoped_nodes import ClassDef, FunctionDef
+
+if TYPE_CHECKING:
+    from typing import Final
+    from collections.abc import Iterator
+
+    from astroid import context
+    from astroid.nodes.node_classes import NodeNG
 
 TYPING_TYPEVARS = {"TypeVar", "NewType"}
 TYPING_TYPEVARS_QUALIFIED: Final = {

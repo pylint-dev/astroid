@@ -8,12 +8,10 @@ from __future__ import annotations
 
 import functools
 import keyword
-from collections.abc import Iterator
 from textwrap import dedent
-from typing import Final
+from typing import TYPE_CHECKING
 
-import astroid
-from astroid import arguments, bases, nodes, util
+from astroid import arguments, nodes, util
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
 from astroid.context import InferenceContext
 from astroid.exceptions import (
@@ -24,6 +22,14 @@ from astroid.exceptions import (
 )
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
+
+if TYPE_CHECKING:
+    from typing import Final
+    from collections.abc import Iterator
+
+    import astroid
+    from astroid import bases
+
 
 ENUM_QNAME: Final[str] = "enum.Enum"
 TYPING_NAMEDTUPLE_QUALIFIED: Final = {

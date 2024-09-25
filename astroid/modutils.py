@@ -25,14 +25,18 @@ import logging
 import os
 import sys
 import sysconfig
-import types
 import warnings
-from collections.abc import Callable, Iterable, Sequence
 from contextlib import redirect_stderr, redirect_stdout
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
 from astroid.const import IS_JYTHON, PY310_PLUS
 from astroid.interpreter._import import spec, util
+
+if TYPE_CHECKING:
+    import types
+    from collections.abc import Callable, Iterable, Sequence
+
 
 if PY310_PLUS:
     from sys import stdlib_module_names

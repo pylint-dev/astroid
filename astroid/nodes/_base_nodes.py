@@ -10,9 +10,8 @@ Previously these were called Mixin nodes.
 from __future__ import annotations
 
 import itertools
-from collections.abc import Callable, Generator, Iterator
 from functools import cached_property, lru_cache, partial
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Union
+from typing import TYPE_CHECKING
 
 from astroid import bases, nodes, util
 from astroid.const import PY310_PLUS
@@ -30,6 +29,9 @@ from astroid.nodes.node_ng import NodeNG
 from astroid.typing import InferenceResult
 
 if TYPE_CHECKING:
+    from typing import Any, ClassVar, Optional, Union
+    from collections.abc import Callable, Generator, Iterator
+
     from astroid.nodes.node_classes import LocalsDictNodeNG
 
     GetFlowFactory = Callable[

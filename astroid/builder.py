@@ -10,20 +10,26 @@ at the same time.
 
 from __future__ import annotations
 
-import ast
 import os
 import textwrap
-import types
 import warnings
-from collections.abc import Iterator, Sequence
-from io import TextIOWrapper
 from tokenize import detect_encoding
+from typing import TYPE_CHECKING
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
-from astroid._ast import ParserModule, get_parser_module
+from astroid._ast import get_parser_module
 from astroid.const import PY312_PLUS
 from astroid.exceptions import AstroidBuildingError, AstroidSyntaxError, InferenceError
 from astroid.manager import AstroidManager
+
+if TYPE_CHECKING:
+    import ast
+    import types
+    from io import TextIOWrapper
+    from collections.abc import Iterator, Sequence
+
+    from astroid._ast import ParserModule
+
 
 # The name of the transient function that is used to
 # wrap expressions to be extracted when calling

@@ -11,8 +11,7 @@ from __future__ import annotations
 import collections
 import itertools
 import operator as operator_mod
-from collections.abc import Callable, Generator, Iterator, Sequence
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING
 
 from astroid import bases, decorators, nodes, util
 from astroid.const import Context
@@ -25,14 +24,19 @@ from astroid.exceptions import (
     NoDefault,
 )
 from astroid.nodes import node_classes
-from astroid.typing import (
-    ConstFactoryResult,
-    InferenceResult,
-    SuccessfulInferenceResult,
-)
 
 if TYPE_CHECKING:
+    from typing import Any, TypeVar
+    from collections.abc import Callable, Generator, Iterator, Sequence
+
+    from astroid.typing import (
+        ConstFactoryResult,
+        InferenceResult,
+        SuccessfulInferenceResult,
+    )
+
     _TupleListNodeT = TypeVar("_TupleListNodeT", nodes.Tuple, nodes.List)
+
 
 _CONTEXTLIB_MGR = "contextlib.contextmanager"
 

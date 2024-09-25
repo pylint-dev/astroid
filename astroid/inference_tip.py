@@ -7,25 +7,30 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from collections.abc import Generator
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING
 
-from astroid.context import InferenceContext
 from astroid.exceptions import InferenceOverwriteError, UseInferenceDefault
 from astroid.nodes import NodeNG
-from astroid.typing import (
-    InferenceResult,
-    InferFn,
-    TransformFn,
-)
+
+if TYPE_CHECKING:
+    from typing import Any, TypeVar
+    from collections.abc import Generator
+
+    from astroid.context import InferenceContext
+    from astroid.typing import (
+        InferenceResult,
+        InferFn,
+        TransformFn,
+    )
+
+    _NodesT = TypeVar("_NodesT", bound=NodeNG)
+
 
 _cache: OrderedDict[
     tuple[InferFn[Any], NodeNG, InferenceContext | None], list[InferenceResult]
 ] = OrderedDict()
 
 _CURRENTLY_INFERRING: set[tuple[InferFn[Any], NodeNG]] = set()
-
-_NodesT = TypeVar("_NodesT", bound=NodeNG)
 
 
 def clear_inference_tip_cache() -> None:

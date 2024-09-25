@@ -4,15 +4,21 @@
 
 """Astroid hooks for numpy.core.function_base module."""
 
+from __future__ import annotations
+
 import functools
+from typing import TYPE_CHECKING
 
 from astroid.brain.brain_numpy_utils import (
     attribute_looks_like_numpy_member,
     infer_numpy_member,
 )
 from astroid.inference_tip import inference_tip
-from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import Attribute
+
+if TYPE_CHECKING:
+    from astroid.manager import AstroidManager
+
 
 METHODS_TO_BE_INFERRED = {
     "linspace": """def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None, axis=0):

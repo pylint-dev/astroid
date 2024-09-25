@@ -16,26 +16,29 @@ import os
 import sys
 import types
 import warnings
-from collections.abc import Iterable
 from contextlib import redirect_stderr, redirect_stdout
-from typing import Any, Union
+from typing import TYPE_CHECKING
 
 from astroid import bases, nodes
 from astroid.const import _EMPTY_OBJECT_MARKER, IS_PYPY
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
 
+if TYPE_CHECKING:
+    from typing import Any, Union
+    from collections.abc import Iterable
+
+    _FunctionTypes = Union[
+        types.FunctionType,
+        types.MethodType,
+        types.BuiltinFunctionType,
+        types.WrapperDescriptorType,
+        types.MethodDescriptorType,
+        types.ClassMethodDescriptorType,
+    ]
+
 logger = logging.getLogger(__name__)
 
-
-_FunctionTypes = Union[
-    types.FunctionType,
-    types.MethodType,
-    types.BuiltinFunctionType,
-    types.WrapperDescriptorType,
-    types.MethodDescriptorType,
-    types.ClassMethodDescriptorType,
-]
 
 # the keys of CONST_CLS eg python builtin types
 _CONSTANTS = tuple(node_classes.CONST_CLS)

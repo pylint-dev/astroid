@@ -4,10 +4,16 @@
 
 # TODO(hippo91) : correct the functions return types
 """Astroid hooks for numpy.random.mtrand module."""
-from astroid import nodes
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
-from astroid.manager import AstroidManager
+
+if TYPE_CHECKING:
+    from astroid import nodes
+    from astroid.manager import AstroidManager
 
 
 def numpy_random_mtrand_transform() -> nodes.Module:

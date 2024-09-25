@@ -7,7 +7,6 @@ from __future__ import annotations
 from collections.abc import Callable, Generator
 from typing import (
     TYPE_CHECKING,
-    Any,
     Generic,
     Protocol,
     TypedDict,
@@ -16,6 +15,7 @@ from typing import (
 )
 
 if TYPE_CHECKING:
+    from typing import Any
     from collections.abc import Iterator
 
     from astroid import bases, exceptions, nodes, transforms, util

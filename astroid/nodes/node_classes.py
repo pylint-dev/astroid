@@ -10,23 +10,15 @@ import abc
 import ast
 import itertools
 import operator
-import sys
 import typing
 import warnings
-from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
 from functools import cached_property
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Literal,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING
 
 from astroid import decorators, protocols, util
 from astroid.bases import Instance, _infer_stmts
-from astroid.const import _EMPTY_OBJECT_MARKER, Context
+from astroid.const import _EMPTY_OBJECT_MARKER
+from astroid.typing import InferenceErrorInfo
 from astroid.context import CallContext, InferenceContext, copy_context
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -46,49 +38,52 @@ from astroid.manager import AstroidManager
 from astroid.nodes import _base_nodes
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
-from astroid.typing import (
-    ConstFactoryResult,
-    InferenceErrorInfo,
-    InferenceResult,
-    SuccessfulInferenceResult,
-)
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 if TYPE_CHECKING:
+    import sys
+    from typing import Any, ClassVar, Literal, Optional, Union
+    from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
+
     from astroid import nodes
+    from astroid.const import Context
     from astroid.nodes import LocalsDictNodeNG
+    from astroid.typing import (
+        ConstFactoryResult,
+        InferenceResult,
+        SuccessfulInferenceResult,
+    )
+
+    if sys.version_info >= (3, 11):
+        from typing import Self
+    else:
+        from typing_extensions import Self
+
+    _NodesT = typing.TypeVar("_NodesT", bound=NodeNG)
+    _BadOpMessageT = typing.TypeVar("_BadOpMessageT", bound=util.BadOperationMessage)
+
+    AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
+    AssignedStmtsCall = Callable[
+        [
+            _NodesT,
+            AssignedStmtsPossibleNode,
+            Optional[InferenceContext],
+            Optional[list[int]],
+        ],
+        Any,
+    ]
+    InferBinaryOperation = Callable[
+        [_NodesT, Optional[InferenceContext]],
+        Generator[Union[InferenceResult, _BadOpMessageT]],
+    ]
+    InferLHS = Callable[
+        [_NodesT, Optional[InferenceContext]],
+        Generator[InferenceResult, None, Optional[InferenceErrorInfo]],
+    ]
+    InferUnaryOp = Callable[[_NodesT, str], ConstFactoryResult]
 
 
 def _is_const(value) -> bool:
     return isinstance(value, tuple(CONST_CLS))
-
-
-_NodesT = typing.TypeVar("_NodesT", bound=NodeNG)
-_BadOpMessageT = typing.TypeVar("_BadOpMessageT", bound=util.BadOperationMessage)
-
-AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
-AssignedStmtsCall = Callable[
-    [
-        _NodesT,
-        AssignedStmtsPossibleNode,
-        Optional[InferenceContext],
-        Optional[list[int]],
-    ],
-    Any,
-]
-InferBinaryOperation = Callable[
-    [_NodesT, Optional[InferenceContext]],
-    Generator[Union[InferenceResult, _BadOpMessageT]],
-]
-InferLHS = Callable[
-    [_NodesT, Optional[InferenceContext]],
-    Generator[InferenceResult, None, Optional[InferenceErrorInfo]],
-]
-InferUnaryOp = Callable[[_NodesT, str], ConstFactoryResult]
 
 
 @decorators.raise_if_nothing_inferred

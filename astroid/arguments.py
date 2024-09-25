@@ -4,12 +4,16 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from astroid import nodes
 from astroid.bases import Instance
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import InferenceError, NoDefault
-from astroid.typing import InferenceResult
 from astroid.util import Uninferable, UninferableBase, safe_infer
+
+if TYPE_CHECKING:
+    from astroid.typing import InferenceResult
 
 
 class CallSite:

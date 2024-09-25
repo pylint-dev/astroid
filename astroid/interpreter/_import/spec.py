@@ -10,20 +10,22 @@ import importlib
 import importlib.machinery
 import importlib.util
 import os
-import pathlib
 import sys
-import types
 import warnings
 import zipimport
-from collections.abc import Iterable, Iterator, Sequence
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal, NamedTuple, Protocol
+from typing import TYPE_CHECKING, NamedTuple, Protocol
 
 from astroid.const import PY310_PLUS
 from astroid.modutils import EXT_LIB_DIRS, cached_os_path_isfile
 
 from . import util
+
+if TYPE_CHECKING:
+    import types
+    from typing import Literal
+    from collections.abc import Iterable, Iterator, Sequence
 
 
 # The MetaPathFinder protocol comes from typeshed, which says:
@@ -321,7 +323,7 @@ _SPEC_FINDERS = (
 )
 
 
-def _is_setuptools_namespace(location: pathlib.Path) -> bool:
+def _is_setuptools_namespace(location: Path) -> bool:
     try:
         with open(location / "__init__.py", "rb") as stream:
             data = stream.read(4096)

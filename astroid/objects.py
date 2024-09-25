@@ -13,12 +13,10 @@ leads to an inferred FrozenSet:
 
 from __future__ import annotations
 
-from collections.abc import Generator, Iterator
+from typing import TYPE_CHECKING
 from functools import cached_property
-from typing import Any, Literal, NoReturn, TypeVar
 
 from astroid import bases, util
-from astroid.context import InferenceContext
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -28,9 +26,15 @@ from astroid.exceptions import (
 from astroid.interpreter import objectmodel
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes, scoped_nodes
-from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
-_T = TypeVar("_T")
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterator
+    from typing import Any, Literal, NoReturn, TypeVar
+
+    from astroid.context import InferenceContext
+    from astroid.typing import InferenceResult, SuccessfulInferenceResult
+
+    _T = TypeVar("_T")
 
 
 class FrozenSet(node_classes.BaseContainer):

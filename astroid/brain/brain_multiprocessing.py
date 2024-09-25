@@ -2,12 +2,18 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from astroid.bases import BoundMethod
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.exceptions import InferenceError
-from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import FunctionDef
+
+if TYPE_CHECKING:
+    from astroid.manager import AstroidManager
 
 
 def _multiprocessing_transform():

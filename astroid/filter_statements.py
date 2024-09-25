@@ -13,10 +13,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from astroid import nodes
-from astroid.typing import SuccessfulInferenceResult
 
 if TYPE_CHECKING:
     from astroid.nodes import _base_nodes
+    from astroid.typing import SuccessfulInferenceResult
 
 
 def _get_filtered_node_statements(

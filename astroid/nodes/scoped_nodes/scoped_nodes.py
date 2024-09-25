@@ -14,9 +14,8 @@ import io
 import itertools
 import os
 import warnings
-from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import cached_property, lru_cache
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypeVar
+from typing import TYPE_CHECKING
 
 from astroid import bases, protocols, util
 from astroid.context import (
@@ -43,7 +42,6 @@ from astroid.manager import AstroidManager
 from astroid.nodes import (
     Arguments,
     Const,
-    NodeNG,
     Unknown,
     _base_nodes,
     const_factory,
@@ -51,17 +49,23 @@ from astroid.nodes import (
 )
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
-from astroid.nodes.utils import Position
-from astroid.typing import (
-    InferBinaryOp,
-    InferenceErrorInfo,
-    InferenceResult,
-    SuccessfulInferenceResult,
-)
+from astroid.typing import InferenceErrorInfo
 
 if TYPE_CHECKING:
+    from typing import Any, ClassVar, Literal, NoReturn, TypeVar
+    from collections.abc import Generator, Iterable, Iterator, Sequence
+
     from astroid import nodes, objects
+    from astroid.nodes import NodeNG
+    from astroid.nodes.utils import Position
     from astroid.nodes._base_nodes import LookupMixIn
+    from astroid.typing import (
+        InferBinaryOp,
+        InferenceResult,
+        SuccessfulInferenceResult,
+    )
+
+    _T = TypeVar("_T")
 
 
 ITER_METHODS = ("__iter__", "__getitem__")
@@ -69,8 +73,6 @@ EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
 BUILTIN_DESCRIPTORS = frozenset(
     {"classmethod", "staticmethod", "builtins.classmethod", "builtins.staticmethod"}
 )
-
-_T = TypeVar("_T")
 
 
 def _c3_merge(sequences, cls, context):
@@ -566,7 +568,7 @@ class Module(LocalsDictNodeNG):
             return default
 
         def str_const(node) -> bool:
-            return isinstance(node, node_classes.Const) and isinstance(node.value, str)
+            return isinstance(node, Const) and isinstance(node.value, str)
 
         for node in explicit.elts:
             if str_const(node):

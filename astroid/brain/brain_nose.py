@@ -4,15 +4,21 @@
 
 """Hooks for nose library."""
 
+from __future__ import annotations
+
 import re
 import textwrap
+from typing import TYPE_CHECKING
 
 from astroid.bases import BoundMethod
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
 from astroid.exceptions import InferenceError
-from astroid.manager import AstroidManager
 from astroid.nodes import List, Module
+
+if TYPE_CHECKING:
+    from astroid.manager import AstroidManager
+
 
 CAPITALS = re.compile("([A-Z])")
 

@@ -5,16 +5,12 @@
 from __future__ import annotations
 
 import pprint
-import sys
+
 import warnings
-from collections.abc import Generator, Iterator
 from functools import cached_property
 from functools import singledispatch as _singledispatch
 from typing import (
     TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Literal,
     TypeVar,
     Union,
     cast,
@@ -33,18 +29,21 @@ from astroid.exceptions import (
 from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
-from astroid.nodes.utils import Position
-from astroid.typing import InferenceErrorInfo, InferenceResult, InferFn
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
-
 
 if TYPE_CHECKING:
+    from sys import version_info
+    from typing import Any, ClassVar, Literal
+    from collections.abc import Generator, Iterator
+
     from astroid import nodes
     from astroid.nodes import _base_nodes
+    from astroid.nodes.utils import Position
+    from astroid.typing import InferenceErrorInfo, InferenceResult, InferFn
+
+    if version_info >= (3, 11):
+        from typing import Self
+    else:
+        from typing_extensions import Self
 
 
 # Types for 'NodeNG.nodes_of_class()'

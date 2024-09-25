@@ -7,13 +7,12 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Iterator
 from functools import partial
-from typing import TYPE_CHECKING, Any, NoReturn, Union, cast
+from typing import TYPE_CHECKING, Union, cast
 
 from astroid import arguments, helpers, nodes, objects, util
 from astroid.builder import AstroidBuilder
-from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
@@ -25,14 +24,18 @@ from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.nodes import scoped_nodes
 from astroid.raw_building import build_module
-from astroid.typing import (
-    ConstFactoryResult,
-    InferenceResult,
-    SuccessfulInferenceResult,
-)
 
 if TYPE_CHECKING:
+    from typing import Any, NoReturn
+    from collections.abc import Callable, Iterable
+
     from astroid.bases import Instance
+    from astroid.context import InferenceContext
+    from astroid.typing import (
+        ConstFactoryResult,
+        InferenceResult,
+        SuccessfulInferenceResult,
+    )
 
 ContainerObjects = Union[
     objects.FrozenSet,

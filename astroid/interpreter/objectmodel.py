@@ -27,9 +27,8 @@ import itertools
 import os
 import pprint
 import types
-from collections.abc import Iterator
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING
 
 import astroid
 from astroid import bases, nodes, util
@@ -37,10 +36,13 @@ from astroid.context import InferenceContext, copy_context
 from astroid.exceptions import AttributeInferenceError, InferenceError, NoDefault
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
-from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 if TYPE_CHECKING:
+    from typing import Any, Literal
+    from collections.abc import Iterator
+
     from astroid.objects import Property
+    from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 IMPL_PREFIX = "attr_"
 LEN_OF_IMPL_PREFIX = len(IMPL_PREFIX)
