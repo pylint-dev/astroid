@@ -728,11 +728,7 @@ class AsyncGeneratorModel(GeneratorModel):
         # Append the values from the AGeneratorType unto this object.
         super().__init__()
         astroid_builtins = AstroidManager().builtins_module
-        generator = astroid_builtins.get("async_generator")
-        if generator is None:
-            # Make it backward compatible.
-            generator = astroid_builtins.get("generator")
-
+        generator = astroid_builtins["async_generator"]
         for name, values in generator.locals.items():
             method = values[0]
             if isinstance(method, nodes.FunctionDef):

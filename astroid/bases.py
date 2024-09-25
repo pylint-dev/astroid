@@ -718,6 +718,10 @@ class Generator(BaseInstance):
 class AsyncGenerator(Generator):
     """Special node representing an async generator."""
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        AsyncGenerator.special_attributes = objectmodel.AsyncGeneratorModel()
+
     def pytype(self) -> Literal["builtins.async_generator"]:
         return "builtins.async_generator"
 

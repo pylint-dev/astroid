@@ -627,9 +627,8 @@ def _astroid_bootstrapping() -> None:
         col_offset=0,
         end_lineno=0,
         end_col_offset=0,
-        parent=nodes.Unknown(),
+        parent=astroid_builtin,
     )
-    _GeneratorType.parent = astroid_builtin
     generator_doc_node = (
         nodes.Const(value=types.GeneratorType.__doc__)
         if types.GeneratorType.__doc__
@@ -651,9 +650,8 @@ def _astroid_bootstrapping() -> None:
             col_offset=0,
             end_lineno=0,
             end_col_offset=0,
-            parent=nodes.Unknown(),
+            parent=astroid_builtin,
         )
-        _AsyncGeneratorType.parent = astroid_builtin
         async_generator_doc_node = (
             nodes.Const(value=types.AsyncGeneratorType.__doc__)
             if types.AsyncGeneratorType.__doc__
