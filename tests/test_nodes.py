@@ -1304,6 +1304,10 @@ def test_type_comments_invalid_expression() -> None:
 def test_type_comments_invalid_function_comments() -> None:
     module = builder.parse(
         """
+    def func(
+        # type: () -> int # inside parentheses
+    ):
+        pass
     def func():
         # type: something completely invalid
         pass
