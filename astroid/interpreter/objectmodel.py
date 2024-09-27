@@ -694,12 +694,10 @@ class BoundMethodModel(FunctionModel):
         return self._instance.bound
 
 
-class GeneratorModel(FunctionModel, ContextManagerModel):
-    def __init__(self):
-        # Append the values from the GeneratorType unto this object.
+class GeneratorBaseModel(FunctionModel, ContextManagerModel):
+    def __init__(self, gen_module: nodes.Module):
         super().__init__()
-        generator = AstroidManager().builtins_module["generator"]
-        for name, values in generator.locals.items():
+        for name, values in gen_module.locals.items():
             method = values[0]
             if isinstance(method, nodes.FunctionDef):
                 method = bases.BoundMethod(method, _get_bound_node(self))
@@ -723,21 +721,14 @@ class GeneratorModel(FunctionModel, ContextManagerModel):
         )
 
 
-class AsyncGeneratorModel(GeneratorModel):
+class GeneratorModel(GeneratorBaseModel):
     def __init__(self):
-        # Append the values from the AGeneratorType unto this object.
-        super().__init__()
-        astroid_builtins = AstroidManager().builtins_module
-        generator = astroid_builtins["async_generator"]
-        for name, values in generator.locals.items():
-            method = values[0]
-            if isinstance(method, nodes.FunctionDef):
-                method = bases.BoundMethod(method, _get_bound_node(self))
+        super().__init__(AstroidManager().builtins_module["generator"])
 
-            def patched(cls, meth=method):
-                return meth
 
-            setattr(type(self), IMPL_PREFIX + name, property(patched))
+class AsyncGeneratorModel(GeneratorBaseModel):
+    def __init__(self):
+        super().__init__(AstroidManager().builtins_module["async_generator"])
 
 
 class InstanceModel(ObjectModel):
