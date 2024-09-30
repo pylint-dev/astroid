@@ -34,6 +34,21 @@ def _get_numpy_version() -> tuple[str, str, str]:
         return ("0", "0", "0")
 
 
+def infer_numpy_name(
+    sources: dict[str, str], node: Name, context: InferenceContext | None = None
+):
+    extracted_node = extract_node(sources[node.name])
+    return extracted_node.infer(context=context)
+
+
+def infer_numpy_attribute(
+    sources: dict[str, str], node: Attribute, context: InferenceContext | None = None
+):
+    extracted_node = extract_node(sources[node.attrname])
+    return extracted_node.infer(context=context)
+
+
+# TODO: Deprecate and remove this function
 def infer_numpy_member(src, node, context: InferenceContext | None = None):
     node = extract_node(src)
     return node.infer(context=context)
@@ -61,6 +76,29 @@ def _is_a_numpy_module(node: Name) -> bool:
     )
 
 
+def member_name_looks_like_numpy_member(
+    member_names: frozenset[str], node: Name
+) -> bool:
+    """
+    Returns True if the Name node's name matches a member name from numpy
+    """
+    return node.name in member_names and node.root().name.startswith("numpy")
+
+
+def attribute_name_looks_like_numpy_member(
+    member_names: frozenset[str], node: Attribute
+) -> bool:
+    """
+    Returns True if the Attribute node's name matches a member name from numpy
+    """
+    return (
+        node.attrname in member_names
+        and isinstance(node.expr, Name)
+        and _is_a_numpy_module(node.expr)
+    )
+
+
+# TODO: Deprecate and remove this function
 def name_looks_like_numpy_member(member_name: str, node: Name) -> bool:
     """
     Returns True if the Name is a member of numpy whose
@@ -69,6 +107,7 @@ def name_looks_like_numpy_member(member_name: str, node: Name) -> bool:
     return node.name == member_name and node.root().name.startswith("numpy")
 
 
+# TODO: Deprecate and remove this function
 def attribute_looks_like_numpy_member(member_name: str, node: Attribute) -> bool:
     """
     Returns True if the Attribute is a member of numpy whose

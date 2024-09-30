@@ -679,7 +679,7 @@ class Generator(BaseInstance):
     # We defer initialization of special_attributes to the __init__ method since the constructor
     # of GeneratorModel requires the raw_building to be complete
     # TODO: This should probably be refactored.
-    special_attributes: objectmodel.GeneratorModel
+    special_attributes: objectmodel.GeneratorBaseModel
 
     def __init__(
         self,

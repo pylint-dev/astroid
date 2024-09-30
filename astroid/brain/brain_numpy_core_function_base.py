@@ -7,8 +7,8 @@
 import functools
 
 from astroid.brain.brain_numpy_utils import (
-    attribute_looks_like_numpy_member,
-    infer_numpy_member,
+    attribute_name_looks_like_numpy_member,
+    infer_numpy_attribute,
 )
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
@@ -25,10 +25,11 @@ METHODS_TO_BE_INFERRED = {
 
 
 def register(manager: AstroidManager) -> None:
-    for func_name, func_src in METHODS_TO_BE_INFERRED.items():
-        inference_function = functools.partial(infer_numpy_member, func_src)
-        manager.register_transform(
-            Attribute,
-            inference_tip(inference_function),
-            functools.partial(attribute_looks_like_numpy_member, func_name),
-        )
+    manager.register_transform(
+        Attribute,
+        inference_tip(functools.partial(infer_numpy_attribute, METHODS_TO_BE_INFERRED)),
+        functools.partial(
+            attribute_name_looks_like_numpy_member,
+            frozenset(METHODS_TO_BE_INFERRED.keys()),
+        ),
+    )
