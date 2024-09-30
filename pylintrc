@@ -92,9 +92,6 @@ disable=fixme,
         missing-docstring,
         too-few-public-methods,
         too-many-public-methods,
-        too-many-boolean-expressions,
-        too-many-branches,
-        too-many-statements,
         # We know about it and we're doing our best to remove it in 2.0 (oups)
         cyclic-import,
         # Requires major redesign for fixing this (and private

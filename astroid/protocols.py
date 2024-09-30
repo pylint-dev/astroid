@@ -691,7 +691,8 @@ def starred_assigned_stmts(  # noqa: C901
             the inference results.
     """
 
-    # pylint: disable=too-many-locals,too-many-statements
+    # pylint: disable = too-many-locals, too-many-statements, too-many-branches
+
     def _determine_starred_iteration_lookups(
         starred: nodes.Starred, target: nodes.Tuple, lookups: list[tuple[int, int]]
     ) -> None:

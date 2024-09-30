@@ -238,10 +238,12 @@ def _get_previous_field_default(node: nodes.ClassDef, name: str) -> nodes.NodeNG
     return None
 
 
-def _generate_dataclass_init(  # pylint: disable=too-many-locals
+def _generate_dataclass_init(
     node: nodes.ClassDef, assigns: list[nodes.AnnAssign], kw_only_decorated: bool
 ) -> str:
     """Return an init method for a dataclass given the targets."""
+    # pylint: disable = too-many-locals, too-many-branches, too-many-statements
+
     params: list[str] = []
     kw_only_params: list[str] = []
     assignments: list[str] = []

@@ -557,6 +557,7 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_function() -> None:
         """FunctionDef, AsyncFunctionDef, Decorators, Lambda, Arguments."""
+        # pylint: disable = too-many-statements
         code = textwrap.dedent(
             """
         def func(  #@
@@ -991,6 +992,7 @@ class TestLinenoColOffset:
         """Match, MatchValue, MatchSingleton, MatchSequence, MatchMapping,
         MatchClass, MatchStar, MatchOr, MatchAs.
         """
+        # pylint: disable = too-many-statements
         code = textwrap.dedent(
             """
         match x:  #@
