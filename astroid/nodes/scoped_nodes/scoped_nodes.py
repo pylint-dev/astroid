@@ -178,13 +178,6 @@ def function_to_method(n, klass):
     return n
 
 
-def _attach_to_parent(node: NodeNG, name: str, parent: NodeNG):
-    frame = parent.frame()
-    frame.set_local(name, node)
-    if frame is parent:
-        frame._append_node(node)
-
-
 class Module(LocalsDictNodeNG):
     """Class representing an :class:`ast.Module` node.
 
@@ -1173,9 +1166,6 @@ class FunctionDef(
             end_col_offset=end_col_offset,
             parent=parent,
         )
-        if parent and not isinstance(parent, Unknown):
-            frame = parent.frame()
-            frame.set_local(name, self)
 
     def postinit(
         self,
@@ -1528,33 +1518,15 @@ class FunctionDef(
             yield self
             return InferenceErrorInfo(node=self, context=context)
 
-        # When inferring a property, we instantiate a new `objects.Property` object,
-        # which in turn, because it inherits from `FunctionDef`, sets itself in the locals
-        # of the wrapping frame. This means that every time we infer a property, the locals
-        # are mutated with a new instance of the property. To avoid this, we detect this
-        # scenario and avoid passing the `parent` argument to the constructor.
         if not self.parent:
             raise ParentMissingError(target=self)
-        parent_frame = self.parent.frame()
-        property_already_in_parent_locals = self.name in parent_frame.locals and any(
-            isinstance(val, objects.Property) for val in parent_frame.locals[self.name]
-        )
-        # We also don't want to pass parent if the definition is within a Try node
-        if isinstance(
-            self.parent,
-            (node_classes.Try, node_classes.If),
-        ):
-            property_already_in_parent_locals = True
-
         prop_func = objects.Property(
             function=self,
             name=self.name,
             lineno=self.lineno,
-            parent=self.parent if not property_already_in_parent_locals else None,
+            parent=self.parent,
             col_offset=self.col_offset,
         )
-        if property_already_in_parent_locals:
-            prop_func.parent = self.parent
         prop_func.postinit(body=[], args=self.args, doc_node=self.doc_node)
         yield prop_func
         return InferenceErrorInfo(node=self, context=context)
@@ -1941,9 +1913,6 @@ class ClassDef(
             end_col_offset=end_col_offset,
             parent=parent,
         )
-        if parent and not isinstance(parent, Unknown):
-            _attach_to_parent(self, name, parent)
-
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)
 
