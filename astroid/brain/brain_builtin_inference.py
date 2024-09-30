@@ -176,6 +176,7 @@ def on_bootstrap():
 
 
 def _builtin_filter_predicate(node, builtin_name) -> bool:
+    # pylint: disable = too-many-boolean-expressions
     if (
         builtin_name == "type"
         and node.root().name == "re"

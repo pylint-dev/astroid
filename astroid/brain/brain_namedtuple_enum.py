@@ -268,6 +268,7 @@ def _get_renamed_namedtuple_attributes(field_names):
     names = list(field_names)
     seen = set()
     for i, name in enumerate(field_names):
+        # pylint: disable = too-many-boolean-expressions
         if (
             not all(c.isalnum() or c == "_" for c in name)
             or keyword.iskeyword(name)

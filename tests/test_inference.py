@@ -1262,6 +1262,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_binary_op_or_union_type(self) -> None:
         """Binary or union is only defined for Python 3.10+."""
+        # pylint: disable = too-many-statements
         code = """
         class A: ...
 

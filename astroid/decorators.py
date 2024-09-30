@@ -137,6 +137,7 @@ if util.check_warnings_filter():  # noqa: C901
                         raise ValueError(
                             f"Can't find argument '{arg}' for '{args[0].__class__.__qualname__}'"
                         ) from None
+                    # pylint: disable = too-many-boolean-expressions
                     if (
                         # Check kwargs
                         # - if found, check it's not None

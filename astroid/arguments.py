@@ -142,6 +142,8 @@ class CallSite:
         self, funcnode: InferenceResult, name: str, context: InferenceContext
     ):  # noqa: C901
         """Infer a function argument value according to the call context."""
+        # pylint: disable = too-many-branches
+
         if not isinstance(funcnode, (nodes.FunctionDef, nodes.Lambda)):
             raise InferenceError(
                 f"Can not infer function argument value for non-function node {funcnode!r}.",

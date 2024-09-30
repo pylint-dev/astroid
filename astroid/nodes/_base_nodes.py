@@ -603,6 +603,7 @@ class OperatorNode(NodeNG):
                 ),
             ]
 
+        # pylint: disable = too-many-boolean-expressions
         if (
             PY310_PLUS
             and op == "|"

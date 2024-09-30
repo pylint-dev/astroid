@@ -656,6 +656,8 @@ class NodeNG:
         :rtype: str
         """
 
+        # pylint: disable = too-many-statements
+
         @_singledispatch
         def _repr_tree(node, result, done, cur_indent="", depth=1):
             """Outputs a representation of a non-tuple/list, non-node that's
