@@ -13,6 +13,10 @@ What's New in astroid 3.3.5?
 ============================
 Release date: TBA
 
+* Control setting local nodes outside of the supposed local's constructor.
+
+  Closes pylint-dev/astroid/issues/1490
+
 * Fix regression with f-string inference.
 
   Closes pylint-dev/pylint#9947
