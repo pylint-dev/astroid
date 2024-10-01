@@ -4,11 +4,17 @@
 
 """Astroid hooks for the ssl library."""
 
-from astroid import nodes
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.const import PY310_PLUS, PY312_PLUS
-from astroid.manager import AstroidManager
+
+if TYPE_CHECKING:
+    from astroid import nodes
+    from astroid.manager import AstroidManager
 
 
 def _verifyflags_enum() -> str:

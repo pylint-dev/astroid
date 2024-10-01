@@ -10,11 +10,14 @@ import contextlib
 import functools
 import sys
 import warnings
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import pytest
 
 from astroid import manager, nodes, transforms
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def require_version(minver: str = "0.0.0", maxver: str = "4.0.0") -> Callable:

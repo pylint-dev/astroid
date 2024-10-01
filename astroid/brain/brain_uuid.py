@@ -3,9 +3,16 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid hooks for the UUID module."""
-from astroid.manager import AstroidManager
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from astroid.nodes.node_classes import Const
 from astroid.nodes.scoped_nodes import ClassDef
+
+if TYPE_CHECKING:
+    from astroid.manager import AstroidManager
 
 
 def _patch_uuid_class(node: ClassDef) -> None:

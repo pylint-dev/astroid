@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 from astroid import bases, manager, nodes, objects, raw_building, util
 from astroid.context import CallContext, InferenceContext
@@ -19,8 +19,12 @@ from astroid.exceptions import (
     _NonDeducibleTypeHierarchy,
 )
 from astroid.nodes import scoped_nodes
-from astroid.typing import InferenceResult
 from astroid.util import safe_infer as real_safe_infer
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from astroid.typing import InferenceResult
 
 
 def safe_infer(

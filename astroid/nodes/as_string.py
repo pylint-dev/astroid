@@ -7,12 +7,13 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from astroid import nodes
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from astroid import objects
     from astroid.nodes import Const
     from astroid.nodes.node_classes import (

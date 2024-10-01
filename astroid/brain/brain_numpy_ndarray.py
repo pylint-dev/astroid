@@ -5,12 +5,16 @@
 """Astroid hooks for numpy ndarray class."""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from astroid.brain.brain_numpy_utils import numpy_supports_type_hints
 from astroid.builder import extract_node
-from astroid.context import InferenceContext
 from astroid.inference_tip import inference_tip
-from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import Attribute
+
+if TYPE_CHECKING:
+    from astroid.context import InferenceContext
+    from astroid.manager import AstroidManager
 
 
 def infer_numpy_ndarray(node, context: InferenceContext | None = None):

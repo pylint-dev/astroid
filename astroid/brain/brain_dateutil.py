@@ -4,12 +4,17 @@
 
 """Astroid hooks for dateutil."""
 
-import textwrap
+from __future__ import annotations
 
-from astroid import nodes
+import textwrap
+from typing import TYPE_CHECKING
+
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
 from astroid.manager import AstroidManager
+
+if TYPE_CHECKING:
+    from astroid import nodes
 
 
 def dateutil_transform() -> nodes.Module:

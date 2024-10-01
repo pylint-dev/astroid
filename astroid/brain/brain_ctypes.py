@@ -10,12 +10,17 @@ the C coded module _ctypes.
 Thus astroid doesn't know that the value member is a builtin type
 among float, int, bytes or str.
 """
-import sys
+from __future__ import annotations
 
-from astroid import nodes
+import sys
+from typing import TYPE_CHECKING
+
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
-from astroid.manager import AstroidManager
+
+if TYPE_CHECKING:
+    from astroid import nodes
+    from astroid.manager import AstroidManager
 
 
 def enrich_ctypes_redefined_types() -> nodes.Module:

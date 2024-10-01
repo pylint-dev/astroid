@@ -4,9 +4,16 @@
 
 """Astroid hooks for understanding ``boto3.ServiceRequest()``."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from astroid.builder import extract_node
-from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import ClassDef
+
+if TYPE_CHECKING:
+    from astroid.manager import AstroidManager
+
 
 BOTO_SERVICE_FACTORY_QUALIFIED_NAME = "boto3.resources.base.ServiceResource"
 
@@ -28,5 +35,7 @@ def _looks_like_boto3_service_request(node: ClassDef) -> bool:
 
 def register(manager: AstroidManager) -> None:
     manager.register_transform(
-        ClassDef, service_request_transform, _looks_like_boto3_service_request
+        ClassDef,
+        service_request_transform,
+        _looks_like_boto3_service_request,
     )
