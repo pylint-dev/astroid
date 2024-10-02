@@ -294,12 +294,17 @@ class ProtocolTests(unittest.TestCase):
         assert element.value is Uninferable
 
     @staticmethod
+    def test_list_multiplication_with_empty_list_and_overflowing_multiplier() -> None:
+        parsed = extract_node("[] * 1163845194457646539560")
+        assert parsed.inferred()[0].elts == []
+
+    @staticmethod
     def test_list_multiplication_with_zero_multiplier() -> None:
         parsed = extract_node("[0] * 0")
         assert parsed.inferred()[0].elts == []
 
     @staticmethod
-    def test_list_multiplication_with_negative_multiplier() -> None:
+    def test_list_multiplication_with_negative_overflowing_multiplier() -> None:
         parsed = extract_node("[0] * -9223372036854775809")
         assert parsed.inferred()[0].elts == []
 
