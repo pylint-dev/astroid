@@ -74,7 +74,9 @@ def _find_func_form_arguments(node, context):
 
 def infer_func_form(
     node: nodes.Call,
-    base_type: list[nodes.NodeNG],
+    base_type: nodes.NodeNG,
+    *,
+    parent: nodes.NodeNG,
     context: InferenceContext | None = None,
     enum: bool = False,
 ) -> tuple[nodes.ClassDef, str, list[str]]:
@@ -147,15 +149,10 @@ def infer_func_form(
         col_offset=node.col_offset,
         end_lineno=node.end_lineno,
         end_col_offset=node.end_col_offset,
-        parent=nodes.Unknown(),
+        parent=parent,
     )
-    # A typical ClassDef automatically adds its name to the parent scope,
-    # but doing so causes problems, so defer setting parent until after init
-    # see: https://github.com/pylint-dev/pylint/issues/5982
-    class_node.parent = node.parent
     class_node.postinit(
-        # set base class=tuple
-        bases=base_type,
+        bases=[base_type],
         body=[],
         decorators=None,
     )
@@ -195,25 +192,16 @@ def infer_named_tuple(
     node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[nodes.ClassDef]:
     """Specific inference function for namedtuple Call node."""
-    tuple_base_name: list[nodes.NodeNG] = [
-        nodes.Name(
-            name="tuple",
-            parent=node.root(),
-            lineno=0,
-            col_offset=0,
-            end_lineno=None,
-            end_col_offset=None,
-        )
-    ]
+    tuple_base: nodes.Name = _extract_single_node("tuple")
     class_node, name, attributes = infer_func_form(
-        node, tuple_base_name, context=context
+        node, tuple_base, parent=AstroidManager().adhoc_module, context=context
     )
+
     call_site = arguments.CallSite.from_call(node, context=context)
-    node = extract_node("import collections; collections.namedtuple")
-    try:
-        func = next(node.infer())
-    except StopIteration as e:
-        raise InferenceError(node=node) from e
+    func = util.safe_infer(
+        _extract_single_node("import collections; collections.namedtuple")
+    )
+    assert isinstance(func, nodes.NodeNG)
     try:
         rename = next(
             call_site.infer_argument(func, "rename", context or InferenceContext())
@@ -365,7 +353,17 @@ def infer_enum(
         __members__ = ['']
     """
     )
-    class_node = infer_func_form(node, [enum_meta], context=context, enum=True)[0]
+
+    # FIXME arguably, the base here shouldn't be the EnumMeta class definition
+    # itself, but a reference (Name) to it. Otherwise, the invariant that all
+    # children of a node have that node as their parent is broken.
+    class_node = infer_func_form(
+        node,
+        enum_meta,
+        parent=AstroidManager().adhoc_module,
+        context=context,
+        enum=True,
+    )[0]
     return iter([class_node.instantiate_class()])
 
 
