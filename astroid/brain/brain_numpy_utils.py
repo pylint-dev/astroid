@@ -48,12 +48,6 @@ def infer_numpy_attribute(
     return extracted_node.infer(context=context)
 
 
-# TODO: Deprecate and remove this function
-def infer_numpy_member(src, node, context: InferenceContext | None = None):
-    node = extract_node(src)
-    return node.infer(context=context)
-
-
 def _is_a_numpy_module(node: Name) -> bool:
     """
     Returns True if the node is a representation of a numpy module.
@@ -93,28 +87,6 @@ def attribute_name_looks_like_numpy_member(
     """
     return (
         node.attrname in member_names
-        and isinstance(node.expr, Name)
-        and _is_a_numpy_module(node.expr)
-    )
-
-
-# TODO: Deprecate and remove this function
-def name_looks_like_numpy_member(member_name: str, node: Name) -> bool:
-    """
-    Returns True if the Name is a member of numpy whose
-    name is member_name.
-    """
-    return node.name == member_name and node.root().name.startswith("numpy")
-
-
-# TODO: Deprecate and remove this function
-def attribute_looks_like_numpy_member(member_name: str, node: Attribute) -> bool:
-    """
-    Returns True if the Attribute is a member of numpy whose
-    name is member_name.
-    """
-    return (
-        node.attrname == member_name
         and isinstance(node.expr, Name)
         and _is_a_numpy_module(node.expr)
     )
