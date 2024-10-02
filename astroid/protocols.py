@@ -142,7 +142,7 @@ def _multiply_seq_by_int(
     context: InferenceContext,
 ) -> _TupleListNodeT:
     node = self.__class__(parent=opnode)
-    if value <= 0:
+    if value <= 0 or not self.elts:
         node.elts = []
         return node
     if len(self.elts) * value > 1e8:
