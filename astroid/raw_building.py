@@ -136,6 +136,7 @@ def build_class(
 
 def build_function(
     name: str,
+    parent: nodes.NodeNG,
     args: list[str] | None = None,
     posonlyargs: list[str] | None = None,
     defaults: list[Any] | None = None,
@@ -149,7 +150,7 @@ def build_function(
         name,
         lineno=0,
         col_offset=0,
-        parent=node_classes.Unknown(),
+        parent=parent,
         end_col_offset=0,
         end_lineno=0,
     )
@@ -321,6 +322,7 @@ def object_build_function(
 
     return build_function(
         getattr(member, "__name__", "<no-name>"),
+        node,
         args,
         posonlyargs,
         defaults,
@@ -344,7 +346,7 @@ def object_build_methoddescriptor(
     """create astroid for a living method descriptor object"""
     # FIXME get arguments ?
     name = getattr(member, "__name__", "<no-name>")
-    func = build_function(name, doc=member.__doc__)
+    func = build_function(name, node, doc=member.__doc__)
     _add_dunder_class(func, node, member)
     return func
 
