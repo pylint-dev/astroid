@@ -22,7 +22,11 @@ Release date: TBA
 
 * Control setting local nodes outside of the supposed local's constructor.
 
-  Closes pylint-dev/astroid/issues/1490
+  Closes #1490
+
+* Fix Python 3.13 compatibility re: `collections.abc`
+
+  Closes pylint-dev/pylint#10000
 
 
 What's New in astroid 3.3.4?
