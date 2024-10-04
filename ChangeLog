@@ -9,9 +9,15 @@ Release date: TBA
 
 
 
-What's New in astroid 3.3.5?
+What's New in astroid 3.3.6?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 3.3.5?
+============================
+Release date: 2024-10-04
 
 * Control setting local nodes outside of the supposed local's constructor.
 
