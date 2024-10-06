@@ -20,7 +20,8 @@ What's New in astroid 3.3.6?
 ============================
 Release date: TBA
 
-
+* Change precedece of `path` arg in `modpath_from_file_with_callback` to be higher than `sys.path`
+  
 
 What's New in astroid 3.3.5?
 ============================
