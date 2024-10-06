@@ -175,6 +175,41 @@ class ModPathFromFileTest(unittest.TestCase):
             finally:
                 os.remove(linked_file_name)
 
+    def test_modpath_from_file_path_order(self) -> None:
+        """Test for ordering of paths.
+        The test does the following:
+        1. Add a tmp directory to beginning of sys.path
+        2. Create a module file in sub directory of tmp directory
+        3. If the sub directory is passed as additional directory, module name
+           should be relative to the subdirectory since additional directory has
+           higher precedence."""
+        orig_path = sys.path.copy()
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            try:
+                mod_name = "module"
+                sub_dirname = "subdir"
+                sub_dir = tmp_dir + "/" + sub_dirname
+                os.mkdir(sub_dir)
+                module_file = f"{sub_dir}/{mod_name}.py"
+
+                sys.path.insert(0, str(tmp_dir))
+                with open(module_file, "w+", encoding="utf-8"):
+                    pass
+
+                # Without additional directory, return relative to tmp_dir
+                self.assertEqual(
+                    modutils.modpath_from_file(module_file), [sub_dirname, mod_name]
+                )
+
+                # With sub directory as additional directory, return relative to
+                # sub directory
+                self.assertEqual(
+                    modutils.modpath_from_file(f"{sub_dir}/{mod_name}.py", [sub_dir]),
+                    [mod_name],
+                )
+            finally:
+                sys.path[:] = orig_path
+
     def test_import_symlink_both_outside_of_path(self) -> None:
         with tempfile.NamedTemporaryFile() as tmpfile:
             linked_file_name = os.path.join(tempfile.gettempdir(), "symlinked_file.py")
