@@ -40,14 +40,7 @@ from astroid.exceptions import (
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
-from astroid.nodes import (
-    Arguments,
-    Const,
-    NodeNG,
-    _base_nodes,
-    const_factory,
-    node_classes,
-)
+from astroid.nodes import _base_nodes, node_classes
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
@@ -60,6 +53,7 @@ from astroid.typing import (
 
 if TYPE_CHECKING:
     from astroid import nodes, objects
+    from astroid.nodes import Arguments, Const, NodeNG
     from astroid.nodes._base_nodes import LookupMixIn
 
 
@@ -353,7 +347,7 @@ class Module(LocalsDictNodeNG):
         if name in self.special_attributes and not ignore_locals and not name_in_locals:
             result = [self.special_attributes.lookup(name)]
             if name == "__name__":
-                main_const = const_factory("__main__")
+                main_const = node_classes.const_factory("__main__")
                 main_const.parent = AstroidManager().builtins_module
                 result.append(main_const)
         elif not ignore_locals and name_in_locals:
@@ -605,6 +599,14 @@ class Module(LocalsDictNodeNG):
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[Module]:
         yield self
+
+
+class __SyntheticRoot(Module):
+    def __init__(self):
+        super().__init__("__astroid_synthetic", pure_python=False)
+
+
+SYNTHETIC_ROOT = __SyntheticRoot()
 
 
 class GeneratorExp(ComprehensionScope):
@@ -1572,7 +1574,7 @@ class FunctionDef(
             and len(self.args.args) == 1
             and self.args.vararg is not None
         ):
-            if isinstance(caller.args, Arguments):
+            if isinstance(caller.args, node_classes.Arguments):
                 assert caller.args.args is not None
                 metaclass = next(caller.args.args[0].infer(context), None)
             elif isinstance(caller.args, list):
@@ -1583,17 +1585,13 @@ class FunctionDef(
                 )
             if isinstance(metaclass, ClassDef):
                 try:
-                    class_bases = [
-                        # Find the first non-None inferred base value
-                        next(
-                            b
-                            for b in arg.infer(
-                                context=context.clone() if context else context
-                            )
-                            if not (isinstance(b, Const) and b.value is None)
-                        )
-                        for arg in caller.args[1:]
-                    ]
+                    # Find the first non-None inferred base value
+                    get_base = lambda arg: next(
+                        b
+                        for b in arg.infer(context=context.clone() if context else None)
+                        if not (isinstance(b, node_classes.Const) and b.value is None)
+                    )
+                    class_bases = [get_base(arg) for arg in caller.args[1:]]
                 except StopIteration as e:
                     raise InferenceError(node=caller.args[1:], context=context) from e
                 new_class = ClassDef(
@@ -1602,7 +1600,7 @@ class FunctionDef(
                     col_offset=0,
                     end_lineno=0,
                     end_col_offset=0,
-                    parent=AstroidManager().synthetic_root,
+                    parent=SYNTHETIC_ROOT,
                 )
                 new_class.hide = True
                 new_class.postinit(
@@ -2831,7 +2829,7 @@ class ClassDef(
                 baseobj = next(
                     b
                     for b in stmt.infer(context=context.clone())
-                    if not (isinstance(b, Const) and b.value is None)
+                    if not (isinstance(b, node_classes.Const) and b.value is None)
                 )
             except (InferenceError, StopIteration):
                 continue

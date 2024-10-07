@@ -93,6 +93,7 @@ from astroid.nodes.node_classes import (
     unpack_infer,
 )
 from astroid.nodes.scoped_nodes import (
+    SYNTHETIC_ROOT,
     AsyncFunctionDef,
     ClassDef,
     ComprehensionScope,
@@ -276,6 +277,7 @@ __all__ = (
     "Position",
     "Raise",
     "Return",
+    "SYNTHETIC_ROOT",
     "Set",
     "SetComp",
     "Slice",
