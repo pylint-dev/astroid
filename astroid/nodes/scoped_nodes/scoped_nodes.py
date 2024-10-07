@@ -171,6 +171,15 @@ def function_to_method(n, klass):
     return n
 
 
+def _infer_last(
+    arg: SuccessfulInferenceResult, context: InferenceContext
+) -> InferenceResult:
+    res = util.Uninferable
+    for b in arg.infer(context=context.clone()):
+        res = b
+    return res
+
+
 class Module(LocalsDictNodeNG):
     """Class representing an :class:`ast.Module` node.
 
@@ -1540,10 +1549,7 @@ class FunctionDef(
         """
         for yield_ in self.nodes_of_class(node_classes.Yield):
             if yield_.value is None:
-                const = node_classes.Const(None)
-                const.parent = yield_
-                const.lineno = yield_.lineno
-                yield const
+                yield node_classes.Const(None, parent=yield_, lineno=yield_.lineno)
             elif yield_.scope() == self:
                 yield from yield_.value.infer(context=context)
 
@@ -1553,6 +1559,8 @@ class FunctionDef(
         context: InferenceContext | None = None,
     ) -> Iterator[InferenceResult]:
         """Infer what the function returns when called."""
+        if context is None:
+            context = InferenceContext()
         if self.is_generator():
             if isinstance(self, AsyncFunctionDef):
                 generator_cls: type[bases.Generator] = bases.AsyncGenerator
@@ -1584,16 +1592,7 @@ class FunctionDef(
                     f"caller.args was neither Arguments nor list; got {type(caller.args)}"
                 )
             if isinstance(metaclass, ClassDef):
-                try:
-                    # Find the first non-None inferred base value
-                    get_base = lambda arg: next(
-                        b
-                        for b in arg.infer(context=context.clone() if context else None)
-                        if not (isinstance(b, node_classes.Const) and b.value is None)
-                    )
-                    class_bases = [get_base(arg) for arg in caller.args[1:]]
-                except StopIteration as e:
-                    raise InferenceError(node=caller.args[1:], context=context) from e
+                class_bases = [_infer_last(x, context) for x in caller.args[1:]]
                 new_class = ClassDef(
                     name="temporary_class",
                     lineno=0,
@@ -2825,13 +2824,8 @@ class ClassDef(
 
         for stmt in self.bases:
             try:
-                # Find the first non-None inferred base value
-                baseobj = next(
-                    b
-                    for b in stmt.infer(context=context.clone())
-                    if not (isinstance(b, node_classes.Const) and b.value is None)
-                )
-            except (InferenceError, StopIteration):
+                baseobj = _infer_last(stmt, context)
+            except InferenceError:
                 continue
             if isinstance(baseobj, bases.Instance):
                 baseobj = baseobj._proxied
