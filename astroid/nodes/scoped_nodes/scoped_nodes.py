@@ -1602,7 +1602,7 @@ class FunctionDef(
                     col_offset=0,
                     end_lineno=0,
                     end_col_offset=0,
-                    parent=AstroidManager().adhoc_module,
+                    parent=AstroidManager().synthetic_root,
                 )
                 new_class.hide = True
                 new_class.postinit(

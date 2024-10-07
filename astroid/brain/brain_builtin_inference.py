@@ -165,7 +165,7 @@ def _extend_builtins(class_transforms):
 
 def on_bootstrap():
     """Called by astroid_bootstrapping()."""
-    AstroidManager().cache_module(build_module("__astroid_adhoc"))
+    AstroidManager().cache_module(build_module("__astroid_synthetic"))
 
     _extend_builtins(
         {
@@ -653,7 +653,7 @@ def infer_property(
         # node.frame. It's somewhere in the builtins module, but we are special
         # casing it for each "property()" call, so we are making up the
         # definition on the spot, ad-hoc.
-        parent=AstroidManager().adhoc_module,
+        parent=AstroidManager().synthetic_root,
     )
     prop_func.postinit(
         body=[],

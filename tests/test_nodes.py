@@ -1962,7 +1962,7 @@ def test_str_repr_no_warnings(node):
             continue
 
         if name == "parent" and "NodeNG" in param_type.annotation:
-            args[name] = AstroidManager().adhoc_module
+            args[name] = AstroidManager().synthetic_root
         elif "int" in param_type.annotation:
             args[name] = random.randint(0, 50)
         elif (
