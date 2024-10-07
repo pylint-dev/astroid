@@ -194,7 +194,7 @@ def infer_named_tuple(
     """Specific inference function for namedtuple Call node."""
     tuple_base: nodes.Name = _extract_single_node("tuple")
     class_node, name, attributes = infer_func_form(
-        node, tuple_base, parent=AstroidManager().adhoc_module, context=context
+        node, tuple_base, parent=AstroidManager().synthetic_root, context=context
     )
 
     call_site = arguments.CallSite.from_call(node, context=context)
@@ -360,7 +360,7 @@ def infer_enum(
     class_node = infer_func_form(
         node,
         enum_meta,
-        parent=AstroidManager().adhoc_module,
+        parent=AstroidManager().synthetic_root,
         context=context,
         enum=True,
     )[0]

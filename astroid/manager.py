@@ -116,8 +116,8 @@ class AstroidManager:
         return self.astroid_cache["builtins"]
 
     @property
-    def adhoc_module(self) -> nodes.Module:
-        return self.astroid_cache["__astroid_adhoc"]
+    def synthetic_root(self) -> nodes.Module:
+        return self.astroid_cache["__astroid_synthetic"]
 
     @property
     def prefer_stubs(self) -> bool:
