@@ -1586,7 +1586,7 @@ class FunctionDef(
             if isinstance(metaclass, ClassDef):
                 try:
                     # Find the first non-None inferred base value
-                    get_base = lambda arg: next(
+                    get_base = lambda arg: next(  # pylint: disable=unnecessary-lambda-assignment # noqa
                         b
                         for b in arg.infer(context=context.clone() if context else None)
                         if not (isinstance(b, node_classes.Const) and b.value is None)
