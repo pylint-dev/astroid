@@ -8,6 +8,7 @@ from __future__ import annotations
 import contextlib
 import sys
 import warnings
+from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 from astroid.exceptions import InferenceError
