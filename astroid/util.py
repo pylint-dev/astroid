@@ -160,6 +160,7 @@ def safe_infer(
     except StopIteration:
         return value
 
+
 def _augment_sys_path(additional_paths: Sequence[str]) -> list[str]:
     original = list(sys.path)
     changes = []
@@ -171,6 +172,7 @@ def _augment_sys_path(additional_paths: Sequence[str]) -> list[str]:
 
     sys.path[:] = changes + sys.path
     return original
+
 
 @contextlib.contextmanager
 def augmented_sys_path(additional_paths: Sequence[str]) -> Iterator[None]:
