@@ -5,7 +5,10 @@
 
 from __future__ import annotations
 
+import contextlib
+import sys
 import warnings
+from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 from astroid.exceptions import InferenceError
@@ -157,3 +160,26 @@ def safe_infer(
         return None  # there is some kind of ambiguity
     except StopIteration:
         return value
+
+
+def _augment_sys_path(additional_paths: Sequence[str]) -> list[str]:
+    original = list(sys.path)
+    changes = []
+    seen = set()
+    for additional_path in additional_paths:
+        if additional_path not in seen:
+            changes.append(additional_path)
+            seen.add(additional_path)
+
+    sys.path[:] = changes + sys.path
+    return original
+
+
+@contextlib.contextmanager
+def augmented_sys_path(additional_paths: Sequence[str]) -> Iterator[None]:
+    """Augment 'sys.path' by adding entries from additional_paths."""
+    original = _augment_sys_path(additional_paths)
+    try:
+        yield
+    finally:
+        sys.path[:] = original
