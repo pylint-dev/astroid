@@ -279,7 +279,7 @@ class PartialFunction(scoped_nodes.FunctionDef):
             name,
             lineno=lineno,
             col_offset=col_offset,
-            parent=AstroidManager().synthetic_root,
+            parent=scoped_nodes.SYNTHETIC_ROOT,
             end_col_offset=0,
             end_lineno=0,
         )

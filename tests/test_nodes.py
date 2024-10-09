@@ -34,10 +34,8 @@ from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
     AttributeInferenceError,
-    ParentMissingError,
     StatementMissing,
 )
-from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import (
     AssignAttr,
     AssignName,
@@ -46,7 +44,13 @@ from astroid.nodes.node_classes import (
     ImportFrom,
     Tuple,
 )
-from astroid.nodes.scoped_nodes import ClassDef, FunctionDef, GeneratorExp, Module
+from astroid.nodes.scoped_nodes import (
+    SYNTHETIC_ROOT,
+    ClassDef,
+    FunctionDef,
+    GeneratorExp,
+    Module,
+)
 from tests.testdata.python3.recursion_error import LONG_CHAINED_METHOD_CALL
 
 from . import resources
@@ -623,12 +627,10 @@ class ConstNodeTest(unittest.TestCase):
         with self.assertRaises(StatementMissing):
             node.statement()
 
-        with self.assertRaises(ParentMissingError):
-            with pytest.warns(DeprecationWarning) as records:
-                node.frame(future=True)
-                assert len(records) == 1
-        with self.assertRaises(ParentMissingError):
-            node.frame()
+        with pytest.warns(DeprecationWarning) as records:
+            assert node.frame(future=True) is SYNTHETIC_ROOT
+            assert len(records) == 1
+        assert node.frame() is SYNTHETIC_ROOT
 
     def test_none(self) -> None:
         self._test(None)
@@ -1962,7 +1964,7 @@ def test_str_repr_no_warnings(node):
             continue
 
         if name == "parent" and "NodeNG" in param_type.annotation:
-            args[name] = AstroidManager().synthetic_root
+            args[name] = SYNTHETIC_ROOT
         elif "int" in param_type.annotation:
             args[name] = random.randint(0, 50)
         elif (

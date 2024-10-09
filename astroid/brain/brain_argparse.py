@@ -21,7 +21,7 @@ def infer_namespace(node, context: InferenceContext | None = None):
         "Namespace",
         lineno=node.lineno,
         col_offset=node.col_offset,
-        parent=AstroidManager().synthetic_root,  # this class is not real
+        parent=nodes.SYNTHETIC_ROOT,  # this class is not real
         end_lineno=node.end_lineno,
         end_col_offset=node.end_col_offset,
     )

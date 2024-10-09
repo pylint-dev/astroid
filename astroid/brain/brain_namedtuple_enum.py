@@ -24,6 +24,7 @@ from astroid.exceptions import (
 )
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
+from astroid.nodes.scoped_nodes.scoped_nodes import SYNTHETIC_ROOT
 
 ENUM_QNAME: Final[str] = "enum.Enum"
 TYPING_NAMEDTUPLE_QUALIFIED: Final = {
@@ -194,7 +195,7 @@ def infer_named_tuple(
     """Specific inference function for namedtuple Call node."""
     tuple_base: nodes.Name = _extract_single_node("tuple")
     class_node, name, attributes = infer_func_form(
-        node, tuple_base, parent=AstroidManager().synthetic_root, context=context
+        node, tuple_base, parent=SYNTHETIC_ROOT, context=context
     )
 
     call_site = arguments.CallSite.from_call(node, context=context)
@@ -360,7 +361,7 @@ def infer_enum(
     class_node = infer_func_form(
         node,
         enum_meta,
-        parent=AstroidManager().synthetic_root,
+        parent=SYNTHETIC_ROOT,
         context=context,
         enum=True,
     )[0]
