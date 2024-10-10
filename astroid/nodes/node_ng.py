@@ -155,8 +155,9 @@ class NodeNG:
                 pass
 
         key = (self, context.lookupname, context.callcontext, context.boundnode)
-        if key in context.inferred:
-            yield from context.inferred[key]
+        cached_result = context.inferred.get(key)
+        if cached_result is not None:
+            yield from cached_result
             return
 
         results = []
