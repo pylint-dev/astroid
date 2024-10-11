@@ -4,8 +4,10 @@
 
 from __future__ import annotations
 
+import contextlib
 import os
 import sys
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 
 from astroid import builder
@@ -33,3 +35,26 @@ class SysPathSetup:
         for key in list(sys.path_importer_cache):
             if key.startswith(datadir):
                 del sys.path_importer_cache[key]
+
+
+def _augment_sys_path(additional_paths: Sequence[str]) -> list[str]:
+    original = list(sys.path)
+    changes = []
+    seen = set()
+    for additional_path in additional_paths:
+        if additional_path not in seen:
+            changes.append(additional_path)
+            seen.add(additional_path)
+
+    sys.path[:] = changes + sys.path
+    return original
+
+
+@contextlib.contextmanager
+def augmented_sys_path(additional_paths: Sequence[str]) -> Iterator[None]:
+    """Augment 'sys.path' by adding entries from additional_paths."""
+    original = _augment_sys_path(additional_paths)
+    try:
+        yield
+    finally:
+        sys.path[:] = original

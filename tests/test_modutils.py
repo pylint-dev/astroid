@@ -22,7 +22,6 @@ import astroid
 from astroid import modutils
 from astroid.const import PY310_PLUS
 from astroid.interpreter._import import spec
-from astroid.util import augmented_sys_path
 
 from . import resources
 
@@ -185,7 +184,7 @@ class ModPathFromFileTest(unittest.TestCase):
            should be relative to the subdirectory since additional directory has
            higher precedence."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            with augmented_sys_path([tmp_dir]):
+            with resources.augmented_sys_path([tmp_dir]):
                 mod_name = "module"
                 sub_dirname = "subdir"
                 sub_dir = tmp_dir + "/" + sub_dirname
