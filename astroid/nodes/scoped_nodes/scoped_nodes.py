@@ -40,14 +40,7 @@ from astroid.exceptions import (
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
-from astroid.nodes import (
-    Arguments,
-    Const,
-    NodeNG,
-    _base_nodes,
-    const_factory,
-    node_classes,
-)
+from astroid.nodes import _base_nodes, node_classes
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
@@ -60,6 +53,7 @@ from astroid.typing import (
 
 if TYPE_CHECKING:
     from astroid import nodes, objects
+    from astroid.nodes import Arguments, Const, NodeNG
     from astroid.nodes._base_nodes import LookupMixIn
 
 
@@ -175,6 +169,15 @@ def function_to_method(n, klass):
         if n.type != "staticmethod":
             return bases.UnboundMethod(n)
     return n
+
+
+def _infer_last(
+    arg: SuccessfulInferenceResult, context: InferenceContext
+) -> InferenceResult:
+    res = util.Uninferable
+    for b in arg.infer(context=context.clone()):
+        res = b
+    return res
 
 
 class Module(LocalsDictNodeNG):
@@ -353,7 +356,7 @@ class Module(LocalsDictNodeNG):
         if name in self.special_attributes and not ignore_locals and not name_in_locals:
             result = [self.special_attributes.lookup(name)]
             if name == "__name__":
-                main_const = const_factory("__main__")
+                main_const = node_classes.const_factory("__main__")
                 main_const.parent = AstroidManager().builtins_module
                 result.append(main_const)
         elif not ignore_locals and name_in_locals:
@@ -605,6 +608,14 @@ class Module(LocalsDictNodeNG):
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[Module]:
         yield self
+
+
+class __SyntheticRoot(Module):
+    def __init__(self):
+        super().__init__("__astroid_synthetic", pure_python=False)
+
+
+SYNTHETIC_ROOT = __SyntheticRoot()
 
 
 class GeneratorExp(ComprehensionScope):
@@ -1538,10 +1549,7 @@ class FunctionDef(
         """
         for yield_ in self.nodes_of_class(node_classes.Yield):
             if yield_.value is None:
-                const = node_classes.Const(None)
-                const.parent = yield_
-                const.lineno = yield_.lineno
-                yield const
+                yield node_classes.Const(None, parent=yield_, lineno=yield_.lineno)
             elif yield_.scope() == self:
                 yield from yield_.value.infer(context=context)
 
@@ -1551,6 +1559,8 @@ class FunctionDef(
         context: InferenceContext | None = None,
     ) -> Iterator[InferenceResult]:
         """Infer what the function returns when called."""
+        if context is None:
+            context = InferenceContext()
         if self.is_generator():
             if isinstance(self, AsyncFunctionDef):
                 generator_cls: type[bases.Generator] = bases.AsyncGenerator
@@ -1572,7 +1582,7 @@ class FunctionDef(
             and len(self.args.args) == 1
             and self.args.vararg is not None
         ):
-            if isinstance(caller.args, Arguments):
+            if isinstance(caller.args, node_classes.Arguments):
                 assert caller.args.args is not None
                 metaclass = next(caller.args.args[0].infer(context), None)
             elif isinstance(caller.args, list):
@@ -1582,27 +1592,14 @@ class FunctionDef(
                     f"caller.args was neither Arguments nor list; got {type(caller.args)}"
                 )
             if isinstance(metaclass, ClassDef):
-                try:
-                    class_bases = [
-                        # Find the first non-None inferred base value
-                        next(
-                            b
-                            for b in arg.infer(
-                                context=context.clone() if context else context
-                            )
-                            if not (isinstance(b, Const) and b.value is None)
-                        )
-                        for arg in caller.args[1:]
-                    ]
-                except StopIteration as e:
-                    raise InferenceError(node=caller.args[1:], context=context) from e
+                class_bases = [_infer_last(x, context) for x in caller.args[1:]]
                 new_class = ClassDef(
                     name="temporary_class",
                     lineno=0,
                     col_offset=0,
                     end_lineno=0,
                     end_col_offset=0,
-                    parent=AstroidManager().synthetic_root,
+                    parent=SYNTHETIC_ROOT,
                 )
                 new_class.hide = True
                 new_class.postinit(
@@ -2827,13 +2824,8 @@ class ClassDef(
 
         for stmt in self.bases:
             try:
-                # Find the first non-None inferred base value
-                baseobj = next(
-                    b
-                    for b in stmt.infer(context=context.clone())
-                    if not (isinstance(b, Const) and b.value is None)
-                )
-            except (InferenceError, StopIteration):
+                baseobj = _infer_last(stmt, context)
+            except InferenceError:
                 continue
             if isinstance(baseobj, bases.Instance):
                 baseobj = baseobj._proxied

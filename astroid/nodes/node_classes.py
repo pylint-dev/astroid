@@ -46,6 +46,7 @@ from astroid.manager import AstroidManager
 from astroid.nodes import _base_nodes
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
+from astroid.nodes.scoped_nodes import SYNTHETIC_ROOT
 from astroid.typing import (
     ConstFactoryResult,
     InferenceErrorInfo,
@@ -2038,7 +2039,7 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         value: Any,
         lineno: int | None = None,
         col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        parent: NodeNG = SYNTHETIC_ROOT,
         kind: str | None = None,
         *,
         end_lineno: int | None = None,
@@ -2550,7 +2551,7 @@ class EmptyNode(_base_nodes.NoChildrenNode):
         self,
         lineno: None = None,
         col_offset: None = None,
-        parent: None = None,
+        parent: NodeNG = SYNTHETIC_ROOT,
         *,
         end_lineno: None = None,
         end_col_offset: None = None,
@@ -5535,7 +5536,7 @@ def const_factory(value: Any) -> ConstFactoryResult:
         instance = initializer_cls(
             lineno=None,
             col_offset=None,
-            parent=None,
+            parent=SYNTHETIC_ROOT,
             end_lineno=None,
             end_col_offset=None,
         )
@@ -5545,7 +5546,7 @@ def const_factory(value: Any) -> ConstFactoryResult:
         instance = initializer_cls(
             lineno=None,
             col_offset=None,
-            parent=None,
+            parent=SYNTHETIC_ROOT,
             end_lineno=None,
             end_col_offset=None,
         )

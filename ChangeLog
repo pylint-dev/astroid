@@ -10,6 +10,8 @@ Release date: TBA
 * Removed internal functions ``infer_numpy_member``, ``name_looks_like_numpy_member``, and
   ``attribute_looks_like_numpy_member`` from ``astroid.brain.brain_numpy_utils``.
 
+* Constants now have a parent of ``nodes.SYNTHETIC_ROOT``.
+
 * Fix crashes with large positive and negative list multipliers.
 
   Closes #2521
