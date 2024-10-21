@@ -1401,7 +1401,7 @@ class TreeRebuilder:
         )
         names = set(newnode.names)
         # Go through the tree and find where those names are created
-        scope: nodes.NodeNG = newnode
+        scope = newnode
         while len(names) != 0:
             scope = scope.parent
             if not scope:
