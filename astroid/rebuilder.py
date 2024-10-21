@@ -61,10 +61,8 @@ class TreeRebuilder:
         self._manager = manager
         self._data = data.split("\n") if data else None
         self._global_names: list[dict[str, list[nodes.Global]]] = []
-        # In _nonlocal_names,
-        # what we save is the function where the variable is created,
-        # rather than nodes.Nonlocal.
-        # We don't really need the Nonlocal statement.
+        # In _nonlocal_names saves the FunctionDef where the variable is created,
+        # rather than Nonlocal, since we don't really need the Nonlocal statement.
         self._nonlocal_names: list[dict[str, nodes.FunctionDef]] = []
         self._import_from_nodes: list[nodes.ImportFrom] = []
         self._delayed_assattr: list[nodes.AssignAttr] = []
@@ -1403,7 +1401,7 @@ class TreeRebuilder:
         )
         names = set(newnode.names)
         # Go through the tree and find where those names are created
-        scope = newnode
+        scope: nodes.NodeNG = newnode
         while len(names) != 0:
             scope = scope.parent
             if not scope:
