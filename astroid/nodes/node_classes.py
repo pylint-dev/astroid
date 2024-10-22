@@ -4784,9 +4784,14 @@ class JoinedStr(NodeNG):
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-        if not self.values:
+        if self.values:
+            yield from self._infer_with_values(context)
+        else:
             yield Const("")
-            return
+
+    def _infer_with_values(
+            self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         uninferable_already_generated = False
         for inferred in self._infer_from_values(self.values, context):
             failed = (
