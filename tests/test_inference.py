@@ -7402,13 +7402,13 @@ c_obj = Cls()
 s1 = f'{c_obj!r}' #@
 """,
             "<__main__.Cls",
-            False
+            False,
         ),
         ("s1 = f'{5}' #@", "5", False),
         ("s1 = f'{missing}'", None, True),
         ("s1 = f'{missing}'", "{MISSING_VALUE}", False),
         ("s1 = f'a/{missing}/b'", None, True),
-        ("s1 = f'a/{missing}/b'", "a/{MISSING_VALUE}/b", False)
+        ("s1 = f'a/{missing}/b'", "a/{MISSING_VALUE}/b", False),
     ],
 )
 def test_joined_str_returns_string(source, expected, fail) -> None:

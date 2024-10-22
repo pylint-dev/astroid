@@ -4719,7 +4719,6 @@ MISSING_VALUE = "{MISSING_VALUE}"
 
 
 class JoinedStr(NodeNG):
-
     """Represents a list of string expressions to be joined.
 
     >>> import astroid
@@ -4790,7 +4789,11 @@ class JoinedStr(NodeNG):
             return
         uninferable_already_generated = False
         for inferred in self._infer_from_values(self.values, context):
-            failed = inferred is util.Uninferable or isinstance(inferred, Const) and MISSING_VALUE in inferred.value
+            failed = (
+                inferred is util.Uninferable
+                or isinstance(inferred, Const)
+                and MISSING_VALUE in inferred.value
+            )
             if failed and self.FAIL_ON_UNINFERABLE:
                 if not uninferable_already_generated:
                     uninferable_already_generated = True
@@ -4822,7 +4825,9 @@ class JoinedStr(NodeNG):
                 yield Const(result)
 
     @classmethod
-    def _safe_infer_from_node(cls, node: NodeNG, context: InferenceContext | None = None, **kwargs: Any) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+    def _safe_infer_from_node(
+        cls, node: NodeNG, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         try:
             yield from node._infer(context, **kwargs)
         except InferenceError:
