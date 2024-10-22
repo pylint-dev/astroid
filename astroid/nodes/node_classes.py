@@ -4719,6 +4719,7 @@ MISSING_VALUE = "{MISSING_VALUE}"
 
 
 class JoinedStr(NodeNG):
+
     """Represents a list of string expressions to be joined.
 
     >>> import astroid
@@ -4728,6 +4729,9 @@ class JoinedStr(NodeNG):
     """
 
     _astroid_fields = ("values",)
+
+    """Customer-defined behavior on what to return when _infer encounters an Uninferable element"""
+    FAIL_ON_UNINFERABLE = True
 
     def __init__(
         self,
@@ -4781,20 +4785,30 @@ class JoinedStr(NodeNG):
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-        yield from self._infer_from_values(self.values, context)
+        uninferable_already_generated = False
+        for inferred in self._infer_from_values(self.values, context):
+            failed = inferred is util.Uninferable or isinstance(inferred, Const) and MISSING_VALUE in inferred.value
+            if failed and self.FAIL_ON_UNINFERABLE:
+                if not uninferable_already_generated:
+                    uninferable_already_generated = True
+                    yield util.Uninferable
+                    continue
+            yield inferred
 
     @classmethod
     def _infer_from_values(
         cls, nodes: list[NodeNG], context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         if not nodes:
-            yield
             return
         if len(nodes) == 1:
-            yield from nodes[0]._infer(context, **kwargs)
+            for node in cls._safe_infer_from_node(nodes[0], context, **kwargs):
+                if isinstance(node, Const):
+                    yield node
+                    continue
+                yield Const(MISSING_VALUE)
             return
-        uninferable_already_generated = False
-        for prefix in nodes[0]._infer(context, **kwargs):
+        for prefix in cls._safe_infer_from_node(nodes[0], context, **kwargs):
             for suffix in cls._infer_from_values(nodes[1:], context, **kwargs):
                 result = ""
                 for node in (prefix, suffix):
@@ -4802,12 +4816,14 @@ class JoinedStr(NodeNG):
                         result += str(node.value)
                         continue
                     result += MISSING_VALUE
-                if MISSING_VALUE in result:
-                    if not uninferable_already_generated:
-                        uninferable_already_generated = True
-                        yield util.Uninferable
-                else:
-                    yield Const(result)
+                yield Const(result)
+
+    @classmethod
+    def _safe_infer_from_node(cls, node: NodeNG, context: InferenceContext | None = None, **kwargs: Any) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        try:
+            yield from node._infer(context, **kwargs)
+        except InferenceError:
+            yield util.Uninferable
 
 
 class NamedExpr(_base_nodes.AssignTypeNode):

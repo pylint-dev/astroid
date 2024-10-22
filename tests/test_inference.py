@@ -21,6 +21,7 @@ import pytest
 from astroid import (
     Assign,
     Const,
+    JoinedStr,
     Slice,
     Uninferable,
     arguments,
@@ -7388,7 +7389,7 @@ def test_empty_format_spec() -> None:
 
 
 @pytest.mark.parametrize(
-    "source, expected",
+    "source, expected, fail",
     [
         (
             """
@@ -7401,17 +7402,26 @@ c_obj = Cls()
 s1 = f'{c_obj!r}' #@
 """,
             "<__main__.Cls",
+            False
         ),
-        ("s1 = f'{5}' #@", "5"),
+        ("s1 = f'{5}' #@", "5", False),
+        ("s1 = f'{missing}'", None, True),
+        ("s1 = f'{missing}'", "{MISSING_VALUE}", False),
+        ("s1 = f'a/{missing}/b'", None, True),
+        ("s1 = f'a/{missing}/b'", "a/{MISSING_VALUE}/b", False)
     ],
 )
-def test_joined_str_returns_string(source, expected) -> None:
+def test_joined_str_returns_string(source, expected, fail) -> None:
     """Regression test for https://github.com/pylint-dev/pylint/issues/9947."""
+    JoinedStr.FAIL_ON_UNINFERABLE = fail
     node = extract_node(source)
     assert isinstance(node, Assign)
     target = node.targets[0]
     assert target
     inferred = list(target.inferred())
     assert len(inferred) == 1
-    assert isinstance(inferred[0], Const)
-    inferred[0].value.startswith(expected)
+    if expected:
+        assert isinstance(inferred[0], Const)
+        inferred[0].value.startswith(expected)
+    else:
+        assert inferred[0] is Uninferable
