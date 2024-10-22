@@ -4790,7 +4790,7 @@ class JoinedStr(NodeNG):
             yield Const("")
 
     def _infer_with_values(
-            self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         uninferable_already_generated = False
         for inferred in self._infer_from_values(self.values, context):
