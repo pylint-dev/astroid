@@ -17,6 +17,10 @@ Release date: TBA
   Closes #2521
   Closes #2523
 
+* Fix crash when typing._alias() call is missing arguments.
+
+  Closes #2513
+
 
 What's New in astroid 3.3.6?
 ============================
