@@ -92,7 +92,7 @@ class Finder:
         modname: str,
         module_parts: tuple[str, ...],
         processed: tuple[str, ...],
-        submodule_path: Sequence[str] | None,
+        submodule_path: tuple[str, ...] | None,
     ) -> ModuleSpec | None:
         """Find the given module.
 
@@ -105,7 +105,7 @@ class Finder:
                                   namespace.
         :param processed: What parts from the module parts were processed
                                so far.
-        :param submodule_path: A list of paths where the module
+        :param submodule_path: A tuple of paths where the module
                                     can be looked into.
         :returns: A ModuleSpec, describing how and where the module was found,
                   None, otherwise.
@@ -127,11 +127,12 @@ class ImportlibFinder(Finder):
     )
 
     @staticmethod
+    @lru_cache(maxsize=1024)
     def find_module(
         modname: str,
         module_parts: tuple[str, ...],
         processed: tuple[str, ...],
-        submodule_path: Sequence[str] | None,
+        submodule_path: tuple[str, ...] | None,
     ) -> ModuleSpec | None:
         if submodule_path is not None:
             search_paths = list(submodule_path)
@@ -222,11 +223,12 @@ class ExplicitNamespacePackageFinder(ImportlibFinder):
     """A finder for the explicit namespace packages."""
 
     @staticmethod
+    @lru_cache(maxsize=1024)
     def find_module(
         modname: str,
         module_parts: tuple[str, ...],
         processed: tuple[str, ...],
-        submodule_path: Sequence[str] | None,
+        submodule_path: tuple[str, ...] | None,
     ) -> ModuleSpec | None:
         if processed:
             modname = ".".join([*processed, modname])
@@ -261,11 +263,12 @@ class ZipFinder(Finder):
                     continue
 
     @staticmethod
+    @lru_cache(maxsize=1024)
     def find_module(
         modname: str,
         module_parts: tuple[str, ...],
         processed: tuple[str, ...],
-        submodule_path: Sequence[str] | None,
+        submodule_path: tuple[str, ...] | None,
     ) -> ModuleSpec | None:
         try:
             file_type, filename, path = _search_zip(module_parts)
@@ -285,11 +288,12 @@ class PathSpecFinder(Finder):
     """Finder based on importlib.machinery.PathFinder."""
 
     @staticmethod
+    @lru_cache(maxsize=1024)
     def find_module(
         modname: str,
         module_parts: tuple[str, ...],
         processed: tuple[str, ...],
-        submodule_path: Sequence[str] | None,
+        submodule_path: tuple[str, ...] | None,
     ) -> ModuleSpec | None:
         spec = importlib.machinery.PathFinder.find_spec(modname, path=submodule_path)
         if spec is not None:
@@ -373,7 +377,7 @@ def _find_spec_with_path(
     modname: str,
     module_parts: tuple[str, ...],
     processed: tuple[str, ...],
-    submodule_path: Sequence[str] | None,
+    submodule_path: tuple[str, ...] | None,
 ) -> tuple[Finder | _MetaPathFinder, ModuleSpec]:
     for finder in _SPEC_FINDERS:
         finder_instance = finder(search_path)
@@ -451,25 +455,30 @@ def _find_spec(
     # Need a copy for not mutating the argument.
     modpath = list(module_path)
 
-    submodule_path = None
+    search_paths = None
     processed: list[str] = []
 
     while modpath:
         modname = modpath.pop(0)
+
+        submodule_path = search_paths or path
+        if submodule_path is not None:
+            submodule_path = tuple(submodule_path)
+
         finder, spec = _find_spec_with_path(
-            _path, modname, module_path, tuple(processed), submodule_path or path
+            _path, modname, module_path, tuple(processed), submodule_path
         )
         processed.append(modname)
         if modpath:
             if isinstance(finder, Finder):
-                submodule_path = finder.contribute_to_path(spec, processed)
-            # If modname is a package from an editable install, update submodule_path
+                search_paths = finder.contribute_to_path(spec, processed)
+            # If modname is a package from an editable install, update search_paths
             # so that the next module in the path will be found inside of it using importlib.
             # Existence of __name__ is guaranteed by _find_spec_with_path.
             elif finder.__name__ in _EditableFinderClasses:  # type: ignore[attr-defined]
-                submodule_path = spec.submodule_search_locations
+                search_paths = spec.submodule_search_locations
 
         if spec.type == ModuleType.PKG_DIRECTORY:
-            spec = spec._replace(submodule_search_locations=submodule_path)
+            spec = spec._replace(submodule_search_locations=search_paths)
 
     return spec
