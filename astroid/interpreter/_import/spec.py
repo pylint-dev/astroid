@@ -472,13 +472,13 @@ def _find_spec(
         if modpath:
             if isinstance(finder, Finder):
                 search_paths = finder.contribute_to_path(spec, processed)
-            # If modname is a package from an editable install, update submodule_path
+            # If modname is a package from an editable install, update search_paths
             # so that the next module in the path will be found inside of it using importlib.
             # Existence of __name__ is guaranteed by _find_spec_with_path.
             elif finder.__name__ in _EditableFinderClasses:  # type: ignore[attr-defined]
                 search_paths = spec.submodule_search_locations
 
         if spec.type == ModuleType.PKG_DIRECTORY:
-            spec = spec._replace(submodule_search_locations=submodule_path)
+            spec = spec._replace(submodule_search_locations=search_paths)
 
     return spec
