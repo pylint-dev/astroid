@@ -716,6 +716,39 @@ class BuilderTest(unittest.TestCase):
         )
         assert node
 
+    def test_locals_with_global_and_nonlocal(self) -> None:
+        module = builder.parse(
+            """
+            x1 = 1                   # Line 2
+            def f1():                # Line 3
+                x2 = 2               # Line 4
+                def f2():            # Line 5
+                    global x1        # Line 6
+                    nonlocal x2      # Line 7
+                    x1 = 1           # Line 8
+                    x2 = 2           # Line 9
+                    x3 = 3           # Line 10
+            """
+        )
+        self.assertSetEqual(set(module.locals), {"x1", "f1"})
+        x1 = module.locals["x1"]
+        f1 = module.locals["f1"][0]
+        self.assertEqual(len(x1), 2)
+        self.assertEqual(x1[0].lineno, 2)
+        self.assertEqual(x1[1].lineno, 8)
+
+        self.assertSetEqual(set(f1.locals), {"x2", "f2"})
+        x2 = f1.locals["x2"]
+        f2 = f1.locals["f2"][0]
+        self.assertEqual(len(x2), 2)
+        self.assertEqual(x2[0].lineno, 4)
+        self.assertEqual(x2[1].lineno, 9)
+
+        self.assertSetEqual(set(f2.locals), {"x3"})
+        x3 = f2.locals["x3"]
+        self.assertEqual(len(x3), 1)
+        self.assertEqual(x3[0].lineno, 10)
+
 
 class FileBuildTest(unittest.TestCase):
     def setUp(self) -> None:

@@ -61,6 +61,9 @@ class TreeRebuilder:
         self._manager = manager
         self._data = data.split("\n") if data else None
         self._global_names: list[dict[str, list[nodes.Global]]] = []
+        # In _nonlocal_names saves the FunctionDef where the variable is created,
+        # rather than Nonlocal, since we don't really need the Nonlocal statement.
+        self._nonlocal_names: list[dict[str, nodes.FunctionDef]] = []
         self._import_from_nodes: list[nodes.ImportFrom] = []
         self._delayed_assattr: list[nodes.AssignAttr] = []
         self._visit_meths: dict[type[ast.AST], Callable[[ast.AST, NodeNG], NodeNG]] = {}
@@ -451,6 +454,9 @@ class TreeRebuilder:
         """Save assignment situation since node.parent is not available yet."""
         if self._global_names and node.name in self._global_names[-1]:
             node.root().set_local(node.name, node)
+        elif self._nonlocal_names and node.name in self._nonlocal_names[-1]:
+            function_def = self._nonlocal_names[-1][node.name]
+            function_def.set_local(node.name, node)
         else:
             assert node.parent
             assert node.name
@@ -1065,6 +1071,7 @@ class TreeRebuilder:
     ) -> _FunctionT:
         """Visit an FunctionDef node to become astroid."""
         self._global_names.append({})
+        self._nonlocal_names.append({})
         node, doc_ast_node = self._get_doc(node)
 
         lineno = node.lineno
@@ -1113,6 +1120,7 @@ class TreeRebuilder:
             ),
         )
         self._global_names.pop()
+        self._nonlocal_names.pop()
         parent.set_local(newnode.name, newnode)
         return newnode
 
@@ -1383,7 +1391,7 @@ class TreeRebuilder:
 
     def visit_nonlocal(self, node: ast.Nonlocal, parent: NodeNG) -> nodes.Nonlocal:
         """Visit a Nonlocal node and return a new instance of it."""
-        return nodes.Nonlocal(
+        newnode = nodes.Nonlocal(
             names=node.names,
             lineno=node.lineno,
             col_offset=node.col_offset,
@@ -1391,6 +1399,24 @@ class TreeRebuilder:
             end_col_offset=node.end_col_offset,
             parent=parent,
         )
+        names = set(newnode.names)
+        # Go through the tree and find where those names are created
+        scope = newnode
+        while len(names) != 0:
+            scope = scope.parent
+            if not scope:
+                # It's not inside a nested function or there are no variables with that name.
+                # Just ignore it as visit_global does when global is used in module scope.
+                break
+            if isinstance(scope, nodes.FunctionDef):
+                found = []
+                for name in names:
+                    if name in scope.locals:
+                        found.append(name)
+                        self._nonlocal_names[-1][name] = scope
+                for name in found:
+                    names.remove(name)
+        return newnode
 
     def visit_constant(self, node: ast.Constant, parent: NodeNG) -> nodes.Const:
         """Visit a Constant node by returning a fresh instance of Const."""
