@@ -8,6 +8,10 @@ What's New in astroid 3.4.0?
 Release date: TBA
 
 
+* Fix crash when typing._alias() call is missing arguments.
+
+  Closes #2513
+
 
 What's New in astroid 3.3.6?
 ============================
