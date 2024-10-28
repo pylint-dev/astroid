@@ -144,12 +144,13 @@ def clean_duplicates_mro(
     sequences: list[list[ClassDef]],
     cls: ClassDef,
     context: InferenceContext | None,
+    ignore_duplicates: bool,
 ) -> list[list[ClassDef]]:
     for sequence in sequences:
         seen = set()
         for node in sequence:
             lineno_and_qname = (node.lineno, node.qname())
-            if lineno_and_qname in seen:
+            if lineno_and_qname in seen and not ignore_duplicates:
                 raise DuplicateBasesError(
                     message="Duplicates found in MROs {mros} for {cls!r}.",
                     mros=sequences,
@@ -2834,7 +2835,9 @@ class ClassDef(
             else:
                 yield from baseobj.bases
 
-    def _compute_mro(self, context: InferenceContext | None = None):
+    def _compute_mro(
+        self, context: InferenceContext | None = None, ignore_duplicates: bool = False
+    ):
         if self.qname() == "builtins.object":
             return [self]
 
@@ -2844,15 +2847,21 @@ class ClassDef(
             if base is self:
                 continue
 
-            mro = base._compute_mro(context=context)
+            mro = base._compute_mro(
+                context=context, ignore_duplicates=ignore_duplicates
+            )
             bases_mro.append(mro)
 
         unmerged_mro: list[list[ClassDef]] = [[self], *bases_mro, inferred_bases]
-        unmerged_mro = clean_duplicates_mro(unmerged_mro, self, context)
+        unmerged_mro = clean_duplicates_mro(
+            unmerged_mro, self, context, ignore_duplicates=ignore_duplicates
+        )
         clean_typing_generic_mro(unmerged_mro)
         return _c3_merge(unmerged_mro, self, context)
 
-    def mro(self, context: InferenceContext | None = None) -> list[ClassDef]:
+    def mro(
+        self, context: InferenceContext | None = None, ignore_duplicates: bool = False
+    ) -> list[ClassDef]:
         """Get the method resolution order, using C3 linearization.
 
         :returns: The list of ancestors, sorted by the mro.
@@ -2860,7 +2869,7 @@ class ClassDef(
         :raises DuplicateBasesError: Duplicate bases in the same class base
         :raises InconsistentMroError: A class' MRO is inconsistent
         """
-        return self._compute_mro(context=context)
+        return self._compute_mro(context=context, ignore_duplicates=ignore_duplicates)
 
     def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
         """Determine the boolean value of this node.
