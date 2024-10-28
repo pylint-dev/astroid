@@ -24,6 +24,12 @@ Release date: TBA
   thus allowing return of partially inferred strings, for example "a/{MISSING_VALUE}/b" when
   inferring ``f"a/{missing}/b"`` with ``missing`` being uninferable
 
+  Closes #2621
+
+* Fix crash when typing._alias() call is missing arguments.
+
+  Closes #2513
+
 
 What's New in astroid 3.3.6?
 ============================

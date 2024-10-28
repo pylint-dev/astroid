@@ -2354,26 +2354,24 @@ class ClassDef(
 
         if name in self.special_attributes and class_context and not values:
             result = [self.special_attributes.lookup(name)]
-            if name == "__bases__":
-                # Need special treatment, since they are mutable
-                # and we need to return all the values.
-                result += values
             return result
 
         if class_context:
             values += self._metaclass_lookup_attribute(name, context)
 
-        # Remove AnnAssigns without value, which are not attributes in the purest sense.
-        for value in values.copy():
+        result: list[InferenceResult] = []
+        for value in values:
             if isinstance(value, node_classes.AssignName):
                 stmt = value.statement()
+                # Ignore AnnAssigns without value, which are not attributes in the purest sense.
                 if isinstance(stmt, node_classes.AnnAssign) and stmt.value is None:
-                    values.pop(values.index(value))
+                    continue
+            result.append(value)
 
-        if not values:
+        if not result:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
-        return values
+        return result
 
     @lru_cache(maxsize=1024)  # noqa
     def _metaclass_lookup_attribute(self, name, context):
@@ -2385,7 +2383,7 @@ class ClassDef(
         for cls in (implicit_meta, metaclass):
             if cls and cls != self and isinstance(cls, ClassDef):
                 cls_attributes = self._get_attribute_from_metaclass(cls, name, context)
-                attrs.update(set(cls_attributes))
+                attrs.update(cls_attributes)
         return attrs
 
     def _get_attribute_from_metaclass(self, cls, name, context):

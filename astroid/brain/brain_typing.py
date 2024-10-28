@@ -258,6 +258,7 @@ def _looks_like_typing_alias(node: Call) -> bool:
         isinstance(node.func, Name)
         # TODO: remove _DeprecatedGenericAlias when Py3.14 min
         and node.func.name in {"_alias", "_DeprecatedGenericAlias"}
+        and len(node.args) == 2
         and (
             # _alias function works also for builtins object such as list and dict
             isinstance(node.args[0], (Attribute, Name))
