@@ -2864,6 +2864,8 @@ class ClassDef(
     ) -> list[ClassDef]:
         """Get the method resolution order, using C3 linearization.
 
+        :param ignore_duplicates: Don't raise DuplicateBasesError on duplicate bases
+            of the same base class.
         :returns: The list of ancestors, sorted by the mro.
         :rtype: list(NodeNG)
         :raises DuplicateBasesError: Duplicate bases in the same class base
