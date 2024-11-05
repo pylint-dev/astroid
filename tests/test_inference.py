@@ -21,7 +21,6 @@ import pytest
 from astroid import (
     Assign,
     Const,
-    JoinedStr,
     Slice,
     Uninferable,
     arguments,
