@@ -7389,7 +7389,7 @@ def test_empty_format_spec() -> None:
 
 
 @pytest.mark.parametrize(
-    "source, expected, fail",
+    "source, expected",
     [
         (
             """
@@ -7402,18 +7402,14 @@ c_obj = Cls()
 s1 = f'{c_obj!r}' #@
 """,
             "<__main__.Cls",
-            False,
         ),
-        ("s1 = f'{5}' #@", "5", False),
-        ("s1 = f'{missing}'", None, True),
-        ("s1 = f'{missing}'", "{MISSING_VALUE}", False),
-        ("s1 = f'a/{missing}/b'", None, True),
-        ("s1 = f'a/{missing}/b'", "a/{MISSING_VALUE}/b", False),
+        ("s1 = f'{5}' #@", "5",),
+        ("s1 = f'{missing}'", None),
+        ("s1 = f'a/{missing}/b'", None),
     ],
 )
-def test_joined_str_returns_string(source, expected, fail) -> None:
+def test_joined_str_returns_string(source, expected) -> None:
     """Regression test for https://github.com/pylint-dev/pylint/issues/9947."""
-    JoinedStr.FAIL_ON_UNINFERABLE = fail
     node = extract_node(source)
     assert isinstance(node, Assign)
     target = node.targets[0]

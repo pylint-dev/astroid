@@ -4715,7 +4715,7 @@ class FormattedValue(NodeNG):
                 continue
 
 
-MISSING_VALUE = "{MISSING_VALUE}"
+UNINFERABLE_VALUE = "{Uninferable}"
 
 
 class JoinedStr(NodeNG):
@@ -4728,9 +4728,6 @@ class JoinedStr(NodeNG):
     """
 
     _astroid_fields = ("values",)
-
-    """Customer-defined behavior on what to return when _infer encounters an Uninferable element"""
-    FAIL_ON_UNINFERABLE = True
 
     def __init__(
         self,
@@ -4797,9 +4794,9 @@ class JoinedStr(NodeNG):
             failed = (
                 inferred is util.Uninferable
                 or isinstance(inferred, Const)
-                and MISSING_VALUE in inferred.value
+                and UNINFERABLE_VALUE in inferred.value
             )
-            if failed and self.FAIL_ON_UNINFERABLE:
+            if failed:
                 if not uninferable_already_generated:
                     uninferable_already_generated = True
                     yield util.Uninferable
@@ -4817,7 +4814,7 @@ class JoinedStr(NodeNG):
                 if isinstance(node, Const):
                     yield node
                     continue
-                yield Const(MISSING_VALUE)
+                yield Const(UNINFERABLE_VALUE)
             return
         for prefix in cls._safe_infer_from_node(nodes[0], context, **kwargs):
             for suffix in cls._infer_from_values(nodes[1:], context, **kwargs):
@@ -4826,7 +4823,7 @@ class JoinedStr(NodeNG):
                     if isinstance(node, Const):
                         result += str(node.value)
                         continue
-                    result += MISSING_VALUE
+                    result += UNINFERABLE_VALUE
                 yield Const(result)
 
     @classmethod
