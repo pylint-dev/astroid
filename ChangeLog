@@ -20,10 +20,6 @@ Release date: TBA
 * Improve consistency of ``JoinedStr`` inference by not raising ``InferenceError`` and
   returning either ``Uninferable`` or a fully resolved ``Const``.
 
-* Introduces flag ``JoinedStr.FAIL_ON_UNINFERABLE`` which defaults to ``True``, but can be set to ```False``,
-  thus allowing return of partially inferred strings, for example "a/{MISSING_VALUE}/b" when
-  inferring ``f"a/{missing}/b"`` with ``missing`` being uninferable
-
   Closes #2621
 
 * Fix crash when typing._alias() call is missing arguments.
