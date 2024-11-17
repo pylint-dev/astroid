@@ -2,12 +2,13 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
 from astroid.manager import AstroidManager
 
 
-def mechanize_transform():
+def mechanize_transform() -> nodes.Module:
     return AstroidBuilder(AstroidManager()).string_build(
         """class Browser(object):
     def __getattr__(self, name):

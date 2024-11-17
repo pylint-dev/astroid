@@ -75,6 +75,7 @@ files = [
     "astroid/brain/brain_hashlib.py",
     "astroid/brain/brain_http.py",
     "astroid/brain/brain_hypothesis.py",
+    "astroid/brain/brain_mechanize.py",
     "astroid/brain/brain_numpy_core_einsumfunc.py",
     "astroid/brain/brain_numpy_core_fromnumeric.py",
     "astroid/brain/brain_numpy_core_function_base.py",
@@ -95,7 +96,9 @@ files = [
     "astroid/brain/brain_unittest.py",
     "astroid/brain/brain_uuid.py",
     "astroid/const.py",
+    "astroid/context.py",
     "astroid/interpreter/_import/",
+    "astroid/modutils.py",
     "astroid/nodes/const.py",
     "astroid/nodes/utils.py",
 ]
