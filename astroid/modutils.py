@@ -272,7 +272,7 @@ def _get_relative_base_path(filename: str, path_to_check: str) -> list[str] | No
 
 def modpath_from_file_with_callback(
     filename: str,
-    path: Sequence[str] | None = None,
+    path: list[str] | None = None,
     is_package_cb: Callable[[str, list[str]], bool] | None = None,
 ) -> list[str]:
     filename = os.path.expanduser(_path_from_filename(filename))
@@ -298,7 +298,7 @@ def modpath_from_file_with_callback(
     )
 
 
-def modpath_from_file(filename: str, path: Sequence[str] | None = None) -> list[str]:
+def modpath_from_file(filename: str, path: list[str] | None = None) -> list[str]:
     """Get the corresponding split module's name from a filename.
 
     This function will return the name of a module or package split on `.`.
@@ -607,7 +607,7 @@ def is_relative(modname: str, from_file: str) -> bool:
 
 
 @lru_cache(maxsize=1024)
-def cached_os_path_isfile(path: str | os.PathLike) -> bool:
+def cached_os_path_isfile(path: str | os.PathLike[str]) -> bool:
     """A cached version of os.path.isfile that helps avoid repetitive I/O"""
     return os.path.isfile(path)
 
