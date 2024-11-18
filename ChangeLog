@@ -17,6 +17,11 @@ Release date: TBA
   Closes #2521
   Closes #2523
 
+* Improve consistency of ``JoinedStr`` inference by not raising ``InferenceError`` and
+  returning either ``Uninferable`` or a fully resolved ``Const``.
+
+  Closes #2621
+
 * Fix crash when typing._alias() call is missing arguments.
 
   Closes #2513

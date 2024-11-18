@@ -7402,7 +7402,12 @@ s1 = f'{c_obj!r}' #@
 """,
             "<__main__.Cls",
         ),
-        ("s1 = f'{5}' #@", "5"),
+        (
+            "s1 = f'{5}' #@",
+            "5",
+        ),
+        ("s1 = f'{missing}'", None),
+        ("s1 = f'a/{missing}/b'", None),
     ],
 )
 def test_joined_str_returns_string(source, expected) -> None:
@@ -7413,5 +7418,8 @@ def test_joined_str_returns_string(source, expected) -> None:
     assert target
     inferred = list(target.inferred())
     assert len(inferred) == 1
-    assert isinstance(inferred[0], Const)
-    inferred[0].value.startswith(expected)
+    if expected:
+        assert isinstance(inferred[0], Const)
+        inferred[0].value.startswith(expected)
+    else:
+        assert inferred[0] is Uninferable
