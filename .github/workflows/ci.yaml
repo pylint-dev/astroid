@@ -259,7 +259,7 @@ jobs:
         run: |
           coverage combine coverage-linux*/.coverage
           coverage xml -o coverage-linux.xml
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
@@ -270,7 +270,7 @@ jobs:
         run: |
           coverage combine coverage-windows*/.coverage
           coverage xml -o coverage-windows.xml
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
@@ -281,7 +281,7 @@ jobs:
         run: |
           coverage combine coverage-pypy*/.coverage
           coverage xml -o coverage-pypy.xml
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
