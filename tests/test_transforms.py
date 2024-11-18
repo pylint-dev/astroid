@@ -274,7 +274,7 @@ class TestTransforms(unittest.TestCase):
         )
 
         original_limit = sys.getrecursionlimit()
-        sys.setrecursionlimit(500 if IS_PYPY else 1000)
+        sys.setrecursionlimit(300 if IS_PYPY else 1000)
 
         try:
             with pytest.warns(UserWarning) as records:
