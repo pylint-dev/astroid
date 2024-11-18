@@ -14,7 +14,6 @@ import pytest
 
 from astroid import MANAGER, builder, nodes, parse, transforms
 from astroid.brain.brain_dataclasses import _looks_like_dataclass_field_call
-from astroid.const import IS_PYPY
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import Call, Compare, Const, Name
 from astroid.nodes.scoped_nodes import FunctionDef, Module
@@ -274,7 +273,7 @@ class TestTransforms(unittest.TestCase):
         )
 
         original_limit = sys.getrecursionlimit()
-        sys.setrecursionlimit(500 if IS_PYPY else 1000)
+        sys.setrecursionlimit(1000)
 
         try:
             with pytest.warns(UserWarning) as records:
