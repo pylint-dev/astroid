@@ -4791,10 +4791,8 @@ class JoinedStr(NodeNG):
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         uninferable_already_generated = False
         for inferred in self._infer_from_values(self.values, context):
-            failed = (
-                inferred is util.Uninferable
-                or isinstance(inferred, Const)
-                and UNINFERABLE_VALUE in inferred.value
+            failed = inferred is util.Uninferable or (
+                isinstance(inferred, Const) and UNINFERABLE_VALUE in inferred.value
             )
             if failed:
                 if not uninferable_already_generated:

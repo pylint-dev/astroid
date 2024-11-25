@@ -358,12 +358,16 @@ def _looks_like_special_alias(node: Call) -> bool:
     PY39: Callable = _CallableType(collections.abc.Callable, 2)
     """
     return isinstance(node.func, Name) and (
-        node.func.name == "_TupleType"
-        and isinstance(node.args[0], Name)
-        and node.args[0].name == "tuple"
-        or node.func.name == "_CallableType"
-        and isinstance(node.args[0], Attribute)
-        and node.args[0].as_string() == "collections.abc.Callable"
+        (
+            node.func.name == "_TupleType"
+            and isinstance(node.args[0], Name)
+            and node.args[0].name == "tuple"
+        )
+        or (
+            node.func.name == "_CallableType"
+            and isinstance(node.args[0], Attribute)
+            and node.args[0].as_string() == "collections.abc.Callable"
+        )
     )
 
 
@@ -400,11 +404,8 @@ def infer_special_alias(
 
 
 def _looks_like_typing_cast(node: Call) -> bool:
-    return (
-        isinstance(node.func, Name)
-        and node.func.name == "cast"
-        or isinstance(node.func, Attribute)
-        and node.func.attrname == "cast"
+    return (isinstance(node.func, Name) and node.func.name == "cast") or (
+        isinstance(node.func, Attribute) and node.func.attrname == "cast"
     )
 
 
