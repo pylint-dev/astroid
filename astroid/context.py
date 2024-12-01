@@ -37,13 +37,13 @@ class InferenceContext:
     """
 
     __slots__ = (
-        "path",
-        "lookupname",
-        "callcontext",
-        "boundnode",
-        "extra_context",
-        "constraints",
         "_nodes_inferred",
+        "boundnode",
+        "callcontext",
+        "constraints",
+        "extra_context",
+        "lookupname",
+        "path",
     )
 
     max_inferred = 100
@@ -164,7 +164,7 @@ class InferenceContext:
 class CallContext:
     """Holds information for a call site."""
 
-    __slots__ = ("args", "keywords", "callee")
+    __slots__ = ("args", "callee", "keywords")
 
     def __init__(
         self,
