@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 def _collections_transform():
     return parse(
-        ("import _collections_abc as abc" if PY313_PLUS and not PY313_0 else "")
+        ("    import _collections_abc as abc" if PY313_PLUS and not PY313_0 else "")
         + """
     class defaultdict(dict):
         default_factory = None
