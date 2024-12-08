@@ -17,6 +17,8 @@ Release date: TBA
   Closes #2521
   Closes #2523
 
+* Fix precedence of `path` arg in `modpath_from_file_with_callback` to be higher than `sys.path`
+
 * Improve consistency of ``JoinedStr`` inference by not raising ``InferenceError`` and
   returning either ``Uninferable`` or a fully resolved ``Const``.
 
@@ -34,8 +36,6 @@ Release date: TBA
 * Fix inability to import `collections.abc` in python 3.13.1.
 
   Closes pylint-dev/pylint#10112
-
-* Fix precedence of `path` arg in `modpath_from_file_with_callback` to be higher than `sys.path`
 
 
 What's New in astroid 3.3.5?
