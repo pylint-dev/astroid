@@ -20,8 +20,7 @@ if TYPE_CHECKING:
 
 def _collections_transform():
     return parse(
-        ("    import _collections_abc as abc" if PY313_PLUS and not PY313_0 else "")
-        + """
+        """
     class defaultdict(dict):
         default_factory = None
         def __missing__(self, key): pass
@@ -38,6 +37,11 @@ def _collections_abc_313_0_transform() -> nodes.Module:
     return AstroidBuilder(AstroidManager()).string_build(
         "from _collections_abc import *"
     )
+
+
+def _collections_abc_313_1_transform() -> nodes.Module:
+    """See https://github.com/python/cpython/pull/124735"""
+    return AstroidBuilder(AstroidManager()).string_build("from collections import abc")
 
 
 def _deque_mock():
@@ -136,4 +140,8 @@ def register(manager: AstroidManager) -> None:
     if PY313_0:
         register_module_extender(
             manager, "collections.abc", _collections_abc_313_0_transform
+        )
+    elif PY313_PLUS:
+        register_module_extender(
+            manager, "_collections_abc", _collections_abc_313_1_transform
         )
