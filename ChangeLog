@@ -31,6 +31,10 @@ What's New in astroid 3.3.6?
 ============================
 Release date: TBA
 
+* Fix inability to import `collections.abc` in python 3.13.1.
+
+  Closes pylint-dev/pylint#10112
+
 * Fix precedence of `path` arg in `modpath_from_file_with_callback` to be higher than `sys.path`
 
 

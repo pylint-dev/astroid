@@ -9,6 +9,7 @@ PY310_PLUS = sys.version_info >= (3, 10)
 PY311_PLUS = sys.version_info >= (3, 11)
 PY312_PLUS = sys.version_info >= (3, 12)
 PY313_PLUS = sys.version_info >= (3, 13)
+PY313_0 = sys.version_info[:3] == (3, 13, 0)
 
 WIN32 = sys.platform == "win32"
 
