@@ -516,11 +516,12 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
         # know that it should be a string, so infer that as a guess.
         if "name" not in target_names:
             code = dedent(
-                """
-            @property
-            def name(self):
-                return ''
-            """
+                '''
+                @property
+                def name(self):
+                    """The name of the Enum member."""
+                    return ''
+                '''
             )
             name_dynamicclassattr = AstroidBuilder(AstroidManager()).string_build(code)[
                 "name"
