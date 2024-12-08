@@ -519,7 +519,11 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                 '''
                 @property
                 def name(self):
-                    """The name of the Enum member."""
+                    """The name of the Enum member.
+                    
+                    This is a reconstruction by astroid: enums are too dynamic to understand, but we at least
+                    know 'name' should be a string, so this is astroid's best guess.
+                    """
                     return ''
                 '''
             )
