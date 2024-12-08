@@ -17,6 +17,10 @@ Release date: TBA
 
   Closes pylint-dev/pylint#10112
 
+* Fix crash when typing._alias() call is missing arguments.
+
+  Closes #2513
+
 
 What's New in astroid 3.3.5?
 ============================
