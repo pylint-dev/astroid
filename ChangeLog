@@ -29,13 +29,26 @@ Release date: TBA
   Closes #2513
 
 
-What's New in astroid 3.3.6?
+What's New in astroid 3.3.7?
 ============================
 Release date: TBA
 
 * Fix inability to import `collections.abc` in python 3.13.1.
 
   Closes pylint-dev/pylint#10112
+
+
+What's New in astroid 3.3.6?
+============================
+Release date: 2024-12-08
+
+* Fix inability to import `collections.abc` in python 3.13.1.
+
+  Closes pylint-dev/pylint#10112
+
+* Fix crash when typing._alias() call is missing arguments.
+
+  Closes #2513
 
 
 What's New in astroid 3.3.5?
