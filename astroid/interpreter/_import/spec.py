@@ -127,6 +127,27 @@ class ImportlibFinder(Finder):
     )
 
     @staticmethod
+    def find_frozen_module(module: str) -> ModuleSpec | None:
+        try:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning)
+                spec = importlib.util.find_spec(module)
+            if (
+                spec
+                and spec.loader  # type: ignore[comparison-overlap] # noqa: E501
+                is importlib.machinery.FrozenImporter
+            ):
+                # No need for BuiltinImporter; builtins handled above
+                return ModuleSpec(
+                    name=module,
+                    location=getattr(spec.loader_state, "filename", None),
+                    type=ModuleType.PY_FROZEN,
+                )
+        except ValueError:
+            pass
+        return None
+
+    @staticmethod
     @lru_cache(maxsize=1024)
     def find_module(
         modname: str,
@@ -135,6 +156,11 @@ class ImportlibFinder(Finder):
         submodule_path: tuple[str, ...] | None,
     ) -> ModuleSpec | None:
         if submodule_path is not None:
+            frozen_module_spec = ImportlibFinder.find_frozen_module(
+                ".".join(part for part in module_parts)
+            )
+            if frozen_module_spec:
+                return frozen_module_spec
             search_paths = list(submodule_path)
         elif modname in sys.builtin_module_names:
             return ModuleSpec(
@@ -143,23 +169,9 @@ class ImportlibFinder(Finder):
                 type=ModuleType.C_BUILTIN,
             )
         else:
-            try:
-                with warnings.catch_warnings():
-                    warnings.filterwarnings("ignore", category=UserWarning)
-                    spec = importlib.util.find_spec(modname)
-                if (
-                    spec
-                    and spec.loader  # type: ignore[comparison-overlap] # noqa: E501
-                    is importlib.machinery.FrozenImporter
-                ):
-                    # No need for BuiltinImporter; builtins handled above
-                    return ModuleSpec(
-                        name=modname,
-                        location=getattr(spec.loader_state, "filename", None),
-                        type=ModuleType.PY_FROZEN,
-                    )
-            except ValueError:
-                pass
+            frozen_module_spec = ImportlibFinder.find_frozen_module(modname)
+            if frozen_module_spec:
+                return frozen_module_spec
             search_paths = sys.path
 
         suffixes = (".py", ".pyi", importlib.machinery.BYTECODE_SUFFIXES[0])
