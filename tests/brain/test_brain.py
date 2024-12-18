@@ -192,6 +192,22 @@ def check_metaclass_is_abc(node: nodes.ClassDef):
 
 
 class CollectionsBrain(unittest.TestCase):
+    def test_collections_abc_is_importable(self) -> None:
+        """
+        Test that we can import `collections.abc`.
+
+        The collections.abc has gone through various formats of being frozen. Therefore, we ensure
+        that we can still import it (correctly).
+        """
+        import_node = builder.extract_node("import collections.abc")
+        assert isinstance(import_node, nodes.Import)
+        imported_module = import_node.do_import_module(import_node.names[0][0])
+        # Make sure that the file we have imported is actually the submodule of collections and
+        # not the `abc` module. (Which would happen if you call `importlib.util.find_spec("abc")`
+        # instead of `importlib.util.find_spec("collections.abc")`)
+        assert isinstance(imported_module.file, str)
+        assert "collections" in imported_module.file
+
     def test_collections_object_not_subscriptable(self) -> None:
         """
         Test that unsubscriptable types are detected
