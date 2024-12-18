@@ -303,6 +303,18 @@ class EnumBrainTest(unittest.TestCase):
         next(i_value.infer())
         next(c_value.infer())
 
+    def test_enum_name_property_has_docstring(self) -> None:
+        code = """
+        from enum import Enum
+        class EmptyEnum(Enum): #@
+            ...
+        """
+        node = astroid.extract_node(code)
+        name_property = next(node.mymethods())
+
+        assert name_property.name == "name"
+        assert name_property.doc_node is not None
+
     def test_enum_name_and_value_members_override_dynamicclassattr(self) -> None:
         code = """
         from enum import Enum
