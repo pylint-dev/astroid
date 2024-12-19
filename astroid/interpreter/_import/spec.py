@@ -185,7 +185,11 @@ class ImportlibFinder(Finder):
                         )
                 except ValueError:
                     pass
-                submodule_path = sys.path
+
+        if submodule_path is not None:
+            search_paths = list(submodule_path)
+        else:
+            search_paths = sys.path
 
         suffixes = (".py", ".pyi", importlib.machinery.BYTECODE_SUFFIXES[0])
         for entry in submodule_path:
