@@ -147,7 +147,7 @@ class ImportlibFinder(Finder):
         if PY310_PLUS:
             # If the module is a stdlib module, check whether this is a frozen module. Note that
             # `find_spec` actually imports the module, so we want to make sure we only run this code
-            # for stuff this is can be expected to be frozen. For now this is only stdlib.
+            # for stuff that can be expected to be frozen. For now this is only stdlib.
             if modname in sys.stdlib_module_names or (
                 processed and processed[0] in sys.stdlib_module_names
             ):
