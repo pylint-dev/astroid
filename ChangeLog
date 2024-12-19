@@ -13,6 +13,10 @@ What's New in astroid 3.3.7?
 ============================
 Release date: TBA
 
+* Fix inability to import `collections.abc` in python 3.13.1. The reported fix in astroid 3.3.6
+  did not actually fix this issue.
+
+  Closes pylint-dev/pylint#10112
 
 
 What's New in astroid 3.3.6?
@@ -20,6 +24,7 @@ What's New in astroid 3.3.6?
 Release date: 2024-12-08
 
 * Fix inability to import `collections.abc` in python 3.13.1.
+  _It was later found that this did not resolve the linked issue. It was fixed in astroid 3.3.7_
 
   Closes pylint-dev/pylint#10112
 
