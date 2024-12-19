@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder, extract_node, parse
-from astroid.const import PY313_0, PY313_PLUS
+from astroid.const import PY313_PLUS
 from astroid.context import InferenceContext
 from astroid.exceptions import AttributeInferenceError
 from astroid.manager import AstroidManager
@@ -20,8 +20,7 @@ if TYPE_CHECKING:
 
 def _collections_transform():
     return parse(
-        ("    import _collections_abc as abc" if PY313_PLUS and not PY313_0 else "")
-        + """
+        """
     class defaultdict(dict):
         default_factory = None
         def __missing__(self, key): pass
@@ -33,7 +32,7 @@ def _collections_transform():
     )
 
 
-def _collections_abc_313_0_transform() -> nodes.Module:
+def _collections_abc_313_transform() -> nodes.Module:
     """See https://github.com/python/cpython/pull/124735"""
     return AstroidBuilder(AstroidManager()).string_build(
         "from _collections_abc import *"
@@ -133,7 +132,7 @@ def register(manager: AstroidManager) -> None:
         ClassDef, easy_class_getitem_inference, _looks_like_subscriptable
     )
 
-    if PY313_0:
+    if PY313_PLUS:
         register_module_extender(
-            manager, "collections.abc", _collections_abc_313_0_transform
+            manager, "collections.abc", _collections_abc_313_transform
         )
