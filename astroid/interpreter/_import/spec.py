@@ -386,13 +386,15 @@ def _search_zip(
             if PY310_PLUS:
                 if not importer.find_spec(os.path.sep.join(modpath)):
                     raise ImportError(
-                        "No module named %s in %s/%s"
-                        % (".".join(modpath[1:]), filepath, modpath)
+                        "No module named {} in {}/{}".format(
+                            ".".join(modpath[1:]), filepath, modpath
+                        )
                     )
             elif not importer.find_module(os.path.sep.join(modpath)):
                 raise ImportError(
-                    "No module named %s in %s/%s"
-                    % (".".join(modpath[1:]), filepath, modpath)
+                    "No module named {} in {}/{}".format(
+                        ".".join(modpath[1:]), filepath, modpath
+                    )
                 )
             return (
                 ModuleType.PY_ZIPMODULE,
