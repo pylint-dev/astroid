@@ -9,9 +9,15 @@ Release date: TBA
 
 
 
-What's New in astroid 3.3.7?
+What's New in astroid 3.3.8?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 3.3.7?
+============================
+Release date: 2024-12-20
 
 * Fix inability to import `collections.abc` in python 3.13.1. The reported fix in astroid 3.3.6
   did not actually fix this issue.
