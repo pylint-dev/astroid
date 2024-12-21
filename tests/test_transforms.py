@@ -265,6 +265,9 @@ class TestTransforms(unittest.TestCase):
         """
         )
 
+    @pytest.mark.skipif(
+        IS_PYPY, reason="Could not find a useful recursion limit on all versions"
+    )
     def test_transform_aborted_if_recursion_limited(self):
         def transform_call(node: Call) -> Const:
             return node
@@ -274,7 +277,7 @@ class TestTransforms(unittest.TestCase):
         )
 
         original_limit = sys.getrecursionlimit()
-        sys.setrecursionlimit(500 if IS_PYPY else 1000)
+        sys.setrecursionlimit(1000)
 
         try:
             with pytest.warns(UserWarning) as records:
