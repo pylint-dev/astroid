@@ -145,26 +145,26 @@ class ImportlibFinder(Finder):
 
         if submodule_path is not None:
              search_paths = list(submodule_path)
-         else:
-             search_paths = sys.path
+        else:
+            search_paths = sys.path
 
-         suffixes = (".py", ".pyi", importlib.machinery.BYTECODE_SUFFIXES[0])
-         for entry in search_paths:
-             package_directory = os.path.join(entry, modname)
-             for suffix in suffixes:
-                 package_file_name = "__init__" + suffix
-                 file_path = os.path.join(package_directory, package_file_name)
-                 if cached_os_path_isfile(file_path):
-                     return ModuleSpec(
-                         name=modname,
-                         location=package_directory,
-                         type=ModuleType.PKG_DIRECTORY,
-                     )
-             for suffix, type_ in ImportlibFinder._SUFFIXES:
-                 file_name = modname + suffix
-                 file_path = os.path.join(entry, file_name)
-                 if cached_os_path_isfile(file_path):
-                     return ModuleSpec(name=modname, location=file_path, type=type_)
+        suffixes = (".py", ".pyi", importlib.machinery.BYTECODE_SUFFIXES[0])
+        for entry in search_paths:
+            package_directory = os.path.join(entry, modname)
+            for suffix in suffixes:
+                package_file_name = "__init__" + suffix
+                file_path = os.path.join(package_directory, package_file_name)
+                if cached_os_path_isfile(file_path):
+                    return ModuleSpec(
+                        name=modname,
+                        location=package_directory,
+                        type=ModuleType.PKG_DIRECTORY,
+                    )
+            for suffix, type_ in ImportlibFinder._SUFFIXES:
+                file_name = modname + suffix
+                file_path = os.path.join(entry, file_name)
+                if cached_os_path_isfile(file_path):
+                    return ModuleSpec(name=modname, location=file_path, type=type_)
 
         # sys.stdlib_module_names was added in Python 3.10
         if PY310_PLUS:
