@@ -27,7 +27,7 @@ COMPOSITE_NAMES = (
 )
 
 
-def is_decorated_with_st_composite(node) -> bool:
+def is_decorated_with_st_composite(node: FunctionDef) -> bool:
     """Return whether a decorated node has @st.composite applied."""
     if node.decorators and node.args.args and node.args.args[0].name == "draw":
         for decorator_attribute in node.decorators.nodes:
@@ -36,11 +36,12 @@ def is_decorated_with_st_composite(node) -> bool:
     return False
 
 
-def remove_draw_parameter_from_composite_strategy(node):
+def remove_draw_parameter_from_composite_strategy(node: FunctionDef) -> FunctionDef:
     """Given that the FunctionDef is decorated with @st.composite, remove the
     first argument (`draw`) - it's always supplied by Hypothesis so we don't
     need to emit the no-value-for-parameter lint.
     """
+    assert isinstance(node.args.args, list)
     del node.args.args[0]
     del node.args.annotations[0]
     del node.args.type_comment_args[0]

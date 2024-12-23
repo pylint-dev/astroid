@@ -10,7 +10,7 @@ on:
 env:
   CACHE_VERSION: 3
   KEY_PREFIX: venv
-  DEFAULT_PYTHON: "3.12"
+  DEFAULT_PYTHON: "3.13"
   PRE_COMMIT_CACHE: ~/.cache/pre-commit
 
 concurrency:
@@ -24,10 +24,10 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.2
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         id: python
-        uses: actions/setup-python@v5.1.1
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
           check-latest: true
@@ -39,7 +39,7 @@ jobs:
           'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v4.0.2
+        uses: actions/cache@v4.1.2
         with:
           path: venv
           key: >-
@@ -59,7 +59,7 @@ jobs:
             hashFiles('.pre-commit-config.yaml') }}" >> $GITHUB_OUTPUT
       - name: Restore pre-commit environment
         id: cache-precommit
-        uses: actions/cache@v4.0.2
+        uses: actions/cache@v4.1.2
         with:
           path: ${{ env.PRE_COMMIT_CACHE }}
           key: >-
@@ -81,15 +81,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.9, "3.10", "3.11", "3.12", "3.13-dev"]
+        python-version: [3.9, "3.10", "3.11", "3.12", "3.13"]
     outputs:
       python-key: ${{ steps.generate-python-key.outputs.key }}
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.2
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v5.1.1
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: ${{ matrix.python-version }}
           check-latest: true
@@ -106,7 +106,7 @@ jobs:
           'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v4.0.2
+        uses: actions/cache@v4.1.2
         with:
           path: venv
           key: >-
@@ -117,7 +117,7 @@ jobs:
         run: |
           python -m venv venv
           . venv/bin/activate
-          python -m pip install -U pip setuptools wheel
+          python -m pip install -U pip wheel
           pip install -U -r requirements_full.txt
           pip install -e .
       - name: Run pytest
@@ -125,10 +125,11 @@ jobs:
           . venv/bin/activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4.3.4
+        uses: actions/upload-artifact@v4.5.0
         with:
           name: coverage-linux-${{ matrix.python-version }}
           path: .coverage
+          include-hidden-files: true
 
   tests-windows:
     name: tests / run / ${{ matrix.python-version }} / Windows
@@ -138,17 +139,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.9, "3.10", "3.11", "3.12", "3.13-dev"]
+        python-version: [3.9, "3.10", "3.11", "3.12", "3.13"]
     steps:
       - name: Set temp directory
         run: echo "TEMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
         # Workaround to set correct temp directory on Windows
         # https://github.com/actions/virtual-environments/issues/712
       - name: Check out code from GitHub
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.2
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v5.1.1
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: ${{ matrix.python-version }}
           check-latest: true
@@ -160,7 +161,7 @@ jobs:
           'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v4.0.2
+        uses: actions/cache@v4.1.2
         with:
           path: venv
           key: >-
@@ -179,10 +180,11 @@ jobs:
           . venv\\Scripts\\activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4.3.4
+        uses: actions/upload-artifact@v4.5.0
         with:
           name: coverage-windows-${{ matrix.python-version }}
           path: .coverage
+          include-hidden-files: true
 
   tests-pypy:
     name: tests / run / ${{ matrix.python-version }} / Linux
@@ -195,10 +197,10 @@ jobs:
         python-version: ["pypy3.9", "pypy3.10"]
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.2
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v5.1.1
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: ${{ matrix.python-version }}
           check-latest: true
@@ -210,7 +212,7 @@ jobs:
           }}" >> $GITHUB_OUTPUT
       - name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v4.0.2
+        uses: actions/cache@v4.1.2
         with:
           path: venv
           key: >-
@@ -229,10 +231,11 @@ jobs:
           . venv/bin/activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4.3.4
+        uses: actions/upload-artifact@v4.5.0
         with:
           name: coverage-pypy-${{ matrix.python-version }}
           path: .coverage
+          include-hidden-files: true
 
   coverage:
     name: tests / process / coverage
@@ -241,12 +244,12 @@ jobs:
     needs: ["tests-linux", "tests-windows", "tests-pypy"]
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v4.1.7
-      - name: Set up Python 3.12
+        uses: actions/checkout@v4.2.2
+      - name: Set up Python 3.13
         id: python
-        uses: actions/setup-python@v5.1.1
+        uses: actions/setup-python@v5.3.0
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           check-latest: true
       - name: Install dependencies
         run: pip install -U -r requirements_minimal.txt
@@ -256,7 +259,7 @@ jobs:
         run: |
           coverage combine coverage-linux*/.coverage
           coverage xml -o coverage-linux.xml
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
@@ -267,7 +270,7 @@ jobs:
         run: |
           coverage combine coverage-windows*/.coverage
           coverage xml -o coverage-windows.xml
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
@@ -278,7 +281,7 @@ jobs:
         run: |
           coverage combine coverage-pypy*/.coverage
           coverage xml -o coverage-pypy.xml
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true

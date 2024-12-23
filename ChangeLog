@@ -3,10 +3,30 @@ astroid's ChangeLog
 ===================
 
 
-What's New in astroid 3.4.0?
+What's New in astroid 4.0.0?
 ============================
 Release date: TBA
 
+* Removed internal functions ``infer_numpy_member``, ``name_looks_like_numpy_member``, and
+  ``attribute_looks_like_numpy_member`` from ``astroid.brain.brain_numpy_utils``.
+
+* Constants now have a parent of ``nodes.SYNTHETIC_ROOT``.
+
+* Fix crashes with large positive and negative list multipliers.
+
+  Closes #2521
+  Closes #2523
+
+* Fix precedence of `path` arg in `modpath_from_file_with_callback` to be higher than `sys.path`
+
+* Improve consistency of ``JoinedStr`` inference by not raising ``InferenceError`` and
+  returning either ``Uninferable`` or a fully resolved ``Const``.
+
+  Closes #2621
+
+* Fix crash when typing._alias() call is missing arguments.
+
+  Closes #2513
 
 
 What's New in astroid 3.3.8?
@@ -17,6 +37,7 @@ Release date: TBA
   and 3.3.7 did not actually fix this issue.
 
   Closes pylint-dev/pylint#10112
+
 
 
 What's New in astroid 3.3.7?
@@ -66,7 +87,7 @@ Release date: 2024-09-23
 
   Closes pylint-dev/pylint#9947
 
-* Fix bug with ``manager.clear_cache()`` not fully clearing cache
+* Fix bug with ``manager.clear_cache()`` not fully clearing cache.
 
   Refs https://github.com/pylint-dev/pylint/pull/9932#issuecomment-2364985551
 

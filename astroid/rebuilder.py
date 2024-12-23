@@ -457,7 +457,7 @@ class TreeRebuilder:
             node.parent.set_local(node.name, node)
 
     def visit_arg(self, node: ast.arg, parent: NodeNG) -> nodes.AssignName:
-        """Visit an arg node by returning a fresh AssName instance."""
+        """Visit an arg node by returning a fresh AssignName instance."""
         return self.visit_assignname(node, parent, node.arg)
 
     def visit_arguments(self, node: ast.arguments, parent: NodeNG) -> nodes.Arguments:
@@ -815,6 +815,7 @@ class TreeRebuilder:
                 else []
             ),
         )
+        parent.set_local(newnode.name, newnode)
         return newnode
 
     def visit_continue(self, node: ast.Continue, parent: NodeNG) -> nodes.Continue:
@@ -1112,6 +1113,7 @@ class TreeRebuilder:
             ),
         )
         self._global_names.pop()
+        parent.set_local(newnode.name, newnode)
         return newnode
 
     def visit_functiondef(

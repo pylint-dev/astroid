@@ -33,6 +33,8 @@ from astroid.raw_building import (
     build_module,
 )
 
+DUMMY_MOD = build_module("DUMMY")
+
 
 class RawBuildingTC(unittest.TestCase):
     def test_attach_dummy_node(self) -> None:
@@ -48,33 +50,33 @@ class RawBuildingTC(unittest.TestCase):
         self.assertEqual(node.parent, None)
 
     def test_build_class(self) -> None:
-        node = build_class("MyClass")
+        node = build_class("MyClass", DUMMY_MOD)
         self.assertEqual(node.name, "MyClass")
         self.assertEqual(node.doc_node, None)
 
     def test_build_function(self) -> None:
-        node = build_function("MyFunction")
+        node = build_function("MyFunction", DUMMY_MOD)
         self.assertEqual(node.name, "MyFunction")
         self.assertEqual(node.doc_node, None)
 
     def test_build_function_args(self) -> None:
         args = ["myArgs1", "myArgs2"]
-        node = build_function("MyFunction", args)
+        node = build_function("MyFunction", DUMMY_MOD, args)
         self.assertEqual("myArgs1", node.args.args[0].name)
         self.assertEqual("myArgs2", node.args.args[1].name)
         self.assertEqual(2, len(node.args.args))
 
     def test_build_function_defaults(self) -> None:
         defaults = ["defaults1", "defaults2"]
-        node = build_function(name="MyFunction", args=None, defaults=defaults)
+        node = build_function("MyFunction", DUMMY_MOD, args=None, defaults=defaults)
         self.assertEqual(2, len(node.args.defaults))
 
     def test_build_function_posonlyargs(self) -> None:
-        node = build_function(name="MyFunction", posonlyargs=["a", "b"])
+        node = build_function("MyFunction", DUMMY_MOD, posonlyargs=["a", "b"])
         self.assertEqual(2, len(node.args.posonlyargs))
 
     def test_build_function_kwonlyargs(self) -> None:
-        node = build_function(name="MyFunction", kwonlyargs=["a", "b"])
+        node = build_function("MyFunction", DUMMY_MOD, kwonlyargs=["a", "b"])
         assert len(node.args.kwonlyargs) == 2
         assert node.args.kwonlyargs[0].name == "a"
         assert node.args.kwonlyargs[1].name == "b"

@@ -6,9 +6,10 @@
 
 import functools
 
+from astroid import nodes
 from astroid.brain.brain_numpy_utils import (
-    attribute_looks_like_numpy_member,
-    infer_numpy_member,
+    attribute_name_looks_like_numpy_member,
+    infer_numpy_attribute,
 )
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
@@ -17,7 +18,7 @@ from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import Attribute
 
 
-def numpy_core_numeric_transform():
+def numpy_core_numeric_transform() -> nodes.Module:
     return parse(
         """
     # different functions defined in numeric.py
@@ -40,10 +41,11 @@ def register(manager: AstroidManager) -> None:
         manager, "numpy.core.numeric", numpy_core_numeric_transform
     )
 
-    for method_name, function_src in METHODS_TO_BE_INFERRED.items():
-        inference_function = functools.partial(infer_numpy_member, function_src)
-        manager.register_transform(
-            Attribute,
-            inference_tip(inference_function),
-            functools.partial(attribute_looks_like_numpy_member, method_name),
-        )
+    manager.register_transform(
+        Attribute,
+        inference_tip(functools.partial(infer_numpy_attribute, METHODS_TO_BE_INFERRED)),
+        functools.partial(
+            attribute_name_looks_like_numpy_member,
+            frozenset(METHODS_TO_BE_INFERRED.keys()),
+        ),
+    )

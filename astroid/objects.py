@@ -109,9 +109,6 @@ class Super(node_classes.NodeNG):
                     super_=self,
                 )
 
-        if not mro_type.newstyle:
-            raise SuperError("Unable to call super on old-style classes.", super_=self)
-
         mro = mro_type.mro()
         if self.mro_pointer not in mro:
             raise SuperError(
@@ -282,7 +279,7 @@ class PartialFunction(scoped_nodes.FunctionDef):
             name,
             lineno=lineno,
             col_offset=col_offset,
-            parent=node_classes.Unknown(),
+            parent=scoped_nodes.SYNTHETIC_ROOT,
             end_col_offset=0,
             end_lineno=0,
         )

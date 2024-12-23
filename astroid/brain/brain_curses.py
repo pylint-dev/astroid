@@ -2,12 +2,13 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
 
 
-def _curses_transform():
+def _curses_transform() -> nodes.Module:
     return parse(
         """
     A_ALTCHARSET = 1

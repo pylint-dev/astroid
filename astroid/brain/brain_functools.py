@@ -10,7 +10,8 @@ from collections.abc import Iterator
 from functools import partial
 from itertools import chain
 
-from astroid import BoundMethod, arguments, extract_node, nodes, objects
+from astroid import BoundMethod, arguments, nodes, objects
+from astroid.builder import extract_node
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip

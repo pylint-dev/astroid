@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64.0", "wheel>=0.37.1"]
+requires = ["setuptools>=75.2.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -62,11 +62,60 @@ testpaths = ["tests"]
 filterwarnings = "error"
 
 [tool.mypy]
-enable_error_code = "ignore-without-code"
-no_implicit_optional = true
+python_version = "3.9"
+files = [
+    "astroid/_ast.py",
+    "astroid/_backport_stdlib_names.py",
+    "astroid/astroid_manager.py",
+    "astroid/brain/brain_crypt.py",
+    "astroid/brain/brain_ctypes.py",
+    "astroid/brain/brain_curses.py",
+    "astroid/brain/brain_datetime.py",
+    "astroid/brain/brain_dateutil.py",
+    "astroid/brain/brain_hashlib.py",
+    "astroid/brain/brain_http.py",
+    "astroid/brain/brain_hypothesis.py",
+    "astroid/brain/brain_mechanize.py",
+    "astroid/brain/brain_numpy_core_einsumfunc.py",
+    "astroid/brain/brain_numpy_core_fromnumeric.py",
+    "astroid/brain/brain_numpy_core_function_base.py",
+    "astroid/brain/brain_numpy_core_multiarray.py",
+    "astroid/brain/brain_numpy_core_numeric.py",
+    "astroid/brain/brain_numpy_core_numerictypes.py",
+    "astroid/brain/brain_numpy_core_umath.py",
+    "astroid/brain/brain_numpy_ma.py",
+    "astroid/brain/brain_numpy_random_mtrand.py",
+    "astroid/brain/brain_pkg_resources.py",
+    "astroid/brain/brain_pytest.py",
+    "astroid/brain/brain_responses.py",
+    "astroid/brain/brain_scipy_signal.py",
+    "astroid/brain/brain_sqlalchemy.py",
+    "astroid/brain/brain_ssl.py",
+    "astroid/brain/brain_subprocess.py",
+    "astroid/brain/brain_threading.py",
+    "astroid/brain/brain_unittest.py",
+    "astroid/brain/brain_uuid.py",
+    "astroid/const.py",
+    "astroid/context.py",
+    "astroid/interpreter/_import/",
+    "astroid/modutils.py",
+    "astroid/nodes/const.py",
+    "astroid/nodes/utils.py",
+]
+always_false = [
+    "PY310_PLUS",
+    "PY311_PLUS",
+    "PY312_PLUS",
+    "PY313_PLUS",
+]
+disallow_any_decorated = true
+disallow_any_explicit = true
+follow_imports = "silent"
 scripts_are_modules = true
 show_error_codes = true
+strict = true
 warn_redundant_casts = true
+warn_unreachable = true
 
 [[tool.mypy.overrides]]
 # Importlib typeshed stubs do not include the private functions we use
@@ -84,6 +133,8 @@ ignore_missing_imports = true
 
 [tool.ruff]
 target-version = "py39"
+
+extend-exclude = ["tests/testdata/"]
 
 # ruff is less lenient than pylint and does not make any exceptions
 # (for docstrings, strings and comments in particular).

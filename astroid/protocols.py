@@ -142,7 +142,10 @@ def _multiply_seq_by_int(
     context: InferenceContext,
 ) -> _TupleListNodeT:
     node = self.__class__(parent=opnode)
-    if value > 1e8:
+    if value <= 0 or not self.elts:
+        node.elts = []
+        return node
+    if len(self.elts) * value > 1e8:
         node.elts = [util.Uninferable]
         return node
     filtered_elts = (
@@ -691,7 +694,8 @@ def starred_assigned_stmts(  # noqa: C901
             the inference results.
     """
 
-    # pylint: disable=too-many-locals,too-many-statements
+    # pylint: disable = too-many-locals, too-many-statements, too-many-branches
+
     def _determine_starred_iteration_lookups(
         starred: nodes.Starred, target: nodes.Tuple, lookups: list[tuple[int, int]]
     ) -> None:

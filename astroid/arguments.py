@@ -54,7 +54,7 @@ class CallSite:
         }
 
     @classmethod
-    def from_call(cls, call_node, context: InferenceContext | None = None):
+    def from_call(cls, call_node: nodes.Call, context: InferenceContext | None = None):
         """Get a CallSite object from the given Call node.
 
         context will be used to force a single inference path.
@@ -65,7 +65,7 @@ class CallSite:
         callcontext = CallContext(call_node.args, call_node.keywords)
         return cls(callcontext, context=context)
 
-    def has_invalid_arguments(self):
+    def has_invalid_arguments(self) -> bool:
         """Check if in the current CallSite were passed *invalid* arguments.
 
         This can mean multiple things. For instance, if an unpacking
@@ -89,7 +89,7 @@ class CallSite:
         self,
         keywords: list[tuple[str | None, nodes.NodeNG]],
         context: InferenceContext | None = None,
-    ):
+    ) -> dict[str | None, InferenceResult]:
         values: dict[str | None, InferenceResult] = {}
         context = context or InferenceContext()
         context.extra_context = self.argument_context_map
@@ -142,6 +142,8 @@ class CallSite:
         self, funcnode: InferenceResult, name: str, context: InferenceContext
     ):  # noqa: C901
         """Infer a function argument value according to the call context."""
+        # pylint: disable = too-many-branches
+
         if not isinstance(funcnode, (nodes.FunctionDef, nodes.Lambda)):
             raise InferenceError(
                 f"Can not infer function argument value for non-function node {funcnode!r}.",

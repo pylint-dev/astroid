@@ -11,7 +11,7 @@ from collections.abc import Callable, Iterable, Iterator
 from functools import partial
 from typing import TYPE_CHECKING, Any, NoReturn, Union, cast
 
-from astroid import arguments, helpers, inference_tip, nodes, objects, util
+from astroid import arguments, helpers, nodes, objects, util
 from astroid.builder import AstroidBuilder
 from astroid.context import InferenceContext
 from astroid.exceptions import (
@@ -21,6 +21,7 @@ from astroid.exceptions import (
     MroError,
     UseInferenceDefault,
 )
+from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.nodes import scoped_nodes
 from astroid.typing import (
@@ -172,6 +173,7 @@ def on_bootstrap():
 
 
 def _builtin_filter_predicate(node, builtin_name) -> bool:
+    # pylint: disable = too-many-boolean-expressions
     if (
         builtin_name == "type"
         and node.root().name == "re"
@@ -189,8 +191,8 @@ def _builtin_filter_predicate(node, builtin_name) -> bool:
         # Match = type(...)
         # ```
         return False
-    if isinstance(node.func, nodes.Name) and node.func.name == builtin_name:
-        return True
+    if isinstance(node.func, nodes.Name):
+        return node.func.name == builtin_name
     if isinstance(node.func, nodes.Attribute):
         return (
             node.func.attrname == "fromkeys"
@@ -371,7 +373,7 @@ infer_frozenset = partial(
 
 
 def _get_elts(arg, context):
-    def is_iterable(n):
+    def is_iterable(n) -> bool:
         return isinstance(n, (nodes.List, nodes.Tuple, nodes.Set))
 
     try:
@@ -641,12 +643,15 @@ def infer_property(
 
     prop_func = objects.Property(
         function=inferred,
-        name=inferred.name,
+        name="<property>",
         lineno=node.lineno,
         col_offset=node.col_offset,
+        # ↓ semantically, the definition of the class of property isn't within
+        # node.frame. It's somewhere in the builtins module, but we are special
+        # casing it for each "property()" call, so we are making up the
+        # definition on the spot, ad-hoc.
+        parent=scoped_nodes.SYNTHETIC_ROOT,
     )
-    # Set parent outside __init__: https://github.com/pylint-dev/astroid/issues/1490
-    prop_func.parent = node
     prop_func.postinit(
         body=[],
         args=inferred.args,
@@ -844,7 +849,7 @@ def _class_or_tuple_to_container(
     return class_container
 
 
-def infer_len(node, context: InferenceContext | None = None):
+def infer_len(node, context: InferenceContext | None = None) -> nodes.Const:
     """Infer length calls.
 
     :param nodes.Call node: len call to infer
@@ -867,7 +872,7 @@ def infer_len(node, context: InferenceContext | None = None):
         raise UseInferenceDefault(str(exc)) from exc
 
 
-def infer_str(node, context: InferenceContext | None = None):
+def infer_str(node, context: InferenceContext | None = None) -> nodes.Const:
     """Infer str() calls.
 
     :param nodes.Call node: str() call to infer
@@ -926,7 +931,7 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
         will be inferred instead.
     """
 
-    def _build_dict_with_elements(elements):
+    def _build_dict_with_elements(elements: list) -> nodes.Dict:
         new_node = nodes.Dict(
             col_offset=node.col_offset,
             lineno=node.lineno,

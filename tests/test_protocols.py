@@ -286,6 +286,28 @@ class ProtocolTests(unittest.TestCase):
         element = parsed.inferred()[0].elts[0]
         assert element.value is Uninferable
 
+    @staticmethod
+    def test_uninferable_list_multiplication_with_multiple_operands() -> None:
+        """Attempting to calculate the result is prohibitively expensive."""
+        parsed = extract_node("[0] * 825 * 16547118")
+        element = parsed.inferred()[0].elts[0]
+        assert element.value is Uninferable
+
+    @staticmethod
+    def test_list_multiplication_with_empty_list_and_overflowing_multiplier() -> None:
+        parsed = extract_node("[] * 1163845194457646539560")
+        assert parsed.inferred()[0].elts == []
+
+    @staticmethod
+    def test_list_multiplication_with_zero_multiplier() -> None:
+        parsed = extract_node("[0] * 0")
+        assert parsed.inferred()[0].elts == []
+
+    @staticmethod
+    def test_list_multiplication_with_negative_overflowing_multiplier() -> None:
+        parsed = extract_node("[0] * -9223372036854775809")
+        assert parsed.inferred()[0].elts == []
+
 
 def test_named_expr_inference() -> None:
     code = """

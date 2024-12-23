@@ -40,15 +40,7 @@ from astroid.exceptions import (
 from astroid.interpreter.dunder_lookup import lookup
 from astroid.interpreter.objectmodel import ClassModel, FunctionModel, ModuleModel
 from astroid.manager import AstroidManager
-from astroid.nodes import (
-    Arguments,
-    Const,
-    NodeNG,
-    Unknown,
-    _base_nodes,
-    const_factory,
-    node_classes,
-)
+from astroid.nodes import _base_nodes, node_classes
 from astroid.nodes.scoped_nodes.mixin import ComprehensionScope, LocalsDictNodeNG
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
@@ -61,6 +53,7 @@ from astroid.typing import (
 
 if TYPE_CHECKING:
     from astroid import nodes, objects
+    from astroid.nodes import Arguments, Const, NodeNG
     from astroid.nodes._base_nodes import LookupMixIn
 
 
@@ -176,6 +169,15 @@ def function_to_method(n, klass):
         if n.type != "staticmethod":
             return bases.UnboundMethod(n)
     return n
+
+
+def _infer_last(
+    arg: SuccessfulInferenceResult, context: InferenceContext
+) -> InferenceResult:
+    res = util.Uninferable
+    for b in arg.infer(context=context.clone()):
+        res = b
+    return res
 
 
 class Module(LocalsDictNodeNG):
@@ -354,7 +356,9 @@ class Module(LocalsDictNodeNG):
         if name in self.special_attributes and not ignore_locals and not name_in_locals:
             result = [self.special_attributes.lookup(name)]
             if name == "__name__":
-                result.append(const_factory("__main__"))
+                main_const = node_classes.const_factory("__main__")
+                main_const.parent = AstroidManager().builtins_module
+                result.append(main_const)
         elif not ignore_locals and name_in_locals:
             result = self.locals[name]
         elif self.package:
@@ -604,6 +608,14 @@ class Module(LocalsDictNodeNG):
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[Module]:
         yield self
+
+
+class __SyntheticRoot(Module):
+    def __init__(self):
+        super().__init__("__astroid_synthetic", pure_python=False)
+
+
+SYNTHETIC_ROOT = __SyntheticRoot()
 
 
 class GeneratorExp(ComprehensionScope):
@@ -1164,9 +1176,6 @@ class FunctionDef(
             end_col_offset=end_col_offset,
             parent=parent,
         )
-        if parent and not isinstance(parent, Unknown):
-            frame = parent.frame()
-            frame.set_local(name, self)
 
     def postinit(
         self,
@@ -1519,33 +1528,15 @@ class FunctionDef(
             yield self
             return InferenceErrorInfo(node=self, context=context)
 
-        # When inferring a property, we instantiate a new `objects.Property` object,
-        # which in turn, because it inherits from `FunctionDef`, sets itself in the locals
-        # of the wrapping frame. This means that every time we infer a property, the locals
-        # are mutated with a new instance of the property. To avoid this, we detect this
-        # scenario and avoid passing the `parent` argument to the constructor.
         if not self.parent:
             raise ParentMissingError(target=self)
-        parent_frame = self.parent.frame()
-        property_already_in_parent_locals = self.name in parent_frame.locals and any(
-            isinstance(val, objects.Property) for val in parent_frame.locals[self.name]
-        )
-        # We also don't want to pass parent if the definition is within a Try node
-        if isinstance(
-            self.parent,
-            (node_classes.Try, node_classes.If),
-        ):
-            property_already_in_parent_locals = True
-
         prop_func = objects.Property(
             function=self,
             name=self.name,
             lineno=self.lineno,
-            parent=self.parent if not property_already_in_parent_locals else None,
+            parent=self.parent,
             col_offset=self.col_offset,
         )
-        if property_already_in_parent_locals:
-            prop_func.parent = self.parent
         prop_func.postinit(body=[], args=self.args, doc_node=self.doc_node)
         yield prop_func
         return InferenceErrorInfo(node=self, context=context)
@@ -1558,10 +1549,7 @@ class FunctionDef(
         """
         for yield_ in self.nodes_of_class(node_classes.Yield):
             if yield_.value is None:
-                const = node_classes.Const(None)
-                const.parent = yield_
-                const.lineno = yield_.lineno
-                yield const
+                yield node_classes.Const(None, parent=yield_, lineno=yield_.lineno)
             elif yield_.scope() == self:
                 yield from yield_.value.infer(context=context)
 
@@ -1571,6 +1559,8 @@ class FunctionDef(
         context: InferenceContext | None = None,
     ) -> Iterator[InferenceResult]:
         """Infer what the function returns when called."""
+        if context is None:
+            context = InferenceContext()
         if self.is_generator():
             if isinstance(self, AsyncFunctionDef):
                 generator_cls: type[bases.Generator] = bases.AsyncGenerator
@@ -1592,7 +1582,7 @@ class FunctionDef(
             and len(self.args.args) == 1
             and self.args.vararg is not None
         ):
-            if isinstance(caller.args, Arguments):
+            if isinstance(caller.args, node_classes.Arguments):
                 assert caller.args.args is not None
                 metaclass = next(caller.args.args[0].infer(context), None)
             elif isinstance(caller.args, list):
@@ -1602,27 +1592,14 @@ class FunctionDef(
                     f"caller.args was neither Arguments nor list; got {type(caller.args)}"
                 )
             if isinstance(metaclass, ClassDef):
-                try:
-                    class_bases = [
-                        # Find the first non-None inferred base value
-                        next(
-                            b
-                            for b in arg.infer(
-                                context=context.clone() if context else context
-                            )
-                            if not (isinstance(b, Const) and b.value is None)
-                        )
-                        for arg in caller.args[1:]
-                    ]
-                except StopIteration as e:
-                    raise InferenceError(node=caller.args[1:], context=context) from e
+                class_bases = [_infer_last(x, context) for x in caller.args[1:]]
                 new_class = ClassDef(
                     name="temporary_class",
                     lineno=0,
                     col_offset=0,
                     end_lineno=0,
                     end_col_offset=0,
-                    parent=self,
+                    parent=SYNTHETIC_ROOT,
                 )
                 new_class.hide = True
                 new_class.postinit(
@@ -1828,7 +1805,7 @@ def get_wrapping_class(node):
     return klass
 
 
-class ClassDef(  # pylint: disable=too-many-instance-attributes
+class ClassDef(
     _base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG, _base_nodes.Statement
 ):
     """Class representing an :class:`ast.ClassDef` node.
@@ -1880,8 +1857,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         ),
     )
     _other_fields = ("name", "is_dataclass", "position")
-    _other_other_fields = ("locals", "_newstyle")
-    _newstyle: bool | None = None
+    _other_other_fields = "locals"
 
     def __init__(
         self,
@@ -1933,9 +1909,6 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
             end_col_offset=end_col_offset,
             parent=parent,
         )
-        if parent and not isinstance(parent, Unknown):
-            parent.frame().set_local(name, self)
-
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)
 
@@ -1981,35 +1954,10 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         self.bases = bases
         self.body = body
         self.decorators = decorators
-        self._newstyle = newstyle
         self._metaclass = metaclass
         self.position = position
         self.doc_node = doc_node
         self.type_params = type_params or []
-
-    def _newstyle_impl(self, context: InferenceContext | None = None):
-        if context is None:
-            context = InferenceContext()
-        if self._newstyle is not None:
-            return self._newstyle
-        for base in self.ancestors(recurs=False, context=context):
-            if base._newstyle_impl(context):
-                self._newstyle = True
-                break
-        klass = self.declared_metaclass()
-        # could be any callable, we'd need to infer the result of klass(name,
-        # bases, dict).  punt if it's not a class node.
-        if klass is not None and isinstance(klass, ClassDef):
-            self._newstyle = klass._newstyle_impl(context)
-        if self._newstyle is None:
-            self._newstyle = False
-        return self._newstyle
-
-    _newstyle = None
-    newstyle = property(
-        _newstyle_impl,
-        doc=("Whether this is a new style class or not\n\n" ":type: bool or None"),
-    )
 
     @cached_property
     def blockstart_tolineno(self):
@@ -2031,14 +1979,12 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         """
         return self.fromlineno, self.tolineno
 
-    def pytype(self) -> Literal["builtins.type", "builtins.classobj"]:
+    def pytype(self) -> Literal["builtins.type"]:
         """Get the name of the type that this node represents.
 
         :returns: The name of the type.
         """
-        if self.newstyle:
-            return "builtins.type"
-        return "builtins.classobj"
+        return "builtins.type"
 
     def display_type(self) -> str:
         """A human readable type of this node.
@@ -2087,7 +2033,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
             col_offset=0,
             end_lineno=0,
             end_col_offset=0,
-            parent=Unknown(),
+            parent=caller.parent,
         )
 
         # Get the bases of the class.
@@ -2121,7 +2067,6 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
                 if isinstance(attr, node_classes.Const) and isinstance(attr.value, str):
                     result.locals[attr.value] = [value]
 
-        result.parent = caller.parent
         return result
 
     def infer_call_result(
@@ -2183,7 +2128,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         )
         if (
             any(
-                node == base or base.parent_of(node) and not self.type_params
+                node == base or (base.parent_of(node) and not self.type_params)
                 for base in self.bases
             )
             or lookup_upper_frame
@@ -2409,26 +2354,24 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
 
         if name in self.special_attributes and class_context and not values:
             result = [self.special_attributes.lookup(name)]
-            if name == "__bases__":
-                # Need special treatment, since they are mutable
-                # and we need to return all the values.
-                result += values
             return result
 
         if class_context:
             values += self._metaclass_lookup_attribute(name, context)
 
-        # Remove AnnAssigns without value, which are not attributes in the purest sense.
-        for value in values.copy():
+        result: list[InferenceResult] = []
+        for value in values:
             if isinstance(value, node_classes.AssignName):
                 stmt = value.statement()
+                # Ignore AnnAssigns without value, which are not attributes in the purest sense.
                 if isinstance(stmt, node_classes.AnnAssign) and stmt.value is None:
-                    values.pop(values.index(value))
+                    continue
+            result.append(value)
 
-        if not values:
+        if not result:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
-        return values
+        return result
 
     @lru_cache(maxsize=1024)  # noqa
     def _metaclass_lookup_attribute(self, name, context):
@@ -2440,7 +2383,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         for cls in (implicit_meta, metaclass):
             if cls and cls != self and isinstance(cls, ClassDef):
                 cls_attributes = self._get_attribute_from_metaclass(cls, name, context)
-                attrs.update(set(cls_attributes))
+                attrs.update(cls_attributes)
         return attrs
 
     def _get_attribute_from_metaclass(self, cls, name, context):
@@ -2588,7 +2531,6 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         try:
             return _valid_getattr(self.getattr("__getattr__", context)[0])
         except AttributeInferenceError:
-            # if self.newstyle: XXX cause an infinite recursion error
             try:
                 getattribute = self.getattr("__getattribute__", context)[0]
                 return _valid_getattr(getattribute)
@@ -2675,16 +2617,12 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
     def implicit_metaclass(self):
         """Get the implicit metaclass of the current class.
 
-        For newstyle classes, this will return an instance of builtins.type.
-        For oldstyle classes, it will simply return None, since there's
-        no implicit metaclass there.
+        This will return an instance of builtins.type.
 
         :returns: The metaclass.
-        :rtype: builtins.type or None
+        :rtype: builtins.type
         """
-        if self.newstyle:
-            return builtin_lookup("type")[1][0]
-        return None
+        return builtin_lookup("type")[1][0]
 
     def declared_metaclass(
         self, context: InferenceContext | None = None
@@ -2752,7 +2690,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         """
         return self._find_metaclass(context=context)
 
-    def has_metaclass_hack(self):
+    def has_metaclass_hack(self) -> bool:
         return self._metaclass_hack
 
     def _islots(self):
@@ -2807,10 +2745,6 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         return None
 
     def _slots(self):
-        if not self.newstyle:
-            raise NotImplementedError(
-                "The concept of slots is undefined for old-style classes."
-            )
 
         slots = self._islots()
         try:
@@ -2850,11 +2784,6 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
                 else:
                     yield None
 
-        if not self.newstyle:
-            raise NotImplementedError(
-                "The concept of slots is undefined for old-style classes."
-            )
-
         try:
             mro = self.mro()
         except MroError as e:
@@ -2893,13 +2822,8 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
 
         for stmt in self.bases:
             try:
-                # Find the first non-None inferred base value
-                baseobj = next(
-                    b
-                    for b in stmt.infer(context=context.clone())
-                    if not (isinstance(b, Const) and b.value is None)
-                )
-            except (InferenceError, StopIteration):
+                baseobj = _infer_last(stmt, context)
+            except InferenceError:
                 continue
             if isinstance(baseobj, bases.Instance):
                 baseobj = baseobj._proxied
@@ -2920,17 +2844,8 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
             if base is self:
                 continue
 
-            try:
-                mro = base._compute_mro(context=context)
-                bases_mro.append(mro)
-            except NotImplementedError:
-                # Some classes have in their ancestors both newstyle and
-                # old style classes. For these we can't retrieve the .mro,
-                # although in Python it's possible, since the class we are
-                # currently working is in fact new style.
-                # So, we fallback to ancestors here.
-                ancestors = list(base.ancestors(context=context))
-                bases_mro.append(ancestors)
+            mro = base._compute_mro(context=context)
+            bases_mro.append(mro)
 
         unmerged_mro: list[list[ClassDef]] = [[self], *bases_mro, inferred_bases]
         unmerged_mro = clean_duplicates_mro(unmerged_mro, self, context)

@@ -3,12 +3,13 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid hooks for pytest."""
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
 from astroid.manager import AstroidManager
 
 
-def pytest_transform():
+def pytest_transform() -> nodes.Module:
     return AstroidBuilder(AstroidManager()).string_build(
         """
 

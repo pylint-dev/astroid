@@ -2,12 +2,13 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
-from astroid import parse
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
+from astroid.builder import parse
 from astroid.manager import AstroidManager
 
 
-def pkg_resources_transform():
+def pkg_resources_transform() -> nodes.Module:
     return parse(
         """
 def require(*requirements):

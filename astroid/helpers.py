@@ -37,8 +37,7 @@ def safe_infer(
 
 
 def _build_proxy_class(cls_name: str, builtins: nodes.Module) -> nodes.ClassDef:
-    proxy = raw_building.build_class(cls_name)
-    proxy.parent = builtins
+    proxy = raw_building.build_class(cls_name, builtins)
     return proxy
 
 
@@ -67,11 +66,10 @@ def _object_type(
 
     for inferred in node.infer(context=context):
         if isinstance(inferred, scoped_nodes.ClassDef):
-            if inferred.newstyle:
-                metaclass = inferred.metaclass(context=context)
-                if metaclass:
-                    yield metaclass
-                    continue
+            metaclass = inferred.metaclass(context=context)
+            if metaclass:
+                yield metaclass
+                continue
             yield builtins.getattr("type")[0]
         elif isinstance(
             inferred,
@@ -194,8 +192,6 @@ def _type_check(type1, type2) -> bool:
     if not all(map(has_known_bases, (type1, type2))):
         raise _NonDeducibleTypeHierarchy
 
-    if not all([type1.newstyle, type2.newstyle]):
-        return False
     try:
         return type1 in type2.mro()[:-1]
     except MroError as e:
@@ -304,9 +300,8 @@ def object_len(node, context: InferenceContext | None = None):
         and result_of_len.pytype() == "builtins.int"
     ):
         return result_of_len.value
-    if (
-        result_of_len is None
-        or isinstance(result_of_len, bases.Instance)
+    if result_of_len is None or (
+        isinstance(result_of_len, bases.Instance)
         and result_of_len.is_subtype_of("builtins.int")
     ):
         # Fake a result as we don't know the arguments of the instance call.

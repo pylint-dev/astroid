@@ -78,7 +78,9 @@ class TransformVisitor:
     def _visit(self, node: nodes.NodeNG) -> SuccessfulInferenceResult:
         for name in node._astroid_fields:
             value = getattr(node, name)
-            value = cast(_Vistables, value)
+            if TYPE_CHECKING:
+                value = cast(_Vistables, value)
+
             visited = self._visit_generic(value)
             if visited != value:
                 setattr(node, name, visited)
@@ -104,11 +106,13 @@ class TransformVisitor:
     def _visit_generic(self, node: nodes.NodeNG) -> SuccessfulInferenceResult: ...
 
     def _visit_generic(self, node: _Vistables) -> _VisitReturns:
+        if not node:
+            return node
         if isinstance(node, list):
             return [self._visit_generic(child) for child in node]
         if isinstance(node, tuple):
             return tuple(self._visit_generic(child) for child in node)
-        if not node or isinstance(node, str):
+        if isinstance(node, str):
             return node
 
         try:

@@ -32,17 +32,20 @@ Contributors
 ------------
 - Emile Anclin <emile.anclin@logilab.fr>
 - Nick Drozd <nicholasdrozd@gmail.com>
+- correctmost <134317971+correctmost@users.noreply.github.com>
 - Andrew Haigh <hello@nelf.in>
 - Julien Cristau <julien.cristau@logilab.fr>
 - David Liu <david@cs.toronto.edu>
 - Alexandre Fayolle <alexandre.fayolle@logilab.fr>
 - Eevee (Alex Munroe) <amunroe@yelp.com>
+- temyurchenko <44875844+temyurchenko@users.noreply.github.com>
 - David Gilman <davidgilman1@gmail.com>
 - Tushar Sadhwani <tushar.sadhwani000@gmail.com>
 - Julien Jehannet <julien.jehannet@logilab.fr>
 - Calen Pennington <calen.pennington@gmail.com>
 - Antonio <antonio@zoftko.com>
 - Hugo van Kemenade <hugovk@users.noreply.github.com>
+- Artem Yurchenko <artemyurchenko@zoho.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Phil Schaf <flying-sheep@web.de>
 - Alex Hall <alex.mojaki@gmail.com>
@@ -50,11 +53,12 @@ Contributors
 - Radosław Ganczarek <radoslaw@ganczarek.in>
 - Paligot Gérard <androwiiid@gmail.com>
 - Ioana Tagirta <ioana.tagirta@gmail.com>
+- Eric Vergnaud <eric.vergnaud@wanadoo.fr>
 - Derek Gustafson <degustaf@gmail.com>
 - David Shea <dshea@redhat.com>
 - Daniel Harding <dharding@gmail.com>
 - Christian Clauss <cclauss@me.com>
-- correctmost <134317971+correctmost@users.noreply.github.com>
+- Akhil Kamat <akhil.kamat@gmail.com>
 - Ville Skyttä <ville.skytta@iki.fi>
 - Rene Zhang <rz99@cornell.edu>
 - Philip Lorenz <philip@bithub.de>
@@ -72,6 +76,7 @@ Contributors
 - emile@crater.logilab.fr <emile@crater.logilab.fr>
 - doranid <ddandd@gmail.com>
 - brendanator <brendan.maginnis@gmail.com>
+- akamat10 <akhil.kamat@gmail.com>
 - Tomas Gavenciak <gavento@ucw.cz>
 - Tim Paine <t.paine154@gmail.com>
 - Thomas Hisch <t.hisch@gmail.com>
@@ -136,6 +141,7 @@ Contributors
 - Miro Hrončok <miro@hroncok.cz>
 - Michał Masłowski <m.maslowski@clearcode.cc>
 - Mateusz Bysiek <mb@mbdev.pl>
+- Matej Aleksandrov <matej.aleksandrov@gmail.com>
 - Marcelo Trylesinski <marcelotryle@gmail.com>
 - Leandro T. C. Melo <ltcmelo@gmail.com>
 - Konrad Weihmann <kweihmann@outlook.com>
@@ -166,7 +172,6 @@ Contributors
 - Francis Charette Migneault <francis.charette.migneault@gmail.com>
 - Felix Mölder <felix.moelder@uni-due.de>
 - Federico Bond <federicobond@gmail.com>
-- Eric Vergnaud <eric.vergnaud@wanadoo.fr>
 - DudeNr33 <3929834+DudeNr33@users.noreply.github.com>
 - Dmitry Shachnev <mitya57@users.noreply.github.com>
 - Denis Laxalde <denis.laxalde@logilab.fr>

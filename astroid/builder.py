@@ -233,7 +233,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 sort_locals(node.parent.scope().locals[asname or name])  # type: ignore[arg-type]
 
     def delayed_assattr(self, node: nodes.AssignAttr) -> None:
-        """Visit a AssAttr node.
+        """Visit an AssignAttr node.
 
         This adds name to locals and handle members definition.
         """
@@ -244,8 +244,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 if isinstance(inferred, util.UninferableBase):
                     continue
                 try:
-                    # pylint: disable=unidiomatic-typecheck # We want a narrow check on the
-                    # parent type, not all of its subclasses
+                    # We want a narrow check on the parent type, not all of its subclasses
                     if type(inferred) in {bases.Instance, objects.ExceptionInstance}:
                         inferred = inferred._proxied
                         iattrs = inferred.instance_attrs

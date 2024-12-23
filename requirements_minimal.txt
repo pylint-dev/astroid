@@ -5,4 +5,4 @@ tbump~=6.11
 # Tools used to run tests
 coverage~=7.6
 pytest
-pytest-cov~=5.0
+pytest-cov~=6.0

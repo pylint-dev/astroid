@@ -1262,6 +1262,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_binary_op_or_union_type(self) -> None:
         """Binary or union is only defined for Python 3.10+."""
+        # pylint: disable = too-many-statements
         code = """
         class A: ...
 
@@ -6880,20 +6881,15 @@ def test_inferring_properties_multiple_time_does_not_mutate_locals() -> None:
         @property
         def a(self):
             return 42
-
-    A()
     """
-    node = extract_node(code)
-    # Infer the class
-    cls = next(node.infer())
+    cls = extract_node(code)
     (prop,) = cls.getattr("a")
 
-    # Try to infer the property function *multiple* times. `A.locals` should be modified only once
+    assert len(cls.locals["a"]) == 1
     for _ in range(3):
         prop.inferred()
     a_locals = cls.locals["a"]
-    # [FunctionDef, Property]
-    assert len(a_locals) == 2
+    assert len(a_locals) == 1
 
 
 def test_getattr_fails_on_empty_values() -> None:
@@ -7406,7 +7402,12 @@ s1 = f'{c_obj!r}' #@
 """,
             "<__main__.Cls",
         ),
-        ("s1 = f'{5}' #@", "5"),
+        (
+            "s1 = f'{5}' #@",
+            "5",
+        ),
+        ("s1 = f'{missing}'", None),
+        ("s1 = f'a/{missing}/b'", None),
     ],
 )
 def test_joined_str_returns_string(source, expected) -> None:
@@ -7417,5 +7418,8 @@ def test_joined_str_returns_string(source, expected) -> None:
     assert target
     inferred = list(target.inferred())
     assert len(inferred) == 1
-    assert isinstance(inferred[0], Const)
-    inferred[0].value.startswith(expected)
+    if expected:
+        assert isinstance(inferred[0], Const)
+        inferred[0].value.startswith(expected)
+    else:
+        assert inferred[0] is Uninferable

@@ -7,7 +7,7 @@ from __future__ import annotations
 import pathlib
 import sys
 from functools import lru_cache
-from importlib._bootstrap_external import _NamespacePath
+from importlib._bootstrap_external import _NamespacePath  # type: ignore[attr-defined]
 from importlib.util import _find_spec_from_path  # type: ignore[attr-defined]
 
 from astroid.const import IS_PYPY

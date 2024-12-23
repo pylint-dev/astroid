@@ -4,9 +4,10 @@
 
 from __future__ import annotations
 
-from astroid import arguments, inference_tip, nodes
+from astroid import arguments, nodes
 from astroid.context import InferenceContext
 from astroid.exceptions import UseInferenceDefault
+from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 
 
@@ -20,13 +21,10 @@ def infer_namespace(node, context: InferenceContext | None = None):
         "Namespace",
         lineno=node.lineno,
         col_offset=node.col_offset,
-        parent=nodes.Unknown(),
+        parent=nodes.SYNTHETIC_ROOT,  # this class is not real
         end_lineno=node.end_lineno,
         end_col_offset=node.end_col_offset,
     )
-    # Set parent manually until ClassDef constructor fixed:
-    # https://github.com/pylint-dev/astroid/issues/1490
-    class_node.parent = node.parent
     for attr in set(callsite.keyword_arguments):
         fake_node = nodes.EmptyNode()
         fake_node.parent = class_node

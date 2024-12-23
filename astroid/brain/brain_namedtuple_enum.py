@@ -13,7 +13,7 @@ from textwrap import dedent
 from typing import Final
 
 import astroid
-from astroid import arguments, bases, inference_tip, nodes, util
+from astroid import arguments, bases, nodes, util
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
 from astroid.context import InferenceContext
 from astroid.exceptions import (
@@ -22,7 +22,9 @@ from astroid.exceptions import (
     InferenceError,
     UseInferenceDefault,
 )
+from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
+from astroid.nodes.scoped_nodes.scoped_nodes import SYNTHETIC_ROOT
 
 ENUM_QNAME: Final[str] = "enum.Enum"
 TYPING_NAMEDTUPLE_QUALIFIED: Final = {
@@ -73,7 +75,9 @@ def _find_func_form_arguments(node, context):
 
 def infer_func_form(
     node: nodes.Call,
-    base_type: list[nodes.NodeNG],
+    base_type: nodes.NodeNG,
+    *,
+    parent: nodes.NodeNG,
     context: InferenceContext | None = None,
     enum: bool = False,
 ) -> tuple[nodes.ClassDef, str, list[str]]:
@@ -146,15 +150,10 @@ def infer_func_form(
         col_offset=node.col_offset,
         end_lineno=node.end_lineno,
         end_col_offset=node.end_col_offset,
-        parent=nodes.Unknown(),
+        parent=parent,
     )
-    # A typical ClassDef automatically adds its name to the parent scope,
-    # but doing so causes problems, so defer setting parent until after init
-    # see: https://github.com/pylint-dev/pylint/issues/5982
-    class_node.parent = node.parent
     class_node.postinit(
-        # set base class=tuple
-        bases=base_type,
+        bases=[base_type],
         body=[],
         decorators=None,
     )
@@ -194,25 +193,16 @@ def infer_named_tuple(
     node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[nodes.ClassDef]:
     """Specific inference function for namedtuple Call node."""
-    tuple_base_name: list[nodes.NodeNG] = [
-        nodes.Name(
-            name="tuple",
-            parent=node.root(),
-            lineno=0,
-            col_offset=0,
-            end_lineno=None,
-            end_col_offset=None,
-        )
-    ]
+    tuple_base: nodes.Name = _extract_single_node("tuple")
     class_node, name, attributes = infer_func_form(
-        node, tuple_base_name, context=context
+        node, tuple_base, parent=SYNTHETIC_ROOT, context=context
     )
+
     call_site = arguments.CallSite.from_call(node, context=context)
-    node = extract_node("import collections; collections.namedtuple")
-    try:
-        func = next(node.infer())
-    except StopIteration as e:
-        raise InferenceError(node=node) from e
+    func = util.safe_infer(
+        _extract_single_node("import collections; collections.namedtuple")
+    )
+    assert isinstance(func, nodes.NodeNG)
     try:
         rename = next(
             call_site.infer_argument(func, "rename", context or InferenceContext())
@@ -267,6 +257,7 @@ def _get_renamed_namedtuple_attributes(field_names):
     names = list(field_names)
     seen = set()
     for i, name in enumerate(field_names):
+        # pylint: disable = too-many-boolean-expressions
         if (
             not all(c.isalnum() or c == "_" for c in name)
             or keyword.iskeyword(name)
@@ -363,7 +354,17 @@ def infer_enum(
         __members__ = ['']
     """
     )
-    class_node = infer_func_form(node, [enum_meta], context=context, enum=True)[0]
+
+    # FIXME arguably, the base here shouldn't be the EnumMeta class definition
+    # itself, but a reference (Name) to it. Otherwise, the invariant that all
+    # children of a node have that node as their parent is broken.
+    class_node = infer_func_form(
+        node,
+        enum_meta,
+        parent=SYNTHETIC_ROOT,
+        context=context,
+        enum=True,
+    )[0]
     return iter([class_node.instantiate_class()])
 
 
@@ -515,11 +516,16 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
         # know that it should be a string, so infer that as a guess.
         if "name" not in target_names:
             code = dedent(
-                """
-            @property
-            def name(self):
-                return ''
-            """
+                '''
+                @property
+                def name(self):
+                    """The name of the Enum member.
+
+                    This is a reconstruction by astroid: enums are too dynamic to understand, but we at least
+                    know 'name' should be a string, so this is astroid's best guess.
+                    """
+                    return ''
+                '''
             )
             name_dynamicclassattr = AstroidBuilder(AstroidManager()).string_build(code)[
                 "name"

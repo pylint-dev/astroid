@@ -519,36 +519,6 @@ class BuilderTest(unittest.TestCase):
         obj_ast = self.builder.inspect_build(object)
         self.assertIn("__setattr__", obj_ast)
 
-    def test_newstyle_detection(self) -> None:
-        data = """
-            class A:
-                "old style"
-
-            class B(A):
-                "old style"
-
-            class C(object):
-                "new style"
-
-            class D(C):
-                "new style"
-
-            __metaclass__ = type
-
-            class E(A):
-                "old style"
-
-            class F:
-                "new style"
-        """
-        mod_ast = builder.parse(data, __name__)
-        self.assertTrue(mod_ast["A"].newstyle)
-        self.assertTrue(mod_ast["B"].newstyle)
-        self.assertTrue(mod_ast["E"].newstyle)
-        self.assertTrue(mod_ast["C"].newstyle)
-        self.assertTrue(mod_ast["D"].newstyle)
-        self.assertTrue(mod_ast["F"].newstyle)
-
     def test_globals(self) -> None:
         data = """
             CSTE = 1
@@ -833,7 +803,6 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(klass.parent.frame(), module)
         self.assertEqual(klass.root(), module)
         self.assertEqual(klass.basenames, [])
-        self.assertTrue(klass.newstyle)
 
     def test_class_locals(self) -> None:
         """Test the 'locals' dictionary of an astroid class."""

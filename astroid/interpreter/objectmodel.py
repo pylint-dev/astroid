@@ -514,9 +514,6 @@ class ClassModel(ObjectModel):
 
     @property
     def attr___mro__(self):
-        if not self._instance.newstyle:
-            raise AttributeInferenceError(target=self._instance, attribute="__mro__")
-
         mro = self._instance.mro()
         obj = node_classes.Tuple(parent=self._instance)
         obj.postinit(mro)
@@ -524,9 +521,6 @@ class ClassModel(ObjectModel):
 
     @property
     def attr_mro(self):
-        if not self._instance.newstyle:
-            raise AttributeInferenceError(target=self._instance, attribute="mro")
-
         other_self = self
 
         # Cls.mro is a method and we need to return one in order to have a proper inference.
@@ -565,10 +559,6 @@ class ClassModel(ObjectModel):
         This looks only in the current module for retrieving the subclasses,
         thus it might miss a couple of them.
         """
-        if not self._instance.newstyle:
-            raise AttributeInferenceError(
-                target=self._instance, attribute="__subclasses__"
-            )
 
         qname = self._instance.qname()
         root = self._instance.root()
@@ -704,20 +694,18 @@ class BoundMethodModel(FunctionModel):
         return self._instance.bound
 
 
-class GeneratorModel(FunctionModel, ContextManagerModel):
-    def __new__(cls, *args, **kwargs):
-        # Append the values from the GeneratorType unto this object.
-        ret = super().__new__(cls, *args, **kwargs)
-        generator = AstroidManager().builtins_module["generator"]
-        for name, values in generator.locals.items():
+class GeneratorBaseModel(FunctionModel, ContextManagerModel):
+    def __init__(self, gen_module: nodes.Module):
+        super().__init__()
+        for name, values in gen_module.locals.items():
             method = values[0]
+            if isinstance(method, nodes.FunctionDef):
+                method = bases.BoundMethod(method, _get_bound_node(self))
 
             def patched(cls, meth=method):
                 return meth
 
-            setattr(type(ret), IMPL_PREFIX + name, property(patched))
-
-        return ret
+            setattr(type(self), IMPL_PREFIX + name, property(patched))
 
     @property
     def attr___name__(self):
@@ -733,25 +721,14 @@ class GeneratorModel(FunctionModel, ContextManagerModel):
         )
 
 
-class AsyncGeneratorModel(GeneratorModel):
-    def __new__(cls, *args, **kwargs):
-        # Append the values from the AGeneratorType unto this object.
-        ret = super().__new__(cls, *args, **kwargs)
-        astroid_builtins = AstroidManager().builtins_module
-        generator = astroid_builtins.get("async_generator")
-        if generator is None:
-            # Make it backward compatible.
-            generator = astroid_builtins.get("generator")
+class GeneratorModel(GeneratorBaseModel):
+    def __init__(self):
+        super().__init__(AstroidManager().builtins_module["generator"])
 
-        for name, values in generator.locals.items():
-            method = values[0]
 
-            def patched(cls, meth=method):
-                return meth
-
-            setattr(type(ret), IMPL_PREFIX + name, property(patched))
-
-        return ret
+class AsyncGeneratorModel(GeneratorBaseModel):
+    def __init__(self):
+        super().__init__(AstroidManager().builtins_module["async_generator"])
 
 
 class InstanceModel(ObjectModel):

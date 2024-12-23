@@ -46,6 +46,7 @@ from astroid.manager import AstroidManager
 from astroid.nodes import _base_nodes
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.node_ng import NodeNG
+from astroid.nodes.scoped_nodes import SYNTHETIC_ROOT
 from astroid.typing import (
     ConstFactoryResult,
     InferenceErrorInfo,
@@ -1523,7 +1524,7 @@ class BinOp(_base_nodes.OperatorNode):
         yield self.left
         yield self.right
 
-    def op_precedence(self):
+    def op_precedence(self) -> int:
         return OP_PRECEDENCE[self.op]
 
     def op_left_associative(self) -> bool:
@@ -1632,7 +1633,7 @@ class BoolOp(NodeNG):
     def get_children(self):
         yield from self.values
 
-    def op_precedence(self):
+    def op_precedence(self) -> int:
         return OP_PRECEDENCE[self.op]
 
     @decorators.raise_if_nothing_inferred
@@ -2038,7 +2039,7 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         value: Any,
         lineno: int | None = None,
         col_offset: int | None = None,
-        parent: NodeNG | None = None,
+        parent: NodeNG = SYNTHETIC_ROOT,
         kind: str | None = None,
         *,
         end_lineno: int | None = None,
@@ -2061,7 +2062,16 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         :param end_col_offset: The end column this node appears on in the
             source code. Note: This is after the last symbol.
         """
-        self.value: Any = value
+        if getattr(value, "__name__", None) == "__doc__":
+            warnings.warn(  # pragma: no cover
+                "You have most likely called a __doc__ field of some object "
+                "and it didn't return a string. "
+                "That happens to some symbols from the standard library. "
+                "Check for isinstance(<X>.__doc__, str).",
+                RuntimeWarning,
+                stacklevel=0,
+            )
+        self.value = value
         """The value that the constant represents."""
 
         self.kind: str | None = kind  # can be None
@@ -2541,7 +2551,7 @@ class EmptyNode(_base_nodes.NoChildrenNode):
         self,
         lineno: None = None,
         col_offset: None = None,
-        parent: None = None,
+        parent: NodeNG = SYNTHETIC_ROOT,
         *,
         end_lineno: None = None,
         end_col_offset: None = None,
@@ -3042,7 +3052,7 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         yield from self.body
         yield from self.orelse
 
-    def has_elif_block(self):
+    def has_elif_block(self) -> bool:
         return len(self.orelse) == 1 and isinstance(self.orelse[0], If)
 
     def _get_yield_nodes_skip_functions(self):
@@ -3489,7 +3499,7 @@ class Return(_base_nodes.Statement):
         if self.value is not None:
             yield self.value
 
-    def is_tuple_return(self):
+    def is_tuple_return(self) -> bool:
         return isinstance(self.value, Tuple)
 
     def _get_return_nodes_skip_functions(self):
@@ -4289,7 +4299,7 @@ class UnaryOp(_base_nodes.OperatorNode):
     def get_children(self):
         yield self.operand
 
-    def op_precedence(self):
+    def op_precedence(self) -> int:
         if self.op == "not":
             return OP_PRECEDENCE[self.op]
 
@@ -4705,7 +4715,7 @@ class FormattedValue(NodeNG):
                 continue
 
 
-MISSING_VALUE = "{MISSING_VALUE}"
+UNINFERABLE_VALUE = "{Uninferable}"
 
 
 class JoinedStr(NodeNG):
@@ -4771,33 +4781,57 @@ class JoinedStr(NodeNG):
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-        yield from self._infer_from_values(self.values, context)
+        if self.values:
+            yield from self._infer_with_values(context)
+        else:
+            yield Const("")
+
+    def _infer_with_values(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        uninferable_already_generated = False
+        for inferred in self._infer_from_values(self.values, context):
+            failed = inferred is util.Uninferable or (
+                isinstance(inferred, Const) and UNINFERABLE_VALUE in inferred.value
+            )
+            if failed:
+                if not uninferable_already_generated:
+                    uninferable_already_generated = True
+                    yield util.Uninferable
+                    continue
+            yield inferred
 
     @classmethod
     def _infer_from_values(
         cls, nodes: list[NodeNG], context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         if not nodes:
-            yield
             return
         if len(nodes) == 1:
-            yield from nodes[0]._infer(context, **kwargs)
+            for node in cls._safe_infer_from_node(nodes[0], context, **kwargs):
+                if isinstance(node, Const):
+                    yield node
+                    continue
+                yield Const(UNINFERABLE_VALUE)
             return
-        uninferable_already_generated = False
-        for prefix in nodes[0]._infer(context, **kwargs):
+        for prefix in cls._safe_infer_from_node(nodes[0], context, **kwargs):
             for suffix in cls._infer_from_values(nodes[1:], context, **kwargs):
                 result = ""
                 for node in (prefix, suffix):
                     if isinstance(node, Const):
                         result += str(node.value)
                         continue
-                    result += MISSING_VALUE
-                if MISSING_VALUE in result:
-                    if not uninferable_already_generated:
-                        uninferable_already_generated = True
-                        yield util.Uninferable
-                else:
-                    yield Const(result)
+                    result += UNINFERABLE_VALUE
+                yield Const(result)
+
+    @classmethod
+    def _safe_infer_from_node(
+        cls, node: NodeNG, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        try:
+            yield from node._infer(context, **kwargs)
+        except InferenceError:
+            yield util.Uninferable
 
 
 class NamedExpr(_base_nodes.AssignTypeNode):
@@ -5526,7 +5560,7 @@ def const_factory(value: Any) -> ConstFactoryResult:
         instance = initializer_cls(
             lineno=None,
             col_offset=None,
-            parent=None,
+            parent=SYNTHETIC_ROOT,
             end_lineno=None,
             end_col_offset=None,
         )
@@ -5536,7 +5570,7 @@ def const_factory(value: Any) -> ConstFactoryResult:
         instance = initializer_cls(
             lineno=None,
             col_offset=None,
-            parent=None,
+            parent=SYNTHETIC_ROOT,
             end_lineno=None,
             end_col_offset=None,
         )

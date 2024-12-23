@@ -59,6 +59,8 @@ def _gi_build_stub(parent):  # noqa: C901
     Inspect the passed module recursively and build stubs for functions,
     classes, etc.
     """
+    # pylint: disable = too-many-branches, too-many-statements
+
     classes = {}
     functions = {}
     constants = {}

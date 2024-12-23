@@ -272,13 +272,13 @@ def _get_relative_base_path(filename: str, path_to_check: str) -> list[str] | No
 
 def modpath_from_file_with_callback(
     filename: str,
-    path: Sequence[str] | None = None,
+    path: list[str] | None = None,
     is_package_cb: Callable[[str, list[str]], bool] | None = None,
 ) -> list[str]:
     filename = os.path.expanduser(_path_from_filename(filename))
     paths_to_check = sys.path.copy()
     if path:
-        paths_to_check += path
+        paths_to_check = path + paths_to_check
     for pathname in itertools.chain(
         paths_to_check, map(_cache_normalize_path, paths_to_check)
     ):
@@ -292,11 +292,13 @@ def modpath_from_file_with_callback(
             return modpath
 
     raise ImportError(
-        "Unable to find module for {} in {}".format(filename, ", \n".join(sys.path))
+        "Unable to find module for {} in {}".format(
+            filename, ", \n".join(paths_to_check)
+        )
     )
 
 
-def modpath_from_file(filename: str, path: Sequence[str] | None = None) -> list[str]:
+def modpath_from_file(filename: str, path: list[str] | None = None) -> list[str]:
     """Get the corresponding split module's name from a filename.
 
     This function will return the name of a module or package split on `.`.
@@ -305,8 +307,8 @@ def modpath_from_file(filename: str, path: Sequence[str] | None = None) -> list[
     :param filename: file's path for which we want the module's name
 
     :type Optional[List[str]] path:
-      Optional list of path where the module or package should be
-      searched (use sys.path if nothing or None is given)
+      Optional list of paths where the module or package should be
+      searched, additionally to sys.path
 
     :raise ImportError:
       if the corresponding module's name has not been found
@@ -602,6 +604,12 @@ def is_relative(modname: str, from_file: str) -> bool:
             modname.split(".", maxsplit=1)[0], [from_file]
         )
     )
+
+
+@lru_cache(maxsize=1024)
+def cached_os_path_isfile(path: str | os.PathLike[str]) -> bool:
+    """A cached version of os.path.isfile that helps avoid repetitive I/O"""
+    return os.path.isfile(path)
 
 
 # internal only functions #####################################################

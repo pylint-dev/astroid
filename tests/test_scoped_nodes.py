@@ -1002,8 +1002,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(cls.getattr("__module__")[0], nodes.Const)
         self.assertEqual(cls.getattr("__module__")[0].value, "data.module")
         self.assertEqual(len(cls.getattr("__dict__")), 1)
-        if not cls.newstyle:
-            self.assertRaises(AttributeInferenceError, cls.getattr, "__mro__")
+
         for cls in (nodes.List._proxied, nodes.Const(1)._proxied):
             self.assertEqual(len(cls.getattr("__bases__")), 1)
             self.assertEqual(len(cls.getattr("__name__")), 1)

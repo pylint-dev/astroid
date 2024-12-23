@@ -24,6 +24,7 @@ from astroid.modutils import (
     NoSourceFile,
     _cache_normalize_path_,
     _has_init,
+    cached_os_path_isfile,
     file_info_from_modpath,
     get_source_file,
     is_module_name_part_of_extension_package_whitelist,
@@ -473,12 +474,16 @@ class AstroidManager:
             LookupMixIn.lookup,
             _cache_normalize_path_,
             _has_init,
+            cached_os_path_isfile,
             util.is_namespace,
             ObjectModel.attributes,
             ClassDef._metaclass_lookup_attribute,
             _find_spec,
         ):
             lru_cache.cache_clear()  # type: ignore[attr-defined]
+
+        for finder in spec._SPEC_FINDERS:
+            finder.find_module.cache_clear()
 
         self.bootstrap()
 

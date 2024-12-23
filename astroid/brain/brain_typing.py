@@ -12,9 +12,9 @@ from collections.abc import Iterator
 from functools import partial
 from typing import Final
 
-from astroid import context, extract_node, inference_tip
+from astroid import context
 from astroid.brain.helpers import register_module_extender
-from astroid.builder import AstroidBuilder, _extract_single_node
+from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
 from astroid.const import PY312_PLUS, PY313_PLUS
 from astroid.exceptions import (
     AstroidSyntaxError,
@@ -22,6 +22,7 @@ from astroid.exceptions import (
     InferenceError,
     UseInferenceDefault,
 )
+from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import (
     Assign,
@@ -357,12 +358,16 @@ def _looks_like_special_alias(node: Call) -> bool:
     PY39: Callable = _CallableType(collections.abc.Callable, 2)
     """
     return isinstance(node.func, Name) and (
-        node.func.name == "_TupleType"
-        and isinstance(node.args[0], Name)
-        and node.args[0].name == "tuple"
-        or node.func.name == "_CallableType"
-        and isinstance(node.args[0], Attribute)
-        and node.args[0].as_string() == "collections.abc.Callable"
+        (
+            node.func.name == "_TupleType"
+            and isinstance(node.args[0], Name)
+            and node.args[0].name == "tuple"
+        )
+        or (
+            node.func.name == "_CallableType"
+            and isinstance(node.args[0], Attribute)
+            and node.args[0].as_string() == "collections.abc.Callable"
+        )
     )
 
 
@@ -399,11 +404,8 @@ def infer_special_alias(
 
 
 def _looks_like_typing_cast(node: Call) -> bool:
-    return isinstance(node, Call) and (
-        isinstance(node.func, Name)
-        and node.func.name == "cast"
-        or isinstance(node.func, Attribute)
-        and node.func.attrname == "cast"
+    return (isinstance(node.func, Name) and node.func.name == "cast") or (
+        isinstance(node.func, Attribute) and node.func.attrname == "cast"
     )
 
 
