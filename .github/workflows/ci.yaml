@@ -10,7 +10,7 @@ on:
 env:
   CACHE_VERSION: 3
   KEY_PREFIX: venv
-  DEFAULT_PYTHON: "3.12"
+  DEFAULT_PYTHON: "3.13"
   PRE_COMMIT_CACHE: ~/.cache/pre-commit
 
 concurrency:
@@ -81,7 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.9, "3.10", "3.11", "3.12", "3.13-dev"]
+        python-version: [3.9, "3.10", "3.11", "3.12", "3.13"]
     outputs:
       python-key: ${{ steps.generate-python-key.outputs.key }}
     steps:
@@ -138,7 +138,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.9, "3.10", "3.11", "3.12", "3.13-dev"]
+        python-version: [3.9, "3.10", "3.11", "3.12", "3.13"]
     steps:
       - name: Set temp directory
         run: echo "TEMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
@@ -242,11 +242,11 @@ jobs:
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v4.1.7
-      - name: Set up Python 3.12
+      - name: Set up Python 3.13
         id: python
         uses: actions/setup-python@v5.1.1
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           check-latest: true
       - name: Install dependencies
         run: pip install -U -r requirements_minimal.txt
