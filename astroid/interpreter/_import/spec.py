@@ -144,7 +144,7 @@ class ImportlibFinder(Finder):
             )
 
         if submodule_path is not None:
-             search_paths = list(submodule_path)
+            search_paths = list(submodule_path)
         else:
             search_paths = sys.path
 
