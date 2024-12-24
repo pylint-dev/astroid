@@ -142,15 +142,45 @@ class ImportlibFinder(Finder):
                 type=ModuleType.C_BUILTIN,
             )
 
+        if submodule_path is not None:
+            search_paths = list(submodule_path)
+        else:
+            search_paths = sys.path
+
+        suffixes = (".py", ".pyi", importlib.machinery.BYTECODE_SUFFIXES[0])
+        for entry in search_paths:
+            package_directory = os.path.join(entry, modname)
+            for suffix in suffixes:
+                package_file_name = "__init__" + suffix
+                file_path = os.path.join(package_directory, package_file_name)
+                if os.path.isfile(file_path):
+                    return ModuleSpec(
+                        name=modname,
+                        location=package_directory,
+                        type=ModuleType.PKG_DIRECTORY,
+                    )
+            for suffix, type_ in ImportlibFinder._SUFFIXES:
+                file_name = modname + suffix
+                file_path = os.path.join(entry, file_name)
+                if os.path.isfile(file_path):
+                    return ModuleSpec(name=modname, location=file_path, type=type_)
+
         # sys.stdlib_module_names was added in Python 3.10
         if PY310_PLUS:
-            # If the module is a stdlib module, check whether this is a frozen module. Note that
-            # `find_spec` actually imports the module, so we want to make sure we only run this code
-            # for stuff that can be expected to be frozen. For now this is only stdlib.
+            # If the module name matches a stdlib module name, check whether this is a frozen
+            # module. Note that `find_spec` actually imports parent modules, so we want to make
+            # sure we only run this code for stuff that can be expected to be frozen. For now
+            # this is only stdlib.
             if modname in sys.stdlib_module_names or (
                 processed and processed[0] in sys.stdlib_module_names
             ):
-                spec = importlib.util.find_spec(".".join((*processed, modname)))
+                try:
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings("ignore", category=Warning)
+                        spec = importlib.util.find_spec(".".join((*processed, modname)))
+                except ValueError:
+                    spec = None
+
                 if (
                     spec
                     and spec.loader  # type: ignore[comparison-overlap] # noqa: E501
@@ -186,28 +216,6 @@ class ImportlibFinder(Finder):
                 except ValueError:
                     pass
 
-        if submodule_path is not None:
-            search_paths = list(submodule_path)
-        else:
-            search_paths = sys.path
-
-        suffixes = (".py", ".pyi", importlib.machinery.BYTECODE_SUFFIXES[0])
-        for entry in search_paths:
-            package_directory = os.path.join(entry, modname)
-            for suffix in suffixes:
-                package_file_name = "__init__" + suffix
-                file_path = os.path.join(package_directory, package_file_name)
-                if os.path.isfile(file_path):
-                    return ModuleSpec(
-                        name=modname,
-                        location=package_directory,
-                        type=ModuleType.PKG_DIRECTORY,
-                    )
-            for suffix, type_ in ImportlibFinder._SUFFIXES:
-                file_name = modname + suffix
-                file_path = os.path.join(entry, file_name)
-                if os.path.isfile(file_path):
-                    return ModuleSpec(name=modname, location=file_path, type=type_)
         return None
 
     def contribute_to_path(
