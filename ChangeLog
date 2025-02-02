@@ -19,6 +19,8 @@ Release date: TBA
 
 * Fix precedence of `path` arg in `modpath_from_file_with_callback` to be higher than `sys.path`
 
+* Following a deprecation period, the ``future`` argument was removed from ``statement()`` and ``frame()``.
+
 * Improve consistency of ``JoinedStr`` inference by not raising ``InferenceError`` and
   returning either ``Uninferable`` or a fully resolved ``Const``.
 

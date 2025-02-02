@@ -621,15 +621,7 @@ class ConstNodeTest(unittest.TestCase):
         self.assertTrue(node._proxied.parent)
         self.assertEqual(node._proxied.root().name, value.__class__.__module__)
         with self.assertRaises(StatementMissing):
-            with pytest.warns(DeprecationWarning) as records:
-                node.statement(future=True)
-                assert len(records) == 1
-        with self.assertRaises(StatementMissing):
             node.statement()
-
-        with pytest.warns(DeprecationWarning) as records:
-            assert node.frame(future=True) is SYNTHETIC_ROOT
-            assert len(records) == 1
         assert node.frame() is SYNTHETIC_ROOT
 
     def test_none(self) -> None:
