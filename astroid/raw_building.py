@@ -421,7 +421,7 @@ class InspectBuilder:
 
     bootstrapped: bool = False
 
-    def __init__(self, manager_instance) -> None:
+    def __init__(self, manager_instance: AstroidManager) -> None:
         self._manager = manager_instance
         self._done: dict[types.ModuleType | type, nodes.Module | nodes.ClassDef] = {}
         self._module: types.ModuleType
