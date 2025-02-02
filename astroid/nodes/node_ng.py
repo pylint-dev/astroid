@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import pprint
 import sys
-import warnings
 from collections.abc import Generator, Iterator
 from functools import cached_property
 from functools import singledispatch as _singledispatch
@@ -14,7 +13,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
-    Literal,
     TypeVar,
     Union,
     cast,
@@ -276,26 +274,18 @@ class NodeNG:
         """
         return any(self is parent for parent in node.node_ancestors())
 
-    def statement(self, *, future: Literal[None, True] = None) -> _base_nodes.Statement:
+    def statement(self) -> _base_nodes.Statement:
         """The first parent node, including self, marked as statement node.
 
         :raises StatementMissing: If self has no parent attribute.
         """
-        if future is not None:
-            warnings.warn(
-                "The future arg will be removed in astroid 4.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         if self.is_statement:
             return cast("_base_nodes.Statement", self)
         if not self.parent:
             raise StatementMissing(target=self)
         return self.parent.statement()
 
-    def frame(
-        self, *, future: Literal[None, True] = None
-    ) -> nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda:
+    def frame(self) -> nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda:
         """The first parent frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -304,15 +294,9 @@ class NodeNG:
         :returns: The first parent frame node.
         :raises ParentMissingError: If self has no parent attribute.
         """
-        if future is not None:
-            warnings.warn(
-                "The future arg will be removed in astroid 4.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         if self.parent is None:
             raise ParentMissingError(target=self)
-        return self.parent.frame(future=future)
+        return self.parent.frame()
 
     def scope(self) -> nodes.LocalsDictNodeNG:
         """The first parent node defining a new scope.
