@@ -36,16 +36,16 @@ Contributors
 - Andrew Haigh <hello@nelf.in>
 - Julien Cristau <julien.cristau@logilab.fr>
 - David Liu <david@cs.toronto.edu>
+- Artem Yurchenko <44875844+temyurchenko@users.noreply.github.com>
 - Alexandre Fayolle <alexandre.fayolle@logilab.fr>
 - Eevee (Alex Munroe) <amunroe@yelp.com>
-- temyurchenko <44875844+temyurchenko@users.noreply.github.com>
 - David Gilman <davidgilman1@gmail.com>
 - Tushar Sadhwani <tushar.sadhwani000@gmail.com>
 - Julien Jehannet <julien.jehannet@logilab.fr>
 - Calen Pennington <calen.pennington@gmail.com>
 - Antonio <antonio@zoftko.com>
 - Hugo van Kemenade <hugovk@users.noreply.github.com>
-- Artem Yurchenko <artemyurchenko@zoho.com>
+- Akhil Kamat <akhil.kamat@gmail.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Phil Schaf <flying-sheep@web.de>
 - Alex Hall <alex.mojaki@gmail.com>
@@ -58,7 +58,6 @@ Contributors
 - David Shea <dshea@redhat.com>
 - Daniel Harding <dharding@gmail.com>
 - Christian Clauss <cclauss@me.com>
-- Akhil Kamat <akhil.kamat@gmail.com>
 - Ville Skyttä <ville.skytta@iki.fi>
 - Rene Zhang <rz99@cornell.edu>
 - Philip Lorenz <philip@bithub.de>
@@ -76,7 +75,6 @@ Contributors
 - emile@crater.logilab.fr <emile@crater.logilab.fr>
 - doranid <ddandd@gmail.com>
 - brendanator <brendan.maginnis@gmail.com>
-- akamat10 <akhil.kamat@gmail.com>
 - Tomas Gavenciak <gavento@ucw.cz>
 - Tim Paine <t.paine154@gmail.com>
 - Thomas Hisch <t.hisch@gmail.com>
@@ -215,9 +213,3 @@ under this name, or we did not manage to find their commits in the history.
 - carl
 - alain lefroy
 - Mark Gius
-- Jérome Perrin <perrinjerome@gmail.com>
-- Jamie Scott <jamie@jami.org.uk>
-- correctmost <134317971+correctmost@users.noreply.github.com>
-- Oleh Prypin <oleh@pryp.in>
-- Eric Vergnaud <eric.vergnaud@wanadoo.fr>
-- Hashem Nasarat <Hnasar@users.noreply.github.com>
