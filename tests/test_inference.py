@@ -43,6 +43,7 @@ from astroid.exceptions import (
     NoDefault,
     NotFoundError,
 )
+from astroid.manager import AstroidManager
 from astroid.objects import ExceptionInstance
 
 from . import resources
@@ -59,7 +60,7 @@ def get_node_of_class(start_from: nodes.FunctionDef, klass: type) -> nodes.Attri
     return next(start_from.nodes_of_class(klass))
 
 
-builder = AstroidBuilder()
+builder = AstroidBuilder(AstroidManager())
 
 DATA_DIR = Path(__file__).parent / "testdata" / "python3" / "data"
 

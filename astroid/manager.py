@@ -17,6 +17,7 @@ from collections.abc import Callable, Iterator, Sequence
 from typing import Any, ClassVar
 
 from astroid import nodes
+from astroid.builder import AstroidBuilder, build_namespace_package_module
 from astroid.context import InferenceContext, _invalidate_cache
 from astroid.exceptions import AstroidBuildingError, AstroidImportError
 from astroid.interpreter._import import spec, util
@@ -161,9 +162,6 @@ class AstroidManager:
         ):
             return self.astroid_cache[modname]
         if source:
-            # pylint: disable=import-outside-toplevel; circular import
-            from astroid.builder import AstroidBuilder
-
             return AstroidBuilder(self).file_build(filepath, modname)
         if fallback and modname:
             return self.ast_from_module_name(modname)
@@ -175,23 +173,14 @@ class AstroidManager:
         """Given some source code as a string, return its corresponding astroid
         object.
         """
-        # pylint: disable=import-outside-toplevel; circular import
-        from astroid.builder import AstroidBuilder
-
         return AstroidBuilder(self).string_build(data, modname, filepath)
 
     def _build_stub_module(self, modname: str) -> nodes.Module:
-        # pylint: disable=import-outside-toplevel; circular import
-        from astroid.builder import AstroidBuilder
-
         return AstroidBuilder(self).string_build("", modname)
 
     def _build_namespace_module(
         self, modname: str, path: Sequence[str]
     ) -> nodes.Module:
-        # pylint: disable=import-outside-toplevel; circular import
-        from astroid.builder import build_namespace_package_module
-
         return build_namespace_package_module(modname, path)
 
     def _can_load_extension(self, modname: str) -> bool:
@@ -290,9 +279,6 @@ class AstroidManager:
         if zipimport is None:
             return None
 
-        # pylint: disable=import-outside-toplevel; circular import
-        from astroid.builder import AstroidBuilder
-
         builder = AstroidBuilder(self)
         for ext in ZIP_IMPORT_EXTS:
             try:
@@ -350,9 +336,6 @@ class AstroidManager:
                 return self.ast_from_file(filepath, modname)  # type: ignore[arg-type]
         except AttributeError:
             pass
-
-        # pylint: disable=import-outside-toplevel; circular import
-        from astroid.builder import AstroidBuilder
 
         return AstroidBuilder(self).module_build(module, modname)
 

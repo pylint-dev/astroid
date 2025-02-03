@@ -25,6 +25,7 @@ import tests.testdata.python3.data.fake_module_with_broken_getattr as fm_getattr
 import tests.testdata.python3.data.fake_module_with_warnings as fm
 from astroid.builder import AstroidBuilder
 from astroid.const import IS_PYPY, PY312_PLUS
+from astroid.manager import AstroidManager
 from astroid.raw_building import (
     attach_dummy_node,
     build_class,
@@ -93,7 +94,7 @@ class RawBuildingTC(unittest.TestCase):
         # what io.BufferedReader is. The code that handles this
         # is in astroid.raw_building.imported_member, which verifies
         # the true name of the module.
-        builder = AstroidBuilder()
+        builder = AstroidBuilder(AstroidManager())
         module = builder.inspect_build(_io)
         buffered_reader = module.getattr("BufferedReader")[0]
         expected = "_io" if PY312_PLUS else "io"
@@ -110,7 +111,7 @@ class RawBuildingTC(unittest.TestCase):
         m.pd = fm
 
         # This should not raise an exception
-        AstroidBuilder().module_build(m, "test")
+        AstroidBuilder(AstroidManager()).module_build(m, "test")
 
     def test_module_object_with_broken_getattr(self) -> None:
         # Tests https://github.com/pylint-dev/astroid/issues/1958
@@ -118,7 +119,7 @@ class RawBuildingTC(unittest.TestCase):
         # errors when using hasattr().
 
         # This should not raise an exception
-        AstroidBuilder().inspect_build(fm_getattr, "test")
+        AstroidBuilder(AstroidManager()).inspect_build(fm_getattr, "test")
 
 
 @pytest.mark.skipif(
@@ -151,7 +152,7 @@ def test_build_module_getattr_catch_output(
 
     with mock.patch("astroid.raw_building.sys.modules") as sys_mock:
         sys_mock.__getitem__.side_effect = mocked_sys_modules_getitem
-        builder = AstroidBuilder()
+        builder = AstroidBuilder(AstroidManager())
         builder.inspect_build(os)
 
     out, err = capsys.readouterr()
