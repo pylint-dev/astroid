@@ -18,11 +18,14 @@ import types
 import warnings
 from collections.abc import Iterable
 from contextlib import redirect_stderr, redirect_stdout
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from astroid import bases, nodes
 from astroid.const import _EMPTY_OBJECT_MARKER, IS_PYPY
 from astroid.nodes import node_classes
+
+if TYPE_CHECKING:
+    from astroid.manager import AstroidManager
 
 logger = logging.getLogger(__name__)
 
