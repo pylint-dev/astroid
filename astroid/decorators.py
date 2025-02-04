@@ -60,7 +60,7 @@ def path_wrapper(func):
 
 
 def yes_if_nothing_inferred(
-    func: Callable[_P, Generator[InferenceResult]]
+    func: Callable[_P, Generator[InferenceResult]],
 ) -> Callable[_P, Generator[InferenceResult]]:
     def inner(*args: _P.args, **kwargs: _P.kwargs) -> Generator[InferenceResult]:
         generator = func(*args, **kwargs)
