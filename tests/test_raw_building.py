@@ -22,6 +22,7 @@ from unittest import mock
 import pytest
 
 import tests.testdata.python3.data.fake_module_with_broken_getattr as fm_getattr
+import tests.testdata.python3.data.fake_module_with_collection_getattribute as fm_collection
 import tests.testdata.python3.data.fake_module_with_warnings as fm
 from astroid.builder import AstroidBuilder
 from astroid.const import IS_PYPY, PY312_PLUS
@@ -117,6 +118,14 @@ class RawBuildingTC(unittest.TestCase):
 
         # This should not raise an exception
         AstroidBuilder().inspect_build(fm_getattr, "test")
+
+    def test_module_collection_with_object_getattribute(self) -> None:
+        # Tests https://github.com/pylint-dev/astroid/issues/2686
+        # When astroid live inspection of module's collection raises
+        # error when element __getattribute__ causes collection to change size.
+
+        # This should not raise an exception
+        AstroidBuilder().inspect_build(fm_collection, "test")
 
 
 @pytest.mark.skipif(
