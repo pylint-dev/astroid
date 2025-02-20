@@ -14,6 +14,11 @@ What's New in astroid 3.3.9?
 Release date: TBA
 
 
+* Fix crash when `sys.modules` contains lazy loader objects during checking.
+
+  Closes #2686
+  Closes pylint-dev/pylint#8589
+
 
 What's New in astroid 3.3.8?
 ============================

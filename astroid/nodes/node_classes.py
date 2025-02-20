@@ -5488,6 +5488,7 @@ def _create_basic_elements(
     """Create a list of nodes to function as the elements of a new node."""
     elements: list[NodeNG] = []
     for element in value:
+        # NOTE: avoid accessing any attributes of element in the loop.
         element_node = const_factory(element)
         element_node.parent = node
         elements.append(element_node)
@@ -5500,6 +5501,7 @@ def _create_dict_items(
     """Create a list of node pairs to function as the items of a new dict node."""
     elements: list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]] = []
     for key, value in values.items():
+        # NOTE: avoid accessing any attributes of both key and value in the loop.
         key_node = const_factory(key)
         key_node.parent = node
         value_node = const_factory(value)
@@ -5510,18 +5512,23 @@ def _create_dict_items(
 
 def const_factory(value: Any) -> ConstFactoryResult:
     """Return an astroid node for a python value."""
-    assert not isinstance(value, NodeNG)
+    # NOTE: avoid accessing any attributes of value until it is known that value
+    # is of a const type, to avoid possibly triggering code for a live object.
+    # Accesses include value.__class__ and isinstance(value, ...), but not type(value).
+    # See: https://github.com/pylint-dev/astroid/issues/2686
+    value_type = type(value)
+    assert not issubclass(value_type, NodeNG)
 
     # This only handles instances of the CONST types. Any
     # subclasses get inferred as EmptyNode.
     # TODO: See if we should revisit these with the normal builder.
-    if value.__class__ not in CONST_CLS:
+    if value_type not in CONST_CLS:
         node = EmptyNode()
         node.object = value
         return node
 
     instance: List | Set | Tuple | Dict
-    initializer_cls = CONST_CLS[value.__class__]
+    initializer_cls = CONST_CLS[value_type]
     if issubclass(initializer_cls, (List, Set, Tuple)):
         instance = initializer_cls(
             lineno=None,
