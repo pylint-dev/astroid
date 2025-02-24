@@ -10,7 +10,7 @@ repos:
       - id: end-of-file-fixer
         exclude: tests/testdata
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.9.6"
+    rev: "v0.9.7"
     hooks:
       - id: ruff
         args: ["--fix"]
@@ -61,7 +61,7 @@ repos:
         require_serial: true
         additional_dependencies: ["types-typed-ast"]
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.5.1
+    rev: v3.5.2
     hooks:
       - id: prettier
         args: [--prose-wrap=always, --print-width=88]
