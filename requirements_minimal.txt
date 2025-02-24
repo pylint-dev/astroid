@@ -6,3 +6,4 @@ tbump~=6.11
 coverage~=7.6
 pytest
 pytest-cov~=5.0
+mypy
