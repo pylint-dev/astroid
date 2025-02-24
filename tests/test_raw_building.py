@@ -19,6 +19,7 @@ import unittest
 from typing import Any
 from unittest import mock
 
+import mypy.build
 import pytest
 
 import tests.testdata.python3.data.fake_module_with_broken_getattr as fm_getattr
@@ -33,6 +34,7 @@ from astroid.raw_building import (
     build_from_import,
     build_function,
     build_module,
+    object_build_class,
 )
 
 DUMMY_MOD = build_module("DUMMY")
@@ -169,3 +171,8 @@ def test_build_module_getattr_catch_output(
     assert expected_err in caplog.text
     assert not out
     assert not err
+
+
+def test_missing__dict__():
+    # This shouldn't raise an exception.
+    object_build_class(DUMMY_MOD, mypy.build.ModuleNotFound)
