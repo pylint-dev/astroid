@@ -4,5 +4,4 @@
 black
 pre-commit
 pylint>=3.2.0
-mypy
 ruff
