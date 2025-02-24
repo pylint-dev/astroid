@@ -370,7 +370,11 @@ def _base_class_object_build(
         # this at least resolves common case such as Exception.args,
         # OSError.errno
         if issubclass(member, Exception):
-            instdict = member().__dict__
+            member_object = member()
+            if hasattr(member_object, "__dict__"):
+                instdict = member_object.__dict__
+            else:
+                raise TypeError
         else:
             raise TypeError
     except TypeError:
