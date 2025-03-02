@@ -174,4 +174,4 @@ def test_build_module_getattr_catch_output(
 
 def test_missing__dict__():
     # This shouldn't raise an exception.
-    object_build_class(DUMMY_MOD, mypy.build.ModuleNotFound)
+    object_build_class(DUMMY_MOD, mypy.build.ModuleNotFound, "arbitrary_name")
