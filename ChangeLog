@@ -37,7 +37,9 @@ What's New in astroid 3.3.10?
 =============================
 Release date: TBA
 
+* Avoid importing submodules sharing names with standard library modules.
 
+  Closes #2684
 
 
 What's New in astroid 3.3.9?
