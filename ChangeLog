@@ -33,14 +33,16 @@ Release date: TBA
   Closes #2513
 
 
-What's New in astroid 3.3.9?
-============================
+What's New in astroid 3.3.10?
+=============================
 Release date: TBA
 
-* Fix inability to import `collections.abc` in python 3.13.1. The reported fixes in astroid 3.3.6
-  and 3.3.7 did not actually fix this issue.
 
-  Closes pylint-dev/pylint#10112
+
+
+What's New in astroid 3.3.9?
+============================
+Release date: 2025-03-09
 
 * Fix crash when `sys.modules` contains lazy loader objects during checking.
 
