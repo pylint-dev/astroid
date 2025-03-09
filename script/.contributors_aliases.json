@@ -1,4 +1,8 @@
 {
+  "134317971+correctmost@users.noreply.github.com": {
+    "mails": ["134317971+correctmost@users.noreply.github.com"],
+    "name": "correctmost"
+  },
   "13665637+DanielNoord@users.noreply.github.com": {
     "mails": ["13665637+DanielNoord@users.noreply.github.com"],
     "name": "Daniël van Noord",
@@ -98,7 +102,7 @@
     "name": "Jacob Bogdanov"
   },
   "jacobtylerwalls@gmail.com": {
-    "mails": ["jacobtylerwalls@gmail.com"],
+    "mails": ["jacobtylerwalls@gmail.com", "jwalls@fargeo.com"],
     "name": "Jacob Walls",
     "team": "Maintainers"
   },
