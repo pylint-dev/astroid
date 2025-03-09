@@ -9,9 +9,15 @@ Release date: TBA
 
 
 
+What's New in astroid 3.3.10?
+=============================
+Release date: TBA
+
+
+
 What's New in astroid 3.3.9?
 ============================
-Release date: TBA
+Release date: 2025-03-09
 
 
 * Fix crash when `sys.modules` contains lazy loader objects during checking.

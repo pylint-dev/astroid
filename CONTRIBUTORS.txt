@@ -200,6 +200,7 @@ Contributors
 - Alexander Presnyakov <flagist0@gmail.com>
 - Ahmed Azzaoui <ahmed.azzaoui@engie.com>
 
+
 Co-Author
 ---------
 The following persons were credited manually but did not commit themselves
@@ -210,9 +211,3 @@ under this name, or we did not manage to find their commits in the history.
 - carl
 - alain lefroy
 - Mark Gius
-- Jérome Perrin <perrinjerome@gmail.com>
-- Jamie Scott <jamie@jami.org.uk>
-- correctmost <134317971+correctmost@users.noreply.github.com>
-- Oleh Prypin <oleh@pryp.in>
-- Eric Vergnaud <eric.vergnaud@wanadoo.fr>
-- Hashem Nasarat <Hnasar@users.noreply.github.com>
