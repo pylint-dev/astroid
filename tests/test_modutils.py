@@ -597,3 +597,18 @@ def test_find_setuptools_pep660_editable_install():
     with unittest.mock.patch.object(sys, "meta_path", new=[_EditableFinder]):
         assert spec.find_spec(["example"])
         assert spec.find_spec(["example", "subpackage"])
+
+
+def test_no_import_done_for_submodule_sharing_std_lib_name() -> None:
+    sys.path.insert(0, resources.find("data"))
+    try:
+        with pytest.raises(ImportError):
+            spec._find_spec_with_path(
+                [resources.find("data")],
+                "trace",
+                ("divide_by_zero", "trace"),
+                ("divide_by_zero",),
+                resources.find("data/divide_by_zero"),
+            )
+    finally:
+        sys.path.pop(0)

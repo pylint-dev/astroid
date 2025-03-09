@@ -171,7 +171,7 @@ class ImportlibFinder(Finder):
             # module. Note that `find_spec` actually imports parent modules, so we want to make
             # sure we only run this code for stuff that can be expected to be frozen. For now
             # this is only stdlib.
-            if modname in sys.stdlib_module_names or (
+            if (modname in sys.stdlib_module_names and not processed) or (
                 processed and processed[0] in sys.stdlib_module_names
             ):
                 try:
