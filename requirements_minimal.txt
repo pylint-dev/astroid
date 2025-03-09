@@ -7,3 +7,4 @@ coverage~=7.6
 pytest
 pytest-cov~=5.0
 mypy
+setuptools
