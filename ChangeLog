@@ -47,6 +47,10 @@ Release date: TBA
   Closes #2686
   Closes pylint-dev/pylint#8589
 
+* Upload release assets to PyPI via Trusted Publishing.
+
+  Refs pylint-dev/pylint#10256
+
 
 What's New in astroid 3.3.8?
 ============================
