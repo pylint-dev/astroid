@@ -439,7 +439,10 @@ class AstroidManager:
         # pylint: disable=import-outside-toplevel
         from astroid.brain.helpers import register_all_brains
         from astroid.inference_tip import clear_inference_tip_cache
-        from astroid.interpreter._import.spec import _find_spec
+        from astroid.interpreter._import.spec import (
+            _find_spec,
+            _is_setuptools_namespace,
+        )
         from astroid.interpreter.objectmodel import ObjectModel
         from astroid.nodes._base_nodes import LookupMixIn
         from astroid.nodes.scoped_nodes import ClassDef
@@ -462,6 +465,7 @@ class AstroidManager:
             ObjectModel.attributes,
             ClassDef._metaclass_lookup_attribute,
             _find_spec,
+            _is_setuptools_namespace,
         ):
             lru_cache.cache_clear()  # type: ignore[attr-defined]
 
