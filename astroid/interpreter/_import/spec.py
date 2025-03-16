@@ -367,6 +367,7 @@ _SPEC_FINDERS = (
 )
 
 
+@lru_cache(maxsize=1024)
 def _is_setuptools_namespace(location: pathlib.Path) -> bool:
     try:
         with open(location / "__init__.py", "rb") as stream:
