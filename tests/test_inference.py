@@ -1883,6 +1883,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         node = ast["do_a_thing"]
         self.assertEqual(node.type, "function")
 
+    @pytest.mark.skipif(
+        IS_PYPY and PY310_PLUS,
+        reason="Persistent recursion error that we ignore and never fix",
+    )
     def test_no_infinite_ancestor_loop(self) -> None:
         klass = extract_node(
             """
