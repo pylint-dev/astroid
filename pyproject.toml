@@ -8,13 +8,14 @@ name = "astroid"
 description = "An abstract syntax tree for Python with inference support."
 readme = "README.rst"
 keywords = [ "abstract syntax tree", "python", "static code analysis" ]
-license = { text = "LGPL-2.1-or-later" }
+license = "LGPL-2.1-or-later"
+license-files = [ "LICENSE", "CONTRIBUTORS.txt" ]
+
 requires-python = ">=3.9.0"
 classifiers = [
   "Development Status :: 6 - Mature",
   "Environment :: Console",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)",
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3 :: Only",
@@ -38,9 +39,6 @@ urls."Bug tracker" = "https://github.com/pylint-dev/astroid/issues"
 urls."Discord server" = "https://discord.gg/Egy6P8AMB5"
 urls."Docs" = "https://pylint.readthedocs.io/projects/astroid/en/latest/"
 urls."Source Code" = "https://github.com/pylint-dev/astroid"
-
-[tool.setuptools]
-license-files = [ "LICENSE", "CONTRIBUTORS.txt" ] # Keep in sync with setup.cfg
 
 [tool.setuptools.package-dir]
 "" = "."
