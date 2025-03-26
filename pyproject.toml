@@ -1,7 +1,7 @@
 [build-system]
 build-backend = "setuptools.build_meta"
 
-requires = ["setuptools>=75.2.0"]
+requires = [ "setuptools>=77" ]
 
 [project]
 name = "astroid"
