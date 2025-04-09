@@ -2183,7 +2183,7 @@ class ClassDef(  # pylint: disable=too-many-instance-attributes
         )
         if (
             any(
-                node == base or base.parent_of(node) and not self.type_params
+                node == base or (base.parent_of(node) and not self.type_params)
                 for base in self.bases
             )
             or lookup_upper_frame

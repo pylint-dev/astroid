@@ -38,8 +38,8 @@ __all__ = (
     "LocalsDictNodeNG",
     "Module",
     "SetComp",
+    "_is_metaclass",
     "builtin_lookup",
     "function_to_method",
     "get_wrapping_class",
-    "_is_metaclass",
 )
