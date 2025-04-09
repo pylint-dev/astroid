@@ -608,13 +608,11 @@ class OperatorNode(NodeNG):
             and op == "|"
             and (
                 isinstance(left, (bases.UnionType, nodes.ClassDef))
-                or isinstance(left, nodes.Const)
-                and left.value is None
+                or (isinstance(left, nodes.Const) and left.value is None)
             )
             and (
                 isinstance(right, (bases.UnionType, nodes.ClassDef))
-                or isinstance(right, nodes.Const)
-                and right.value is None
+                or (isinstance(right, nodes.Const) and right.value is None)
             )
         ):
             methods.extend([partial(OperatorNode._bin_op_or_union_type, left, right)])

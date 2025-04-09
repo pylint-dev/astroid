@@ -50,10 +50,8 @@ from bump_changelog import (
 )
 def test_get_next_version(version, version_type, expected_version, expected_versions):
     assert get_next_version(version, version_type) == expected_version
-    if (
-        version_type == VersionType.PATCH
-        or version_type == VersionType.MINOR
-        and version.endswith(".0")
+    if version_type == VersionType.PATCH or (
+        version_type == VersionType.MINOR and version.endswith(".0")
     ):
         assert get_next_versions(version, version_type) == expected_versions
 
