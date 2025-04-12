@@ -489,6 +489,7 @@ def get_source_file(
     """
     filename = os.path.abspath(_path_from_filename(filename))
     base, orig_ext = os.path.splitext(filename)
+    orig_ext = orig_ext.lstrip(".")
     if orig_ext not in PY_SOURCE_EXTS and os.path.exists(f"{base}{orig_ext}"):
         return f"{base}{orig_ext}"
     for ext in PY_SOURCE_EXTS_STUBS_FIRST if prefer_stubs else PY_SOURCE_EXTS:
