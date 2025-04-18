@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Unit tests for module modutils (module manipulation utilities)."""
+
 import email
 import logging
 import os
@@ -47,9 +48,7 @@ class ModuleFileTest(unittest.TestCase):
                 del sys.path_importer_cache[k]
 
     def test_find_zipped_module(self) -> None:
-        found_spec = spec.find_spec(
-            [self.package], [resources.find("data/MyPyPa-0.1.0-py2.5.zip")]
-        )
+        found_spec = spec.find_spec([self.package], [resources.find("data/MyPyPa-0.1.0-py2.5.zip")])
         self.assertEqual(found_spec.type, spec.ModuleType.PY_ZIPMODULE)
         self.assertEqual(
             found_spec.location.split(os.sep)[-3:],
@@ -57,9 +56,7 @@ class ModuleFileTest(unittest.TestCase):
         )
 
     def test_find_egg_module(self) -> None:
-        found_spec = spec.find_spec(
-            [self.package], [resources.find("data/MyPyPa-0.1.0-py2.5.egg")]
-        )
+        found_spec = spec.find_spec([self.package], [resources.find("data/MyPyPa-0.1.0-py2.5.egg")])
         self.assertEqual(found_spec.type, spec.ModuleType.PY_ZIPMODULE)
         self.assertEqual(
             found_spec.location.split(os.sep)[-3:],
@@ -77,9 +74,7 @@ class LoadModuleFromNameTest(unittest.TestCase):
         self.assertEqual(modutils.load_module_from_name("os.path"), os.path)
 
     def test_raise_load_module_from_name_1(self) -> None:
-        self.assertRaises(
-            ImportError, modutils.load_module_from_name, "_this_module_does_not_exist_"
-        )
+        self.assertRaises(ImportError, modutils.load_module_from_name, "_this_module_does_not_exist_")
 
 
 def test_import_dotted_library(
@@ -118,9 +113,7 @@ class GetModulePartTest(unittest.TestCase):
     """Given a dotted name return the module part of the name."""
 
     def test_known_values_get_module_part_1(self) -> None:
-        self.assertEqual(
-            modutils.get_module_part("astroid.modutils"), "astroid.modutils"
-        )
+        self.assertEqual(modutils.get_module_part("astroid.modutils"), "astroid.modutils")
 
     def test_known_values_get_module_part_2(self) -> None:
         self.assertEqual(
@@ -144,9 +137,7 @@ class GetModulePartTest(unittest.TestCase):
         self.assertEqual(modutils.get_module_part("sys.path", "__file__"), "sys")
 
     def test_get_module_part_exception(self) -> None:
-        self.assertRaises(
-            ImportError, modutils.get_module_part, "unknown.module", modutils.__file__
-        )
+        self.assertRaises(ImportError, modutils.get_module_part, "unknown.module", modutils.__file__)
 
     def test_get_module_part_only_dot(self) -> None:
         self.assertEqual(modutils.get_module_part(".", modutils.__file__), ".")
@@ -169,9 +160,7 @@ class ModPathFromFileTest(unittest.TestCase):
             linked_file_name = "symlinked_file.py"
             try:
                 os.symlink(tmpfile.name, linked_file_name)
-                self.assertEqual(
-                    modutils.modpath_from_file(linked_file_name), ["symlinked_file"]
-                )
+                self.assertEqual(modutils.modpath_from_file(linked_file_name), ["symlinked_file"])
             finally:
                 os.remove(linked_file_name)
 
@@ -195,9 +184,7 @@ class ModPathFromFileTest(unittest.TestCase):
                     pass
 
                 # Without additional directory, return relative to tmp_dir
-                self.assertEqual(
-                    modutils.modpath_from_file(module_file), [sub_dirname, mod_name]
-                )
+                self.assertEqual(modutils.modpath_from_file(module_file), [sub_dirname, mod_name])
 
                 # With sub directory as additional directory, return relative to
                 # sub directory
@@ -211,9 +198,7 @@ class ModPathFromFileTest(unittest.TestCase):
             linked_file_name = os.path.join(tempfile.gettempdir(), "symlinked_file.py")
             try:
                 os.symlink(tmpfile.name, linked_file_name)
-                self.assertRaises(
-                    ImportError, modutils.modpath_from_file, linked_file_name
-                )
+                self.assertRaises(ImportError, modutils.modpath_from_file, linked_file_name)
             finally:
                 os.remove(linked_file_name)
 
@@ -315,9 +300,7 @@ class FileFromModPathTest(resources.SysPathSetup, unittest.TestCase):
 class GetSourceFileTest(unittest.TestCase):
     def test(self) -> None:
         filename = _get_file_from_object(os.path)
-        self.assertEqual(
-            modutils.get_source_file(os.path.__file__), os.path.normpath(filename)
-        )
+        self.assertEqual(modutils.get_source_file(os.path.__file__), os.path.normpath(filename))
 
     def test_raise(self) -> None:
         self.assertRaises(modutils.NoSourceFile, modutils.get_source_file, "whatever")
@@ -334,6 +317,22 @@ class GetSourceFileTest(unittest.TestCase):
             modutils.get_source_file(module, prefer_stubs=True),
             os.path.normpath(module) + "i",
         )
+
+    def test_nonstandard_extension(self) -> None:
+        package = resources.find("pyi_data/find_test")
+        modules = [
+            os.path.join(package, "__init__.weird_ext"),
+            os.path.join(package, "standalone_file.weird_ext"),
+        ]
+        for module in modules:
+            self.assertEqual(
+                modutils.get_source_file(module, prefer_stubs=True),
+                module,
+            )
+            self.assertEqual(
+                modutils.get_source_file(module),
+                module,
+            )
 
 
 class IsStandardModuleTest(resources.SysPathSetup, unittest.TestCase):
@@ -390,9 +389,7 @@ class IsStandardModuleTest(resources.SysPathSetup, unittest.TestCase):
         with pytest.warns(DeprecationWarning):
             assert modutils.is_standard_module("data.module", (datadir,))
         with pytest.warns(DeprecationWarning):
-            assert modutils.is_standard_module(
-                "data.module", (os.path.abspath(datadir),)
-            )
+            assert modutils.is_standard_module("data.module", (os.path.abspath(datadir),))
         # "" will evaluate to cwd
         with pytest.warns(DeprecationWarning):
             assert modutils.is_standard_module("data.module", ("",))
@@ -506,16 +503,10 @@ class IsRelativeTest(unittest.TestCase):
         self.assertFalse(modutils.is_relative("astroid", astroid.__path__[0]))
 
     def test_known_values_is_relative_4(self) -> None:
-        self.assertTrue(
-            modutils.is_relative("util", astroid.interpreter._import.spec.__file__)
-        )
+        self.assertTrue(modutils.is_relative("util", astroid.interpreter._import.spec.__file__))
 
     def test_known_values_is_relative_5(self) -> None:
-        self.assertFalse(
-            modutils.is_relative(
-                "objectmodel", astroid.interpreter._import.spec.__file__
-            )
-        )
+        self.assertFalse(modutils.is_relative("objectmodel", astroid.interpreter._import.spec.__file__))
 
     def test_deep_relative(self) -> None:
         self.assertTrue(modutils.is_relative("ElementTree", xml.etree.__path__[0]))
@@ -530,9 +521,7 @@ class IsRelativeTest(unittest.TestCase):
         self.assertTrue(modutils.is_relative("etree.gibberish", xml.__path__[0]))
 
     def test_is_relative_bad_path(self) -> None:
-        self.assertFalse(
-            modutils.is_relative("ElementTree", os.path.join(xml.__path__[0], "ftree"))
-        )
+        self.assertFalse(modutils.is_relative("ElementTree", os.path.join(xml.__path__[0], "ftree")))
 
 
 class GetModuleFilesTest(unittest.TestCase):
@@ -578,38 +567,18 @@ class GetModuleFilesTest(unittest.TestCase):
 
 class ExtensionPackageWhitelistTest(unittest.TestCase):
     def test_is_module_name_part_of_extension_package_whitelist_true(self) -> None:
+        self.assertTrue(modutils.is_module_name_part_of_extension_package_whitelist("numpy", {"numpy"}))
+        self.assertTrue(modutils.is_module_name_part_of_extension_package_whitelist("numpy.core", {"numpy"}))
         self.assertTrue(
-            modutils.is_module_name_part_of_extension_package_whitelist(
-                "numpy", {"numpy"}
-            )
-        )
-        self.assertTrue(
-            modutils.is_module_name_part_of_extension_package_whitelist(
-                "numpy.core", {"numpy"}
-            )
-        )
-        self.assertTrue(
-            modutils.is_module_name_part_of_extension_package_whitelist(
-                "numpy.core.umath", {"numpy"}
-            )
+            modutils.is_module_name_part_of_extension_package_whitelist("numpy.core.umath", {"numpy"})
         )
 
     def test_is_module_name_part_of_extension_package_whitelist_success(self) -> None:
+        self.assertFalse(modutils.is_module_name_part_of_extension_package_whitelist("numpy", {"numpy.core"}))
         self.assertFalse(
-            modutils.is_module_name_part_of_extension_package_whitelist(
-                "numpy", {"numpy.core"}
-            )
+            modutils.is_module_name_part_of_extension_package_whitelist("numpy.core", {"numpy.core.umath"})
         )
-        self.assertFalse(
-            modutils.is_module_name_part_of_extension_package_whitelist(
-                "numpy.core", {"numpy.core.umath"}
-            )
-        )
-        self.assertFalse(
-            modutils.is_module_name_part_of_extension_package_whitelist(
-                "core.umath", {"numpy"}
-            )
-        )
+        self.assertFalse(modutils.is_module_name_part_of_extension_package_whitelist("core.umath", {"numpy"}))
 
 
 @pytest.mark.skipif(not HAS_URLLIB3_V1, reason="This test requires urllib3 < 2.")
