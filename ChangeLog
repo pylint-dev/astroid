@@ -41,6 +41,10 @@ Release date: TBA
 
   Closes #2684
 
+* Fix bug where ``pylint code.custom_extension`` would analyze ``code.py`` or ``code.pyi`` instead if they existed.
+
+	Closes pylint-dev/pylint#3631
+
 
 What's New in astroid 3.3.9?
 ============================
