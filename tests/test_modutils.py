@@ -304,6 +304,22 @@ class GetSourceFileTest(unittest.TestCase):
             os.path.normpath(module) + "i",
         )
 
+    def test_nonstandard_extension(self) -> None:
+        package = resources.find("pyi_data/find_test")
+        modules = [
+            os.path.join(package, "__init__.weird_ext"),
+            os.path.join(package, "standalone_file.weird_ext"),
+        ]
+        for module in modules:
+            self.assertEqual(
+                modutils.get_source_file(module, prefer_stubs=True),
+                module,
+            )
+            self.assertEqual(
+                modutils.get_source_file(module),
+                module,
+            )
+
 
 class IsStandardModuleTest(resources.SysPathSetup, unittest.TestCase):
     """
