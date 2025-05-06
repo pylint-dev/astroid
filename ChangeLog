@@ -9,9 +9,15 @@ Release date: TBA
 
 
 
-What's New in astroid 3.3.10?
+What's New in astroid 3.3.11?
 =============================
 Release date: TBA
+
+
+
+What's New in astroid 3.3.10?
+=============================
+Release date: 2025-05-07
 
 * Avoid importing submodules sharing names with standard library modules.
 
