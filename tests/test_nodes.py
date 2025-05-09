@@ -28,7 +28,14 @@ from astroid import (
     transforms,
     util,
 )
-from astroid.const import IS_PYPY, PY310_PLUS, PY311_PLUS, PY312_PLUS, Context
+from astroid.const import (
+    IS_PYPY,
+    PY310_PLUS,
+    PY311_PLUS,
+    PY312_PLUS,
+    PY314_PLUS,
+    Context,
+)
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -115,10 +122,21 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         ast = abuilder.string_build("raise_string(*args, **kwargs)").body[0]
         self.assertEqual(ast.as_string(), "raise_string(*args, **kwargs)")
 
-    def test_module_as_string(self) -> None:
-        """Check as_string on a whole module prepared to be returned identically."""
+    @pytest.mark.skipif(PY314_PLUS, reason="return in finally is now a syntax error")
+    def test_module_as_string_pre_3_14(self) -> None:
+        """Check as_string on a whole module prepared to be returned identically for py < 3.14."""
+        self.maxDiff = None
         module = resources.build_file("data/module.py", "data.module")
         with open(resources.find("data/module.py"), encoding="utf-8") as fobj:
+            self.assertMultiLineEqual(module.as_string(), fobj.read())
+
+    @pytest.mark.skipif(
+        not PY314_PLUS, reason="return in finally is now a syntax error"
+    )
+    def test_module_as_string(self) -> None:
+        """Check as_string on a whole module prepared to be returned identically for py > 3.14."""
+        module = resources.build_file("data/module3.14.py", "data.module3.14")
+        with open(resources.find("data/module3.14.py"), encoding="utf-8") as fobj:
             self.assertMultiLineEqual(module.as_string(), fobj.read())
 
     def test_module2_as_string(self) -> None:
