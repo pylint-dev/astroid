@@ -114,6 +114,7 @@ Contributors
 - grayjk <grayjk@gmail.com>
 - alm <alonme@users.noreply.github.com>
 - adam-grant-hendry <59346180+adam-grant-hendry@users.noreply.github.com>
+- aatle <168398276+aatle@users.noreply.github.com>
 - Zbigniew Jędrzejewski-Szmek <zbyszek@in.waw.pl>
 - Zac Hatfield-Dodds <Zac-HD@users.noreply.github.com>
 - Vilnis Termanis <vilnis.termanis@iotics.com>
@@ -122,6 +123,7 @@ Contributors
 - Tomas Novak <ext.Tomas.Novak@skoda-auto.cz>
 - Thirumal Venkat <me@thirumal.in>
 - SupImDos <62866982+SupImDos@users.noreply.github.com>
+- Stéphane Brunner <stephane.brunner@camptocamp.com>
 - Stanislav Levin <slev@altlinux.org>
 - Simon Hewitt <si@sjhewitt.co.uk>
 - Serhiy Storchaka <storchaka@gmail.com>
@@ -185,6 +187,7 @@ Contributors
 - Cole Robinson <crobinso@redhat.com>
 - Christoph Reiter <reiter.christoph@gmail.com>
 - Chris Philip <chrisp533@gmail.com>
+- Charlie Ringström <34444482+Chasarr@users.noreply.github.com>
 - BioGeek <jeroen.vangoey@gmail.com>
 - Bianca Power <30207144+biancapower@users.noreply.github.com>
 - Benjamin Elven <25181435+S3ntinelX@users.noreply.github.com>

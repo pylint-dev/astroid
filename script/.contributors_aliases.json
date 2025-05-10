@@ -1,8 +1,4 @@
 {
-  "c.ringstrom@gmail.com": {
-    "mails": ["c.ringstrom@gmail.com"],
-    "name": "Charlie Ringström"
-  },
   "134317971+correctmost@users.noreply.github.com": {
     "mails": ["134317971+correctmost@users.noreply.github.com"],
     "name": "correctmost"
@@ -84,6 +80,10 @@
     "mails": ["bryce.paul.guinta@gmail.com", "bryce.guinta@protonmail.com"],
     "name": "Bryce Guinta",
     "team": "Maintainers"
+  },
+  "c.ringstrom@gmail.com": {
+    "mails": ["c.ringstrom@gmail.com"],
+    "name": "Charlie Ringström"
   },
   "calen.pennington@gmail.com": {
     "mails": ["cale@edx.org", "calen.pennington@gmail.com"],
