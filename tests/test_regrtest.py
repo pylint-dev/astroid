@@ -497,3 +497,9 @@ def test_regression_missing_callcontext() -> None:
         )
     )
     assert node.inferred()[0].value == "mystr"
+
+
+def test_regression_no_crash_during_build() -> None:
+    node: nodes.Attribute = extract_node("__()")
+    assert node.args == []
+    assert node.as_string() == "__()"
