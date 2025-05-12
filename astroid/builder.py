@@ -317,6 +317,7 @@ def _extract_expressions(node: nodes.NodeNG) -> Iterator[nodes.NodeNG]:
         isinstance(node, nodes.Call)
         and isinstance(node.func, nodes.Name)
         and node.func.name == _TRANSIENT_FUNCTION
+        and node.args
     ):
         real_expr = node.args[0]
         assert node.parent

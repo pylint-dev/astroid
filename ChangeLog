@@ -37,7 +37,9 @@ What's New in astroid 3.3.11?
 =============================
 Release date: TBA
 
+* Fix a crash when parsing what look like the internal "transient function" (``__``) without any args.
 
+  Closes #2734
 
 What's New in astroid 3.3.10?
 =============================
