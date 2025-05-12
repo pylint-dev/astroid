@@ -13,7 +13,9 @@ What's New in astroid 3.3.11?
 =============================
 Release date: TBA
 
+* Fix a crash when parsing an empty arbitrary expression with ``extract_node`` (``extract_node("__()")``).
 
+  Closes #2734
 
 What's New in astroid 3.3.10?
 =============================
