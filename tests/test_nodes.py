@@ -37,6 +37,7 @@ from astroid.exceptions import (
     StatementMissing,
 )
 from astroid.nodes.node_classes import (
+    UNATTACHED_UNKNOWN,
     AssignAttr,
     AssignName,
     Attribute,
@@ -281,8 +282,10 @@ everything = f""" " \' \r \t \\ {{ }} {'x' + x!r:a} {["'"]!s:{a}}"""
 
     @staticmethod
     def test_as_string_unknown() -> None:
-        assert nodes.Unknown().as_string() == "Unknown.Unknown()"
-        assert nodes.Unknown(lineno=1, col_offset=0).as_string() == "Unknown.Unknown()"
+        unknown1 = nodes.Unknown(parent=SYNTHETIC_ROOT)
+        unknown2 = nodes.Unknown(lineno=1, col_offset=0, parent=SYNTHETIC_ROOT)
+        assert unknown1.as_string() == "Unknown.Unknown()"
+        assert unknown2.as_string() == "Unknown.Unknown()"
 
     @staticmethod
     @pytest.mark.skipif(
@@ -1231,9 +1234,9 @@ class ContextTest(unittest.TestCase):
 
 def test_unknown() -> None:
     """Test Unknown node."""
-    assert isinstance(next(nodes.Unknown().infer()), type(util.Uninferable))
-    assert isinstance(nodes.Unknown().name, str)
-    assert isinstance(nodes.Unknown().qname(), str)
+    assert isinstance(next(UNATTACHED_UNKNOWN.infer()), type(util.Uninferable))
+    assert isinstance(UNATTACHED_UNKNOWN.name, str)
+    assert isinstance(UNATTACHED_UNKNOWN.qname(), str)
 
 
 def test_type_comments_with() -> None:
@@ -1963,7 +1966,7 @@ def test_str_repr_no_warnings(node):
             "NodeNG" in param_type.annotation
             or "SuccessfulInferenceResult" in param_type.annotation
         ):
-            args[name] = nodes.Unknown()
+            args[name] = UNATTACHED_UNKNOWN
         elif "str" in param_type.annotation:
             args[name] = ""
         else:

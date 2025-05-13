@@ -4963,9 +4963,9 @@ class Unknown(_base_nodes.AssignTypeNode):
 
     def __init__(
         self,
+        parent: NodeNG,
         lineno: None = None,
         col_offset: None = None,
-        parent: None = None,
         *,
         end_lineno: None = None,
         end_col_offset: None = None,
@@ -4984,6 +4984,9 @@ class Unknown(_base_nodes.AssignTypeNode):
     def _infer(self, context: InferenceContext | None = None, **kwargs):
         """Inference on an Unknown node immediately terminates."""
         yield util.Uninferable
+
+
+UNATTACHED_UNKNOWN = Unknown(parent=SYNTHETIC_ROOT)
 
 
 class EvaluatedObject(NodeNG):
