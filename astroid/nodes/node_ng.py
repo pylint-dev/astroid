@@ -315,6 +315,7 @@ class NodeNG:
         :returns: The root node.
         """
         if not (parent := self.parent):
+            assert isinstance(self, (nodes.Module, nodes.Unknown))
             return self
 
         while parent.parent:
