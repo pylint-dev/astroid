@@ -228,17 +228,17 @@ class ModuleModel(ObjectModel):
     @property
     def attr___spec__(self):
         # No handling for now.
-        return node_classes.Unknown()
+        return node_classes.Unknown(parent=self._instance)
 
     @property
     def attr___loader__(self):
         # No handling for now.
-        return node_classes.Unknown()
+        return node_classes.Unknown(parent=self._instance)
 
     @property
     def attr___cached__(self):
         # No handling for now.
-        return node_classes.Unknown()
+        return node_classes.Unknown(parent=self._instance)
 
 
 class FunctionModel(ObjectModel):
@@ -462,7 +462,7 @@ class FunctionModel(ObjectModel):
     # These are here just for completion.
     @property
     def attr___ne__(self):
-        return node_classes.Unknown()
+        return node_classes.Unknown(parent=self._instance)
 
     attr___subclasshook__ = attr___ne__
     attr___str__ = attr___ne__
@@ -493,8 +493,8 @@ class ClassModel(ObjectModel):
         super().__init__()
 
     @property
-    def attr___annotations__(self) -> node_classes.Unkown:
-        return node_classes.Unknown()
+    def attr___annotations__(self) -> node_classes.Unknown:
+        return node_classes.Unknown(parent=self._instance)
 
     @property
     def attr___module__(self):

@@ -162,13 +162,13 @@ def _filter_uninferable_nodes(
 ) -> Iterator[SuccessfulInferenceResult]:
     for elt in elts:
         if isinstance(elt, util.UninferableBase):
-            yield nodes.Unknown()
+            yield node_classes.UNATTACHED_UNKNOWN
         else:
             for inferred in elt.infer(context):
                 if not isinstance(inferred, util.UninferableBase):
                     yield inferred
                 else:
-                    yield nodes.Unknown()
+                    yield node_classes.UNATTACHED_UNKNOWN
 
 
 @decorators.yes_if_nothing_inferred

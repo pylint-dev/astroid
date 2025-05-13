@@ -502,7 +502,7 @@ def test_regression_missing_callcontext() -> None:
 
 def test_regression_root_is_not_a_module() -> None:
     """Regression test for #2672."""
-    node: nodes.Attribute = _extract_single_node(
+    node: nodes.ClassDef = _extract_single_node(
         textwrap.dedent(
             """
         a=eval.__get__(1).__gt__
@@ -513,6 +513,14 @@ def test_regression_root_is_not_a_module() -> None:
         )
     )
     assert node.name == "c"
+
+
+@pytest.mark.xfail(reason="Not fixed yet")
+def test_regression_eval_get_of_arg() -> None:
+    """Regression test for #2743"""
+    node = _extract_single_node("eval.__get__(1)")
+    with pytest.raises(InferenceError):
+        next(node.infer())
 
 
 def test_regression_no_crash_during_build() -> None:

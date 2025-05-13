@@ -11,6 +11,7 @@ from astroid import builder, helpers, manager, nodes, raw_building, util
 from astroid.builder import AstroidBuilder
 from astroid.const import IS_PYPY
 from astroid.exceptions import _NonDeducibleTypeHierarchy
+from astroid.nodes.node_classes import UNATTACHED_UNKNOWN
 from astroid.nodes.scoped_nodes import ClassDef
 
 
@@ -269,7 +270,7 @@ def test_uninferable_for_safe_infer() -> None:
 
 def test_safe_infer_shim() -> None:
     with pytest.warns(DeprecationWarning) as records:
-        helpers.safe_infer(nodes.Unknown())
+        helpers.safe_infer(UNATTACHED_UNKNOWN)
 
     assert (
         "Import safe_infer from astroid.util; this shim in astroid.helpers will be removed."
