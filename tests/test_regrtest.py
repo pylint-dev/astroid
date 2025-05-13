@@ -500,6 +500,21 @@ def test_regression_missing_callcontext() -> None:
     assert node.inferred()[0].value == "mystr"
 
 
+def test_regression_root_is_not_a_module() -> None:
+    """Regression test for #2672."""
+    node: nodes.Attribute = _extract_single_node(
+        textwrap.dedent(
+            """
+        a=eval.__get__(1).__gt__
+
+        @a
+        class c: ...
+        """
+        )
+    )
+    assert node.name == "c"
+
+
 def test_regression_no_crash_during_build() -> None:
     node: nodes.Attribute = extract_node("__()")
     assert node.args == []

@@ -37,6 +37,10 @@ What's New in astroid 3.3.11?
 =============================
 Release date: TBA
 
+* Fix a crash when the root of a node is not a module but is unknown.
+
+  Closes #2672
+
 * Fix a crash when parsing an empty arbitrary expression with ``extract_node`` (``extract_node("__()")``).
 
   Closes #2734

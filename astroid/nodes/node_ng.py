@@ -309,13 +309,13 @@ class NodeNG:
             raise ParentMissingError(target=self)
         return self.parent.scope()
 
-    def root(self) -> nodes.Module:
+    def root(self) -> nodes.Module | nodes.Unknown:
         """Return the root node of the syntax tree.
 
         :returns: The root node.
         """
         if not (parent := self.parent):
-            assert isinstance(self, nodes.Module)
+            assert isinstance(self, (nodes.Module, nodes.Unknown))
             return self
 
         while parent.parent:
