@@ -503,3 +503,19 @@ def test_regression_no_crash_during_build() -> None:
     node: nodes.Attribute = extract_node("__()")
     assert node.args == []
     assert node.as_string() == "__()"
+
+
+def test_regression_no_crash_on_called_slice() -> None:
+    """Regression test for issue #2721."""
+    node: nodes.Attribute = extract_node(
+        textwrap.dedent(
+            """
+        s = slice(-2)
+        @s()
+        @six.add_metaclass()
+        class a: ...
+        """
+        )
+    )
+    assert isinstance(node, nodes.ClassDef)
+    assert node.name == "a"
