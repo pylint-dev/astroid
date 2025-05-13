@@ -464,6 +464,22 @@ def test_max_inferred_for_complicated_class_hierarchy() -> None:
     assert super_node.getattr("__init__", context=context)[0] == Uninferable
 
 
+def test_regression_crash_starred_expression() -> None:
+    """Regression test for #2646."""
+    node: nodes.Attribute = _extract_single_node(
+        textwrap.dedent(
+            """
+        class c:
+            a[t]
+
+        for *o.attr, (*t,) in ():
+            pass
+        """
+        )
+    )
+    assert node.inferred()[0].value == "mystr"
+
+
 @mock.patch(
     "astroid.nodes.ImportFrom._infer",
     side_effect=RecursionError,
