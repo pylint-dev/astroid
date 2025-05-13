@@ -41,6 +41,11 @@ Release date: TBA
 
   Closes #2734
 
+* Fix a crash when parsing a slice called in a decorator on a function that is also decorated with
+  a known ``six`` decorator.
+
+  Closes #2721
+
 What's New in astroid 3.3.10?
 =============================
 Release date: 2025-05-10
