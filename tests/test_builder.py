@@ -802,14 +802,8 @@ class FileBuildTest(unittest.TestCase):
     def test_class_locals(self) -> None:
         """Test the 'locals' dictionary of an astroid class."""
         module = self.module
-        klass1 = module["YO"]
-        locals1 = klass1.locals
-        keys = sorted(locals1.keys())
         assert_keys = ["__annotations__", "__init__", "__module__", "__qualname__", "a"]
-        self.assertEqual(keys, assert_keys)
-        klass2 = module["YOUPI"]
-        locals2 = klass2.locals
-        keys = locals2.keys()
+        self.assertEqual(sorted(module["YO"].locals.keys()), assert_keys)
         assert_keys = [
             "__annotations__",
             "__init__",
@@ -820,39 +814,35 @@ class FileBuildTest(unittest.TestCase):
             "method",
             "static_method",
         ]
-        self.assertEqual(sorted(keys), assert_keys)
+        self.assertEqual(sorted(module["YOUPI"].locals.keys()), assert_keys)
 
     def test_class_instance_attrs(self) -> None:
         module = self.module
-        klass1 = module["YO"]
-        klass2 = module["YOUPI"]
-        self.assertEqual(list(klass1.instance_attrs.keys()), ["yo"])
-        self.assertEqual(list(klass2.instance_attrs.keys()), ["member"])
+        self.assertEqual(list(module["YO"].instance_attrs.keys()), ["yo"])
+        self.assertEqual(list(module["YOUPI"].instance_attrs.keys()), ["member"])
 
     def test_class_basenames(self) -> None:
         module = self.module
-        klass1 = module["YO"]
-        klass2 = module["YOUPI"]
-        self.assertEqual(klass1.basenames, [])
-        self.assertEqual(klass2.basenames, ["YO"])
+        self.assertEqual(module["YO"].basenames, [])
+        self.assertEqual(module["YOUPI"].basenames, ["YO"])
 
     def test_method_base_props(self) -> None:
         """Test base properties and method of an astroid method."""
-        klass2 = self.module["YOUPI"]
-        # "normal" method
-        method = klass2["method"]
+        method = self.module["YOUPI"]["method"]
         self.assertEqual(method.name, "method")
         self.assertEqual([n.name for n in method.args.args], ["self"])
         assert isinstance(method.doc_node, nodes.Const)
         self.assertEqual(method.doc_node.value, "method\n        test")
         self.assertEqual(method.fromlineno, 48)
         self.assertEqual(method.type, "method")
-        # class method
-        method = klass2["class_method"]
+
+    def test_class_method_base_props(self) -> None:
+        method = self.module["YOUPI"]["class_method"]
         self.assertEqual([n.name for n in method.args.args], ["cls"])
         self.assertEqual(method.type, "classmethod")
-        # static method
-        method = klass2["static_method"]
+
+    def test_static_method_base_props(self) -> None:
+        method = self.module["YOUPI"]["static_method"]
         self.assertEqual(method.args.args, [])
         self.assertEqual(method.type, "staticmethod")
 
