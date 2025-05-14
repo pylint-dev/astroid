@@ -781,9 +781,7 @@ class FileBuildTest(unittest.TestCase):
     def test_function_locals(self) -> None:
         """Test the 'locals' dictionary of an astroid function."""
         _locals = self.module["global_access"].locals
-        self.assertEqual(len(_locals), 4)
-        keys = sorted(_locals.keys())
-        self.assertEqual(keys, ["i", "key", "local", "val"])
+        self.assertEqual(sorted(_locals.keys()), ["i", "key", "local", "val"])
 
     def test_class_base_props(self) -> None:
         """Test base properties and method of an astroid class."""
@@ -861,11 +859,8 @@ class FileBuildTest(unittest.TestCase):
     def test_method_locals(self) -> None:
         """Test the 'locals' dictionary of an astroid method."""
         method = self.module["YOUPI"]["method"]
-        _locals = method.locals
-        keys = sorted(_locals)
         # ListComp variables are not accessible outside
-        self.assertEqual(len(_locals), 3)
-        self.assertEqual(keys, ["autre", "local", "self"])
+        self.assertEqual(sorted(method.locals), ["autre", "local", "self"])
 
     def test_unknown_encoding(self) -> None:
         with self.assertRaises(AstroidSyntaxError):
