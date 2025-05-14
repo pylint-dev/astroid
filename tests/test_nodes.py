@@ -28,7 +28,7 @@ from astroid import (
     transforms,
     util,
 )
-from astroid.const import IS_PYPY, PY310_PLUS, PY312_PLUS, Context
+from astroid.const import IS_PYPY, PY310_PLUS, PY311_PLUS, PY312_PLUS, Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -966,8 +966,8 @@ class BoundMethodNodeTest(unittest.TestCase):
         ):
             self._is_property(ast, prop)
 
-    @pytest.mark.skipif(not PY310_PLUS, reason="Uses enum.property")
-    def test_is_standard_property_py310(self) -> None:
+    @pytest.mark.skipif(not PY311_PLUS, reason="Uses enum.property")
+    def test_is_standard_property_py311(self) -> None:
         # Test to make sure the Python-provided property decorators
         # are properly interpreted as properties
         ast = builder.parse(
@@ -1102,8 +1102,8 @@ class BoundMethodNodeTest(unittest.TestCase):
         ):
             self._is_property(ast, prop)
 
-    @pytest.mark.skipif(not PY310_PLUS, reason="Uses enum.property")
-    def test_is_standard_property_subclass_py310(self) -> None:
+    @pytest.mark.skipif(not PY311_PLUS, reason="Uses enum.property")
+    def test_is_standard_property_subclass_py311(self) -> None:
         # Test to make sure that subclasses of the Python-provided property decorators
         # are properly interpreted as properties
         ast = builder.parse(

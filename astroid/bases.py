@@ -13,7 +13,7 @@ from collections.abc import Iterable, Iterator
 from typing import TYPE_CHECKING, Any, Literal
 
 from astroid import decorators, nodes
-from astroid.const import PY310_PLUS
+from astroid.const import PY311_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -39,7 +39,8 @@ if TYPE_CHECKING:
 
 
 PROPERTIES = {"builtins.property", "abc.abstractproperty", "functools.cached_property"}
-if PY310_PLUS:
+# enum.property was added in Python 3.11
+if PY311_PLUS:
     PROPERTIES.add("enum.property")
 
 # List of possible property names. We use this list in order
