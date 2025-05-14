@@ -32,6 +32,9 @@ Release date: TBA
 
   Closes #2513
 
+* Include subclasses of standard property classes as `property` decorators
+
+  Closes #10377
 
 What's New in astroid 3.3.11?
 =============================
