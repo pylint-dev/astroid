@@ -966,7 +966,7 @@ class BoundMethodNodeTest(unittest.TestCase):
         ):
             self._is_property(ast, prop)
 
-    @pytest.mark.skipif(not PY311_PLUS, reason="Uses enum.property")
+    @pytest.mark.skipif(not PY311_PLUS, reason="Uses enum.property introduced in 3.11")
     def test_is_standard_property_py311(self) -> None:
         # Test to make sure the Python-provided property decorators
         # are properly interpreted as properties
@@ -1102,7 +1102,7 @@ class BoundMethodNodeTest(unittest.TestCase):
         ):
             self._is_property(ast, prop)
 
-    @pytest.mark.skipif(not PY311_PLUS, reason="Uses enum.property")
+    @pytest.mark.skipif(not PY311_PLUS, reason="Uses enum.property introduced in 3.11")
     def test_is_standard_property_subclass_py311(self) -> None:
         # Test to make sure that subclasses of the Python-provided property decorators
         # are properly interpreted as properties
