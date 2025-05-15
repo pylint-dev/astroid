@@ -15,7 +15,7 @@ import astroid
 from astroid import MANAGER, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
 from astroid.brain.brain_namedtuple_enum import _get_namedtuple_fields
-from astroid.const import PY312_PLUS, PY313_PLUS
+from astroid.const import PY312_PLUS, PY313_PLUS, PY314_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -335,6 +335,9 @@ class CollectionsBrain(unittest.TestCase):
         with self.assertRaises(InferenceError):
             next(node.infer())
 
+    @pytest.mark.skipif(
+        PY314_PLUS, reason="collections.abc.ByteString was removed in 3.14"
+    )
     def test_collections_object_subscriptable_3(self):
         """With Python 3.9 the ByteString class of the collections module is subscriptable
         (but not the same class from typing module)"""
@@ -918,6 +921,7 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
+    @pytest.mark.skipif(PY314_PLUS, reason="typing.ByteString was removed in 3.14")
     def test_typing_object_notsubscriptable_3(self):
         """Until python39 ByteString class of the typing module is not
         subscriptable (whereas it is in the collections' module)"""
