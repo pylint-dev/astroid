@@ -15,7 +15,7 @@ from typing import Final
 from astroid import context, extract_node, inference_tip
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder, _extract_single_node
-from astroid.const import PY312_PLUS, PY313_PLUS
+from astroid.const import PY312_PLUS, PY313_PLUS, PY314_PLUS
 from astroid.exceptions import (
     AstroidSyntaxError,
     AttributeInferenceError,
@@ -77,7 +77,7 @@ TYPING_ALIAS = frozenset(
         "typing.MutableMapping",
         "typing.Sequence",
         "typing.MutableSequence",
-        "typing.ByteString",
+        "typing.ByteString",  # removed in 3.14
         "typing.Tuple",
         "typing.List",
         "typing.Deque",
@@ -431,9 +431,8 @@ def infer_typing_cast(
 
 
 def _typing_transform():
-    return AstroidBuilder(AstroidManager()).string_build(
-        textwrap.dedent(
-            """
+    code = textwrap.dedent(
+        """
     class Generic:
         @classmethod
         def __class_getitem__(cls, item):  return cls
@@ -467,8 +466,16 @@ def _typing_transform():
         @classmethod
         def __class_getitem__(cls, item):  return cls
     """
-        )
     )
+    if PY314_PLUS:
+        code += textwrap.dedent(
+            """
+    class Union:
+        @classmethod
+        def __class_getitem__(cls, item): return cls
+    """
+        )
+    return AstroidBuilder(AstroidManager()).string_build(code)
 
 
 def register(manager: AstroidManager) -> None:
