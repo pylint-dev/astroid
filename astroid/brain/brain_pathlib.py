@@ -8,7 +8,7 @@ from collections.abc import Iterator
 
 from astroid import bases, context, nodes
 from astroid.builder import _extract_single_node
-from astroid.const import PY313_PLUS
+from astroid.const import PY313
 from astroid.exceptions import InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
@@ -29,7 +29,7 @@ def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
         value = next(node.value.infer())
     except (InferenceError, StopIteration):
         return False
-    parents = "builtins.tuple" if PY313_PLUS else "pathlib._PathParents"
+    parents = "builtins.tuple" if PY313 else "pathlib._PathParents"
     return (
         isinstance(value, bases.Instance)
         and isinstance(value._proxied, nodes.ClassDef)
