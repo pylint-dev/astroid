@@ -128,16 +128,25 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         self.maxDiff = None
         module = resources.build_file("data/module.py", "data.module")
         with open(resources.find("data/module.py"), encoding="utf-8") as fobj:
-            self.assertMultiLineEqual(module.as_string(), fobj.read())
+            # Ignore comments in python file
+            data_str = "\n".join(
+                [s for s in fobj.read().split("\n") if not s.lstrip().startswith("# ")]
+            )
+            self.assertMultiLineEqual(module.as_string(), data_str)
 
     @pytest.mark.skipif(
         not PY314_PLUS, reason="return in finally is now a syntax error"
     )
     def test_module_as_string(self) -> None:
         """Check as_string on a whole module prepared to be returned identically for py > 3.14."""
+        self.maxDiff = None
         module = resources.build_file("data/module3.14.py", "data.module3.14")
         with open(resources.find("data/module3.14.py"), encoding="utf-8") as fobj:
-            self.assertMultiLineEqual(module.as_string(), fobj.read())
+            # Ignore comments in python file
+            data_str = "\n".join(
+                [s for s in fobj.read().split("\n") if not s.lstrip().startswith("# ")]
+            )
+            self.assertMultiLineEqual(module.as_string(), data_str)
 
     def test_module2_as_string(self) -> None:
         """Check as_string on a whole module prepared to be returned identically."""
