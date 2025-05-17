@@ -5,7 +5,7 @@
 
 import astroid
 from astroid import bases
-from astroid.const import PY310_PLUS, PY313_PLUS
+from astroid.const import PY310_PLUS, PY313
 from astroid.util import Uninferable
 
 
@@ -23,7 +23,7 @@ def test_inference_parents() -> None:
     inferred = name_node.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
-    if PY313_PLUS:
+    if PY313:
         assert inferred[0].qname() == "builtins.tuple"
     else:
         assert inferred[0].qname() == "pathlib._PathParents"
@@ -43,7 +43,7 @@ def test_inference_parents_subscript_index() -> None:
     inferred = path.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
-    if PY313_PLUS:
+    if PY313:
         assert inferred[0].qname() == "pathlib._local.Path"
     else:
         assert inferred[0].qname() == "pathlib.Path"
