@@ -34,7 +34,7 @@ from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod, UnionType
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
-from astroid.const import IS_PYPY, PY310_PLUS, PY312_PLUS
+from astroid.const import IS_PYPY, PY310_PLUS, PY312_PLUS, PY314_PLUS
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -1306,8 +1306,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             assert i0.bool_value() is True
             assert i0.pytype() == "types.UnionType"
             assert i0.display_type() == "UnionType"
-            assert str(i0) == "UnionType(UnionType)"
-            assert repr(i0) == f"<UnionType(UnionType) l.0 at 0x{id(i0)}>"
+            if PY314_PLUS:
+                assert str(i0) == "UnionType(Union)"
+                assert repr(i0) == f"<UnionType(Union) l.0 at 0x{id(i0)}>"
+            else:
+                assert str(i0) == "UnionType(UnionType)"
+                assert repr(i0) == f"<UnionType(UnionType) l.0 at 0x{id(i0)}>"
 
             i1 = ast_nodes[1].inferred()[0]
             assert isinstance(i1, UnionType)
