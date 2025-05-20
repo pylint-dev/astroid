@@ -8,6 +8,11 @@ What's New in astroid 3.4.0?
 Release date: TBA
 
 
+* Include subclasses of standard property classes as `property` decorators
+
+  Closes #10377
+
+* Modify ``astroid.bases`` and ``tests.test_nodes`` to reflect that `enum.property` was added in Python 3.11, not 3.10
 
 What's New in astroid 3.3.11?
 =============================

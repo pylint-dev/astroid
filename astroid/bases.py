@@ -13,7 +13,7 @@ from collections.abc import Iterable, Iterator
 from typing import TYPE_CHECKING, Any, Literal
 
 from astroid import decorators, nodes
-from astroid.const import PY310_PLUS
+from astroid.const import PY311_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -38,8 +38,9 @@ if TYPE_CHECKING:
     from astroid.constraint import Constraint
 
 
-PROPERTIES = {"builtins.property", "abc.abstractproperty"}
-if PY310_PLUS:
+PROPERTIES = {"builtins.property", "abc.abstractproperty", "functools.cached_property"}
+# enum.property was added in Python 3.11
+if PY311_PLUS:
     PROPERTIES.add("enum.property")
 
 # List of possible property names. We use this list in order
@@ -79,24 +80,30 @@ def _is_property(
     if any(name in stripped for name in POSSIBLE_PROPERTIES):
         return True
 
-    # Lookup for subclasses of *property*
     if not meth.decorators:
         return False
+    # Lookup for subclasses of *property*
     for decorator in meth.decorators.nodes or ():
         inferred = safe_infer(decorator, context=context)
         if inferred is None or isinstance(inferred, UninferableBase):
             continue
         if isinstance(inferred, nodes.ClassDef):
+            # Check for a class which inherits from a standard property type
+            if any(inferred.is_subtype_of(pclass) for pclass in PROPERTIES):
+                return True
             for base_class in inferred.bases:
-                if not isinstance(base_class, nodes.Name):
+                # Check for a class which inherits from functools.cached_property
+                # and includes a subscripted type annotation
+                if isinstance(base_class, nodes.Subscript):
+                    value = safe_infer(base_class.value, context=context)
+                    if not isinstance(value, nodes.ClassDef):
+                        continue
+                    if value.name != "cached_property":
+                        continue
+                    module, _ = value.lookup(value.name)
+                    if isinstance(module, nodes.Module) and module.name == "functools":
+                        return True
                     continue
-                module, _ = base_class.lookup(base_class.name)
-                if (
-                    isinstance(module, nodes.Module)
-                    and module.name == "builtins"
-                    and base_class.name == "property"
-                ):
-                    return True
 
     return False
 
