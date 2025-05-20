@@ -28,7 +28,7 @@ from astroid import (
     transforms,
     util,
 )
-from astroid.const import IS_PYPY, PY310_PLUS, PY312_PLUS, Context
+from astroid.const import IS_PYPY, PY310_PLUS, PY311_PLUS, PY312_PLUS, Context
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -929,67 +929,274 @@ class UnboundMethodNodeTest(unittest.TestCase):
 
 
 class BoundMethodNodeTest(unittest.TestCase):
-    def test_is_property(self) -> None:
+    def _is_property(self, ast: nodes.Module, prop: str) -> None:
+        inferred = next(ast[prop].infer())
+        self.assertIsInstance(inferred, nodes.Const, prop)
+        self.assertEqual(inferred.value, 42, prop)
+
+    def test_is_standard_property(self) -> None:
+        # Test to make sure the Python-provided property decorators
+        # are properly interpreted as properties
         ast = builder.parse(
             """
         import abc
+        import functools
 
-        def cached_property():
-            # Not a real decorator, but we don't care
-            pass
-        def reify():
-            # Same as cached_property
-            pass
-        def lazy_property():
-            pass
-        def lazyproperty():
-            pass
-        def lazy(): pass
         class A(object):
             @property
-            def builtin_property(self):
-                return 42
+            def builtin_property(self): return 42
+
             @abc.abstractproperty
-            def abc_property(self):
-                return 42
-            @cached_property
-            def cached_property(self): return 42
-            @reify
-            def reified(self): return 42
-            @lazy_property
-            def lazy_prop(self): return 42
-            @lazyproperty
-            def lazyprop(self): return 42
-            def not_prop(self): pass
-            @lazy
-            def decorated_with_lazy(self): return 42
+            def abc_property(self): return 42
+
+            @property
+            @abc.abstractmethod
+            def abstractmethod_property(self): return 42
+
+            @functools.cached_property
+            def functools_property(self): return 42
 
         cls = A()
-        builtin_property = cls.builtin_property
-        abc_property = cls.abc_property
-        cached_p = cls.cached_property
-        reified = cls.reified
-        not_prop = cls.not_prop
-        lazy_prop = cls.lazy_prop
-        lazyprop = cls.lazyprop
-        decorated_with_lazy = cls.decorated_with_lazy
+        builtin_p = cls.builtin_property
+        abc_p = cls.abc_property
+        abstractmethod_p = cls.abstractmethod_property
+        functools_p = cls.functools_property
         """
         )
         for prop in (
-            "builtin_property",
-            "abc_property",
+            "builtin_p",
+            "abc_p",
+            "abstractmethod_p",
+            "functools_p",
+        ):
+            self._is_property(ast, prop)
+
+    @pytest.mark.skipif(not PY311_PLUS, reason="Uses enum.property introduced in 3.11")
+    def test_is_standard_property_py311(self) -> None:
+        # Test to make sure the Python-provided property decorators
+        # are properly interpreted as properties
+        ast = builder.parse(
+            """
+        import enum
+
+        class A(object):
+            @enum.property
+            def enum_property(self): return 42
+
+        cls = A()
+        enum_p = cls.enum_property
+        """
+        )
+        self._is_property(ast, "enum_p")
+
+    def test_is_possible_property(self) -> None:
+        # Test to make sure that decorators with POSSIBLE_PROPERTIES names
+        # are properly interpreted as properties
+        ast = builder.parse(
+            """
+        # Not real decorators, but we don't care
+        def cachedproperty(): pass
+        def cached_property(): pass
+        def reify(): pass
+        def lazy_property(): pass
+        def lazyproperty(): pass
+        def lazy(): pass
+        def lazyattribute(): pass
+        def lazy_attribute(): pass
+        def LazyProperty(): pass
+        def DynamicClassAttribute(): pass
+
+        class A(object):
+            @cachedproperty
+            def cachedproperty(self): return 42
+
+            @cached_property
+            def cached_property(self): return 42
+
+            @reify
+            def reified(self): return 42
+
+            @lazy_property
+            def lazy_prop(self): return 42
+
+            @lazyproperty
+            def lazyprop(self): return 42
+
+            @lazy
+            def decorated_with_lazy(self): return 42
+
+            @lazyattribute
+            def lazyattribute(self): return 42
+
+            @lazy_attribute
+            def lazy_attribute(self): return 42
+
+            @LazyProperty
+            def LazyProperty(self): return 42
+
+            @DynamicClassAttribute
+            def DynamicClassAttribute(self): return 42
+
+        cls = A()
+        cachedp = cls.cachedproperty
+        cached_p = cls.cached_property
+        reified = cls.reified
+        lazy_prop = cls.lazy_prop
+        lazyprop = cls.lazyprop
+        decorated_with_lazy = cls.decorated_with_lazy
+        lazya = cls.lazyattribute
+        lazy_a = cls.lazy_attribute
+        LazyP = cls.LazyProperty
+        DynamicClassA = cls.DynamicClassAttribute
+        """
+        )
+        for prop in (
+            "cachedp",
             "cached_p",
             "reified",
             "lazy_prop",
             "lazyprop",
             "decorated_with_lazy",
+            "lazya",
+            "lazy_a",
+            "LazyP",
+            "DynamicClassA",
+        ):
+            self._is_property(ast, prop)
+
+    def test_is_standard_property_subclass(self) -> None:
+        # Test to make sure that subclasses of the Python-provided property decorators
+        # are properly interpreted as properties
+        ast = builder.parse(
+            """
+        import abc
+        import functools
+        from typing import Generic, TypeVar
+
+        class user_property(property): pass
+        class user_abc_property(abc.abstractproperty): pass
+        class user_functools_property(functools.cached_property): pass
+        T = TypeVar('T')
+        class annotated_user_functools_property(functools.cached_property[T], Generic[T]): pass
+
+        class A(object):
+            @user_property
+            def user_property(self): return 42
+
+            @user_abc_property
+            def user_abc_property(self): return 42
+
+            @user_functools_property
+            def user_functools_property(self): return 42
+
+            @annotated_user_functools_property
+            def annotated_user_functools_property(self): return 42
+
+        cls = A()
+        user_p = cls.user_property
+        user_abc_p = cls.user_abc_property
+        user_functools_p = cls.user_functools_property
+        annotated_user_functools_p = cls.annotated_user_functools_property
+        """
+        )
+        for prop in (
+            "user_p",
+            "user_abc_p",
+            "user_functools_p",
+            "annotated_user_functools_p",
+        ):
+            self._is_property(ast, prop)
+
+    @pytest.mark.skipif(not PY311_PLUS, reason="Uses enum.property introduced in 3.11")
+    def test_is_standard_property_subclass_py311(self) -> None:
+        # Test to make sure that subclasses of the Python-provided property decorators
+        # are properly interpreted as properties
+        ast = builder.parse(
+            """
+        import enum
+
+        class user_enum_property(enum.property): pass
+
+        class A(object):
+            @user_enum_property
+            def user_enum_property(self): return 42
+
+        cls = A()
+        user_enum_p = cls.user_enum_property
+        """
+        )
+        self._is_property(ast, "user_enum_p")
+
+    @pytest.mark.skipif(not PY312_PLUS, reason="Uses 3.12 generic typing syntax")
+    def test_is_standard_property_subclass_py312(self) -> None:
+        ast = builder.parse(
+            """
+        from functools import cached_property
+
+        class annotated_user_cached_property[T](cached_property[T]):
+            pass
+
+        class A(object):
+            @annotated_user_cached_property
+            def annotated_user_cached_property(self): return 42
+
+        cls = A()
+        annotated_user_cached_p = cls.annotated_user_cached_property
+        """
+        )
+        self._is_property(ast, "annotated_user_cached_p")
+
+    def test_is_not_property(self) -> None:
+        ast = builder.parse(
+            """
+        from collections.abc import Iterator
+
+        class cached_property: pass
+        # If a decorator is named cached_property, we will accept it as a property,
+        # even if it isn't functools.cached_property.
+        # However, do not extend the same leniency to superclasses of decorators.
+        class wrong_superclass_type1(cached_property): pass
+        class wrong_superclass_type2(cached_property[float]): pass
+        cachedproperty = { float: int }
+        class wrong_superclass_type3(cachedproperty[float]): pass
+        class wrong_superclass_type4(Iterator[float]): pass
+
+        class A(object):
+            def no_decorator(self): return 42
+
+            def property(self): return 42
+
+            @wrong_superclass_type1
+            def wrong_superclass_type1(self): return 42
+
+            @wrong_superclass_type2
+            def wrong_superclass_type2(self): return 42
+
+            @wrong_superclass_type3
+            def wrong_superclass_type3(self): return 42
+
+            @wrong_superclass_type4
+            def wrong_superclass_type4(self): return 42
+
+        cls = A()
+        no_decorator = cls.no_decorator
+        not_prop = cls.property
+        bad_superclass1 = cls.wrong_superclass_type1
+        bad_superclass2 = cls.wrong_superclass_type2
+        bad_superclass3 = cls.wrong_superclass_type3
+        bad_superclass4 = cls.wrong_superclass_type4
+        """
+        )
+        for prop in (
+            "no_decorator",
+            "not_prop",
+            "bad_superclass1",
+            "bad_superclass2",
+            "bad_superclass3",
+            "bad_superclass4",
         ):
             inferred = next(ast[prop].infer())
-            self.assertIsInstance(inferred, nodes.Const, prop)
-            self.assertEqual(inferred.value, 42, prop)
-
-        inferred = next(ast["not_prop"].infer())
-        self.assertIsInstance(inferred, bases.BoundMethod)
+            self.assertIsInstance(inferred, bases.BoundMethod)
 
 
 class AliasesTest(unittest.TestCase):
