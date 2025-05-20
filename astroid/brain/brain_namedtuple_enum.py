@@ -280,7 +280,9 @@ def _check_namedtuple_attributes(typename, attributes, rename=False):
     # <snippet>
     for name in (typename, *attributes):
         if not isinstance(name, str):
-            raise AstroidTypeError("Type names and field names must be strings")
+            raise AstroidTypeError(
+                f"Type names and field names must be strings, not {type(name)!r}"
+            )
         if not name.isidentifier():
             raise AstroidValueError(
                 "Type names and field names must be valid" + f"identifiers: {name!r}"
