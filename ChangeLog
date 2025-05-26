@@ -38,6 +38,10 @@ Release date: TBA
 
 * Modify ``astroid.bases`` and ``tests.test_nodes`` to reflect that `enum.property` was added in Python 3.11, not 3.10
 
+* Fix incorrect result in `_get_relative_base_path` when the target directory name starts with the base path
+
+  Closes #2608
+
 What's New in astroid 3.3.11?
 =============================
 Release date: TBA
