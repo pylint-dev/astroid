@@ -28,7 +28,14 @@ from astroid import (
     transforms,
     util,
 )
-from astroid.const import IS_PYPY, PY310_PLUS, PY311_PLUS, PY312_PLUS, PY314_PLUS, Context
+from astroid.const import (
+    IS_PYPY,
+    PY310_PLUS,
+    PY311_PLUS,
+    PY312_PLUS,
+    PY314_PLUS,
+    Context,
+)
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
