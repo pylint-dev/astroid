@@ -236,6 +236,14 @@ def check_modpath_has_init(path: str, mod_path: list[str]) -> bool:
     return True
 
 
+def _is_subpath(path: str, base: str) -> bool:
+    path = os.path.normcase(os.path.normpath(path))
+    base = os.path.normcase(os.path.normpath(base))
+    if not path.startswith(base):
+        return False
+    return (len(path) == len(base)) or (path[len(base)] == os.path.sep)
+
+
 def _get_relative_base_path(filename: str, path_to_check: str) -> list[str] | None:
     """Extracts the relative mod path of the file to import from.
 
@@ -252,19 +260,18 @@ def _get_relative_base_path(filename: str, path_to_check: str) -> list[str] | No
         _get_relative_base_path("/a/b/c/d.py", "/a/b") ->  ["c","d"]
         _get_relative_base_path("/a/b/c/d.py", "/dev") ->  None
     """
-    importable_path = None
-    path_to_check = os.path.normcase(path_to_check)
+    path_to_check = os.path.normcase(os.path.normpath(path_to_check))
+
     abs_filename = os.path.abspath(filename)
-    if os.path.normcase(abs_filename).startswith(path_to_check):
-        importable_path = abs_filename
+    if _is_subpath(abs_filename, path_to_check):
+        base_path = os.path.splitext(abs_filename)[0]
+        relative_base_path = base_path[len(path_to_check) :].lstrip(os.path.sep)
+        return [pkg for pkg in relative_base_path.split(os.sep) if pkg]
 
     real_filename = os.path.realpath(filename)
-    if os.path.normcase(real_filename).startswith(path_to_check):
-        importable_path = real_filename
-
-    if importable_path:
-        base_path = os.path.splitext(importable_path)[0]
-        relative_base_path = base_path[len(path_to_check) :]
+    if _is_subpath(real_filename, path_to_check):
+        base_path = os.path.splitext(real_filename)[0]
+        relative_base_path = base_path[len(path_to_check) :].lstrip(os.path.sep)
         return [pkg for pkg in relative_base_path.split(os.sep) if pkg]
 
     return None

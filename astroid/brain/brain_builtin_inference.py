@@ -769,7 +769,9 @@ def infer_issubclass(callnode, context: InferenceContext | None = None):
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
     if not isinstance(obj_type, nodes.ClassDef):
-        raise UseInferenceDefault("TypeError: arg 1 must be class")
+        raise UseInferenceDefault(
+            f"TypeError: arg 1 must be class, not {type(obj_type)!r}"
+        )
 
     # The right hand argument is the class(es) that the given
     # object is to be checked against.

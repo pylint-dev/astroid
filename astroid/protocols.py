@@ -809,7 +809,7 @@ def starred_assigned_stmts(  # noqa: C901
 
         if not isinstance(target, nodes.Tuple):
             raise InferenceError(
-                "Could not make sense of this, the target must be a tuple",
+                f"Could not make sense of this, the target must be a tuple, not {type(target)!r}",
                 context=context,
             )
 
