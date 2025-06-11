@@ -42,7 +42,7 @@ Release date: TBA
 
   Closes #2608
 
-* The brain for nose was dropped. It's been deprecated for 10 years and required some maintenance.
+* The brain for nose was dropped. nose has been deprecated for 10 years and the brain required some maintenance.
 
   Refs #2765
 
