@@ -151,7 +151,6 @@ module = [
   "_io.*",
   "gi.*",
   "importlib.*",
-  "nose.*",
   "numpy.*",
   "pytest",
   "setuptools",

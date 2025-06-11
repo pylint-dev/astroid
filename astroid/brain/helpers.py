@@ -47,7 +47,6 @@ def register_all_brains(manager: AstroidManager) -> None:
         brain_mechanize,
         brain_multiprocessing,
         brain_namedtuple_enum,
-        brain_nose,
         brain_numpy_core_einsumfunc,
         brain_numpy_core_fromnumeric,
         brain_numpy_core_function_base,
@@ -99,7 +98,6 @@ def register_all_brains(manager: AstroidManager) -> None:
     brain_mechanize.register(manager)
     brain_multiprocessing.register(manager)
     brain_namedtuple_enum.register(manager)
-    brain_nose.register(manager)
     brain_numpy_core_einsumfunc.register(manager)
     brain_numpy_core_fromnumeric.register(manager)
     brain_numpy_core_function_base.register(manager)

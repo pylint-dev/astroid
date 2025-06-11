@@ -3,7 +3,6 @@
 
 # Packages used to run additional tests
 attrs
-nose
 numpy>=1.17.0,<2; python_version<"3.12"
 python-dateutil
 PyQt6
