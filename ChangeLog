@@ -42,6 +42,10 @@ Release date: TBA
 
   Closes #2608
 
+* The brain for nose was dropped. It's been deprecated for 10 years and required some maintenance.
+
+  Refs #2765
+
 What's New in astroid 3.3.11?
 =============================
 Release date: TBA
