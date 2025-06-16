@@ -3,7 +3,7 @@ contributors-txt>=0.7.4
 tbump~=6.11
 
 # Tools used to run tests
-coverage~=7.8
+coverage~=7.9
 pytest
 pytest-cov~=6.1
 mypy
