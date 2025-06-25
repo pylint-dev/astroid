@@ -318,6 +318,11 @@ class ZipFinder(Finder):
             submodule_search_locations=path,
         )
 
+    def contribute_to_path(
+        self, spec: ModuleSpec, processed: list[str]
+    ) -> Sequence[str] | None:
+        return spec.submodule_search_locations
+
 
 class PathSpecFinder(Finder):
     """Finder based on importlib.machinery.PathFinder."""
