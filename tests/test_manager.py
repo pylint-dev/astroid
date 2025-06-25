@@ -277,6 +277,17 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
         finally:
             os.remove(linked_file_name)
 
+    def test_ast_from_module_name_pyz_with_submodule(self) -> None:
+        with self._restore_package_cache():
+            archive_path = os.path.join(resources.RESOURCE_PATH, "x.zip")
+            sys.path.insert(0, archive_path)
+            module = self.manager.ast_from_module_name("xxx.test")
+            self.assertEqual(module.name, "xxx.test")
+            end = os.path.join(archive_path, "xxx", "test")
+            self.assertTrue(
+                module.file.endswith(end), f"{module.file} doesn't endswith {end}"
+            )
+
     def test_zip_import_data(self) -> None:
         """Check if zip_import_data works."""
         with self._restore_package_cache():
