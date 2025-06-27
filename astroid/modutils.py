@@ -372,7 +372,7 @@ def file_info_from_modpath(
     if modpath[0] == "xml":
         # handle _xmlplus
         try:
-            return _spec_from_modpath(["_xmlplus"] + modpath[1:], path, context)
+            return _spec_from_modpath(["_xmlplus", *modpath[1:]], path, context)
         except ImportError:
             return _spec_from_modpath(modpath, path, context)
     elif modpath == ["os", "path"]:
