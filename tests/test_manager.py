@@ -120,8 +120,15 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
     def test_identify_old_namespace_package_protocol(self) -> None:
         # Like the above cases, this package follows the old namespace package protocol
         # astroid currently assumes such packages are in sys.modules, so import it
-        # pylint: disable-next=import-outside-toplevel
-        import tests.testdata.python3.data.path_pkg_resources_1.package.foo as _  # noqa
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=UserWarning,
+                message=".*pkg_resources is deprecated.*",
+            )
+
+            # pylint: disable-next=import-outside-toplevel
+            import tests.testdata.python3.data.path_pkg_resources_1.package.foo as _  # noqa
 
         self.assertTrue(
             util.is_namespace("tests.testdata.python3.data.path_pkg_resources_1")
