@@ -34,7 +34,7 @@ from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod, UnionType
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
-from astroid.const import IS_PYPY, PY310_PLUS, PY312_PLUS
+from astroid.const import IS_PYPY, PY310_PLUS, PY312_PLUS, PY314_PLUS
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -43,6 +43,7 @@ from astroid.exceptions import (
     NoDefault,
     NotFoundError,
 )
+from astroid.manager import AstroidManager
 from astroid.objects import ExceptionInstance
 
 from . import resources
@@ -59,7 +60,7 @@ def get_node_of_class(start_from: nodes.FunctionDef, klass: type) -> nodes.Attri
     return next(start_from.nodes_of_class(klass))
 
 
-builder = AstroidBuilder()
+builder = AstroidBuilder(AstroidManager())
 
 DATA_DIR = Path(__file__).parent / "testdata" / "python3" / "data"
 
@@ -1307,8 +1308,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             assert i0.bool_value() is True
             assert i0.pytype() == "types.UnionType"
             assert i0.display_type() == "UnionType"
-            assert str(i0) == "UnionType(UnionType)"
-            assert repr(i0) == f"<UnionType(UnionType) l.0 at 0x{id(i0)}>"
+            if PY314_PLUS:
+                assert str(i0) == "UnionType(Union)"
+                assert repr(i0) == f"<UnionType(Union) l.0 at 0x{id(i0)}>"
+            else:
+                assert str(i0) == "UnionType(UnionType)"
+                assert repr(i0) == f"<UnionType(UnionType) l.0 at 0x{id(i0)}>"
 
             i1 = ast_nodes[1].inferred()[0]
             assert isinstance(i1, UnionType)
@@ -1882,6 +1887,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         node = ast["do_a_thing"]
         self.assertEqual(node.type, "function")
 
+    @pytest.mark.skipif(
+        IS_PYPY and PY310_PLUS,
+        reason="Persistent recursion error that we ignore and never fix",
+    )
     def test_no_infinite_ancestor_loop(self) -> None:
         klass = extract_node(
             """
@@ -7402,7 +7411,12 @@ s1 = f'{c_obj!r}' #@
 """,
             "<__main__.Cls",
         ),
-        ("s1 = f'{5}' #@", "5"),
+        (
+            "s1 = f'{5}' #@",
+            "5",
+        ),
+        ("s1 = f'{missing}'", None),
+        ("s1 = f'a/{missing}/b'", None),
     ],
 )
 def test_joined_str_returns_string(source, expected) -> None:
@@ -7413,5 +7427,8 @@ def test_joined_str_returns_string(source, expected) -> None:
     assert target
     inferred = list(target.inferred())
     assert len(inferred) == 1
-    assert isinstance(inferred[0], Const)
-    inferred[0].value.startswith(expected)
+    if expected:
+        assert isinstance(inferred[0], Const)
+        inferred[0].value.startswith(expected)
+    else:
+        assert inferred[0] is Uninferable

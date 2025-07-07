@@ -162,13 +162,13 @@ def _filter_uninferable_nodes(
 ) -> Iterator[SuccessfulInferenceResult]:
     for elt in elts:
         if isinstance(elt, util.UninferableBase):
-            yield nodes.Unknown()
+            yield node_classes.UNATTACHED_UNKNOWN
         else:
             for inferred in elt.infer(context):
                 if not isinstance(inferred, util.UninferableBase):
                     yield inferred
                 else:
-                    yield nodes.Unknown()
+                    yield node_classes.UNATTACHED_UNKNOWN
 
 
 @decorators.yes_if_nothing_inferred
@@ -809,7 +809,7 @@ def starred_assigned_stmts(  # noqa: C901
 
         if not isinstance(target, nodes.Tuple):
             raise InferenceError(
-                "Could not make sense of this, the target must be a tuple",
+                f"Could not make sense of this, the target must be a tuple, not {type(target)!r}",
                 context=context,
             )
 

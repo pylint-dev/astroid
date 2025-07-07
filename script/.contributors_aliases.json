@@ -1,4 +1,8 @@
 {
+  "134317971+correctmost@users.noreply.github.com": {
+    "mails": ["134317971+correctmost@users.noreply.github.com"],
+    "name": "correctmost"
+  },
   "13665637+DanielNoord@users.noreply.github.com": {
     "mails": ["13665637+DanielNoord@users.noreply.github.com"],
     "name": "Daniël van Noord",
@@ -18,6 +22,13 @@
     "name": "Mark Byrne",
     "team": "Maintainers"
   },
+  "44875844+temyurchenko@users.noreply.github.com": {
+    "mails": [
+      "artemyurchenko@zoho.com",
+      "44875844+temyurchenko@users.noreply.github.com"
+    ],
+    "name": "Artem Yurchenko"
+  },
   "55152140+jayaddison@users.noreply.github.com": {
     "mails": ["55152140+jayaddison@users.noreply.github.com", "jay@jp-hosting.net"],
     "name": "James Addison"
@@ -29,6 +40,10 @@
   "adam.grant.hendry@gmail.com": {
     "mails": ["adam.grant.hendry@gmail.com"],
     "name": "Adam Hendry"
+  },
+  "akhil.kamat@gmail.com": {
+    "mails": ["akhil.kamat@gmail.com"],
+    "name": "Akhil Kamat"
   },
   "androwiiid@gmail.com": {
     "mails": ["androwiiid@gmail.com"],
@@ -66,6 +81,10 @@
     "name": "Bryce Guinta",
     "team": "Maintainers"
   },
+  "c.ringstrom@gmail.com": {
+    "mails": ["c.ringstrom@gmail.com"],
+    "name": "Charlie Ringström"
+  },
   "calen.pennington@gmail.com": {
     "mails": ["cale@edx.org", "calen.pennington@gmail.com"],
     "name": "Calen Pennington"
@@ -98,7 +117,7 @@
     "name": "Jacob Bogdanov"
   },
   "jacobtylerwalls@gmail.com": {
-    "mails": ["jacobtylerwalls@gmail.com"],
+    "mails": ["jacobtylerwalls@gmail.com", "jwalls@fargeo.com"],
     "name": "Jacob Walls",
     "team": "Maintainers"
   },

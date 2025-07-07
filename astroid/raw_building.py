@@ -18,12 +18,14 @@ import types
 import warnings
 from collections.abc import Iterable
 from contextlib import redirect_stderr, redirect_stdout
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from astroid import bases, nodes
 from astroid.const import _EMPTY_OBJECT_MARKER, IS_PYPY
-from astroid.manager import AstroidManager
 from astroid.nodes import node_classes
+
+if TYPE_CHECKING:
+    from astroid.manager import AstroidManager
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +39,6 @@ _FunctionTypes = Union[
     types.ClassMethodDescriptorType,
 ]
 
-# the keys of CONST_CLS eg python builtin types
-_CONSTANTS = tuple(node_classes.CONST_CLS)
 TYPE_NONE = type(None)
 TYPE_NOTIMPLEMENTED = type(NotImplemented)
 TYPE_ELLIPSIS = type(...)
@@ -369,7 +369,11 @@ def _base_class_object_build(
         # this at least resolves common case such as Exception.args,
         # OSError.errno
         if issubclass(member, Exception):
-            instdict = member().__dict__
+            member_object = member()
+            if hasattr(member_object, "__dict__"):
+                instdict = member_object.__dict__
+            else:
+                raise TypeError
         else:
             raise TypeError
     except TypeError:
@@ -424,8 +428,8 @@ class InspectBuilder:
 
     bootstrapped: bool = False
 
-    def __init__(self, manager_instance: AstroidManager | None = None) -> None:
-        self._manager = manager_instance or AstroidManager()
+    def __init__(self, manager_instance: AstroidManager) -> None:
+        self._manager = manager_instance
         self._done: dict[types.ModuleType | type, nodes.Module | nodes.ClassDef] = {}
         self._module: types.ModuleType
 
@@ -502,7 +506,7 @@ class InspectBuilder:
                 child: nodes.NodeNG = object_build_methoddescriptor(node, member)
             elif inspect.isdatadescriptor(member):
                 child = object_build_datadescriptor(node, member)
-            elif isinstance(member, _CONSTANTS):
+            elif isinstance(member, tuple(node_classes.CONST_CLS)):
                 if alias in node.special_attributes:
                     continue
                 child = nodes.const_factory(member)
@@ -595,7 +599,10 @@ def _astroid_bootstrapping() -> None:
     """astroid bootstrapping the builtins module"""
     # this boot strapping is necessary since we need the Const nodes to
     # inspect_build builtins, and then we can proxy Const
-    builder = InspectBuilder()
+    # pylint: disable-next=import-outside-toplevel
+    from astroid.manager import AstroidManager
+
+    builder = InspectBuilder(AstroidManager())
     astroid_builtin = builder.inspect_build(builtins)
 
     for cls, node_cls in node_classes.CONST_CLS.items():

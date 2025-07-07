@@ -21,7 +21,6 @@ from pathlib import Path
 from typing import Literal, NamedTuple, Protocol
 
 from astroid.const import PY310_PLUS
-from astroid.modutils import EXT_LIB_DIRS, cached_os_path_isfile
 
 from . import util
 
@@ -134,32 +133,21 @@ class ImportlibFinder(Finder):
         processed: tuple[str, ...],
         submodule_path: tuple[str, ...] | None,
     ) -> ModuleSpec | None:
-        if submodule_path is not None:
-            search_paths = list(submodule_path)
-        elif modname in sys.builtin_module_names:
+        # pylint: disable-next=import-outside-toplevel
+        from astroid.modutils import cached_os_path_isfile
+
+        # Although we should be able to use `find_spec` this doesn't work on PyPy for builtins.
+        # Therefore, we use the `builtin_module_nams` heuristic for these.
+        if submodule_path is None and modname in sys.builtin_module_names:
             return ModuleSpec(
                 name=modname,
                 location=None,
                 type=ModuleType.C_BUILTIN,
             )
+
+        if submodule_path is not None:
+            search_paths = list(submodule_path)
         else:
-            try:
-                with warnings.catch_warnings():
-                    warnings.filterwarnings("ignore", category=UserWarning)
-                    spec = importlib.util.find_spec(modname)
-                if (
-                    spec
-                    and spec.loader  # type: ignore[comparison-overlap] # noqa: E501
-                    is importlib.machinery.FrozenImporter
-                ):
-                    # No need for BuiltinImporter; builtins handled above
-                    return ModuleSpec(
-                        name=modname,
-                        location=getattr(spec.loader_state, "filename", None),
-                        type=ModuleType.PY_FROZEN,
-                    )
-            except ValueError:
-                pass
             search_paths = sys.path
 
         suffixes = (".py", ".pyi", importlib.machinery.BYTECODE_SUFFIXES[0])
@@ -179,6 +167,58 @@ class ImportlibFinder(Finder):
                 file_path = os.path.join(entry, file_name)
                 if cached_os_path_isfile(file_path):
                     return ModuleSpec(name=modname, location=file_path, type=type_)
+
+        # sys.stdlib_module_names was added in Python 3.10
+        if PY310_PLUS:
+            # If the module name matches a stdlib module name, check whether this is a frozen
+            # module. Note that `find_spec` actually imports parent modules, so we want to make
+            # sure we only run this code for stuff that can be expected to be frozen. For now
+            # this is only stdlib.
+            if (modname in sys.stdlib_module_names and not processed) or (
+                processed and processed[0] in sys.stdlib_module_names
+            ):
+                try:
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings("ignore", category=Warning)
+                        spec = importlib.util.find_spec(".".join((*processed, modname)))
+                except ValueError:
+                    spec = None
+
+                if (
+                    spec
+                    and spec.loader  # type: ignore[comparison-overlap] # noqa: E501
+                    is importlib.machinery.FrozenImporter
+                ):
+                    return ModuleSpec(
+                        name=modname,
+                        location=getattr(spec.loader_state, "filename", None),
+                        type=ModuleType.PY_FROZEN,
+                    )
+        else:
+            # NOTE: This is broken code. It doesn't work on Python 3.13+ where submodules can also
+            # be frozen. However, we don't want to worry about this and we don't want to break
+            # support for older versions of Python. This is just copy-pasted from the old non
+            # working version to at least have no functional behaviour change on <=3.10.
+            # It can be removed after 3.10 is no longer supported in favour of the logic above.
+            if submodule_path is None:  # pylint: disable=else-if-used
+                try:
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings("ignore", category=UserWarning)
+                        spec = importlib.util.find_spec(modname)
+                    if (
+                        spec
+                        and spec.loader  # type: ignore[comparison-overlap] # noqa: E501
+                        is importlib.machinery.FrozenImporter
+                    ):
+                        # No need for BuiltinImporter; builtins handled above
+                        return ModuleSpec(
+                            name=modname,
+                            location=getattr(spec.loader_state, "filename", None),
+                            type=ModuleType.PY_FROZEN,
+                        )
+                except ValueError:
+                    pass
+
         return None
 
     def contribute_to_path(
@@ -187,6 +227,8 @@ class ImportlibFinder(Finder):
         if spec.location is None:
             # Builtin.
             return None
+        # pylint: disable-next=import-outside-toplevel
+        from astroid.modutils import EXT_LIB_DIRS
 
         if _is_setuptools_namespace(Path(spec.location)):
             # extend_path is called, search sys.path for module/packages
@@ -283,6 +325,11 @@ class ZipFinder(Finder):
             submodule_search_locations=path,
         )
 
+    def contribute_to_path(
+        self, spec: ModuleSpec, processed: list[str]
+    ) -> Sequence[str] | None:
+        return spec.submodule_search_locations
+
 
 class PathSpecFinder(Finder):
     """Finder based on importlib.machinery.PathFinder."""
@@ -325,6 +372,7 @@ _SPEC_FINDERS = (
 )
 
 
+@lru_cache(maxsize=1024)
 def _is_setuptools_namespace(location: pathlib.Path) -> bool:
     try:
         with open(location / "__init__.py", "rb") as stream:
@@ -356,13 +404,15 @@ def _search_zip(
             if PY310_PLUS:
                 if not importer.find_spec(os.path.sep.join(modpath)):
                     raise ImportError(
-                        "No module named %s in %s/%s"
-                        % (".".join(modpath[1:]), filepath, modpath)
+                        "No module named {} in {}/{}".format(
+                            ".".join(modpath[1:]), filepath, modpath
+                        )
                     )
             elif not importer.find_module(os.path.sep.join(modpath)):
                 raise ImportError(
-                    "No module named %s in %s/%s"
-                    % (".".join(modpath[1:]), filepath, modpath)
+                    "No module named {} in {}/{}".format(
+                        ".".join(modpath[1:]), filepath, modpath
+                    )
                 )
             return (
                 ModuleType.PY_ZIPMODULE,

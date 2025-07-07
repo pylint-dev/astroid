@@ -335,6 +335,22 @@ class GetSourceFileTest(unittest.TestCase):
             os.path.normpath(module) + "i",
         )
 
+    def test_nonstandard_extension(self) -> None:
+        package = resources.find("pyi_data/find_test")
+        modules = [
+            os.path.join(package, "__init__.weird_ext"),
+            os.path.join(package, "standalone_file.weird_ext"),
+        ]
+        for module in modules:
+            self.assertEqual(
+                modutils.get_source_file(module, prefer_stubs=True),
+                module,
+            )
+            self.assertEqual(
+                modutils.get_source_file(module),
+                module,
+            )
+
 
 class IsStandardModuleTest(resources.SysPathSetup, unittest.TestCase):
     """
@@ -628,3 +644,18 @@ def test_find_setuptools_pep660_editable_install():
     with unittest.mock.patch.object(sys, "meta_path", new=[_EditableFinder]):
         assert spec.find_spec(["example"])
         assert spec.find_spec(["example", "subpackage"])
+
+
+def test_no_import_done_for_submodule_sharing_std_lib_name() -> None:
+    sys.path.insert(0, resources.find("data"))
+    try:
+        with pytest.raises(ImportError):
+            spec._find_spec_with_path(
+                [resources.find("data")],
+                "trace",
+                ("divide_by_zero", "trace"),
+                ("divide_by_zero",),
+                resources.find("data/divide_by_zero"),
+            )
+    finally:
+        sys.path.pop(0)

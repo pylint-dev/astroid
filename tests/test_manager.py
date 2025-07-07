@@ -120,8 +120,15 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
     def test_identify_old_namespace_package_protocol(self) -> None:
         # Like the above cases, this package follows the old namespace package protocol
         # astroid currently assumes such packages are in sys.modules, so import it
-        # pylint: disable-next=import-outside-toplevel
-        import tests.testdata.python3.data.path_pkg_resources_1.package.foo as _  # noqa
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=UserWarning,
+                message=".*pkg_resources is deprecated.*",
+            )
+
+            # pylint: disable-next=import-outside-toplevel
+            import tests.testdata.python3.data.path_pkg_resources_1.package.foo as _  # noqa
 
         self.assertTrue(
             util.is_namespace("tests.testdata.python3.data.path_pkg_resources_1")
@@ -276,6 +283,17 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
                 self._test_ast_from_zip(linked_file_name)
         finally:
             os.remove(linked_file_name)
+
+    def test_ast_from_module_name_pyz_with_submodule(self) -> None:
+        with self._restore_package_cache():
+            archive_path = os.path.join(resources.RESOURCE_PATH, "x.zip")
+            sys.path.insert(0, archive_path)
+            module = self.manager.ast_from_module_name("xxx.test")
+            self.assertEqual(module.name, "xxx.test")
+            end = os.path.join(archive_path, "xxx", "test")
+            self.assertTrue(
+                module.file.endswith(end), f"{module.file} doesn't endswith {end}"
+            )
 
     def test_zip_import_data(self) -> None:
         """Check if zip_import_data works."""

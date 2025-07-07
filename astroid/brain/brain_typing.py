@@ -15,7 +15,7 @@ from typing import Final
 from astroid import context
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
-from astroid.const import PY312_PLUS, PY313_PLUS
+from astroid.const import PY312_PLUS, PY313_PLUS, PY314_PLUS
 from astroid.exceptions import (
     AstroidSyntaxError,
     AttributeInferenceError,
@@ -78,7 +78,7 @@ TYPING_ALIAS = frozenset(
         "typing.MutableMapping",
         "typing.Sequence",
         "typing.MutableSequence",
-        "typing.ByteString",
+        "typing.ByteString",  # removed in 3.14
         "typing.Tuple",
         "typing.List",
         "typing.Deque",
@@ -358,12 +358,16 @@ def _looks_like_special_alias(node: Call) -> bool:
     PY39: Callable = _CallableType(collections.abc.Callable, 2)
     """
     return isinstance(node.func, Name) and (
-        node.func.name == "_TupleType"
-        and isinstance(node.args[0], Name)
-        and node.args[0].name == "tuple"
-        or node.func.name == "_CallableType"
-        and isinstance(node.args[0], Attribute)
-        and node.args[0].as_string() == "collections.abc.Callable"
+        (
+            node.func.name == "_TupleType"
+            and isinstance(node.args[0], Name)
+            and node.args[0].name == "tuple"
+        )
+        or (
+            node.func.name == "_CallableType"
+            and isinstance(node.args[0], Attribute)
+            and node.args[0].as_string() == "collections.abc.Callable"
+        )
     )
 
 
@@ -400,11 +404,8 @@ def infer_special_alias(
 
 
 def _looks_like_typing_cast(node: Call) -> bool:
-    return (
-        isinstance(node.func, Name)
-        and node.func.name == "cast"
-        or isinstance(node.func, Attribute)
-        and node.func.attrname == "cast"
+    return (isinstance(node.func, Name) and node.func.name == "cast") or (
+        isinstance(node.func, Attribute) and node.func.attrname == "cast"
     )
 
 
@@ -430,9 +431,8 @@ def infer_typing_cast(
 
 
 def _typing_transform():
-    return AstroidBuilder(AstroidManager()).string_build(
-        textwrap.dedent(
-            """
+    code = textwrap.dedent(
+        """
     class Generic:
         @classmethod
         def __class_getitem__(cls, item):  return cls
@@ -466,8 +466,16 @@ def _typing_transform():
         @classmethod
         def __class_getitem__(cls, item):  return cls
     """
-        )
     )
+    if PY314_PLUS:
+        code += textwrap.dedent(
+            """
+    class Union:
+        @classmethod
+        def __class_getitem__(cls, item): return cls
+    """
+        )
+    return AstroidBuilder(AstroidManager()).string_build(code)
 
 
 def register(manager: AstroidManager) -> None:

@@ -27,6 +27,7 @@ from astroid.exceptions import (
     InferenceError,
     StatementMissing,
 )
+from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import Module
 
 from . import resources
@@ -737,10 +738,6 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(module.package, 0)
         self.assertFalse(module.is_statement)
         with self.assertRaises(StatementMissing):
-            with pytest.warns(DeprecationWarning) as records:
-                self.assertEqual(module.statement(future=True), module)
-        assert len(records) == 1
-        with self.assertRaises(StatementMissing):
             module.statement()
 
     def test_module_locals(self) -> None:
@@ -784,9 +781,7 @@ class FileBuildTest(unittest.TestCase):
     def test_function_locals(self) -> None:
         """Test the 'locals' dictionary of an astroid function."""
         _locals = self.module["global_access"].locals
-        self.assertEqual(len(_locals), 4)
-        keys = sorted(_locals.keys())
-        self.assertEqual(keys, ["i", "key", "local", "val"])
+        self.assertEqual(sorted(_locals.keys()), ["i", "key", "local", "val"])
 
     def test_class_base_props(self) -> None:
         """Test base properties and method of an astroid class."""
@@ -807,14 +802,8 @@ class FileBuildTest(unittest.TestCase):
     def test_class_locals(self) -> None:
         """Test the 'locals' dictionary of an astroid class."""
         module = self.module
-        klass1 = module["YO"]
-        locals1 = klass1.locals
-        keys = sorted(locals1.keys())
         assert_keys = ["__annotations__", "__init__", "__module__", "__qualname__", "a"]
-        self.assertEqual(keys, assert_keys)
-        klass2 = module["YOUPI"]
-        locals2 = klass2.locals
-        keys = locals2.keys()
+        self.assertEqual(sorted(module["YO"].locals.keys()), assert_keys)
         assert_keys = [
             "__annotations__",
             "__init__",
@@ -825,50 +814,43 @@ class FileBuildTest(unittest.TestCase):
             "method",
             "static_method",
         ]
-        self.assertEqual(sorted(keys), assert_keys)
+        self.assertEqual(sorted(module["YOUPI"].locals.keys()), assert_keys)
 
     def test_class_instance_attrs(self) -> None:
         module = self.module
-        klass1 = module["YO"]
-        klass2 = module["YOUPI"]
-        self.assertEqual(list(klass1.instance_attrs.keys()), ["yo"])
-        self.assertEqual(list(klass2.instance_attrs.keys()), ["member"])
+        self.assertEqual(list(module["YO"].instance_attrs.keys()), ["yo"])
+        self.assertEqual(list(module["YOUPI"].instance_attrs.keys()), ["member"])
 
     def test_class_basenames(self) -> None:
         module = self.module
-        klass1 = module["YO"]
-        klass2 = module["YOUPI"]
-        self.assertEqual(klass1.basenames, [])
-        self.assertEqual(klass2.basenames, ["YO"])
+        self.assertEqual(module["YO"].basenames, [])
+        self.assertEqual(module["YOUPI"].basenames, ["YO"])
 
     def test_method_base_props(self) -> None:
         """Test base properties and method of an astroid method."""
-        klass2 = self.module["YOUPI"]
-        # "normal" method
-        method = klass2["method"]
+        method = self.module["YOUPI"]["method"]
         self.assertEqual(method.name, "method")
         self.assertEqual([n.name for n in method.args.args], ["self"])
         assert isinstance(method.doc_node, nodes.Const)
         self.assertEqual(method.doc_node.value, "method\n        test")
         self.assertEqual(method.fromlineno, 48)
         self.assertEqual(method.type, "method")
-        # class method
-        method = klass2["class_method"]
+
+    def test_class_method_base_props(self) -> None:
+        method = self.module["YOUPI"]["class_method"]
         self.assertEqual([n.name for n in method.args.args], ["cls"])
         self.assertEqual(method.type, "classmethod")
-        # static method
-        method = klass2["static_method"]
+
+    def test_static_method_base_props(self) -> None:
+        method = self.module["YOUPI"]["static_method"]
         self.assertEqual(method.args.args, [])
         self.assertEqual(method.type, "staticmethod")
 
     def test_method_locals(self) -> None:
         """Test the 'locals' dictionary of an astroid method."""
         method = self.module["YOUPI"]["method"]
-        _locals = method.locals
-        keys = sorted(_locals)
         # ListComp variables are not accessible outside
-        self.assertEqual(len(_locals), 3)
-        self.assertEqual(keys, ["autre", "local", "self"])
+        self.assertEqual(sorted(method.locals), ["autre", "local", "self"])
 
     def test_unknown_encoding(self) -> None:
         with self.assertRaises(AstroidSyntaxError):
@@ -879,7 +861,7 @@ def test_module_build_dunder_file() -> None:
     """Test that module_build() can work with modules that have the *__file__*
     attribute.
     """
-    module = builder.AstroidBuilder().module_build(collections)
+    module = builder.AstroidBuilder(AstroidManager()).module_build(collections)
     assert module.path[0] == collections.__file__
 
 
@@ -964,7 +946,7 @@ class HermeticInterpreterTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             _ = self.imported_module.__file__
 
-        my_builder = builder.AstroidBuilder()
+        my_builder = builder.AstroidBuilder(AstroidManager())
         with unittest.mock.patch.object(
             self.imported_module.__loader__,
             "get_source",

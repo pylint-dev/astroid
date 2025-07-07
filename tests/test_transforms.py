@@ -219,7 +219,7 @@ class TestTransforms(unittest.TestCase):
             return node.root().name == "time"
 
         with add_transform(manager, nodes.FunctionDef, transform_function, predicate):
-            builder_instance = builder.AstroidBuilder()
+            builder_instance = builder.AstroidBuilder(AstroidManager())
             module = builder_instance.module_build(time)
 
         asctime = module["asctime"]
@@ -233,7 +233,9 @@ class TestTransforms(unittest.TestCase):
 
         manager = MANAGER
         with add_transform(manager, nodes.FunctionDef, transform_function):
-            astroid_builder = builder.AstroidBuilder(apply_transforms=False)
+            astroid_builder = builder.AstroidBuilder(
+                AstroidManager(), apply_transforms=False
+            )
             module = astroid_builder.string_build("""def test(): pass""")
 
         # The transform wasn't applied.
@@ -265,6 +267,9 @@ class TestTransforms(unittest.TestCase):
         """
         )
 
+    @pytest.mark.skipif(
+        IS_PYPY, reason="Could not find a useful recursion limit on all versions"
+    )
     def test_transform_aborted_if_recursion_limited(self):
         def transform_call(node: Call) -> Const:
             return node
@@ -274,7 +279,7 @@ class TestTransforms(unittest.TestCase):
         )
 
         original_limit = sys.getrecursionlimit()
-        sys.setrecursionlimit(500 if IS_PYPY else 1000)
+        sys.setrecursionlimit(1000)
 
         try:
             with pytest.warns(UserWarning) as records:

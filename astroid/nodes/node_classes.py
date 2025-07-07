@@ -4715,7 +4715,7 @@ class FormattedValue(NodeNG):
                 continue
 
 
-MISSING_VALUE = "{MISSING_VALUE}"
+UNINFERABLE_VALUE = "{Uninferable}"
 
 
 class JoinedStr(NodeNG):
@@ -4781,33 +4781,57 @@ class JoinedStr(NodeNG):
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-        yield from self._infer_from_values(self.values, context)
+        if self.values:
+            yield from self._infer_with_values(context)
+        else:
+            yield Const("")
+
+    def _infer_with_values(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        uninferable_already_generated = False
+        for inferred in self._infer_from_values(self.values, context):
+            failed = inferred is util.Uninferable or (
+                isinstance(inferred, Const) and UNINFERABLE_VALUE in inferred.value
+            )
+            if failed:
+                if not uninferable_already_generated:
+                    uninferable_already_generated = True
+                    yield util.Uninferable
+                    continue
+            yield inferred
 
     @classmethod
     def _infer_from_values(
         cls, nodes: list[NodeNG], context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         if not nodes:
-            yield
             return
         if len(nodes) == 1:
-            yield from nodes[0]._infer(context, **kwargs)
+            for node in cls._safe_infer_from_node(nodes[0], context, **kwargs):
+                if isinstance(node, Const):
+                    yield node
+                    continue
+                yield Const(UNINFERABLE_VALUE)
             return
-        uninferable_already_generated = False
-        for prefix in nodes[0]._infer(context, **kwargs):
+        for prefix in cls._safe_infer_from_node(nodes[0], context, **kwargs):
             for suffix in cls._infer_from_values(nodes[1:], context, **kwargs):
                 result = ""
                 for node in (prefix, suffix):
                     if isinstance(node, Const):
                         result += str(node.value)
                         continue
-                    result += MISSING_VALUE
-                if MISSING_VALUE in result:
-                    if not uninferable_already_generated:
-                        uninferable_already_generated = True
-                        yield util.Uninferable
-                else:
-                    yield Const(result)
+                    result += UNINFERABLE_VALUE
+                yield Const(result)
+
+    @classmethod
+    def _safe_infer_from_node(
+        cls, node: NodeNG, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        try:
+            yield from node._infer(context, **kwargs)
+        except InferenceError:
+            yield util.Uninferable
 
 
 class NamedExpr(_base_nodes.AssignTypeNode):
@@ -4874,9 +4898,7 @@ class NamedExpr(_base_nodes.AssignTypeNode):
     See astroid/protocols.py for actual implementation.
     """
 
-    def frame(
-        self, *, future: Literal[None, True] = None
-    ) -> nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda:
+    def frame(self) -> nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda:
         """The first parent frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -4884,12 +4906,6 @@ class NamedExpr(_base_nodes.AssignTypeNode):
 
         :returns: The first parent frame node.
         """
-        if future is not None:
-            warnings.warn(
-                "The future arg will be removed in astroid 4.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         if not self.parent:
             raise ParentMissingError(target=self)
 
@@ -4947,9 +4963,9 @@ class Unknown(_base_nodes.AssignTypeNode):
 
     def __init__(
         self,
+        parent: NodeNG,
         lineno: None = None,
         col_offset: None = None,
-        parent: None = None,
         *,
         end_lineno: None = None,
         end_col_offset: None = None,
@@ -4968,6 +4984,9 @@ class Unknown(_base_nodes.AssignTypeNode):
     def _infer(self, context: InferenceContext | None = None, **kwargs):
         """Inference on an Unknown node immediately terminates."""
         yield util.Uninferable
+
+
+UNATTACHED_UNKNOWN = Unknown(parent=SYNTHETIC_ROOT)
 
 
 class EvaluatedObject(NodeNG):
@@ -5498,6 +5517,7 @@ def _create_basic_elements(
     """Create a list of nodes to function as the elements of a new node."""
     elements: list[NodeNG] = []
     for element in value:
+        # NOTE: avoid accessing any attributes of element in the loop.
         element_node = const_factory(element)
         element_node.parent = node
         elements.append(element_node)
@@ -5510,6 +5530,7 @@ def _create_dict_items(
     """Create a list of node pairs to function as the items of a new dict node."""
     elements: list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]] = []
     for key, value in values.items():
+        # NOTE: avoid accessing any attributes of both key and value in the loop.
         key_node = const_factory(key)
         key_node.parent = node
         value_node = const_factory(value)
@@ -5520,18 +5541,23 @@ def _create_dict_items(
 
 def const_factory(value: Any) -> ConstFactoryResult:
     """Return an astroid node for a python value."""
-    assert not isinstance(value, NodeNG)
+    # NOTE: avoid accessing any attributes of value until it is known that value
+    # is of a const type, to avoid possibly triggering code for a live object.
+    # Accesses include value.__class__ and isinstance(value, ...), but not type(value).
+    # See: https://github.com/pylint-dev/astroid/issues/2686
+    value_type = type(value)
+    assert not issubclass(value_type, NodeNG)
 
     # This only handles instances of the CONST types. Any
     # subclasses get inferred as EmptyNode.
     # TODO: See if we should revisit these with the normal builder.
-    if value.__class__ not in CONST_CLS:
+    if value_type not in CONST_CLS:
         node = EmptyNode()
         node.object = value
         return node
 
     instance: List | Set | Tuple | Dict
-    initializer_cls = CONST_CLS[value.__class__]
+    initializer_cls = CONST_CLS[value_type]
     if issubclass(initializer_cls, (List, Set, Tuple)):
         instance = initializer_cls(
             lineno=None,

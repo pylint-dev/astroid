@@ -280,7 +280,9 @@ def _check_namedtuple_attributes(typename, attributes, rename=False):
     # <snippet>
     for name in (typename, *attributes):
         if not isinstance(name, str):
-            raise AstroidTypeError("Type names and field names must be strings")
+            raise AstroidTypeError(
+                f"Type names and field names must be strings, not {type(name)!r}"
+            )
         if not name.isidentifier():
             raise AstroidValueError(
                 "Type names and field names must be valid" + f"identifiers: {name!r}"
@@ -516,11 +518,16 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
         # know that it should be a string, so infer that as a guess.
         if "name" not in target_names:
             code = dedent(
-                """
-            @property
-            def name(self):
-                return ''
-            """
+                '''
+                @property
+                def name(self):
+                    """The name of the Enum member.
+
+                    This is a reconstruction by astroid: enums are too dynamic to understand, but we at least
+                    know 'name' should be a string, so this is astroid's best guess.
+                    """
+                    return ''
+                '''
             )
             name_dynamicclassattr = AstroidBuilder(AstroidManager()).string_build(code)[
                 "name"

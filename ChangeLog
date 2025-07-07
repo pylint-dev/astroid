@@ -10,6 +10,8 @@ Release date: TBA
 * Removed internal functions ``infer_numpy_member``, ``name_looks_like_numpy_member``, and
   ``attribute_looks_like_numpy_member`` from ``astroid.brain.brain_numpy_utils``.
 
+* To alleviate circular imports, the ``manager`` argument to ``AstroidBuilder()`` is now required.
+
 * Constants now have a parent of ``nodes.SYNTHETIC_ROOT``.
 
 * Fix crashes with large positive and negative list multipliers.
@@ -17,17 +19,114 @@ Release date: TBA
   Closes #2521
   Closes #2523
 
+* Fix precedence of `path` arg in `modpath_from_file_with_callback` to be higher than `sys.path`
+
+* Following a deprecation period, the ``future`` argument was removed from ``statement()`` and ``frame()``.
+
+* Improve consistency of ``JoinedStr`` inference by not raising ``InferenceError`` and
+  returning either ``Uninferable`` or a fully resolved ``Const``.
+
+  Closes #2621
+
 * Fix crash when typing._alias() call is missing arguments.
 
   Closes #2513
 
+* Include subclasses of standard property classes as `property` decorators
 
-What's New in astroid 3.3.6?
-============================
-Release date: TBA
+  Closes #10377
+
+* Modify ``astroid.bases`` and ``tests.test_nodes`` to reflect that `enum.property` was added in Python 3.11, not 3.10
+
+* Fix incorrect result in `_get_relative_base_path` when the target directory name starts with the base path
+
+  Closes #2608
+
+* The brain for nose was dropped. nose has been deprecated for 10 years and the brain required some maintenance.
+
+  Refs #2765
 
 * Fix precedence of `path` arg in `modpath_from_file_with_callback` to be higher than `sys.path`
 * Prevent dataclass parsing from triggering `DuplicateBasesError`.
+
+What's New in astroid 3.3.11?
+=============================
+Release date: TBA
+
+* Fix a crash when the root of a node is not a module but is unknown.
+
+  Closes #2672
+
+* Fix a crash when parsing an empty arbitrary expression with ``extract_node`` (``extract_node("__()")``).
+
+  Closes #2734
+
+* Fix a crash when parsing a slice called in a decorator on a function that is also decorated with
+  a known ``six`` decorator.
+
+  Closes #2721
+
+What's New in astroid 3.3.10?
+=============================
+Release date: 2025-05-10
+
+* Avoid importing submodules sharing names with standard library modules.
+
+  Closes #2684
+
+* Fix bug where ``pylint code.custom_extension`` would analyze ``code.py`` or ``code.pyi`` instead if they existed.
+
+	Closes pylint-dev/pylint#3631
+
+
+What's New in astroid 3.3.9?
+============================
+Release date: 2025-03-09
+
+* Fix crash when `sys.modules` contains lazy loader objects during checking.
+
+  Closes #2686
+  Closes pylint-dev/pylint#8589
+
+* Upload release assets to PyPI via Trusted Publishing.
+
+  Refs pylint-dev/pylint#10256
+
+
+What's New in astroid 3.3.8?
+============================
+Release date: 2024-12-23
+
+* Fix inability to import `collections.abc` in python 3.13.1. The reported fixes in astroid 3.3.6
+  and 3.3.7 did not actually fix this issue.
+
+  Closes pylint-dev/pylint#10112
+
+
+What's New in astroid 3.3.7?
+============================
+Release date: 2024-12-20
+
+This release was yanked.
+
+* Fix inability to import `collections.abc` in python 3.13.1. The reported fix in astroid 3.3.6
+  did not actually fix this issue.
+
+  Closes pylint-dev/pylint#10112
+
+
+What's New in astroid 3.3.6?
+============================
+Release date: 2024-12-08
+
+* Fix inability to import `collections.abc` in python 3.13.1.
+  _It was later found that this did not resolve the linked issue. It was fixed in astroid 3.3.7_
+
+  Closes pylint-dev/pylint#10112
+
+* Fix crash when typing._alias() call is missing arguments.
+
+  Closes #2513
 
 
 What's New in astroid 3.3.5?

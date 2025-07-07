@@ -15,7 +15,7 @@ import astroid
 from astroid import MANAGER, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
 from astroid.brain.brain_namedtuple_enum import _get_namedtuple_fields
-from astroid.const import PY312_PLUS, PY313_PLUS
+from astroid.const import PY312_PLUS, PY313_PLUS, PY314_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -192,6 +192,22 @@ def check_metaclass_is_abc(node: nodes.ClassDef):
 
 
 class CollectionsBrain(unittest.TestCase):
+    def test_collections_abc_is_importable(self) -> None:
+        """
+        Test that we can import `collections.abc`.
+
+        The collections.abc has gone through various formats of being frozen. Therefore, we ensure
+        that we can still import it (correctly).
+        """
+        import_node = builder.extract_node("import collections.abc")
+        assert isinstance(import_node, nodes.Import)
+        imported_module = import_node.do_import_module(import_node.names[0][0])
+        # Make sure that the file we have imported is actually the submodule of collections and
+        # not the `abc` module. (Which would happen if you call `importlib.util.find_spec("abc")`
+        # instead of `importlib.util.find_spec("collections.abc")`)
+        assert isinstance(imported_module.file, str)
+        assert "collections" in imported_module.file
+
     def test_collections_object_not_subscriptable(self) -> None:
         """
         Test that unsubscriptable types are detected
@@ -319,6 +335,9 @@ class CollectionsBrain(unittest.TestCase):
         with self.assertRaises(InferenceError):
             next(node.infer())
 
+    @pytest.mark.skipif(
+        PY314_PLUS, reason="collections.abc.ByteString was removed in 3.14"
+    )
     def test_collections_object_subscriptable_3(self):
         """With Python 3.9 the ByteString class of the collections module is subscriptable
         (but not the same class from typing module)"""
@@ -902,6 +921,7 @@ class TypingBrain(unittest.TestCase):
             ],
         )
 
+    @pytest.mark.skipif(PY314_PLUS, reason="typing.ByteString was removed in 3.14")
     def test_typing_object_notsubscriptable_3(self):
         """Until python39 ByteString class of the typing module is not
         subscriptable (whereas it is in the collections' module)"""

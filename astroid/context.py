@@ -15,7 +15,8 @@ from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 if TYPE_CHECKING:
     from astroid import constraint, nodes
-    from astroid.nodes.node_classes import Keyword, NodeNG
+    from astroid.nodes.node_classes import Keyword
+    from astroid.nodes.node_ng import NodeNG
 
 _InferenceCache = dict[
     tuple["NodeNG", Optional[str], Optional[str], Optional[str]], Sequence["NodeNG"]
@@ -36,13 +37,13 @@ class InferenceContext:
     """
 
     __slots__ = (
-        "path",
-        "lookupname",
-        "callcontext",
-        "boundnode",
-        "extra_context",
-        "constraints",
         "_nodes_inferred",
+        "boundnode",
+        "callcontext",
+        "constraints",
+        "extra_context",
+        "lookupname",
+        "path",
     )
 
     max_inferred = 100
@@ -163,7 +164,7 @@ class InferenceContext:
 class CallContext:
     """Holds information for a call site."""
 
-    __slots__ = ("args", "keywords", "callee")
+    __slots__ = ("args", "callee", "keywords")
 
     def __init__(
         self,

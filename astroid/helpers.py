@@ -129,7 +129,9 @@ def _object_type_is_subclass(
     # issubclass(object, (1, type)) raises TypeError
     for klass in class_seq:
         if isinstance(klass, util.UninferableBase):
-            raise AstroidTypeError("arg 2 must be a type or tuple of types")
+            raise AstroidTypeError(
+                f"arg 2 must be a type or tuple of types, not {type(klass)!r}"
+            )
 
         for obj_subclass in obj_type.mro():
             if obj_subclass == klass:
@@ -164,7 +166,7 @@ def object_issubclass(
         or its type's mro doesn't work
     """
     if not isinstance(node, nodes.ClassDef):
-        raise TypeError(f"{node} needs to be a ClassDef node")
+        raise TypeError(f"{node} needs to be a ClassDef node, not {type(node)!r}")
     return _object_type_is_subclass(node, class_or_seq, context=context)
 
 
@@ -300,9 +302,8 @@ def object_len(node, context: InferenceContext | None = None):
         and result_of_len.pytype() == "builtins.int"
     ):
         return result_of_len.value
-    if (
-        result_of_len is None
-        or isinstance(result_of_len, bases.Instance)
+    if result_of_len is None or (
+        isinstance(result_of_len, bases.Instance)
         and result_of_len.is_subtype_of("builtins.int")
     ):
         # Fake a result as we don't know the arguments of the instance call.

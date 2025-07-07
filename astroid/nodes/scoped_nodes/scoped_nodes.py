@@ -13,7 +13,6 @@ from __future__ import annotations
 import io
 import itertools
 import os
-import warnings
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import cached_property, lru_cache
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypeVar
@@ -404,17 +403,11 @@ class Module(LocalsDictNodeNG):
         """
         return self.file is not None and self.file.endswith(".py")
 
-    def statement(self, *, future: Literal[None, True] = None) -> NoReturn:
+    def statement(self) -> NoReturn:
         """The first parent node, including self, marked as statement node.
 
         When called on a :class:`Module` this raises a StatementMissing.
         """
-        if future is not None:
-            warnings.warn(
-                "The future arg will be removed in astroid 4.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         raise StatementMissing(target=self)
 
     def previous_sibling(self):
@@ -2129,7 +2122,7 @@ class ClassDef(
         )
         if (
             any(
-                node == base or base.parent_of(node) and not self.type_params
+                node == base or (base.parent_of(node) and not self.type_params)
                 for base in self.bases
             )
             or lookup_upper_frame
