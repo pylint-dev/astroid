@@ -171,7 +171,7 @@ def _find_arguments_from_base_classes(
     # See TODO down below
     # all_have_defaults = True
 
-    for base in reversed(node.mro()):
+    for base in reversed(node.mro(ignore_duplicates=True)):
         if not base.is_dataclass:
             continue
         try:
@@ -221,7 +221,7 @@ def _parse_arguments_into_strings(
 
 def _get_previous_field_default(node: nodes.ClassDef, name: str) -> nodes.NodeNG | None:
     """Get the default value of a previously defined field."""
-    for base in reversed(node.mro()):
+    for base in reversed(node.mro(ignore_duplicates=True)):
         if not base.is_dataclass:
             continue
         if name in base.locals:

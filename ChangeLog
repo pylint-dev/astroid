@@ -46,6 +46,9 @@ Release date: TBA
 
   Refs #2765
 
+* Fix precedence of `path` arg in `modpath_from_file_with_callback` to be higher than `sys.path`
+* Prevent dataclass parsing from triggering `DuplicateBasesError`.
+
 What's New in astroid 3.3.11?
 =============================
 Release date: TBA

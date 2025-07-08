@@ -1939,6 +1939,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         assert isinstance(cls, nodes.ClassDef)
         with self.assertRaises(DuplicateBasesError):
             cls.mro()
+        assert len(cls.mro(ignore_duplicates=True)) == 3
 
     def test_mro_generic_error_2(self):
         cls = builder.extract_node(
@@ -1952,6 +1953,8 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         assert isinstance(cls, nodes.ClassDef)
         with self.assertRaises(DuplicateBasesError):
             cls.mro()
+        with self.assertRaises(InconsistentMroError):
+            cls.mro(ignore_duplicates=True)
 
     def test_mro_typing_extensions(self):
         """Regression test for mro() inference on typing_extensions.

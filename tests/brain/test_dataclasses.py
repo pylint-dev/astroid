@@ -1350,3 +1350,33 @@ def test_dataclass_with_properties() -> None:
     fourth_init: bases.UnboundMethod = next(fourth.infer())
     assert [a.name for a in fourth_init.args.args] == ["self", "other_attr", "attr"]
     assert [a.name for a in fourth_init.args.defaults] == ["Uninferable"]
+
+
+@parametrize_module
+def test_dataclass_inherited_from_multiple_protocol_bases(module: str):
+    code = astroid.extract_node(
+        f"""
+    from {module} import dataclass
+    from typing import TypeVar, Protocol
+
+    BaseT = TypeVar("BaseT")
+    T = TypeVar("T", bound=BaseT)
+
+
+    class A(Protocol[BaseT]):
+        pass
+
+
+    class B(A[T], Protocol[T]):
+        pass
+
+
+    @dataclass
+    class Dataclass(B[T]):
+        pass
+    """
+    )
+    inferred = code.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.ClassDef)
+    assert inferred[0].is_dataclass
