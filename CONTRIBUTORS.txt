@@ -133,6 +133,7 @@ Contributors
 - Oleh Prypin <oleh@pryp.in>
 - Nicolas Noirbent <nicolas@noirbent.fr>
 - Neil Girdhar <mistersheik@gmail.com>
+- Mitch Harding <mitchell.harding@hpe.com>
 - Miro Hrončok <miro@hroncok.cz>
 - Michał Masłowski <m.maslowski@clearcode.cc>
 - Mateusz Bysiek <mb@mbdev.pl>
