@@ -11,7 +11,7 @@ keywords = [ "abstract syntax tree", "python", "static code analysis" ]
 license = "LGPL-2.1-or-later"
 license-files = [ "LICENSE", "CONTRIBUTORS.txt" ]
 
-requires-python = ">=3.9.0"
+requires-python = ">=3.10.0"
 classifiers = [
   "Development Status :: 6 - Mature",
   "Environment :: Console",
@@ -19,7 +19,6 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -50,7 +49,7 @@ include = [ "astroid*" ]
 version = { attr = "astroid.__pkginfo__.__version__" }
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 
 # ruff is less lenient than pylint and does not make any exceptions
 # (for docstrings, strings and comments in particular).
@@ -90,10 +89,9 @@ testpaths = [ "tests" ]
 filterwarnings = "error"
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 files = [
   "astroid/_ast.py",
-  "astroid/_backport_stdlib_names.py",
   "astroid/astroid_manager.py",
   "astroid/brain/brain_crypt.py",
   "astroid/brain/brain_ctypes.py",
@@ -131,7 +129,6 @@ files = [
   "astroid/nodes/utils.py",
 ]
 always_false = [
-  "PY310_PLUS",
   "PY311_PLUS",
   "PY312_PLUS",
   "PY313_PLUS",

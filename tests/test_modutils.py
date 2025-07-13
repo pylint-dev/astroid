@@ -20,7 +20,6 @@ from pytest import CaptureFixture, LogCaptureFixture
 
 import astroid
 from astroid import modutils
-from astroid.const import PY310_PLUS
 from astroid.interpreter._import import spec
 
 from . import resources
@@ -500,18 +499,6 @@ class ModuleInPathTest(resources.SysPathSetup, unittest.TestCase):
         datadir = resources.find("")
         assert not modutils.module_in_path("etree", datadir)
         assert not modutils.module_in_path("astroid", datadir)
-
-
-class BackportStdlibNamesTest(resources.SysPathSetup, unittest.TestCase):
-    """
-    Verify backport raises exception on newer versions
-    """
-
-    @pytest.mark.skipif(not PY310_PLUS, reason="Backport valid on <=3.9")
-    def test_import_error(self) -> None:
-        with pytest.raises(AssertionError):
-            # pylint: disable-next=import-outside-toplevel, unused-import
-            from astroid import _backport_stdlib_names  # noqa
 
 
 class IsRelativeTest(unittest.TestCase):

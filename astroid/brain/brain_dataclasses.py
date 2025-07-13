@@ -15,22 +15,22 @@ dataclasses. References:
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import Literal, Union
+from typing import Literal
 
 from astroid import bases, context, nodes
 from astroid.builder import parse
-from astroid.const import PY310_PLUS, PY313_PLUS
+from astroid.const import PY313_PLUS
 from astroid.exceptions import AstroidSyntaxError, InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.typing import InferenceResult
 from astroid.util import Uninferable, UninferableBase, safe_infer
 
-_FieldDefaultReturn = Union[
-    None,
-    tuple[Literal["default"], nodes.NodeNG],
-    tuple[Literal["default_factory"], nodes.Call],
-]
+_FieldDefaultReturn = (
+    None
+    | tuple[Literal["default"], nodes.NodeNG]
+    | tuple[Literal["default_factory"], nodes.Call]
+)
 
 DATACLASSES_DECORATORS = frozenset(("dataclass",))
 FIELD_NAME = "field"
@@ -72,7 +72,7 @@ def dataclass_transform(node: nodes.ClassDef) -> None:
         return
 
     kw_only_decorated = False
-    if PY310_PLUS and node.decorators.nodes:
+    if node.decorators.nodes:
         for decorator in node.decorators.nodes:
             if not isinstance(decorator, nodes.Call):
                 kw_only_decorated = False
@@ -562,8 +562,6 @@ def _is_class_var(node: nodes.NodeNG) -> bool:
 
 def _is_keyword_only_sentinel(node: nodes.NodeNG) -> bool:
     """Return True if node is the KW_ONLY sentinel."""
-    if not PY310_PLUS:
-        return False
     inferred = safe_infer(node)
     return (
         isinstance(inferred, bases.Instance)

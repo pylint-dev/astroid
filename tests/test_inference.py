@@ -34,7 +34,7 @@ from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod, UnionType
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
-from astroid.const import IS_PYPY, PY310_PLUS, PY312_PLUS, PY314_PLUS
+from astroid.const import IS_PYPY, PY312_PLUS, PY314_PLUS
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -1292,61 +1292,57 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         tuple | int  #@
         """
         ast_nodes = extract_node(code)
-        if not PY310_PLUS:
-            for n in ast_nodes:
-                assert n.inferred() == [util.Uninferable]
+        i0 = ast_nodes[0].inferred()[0]
+        assert isinstance(i0, UnionType)
+        assert isinstance(i0.left, nodes.ClassDef)
+        assert i0.left.name == "int"
+        assert isinstance(i0.right, nodes.Const)
+        assert i0.right.value is None
+
+        # Assert basic UnionType properties and methods
+        assert i0.callable() is False
+        assert i0.bool_value() is True
+        assert i0.pytype() == "types.UnionType"
+        assert i0.display_type() == "UnionType"
+        if PY314_PLUS:
+            assert str(i0) == "UnionType(Union)"
+            assert repr(i0) == f"<UnionType(Union) l.0 at 0x{id(i0)}>"
         else:
-            i0 = ast_nodes[0].inferred()[0]
-            assert isinstance(i0, UnionType)
-            assert isinstance(i0.left, nodes.ClassDef)
-            assert i0.left.name == "int"
-            assert isinstance(i0.right, nodes.Const)
-            assert i0.right.value is None
+            assert str(i0) == "UnionType(UnionType)"
+            assert repr(i0) == f"<UnionType(UnionType) l.0 at 0x{id(i0)}>"
 
-            # Assert basic UnionType properties and methods
-            assert i0.callable() is False
-            assert i0.bool_value() is True
-            assert i0.pytype() == "types.UnionType"
-            assert i0.display_type() == "UnionType"
-            if PY314_PLUS:
-                assert str(i0) == "UnionType(Union)"
-                assert repr(i0) == f"<UnionType(Union) l.0 at 0x{id(i0)}>"
-            else:
-                assert str(i0) == "UnionType(UnionType)"
-                assert repr(i0) == f"<UnionType(UnionType) l.0 at 0x{id(i0)}>"
+        i1 = ast_nodes[1].inferred()[0]
+        assert isinstance(i1, UnionType)
 
-            i1 = ast_nodes[1].inferred()[0]
-            assert isinstance(i1, UnionType)
+        i2 = ast_nodes[2].inferred()[0]
+        assert isinstance(i2, UnionType)
+        assert isinstance(i2.left, UnionType)
+        assert isinstance(i2.left.left, nodes.ClassDef)
+        assert i2.left.left.name == "int"
+        assert isinstance(i2.left.right, nodes.ClassDef)
+        assert i2.left.right.name == "str"
+        assert isinstance(i2.right, nodes.Const)
+        assert i2.right.value is None
 
-            i2 = ast_nodes[2].inferred()[0]
-            assert isinstance(i2, UnionType)
-            assert isinstance(i2.left, UnionType)
-            assert isinstance(i2.left.left, nodes.ClassDef)
-            assert i2.left.left.name == "int"
-            assert isinstance(i2.left.right, nodes.ClassDef)
-            assert i2.left.right.name == "str"
-            assert isinstance(i2.right, nodes.Const)
-            assert i2.right.value is None
+        i3 = ast_nodes[3].inferred()[0]
+        assert isinstance(i3, UnionType)
+        assert isinstance(i3.left, nodes.ClassDef)
+        assert i3.left.name == "A"
+        assert isinstance(i3.right, nodes.ClassDef)
+        assert i3.right.name == "B"
 
-            i3 = ast_nodes[3].inferred()[0]
-            assert isinstance(i3, UnionType)
-            assert isinstance(i3.left, nodes.ClassDef)
-            assert i3.left.name == "A"
-            assert isinstance(i3.right, nodes.ClassDef)
-            assert i3.right.name == "B"
+        i4 = ast_nodes[4].inferred()[0]
+        assert isinstance(i4, UnionType)
 
-            i4 = ast_nodes[4].inferred()[0]
-            assert isinstance(i4, UnionType)
+        i5 = ast_nodes[5].inferred()[0]
+        assert isinstance(i5, UnionType)
+        assert isinstance(i5.left, nodes.ClassDef)
+        assert i5.left.name == "List"
 
-            i5 = ast_nodes[5].inferred()[0]
-            assert isinstance(i5, UnionType)
-            assert isinstance(i5.left, nodes.ClassDef)
-            assert i5.left.name == "List"
-
-            i6 = ast_nodes[6].inferred()[0]
-            assert isinstance(i6, UnionType)
-            assert isinstance(i6.left, nodes.ClassDef)
-            assert i6.left.name == "tuple"
+        i6 = ast_nodes[6].inferred()[0]
+        assert isinstance(i6, UnionType)
+        assert isinstance(i6.left, nodes.ClassDef)
+        assert i6.left.name == "tuple"
 
         code = """
         from typing import List
@@ -1359,26 +1355,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         Alias1 | Alias2  #@
         """
         ast_nodes = extract_node(code)
-        if not PY310_PLUS:
-            for n in ast_nodes:
-                assert n.inferred() == [util.Uninferable]
-        else:
-            i0 = ast_nodes[0].inferred()[0]
-            assert isinstance(i0, UnionType)
-            assert isinstance(i0.left, nodes.ClassDef)
-            assert i0.left.name == "List"
+        i0 = ast_nodes[0].inferred()[0]
+        assert isinstance(i0, UnionType)
+        assert isinstance(i0.left, nodes.ClassDef)
+        assert i0.left.name == "List"
 
-            i1 = ast_nodes[1].inferred()[0]
-            assert isinstance(i1, UnionType)
-            assert isinstance(i1.left, UnionType)
-            assert isinstance(i1.left.left, nodes.ClassDef)
-            assert i1.left.left.name == "str"
+        i1 = ast_nodes[1].inferred()[0]
+        assert isinstance(i1, UnionType)
+        assert isinstance(i1.left, UnionType)
+        assert isinstance(i1.left.left, nodes.ClassDef)
+        assert i1.left.left.name == "str"
 
-            i2 = ast_nodes[2].inferred()[0]
-            assert isinstance(i2, UnionType)
-            assert isinstance(i2.left, nodes.ClassDef)
-            assert i2.left.name == "List"
-            assert isinstance(i2.right, UnionType)
+        i2 = ast_nodes[2].inferred()[0]
+        assert isinstance(i2, UnionType)
+        assert isinstance(i2.left, nodes.ClassDef)
+        assert i2.left.name == "List"
+        assert isinstance(i2.right, UnionType)
 
     def test_nonregr_lambda_arg(self) -> None:
         code = """
@@ -1888,7 +1880,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(node.type, "function")
 
     @pytest.mark.skipif(
-        IS_PYPY and PY310_PLUS,
+        IS_PYPY,
         reason="Persistent recursion error that we ignore and never fix",
     )
     def test_no_infinite_ancestor_loop(self) -> None:

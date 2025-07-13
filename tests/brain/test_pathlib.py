@@ -5,7 +5,7 @@
 
 import astroid
 from astroid import bases
-from astroid.const import PY310_PLUS, PY313
+from astroid.const import PY313
 from astroid.util import Uninferable
 
 
@@ -62,11 +62,8 @@ def test_inference_parents_subscript_slice() -> None:
     )
     inferred = name_node.inferred()
     assert len(inferred) == 1
-    if PY310_PLUS:
-        assert isinstance(inferred[0], bases.Instance)
-        assert inferred[0].qname() == "builtins.tuple"
-    else:
-        assert inferred[0] is Uninferable
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].qname() == "builtins.tuple"
 
 
 def test_inference_parents_subscript_not_path() -> None:

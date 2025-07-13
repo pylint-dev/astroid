@@ -32,6 +32,8 @@ Release date: TBA
 
   Closes #2513
 
+* Remove support for Python 3.9 (and constant `PY310_PLUS`).
+
 * Include subclasses of standard property classes as `property` decorators
 
   Closes #10377

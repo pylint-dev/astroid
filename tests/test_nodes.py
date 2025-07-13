@@ -30,7 +30,6 @@ from astroid import (
 )
 from astroid.const import (
     IS_PYPY,
-    PY310_PLUS,
     PY311_PLUS,
     PY312_PLUS,
     PY314_PLUS,
@@ -1918,7 +1917,6 @@ def test_is_generator_for_yield_in_aug_assign() -> None:
     assert bool(node.is_generator())
 
 
-@pytest.mark.skipif(not PY310_PLUS, reason="pattern matching was added in PY310")
 class TestPatternMatching:
     @staticmethod
     def test_match_simple():

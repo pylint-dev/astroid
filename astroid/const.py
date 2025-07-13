@@ -5,7 +5,6 @@
 import enum
 import sys
 
-PY310_PLUS = sys.version_info >= (3, 10)
 PY311_PLUS = sys.version_info >= (3, 11)
 PY312_PLUS = sys.version_info >= (3, 12)
 PY313 = sys.version_info[:2] == (3, 13)

@@ -81,7 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.9, "3.10", "3.11", "3.12", "3.13", "3.14-dev"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14-dev"]
     outputs:
       python-key: ${{ steps.generate-python-key.outputs.key }}
     steps:
@@ -139,7 +139,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.9, "3.10", "3.11", "3.12", "3.13", "3.14-dev"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14-dev"]
     steps:
       - name: Set temp directory
         run: echo "TEMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
@@ -194,7 +194,7 @@ jobs:
       fail-fast: false
       matrix:
         # We only test on the lowest and highest supported PyPy versions
-        python-version: ["pypy3.9", "pypy3.10"]
+        python-version: ["pypy3.10"]
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v4.2.2
