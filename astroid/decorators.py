@@ -18,10 +18,7 @@ from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
 from astroid.typing import InferenceResult
 
-if sys.version_info >= (3, 10):
-    from typing import ParamSpec
-else:
-    from typing_extensions import ParamSpec
+from typing import ParamSpec
 
 _R = TypeVar("_R")
 _P = ParamSpec("_P")
