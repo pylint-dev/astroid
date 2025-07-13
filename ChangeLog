@@ -14,9 +14,10 @@ Release date: TBA
 
 * Modify ``astroid.bases`` and ``tests.test_nodes`` to reflect that `enum.property` was added in Python 3.11, not 3.10
 
+
 What's New in astroid 3.3.11?
 =============================
-Release date: TBA
+Release date: 2025-07-13
 
 * Fix a crash when parsing an empty arbitrary expression with ``extract_node`` (``extract_node("__()")``).
 
