@@ -30,14 +30,10 @@ import warnings
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import redirect_stderr, redirect_stdout
 from functools import lru_cache
+from sys import stdlib_module_names
 
-from astroid.const import IS_JYTHON, PY310_PLUS
+from astroid.const import IS_JYTHON
 from astroid.interpreter._import import spec, util
-
-if PY310_PLUS:
-    from sys import stdlib_module_names
-else:
-    from astroid._backport_stdlib_names import stdlib_module_names
 
 logger = logging.getLogger(__name__)
 

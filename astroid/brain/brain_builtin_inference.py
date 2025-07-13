@@ -9,7 +9,7 @@ from __future__ import annotations
 import itertools
 from collections.abc import Callable, Iterable, Iterator
 from functools import partial
-from typing import TYPE_CHECKING, Any, NoReturn, Union, cast
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 from astroid import arguments, helpers, nodes, objects, util
 from astroid.builder import AstroidBuilder
@@ -33,26 +33,13 @@ from astroid.typing import (
 if TYPE_CHECKING:
     from astroid.bases import Instance
 
-ContainerObjects = Union[
-    objects.FrozenSet,
-    objects.DictItems,
-    objects.DictKeys,
-    objects.DictValues,
-]
+ContainerObjects = (
+    objects.FrozenSet | objects.DictItems | objects.DictKeys | objects.DictValues
+)
 
-BuiltContainers = Union[
-    type[tuple],
-    type[list],
-    type[set],
-    type[frozenset],
-]
+BuiltContainers = type[tuple] | type[list] | type[set] | type[frozenset]
 
-CopyResult = Union[
-    nodes.Dict,
-    nodes.List,
-    nodes.Set,
-    objects.FrozenSet,
-]
+CopyResult = nodes.Dict | nodes.List | nodes.Set | objects.FrozenSet
 
 OBJECT_DUNDER_NEW = "object.__new__"
 
@@ -282,7 +269,7 @@ def _container_generic_transform(
     if isinstance(arg, klass):
         return arg
     if isinstance(arg, iterables):
-        arg = cast(Union[nodes.BaseContainer, ContainerObjects], arg)
+        arg = cast((nodes.BaseContainer | ContainerObjects), arg)
         if all(isinstance(elt, nodes.Const) for elt in arg.elts):
             elts = [cast(nodes.Const, elt).value for elt in arg.elts]
         else:

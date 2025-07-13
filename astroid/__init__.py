@@ -30,9 +30,6 @@ Main modules are:
 * builder contains the class responsible to build astroid trees
 """
 
-import functools
-import tokenize
-
 # isort: off
 # We have an isort: off on 'astroid.nodes' because of a circular import.
 from astroid.nodes import node_classes, scoped_nodes
@@ -44,7 +41,7 @@ from astroid.__pkginfo__ import __version__, version
 from astroid.bases import BaseInstance, BoundMethod, Instance, UnboundMethod
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import extract_node, parse
-from astroid.const import PY310_PLUS, Context
+from astroid.const import Context
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidError,
@@ -175,12 +172,3 @@ from astroid.nodes import (
 # isort: on
 
 from astroid.util import Uninferable
-
-# Performance hack for tokenize. See https://bugs.python.org/issue43014
-# Adapted from https://github.com/PyCQA/pycodestyle/pull/993
-if (
-    not PY310_PLUS
-    and callable(getattr(tokenize, "_compile", None))
-    and getattr(tokenize._compile, "__wrapped__", None) is None  # type: ignore[attr-defined]
-):
-    tokenize._compile = functools.lru_cache(tokenize._compile)  # type: ignore[attr-defined]

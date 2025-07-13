@@ -6,7 +6,6 @@ import pytest
 
 import astroid
 from astroid import bases, nodes
-from astroid.const import PY310_PLUS
 from astroid.exceptions import InferenceError
 from astroid.util import Uninferable
 
@@ -422,19 +421,12 @@ def test_dataclass_order_of_inherited_attributes():
     assert [a.name for a in child_init.args.args] == ["self", "a", "b", "c"]
 
     normal_init: bases.UnboundMethod = next(normal.infer())
-    if PY310_PLUS:
-        assert [a.name for a in normal_init.args.args] == ["self", "a", "c"]
-        assert [a.name for a in normal_init.args.kwonlyargs] == ["b"]
-    else:
-        assert [a.name for a in normal_init.args.args] == ["self", "a", "b", "c"]
-        assert [a.name for a in normal_init.args.kwonlyargs] == []
+    assert [a.name for a in normal_init.args.args] == ["self", "a", "c"]
+    assert [a.name for a in normal_init.args.kwonlyargs] == ["b"]
 
     keyword_only_init: bases.UnboundMethod = next(keyword_only.infer())
-    if PY310_PLUS:
-        assert [a.name for a in keyword_only_init.args.args] == ["self"]
-        assert [a.name for a in keyword_only_init.args.kwonlyargs] == ["a", "b", "c"]
-    else:
-        assert [a.name for a in keyword_only_init.args.args] == ["self", "a", "b", "c"]
+    assert [a.name for a in keyword_only_init.args.args] == ["self"]
+    assert [a.name for a in keyword_only_init.args.kwonlyargs] == ["a", "b", "c"]
 
 
 def test_pydantic_field() -> None:
@@ -806,10 +798,7 @@ def test_kw_only_sentinel() -> None:
     B.__init__  #@
     """
     )
-    if PY310_PLUS:
-        expected = ["self", "y"]
-    else:
-        expected = ["self", "_", "y"]
+    expected = ["self", "y"]
     init = next(node_one.infer())
     assert [a.name for a in init.args.args] == expected
 
@@ -818,10 +807,7 @@ def test_kw_only_sentinel() -> None:
 
 
 def test_kw_only_decorator() -> None:
-    """Test that we update the signature correctly based on the keyword.
-
-    kw_only was introduced in PY310.
-    """
+    """Test that we update the signature correctly based on the keyword."""
     foodef, bardef, cee, dee = astroid.extract_node(
         """
     from dataclasses import dataclass
@@ -855,43 +841,20 @@ def test_kw_only_decorator() -> None:
     )
 
     foo_init: bases.UnboundMethod = next(foodef.infer())
-    if PY310_PLUS:
-        assert [a.name for a in foo_init.args.args] == ["self"]
-        assert [a.name for a in foo_init.args.kwonlyargs] == ["a", "e"]
-    else:
-        assert [a.name for a in foo_init.args.args] == ["self", "a", "e"]
-        assert [a.name for a in foo_init.args.kwonlyargs] == []
+    assert [a.name for a in foo_init.args.args] == ["self"]
+    assert [a.name for a in foo_init.args.kwonlyargs] == ["a", "e"]
 
     bar_init: bases.UnboundMethod = next(bardef.infer())
-    if PY310_PLUS:
-        assert [a.name for a in bar_init.args.args] == ["self", "c"]
-        assert [a.name for a in bar_init.args.kwonlyargs] == ["a", "e"]
-    else:
-        assert [a.name for a in bar_init.args.args] == ["self", "a", "e", "c"]
-        assert [a.name for a in bar_init.args.kwonlyargs] == []
+    assert [a.name for a in bar_init.args.args] == ["self", "c"]
+    assert [a.name for a in bar_init.args.kwonlyargs] == ["a", "e"]
 
     cee_init: bases.UnboundMethod = next(cee.infer())
-    if PY310_PLUS:
-        assert [a.name for a in cee_init.args.args] == ["self", "c", "d"]
-        assert [a.name for a in cee_init.args.kwonlyargs] == ["a", "e"]
-    else:
-        assert [a.name for a in cee_init.args.args] == ["self", "a", "e", "c", "d"]
-        assert [a.name for a in cee_init.args.kwonlyargs] == []
+    assert [a.name for a in cee_init.args.args] == ["self", "c", "d"]
+    assert [a.name for a in cee_init.args.kwonlyargs] == ["a", "e"]
 
     dee_init: bases.UnboundMethod = next(dee.infer())
-    if PY310_PLUS:
-        assert [a.name for a in dee_init.args.args] == ["self", "c", "d"]
-        assert [a.name for a in dee_init.args.kwonlyargs] == ["a", "e", "ee"]
-    else:
-        assert [a.name for a in dee_init.args.args] == [
-            "self",
-            "a",
-            "e",
-            "c",
-            "d",
-            "ee",
-        ]
-        assert [a.name for a in dee_init.args.kwonlyargs] == []
+    assert [a.name for a in dee_init.args.args] == ["self", "c", "d"]
+    assert [a.name for a in dee_init.args.kwonlyargs] == ["a", "e", "ee"]
 
 
 def test_kw_only_in_field_call() -> None:

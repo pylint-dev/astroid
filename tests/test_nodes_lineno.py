@@ -4,11 +4,9 @@
 
 import textwrap
 
-import pytest
-
 import astroid
 from astroid import builder, nodes
-from astroid.const import PY310_PLUS, PY312_PLUS
+from astroid.const import PY312_PLUS
 
 
 class TestLinenoColOffset:
@@ -987,7 +985,6 @@ class TestLinenoColOffset:
         assert (s4.value.end_lineno, s4.value.end_col_offset) == (2, 14)
 
     @staticmethod
-    @pytest.mark.skipif(not PY310_PLUS, reason="pattern matching was added in PY310")
     def test_end_lineno_match() -> None:
         """Match, MatchValue, MatchSingleton, MatchSequence, MatchMapping,
         MatchClass, MatchStar, MatchOr, MatchAs.

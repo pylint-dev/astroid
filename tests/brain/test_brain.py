@@ -128,7 +128,6 @@ class IOBrainTest(unittest.TestCase):
             self.assertEqual(raw.name, "FileIO")
 
 
-@test_utils.require_version("3.9")
 class TypeBrain(unittest.TestCase):
     def test_type_subscript(self):
         """
@@ -265,43 +264,6 @@ class CollectionsBrain(unittest.TestCase):
             inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
         )
 
-    @test_utils.require_version(maxver="3.9")
-    def test_collections_object_not_yet_subscriptable(self):
-        """
-        Test that unsubscriptable types are detected as such.
-        Until python39 MutableSet of the collections module is not subscriptable.
-        """
-        wrong_node = builder.extract_node(
-            """
-        import collections.abc
-        collections.abc.MutableSet[int]
-        """
-        )
-        with self.assertRaises(InferenceError):
-            next(wrong_node.infer())
-        right_node = builder.extract_node(
-            """
-        import collections.abc
-        collections.abc.MutableSet
-        """
-        )
-        inferred = next(right_node.infer())
-        check_metaclass_is_abc(inferred)
-        assertEqualMro(
-            inferred,
-            [
-                "_collections_abc.MutableSet",
-                "_collections_abc.Set",
-                "_collections_abc.Collection",
-                "_collections_abc.Sized",
-                "_collections_abc.Iterable",
-                "_collections_abc.Container",
-                "builtins.object",
-            ],
-        )
-        with self.assertRaises(AttributeInferenceError):
-            inferred.getattr("__class_getitem__")
-
     def test_collections_object_subscriptable_2(self):
         """Starting with python39 Iterator in the collection.abc module is subscriptable"""
         node = builder.extract_node(
@@ -322,18 +284,6 @@ class CollectionsBrain(unittest.TestCase):
                 "builtins.object",
             ],
         )
-
-    @test_utils.require_version(maxver="3.9")
-    def test_collections_object_not_yet_subscriptable_2(self):
-        """Before python39 Iterator in the collection.abc module is not subscriptable"""
-        node = builder.extract_node(
-            """
-        import collections.abc
-        collections.abc.Iterator[int]
-        """
-        )
-        with self.assertRaises(InferenceError):
-            next(node.infer())
 
     @pytest.mark.skipif(
         PY314_PLUS, reason="collections.abc.ByteString was removed in 3.14"
@@ -705,7 +655,6 @@ class TypingBrain(unittest.TestCase):
         )
         assert len(node.inferred()) == 1
 
-    @test_utils.require_version(minver="3.10")
     def test_typing_param_spec(self):
         node = builder.extract_node(
             """
@@ -1025,55 +974,6 @@ class ReBrainTest(unittest.TestCase):
             self.assertIn(name, re_ast)
             self.assertEqual(next(re_ast[name].infer()).value, getattr(re, name))
 
-    @test_utils.require_version(maxver="3.9")
-    def test_re_pattern_unsubscriptable(self):
-        """
-        re.Pattern and re.Match are unsubscriptable until PY39.
-        """
-        right_node1 = builder.extract_node(
-            """
-        import re
-        re.Pattern
-        """
-        )
-        inferred1 = next(right_node1.infer())
-        assert isinstance(inferred1, nodes.ClassDef)
-        with self.assertRaises(AttributeInferenceError):
-            assert isinstance(
-                inferred1.getattr("__class_getitem__")[0], nodes.FunctionDef
-            )
-
-        right_node2 = builder.extract_node(
-            """
-        import re
-        re.Pattern
-        """
-        )
-        inferred2 = next(right_node2.infer())
-        assert isinstance(inferred2, nodes.ClassDef)
-        with self.assertRaises(AttributeInferenceError):
-            assert isinstance(
-                inferred2.getattr("__class_getitem__")[0], nodes.FunctionDef
-            )
-
-        wrong_node1 = builder.extract_node(
-            """
-        import re
-        re.Pattern[int]
-        """
-        )
-        with self.assertRaises(InferenceError):
-            next(wrong_node1.infer())
-
-        wrong_node2 = builder.extract_node(
-            """
-        import re
-        re.Match[int]
-        """
-        )
-        with self.assertRaises(InferenceError):
-            next(wrong_node2.infer())
-
     def test_re_pattern_subscriptable(self):
         """Test re.Pattern and re.Match are subscriptable in PY39+"""
         node1 = builder.extract_node(
@@ -1203,7 +1103,6 @@ class SubprocessTest(unittest.TestCase):
         assert isinstance(inferred, astroid.Const)
         assert isinstance(inferred.value, (str, bytes))
 
-    @test_utils.require_version("3.9")
     def test_popen_does_not_have_class_getitem(self):
         code = """import subprocess; subprocess.Popen"""
         node = astroid.extract_node(code)

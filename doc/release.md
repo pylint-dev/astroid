@@ -30,10 +30,9 @@ tbump 2.5.0-dev0 --no-tag --no-push
 git commit -am "Upgrade the version to 2.5.0-dev0 following 2.4.0 release"
 ```
 
-Check the commit and then push to a release branch
+Check the commit and then push to a release branch:
 
 - Open a merge request with the two commits (no one can push directly on `main`)
-- Trigger the "release tests" workflow in GitHub Actions.
 - After the merge, recover the merged commits on `main` and tag the first one (the
   version should be `X.Y.Z`) as `vX.Y.Z` (For example: `v2.4.0`)
 - Push the tag.
@@ -92,8 +91,8 @@ is the version under development on `main`.)
 - Fix version conflicts properly, meaning preserve the version numbers of the form
   `X.Y.0-devZ` (For example: `2.4.0-dev6`).
 - Open a merge request against main. Ensure a merge commit is used, because pre-commit
-  need the patch release tag to be in the main branch history to consider the patch
-  release as the latest version and this won't be the case with rebase or squash. You
+  needs the patch release tag to be in the main branch history to consider the patch
+  release as the latest version, and this won't be the case with rebase or squash. You
   can defend against trigger-happy future selves by enabling auto-merge with the merge
   commit strategy.
 - Wait for approval. Again, use a merge commit.

@@ -13,7 +13,7 @@ import pytest
 
 import astroid
 from astroid import extract_node, nodes
-from astroid.const import PY310_PLUS, PY312_PLUS
+from astroid.const import PY312_PLUS
 from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
 from astroid.util import Uninferable, UninferableBase
@@ -364,7 +364,6 @@ def test_named_expr_inference() -> None:
     assert node.value == 1
 
 
-@pytest.mark.skipif(not PY310_PLUS, reason="Match requires python 3.10")
 class TestPatternMatching:
     @staticmethod
     def test_assigned_stmts_match_mapping():

@@ -14,7 +14,6 @@ from typing import (
     Any,
     ClassVar,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -48,7 +47,7 @@ if TYPE_CHECKING:
 _NodesT = TypeVar("_NodesT", bound="NodeNG")
 _NodesT2 = TypeVar("_NodesT2", bound="NodeNG")
 _NodesT3 = TypeVar("_NodesT3", bound="NodeNG")
-SkipKlassT = Union[None, type["NodeNG"], tuple[type["NodeNG"], ...]]
+SkipKlassT = None | type["NodeNG"] | tuple[type["NodeNG"], ...]
 
 
 class NodeNG:

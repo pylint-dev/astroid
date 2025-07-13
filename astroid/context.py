@@ -9,7 +9,7 @@ from __future__ import annotations
 import contextlib
 import pprint
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from astroid.nodes.node_ng import NodeNG
 
 _InferenceCache = dict[
-    tuple["NodeNG", Optional[str], Optional[str], Optional[str]], Sequence["NodeNG"]
+    tuple["NodeNG", str | None, str | None, str | None], Sequence["NodeNG"]
 ]
 
 _INFERENCE_CACHE: _InferenceCache = {}

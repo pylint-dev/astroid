@@ -7,7 +7,7 @@
 from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
-from astroid.const import PY310_PLUS, PY312_PLUS
+from astroid.const import PY312_PLUS
 from astroid.manager import AstroidManager
 
 
@@ -18,9 +18,7 @@ def _verifyflags_enum() -> str:
         VERIFY_CRL_CHECK_LEAF = 1
         VERIFY_CRL_CHECK_CHAIN = 2
         VERIFY_X509_STRICT = 3
-        VERIFY_X509_TRUSTED_FIRST = 4"""
-    if PY310_PLUS:
-        enum += """
+        VERIFY_X509_TRUSTED_FIRST = 4
         VERIFY_ALLOW_PROXY_CERTS = 5
         VERIFY_X509_PARTIAL_CHAIN = 6
         """
