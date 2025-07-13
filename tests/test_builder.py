@@ -850,7 +850,7 @@ class FileBuildTest(unittest.TestCase):
         """Test the 'locals' dictionary of an astroid method."""
         method = self.module["YOUPI"]["method"]
         # ListComp variables are not accessible outside
-        self.assertEqual(sorted(method.locals), ["autre", "local", "self"])
+        self.assertEqual(sorted(method.locals), ["a", "autre", "local", "self"])
 
     def test_unknown_encoding(self) -> None:
         with self.assertRaises(AstroidSyntaxError):

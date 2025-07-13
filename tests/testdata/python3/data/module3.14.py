@@ -60,8 +60,8 @@ class YOUPI(YO):
             global_access(local, val=autre)
         finally:
             # return in finally was previously tested here but became a syntax error
-            # in 3.14 and this file is used in 188/1464 tests
-            a = local
+            # in 3.14 and is used in 188/1464 tests
+            print(local)
     
     def static_method():
         """static method test"""
