@@ -15,14 +15,7 @@ import typing
 import warnings
 from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
 from functools import cached_property
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Literal,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Union
 
 from astroid import decorators, protocols, util
 from astroid.bases import Instance, _infer_stmts
@@ -71,23 +64,24 @@ def _is_const(value) -> bool:
 _NodesT = typing.TypeVar("_NodesT", bound=NodeNG)
 _BadOpMessageT = typing.TypeVar("_BadOpMessageT", bound=util.BadOperationMessage)
 
+# pylint: disable-next=consider-alternative-union-syntax
 AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
 AssignedStmtsCall = Callable[
     [
         _NodesT,
         AssignedStmtsPossibleNode,
-        Optional[InferenceContext],
-        Optional[list[int]],
+        InferenceContext | None,
+        list[int] | None,
     ],
     Any,
 ]
 InferBinaryOperation = Callable[
-    [_NodesT, Optional[InferenceContext]],
-    Generator[Union[InferenceResult, _BadOpMessageT]],
+    [_NodesT, InferenceContext | None],
+    Generator[InferenceResult | _BadOpMessageT],
 ]
 InferLHS = Callable[
-    [_NodesT, Optional[InferenceContext]],
-    Generator[InferenceResult, None, Optional[InferenceErrorInfo]],
+    [_NodesT, InferenceContext | None],
+    Generator[InferenceResult, None, InferenceErrorInfo | None],
 ]
 InferUnaryOp = Callable[[_NodesT, str], ConstFactoryResult]
 

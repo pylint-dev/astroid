@@ -18,7 +18,7 @@ import types
 import warnings
 from collections.abc import Iterable
 from contextlib import redirect_stderr, redirect_stdout
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 from astroid import bases, nodes
 from astroid.const import _EMPTY_OBJECT_MARKER, IS_PYPY
@@ -30,14 +30,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-_FunctionTypes = Union[
-    types.FunctionType,
-    types.MethodType,
-    types.BuiltinFunctionType,
-    types.WrapperDescriptorType,
-    types.MethodDescriptorType,
-    types.ClassMethodDescriptorType,
-]
+_FunctionTypes = (
+    types.FunctionType
+    | types.MethodType
+    | types.BuiltinFunctionType
+    | types.WrapperDescriptorType
+    | types.MethodDescriptorType
+    | types.ClassMethodDescriptorType
+)
 
 TYPE_NONE = type(None)
 TYPE_NOTIMPLEMENTED = type(NotImplemented)

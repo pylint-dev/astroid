@@ -8,7 +8,7 @@ from __future__ import annotations
 import sys
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from astroid import nodes, util
 from astroid.typing import InferenceResult
@@ -21,7 +21,7 @@ else:
 if TYPE_CHECKING:
     from astroid import bases
 
-_NameNodes = Union[nodes.AssignAttr, nodes.Attribute, nodes.AssignName, nodes.Name]
+_NameNodes = nodes.AssignAttr | nodes.Attribute | nodes.AssignName | nodes.Name
 
 
 class Constraint(ABC):

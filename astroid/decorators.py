@@ -11,14 +11,12 @@ import inspect
 import sys
 import warnings
 from collections.abc import Callable, Generator
-from typing import TypeVar
+from typing import ParamSpec, TypeVar
 
 from astroid import util
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
 from astroid.typing import InferenceResult
-
-from typing import ParamSpec
 
 _R = TypeVar("_R")
 _P = ParamSpec("_P")

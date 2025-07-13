@@ -47,6 +47,7 @@ class AstroidManagerBrain(TypedDict):
     _transform: transforms.TransformVisitor
 
 
+# pylint: disable=consider-alternative-union-syntax
 InferenceResult = Union["nodes.NodeNG", "util.UninferableBase", "bases.Proxy"]
 SuccessfulInferenceResult = Union["nodes.NodeNG", "bases.Proxy"]
 _SuccessfulInferenceResultT = TypeVar(

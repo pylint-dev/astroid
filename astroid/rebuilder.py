@@ -14,7 +14,7 @@ import token
 from collections.abc import Callable, Generator
 from io import StringIO
 from tokenize import TokenInfo, generate_tokens
-from typing import TYPE_CHECKING, Final, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Final, TypeVar, cast, overload
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
@@ -29,12 +29,12 @@ if TYPE_CHECKING:
         "T_Doc",
         "ast.Module",
         "ast.ClassDef",
-        Union["ast.FunctionDef", "ast.AsyncFunctionDef"],
+        "ast.FunctionDef" | "ast.AsyncFunctionDef",
     )
     _FunctionT = TypeVar("_FunctionT", nodes.FunctionDef, nodes.AsyncFunctionDef)
     _ForT = TypeVar("_ForT", nodes.For, nodes.AsyncFor)
     _WithT = TypeVar("_WithT", nodes.With, nodes.AsyncWith)
-    NodesWithDocsType = Union[nodes.Module, nodes.ClassDef, nodes.FunctionDef]
+    NodesWithDocsType = nodes.Module | nodes.ClassDef | nodes.FunctionDef
 
 
 REDIRECT: Final[dict[str, str]] = {
@@ -1429,7 +1429,7 @@ class TreeRebuilder:
             )
         # XXX REMOVE me :
         if context in (Context.Del, Context.Store):  # 'Aug' ??
-            newnode = cast(Union[nodes.AssignName, nodes.DelName], newnode)
+            newnode = cast((nodes.AssignName | nodes.DelName), newnode)
             self._save_assignment(newnode)
         return newnode
 
