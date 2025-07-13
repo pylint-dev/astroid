@@ -35,8 +35,8 @@ Contributors
 - correctmost <134317971+correctmost@users.noreply.github.com>
 - Andrew Haigh <hello@nelf.in>
 - Julien Cristau <julien.cristau@logilab.fr>
-- David Liu <david@cs.toronto.edu>
 - Artem Yurchenko <44875844+temyurchenko@users.noreply.github.com>
+- David Liu <david@cs.toronto.edu>
 - Alexandre Fayolle <alexandre.fayolle@logilab.fr>
 - Eevee (Alex Munroe) <amunroe@yelp.com>
 - David Gilman <davidgilman1@gmail.com>
@@ -72,6 +72,7 @@ Contributors
 - Dani Alcala <112832187+clavedeluna@users.noreply.github.com>
 - Adrien Di Mascio <Adrien.DiMascio@logilab.fr>
 - tristanlatr <19967168+tristanlatr@users.noreply.github.com>
+- grayjk <grayjk@gmail.com>
 - emile@crater.logilab.fr <emile@crater.logilab.fr>
 - doranid <ddandd@gmail.com>
 - brendanator <brendan.maginnis@gmail.com>
@@ -87,6 +88,7 @@ Contributors
 - Peter Kolbus <peter.kolbus@gmail.com>
 - Omer Katz <omer.drow@gmail.com>
 - Moises Lopez <moylop260@vauxoo.com>
+- Mitch Harding <mitchell.harding@hpe.com>
 - Michal Vasilek <michal@vasilek.cz>
 - Keichi Takahashi <keichi.t@me.com>
 - Kavins Singh <kavinsingh@hotmail.com>
@@ -102,16 +104,17 @@ Contributors
 - Anthony Sottile <asottile@umich.edu>
 - Alexander Shadchin <alexandr.shadchin@gmail.com>
 - wgehalo <wgehalo@gmail.com>
+- tejaschauhan36912 <59693377+tejaschauhan36912@users.noreply.github.com>
 - rr- <rr-@sakuya.pl>
 - raylu <lurayl@gmail.com>
 - plucury <plucury@gmail.com>
+- pavan-msys <149513767+pavan-msys@users.noreply.github.com>
 - ostr00000 <ostr00000@gmail.com>
 - noah-weingarden <33741795+noah-weingarden@users.noreply.github.com>
 - nathannaveen <42319948+nathannaveen@users.noreply.github.com>
 - mathieui <mathieui@users.noreply.github.com>
 - markmcclain <markmcclain@users.noreply.github.com>
 - ioanatia <ioanatia@users.noreply.github.com>
-- grayjk <grayjk@gmail.com>
 - alm <alonme@users.noreply.github.com>
 - adam-grant-hendry <59346180+adam-grant-hendry@users.noreply.github.com>
 - aatle <168398276+aatle@users.noreply.github.com>

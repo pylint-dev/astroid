@@ -72,7 +72,8 @@
     "mails": [
       "66853113+pre-commit-ci[bot]@users.noreply.github.com",
       "49699333+dependabot[bot]@users.noreply.github.com",
-      "41898282+github-actions[bot]@users.noreply.github.com"
+      "41898282+github-actions[bot]@users.noreply.github.com",
+      "212256041+pylint-backport-bot[bot]@users.noreply.github.com"
     ],
     "name": "bot"
   },
@@ -102,6 +103,10 @@
   "github@euresti.com": {
     "mails": ["david@dropbox.com", "github@euresti.com"],
     "name": "David Euresti"
+  },
+  "grayjk@gmail.com": {
+    "mails": ["grayjk@gmail.com"],
+    "name": "grayjk"
   },
   "guillaume.peillex@gmail.com": {
     "mails": ["guillaume.peillex@gmail.com"],
