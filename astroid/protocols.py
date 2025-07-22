@@ -536,9 +536,18 @@ def excepthandler_assigned_stmts(
 
     if isinstance(self.parent, node_classes.TryStar):
         # except * handler has assigned ExceptionGroup
-        eg = nodes.ClassDef('ExceptionGroup', self.lineno, self.col_offset, self, end_lineno=self.end_lineno, end_col_offset=self.end_col_offset)
+        eg = nodes.ClassDef(
+            "ExceptionGroup",
+            self.lineno,
+            self.col_offset,
+            self,
+            end_lineno=self.end_lineno,
+            end_col_offset=self.end_col_offset,
+        )
         assigned = objects.ExceptionInstance(eg)
-        assigned.instance_attrs['exceptions'] = [nodes.List.from_elements(_generate_assigned())]
+        assigned.instance_attrs["exceptions"] = [
+            nodes.List.from_elements(_generate_assigned())
+        ]
         yield assigned
     else:
         yield from _generate_assigned()
