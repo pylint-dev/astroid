@@ -527,11 +527,21 @@ def excepthandler_assigned_stmts(
 ) -> Any:
     from astroid import objects  # pylint: disable=import-outside-toplevel
 
-    for assigned in node_classes.unpack_infer(self.type):
-        if isinstance(assigned, nodes.ClassDef):
-            assigned = objects.ExceptionInstance(assigned)
+    def _generate_assigned():
+        for assigned in node_classes.unpack_infer(self.type):
+            if isinstance(assigned, nodes.ClassDef):
+                assigned = objects.ExceptionInstance(assigned)
 
+            yield assigned
+
+    if isinstance(self.parent, node_classes.TryStar):
+        # except * handler has assigned ExceptionGroup
+        eg = nodes.ClassDef('ExceptionGroup', self.lineno, self.col_offset, self, end_lineno=self.end_lineno, end_col_offset=self.end_col_offset)
+        assigned = objects.ExceptionInstance(eg)
+        assigned.instance_attrs['exceptions'] = [nodes.List.from_elements(_generate_assigned())]
         yield assigned
+    else:
+        yield from _generate_assigned()
     return {
         "node": self,
         "unknown": node,

@@ -11,6 +11,7 @@ from astroid import (
     For,
     Name,
     Try,
+    List,
     Uninferable,
     bases,
     extract_node,
@@ -93,6 +94,7 @@ def test_star_exceptions() -> None:
     assert final.value.args[0].value == 0
 
 
+
 @pytest.mark.skipif(not PY311_PLUS, reason="Requires Python 3.11 or higher")
 def test_star_exceptions_infer_name() -> None:
     trystar = extract_node(
@@ -108,3 +110,31 @@ except* ValueError:
     stmts = bases._infer_stmts([trystar], context)
     assert list(stmts) == [Uninferable]
     assert context.lookupname == name
+
+
+@pytest.mark.skipif(not PY311_PLUS, reason="Requires Python 3.11 or higher")
+def test_star_exceptions_infer_exceptions() -> None:
+    code = textwrap.dedent(
+        """
+    try:
+        raise ExceptionGroup("group", [ValueError(654), TypeError(10)])
+    except* ValueError as ve:
+        print(e.exceptions)
+    except* TypeError as te:
+        print(e.exceptions)
+    else:
+        sys.exit(127)
+    finally:
+        sys.exit(0)"""
+    )
+    node = extract_node(code)
+    assert isinstance(node, TryStar)
+    inferred_ve = next(node.handlers[0].statement().name.infer())
+    assert inferred_ve.name =='ExceptionGroup'
+    assert isinstance(inferred_ve.getattr('exceptions')[0], List)
+    assert inferred_ve.getattr('exceptions')[0].elts[0].pytype() == 'builtins.ValueError'
+
+    inferred_te = next(node.handlers[1].statement().name.infer())
+    assert inferred_te.name =='ExceptionGroup'
+    assert isinstance(inferred_te.getattr('exceptions')[0], List)
+    assert inferred_te.getattr('exceptions')[0].elts[0].pytype() == 'builtins.TypeError'
