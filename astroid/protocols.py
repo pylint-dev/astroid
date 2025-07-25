@@ -538,7 +538,7 @@ def excepthandler_assigned_stmts(
     if isinstance(self.parent, node_classes.TryStar):
         # except * handler has assigned ExceptionGroup with caught
         # exceptions under exceptions attribute
-        eg = next(
+        eg = list(
             node_classes.unpack_infer(
                 extract_node(
                     """
@@ -547,7 +547,7 @@ ExceptionGroup
 """
                 )
             )
-        )
+        )[0]
         assigned = objects.ExceptionInstance(eg)
         assigned.instance_attrs["exceptions"] = [
             nodes.List.from_elements(_generate_assigned())
