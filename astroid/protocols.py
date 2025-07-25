@@ -15,6 +15,7 @@ from collections.abc import Callable, Generator, Iterator, Sequence
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from astroid import bases, decorators, nodes, util
+from astroid.builder import extract_node
 from astroid.const import Context
 from astroid.context import InferenceContext, copy_context
 from astroid.exceptions import (
@@ -535,15 +536,13 @@ def excepthandler_assigned_stmts(
             yield assigned
 
     if isinstance(self.parent, node_classes.TryStar):
-        # except * handler has assigned ExceptionGroup
-        eg = nodes.ClassDef(
-            "ExceptionGroup",
-            self.lineno,
-            self.col_offset,
-            self,
-            end_lineno=self.end_lineno,
-            end_col_offset=self.end_col_offset,
-        )
+        # except * handler has assigned ExceptionGroup with caught
+        # exceptions under exceptions attribute
+        eg = next(node_classes.unpack_infer(
+           extract_node('''
+from builtins import ExceptionGroup
+ExceptionGroup
+'''))) 
         assigned = objects.ExceptionInstance(eg)
         assigned.instance_attrs["exceptions"] = [
             nodes.List.from_elements(_generate_assigned())
