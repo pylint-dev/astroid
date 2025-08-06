@@ -5484,6 +5484,114 @@ class MatchOr(Pattern):
         self.patterns = patterns
 
 
+class TemplateStr(NodeNG):
+    """Class representing an :class:`ast.TemplateStr` node.
+
+    >>> import astroid
+    >>> node = astroid.extract_node('t"{name} finished {place!s}"')
+    >>> node
+    <TemplateStr l.1 at 0x103b7aa50>
+    """
+
+    _astroid_fields = ("values",)
+
+    def __init__(
+        self,
+        lineno: int | None = None,
+        col_offset: int | None = None,
+        parent: NodeNG | None = None,
+        *,
+        end_lineno: int | None = None,
+        end_col_offset: int | None = None,
+    ) -> None:
+        self.values: list[NodeNG]
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
+    def postinit(self, *, values: list[NodeNG]) -> None:
+        self.values = values
+
+    def get_children(self) -> Iterator[NodeNG]:
+        yield from self.values
+
+
+class Interpolation(NodeNG):
+    """Class representing an :class:`ast.Interpolation` node.
+
+    >>> import astroid
+    >>> node = astroid.extract_node('t"{name} finished {place!s}"')
+    >>> node
+    <TemplateStr l.1 at 0x103b7aa50>
+    >>> node.values[0]
+    <Interpolation l.1 at 0x103b7acf0>
+    >>> node.values[2]
+    <Interpolation l.1 at 0x10411e5d0>
+    """
+
+    _astroid_fields = ("value", "format_spec")
+    _other_fields = ("str", "conversion")
+
+    def __init__(
+        self,
+        lineno: int | None = None,
+        col_offset: int | None = None,
+        parent: NodeNG | None = None,
+        *,
+        end_lineno: int | None = None,
+        end_col_offset: int | None = None,
+    ) -> None:
+        self.value: NodeNG
+        """Any expression node."""
+
+        self.str: str
+        """Text of the interpolation expression."""
+
+        self.conversion: int
+        """The type of formatting to be applied to the value.
+
+        .. seealso::
+            :class:`ast.Interpolation`
+        """
+
+        self.format_spec: JoinedStr | None = None
+        """The formatting to be applied to the value.
+
+        .. seealso::
+            :class:`ast.Interpolation`
+        """
+
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
+    def postinit(
+        self,
+        *,
+        value: NodeNG,
+        str: str,  # pylint: disable=redefined-builtin
+        conversion: int = -1,
+        format_spec: JoinedStr | None = None,
+    ) -> None:
+        self.value = value
+        self.str = str
+        self.conversion = conversion
+        self.format_spec = format_spec
+
+    def get_children(self) -> Iterator[NodeNG]:
+        yield self.value
+        if self.format_spec:
+            yield self.format_spec
+
+
 # constants ##############################################################
 
 # The _proxied attribute of all container types (List, Tuple, etc.)

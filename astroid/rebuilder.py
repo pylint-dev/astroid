@@ -460,6 +460,18 @@ class TreeRebuilder:
         @overload
         def visit(self, node: ast.pattern, parent: nodes.NodeNG) -> nodes.Pattern: ...
 
+        if sys.version_info >= (3, 14):
+
+            @overload
+            def visit(
+                self, node: ast.TemplateStr, parent: nodes.NodeNG
+            ) -> nodes.TemplateStr: ...
+
+            @overload
+            def visit(
+                self, node: ast.Interpolation, parent: nodes.NodeNG
+            ) -> nodes.Interpolation: ...
+
         @overload
         def visit(self, node: ast.AST, parent: nodes.NodeNG) -> nodes.NodeNG: ...
 
@@ -1929,3 +1941,38 @@ class TreeRebuilder:
             patterns=[self.visit(pattern, newnode) for pattern in node.patterns]
         )
         return newnode
+
+    if sys.version_info >= (3, 14):
+
+        def visit_templatestr(
+            self, node: ast.TemplateStr, parent: nodes.NodeNG
+        ) -> nodes.TemplateStr:
+            newnode = nodes.TemplateStr(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+            newnode.postinit(
+                values=[self.visit(value, newnode) for value in node.values]
+            )
+            return newnode
+
+        def visit_interpolation(
+            self, node: ast.Interpolation, parent: nodes.NodeNG
+        ) -> nodes.Interpolation:
+            newnode = nodes.Interpolation(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+            newnode.postinit(
+                value=self.visit(node.value, parent),
+                str=node.str,
+                conversion=node.conversion,
+                format_spec=self.visit(node.format_spec, parent),
+            )
+            return newnode
