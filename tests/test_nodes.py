@@ -2173,6 +2173,41 @@ class TestPatternMatching:
         assert [inf.value for inf in inferred] == [10, -1]
 
 
+@pytest.mark.skipif(not PY314_PLUS, reason="TemplateStr was added in PY314")
+class TestTemplateString:
+    @staticmethod
+    def test_template_string_simple() -> None:
+        code = textwrap.dedent(
+            """
+        name = "Foo"
+        place = 3
+        t"{name} finished {place!r:ordinal}"  #@
+        """
+        ).strip()
+        node = builder.extract_node(code)
+        assert node.as_string() == "t'{name} finished {place!r:ordinal}'"
+        assert isinstance(node, nodes.TemplateStr)
+        assert len(node.values) == 3
+        value = node.values[0]
+        assert isinstance(value, nodes.Interpolation)
+        assert isinstance(value.value, nodes.Name)
+        assert value.value.name == "name"
+        assert value.str == "name"
+        assert value.conversion == -1
+        assert value.format_spec is None
+        value = node.values[1]
+        assert isinstance(value, nodes.Const)
+        assert value.pytype() == "builtins.str"
+        assert value.value == " finished "
+        value = node.values[2]
+        assert isinstance(value, nodes.Interpolation)
+        assert isinstance(value.value, nodes.Name)
+        assert value.value.name == "place"
+        assert value.str == "place"
+        assert value.conversion == ord("r")
+        assert isinstance(value.format_spec, nodes.JoinedStr)
+
+
 @pytest.mark.parametrize(
     "node",
     [

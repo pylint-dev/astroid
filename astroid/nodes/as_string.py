@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from astroid import objects
     from astroid.nodes import Const
     from astroid.nodes.node_classes import (
+        Interpolation,
         Match,
         MatchAs,
         MatchCase,
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
         MatchSingleton,
         MatchStar,
         MatchValue,
+        TemplateStr,
         Unknown,
     )
     from astroid.nodes.node_ng import NodeNG
@@ -671,6 +673,32 @@ class AsStringVisitor:
         if node.patterns is None:
             raise AssertionError(f"{node} does not have pattern nodes")
         return " | ".join(p.accept(self) for p in node.patterns)
+
+    def visit_templatestr(self, node: TemplateStr) -> str:
+        """Return an astroid.TemplateStr node as string."""
+        string = ""
+        for value in node.values:
+            match value:
+                case nodes.Interpolation():
+                    string += "{" + value.accept(self) + "}"
+                case _:
+                    string += value.accept(self)[1:-1]
+        for quote in ("'", '"', '"""', "'''"):
+            if quote not in string:
+                break
+        return "t" + quote + string + quote
+
+    def visit_interpolation(self, node: Interpolation) -> str:
+        """Return an astroid.Interpolation node as string."""
+        result = f"{node.str}"
+        if node.conversion and node.conversion >= 0:
+            # e.g. if node.conversion == 114: result += "!r"
+            result += "!" + chr(node.conversion)
+        if node.format_spec:
+            # The format spec is itself a JoinedString, i.e. an f-string
+            # We strip the f and quotes of the ends
+            result += ":" + node.format_spec.accept(self)[2:-1]
+        return result
 
     # These aren't for real AST nodes, but for inference objects.
 

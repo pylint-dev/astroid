@@ -52,6 +52,10 @@ Release date: TBA
 
   Closes #2672
 
+* Add basic support for ``ast.TemplateStr`` and ``ast.Interpolation``added in Python 3.14.
+
+  refs #2789
+
 
 What's New in astroid 3.3.11?
 =============================
