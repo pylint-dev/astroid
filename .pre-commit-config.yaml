@@ -49,9 +49,24 @@ repos:
             "-rn",
             "-sn",
             "--rcfile=pylintrc",
+            # "--load-plugins=pylint.extensions.docparams", We're not ready for that
+          ]
+      # We define an additional manual step to allow running pylint
+      # with the proper output for CI.
+      - id: pylint
+        alias: pylint-ci
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        args: [
+            "-rn",
+            "-sn",
+            "--rcfile=pylintrc",
             "--output-format=github",
             # "--load-plugins=pylint.extensions.docparams", We're not ready for that
           ]
+        stages: [manual]
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.17.1
     hooks:

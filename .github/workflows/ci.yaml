@@ -72,7 +72,7 @@ jobs:
       - name: Run pre-commit checks
         run: |
           . venv/bin/activate
-          pre-commit run pylint --all-files
+          pre-commit run --hook-stage manual pylint-ci --all-files
 
   tests-linux:
     name: tests / run / ${{ matrix.python-version }} / Linux
