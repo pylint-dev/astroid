@@ -1851,7 +1851,7 @@ class Compare(NodeNG):
     # TODO: move to util?
     @staticmethod
     def _to_literal(node: SuccessfulInferenceResult) -> Any:
-        # Can raise SyntaxError or ValueError from ast.literal_eval
+        # Can raise SyntaxError, ValueError, or TypeError from ast.literal_eval
         # Can raise AttributeError from node.as_string() as not all nodes have a visitor
         # Is this the stupidest idea or the simplest idea?
         return ast.literal_eval(node.as_string())
@@ -1887,7 +1887,7 @@ class Compare(NodeNG):
 
             try:
                 left, right = self._to_literal(left), self._to_literal(right)
-            except (SyntaxError, ValueError, AttributeError):
+            except (SyntaxError, ValueError, AttributeError, TypeError):
                 return util.Uninferable
 
             try:
