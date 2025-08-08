@@ -543,3 +543,10 @@ def test_regression_no_crash_on_called_slice() -> None:
     )
     assert isinstance(node, nodes.ClassDef)
     assert node.name == "a"
+
+
+def test_regression_infer_dict_literal_comparison_uninferable() -> None:
+    """Regression test for issue #2522."""
+    node = extract_node("{{}}>0")
+    inferred = next(node.infer())
+    assert inferred.value == Uninferable
