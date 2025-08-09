@@ -27,9 +27,9 @@ if TYPE_CHECKING:
 
     T_Doc = TypeVar(
         "T_Doc",
-        "ast.Module",
-        "ast.ClassDef",
-        "ast.FunctionDef" | "ast.AsyncFunctionDef",
+        ast.Module,
+        ast.ClassDef,
+        ast.FunctionDef | ast.AsyncFunctionDef,
     )
     _FunctionT = TypeVar("_FunctionT", nodes.FunctionDef, nodes.AsyncFunctionDef)
     _ForT = TypeVar("_ForT", nodes.For, nodes.AsyncFor)
@@ -72,7 +72,7 @@ class TreeRebuilder:
         else:
             self._parser_module = parser_module
 
-    def _get_doc(self, node: T_Doc) -> tuple[T_Doc, ast.Constant | ast.Str | None]:
+    def _get_doc(self, node: T_Doc) -> tuple[T_Doc, ast.Constant | None]:
         """Return the doc ast node."""
         try:
             if node.body and isinstance(node.body[0], ast.Expr):
