@@ -32,6 +32,7 @@ from astroid.const import (
     IS_PYPY,
     PY311_PLUS,
     PY312_PLUS,
+    PY313_PLUS,
     PY314_PLUS,
     Context,
 )
@@ -332,15 +333,34 @@ everything = f""" " \' \r \t \\ {{ }} {'x' + x!r:a} {["'"]!s:{a}}"""
 class AsStringTypeParamNodes(unittest.TestCase):
     @staticmethod
     def test_as_string_type_alias() -> None:
-        ast = abuilder.string_build("type Point = tuple[float, float]")
-        type_alias = ast.body[0]
-        assert type_alias.as_string().strip() == "Point"
+        ast1 = abuilder.string_build("type Point = tuple[float, float]")
+        type_alias1 = ast1.body[0]
+        assert type_alias1.as_string().strip() == "type Point = tuple[float, float]"
+        ast2 = abuilder.string_build(
+            "type Point[T, **P] = tuple[float, T, Callable[P, None]]"
+        )
+        type_alias2 = ast2.body[0]
+        assert (
+            type_alias2.as_string().strip()
+            == "type Point[T, **P] = tuple[float, T, Callable[P, None]]"
+        )
 
     @staticmethod
     def test_as_string_type_var() -> None:
-        ast = abuilder.string_build("type Point[T] = tuple[float, float]")
+        ast = abuilder.string_build("type Point[T: int | str] = tuple[float, float]")
         type_var = ast.body[0].type_params[0]
-        assert type_var.as_string().strip() == "T"
+        assert type_var.as_string().strip() == "T: int | str"
+
+    @staticmethod
+    @pytest.mark.skipif(
+        not PY313_PLUS, reason="Type parameter defaults were added in 313"
+    )
+    def test_as_string_type_var_default() -> None:
+        ast = abuilder.string_build(
+            "type Point[T: int | str = int] = tuple[float, float]"
+        )
+        type_var = ast.body[0].type_params[0]
+        assert type_var.as_string().strip() == "T: int | str = int"
 
     @staticmethod
     def test_as_string_type_var_tuple() -> None:
@@ -349,10 +369,40 @@ class AsStringTypeParamNodes(unittest.TestCase):
         assert type_var_tuple.as_string().strip() == "*Ts"
 
     @staticmethod
+    @pytest.mark.skipif(
+        not PY313_PLUS, reason="Type parameter defaults were added in 313"
+    )
+    def test_as_string_type_var_tuple_defaults() -> None:
+        ast = abuilder.string_build("type Alias[*Ts = tuple[int, str]] = tuple[*Ts]")
+        type_var_tuple = ast.body[0].type_params[0]
+        assert type_var_tuple.as_string().strip() == "*Ts = tuple[int, str]"
+
+    @staticmethod
     def test_as_string_param_spec() -> None:
         ast = abuilder.string_build("type Alias[**P] = Callable[P, int]")
         param_spec = ast.body[0].type_params[0]
-        assert param_spec.as_string().strip() == "P"
+        assert param_spec.as_string().strip() == "**P"
+
+    @staticmethod
+    @pytest.mark.skipif(
+        not PY313_PLUS, reason="Type parameter defaults were added in 313"
+    )
+    def test_as_string_param_spec_defaults() -> None:
+        ast = abuilder.string_build("type Alias[**P = [str, int]] = Callable[P, int]")
+        param_spec = ast.body[0].type_params[0]
+        assert param_spec.as_string().strip() == "**P = [str, int]"
+
+    @staticmethod
+    def test_as_string_class_type_params() -> None:
+        code = abuilder.string_build("class A[T, **P]: ...")
+        cls_node = code.body[0]
+        assert cls_node.as_string().strip() == "class A[T, **P]:\n    ..."
+
+    @staticmethod
+    def test_as_string_function_type_params() -> None:
+        code = abuilder.string_build("def func[T, **P](): ...")
+        func_node = code.body[0]
+        assert func_node.as_string().strip() == "def func[T, **P]():\n    ..."
 
 
 class _NodeTest(unittest.TestCase):

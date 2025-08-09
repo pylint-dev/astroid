@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Final, TypeVar, cast, overload
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import PY312_PLUS, Context
+from astroid.const import PY312_PLUS, PY313_PLUS, Context
 from astroid.nodes.utils import Position
 from astroid.typing import InferenceResult
 
@@ -1483,7 +1483,12 @@ class TreeRebuilder:
         )
         # Add AssignName node for 'node.name'
         # https://bugs.python.org/issue43994
-        newnode.postinit(name=self.visit_assignname(node, newnode, node.name))
+        newnode.postinit(
+            name=self.visit_assignname(node, newnode, node.name),
+            default_value=(
+                self.visit(node.default_value, newnode) if PY313_PLUS else None
+            ),
+        )
         return newnode
 
     def visit_pass(self, node: ast.Pass, parent: nodes.NodeNG) -> nodes.Pass:
@@ -1679,6 +1684,9 @@ class TreeRebuilder:
         newnode.postinit(
             name=self.visit_assignname(node, newnode, node.name),
             bound=self.visit(node.bound, newnode),
+            default_value=(
+                self.visit(node.default_value, newnode) if PY313_PLUS else None
+            ),
         )
         return newnode
 
@@ -1695,7 +1703,12 @@ class TreeRebuilder:
         )
         # Add AssignName node for 'node.name'
         # https://bugs.python.org/issue43994
-        newnode.postinit(name=self.visit_assignname(node, newnode, node.name))
+        newnode.postinit(
+            name=self.visit_assignname(node, newnode, node.name),
+            default_value=(
+                self.visit(node.default_value, newnode) if PY313_PLUS else None
+            ),
+        )
         return newnode
 
     def visit_unaryop(self, node: ast.UnaryOp, parent: nodes.NodeNG) -> nodes.UnaryOp:

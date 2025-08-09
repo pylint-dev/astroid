@@ -3383,9 +3383,9 @@ class ParamSpec(_base_nodes.AssignTypeNode):
     <ParamSpec l.1 at 0x7f23b2e4e198>
     """
 
-    _astroid_fields = ("name",)
-
+    _astroid_fields = ("name", "default_value")
     name: AssignName
+    default_value: NodeNG | None
 
     def __init__(
         self,
@@ -3404,8 +3404,9 @@ class ParamSpec(_base_nodes.AssignTypeNode):
             parent=parent,
         )
 
-    def postinit(self, *, name: AssignName) -> None:
+    def postinit(self, *, name: AssignName, default_value: NodeNG | None) -> None:
         self.name = name
+        self.default_value = default_value
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
@@ -4141,10 +4142,10 @@ class TypeVar(_base_nodes.AssignTypeNode):
     <TypeVar l.1 at 0x7f23b2e4e198>
     """
 
-    _astroid_fields = ("name", "bound")
-
+    _astroid_fields = ("name", "bound", "default_value")
     name: AssignName
     bound: NodeNG | None
+    default_value: NodeNG | None
 
     def __init__(
         self,
@@ -4163,9 +4164,16 @@ class TypeVar(_base_nodes.AssignTypeNode):
             parent=parent,
         )
 
-    def postinit(self, *, name: AssignName, bound: NodeNG | None) -> None:
+    def postinit(
+        self,
+        *,
+        name: AssignName,
+        bound: NodeNG | None,
+        default_value: NodeNG | None = None,
+    ) -> None:
         self.name = name
         self.bound = bound
+        self.default_value = default_value
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
@@ -4187,9 +4195,9 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
     <TypeVarTuple l.1 at 0x7f23b2e4e198>
     """
 
-    _astroid_fields = ("name",)
-
+    _astroid_fields = ("name", "default_value")
     name: AssignName
+    default_value: NodeNG | None
 
     def __init__(
         self,
@@ -4208,8 +4216,11 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
             parent=parent,
         )
 
-    def postinit(self, *, name: AssignName) -> None:
+    def postinit(
+        self, *, name: AssignName, default_value: NodeNG | None = None
+    ) -> None:
         self.name = name
+        self.default_value = default_value
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
