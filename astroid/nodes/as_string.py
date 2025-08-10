@@ -176,18 +176,27 @@ class AsStringVisitor:
         args.extend(keywords)
         return f"{expr_str}({', '.join(args)})"
 
+    def _handle_type_params(
+        self, type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple]
+    ) -> str:
+        return (
+            f"[{', '.join(tp.accept(self) for tp in type_params)}]"
+            if type_params
+            else ""
+        )
+
     def visit_classdef(self, node: nodes.ClassDef) -> str:
         """return an astroid.ClassDef node as string"""
         decorate = node.decorators.accept(self) if node.decorators else ""
+        type_params = self._handle_type_params(node.type_params)
         args = [n.accept(self) for n in node.bases]
         if node._metaclass and not node.has_metaclass_hack():
             args.append("metaclass=" + node._metaclass.accept(self))
         args += [n.accept(self) for n in node.keywords]
         args_str = f"({', '.join(args)})" if args else ""
         docs = self._docs_dedent(node.doc_node)
-        # TODO: handle type_params
-        return "\n\n{}class {}{}:{}\n{}\n".format(
-            decorate, node.name, args_str, docs, self._stmt_list(node.body)
+        return "\n\n{}class {}{}{}:{}\n{}\n".format(
+            decorate, node.name, type_params, args_str, docs, self._stmt_list(node.body)
         )
 
     def visit_compare(self, node: nodes.Compare) -> str:
@@ -336,17 +345,18 @@ class AsStringVisitor:
     def handle_functiondef(self, node: nodes.FunctionDef, keyword: str) -> str:
         """return a (possibly async) function definition node as string"""
         decorate = node.decorators.accept(self) if node.decorators else ""
+        type_params = self._handle_type_params(node.type_params)
         docs = self._docs_dedent(node.doc_node)
         trailer = ":"
         if node.returns:
             return_annotation = " -> " + node.returns.as_string()
             trailer = return_annotation + ":"
-        # TODO: handle type_params
-        def_format = "\n%s%s %s(%s)%s%s\n%s"
+        def_format = "\n%s%s %s%s(%s)%s%s\n%s"
         return def_format % (
             decorate,
             keyword,
             node.name,
+            type_params,
             node.args.accept(self),
             trailer,
             docs,
@@ -455,7 +465,10 @@ class AsStringVisitor:
 
     def visit_paramspec(self, node: nodes.ParamSpec) -> str:
         """return an astroid.ParamSpec node as string"""
-        return node.name.accept(self)
+        default_value_str = (
+            f" = {node.default_value.accept(self)}" if node.default_value else ""
+        )
+        return f"**{node.name.accept(self)}{default_value_str}"
 
     def visit_pass(self, node: nodes.Pass) -> str:
         """return an astroid.Pass node as string"""
@@ -545,15 +558,23 @@ class AsStringVisitor:
 
     def visit_typealias(self, node: nodes.TypeAlias) -> str:
         """return an astroid.TypeAlias node as string"""
-        return node.name.accept(self) if node.name else "_"
+        type_params = self._handle_type_params(node.type_params)
+        return f"type {node.name.accept(self)}{type_params} = {node.value.accept(self)}"
 
     def visit_typevar(self, node: nodes.TypeVar) -> str:
         """return an astroid.TypeVar node as string"""
-        return node.name.accept(self) if node.name else "_"
+        bound_str = f": {node.bound.accept(self)}" if node.bound else ""
+        default_value_str = (
+            f" = {node.default_value.accept(self)}" if node.default_value else ""
+        )
+        return f"{node.name.accept(self)}{bound_str}{default_value_str}"
 
     def visit_typevartuple(self, node: nodes.TypeVarTuple) -> str:
         """return an astroid.TypeVarTuple node as string"""
-        return "*" + node.name.accept(self) if node.name else ""
+        default_value_str = (
+            f" = {node.default_value.accept(self)}" if node.default_value else ""
+        )
+        return f"*{node.name.accept(self)}{default_value_str}"
 
     def visit_unaryop(self, node: nodes.UnaryOp) -> str:
         """return an astroid.UnaryOp node as string"""

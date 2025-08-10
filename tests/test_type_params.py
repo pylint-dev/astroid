@@ -5,11 +5,14 @@
 import pytest
 
 from astroid import extract_node
-from astroid.const import PY312_PLUS
+from astroid.const import PY312_PLUS, PY313_PLUS
 from astroid.nodes import (
     AssignName,
+    List,
+    Name,
     ParamSpec,
     Subscript,
+    Tuple,
     TypeAlias,
     TypeVar,
     TypeVarTuple,
@@ -26,6 +29,7 @@ def test_type_alias() -> None:
     assert isinstance(node.type_params[0].name, AssignName)
     assert node.type_params[0].name.name == "T"
     assert node.type_params[0].bound is None
+    assert node.type_params[0].default_value is None
 
     assert isinstance(node.value, Subscript)
     assert node.value.value.name == "list"
@@ -41,12 +45,46 @@ def test_type_alias() -> None:
     assert assigned is node.value
 
 
+def test_type_var() -> None:
+    node = extract_node("type Point[T: int] = T")
+    param = node.type_params[0]
+    assert isinstance(param, TypeVar)
+    assert isinstance(param.bound, Name)
+    assert param.bound.name == "int"
+    assert param.default_value is None
+
+
+@pytest.mark.skipif(not PY313_PLUS, reason="Type parameter defaults were added in 313")
+def test_type_var_defaults() -> None:
+    node = extract_node("type Point[T: int = int] = T")
+    param = node.type_params[0]
+    assert isinstance(param, TypeVar)
+    assert isinstance(param.bound, Name)
+    assert param.bound.name == "int"
+    assert isinstance(param.default_value, Name)
+    assert param.default_value.name == "int"
+
+
 def test_type_param_spec() -> None:
     node = extract_node("type Alias[**P] = Callable[P, int]")
     params = node.type_params[0]
     assert isinstance(params, ParamSpec)
     assert isinstance(params.name, AssignName)
     assert params.name.name == "P"
+    assert params.default_value is None
+
+    assert node.inferred()[0] is node
+
+
+@pytest.mark.skipif(not PY313_PLUS, reason="Type parameter defaults were added in 313")
+def test_type_param_spec_defaults() -> None:
+    node = extract_node("type Alias[**P = [int, str]] = Callable[P, int]")
+    params = node.type_params[0]
+    assert isinstance(params, ParamSpec)
+    assert isinstance(params.name, AssignName)
+    assert params.name.name == "P"
+    assert isinstance(params.default_value, List)
+    assert len(params.default_value.elts) == 2
 
     assert node.inferred()[0] is node
 
@@ -57,6 +95,23 @@ def test_type_var_tuple() -> None:
     assert isinstance(params, TypeVarTuple)
     assert isinstance(params.name, AssignName)
     assert params.name.name == "Ts"
+    assert params.default_value is None
+
+    assert node.inferred()[0] is node
+
+
+@pytest.mark.skipif(not PY313_PLUS, reason="Type parameter defaults were added in 313")
+def test_type_var_tuple_defaults() -> None:
+    node = extract_node("type Alias[*Ts = tuple[int, str]] = tuple[*Ts]")
+    params = node.type_params[0]
+    assert isinstance(params, TypeVarTuple)
+    assert isinstance(params.name, AssignName)
+    assert params.name.name == "Ts"
+    assert isinstance(params.default_value, Subscript)
+    assert isinstance(params.default_value.value, Name)
+    assert params.default_value.value.name == "tuple"
+    assert isinstance(params.default_value.slice, Tuple)
+    assert len(params.default_value.slice.elts) == 2
 
     assert node.inferred()[0] is node
 
