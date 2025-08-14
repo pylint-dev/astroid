@@ -11,6 +11,10 @@ Release date: TBA
 
   Closes pylint-dev/pylint#9056
 
+* Fix crash when comparing invalid dict literal
+
+  Closes #2522
+
 * Removed internal functions ``infer_numpy_member``, ``name_looks_like_numpy_member``, and
   ``attribute_looks_like_numpy_member`` from ``astroid.brain.brain_numpy_utils``.
 
@@ -55,6 +59,15 @@ Release date: TBA
 * Fix a crash when the root of a node is not a module but is unknown.
 
   Closes #2672
+
+* Add basic support for ``ast.TemplateStr`` and ``ast.Interpolation``added in Python 3.14.
+
+  refs #2789
+
+* Add support for type parameter defaults added in Python 3.13.
+
+* Improve ``as_string()`` representation for ``TypeVar``, ``ParamSpec`` and ``TypeVarTuple`` nodes, as well as
+  type parameter in ``ClassDef``, ``FuncDef`` and ``TypeAlias`` nodes (PEP 695).
 
 
 What's New in astroid 3.3.11?

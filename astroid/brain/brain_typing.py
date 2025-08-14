@@ -470,6 +470,7 @@ def _typing_transform():
     if PY314_PLUS:
         code += textwrap.dedent(
             """
+    from annotationlib import ForwardRef
     class Union:
         @classmethod
         def __class_getitem__(cls, item): return cls

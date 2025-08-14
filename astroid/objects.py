@@ -274,18 +274,15 @@ class PartialFunction(scoped_nodes.FunctionDef):
     """A class representing partial function obtained via functools.partial."""
 
     def __init__(self, call, name=None, lineno=None, col_offset=None, parent=None):
-        # TODO: Pass end_lineno, end_col_offset and parent as well
+        # TODO: Pass end_lineno, end_col_offset as well
         super().__init__(
             name,
             lineno=lineno,
             col_offset=col_offset,
-            parent=scoped_nodes.SYNTHETIC_ROOT,
             end_col_offset=0,
             end_lineno=0,
+            parent=parent,
         )
-        # A typical FunctionDef automatically adds its name to the parent scope,
-        # but a partial should not, so defer setting parent until after init
-        self.parent = parent
         self.filled_args = call.positional_arguments[1:]
         self.filled_keywords = call.keyword_arguments
 

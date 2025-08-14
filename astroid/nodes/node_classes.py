@@ -1851,7 +1851,7 @@ class Compare(NodeNG):
     # TODO: move to util?
     @staticmethod
     def _to_literal(node: SuccessfulInferenceResult) -> Any:
-        # Can raise SyntaxError or ValueError from ast.literal_eval
+        # Can raise SyntaxError, ValueError, or TypeError from ast.literal_eval
         # Can raise AttributeError from node.as_string() as not all nodes have a visitor
         # Is this the stupidest idea or the simplest idea?
         return ast.literal_eval(node.as_string())
@@ -1887,7 +1887,7 @@ class Compare(NodeNG):
 
             try:
                 left, right = self._to_literal(left), self._to_literal(right)
-            except (SyntaxError, ValueError, AttributeError):
+            except (SyntaxError, ValueError, AttributeError, TypeError):
                 return util.Uninferable
 
             try:
@@ -3383,9 +3383,9 @@ class ParamSpec(_base_nodes.AssignTypeNode):
     <ParamSpec l.1 at 0x7f23b2e4e198>
     """
 
-    _astroid_fields = ("name",)
-
+    _astroid_fields = ("name", "default_value")
     name: AssignName
+    default_value: NodeNG | None
 
     def __init__(
         self,
@@ -3404,8 +3404,9 @@ class ParamSpec(_base_nodes.AssignTypeNode):
             parent=parent,
         )
 
-    def postinit(self, *, name: AssignName) -> None:
+    def postinit(self, *, name: AssignName, default_value: NodeNG | None) -> None:
         self.name = name
+        self.default_value = default_value
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
@@ -4141,10 +4142,10 @@ class TypeVar(_base_nodes.AssignTypeNode):
     <TypeVar l.1 at 0x7f23b2e4e198>
     """
 
-    _astroid_fields = ("name", "bound")
-
+    _astroid_fields = ("name", "bound", "default_value")
     name: AssignName
     bound: NodeNG | None
+    default_value: NodeNG | None
 
     def __init__(
         self,
@@ -4163,9 +4164,16 @@ class TypeVar(_base_nodes.AssignTypeNode):
             parent=parent,
         )
 
-    def postinit(self, *, name: AssignName, bound: NodeNG | None) -> None:
+    def postinit(
+        self,
+        *,
+        name: AssignName,
+        bound: NodeNG | None,
+        default_value: NodeNG | None = None,
+    ) -> None:
         self.name = name
         self.bound = bound
+        self.default_value = default_value
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
@@ -4187,9 +4195,9 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
     <TypeVarTuple l.1 at 0x7f23b2e4e198>
     """
 
-    _astroid_fields = ("name",)
-
+    _astroid_fields = ("name", "default_value")
     name: AssignName
+    default_value: NodeNG | None
 
     def __init__(
         self,
@@ -4208,8 +4216,11 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
             parent=parent,
         )
 
-    def postinit(self, *, name: AssignName) -> None:
+    def postinit(
+        self, *, name: AssignName, default_value: NodeNG | None = None
+    ) -> None:
         self.name = name
+        self.default_value = default_value
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
@@ -5482,6 +5493,114 @@ class MatchOr(Pattern):
 
     def postinit(self, *, patterns: list[Pattern]) -> None:
         self.patterns = patterns
+
+
+class TemplateStr(NodeNG):
+    """Class representing an :class:`ast.TemplateStr` node.
+
+    >>> import astroid
+    >>> node = astroid.extract_node('t"{name} finished {place!s}"')
+    >>> node
+    <TemplateStr l.1 at 0x103b7aa50>
+    """
+
+    _astroid_fields = ("values",)
+
+    def __init__(
+        self,
+        lineno: int | None = None,
+        col_offset: int | None = None,
+        parent: NodeNG | None = None,
+        *,
+        end_lineno: int | None = None,
+        end_col_offset: int | None = None,
+    ) -> None:
+        self.values: list[NodeNG]
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
+    def postinit(self, *, values: list[NodeNG]) -> None:
+        self.values = values
+
+    def get_children(self) -> Iterator[NodeNG]:
+        yield from self.values
+
+
+class Interpolation(NodeNG):
+    """Class representing an :class:`ast.Interpolation` node.
+
+    >>> import astroid
+    >>> node = astroid.extract_node('t"{name} finished {place!s}"')
+    >>> node
+    <TemplateStr l.1 at 0x103b7aa50>
+    >>> node.values[0]
+    <Interpolation l.1 at 0x103b7acf0>
+    >>> node.values[2]
+    <Interpolation l.1 at 0x10411e5d0>
+    """
+
+    _astroid_fields = ("value", "format_spec")
+    _other_fields = ("str", "conversion")
+
+    def __init__(
+        self,
+        lineno: int | None = None,
+        col_offset: int | None = None,
+        parent: NodeNG | None = None,
+        *,
+        end_lineno: int | None = None,
+        end_col_offset: int | None = None,
+    ) -> None:
+        self.value: NodeNG
+        """Any expression node."""
+
+        self.str: str
+        """Text of the interpolation expression."""
+
+        self.conversion: int
+        """The type of formatting to be applied to the value.
+
+        .. seealso::
+            :class:`ast.Interpolation`
+        """
+
+        self.format_spec: JoinedStr | None = None
+        """The formatting to be applied to the value.
+
+        .. seealso::
+            :class:`ast.Interpolation`
+        """
+
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
+    def postinit(
+        self,
+        *,
+        value: NodeNG,
+        str: str,  # pylint: disable=redefined-builtin
+        conversion: int = -1,
+        format_spec: JoinedStr | None = None,
+    ) -> None:
+        self.value = value
+        self.str = str
+        self.conversion = conversion
+        self.format_spec = format_spec
+
+    def get_children(self) -> Iterator[NodeNG]:
+        yield self.value
+        if self.format_spec:
+            yield self.format_spec
 
 
 # constants ##############################################################

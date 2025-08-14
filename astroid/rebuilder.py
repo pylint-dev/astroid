@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Final, TypeVar, cast, overload
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import PY312_PLUS, Context
+from astroid.const import PY312_PLUS, PY313_PLUS, Context
 from astroid.nodes.utils import Position
 from astroid.typing import InferenceResult
 
@@ -27,9 +27,9 @@ if TYPE_CHECKING:
 
     T_Doc = TypeVar(
         "T_Doc",
-        "ast.Module",
-        "ast.ClassDef",
-        "ast.FunctionDef" | "ast.AsyncFunctionDef",
+        ast.Module,
+        ast.ClassDef,
+        ast.FunctionDef | ast.AsyncFunctionDef,
     )
     _FunctionT = TypeVar("_FunctionT", nodes.FunctionDef, nodes.AsyncFunctionDef)
     _ForT = TypeVar("_ForT", nodes.For, nodes.AsyncFor)
@@ -72,7 +72,7 @@ class TreeRebuilder:
         else:
             self._parser_module = parser_module
 
-    def _get_doc(self, node: T_Doc) -> tuple[T_Doc, ast.Constant | ast.Str | None]:
+    def _get_doc(self, node: T_Doc) -> tuple[T_Doc, ast.Constant | None]:
         """Return the doc ast node."""
         try:
             if node.body and isinstance(node.body[0], ast.Expr):
@@ -459,6 +459,18 @@ class TreeRebuilder:
 
         @overload
         def visit(self, node: ast.pattern, parent: nodes.NodeNG) -> nodes.Pattern: ...
+
+        if sys.version_info >= (3, 14):
+
+            @overload
+            def visit(
+                self, node: ast.TemplateStr, parent: nodes.NodeNG
+            ) -> nodes.TemplateStr: ...
+
+            @overload
+            def visit(
+                self, node: ast.Interpolation, parent: nodes.NodeNG
+            ) -> nodes.Interpolation: ...
 
         @overload
         def visit(self, node: ast.AST, parent: nodes.NodeNG) -> nodes.NodeNG: ...
@@ -1471,7 +1483,12 @@ class TreeRebuilder:
         )
         # Add AssignName node for 'node.name'
         # https://bugs.python.org/issue43994
-        newnode.postinit(name=self.visit_assignname(node, newnode, node.name))
+        newnode.postinit(
+            name=self.visit_assignname(node, newnode, node.name),
+            default_value=(
+                self.visit(node.default_value, newnode) if PY313_PLUS else None
+            ),
+        )
         return newnode
 
     def visit_pass(self, node: ast.Pass, parent: nodes.NodeNG) -> nodes.Pass:
@@ -1667,6 +1684,9 @@ class TreeRebuilder:
         newnode.postinit(
             name=self.visit_assignname(node, newnode, node.name),
             bound=self.visit(node.bound, newnode),
+            default_value=(
+                self.visit(node.default_value, newnode) if PY313_PLUS else None
+            ),
         )
         return newnode
 
@@ -1683,7 +1703,12 @@ class TreeRebuilder:
         )
         # Add AssignName node for 'node.name'
         # https://bugs.python.org/issue43994
-        newnode.postinit(name=self.visit_assignname(node, newnode, node.name))
+        newnode.postinit(
+            name=self.visit_assignname(node, newnode, node.name),
+            default_value=(
+                self.visit(node.default_value, newnode) if PY313_PLUS else None
+            ),
+        )
         return newnode
 
     def visit_unaryop(self, node: ast.UnaryOp, parent: nodes.NodeNG) -> nodes.UnaryOp:
@@ -1929,3 +1954,38 @@ class TreeRebuilder:
             patterns=[self.visit(pattern, newnode) for pattern in node.patterns]
         )
         return newnode
+
+    if sys.version_info >= (3, 14):
+
+        def visit_templatestr(
+            self, node: ast.TemplateStr, parent: nodes.NodeNG
+        ) -> nodes.TemplateStr:
+            newnode = nodes.TemplateStr(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+            newnode.postinit(
+                values=[self.visit(value, newnode) for value in node.values]
+            )
+            return newnode
+
+        def visit_interpolation(
+            self, node: ast.Interpolation, parent: nodes.NodeNG
+        ) -> nodes.Interpolation:
+            newnode = nodes.Interpolation(
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+                parent=parent,
+            )
+            newnode.postinit(
+                value=self.visit(node.value, parent),
+                str=node.str,
+                conversion=node.conversion,
+                format_spec=self.visit(node.format_spec, parent),
+            )
+            return newnode
