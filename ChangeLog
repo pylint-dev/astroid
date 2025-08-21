@@ -7,7 +7,7 @@ What's New in astroid 4.0.0?
 ============================
 Release date: TBA
 
-* Fix crash when inferring namedtuple with invalid field name
+* Fix crash when inferring namedtuple with invalid field name looking like f-string formatting.
 
   Closes #2519
 
