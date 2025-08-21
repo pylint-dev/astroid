@@ -550,3 +550,14 @@ def test_regression_infer_dict_literal_comparison_uninferable() -> None:
     node = extract_node("{{}}>0")
     inferred = next(node.infer())
     assert inferred.value == Uninferable
+
+
+def test_regression_infer_namedtuple_invalid_fieldname_error() -> None:
+    """Regression test for issue #2519."""
+    code = """
+    from collections import namedtuple
+    namedtuple('a','}')
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred.value == Uninferable
