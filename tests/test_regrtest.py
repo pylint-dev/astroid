@@ -2,6 +2,7 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
+import platform
 import sys
 import textwrap
 import unittest
@@ -569,4 +570,7 @@ def test_regression_parse_deeply_nested_parentheses() -> None:
         extract_node(
             "A=((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((c,j=t"
         )
-    assert isinstance(ctx.value.error, MemoryError)
+    expected = (
+        SyntaxError if platform.python_implementation() == "PyPy" else MemoryError
+    )
+    assert isinstance(ctx.value.error, expected)
