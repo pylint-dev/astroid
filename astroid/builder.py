@@ -181,7 +181,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             node, parser_module = _parse_string(
                 data, type_comments=True, modname=modname
             )
-        except (TypeError, ValueError, SyntaxError) as exc:
+        except (TypeError, ValueError, SyntaxError, MemoryError) as exc:
             raise AstroidSyntaxError(
                 "Parsing Python code failed:\n{error}",
                 source=data,
