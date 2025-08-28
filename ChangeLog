@@ -7,6 +7,10 @@ What's New in astroid 4.0.0?
 ============================
 Release date: TBA
 
+* Prevent crash when parsing deeply nested parentheses causing MemoryError in python's built-in ast.
+
+  Closes #2643
+
 * Fix crash when inferring namedtuple with invalid field name looking like f-string formatting.
 
   Closes #2519

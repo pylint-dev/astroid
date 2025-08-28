@@ -2,6 +2,7 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
+import platform
 import sys
 import textwrap
 import unittest
@@ -13,7 +14,7 @@ from astroid import MANAGER, Instance, bases, manager, nodes, parse, test_utils
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
 from astroid.const import PY312_PLUS
 from astroid.context import InferenceContext
-from astroid.exceptions import InferenceError
+from astroid.exceptions import AstroidSyntaxError, InferenceError
 from astroid.manager import AstroidManager
 from astroid.raw_building import build_module
 from astroid.util import Uninferable
@@ -561,3 +562,15 @@ def test_regression_infer_namedtuple_invalid_fieldname_error() -> None:
     node = extract_node(code)
     inferred = next(node.infer())
     assert inferred.value == Uninferable
+
+
+def test_regression_parse_deeply_nested_parentheses() -> None:
+    """Regression test for issue #2643."""
+    with pytest.raises(AstroidSyntaxError, match="Parsing Python code failed:") as ctx:
+        extract_node(
+            "A=((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((c,j=t"
+        )
+    expected = (
+        SyntaxError if platform.python_implementation() == "PyPy" else MemoryError
+    )
+    assert isinstance(ctx.value.error, expected)
