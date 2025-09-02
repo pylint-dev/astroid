@@ -157,3 +157,13 @@ def safe_infer(
         return None  # there is some kind of ambiguity
     except StopIteration:
         return value
+
+
+def is_class_var(node: nodes.NodeNG) -> bool:
+    """Return True if node is a ClassVar, with or without subscripting."""
+    try:
+        inferred = next(node.infer())
+    except (InferenceError, StopIteration):
+        return False
+
+    return getattr(inferred, "name", "") == "ClassVar"

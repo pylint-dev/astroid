@@ -24,7 +24,7 @@ from astroid.exceptions import AstroidSyntaxError, InferenceError, UseInferenceD
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.typing import InferenceResult
-from astroid.util import Uninferable, UninferableBase, safe_infer
+from astroid.util import Uninferable, UninferableBase, safe_infer, is_class_var
 
 _FieldDefaultReturn = (
     None
@@ -117,7 +117,7 @@ def _get_dataclass_attributes(
             continue
 
         # Annotation is never None
-        if _is_class_var(assign_node.annotation):  # type: ignore[arg-type]
+        if is_class_var(assign_node.annotation):  # type: ignore[arg-type]
             continue
 
         if _is_keyword_only_sentinel(assign_node.annotation):
@@ -548,16 +548,6 @@ def _get_field_default(field_call: nodes.Call) -> _FieldDefaultReturn:
         return "default_factory", new_call
 
     return None
-
-
-def _is_class_var(node: nodes.NodeNG) -> bool:
-    """Return True if node is a ClassVar, with or without subscripting."""
-    try:
-        inferred = next(node.infer())
-    except (InferenceError, StopIteration):
-        return False
-
-    return getattr(inferred, "name", "") == "ClassVar"
 
 
 def _is_keyword_only_sentinel(node: nodes.NodeNG) -> bool:

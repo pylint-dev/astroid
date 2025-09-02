@@ -11,7 +11,7 @@ for attrs classes
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import AnnAssign, Assign, AssignName, Call, Unknown
 from astroid.nodes.scoped_nodes import ClassDef
-from astroid.util import safe_infer
+from astroid.util import safe_infer, is_class_var
 
 ATTRIB_NAMES = frozenset(
     (
@@ -78,6 +78,13 @@ def attr_attributes_transform(node: ClassDef) -> None:
                 continue
         elif not use_bare_annotations:
             continue
+
+        # Skip attributes that are explicitly annotated as class variables
+        if isinstance(cdef_body_node, AnnAssign) and is_class_var(
+            cdef_body_node.annotation
+        ):
+            continue
+
         targets = (
             cdef_body_node.targets
             if hasattr(cdef_body_node, "targets")
