@@ -8,10 +8,11 @@ Astroid hook for the attrs library
 Without this hook pylint reports unsupported-assignment-operation
 for attrs classes
 """
+from astroid.brain.helpers import is_class_var
 from astroid.manager import AstroidManager
 from astroid.nodes.node_classes import AnnAssign, Assign, AssignName, Call, Unknown
 from astroid.nodes.scoped_nodes import ClassDef
-from astroid.util import safe_infer, is_class_var
+from astroid.util import safe_infer
 
 ATTRIB_NAMES = frozenset(
     (

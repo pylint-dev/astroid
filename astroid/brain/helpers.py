@@ -6,8 +6,14 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from typing import TYPE_CHECKING
+
+from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import Module
+
+if TYPE_CHECKING:
+    from astroid.nodes.node_ng import NodeNG
 
 
 def register_module_extender(
@@ -127,3 +133,13 @@ def register_all_brains(manager: AstroidManager) -> None:
     brain_typing.register(manager)
     brain_unittest.register(manager)
     brain_uuid.register(manager)
+
+
+def is_class_var(node: NodeNG) -> bool:
+    """Return True if node is a ClassVar, with or without subscripting."""
+    try:
+        inferred = next(node.infer())
+    except (InferenceError, StopIteration):
+        return False
+
+    return getattr(inferred, "name", "") == "ClassVar"

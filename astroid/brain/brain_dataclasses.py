@@ -18,13 +18,14 @@ from collections.abc import Iterator
 from typing import Literal
 
 from astroid import bases, context, nodes
+from astroid.brain.helpers import is_class_var
 from astroid.builder import parse
 from astroid.const import PY313_PLUS
 from astroid.exceptions import AstroidSyntaxError, InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.typing import InferenceResult
-from astroid.util import Uninferable, UninferableBase, safe_infer, is_class_var
+from astroid.util import Uninferable, UninferableBase, safe_infer
 
 _FieldDefaultReturn = (
     None
