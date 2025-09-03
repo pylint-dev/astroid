@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-
 from typing import TYPE_CHECKING
 
 from astroid.exceptions import InferenceError

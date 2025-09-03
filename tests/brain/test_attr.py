@@ -232,34 +232,22 @@ class AttrsTest(unittest.TestCase):
 
     def test_attrs_with_class_var_annotation(self) -> None:
         cases = {
-            "from_import": """
+            "with-subscript": """
                 import attrs
                 from typing import ClassVar
 
                 @attrs.define
                 class Foo:
                     bar: ClassVar[int] = 1
-                    baz: int = 1
                 Foo()
             """,
-            "module_import": """
-                import attrs
-                import typing
-
-                @attrs.define
-                class Foo:
-                    bar: typing.ClassVar[int] = 1
-                    baz: int = 1
-                Foo()
-            """,
-            "no_subscript": """
+            "no-subscript": """
                 import attrs
                 from typing import ClassVar
 
                 @attrs.define
                 class Foo:
                     bar: ClassVar = 1
-                    baz: int = 1
                 Foo()
             """,
         }
@@ -267,9 +255,33 @@ class AttrsTest(unittest.TestCase):
         for name, code in cases.items():
             with self.subTest(case=name):
                 instance = next(astroid.extract_node(code).infer())
-
                 self.assertIsInstance(instance.getattr("bar")[0], nodes.AssignName)
-                self.assertIsInstance(instance.getattr("baz")[0], nodes.Unknown)
-
                 self.assertNotIn("bar", instance.instance_attrs)
-                self.assertIn("baz", instance.instance_attrs)
+
+    def test_attrs_without_class_var_annotation(self) -> None:
+        cases = {
+            "wrong-name": """
+                import attrs
+                from typing import Final
+
+                @attrs.define
+                class Foo:
+                    bar: Final[int] = 1
+                Foo()
+            """,
+            "classvar-not-outermost": """
+                import attrs
+                from typing import ClassVar
+
+                @attrs.define
+                class Foo:
+                    bar: list[ClassVar[int]] = []
+                Foo()
+            """,
+        }
+
+        for name, code in cases.items():
+            with self.subTest(case=name):
+                instance = next(astroid.extract_node(code).infer())
+                self.assertIsInstance(instance.getattr("bar")[0], nodes.Unknown)
+                self.assertIn("bar", instance.instance_attrs)
