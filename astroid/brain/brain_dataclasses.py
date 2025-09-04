@@ -18,6 +18,7 @@ from collections.abc import Iterator
 from typing import Literal
 
 from astroid import bases, context, nodes
+from astroid.brain.helpers import is_class_var
 from astroid.builder import parse
 from astroid.const import PY313_PLUS
 from astroid.exceptions import AstroidSyntaxError, InferenceError, UseInferenceDefault
@@ -117,7 +118,7 @@ def _get_dataclass_attributes(
             continue
 
         # Annotation is never None
-        if _is_class_var(assign_node.annotation):  # type: ignore[arg-type]
+        if is_class_var(assign_node.annotation):  # type: ignore[arg-type]
             continue
 
         if _is_keyword_only_sentinel(assign_node.annotation):
@@ -548,16 +549,6 @@ def _get_field_default(field_call: nodes.Call) -> _FieldDefaultReturn:
         return "default_factory", new_call
 
     return None
-
-
-def _is_class_var(node: nodes.NodeNG) -> bool:
-    """Return True if node is a ClassVar, with or without subscripting."""
-    try:
-        inferred = next(node.infer())
-    except (InferenceError, StopIteration):
-        return False
-
-    return getattr(inferred, "name", "") == "ClassVar"
 
 
 def _is_keyword_only_sentinel(node: nodes.NodeNG) -> bool:
