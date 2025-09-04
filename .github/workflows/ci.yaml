@@ -217,7 +217,7 @@ jobs:
         with:
           path: venv
           key: >-
-            ${{ runner.os }}-${{ matrix.python-version }}-${{
+            ${{ runner.os }}-${{ steps.python.outputs.python-version }}-${{
             steps.generate-python-key.outputs.key }}
       - name: Create Python virtual environment
         if: steps.cache-venv.outputs.cache-hit != 'true'
