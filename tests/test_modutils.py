@@ -161,7 +161,7 @@ class ModPathFromFileTest(unittest.TestCase):
         )
 
     def test_raise_modpath_from_file_exception(self) -> None:
-        self.assertRaises(Exception, modutils.modpath_from_file, "/turlututu")
+        self.assertRaises(ImportError, modutils.modpath_from_file, "/turlututu")
 
     def test_import_symlink_with_source_outside_of_path(self) -> None:
         with tempfile.NamedTemporaryFile() as tmpfile:
