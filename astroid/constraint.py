@@ -84,6 +84,47 @@ class NoneConstraint(Constraint):
         return self.negate ^ _matches(inferred, self.CONST_NONE)
 
 
+class BooleanConstraint(Constraint):
+    """Represents an "x" or "not x" constraint."""
+
+    @classmethod
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
+        """Return a new constraint for node if expr matches one of these patterns:
+
+        - direct match (expr == node): use given negate value
+        - negated match (expr == `not node`): flip negate value
+
+        Return None if no pattern matches.
+        """
+        if _matches(expr, node):
+            return cls(node=node, negate=negate)
+
+        if (
+            isinstance(expr, nodes.UnaryOp)
+            and expr.op == "not"
+            and _matches(expr.operand, node)
+        ):
+            return cls(node=node, negate=not negate)
+
+        return None
+
+    def satisfied_by(self, inferred: InferenceResult) -> bool:
+        """Return True for uninferable results, or depending on negate flag:
+
+        - negate=False: satisfied if boolean value is True
+        - negate=True: satisfied if boolean value is False
+        """
+        inferred_booleaness = inferred.bool_value()
+        if isinstance(inferred, util.UninferableBase) or isinstance(
+            inferred_booleaness, util.UninferableBase
+        ):
+            return True
+
+        return self.negate ^ inferred_booleaness
+
+
 def get_constraints(
     expr: _NameNodes, frame: nodes.LocalsDictNodeNG
 ) -> dict[nodes.If, set[Constraint]]:
@@ -114,7 +155,12 @@ def get_constraints(
     return constraints_mapping
 
 
-ALL_CONSTRAINT_CLASSES = frozenset((NoneConstraint,))
+ALL_CONSTRAINT_CLASSES = frozenset(
+    (
+        NoneConstraint,
+        BooleanConstraint,
+    )
+)
 """All supported constraint types."""
 
 
