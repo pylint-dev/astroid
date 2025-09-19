@@ -17,6 +17,8 @@ def common_params(node: str) -> pytest.MarkDecorator:
         (
             (f"{node} is None", None, 3),
             (f"{node} is not None", 3, None),
+            (f"{node}", 3, None),
+            (f"not {node}", None, 3),
         ),
     )
 
