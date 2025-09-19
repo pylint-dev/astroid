@@ -5473,7 +5473,7 @@ class CallSiteTest(unittest.TestCase):
         site = self._call_site_from_call(ast_node)
         self.assertIn("f", site.duplicated_keywords)
 
-    def test_call_site_uninferable(self) -> None:
+    def test_call_site_unpack_with_boolean_guard(self) -> None:
         code = """
             def get_nums():
                 nums = ()
@@ -5495,12 +5495,14 @@ class CallSiteTest(unittest.TestCase):
                 add(*nums)
                 print(**kwargs)
         """
-        # Test that `*nums` argument should be Uninferable
         ast = parse(code, __name__)
         *_, add_call, print_call = list(ast.nodes_of_class(nodes.Call))
         nums_arg = add_call.args[0]
         add_call_site = self._call_site_from_call(add_call)
-        self.assertEqual(add_call_site._unpack_args([nums_arg]), [Uninferable])
+        add_call_site_args = add_call_site._unpack_args([nums_arg])
+        self.assertEqual(len(add_call_site_args), 2)
+        self.assertTrue(all(isinstance(arg, nodes.Const) for arg in add_call_site_args))
+        self.assertEqual([arg.value for arg in add_call_site_args], [1, 2])
 
         print_call_site = self._call_site_from_call(print_call)
         keywords = CallContext(print_call.args, print_call.keywords).keywords
