@@ -54,7 +54,7 @@ jobs:
         run: |
           python -m venv venv
           . venv/bin/activate
-          python -m pip install -U pip setuptools wheel
+          python -m pip install -U pip
           pip install -U -r requirements_full.txt
       - name: Generate pre-commit restore key
         id: generate-pre-commit-key
@@ -163,7 +163,7 @@ jobs:
         run: |
           python -m venv venv
           . venv\\Scripts\\activate
-          python -m pip install -U pip setuptools wheel
+          python -m pip install -U pip
           pip install -U -r requirements_full.txt
           pip install -e .
       - name: Run pytest
@@ -201,7 +201,7 @@ jobs:
         run: |
           python -m venv venv
           . venv/bin/activate
-          python -m pip install -U pip setuptools wheel
+          python -m pip install -U pip
           pip install -U -r requirements_minimal.txt
           pip install -e .
       - name: Run pytest
