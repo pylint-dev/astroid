@@ -24,9 +24,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Check out code from GitHub
+      - &checkout
+        name: Check out code from GitHub
         uses: actions/checkout@v5.0.0
-      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+      - &setup-python-default
+        name: Set up Python ${{ env.DEFAULT_PYTHON }}
         id: python
         uses: actions/setup-python@v6.0.0
         with:
@@ -38,7 +40,8 @@ jobs:
           echo "key=base-venv-${{ env.CACHE_VERSION }}-${{
             hashFiles('pyproject.toml', 'requirements_dev.txt',
           'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
-      - name: Restore Python virtual environment
+      - &cache-python
+        name: Restore Python virtual environment
         id: cache-venv
         uses: actions/cache@v4.2.4
         with:
@@ -51,7 +54,7 @@ jobs:
         run: |
           python -m venv venv
           . venv/bin/activate
-          python -m pip install -U pip setuptools wheel
+          python -m pip install -U pip
           pip install -U -r requirements_full.txt
       - name: Generate pre-commit restore key
         id: generate-pre-commit-key
@@ -82,12 +85,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: &matrix-python-version ["3.10", "3.11", "3.12", "3.13", "3.14"]
     outputs:
       python-key: ${{ steps.generate-python-key.outputs.key }}
     steps:
-      - name: Check out code from GitHub
-        uses: actions/checkout@v5.0.0
+      - *checkout
       - name: Set up Python ${{ matrix.python-version }}
         id: python
         uses: actions/setup-python@v6.0.0
@@ -106,14 +108,7 @@ jobs:
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
             hashFiles('pyproject.toml', 'requirements_dev.txt',
           'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
-      - name: Restore Python virtual environment
-        id: cache-venv
-        uses: actions/cache@v4.2.4
-        with:
-          path: venv
-          key: >-
-            ${{ runner.os }}-${{ steps.python.outputs.python-version }}-${{
-            steps.generate-python-key.outputs.key }}
+      - *cache-python
       - name: Create Python virtual environment
         if: steps.cache-venv.outputs.cache-hit != 'true'
         run: |
@@ -127,7 +122,7 @@ jobs:
           . venv/bin/activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: &actions-upload-artifact actions/upload-artifact@v4.6.2
         with:
           name: coverage-linux-${{ matrix.python-version }}
           path: .coverage
@@ -137,7 +132,7 @@ jobs:
     name: tests / run / ${{ matrix.python-version }} / Windows
     runs-on: windows-latest
     timeout-minutes: 20
-    needs: tests-linux
+    needs: [tests-linux]
     strategy:
       fail-fast: false
       matrix:
@@ -147,9 +142,9 @@ jobs:
         run: echo "TEMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
         # Workaround to set correct temp directory on Windows
         # https://github.com/actions/virtual-environments/issues/712
-      - name: Check out code from GitHub
-        uses: actions/checkout@v5.0.0
-      - name: Set up Python ${{ matrix.python-version }}
+      - *checkout
+      - &setup-python-matrix
+        name: Set up Python ${{ matrix.python-version }}
         id: python
         uses: actions/setup-python@v6.0.0
         with:
@@ -162,20 +157,13 @@ jobs:
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
             hashFiles('pyproject.toml', 'requirements_dev.txt',
           'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
-      - name: Restore Python virtual environment
-        id: cache-venv
-        uses: actions/cache@v4.2.4
-        with:
-          path: venv
-          key: >-
-            ${{ runner.os }}-${{ steps.python.outputs.python-version }}-${{
-            steps.generate-python-key.outputs.key }}
+      - *cache-python
       - name: Create Python virtual environment
         if: steps.cache-venv.outputs.cache-hit != 'true'
         run: |
           python -m venv venv
           . venv\\Scripts\\activate
-          python -m pip install -U pip setuptools wheel
+          python -m pip install -U pip
           pip install -U -r requirements_full.txt
           pip install -e .
       - name: Run pytest
@@ -183,7 +171,7 @@ jobs:
           . venv\\Scripts\\activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: *actions-upload-artifact
         with:
           name: coverage-windows-${{ matrix.python-version }}
           path: .coverage
@@ -199,34 +187,21 @@ jobs:
         # We only test on the lowest and highest supported PyPy versions
         python-version: ["pypy3.10"]
     steps:
-      - name: Check out code from GitHub
-        uses: actions/checkout@v5.0.0
-      - name: Set up Python ${{ matrix.python-version }}
-        id: python
-        uses: actions/setup-python@v6.0.0
-        with:
-          python-version: ${{ matrix.python-version }}
-          check-latest: true
+      - *checkout
+      - *setup-python-matrix
       - name: Generate partial Python venv restore key
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
             hashFiles('pyproject.toml', 'requirements_minimal.txt')
           }}" >> $GITHUB_OUTPUT
-      - name: Restore Python virtual environment
-        id: cache-venv
-        uses: actions/cache@v4.2.4
-        with:
-          path: venv
-          key: >-
-            ${{ runner.os }}-${{ steps.python.outputs.python-version }}-${{
-            steps.generate-python-key.outputs.key }}
+      - *cache-python
       - name: Create Python virtual environment
         if: steps.cache-venv.outputs.cache-hit != 'true'
         run: |
           python -m venv venv
           . venv/bin/activate
-          python -m pip install -U pip setuptools wheel
+          python -m pip install -U pip
           pip install -U -r requirements_minimal.txt
           pip install -e .
       - name: Run pytest
@@ -234,7 +209,7 @@ jobs:
           . venv/bin/activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: *actions-upload-artifact
         with:
           name: coverage-pypy-${{ matrix.python-version }}
           path: .coverage
@@ -246,14 +221,8 @@ jobs:
     timeout-minutes: 10
     needs: ["tests-linux", "tests-windows", "tests-pypy"]
     steps:
-      - name: Check out code from GitHub
-        uses: actions/checkout@v5.0.0
-      - name: Set up Python 3.13
-        id: python
-        uses: actions/setup-python@v6.0.0
-        with:
-          python-version: "3.13"
-          check-latest: true
+      - *checkout
+      - *setup-python-default
       - name: Install dependencies
         run: pip install -U -r requirements_minimal.txt
       - name: Download all coverage artifacts
@@ -262,7 +231,7 @@ jobs:
         run: |
           coverage combine coverage-linux*/.coverage
           coverage xml -o coverage-linux.xml
-      - uses: codecov/codecov-action@v5
+      - uses: &actions-codecov codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
@@ -273,7 +242,7 @@ jobs:
         run: |
           coverage combine coverage-windows*/.coverage
           coverage xml -o coverage-windows.xml
-      - uses: codecov/codecov-action@v5
+      - uses: *actions-codecov
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
@@ -284,7 +253,7 @@ jobs:
         run: |
           coverage combine coverage-pypy*/.coverage
           coverage xml -o coverage-pypy.xml
-      - uses: codecov/codecov-action@v5
+      - uses: *actions-codecov
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
