@@ -86,6 +86,10 @@
     "mails": ["c.ringstrom@gmail.com"],
     "name": "Charlie Ringström"
   },
+  "matusvalo@users.noreply.github.com": {
+    "mails": ["matusvalo@users.noreply.github.com"],
+    "name": "Matus Valo"
+  },
   "calen.pennington@gmail.com": {
     "mails": ["cale@edx.org", "calen.pennington@gmail.com"],
     "name": "Calen Pennington"
@@ -114,7 +118,10 @@
     "team": "Maintainers"
   },
   "hugovk@users.noreply.github.com": {
-    "mails": ["hugovk@users.noreply.github.com"],
+    "mails": [
+      "hugovk@users.noreply.github.com",
+      "1324225+hugovk@users.noreply.github.com"
+    ],
     "name": "Hugo van Kemenade"
   },
   "jacob@bogdanov.dev": {
