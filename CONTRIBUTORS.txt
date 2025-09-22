@@ -41,10 +41,11 @@ Contributors
 - Eevee (Alex Munroe) <amunroe@yelp.com>
 - David Gilman <davidgilman1@gmail.com>
 - Tushar Sadhwani <tushar.sadhwani000@gmail.com>
+- Matus Valo <matusvalo@users.noreply.github.com>
 - Julien Jehannet <julien.jehannet@logilab.fr>
+- Hugo van Kemenade <hugovk@users.noreply.github.com>
 - Calen Pennington <calen.pennington@gmail.com>
 - Antonio <antonio@zoftko.com>
-- Hugo van Kemenade <hugovk@users.noreply.github.com>
 - Akhil Kamat <akhil.kamat@gmail.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Phil Schaf <flying-sheep@web.de>
@@ -59,6 +60,7 @@ Contributors
 - Daniel Harding <dharding@gmail.com>
 - Christian Clauss <cclauss@me.com>
 - Ville Skyttä <ville.skytta@iki.fi>
+- Synrom <30272537+Synrom@users.noreply.github.com>
 - Rene Zhang <rz99@cornell.edu>
 - Philip Lorenz <philip@bithub.de>
 - Nicolas Chauvat <nicolas.chauvat@logilab.fr>
@@ -76,6 +78,7 @@ Contributors
 - emile@crater.logilab.fr <emile@crater.logilab.fr>
 - doranid <ddandd@gmail.com>
 - brendanator <brendan.maginnis@gmail.com>
+- Zen Lee <53538590+zenlyj@users.noreply.github.com>
 - Tomas Gavenciak <gavento@ucw.cz>
 - Tim Paine <t.paine154@gmail.com>
 - Thomas Hisch <t.hisch@gmail.com>
