@@ -5491,7 +5491,7 @@ class CallSiteTest(unittest.TestCase):
             else:
                 kwargs = {}
 
-            if nums:
+            if nums is not None:
                 add(*nums)
                 print(**kwargs)
         """
