@@ -78,7 +78,7 @@ TYPING_ALIAS = frozenset(
         "typing.MutableMapping",
         "typing.Sequence",
         "typing.MutableSequence",
-        "typing.ByteString",  # removed in 3.14
+        "typing.ByteString",  # scheduled for removal in 3.17
         "typing.Tuple",
         "typing.List",
         "typing.Deque",
