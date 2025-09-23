@@ -37,6 +37,7 @@ def test_group_exceptions_exceptions() -> None:
     inferred = node.inferred()[0]
     assert isinstance(inferred, Tuple)
 
+
 @pytest.mark.skipif(not PY311_PLUS, reason="Requires Python 3.11 or higher")
 def test_group_exceptions() -> None:
     node = extract_node(
