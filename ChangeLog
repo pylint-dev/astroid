@@ -85,6 +85,11 @@ Release date: TBA
 * Improve ``as_string()`` representation for ``TypeVar``, ``ParamSpec`` and ``TypeVarTuple`` nodes, as well as
   type parameter in ``ClassDef``, ``FuncDef`` and ``TypeAlias`` nodes (PEP 695).
 
+* Fix a false positive for ``not-an-iterable`` in an ``ExceptionGroup`` context.
+
+  Closes pylint-dev/pylint#8985
+  Closes pylint-dev/pylint#10558
+
 
 What's New in astroid 3.3.11?
 =============================
