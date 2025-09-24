@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, Union
 
 from astroid import decorators, protocols, util
 from astroid.bases import Instance, _infer_stmts
-from astroid.const import _EMPTY_OBJECT_MARKER, Context, PY314_PLUS
+from astroid.const import _EMPTY_OBJECT_MARKER, PY314_PLUS, Context
 from astroid.context import CallContext, InferenceContext, copy_context
 from astroid.exceptions import (
     AstroidBuildingError,
