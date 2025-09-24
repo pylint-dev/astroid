@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, Union
 
 from astroid import decorators, protocols, util
 from astroid.bases import Instance, _infer_stmts
-from astroid.const import _EMPTY_OBJECT_MARKER, Context
+from astroid.const import _EMPTY_OBJECT_MARKER, PY314_PLUS, Context
 from astroid.context import CallContext, InferenceContext, copy_context
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -2166,8 +2166,12 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
-        :rtype: bool
+        :rtype: bool or Uninferable
         """
+        # bool(NotImplemented) is deprecated; it raises TypeError starting from Python 3.14
+        # and returns True for versions under 3.14
+        if self.value is NotImplemented:
+            return util.Uninferable if PY314_PLUS else True
         return bool(self.value)
 
     def _infer(
