@@ -2168,6 +2168,9 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         :returns: The boolean value of this node.
         :rtype: bool
         """
+        # Guard against DeprecationWarning: bool(NotImplemented) is deprecated since Python 3.9
+        if self.value is NotImplemented:
+            return True
         return bool(self.value)
 
     def _infer(
