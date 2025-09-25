@@ -38,7 +38,7 @@ class EnumBrainTest(unittest.TestCase):
             self.assertIn("builtins.property", prop.decoratornames())
 
         meth = one.getattr("mymethod")[0]
-        self.assertIsInstance(meth, astroid.FunctionDef)
+        self.assertIsInstance(meth, nodes.FunctionDef)
 
     def test_looks_like_enum_false_positive(self) -> None:
         # Test that a class named Enumeration is not considered a builtin enum.
@@ -70,7 +70,7 @@ class EnumBrainTest(unittest.TestCase):
         assert isinstance(ast_node, nodes.NodeNG)
         inferred = ast_node.inferred()
         self.assertEqual(len(inferred), 1)
-        self.assertIsInstance(inferred[0], astroid.Const)
+        self.assertIsInstance(inferred[0], nodes.Const)
         self.assertEqual(inferred[0].value, 1)
 
     def test_ignores_with_nodes_from_body_of_enum(self) -> None:
@@ -169,7 +169,7 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(instance, astroid.Instance)
 
         inferred = next(name.infer())
-        self.assertIsInstance(inferred, astroid.Const)
+        self.assertIsInstance(inferred, nodes.Const)
 
     def test_enum_func_form_has_dunder_members(self) -> None:
         instance = builder.extract_node(
@@ -181,7 +181,7 @@ class EnumBrainTest(unittest.TestCase):
         """
         )
         instance = next(instance.infer())
-        self.assertIsInstance(instance, astroid.Const)
+        self.assertIsInstance(instance, nodes.Const)
         self.assertIsInstance(instance.value, str)
 
     def test_infer_enum_value_as_the_right_type(self) -> None:
@@ -197,13 +197,13 @@ class EnumBrainTest(unittest.TestCase):
         )
         inferred_string = string_value.inferred()
         assert any(
-            isinstance(elem, astroid.Const) and elem.value == "a"
+            isinstance(elem, nodes.Const) and elem.value == "a"
             for elem in inferred_string
         )
 
         inferred_int = int_value.inferred()
         assert any(
-            isinstance(elem, astroid.Const) and elem.value == 1 for elem in inferred_int
+            isinstance(elem, nodes.Const) and elem.value == 1 for elem in inferred_int
         )
 
     def test_mingled_single_and_double_quotes_does_not_crash(self) -> None:
@@ -247,7 +247,7 @@ class EnumBrainTest(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        assert isinstance(inferred, astroid.ClassDef)
+        assert isinstance(inferred, nodes.ClassDef)
 
     def test_enum_tuple_list_values(self) -> None:
         tuple_node, list_node = builder.extract_node(
@@ -263,8 +263,8 @@ class EnumBrainTest(unittest.TestCase):
         )
         inferred_tuple_node = next(tuple_node.infer())
         inferred_list_node = next(list_node.infer())
-        assert isinstance(inferred_tuple_node, astroid.Tuple)
-        assert isinstance(inferred_list_node, astroid.List)
+        assert isinstance(inferred_tuple_node, nodes.Tuple)
+        assert isinstance(inferred_list_node, nodes.List)
         assert inferred_tuple_node.as_string() == "(1, 2)"
         assert inferred_list_node.as_string() == "[2, 4]"
 
@@ -361,7 +361,7 @@ class EnumBrainTest(unittest.TestCase):
         assert isinstance(ast_node, nodes.NodeNG)
         inferred = ast_node.inferred()
         self.assertEqual(len(inferred), 1)
-        self.assertIsInstance(inferred[0], astroid.Const)
+        self.assertIsInstance(inferred[0], nodes.Const)
         self.assertEqual(inferred[0].value, "red")
 
     def test_enum_subclass_member_value(self) -> None:
@@ -381,7 +381,7 @@ class EnumBrainTest(unittest.TestCase):
         assert isinstance(ast_node, nodes.NodeNG)
         inferred = ast_node.inferred()
         self.assertEqual(len(inferred), 1)
-        self.assertIsInstance(inferred[0], astroid.Const)
+        self.assertIsInstance(inferred[0], nodes.Const)
         self.assertEqual(inferred[0].value, 1)
 
     def test_enum_subclass_member_method(self) -> None:
@@ -403,7 +403,7 @@ class EnumBrainTest(unittest.TestCase):
         assert isinstance(ast_node, nodes.NodeNG)
         inferred = ast_node.inferred()
         self.assertEqual(len(inferred), 1)
-        self.assertIsInstance(inferred[0], astroid.Const)
+        self.assertIsInstance(inferred[0], nodes.Const)
         self.assertEqual(inferred[0].value, "red")
 
     def test_enum_subclass_different_modules(self) -> None:
@@ -430,7 +430,7 @@ class EnumBrainTest(unittest.TestCase):
         assert isinstance(ast_node, nodes.NodeNG)
         inferred = ast_node.inferred()
         self.assertEqual(len(inferred), 1)
-        self.assertIsInstance(inferred[0], astroid.Const)
+        self.assertIsInstance(inferred[0], nodes.Const)
         self.assertEqual(inferred[0].value, 1)
 
     def test_members_member_ignored(self) -> None:
@@ -445,7 +445,7 @@ class EnumBrainTest(unittest.TestCase):
         )
 
         inferred = next(ast_node.infer())
-        self.assertIsInstance(inferred, astroid.Dict)
+        self.assertIsInstance(inferred, nodes.Dict)
         self.assertTrue(inferred.locals)
 
     def test_enum_as_renamed_import(self) -> None:

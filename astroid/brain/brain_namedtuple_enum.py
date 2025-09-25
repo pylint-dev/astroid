@@ -12,7 +12,6 @@ from collections.abc import Iterator
 from textwrap import dedent
 from typing import Final
 
-import astroid
 from astroid import arguments, bases, nodes, util
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
 from astroid.context import InferenceContext
@@ -650,7 +649,7 @@ def _get_namedtuple_fields(node: nodes.Call) -> str:
     return field_names
 
 
-def _is_enum_subclass(cls: astroid.ClassDef) -> bool:
+def _is_enum_subclass(cls: nodes.ClassDef) -> bool:
     """Return whether cls is a subclass of an Enum."""
     return cls.is_subtype_of("enum.Enum")
 

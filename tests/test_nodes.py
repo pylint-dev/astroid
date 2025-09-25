@@ -908,8 +908,8 @@ class AnnAssignNodeTest(unittest.TestCase):
         assign = builder.extract_node(code)
         self.assertIsInstance(assign, nodes.AnnAssign)
         self.assertEqual(assign.target.name, "test")
-        self.assertIsInstance(assign.annotation, astroid.Subscript)
-        self.assertIsInstance(assign.value, astroid.Dict)
+        self.assertIsInstance(assign.annotation, nodes.Subscript)
+        self.assertIsInstance(assign.value, nodes.Dict)
 
     def test_as_string(self) -> None:
         code = textwrap.dedent(
@@ -1533,7 +1533,7 @@ def test_type_comments_with() -> None:
     )
     node = module.body[0]
     ignored_node = module.body[1]
-    assert isinstance(node.type_annotation, astroid.Name)
+    assert isinstance(node.type_annotation, nodes.Name)
 
     assert ignored_node.type_annotation is None
 
@@ -1549,7 +1549,7 @@ def test_type_comments_for() -> None:
     )
     node = module.body[0]
     ignored_node = module.body[1]
-    assert isinstance(node.type_annotation, astroid.Subscript)
+    assert isinstance(node.type_annotation, nodes.Subscript)
     assert node.type_annotation.as_string() == "List[int]"
 
     assert ignored_node.type_annotation is None
@@ -1564,7 +1564,7 @@ def test_type_coments_assign() -> None:
     )
     node = module.body[0]
     ignored_node = module.body[1]
-    assert isinstance(node.type_annotation, astroid.Subscript)
+    assert isinstance(node.type_annotation, nodes.Subscript)
     assert node.type_annotation.as_string() == "List[int]"
 
     assert ignored_node.type_annotation is None
@@ -1620,9 +1620,9 @@ def test_type_comments_function() -> None:
     """
     )
     expected_annotations = [
-        (["int"], astroid.Name, "str"),
-        (["int", "int", "int"], astroid.Tuple, "(str, str)"),
-        (["int", "int", "str", "List[int]"], astroid.Subscript, "List[int]"),
+        (["int"], nodes.Name, "str"),
+        (["int", "int", "int"], nodes.Tuple, "(str, str)"),
+        (["int", "int", "str", "List[int]"], nodes.Subscript, "List[int]"),
     ]
     for node, (expected_args, expected_returns_type, expected_returns_string) in zip(
         module.body, expected_annotations
@@ -1667,7 +1667,7 @@ def test_type_comments_arguments() -> None:
     ]
     for node, expected_args in zip(module.body, expected_annotations):
         assert len(node.type_comment_args) == 1
-        assert isinstance(node.type_comment_args[0], astroid.Const)
+        assert isinstance(node.type_comment_args[0], nodes.Const)
         assert node.type_comment_args[0].value == Ellipsis
         assert len(node.args.type_comment_args) == len(expected_args)
         for expected_arg, actual_arg in zip(expected_args, node.args.type_comment_args):
@@ -1696,7 +1696,7 @@ def test_type_comments_posonly_arguments() -> None:
     ]
     for node, expected_types in zip(module.body, expected_annotations):
         assert len(node.type_comment_args) == 1
-        assert isinstance(node.type_comment_args[0], astroid.Const)
+        assert isinstance(node.type_comment_args[0], nodes.Const)
         assert node.type_comment_args[0].value == Ellipsis
         type_comments = [
             node.args.type_comment_posonlyargs,
@@ -1917,15 +1917,15 @@ def test_parse_type_comments_with_proper_parent() -> None:
     assert len(type_comments) == 1
 
     type_comment = type_comments[0]
-    assert isinstance(type_comment, astroid.Attribute)
-    assert isinstance(type_comment.parent, astroid.Expr)
-    assert isinstance(type_comment.parent.parent, astroid.Arguments)
+    assert isinstance(type_comment, nodes.Attribute)
+    assert isinstance(type_comment.parent, nodes.Expr)
+    assert isinstance(type_comment.parent.parent, nodes.Arguments)
 
 
 def test_const_itered() -> None:
     code = 'a = "string"'
     node = astroid.extract_node(code).value
-    assert isinstance(node, astroid.Const)
+    assert isinstance(node, nodes.Const)
     itered = node.itered()
     assert len(itered) == 6
     assert [elem.value for elem in itered] == list("string")
@@ -1994,12 +1994,12 @@ class TestPatternMatching:
 
         assert isinstance(case0.pattern, nodes.MatchValue)
         assert (
-            isinstance(case0.pattern.value, astroid.Const)
+            isinstance(case0.pattern.value, nodes.Const)
             and case0.pattern.value.value == 200
         )
         assert list(case0.pattern.get_children()) == [case0.pattern.value]
         assert case0.guard is None
-        assert isinstance(case0.body[0], astroid.Pass)
+        assert isinstance(case0.body[0], nodes.Pass)
         assert list(case0.get_children()) == [case0.pattern, case0.body[0]]
 
         assert isinstance(case1.pattern, nodes.MatchOr)

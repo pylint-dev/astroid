@@ -19,9 +19,6 @@ from unittest.mock import patch
 import pytest
 
 from astroid import (
-    Assign,
-    Const,
-    Slice,
     Uninferable,
     arguments,
     manager,
@@ -71,7 +68,7 @@ class InferenceUtilsTest(unittest.TestCase):
             raise InferenceError
 
         infer_default = decoratorsmod.path_wrapper(infer_default)
-        infer_end = decoratorsmod.path_wrapper(Slice._infer)
+        infer_end = decoratorsmod.path_wrapper(nodes.Slice._infer)
         with self.assertRaises(InferenceError):
             next(infer_default(1))
         self.assertEqual(next(infer_end(1)), 1)
@@ -665,7 +662,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = node.inferred()
         self.assertEqual(len(inferred), 1)
         value_node = inferred[0]
-        self.assertIsInstance(value_node, Const)
+        self.assertIsInstance(value_node, nodes.Const)
         self.assertEqual(value_node.value, "Hello John!")
 
     def test_float_complex_ambiguity(self) -> None:
@@ -5563,7 +5560,7 @@ def test_formatted_fstring_inference(code, result) -> None:
     if result is None:
         assert value_node is util.Uninferable
     else:
-        assert isinstance(value_node, Const)
+        assert isinstance(value_node, nodes.Const)
         assert value_node.value == result
 
 
@@ -6177,7 +6174,7 @@ def test_recursion_error_inferring_slice() -> None:
     """
     )
     inferred = next(node.infer())
-    assert isinstance(inferred, Slice)
+    assert isinstance(inferred, nodes.Slice)
 
 
 def test_exception_lookup_last_except_handler_wins() -> None:
@@ -7414,13 +7411,13 @@ s1 = f'{c_obj!r}' #@
 def test_joined_str_returns_string(source, expected) -> None:
     """Regression test for https://github.com/pylint-dev/pylint/issues/9947."""
     node = extract_node(source)
-    assert isinstance(node, Assign)
+    assert isinstance(node, nodes.Assign)
     target = node.targets[0]
     assert target
     inferred = list(target.inferred())
     assert len(inferred) == 1
     if expected:
-        assert isinstance(inferred[0], Const)
+        assert isinstance(inferred[0], nodes.Const)
         inferred[0].value.startswith(expected)
     else:
         assert inferred[0] is Uninferable

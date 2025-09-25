@@ -140,10 +140,10 @@ class TypeBrain(unittest.TestCase):
             """
         )
         val_inf = src.annotation.value.inferred()[0]
-        self.assertIsInstance(val_inf, astroid.ClassDef)
+        self.assertIsInstance(val_inf, nodes.ClassDef)
         self.assertEqual(val_inf.name, "type")
         meth_inf = val_inf.getattr("__class_getitem__")[0]
-        self.assertIsInstance(meth_inf, astroid.FunctionDef)
+        self.assertIsInstance(meth_inf, nodes.FunctionDef)
 
     def test_invalid_type_subscript(self):
         """
@@ -157,7 +157,7 @@ class TypeBrain(unittest.TestCase):
             """
         )
         val_inf = src.annotation.value.inferred()[0]
-        self.assertIsInstance(val_inf, astroid.ClassDef)
+        self.assertIsInstance(val_inf, nodes.ClassDef)
         self.assertEqual(val_inf.name, "str")
         with self.assertRaises(AttributeInferenceError):
             # pylint: disable=expression-not-assigned
@@ -355,7 +355,7 @@ class TypingBrain(unittest.TestCase):
         )
         self.assertEqual(len(klass.getattr("as_string")), 1)
         inferred = next(called.infer())
-        self.assertIsInstance(inferred, astroid.Const)
+        self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 5)
 
     def test_namedtuple_inference(self) -> None:
@@ -445,7 +445,7 @@ class TypingBrain(unittest.TestCase):
         self.assertIsInstance(inferred, astroid.Instance)
 
         class_attr = inferred.getattr("CLASS_ATTR")[0]
-        self.assertIsInstance(class_attr, astroid.AssignName)
+        self.assertIsInstance(class_attr, nodes.AssignName)
         const = next(class_attr.infer())
         self.assertEqual(const.value, "class_attr")
 
@@ -536,10 +536,10 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(result.infer())
-        self.assertIsInstance(inferred, astroid.ClassDef)
+        self.assertIsInstance(inferred, nodes.ClassDef)
 
         class_def_attr = inferred.getattr("Foo")[0]
-        self.assertIsInstance(class_def_attr, astroid.ClassDef)
+        self.assertIsInstance(class_def_attr, nodes.ClassDef)
         attr_def = class_def_attr.getattr("bar")[0]
         attr = next(attr_def.infer())
         self.assertEqual(attr.value, "bar")
@@ -1030,7 +1030,7 @@ class RandomSampleTest(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        self.assertIsInstance(inferred, astroid.List)
+        self.assertIsInstance(inferred, nodes.List)
         elems = sorted(elem.value for elem in inferred.elts)
         self.assertEqual(elems, [1, 2])
 
@@ -1048,12 +1048,12 @@ class RandomSampleTest(unittest.TestCase):
         )
         # Check that arguments are of type `nodes.Call`.
         sequence, length = node.args
-        self.assertIsInstance(sequence, astroid.Call)
-        self.assertIsInstance(length, astroid.Call)
+        self.assertIsInstance(sequence, nodes.Call)
+        self.assertIsInstance(length, nodes.Call)
 
         # Check the inference of `random.sample` call.
         inferred = next(node.infer())
-        self.assertIsInstance(inferred, astroid.List)
+        self.assertIsInstance(inferred, nodes.List)
         elems = sorted(elem.value for elem in inferred.elts)
         self.assertEqual(elems, [1, 2])
 
@@ -1065,7 +1065,7 @@ class RandomSampleTest(unittest.TestCase):
         sample(list({1: A()}.values()), 1)"""
         )
         inferred = next(node.infer())
-        assert isinstance(inferred, astroid.List)
+        assert isinstance(inferred, nodes.List)
         assert len(inferred.elts) == 1
         assert isinstance(inferred.elts[0], nodes.Call)
 
@@ -1096,7 +1096,7 @@ class SubprocessTest(unittest.TestCase):
         node = astroid.extract_node(code)
         inferred = next(node.infer())
         # Can be either str or bytes
-        assert isinstance(inferred, astroid.Const)
+        assert isinstance(inferred, nodes.Const)
         assert isinstance(inferred.value, (str, bytes))
 
     def test_popen_does_not_have_class_getitem(self):
@@ -1572,7 +1572,7 @@ def test_infer_str() -> None:
     )
     for node in ast_nodes:
         inferred = next(node.infer())
-        assert isinstance(inferred, astroid.Const)
+        assert isinstance(inferred, nodes.Const)
 
     node = astroid.extract_node(
         """
@@ -1593,7 +1593,7 @@ def test_infer_int() -> None:
     )
     for node in ast_nodes:
         inferred = next(node.infer())
-        assert isinstance(inferred, astroid.Const)
+        assert isinstance(inferred, nodes.Const)
 
     ast_nodes = astroid.extract_node(
         """
@@ -1635,7 +1635,7 @@ def test_infer_dict_from_keys() -> None:
     )
     for node in good_nodes:
         inferred = next(node.infer())
-        assert isinstance(inferred, astroid.Dict)
+        assert isinstance(inferred, nodes.Dict)
         assert inferred.items == []
 
     # Test inferable values
@@ -1647,9 +1647,9 @@ def test_infer_dict_from_keys() -> None:
     """
     )
     inferred = next(from_dict.infer())
-    assert isinstance(inferred, astroid.Dict)
+    assert isinstance(inferred, nodes.Dict)
     itered = inferred.itered()
-    assert all(isinstance(elem, astroid.Const) for elem in itered)
+    assert all(isinstance(elem, nodes.Const) for elem in itered)
     actual_values = [elem.value for elem in itered]
     assert sorted(actual_values) == ["a", "b", "c"]
 
@@ -1660,9 +1660,9 @@ def test_infer_dict_from_keys() -> None:
     """
     )
     inferred = next(from_string.infer())
-    assert isinstance(inferred, astroid.Dict)
+    assert isinstance(inferred, nodes.Dict)
     itered = inferred.itered()
-    assert all(isinstance(elem, astroid.Const) for elem in itered)
+    assert all(isinstance(elem, nodes.Const) for elem in itered)
     actual_values = [elem.value for elem in itered]
     assert sorted(actual_values) == ["a", "b", "c"]
 
@@ -1673,9 +1673,9 @@ def test_infer_dict_from_keys() -> None:
     """
     )
     inferred = next(from_bytes.infer())
-    assert isinstance(inferred, astroid.Dict)
+    assert isinstance(inferred, nodes.Dict)
     itered = inferred.itered()
-    assert all(isinstance(elem, astroid.Const) for elem in itered)
+    assert all(isinstance(elem, nodes.Const) for elem in itered)
     actual_values = [elem.value for elem in itered]
     assert sorted(actual_values) == [97, 98, 99]
 
@@ -1689,9 +1689,9 @@ def test_infer_dict_from_keys() -> None:
     )
     for node in from_others:
         inferred = next(node.infer())
-        assert isinstance(inferred, astroid.Dict)
+        assert isinstance(inferred, nodes.Dict)
         itered = inferred.itered()
-        assert all(isinstance(elem, astroid.Const) for elem in itered)
+        assert all(isinstance(elem, nodes.Const) for elem in itered)
         actual_values = [elem.value for elem in itered]
         assert sorted(actual_values) == ["a", "b", "c"]
 
@@ -1739,7 +1739,7 @@ class TestFunctoolsPartial:
         )
         for node in ast_nodes:
             inferred = next(node.infer())
-            assert isinstance(inferred, (astroid.FunctionDef, astroid.Instance))
+            assert isinstance(inferred, (nodes.FunctionDef, astroid.Instance))
             assert inferred.qname() in {
                 "functools.partial",
                 "functools.partial.newfunc",
@@ -1770,7 +1770,7 @@ class TestFunctoolsPartial:
         expected_values = [4, 7, 7, 3, 12, 16, 32, 36, 3, 9, 7]
         for node, expected_value in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
-            assert isinstance(inferred, astroid.Const)
+            assert isinstance(inferred, nodes.Const)
             assert inferred.value == expected_value
 
     def test_partial_assignment(self) -> None:
@@ -1871,7 +1871,7 @@ def test_http_status_brain() -> None:
     """
     )
     inferred = next(node.infer())
-    assert isinstance(inferred, astroid.Const)
+    assert isinstance(inferred, nodes.Const)
 
 
 def test_http_status_brain_iterable() -> None:
@@ -1898,7 +1898,7 @@ def test_oserror_model() -> None:
     )
     inferred = next(node.infer())
     strerror = next(inferred.igetattr("strerror"))
-    assert isinstance(strerror, astroid.Const)
+    assert isinstance(strerror, nodes.Const)
     assert strerror.value == ""
 
 
@@ -1919,9 +1919,9 @@ def test_crypt_brain() -> None:
 @pytest.mark.parametrize(
     "code,expected_class,expected_value",
     [
-        ("'hey'.encode()", astroid.Const, b""),
-        ("b'hey'.decode()", astroid.Const, ""),
-        ("'hey'.encode().decode()", astroid.Const, ""),
+        ("'hey'.encode()", nodes.Const, b""),
+        ("b'hey'.decode()", nodes.Const, ""),
+        ("'hey'.encode().decode()", nodes.Const, ""),
     ],
 )
 def test_str_and_bytes(code, expected_class, expected_value):

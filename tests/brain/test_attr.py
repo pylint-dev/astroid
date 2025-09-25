@@ -85,7 +85,7 @@ class AttrsTest(unittest.TestCase):
 
         for name in ("f", "g", "h", "i", "j", "k", "l", "m"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
-            self.assertIsInstance(should_be_unknown, astroid.Unknown)
+            self.assertIsInstance(should_be_unknown, nodes.Unknown)
 
     def test_attrs_transform(self) -> None:
         """Test brain for decorators of the 'attrs' package.
@@ -158,7 +158,7 @@ class AttrsTest(unittest.TestCase):
 
         for name in ("f", "g", "h", "i", "j", "k", "l"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
-            self.assertIsInstance(should_be_unknown, astroid.Unknown, name)
+            self.assertIsInstance(should_be_unknown, nodes.Unknown, name)
 
     def test_special_attributes(self) -> None:
         """Make sure special attrs attributes exist"""
@@ -200,7 +200,7 @@ class AttrsTest(unittest.TestCase):
         Foo()
         """
         should_be_unknown = next(astroid.extract_node(code).infer()).getattr("bar")[0]
-        self.assertIsInstance(should_be_unknown, astroid.Unknown)
+        self.assertIsInstance(should_be_unknown, nodes.Unknown)
 
     def test_attr_with_only_annotation_fails(self) -> None:
         code = """
@@ -228,7 +228,7 @@ class AttrsTest(unittest.TestCase):
             should_be_unknown = next(astroid.extract_node(code).infer()).getattr(
                 attr_name
             )[0]
-            self.assertIsInstance(should_be_unknown, astroid.Unknown)
+            self.assertIsInstance(should_be_unknown, nodes.Unknown)
 
     def test_attrs_with_class_var_annotation(self) -> None:
         cases = {
