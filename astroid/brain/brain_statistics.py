@@ -10,6 +10,7 @@ complex runtime behavior difficult to analyze statically.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from astroid.context import InferenceContext
@@ -53,7 +54,9 @@ def _looks_like_statistics_quantiles(node: Call) -> bool:
     return False
 
 
-def infer_statistics_quantiles(node: Call, context: InferenceContext | None = None):
+def infer_statistics_quantiles(
+    node: Call, context: InferenceContext | None = None
+) -> Iterator[InferenceResult]:
     """Infer the result of statistics.quantiles() calls.
 
     Returns Uninferable because quantiles() has complex runtime behavior
