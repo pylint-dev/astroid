@@ -592,9 +592,7 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         ast = self.module["modutils"]
         self.assertEqual(ast.as_string(), "from astroid import modutils")
         ast = self.module["NameNode"]
-        self.assertEqual(
-            ast.as_string(), "from astroid.nodes.node_classes import Name as NameNode"
-        )
+        self.assertEqual(ast.as_string(), "from astroid.nodes import Name as NameNode")
         ast = self.module["os"]
         self.assertEqual(ast.as_string(), "import os.path")
         code = """from . import here
