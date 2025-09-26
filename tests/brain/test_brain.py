@@ -21,11 +21,9 @@ from astroid.exceptions import (
     InferenceError,
     UseInferenceDefault,
 )
-from astroid.nodes.node_classes import Const
-from astroid.nodes.scoped_nodes import ClassDef
 
 
-def assertEqualMro(klass: ClassDef, expected_mro: list[str]) -> None:
+def assertEqualMro(klass: nodes.ClassDef, expected_mro: list[str]) -> None:
     """Check mro names."""
     assert [member.qname() for member in klass.mro()] == expected_mro
 
@@ -1361,7 +1359,7 @@ class TestIssubclassBrain:
             _get_result_node("issubclass(int, int, str)")
 
 
-def _get_result_node(code: str) -> Const:
+def _get_result_node(code: str) -> nodes.Const:
     node = next(astroid.extract_node(code).infer())
     return node
 

@@ -43,22 +43,8 @@ from astroid.exceptions import (
     AttributeInferenceError,
     StatementMissing,
 )
-from astroid.nodes.node_classes import (
-    UNATTACHED_UNKNOWN,
-    AssignAttr,
-    AssignName,
-    Attribute,
-    Call,
-    ImportFrom,
-    Tuple,
-)
-from astroid.nodes.scoped_nodes import (
-    SYNTHETIC_ROOT,
-    ClassDef,
-    FunctionDef,
-    GeneratorExp,
-    Module,
-)
+from astroid.nodes.node_classes import UNATTACHED_UNKNOWN
+from astroid.nodes.scoped_nodes import SYNTHETIC_ROOT
 from tests.testdata.python3.recursion_error import LONG_CHAINED_METHOD_CALL
 
 from . import resources
@@ -68,7 +54,7 @@ abuilder = builder.AstroidBuilder(astroid.MANAGER)
 
 class AsStringTest(resources.SysPathSetup, unittest.TestCase):
     def test_tuple_as_string(self) -> None:
-        def build(string: str) -> Tuple:
+        def build(string: str) -> nodes.Tuple:
             return abuilder.string_build(string).body[0].value
 
         self.assertEqual(build("1,").as_string(), "(1, )")
@@ -411,7 +397,7 @@ class _NodeTest(unittest.TestCase):
     CODE = ""
 
     @property
-    def astroid(self) -> Module:
+    def astroid(self) -> nodes.Module:
         try:
             return self.__class__.__dict__["CODE_Astroid"]
         except KeyError:
@@ -1277,30 +1263,30 @@ class AliasesTest(unittest.TestCase):
     def setUp(self) -> None:
         self.transformer = transforms.TransformVisitor()
 
-    def parse_transform(self, code: str) -> Module:
+    def parse_transform(self, code: str) -> nodes.Module:
         module = parse(code, apply_transforms=False)
         return self.transformer.visit(module)
 
     def test_aliases(self) -> None:
-        def test_from(node: ImportFrom) -> ImportFrom:
+        def test_from(node: nodes.ImportFrom) -> nodes.ImportFrom:
             node.names = [*node.names, ("absolute_import", None)]
             return node
 
-        def test_class(node: ClassDef) -> ClassDef:
+        def test_class(node: nodes.ClassDef) -> nodes.ClassDef:
             node.name = "Bar"
             return node
 
-        def test_function(node: FunctionDef) -> FunctionDef:
+        def test_function(node: nodes.FunctionDef) -> nodes.FunctionDef:
             node.name = "another_test"
             return node
 
-        def test_callfunc(node: Call) -> Call | None:
+        def test_callfunc(node: nodes.Call) -> nodes.Call | None:
             if node.func.name == "Foo":
                 node.func.name = "Bar"
                 return node
             return None
 
-        def test_assname(node: AssignName) -> AssignName | None:
+        def test_assname(node: nodes.AssignName) -> nodes.AssignName | None:
             if node.name == "foo":
                 return nodes.AssignName(
                     "bar",
@@ -1312,19 +1298,19 @@ class AliasesTest(unittest.TestCase):
                 )
             return None
 
-        def test_assattr(node: AssignAttr) -> AssignAttr:
+        def test_assattr(node: nodes.AssignAttr) -> nodes.AssignAttr:
             if node.attrname == "a":
                 node.attrname = "b"
                 return node
             return None
 
-        def test_getattr(node: Attribute) -> Attribute:
+        def test_getattr(node: nodes.Attribute) -> nodes.Attribute:
             if node.attrname == "a":
                 node.attrname = "b"
                 return node
             return None
 
-        def test_genexpr(node: GeneratorExp) -> GeneratorExp:
+        def test_genexpr(node: nodes.GeneratorExp) -> nodes.GeneratorExp:
             if node.elt.value == 1:
                 node.elt = nodes.Const(2, node.lineno, node.col_offset, node.parent)
                 return node

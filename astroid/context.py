@@ -15,11 +15,9 @@ from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 if TYPE_CHECKING:
     from astroid import constraint, nodes
-    from astroid.nodes.node_classes import Keyword
-    from astroid.nodes.node_ng import NodeNG
 
 _InferenceCache = dict[
-    tuple["NodeNG", str | None, str | None, str | None], Sequence["NodeNG"]
+    tuple["nodes.NodeNG", str | None, str | None, str | None], Sequence["nodes.NodeNG"]
 ]
 
 _INFERENCE_CACHE: _InferenceCache = {}
@@ -168,8 +166,8 @@ class CallContext:
 
     def __init__(
         self,
-        args: list[NodeNG],
-        keywords: list[Keyword] | None = None,
+        args: list[nodes.NodeNG],
+        keywords: list[nodes.Keyword] | None = None,
         callee: InferenceResult | None = None,
     ):
         self.args = args  # Call positional arguments
