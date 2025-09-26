@@ -3121,8 +3121,11 @@ class IfExp(NodeNG):
         except (InferenceError, StopIteration):
             both_branches = True
         else:
-            if not isinstance(test, util.UninferableBase):
-                if test.bool_value():
+            test_bool_value = test.bool_value()
+            if not isinstance(test, util.UninferableBase) and not isinstance(
+                test_bool_value, util.UninferableBase
+            ):
+                if test_bool_value:
                     yield from self.body.infer(context=lhs_context)
                 else:
                     yield from self.orelse.infer(context=rhs_context)
