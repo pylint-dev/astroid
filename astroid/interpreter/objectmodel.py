@@ -770,6 +770,12 @@ class SyntaxErrorInstanceModel(ExceptionInstanceModel):
         return node_classes.Const("")
 
 
+class GroupExceptionInstanceModel(ExceptionInstanceModel):
+    @property
+    def attr_exceptions(self) -> nodes.Tuple:
+        return node_classes.Tuple(parent=self._instance)
+
+
 class OSErrorInstanceModel(ExceptionInstanceModel):
     @property
     def attr_filename(self):
@@ -804,6 +810,7 @@ class UnicodeDecodeErrorInstanceModel(ExceptionInstanceModel):
 
 BUILTIN_EXCEPTIONS = {
     "builtins.SyntaxError": SyntaxErrorInstanceModel,
+    "builtins.ExceptionGroup": GroupExceptionInstanceModel,
     "builtins.ImportError": ImportErrorInstanceModel,
     "builtins.UnicodeDecodeError": UnicodeDecodeErrorInstanceModel,
     # These are all similar to OSError in terms of attributes
