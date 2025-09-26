@@ -15,6 +15,22 @@ from astroid.const import PY311_PLUS
 from astroid.context import InferenceContext
 
 
+@pytest.mark.skipif(not PY311_PLUS, reason="Exception group introduced in Python 3.11")
+def test_group_exceptions_exceptions() -> None:
+    node = extract_node(
+        textwrap.dedent(
+            """
+        try:
+            raise ExceptionGroup('', [TypeError(), TypeError()])
+        except ExceptionGroup as eg:
+            eg.exceptions #@"""
+        )
+    )
+
+    inferred = node.inferred()[0]
+    assert isinstance(inferred, nodes.Tuple)
+
+
 @pytest.mark.skipif(not PY311_PLUS, reason="Requires Python 3.11 or higher")
 def test_group_exceptions() -> None:
     node = extract_node(

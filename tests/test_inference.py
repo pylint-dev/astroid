@@ -2981,6 +2981,14 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(instance.infer())
         self.assertIs(inferred.bool_value(), util.Uninferable)
 
+    def test_bool_value_not_implemented(self) -> None:
+        node = extract_node("""NotImplemented""")
+        inferred = next(node.infer())
+        if PY314_PLUS:
+            self.assertIs(inferred.bool_value(), util.Uninferable)
+        else:
+            self.assertIs(inferred.bool_value(), True)
+
     def test_infer_coercion_rules_for_floats_complex(self) -> None:
         ast_nodes = extract_node(
             """

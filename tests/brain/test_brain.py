@@ -321,6 +321,16 @@ class CollectionsBrain(unittest.TestCase):
             ],
         )
 
+    def test_statistics_quantiles_from_import(self):
+        node = builder.extract_node(
+            """
+        from statistics import quantiles
+        quantiles([1, 2, 3, 4, 5, 6, 7, 8, 9], n=4)
+        """
+        )
+        inferred = next(node.infer())
+        self.assertIs(inferred, util.Uninferable)
+
 
 class TypingBrain(unittest.TestCase):
     def test_namedtuple_base(self) -> None:

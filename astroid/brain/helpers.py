@@ -75,6 +75,7 @@ def register_all_brains(manager: AstroidManager) -> None:
         brain_six,
         brain_sqlalchemy,
         brain_ssl,
+        brain_statistics,
         brain_subprocess,
         brain_threading,
         brain_type,
@@ -126,6 +127,7 @@ def register_all_brains(manager: AstroidManager) -> None:
     brain_six.register(manager)
     brain_sqlalchemy.register(manager)
     brain_ssl.register(manager)
+    brain_statistics.register(manager)
     brain_subprocess.register(manager)
     brain_threading.register(manager)
     brain_type.register(manager)
