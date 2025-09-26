@@ -204,9 +204,10 @@ def infer_named_tuple(
     )
     assert isinstance(func, nodes.NodeNG)
     try:
-        rename = next(
+        rename_arg_bool_value = next(
             call_site.infer_argument(func, "rename", context or InferenceContext())
         ).bool_value()
+        rename = rename_arg_bool_value is True
     except (InferenceError, StopIteration):
         rename = False
 

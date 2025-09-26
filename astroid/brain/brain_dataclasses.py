@@ -80,7 +80,7 @@ def dataclass_transform(node: nodes.ClassDef) -> None:
                 break
             for keyword in decorator.keywords:
                 if keyword.arg == "kw_only":
-                    kw_only_decorated = keyword.value.bool_value()
+                    kw_only_decorated = keyword.value.bool_value() is True
 
     init_str = _generate_dataclass_init(
         node,
@@ -156,7 +156,7 @@ def _check_generate_dataclass_init(node: nodes.ClassDef) -> bool:
     # Check for keyword arguments of the form init=False
     return not any(
         keyword.arg == "init"
-        and not keyword.value.bool_value()  # type: ignore[union-attr] # value is never None
+        and keyword.value.bool_value() is False  # type: ignore[union-attr] # value is never None
         for keyword in found.keywords
     )
 
@@ -272,7 +272,7 @@ def _generate_dataclass_init(
         if is_field:
             # Skip any fields that have `init=False`
             if any(
-                keyword.arg == "init" and not keyword.value.bool_value()
+                keyword.arg == "init" and (keyword.value.bool_value() is False)
                 for keyword in value.keywords  # type: ignore[union-attr] # value is never None
             ):
                 # Also remove the name from the previous arguments to be inserted later
@@ -342,7 +342,7 @@ def _generate_dataclass_init(
         if is_field:
             kw_only = [k for k in value.keywords if k.arg == "kw_only"]  # type: ignore[union-attr]
             if kw_only:
-                if kw_only[0].value.bool_value():
+                if kw_only[0].value.bool_value() is True:
                     kw_only_params.append(param_str)
                 else:
                     params.append(param_str)
