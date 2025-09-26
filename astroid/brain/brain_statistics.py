@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING
 from astroid.context import InferenceContext
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
-from astroid.nodes.node_classes import Attribute, Call, ImportFrom
+from astroid.nodes.node_classes import Attribute, Call, ImportFrom, Name
 from astroid.util import Uninferable
 
 if TYPE_CHECKING:
@@ -29,12 +29,12 @@ def _looks_like_statistics_quantiles(node: Call) -> bool:
     if isinstance(node.func, Attribute):
         if node.func.attrname != "quantiles":
             return False
-        if hasattr(node.func, "expr") and hasattr(node.func.expr, "name"):
+        if isinstance(node.func.expr, Name):
             if node.func.expr.name == "statistics":
                 return True
 
     # Case 2: from statistics import quantiles; quantiles(...)
-    if hasattr(node.func, "name") and node.func.name == "quantiles":
+    if isinstance(node.func, Name) and node.func.name == "quantiles":
         # Check if quantiles was imported from statistics
         try:
             frame = node.frame()
