@@ -12,7 +12,6 @@ from astroid.builder import AstroidBuilder
 from astroid.const import IS_PYPY
 from astroid.exceptions import _NonDeducibleTypeHierarchy
 from astroid.nodes.node_classes import UNATTACHED_UNKNOWN
-from astroid.nodes.scoped_nodes import ClassDef
 
 
 class TestHelpers(unittest.TestCase):
@@ -23,14 +22,14 @@ class TestHelpers(unittest.TestCase):
         self.builtins = astroid_manager.astroid_cache[builtins_name]
         self.manager = manager.AstroidManager()
 
-    def _extract(self, obj_name: str) -> ClassDef:
+    def _extract(self, obj_name: str) -> nodes.ClassDef:
         return self.builtins.getattr(obj_name)[0]
 
-    def _build_custom_builtin(self, obj_name: str) -> ClassDef:
+    def _build_custom_builtin(self, obj_name: str) -> nodes.ClassDef:
         proxy = raw_building.build_class(obj_name, self.builtins)
         return proxy
 
-    def assert_classes_equal(self, cls: ClassDef, other: ClassDef) -> None:
+    def assert_classes_equal(self, cls: nodes.ClassDef, other: nodes.ClassDef) -> None:
         self.assertEqual(cls.name, other.name)
         self.assertEqual(cls.parent, other.parent)
         self.assertEqual(cls.qname(), other.qname())

@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import unittest
 
-import astroid
 from astroid import builder, nodes, util
 from astroid.exceptions import AttributeInferenceError
 
@@ -184,8 +183,8 @@ class NamedTupleTest(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        self.assertIsInstance(inferred, astroid.ClassDef)
-        self.assertIsInstance(inferred.bases[0], astroid.Name)
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertIsInstance(inferred.bases[0], nodes.Name)
         self.assertEqual(inferred.bases[0].name, "tuple")
 
     def test_invalid_label_does_not_crash_inference(self) -> None:
@@ -196,7 +195,7 @@ class NamedTupleTest(unittest.TestCase):
         """
         node = builder.extract_node(code)
         inferred = next(node.infer())
-        assert isinstance(inferred, astroid.ClassDef)
+        assert isinstance(inferred, nodes.ClassDef)
         assert "b" not in inferred.locals
         assert "c" not in inferred.locals
 

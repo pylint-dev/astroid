@@ -15,7 +15,7 @@ from unittest import mock
 import pytest
 
 import astroid
-from astroid import manager, test_utils
+from astroid import manager, nodes, test_utils
 from astroid.const import IS_JYTHON, IS_PYPY, PY312_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -107,7 +107,7 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
         try:
             for name in ("foo", "bar", "baz"):
                 module = self.manager.ast_from_module_name("package." + name)
-                self.assertIsInstance(module, astroid.Module)
+                self.assertIsInstance(module, nodes.Module)
         finally:
             sys.path = origpath
 
@@ -181,10 +181,10 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
 
         try:
             module = self.manager.ast_from_module_name("namespace_pep_420.module")
-            self.assertIsInstance(module, astroid.Module)
+            self.assertIsInstance(module, nodes.Module)
             self.assertEqual(module.name, "namespace_pep_420.module")
             var = next(module.igetattr("var"))
-            self.assertIsInstance(var, astroid.Const)
+            self.assertIsInstance(var, nodes.Const)
             self.assertEqual(var.value, 42)
         finally:
             for _ in range(2):
@@ -202,7 +202,7 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
             module = self.manager.ast_from_module_name("foogle.fax")
             submodule = next(module.igetattr("a"))
             value = next(submodule.igetattr("x"))
-            self.assertIsInstance(value, astroid.Const)
+            self.assertIsInstance(value, nodes.Const)
             with self.assertRaises(AstroidImportError):
                 self.manager.ast_from_module_name("foogle.moogle")
         finally:

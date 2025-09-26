@@ -6,13 +6,13 @@
 
 import functools
 
+from astroid import nodes
 from astroid.brain.brain_numpy_utils import (
     attribute_name_looks_like_numpy_member,
     infer_numpy_attribute,
 )
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
-from astroid.nodes.node_classes import Attribute
 
 METHODS_TO_BE_INFERRED = {
     "linspace": """def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None, axis=0):
@@ -26,7 +26,7 @@ METHODS_TO_BE_INFERRED = {
 
 def register(manager: AstroidManager) -> None:
     manager.register_transform(
-        Attribute,
+        nodes.Attribute,
         inference_tip(functools.partial(infer_numpy_attribute, METHODS_TO_BE_INFERRED)),
         functools.partial(
             attribute_name_looks_like_numpy_member,

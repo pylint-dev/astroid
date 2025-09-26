@@ -412,7 +412,7 @@ class AstroidManager:
 
         `hook` must be a function that accepts a single argument `modname` which
         contains the name of the module or package that could not be imported.
-        If `hook` can resolve the import, must return a node of type `astroid.Module`,
+        If `hook` can resolve the import, must return a node of type `nodes.Module`,
         otherwise, it must raise `AstroidBuildingError`.
         """
         self._failed_import_hooks.append(hook)

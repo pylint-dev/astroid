@@ -43,22 +43,8 @@ from astroid.exceptions import (
     AttributeInferenceError,
     StatementMissing,
 )
-from astroid.nodes.node_classes import (
-    UNATTACHED_UNKNOWN,
-    AssignAttr,
-    AssignName,
-    Attribute,
-    Call,
-    ImportFrom,
-    Tuple,
-)
-from astroid.nodes.scoped_nodes import (
-    SYNTHETIC_ROOT,
-    ClassDef,
-    FunctionDef,
-    GeneratorExp,
-    Module,
-)
+from astroid.nodes.node_classes import UNATTACHED_UNKNOWN
+from astroid.nodes.scoped_nodes import SYNTHETIC_ROOT
 from tests.testdata.python3.recursion_error import LONG_CHAINED_METHOD_CALL
 
 from . import resources
@@ -68,7 +54,7 @@ abuilder = builder.AstroidBuilder(astroid.MANAGER)
 
 class AsStringTest(resources.SysPathSetup, unittest.TestCase):
     def test_tuple_as_string(self) -> None:
-        def build(string: str) -> Tuple:
+        def build(string: str) -> nodes.Tuple:
             return abuilder.string_build(string).body[0].value
 
         self.assertEqual(build("1,").as_string(), "(1, )")
@@ -411,7 +397,7 @@ class _NodeTest(unittest.TestCase):
     CODE = ""
 
     @property
-    def astroid(self) -> Module:
+    def astroid(self) -> nodes.Module:
         try:
             return self.__class__.__dict__["CODE_Astroid"]
         except KeyError:
@@ -606,9 +592,7 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         ast = self.module["modutils"]
         self.assertEqual(ast.as_string(), "from astroid import modutils")
         ast = self.module["NameNode"]
-        self.assertEqual(
-            ast.as_string(), "from astroid.nodes.node_classes import Name as NameNode"
-        )
+        self.assertEqual(ast.as_string(), "from astroid.nodes import Name as NameNode")
         ast = self.module["os"]
         self.assertEqual(ast.as_string(), "import os.path")
         code = """from . import here
@@ -908,8 +892,8 @@ class AnnAssignNodeTest(unittest.TestCase):
         assign = builder.extract_node(code)
         self.assertIsInstance(assign, nodes.AnnAssign)
         self.assertEqual(assign.target.name, "test")
-        self.assertIsInstance(assign.annotation, astroid.Subscript)
-        self.assertIsInstance(assign.value, astroid.Dict)
+        self.assertIsInstance(assign.annotation, nodes.Subscript)
+        self.assertIsInstance(assign.value, nodes.Dict)
 
     def test_as_string(self) -> None:
         code = textwrap.dedent(
@@ -1277,30 +1261,30 @@ class AliasesTest(unittest.TestCase):
     def setUp(self) -> None:
         self.transformer = transforms.TransformVisitor()
 
-    def parse_transform(self, code: str) -> Module:
+    def parse_transform(self, code: str) -> nodes.Module:
         module = parse(code, apply_transforms=False)
         return self.transformer.visit(module)
 
     def test_aliases(self) -> None:
-        def test_from(node: ImportFrom) -> ImportFrom:
+        def test_from(node: nodes.ImportFrom) -> nodes.ImportFrom:
             node.names = [*node.names, ("absolute_import", None)]
             return node
 
-        def test_class(node: ClassDef) -> ClassDef:
+        def test_class(node: nodes.ClassDef) -> nodes.ClassDef:
             node.name = "Bar"
             return node
 
-        def test_function(node: FunctionDef) -> FunctionDef:
+        def test_function(node: nodes.FunctionDef) -> nodes.FunctionDef:
             node.name = "another_test"
             return node
 
-        def test_callfunc(node: Call) -> Call | None:
+        def test_callfunc(node: nodes.Call) -> nodes.Call | None:
             if node.func.name == "Foo":
                 node.func.name = "Bar"
                 return node
             return None
 
-        def test_assname(node: AssignName) -> AssignName | None:
+        def test_assname(node: nodes.AssignName) -> nodes.AssignName | None:
             if node.name == "foo":
                 return nodes.AssignName(
                     "bar",
@@ -1312,19 +1296,19 @@ class AliasesTest(unittest.TestCase):
                 )
             return None
 
-        def test_assattr(node: AssignAttr) -> AssignAttr:
+        def test_assattr(node: nodes.AssignAttr) -> nodes.AssignAttr:
             if node.attrname == "a":
                 node.attrname = "b"
                 return node
             return None
 
-        def test_getattr(node: Attribute) -> Attribute:
+        def test_getattr(node: nodes.Attribute) -> nodes.Attribute:
             if node.attrname == "a":
                 node.attrname = "b"
                 return node
             return None
 
-        def test_genexpr(node: GeneratorExp) -> GeneratorExp:
+        def test_genexpr(node: nodes.GeneratorExp) -> nodes.GeneratorExp:
             if node.elt.value == 1:
                 node.elt = nodes.Const(2, node.lineno, node.col_offset, node.parent)
                 return node
@@ -1533,7 +1517,7 @@ def test_type_comments_with() -> None:
     )
     node = module.body[0]
     ignored_node = module.body[1]
-    assert isinstance(node.type_annotation, astroid.Name)
+    assert isinstance(node.type_annotation, nodes.Name)
 
     assert ignored_node.type_annotation is None
 
@@ -1549,7 +1533,7 @@ def test_type_comments_for() -> None:
     )
     node = module.body[0]
     ignored_node = module.body[1]
-    assert isinstance(node.type_annotation, astroid.Subscript)
+    assert isinstance(node.type_annotation, nodes.Subscript)
     assert node.type_annotation.as_string() == "List[int]"
 
     assert ignored_node.type_annotation is None
@@ -1564,7 +1548,7 @@ def test_type_coments_assign() -> None:
     )
     node = module.body[0]
     ignored_node = module.body[1]
-    assert isinstance(node.type_annotation, astroid.Subscript)
+    assert isinstance(node.type_annotation, nodes.Subscript)
     assert node.type_annotation.as_string() == "List[int]"
 
     assert ignored_node.type_annotation is None
@@ -1620,9 +1604,9 @@ def test_type_comments_function() -> None:
     """
     )
     expected_annotations = [
-        (["int"], astroid.Name, "str"),
-        (["int", "int", "int"], astroid.Tuple, "(str, str)"),
-        (["int", "int", "str", "List[int]"], astroid.Subscript, "List[int]"),
+        (["int"], nodes.Name, "str"),
+        (["int", "int", "int"], nodes.Tuple, "(str, str)"),
+        (["int", "int", "str", "List[int]"], nodes.Subscript, "List[int]"),
     ]
     for node, (expected_args, expected_returns_type, expected_returns_string) in zip(
         module.body, expected_annotations
@@ -1667,7 +1651,7 @@ def test_type_comments_arguments() -> None:
     ]
     for node, expected_args in zip(module.body, expected_annotations):
         assert len(node.type_comment_args) == 1
-        assert isinstance(node.type_comment_args[0], astroid.Const)
+        assert isinstance(node.type_comment_args[0], nodes.Const)
         assert node.type_comment_args[0].value == Ellipsis
         assert len(node.args.type_comment_args) == len(expected_args)
         for expected_arg, actual_arg in zip(expected_args, node.args.type_comment_args):
@@ -1696,7 +1680,7 @@ def test_type_comments_posonly_arguments() -> None:
     ]
     for node, expected_types in zip(module.body, expected_annotations):
         assert len(node.type_comment_args) == 1
-        assert isinstance(node.type_comment_args[0], astroid.Const)
+        assert isinstance(node.type_comment_args[0], nodes.Const)
         assert node.type_comment_args[0].value == Ellipsis
         type_comments = [
             node.args.type_comment_posonlyargs,
@@ -1917,15 +1901,15 @@ def test_parse_type_comments_with_proper_parent() -> None:
     assert len(type_comments) == 1
 
     type_comment = type_comments[0]
-    assert isinstance(type_comment, astroid.Attribute)
-    assert isinstance(type_comment.parent, astroid.Expr)
-    assert isinstance(type_comment.parent.parent, astroid.Arguments)
+    assert isinstance(type_comment, nodes.Attribute)
+    assert isinstance(type_comment.parent, nodes.Expr)
+    assert isinstance(type_comment.parent.parent, nodes.Arguments)
 
 
 def test_const_itered() -> None:
     code = 'a = "string"'
     node = astroid.extract_node(code).value
-    assert isinstance(node, astroid.Const)
+    assert isinstance(node, nodes.Const)
     itered = node.itered()
     assert len(itered) == 6
     assert [elem.value for elem in itered] == list("string")
@@ -1994,12 +1978,12 @@ class TestPatternMatching:
 
         assert isinstance(case0.pattern, nodes.MatchValue)
         assert (
-            isinstance(case0.pattern.value, astroid.Const)
+            isinstance(case0.pattern.value, nodes.Const)
             and case0.pattern.value.value == 200
         )
         assert list(case0.pattern.get_children()) == [case0.pattern.value]
         assert case0.guard is None
-        assert isinstance(case0.body[0], astroid.Pass)
+        assert isinstance(case0.body[0], nodes.Pass)
         assert list(case0.get_children()) == [case0.pattern, case0.body[0]]
 
         assert isinstance(case1.pattern, nodes.MatchOr)

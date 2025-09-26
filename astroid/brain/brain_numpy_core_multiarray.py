@@ -17,7 +17,6 @@ from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
-from astroid.nodes.node_classes import Attribute, Name
 
 
 def numpy_core_multiarray_transform() -> nodes.Module:
@@ -96,12 +95,12 @@ def register(manager: AstroidManager) -> None:
     method_names = frozenset(METHODS_TO_BE_INFERRED.keys())
 
     manager.register_transform(
-        Attribute,
+        nodes.Attribute,
         inference_tip(functools.partial(infer_numpy_attribute, METHODS_TO_BE_INFERRED)),
         functools.partial(attribute_name_looks_like_numpy_member, method_names),
     )
     manager.register_transform(
-        Name,
+        nodes.Name,
         inference_tip(functools.partial(infer_numpy_name, METHODS_TO_BE_INFERRED)),
         functools.partial(member_name_looks_like_numpy_member, method_names),
     )
