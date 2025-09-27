@@ -13,49 +13,44 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
+from astroid import nodes
 from astroid.context import InferenceContext
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
-from astroid.nodes.node_classes import Attribute, Call, ImportFrom, Name
 from astroid.util import Uninferable
 
 if TYPE_CHECKING:
     from astroid.typing import InferenceResult
 
 
-def _looks_like_statistics_quantiles(node: Call) -> bool:
+def _looks_like_statistics_quantiles(node: nodes.Call) -> bool:
     """Check if this is a call to statistics.quantiles."""
-    # Case 1: statistics.quantiles(...)
-    if isinstance(node.func, Attribute):
-        if node.func.attrname != "quantiles":
-            return False
-        if isinstance(node.func.expr, Name):
-            if node.func.expr.name == "statistics":
-                return True
-
-    # Case 2: from statistics import quantiles; quantiles(...)
-    if isinstance(node.func, Name) and node.func.name == "quantiles":
-        # Check if quantiles was imported from statistics
-        try:
-            frame = node.frame()
-            if "quantiles" in frame.locals:
-                # Look for import from statistics
-                for stmt in frame.body:
-                    if (
-                        isinstance(stmt, ImportFrom)
-                        and stmt.modname == "statistics"
-                        and any(name[0] == "quantiles" for name in stmt.names or [])
-                    ):
-                        return True
-        except (AttributeError, TypeError):
-            # If we can't determine the import context, be conservative
-            pass
-
+    match node.func:
+        case nodes.Attribute(expr=nodes.Name(name="statistics"), attrname="quantiles"):
+            # Case 1: statistics.quantiles(...)
+            return True
+        case nodes.Name(name="quantiles"):
+            # Case 2: from statistics import quantiles; quantiles(...)
+            # Check if quantiles was imported from statistics
+            try:
+                frame = node.frame()
+                if "quantiles" in frame.locals:
+                    # Look for import from statistics
+                    for stmt in frame.body:
+                        if (
+                            isinstance(stmt, nodes.ImportFrom)
+                            and stmt.modname == "statistics"
+                            and any(name[0] == "quantiles" for name in stmt.names or [])
+                        ):
+                            return True
+            except (AttributeError, TypeError):
+                # If we can't determine the import context, be conservative
+                pass
     return False
 
 
 def infer_statistics_quantiles(
-    node: Call, context: InferenceContext | None = None
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[InferenceResult]:
     """Infer the result of statistics.quantiles() calls.
 
@@ -72,7 +67,7 @@ def infer_statistics_quantiles(
 def register(manager: AstroidManager) -> None:
     """Register statistics-specific inference improvements."""
     manager.register_transform(
-        Call,
+        nodes.Call,
         inference_tip(infer_statistics_quantiles),
         _looks_like_statistics_quantiles,
     )
