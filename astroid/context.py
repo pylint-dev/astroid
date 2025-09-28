@@ -80,7 +80,9 @@ class InferenceContext:
         self.extra_context: dict[SuccessfulInferenceResult, InferenceContext] = {}
         """Context that needs to be passed down through call stacks for call arguments."""
 
-        self.constraints: dict[str, dict[nodes.If, set[constraint.Constraint]]] = {}
+        self.constraints: dict[
+            str, dict[nodes.If | nodes.IfExp, set[constraint.Constraint]]
+        ] = {}
         """The constraints on nodes."""
 
     @property
