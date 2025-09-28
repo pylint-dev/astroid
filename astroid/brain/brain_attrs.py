@@ -8,10 +8,9 @@ Astroid hook for the attrs library
 Without this hook pylint reports unsupported-assignment-operation
 for attrs classes
 """
+from astroid import nodes
 from astroid.brain.helpers import is_class_var
 from astroid.manager import AstroidManager
-from astroid.nodes.node_classes import AnnAssign, Assign, AssignName, Call, Unknown
-from astroid.nodes.scoped_nodes import ClassDef
 from astroid.util import safe_infer
 
 ATTRIB_NAMES = frozenset(
@@ -51,7 +50,7 @@ def is_decorated_with_attrs(node, decorator_names=ATTRS_NAMES) -> bool:
     if not node.decorators:
         return False
     for decorator_attribute in node.decorators.nodes:
-        if isinstance(decorator_attribute, Call):  # decorator with arguments
+        if isinstance(decorator_attribute, nodes.Call):  # decorator with arguments
             decorator_attribute = decorator_attribute.func
         if decorator_attribute.as_string() in decorator_names:
             return True
@@ -62,26 +61,26 @@ def is_decorated_with_attrs(node, decorator_names=ATTRS_NAMES) -> bool:
     return False
 
 
-def attr_attributes_transform(node: ClassDef) -> None:
+def attr_attributes_transform(node: nodes.ClassDef) -> None:
     """Given that the ClassNode has an attr decorator,
     rewrite class attributes as instance attributes
     """
     # Astroid can't infer this attribute properly
     # Prevents https://github.com/pylint-dev/pylint/issues/1884
-    node.locals["__attrs_attrs__"] = [Unknown(parent=node)]
+    node.locals["__attrs_attrs__"] = [nodes.Unknown(parent=node)]
 
     use_bare_annotations = is_decorated_with_attrs(node, NEW_ATTRS_NAMES)
     for cdef_body_node in node.body:
-        if not isinstance(cdef_body_node, (Assign, AnnAssign)):
+        if not isinstance(cdef_body_node, (nodes.Assign, nodes.AnnAssign)):
             continue
-        if isinstance(cdef_body_node.value, Call):
+        if isinstance(cdef_body_node.value, nodes.Call):
             if cdef_body_node.value.func.as_string() not in ATTRIB_NAMES:
                 continue
         elif not use_bare_annotations:
             continue
 
         # Skip attributes that are explicitly annotated as class variables
-        if isinstance(cdef_body_node, AnnAssign) and is_class_var(
+        if isinstance(cdef_body_node, nodes.AnnAssign) and is_class_var(
             cdef_body_node.annotation
         ):
             continue
@@ -92,12 +91,12 @@ def attr_attributes_transform(node: ClassDef) -> None:
             else [cdef_body_node.target]
         )
         for target in targets:
-            rhs_node = Unknown(
+            rhs_node = nodes.Unknown(
                 lineno=cdef_body_node.lineno,
                 col_offset=cdef_body_node.col_offset,
                 parent=cdef_body_node,
             )
-            if isinstance(target, AssignName):
+            if isinstance(target, nodes.AssignName):
                 # Could be a subscript if the code analysed is
                 # i = Optional[str] = ""
                 # See https://github.com/pylint-dev/pylint/issues/4439
@@ -107,5 +106,5 @@ def attr_attributes_transform(node: ClassDef) -> None:
 
 def register(manager: AstroidManager) -> None:
     manager.register_transform(
-        ClassDef, attr_attributes_transform, is_decorated_with_attrs
+        nodes.ClassDef, attr_attributes_transform, is_decorated_with_attrs
     )

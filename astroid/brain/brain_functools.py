@@ -17,8 +17,6 @@ from astroid.exceptions import InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.interpreter import objectmodel
 from astroid.manager import AstroidManager
-from astroid.nodes.node_classes import AssignName, Attribute, Call, Name
-from astroid.nodes.scoped_nodes import FunctionDef
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
 from astroid.util import UninferableBase, safe_infer
 
@@ -92,7 +90,7 @@ def _functools_partial_inference(
         raise UseInferenceDefault from exc
     if isinstance(inferred_wrapped_function, UninferableBase):
         raise UseInferenceDefault("Cannot infer the wrapped function")
-    if not isinstance(inferred_wrapped_function, FunctionDef):
+    if not isinstance(inferred_wrapped_function, nodes.FunctionDef):
         raise UseInferenceDefault("The wrapped function is not a function")
 
     # Determine if the passed keywords into the callsite are supported
@@ -106,7 +104,9 @@ def _functools_partial_inference(
             inferred_wrapped_function.args.kwonlyargs or (),
         )
     parameter_names = {
-        param.name for param in function_parameters if isinstance(param, AssignName)
+        param.name
+        for param in function_parameters
+        if isinstance(param, nodes.AssignName)
     }
     if set(call.keyword_arguments) - parameter_names:
         raise UseInferenceDefault("wrapped function received unknown parameters")
@@ -135,23 +135,25 @@ def _looks_like_lru_cache(node) -> bool:
     if not node.decorators:
         return False
     for decorator in node.decorators.nodes:
-        if not isinstance(decorator, (Attribute, Call)):
+        if not isinstance(decorator, (nodes.Attribute, nodes.Call)):
             continue
         if _looks_like_functools_member(decorator, "lru_cache"):
             return True
     return False
 
 
-def _looks_like_functools_member(node: Attribute | Call, member: str) -> bool:
+def _looks_like_functools_member(
+    node: nodes.Attribute | nodes.Call, member: str
+) -> bool:
     """Check if the given Call node is the wanted member of functools."""
-    if isinstance(node, Attribute):
+    if isinstance(node, nodes.Attribute):
         return node.attrname == member
-    if isinstance(node.func, Name):
+    if isinstance(node.func, nodes.Name):
         return node.func.name == member
-    if isinstance(node.func, Attribute):
+    if isinstance(node.func, nodes.Attribute):
         return (
             node.func.attrname == member
-            and isinstance(node.func.expr, Name)
+            and isinstance(node.func.expr, nodes.Name)
             and node.func.expr.name == "functools"
         )
     return False
@@ -161,10 +163,12 @@ _looks_like_partial = partial(_looks_like_functools_member, member="partial")
 
 
 def register(manager: AstroidManager) -> None:
-    manager.register_transform(FunctionDef, _transform_lru_cache, _looks_like_lru_cache)
+    manager.register_transform(
+        nodes.FunctionDef, _transform_lru_cache, _looks_like_lru_cache
+    )
 
     manager.register_transform(
-        Call,
+        nodes.Call,
         inference_tip(_functools_partial_inference),
         _looks_like_partial,
     )

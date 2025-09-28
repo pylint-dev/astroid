@@ -427,13 +427,13 @@ class FunctionModel(ObjectModel):
                 we get a new object which has two parameters, *self* and *type*.
                 """
                 nonlocal func
-                arguments = astroid.Arguments(
+                arguments = nodes.Arguments(
                     parent=func.args.parent, vararg=None, kwarg=None
                 )
 
                 positional_or_keyword_params = func.args.args.copy()
                 positional_or_keyword_params.append(
-                    astroid.AssignName(
+                    nodes.AssignName(
                         name="type",
                         lineno=0,
                         col_offset=0,
@@ -953,7 +953,7 @@ class PropertyModel(ObjectModel):
     def attr_fset(self):
         func = self._instance
 
-        def find_setter(func: Property) -> astroid.FunctionDef | None:
+        def find_setter(func: Property) -> nodes.FunctionDef | None:
             """
             Given a property, find the corresponding setter function and returns it.
 

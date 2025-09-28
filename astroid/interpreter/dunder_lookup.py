@@ -18,20 +18,20 @@ import itertools
 from typing import TYPE_CHECKING
 
 import astroid
+from astroid import nodes
 from astroid.exceptions import AttributeInferenceError
 
 if TYPE_CHECKING:
-    from astroid import nodes
     from astroid.context import InferenceContext
 
 
 def _lookup_in_mro(node, name) -> list:
     attrs = node.locals.get(name, [])
 
-    nodes = itertools.chain.from_iterable(
+    nodes_ = itertools.chain.from_iterable(
         ancestor.locals.get(name, []) for ancestor in node.ancestors(recurs=True)
     )
-    values = list(itertools.chain(attrs, nodes))
+    values = list(itertools.chain(attrs, nodes_))
     if not values:
         raise AttributeInferenceError(attribute=name, target=node)
 
@@ -47,13 +47,11 @@ def lookup(
     will be returned. Otherwise, `astroid.AttributeInferenceError`
     is going to be raised.
     """
-    if isinstance(
-        node, (astroid.List, astroid.Tuple, astroid.Const, astroid.Dict, astroid.Set)
-    ):
+    if isinstance(node, (nodes.List, nodes.Tuple, nodes.Const, nodes.Dict, nodes.Set)):
         return _builtin_lookup(node, name)
     if isinstance(node, astroid.Instance):
         return _lookup_in_mro(node, name)
-    if isinstance(node, astroid.ClassDef):
+    if isinstance(node, nodes.ClassDef):
         return _class_lookup(node, name, context=context)
 
     raise AttributeInferenceError(attribute=name, target=node)

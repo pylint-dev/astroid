@@ -122,7 +122,7 @@ class ProtocolTests(unittest.TestCase):
 
         for1_starred = next(assign_stmts.nodes_of_class(nodes.Starred))
         assigned = next(for1_starred.assigned_stmts())
-        assert isinstance(assigned, astroid.List)
+        assert isinstance(assigned, nodes.List)
         assert assigned.as_string() == "[1, 2]"
 
     def _get_starred_stmts(self, code: str) -> list | UninferableBase:
@@ -236,7 +236,7 @@ class ProtocolTests(unittest.TestCase):
             node.root().locals["__all__"] = [node.value]
 
         manager = astroid.MANAGER
-        with _add_transform(manager, astroid.Assign, transform):
+        with _add_transform(manager, nodes.Assign, transform):
             module = astroid.parse(
                 """
             __all__ = ['a']

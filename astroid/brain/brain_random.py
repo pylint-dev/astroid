@@ -6,27 +6,18 @@ from __future__ import annotations
 
 import random
 
+from astroid import nodes
 from astroid.context import InferenceContext
 from astroid.exceptions import UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
-from astroid.nodes.node_classes import (
-    Attribute,
-    Call,
-    Const,
-    EvaluatedObject,
-    List,
-    Name,
-    Set,
-    Tuple,
-)
 from astroid.util import safe_infer
 
-ACCEPTED_ITERABLES_FOR_SAMPLE = (List, Set, Tuple)
+ACCEPTED_ITERABLES_FOR_SAMPLE = (nodes.List, nodes.Set, nodes.Tuple)
 
 
 def _clone_node_with_lineno(node, parent, lineno):
-    if isinstance(node, EvaluatedObject):
+    if isinstance(node, nodes.EvaluatedObject):
         node = node.original
     cls = node.__class__
     other_fields = node._other_fields
@@ -52,7 +43,7 @@ def infer_random_sample(node, context: InferenceContext | None = None):
         raise UseInferenceDefault
 
     inferred_length = safe_infer(node.args[1], context=context)
-    if not isinstance(inferred_length, Const):
+    if not isinstance(inferred_length, nodes.Const):
         raise UseInferenceDefault
     if not isinstance(inferred_length.value, int):
         raise UseInferenceDefault
@@ -73,7 +64,7 @@ def infer_random_sample(node, context: InferenceContext | None = None):
     except ValueError as exc:
         raise UseInferenceDefault from exc
 
-    new_node = List(
+    new_node = nodes.List(
         lineno=node.lineno,
         col_offset=node.col_offset,
         parent=node.scope(),
@@ -90,14 +81,14 @@ def infer_random_sample(node, context: InferenceContext | None = None):
 
 def _looks_like_random_sample(node) -> bool:
     func = node.func
-    if isinstance(func, Attribute):
+    if isinstance(func, nodes.Attribute):
         return func.attrname == "sample"
-    if isinstance(func, Name):
+    if isinstance(func, nodes.Name):
         return func.name == "sample"
     return False
 
 
 def register(manager: AstroidManager) -> None:
     manager.register_transform(
-        Call, inference_tip(infer_random_sample), _looks_like_random_sample
+        nodes.Call, inference_tip(infer_random_sample), _looks_like_random_sample
     )
