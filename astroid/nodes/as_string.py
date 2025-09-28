@@ -14,7 +14,6 @@ from astroid import nodes
 
 if TYPE_CHECKING:
     from astroid import objects
-    from astroid.nodes.node_ng import NodeNG
 
 # pylint: disable=unused-argument
 
@@ -29,7 +28,7 @@ class AsStringVisitor:
     def __init__(self, indent: str = "    "):
         self.indent: str = indent
 
-    def __call__(self, node: NodeNG) -> str:
+    def __call__(self, node: nodes.NodeNG) -> str:
         """Makes this visitor behave as a simple function"""
         return node.accept(self).replace(DOC_NEWLINE, "\n")
 
@@ -53,7 +52,7 @@ class AsStringVisitor:
         return self.indent + stmts_str.replace("\n", "\n" + self.indent)
 
     def _precedence_parens(
-        self, node: NodeNG, child: NodeNG, is_left: bool = True
+        self, node: nodes.NodeNG, child: nodes.NodeNG, is_left: bool = True
     ) -> str:
         """Wrap child in parens only if required to keep same semantics"""
         if self._should_wrap(node, child, is_left):
@@ -61,7 +60,9 @@ class AsStringVisitor:
 
         return child.accept(self)
 
-    def _should_wrap(self, node: NodeNG, child: NodeNG, is_left: bool) -> bool:
+    def _should_wrap(
+        self, node: nodes.NodeNG, child: nodes.NodeNG, is_left: bool
+    ) -> bool:
         """Wrap child if:
         - it has lower precedence
         - same precedence with position opposite to associativity direction
