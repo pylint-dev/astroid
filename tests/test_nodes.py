@@ -13,6 +13,7 @@ import random
 import sys
 import textwrap
 import unittest
+import warnings
 from typing import Any
 
 import pytest
@@ -2311,3 +2312,21 @@ def test_arguments_default_value():
 
     node = extract_node("def fruit(seeds, flavor='good', *, peel='maybe'): ...")
     assert node.args.default_value("flavor").value == "good"
+
+
+def test_deprecated_nodes_import_from_toplevel():
+    # pylint: disable=import-outside-toplevel,no-name-in-module
+    with pytest.raises(
+        DeprecationWarning, match="importing 'For' from 'astroid' is deprecated"
+    ):
+        from astroid import For
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        from astroid import For
+
+        assert For is nodes.For
+
+    # This should not raise a DeprecationWarning
+    # pylint: disable-next=unused-import
+    from astroid import builtin_lookup
