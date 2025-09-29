@@ -34,7 +34,7 @@ def main() -> None:
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
     logging.debug(f"Launching bump_changelog with args: {args}")
-    if any(s in args.version for s in ("dev", "a", "b")):
+    if any(s in args.version for s in ("dev", "a", "b", "rc")):
         return
     with open(DEFAULT_CHANGELOG_PATH, encoding="utf-8") as f:
         content = f.read()
