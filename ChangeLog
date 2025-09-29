@@ -96,6 +96,11 @@ Release date: TBA
   Closes pylint-dev/pylint#8985
   Closes pylint-dev/pylint#10558
 
+* Deprecate importing node classes from ``astroid`` directly. This will be removed in v5.
+  It's recommended to import them from ``astroid.nodes`` instead.
+
+  Refs #2837
+
 
 What's New in astroid 3.3.11?
 =============================

@@ -2311,3 +2311,11 @@ def test_arguments_default_value():
 
     node = extract_node("def fruit(seeds, flavor='good', *, peel='maybe'): ...")
     assert node.args.default_value("flavor").value == "good"
+
+
+def test_deprecated_nodes_import_from_toplevel():
+    with pytest.raises(
+        DeprecationWarning, match="importing 'For' from 'astroid' is deprecated"
+    ):
+        # pylint: disable-next=import-outside-toplevel,no-name-in-module,unused-import
+        from astroid import For
