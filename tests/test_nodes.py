@@ -2326,3 +2326,7 @@ def test_deprecated_nodes_import_from_toplevel():
         from astroid import For
 
         assert For is nodes.For
+
+    # This should not raise a DeprecationWarning
+    # pylint: disable-next=unused-import
+    from astroid import builtin_lookup
