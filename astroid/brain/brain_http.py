@@ -35,6 +35,7 @@ def _http_transform() -> nodes.Module:
         SWITCHING_PROTOCOLS = _HTTPStatus(101, 'Switching Protocols',
                 'Switching to new protocol; obey Upgrade header')
         PROCESSING = _HTTPStatus(102, 'Processing', '')
+        EARLY_HINTS = _HTTPStatus(103, 'Early Hints')
         OK = _HTTPStatus(200, 'OK', 'Request fulfilled, document follows')
         CREATED = _HTTPStatus(201, 'Created', 'Document created, URL follows')
         ACCEPTED = _HTTPStatus(202, 'Accepted',
@@ -99,12 +100,15 @@ def _http_transform() -> nodes.Module:
         REQUESTED_RANGE_NOT_SATISFIABLE = RANGE_NOT_SATISFIABLE
         EXPECTATION_FAILED = _HTTPStatus(417, 'Expectation Failed',
             'Expect condition could not be satisfied')
+        IM_A_TEAPOT = _HTTPStatus(418, 'I\\\'m a Teapot',
+            'Server refuses to brew coffee because it is a teapot.')
         MISDIRECTED_REQUEST = _HTTPStatus(421, 'Misdirected Request',
             'Server is not able to produce a response')
         UNPROCESSABLE_CONTENT = _HTTPStatus(422, 'Unprocessable Content')
         UNPROCESSABLE_ENTITY = UNPROCESSABLE_CONTENT
         LOCKED = _HTTPStatus(423, 'Locked')
         FAILED_DEPENDENCY = _HTTPStatus(424, 'Failed Dependency')
+        TOO_EARLY = _HTTPStatus(425, 'Too Early')
         UPGRADE_REQUIRED = _HTTPStatus(426, 'Upgrade Required')
         PRECONDITION_REQUIRED = _HTTPStatus(428, 'Precondition Required',
             'The origin server requires the request to be conditional')
@@ -152,6 +156,7 @@ def _http_client_transform() -> nodes.Module:
     CONTINUE = HTTPStatus.CONTINUE
     SWITCHING_PROTOCOLS = HTTPStatus.SWITCHING_PROTOCOLS
     PROCESSING = HTTPStatus.PROCESSING
+    EARLY_HINTS = HTTPStatus.EARLY_HINTS
     OK = HTTPStatus.OK
     CREATED = HTTPStatus.CREATED
     ACCEPTED = HTTPStatus.ACCEPTED
@@ -191,10 +196,12 @@ def _http_client_transform() -> nodes.Module:
     RANGE_NOT_SATISFIABLE = HTTPStatus.RANGE_NOT_SATISFIABLE
     REQUESTED_RANGE_NOT_SATISFIABLE = HTTPStatus.RANGE_NOT_SATISFIABLE
     EXPECTATION_FAILED = HTTPStatus.EXPECTATION_FAILED
+    IM_A_TEAPOT = HTTPStatus.IM_A_TEAPOT
     UNPROCESSABLE_CONTENT = HTTPStatus.UNPROCESSABLE_CONTENT
     UNPROCESSABLE_ENTITY = HTTPStatus.UNPROCESSABLE_CONTENT
     LOCKED = HTTPStatus.LOCKED
     FAILED_DEPENDENCY = HTTPStatus.FAILED_DEPENDENCY
+    TOO_EARLY = HTTPStatus.TOO_EARLY
     UPGRADE_REQUIRED = HTTPStatus.UPGRADE_REQUIRED
     PRECONDITION_REQUIRED = HTTPStatus.PRECONDITION_REQUIRED
     TOO_MANY_REQUESTS = HTTPStatus.TOO_MANY_REQUESTS
