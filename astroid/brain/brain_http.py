@@ -87,20 +87,22 @@ def _http_transform() -> nodes.Module:
             'Client must specify Content-Length')
         PRECONDITION_FAILED = _HTTPStatus(412, 'Precondition Failed',
             'Precondition in headers is false')
-        REQUEST_ENTITY_TOO_LARGE = _HTTPStatus(413, 'Request Entity Too Large',
-            'Entity is too large')
-        REQUEST_URI_TOO_LONG = _HTTPStatus(414, 'Request-URI Too Long',
-            'URI is too long')
+        CONTENT_TOO_LARGE = _HTTPStatus(413, 'Content Too Large',
+        'Content is too large')
+        REQUEST_ENTITY_TOO_LARGE = CONTENT_TOO_LARGE
+        URI_TOO_LONG = _HTTPStatus(414, 'URI Too Long', 'URI is too long')
+        REQUEST_URI_TOO_LONG = URI_TOO_LONG
         UNSUPPORTED_MEDIA_TYPE = _HTTPStatus(415, 'Unsupported Media Type',
             'Entity body in unsupported format')
-        REQUESTED_RANGE_NOT_SATISFIABLE = _HTTPStatus(416,
-            'Requested Range Not Satisfiable',
-            'Cannot satisfy request range')
+        RANGE_NOT_SATISFIABLE = (416, 'Range Not Satisfiable',
+        'Cannot satisfy request range')
+        REQUESTED_RANGE_NOT_SATISFIABLE = RANGE_NOT_SATISFIABLE
         EXPECTATION_FAILED = _HTTPStatus(417, 'Expectation Failed',
             'Expect condition could not be satisfied')
         MISDIRECTED_REQUEST = _HTTPStatus(421, 'Misdirected Request',
             'Server is not able to produce a response')
-        UNPROCESSABLE_ENTITY = _HTTPStatus(422, 'Unprocessable Entity')
+        UNPROCESSABLE_CONTENT = _HTTPStatus(422, 'Unprocessable Content')
+        UNPROCESSABLE_ENTITY = UNPROCESSABLE_CONTENT
         LOCKED = _HTTPStatus(423, 'Locked')
         FAILED_DEPENDENCY = _HTTPStatus(424, 'Failed Dependency')
         UPGRADE_REQUIRED = _HTTPStatus(426, 'Upgrade Required')
@@ -181,12 +183,16 @@ def _http_client_transform() -> nodes.Module:
     GONE = HTTPStatus.GONE
     LENGTH_REQUIRED = HTTPStatus.LENGTH_REQUIRED
     PRECONDITION_FAILED = HTTPStatus.PRECONDITION_FAILED
-    REQUEST_ENTITY_TOO_LARGE = HTTPStatus.REQUEST_ENTITY_TOO_LARGE
-    REQUEST_URI_TOO_LONG = HTTPStatus.REQUEST_URI_TOO_LONG
+    CONTENT_TOO_LARGE = HTTPStatus.CONTENT_TOO_LARGE
+    REQUEST_ENTITY_TOO_LARGE = HTTPStatus.CONTENT_TOO_LARGE
+    URI_TOO_LONG = HTTPStatus.URI_TOO_LONG
+    REQUEST_URI_TOO_LONG = HTTPStatus.URI_TOO_LONG
     UNSUPPORTED_MEDIA_TYPE = HTTPStatus.UNSUPPORTED_MEDIA_TYPE
-    REQUESTED_RANGE_NOT_SATISFIABLE = HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE
+    RANGE_NOT_SATISFIABLE = HTTPStatus.RANGE_NOT_SATISFIABLE
+    REQUESTED_RANGE_NOT_SATISFIABLE = HTTPStatus.RANGE_NOT_SATISFIABLE
     EXPECTATION_FAILED = HTTPStatus.EXPECTATION_FAILED
-    UNPROCESSABLE_ENTITY = HTTPStatus.UNPROCESSABLE_ENTITY
+    UNPROCESSABLE_CONTENT = HTTPStatus.UNPROCESSABLE_CONTENT
+    UNPROCESSABLE_ENTITY = HTTPStatus.UNPROCESSABLE_CONTENT
     LOCKED = HTTPStatus.LOCKED
     FAILED_DEPENDENCY = HTTPStatus.FAILED_DEPENDENCY
     UPGRADE_REQUIRED = HTTPStatus.UPGRADE_REQUIRED
