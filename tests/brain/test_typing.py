@@ -70,3 +70,23 @@ class TestTypingAlias:
         inferred = next(node.value.infer())
         assert isinstance(inferred, bases.Instance)
         assert inferred.name == "_SpecialGenericAlias"
+
+
+class TestSpecialAlias:
+    @pytest.mark.parametrize(
+        "code",
+        [
+            "_CallableType()",
+            "_TupleType()",
+        ],
+    )
+    def test_special_alias_no_crash_on_empty_args(self, code: str) -> None:
+        """
+        Regression test for: https://github.com/pylint-dev/astroid/issues/2772
+
+        Test that _CallableType() and _TupleType() calls with no arguments
+        do not cause an IndexError.
+        """
+        # Should not raise IndexError
+        module = builder.parse(code)
+        assert isinstance(module, nodes.Module)
