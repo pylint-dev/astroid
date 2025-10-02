@@ -1223,7 +1223,7 @@ class FunctionDef(
         The property will return all the callables that are used for
         decoration.
         """
-        if not self.parent or not isinstance(frame := self.parent.frame(), ClassDef):
+        if not (self.parent and isinstance(frame := self.parent.frame(), ClassDef)):
             return []
 
         decorators: list[node_classes.Call] = []
@@ -1517,7 +1517,7 @@ class FunctionDef(
     ) -> Generator[objects.Property | FunctionDef, None, InferenceErrorInfo]:
         from astroid import objects  # pylint: disable=import-outside-toplevel
 
-        if not self.decorators or not bases._is_property(self):
+        if not (self.decorators and bases._is_property(self)):
             yield self
             return InferenceErrorInfo(node=self, context=context)
 
@@ -2725,9 +2725,10 @@ class ClassDef(
             for elt in values:
                 try:
                     for inferred in elt.infer():
-                        if not isinstance(
-                            inferred, node_classes.Const
-                        ) or not isinstance(inferred.value, str):
+                        if not (
+                            isinstance(inferred, node_classes.Const)
+                            and isinstance(inferred.value, str)
+                        ):
                             continue
                         if not inferred.value:
                             continue

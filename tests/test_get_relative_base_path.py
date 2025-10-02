@@ -14,7 +14,7 @@ class TestModUtilsRelativePath(unittest.TestCase):
         self.cwd = os.getcwd()
 
     def _run_relative_path_test(self, target, base, expected):
-        if not target or not base:
+        if not (target and base):
             result = None
         else:
             base_dir = os.path.join(self.cwd, base)

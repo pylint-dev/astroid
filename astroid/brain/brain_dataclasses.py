@@ -45,7 +45,7 @@ def is_decorated_with_dataclass(
     node: nodes.ClassDef, decorator_names: frozenset[str] = DATACLASSES_DECORATORS
 ) -> bool:
     """Return True if a decorated node has a `dataclass` decorator applied."""
-    if not isinstance(node, nodes.ClassDef) or not node.decorators:
+    if not (isinstance(node, nodes.ClassDef) and node.decorators):
         return False
 
     return any(
@@ -112,8 +112,9 @@ def _get_dataclass_attributes(
     If init is True, also include InitVars.
     """
     for assign_node in node.body:
-        if not isinstance(assign_node, nodes.AnnAssign) or not isinstance(
-            assign_node.target, nodes.AssignName
+        if not (
+            isinstance(assign_node, nodes.AnnAssign)
+            and isinstance(assign_node.target, nodes.AssignName)
         ):
             continue
 

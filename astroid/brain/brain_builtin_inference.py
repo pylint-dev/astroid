@@ -998,7 +998,7 @@ def _infer_copy_method(
 
 def _is_str_format_call(node: nodes.Call) -> bool:
     """Catch calls to str.format()."""
-    if not isinstance(node.func, nodes.Attribute) or not node.func.attrname == "format":
+    if not (isinstance(node.func, nodes.Attribute) and node.func.attrname == "format"):
         return False
 
     if isinstance(node.func.expr, nodes.Name):
@@ -1018,8 +1018,9 @@ def _infer_str_format_call(
 
     value: nodes.Const
     if isinstance(node.func.expr, nodes.Name):
-        if not (inferred := util.safe_infer(node.func.expr)) or not isinstance(
-            inferred, nodes.Const
+        if not (
+            (inferred := util.safe_infer(node.func.expr))
+            and isinstance(inferred, nodes.Const)
         ):
             return iter([util.Uninferable])
         value = inferred
