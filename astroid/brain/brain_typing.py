@@ -291,10 +291,10 @@ def infer_typing_alias(
 
     # TODO: evaluate if still necessary when Py3.12 is minimum
     """
-    if (
-        not isinstance(node.parent, nodes.Assign)
-        or not len(node.parent.targets) == 1
-        or not isinstance(node.parent.targets[0], nodes.AssignName)
+    if not (
+        isinstance(node.parent, nodes.Assign)
+        and len(node.parent.targets) == 1
+        and isinstance(node.parent.targets[0], nodes.AssignName)
     ):
         raise UseInferenceDefault
     try:
@@ -412,10 +412,10 @@ def infer_typing_cast(
         func = next(node.func.infer(context=ctx))
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
-    if (
-        not isinstance(func, nodes.FunctionDef)
-        or func.qname() != "typing.cast"
-        or len(node.args) != 2
+    if not (
+        isinstance(func, nodes.FunctionDef)
+        and func.qname() == "typing.cast"
+        and len(node.args) == 2
     ):
         raise UseInferenceDefault
 
