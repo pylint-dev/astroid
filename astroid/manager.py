@@ -64,6 +64,7 @@ class AstroidManager:
         "extension_package_whitelist": set(),
         "module_denylist": set(),
         "_transform": TransformVisitor(),
+        "_early_transform": TransformVisitor(),
         "prefer_stubs": False,
     }
 
@@ -77,6 +78,7 @@ class AstroidManager:
         ]
         self.module_denylist = AstroidManager.brain["module_denylist"]
         self._transform = AstroidManager.brain["_transform"]
+        self._early_transform = AstroidManager.brain["_early_transform"]
         self.prefer_stubs = AstroidManager.brain["prefer_stubs"]
 
     @property
@@ -113,6 +115,15 @@ class AstroidManager:
         return self._transform.unregister_transform
 
     @property
+    def register_early_transform(self):
+        # This and unregister_early_transform below are exported for convenience
+        return self._early_transform.register_transform
+
+    @property
+    def unregister_early_transform(self):
+        return self._early_transform.unregister_transform
+
+    @property
     def builtins_module(self) -> nodes.Module:
         return self.astroid_cache["builtins"]
 
@@ -127,6 +138,10 @@ class AstroidManager:
     def visit_transforms(self, node: nodes.NodeNG) -> InferenceResult:
         """Visit the transforms and apply them to the given *node*."""
         return self._transform.visit(node)
+
+    def visit_early_transforms(self, node: nodes.NodeNG) -> InferenceResult:
+        """Visit the early transforms and apply them to the given *node*."""
+        return self._early_transform.visit(node)
 
     def ast_from_file(
         self,
@@ -455,6 +470,9 @@ class AstroidManager:
 
         # NB: not a new TransformVisitor()
         AstroidManager.brain["_transform"].transforms = collections.defaultdict(list)
+        AstroidManager.brain["_early_transform"].transforms = collections.defaultdict(
+            list
+        )
 
         for lru_cache in (
             LookupMixIn.lookup,
