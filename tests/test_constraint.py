@@ -8,6 +8,7 @@ from __future__ import annotations
 import pytest
 
 from astroid import builder, nodes
+from astroid.bases import Instance
 from astroid.util import Uninferable
 
 
@@ -19,6 +20,8 @@ def common_params(node: str) -> pytest.MarkDecorator:
             (f"{node} is not None", 3, None),
             (f"{node}", 3, None),
             (f"not {node}", None, 3),
+            (f"isinstance({node}, int)", 3, None),
+            (f"isinstance({node}, (int, str))", 3, None),
         ),
     )
 
@@ -773,3 +776,134 @@ def test_if_exp_instance_attr_varname_collision(
     assert isinstance(inferred[0], nodes.Const)
     assert inferred[0].value == fail_val
     assert inferred[1].value is Uninferable
+
+
+def test_isinstance_equal_types() -> None:
+    """Test constraint for an object whose type is equal to the checked type."""
+    node = builder.extract_node(
+        f"""
+    class A:
+        pass
+
+    x = A()
+
+    if isinstance(x, A):
+        x  #@
+    """
+    )
+
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], Instance)
+    assert isinstance(inferred[0]._proxied, nodes.ClassDef)
+    assert inferred[0].name == "A"
+
+
+def test_isinstance_subtype() -> None:
+    """Test constraint for an object whose type is a strict subtype of the checked type."""
+    node = builder.extract_node(
+        f"""
+    class A:
+        pass
+
+    class B(A):
+        pass
+
+    x = B()
+
+    if isinstance(x, A):
+        x  #@
+    """
+    )
+
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], Instance)
+    assert isinstance(inferred[0]._proxied, nodes.ClassDef)
+    assert inferred[0].name == "B"
+
+
+def test_isinstance_unrelated_types():
+    """Test constraint for an object whose type is not related to the checked type."""
+    node = builder.extract_node(
+        f"""
+    class A:
+        pass
+
+    class B:
+        pass
+
+    x = A()
+
+    if isinstance(x, B):
+        x  #@
+    """
+    )
+
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+
+def test_isinstance_supertype():
+    """Test constraint for an object whose type is a strict supertype of the checked type."""
+    node = builder.extract_node(
+        f"""
+    class A:
+        pass
+
+    class B(A):
+        pass
+
+    x = A()
+
+    if isinstance(x, B):
+        x  #@
+    """
+    )
+
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+
+def test_isinstance_keyword_arguments():
+    """Test that constraint does not apply when `isinstance` is called
+    with keyword arguments.
+    """
+    n1, n2 = builder.extract_node(
+        f"""
+    x = 3
+
+    if isinstance(object=x, classinfo=str):
+        x  #@
+
+    if isinstance(x, str, object=x, classinfo=str):
+        x  #@
+    """
+    )
+
+    for node in (n1, n2):
+        inferred = node.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], nodes.Const)
+        assert inferred[0].value == 3
+
+
+def test_isinstance_extra_argument():
+    """Test that constraint does not apply when `isinstance` is called
+    with more than two positional arguments.
+    """
+    node = builder.extract_node(
+        f"""
+    x = 3
+
+    if isinstance(x, str, bool):
+        x  #@
+    """
+    )
+
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 3
