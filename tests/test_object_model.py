@@ -265,10 +265,13 @@ class ModuleModelTest(unittest.TestCase):
         xml.__setattr__ #@
         xml.__reduce_ex__ #@
         xml.__lt__ #@
+        xml.__le__ #@
         xml.__eq__ #@
+        xml.__ne__ #@
+        xml.__ge__ #@
         xml.__gt__ #@
         xml.__format__ #@
-        xml.__delattr___ #@
+        xml.__delattr__ #@
         xml.__getattribute__ #@
         xml.__hash__ #@
         xml.__dir__ #@
@@ -326,7 +329,7 @@ class ModuleModelTest(unittest.TestCase):
 
         # The following nodes are just here for theoretical completeness,
         # and they either return Uninferable or raise InferenceError.
-        for ast_node in ast_nodes[11:28]:
+        for ast_node in ast_nodes[11:31]:
             with pytest.raises(InferenceError):
                 next(ast_node.infer())
 
@@ -449,16 +452,23 @@ class FunctionModelTest(unittest.TestCase):
 
         func.__reduce_ex__ #@
         func.__lt__ #@
+        func.__le__ #@
         func.__eq__ #@
+        func.__ne__ #@
+        func.__ge__ #@
         func.__gt__ #@
         func.__format__ #@
-        func.__delattr___ #@
+        func.__delattr__ #@
         func.__getattribute__ #@
         func.__hash__ #@
         func.__dir__ #@
         func.__class__ #@
 
         func.__setattr__ #@
+        func.__builtins__ #@
+        func.__getstate__ #@
+        func.__init_subclass__ #@
+        func.__type_params__ #@
         ''',
             module_name="fake_module",
         )
@@ -513,13 +523,9 @@ class FunctionModelTest(unittest.TestCase):
 
         # The following nodes are just here for theoretical completeness,
         # and they either return Uninferable or raise InferenceError.
-        for ast_node in ast_nodes[11:26]:
+        for ast_node in ast_nodes[11:34]:
             inferred = next(ast_node.infer())
             assert inferred is util.Uninferable
-
-        for ast_node in ast_nodes[26:27]:
-            with pytest.raises(InferenceError):
-                inferred = next(ast_node.infer())
 
     def test_empty_return_annotation(self) -> None:
         ast_node = builder.extract_node(
