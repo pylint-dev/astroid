@@ -781,7 +781,7 @@ def test_if_exp_instance_attr_varname_collision(
 def test_isinstance_equal_types() -> None:
     """Test constraint for an object whose type is equal to the checked type."""
     node = builder.extract_node(
-        f"""
+        """
     class A:
         pass
 
@@ -802,7 +802,7 @@ def test_isinstance_equal_types() -> None:
 def test_isinstance_subtype() -> None:
     """Test constraint for an object whose type is a strict subtype of the checked type."""
     node = builder.extract_node(
-        f"""
+        """
     class A:
         pass
 
@@ -826,7 +826,7 @@ def test_isinstance_subtype() -> None:
 def test_isinstance_unrelated_types():
     """Test constraint for an object whose type is not related to the checked type."""
     node = builder.extract_node(
-        f"""
+        """
     class A:
         pass
 
@@ -848,7 +848,7 @@ def test_isinstance_unrelated_types():
 def test_isinstance_supertype():
     """Test constraint for an object whose type is a strict supertype of the checked type."""
     node = builder.extract_node(
-        f"""
+        """
     class A:
         pass
 
@@ -872,7 +872,7 @@ def test_isinstance_keyword_arguments():
     with keyword arguments.
     """
     n1, n2 = builder.extract_node(
-        f"""
+        """
     x = 3
 
     if isinstance(object=x, classinfo=str):
@@ -895,7 +895,7 @@ def test_isinstance_extra_argument():
     with more than two positional arguments.
     """
     node = builder.extract_node(
-        f"""
+        """
     x = 3
 
     if isinstance(x, str, bool):
