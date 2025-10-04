@@ -10,7 +10,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
-from astroid import nodes, util
+from astroid import helpers, nodes, util
+from astroid.exceptions import AstroidTypeError, InferenceError, MroError
 from astroid.typing import InferenceResult
 
 if sys.version_info >= (3, 11):
@@ -125,6 +126,55 @@ class BooleanConstraint(Constraint):
         return self.negate ^ inferred_booleaness
 
 
+class TypeConstraint(Constraint):
+    """Represents an "isinstance(x, y)" constraint."""
+
+    def __init__(
+        self, node: nodes.NodeNG, classinfo: nodes.NodeNG, negate: bool
+    ) -> None:
+        super().__init__(node=node, negate=negate)
+        self.classinfo = classinfo
+
+    @classmethod
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
+        """Return a new constraint for node if expr matches the
+        "isinstance(x, y)" pattern. Else, return None.
+        """
+        is_instance_call = (
+            isinstance(expr, nodes.Call)
+            and isinstance(expr.func, nodes.Name)
+            and expr.func.name == "isinstance"
+            and not expr.keywords
+            and len(expr.args) == 2
+        )
+        if is_instance_call and _matches(expr.args[0], node):
+            return cls(node=node, classinfo=expr.args[1], negate=negate)
+
+        return None
+
+    def satisfied_by(self, inferred: InferenceResult) -> bool:
+        """Return True for uninferable results, or depending on negate flag:
+
+        - negate=False: satisfied when inferred is an instance of the checked types.
+        - negate=True: satisfied when inferred is not an instance of the checked types.
+        """
+        if isinstance(inferred, util.UninferableBase):
+            return True
+
+        try:
+            types = helpers.class_or_tuple_to_container(self.classinfo)
+            matches_checked_types = helpers.object_isinstance(inferred, types)
+
+            if isinstance(matches_checked_types, util.UninferableBase):
+                return True
+
+            return self.negate ^ matches_checked_types
+        except (InferenceError, AstroidTypeError, MroError):
+            return True
+
+
 def get_constraints(
     expr: _NameNodes, frame: nodes.LocalsDictNodeNG
 ) -> dict[nodes.If | nodes.IfExp, set[Constraint]]:
@@ -159,6 +209,7 @@ ALL_CONSTRAINT_CLASSES = frozenset(
     (
         NoneConstraint,
         BooleanConstraint,
+        TypeConstraint,
     )
 )
 """All supported constraint types."""
