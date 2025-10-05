@@ -964,7 +964,15 @@ def test_object_dunder_methods_can_be_overridden() -> None:
 
 def test_unoverridden_object_dunders_return_uninferable() -> None:
     """Test that un-overridden object dunders return Uninferable when called."""
-    for dunder in ("__eq__", "__hash__", "__lt__", "__le__", "__gt__", "__ge__", "__ne__"):
+    for dunder in (
+        "__eq__",
+        "__hash__",
+        "__lt__",
+        "__le__",
+        "__gt__",
+        "__ge__",
+        "__ne__",
+    ):
         node = builder.extract_node(
             f"""
             class MyClass:
