@@ -163,6 +163,33 @@ class ObjectModel:
 
         return bases.BoundMethod(proxy=node, bound=_get_bound_node(self))
 
+    # Base object attributes that return Unknown as fallback placeholders.
+    @property
+    def attr___ne__(self):
+        return node_classes.Unknown(parent=self._instance)
+
+    attr___class__ = attr___ne__
+    attr___delattr__ = attr___ne__
+    attr___dir__ = attr___ne__
+    attr___doc__ = attr___ne__
+    attr___eq__ = attr___ne__
+    attr___format__ = attr___ne__
+    attr___ge__ = attr___ne__
+    attr___getattribute__ = attr___ne__
+    attr___getstate__ = attr___ne__
+    attr___gt__ = attr___ne__
+    attr___hash__ = attr___ne__
+    attr___init_subclass__ = attr___ne__
+    attr___le__ = attr___ne__
+    attr___lt__ = attr___ne__
+    attr___reduce__ = attr___ne__
+    attr___reduce_ex__ = attr___ne__
+    attr___repr__ = attr___ne__
+    attr___setattr__ = attr___ne__
+    attr___sizeof__ = attr___ne__
+    attr___str__ = attr___ne__
+    attr___subclasshook__ = attr___ne__
+
 
 class ModuleModel(ObjectModel):
     def _builtins(self):
@@ -459,36 +486,15 @@ class FunctionModel(ObjectModel):
 
         return DescriptorBoundMethod(proxy=self._instance, bound=self._instance)
 
-    # These are here just for completion.
+    # Function-specific attributes.
     @property
-    def attr___ne__(self):
+    def attr___call__(self):
         return node_classes.Unknown(parent=self._instance)
 
-    attr___subclasshook__ = attr___ne__
-    attr___str__ = attr___ne__
-    attr___sizeof__ = attr___ne__
-    attr___setattr__ = attr___ne__
-    attr___repr__ = attr___ne__
-    attr___reduce__ = attr___ne__
-    attr___reduce_ex__ = attr___ne__
-    attr___lt__ = attr___ne__
-    attr___le__ = attr___ne__
-    attr___eq__ = attr___ne__
-    attr___ge__ = attr___ne__
-    attr___gt__ = attr___ne__
-    attr___format__ = attr___ne__
-    attr___delattr__ = attr___ne__
-    attr___getattribute__ = attr___ne__
-    attr___hash__ = attr___ne__
-    attr___dir__ = attr___ne__
-    attr___call__ = attr___ne__
-    attr___class__ = attr___ne__
-    attr___closure__ = attr___ne__
-    attr___code__ = attr___ne__
-    attr___builtins__ = attr___ne__
-    attr___getstate__ = attr___ne__
-    attr___init_subclass__ = attr___ne__
-    attr___type_params__ = attr___ne__
+    attr___builtins__ = attr___call__
+    attr___closure__ = attr___call__
+    attr___code__ = attr___call__
+    attr___type_params__ = attr___call__
 
 
 class ClassModel(ObjectModel):

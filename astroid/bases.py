@@ -250,7 +250,9 @@ class BaseInstance(Proxy):
             values = self._proxied.instance_attr(name, context)
         except AttributeInferenceError as exc:
             if self.special_attributes and name in self.special_attributes:
-                return [self.special_attributes.lookup(name)]
+                special_attr = self.special_attributes.lookup(name)
+                if not isinstance(special_attr, (UninferableBase, nodes.Unknown)):
+                    return [special_attr]
 
             if lookupclass:
                 # Class attributes not available through the instance
@@ -571,10 +573,14 @@ class BoundMethod(UnboundMethod):
             raise InferenceError(context=context) from e
         if not isinstance(mcs, nodes.ClassDef):
             # Not a valid first argument.
-            return None
+            raise InferenceError(
+                "type.__new__() requires a class for metaclass", context=context
+            )
         if not mcs.is_subtype_of("builtins.type"):
             # Not a valid metaclass.
-            return None
+            raise InferenceError(
+                "type.__new__() metaclass must be a subclass of type", context=context
+            )
 
         # Verify the name
         try:
@@ -583,10 +589,14 @@ class BoundMethod(UnboundMethod):
             raise InferenceError(context=context) from e
         if not isinstance(name, nodes.Const):
             # Not a valid name, needs to be a const.
-            return None
+            raise InferenceError(
+                "type.__new__() requires a constant for name", context=context
+            )
         if not isinstance(name.value, str):
             # Needs to be a string.
-            return None
+            raise InferenceError(
+                "type.__new__() requires a string for name", context=context
+            )
 
         # Verify the bases
         try:
@@ -595,14 +605,18 @@ class BoundMethod(UnboundMethod):
             raise InferenceError(context=context) from e
         if not isinstance(bases, nodes.Tuple):
             # Needs to be a tuple.
-            return None
+            raise InferenceError(
+                "type.__new__() requires a tuple for bases", context=context
+            )
         try:
             inferred_bases = [next(elt.infer(context=context)) for elt in bases.elts]
         except StopIteration as e:
             raise InferenceError(context=context) from e
         if any(not isinstance(base, nodes.ClassDef) for base in inferred_bases):
             # All the bases needs to be Classes
-            return None
+            raise InferenceError(
+                "type.__new__() requires classes for bases", context=context
+            )
 
         # Verify the attributes.
         try:
@@ -611,7 +625,9 @@ class BoundMethod(UnboundMethod):
             raise InferenceError(context=context) from e
         if not isinstance(attrs, nodes.Dict):
             # Needs to be a dictionary.
-            return None
+            raise InferenceError(
+                "type.__new__() requires a dict for attrs", context=context
+            )
         cls_locals: dict[str, list[InferenceResult]] = collections.defaultdict(list)
         for key, value in attrs.items:
             try:
@@ -664,9 +680,13 @@ class BoundMethod(UnboundMethod):
             and self.bound.name == "type"
             and self.name == "__new__"
             and isinstance(caller, nodes.Call)
-            and len(caller.args) == 4
         ):
             # Check if we have a ``type.__new__(mcs, name, bases, attrs)`` call.
+            if len(caller.args) != 4:
+                raise InferenceError(
+                    f"type.__new__() requires 4 arguments, got {len(caller.args)}",
+                    context=context,
+                )
             new_cls = self._infer_type_new_call(caller, context)
             if new_cls:
                 return iter((new_cls,))

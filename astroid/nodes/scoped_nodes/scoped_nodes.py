@@ -1618,6 +1618,17 @@ class FunctionDef(
                     yield node_classes.Const(None)
                 return
 
+            # Builtin dunder methods have empty bodies, return Uninferable.
+            if (
+                self.root().qname() == "builtins"
+                and self.name.startswith("__")
+                and self.name.endswith("__")
+                and self.parent
+                and self.parent.__class__.__name__ == "ClassDef"
+            ):
+                yield util.Uninferable
+                return
+
             raise InferenceError("The function does not have any return statements")
 
         for returnnode in itertools.chain((first_return,), returns):
@@ -2346,8 +2357,12 @@ class ClassDef(
             values += classnode.locals.get(name, [])
 
         if name in self.special_attributes and class_context and not values:
-            result = [self.special_attributes.lookup(name)]
-            return result
+            special_attr = self.special_attributes.lookup(name)
+            if not isinstance(
+                special_attr, (util.UninferableBase, node_classes.Unknown)
+            ):
+                result = [special_attr]
+                return result
 
         if class_context:
             values += self._metaclass_lookup_attribute(name, context)

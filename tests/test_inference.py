@@ -5618,8 +5618,9 @@ def test_cannot_infer_call_result_for_builtin_methods() -> None:
     )
     inferred = next(node.infer())
     lenmeth = next(inferred.igetattr("__len__"))
-    with pytest.raises(InferenceError):
-        next(lenmeth.infer_call_result(None, None))
+    # Builtin dunder methods now return Uninferable instead of raising InferenceError
+    result = next(lenmeth.infer_call_result(None, None))
+    assert result is util.Uninferable
 
 
 def test_unpack_dicts_in_assignment() -> None:
