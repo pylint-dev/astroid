@@ -84,7 +84,7 @@ Release date: TBA
 
 * Add basic support for ``ast.TemplateStr`` and ``ast.Interpolation``added in Python 3.14.
 
-  refs #2789
+  Refs #2789
 
 * Add support for type parameter defaults added in Python 3.13.
 
