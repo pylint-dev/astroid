@@ -987,32 +987,8 @@ def test_unoverridden_object_dunders_return_uninferable() -> None:
 
 def test_all_object_dunders_accessible() -> None:
     """Test that object dunders are accessible on classes and instances."""
-    object_dunders = [
-        "__class__",
-        "__delattr__",
-        "__dir__",
-        "__doc__",
-        "__eq__",
-        "__format__",
-        "__ge__",
-        "__getattribute__",
-        "__getstate__",
-        "__gt__",
-        "__hash__",
-        "__init__",
-        "__init_subclass__",
-        "__le__",
-        "__lt__",
-        "__ne__",
-        "__new__",
-        "__reduce__",
-        "__reduce_ex__",
-        "__repr__",
-        "__setattr__",
-        "__sizeof__",
-        "__str__",
-        "__subclasshook__",
-    ]
+    # Use actual dunders from object in the current Python version
+    object_dunders = [attr for attr in dir(object) if attr.startswith("__")]
 
     cls, instance = builder.extract_node(
         """
