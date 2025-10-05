@@ -29,6 +29,10 @@
     ],
     "name": "Artem Yurchenko"
   },
+  "53538590+zenlyj@users.noreply.github.com": {
+    "mails": ["53538590+zenlyj@users.noreply.github.com", "zenlyj97@gmail.com"],
+    "name": "Zen Lee"
+  },
   "55152140+jayaddison@users.noreply.github.com": {
     "mails": ["55152140+jayaddison@users.noreply.github.com", "jay@jp-hosting.net"],
     "name": "James Addison"
@@ -85,10 +89,6 @@
   "c.ringstrom@gmail.com": {
     "mails": ["c.ringstrom@gmail.com"],
     "name": "Charlie Ringström"
-  },
-  "matusvalo@users.noreply.github.com": {
-    "mails": ["matusvalo@users.noreply.github.com"],
-    "name": "Matus Valo"
   },
   "calen.pennington@gmail.com": {
     "mails": ["cale@edx.org", "calen.pennington@gmail.com"],
@@ -148,6 +148,10 @@
   "mariocj89@gmail.com": {
     "mails": ["mcorcherojim@bloomberg.net", "mariocj89@gmail.com"],
     "name": "Mario Corchero"
+  },
+  "matusvalo@users.noreply.github.com": {
+    "mails": ["matusvalo@users.noreply.github.com"],
+    "name": "Matus Valo"
   },
   "me@the-compiler.org": {
     "mails": ["me@the-compiler.org"],

@@ -14,8 +14,8 @@ Ex-maintainers
 Maintainers
 -----------
 - Pierre Sassoulas <pierre.sassoulas@gmail.com>
-- Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 - Jacob Walls <jacobtylerwalls@gmail.com>
+- Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 - Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 - Hippo91 <guillaume.peillex@gmail.com>
 - Bryce Guinta <bryce.paul.guinta@gmail.com>
@@ -47,6 +47,7 @@ Contributors
 - Calen Pennington <calen.pennington@gmail.com>
 - Antonio <antonio@zoftko.com>
 - Akhil Kamat <akhil.kamat@gmail.com>
+- Zen Lee <53538590+zenlyj@users.noreply.github.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Phil Schaf <flying-sheep@web.de>
 - Alex Hall <alex.mojaki@gmail.com>
@@ -78,13 +79,13 @@ Contributors
 - emile@crater.logilab.fr <emile@crater.logilab.fr>
 - doranid <ddandd@gmail.com>
 - brendanator <brendan.maginnis@gmail.com>
-- Zen Lee <53538590+zenlyj@users.noreply.github.com>
 - Tomas Gavenciak <gavento@ucw.cz>
 - Tim Paine <t.paine154@gmail.com>
 - Thomas Hisch <t.hisch@gmail.com>
 - Stefan Scherfke <stefan@sofa-rockers.org>
 - Sergei Lebedev <185856+superbobry@users.noreply.github.com>
 - Saugat Pachhai (सौगात) <suagatchhetri@outlook.com>
+- Robert Hofer <1058012+hofrob@users.noreply.github.com>
 - Ram Rachum <ram@rachum.com>
 - Pierre-Yves David <pierre-yves.david@logilab.fr>
 - Peter Pentchev <roam@ringlet.net>
@@ -100,6 +101,7 @@ Contributors
 - John Vandenberg <jayvdb@gmail.com>
 - Jacob Bogdanov <jacob@bogdanov.dev>
 - Google, Inc. <no-reply@google.com>
+- Emmanuel Ferdman <emmanuelferdman@gmail.com>
 - David Euresti <github@euresti.com>
 - David Douard <david.douard@logilab.fr>
 - David Cain <davidjosephcain@gmail.com>
@@ -222,3 +224,5 @@ under this name, or we did not manage to find their commits in the history.
 - carl
 - alain lefroy
 - Mark Gius
+- Robert Hofer <1058012+hofrob@users.noreply.github.com>
+- Emmanuel Ferdman <emmanuelferdman@gmail.com>
