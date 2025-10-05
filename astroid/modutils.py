@@ -30,14 +30,10 @@ import warnings
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import redirect_stderr, redirect_stdout
 from functools import lru_cache
+from sys import stdlib_module_names
 
-from astroid.const import IS_JYTHON, PY310_PLUS
+from astroid.const import IS_JYTHON
 from astroid.interpreter._import import spec, util
-
-if PY310_PLUS:
-    from sys import stdlib_module_names
-else:
-    from astroid._backport_stdlib_names import stdlib_module_names
 
 logger = logging.getLogger(__name__)
 
@@ -236,6 +232,14 @@ def check_modpath_has_init(path: str, mod_path: list[str]) -> bool:
     return True
 
 
+def _is_subpath(path: str, base: str) -> bool:
+    path = os.path.normcase(os.path.normpath(path))
+    base = os.path.normcase(os.path.normpath(base))
+    if not path.startswith(base):
+        return False
+    return (len(path) == len(base)) or (path[len(base)] == os.path.sep)
+
+
 def _get_relative_base_path(filename: str, path_to_check: str) -> list[str] | None:
     """Extracts the relative mod path of the file to import from.
 
@@ -252,19 +256,18 @@ def _get_relative_base_path(filename: str, path_to_check: str) -> list[str] | No
         _get_relative_base_path("/a/b/c/d.py", "/a/b") ->  ["c","d"]
         _get_relative_base_path("/a/b/c/d.py", "/dev") ->  None
     """
-    importable_path = None
-    path_to_check = os.path.normcase(path_to_check)
+    path_to_check = os.path.normcase(os.path.normpath(path_to_check))
+
     abs_filename = os.path.abspath(filename)
-    if os.path.normcase(abs_filename).startswith(path_to_check):
-        importable_path = abs_filename
+    if _is_subpath(abs_filename, path_to_check):
+        base_path = os.path.splitext(abs_filename)[0]
+        relative_base_path = base_path[len(path_to_check) :].lstrip(os.path.sep)
+        return [pkg for pkg in relative_base_path.split(os.sep) if pkg]
 
     real_filename = os.path.realpath(filename)
-    if os.path.normcase(real_filename).startswith(path_to_check):
-        importable_path = real_filename
-
-    if importable_path:
-        base_path = os.path.splitext(importable_path)[0]
-        relative_base_path = base_path[len(path_to_check) :]
+    if _is_subpath(real_filename, path_to_check):
+        base_path = os.path.splitext(real_filename)[0]
+        relative_base_path = base_path[len(path_to_check) :].lstrip(os.path.sep)
         return [pkg for pkg in relative_base_path.split(os.sep) if pkg]
 
     return None
@@ -272,13 +275,13 @@ def _get_relative_base_path(filename: str, path_to_check: str) -> list[str] | No
 
 def modpath_from_file_with_callback(
     filename: str,
-    path: Sequence[str] | None = None,
+    path: list[str] | None = None,
     is_package_cb: Callable[[str, list[str]], bool] | None = None,
 ) -> list[str]:
     filename = os.path.expanduser(_path_from_filename(filename))
     paths_to_check = sys.path.copy()
     if path:
-        paths_to_check += path
+        paths_to_check = path + paths_to_check
     for pathname in itertools.chain(
         paths_to_check, map(_cache_normalize_path, paths_to_check)
     ):
@@ -292,11 +295,13 @@ def modpath_from_file_with_callback(
             return modpath
 
     raise ImportError(
-        "Unable to find module for {} in {}".format(filename, ", \n".join(sys.path))
+        "Unable to find module for {} in {}".format(
+            filename, ", \n".join(paths_to_check)
+        )
     )
 
 
-def modpath_from_file(filename: str, path: Sequence[str] | None = None) -> list[str]:
+def modpath_from_file(filename: str, path: list[str] | None = None) -> list[str]:
     """Get the corresponding split module's name from a filename.
 
     This function will return the name of a module or package split on `.`.
@@ -305,8 +310,8 @@ def modpath_from_file(filename: str, path: Sequence[str] | None = None) -> list[
     :param filename: file's path for which we want the module's name
 
     :type Optional[List[str]] path:
-      Optional list of path where the module or package should be
-      searched (use sys.path if nothing or None is given)
+      Optional list of paths where the module or package should be
+      searched, additionally to sys.path
 
     :raise ImportError:
       if the corresponding module's name has not been found
@@ -363,7 +368,7 @@ def file_info_from_modpath(
     if modpath[0] == "xml":
         # handle _xmlplus
         try:
-            return _spec_from_modpath(["_xmlplus"] + modpath[1:], path, context)
+            return _spec_from_modpath(["_xmlplus", *modpath[1:]], path, context)
         except ImportError:
             return _spec_from_modpath(modpath, path, context)
     elif modpath == ["os", "path"]:
@@ -487,8 +492,9 @@ def get_source_file(
     """
     filename = os.path.abspath(_path_from_filename(filename))
     base, orig_ext = os.path.splitext(filename)
-    if orig_ext == ".pyi" and os.path.exists(f"{base}{orig_ext}"):
-        return f"{base}{orig_ext}"
+    orig_ext = orig_ext.lstrip(".")
+    if orig_ext not in PY_SOURCE_EXTS and os.path.exists(f"{base}.{orig_ext}"):
+        return f"{base}.{orig_ext}"
     for ext in PY_SOURCE_EXTS_STUBS_FIRST if prefer_stubs else PY_SOURCE_EXTS:
         source_path = f"{base}.{ext}"
         if os.path.exists(source_path):
@@ -605,7 +611,7 @@ def is_relative(modname: str, from_file: str) -> bool:
 
 
 @lru_cache(maxsize=1024)
-def cached_os_path_isfile(path: str | os.PathLike) -> bool:
+def cached_os_path_isfile(path: str | os.PathLike[str]) -> bool:
     """A cached version of os.path.isfile that helps avoid repetitive I/O"""
     return os.path.isfile(path)
 

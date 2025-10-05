@@ -13,7 +13,7 @@ import pytest
 
 import astroid
 from astroid import extract_node, nodes
-from astroid.const import PY310_PLUS, PY312_PLUS
+from astroid.const import PY312_PLUS
 from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
 from astroid.util import Uninferable, UninferableBase
@@ -122,7 +122,7 @@ class ProtocolTests(unittest.TestCase):
 
         for1_starred = next(assign_stmts.nodes_of_class(nodes.Starred))
         assigned = next(for1_starred.assigned_stmts())
-        assert isinstance(assigned, astroid.List)
+        assert isinstance(assigned, nodes.List)
         assert assigned.as_string() == "[1, 2]"
 
     def _get_starred_stmts(self, code: str) -> list | UninferableBase:
@@ -236,7 +236,7 @@ class ProtocolTests(unittest.TestCase):
             node.root().locals["__all__"] = [node.value]
 
         manager = astroid.MANAGER
-        with _add_transform(manager, astroid.Assign, transform):
+        with _add_transform(manager, nodes.Assign, transform):
             module = astroid.parse(
                 """
             __all__ = ['a']
@@ -285,6 +285,28 @@ class ProtocolTests(unittest.TestCase):
         parsed = extract_node("[0] * 123456789")
         element = parsed.inferred()[0].elts[0]
         assert element.value is Uninferable
+
+    @staticmethod
+    def test_uninferable_list_multiplication_with_multiple_operands() -> None:
+        """Attempting to calculate the result is prohibitively expensive."""
+        parsed = extract_node("[0] * 825 * 16547118")
+        element = parsed.inferred()[0].elts[0]
+        assert element.value is Uninferable
+
+    @staticmethod
+    def test_list_multiplication_with_empty_list_and_overflowing_multiplier() -> None:
+        parsed = extract_node("[] * 1163845194457646539560")
+        assert parsed.inferred()[0].elts == []
+
+    @staticmethod
+    def test_list_multiplication_with_zero_multiplier() -> None:
+        parsed = extract_node("[0] * 0")
+        assert parsed.inferred()[0].elts == []
+
+    @staticmethod
+    def test_list_multiplication_with_negative_overflowing_multiplier() -> None:
+        parsed = extract_node("[0] * -9223372036854775809")
+        assert parsed.inferred()[0].elts == []
 
 
 def test_named_expr_inference() -> None:
@@ -342,7 +364,6 @@ def test_named_expr_inference() -> None:
     assert node.value == 1
 
 
-@pytest.mark.skipif(not PY310_PLUS, reason="Match requires python 3.10")
 class TestPatternMatching:
     @staticmethod
     def test_assigned_stmts_match_mapping():

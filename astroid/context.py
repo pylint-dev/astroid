@@ -9,16 +9,15 @@ from __future__ import annotations
 import contextlib
 import pprint
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 if TYPE_CHECKING:
     from astroid import constraint, nodes
-    from astroid.nodes.node_classes import Keyword, NodeNG
 
 _InferenceCache = dict[
-    tuple["NodeNG", Optional[str], Optional[str], Optional[str]], Sequence["NodeNG"]
+    tuple["nodes.NodeNG", str | None, str | None, str | None], Sequence["nodes.NodeNG"]
 ]
 
 _INFERENCE_CACHE: _InferenceCache = {}
@@ -36,13 +35,13 @@ class InferenceContext:
     """
 
     __slots__ = (
-        "path",
-        "lookupname",
-        "callcontext",
-        "boundnode",
-        "extra_context",
-        "constraints",
         "_nodes_inferred",
+        "boundnode",
+        "callcontext",
+        "constraints",
+        "extra_context",
+        "lookupname",
+        "path",
     )
 
     max_inferred = 100
@@ -79,7 +78,9 @@ class InferenceContext:
         self.extra_context: dict[SuccessfulInferenceResult, InferenceContext] = {}
         """Context that needs to be passed down through call stacks for call arguments."""
 
-        self.constraints: dict[str, dict[nodes.If, set[constraint.Constraint]]] = {}
+        self.constraints: dict[
+            str, dict[nodes.If | nodes.IfExp, set[constraint.Constraint]]
+        ] = {}
         """The constraints on nodes."""
 
     @property
@@ -163,12 +164,12 @@ class InferenceContext:
 class CallContext:
     """Holds information for a call site."""
 
-    __slots__ = ("args", "keywords", "callee")
+    __slots__ = ("args", "callee", "keywords")
 
     def __init__(
         self,
-        args: list[NodeNG],
-        keywords: list[Keyword] | None = None,
+        args: list[nodes.NodeNG],
+        keywords: list[nodes.Keyword] | None = None,
         callee: InferenceResult | None = None,
     ):
         self.args = args  # Call positional arguments

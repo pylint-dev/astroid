@@ -4,12 +4,18 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from astroid.brain.helpers import register_module_extender
-from astroid.builder import extract_node, parse
+from astroid.builder import AstroidBuilder, extract_node, parse
+from astroid.const import PY313_PLUS
 from astroid.context import InferenceContext
 from astroid.exceptions import AttributeInferenceError
 from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import ClassDef
+
+if TYPE_CHECKING:
+    from astroid import nodes
 
 
 def _collections_transform():
@@ -23,6 +29,13 @@ def _collections_transform():
     """
         + _deque_mock()
         + _ordered_dict_mock()
+    )
+
+
+def _collections_abc_313_transform() -> nodes.Module:
+    """See https://github.com/python/cpython/pull/124735"""
+    return AstroidBuilder(AstroidManager()).string_build(
+        "from _collections_abc import *"
     )
 
 
@@ -118,3 +131,8 @@ def register(manager: AstroidManager) -> None:
     manager.register_transform(
         ClassDef, easy_class_getitem_inference, _looks_like_subscriptable
     )
+
+    if PY313_PLUS:
+        register_module_extender(
+            manager, "collections.abc", _collections_abc_313_transform
+        )

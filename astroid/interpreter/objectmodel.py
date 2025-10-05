@@ -228,17 +228,17 @@ class ModuleModel(ObjectModel):
     @property
     def attr___spec__(self):
         # No handling for now.
-        return node_classes.Unknown()
+        return node_classes.Unknown(parent=self._instance)
 
     @property
     def attr___loader__(self):
         # No handling for now.
-        return node_classes.Unknown()
+        return node_classes.Unknown(parent=self._instance)
 
     @property
     def attr___cached__(self):
         # No handling for now.
-        return node_classes.Unknown()
+        return node_classes.Unknown(parent=self._instance)
 
 
 class FunctionModel(ObjectModel):
@@ -427,13 +427,13 @@ class FunctionModel(ObjectModel):
                 we get a new object which has two parameters, *self* and *type*.
                 """
                 nonlocal func
-                arguments = astroid.Arguments(
+                arguments = nodes.Arguments(
                     parent=func.args.parent, vararg=None, kwarg=None
                 )
 
                 positional_or_keyword_params = func.args.args.copy()
                 positional_or_keyword_params.append(
-                    astroid.AssignName(
+                    nodes.AssignName(
                         name="type",
                         lineno=0,
                         col_offset=0,
@@ -462,7 +462,7 @@ class FunctionModel(ObjectModel):
     # These are here just for completion.
     @property
     def attr___ne__(self):
-        return node_classes.Unknown()
+        return node_classes.Unknown(parent=self._instance)
 
     attr___subclasshook__ = attr___ne__
     attr___str__ = attr___ne__
@@ -493,8 +493,8 @@ class ClassModel(ObjectModel):
         super().__init__()
 
     @property
-    def attr___annotations__(self) -> node_classes.Unkown:
-        return node_classes.Unknown()
+    def attr___annotations__(self) -> node_classes.Unknown:
+        return node_classes.Unknown(parent=self._instance)
 
     @property
     def attr___module__(self):
@@ -514,9 +514,6 @@ class ClassModel(ObjectModel):
 
     @property
     def attr___mro__(self):
-        if not self._instance.newstyle:
-            raise AttributeInferenceError(target=self._instance, attribute="__mro__")
-
         mro = self._instance.mro()
         obj = node_classes.Tuple(parent=self._instance)
         obj.postinit(mro)
@@ -524,9 +521,6 @@ class ClassModel(ObjectModel):
 
     @property
     def attr_mro(self):
-        if not self._instance.newstyle:
-            raise AttributeInferenceError(target=self._instance, attribute="mro")
-
         other_self = self
 
         # Cls.mro is a method and we need to return one in order to have a proper inference.
@@ -565,10 +559,6 @@ class ClassModel(ObjectModel):
         This looks only in the current module for retrieving the subclasses,
         thus it might miss a couple of them.
         """
-        if not self._instance.newstyle:
-            raise AttributeInferenceError(
-                target=self._instance, attribute="__subclasses__"
-            )
 
         qname = self._instance.qname()
         root = self._instance.root()
@@ -704,20 +694,18 @@ class BoundMethodModel(FunctionModel):
         return self._instance.bound
 
 
-class GeneratorModel(FunctionModel, ContextManagerModel):
-    def __new__(cls, *args, **kwargs):
-        # Append the values from the GeneratorType unto this object.
-        ret = super().__new__(cls, *args, **kwargs)
-        generator = AstroidManager().builtins_module["generator"]
-        for name, values in generator.locals.items():
+class GeneratorBaseModel(FunctionModel, ContextManagerModel):
+    def __init__(self, gen_module: nodes.Module):
+        super().__init__()
+        for name, values in gen_module.locals.items():
             method = values[0]
+            if isinstance(method, nodes.FunctionDef):
+                method = bases.BoundMethod(method, _get_bound_node(self))
 
             def patched(cls, meth=method):
                 return meth
 
-            setattr(type(ret), IMPL_PREFIX + name, property(patched))
-
-        return ret
+            setattr(type(self), IMPL_PREFIX + name, property(patched))
 
     @property
     def attr___name__(self):
@@ -733,25 +721,14 @@ class GeneratorModel(FunctionModel, ContextManagerModel):
         )
 
 
-class AsyncGeneratorModel(GeneratorModel):
-    def __new__(cls, *args, **kwargs):
-        # Append the values from the AGeneratorType unto this object.
-        ret = super().__new__(cls, *args, **kwargs)
-        astroid_builtins = AstroidManager().builtins_module
-        generator = astroid_builtins.get("async_generator")
-        if generator is None:
-            # Make it backward compatible.
-            generator = astroid_builtins.get("generator")
+class GeneratorModel(GeneratorBaseModel):
+    def __init__(self):
+        super().__init__(AstroidManager().builtins_module["generator"])
 
-        for name, values in generator.locals.items():
-            method = values[0]
 
-            def patched(cls, meth=method):
-                return meth
-
-            setattr(type(ret), IMPL_PREFIX + name, property(patched))
-
-        return ret
+class AsyncGeneratorModel(GeneratorBaseModel):
+    def __init__(self):
+        super().__init__(AstroidManager().builtins_module["async_generator"])
 
 
 class InstanceModel(ObjectModel):
@@ -793,6 +770,12 @@ class SyntaxErrorInstanceModel(ExceptionInstanceModel):
         return node_classes.Const("")
 
 
+class GroupExceptionInstanceModel(ExceptionInstanceModel):
+    @property
+    def attr_exceptions(self) -> nodes.Tuple:
+        return node_classes.Tuple(parent=self._instance)
+
+
 class OSErrorInstanceModel(ExceptionInstanceModel):
     @property
     def attr_filename(self):
@@ -827,6 +810,7 @@ class UnicodeDecodeErrorInstanceModel(ExceptionInstanceModel):
 
 BUILTIN_EXCEPTIONS = {
     "builtins.SyntaxError": SyntaxErrorInstanceModel,
+    "builtins.ExceptionGroup": GroupExceptionInstanceModel,
     "builtins.ImportError": ImportErrorInstanceModel,
     "builtins.UnicodeDecodeError": UnicodeDecodeErrorInstanceModel,
     # These are all similar to OSError in terms of attributes
@@ -969,7 +953,7 @@ class PropertyModel(ObjectModel):
     def attr_fset(self):
         func = self._instance
 
-        def find_setter(func: Property) -> astroid.FunctionDef | None:
+        def find_setter(func: Property) -> nodes.FunctionDef | None:
             """
             Given a property, find the corresponding setter function and returns it.
 

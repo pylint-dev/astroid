@@ -15,9 +15,9 @@ Maintainers
 -----------
 - Pierre Sassoulas <pierre.sassoulas@gmail.com>
 - Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
-- Hippo91 <guillaume.peillex@gmail.com>
-- Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 - Jacob Walls <jacobtylerwalls@gmail.com>
+- Marc Mueller <30130371+cdce8p@users.noreply.github.com>
+- Hippo91 <guillaume.peillex@gmail.com>
 - Bryce Guinta <bryce.paul.guinta@gmail.com>
 - Ceridwen <ceridwenv@gmail.com>
 - Mark Byrne <31762852+mbyrnepr2@users.noreply.github.com>
@@ -32,16 +32,21 @@ Contributors
 ------------
 - Emile Anclin <emile.anclin@logilab.fr>
 - Nick Drozd <nicholasdrozd@gmail.com>
+- correctmost <134317971+correctmost@users.noreply.github.com>
 - Andrew Haigh <hello@nelf.in>
 - Julien Cristau <julien.cristau@logilab.fr>
+- Artem Yurchenko <44875844+temyurchenko@users.noreply.github.com>
 - David Liu <david@cs.toronto.edu>
 - Alexandre Fayolle <alexandre.fayolle@logilab.fr>
 - Eevee (Alex Munroe) <amunroe@yelp.com>
 - David Gilman <davidgilman1@gmail.com>
 - Tushar Sadhwani <tushar.sadhwani000@gmail.com>
+- Matus Valo <matusvalo@users.noreply.github.com>
 - Julien Jehannet <julien.jehannet@logilab.fr>
-- Calen Pennington <calen.pennington@gmail.com>
 - Hugo van Kemenade <hugovk@users.noreply.github.com>
+- Calen Pennington <calen.pennington@gmail.com>
+- Antonio <antonio@zoftko.com>
+- Akhil Kamat <akhil.kamat@gmail.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Phil Schaf <flying-sheep@web.de>
 - Alex Hall <alex.mojaki@gmail.com>
@@ -49,11 +54,13 @@ Contributors
 - Radosław Ganczarek <radoslaw@ganczarek.in>
 - Paligot Gérard <androwiiid@gmail.com>
 - Ioana Tagirta <ioana.tagirta@gmail.com>
+- Eric Vergnaud <eric.vergnaud@wanadoo.fr>
 - Derek Gustafson <degustaf@gmail.com>
 - David Shea <dshea@redhat.com>
 - Daniel Harding <dharding@gmail.com>
 - Christian Clauss <cclauss@me.com>
 - Ville Skyttä <ville.skytta@iki.fi>
+- Synrom <30272537+Synrom@users.noreply.github.com>
 - Rene Zhang <rz99@cornell.edu>
 - Philip Lorenz <philip@bithub.de>
 - Nicolas Chauvat <nicolas.chauvat@logilab.fr>
@@ -65,12 +72,13 @@ Contributors
 - FELD Boris <lothiraldan@gmail.com>
 - Enji Cooper <yaneurabeya@gmail.com>
 - Dani Alcala <112832187+clavedeluna@users.noreply.github.com>
-- Antonio <antonio@zoftko.com>
 - Adrien Di Mascio <Adrien.DiMascio@logilab.fr>
 - tristanlatr <19967168+tristanlatr@users.noreply.github.com>
+- grayjk <grayjk@gmail.com>
 - emile@crater.logilab.fr <emile@crater.logilab.fr>
 - doranid <ddandd@gmail.com>
 - brendanator <brendan.maginnis@gmail.com>
+- Zen Lee <53538590+zenlyj@users.noreply.github.com>
 - Tomas Gavenciak <gavento@ucw.cz>
 - Tim Paine <t.paine154@gmail.com>
 - Thomas Hisch <t.hisch@gmail.com>
@@ -83,6 +91,7 @@ Contributors
 - Peter Kolbus <peter.kolbus@gmail.com>
 - Omer Katz <omer.drow@gmail.com>
 - Moises Lopez <moylop260@vauxoo.com>
+- Mitch Harding <mitchell.harding@hpe.com>
 - Michal Vasilek <michal@vasilek.cz>
 - Keichi Takahashi <keichi.t@me.com>
 - Kavins Singh <kavinsingh@hotmail.com>
@@ -98,18 +107,20 @@ Contributors
 - Anthony Sottile <asottile@umich.edu>
 - Alexander Shadchin <alexandr.shadchin@gmail.com>
 - wgehalo <wgehalo@gmail.com>
+- tejaschauhan36912 <59693377+tejaschauhan36912@users.noreply.github.com>
 - rr- <rr-@sakuya.pl>
 - raylu <lurayl@gmail.com>
 - plucury <plucury@gmail.com>
+- pavan-msys <149513767+pavan-msys@users.noreply.github.com>
 - ostr00000 <ostr00000@gmail.com>
 - noah-weingarden <33741795+noah-weingarden@users.noreply.github.com>
 - nathannaveen <42319948+nathannaveen@users.noreply.github.com>
 - mathieui <mathieui@users.noreply.github.com>
 - markmcclain <markmcclain@users.noreply.github.com>
 - ioanatia <ioanatia@users.noreply.github.com>
-- grayjk <grayjk@gmail.com>
 - alm <alonme@users.noreply.github.com>
 - adam-grant-hendry <59346180+adam-grant-hendry@users.noreply.github.com>
+- aatle <168398276+aatle@users.noreply.github.com>
 - Zbigniew Jędrzejewski-Szmek <zbyszek@in.waw.pl>
 - Zac Hatfield-Dodds <Zac-HD@users.noreply.github.com>
 - Vilnis Termanis <vilnis.termanis@iotics.com>
@@ -118,6 +129,7 @@ Contributors
 - Tomas Novak <ext.Tomas.Novak@skoda-auto.cz>
 - Thirumal Venkat <me@thirumal.in>
 - SupImDos <62866982+SupImDos@users.noreply.github.com>
+- Stéphane Brunner <stephane.brunner@camptocamp.com>
 - Stanislav Levin <slev@altlinux.org>
 - Simon Hewitt <si@sjhewitt.co.uk>
 - Serhiy Storchaka <storchaka@gmail.com>
@@ -129,17 +141,21 @@ Contributors
 - Peter de Blanc <peter@standard.ai>
 - Peter Talley <peterctalley@gmail.com>
 - Ovidiu Sabou <ovidiu@sabou.org>
+- Oleh Prypin <oleh@pryp.in>
 - Nicolas Noirbent <nicolas@noirbent.fr>
 - Neil Girdhar <mistersheik@gmail.com>
 - Miro Hrončok <miro@hroncok.cz>
 - Michał Masłowski <m.maslowski@clearcode.cc>
 - Mateusz Bysiek <mb@mbdev.pl>
+- Matej Aleksandrov <matej.aleksandrov@gmail.com>
 - Marcelo Trylesinski <marcelotryle@gmail.com>
 - Leandro T. C. Melo <ltcmelo@gmail.com>
 - Konrad Weihmann <kweihmann@outlook.com>
 - Kian Meng, Ang <kianmeng.ang@gmail.com>
 - Kai Mueller <15907922+kasium@users.noreply.github.com>
 - Jörg Thalheim <Mic92@users.noreply.github.com>
+- Jérome Perrin <perrinjerome@gmail.com>
+- JulianJvn <128477611+JulianJvn@users.noreply.github.com>
 - Josef Kemetmüller <josef.kemetmueller@gmail.com>
 - Jonathan Striebel <jstriebel@users.noreply.github.com>
 - John Belmonte <john@neggie.net>
@@ -147,11 +163,14 @@ Contributors
 - Jeff Quast <contact@jeffquast.com>
 - Jarrad Hope <me@jarradhope.com>
 - Jared Garst <jgarst@users.noreply.github.com>
+- Jamie Scott <jamie@jami.org.uk>
 - Jakub Wilk <jwilk@jwilk.net>
 - Iva Miholic <ivamiho@gmail.com>
 - Ionel Maries Cristian <contact@ionelmc.ro>
 - HoverHell <hoverhell@gmail.com>
+- Hashem Nasarat <Hnasar@users.noreply.github.com>
 - HQupgradeHQ <18361586+HQupgradeHQ@users.noreply.github.com>
+- Gwyn Ciesla <gwync@protonmail.com>
 - Grygorii Iermolenko <gyermolenko@gmail.com>
 - Gregory P. Smith <greg@krypto.org>
 - Giuseppe Scrivano <gscrivan@redhat.com>
@@ -174,6 +193,7 @@ Contributors
 - Cole Robinson <crobinso@redhat.com>
 - Christoph Reiter <reiter.christoph@gmail.com>
 - Chris Philip <chrisp533@gmail.com>
+- Charlie Ringström <34444482+Chasarr@users.noreply.github.com>
 - BioGeek <jeroen.vangoey@gmail.com>
 - Bianca Power <30207144+biancapower@users.noreply.github.com>
 - Benjamin Elven <25181435+S3ntinelX@users.noreply.github.com>
@@ -191,8 +211,6 @@ Contributors
 - Alexander Scheel <alexander.m.scheel@gmail.com>
 - Alexander Presnyakov <flagist0@gmail.com>
 - Ahmed Azzaoui <ahmed.azzaoui@engie.com>
-- JulianJvn <128477611+JulianJvn@users.noreply.github.com>
-- Gwyn Ciesla <gwync@protonmail.com>
 
 Co-Author
 ---------
@@ -204,8 +222,3 @@ under this name, or we did not manage to find their commits in the history.
 - carl
 - alain lefroy
 - Mark Gius
-- Jérome Perrin <perrinjerome@gmail.com>
-- Jamie Scott <jamie@jami.org.uk>
-- correctmost <134317971+correctmost@users.noreply.github.com>
-- Oleh Prypin <oleh@pryp.in>
-- Eric Vergnaud <eric.vergnaud@wanadoo.fr>

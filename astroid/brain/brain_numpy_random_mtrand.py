@@ -4,12 +4,13 @@
 
 # TODO(hippo91) : correct the functions return types
 """Astroid hooks for numpy.random.mtrand module."""
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
 
 
-def numpy_random_mtrand_transform():
+def numpy_random_mtrand_transform() -> nodes.Module:
     return parse(
         """
     def beta(a, b, size=None): return uninferable

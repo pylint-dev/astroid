@@ -9,12 +9,13 @@ import pytest
 
 from astroid import exceptions, nodes
 from astroid.builder import AstroidBuilder, extract_node
+from astroid.manager import AstroidManager
 
 
 class Python3TC(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.builder = AstroidBuilder()
+        cls.builder = AstroidBuilder(AstroidManager())
 
     def test_starred_notation(self) -> None:
         astroid = self.builder.string_build("*a, b = [1, 2, 3]", "test", "test")
@@ -155,7 +156,6 @@ class Python3TC(unittest.TestCase):
             )
         )
         klass = astroid["SubTest"]
-        self.assertTrue(klass.newstyle)
         metaclass = klass.metaclass()
         self.assertIsInstance(metaclass, nodes.ClassDef)
         self.assertEqual(metaclass.name, "ABCMeta")

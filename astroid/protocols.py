@@ -15,6 +15,7 @@ from collections.abc import Callable, Generator, Iterator, Sequence
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from astroid import bases, decorators, nodes, util
+from astroid.builder import extract_node
 from astroid.const import Context
 from astroid.context import InferenceContext, copy_context
 from astroid.exceptions import (
@@ -142,7 +143,10 @@ def _multiply_seq_by_int(
     context: InferenceContext,
 ) -> _TupleListNodeT:
     node = self.__class__(parent=opnode)
-    if value > 1e8:
+    if not (value > 0 and self.elts):
+        node.elts = []
+        return node
+    if len(self.elts) * value > 1e8:
         node.elts = [util.Uninferable]
         return node
     filtered_elts = (
@@ -159,13 +163,13 @@ def _filter_uninferable_nodes(
 ) -> Iterator[SuccessfulInferenceResult]:
     for elt in elts:
         if isinstance(elt, util.UninferableBase):
-            yield nodes.Unknown()
+            yield node_classes.UNATTACHED_UNKNOWN
         else:
             for inferred in elt.infer(context):
                 if not isinstance(inferred, util.UninferableBase):
                     yield inferred
                 else:
-                    yield nodes.Unknown()
+                    yield node_classes.UNATTACHED_UNKNOWN
 
 
 @decorators.yes_if_nothing_inferred
@@ -524,11 +528,34 @@ def excepthandler_assigned_stmts(
 ) -> Any:
     from astroid import objects  # pylint: disable=import-outside-toplevel
 
-    for assigned in node_classes.unpack_infer(self.type):
-        if isinstance(assigned, nodes.ClassDef):
-            assigned = objects.ExceptionInstance(assigned)
+    def _generate_assigned():
+        for assigned in node_classes.unpack_infer(self.type):
+            if isinstance(assigned, nodes.ClassDef):
+                assigned = objects.ExceptionInstance(assigned)
 
+            yield assigned
+
+    if isinstance(self.parent, node_classes.TryStar):
+        # except * handler has assigned ExceptionGroup with caught
+        # exceptions under exceptions attribute
+        # pylint: disable-next=stop-iteration-return
+        eg = next(
+            node_classes.unpack_infer(
+                extract_node(
+                    """
+from builtins import ExceptionGroup
+ExceptionGroup
+"""
+                )
+            )
+        )
+        assigned = objects.ExceptionInstance(eg)
+        assigned.instance_attrs["exceptions"] = [
+            nodes.List.from_elements(_generate_assigned())
+        ]
         yield assigned
+    else:
+        yield from _generate_assigned()
     return {
         "node": self,
         "unknown": node,
@@ -691,7 +718,8 @@ def starred_assigned_stmts(  # noqa: C901
             the inference results.
     """
 
-    # pylint: disable=too-many-locals,too-many-statements
+    # pylint: disable = too-many-locals, too-many-statements, too-many-branches
+
     def _determine_starred_iteration_lookups(
         starred: nodes.Starred, target: nodes.Tuple, lookups: list[tuple[int, int]]
     ) -> None:
@@ -805,7 +833,7 @@ def starred_assigned_stmts(  # noqa: C901
 
         if not isinstance(target, nodes.Tuple):
             raise InferenceError(
-                "Could not make sense of this, the target must be a tuple",
+                f"Could not make sense of this, the target must be a tuple, not {type(target)!r}",
                 context=context,
             )
 

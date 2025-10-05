@@ -17,6 +17,8 @@ def common_params(node: str) -> pytest.MarkDecorator:
         (
             (f"{node} is None", None, 3),
             (f"{node} is not None", 3, None),
+            (f"{node}", 3, None),
+            (f"not {node}", None, 3),
         ),
     )
 
@@ -590,3 +592,184 @@ def test_if_instance_attr_varname_collision4(
 
     assert isinstance(inferred[1], nodes.Const)
     assert inferred[1].value == fail_val
+
+
+@common_params(node="x")
+def test_if_exp_body(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test constraint for a variable that is used in an if exp body."""
+    node1, node2 = builder.extract_node(
+        f"""
+    def f1(x = {fail_val}):
+        return (
+            x if {condition} else None  #@
+        )
+
+    def f2(x = {satisfy_val}):
+        return (
+            x if {condition} else None  #@
+        )
+    """
+    )
+
+    inferred = node1.body.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.body.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == satisfy_val
+    assert inferred[1] is Uninferable
+
+
+@common_params(node="x")
+def test_if_exp_else(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test constraint for a variable that is used in an if exp else block."""
+    node1, node2 = builder.extract_node(
+        f"""
+    def f1(x = {satisfy_val}):
+        return (
+            None if {condition} else x  #@
+        )
+
+    def f2(x = {fail_val}):
+        return (
+            None if {condition} else x  #@
+        )
+    """
+    )
+
+    inferred = node1.orelse.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.orelse.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == fail_val
+    assert inferred[1] is Uninferable
+
+
+@common_params(node="x")
+def test_outside_if_exp(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test that constraint in an if exp condition doesn't apply outside of the if exp."""
+    nodes_ = builder.extract_node(
+        f"""
+    def f1(x = {fail_val}):
+        x if {condition} else None
+        return (
+            x  #@
+        )
+
+    def f2(x = {satisfy_val}):
+        None if {condition} else x
+        return (
+            x  #@
+        )
+    """
+    )
+    for node, val in zip(nodes_, (fail_val, satisfy_val)):
+        inferred = node.inferred()
+        assert len(inferred) == 2
+        assert isinstance(inferred[0], nodes.Const)
+        assert inferred[0].value == val
+        assert inferred[1] is Uninferable
+
+
+@common_params(node="x")
+def test_nested_if_exp(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test that constraint in an if exp condition applies within inner if exp."""
+    node1, node2 = builder.extract_node(
+        f"""
+    def f1(y, x = {fail_val}):
+        return (
+            (x if y else None) if {condition} else None  #@
+        )
+
+    def f2(y, x = {satisfy_val}):
+        return (
+            (x if y else None) if {condition} else None  #@
+        )
+    """
+    )
+
+    inferred = node1.body.body.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.body.body.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == satisfy_val
+    assert inferred[1] is Uninferable
+
+
+@common_params(node="self.x")
+def test_if_exp_instance_attr(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test constraint for an instance attribute in an if exp."""
+    node1, node2 = builder.extract_node(
+        f"""
+    class A1:
+        def __init__(self, x = {fail_val}):
+            self.x = x
+
+        def method(self):
+            return (
+                self.x if {condition} else None  #@
+            )
+
+    class A2:
+        def __init__(self, x = {satisfy_val}):
+            self.x = x
+
+        def method(self):
+            return (
+                self.x if {condition} else None  #@
+            )
+    """
+    )
+
+    inferred = node1.body.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.body.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == satisfy_val
+    assert inferred[1].value is Uninferable
+
+
+@common_params(node="self.x")
+def test_if_exp_instance_attr_varname_collision(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test that constraint in an if exp condition doesn't apply to a variable with the same name."""
+    node = builder.extract_node(
+        f"""
+    class A:
+        def __init__(self, x = {fail_val}):
+            self.x = x
+
+        def method(self, x = {fail_val}):
+            return (
+                x if {condition} else None  #@
+            )
+    """
+    )
+
+    inferred = node.body.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == fail_val
+    assert inferred[1].value is Uninferable

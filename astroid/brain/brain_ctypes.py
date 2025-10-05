@@ -12,12 +12,13 @@ among float, int, bytes or str.
 """
 import sys
 
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
 
 
-def enrich_ctypes_redefined_types():
+def enrich_ctypes_redefined_types() -> nodes.Module:
     """
     For each ctypes redefined types, overload 'value' and '_type_' members
     definition.

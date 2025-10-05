@@ -14,7 +14,7 @@ from astroid.builder import _extract_single_node, extract_node
 
 class BuiltinsTest(unittest.TestCase):
     def test_infer_property(self):
-        class_with_property = _extract_single_node(
+        property_assign = _extract_single_node(
             """
         class Something:
             def getter():
@@ -22,14 +22,15 @@ class BuiltinsTest(unittest.TestCase):
             asd = property(getter) #@
         """
         )
-        inferred_property = next(iter(class_with_property.value.infer()))
+        inferred_property = next(iter(property_assign.value.infer()))
         self.assertTrue(isinstance(inferred_property, objects.Property))
-        class_parent = inferred_property.parent.parent.parent
+        class_parent = property_assign.scope()
         self.assertIsInstance(class_parent, nodes.ClassDef)
         self.assertFalse(
             any(
-                isinstance(getter, objects.Property)
-                for getter in class_parent.locals["getter"]
+                isinstance(def_, objects.Property)
+                for def_list in class_parent.locals.values()
+                for def_ in def_list
             )
         )
         self.assertTrue(hasattr(inferred_property, "args"))

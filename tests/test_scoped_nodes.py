@@ -42,6 +42,7 @@ from astroid.exceptions import (
     ResolveError,
     TooManyLevelsError,
 )
+from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes.scoped_nodes import _is_metaclass
 
 from . import resources
@@ -268,21 +269,21 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_file_stream_physical(self) -> None:
         path = resources.find("data/all.py")
-        astroid = builder.AstroidBuilder().file_build(path, "all")
+        astroid = builder.AstroidBuilder(AstroidManager()).file_build(path, "all")
         with open(path, "rb") as file_io:
             with astroid.stream() as stream:
                 self.assertEqual(stream.read(), file_io.read())
 
     def test_file_stream_api(self) -> None:
         path = resources.find("data/all.py")
-        file_build = builder.AstroidBuilder().file_build(path, "all")
+        file_build = builder.AstroidBuilder(AstroidManager()).file_build(path, "all")
         with self.assertRaises(AttributeError):
             # pylint: disable=pointless-statement, no-member
             file_build.file_stream  # noqa: B018
 
     def test_stream_api(self) -> None:
         path = resources.find("data/all.py")
-        astroid = builder.AstroidBuilder().file_build(path, "all")
+        astroid = builder.AstroidBuilder(AstroidManager()).file_build(path, "all")
         stream = astroid.stream()
         self.assertTrue(hasattr(stream, "close"))
         with stream:
@@ -1002,8 +1003,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(cls.getattr("__module__")[0], nodes.Const)
         self.assertEqual(cls.getattr("__module__")[0].value, "data.module")
         self.assertEqual(len(cls.getattr("__dict__")), 1)
-        if not cls.newstyle:
-            self.assertRaises(AttributeInferenceError, cls.getattr, "__mro__")
+
         for cls in (nodes.List._proxied, nodes.Const(1)._proxied):
             self.assertEqual(len(cls.getattr("__bases__")), 1)
             self.assertEqual(len(cls.getattr("__name__")), 1)
@@ -2154,7 +2154,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
         # Test that objects analyzed through the live introspection
         # aren't considered to have dynamic getattr implemented.
-        astroid_builder = builder.AstroidBuilder()
+        astroid_builder = builder.AstroidBuilder(AstroidManager())
         module = astroid_builder.module_build(difflib)
         self.assertFalse(module["SequenceMatcher"].has_dynamic_getattr())
 

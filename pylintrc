@@ -9,7 +9,13 @@
 
 # Add files or directories to the blacklist. They should be base names, not
 # paths.
-ignore=CVS
+ignore=.tox,CVS
+
+# Add files or directories matching the regular expressions patterns to the
+# ignore-list. The regex matches against paths and can be in Posix or Windows
+# format. Because '\\' represents the directory delimiter on Windows systems,
+# it can't be used as an escape character.
+ignore-paths=doc/conf.py,tests/testdata/
 
 # Pickle collected data for later comparisons.
 persistent=yes
@@ -39,7 +45,7 @@ unsafe-load-any-extension=no
 extension-pkg-whitelist=
 
 # Minimum supported python version
-py-version = 3.9.0
+py-version = 3.10.0
 
 
 [REPORTS]
@@ -86,9 +92,6 @@ disable=fixme,
         missing-docstring,
         too-few-public-methods,
         too-many-public-methods,
-        too-many-boolean-expressions,
-        too-many-branches,
-        too-many-statements,
         # We know about it and we're doing our best to remove it in 2.0 (oups)
         cyclic-import,
         # Requires major redesign for fixing this (and private
@@ -300,6 +303,9 @@ exclude-protected=_asdict,_fields,_replace,_source,_make
 
 # Maximum number of arguments for function / method
 max-args=10
+
+# Maximum number of positional arguments for function / method.
+max-positional-arguments=8
 
 # Argument names that match this expression will be ignored. Default to name
 

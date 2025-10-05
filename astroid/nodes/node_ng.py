@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import pprint
 import sys
-import warnings
 from collections.abc import Generator, Iterator
 from functools import cached_property
 from functools import singledispatch as _singledispatch
@@ -14,14 +13,12 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
-    Literal,
     TypeVar,
-    Union,
     cast,
     overload,
 )
 
-from astroid import util
+from astroid import nodes, util
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidError,
@@ -43,7 +40,6 @@ else:
 
 
 if TYPE_CHECKING:
-    from astroid import nodes
     from astroid.nodes import _base_nodes
 
 
@@ -51,7 +47,7 @@ if TYPE_CHECKING:
 _NodesT = TypeVar("_NodesT", bound="NodeNG")
 _NodesT2 = TypeVar("_NodesT2", bound="NodeNG")
 _NodesT3 = TypeVar("_NodesT3", bound="NodeNG")
-SkipKlassT = Union[None, type["NodeNG"], tuple[type["NodeNG"], ...]]
+SkipKlassT = None | type["NodeNG"] | tuple[type["NodeNG"], ...]
 
 
 class NodeNG:
@@ -277,26 +273,18 @@ class NodeNG:
         """
         return any(self is parent for parent in node.node_ancestors())
 
-    def statement(self, *, future: Literal[None, True] = None) -> _base_nodes.Statement:
+    def statement(self) -> _base_nodes.Statement:
         """The first parent node, including self, marked as statement node.
 
         :raises StatementMissing: If self has no parent attribute.
         """
-        if future is not None:
-            warnings.warn(
-                "The future arg will be removed in astroid 4.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         if self.is_statement:
             return cast("_base_nodes.Statement", self)
         if not self.parent:
             raise StatementMissing(target=self)
         return self.parent.statement()
 
-    def frame(
-        self, *, future: Literal[None, True] = None
-    ) -> nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda:
+    def frame(self) -> nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda:
         """The first parent frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -305,15 +293,9 @@ class NodeNG:
         :returns: The first parent frame node.
         :raises ParentMissingError: If self has no parent attribute.
         """
-        if future is not None:
-            warnings.warn(
-                "The future arg will be removed in astroid 4.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         if self.parent is None:
             raise ParentMissingError(target=self)
-        return self.parent.frame(future=future)
+        return self.parent.frame()
 
     def scope(self) -> nodes.LocalsDictNodeNG:
         """The first parent node defining a new scope.
@@ -332,11 +314,13 @@ class NodeNG:
         :returns: The root node.
         """
         if not (parent := self.parent):
-            return self  # type: ignore[return-value] # Only 'Module' does not have a parent node.
+            assert isinstance(self, nodes.Module)
+            return self
 
         while parent.parent:
             parent = parent.parent
-        return parent  # type: ignore[return-value] # Only 'Module' does not have a parent node.
+        assert isinstance(parent, nodes.Module)
+        return parent
 
     def child_sequence(self, child):
         """Search for the sequence that contains this child.
@@ -656,6 +640,8 @@ class NodeNG:
         :rtype: str
         """
 
+        # pylint: disable = too-many-statements
+
         @_singledispatch
         def _repr_tree(node, result, done, cur_indent="", depth=1):
             """Outputs a representation of a non-tuple/list, non-node that's
@@ -776,7 +762,7 @@ class NodeNG:
         """
         return util.Uninferable
 
-    def op_precedence(self):
+    def op_precedence(self) -> int:
         # Look up by class name or default to highest precedence
         return OP_PRECEDENCE.get(self.__class__.__name__, len(OP_PRECEDENCE))
 

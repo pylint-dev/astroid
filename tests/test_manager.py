@@ -15,7 +15,7 @@ from unittest import mock
 import pytest
 
 import astroid
-from astroid import manager, test_utils
+from astroid import manager, nodes, test_utils
 from astroid.const import IS_JYTHON, IS_PYPY, PY312_PLUS
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -107,7 +107,7 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
         try:
             for name in ("foo", "bar", "baz"):
                 module = self.manager.ast_from_module_name("package." + name)
-                self.assertIsInstance(module, astroid.Module)
+                self.assertIsInstance(module, nodes.Module)
         finally:
             sys.path = origpath
 
@@ -120,8 +120,15 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
     def test_identify_old_namespace_package_protocol(self) -> None:
         # Like the above cases, this package follows the old namespace package protocol
         # astroid currently assumes such packages are in sys.modules, so import it
-        # pylint: disable-next=import-outside-toplevel
-        import tests.testdata.python3.data.path_pkg_resources_1.package.foo as _  # noqa
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=UserWarning,
+                message=".*pkg_resources is deprecated.*",
+            )
+
+            # pylint: disable-next=import-outside-toplevel
+            import tests.testdata.python3.data.path_pkg_resources_1.package.foo as _  # noqa
 
         self.assertTrue(
             util.is_namespace("tests.testdata.python3.data.path_pkg_resources_1")
@@ -174,10 +181,10 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
 
         try:
             module = self.manager.ast_from_module_name("namespace_pep_420.module")
-            self.assertIsInstance(module, astroid.Module)
+            self.assertIsInstance(module, nodes.Module)
             self.assertEqual(module.name, "namespace_pep_420.module")
             var = next(module.igetattr("var"))
-            self.assertIsInstance(var, astroid.Const)
+            self.assertIsInstance(var, nodes.Const)
             self.assertEqual(var.value, 42)
         finally:
             for _ in range(2):
@@ -195,7 +202,7 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
             module = self.manager.ast_from_module_name("foogle.fax")
             submodule = next(module.igetattr("a"))
             value = next(submodule.igetattr("x"))
-            self.assertIsInstance(value, astroid.Const)
+            self.assertIsInstance(value, nodes.Const)
             with self.assertRaises(AstroidImportError):
                 self.manager.ast_from_module_name("foogle.moogle")
         finally:
@@ -276,6 +283,17 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
                 self._test_ast_from_zip(linked_file_name)
         finally:
             os.remove(linked_file_name)
+
+    def test_ast_from_module_name_pyz_with_submodule(self) -> None:
+        with self._restore_package_cache():
+            archive_path = os.path.join(resources.RESOURCE_PATH, "x.zip")
+            sys.path.insert(0, archive_path)
+            module = self.manager.ast_from_module_name("xxx.test")
+            self.assertEqual(module.name, "xxx.test")
+            end = os.path.join(archive_path, "xxx", "test")
+            self.assertTrue(
+                module.file.endswith(end), f"{module.file} doesn't endswith {end}"
+            )
 
     def test_zip_import_data(self) -> None:
         """Check if zip_import_data works."""
@@ -490,6 +508,32 @@ class ClearCacheTest(unittest.TestCase):
             with self.subTest(cleared_cache=cleared_cache):
                 # less equal because the "baseline" might have had multiple calls to bootstrap()
                 self.assertLessEqual(cleared_cache.currsize, baseline_cache.currsize)
+
+    def test_file_cache_after_clear_cache(self) -> None:
+        """Test to mimic the behavior of how pylint lints file and
+        ensure clear cache clears everything stored in the cache.
+        See https://github.com/pylint-dev/pylint/pull/9932#issuecomment-2364985551
+        for more information.
+        """
+        orig_sys_path = sys.path[:]
+        try:
+            search_path = resources.RESOURCE_PATH
+            sys.path.insert(0, search_path)
+            node = astroid.MANAGER.ast_from_file(resources.find("data/cache/a.py"))
+            self.assertEqual(node.name, "cache.a")
+
+            # This import from statement should succeed and update the astroid cache
+            importfrom_node = astroid.extract_node("from cache import a")
+            importfrom_node.do_import_module(importfrom_node.modname)
+        finally:
+            sys.path = orig_sys_path
+
+        astroid.MANAGER.clear_cache()
+
+        importfrom_node = astroid.extract_node("from cache import a")
+        # Try import from again after clear cache, this should raise an error
+        with self.assertRaises(AstroidBuildingError):
+            importfrom_node.do_import_module(importfrom_node.modname)
 
     def test_brain_plugins_reloaded_after_clearing_cache(self) -> None:
         astroid.MANAGER.clear_cache()

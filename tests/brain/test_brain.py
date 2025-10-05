@@ -21,11 +21,9 @@ from astroid.exceptions import (
     InferenceError,
     UseInferenceDefault,
 )
-from astroid.nodes.node_classes import Const
-from astroid.nodes.scoped_nodes import ClassDef
 
 
-def assertEqualMro(klass: ClassDef, expected_mro: list[str]) -> None:
+def assertEqualMro(klass: nodes.ClassDef, expected_mro: list[str]) -> None:
     """Check mro names."""
     assert [member.qname() for member in klass.mro()] == expected_mro
 
@@ -128,7 +126,6 @@ class IOBrainTest(unittest.TestCase):
             self.assertEqual(raw.name, "FileIO")
 
 
-@test_utils.require_version("3.9")
 class TypeBrain(unittest.TestCase):
     def test_type_subscript(self):
         """
@@ -141,10 +138,10 @@ class TypeBrain(unittest.TestCase):
             """
         )
         val_inf = src.annotation.value.inferred()[0]
-        self.assertIsInstance(val_inf, astroid.ClassDef)
+        self.assertIsInstance(val_inf, nodes.ClassDef)
         self.assertEqual(val_inf.name, "type")
         meth_inf = val_inf.getattr("__class_getitem__")[0]
-        self.assertIsInstance(meth_inf, astroid.FunctionDef)
+        self.assertIsInstance(meth_inf, nodes.FunctionDef)
 
     def test_invalid_type_subscript(self):
         """
@@ -158,7 +155,7 @@ class TypeBrain(unittest.TestCase):
             """
         )
         val_inf = src.annotation.value.inferred()[0]
-        self.assertIsInstance(val_inf, astroid.ClassDef)
+        self.assertIsInstance(val_inf, nodes.ClassDef)
         self.assertEqual(val_inf.name, "str")
         with self.assertRaises(AttributeInferenceError):
             # pylint: disable=expression-not-assigned
@@ -182,7 +179,7 @@ def check_metaclass_is_abc(node: nodes.ClassDef):
     if PY312_PLUS and node.name == "ByteString":
         # .metaclass() finds the first metaclass in the mro(),
         # which, from 3.12, is _DeprecateByteStringMeta (unhelpful)
-        # until ByteString is removed in 3.14.
+        # until ByteString is removed in 3.17.
         # Jump over the first two ByteString classes in the mro().
         check_metaclass_is_abc(node.mro()[2])
     else:
@@ -192,6 +189,22 @@ def check_metaclass_is_abc(node: nodes.ClassDef):
 
 
 class CollectionsBrain(unittest.TestCase):
+    def test_collections_abc_is_importable(self) -> None:
+        """
+        Test that we can import `collections.abc`.
+
+        The collections.abc has gone through various formats of being frozen. Therefore, we ensure
+        that we can still import it (correctly).
+        """
+        import_node = builder.extract_node("import collections.abc")
+        assert isinstance(import_node, nodes.Import)
+        imported_module = import_node.do_import_module(import_node.names[0][0])
+        # Make sure that the file we have imported is actually the submodule of collections and
+        # not the `abc` module. (Which would happen if you call `importlib.util.find_spec("abc")`
+        # instead of `importlib.util.find_spec("collections.abc")`)
+        assert isinstance(imported_module.file, str)
+        assert "collections" in imported_module.file
+
     def test_collections_object_not_subscriptable(self) -> None:
         """
         Test that unsubscriptable types are detected
@@ -249,43 +262,6 @@ class CollectionsBrain(unittest.TestCase):
             inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
         )
 
-    @test_utils.require_version(maxver="3.9")
-    def test_collections_object_not_yet_subscriptable(self):
-        """
-        Test that unsubscriptable types are detected as such.
-        Until python39 MutableSet of the collections module is not subscriptable.
-        """
-        wrong_node = builder.extract_node(
-            """
-        import collections.abc
-        collections.abc.MutableSet[int]
-        """
-        )
-        with self.assertRaises(InferenceError):
-            next(wrong_node.infer())
-        right_node = builder.extract_node(
-            """
-        import collections.abc
-        collections.abc.MutableSet
-        """
-        )
-        inferred = next(right_node.infer())
-        check_metaclass_is_abc(inferred)
-        assertEqualMro(
-            inferred,
-            [
-                "_collections_abc.MutableSet",
-                "_collections_abc.Set",
-                "_collections_abc.Collection",
-                "_collections_abc.Sized",
-                "_collections_abc.Iterable",
-                "_collections_abc.Container",
-                "builtins.object",
-            ],
-        )
-        with self.assertRaises(AttributeInferenceError):
-            inferred.getattr("__class_getitem__")
-
     def test_collections_object_subscriptable_2(self):
         """Starting with python39 Iterator in the collection.abc module is subscriptable"""
         node = builder.extract_node(
@@ -306,18 +282,6 @@ class CollectionsBrain(unittest.TestCase):
                 "builtins.object",
             ],
         )
-
-    @test_utils.require_version(maxver="3.9")
-    def test_collections_object_not_yet_subscriptable_2(self):
-        """Before python39 Iterator in the collection.abc module is not subscriptable"""
-        node = builder.extract_node(
-            """
-        import collections.abc
-        collections.abc.Iterator[int]
-        """
-        )
-        with self.assertRaises(InferenceError):
-            next(node.infer())
 
     def test_collections_object_subscriptable_3(self):
         """With Python 3.9 the ByteString class of the collections module is subscriptable
@@ -355,6 +319,16 @@ class CollectionsBrain(unittest.TestCase):
             ],
         )
 
+    def test_statistics_quantiles_from_import(self):
+        node = builder.extract_node(
+            """
+        from statistics import quantiles
+        quantiles([1, 2, 3, 4, 5, 6, 7, 8, 9], n=4)
+        """
+        )
+        inferred = next(node.infer())
+        self.assertIs(inferred, util.Uninferable)
+
 
 class TypingBrain(unittest.TestCase):
     def test_namedtuple_base(self) -> None:
@@ -389,7 +363,7 @@ class TypingBrain(unittest.TestCase):
         )
         self.assertEqual(len(klass.getattr("as_string")), 1)
         inferred = next(called.infer())
-        self.assertIsInstance(inferred, astroid.Const)
+        self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 5)
 
     def test_namedtuple_inference(self) -> None:
@@ -479,7 +453,7 @@ class TypingBrain(unittest.TestCase):
         self.assertIsInstance(inferred, astroid.Instance)
 
         class_attr = inferred.getattr("CLASS_ATTR")[0]
-        self.assertIsInstance(class_attr, astroid.AssignName)
+        self.assertIsInstance(class_attr, nodes.AssignName)
         const = next(class_attr.infer())
         self.assertEqual(const.value, "class_attr")
 
@@ -570,10 +544,10 @@ class TypingBrain(unittest.TestCase):
         """
         )
         inferred = next(result.infer())
-        self.assertIsInstance(inferred, astroid.ClassDef)
+        self.assertIsInstance(inferred, nodes.ClassDef)
 
         class_def_attr = inferred.getattr("Foo")[0]
-        self.assertIsInstance(class_def_attr, astroid.ClassDef)
+        self.assertIsInstance(class_def_attr, nodes.ClassDef)
         attr_def = class_def_attr.getattr("bar")[0]
         attr = next(attr_def.infer())
         self.assertEqual(attr.value, "bar")
@@ -686,7 +660,6 @@ class TypingBrain(unittest.TestCase):
         )
         assert len(node.inferred()) == 1
 
-    @test_utils.require_version(minver="3.10")
     def test_typing_param_spec(self):
         node = builder.extract_node(
             """
@@ -903,7 +876,7 @@ class TypingBrain(unittest.TestCase):
         )
 
     def test_typing_object_notsubscriptable_3(self):
-        """Until python39 ByteString class of the typing module is not
+        """The ByteString class of the typing module is not
         subscriptable (whereas it is in the collections' module)"""
         right_node = builder.extract_node(
             """
@@ -1005,55 +978,6 @@ class ReBrainTest(unittest.TestCase):
             self.assertIn(name, re_ast)
             self.assertEqual(next(re_ast[name].infer()).value, getattr(re, name))
 
-    @test_utils.require_version(maxver="3.9")
-    def test_re_pattern_unsubscriptable(self):
-        """
-        re.Pattern and re.Match are unsubscriptable until PY39.
-        """
-        right_node1 = builder.extract_node(
-            """
-        import re
-        re.Pattern
-        """
-        )
-        inferred1 = next(right_node1.infer())
-        assert isinstance(inferred1, nodes.ClassDef)
-        with self.assertRaises(AttributeInferenceError):
-            assert isinstance(
-                inferred1.getattr("__class_getitem__")[0], nodes.FunctionDef
-            )
-
-        right_node2 = builder.extract_node(
-            """
-        import re
-        re.Pattern
-        """
-        )
-        inferred2 = next(right_node2.infer())
-        assert isinstance(inferred2, nodes.ClassDef)
-        with self.assertRaises(AttributeInferenceError):
-            assert isinstance(
-                inferred2.getattr("__class_getitem__")[0], nodes.FunctionDef
-            )
-
-        wrong_node1 = builder.extract_node(
-            """
-        import re
-        re.Pattern[int]
-        """
-        )
-        with self.assertRaises(InferenceError):
-            next(wrong_node1.infer())
-
-        wrong_node2 = builder.extract_node(
-            """
-        import re
-        re.Match[int]
-        """
-        )
-        with self.assertRaises(InferenceError):
-            next(wrong_node2.infer())
-
     def test_re_pattern_subscriptable(self):
         """Test re.Pattern and re.Match are subscriptable in PY39+"""
         node1 = builder.extract_node(
@@ -1114,7 +1038,7 @@ class RandomSampleTest(unittest.TestCase):
         """
         )
         inferred = next(node.infer())
-        self.assertIsInstance(inferred, astroid.List)
+        self.assertIsInstance(inferred, nodes.List)
         elems = sorted(elem.value for elem in inferred.elts)
         self.assertEqual(elems, [1, 2])
 
@@ -1132,12 +1056,12 @@ class RandomSampleTest(unittest.TestCase):
         )
         # Check that arguments are of type `nodes.Call`.
         sequence, length = node.args
-        self.assertIsInstance(sequence, astroid.Call)
-        self.assertIsInstance(length, astroid.Call)
+        self.assertIsInstance(sequence, nodes.Call)
+        self.assertIsInstance(length, nodes.Call)
 
         # Check the inference of `random.sample` call.
         inferred = next(node.infer())
-        self.assertIsInstance(inferred, astroid.List)
+        self.assertIsInstance(inferred, nodes.List)
         elems = sorted(elem.value for elem in inferred.elts)
         self.assertEqual(elems, [1, 2])
 
@@ -1149,7 +1073,7 @@ class RandomSampleTest(unittest.TestCase):
         sample(list({1: A()}.values()), 1)"""
         )
         inferred = next(node.infer())
-        assert isinstance(inferred, astroid.List)
+        assert isinstance(inferred, nodes.List)
         assert len(inferred.elts) == 1
         assert isinstance(inferred.elts[0], nodes.Call)
 
@@ -1180,10 +1104,9 @@ class SubprocessTest(unittest.TestCase):
         node = astroid.extract_node(code)
         inferred = next(node.infer())
         # Can be either str or bytes
-        assert isinstance(inferred, astroid.Const)
+        assert isinstance(inferred, nodes.Const)
         assert isinstance(inferred.value, (str, bytes))
 
-    @test_utils.require_version("3.9")
     def test_popen_does_not_have_class_getitem(self):
         code = """import subprocess; subprocess.Popen"""
         node = astroid.extract_node(code)
@@ -1436,7 +1359,7 @@ class TestIssubclassBrain:
             _get_result_node("issubclass(int, int, str)")
 
 
-def _get_result_node(code: str) -> Const:
+def _get_result_node(code: str) -> nodes.Const:
     node = next(astroid.extract_node(code).infer())
     return node
 
@@ -1657,7 +1580,7 @@ def test_infer_str() -> None:
     )
     for node in ast_nodes:
         inferred = next(node.infer())
-        assert isinstance(inferred, astroid.Const)
+        assert isinstance(inferred, nodes.Const)
 
     node = astroid.extract_node(
         """
@@ -1678,7 +1601,7 @@ def test_infer_int() -> None:
     )
     for node in ast_nodes:
         inferred = next(node.infer())
-        assert isinstance(inferred, astroid.Const)
+        assert isinstance(inferred, nodes.Const)
 
     ast_nodes = astroid.extract_node(
         """
@@ -1705,7 +1628,8 @@ def test_infer_dict_from_keys() -> None:
     )
     for node in bad_nodes:
         with pytest.raises(InferenceError):
-            next(node.infer())
+            if isinstance(next(node.infer()), util.UninferableBase):
+                raise InferenceError
 
     # Test uninferable values
     good_nodes = astroid.extract_node(
@@ -1719,7 +1643,7 @@ def test_infer_dict_from_keys() -> None:
     )
     for node in good_nodes:
         inferred = next(node.infer())
-        assert isinstance(inferred, astroid.Dict)
+        assert isinstance(inferred, nodes.Dict)
         assert inferred.items == []
 
     # Test inferable values
@@ -1731,9 +1655,9 @@ def test_infer_dict_from_keys() -> None:
     """
     )
     inferred = next(from_dict.infer())
-    assert isinstance(inferred, astroid.Dict)
+    assert isinstance(inferred, nodes.Dict)
     itered = inferred.itered()
-    assert all(isinstance(elem, astroid.Const) for elem in itered)
+    assert all(isinstance(elem, nodes.Const) for elem in itered)
     actual_values = [elem.value for elem in itered]
     assert sorted(actual_values) == ["a", "b", "c"]
 
@@ -1744,9 +1668,9 @@ def test_infer_dict_from_keys() -> None:
     """
     )
     inferred = next(from_string.infer())
-    assert isinstance(inferred, astroid.Dict)
+    assert isinstance(inferred, nodes.Dict)
     itered = inferred.itered()
-    assert all(isinstance(elem, astroid.Const) for elem in itered)
+    assert all(isinstance(elem, nodes.Const) for elem in itered)
     actual_values = [elem.value for elem in itered]
     assert sorted(actual_values) == ["a", "b", "c"]
 
@@ -1757,9 +1681,9 @@ def test_infer_dict_from_keys() -> None:
     """
     )
     inferred = next(from_bytes.infer())
-    assert isinstance(inferred, astroid.Dict)
+    assert isinstance(inferred, nodes.Dict)
     itered = inferred.itered()
-    assert all(isinstance(elem, astroid.Const) for elem in itered)
+    assert all(isinstance(elem, nodes.Const) for elem in itered)
     actual_values = [elem.value for elem in itered]
     assert sorted(actual_values) == [97, 98, 99]
 
@@ -1773,9 +1697,9 @@ def test_infer_dict_from_keys() -> None:
     )
     for node in from_others:
         inferred = next(node.infer())
-        assert isinstance(inferred, astroid.Dict)
+        assert isinstance(inferred, nodes.Dict)
         itered = inferred.itered()
-        assert all(isinstance(elem, astroid.Const) for elem in itered)
+        assert all(isinstance(elem, nodes.Const) for elem in itered)
         actual_values = [elem.value for elem in itered]
         assert sorted(actual_values) == ["a", "b", "c"]
 
@@ -1823,7 +1747,7 @@ class TestFunctoolsPartial:
         )
         for node in ast_nodes:
             inferred = next(node.infer())
-            assert isinstance(inferred, (astroid.FunctionDef, astroid.Instance))
+            assert isinstance(inferred, (nodes.FunctionDef, astroid.Instance))
             assert inferred.qname() in {
                 "functools.partial",
                 "functools.partial.newfunc",
@@ -1854,7 +1778,7 @@ class TestFunctoolsPartial:
         expected_values = [4, 7, 7, 3, 12, 16, 32, 36, 3, 9, 7]
         for node, expected_value in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
-            assert isinstance(inferred, astroid.Const)
+            assert isinstance(inferred, nodes.Const)
             assert inferred.value == expected_value
 
     def test_partial_assignment(self) -> None:
@@ -1955,7 +1879,7 @@ def test_http_status_brain() -> None:
     """
     )
     inferred = next(node.infer())
-    assert isinstance(inferred, astroid.Const)
+    assert isinstance(inferred, nodes.Const)
 
 
 def test_http_status_brain_iterable() -> None:
@@ -1982,7 +1906,7 @@ def test_oserror_model() -> None:
     )
     inferred = next(node.infer())
     strerror = next(inferred.igetattr("strerror"))
-    assert isinstance(strerror, astroid.Const)
+    assert isinstance(strerror, nodes.Const)
     assert strerror.value == ""
 
 
@@ -2003,9 +1927,9 @@ def test_crypt_brain() -> None:
 @pytest.mark.parametrize(
     "code,expected_class,expected_value",
     [
-        ("'hey'.encode()", astroid.Const, b""),
-        ("b'hey'.decode()", astroid.Const, ""),
-        ("'hey'.encode().decode()", astroid.Const, ""),
+        ("'hey'.encode()", nodes.Const, b""),
+        ("b'hey'.decode()", nodes.Const, ""),
+        ("'hey'.encode().decode()", nodes.Const, ""),
     ],
 )
 def test_str_and_bytes(code, expected_class, expected_value):

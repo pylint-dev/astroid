@@ -67,6 +67,8 @@ def _filter_stmts(
 
     :returns: The filtered statements.
     """
+    # pylint: disable = too-many-branches, too-many-statements
+
     # if offset == -1, my actual frame is not the inner frame but its parent
     #
     # class A(B): pass

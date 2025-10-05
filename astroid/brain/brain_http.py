@@ -5,12 +5,13 @@
 """Astroid brain hints for some of the `http` module."""
 import textwrap
 
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder
 from astroid.manager import AstroidManager
 
 
-def _http_transform():
+def _http_transform() -> nodes.Module:
     code = textwrap.dedent(
         """
     from enum import IntEnum
@@ -34,6 +35,7 @@ def _http_transform():
         SWITCHING_PROTOCOLS = _HTTPStatus(101, 'Switching Protocols',
                 'Switching to new protocol; obey Upgrade header')
         PROCESSING = _HTTPStatus(102, 'Processing', '')
+        EARLY_HINTS = _HTTPStatus(103, 'Early Hints')
         OK = _HTTPStatus(200, 'OK', 'Request fulfilled, document follows')
         CREATED = _HTTPStatus(201, 'Created', 'Document created, URL follows')
         ACCEPTED = _HTTPStatus(202, 'Accepted',
@@ -86,22 +88,27 @@ def _http_transform():
             'Client must specify Content-Length')
         PRECONDITION_FAILED = _HTTPStatus(412, 'Precondition Failed',
             'Precondition in headers is false')
-        REQUEST_ENTITY_TOO_LARGE = _HTTPStatus(413, 'Request Entity Too Large',
-            'Entity is too large')
-        REQUEST_URI_TOO_LONG = _HTTPStatus(414, 'Request-URI Too Long',
-            'URI is too long')
+        CONTENT_TOO_LARGE = _HTTPStatus(413, 'Content Too Large',
+        'Content is too large')
+        REQUEST_ENTITY_TOO_LARGE = CONTENT_TOO_LARGE
+        URI_TOO_LONG = _HTTPStatus(414, 'URI Too Long', 'URI is too long')
+        REQUEST_URI_TOO_LONG = URI_TOO_LONG
         UNSUPPORTED_MEDIA_TYPE = _HTTPStatus(415, 'Unsupported Media Type',
             'Entity body in unsupported format')
-        REQUESTED_RANGE_NOT_SATISFIABLE = _HTTPStatus(416,
-            'Requested Range Not Satisfiable',
-            'Cannot satisfy request range')
+        RANGE_NOT_SATISFIABLE = (416, 'Range Not Satisfiable',
+        'Cannot satisfy request range')
+        REQUESTED_RANGE_NOT_SATISFIABLE = RANGE_NOT_SATISFIABLE
         EXPECTATION_FAILED = _HTTPStatus(417, 'Expectation Failed',
             'Expect condition could not be satisfied')
+        IM_A_TEAPOT = _HTTPStatus(418, 'I\\\'m a Teapot',
+            'Server refuses to brew coffee because it is a teapot.')
         MISDIRECTED_REQUEST = _HTTPStatus(421, 'Misdirected Request',
             'Server is not able to produce a response')
-        UNPROCESSABLE_ENTITY = _HTTPStatus(422, 'Unprocessable Entity')
+        UNPROCESSABLE_CONTENT = _HTTPStatus(422, 'Unprocessable Content')
+        UNPROCESSABLE_ENTITY = UNPROCESSABLE_CONTENT
         LOCKED = _HTTPStatus(423, 'Locked')
         FAILED_DEPENDENCY = _HTTPStatus(424, 'Failed Dependency')
+        TOO_EARLY = _HTTPStatus(425, 'Too Early')
         UPGRADE_REQUIRED = _HTTPStatus(426, 'Upgrade Required')
         PRECONDITION_REQUIRED = _HTTPStatus(428, 'Precondition Required',
             'The origin server requires the request to be conditional')
@@ -140,7 +147,7 @@ def _http_transform():
     return AstroidBuilder(AstroidManager()).string_build(code)
 
 
-def _http_client_transform():
+def _http_client_transform() -> nodes.Module:
     return AstroidBuilder(AstroidManager()).string_build(
         textwrap.dedent(
             """
@@ -149,6 +156,7 @@ def _http_client_transform():
     CONTINUE = HTTPStatus.CONTINUE
     SWITCHING_PROTOCOLS = HTTPStatus.SWITCHING_PROTOCOLS
     PROCESSING = HTTPStatus.PROCESSING
+    EARLY_HINTS = HTTPStatus.EARLY_HINTS
     OK = HTTPStatus.OK
     CREATED = HTTPStatus.CREATED
     ACCEPTED = HTTPStatus.ACCEPTED
@@ -180,14 +188,20 @@ def _http_client_transform():
     GONE = HTTPStatus.GONE
     LENGTH_REQUIRED = HTTPStatus.LENGTH_REQUIRED
     PRECONDITION_FAILED = HTTPStatus.PRECONDITION_FAILED
-    REQUEST_ENTITY_TOO_LARGE = HTTPStatus.REQUEST_ENTITY_TOO_LARGE
-    REQUEST_URI_TOO_LONG = HTTPStatus.REQUEST_URI_TOO_LONG
+    CONTENT_TOO_LARGE = HTTPStatus.CONTENT_TOO_LARGE
+    REQUEST_ENTITY_TOO_LARGE = HTTPStatus.CONTENT_TOO_LARGE
+    URI_TOO_LONG = HTTPStatus.URI_TOO_LONG
+    REQUEST_URI_TOO_LONG = HTTPStatus.URI_TOO_LONG
     UNSUPPORTED_MEDIA_TYPE = HTTPStatus.UNSUPPORTED_MEDIA_TYPE
-    REQUESTED_RANGE_NOT_SATISFIABLE = HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE
+    RANGE_NOT_SATISFIABLE = HTTPStatus.RANGE_NOT_SATISFIABLE
+    REQUESTED_RANGE_NOT_SATISFIABLE = HTTPStatus.RANGE_NOT_SATISFIABLE
     EXPECTATION_FAILED = HTTPStatus.EXPECTATION_FAILED
-    UNPROCESSABLE_ENTITY = HTTPStatus.UNPROCESSABLE_ENTITY
+    IM_A_TEAPOT = HTTPStatus.IM_A_TEAPOT
+    UNPROCESSABLE_CONTENT = HTTPStatus.UNPROCESSABLE_CONTENT
+    UNPROCESSABLE_ENTITY = HTTPStatus.UNPROCESSABLE_CONTENT
     LOCKED = HTTPStatus.LOCKED
     FAILED_DEPENDENCY = HTTPStatus.FAILED_DEPENDENCY
+    TOO_EARLY = HTTPStatus.TOO_EARLY
     UPGRADE_REQUIRED = HTTPStatus.UPGRADE_REQUIRED
     PRECONDITION_REQUIRED = HTTPStatus.PRECONDITION_REQUIRED
     TOO_MANY_REQUESTS = HTTPStatus.TOO_MANY_REQUESTS

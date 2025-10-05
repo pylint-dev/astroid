@@ -19,8 +19,6 @@ from unittest.mock import patch
 import pytest
 
 from astroid import (
-    Const,
-    Slice,
     Uninferable,
     arguments,
     manager,
@@ -33,7 +31,7 @@ from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod, UnionType
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
-from astroid.const import IS_PYPY, PY310_PLUS, PY312_PLUS
+from astroid.const import IS_PYPY, PY312_PLUS, PY314_PLUS
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -42,6 +40,7 @@ from astroid.exceptions import (
     NoDefault,
     NotFoundError,
 )
+from astroid.manager import AstroidManager
 from astroid.objects import ExceptionInstance
 
 from . import resources
@@ -58,7 +57,7 @@ def get_node_of_class(start_from: nodes.FunctionDef, klass: type) -> nodes.Attri
     return next(start_from.nodes_of_class(klass))
 
 
-builder = AstroidBuilder()
+builder = AstroidBuilder(AstroidManager())
 
 DATA_DIR = Path(__file__).parent / "testdata" / "python3" / "data"
 
@@ -69,7 +68,7 @@ class InferenceUtilsTest(unittest.TestCase):
             raise InferenceError
 
         infer_default = decoratorsmod.path_wrapper(infer_default)
-        infer_end = decoratorsmod.path_wrapper(Slice._infer)
+        infer_end = decoratorsmod.path_wrapper(nodes.Slice._infer)
         with self.assertRaises(InferenceError):
             next(infer_default(1))
         self.assertEqual(next(infer_end(1)), 1)
@@ -663,7 +662,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = node.inferred()
         self.assertEqual(len(inferred), 1)
         value_node = inferred[0]
-        self.assertIsInstance(value_node, Const)
+        self.assertIsInstance(value_node, nodes.Const)
         self.assertEqual(value_node.value, "Hello John!")
 
     def test_float_complex_ambiguity(self) -> None:
@@ -1261,6 +1260,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_binary_op_or_union_type(self) -> None:
         """Binary or union is only defined for Python 3.10+."""
+        # pylint: disable = too-many-statements
         code = """
         class A: ...
 
@@ -1289,57 +1289,57 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         tuple | int  #@
         """
         ast_nodes = extract_node(code)
-        if not PY310_PLUS:
-            for n in ast_nodes:
-                assert n.inferred() == [util.Uninferable]
-        else:
-            i0 = ast_nodes[0].inferred()[0]
-            assert isinstance(i0, UnionType)
-            assert isinstance(i0.left, nodes.ClassDef)
-            assert i0.left.name == "int"
-            assert isinstance(i0.right, nodes.Const)
-            assert i0.right.value is None
+        i0 = ast_nodes[0].inferred()[0]
+        assert isinstance(i0, UnionType)
+        assert isinstance(i0.left, nodes.ClassDef)
+        assert i0.left.name == "int"
+        assert isinstance(i0.right, nodes.Const)
+        assert i0.right.value is None
 
-            # Assert basic UnionType properties and methods
-            assert i0.callable() is False
-            assert i0.bool_value() is True
-            assert i0.pytype() == "types.UnionType"
-            assert i0.display_type() == "UnionType"
+        # Assert basic UnionType properties and methods
+        assert i0.callable() is False
+        assert i0.bool_value() is True
+        assert i0.pytype() == "types.UnionType"
+        assert i0.display_type() == "UnionType"
+        if PY314_PLUS:
+            assert str(i0) == "UnionType(Union)"
+            assert repr(i0) == f"<UnionType(Union) l.0 at 0x{id(i0)}>"
+        else:
             assert str(i0) == "UnionType(UnionType)"
             assert repr(i0) == f"<UnionType(UnionType) l.0 at 0x{id(i0)}>"
 
-            i1 = ast_nodes[1].inferred()[0]
-            assert isinstance(i1, UnionType)
+        i1 = ast_nodes[1].inferred()[0]
+        assert isinstance(i1, UnionType)
 
-            i2 = ast_nodes[2].inferred()[0]
-            assert isinstance(i2, UnionType)
-            assert isinstance(i2.left, UnionType)
-            assert isinstance(i2.left.left, nodes.ClassDef)
-            assert i2.left.left.name == "int"
-            assert isinstance(i2.left.right, nodes.ClassDef)
-            assert i2.left.right.name == "str"
-            assert isinstance(i2.right, nodes.Const)
-            assert i2.right.value is None
+        i2 = ast_nodes[2].inferred()[0]
+        assert isinstance(i2, UnionType)
+        assert isinstance(i2.left, UnionType)
+        assert isinstance(i2.left.left, nodes.ClassDef)
+        assert i2.left.left.name == "int"
+        assert isinstance(i2.left.right, nodes.ClassDef)
+        assert i2.left.right.name == "str"
+        assert isinstance(i2.right, nodes.Const)
+        assert i2.right.value is None
 
-            i3 = ast_nodes[3].inferred()[0]
-            assert isinstance(i3, UnionType)
-            assert isinstance(i3.left, nodes.ClassDef)
-            assert i3.left.name == "A"
-            assert isinstance(i3.right, nodes.ClassDef)
-            assert i3.right.name == "B"
+        i3 = ast_nodes[3].inferred()[0]
+        assert isinstance(i3, UnionType)
+        assert isinstance(i3.left, nodes.ClassDef)
+        assert i3.left.name == "A"
+        assert isinstance(i3.right, nodes.ClassDef)
+        assert i3.right.name == "B"
 
-            i4 = ast_nodes[4].inferred()[0]
-            assert isinstance(i4, UnionType)
+        i4 = ast_nodes[4].inferred()[0]
+        assert isinstance(i4, UnionType)
 
-            i5 = ast_nodes[5].inferred()[0]
-            assert isinstance(i5, UnionType)
-            assert isinstance(i5.left, nodes.ClassDef)
-            assert i5.left.name == "List"
+        i5 = ast_nodes[5].inferred()[0]
+        assert isinstance(i5, UnionType)
+        assert isinstance(i5.left, nodes.ClassDef)
+        assert i5.left.name == "List"
 
-            i6 = ast_nodes[6].inferred()[0]
-            assert isinstance(i6, UnionType)
-            assert isinstance(i6.left, nodes.ClassDef)
-            assert i6.left.name == "tuple"
+        i6 = ast_nodes[6].inferred()[0]
+        assert isinstance(i6, UnionType)
+        assert isinstance(i6.left, nodes.ClassDef)
+        assert i6.left.name == "tuple"
 
         code = """
         from typing import List
@@ -1352,26 +1352,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         Alias1 | Alias2  #@
         """
         ast_nodes = extract_node(code)
-        if not PY310_PLUS:
-            for n in ast_nodes:
-                assert n.inferred() == [util.Uninferable]
-        else:
-            i0 = ast_nodes[0].inferred()[0]
-            assert isinstance(i0, UnionType)
-            assert isinstance(i0.left, nodes.ClassDef)
-            assert i0.left.name == "List"
+        i0 = ast_nodes[0].inferred()[0]
+        assert isinstance(i0, UnionType)
+        assert isinstance(i0.left, nodes.ClassDef)
+        assert i0.left.name == "List"
 
-            i1 = ast_nodes[1].inferred()[0]
-            assert isinstance(i1, UnionType)
-            assert isinstance(i1.left, UnionType)
-            assert isinstance(i1.left.left, nodes.ClassDef)
-            assert i1.left.left.name == "str"
+        i1 = ast_nodes[1].inferred()[0]
+        assert isinstance(i1, UnionType)
+        assert isinstance(i1.left, UnionType)
+        assert isinstance(i1.left.left, nodes.ClassDef)
+        assert i1.left.left.name == "str"
 
-            i2 = ast_nodes[2].inferred()[0]
-            assert isinstance(i2, UnionType)
-            assert isinstance(i2.left, nodes.ClassDef)
-            assert i2.left.name == "List"
-            assert isinstance(i2.right, UnionType)
+        i2 = ast_nodes[2].inferred()[0]
+        assert isinstance(i2, UnionType)
+        assert isinstance(i2.left, nodes.ClassDef)
+        assert i2.left.name == "List"
+        assert isinstance(i2.right, UnionType)
 
     def test_nonregr_lambda_arg(self) -> None:
         code = """
@@ -1871,6 +1867,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         node = ast["do_a_thing"]
         self.assertEqual(node.type, "function")
 
+    @pytest.mark.skipif(
+        IS_PYPY,
+        reason="Persistent recursion error that we ignore and never fix",
+    )
     def test_no_infinite_ancestor_loop(self) -> None:
         klass = extract_node(
             """
@@ -2971,6 +2971,14 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         )
         inferred = next(instance.infer())
         self.assertIs(inferred.bool_value(), util.Uninferable)
+
+    def test_bool_value_not_implemented(self) -> None:
+        node = extract_node("""NotImplemented""")
+        inferred = next(node.infer())
+        if PY314_PLUS:
+            self.assertIs(inferred.bool_value(), util.Uninferable)
+        else:
+            self.assertIs(inferred.bool_value(), True)
 
     def test_infer_coercion_rules_for_floats_complex(self) -> None:
         ast_nodes = extract_node(
@@ -4407,6 +4415,23 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = list(node.inferred())
         assert [const.value for const in inferred] == [42, False]
 
+    def test_infer_property_setter(self) -> None:
+        node = extract_node(
+            """
+        class PropertyWithSetter:
+            @property
+            def host(self):
+                return self._host
+
+            @host.setter
+            def host(self, value: str):
+                self._host = value
+
+        PropertyWithSetter().host #@
+        """
+        )
+        assert not isinstance(next(node.infer()), Instance)
+
     def test_delayed_attributes_without_slots(self) -> None:
         ast_node = extract_node(
             """
@@ -5462,7 +5487,7 @@ class CallSiteTest(unittest.TestCase):
             else:
                 kwargs = {}
 
-            if nums:
+            if nums is not None:
                 add(*nums)
                 print(**kwargs)
         """
@@ -5534,7 +5559,7 @@ def test_formatted_fstring_inference(code, result) -> None:
     if result is None:
         assert value_node is util.Uninferable
     else:
-        assert isinstance(value_node, Const)
+        assert isinstance(value_node, nodes.Const)
         assert value_node.value == result
 
 
@@ -6148,7 +6173,7 @@ def test_recursion_error_inferring_slice() -> None:
     """
     )
     inferred = next(node.infer())
-    assert isinstance(inferred, Slice)
+    assert isinstance(inferred, nodes.Slice)
 
 
 def test_exception_lookup_last_except_handler_wins() -> None:
@@ -6853,20 +6878,15 @@ def test_inferring_properties_multiple_time_does_not_mutate_locals() -> None:
         @property
         def a(self):
             return 42
-
-    A()
     """
-    node = extract_node(code)
-    # Infer the class
-    cls = next(node.infer())
+    cls = extract_node(code)
     (prop,) = cls.getattr("a")
 
-    # Try to infer the property function *multiple* times. `A.locals` should be modified only once
+    assert len(cls.locals["a"]) == 1
     for _ in range(3):
         prop.inferred()
     a_locals = cls.locals["a"]
-    # [FunctionDef, Property]
-    assert len(a_locals) == 2
+    assert len(a_locals) == 1
 
 
 def test_getattr_fails_on_empty_values() -> None:
@@ -7354,3 +7374,49 @@ def test_sys_argv_uninferable() -> None:
     sys_argv_value = list(a._infer())
     assert len(sys_argv_value) == 1
     assert sys_argv_value[0] is Uninferable
+
+
+def test_empty_format_spec() -> None:
+    """Regression test for https://github.com/pylint-dev/pylint/issues/9945."""
+    node = extract_node('f"{x:}"')
+    assert isinstance(node, nodes.JoinedStr)
+
+    assert list(node.infer()) == [util.Uninferable]
+
+
+@pytest.mark.parametrize(
+    "source, expected",
+    [
+        (
+            """
+class Cls:
+    # pylint: disable=too-few-public-methods
+    pass
+
+c_obj = Cls()
+
+s1 = f'{c_obj!r}' #@
+""",
+            "<__main__.Cls",
+        ),
+        (
+            "s1 = f'{5}' #@",
+            "5",
+        ),
+        ("s1 = f'{missing}'", None),
+        ("s1 = f'a/{missing}/b'", None),
+    ],
+)
+def test_joined_str_returns_string(source, expected) -> None:
+    """Regression test for https://github.com/pylint-dev/pylint/issues/9947."""
+    node = extract_node(source)
+    assert isinstance(node, nodes.Assign)
+    target = node.targets[0]
+    assert target
+    inferred = list(target.inferred())
+    assert len(inferred) == 1
+    if expected:
+        assert isinstance(inferred[0], nodes.Const)
+        inferred[0].value.startswith(expected)
+    else:
+        assert inferred[0] is Uninferable

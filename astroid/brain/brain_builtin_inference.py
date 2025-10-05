@@ -9,9 +9,9 @@ from __future__ import annotations
 import itertools
 from collections.abc import Callable, Iterable, Iterator
 from functools import partial
-from typing import TYPE_CHECKING, Any, NoReturn, Union, cast
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 
-from astroid import arguments, helpers, inference_tip, nodes, objects, util
+from astroid import arguments, helpers, nodes, objects, util
 from astroid.builder import AstroidBuilder
 from astroid.context import InferenceContext
 from astroid.exceptions import (
@@ -21,6 +21,7 @@ from astroid.exceptions import (
     MroError,
     UseInferenceDefault,
 )
+from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.nodes import scoped_nodes
 from astroid.typing import (
@@ -32,26 +33,13 @@ from astroid.typing import (
 if TYPE_CHECKING:
     from astroid.bases import Instance
 
-ContainerObjects = Union[
-    objects.FrozenSet,
-    objects.DictItems,
-    objects.DictKeys,
-    objects.DictValues,
-]
+ContainerObjects = (
+    objects.FrozenSet | objects.DictItems | objects.DictKeys | objects.DictValues
+)
 
-BuiltContainers = Union[
-    type[tuple],
-    type[list],
-    type[set],
-    type[frozenset],
-]
+BuiltContainers = type[tuple] | type[list] | type[set] | type[frozenset]
 
-CopyResult = Union[
-    nodes.Dict,
-    nodes.List,
-    nodes.Set,
-    objects.FrozenSet,
-]
+CopyResult = nodes.Dict | nodes.List | nodes.Set | objects.FrozenSet
 
 OBJECT_DUNDER_NEW = "object.__new__"
 
@@ -172,6 +160,7 @@ def on_bootstrap():
 
 
 def _builtin_filter_predicate(node, builtin_name) -> bool:
+    # pylint: disable = too-many-boolean-expressions
     if (
         builtin_name == "type"
         and node.root().name == "re"
@@ -189,8 +178,8 @@ def _builtin_filter_predicate(node, builtin_name) -> bool:
         # Match = type(...)
         # ```
         return False
-    if isinstance(node.func, nodes.Name) and node.func.name == builtin_name:
-        return True
+    if isinstance(node.func, nodes.Name):
+        return node.func.name == builtin_name
     if isinstance(node.func, nodes.Attribute):
         return (
             node.func.attrname == "fromkeys"
@@ -280,7 +269,7 @@ def _container_generic_transform(
     if isinstance(arg, klass):
         return arg
     if isinstance(arg, iterables):
-        arg = cast(Union[nodes.BaseContainer, ContainerObjects], arg)
+        arg = cast((nodes.BaseContainer | ContainerObjects), arg)
         if all(isinstance(elt, nodes.Const) for elt in arg.elts):
             elts = [cast(nodes.Const, elt).value for elt in arg.elts]
         else:
@@ -371,7 +360,7 @@ infer_frozenset = partial(
 
 
 def _get_elts(arg, context):
-    def is_iterable(n):
+    def is_iterable(n) -> bool:
         return isinstance(n, (nodes.List, nodes.Tuple, nodes.Set))
 
     try:
@@ -641,12 +630,15 @@ def infer_property(
 
     prop_func = objects.Property(
         function=inferred,
-        name=inferred.name,
+        name="<property>",
         lineno=node.lineno,
         col_offset=node.col_offset,
+        # ↓ semantically, the definition of the class of property isn't within
+        # node.frame. It's somewhere in the builtins module, but we are special
+        # casing it for each "property()" call, so we are making up the
+        # definition on the spot, ad-hoc.
+        parent=scoped_nodes.SYNTHETIC_ROOT,
     )
-    # Set parent outside __init__: https://github.com/pylint-dev/astroid/issues/1490
-    prop_func.parent = node
     prop_func.postinit(
         body=[],
         args=inferred.args,
@@ -764,7 +756,9 @@ def infer_issubclass(callnode, context: InferenceContext | None = None):
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
     if not isinstance(obj_type, nodes.ClassDef):
-        raise UseInferenceDefault("TypeError: arg 1 must be class")
+        raise UseInferenceDefault(
+            f"TypeError: arg 1 must be class, not {type(obj_type)!r}"
+        )
 
     # The right hand argument is the class(es) that the given
     # object is to be checked against.
@@ -844,7 +838,7 @@ def _class_or_tuple_to_container(
     return class_container
 
 
-def infer_len(node, context: InferenceContext | None = None):
+def infer_len(node, context: InferenceContext | None = None) -> nodes.Const:
     """Infer length calls.
 
     :param nodes.Call node: len call to infer
@@ -867,7 +861,7 @@ def infer_len(node, context: InferenceContext | None = None):
         raise UseInferenceDefault(str(exc)) from exc
 
 
-def infer_str(node, context: InferenceContext | None = None):
+def infer_str(node, context: InferenceContext | None = None) -> nodes.Const:
     """Infer str() calls.
 
     :param nodes.Call node: str() call to infer
@@ -926,7 +920,7 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
         will be inferred instead.
     """
 
-    def _build_dict_with_elements(elements):
+    def _build_dict_with_elements(elements: list) -> nodes.Dict:
         new_node = nodes.Dict(
             col_offset=node.col_offset,
             lineno=node.lineno,
@@ -1004,7 +998,7 @@ def _infer_copy_method(
 
 def _is_str_format_call(node: nodes.Call) -> bool:
     """Catch calls to str.format()."""
-    if not isinstance(node.func, nodes.Attribute) or not node.func.attrname == "format":
+    if not (isinstance(node.func, nodes.Attribute) and node.func.attrname == "format"):
         return False
 
     if isinstance(node.func.expr, nodes.Name):
@@ -1024,8 +1018,9 @@ def _infer_str_format_call(
 
     value: nodes.Const
     if isinstance(node.func.expr, nodes.Name):
-        if not (inferred := util.safe_infer(node.func.expr)) or not isinstance(
-            inferred, nodes.Const
+        if not (
+            (inferred := util.safe_infer(node.func.expr))
+            and isinstance(inferred, nodes.Const)
         ):
             return iter([util.Uninferable])
         value = inferred

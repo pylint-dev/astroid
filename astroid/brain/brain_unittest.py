@@ -3,12 +3,13 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid hooks for unittest module."""
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
 
 
-def IsolatedAsyncioTestCaseImport():
+def IsolatedAsyncioTestCaseImport() -> nodes.Module:
     """
     In the unittest package, the IsolatedAsyncioTestCase class is imported lazily.
 

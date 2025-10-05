@@ -38,21 +38,21 @@ class InstanceModelTest(unittest.TestCase):
         )
         assert isinstance(ast_nodes, list)
         cls = next(ast_nodes[0].infer())
-        self.assertIsInstance(cls, astroid.ClassDef)
+        self.assertIsInstance(cls, nodes.ClassDef)
         self.assertEqual(cls.name, "A")
 
         module = next(ast_nodes[1].infer())
-        self.assertIsInstance(module, astroid.Const)
+        self.assertIsInstance(module, nodes.Const)
         self.assertEqual(module.value, "fake_module")
 
         doc = next(ast_nodes[2].infer())
-        self.assertIsInstance(doc, astroid.Const)
+        self.assertIsInstance(doc, nodes.Const)
         self.assertEqual(doc.value, "test")
 
         dunder_dict = next(ast_nodes[3].infer())
-        self.assertIsInstance(dunder_dict, astroid.Dict)
-        attr = next(dunder_dict.getitem(astroid.Const("a")).infer())
-        self.assertIsInstance(attr, astroid.Const)
+        self.assertIsInstance(dunder_dict, nodes.Dict)
+        attr = next(dunder_dict.getitem(nodes.Const("a")).infer())
+        self.assertIsInstance(attr, nodes.Const)
         self.assertEqual(attr.value, 42)
 
     @pytest.mark.xfail(reason="Instance lookup cannot override object model")
@@ -68,7 +68,7 @@ class InstanceModelTest(unittest.TestCase):
         """
         )
         inferred = next(ast_node.infer())
-        self.assertIsInstance(inferred, astroid.List)
+        self.assertIsInstance(inferred, nodes.List)
         self.assertEqual(inferred.elts, [])
 
 
@@ -85,7 +85,7 @@ class BoundMethodModelTest(unittest.TestCase):
         )
         assert isinstance(ast_nodes, list)
         func = next(ast_nodes[0].infer())
-        self.assertIsInstance(func, astroid.FunctionDef)
+        self.assertIsInstance(func, nodes.FunctionDef)
         self.assertEqual(func.name, "test")
 
         self_ = next(ast_nodes[1].infer())
@@ -110,17 +110,17 @@ class UnboundMethodModelTest(unittest.TestCase):
         )
         assert isinstance(ast_nodes, list)
         cls = next(ast_nodes[0].infer())
-        self.assertIsInstance(cls, astroid.ClassDef)
+        self.assertIsInstance(cls, nodes.ClassDef)
         unbound_name = "function"
 
         self.assertEqual(cls.name, unbound_name)
 
         func = next(ast_nodes[1].infer())
-        self.assertIsInstance(func, astroid.FunctionDef)
+        self.assertIsInstance(func, nodes.FunctionDef)
         self.assertEqual(func.name, "test")
 
         self_ = next(ast_nodes[2].infer())
-        self.assertIsInstance(self_, astroid.Const)
+        self.assertIsInstance(self_, nodes.Const)
         self.assertIsNone(self_.value)
 
         self.assertEqual(cls.name, next(ast_nodes[3].infer()).name)
@@ -138,7 +138,7 @@ class ClassModelTest(unittest.TestCase):
         """
         )
         inferred = next(ast_node.infer())
-        self.assertIsInstance(inferred, astroid.Const)
+        self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, "first")
 
     def test_class_model_correct_mro_subclasses_proxied(self) -> None:
@@ -153,8 +153,8 @@ class ClassModelTest(unittest.TestCase):
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, astroid.BoundMethod)
-            self.assertIsInstance(inferred._proxied, astroid.FunctionDef)
-            self.assertIsInstance(inferred.bound, astroid.ClassDef)
+            self.assertIsInstance(inferred._proxied, nodes.FunctionDef)
+            self.assertIsInstance(inferred.bound, nodes.ClassDef)
             self.assertEqual(inferred.bound.name, "type")
 
     def test_class_model(self) -> None:
@@ -181,41 +181,41 @@ class ClassModelTest(unittest.TestCase):
         )
         assert isinstance(ast_nodes, list)
         module = next(ast_nodes[0].infer())
-        self.assertIsInstance(module, astroid.Const)
+        self.assertIsInstance(module, nodes.Const)
         self.assertEqual(module.value, "fake_module")
 
         name = next(ast_nodes[1].infer())
-        self.assertIsInstance(name, astroid.Const)
+        self.assertIsInstance(name, nodes.Const)
         self.assertEqual(name.value, "A")
 
         qualname = next(ast_nodes[2].infer())
-        self.assertIsInstance(qualname, astroid.Const)
+        self.assertIsInstance(qualname, nodes.Const)
         self.assertEqual(qualname.value, "fake_module.A")
 
         doc = next(ast_nodes[3].infer())
-        self.assertIsInstance(doc, astroid.Const)
+        self.assertIsInstance(doc, nodes.Const)
         self.assertEqual(doc.value, "test")
 
         mro = next(ast_nodes[4].infer())
-        self.assertIsInstance(mro, astroid.Tuple)
+        self.assertIsInstance(mro, nodes.Tuple)
         self.assertEqual([cls.name for cls in mro.elts], ["A", "object"])
 
         called_mro = next(ast_nodes[5].infer())
         self.assertEqual(called_mro.elts, mro.elts)
 
         base_nodes = next(ast_nodes[6].infer())
-        self.assertIsInstance(base_nodes, astroid.Tuple)
+        self.assertIsInstance(base_nodes, nodes.Tuple)
         self.assertEqual([cls.name for cls in base_nodes.elts], ["object"])
 
         cls = next(ast_nodes[7].infer())
-        self.assertIsInstance(cls, astroid.ClassDef)
+        self.assertIsInstance(cls, nodes.ClassDef)
         self.assertEqual(cls.name, "type")
 
         cls_dict = next(ast_nodes[8].infer())
-        self.assertIsInstance(cls_dict, astroid.Dict)
+        self.assertIsInstance(cls_dict, nodes.Dict)
 
         subclasses = next(ast_nodes[9].infer())
-        self.assertIsInstance(subclasses, astroid.List)
+        self.assertIsInstance(subclasses, nodes.List)
         self.assertEqual([cls.name for cls in subclasses.elts], ["B", "C"])
 
 
@@ -227,7 +227,7 @@ class ModuleModelTest(unittest.TestCase):
         """
         )
         file_value = next(ast_node.igetattr("__file__"))
-        self.assertIsInstance(file_value, astroid.Const)
+        self.assertIsInstance(file_value, nodes.Const)
         self.assertEqual(file_value.value, "mine")
 
     def test__path__not_a_package(self) -> None:
@@ -278,20 +278,20 @@ class ModuleModelTest(unittest.TestCase):
         )
         assert isinstance(ast_nodes, list)
         path = next(ast_nodes[0].infer())
-        self.assertIsInstance(path, astroid.List)
-        self.assertIsInstance(path.elts[0], astroid.Const)
+        self.assertIsInstance(path, nodes.List)
+        self.assertIsInstance(path.elts[0], nodes.Const)
         self.assertEqual(path.elts[0].value, xml.__path__[0])
 
         name = next(ast_nodes[1].infer())
-        self.assertIsInstance(name, astroid.Const)
+        self.assertIsInstance(name, nodes.Const)
         self.assertEqual(name.value, "xml")
 
         doc = next(ast_nodes[2].infer())
-        self.assertIsInstance(doc, astroid.Const)
+        self.assertIsInstance(doc, nodes.Const)
         self.assertEqual(doc.value, xml.__doc__)
 
         file_ = next(ast_nodes[3].infer())
-        self.assertIsInstance(file_, astroid.Const)
+        self.assertIsInstance(file_, nodes.Const)
         self.assertEqual(file_.value, xml.__file__.replace(".pyc", ".py"))
 
         for ast_node in ast_nodes[4:7]:
@@ -299,11 +299,11 @@ class ModuleModelTest(unittest.TestCase):
             self.assertIs(inferred, astroid.Uninferable)
 
         package = next(ast_nodes[7].infer())
-        self.assertIsInstance(package, astroid.Const)
+        self.assertIsInstance(package, nodes.Const)
         self.assertEqual(package.value, "xml")
 
         dict_ = next(ast_nodes[8].infer())
-        self.assertIsInstance(dict_, astroid.Dict)
+        self.assertIsInstance(dict_, nodes.Dict)
 
         init_ = next(ast_nodes[9].infer())
         assert isinstance(init_, bases.BoundMethod)
@@ -346,7 +346,7 @@ class FunctionModelTest(unittest.TestCase):
         self.assertIsInstance(bound, astroid.BoundMethod)
         self.assertEqual(bound._proxied._proxied.name, "test")
         result = next(result.infer())
-        self.assertIsInstance(result, astroid.Const)
+        self.assertIsInstance(result, nodes.Const)
         self.assertEqual(result.value, 42)
 
     def test___get__has_extra_params_defined(self) -> None:
@@ -386,7 +386,7 @@ class FunctionModelTest(unittest.TestCase):
         """
         )
         result = next(result.infer())
-        self.assertIsInstance(result, astroid.Const)
+        self.assertIsInstance(result, nodes.Const)
         self.assertEqual(result.value, 42)
 
     def test_descriptors_binding_invalid(self) -> None:
@@ -464,30 +464,30 @@ class FunctionModelTest(unittest.TestCase):
         )
         assert isinstance(ast_nodes, list)
         name = next(ast_nodes[0].infer())
-        self.assertIsInstance(name, astroid.Const)
+        self.assertIsInstance(name, nodes.Const)
         self.assertEqual(name.value, "func")
 
         doc = next(ast_nodes[1].infer())
-        self.assertIsInstance(doc, astroid.Const)
+        self.assertIsInstance(doc, nodes.Const)
         self.assertEqual(doc.value, "test")
 
         qualname = next(ast_nodes[2].infer())
-        self.assertIsInstance(qualname, astroid.Const)
+        self.assertIsInstance(qualname, nodes.Const)
         self.assertEqual(qualname.value, "fake_module.func")
 
         module = next(ast_nodes[3].infer())
-        self.assertIsInstance(module, astroid.Const)
+        self.assertIsInstance(module, nodes.Const)
         self.assertEqual(module.value, "fake_module")
 
         defaults = next(ast_nodes[4].infer())
-        self.assertIsInstance(defaults, astroid.Tuple)
+        self.assertIsInstance(defaults, nodes.Tuple)
         self.assertEqual([default.value for default in defaults.elts], [1, 2])
 
         dict_ = next(ast_nodes[5].infer())
-        self.assertIsInstance(dict_, astroid.Dict)
+        self.assertIsInstance(dict_, nodes.Dict)
 
         globals_ = next(ast_nodes[6].infer())
-        self.assertIsInstance(globals_, astroid.Dict)
+        self.assertIsInstance(globals_, nodes.Dict)
 
         for ast_node in ast_nodes[7:9]:
             self.assertIs(next(ast_node.infer()), astroid.Uninferable)
@@ -529,7 +529,7 @@ class FunctionModelTest(unittest.TestCase):
         """
         )
         annotations = next(ast_node.infer())
-        self.assertIsInstance(annotations, astroid.Dict)
+        self.assertIsInstance(annotations, nodes.Dict)
         self.assertEqual(len(annotations.items), 0)
 
     def test_builtin_dunder_init_does_not_crash_when_accessing_annotations(
@@ -544,7 +544,7 @@ class FunctionModelTest(unittest.TestCase):
         """
         )
         inferred = next(ast_node.infer())
-        self.assertIsInstance(inferred, astroid.Dict)
+        self.assertIsInstance(inferred, nodes.Dict)
         self.assertEqual(len(inferred.items), 0)
 
     def test_annotations_kwdefaults(self) -> None:
@@ -556,20 +556,18 @@ class FunctionModelTest(unittest.TestCase):
         """
         )
         annotations = next(ast_node[0].infer())
-        self.assertIsInstance(annotations, astroid.Dict)
-        self.assertIsInstance(
-            annotations.getitem(astroid.Const("return")), astroid.Const
-        )
-        self.assertEqual(annotations.getitem(astroid.Const("return")).value, 2)
-        self.assertIsInstance(annotations.getitem(astroid.Const("a")), astroid.Const)
-        self.assertEqual(annotations.getitem(astroid.Const("a")).value, 1)
-        self.assertEqual(annotations.getitem(astroid.Const("args")).value, 2)
-        self.assertEqual(annotations.getitem(astroid.Const("kwarg")).value, 3)
+        self.assertIsInstance(annotations, nodes.Dict)
+        self.assertIsInstance(annotations.getitem(nodes.Const("return")), nodes.Const)
+        self.assertEqual(annotations.getitem(nodes.Const("return")).value, 2)
+        self.assertIsInstance(annotations.getitem(nodes.Const("a")), nodes.Const)
+        self.assertEqual(annotations.getitem(nodes.Const("a")).value, 1)
+        self.assertEqual(annotations.getitem(nodes.Const("args")).value, 2)
+        self.assertEqual(annotations.getitem(nodes.Const("kwarg")).value, 3)
 
-        self.assertEqual(annotations.getitem(astroid.Const("f")).value, 4)
+        self.assertEqual(annotations.getitem(nodes.Const("f")).value, 4)
 
         kwdefaults = next(ast_node[1].infer())
-        self.assertIsInstance(kwdefaults, astroid.Dict)
+        self.assertIsInstance(kwdefaults, nodes.Dict)
         # self.assertEqual(kwdefaults.getitem('f').value, 'lala')
 
     def test_annotation_positional_only(self):
@@ -580,12 +578,12 @@ class FunctionModelTest(unittest.TestCase):
         """
         )
         annotations = next(ast_node.infer())
-        self.assertIsInstance(annotations, astroid.Dict)
+        self.assertIsInstance(annotations, nodes.Dict)
 
-        self.assertIsInstance(annotations.getitem(astroid.Const("a")), astroid.Const)
-        self.assertEqual(annotations.getitem(astroid.Const("a")).value, 1)
-        self.assertEqual(annotations.getitem(astroid.Const("b")).value, 2)
-        self.assertEqual(annotations.getitem(astroid.Const("c")).value, 3)
+        self.assertIsInstance(annotations.getitem(nodes.Const("a")), nodes.Const)
+        self.assertEqual(annotations.getitem(nodes.Const("a")).value, 1)
+        self.assertEqual(annotations.getitem(nodes.Const("b")).value, 2)
+        self.assertEqual(annotations.getitem(nodes.Const("c")).value, 3)
 
     def test_is_not_lambda(self):
         ast_node = builder.extract_node("def func(): pass")
@@ -657,11 +655,11 @@ class GeneratorModelTest(unittest.TestCase):
         self.assertEqual(doc.value, "a")
 
         gi_code = next(ast_nodes[2].infer())
-        self.assertIsInstance(gi_code, astroid.ClassDef)
+        self.assertIsInstance(gi_code, nodes.ClassDef)
         self.assertEqual(gi_code.name, "gi_code")
 
         gi_frame = next(ast_nodes[3].infer())
-        self.assertIsInstance(gi_frame, astroid.ClassDef)
+        self.assertIsInstance(gi_frame, nodes.ClassDef)
         self.assertEqual(gi_frame.name, "gi_frame")
 
         send = next(ast_nodes[4].infer())
@@ -690,7 +688,7 @@ class ExceptionModelTest(unittest.TestCase):
         )
         assert isinstance(ast_nodes, list)
         args = next(ast_nodes[0].infer())
-        assert isinstance(args, astroid.Tuple)
+        assert isinstance(args, nodes.Tuple)
         tb = next(ast_nodes[1].infer())
         # Python 3.11: If 'contextlib' is loaded, '__traceback__'
         # could be set inside '__exit__' method in
@@ -717,7 +715,7 @@ class ExceptionModelTest(unittest.TestCase):
         """
         )
         inferred = next(ast_node.infer())
-        assert isinstance(inferred, astroid.Const)
+        assert isinstance(inferred, nodes.Const)
 
     @unittest.skipIf(HAS_SIX, "This test fails if the six library is installed")
     def test_oserror(self) -> None:
@@ -734,7 +732,7 @@ class ExceptionModelTest(unittest.TestCase):
         expected_values = ["", "", 0]
         for node, value in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
-            assert isinstance(inferred, astroid.Const)
+            assert isinstance(inferred, nodes.Const)
             assert inferred.value == value
 
     def test_unicodedecodeerror(self) -> None:
@@ -746,7 +744,7 @@ class ExceptionModelTest(unittest.TestCase):
         """
         node = builder.extract_node(code)
         inferred = next(node.infer())
-        assert isinstance(inferred, astroid.Const)
+        assert isinstance(inferred, nodes.Const)
         assert inferred.value == b""
 
     def test_import_error(self) -> None:
@@ -761,7 +759,7 @@ class ExceptionModelTest(unittest.TestCase):
         )
         for node in ast_nodes:
             inferred = next(node.infer())
-            assert isinstance(inferred, astroid.Const)
+            assert isinstance(inferred, nodes.Const)
             assert inferred.value == ""
 
     def test_exception_instance_correctly_instantiated(self) -> None:
@@ -776,14 +774,14 @@ class ExceptionModelTest(unittest.TestCase):
         inferred = next(ast_node.infer())
         assert isinstance(inferred, astroid.Instance)
         cls = next(inferred.igetattr("__class__"))
-        assert isinstance(cls, astroid.ClassDef)
+        assert isinstance(cls, nodes.ClassDef)
 
 
 class DictObjectModelTest(unittest.TestCase):
     def test__class__(self) -> None:
         ast_node = builder.extract_node("{}.__class__")
         inferred = next(ast_node.infer())
-        self.assertIsInstance(inferred, astroid.ClassDef)
+        self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "dict")
 
     def test_attributes_inferred_as_methods(self) -> None:
@@ -851,7 +849,7 @@ def test_lru_cache(parentheses) -> None:
     cache_clear = next(ast_nodes[0].infer())
     assert isinstance(cache_clear, astroid.BoundMethod)
     wrapped = next(ast_nodes[1].infer())
-    assert isinstance(wrapped, astroid.FunctionDef)
+    assert isinstance(wrapped, nodes.FunctionDef)
     assert wrapped.name == "foo"
     cache_info = next(ast_nodes[2].infer())
     assert isinstance(cache_info, astroid.Instance)

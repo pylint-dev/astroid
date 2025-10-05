@@ -11,17 +11,12 @@ import inspect
 import sys
 import warnings
 from collections.abc import Callable, Generator
-from typing import TypeVar
+from typing import ParamSpec, TypeVar
 
 from astroid import util
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
 from astroid.typing import InferenceResult
-
-if sys.version_info >= (3, 10):
-    from typing import ParamSpec
-else:
-    from typing_extensions import ParamSpec
 
 _R = TypeVar("_R")
 _P = ParamSpec("_P")
@@ -60,7 +55,7 @@ def path_wrapper(func):
 
 
 def yes_if_nothing_inferred(
-    func: Callable[_P, Generator[InferenceResult]]
+    func: Callable[_P, Generator[InferenceResult]],
 ) -> Callable[_P, Generator[InferenceResult]]:
     def inner(*args: _P.args, **kwargs: _P.kwargs) -> Generator[InferenceResult]:
         generator = func(*args, **kwargs)
@@ -137,6 +132,7 @@ if util.check_warnings_filter():  # noqa: C901
                         raise ValueError(
                             f"Can't find argument '{arg}' for '{args[0].__class__.__qualname__}'"
                         ) from None
+                    # pylint: disable = too-many-boolean-expressions
                     if (
                         # Check kwargs
                         # - if found, check it's not None
@@ -146,11 +142,13 @@ if util.check_warnings_filter():  # noqa: C901
                         # - len(args) needs to be long enough, if too short
                         #   arg can't be in args either
                         # - args[index] should not be None
-                        or arg not in kwargs
-                        and (
-                            index == -1
-                            or len(args) <= index
-                            or (len(args) > index and args[index] is None)
+                        or (
+                            arg not in kwargs
+                            and (
+                                index == -1
+                                or len(args) <= index
+                                or (len(args) > index and args[index] is None)
+                            )
                         )
                     ):
                         warnings.warn(

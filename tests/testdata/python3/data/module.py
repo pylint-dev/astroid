@@ -2,7 +2,7 @@
 """
 
 __revision__ = '$Id: module.py,v 1.2 2005-11-02 11:56:54 syt Exp $'
-from astroid.nodes.node_classes import Name as NameNode
+from astroid.nodes import Name as NameNode
 from astroid import modutils
 from astroid.utils import *
 import os.path
@@ -59,7 +59,9 @@ class YOUPI(YO):
                 return 'hehe'
             global_access(local, val=autre)
         finally:
-            return local
+            # return in finally was previously tested here but became a syntax error
+            # in 3.14 and this file is used in 188/1464 tests
+            a = local
     
     def static_method():
         """static method test"""

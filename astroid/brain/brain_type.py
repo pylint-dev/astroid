@@ -22,9 +22,11 @@ Thanks to Lukasz Langa for fruitful discussion.
 
 from __future__ import annotations
 
-from astroid import extract_node, inference_tip, nodes
+from astroid import nodes
+from astroid.builder import extract_node
 from astroid.context import InferenceContext
 from astroid.exceptions import UseInferenceDefault
+from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 
 
@@ -33,7 +35,7 @@ def _looks_like_type_subscript(node: nodes.Name) -> bool:
     Try to figure out if a Name node is used inside a type related subscript.
 
     :param node: node to check
-    :type node: astroid.nodes.node_classes.NodeNG
+    :type node: astroid.nodes.NodeNG
     :return: whether the node is a Name node inside a type related subscript
     """
     if isinstance(node.parent, nodes.Subscript):
@@ -46,12 +48,12 @@ def infer_type_sub(node, context: InferenceContext | None = None):
     Infer a type[...] subscript.
 
     :param node: node to infer
-    :type node: astroid.nodes.node_classes.NodeNG
+    :type node: astroid.nodes.NodeNG
     :return: the inferred node
     :rtype: nodes.NodeNG
     """
     node_scope, _ = node.scope().lookup("type")
-    if not isinstance(node_scope, nodes.Module) or node_scope.qname() != "builtins":
+    if not (isinstance(node_scope, nodes.Module) and node_scope.qname() == "builtins"):
         raise UseInferenceDefault()
     class_src = """
     class type:

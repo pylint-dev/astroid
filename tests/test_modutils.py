@@ -20,7 +20,6 @@ from pytest import CaptureFixture, LogCaptureFixture
 
 import astroid
 from astroid import modutils
-from astroid.const import PY310_PLUS
 from astroid.interpreter._import import spec
 
 from . import resources
@@ -162,7 +161,7 @@ class ModPathFromFileTest(unittest.TestCase):
         )
 
     def test_raise_modpath_from_file_exception(self) -> None:
-        self.assertRaises(Exception, modutils.modpath_from_file, "/turlututu")
+        self.assertRaises(ImportError, modutils.modpath_from_file, "/turlututu")
 
     def test_import_symlink_with_source_outside_of_path(self) -> None:
         with tempfile.NamedTemporaryFile() as tmpfile:
@@ -174,6 +173,37 @@ class ModPathFromFileTest(unittest.TestCase):
                 )
             finally:
                 os.remove(linked_file_name)
+
+    def test_modpath_from_file_path_order(self) -> None:
+        """Test for ordering of paths.
+        The test does the following:
+        1. Add a tmp directory to beginning of sys.path via augmented_sys_path
+        2. Create a module file in sub directory of tmp directory
+        3. If the sub directory is passed as additional directory, module name
+           should be relative to the subdirectory since additional directory has
+           higher precedence."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            with resources.augmented_sys_path([tmp_dir]):
+                mod_name = "module"
+                sub_dirname = "subdir"
+                sub_dir = tmp_dir + "/" + sub_dirname
+                os.mkdir(sub_dir)
+                module_file = f"{sub_dir}/{mod_name}.py"
+
+                with open(module_file, "w+", encoding="utf-8"):
+                    pass
+
+                # Without additional directory, return relative to tmp_dir
+                self.assertEqual(
+                    modutils.modpath_from_file(module_file), [sub_dirname, mod_name]
+                )
+
+                # With sub directory as additional directory, return relative to
+                # sub directory
+                self.assertEqual(
+                    modutils.modpath_from_file(f"{sub_dir}/{mod_name}.py", [sub_dir]),
+                    [mod_name],
+                )
 
     def test_import_symlink_both_outside_of_path(self) -> None:
         with tempfile.NamedTemporaryFile() as tmpfile:
@@ -303,6 +333,22 @@ class GetSourceFileTest(unittest.TestCase):
             modutils.get_source_file(module, prefer_stubs=True),
             os.path.normpath(module) + "i",
         )
+
+    def test_nonstandard_extension(self) -> None:
+        package = resources.find("pyi_data/find_test")
+        modules = [
+            os.path.join(package, "__init__.weird_ext"),
+            os.path.join(package, "standalone_file.weird_ext"),
+        ]
+        for module in modules:
+            self.assertEqual(
+                modutils.get_source_file(module, prefer_stubs=True),
+                module,
+            )
+            self.assertEqual(
+                modutils.get_source_file(module),
+                module,
+            )
 
 
 class IsStandardModuleTest(resources.SysPathSetup, unittest.TestCase):
@@ -455,18 +501,6 @@ class ModuleInPathTest(resources.SysPathSetup, unittest.TestCase):
         assert not modutils.module_in_path("astroid", datadir)
 
 
-class BackportStdlibNamesTest(resources.SysPathSetup, unittest.TestCase):
-    """
-    Verify backport raises exception on newer versions
-    """
-
-    @pytest.mark.skipif(not PY310_PLUS, reason="Backport valid on <=3.9")
-    def test_import_error(self) -> None:
-        with pytest.raises(AssertionError):
-            # pylint: disable-next=import-outside-toplevel, unused-import
-            from astroid import _backport_stdlib_names  # noqa
-
-
 class IsRelativeTest(unittest.TestCase):
     def test_known_values_is_relative_1(self) -> None:
         self.assertTrue(modutils.is_relative("utils", email.__path__[0]))
@@ -597,3 +631,18 @@ def test_find_setuptools_pep660_editable_install():
     with unittest.mock.patch.object(sys, "meta_path", new=[_EditableFinder]):
         assert spec.find_spec(["example"])
         assert spec.find_spec(["example", "subpackage"])
+
+
+def test_no_import_done_for_submodule_sharing_std_lib_name() -> None:
+    sys.path.insert(0, resources.find("data"))
+    try:
+        with pytest.raises(ImportError):
+            spec._find_spec_with_path(
+                [resources.find("data")],
+                "trace",
+                ("divide_by_zero", "trace"),
+                ("divide_by_zero",),
+                resources.find("data/divide_by_zero"),
+            )
+    finally:
+        sys.path.pop(0)

@@ -2,12 +2,13 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
+from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
 
 
-def _hashlib_transform():
+def _hashlib_transform() -> nodes.Module:
     init_signature = "value='', usedforsecurity=True"
     digest_signature = "self"
     shake_digest_signature = "self, length"

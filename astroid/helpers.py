@@ -37,8 +37,7 @@ def safe_infer(
 
 
 def _build_proxy_class(cls_name: str, builtins: nodes.Module) -> nodes.ClassDef:
-    proxy = raw_building.build_class(cls_name)
-    proxy.parent = builtins
+    proxy = raw_building.build_class(cls_name, builtins)
     return proxy
 
 
@@ -67,11 +66,10 @@ def _object_type(
 
     for inferred in node.infer(context=context):
         if isinstance(inferred, scoped_nodes.ClassDef):
-            if inferred.newstyle:
-                metaclass = inferred.metaclass(context=context)
-                if metaclass:
-                    yield metaclass
-                    continue
+            metaclass = inferred.metaclass(context=context)
+            if metaclass:
+                yield metaclass
+                continue
             yield builtins.getattr("type")[0]
         elif isinstance(
             inferred,
@@ -106,7 +104,7 @@ def object_type(
         types = set(_object_type(node, context))
     except InferenceError:
         return util.Uninferable
-    if len(types) > 1 or not types:
+    if len(types) != 1:
         return util.Uninferable
     return next(iter(types))
 
@@ -131,7 +129,9 @@ def _object_type_is_subclass(
     # issubclass(object, (1, type)) raises TypeError
     for klass in class_seq:
         if isinstance(klass, util.UninferableBase):
-            raise AstroidTypeError("arg 2 must be a type or tuple of types")
+            raise AstroidTypeError(
+                f"arg 2 must be a type or tuple of types, not {type(klass)!r}"
+            )
 
         for obj_subclass in obj_type.mro():
             if obj_subclass == klass:
@@ -166,7 +166,7 @@ def object_issubclass(
         or its type's mro doesn't work
     """
     if not isinstance(node, nodes.ClassDef):
-        raise TypeError(f"{node} needs to be a ClassDef node")
+        raise TypeError(f"{node} needs to be a ClassDef node, not {type(node)!r}")
     return _object_type_is_subclass(node, class_or_seq, context=context)
 
 
@@ -194,8 +194,6 @@ def _type_check(type1, type2) -> bool:
     if not all(map(has_known_bases, (type1, type2))):
         raise _NonDeducibleTypeHierarchy
 
-    if not all([type1.newstyle, type2.newstyle]):
-        return False
     try:
         return type1 in type2.mro()[:-1]
     except MroError as e:
@@ -304,9 +302,8 @@ def object_len(node, context: InferenceContext | None = None):
         and result_of_len.pytype() == "builtins.int"
     ):
         return result_of_len.value
-    if (
-        result_of_len is None
-        or isinstance(result_of_len, bases.Instance)
+    if result_of_len is None or (
+        isinstance(result_of_len, bases.Instance)
         and result_of_len.is_subtype_of("builtins.int")
     ):
         # Fake a result as we don't know the arguments of the instance call.

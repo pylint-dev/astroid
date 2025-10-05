@@ -7,7 +7,7 @@ from __future__ import annotations
 import unittest
 
 import astroid
-from astroid import nodes
+from astroid import exceptions, nodes
 
 try:
     import attr  # type: ignore[import]  # pylint: disable=unused-import
@@ -85,7 +85,7 @@ class AttrsTest(unittest.TestCase):
 
         for name in ("f", "g", "h", "i", "j", "k", "l", "m"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
-            self.assertIsInstance(should_be_unknown, astroid.Unknown)
+            self.assertIsInstance(should_be_unknown, nodes.Unknown)
 
     def test_attrs_transform(self) -> None:
         """Test brain for decorators of the 'attrs' package.
@@ -158,7 +158,7 @@ class AttrsTest(unittest.TestCase):
 
         for name in ("f", "g", "h", "i", "j", "k", "l"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
-            self.assertIsInstance(should_be_unknown, astroid.Unknown, name)
+            self.assertIsInstance(should_be_unknown, nodes.Unknown, name)
 
     def test_special_attributes(self) -> None:
         """Make sure special attrs attributes exist"""
@@ -200,4 +200,88 @@ class AttrsTest(unittest.TestCase):
         Foo()
         """
         should_be_unknown = next(astroid.extract_node(code).infer()).getattr("bar")[0]
-        self.assertIsInstance(should_be_unknown, astroid.Unknown)
+        self.assertIsInstance(should_be_unknown, nodes.Unknown)
+
+    def test_attr_with_only_annotation_fails(self) -> None:
+        code = """
+        import attr
+
+        @attr.s
+        class Foo:
+            bar: int
+        Foo()
+        """
+        with self.assertRaises(exceptions.AttributeInferenceError):
+            next(astroid.extract_node(code).infer()).getattr("bar")
+
+    def test_attrs_with_only_annotation_works(self) -> None:
+        code = """
+        import attrs
+
+        @attrs.define
+        class Foo:
+            bar: int
+            baz: str = "hello"
+        Foo(1)
+        """
+        for attr_name in ("bar", "baz"):
+            should_be_unknown = next(astroid.extract_node(code).infer()).getattr(
+                attr_name
+            )[0]
+            self.assertIsInstance(should_be_unknown, nodes.Unknown)
+
+    def test_attrs_with_class_var_annotation(self) -> None:
+        cases = {
+            "with-subscript": """
+                import attrs
+                from typing import ClassVar
+
+                @attrs.define
+                class Foo:
+                    bar: ClassVar[int] = 1
+                Foo()
+            """,
+            "no-subscript": """
+                import attrs
+                from typing import ClassVar
+
+                @attrs.define
+                class Foo:
+                    bar: ClassVar = 1
+                Foo()
+            """,
+        }
+
+        for name, code in cases.items():
+            with self.subTest(case=name):
+                instance = next(astroid.extract_node(code).infer())
+                self.assertIsInstance(instance.getattr("bar")[0], nodes.AssignName)
+                self.assertNotIn("bar", instance.instance_attrs)
+
+    def test_attrs_without_class_var_annotation(self) -> None:
+        cases = {
+            "wrong-name": """
+                import attrs
+                from typing import Final
+
+                @attrs.define
+                class Foo:
+                    bar: Final[int] = 1
+                Foo()
+            """,
+            "classvar-not-outermost": """
+                import attrs
+                from typing import ClassVar
+
+                @attrs.define
+                class Foo:
+                    bar: list[ClassVar[int]] = []
+                Foo()
+            """,
+        }
+
+        for name, code in cases.items():
+            with self.subTest(case=name):
+                instance = next(astroid.extract_node(code).infer())
+                self.assertIsInstance(instance.getattr("bar")[0], nodes.Unknown)
+                self.assertIn("bar", instance.instance_attrs)

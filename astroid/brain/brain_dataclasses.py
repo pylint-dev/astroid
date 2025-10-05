@@ -15,22 +15,23 @@ dataclasses. References:
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import Literal, Union
+from typing import Literal
 
 from astroid import bases, context, nodes
+from astroid.brain.helpers import is_class_var
 from astroid.builder import parse
-from astroid.const import PY310_PLUS, PY313_PLUS
+from astroid.const import PY313_PLUS
 from astroid.exceptions import AstroidSyntaxError, InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.typing import InferenceResult
 from astroid.util import Uninferable, UninferableBase, safe_infer
 
-_FieldDefaultReturn = Union[
-    None,
-    tuple[Literal["default"], nodes.NodeNG],
-    tuple[Literal["default_factory"], nodes.Call],
-]
+_FieldDefaultReturn = (
+    None
+    | tuple[Literal["default"], nodes.NodeNG]
+    | tuple[Literal["default_factory"], nodes.Call]
+)
 
 DATACLASSES_DECORATORS = frozenset(("dataclass",))
 FIELD_NAME = "field"
@@ -44,7 +45,7 @@ def is_decorated_with_dataclass(
     node: nodes.ClassDef, decorator_names: frozenset[str] = DATACLASSES_DECORATORS
 ) -> bool:
     """Return True if a decorated node has a `dataclass` decorator applied."""
-    if not isinstance(node, nodes.ClassDef) or not node.decorators:
+    if not (isinstance(node, nodes.ClassDef) and node.decorators):
         return False
 
     return any(
@@ -72,14 +73,14 @@ def dataclass_transform(node: nodes.ClassDef) -> None:
         return
 
     kw_only_decorated = False
-    if PY310_PLUS and node.decorators.nodes:
+    if node.decorators.nodes:
         for decorator in node.decorators.nodes:
             if not isinstance(decorator, nodes.Call):
                 kw_only_decorated = False
                 break
             for keyword in decorator.keywords:
                 if keyword.arg == "kw_only":
-                    kw_only_decorated = keyword.value.bool_value()
+                    kw_only_decorated = keyword.value.bool_value() is True
 
     init_str = _generate_dataclass_init(
         node,
@@ -111,13 +112,14 @@ def _get_dataclass_attributes(
     If init is True, also include InitVars.
     """
     for assign_node in node.body:
-        if not isinstance(assign_node, nodes.AnnAssign) or not isinstance(
-            assign_node.target, nodes.AssignName
+        if not (
+            isinstance(assign_node, nodes.AnnAssign)
+            and isinstance(assign_node.target, nodes.AssignName)
         ):
             continue
 
         # Annotation is never None
-        if _is_class_var(assign_node.annotation):  # type: ignore[arg-type]
+        if is_class_var(assign_node.annotation):  # type: ignore[arg-type]
             continue
 
         if _is_keyword_only_sentinel(assign_node.annotation):
@@ -155,7 +157,7 @@ def _check_generate_dataclass_init(node: nodes.ClassDef) -> bool:
     # Check for keyword arguments of the form init=False
     return not any(
         keyword.arg == "init"
-        and not keyword.value.bool_value()  # type: ignore[union-attr] # value is never None
+        and keyword.value.bool_value() is False  # type: ignore[union-attr] # value is never None
         for keyword in found.keywords
     )
 
@@ -238,10 +240,12 @@ def _get_previous_field_default(node: nodes.ClassDef, name: str) -> nodes.NodeNG
     return None
 
 
-def _generate_dataclass_init(  # pylint: disable=too-many-locals
+def _generate_dataclass_init(
     node: nodes.ClassDef, assigns: list[nodes.AnnAssign], kw_only_decorated: bool
 ) -> str:
     """Return an init method for a dataclass given the targets."""
+    # pylint: disable = too-many-locals, too-many-branches, too-many-statements
+
     params: list[str] = []
     kw_only_params: list[str] = []
     assignments: list[str] = []
@@ -269,7 +273,7 @@ def _generate_dataclass_init(  # pylint: disable=too-many-locals
         if is_field:
             # Skip any fields that have `init=False`
             if any(
-                keyword.arg == "init" and not keyword.value.bool_value()
+                keyword.arg == "init" and (keyword.value.bool_value() is False)
                 for keyword in value.keywords  # type: ignore[union-attr] # value is never None
             ):
                 # Also remove the name from the previous arguments to be inserted later
@@ -339,7 +343,7 @@ def _generate_dataclass_init(  # pylint: disable=too-many-locals
         if is_field:
             kw_only = [k for k in value.keywords if k.arg == "kw_only"]  # type: ignore[union-attr]
             if kw_only:
-                if kw_only[0].value.bool_value():
+                if kw_only[0].value.bool_value() is True:
                     kw_only_params.append(param_str)
                 else:
                     params.append(param_str)
@@ -548,20 +552,8 @@ def _get_field_default(field_call: nodes.Call) -> _FieldDefaultReturn:
     return None
 
 
-def _is_class_var(node: nodes.NodeNG) -> bool:
-    """Return True if node is a ClassVar, with or without subscripting."""
-    try:
-        inferred = next(node.infer())
-    except (InferenceError, StopIteration):
-        return False
-
-    return getattr(inferred, "name", "") == "ClassVar"
-
-
 def _is_keyword_only_sentinel(node: nodes.NodeNG) -> bool:
     """Return True if node is the KW_ONLY sentinel."""
-    if not PY310_PLUS:
-        return False
     inferred = safe_infer(node)
     return (
         isinstance(inferred, bases.Instance)
