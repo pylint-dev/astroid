@@ -79,6 +79,7 @@ def attach_const_node(node, name: str, value) -> None:
     node with the specified name
     """
     # Special case: __hash__ = None overrides ObjectModel for unhashable types.
+    # See https://docs.python.org/3/reference/datamodel.html#object.__hash__
     if name == "__hash__" and value is None:
         _attach_local_node(node, nodes.const_factory(value), name)
     elif name not in node.special_attributes:
@@ -511,6 +512,7 @@ class InspectBuilder:
                 child = object_build_datadescriptor(node, member)
             elif isinstance(member, tuple(node_classes.CONST_CLS)):
                 # Special case: __hash__ = None overrides ObjectModel for unhashable types.
+                # See https://docs.python.org/3/reference/datamodel.html#object.__hash__
                 if alias in node.special_attributes and not (
                     alias == "__hash__" and member is None
                 ):

@@ -2357,9 +2357,7 @@ class ClassDef(
 
         if name in self.special_attributes and class_context and not values:
             special_attr = self.special_attributes.lookup(name)
-            if not isinstance(
-                special_attr, (util.UninferableBase, node_classes.Unknown)
-            ):
+            if not isinstance(special_attr, node_classes.Unknown):
                 result = [special_attr]
                 return result
 

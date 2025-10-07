@@ -251,7 +251,7 @@ class BaseInstance(Proxy):
         except AttributeInferenceError as exc:
             if self.special_attributes and name in self.special_attributes:
                 special_attr = self.special_attributes.lookup(name)
-                if not isinstance(special_attr, (UninferableBase, nodes.Unknown)):
+                if not isinstance(special_attr, nodes.Unknown):
                     return [special_attr]
 
             if lookupclass:
