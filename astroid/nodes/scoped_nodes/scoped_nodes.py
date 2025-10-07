@@ -1620,11 +1620,10 @@ class FunctionDef(
 
             # Builtin dunder methods have empty bodies, return Uninferable.
             if (
-                self.root().qname() == "builtins"
+                len(self.body) == 0
                 and self.name.startswith("__")
                 and self.name.endswith("__")
-                and self.parent
-                and self.parent.__class__.__name__ == "ClassDef"
+                and self.root().qname() == "builtins"
             ):
                 yield util.Uninferable
                 return
