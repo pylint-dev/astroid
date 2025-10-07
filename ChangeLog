@@ -3,9 +3,22 @@ astroid's ChangeLog
 ===================
 
 
-What's New in astroid 4.0.0?
+What's New in astroid 4.1.0?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 4.0.1?
+============================
+Release date: TBA
+
+* Make `type.__new__()` raise clear errors instead of returning `None`
+
+
+What's New in astroid 4.0.0?
+============================
+Release date: 2025-10-05
 
 * Support constraints from ternary expressions in inference.
 
@@ -84,7 +97,7 @@ Release date: TBA
 
 * Add basic support for ``ast.TemplateStr`` and ``ast.Interpolation``added in Python 3.14.
 
-  refs #2789
+  Refs #2789
 
 * Add support for type parameter defaults added in Python 3.13.
 
