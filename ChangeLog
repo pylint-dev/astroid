@@ -21,6 +21,9 @@ Release date: TBA
 
 * Make `type.__new__()` raise clear errors instead of returning `None`
 
+* Suppress ``SyntaxWarning`` for invalid escape sequences and return in finally on
+  Python 3.14 when parsing modules.
+
 
 What's New in astroid 4.0.0?
 ============================
