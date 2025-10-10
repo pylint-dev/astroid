@@ -7,6 +7,8 @@ What's New in astroid 4.1.0?
 ============================
 Release date: TBA
 
+* Make `type.__new__()` raise clear errors instead of returning `None`
+
 * Move object dunder methods from ``FunctionModel`` to ``ObjectModel`` to make them
   available on all object types, not just functions.
 
@@ -18,8 +20,6 @@ Release date: TBA
 What's New in astroid 4.0.1?
 ============================
 Release date: TBA
-
-* Make `type.__new__()` raise clear errors instead of returning `None`
 
 * Suppress ``SyntaxWarning`` for invalid escape sequences and return in finally on
   Python 3.14 when parsing modules.
