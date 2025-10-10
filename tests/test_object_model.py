@@ -265,10 +265,13 @@ class ModuleModelTest(unittest.TestCase):
         xml.__setattr__ #@
         xml.__reduce_ex__ #@
         xml.__lt__ #@
+        xml.__le__ #@
         xml.__eq__ #@
+        xml.__ne__ #@
+        xml.__ge__ #@
         xml.__gt__ #@
         xml.__format__ #@
-        xml.__delattr___ #@
+        xml.__delattr__ #@
         xml.__getattribute__ #@
         xml.__hash__ #@
         xml.__dir__ #@
@@ -324,9 +327,13 @@ class ModuleModelTest(unittest.TestCase):
         new_ = next(ast_nodes[10].infer())
         assert isinstance(new_, bases.BoundMethod)
 
-        # The following nodes are just here for theoretical completeness,
-        # and they either return Uninferable or raise InferenceError.
-        for ast_node in ast_nodes[11:28]:
+        # Inherited attributes return Uninferable.
+        for ast_node in ast_nodes[11:29]:
+            inferred = next(ast_node.infer())
+            self.assertIs(inferred, astroid.Uninferable)
+
+        # Attributes that don't exist on modules raise InferenceError.
+        for ast_node in ast_nodes[29:31]:
             with pytest.raises(InferenceError):
                 next(ast_node.infer())
 
@@ -449,16 +456,23 @@ class FunctionModelTest(unittest.TestCase):
 
         func.__reduce_ex__ #@
         func.__lt__ #@
+        func.__le__ #@
         func.__eq__ #@
+        func.__ne__ #@
+        func.__ge__ #@
         func.__gt__ #@
         func.__format__ #@
-        func.__delattr___ #@
+        func.__delattr__ #@
         func.__getattribute__ #@
         func.__hash__ #@
         func.__dir__ #@
         func.__class__ #@
 
         func.__setattr__ #@
+        func.__builtins__ #@
+        func.__getstate__ #@
+        func.__init_subclass__ #@
+        func.__type_params__ #@
         ''',
             module_name="fake_module",
         )
@@ -511,15 +525,10 @@ class FunctionModelTest(unittest.TestCase):
         new_ = next(ast_nodes[10].infer())
         assert isinstance(new_, bases.BoundMethod)
 
-        # The following nodes are just here for theoretical completeness,
-        # and they either return Uninferable or raise InferenceError.
-        for ast_node in ast_nodes[11:26]:
+        # Remaining attributes return Uninferable.
+        for ast_node in ast_nodes[11:34]:
             inferred = next(ast_node.infer())
             assert inferred is util.Uninferable
-
-        for ast_node in ast_nodes[26:27]:
-            with pytest.raises(InferenceError):
-                inferred = next(ast_node.infer())
 
     def test_empty_return_annotation(self) -> None:
         ast_node = builder.extract_node(
@@ -897,3 +906,112 @@ def test_class_annotations_typed_dict() -> None:
     assert next(apple.infer()) is astroid.Uninferable
     assert isinstance(pear, nodes.Attribute)
     assert next(pear.infer()) is astroid.Uninferable
+
+
+def test_object_dunder_methods_can_be_overridden() -> None:
+    """Test that ObjectModel dunders don't block class overrides."""
+    # Test instance method override
+    eq_result = builder.extract_node(
+        """
+        class MyClass:
+            def __eq__(self, other):
+                return "custom equality"
+
+        MyClass().__eq__(None)  #@
+        """
+    )
+    inferred = next(eq_result.infer())
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == "custom equality"
+
+    # Test that __eq__ on instance returns a bound method
+    eq_method = builder.extract_node(
+        """
+        class MyClass:
+            def __eq__(self, other):
+                return True
+
+        MyClass().__eq__  #@
+        """
+    )
+    inferred = next(eq_method.infer())
+    assert isinstance(inferred, astroid.BoundMethod)
+
+    # Test other commonly overridden dunders
+    for dunder, return_val in (
+        ("__ne__", "not equal"),
+        ("__lt__", "less than"),
+        ("__le__", "less or equal"),
+        ("__gt__", "greater than"),
+        ("__ge__", "greater or equal"),
+        ("__str__", "string repr"),
+        ("__repr__", "repr"),
+        ("__hash__", 42),
+    ):
+        node = builder.extract_node(
+            f"""
+            class MyClass:
+                def {dunder}(self, *args):
+                    return {return_val!r}
+
+            MyClass().{dunder}()  #@
+            """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const), f"{dunder} failed to infer correctly"
+        assert inferred.value == return_val, f"{dunder} returned wrong value"
+
+
+def test_unoverridden_object_dunders_return_uninferable() -> None:
+    """Test that un-overridden object dunders return Uninferable when called."""
+    for dunder in (
+        "__eq__",
+        "__hash__",
+        "__lt__",
+        "__le__",
+        "__gt__",
+        "__ge__",
+        "__ne__",
+    ):
+        node = builder.extract_node(
+            f"""
+            class MyClass:
+                pass
+
+            MyClass().{dunder}(None) if "{dunder}" != "__hash__" else MyClass().{dunder}()  #@
+            """
+        )
+        result = next(node.infer())
+        assert result is util.Uninferable
+
+
+def test_all_object_dunders_accessible() -> None:
+    """Test that object dunders are accessible on classes and instances."""
+    # Use actual dunders from object in the current Python version
+    object_dunders = [attr for attr in dir(object) if attr.startswith("__")]
+
+    cls, instance = builder.extract_node(
+        """
+        class MyClass:
+            pass
+
+        MyClass  #@
+        MyClass()  #@
+        """
+    )
+    cls = next(cls.infer())
+    instance = next(instance.infer())
+
+    for dunder in object_dunders:
+        assert cls.getattr(dunder)
+        assert instance.getattr(dunder)
+
+
+def test_hash_none_for_unhashable_builtins() -> None:
+    """Test that unhashable builtin types have __hash__ = None."""
+    for type_name in ("list", "dict", "set"):
+        node = builder.extract_node(f"{type_name}  #@")
+        cls = next(node.infer())
+        hash_attr = cls.getattr("__hash__")[0]
+        assert isinstance(hash_attr, nodes.Const)
+        assert hash_attr.value is None

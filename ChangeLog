@@ -7,6 +7,12 @@ What's New in astroid 4.1.0?
 ============================
 Release date: TBA
 
+* Move object dunder methods from ``FunctionModel`` to ``ObjectModel`` to make them
+  available on all object types, not just functions.
+
+  Closes #2742
+  Closes #2741
+  Closes pylint-dev/pylint#6094
 
 
 What's New in astroid 4.0.1?

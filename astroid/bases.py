@@ -250,7 +250,9 @@ class BaseInstance(Proxy):
             values = self._proxied.instance_attr(name, context)
         except AttributeInferenceError as exc:
             if self.special_attributes and name in self.special_attributes:
-                return [self.special_attributes.lookup(name)]
+                special_attr = self.special_attributes.lookup(name)
+                if not isinstance(special_attr, nodes.Unknown):
+                    return [special_attr]
 
             if lookupclass:
                 # Class attributes not available through the instance

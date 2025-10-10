@@ -4966,9 +4966,10 @@ class NamedExpr(_base_nodes.AssignTypeNode):
 
 class Unknown(_base_nodes.AssignTypeNode):
     """This node represents a node in a constructed AST where
-    introspection is not possible.  At the moment, it's only used in
-    the args attribute of FunctionDef nodes where function signature
-    introspection failed.
+    introspection is not possible.
+
+    Used in the args attribute of FunctionDef nodes where function signature
+    introspection failed, and as a placeholder in ObjectModel.
     """
 
     name = "Unknown"
