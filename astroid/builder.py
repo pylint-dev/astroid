@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import ParserModule, get_parser_module
-from astroid.const import PY312_PLUS
+from astroid.const import PY312_PLUS, PY314_PLUS
 from astroid.exceptions import AstroidBuildingError, AstroidSyntaxError, InferenceError
 
 if TYPE_CHECKING:
@@ -39,7 +39,11 @@ _TRANSIENT_FUNCTION = "__"
 _STATEMENT_SELECTOR = "#@"
 
 if PY312_PLUS:
-    warnings.filterwarnings("ignore", "invalid escape sequence", SyntaxWarning)
+    warnings.filterwarnings("ignore", ".*invalid escape sequence", SyntaxWarning)
+if PY314_PLUS:
+    warnings.filterwarnings(
+        "ignore", "'(return|continue|break)' in a 'finally'", SyntaxWarning
+    )
 
 
 def open_source_file(filename: str) -> tuple[TextIOWrapper, str, str]:
