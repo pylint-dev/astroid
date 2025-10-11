@@ -2314,6 +2314,19 @@ def test_arguments_default_value():
     assert node.args.default_value("flavor").value == "good"
 
 
+def test_arguments_annotations():
+    node = extract_node(
+        "def fruit(eat: str, /, peel: bool, *args: int, trim: float, **kwargs: bytes): ..."
+    )
+    assert isinstance(node.args, nodes.Arguments)
+    annotation_names = [
+        ann.name for ann in node.args.get_annotations() if isinstance(ann, nodes.Name)
+    ]
+    assert all(
+        name in annotation_names for name in ("str", "bool", "int", "float", "bytes")
+    )
+
+
 def test_deprecated_nodes_import_from_toplevel():
     # pylint: disable=import-outside-toplevel,no-name-in-module
     with pytest.raises(

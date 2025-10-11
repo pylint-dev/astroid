@@ -1020,6 +1020,23 @@ class Arguments(
             if elt is not None:
                 yield elt
 
+    def get_annotations(self) -> Iterator[nodes.NodeNG]:
+        """Iterate over all annotations nodes."""
+        for elt in self.posonlyargs_annotations:
+            if elt is not None:
+                yield elt
+        for elt in self.annotations:
+            if elt is not None:
+                yield elt
+        if self.varargannotation is not None:
+            yield self.varargannotation
+
+        for elt in self.kwonlyargs_annotations:
+            if elt is not None:
+                yield elt
+        if self.kwargannotation is not None:
+            yield self.kwargannotation
+
     @decorators.raise_if_nothing_inferred
     def _infer(
         self: nodes.Arguments, context: InferenceContext | None = None, **kwargs: Any
