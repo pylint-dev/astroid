@@ -224,5 +224,3 @@ under this name, or we did not manage to find their commits in the history.
 - carl
 - alain lefroy
 - Mark Gius
-- Robert Hofer <1058012+hofrob@users.noreply.github.com>
-- Emmanuel Ferdman <emmanuelferdman@gmail.com>
