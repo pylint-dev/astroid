@@ -16,6 +16,11 @@ Release date: TBA
   Closes #2741
   Closes pylint-dev/pylint#6094
 
+* Add helper to iterate over all annotations nodes of function arguments,
+  ``Arguments.get_annotations()``.
+
+  Refs #2860
+
 
 What's New in astroid 4.0.2?
 ============================
