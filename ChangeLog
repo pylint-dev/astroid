@@ -9,10 +9,15 @@ Release date: TBA
 
 
 
-What's New in astroid 4.0.1?
+What's New in astroid 4.0.2?
 ============================
 Release date: TBA
 
+
+
+What's New in astroid 4.0.1?
+============================
+Release date: 2025-10-11
 
 * Suppress ``SyntaxWarning`` for invalid escape sequences and return in finally on
   Python 3.14 when parsing modules.
