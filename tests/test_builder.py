@@ -488,6 +488,22 @@ class BuilderTest(unittest.TestCase):
         finally:
             self.manager.unregister_transform(nodes.Module, transform_time)
 
+    def test_inspect_early_transform_module(self) -> None:
+        # ensure no cached version of the time module
+        self.manager._mod_file_cache.pop(("time", None), None)
+        self.manager.astroid_cache.pop("time", None)
+
+        def transform_time(node: Module) -> None:
+            if node.name == "time":
+                node.transformed = True
+
+        self.manager.register_early_transform(nodes.Module, transform_time)
+        try:
+            time_ast = self.manager.ast_from_module_name("time")
+            self.assertTrue(getattr(time_ast, "transformed", False))
+        finally:
+            self.manager.unregister_early_transform(nodes.Module, transform_time)
+
     def test_package_name(self) -> None:
         """Test base properties and method of an astroid module."""
         datap = resources.build_file("data/__init__.py", "data")

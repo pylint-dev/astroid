@@ -106,6 +106,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             if self._apply_transforms:
                 # We have to handle transformation by ourselves since the
                 # rebuilder isn't called for builtin nodes
+                node = self._manager.visit_early_transforms(node)
                 node = self._manager.visit_transforms(node)
         assert isinstance(node, nodes.Module)
         return node
@@ -168,6 +169,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 for symbol, _ in from_node.names:
                     module.future_imports.add(symbol)
             self.add_from_names_to_locals(from_node)
+        # Visit the transforms
+        if self._apply_transforms:
+            module = self._manager.visit_early_transforms(module)
+
         # handle delayed assattr nodes
         for delayed in builder._delayed_assattr:
             self.delayed_assattr(delayed)
