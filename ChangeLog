@@ -24,6 +24,10 @@ Release date: TBA
 * Suppress ``SyntaxWarning`` for invalid escape sequences and return in finally on
   Python 3.14 when parsing modules.
 
+* Assign ``Import`` and ``ImportFrom`` nodes to module locals if used with ``global``.
+
+  Closes pylint-dev/pylint#10632
+
 
 What's New in astroid 4.0.0?
 ============================

@@ -2803,6 +2803,31 @@ def test_slots_duplicate_bases_issue_1089() -> None:
         astroid["First"].slots()
 
 
+def test_import_with_global() -> None:
+    code = builder.parse(
+        """
+    def f1():
+        global platform
+        from sys import platform as plat
+        platform = plat
+
+    def f2():
+        global os, RE, deque, VERSION, Path
+        import os
+        import re as RE
+        from collections import deque
+        from sys import version as VERSION
+        from pathlib import *
+    """
+    )
+    assert "platform" in code.locals
+    assert "os" in code.locals
+    assert "RE" in code.locals
+    assert "deque" in code.locals
+    assert "VERSION" in code.locals
+    assert "Path" in code.locals
+
+
 class TestFrameNodes:
     @staticmethod
     def test_frame_node():
