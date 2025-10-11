@@ -11,7 +11,7 @@ from __future__ import annotations
 import ast
 import sys
 import token
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Collection, Generator
 from io import StringIO
 from tokenize import TokenInfo, generate_tokens
 from typing import TYPE_CHECKING, Final, TypeVar, cast, overload
@@ -61,7 +61,7 @@ class TreeRebuilder:
         self._manager = manager
         self._data = data.split("\n") if data else None
         self._global_names: list[dict[str, list[nodes.Global]]] = []
-        self._import_from_nodes: list[nodes.ImportFrom] = []
+        self._import_from_nodes: list[tuple[nodes.ImportFrom, Collection[str]]] = []
         self._delayed_assattr: list[nodes.AssignAttr] = []
         self._visit_meths: dict[
             type[ast.AST], Callable[[ast.AST, nodes.NodeNG], nodes.NodeNG]
@@ -1099,7 +1099,9 @@ class TreeRebuilder:
             parent=parent,
         )
         # store From names to add them to locals after building
-        self._import_from_nodes.append(newnode)
+        self._import_from_nodes.append(
+            (newnode, self._global_names[-1].keys() if self._global_names else ())
+        )
         return newnode
 
     @overload
@@ -1300,8 +1302,11 @@ class TreeRebuilder:
         )
         # save import names in parent's locals:
         for name, asname in newnode.names:
-            name = asname or name
-            parent.set_local(name.split(".")[0], newnode)
+            name = (asname or name).split(".")[0]
+            if self._global_names and name in self._global_names[-1]:
+                parent.root().set_local(name, newnode)
+            else:
+                parent.set_local(name, newnode)
         return newnode
 
     def visit_joinedstr(
