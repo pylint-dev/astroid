@@ -78,7 +78,7 @@ class NoneConstraint(Constraint):
     def satisfied_by(self, inferred: InferenceResult) -> bool:
         """Return True if this constraint is satisfied by the given inferred value."""
         # Assume true if uninferable
-        if isinstance(inferred, util.UninferableBase):
+        if inferred is util.Uninferable:
             return True
 
         # Return the XOR of self.negate and matches(inferred, self.CONST_NONE)
@@ -118,9 +118,7 @@ class BooleanConstraint(Constraint):
         - negate=True: satisfied if boolean value is False
         """
         inferred_booleaness = inferred.bool_value()
-        if isinstance(inferred, util.UninferableBase) or isinstance(
-            inferred_booleaness, util.UninferableBase
-        ):
+        if inferred is util.Uninferable or inferred_booleaness is util.Uninferable:
             return True
 
         return self.negate ^ inferred_booleaness
@@ -160,14 +158,14 @@ class TypeConstraint(Constraint):
         - negate=False: satisfied when inferred is an instance of the checked types.
         - negate=True: satisfied when inferred is not an instance of the checked types.
         """
-        if isinstance(inferred, util.UninferableBase):
+        if inferred is util.Uninferable:
             return True
 
         try:
             types = helpers.class_or_tuple_to_container(self.classinfo)
             matches_checked_types = helpers.object_isinstance(inferred, types)
 
-            if isinstance(matches_checked_types, util.UninferableBase):
+            if matches_checked_types is util.Uninferable:
                 return True
 
             return self.negate ^ matches_checked_types
