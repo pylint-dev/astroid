@@ -867,6 +867,82 @@ def test_isinstance_supertype():
     assert inferred[0] is Uninferable
 
 
+def test_isinstance_multiple_inheritance():
+    """Test constraint for an object that inherits from more than one parent class."""
+    n1, n2, n3 = builder.extract_node(
+        """
+    class A:
+        pass
+
+    class B:
+        pass
+
+    class C(A, B):
+        pass
+
+    x = C()
+
+    if isinstance(x, C):
+        x  #@
+
+    if isinstance(x, A):
+        x  #@
+
+    if isinstance(x, B):
+        x  #@
+    """
+    )
+
+    for node in (n1, n2, n3):
+        inferred = node.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Instance)
+        assert isinstance(inferred[0]._proxied, nodes.ClassDef)
+        assert inferred[0].name == "C"
+
+
+def test_isinstance_diamond_inheritance():
+    """Test constraint for an object that inherits from parent classes
+    in diamond inheritance.
+    """
+    n1, n2, n3, n4 = builder.extract_node(
+        """
+    class A():
+        pass
+
+    class B(A):
+        pass
+
+    class C(A):
+        pass
+
+    class D(B, C):
+        pass
+
+    x = D()
+
+    if isinstance(x, D):
+        x  #@
+
+    if isinstance(x, B):
+        x  #@
+
+    if isinstance(x, C):
+        x  #@
+
+    if isinstance(x, A):
+        x  #@
+    """
+    )
+
+    for node in (n1, n2, n3, n4):
+        inferred = node.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Instance)
+        assert isinstance(inferred[0]._proxied, nodes.ClassDef)
+        assert inferred[0].name == "D"
+
+
 def test_isinstance_keyword_arguments():
     """Test that constraint does not apply when `isinstance` is called
     with keyword arguments.
@@ -907,3 +983,68 @@ def test_isinstance_extra_argument():
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)
     assert inferred[0].value == 3
+
+
+def test_isinstance_classinfo_inference_error():
+    """Test that constraint is satisfied when `isinstance` is called with
+    classinfo that raises an inference error.
+    """
+    node = builder.extract_node(
+        """
+    x = 3
+
+    if isinstance(x, undefined_type):
+        x  #@
+    """
+    )
+
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 3
+
+
+def test_isinstance_uninferable_classinfo():
+    """Test that constraint is satisfied when `isinstance` is called with
+    uninferable classinfo.
+    """
+    node = builder.extract_node(
+        """
+    def f(classinfo):
+        x = 3
+
+        if isinstance(x, classinfo):
+            x  #@
+    """
+    )
+
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 3
+
+
+def test_isinstance_mro_error():
+    """Test that constraint is satisfied when computing the object's
+    method resolution order raises an MRO error.
+    """
+    node = builder.extract_node(
+        """
+    class A():
+        pass
+
+    class B(A, A):
+        pass
+
+    x = B()
+
+    if isinstance(x, A):
+        x  #@
+    """
+    )
+
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], Instance)
+    assert isinstance(inferred[0]._proxied, nodes.ClassDef)
+    assert inferred[0].name == "B"
