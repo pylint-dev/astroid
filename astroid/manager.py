@@ -208,7 +208,14 @@ class AstroidManager:
         if modname in self.module_denylist:
             raise AstroidImportError(f"Skipping ignored module {modname!r}")
         if modname in self.astroid_cache and use_cache:
-            return self.astroid_cache[modname]
+            if modname == "":
+                return self.astroid_cache[modname]
+
+            module_parent_path = self.astroid_cache[modname].get_parent_path()
+            if context_file and os.path.dirname(context_file) == module_parent_path:
+                return self.astroid_cache[modname]
+            elif module_parent_path is None:
+                return self.astroid_cache[modname]
         if modname == "__main__":
             return self._build_stub_module(modname)
         if context_file:

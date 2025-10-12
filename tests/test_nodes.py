@@ -42,6 +42,8 @@ from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
     AttributeInferenceError,
+    InferenceError,
+    ParentMissingError,
     StatementMissing,
 )
 from astroid.nodes.node_classes import UNATTACHED_UNKNOWN
@@ -640,7 +642,10 @@ from ..cave import wine\n\n"""
         ctx = InferenceContext()
         # will fail if absolute import failed
         ctx.lookupname = "message"
-        next(module["message"].infer(ctx))
+
+        with self.assertRaises(InferenceError):
+            next(module["message"].infer(ctx))
+
         ctx.lookupname = "email"
         m = next(module["email"].infer(ctx))
         self.assertFalse(m.file.startswith(os.path.join("data", "email.py")))

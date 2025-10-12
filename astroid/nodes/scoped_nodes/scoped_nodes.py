@@ -15,6 +15,7 @@ import itertools
 import os
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import cached_property, lru_cache
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypeVar
 
 from astroid import bases, protocols, util
@@ -435,6 +436,7 @@ class Module(LocalsDictNodeNG):
     def import_module(
         self,
         modname: str,
+        context_file: str | None = None,
         relative_only: bool = False,
         level: int | None = None,
         use_cache: bool = True,
@@ -457,7 +459,7 @@ class Module(LocalsDictNodeNG):
 
         try:
             return AstroidManager().ast_from_module_name(
-                absmodname, use_cache=use_cache
+                absmodname, context_file, use_cache=use_cache
             )
         except AstroidBuildingError:
             # we only want to import a sub module or package of this module,
@@ -468,7 +470,9 @@ class Module(LocalsDictNodeNG):
             # like "_winapi" or "nt" on POSIX systems.
             if modname == absmodname:
                 raise
-        return AstroidManager().ast_from_module_name(modname, use_cache=use_cache)
+        return AstroidManager().ast_from_module_name(
+            modname, context_file, use_cache=use_cache
+        )
 
     def relative_to_absolute_name(self, modname: str, level: int | None) -> str:
         """Get the absolute module name for a relative import.
@@ -586,6 +590,14 @@ class Module(LocalsDictNodeNG):
 
     def get_children(self):
         yield from self.body
+
+    def get_parent_path(self) -> str | None:
+        """Given the module, return its parent path"""
+        module_parts = self.name.split(".")
+        if self.file and self.file != "<?>":
+            return str(Path(self.file).parents[len(module_parts)])
+        else:
+            return None
 
     def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
         """The node's frame node.

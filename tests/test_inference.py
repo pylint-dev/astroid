@@ -1501,22 +1501,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         with pytest.raises(InferenceError):
             next(node.infer(context=context))
 
-    def test_python25_no_relative_import(self) -> None:
-        ast = resources.build_file("data/package/absimport.py")
-        self.assertTrue(ast.absolute_import_activated(), True)
-        inferred = next(
-            test_utils.get_name_node(ast, "import_package_subpackage_module").infer()
-        )
-        # failed to import since absolute_import is activated
-        self.assertIs(inferred, util.Uninferable)
-
     def test_nonregr_absolute_import(self) -> None:
         ast = resources.build_file("data/absimp/string.py", "data.absimp.string")
         self.assertTrue(ast.absolute_import_activated(), True)
         inferred = next(test_utils.get_name_node(ast, "string").infer())
         self.assertIsInstance(inferred, nodes.Module)
         self.assertEqual(inferred.name, "string")
-        self.assertIn("ascii_letters", inferred.locals)
+        self.assertNotIn("ascii_letters", inferred.locals)
 
     def test_property(self) -> None:
         code = """

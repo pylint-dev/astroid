@@ -164,9 +164,15 @@ class ImportNode(FilterStmtsBaseNode, NoChildrenNode, Statement):
             use_cache = True
 
         # pylint: disable-next=no-member # pylint doesn't recognize type of mymodule
+        context_file = mymodule.path[0] if mymodule.path else None
+        if context_file == "<?>":
+            context_file = None
+
+        # pylint: disable-next=no-member # pylint doesn't recognize type of mymodule
         return mymodule.import_module(
             modname,
             level=level,
+            context_file=context_file,
             relative_only=bool(level and level >= 1),
             use_cache=use_cache,
         )
