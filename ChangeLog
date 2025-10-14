@@ -119,7 +119,7 @@ Release date: 2025-10-05
 
   Closes #2672
 
-* Add basic support for ``ast.TemplateStr`` and ``ast.Interpolation``added in Python 3.14.
+* Add basic support for ``ast.TemplateStr`` and ``ast.Interpolation`` added in Python 3.14.
 
   Refs #2789
 
