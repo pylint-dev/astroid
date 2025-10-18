@@ -178,7 +178,7 @@ def class_or_tuple_to_container(
     # raises InferenceError if any of the inferences fall through
     try:
         node_infer = next(node.infer(context=context))
-    except StopIteration as e:
+    except StopIteration as e:  # pragma: no cover
         raise InferenceError(node=node, context=context) from e
     # arg2 MUST be a type or a TUPLE of types
     # for isinstance
@@ -187,7 +187,7 @@ def class_or_tuple_to_container(
             class_container = [
                 next(node.infer(context=context)) for node in node_infer.elts
             ]
-        except StopIteration as e:
+        except StopIteration as e:  # pragma: no cover
             raise InferenceError(node=node, context=context) from e
     else:
         class_container = [node_infer]
