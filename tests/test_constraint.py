@@ -5,13 +5,13 @@
 """Tests for inference involving constraints."""
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 
 from astroid import builder, nodes
 from astroid.bases import Instance
 from astroid.util import Uninferable
-
-from unittest.mock import patch
 
 
 def common_params(node: str) -> pytest.MarkDecorator:
