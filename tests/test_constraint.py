@@ -11,6 +11,8 @@ from astroid import builder, nodes
 from astroid.bases import Instance
 from astroid.util import Uninferable
 
+from unittest.mock import patch
+
 
 def common_params(node: str) -> pytest.MarkDecorator:
     return pytest.mark.parametrize(
@@ -1048,3 +1050,23 @@ def test_isinstance_mro_error():
     assert isinstance(inferred[0], Instance)
     assert isinstance(inferred[0]._proxied, nodes.ClassDef)
     assert inferred[0].name == "B"
+
+
+def test_isinstance_uninferable():
+    """Test that constraint is satisfied when `isinstance` inference returns Uninferable."""
+    node = builder.extract_node(
+        """
+    x = 3
+
+    if isinstance(x, str):
+        x  #@
+    """
+    )
+
+    with patch(
+        "astroid.constraint.helpers.object_isinstance", return_value=Uninferable
+    ):
+        inferred = node.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], nodes.Const)
+        assert inferred[0].value == 3
