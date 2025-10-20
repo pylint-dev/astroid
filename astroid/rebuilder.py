@@ -9,6 +9,7 @@ order to get a single Astroid representation.
 from __future__ import annotations
 
 import ast
+import itertools
 import sys
 import token
 from collections.abc import Callable, Collection, Generator
@@ -589,6 +590,16 @@ class TreeRebuilder:
             type_comment_kwonlyargs=type_comment_kwonlyargs,
             type_comment_posonlyargs=type_comment_posonlyargs,
         )
+        if start_end_lineno_pairs := [
+            (arg.lineno, arg.end_lineno)
+            for arg in itertools.chain(
+                node.args, node.posonlyargs, node.kwonlyargs, [node.vararg, node.kwarg]
+            )
+            if arg
+        ]:
+            newnode.lineno = min(startend[0] for startend in start_end_lineno_pairs)
+            newnode.end_lineno = max(startend[1] for startend in start_end_lineno_pairs)
+
         # save argument names in locals:
         assert newnode.parent
         if vararg:

@@ -589,6 +589,8 @@ class TestLinenoColOffset:
         assert (f1.body[0].lineno, f1.body[0].col_offset) == (6, 4)
         assert (f1.body[0].end_lineno, f1.body[0].end_col_offset) == (6, 8)
 
+        assert (f1.args.lineno, f1.args.end_lineno) == (2, 4)
+
         # pos only arguments
         # TODO fix column offset: arg -> arg (AssignName)
         assert isinstance(f1.args.posonlyargs[0], nodes.AssignName)
