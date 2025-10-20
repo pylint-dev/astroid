@@ -16,6 +16,8 @@ Release date: TBA
   Closes #2741
   Closes pylint-dev/pylint#6094
 
+* ``lineno`` and ``end_lineno`` are now available on ``Arguments``.
+
 * Add helper to iterate over all annotations nodes of function arguments,
   ``Arguments.get_annotations()``.
 
