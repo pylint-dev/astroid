@@ -47,7 +47,9 @@ def infer_parents_subscript(
         # For slices, return a tuple
         parents_tuple = nodes.Tuple()
         path_cls = next(_extract_single_node(PATH_TEMPLATE).infer())
-        parents_tuple.elts = [path_cls.instantiate_class() for _ in range(2)]  # Mock some parents
+        parents_tuple.elts = [
+            path_cls.instantiate_class() for _ in range(2)
+        ]  # Mock some parents
         return iter([parents_tuple])
 
     raise UseInferenceDefault
@@ -58,17 +60,17 @@ def _looks_like_parents_name(node: nodes.Name) -> bool:
     # Only apply to direct Name nodes, not to Name nodes in subscripts
     if isinstance(node.parent, nodes.Subscript):
         return False
-    
+
     # Only apply to Name nodes that are direct expressions, not in subscripts
     if not isinstance(node.parent, nodes.Expr):
         return False
-    
+
     # Look for the assignment in the current scope
     try:
         frame, stmts = node.lookup(node.name)
         if not stmts:
             return False
-        
+
         # Check each assignment statement
         for stmt in stmts:
             if isinstance(stmt, nodes.AssignName):
@@ -76,14 +78,19 @@ def _looks_like_parents_name(node: nodes.Name) -> bool:
                 assign_node = stmt.parent
                 if isinstance(assign_node, nodes.Assign):
                     # Check if the value is an Attribute access to .parents
-                    if (isinstance(assign_node.value, nodes.Attribute) 
-                        and assign_node.value.attrname == "parents"):
+                    if (
+                        isinstance(assign_node.value, nodes.Attribute)
+                        and assign_node.value.attrname == "parents"
+                    ):
                         try:
                             # Check if the attribute is from a Path object
                             value = next(assign_node.value.expr.infer())
-                            if (isinstance(value, bases.Instance) 
+                            if (
+                                isinstance(value, bases.Instance)
                                 and isinstance(value._proxied, nodes.ClassDef)
-                                and value.qname() in ("pathlib.Path", "pathlib._local.Path")):
+                                and value.qname()
+                                in ("pathlib.Path", "pathlib._local.Path")
+                            ):
                                 return True
                         except (InferenceError, StopIteration):
                             pass
@@ -99,16 +106,20 @@ def infer_parents_name(
     if PY313:
         # For Python 3.13+, parents is a tuple
         from astroid import nodes
+
         # Create a tuple that behaves like Path.parents
         parents_tuple = nodes.Tuple()
         # Add some mock Path elements to make indexing work
         path_cls = next(_extract_single_node(PATH_TEMPLATE).infer())
-        parents_tuple.elts = [path_cls.instantiate_class() for _ in range(3)]  # Mock some parents
+        parents_tuple.elts = [
+            path_cls.instantiate_class() for _ in range(3)
+        ]  # Mock some parents
         return iter([parents_tuple])
     else:
         # For older versions, it's a _PathParents object
         # We need to create a mock _PathParents instance that behaves correctly
-        parents_cls = _extract_single_node("""
+        parents_cls = _extract_single_node(
+            """
 class _PathParents:
     def __getitem__(self, key):
         from pathlib import Path
@@ -117,7 +128,8 @@ class _PathParents:
             return (Path(), Path())
         # For indexing, return a Path object
         return Path()
-""")
+"""
+        )
         return iter([parents_cls.instantiate_class()])
 
 
@@ -125,19 +137,21 @@ def _looks_like_parents_attribute(node: nodes.Attribute) -> bool:
     """Check if an Attribute node is accessing Path.parents."""
     if node.attrname != "parents":
         return False
-    
+
     # Check if the expression is a Path object
     try:
         expr_inferred = list(node.expr.infer())
         if expr_inferred and not isinstance(expr_inferred[0], util.UninferableBase):
             expr_value = expr_inferred[0]
-            if (isinstance(expr_value, bases.Instance) 
+            if (
+                isinstance(expr_value, bases.Instance)
                 and isinstance(expr_value._proxied, nodes.ClassDef)
-                and expr_value.qname() in ("pathlib.Path", "pathlib._local.Path")):
+                and expr_value.qname() in ("pathlib.Path", "pathlib._local.Path")
+            ):
                 return True
     except (InferenceError, StopIteration):
         pass
-    
+
     return False
 
 
@@ -149,11 +163,14 @@ def infer_parents_attribute(
         # For Python 3.13+, parents is a tuple
         parents_tuple = nodes.Tuple()
         path_cls = next(_extract_single_node(PATH_TEMPLATE).infer())
-        parents_tuple.elts = [path_cls.instantiate_class() for _ in range(3)]  # Mock some parents
+        parents_tuple.elts = [
+            path_cls.instantiate_class() for _ in range(3)
+        ]  # Mock some parents
         return iter([parents_tuple])
     else:
         # For older versions, it's a _PathParents object
-        parents_cls = _extract_single_node("""
+        parents_cls = _extract_single_node(
+            """
 class _PathParents:
     def __getitem__(self, key):
         from pathlib import Path
@@ -162,7 +179,8 @@ class _PathParents:
             return (Path(), Path())
         # For indexing, return a Path object
         return Path()
-""")
+"""
+        )
         return iter([parents_cls.instantiate_class()])
 
 
