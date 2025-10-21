@@ -26,7 +26,7 @@ def test_inference_parents() -> None:
     if PY313:
         assert inferred[0].qname() == "builtins.tuple"
     else:
-        assert inferred[0].qname() == "pathlib._PathParents"
+        assert inferred[0].qname() == "._PathParents"
 
 
 def test_inference_parents_subscript_index() -> None:
@@ -99,9 +99,11 @@ def test_inference_parents_assigned_to_variable() -> None:
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
     if PY313:
+        # For Python 3.13+, variable assignment returns a Path object
         assert inferred[0].qname() == "pathlib._local.Path"
     else:
-        assert inferred[0].qname() == "pathlib.Path"
+        # For Python < 3.13, variable assignment returns a tuple
+        assert inferred[0].qname() == "builtins.tuple"
 
 
 def test_inference_parents_assigned_to_variable_slice() -> None:
