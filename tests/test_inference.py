@@ -1503,7 +1503,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_python25_no_relative_import(self) -> None:
         ast = resources.build_file("data/package/absimport.py")
-        self.assertTrue(ast.absolute_import_activated(), True)
+        self.assertTrue(ast.absolute_import_activated())
         inferred = next(
             test_utils.get_name_node(ast, "import_package_subpackage_module").infer()
         )
@@ -1512,7 +1512,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_nonregr_absolute_import(self) -> None:
         ast = resources.build_file("data/absimp/string.py", "data.absimp.string")
-        self.assertTrue(ast.absolute_import_activated(), True)
+        self.assertTrue(ast.absolute_import_activated())
         inferred = next(test_utils.get_name_node(ast, "string").infer())
         self.assertIsInstance(inferred, nodes.Module)
         self.assertEqual(inferred.name, "string")
