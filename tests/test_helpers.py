@@ -10,7 +10,7 @@ import pytest
 from astroid import builder, helpers, manager, nodes, raw_building, util
 from astroid.builder import AstroidBuilder
 from astroid.const import IS_PYPY
-from astroid.exceptions import _NonDeducibleTypeHierarchy
+from astroid.exceptions import InferenceError, _NonDeducibleTypeHierarchy
 from astroid.nodes.node_classes import UNATTACHED_UNKNOWN
 
 
@@ -275,3 +275,70 @@ def test_safe_infer_shim() -> None:
         "Import safe_infer from astroid.util; this shim in astroid.helpers will be removed."
         in records[0].message.args[0]
     )
+
+
+def test_class_to_container() -> None:
+    node = builder.extract_node("""isinstance(3, int)""")
+
+    container = helpers.class_or_tuple_to_container(node.args[1])
+
+    assert len(container) == 1
+    assert isinstance(container[0], nodes.ClassDef)
+    assert container[0].name == "int"
+
+
+def test_tuple_to_container() -> None:
+    node = builder.extract_node("""isinstance(3, (int, str))""")
+
+    container = helpers.class_or_tuple_to_container(node.args[1])
+
+    assert len(container) == 2
+
+    assert isinstance(container[0], nodes.ClassDef)
+    assert container[0].name == "int"
+
+    assert isinstance(container[1], nodes.ClassDef)
+    assert container[1].name == "str"
+
+
+def test_class_to_container_uninferable() -> None:
+    node = builder.extract_node(
+        """
+    def f(x):
+        isinstance(3, x)  #@
+    """
+    )
+
+    container = helpers.class_or_tuple_to_container(node.args[1])
+
+    assert len(container) == 1
+    assert container[0] is util.Uninferable
+
+
+def test_tuple_to_container_uninferable() -> None:
+    node = builder.extract_node(
+        """
+    def f(x, y):
+        isinstance(3, (x, y))  #@
+    """
+    )
+
+    container = helpers.class_or_tuple_to_container(node.args[1])
+
+    assert len(container) == 2
+    assert container[0] is util.Uninferable
+    assert container[1] is util.Uninferable
+
+
+def test_class_to_container_inference_error() -> None:
+    node = builder.extract_node("""isinstance(3, undefined_type)""")
+
+    with pytest.raises(InferenceError):
+        helpers.class_or_tuple_to_container(node.args[1])
+
+
+def test_tuple_to_container_inference_error() -> None:
+    node = builder.extract_node("""isinstance(3, (int, undefined_type))""")
+
+    with pytest.raises(InferenceError):
+        helpers.class_or_tuple_to_container(node.args[1])
