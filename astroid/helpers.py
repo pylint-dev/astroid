@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import warnings
 from collections.abc import Generator
 
 from astroid import bases, manager, nodes, objects, raw_building, util
@@ -20,20 +19,7 @@ from astroid.exceptions import (
 )
 from astroid.nodes import scoped_nodes
 from astroid.typing import InferenceResult
-from astroid.util import safe_infer as real_safe_infer
-
-
-def safe_infer(
-    node: nodes.NodeNG | bases.Proxy | util.UninferableBase,
-    context: InferenceContext | None = None,
-) -> InferenceResult | None:
-    # When removing, also remove the real_safe_infer alias
-    warnings.warn(
-        "Import safe_infer from astroid.util; this shim in astroid.helpers will be removed.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return real_safe_infer(node, context=context)
+from astroid.util import safe_infer
 
 
 def _build_proxy_class(cls_name: str, builtins: nodes.Module) -> nodes.ClassDef:
@@ -177,7 +163,7 @@ def has_known_bases(klass, context: InferenceContext | None = None) -> bool:
     except AttributeError:
         pass
     for base in klass.bases:
-        result = real_safe_infer(base, context=context)
+        result = safe_infer(base, context=context)
         # TODO: check for A->B->A->B pattern in class structure too?
         if (
             not isinstance(result, scoped_nodes.ClassDef)
@@ -250,7 +236,7 @@ def object_len(node, context: InferenceContext | None = None):
     # pylint: disable=import-outside-toplevel; circular import
     from astroid.objects import FrozenSet
 
-    inferred_node = real_safe_infer(node, context=context)
+    inferred_node = safe_infer(node, context=context)
 
     # prevent self referential length calls from causing a recursion error
     # see https://github.com/pylint-dev/astroid/issues/777
