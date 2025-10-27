@@ -120,7 +120,6 @@ class TreeRebuilder:
         end_lineno = node.end_lineno
         if node.body:
             end_lineno = node.body[0].lineno
-        # pylint: disable-next=unsubscriptable-object
         data = "\n".join(self._data[node.lineno - 1 : end_lineno])
 
         start_token: TokenInfo | None = None
