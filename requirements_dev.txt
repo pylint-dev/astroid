@@ -3,5 +3,5 @@
 # Tools used during development, prefer running these with pre-commit
 black
 pre-commit
-pylint>=3.2.7
+pylint>=4.0.0
 ruff

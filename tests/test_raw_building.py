@@ -10,7 +10,7 @@ to simulate issues in unittest below
 
 from __future__ import annotations
 
-import _io
+import _io  # pylint: disable=wrong-import-order
 import logging
 import os
 import sys

@@ -83,7 +83,6 @@ def is_namespace(modname: str) -> bool:
 
             # Repair last_submodule_search_locations
             if last_submodule_search_locations:
-                # pylint: disable=unsubscriptable-object
                 last_item = last_submodule_search_locations[-1]
                 # e.g. for failure example above, add 'a/b' and keep going
                 # so that find_spec('a.b.c', path=['a', 'a/b']) succeeds
