@@ -102,4 +102,3 @@ def test_inference_parents_subscript_not_path() -> None:
     inferred = name_node.inferred()
     assert len(inferred) == 1
     assert inferred[0] is Uninferable
-
