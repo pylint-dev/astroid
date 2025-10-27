@@ -54,6 +54,7 @@ lint.select = [
   "F",   # pyflakes
   "I",   # isort
   "RUF", # ruff
+  "UP",
   "W",   # pycodestyle
 ]
 lint.ignore = [
@@ -69,6 +70,7 @@ lint.fixable = [
   "F",   # pyflakes
   "I",   # isort
   "RUF", # ruff
+  "UP",  # pyupgrade
   "W",   # pycodestyle
 ]
 lint.unfixable = [ "RUF001" ]

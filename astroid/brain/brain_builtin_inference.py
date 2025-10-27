@@ -827,7 +827,7 @@ def infer_len(node, context: InferenceContext | None = None) -> nodes.Const:
     if len(call.positional_arguments) != 1:
         raise UseInferenceDefault(
             "TypeError: len() must take exactly one argument "
-            "({len}) given".format(len=len(call.positional_arguments))
+            f"({len(call.positional_arguments)}) given"
         )
     [argument_node] = call.positional_arguments
 
