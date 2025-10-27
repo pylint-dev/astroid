@@ -202,9 +202,7 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
                 inferred_values = list(self._inferred_numpy_func_call(func_))
                 self.assertTrue(
                     len(inferred_values) == 1,
-                    msg="Too much inferred values ({}) for {:s}".format(
-                        inferred_values[-1].pytype(), func_
-                    ),
+                    msg=f"Too much inferred values ({inferred_values[-1].pytype()}) for {func_:s}",
                 )
                 self.assertTrue(
                     inferred_values[0].pytype() == ".ndarray",

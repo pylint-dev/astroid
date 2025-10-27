@@ -46,7 +46,5 @@ class BrainNumpyCoreFunctionBaseTest(unittest.TestCase):
                 )
                 self.assertTrue(
                     inferred_values[-1].pytype() in licit_array_types,
-                    msg="Illicit type for {:s} ({})".format(
-                        func_[0], inferred_values[-1].pytype()
-                    ),
+                    msg=f"Illicit type for {func_[0]:s} ({inferred_values[-1].pytype()})",
                 )

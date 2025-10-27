@@ -130,10 +130,10 @@ def transform_content(content: str, version: str) -> str:
 def do_checks(content, next_version, version, version_type):
     err = "in the changelog, fix that first!"
     NEW_VERSION_ERROR_MSG = (
-        "The text for this version '{version}' did not exists %s" % err
+        f"The text for this version '{{version}}' did not exists {err}"
     )
     NEXT_VERSION_ERROR_MSG = (
-        "The text for the next version '{version}' already exists %s" % err
+        f"The text for the next version '{{version}}' already exists {err}"
     )
     wn_next_version = get_whats_new(next_version)
     wn_this_version = get_whats_new(version)

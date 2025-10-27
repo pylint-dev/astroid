@@ -90,15 +90,11 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
                     inferred_values = list(infer_wrapper(*func_))
                     self.assertTrue(
                         len(inferred_values) == 1,
-                        msg="Too much inferred values ({}) for {:s}".format(
-                            inferred_values, func_[0]
-                        ),
+                        msg=f"Too much inferred values ({inferred_values}) for {func_[0]:s}",
                     )
                     self.assertTrue(
                         inferred_values[-1].pytype() == ".ndarray",
-                        msg="Illicit type for {:s} ({})".format(
-                            func_[0], inferred_values[-1].pytype()
-                        ),
+                        msg=f"Illicit type for {func_[0]:s} ({inferred_values[-1].pytype()})",
                     )
 
     def test_numpy_function_calls_inferred_as_bool(self):
@@ -112,15 +108,11 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
                     inferred_values = list(infer_wrapper(*func_))
                     self.assertTrue(
                         len(inferred_values) == 1,
-                        msg="Too much inferred values ({}) for {:s}".format(
-                            inferred_values, func_[0]
-                        ),
+                        msg=f"Too much inferred values ({inferred_values}) for {func_[0]:s}",
                     )
                     self.assertTrue(
                         inferred_values[-1].pytype() == "builtins.bool",
-                        msg="Illicit type for {:s} ({})".format(
-                            func_[0], inferred_values[-1].pytype()
-                        ),
+                        msg=f"Illicit type for {func_[0]:s} ({inferred_values[-1].pytype()})",
                     )
 
     def test_numpy_function_calls_inferred_as_dtype(self):
@@ -134,15 +126,11 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
                     inferred_values = list(infer_wrapper(*func_))
                     self.assertTrue(
                         len(inferred_values) == 1,
-                        msg="Too much inferred values ({}) for {:s}".format(
-                            inferred_values, func_[0]
-                        ),
+                        msg=f"Too much inferred values ({inferred_values}) for {func_[0]:s}",
                     )
                     self.assertTrue(
                         inferred_values[-1].pytype() == "numpy.dtype",
-                        msg="Illicit type for {:s} ({})".format(
-                            func_[0], inferred_values[-1].pytype()
-                        ),
+                        msg=f"Illicit type for {func_[0]:s} ({inferred_values[-1].pytype()})",
                     )
 
     def test_numpy_function_calls_inferred_as_none(self):
@@ -156,15 +144,11 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
                     inferred_values = list(infer_wrapper(*func_))
                     self.assertTrue(
                         len(inferred_values) == 1,
-                        msg="Too much inferred values ({}) for {:s}".format(
-                            inferred_values, func_[0]
-                        ),
+                        msg=f"Too much inferred values ({inferred_values}) for {func_[0]:s}",
                     )
                     self.assertTrue(
                         inferred_values[-1].pytype() == "builtins.NoneType",
-                        msg="Illicit type for {:s} ({})".format(
-                            func_[0], inferred_values[-1].pytype()
-                        ),
+                        msg=f"Illicit type for {func_[0]:s} ({inferred_values[-1].pytype()})",
                     )
 
     def test_numpy_function_calls_inferred_as_tuple(self):
@@ -178,13 +162,9 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
                     inferred_values = list(infer_wrapper(*func_))
                     self.assertTrue(
                         len(inferred_values) == 1,
-                        msg="Too much inferred values ({}) for {:s}".format(
-                            inferred_values, func_[0]
-                        ),
+                        msg=f"Too much inferred values ({inferred_values}) for {func_[0]:s}",
                     )
                     self.assertTrue(
                         inferred_values[-1].pytype() == "builtins.tuple",
-                        msg="Illicit type for {:s} ({})".format(
-                            func_[0], inferred_values[-1].pytype()
-                        ),
+                        msg=f"Illicit type for {func_[0]:s} ({inferred_values[-1].pytype()})",
                     )
