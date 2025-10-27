@@ -226,7 +226,7 @@ jobs:
       - name: Install dependencies
         run: pip install -U -r requirements_minimal.txt
       - name: Download all coverage artifacts
-        uses: actions/download-artifact@v5.0.0
+        uses: actions/download-artifact@v6.0.0
       - name: Combine Linux coverage results
         run: |
           coverage combine coverage-linux*/.coverage
