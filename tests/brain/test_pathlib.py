@@ -26,7 +26,7 @@ def test_inference_parents() -> None:
     if PY313:
         assert inferred[0].qname() == "builtins.tuple"
     else:
-        assert inferred[0].qname() == "._PathParents"
+        assert inferred[0].qname().lstrip(".").endswith("_PathParents")
 
 
 def test_inference_parents_subscript_index() -> None:

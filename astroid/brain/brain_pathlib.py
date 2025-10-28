@@ -34,7 +34,7 @@ def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
     return (
         isinstance(value, bases.Instance)
         and isinstance(value._proxied, nodes.ClassDef)
-        and value.qname().lstrip(".") == parents
+        and value.qname() == parents
     )
 
 
