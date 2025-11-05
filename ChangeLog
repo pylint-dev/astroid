@@ -23,6 +23,10 @@ Release date: TBA
 
   Refs #2860
 
+* Add ``HTTPMethod`` enum support to brain module for Python 3.11+.
+
+  Closes #4135
+
 
 What's New in astroid 4.0.2?
 ============================
