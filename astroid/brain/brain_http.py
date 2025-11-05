@@ -14,9 +14,20 @@ from astroid.manager import AstroidManager
 def _http_transform() -> nodes.Module:
     code = textwrap.dedent(
         """
-    from enum import IntEnum
+    from enum import IntEnum, StrEnum
     from collections import namedtuple
     _HTTPStatus = namedtuple('_HTTPStatus', 'value phrase description')
+
+    class HTTPMethod(StrEnum):
+        GET = "GET"
+        POST = "POST"
+        PUT = "PUT"
+        DELETE = "DELETE"
+        HEAD = "HEAD"
+        OPTIONS = "OPTIONS"
+        PATCH = "PATCH"
+        TRACE = "TRACE"
+        CONNECT = "CONNECT"
 
     class HTTPStatus(IntEnum):
 
