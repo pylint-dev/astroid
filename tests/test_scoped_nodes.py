@@ -989,8 +989,8 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         def f1(bar: str) -> None:  #@
             pass
 
-        def f2(
-               bar: str) -> None:  #@
+        def f2(  #@
+               bar: str) -> None:
             pass
 
         def f3(  #@
