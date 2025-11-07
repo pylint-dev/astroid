@@ -1020,7 +1020,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         # Unimplemented, will return line 14 for now.
         # assert ast_nodes[3].blockstart_tolineno == 15
 
-        # This will pass but for the wrong reason
         assert ast_nodes[4].blockstart_tolineno == 19
 
 
