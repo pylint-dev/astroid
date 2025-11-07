@@ -982,6 +982,40 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         with pytest.raises(AttributeInferenceError):
             func.getattr("")
 
+    @staticmethod
+    def test_blockstart_tolineno() -> None:
+        code = textwrap.dedent(
+            """\
+        def f1(bar: str) -> None:  #@
+            pass
+
+        def f2(
+               bar: str) -> None:  #@
+            pass
+
+        def f3(  #@
+            bar: str
+        ) -> None:
+            pass
+
+        def f4(  #@
+            bar: str
+        ):
+            pass
+        """
+        )
+        ast_nodes: list[nodes.FunctionDef] = builder.extract_node(code)  # type: ignore[assignment]
+        assert len(ast_nodes) == 4
+
+        assert ast_nodes[0].blockstart_tolineno == 1
+
+        assert ast_nodes[1].blockstart_tolineno == 5
+
+        assert ast_nodes[2].blockstart_tolineno == 10
+
+        # Unimplemented, will return line 14 for now.
+        # assert ast_nodes[3].blockstart_tolineno == 15
+
 
 class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_dict_interface(self) -> None:
