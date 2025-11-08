@@ -1401,6 +1401,8 @@ class FunctionDef(
 
         :type: int
         """
+        if self.returns:
+            return self.returns.tolineno
         return self.args.tolineno
 
     def implicit_parameters(self) -> Literal[0, 1]:
