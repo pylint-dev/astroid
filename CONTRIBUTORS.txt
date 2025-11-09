@@ -14,8 +14,8 @@ Ex-maintainers
 Maintainers
 -----------
 - Pierre Sassoulas <pierre.sassoulas@gmail.com>
-- Jacob Walls <jacobtylerwalls@gmail.com>
 - Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
+- Jacob Walls <jacobtylerwalls@gmail.com>
 - Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 - Hippo91 <guillaume.peillex@gmail.com>
 - Bryce Guinta <bryce.paul.guinta@gmail.com>
