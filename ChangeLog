@@ -8,16 +8,25 @@ What's New in astroid 4.1.0?
 Release date: TBA
 
 
-* Add ``HTTPMethod`` enum support to brain module for Python 3.11+.
 
-  Closes #4135
-
-
-What's New in astroid 4.0.2?
+What's New in astroid 4.0.3?
 ============================
 Release date: TBA
 
 
+
+What's New in astroid 4.0.2?
+============================
+Release date: 2025-11-09
+
+* Handle FunctionDef blockstart_tolineno edge cases correctly.
+
+  Refs #2880
+
+* Add ``HTTPMethod`` enum support to brain module for Python 3.11+.
+
+  Refs pylint-dev/pylint#10624
+  Closes #2877
 
 What's New in astroid 4.0.1?
 ============================
