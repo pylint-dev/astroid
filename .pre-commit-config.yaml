@@ -10,7 +10,7 @@ repos:
       - id: end-of-file-fixer
         exclude: tests/testdata
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.14.7"
+    rev: "v0.14.8"
     hooks:
       - id: ruff-check
         args: ["--fix"]
@@ -33,7 +33,7 @@ repos:
       - id: black-disable-checker
         exclude: tests/test_nodes_lineno.py
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 25.11.0
+    rev: 25.12.0
     hooks:
       - id: black
         args: [--safe, --quiet]
@@ -76,7 +76,7 @@ repos:
         require_serial: true
         additional_dependencies: ["types-typed-ast"]
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.7.3
+    rev: v3.7.4
     hooks:
       - id: prettier
         args: [--prose-wrap=always, --print-width=88]
