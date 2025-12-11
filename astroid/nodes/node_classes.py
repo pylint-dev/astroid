@@ -968,7 +968,7 @@ class Arguments(
             return True
         return self.find_argname(name)[1] is not None
 
-    def find_argname(self, argname, rec=DEPRECATED_ARGUMENT_DEFAULT):
+    def find_argname(self, argname):
         """Get the index and :class:`AssignName` node for given name.
 
         :param argname: The name of the argument to search for.
@@ -977,12 +977,6 @@ class Arguments(
         :returns: The index and node for the argument.
         :rtype: tuple(str or None, AssignName or None)
         """
-        if rec != DEPRECATED_ARGUMENT_DEFAULT:  # pragma: no cover
-            warnings.warn(
-                "The rec argument will be removed in astroid 3.1.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         if self.arguments:
             index, argument = _find_arg(argname, self.arguments)
             if argument:
