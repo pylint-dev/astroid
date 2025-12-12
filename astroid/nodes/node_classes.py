@@ -1039,7 +1039,7 @@ class Arguments(
 
     @decorators.raise_if_nothing_inferred
     def _infer(
-        self: nodes.Arguments, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult]:
         # pylint: disable-next=import-outside-toplevel
         from astroid.protocols import _arguments_infer_argname
@@ -1458,7 +1458,7 @@ class AugAssign(
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self: nodes.AugAssign, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult]:
         return self._filter_operation_errors(
             self._infer_augassign, context, util.BadBinaryOperationMessage
@@ -1573,7 +1573,7 @@ class BinOp(_base_nodes.OperatorNode):
     @decorators.yes_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self: nodes.BinOp, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult]:
         return self._filter_operation_errors(
             self._infer_binop, context, util.BadBinaryOperationMessage
@@ -1650,7 +1650,7 @@ class BoolOp(NodeNG):
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self: nodes.BoolOp, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """Infer a boolean operation (and / or / not).
 
@@ -4335,7 +4335,7 @@ class UnaryOp(_base_nodes.OperatorNode):
         return super().op_precedence()
 
     def _infer_unaryop(
-        self: nodes.UnaryOp, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[
         InferenceResult | util.BadUnaryOperationMessage, None, InferenceErrorInfo
     ]:
@@ -4401,7 +4401,7 @@ class UnaryOp(_base_nodes.OperatorNode):
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self: nodes.UnaryOp, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
         """Infer what an UnaryOp should return when evaluated."""
         yield from self._filter_operation_errors(
