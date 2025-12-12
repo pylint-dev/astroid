@@ -156,7 +156,7 @@ jobs:
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
             hashFiles('pyproject.toml', 'requirements_dev.txt',
-          'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
+          'requirements_full.txt', 'requirements_minimal.txt') }}" >> $env:GITHUB_OUTPUT
       - *cache-python
       - name: Create Python virtual environment
         if: steps.cache-venv.outputs.cache-hit != 'true'
