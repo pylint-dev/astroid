@@ -29,6 +29,10 @@ Release date: TBA
 
   Refs #2860
 
+* Skip direct parent when determining the ``Decorator`` frame.
+
+  Refs pylint-dev/pylint#8425
+
 
 
 What's New in astroid 4.0.3?

@@ -56,6 +56,8 @@ if TYPE_CHECKING:
     from astroid import nodes
     from astroid.nodes import LocalsDictNodeNG
 
+    _FrameType = nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda
+
 
 def _is_const(value) -> bool:
     return isinstance(value, tuple(CONST_CLS))
@@ -2239,12 +2241,21 @@ class Decorators(NodeNG):
 
         :returns: The first parent scope node.
         """
-        # skip the function node to go directly to the upper level scope
+        # skip the function or class node to go directly to the upper level scope
         if not self.parent:
             raise ParentMissingError(target=self)
         if not self.parent.parent:
             raise ParentMissingError(target=self.parent)
         return self.parent.parent.scope()
+
+    def frame(self) -> _FrameType:
+        """The first parent node defining a new frame."""
+        # skip the function or class node to go directly to the upper level frame
+        if not self.parent:
+            raise ParentMissingError(target=self)
+        if not self.parent.parent:
+            raise ParentMissingError(target=self.parent)
+        return self.parent.parent.frame()
 
     def get_children(self):
         yield from self.nodes
