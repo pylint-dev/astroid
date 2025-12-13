@@ -6,4 +6,4 @@ tbump~=6.11
 coverage~=7.10
 pytest
 pytest-cov~=7.0
-mypy
+mypy; platform_python_implementation!="PyPy"
