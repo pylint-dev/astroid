@@ -19,7 +19,6 @@ import unittest
 from typing import Any
 from unittest import mock
 
-import mypy.build
 import pytest
 
 import tests.testdata.python3.data.fake_module_with_broken_getattr as fm_getattr
@@ -36,6 +35,13 @@ from astroid.raw_building import (
     build_module,
     object_build_class,
 )
+
+try:
+    import mypy.build
+
+    HAS_MYPY = True
+except ImportError:
+    HAS_MYPY = False
 
 DUMMY_MOD = build_module("DUMMY")
 
@@ -173,6 +179,7 @@ def test_build_module_getattr_catch_output(
     assert not err
 
 
+@pytest.mark.skipif(not HAS_MYPY, reason="This test requires mypy")
 def test_missing__dict__():
     # This shouldn't raise an exception.
     object_build_class(DUMMY_MOD, mypy.build.ModuleNotFound)
