@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar, overload
+from typing import TYPE_CHECKING, overload
+
+from typing_extensions import Self
 
 from astroid.exceptions import ParentMissingError
 from astroid.filter_statements import _filter_stmts
@@ -16,8 +18,6 @@ from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 if TYPE_CHECKING:
     from astroid import nodes
-
-_T = TypeVar("_T")
 
 
 class LocalsDictNodeNG(_base_nodes.LookupMixIn):
@@ -46,7 +46,7 @@ class LocalsDictNodeNG(_base_nodes.LookupMixIn):
         except ParentMissingError:
             return self.name
 
-    def scope(self: _T) -> _T:
+    def scope(self) -> Self:
         """The first parent node defining a new scope.
 
         :returns: The first parent scope node.
