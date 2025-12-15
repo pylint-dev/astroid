@@ -13,11 +13,10 @@ leads to an inferred FrozenSet:
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Generator, Iterator
 from functools import cached_property
 from typing import Any, Literal, NoReturn
-
-from typing_extensions import Self
 
 from astroid import bases, util
 from astroid.context import InferenceContext
@@ -31,6 +30,11 @@ from astroid.interpreter import objectmodel
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes, scoped_nodes
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 
 class FrozenSet(node_classes.BaseContainer):
