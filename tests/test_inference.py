@@ -6445,22 +6445,45 @@ def test_ifexp_inference() -> None:
 def test_ifexp_with_default_arguments() -> None:
     code = """
     def bad(foo: str | None = None):
-        a = 1 if foo else ""  #@
+        a = 1 if foo else "" #@
 
     def good(foo: str):
-        a = 1 if foo else ""  #@
+        a = 1 if foo else "" #@
+
+    def f1(foo: str | None = None):
+        a = 1 if foo else "c1"
+        b = 2 if a else "c2" #@
+        c = 3 if b else "c3" #@
+        d = 4 if not foo else foo #@
+        e = d if not foo else foo #@
     """
 
-    nodes = extract_node(code)
+    ast_nodes = extract_node(code)
 
-    first = nodes[0].value.inferred()
-    second = nodes[1].value.inferred()
+    first = ast_nodes[0].value.inferred()
+    second = ast_nodes[1].value.inferred()
+    third = ast_nodes[2].value.inferred()
+    fourth = ast_nodes[3].value.inferred()
+    fifth = ast_nodes[4].value.inferred()
+    sixth = ast_nodes[5].value.inferred()
 
     assert(len(first) == 2)
     assert([first[0].value, first[1].value] == [1, ""])
 
     assert(len(second) == 2)
     assert([second[0].value, second[1].value] == [1, ""])
+
+    assert(len(third) == 1)
+    assert(third[0].value == 2)
+
+    assert(len(fourth) == 1)
+    assert(fourth[0].value == 3)
+
+    assert(len(fifth) == 2)
+    assert([fifth[0].value, fifth[1].value] == [4, Uninferable])
+
+    assert(len(sixth) == 3)
+    assert([sixth[0].value, sixth[1].value, sixth[2].value] == [4, Uninferable, Uninferable])
 
 
 def test_assert_last_function_returns_none_on_inference() -> None:
