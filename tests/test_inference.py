@@ -6442,6 +6442,7 @@ def test_ifexp_inference() -> None:
     assert isinstance(third, list)
     assert [third[0].value, third[1].value] == [1, 2]
 
+
 def test_ifexp_with_default_arguments() -> None:
     code = """
     def bad(foo: str | None = None):
@@ -6456,11 +6457,11 @@ def test_ifexp_with_default_arguments() -> None:
     first = nodes[0].value.inferred()
     second = nodes[1].value.inferred()
 
-    assert(len(first) == 2)
-    assert([first[0].value, first[1].value] == [1, ""])
+    assert len(first) == 2
+    assert [first[0].value, first[1].value] == [1, ""]
 
-    assert(len(second) == 2)
-    assert([second[0].value, second[1].value] == [1, ""])
+    assert len(second) == 2
+    assert [second[0].value, second[1].value] == [1, ""]
 
 
 def test_assert_last_function_returns_none_on_inference() -> None:
