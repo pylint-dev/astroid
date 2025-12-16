@@ -6490,6 +6490,45 @@ def test_ifexp_with_default_arguments() -> None:
         Uninferable,
     ]
 
+def test_ifexp_with_uninferables() -> None:
+    code = """
+    def truthy_and_falsy():
+        return False if unknown() else True
+
+    def truthy_and_uninferable():
+        return False if unknown() else unknown()
+
+    def calls_truthy_and_falsy():
+        return 1 if truthy_and_falsy() else 2
+
+    def calls_truthy_and_uninferable():
+        return 1 if truthy_and_uninferable() else truthy_and_uninferable()
+
+    truthy_and_falsy() #@
+    truthy_and_uninferable() #@
+    calls_truthy_and_falsy() #@
+    calls_truthy_and_uninferable() #@
+    """
+
+    ast_nodes = extract_node(code)
+
+    first = ast_nodes[0].inferred()
+    second = ast_nodes[1].inferred()
+    third = ast_nodes[2].inferred()
+    fourth = ast_nodes[3].inferred()
+
+    assert len(first) == 2
+    assert [first[0].value, first[1].value] == [False, True]
+
+    assert len(second) == 2
+    assert [second[0].value, second[1].value] == [False, Uninferable]
+
+    assert len(third) == 2
+    assert [third[0].value, third[1].value] == [1, 2]
+
+    assert len(fourth) == 3
+    assert [fourth[0].value, fourth[1].value, fourth[2].value] == [1, False, Uninferable]
+
 
 def test_assert_last_function_returns_none_on_inference() -> None:
     code = """

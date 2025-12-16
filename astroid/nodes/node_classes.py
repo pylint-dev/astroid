@@ -3147,7 +3147,7 @@ class IfExp(NodeNG):
                     break
                 if condition is None:
                     condition = test_bool_value
-                elif condition != test_bool_value:
+                elif test_bool_value != condition:
                     condition = None
                     break
         except InferenceError:
