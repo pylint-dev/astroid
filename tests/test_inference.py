@@ -6484,7 +6484,11 @@ def test_ifexp_with_default_arguments() -> None:
     assert [fifth[0].value, fifth[1].value] == [4, Uninferable]
 
     assert len(sixth) == 3
-    assert [sixth[0].value, sixth[1].value, sixth[2].value] == [4, Uninferable, Uninferable]
+    assert [sixth[0].value, sixth[1].value, sixth[2].value] == [
+        4,
+        Uninferable,
+        Uninferable,
+    ]
 
 
 def test_assert_last_function_returns_none_on_inference() -> None:
