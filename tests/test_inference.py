@@ -6445,17 +6445,17 @@ def test_ifexp_inference() -> None:
 
 def test_ifexp_with_default_arguments() -> None:
     code = """
-    def bad(foo: str | None = None):
-        a = 1 if foo else "" #@
+    def with_default(foo: str | None = None):
+        a = 1 if foo else "bar" #@
 
-    def good(foo: str):
-        a = 1 if foo else "" #@
+    def without_default(foo: str):
+        a = 1 if foo else "bar" #@
 
-    def f1(foo: str | None = None):
-        a = 1 if foo else "c1"
-        b = 2 if a else "c2" #@
-        c = 3 if b else "c3" #@
-        d = 4 if not foo else foo #@
+    def some_ifexps(foo: str | None = None):
+        a = 1 if foo else 2
+        b = 3 if a else 4 #@
+        c = 4 if b else 5 #@
+        d = 5 if not foo else foo #@
         e = d if not foo else foo #@
     """
 
@@ -6469,26 +6469,27 @@ def test_ifexp_with_default_arguments() -> None:
     sixth = ast_nodes[5].value.inferred()
 
     assert len(first) == 2
-    assert [first[0].value, first[1].value] == [1, ""]
+    assert [first[0].value, first[1].value] == [1, "bar"]
 
     assert len(second) == 2
-    assert [second[0].value, second[1].value] == [1, ""]
+    assert [second[0].value, second[1].value] == [1, "bar"]
 
     assert len(third) == 1
-    assert third[0].value == 2
+    assert third[0].value == 3
 
     assert len(fourth) == 1
-    assert fourth[0].value == 3
+    assert fourth[0].value == 4
 
     assert len(fifth) == 2
-    assert [fifth[0].value, fifth[1].value] == [4, Uninferable]
+    assert [fifth[0].value, fifth[1].value] == [5, Uninferable]
 
     assert len(sixth) == 3
     assert [sixth[0].value, sixth[1].value, sixth[2].value] == [
-        4,
+        5,
         Uninferable,
         Uninferable,
     ]
+
 
 def test_ifexp_with_uninferables() -> None:
     code = """
@@ -6502,7 +6503,7 @@ def test_ifexp_with_uninferables() -> None:
         return 1 if truthy_and_falsy() else 2
 
     def calls_truthy_and_uninferable():
-        return 1 if truthy_and_uninferable() else truthy_and_uninferable()
+        return 1 if range(10) else truthy_and_uninferable()
 
     truthy_and_falsy() #@
     truthy_and_uninferable() #@
@@ -6527,7 +6528,11 @@ def test_ifexp_with_uninferables() -> None:
     assert [third[0].value, third[1].value] == [1, 2]
 
     assert len(fourth) == 3
-    assert [fourth[0].value, fourth[1].value, fourth[2].value] == [1, False, Uninferable]
+    assert [fourth[0].value, fourth[1].value, fourth[2].value] == [
+        1,
+        False,
+        Uninferable,
+    ]
 
 
 def test_assert_last_function_returns_none_on_inference() -> None:
