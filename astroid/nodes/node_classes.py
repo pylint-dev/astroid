@@ -55,8 +55,7 @@ else:
 if TYPE_CHECKING:
     from astroid import nodes
     from astroid.nodes import LocalsDictNodeNG
-
-    _FrameType = nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda
+    from astroid.nodes.node_ng import FrameType
 
 
 def _is_const(value) -> bool:
@@ -2248,7 +2247,7 @@ class Decorators(NodeNG):
             raise ParentMissingError(target=self.parent)
         return self.parent.parent.scope()
 
-    def frame(self) -> _FrameType:
+    def frame(self) -> FrameType:
         """The first parent node defining a new frame."""
         # skip the function or class node to go directly to the upper level frame
         if not self.parent:
@@ -4938,7 +4937,7 @@ class NamedExpr(_base_nodes.AssignTypeNode):
     See astroid/protocols.py for actual implementation.
     """
 
-    def frame(self) -> nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda:
+    def frame(self) -> FrameType:
         """The first parent frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
