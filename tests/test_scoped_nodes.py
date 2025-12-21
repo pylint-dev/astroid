@@ -2913,7 +2913,10 @@ class TestFrameNodes:
     def test_frame_node_for_decorators():
         code = builder.extract_node(
             """
-            def deco(var): ...
+            def deco(var):
+                def inner(arg):
+                    ...
+                return inner
 
             @deco(
                 x := 1  #@
