@@ -2910,6 +2910,39 @@ class TestFrameNodes:
         assert module.frame() == module
 
     @staticmethod
+    def test_frame_node_for_decorators():
+        code = builder.extract_node(
+            """
+            def deco(var):
+                def inner(arg):
+                    ...
+                return inner
+
+            @deco(
+                x := 1  #@
+            )
+            def func():  #@
+                ...
+
+            @deco(
+                y := 2  #@
+            )
+            class A:  #@
+                ...
+        """
+        )
+        name_expr_node1, func_node, name_expr_node2, class_node = code
+        module = func_node.root()
+        assert name_expr_node1.scope() == module
+        assert name_expr_node1.frame() == module
+        assert name_expr_node2.scope() == module
+        assert name_expr_node2.frame() == module
+        assert module.locals.get("x") == [name_expr_node1.target]
+        assert module.locals.get("y") == [name_expr_node2.target]
+        assert "x" not in func_node.locals
+        assert "y" not in class_node.locals
+
+    @staticmethod
     def test_non_frame_node():
         """Test if the frame of non frame nodes is set correctly."""
         module = builder.parse(
