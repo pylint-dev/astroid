@@ -29,7 +29,7 @@ from astroid import (
     util,
 )
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import WIN32
+from astroid.const import PY312_PLUS, WIN32
 from astroid.exceptions import (
     AstroidBuildingError,
     AttributeInferenceError,
@@ -1966,6 +1966,34 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqualMroQName(
             cls, [".E", ".C", ".A", ".B", "typing.Generic", ".D", "builtins.object"]
         )
+
+    @pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
+    def test_mro_generic_8(self):
+        cls = builder.extract_node(
+            """
+        class A: ...
+        class B[T]: ...
+        class C[T](A, B[T]): ...
+        """
+        )
+        assert isinstance(cls, nodes.ClassDef)
+        self.assertEqualMroQName(cls, [".C", ".A", ".B", "builtins.object"])
+
+    @pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
+    def test_mro_generic_9(self):
+        cls = builder.extract_node(
+            """
+        from dataclasses import dataclass
+        @dataclass
+        class A: ...
+        @dataclass
+        class B[T]: ...
+        @dataclass
+        class C[T](A, B[T]): ...
+        """
+        )
+        assert isinstance(cls, nodes.ClassDef)
+        self.assertEqualMroQName(cls, [".C", ".A", ".B", "builtins.object"])
 
     def test_mro_generic_error_1(self):
         cls = builder.extract_node(
