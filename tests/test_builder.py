@@ -88,18 +88,47 @@ class FromToLineNoTest(unittest.TestCase):
             self.assertEqual(arg.fromlineno, 10 + i)
             self.assertEqual(arg.tolineno, 10 + i)
 
-
-    def test_extract_multiline_statement(self):
+    def test_extract_node_multiline_statement(self):
+        """
+        A multiline statement marked with #@ should be extracted
+        as a single AST node, not split per-line.
+        """
         code = """
-            model = foo(
-                1,
-                2,
-            )  #@
+            model = tf.keras.Sequential(layers=[
+                tf.keras.layers.Dense(units=64, activation='relu'),
+                tf.keras.layers.Dense(units=10)
+            ])  #@
             """
-        node = extract_node(code)
-        assert isinstance(node, nodes.Assign)
 
+        node = builder.extract_node(code)
 
+        assert node is not None, "extract_node returned None for multiline statement"
+        assert isinstance(node, nodes.Assign), (
+            f"Expected Assign node, got {type(node).__name__}"
+        )
+        value = node.value
+        assert isinstance(value, nodes.Call)
+        func = value.func
+        assert isinstance(func, nodes.Attribute)
+        assert func.attrname == "Sequential"
+        start = node.lineno
+        end = getattr(node, "end_lineno", None)
+
+        assert start is not None, "lineno must be set"
+        assert end is not None, "end_lineno must be set for multiline node"
+        assert end > start, (
+            f"Expected multiline node, got lineno={start}, end_lineno={end}"
+        )
+
+        children = list(node.get_children())
+        dense_calls = [
+            child for child in node.nodes_of_class(nodes.Call)
+            if isinstance(child.func, nodes.Attribute)
+            and child.func.attrname == "Dense"
+        ]
+        assert len(dense_calls) == 2, (
+            "Expected exactly two Dense layer calls inside Sequential"
+        )
 
     def test_function_lineno(self) -> None:
         stmts = self.astroid.body
