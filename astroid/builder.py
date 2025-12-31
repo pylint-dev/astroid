@@ -384,7 +384,7 @@ def _find_statement_by_line(node: nodes.NodeNG, line: int) -> nodes.NodeNG | Non
 
     if start <= line <= end:
         return node
-    
+
     for child in node.get_children():
         result = _find_statement_by_line(child, line)
         if result:

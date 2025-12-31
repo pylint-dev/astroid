@@ -18,7 +18,7 @@ import unittest.mock
 
 import pytest
 
-from astroid import Instance, builder, nodes, test_utils, util, extract_node
+from astroid import Instance, builder, extract_node, nodes, test_utils, util
 from astroid.const import IS_PYPY
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -103,9 +103,9 @@ class FromToLineNoTest(unittest.TestCase):
         node = builder.extract_node(code)
 
         assert node is not None, "extract_node returned None for multiline statement"
-        assert isinstance(node, nodes.Assign), (
-            f"Expected Assign node, got {type(node).__name__}"
-        )
+        assert isinstance(
+            node, nodes.Assign
+        ), f"Expected Assign node, got {type(node).__name__}"
         value = node.value
         assert isinstance(value, nodes.Call)
         func = value.func
@@ -116,17 +116,18 @@ class FromToLineNoTest(unittest.TestCase):
 
         assert start is not None, "lineno must be set"
         assert end is not None, "end_lineno must be set for multiline node"
-        assert end > start, (
-            f"Expected multiline node, got lineno={start}, end_lineno={end}"
-        )
+        assert (
+            end > start
+        ), f"Expected multiline node, got lineno={start}, end_lineno={end}"
         dense_calls = [
-            child for child in node.nodes_of_class(nodes.Call)
+            child
+            for child in node.nodes_of_class(nodes.Call)
             if isinstance(child.func, nodes.Attribute)
             and child.func.attrname == "Dense"
         ]
-        assert len(dense_calls) == 2, (
-            "Expected exactly two Dense layer calls inside Sequential"
-        )
+        assert (
+            len(dense_calls) == 2
+        ), "Expected exactly two Dense layer calls inside Sequential"
 
     def test_function_lineno(self) -> None:
         stmts = self.astroid.body
