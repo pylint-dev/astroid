@@ -6,6 +6,8 @@ astroid's ChangeLog
 What's New in astroid 4.1.0?
 ============================
 Release date: TBA
+* Fixed incorrect extraction of multi-line statements when using the #@ marker in
+  astroid.builder.extract_node.
 
 * Add support for type constraints (`isinstance(x, y)`) in inference.
 
