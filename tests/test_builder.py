@@ -18,7 +18,7 @@ import unittest.mock
 
 import pytest
 
-from astroid import Instance, builder, nodes, test_utils, util
+from astroid import Instance, builder, nodes, test_utils, util, extract_node
 from astroid.const import IS_PYPY
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -87,6 +87,19 @@ class FromToLineNoTest(unittest.TestCase):
             self.assertIsInstance(arg, nodes.Const)
             self.assertEqual(arg.fromlineno, 10 + i)
             self.assertEqual(arg.tolineno, 10 + i)
+
+
+    def test_extract_multiline_statement(self):
+        code = """
+            model = foo(
+                1,
+                2,
+            )  #@
+            """
+        node = extract_node(code)
+        assert isinstance(node, nodes.Assign)
+
+
 
     def test_function_lineno(self) -> None:
         stmts = self.astroid.body
