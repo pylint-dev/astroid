@@ -8,9 +8,9 @@ So, you want to release the `X.Y.Z` version of astroid ?
 the maintenance branch. If so, release a last patch release first. See
 `Releasing a patch version`.**
 
-- Remove the empty changelog for the last unreleased patch version `X.Y-1.Z'`. (For
+- Remove the empty changelog for the last unreleased patch version `X.Y-1.Z`. (For
   example: `v2.3.5`)
-- Check the result of `git diff vX.Y-1.Z' ChangeLog`. (For example:
+- Check the result of `git diff vX.Y-1.Z ChangeLog`. (For example:
   `git diff v2.3.4 ChangeLog`)
 - Install the release dependencies: `pip3 install -r requirements_minimal.txt`
 - Bump the version and release by using `tbump X.Y.0 --no-push --no-tag`. (For example:
