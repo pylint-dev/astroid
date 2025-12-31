@@ -119,8 +119,6 @@ class FromToLineNoTest(unittest.TestCase):
         assert end > start, (
             f"Expected multiline node, got lineno={start}, end_lineno={end}"
         )
-
-        children = list(node.get_children())
         dense_calls = [
             child for child in node.nodes_of_class(nodes.Call)
             if isinstance(child.func, nodes.Attribute)
