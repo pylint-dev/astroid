@@ -6443,6 +6443,98 @@ def test_ifexp_inference() -> None:
     assert [third[0].value, third[1].value] == [1, 2]
 
 
+def test_ifexp_with_default_arguments() -> None:
+    code = """
+    def with_default(foo: str | None = None):
+        a = 1 if foo else "bar" #@
+
+    def without_default(foo: str):
+        a = 1 if foo else "bar" #@
+
+    def some_ifexps(foo: str | None = None):
+        a = 1 if foo else 2
+        b = 3 if a else 4 #@
+        c = 4 if b else 5 #@
+        d = 5 if not foo else foo #@
+        e = d if not foo else foo #@
+    """
+
+    ast_nodes = extract_node(code)
+
+    first = ast_nodes[0].value.inferred()
+    second = ast_nodes[1].value.inferred()
+    third = ast_nodes[2].value.inferred()
+    fourth = ast_nodes[3].value.inferred()
+    fifth = ast_nodes[4].value.inferred()
+    sixth = ast_nodes[5].value.inferred()
+
+    assert len(first) == 2
+    assert [first[0].value, first[1].value] == [1, "bar"]
+
+    assert len(second) == 2
+    assert [second[0].value, second[1].value] == [1, "bar"]
+
+    assert len(third) == 1
+    assert third[0].value == 3
+
+    assert len(fourth) == 1
+    assert fourth[0].value == 4
+
+    assert len(fifth) == 2
+    assert [fifth[0].value, fifth[1].value] == [5, Uninferable]
+
+    assert len(sixth) == 3
+    assert [sixth[0].value, sixth[1].value, sixth[2].value] == [
+        5,
+        Uninferable,
+        Uninferable,
+    ]
+
+
+def test_ifexp_with_uninferables() -> None:
+    code = """
+    def truthy_and_falsy():
+        return False if unknown() else True
+
+    def truthy_and_uninferable():
+        return False if unknown() else unknown()
+
+    def calls_truthy_and_falsy():
+        return 1 if truthy_and_falsy() else 2
+
+    def calls_truthy_and_uninferable():
+        return 1 if range(10) else truthy_and_uninferable()
+
+    truthy_and_falsy() #@
+    truthy_and_uninferable() #@
+    calls_truthy_and_falsy() #@
+    calls_truthy_and_uninferable() #@
+    """
+
+    ast_nodes = extract_node(code)
+
+    first = ast_nodes[0].inferred()
+    second = ast_nodes[1].inferred()
+    third = ast_nodes[2].inferred()
+    fourth = ast_nodes[3].inferred()
+
+    assert len(first) == 2
+    assert [first[0].value, first[1].value] == [False, True]
+
+    assert len(second) == 2
+    assert [second[0].value, second[1].value] == [False, Uninferable]
+
+    assert len(third) == 2
+    assert [third[0].value, third[1].value] == [1, 2]
+
+    assert len(fourth) == 3
+    assert [fourth[0].value, fourth[1].value, fourth[2].value] == [
+        1,
+        False,
+        Uninferable,
+    ]
+
+
 def test_assert_last_function_returns_none_on_inference() -> None:
     code = """
     def check_equal(a, b):
