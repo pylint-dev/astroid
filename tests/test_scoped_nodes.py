@@ -29,7 +29,7 @@ from astroid import (
     util,
 )
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import WIN32
+from astroid.const import PY312_PLUS, WIN32
 from astroid.exceptions import (
     AstroidBuildingError,
     AttributeInferenceError,
@@ -1967,6 +1967,34 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             cls, [".E", ".C", ".A", ".B", "typing.Generic", ".D", "builtins.object"]
         )
 
+    @pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
+    def test_mro_generic_8(self):
+        cls = builder.extract_node(
+            """
+        class A: ...
+        class B[T]: ...
+        class C[T](A, B[T]): ...
+        """
+        )
+        assert isinstance(cls, nodes.ClassDef)
+        self.assertEqualMroQName(cls, [".C", ".A", ".B", "builtins.object"])
+
+    @pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
+    def test_mro_generic_9(self):
+        cls = builder.extract_node(
+            """
+        from dataclasses import dataclass
+        @dataclass
+        class A: ...
+        @dataclass
+        class B[T]: ...
+        @dataclass
+        class C[T](A, B[T]): ...
+        """
+        )
+        assert isinstance(cls, nodes.ClassDef)
+        self.assertEqualMroQName(cls, [".C", ".A", ".B", "builtins.object"])
+
     def test_mro_generic_error_1(self):
         cls = builder.extract_node(
             """
@@ -2908,6 +2936,39 @@ class TestFrameNodes:
 
         assert module.frame() == module
         assert module.frame() == module
+
+    @staticmethod
+    def test_frame_node_for_decorators():
+        code = builder.extract_node(
+            """
+            def deco(var):
+                def inner(arg):
+                    ...
+                return inner
+
+            @deco(
+                x := 1  #@
+            )
+            def func():  #@
+                ...
+
+            @deco(
+                y := 2  #@
+            )
+            class A:  #@
+                ...
+        """
+        )
+        name_expr_node1, func_node, name_expr_node2, class_node = code
+        module = func_node.root()
+        assert name_expr_node1.scope() == module
+        assert name_expr_node1.frame() == module
+        assert name_expr_node2.scope() == module
+        assert name_expr_node2.frame() == module
+        assert module.locals.get("x") == [name_expr_node1.target]
+        assert module.locals.get("y") == [name_expr_node2.target]
+        assert "x" not in func_node.locals
+        assert "y" not in class_node.locals
 
     @staticmethod
     def test_non_frame_node():

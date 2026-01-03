@@ -42,6 +42,8 @@ else:
 if TYPE_CHECKING:
     from astroid.nodes import _base_nodes
 
+    FrameType = nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda
+
 
 # Types for 'NodeNG.nodes_of_class()'
 _NodesT = TypeVar("_NodesT", bound="NodeNG")
@@ -284,7 +286,7 @@ class NodeNG:
             raise StatementMissing(target=self)
         return self.parent.statement()
 
-    def frame(self) -> nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda:
+    def frame(self) -> FrameType:
         """The first parent frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
