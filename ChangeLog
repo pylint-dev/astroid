@@ -38,9 +38,15 @@ Release date: TBA
 
 
 
-What's New in astroid 4.0.3?
+What's New in astroid 4.0.4?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 4.0.3?
+============================
+Release date: 2026-01-03
 
 * Fix inference of ``IfExp`` (ternary expression) nodes to avoid prematurely narrowing
   results in the face of inference ambiguity.
