@@ -151,26 +151,29 @@ class GetModulePartTest(unittest.TestCase):
         self.assertEqual(modutils.get_module_part(".", modutils.__file__), ".")
 
 
-
 class IsSubpathTest(unittest.TestCase):
     """Tests for modutils._is_subpath,
     which is used internally by modutils.modpath_from_file."""
 
     @unittest.skipUnless(sys.platform == "win32", "Windows-specific path test")
     def test_is_subpath_with_trailing_separator_unc_path(self) -> None:
-        self.assertTrue(modutils._is_subpath(
-            "\\\\Mac\\Code\\tests\\test_resources.py",
-            # UNC path with trailing separator
-            "\\\\mac\\code\\"
-        ))
+        self.assertTrue(
+            modutils._is_subpath(
+                "\\\\Mac\\Code\\tests\\test_resources.py",
+                # UNC path with trailing separator
+                "\\\\mac\\code\\",
+            )
+        )
 
     @unittest.skipUnless(sys.platform == "win32", "Windows-specific path test")
     def test_is_subpath_without_trailing_separator_unc_path(self) -> None:
-        self.assertTrue(modutils._is_subpath(
-            "\\\\Mac\\Code\\tests\\test_resources.py",
-            # UNC path without trailing separator
-            "\\\\mac\\code"
-        ))
+        self.assertTrue(
+            modutils._is_subpath(
+                "\\\\Mac\\Code\\tests\\test_resources.py",
+                # UNC path without trailing separator
+                "\\\\mac\\code",
+            )
+        )
 
 
 class ModPathFromFileTest(unittest.TestCase):

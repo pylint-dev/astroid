@@ -238,9 +238,9 @@ def _is_subpath(path: str, base: str) -> bool:
     if not path.startswith(base):
         return False
     return (
-        (len(path) == len(base)) or 
-        (path[len(base)] == os.path.sep) or
-        (base.endswith(os.path.sep) and path[len(base) - 1] == os.path.sep)
+        (len(path) == len(base))
+        or (path[len(base)] == os.path.sep)
+        or (base.endswith(os.path.sep) and path[len(base) - 1] == os.path.sep)
     )
 
 
