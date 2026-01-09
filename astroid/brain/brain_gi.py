@@ -54,6 +54,35 @@ _special_methods = frozenset(
 )
 
 
+def _gi_supports_inspect_signature():
+    """
+    Indicates if pygobject supports inspect.signature().
+    """
+    import gi
+
+    try:
+        # inspect.signature() is supported since pygobject==3.51.0 (ee9558e4).
+        gi.check_version((3, 51, 0))
+        return True
+    except ValueError:
+        pass
+    return False
+
+
+def _gi_is_method_call(obj):
+    if _gi_supports_inspect_signature():
+        # Since inspect.signature() is supported, the workaround to use
+        # inspect.ismethoddescriptor() was disabled and cannot be used anymore
+        # to tell apart functions from methods.
+        # See https://github.com/pylint-dev/astroid/issues/2594
+        try:
+            sig = str(inspect.signature(obj))
+            return sig == "(self)" or sig.startswith("(self, ")
+        except Exception:  # pylint: disable=broad-except
+            return False
+    return inspect.ismethod(obj) or inspect.ismethoddescriptor(obj)
+
+
 def _gi_build_stub(parent):  # noqa: C901
     """
     Inspect the passed module recursively and build stubs for functions,
@@ -84,7 +113,7 @@ def _gi_build_stub(parent):  # noqa: C901
             classes[name] = obj
         elif inspect.isfunction(obj) or inspect.isbuiltin(obj):
             functions[name] = obj
-        elif inspect.ismethod(obj) or inspect.ismethoddescriptor(obj):
+        elif _gi_is_method_call(obj):
             methods[name] = obj
         elif (
             str(obj).startswith("<flags")
