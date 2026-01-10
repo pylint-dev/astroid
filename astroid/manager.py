@@ -318,7 +318,7 @@ class AstroidManager:
             self._mod_file_cache[(modname, contextfile)] = value
         if isinstance(value, AstroidBuildingError):
             # we remove the traceback here to save on memory usage (since these exceptions are cached)
-            raise value.with_traceback(None)  # pylint: disable=no-member
+            raise value.with_traceback(None)
         return value
 
     def ast_from_module(
