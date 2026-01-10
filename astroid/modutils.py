@@ -237,7 +237,11 @@ def _is_subpath(path: str, base: str) -> bool:
     base = os.path.normcase(os.path.normpath(base))
     if not path.startswith(base):
         return False
-    return (len(path) == len(base)) or (path[len(base)] == os.path.sep)
+    return (
+        (len(path) == len(base))
+        or (path[len(base)] == os.path.sep)
+        or (base.endswith(os.path.sep) and path[len(base) - 1] == os.path.sep)
+    )
 
 
 def _get_relative_base_path(filename: str, path_to_check: str) -> list[str] | None:

@@ -42,6 +42,10 @@ What's New in astroid 4.0.4?
 ============================
 Release date: TBA
 
+* Fix ability to detect .py modules inside PATH directories on Windows
+  described by a UNC path with a trailing backslash (`\`)
+    - Example: modutils.modpath_from_file(filename=r"\\Mac\Code\tests\test_resources.py", path=["\\mac\code\"]) == ['tests', 'test_resources']
+
 
 
 What's New in astroid 4.0.3?
