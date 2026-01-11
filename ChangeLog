@@ -46,7 +46,9 @@ Release date: TBA
   described by a UNC path with a trailing backslash (`\`)
     - Example: modutils.modpath_from_file(filename=r"\\Mac\Code\tests\test_resources.py", path=["\\mac\code\"]) == ['tests', 'test_resources']
 
+* Fix ``random.sample`` inference crash when sequence contains uninferable elements.
 
+  Closes #2518
 
 What's New in astroid 4.0.3?
 ============================

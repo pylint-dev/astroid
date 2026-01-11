@@ -1077,6 +1077,20 @@ class RandomSampleTest(unittest.TestCase):
         assert len(inferred.elts) == 1
         assert isinstance(inferred.elts[0], nodes.Call)
 
+    def test_no_crash_on_uninferable_element(self) -> None:
+        """Test that random.sample does not crash when elements are Uninferable.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/2518
+        """
+        node = astroid.extract_node(
+            """
+        import random
+        random.sample(1*[b], 1)  #@
+        """
+        )
+        inferred = next(node.infer())
+        assert inferred is astroid.Uninferable
+
 
 class SubprocessTest(unittest.TestCase):
     """Test subprocess brain"""

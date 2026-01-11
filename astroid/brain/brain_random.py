@@ -11,7 +11,7 @@ from astroid.context import InferenceContext
 from astroid.exceptions import UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
-from astroid.util import safe_infer
+from astroid.util import UninferableBase, safe_infer
 
 ACCEPTED_ITERABLES_FOR_SAMPLE = (nodes.List, nodes.Set, nodes.Tuple)
 
@@ -57,6 +57,9 @@ def infer_random_sample(node, context: InferenceContext | None = None):
 
     if inferred_length.value > len(inferred_sequence.elts):
         # In this case, this will raise a ValueError
+        raise UseInferenceDefault
+
+    if any(isinstance(elt, UninferableBase) for elt in inferred_sequence.elts):
         raise UseInferenceDefault
 
     try:
