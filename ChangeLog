@@ -709,11 +709,6 @@ Release date: 2023-09-26
   Closes #2305
   Closes pylint-dev/pylint#9069
 
-* Fix a regression in 2.15.7 for ``unsubscriptable-object``.
-
-  Closes #2305
-  Closes pylint-dev/pylint#9069
-
 
 What's New in astroid 2.15.7?
 =============================
