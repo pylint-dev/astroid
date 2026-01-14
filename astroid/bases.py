@@ -541,9 +541,13 @@ class BoundMethod(UnboundMethod):
         self,
         proxy: nodes.FunctionDef | nodes.Lambda | UnboundMethod,
         bound: SuccessfulInferenceResult,
+        original_caller: SuccessfulInferenceResult | None = None,
     ) -> None:
         super().__init__(proxy)
         self.bound = bound
+        # For super() calls: the actual instance/class that called super()
+        # Used to correctly infer return type of methods returning Self
+        self.original_caller = original_caller
 
     def implicit_parameters(self) -> Literal[0, 1]:
         if self.name == "__new__":
@@ -674,7 +678,9 @@ class BoundMethod(UnboundMethod):
         caller: SuccessfulInferenceResult | None,
         context: InferenceContext | None = None,
     ) -> Iterator[InferenceResult]:
-        context = bind_context_to_node(context, self.bound)
+        # For super() calls, use original_caller to correctly infer Self return type
+        bound_node = self.original_caller if self.original_caller else self.bound
+        context = bind_context_to_node(context, bound_node)
         if (
             isinstance(self.bound, nodes.ClassDef)
             and self.bound.name == "type"
