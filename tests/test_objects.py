@@ -504,6 +504,60 @@ class SuperTests(unittest.TestCase):
         second = next(ast_nodes[1].infer())
         self.assertIsInstance(second, bases.Instance)
 
+    def test_super_method_chaining_return_type(self) -> None:
+        """Test that super().method() correctly infers child type.
+
+        Regression test for: https://github.com/pylint-dev/astroid/issues/457
+        """
+        node = builder.extract_node(
+            """
+        class Parent:
+            def method(self) -> "Parent":
+                return self
+
+        class Child(Parent):
+            def method(self) -> "Child":
+                return super().method()
+
+            def extra(self) -> "Child":
+                return self
+
+        Child().method().extra() #@
+        """
+        )
+        inferred = next(node.infer())
+        # Should infer Child instance, not Parent
+        self.assertIsInstance(inferred, bases.Instance)
+        self.assertEqual(inferred._proxied.name, "Child")
+
+    def test_super_classmethod_chaining_return_type(self) -> None:
+        """Test that super().classmethod() correctly infers child type.
+
+        Regression test for: https://github.com/pylint-dev/astroid/issues/457
+        """
+        node = builder.extract_node(
+            """
+        class Parent:
+            @classmethod
+            def create(cls) -> "Parent":
+                return cls()
+
+        class Child(Parent):
+            @classmethod
+            def create(cls) -> "Child":
+                return super().create()
+
+            def extra(self) -> "Child":
+                return self
+
+        Child.create().extra() #@
+        """
+        )
+        inferred = next(node.infer())
+        # Should infer Child instance, not Parent
+        self.assertIsInstance(inferred, bases.Instance)
+        self.assertEqual(inferred._proxied.name, "Child")
+
     def test_super_invalid_types(self) -> None:
         node = builder.extract_node(
             """

@@ -36,6 +36,12 @@ Release date: TBA
 * Add simple command line interface for astroid to output generated AST.
   Use with ``python -m astroid``.
 
+* Fix incorrect type inference for ``super().method()`` calls that return ``Self``.
+  Previously, astroid would infer the parent class type instead of the child class type,
+  causing pylint E1101 false positives in method chaining scenarios.
+
+  Closes #457
+
 
 
 What's New in astroid 4.0.4?
