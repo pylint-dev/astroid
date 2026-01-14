@@ -56,6 +56,10 @@ Release date: TBA
 
   Closes #2518
 
+* Fix ``random.sample`` crash when cloning ``ClassDef`` or ``FunctionDef`` nodes.
+
+  Closes #2923
+
 What's New in astroid 4.0.3?
 ============================
 Release date: 2026-01-03
