@@ -83,6 +83,35 @@ def _gi_is_method_call(obj):
     return inspect.ismethod(obj) or inspect.ismethoddescriptor(obj)
 
 
+def _gi_replace_nonbuiltin_defaults(sig: inspect.Signature) -> inspect.Signature:
+    """
+    Replace non-builtin default parameter values from signature. This is needed
+    to obtain valid Python syntax when serializing the signature to string.
+    Non-builtin default values will produce signatures like this:
+
+        - (argname : IntEnum = <IntEnum.CONST: 0>, ...)
+        - (argname : ObjectType = <ObjectType object at 0xdeadbeefcafe>, ...)
+
+    In that case, replace the default value by 'None' and strip the type
+    annotation to produce a valid signature: (argname=None, ...)
+    """
+
+    def is_empty_or_primitive_builtin(obj) -> bool:
+        return obj == inspect.Parameter.empty or (
+            obj.__class__.__module__ == "builtins"
+            and isinstance(obj, (bool, str, int, float, type(None)))
+        )
+
+    params: list[inspect.Parameter] = []
+    for val in sig.parameters.values():
+        if is_empty_or_primitive_builtin(val.default):
+            params.append(val)
+        else:
+            params.append(val.replace(default=None, annotation=inspect.Parameter.empty))
+
+    return sig.replace(parameters=params)
+
+
 def _gi_build_stub(parent):  # noqa: C901
     """
     Inspect the passed module recursively and build stubs for functions,
@@ -132,6 +161,7 @@ def _gi_build_stub(parent):  # noqa: C901
             constants[name] = 0
 
     ret = ""
+    supports_inspect = _gi_supports_inspect_signature()
 
     if constants:
         ret += f"# {parent.__name__} constants\n\n"
@@ -153,7 +183,14 @@ def _gi_build_stub(parent):  # noqa: C901
     if functions:
         ret += f"# {parent.__name__} functions\n\n"
     for name in sorted(functions):
-        ret += f"def {name}(*args, **kwargs):\n"
+        sig_str = "(*args, **kwargs)"
+        if supports_inspect:
+            try:
+                sig = inspect.signature(functions[name])
+                sig_str = str(_gi_replace_nonbuiltin_defaults(sig))
+            except ValueError:
+                pass  # best effort: expect some 'no signature found' errors
+        ret += f"def {name}{sig_str}:\n"
         ret += "    pass\n"
 
     if ret:
@@ -161,7 +198,14 @@ def _gi_build_stub(parent):  # noqa: C901
     if methods:
         ret += f"# {parent.__name__} methods\n\n"
     for name in sorted(methods):
-        ret += f"def {name}(self, *args, **kwargs):\n"
+        sig_str = "(self, *args, **kwargs)"
+        if supports_inspect:
+            try:
+                sig = inspect.signature(methods[name])
+                sig_str = str(_gi_replace_nonbuiltin_defaults(sig))
+            except ValueError:
+                pass  # best effort: expect some 'no signature found' errors
+        ret += f"def {name}{sig_str}:\n"
         ret += "    pass\n"
 
     if ret:
