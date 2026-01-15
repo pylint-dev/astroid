@@ -1108,6 +1108,23 @@ class RandomSampleTest(unittest.TestCase):
         assert isinstance(inferred.elts[0], nodes.ClassDef)
         assert inferred.elts[0].name == "dict"
 
+    def test_no_crash_on_functiondef_clone(self) -> None:
+        """Test that random.sample does not crash when cloning FunctionDef nodes.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/2923
+        """
+        node = astroid.extract_node(
+            """
+        import random
+        random.sample([len] * 2, 1)  #@
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.List)
+        assert len(inferred.elts) == 1
+        assert isinstance(inferred.elts[0], nodes.FunctionDef)
+        assert inferred.elts[0].name == "len"
+
 
 class SubprocessTest(unittest.TestCase):
     """Test subprocess brain"""
