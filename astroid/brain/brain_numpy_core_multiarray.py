@@ -39,7 +39,7 @@ METHODS_TO_BE_INFERRED = {
             return numpy.ndarray([0, 0])""",
     "empty_like": """def empty_like(a, dtype=None, order='K', subok=True):
             return numpy.ndarray((0, 0))""",
-    "concatenate": """def concatenate(arrays, axis=None, out=None):
+    "concatenate": """def concatenate(arrays, axis=None, out=None, dtype=None, casting='same_kind'):
             return numpy.ndarray((0, 0))""",
     "where": """def where(condition, x=None, y=None):
             return numpy.ndarray([0, 0])""",

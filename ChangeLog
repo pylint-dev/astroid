@@ -42,6 +42,10 @@ Release date: TBA
 
   Closes #457
 
+* Add missing ``dtype`` and ``casting`` parameters to ``numpy.concatenate`` brain.
+
+  Closes #2870
+
 
 
 What's New in astroid 4.0.4?
