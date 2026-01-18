@@ -123,8 +123,7 @@ class FromToLineNoTest(unittest.TestCase):
 
     @staticmethod
     def test_decorated_class_lineno() -> None:
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         class A:  # L2
             ...
 
@@ -138,8 +137,7 @@ class FromToLineNoTest(unittest.TestCase):
         )
         class C:  # L13
             ...
-        """
-        )
+        """)
 
         ast_module: nodes.Module = builder.parse(code)  # type: ignore[assignment]
 
@@ -161,8 +159,7 @@ class FromToLineNoTest(unittest.TestCase):
     @staticmethod
     def test_class_with_docstring() -> None:
         """Test class nodes which only have docstrings."""
-        code = textwrap.dedent(
-            '''\
+        code = textwrap.dedent('''\
         class A:
             """My docstring"""
             var = 1
@@ -181,8 +178,7 @@ class FromToLineNoTest(unittest.TestCase):
 
         class E:
             ...
-        '''
-        )
+        ''')
 
         ast_module = builder.parse(code)
 
@@ -214,8 +210,7 @@ class FromToLineNoTest(unittest.TestCase):
     @staticmethod
     def test_function_with_docstring() -> None:
         """Test function defintions with only docstrings."""
-        code = textwrap.dedent(
-            '''\
+        code = textwrap.dedent('''\
         def a():
             """My docstring"""
             var = 1
@@ -236,8 +231,7 @@ class FromToLineNoTest(unittest.TestCase):
             """My docstring
             is long.
             """
-        '''
-        )
+        ''')
 
         ast_module = builder.parse(code)
 
@@ -572,12 +566,10 @@ class BuilderTest(unittest.TestCase):
         self.assertEqual({"print_function"}, mod.future_imports)
 
     def test_two_future_imports(self) -> None:
-        mod = builder.parse(
-            """
+        mod = builder.parse("""
             from __future__ import print_function
             from __future__ import absolute_import
-            """
-        )
+            """)
         self.assertEqual({"print_function", "absolute_import"}, mod.future_imports)
 
     def test_inferred_build(self) -> None:
@@ -597,15 +589,13 @@ class BuilderTest(unittest.TestCase):
         self.assertIn("type", lclass.locals)
 
     def test_infer_can_assign_regular_object(self) -> None:
-        mod = builder.parse(
-            """
+        mod = builder.parse("""
             class A:
                 pass
             a = A()
             a.value = "is set"
             a.other = "is set"
-        """
-        )
+        """)
         obj = list(mod.igetattr("a"))
         self.assertEqual(len(obj), 1)
         obj = obj[0]
@@ -614,15 +604,13 @@ class BuilderTest(unittest.TestCase):
         self.assertIn("other", obj.instance_attrs)
 
     def test_infer_can_assign_has_slots(self) -> None:
-        mod = builder.parse(
-            """
+        mod = builder.parse("""
             class A:
                 __slots__ = ('value',)
             a = A()
             a.value = "is set"
             a.other = "not set"
-        """
-        )
+        """)
         obj = list(mod.igetattr("a"))
         self.assertEqual(len(obj), 1)
         obj = obj[0]
@@ -631,12 +619,10 @@ class BuilderTest(unittest.TestCase):
         self.assertNotIn("other", obj.instance_attrs)
 
     def test_infer_can_assign_no_classdict(self) -> None:
-        mod = builder.parse(
-            """
+        mod = builder.parse("""
             a = object()
             a.value = "not set"
-        """
-        )
+        """)
         obj = list(mod.igetattr("a"))
         self.assertEqual(len(obj), 1)
         obj = obj[0]
@@ -700,21 +686,17 @@ class BuilderTest(unittest.TestCase):
         self.assertEqual(chain.value, "None")
 
     def test_not_implemented(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         NotImplemented #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, NotImplemented)
 
     def test_type_comments_without_content(self) -> None:
-        node = builder.parse(
-            """
+        node = builder.parse("""
             a = 1 # type: # any comment
-        """
-        )
+        """)
         assert node
 
 
@@ -866,8 +848,7 @@ def test_module_build_dunder_file() -> None:
 
 
 def test_parse_module_with_invalid_type_comments_does_not_crash():
-    node = builder.parse(
-        """
+    node = builder.parse("""
     # op {
     #   name: "AssignAddVariableOp"
     #   input_arg {
@@ -885,8 +866,7 @@ def test_parse_module_with_invalid_type_comments_does_not_crash():
     #   is_stateful: true
     # }
     a, b = 2
-    """
-    )
+    """)
     assert isinstance(node, nodes.Module)
 
 

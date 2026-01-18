@@ -4,6 +4,7 @@
 
 # TODO(hippo91) : correct the functions return types
 """Astroid hooks for numpy.random.mtrand module."""
+
 from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
@@ -11,8 +12,7 @@ from astroid.manager import AstroidManager
 
 
 def numpy_random_mtrand_transform() -> nodes.Module:
-    return parse(
-        """
+    return parse("""
     def beta(a, b, size=None): return uninferable
     def binomial(n, p, size=None): return uninferable
     def bytes(length): return uninferable
@@ -63,8 +63,7 @@ def numpy_random_mtrand_transform() -> nodes.Module:
     def wald(mean, scale, size=None): return uninferable
     def weibull(a, size=None): return uninferable
     def zipf(a, size=None): return uninferable
-    """
-    )
+    """)
 
 
 def register(manager: AstroidManager) -> None:

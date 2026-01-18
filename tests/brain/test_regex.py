@@ -29,22 +29,18 @@ class TestRegexBrain:
     )
     def test_regex_pattern_and_match_subscriptable(self):
         """Test regex.Pattern and regex.Match are subscriptable in PY39+."""
-        node1 = builder.extract_node(
-            """
+        node1 = builder.extract_node("""
         import regex
         regex.Pattern[str]
-        """
-        )
+        """)
         inferred1 = next(node1.infer())
         assert isinstance(inferred1, nodes.ClassDef)
         assert isinstance(inferred1.getattr("__class_getitem__")[0], nodes.FunctionDef)
 
-        node2 = builder.extract_node(
-            """
+        node2 = builder.extract_node("""
         import regex
         regex.Match[str]
-        """
-        )
+        """)
         inferred2 = next(node2.infer())
         assert isinstance(inferred2, nodes.ClassDef)
         assert isinstance(inferred2.getattr("__class_getitem__")[0], nodes.FunctionDef)

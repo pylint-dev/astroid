@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid hooks for the UUID module."""
+
 from astroid import nodes
 from astroid.manager import AstroidManager
 

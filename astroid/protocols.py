@@ -539,16 +539,10 @@ def excepthandler_assigned_stmts(
         # except * handler has assigned ExceptionGroup with caught
         # exceptions under exceptions attribute
         # pylint: disable-next=stop-iteration-return
-        eg = next(
-            node_classes.unpack_infer(
-                extract_node(
-                    """
+        eg = next(node_classes.unpack_infer(extract_node("""
 from builtins import ExceptionGroup
 ExceptionGroup
-"""
-                )
-            )
-        )
+""")))
         assigned = objects.ExceptionInstance(eg)
         assigned.instance_attrs["exceptions"] = [
             nodes.List.from_elements(_generate_assigned())

@@ -18,8 +18,7 @@ def _regex_transform() -> nodes.Module:
     # pylint: disable-next=line-too-long
     See https://github.com/mrabarnett/mrab-regex/blob/2022.10.31/regex_3/regex.py#L200
     """
-    return parse(
-        """
+    return parse("""
     A = ASCII = 0x80          # Assume ASCII locale.
     B = BESTMATCH = 0x1000    # Best fuzzy match.
     D = DEBUG = 0x200         # Print parsed pattern.
@@ -39,8 +38,7 @@ def _regex_transform() -> nodes.Module:
     W = WORD = 0x800          # Default Unicode word breaks.
     X = VERBOSE = 0x40        # Ignore whitespace and comments.
     T = TEMPLATE = 0x1        # Template (present because re module has it).
-    """
-    )
+    """)
 
 
 CLASS_GETITEM_TEMPLATE = """

@@ -17,13 +17,11 @@ except ImportError:
 
 
 def _inferred_numpy_func_call(func_name: str, *func_args: str) -> nodes.FunctionDef:
-    node = builder.extract_node(
-        f"""
+    node = builder.extract_node(f"""
     import numpy as np
     func = np.{func_name:s}
     func({','.join(func_args):s})
-    """
-    )
+    """)
     return node.infer()
 
 
@@ -43,12 +41,10 @@ def test_numpy_function_calls_inferred_as_ndarray() -> None:
 
 @pytest.mark.skipif(not HAS_NUMPY, reason="This test requires the numpy library.")
 def test_function_parameters() -> None:
-    instance = builder.extract_node(
-        """
+    instance = builder.extract_node("""
     import numpy
     numpy.einsum #@
-    """
-    )
+    """)
     actual_args = instance.inferred()[0].args
 
     assert actual_args.vararg == "operands"

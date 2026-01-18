@@ -107,13 +107,11 @@ import urllib.error as urllib_error
 
 
 def six_moves_transform():
-    code = dedent(
-        """
+    code = dedent("""
     class Moves(object):
     {}
     moves = Moves()
-    """
-    ).format(_indent(_IMPORTS, "    "))
+    """).format(_indent(_IMPORTS, "    "))
     module = AstroidBuilder(AstroidManager()).string_build(code)
     module.name = "six.moves"
     return module

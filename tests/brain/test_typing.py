@@ -15,12 +15,10 @@ def test_infer_typevar() -> None:
     Test that an inferred `typing.TypeVar()` call produces a `nodes.ClassDef`
     node.
     """
-    call_node = builder.extract_node(
-        """
+    call_node = builder.extract_node("""
     from typing import TypeVar
     TypeVar('My.Type')
-    """
-    )
+    """)
     with pytest.raises(InferenceError):
         call_node.inferred()
 
@@ -30,12 +28,10 @@ class TestTypingAlias:
         """
         Test that _alias() calls can be inferred.
         """
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
             from typing import _alias
             x = _alias(int, float)
-            """
-        )
+            """)
         assert isinstance(node, nodes.Assign)
         assert isinstance(node.value, nodes.Call)
         inferred = next(node.value.infer())
@@ -59,12 +55,10 @@ class TestTypingAlias:
 
         Test that _alias() calls with the incorrect number of arguments can be inferred.
         """
-        node = builder.extract_node(
-            f"""
+        node = builder.extract_node(f"""
             from typing import _alias
             x = _alias({alias_args})
-            """
-        )
+            """)
         assert isinstance(node, nodes.Assign)
         assert isinstance(node.value, nodes.Call)
         inferred = next(node.value.infer())

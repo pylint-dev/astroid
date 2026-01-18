@@ -74,12 +74,10 @@ class NumpyBrainRandomMtrandTest(unittest.TestCase):
     }
 
     def _inferred_numpy_attribute(self, func_name):
-        node = builder.extract_node(
-            f"""
+        node = builder.extract_node(f"""
         import numpy.random.mtrand as tested_module
         func = tested_module.{func_name:s}
-        func"""
-        )
+        func""")
         return next(node.infer())
 
     def test_numpy_random_mtrand_functions(self):

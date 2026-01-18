@@ -105,23 +105,19 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
     )
 
     def _inferred_ndarray_method_call(self, func_name):
-        node = builder.extract_node(
-            f"""
+        node = builder.extract_node(f"""
         import numpy as np
         test_array = np.ndarray((2, 2))
         test_array.{func_name:s}()
-        """
-        )
+        """)
         return node.infer()
 
     def _inferred_ndarray_attribute(self, attr_name):
-        node = builder.extract_node(
-            f"""
+        node = builder.extract_node(f"""
         import numpy as np
         test_array = np.ndarray((2, 2))
         test_array.{attr_name:s}
-        """
-        )
+        """)
         return node.infer()
 
     def test_numpy_function_calls_inferred_as_ndarray(self):

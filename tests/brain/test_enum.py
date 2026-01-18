@@ -15,8 +15,7 @@ from astroid.exceptions import InferenceError
 
 class EnumBrainTest(unittest.TestCase):
     def test_simple_enum(self) -> None:
-        module = builder.parse(
-            """
+        module = builder.parse("""
         import enum
 
         class MyEnum(enum.Enum):
@@ -26,8 +25,7 @@ class EnumBrainTest(unittest.TestCase):
             def mymethod(self, x):
                 return 5
 
-        """
-        )
+        """)
 
         enumeration = next(module["MyEnum"].infer())
         one = enumeration["one"]
@@ -42,22 +40,19 @@ class EnumBrainTest(unittest.TestCase):
 
     def test_looks_like_enum_false_positive(self) -> None:
         # Test that a class named Enumeration is not considered a builtin enum.
-        module = builder.parse(
-            """
+        module = builder.parse("""
         class Enumeration(object):
             def __init__(self, name, enum_list):
                 pass
             test = 42
-        """
-        )
+        """)
         enumeration = module["Enumeration"]
         test = next(enumeration.igetattr("test"))
         self.assertEqual(test.value, 42)
 
     def test_user_enum_false_positive(self) -> None:
         # Test that a user-defined class named Enum is not considered a builtin enum.
-        ast_node = astroid.extract_node(
-            """
+        ast_node = astroid.extract_node("""
         class Enum:
             pass
 
@@ -65,8 +60,7 @@ class EnumBrainTest(unittest.TestCase):
             red = 1
 
         Color.red #@
-        """
-        )
+        """)
         assert isinstance(ast_node, nodes.NodeNG)
         inferred = ast_node.inferred()
         self.assertEqual(len(inferred), 1)
@@ -89,8 +83,7 @@ class EnumBrainTest(unittest.TestCase):
         assert len(inferred.locals["err"]) == 1
 
     def test_enum_multiple_base_classes(self) -> None:
-        module = builder.parse(
-            """
+        module = builder.parse("""
         import enum
 
         class Mixin:
@@ -98,8 +91,7 @@ class EnumBrainTest(unittest.TestCase):
 
         class MyEnum(Mixin, enum.Enum):
             one = 1
-        """
-        )
+        """)
         enumeration = next(module["MyEnum"].infer())
         one = enumeration["one"]
 
@@ -110,14 +102,12 @@ class EnumBrainTest(unittest.TestCase):
         )
 
     def test_int_enum(self) -> None:
-        module = builder.parse(
-            """
+        module = builder.parse("""
         import enum
 
         class MyEnum(enum.IntEnum):
             one = 1
-        """
-        )
+        """)
 
         enumeration = next(module["MyEnum"].infer())
         one = enumeration["one"]
@@ -129,14 +119,12 @@ class EnumBrainTest(unittest.TestCase):
         )
 
     def test_enum_func_form_is_class_not_instance(self) -> None:
-        cls, instance = builder.extract_node(
-            """
+        cls, instance = builder.extract_node("""
         from enum import Enum
         f = Enum('Audience', ['a', 'b', 'c'])
         f #@
         f(1) #@
-        """
-        )
+        """)
         inferred_cls = next(cls.infer())
         self.assertIsInstance(inferred_cls, bases.Instance)
         inferred_instance = next(instance.infer())
@@ -145,26 +133,22 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(next(inferred_instance.igetattr("value")), nodes.Const)
 
     def test_enum_func_form_iterable(self) -> None:
-        instance = builder.extract_node(
-            """
+        instance = builder.extract_node("""
         from enum import Enum
         Animal = Enum('Animal', 'ant bee cat dog')
         Animal
-        """
-        )
+        """)
         inferred = next(instance.infer())
         self.assertIsInstance(inferred, astroid.Instance)
         self.assertTrue(inferred.getattr("__iter__"))
 
     def test_enum_func_form_subscriptable(self) -> None:
-        instance, name = builder.extract_node(
-            """
+        instance, name = builder.extract_node("""
         from enum import Enum
         Animal = Enum('Animal', 'ant bee cat dog')
         Animal['ant'] #@
         Animal['ant'].name #@
-        """
-        )
+        """)
         instance = next(instance.infer())
         self.assertIsInstance(instance, astroid.Instance)
 
@@ -172,29 +156,25 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
 
     def test_enum_func_form_has_dunder_members(self) -> None:
-        instance = builder.extract_node(
-            """
+        instance = builder.extract_node("""
         from enum import Enum
         Animal = Enum('Animal', 'ant bee cat dog')
         for i in Animal.__members__:
             i #@
-        """
-        )
+        """)
         instance = next(instance.infer())
         self.assertIsInstance(instance, nodes.Const)
         self.assertIsInstance(instance.value, str)
 
     def test_infer_enum_value_as_the_right_type(self) -> None:
-        string_value, int_value = builder.extract_node(
-            """
+        string_value, int_value = builder.extract_node("""
         from enum import Enum
         class A(Enum):
             a = 'a'
             b = 1
         A.a.value #@
         A.b.value #@
-        """
-        )
+        """)
         inferred_string = string_value.inferred()
         assert any(
             isinstance(elem, nodes.Const) and elem.value == "a"
@@ -207,32 +187,27 @@ class EnumBrainTest(unittest.TestCase):
         )
 
     def test_mingled_single_and_double_quotes_does_not_crash(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         from enum import Enum
         class A(Enum):
             a = 'x"y"'
         A.a.value #@
-        """
-        )
+        """)
         inferred_string = next(node.infer())
         assert inferred_string.value == 'x"y"'
 
     def test_special_characters_does_not_crash(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         import enum
         class Example(enum.Enum):
             NULL = '\\N{NULL}'
         Example.NULL.value
-        """
-        )
+        """)
         inferred_string = next(node.infer())
         assert inferred_string.value == "\N{NULL}"
 
     def test_dont_crash_on_for_loops_in_body(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
 
         class Commands(IntEnum):
             _ignore_ = 'Commands index'
@@ -244,14 +219,12 @@ class EnumBrainTest(unittest.TestCase):
                 Commands[f'DC{index + 1}'] = 0x11 + index, f'Device Control {index + 1}'
 
         Commands
-        """
-        )
+        """)
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.ClassDef)
 
     def test_enum_tuple_list_values(self) -> None:
-        tuple_node, list_node = builder.extract_node(
-            """
+        tuple_node, list_node = builder.extract_node("""
         import enum
 
         class MyEnum(enum.Enum):
@@ -259,8 +232,7 @@ class EnumBrainTest(unittest.TestCase):
             b = [2, 4]
         MyEnum.a.value #@
         MyEnum.b.value #@
-        """
-        )
+        """)
         inferred_tuple_node = next(tuple_node.infer())
         inferred_list_node = next(list_node.infer())
         assert isinstance(inferred_tuple_node, nodes.Tuple)
@@ -345,8 +317,7 @@ class EnumBrainTest(unittest.TestCase):
         assert inferred.pytype() == ".TrickyEnum.value"
 
     def test_enum_subclass_member_name(self) -> None:
-        ast_node = astroid.extract_node(
-            """
+        ast_node = astroid.extract_node("""
         from enum import Enum
 
         class EnumSubclass(Enum):
@@ -356,8 +327,7 @@ class EnumBrainTest(unittest.TestCase):
             red = 1
 
         Color.red.name #@
-        """
-        )
+        """)
         assert isinstance(ast_node, nodes.NodeNG)
         inferred = ast_node.inferred()
         self.assertEqual(len(inferred), 1)
@@ -365,8 +335,7 @@ class EnumBrainTest(unittest.TestCase):
         self.assertEqual(inferred[0].value, "red")
 
     def test_enum_subclass_member_value(self) -> None:
-        ast_node = astroid.extract_node(
-            """
+        ast_node = astroid.extract_node("""
         from enum import Enum
 
         class EnumSubclass(Enum):
@@ -376,8 +345,7 @@ class EnumBrainTest(unittest.TestCase):
             red = 1
 
         Color.red.value #@
-        """
-        )
+        """)
         assert isinstance(ast_node, nodes.NodeNG)
         inferred = ast_node.inferred()
         self.assertEqual(len(inferred), 1)
@@ -386,8 +354,7 @@ class EnumBrainTest(unittest.TestCase):
 
     def test_enum_subclass_member_method(self) -> None:
         # See Pylint issue #2626
-        ast_node = astroid.extract_node(
-            """
+        ast_node = astroid.extract_node("""
         from enum import Enum
 
         class EnumSubclass(Enum):
@@ -398,8 +365,7 @@ class EnumBrainTest(unittest.TestCase):
             red = 1
 
         Color.red.hello_pylint()  #@
-        """
-        )
+        """)
         assert isinstance(ast_node, nodes.NodeNG)
         inferred = ast_node.inferred()
         self.assertEqual(len(inferred), 1)
@@ -417,16 +383,14 @@ class EnumBrainTest(unittest.TestCase):
         """,
             "a",
         )
-        ast_node = astroid.extract_node(
-            """
+        ast_node = astroid.extract_node("""
         from a import EnumSubclass
 
         class Color(EnumSubclass):
             red = 1
 
         Color.red.value #@
-        """
-        )
+        """)
         assert isinstance(ast_node, nodes.NodeNG)
         inferred = ast_node.inferred()
         self.assertEqual(len(inferred), 1)
@@ -434,15 +398,13 @@ class EnumBrainTest(unittest.TestCase):
         self.assertEqual(inferred[0].value, 1)
 
     def test_members_member_ignored(self) -> None:
-        ast_node = builder.extract_node(
-            """
+        ast_node = builder.extract_node("""
         from enum import Enum
         class Animal(Enum):
             a = 1
             __members__ = {}
         Animal.__members__ #@
-        """
-        )
+        """)
 
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Dict)
@@ -450,14 +412,12 @@ class EnumBrainTest(unittest.TestCase):
 
     def test_enum_as_renamed_import(self) -> None:
         """Originally reported in https://github.com/pylint-dev/pylint/issues/5776."""
-        ast_node: nodes.Attribute = builder.extract_node(
-            """
+        ast_node: nodes.Attribute = builder.extract_node("""
         from enum import Enum as PyEnum
         class MyEnum(PyEnum):
             ENUM_KEY = "enum_value"
         MyEnum.ENUM_KEY
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         assert isinstance(inferred, bases.Instance)
         assert inferred._proxied.name == "ENUM_KEY"
@@ -476,21 +436,17 @@ class EnumBrainTest(unittest.TestCase):
             "module_with_class_named_enum",
         )
 
-        attribute_nodes = astroid.extract_node(
-            """
+        attribute_nodes = astroid.extract_node("""
         import module_with_class_named_enum
         module_with_class_named_enum.Enum("apple", "orange") #@
         typo_module_with_class_named_enum.Enum("apple", "orange") #@
-        """
-        )
+        """)
 
-        name_nodes = astroid.extract_node(
-            """
+        name_nodes = astroid.extract_node("""
         from module_with_class_named_enum import Enum
         Enum("apple", "orange") #@
         TypoEnum("apple", "orange") #@
-        """
-        )
+        """)
 
         # Test that both of the successfully inferred `Name` & `Attribute`
         # nodes refer to the user-defined Enum class.
@@ -513,8 +469,7 @@ class EnumBrainTest(unittest.TestCase):
         Test that only enum members `MARS` and `radius` appear in the `__members__` container while
         the attribute `mass` does not.
         """
-        enum_class = astroid.extract_node(
-            """
+        enum_class = astroid.extract_node("""
         from enum import Enum
         class Planet(Enum): #@
             MARS = (1, 2)
@@ -526,8 +481,7 @@ class EnumBrainTest(unittest.TestCase):
                 self.radius = radius
 
         Planet.MARS.value
-        """
-        )
+        """)
         enum_members = next(enum_class.igetattr("__members__"))
         assert len(enum_members.items) == 2
         mars, radius = enum_members.items
@@ -540,8 +494,7 @@ class EnumBrainTest(unittest.TestCase):
         Test that a user-defined enum class is inferred when it subclasses
         another user-defined enum class.
         """
-        enum_class_node, enum_member_value_node = astroid.extract_node(
-            """
+        enum_class_node, enum_member_value_node = astroid.extract_node("""
         import sys
 
         from enum import Enum
@@ -558,8 +511,7 @@ class EnumBrainTest(unittest.TestCase):
 
 
         Color.RED.value #@
-        """
-        )
+        """)
         assert "RED" in enum_class_node.locals
 
         enum_members = enum_class_node.locals["__members__"][0].items
@@ -575,8 +527,7 @@ class EnumBrainTest(unittest.TestCase):
         Originally reported in https://github.com/pylint-dev/pylint/issues/9015
         """
 
-        ast_node: nodes.Attribute = builder.extract_node(
-            """
+        ast_node: nodes.Attribute = builder.extract_node("""
         import enum
 
 
@@ -586,8 +537,7 @@ class EnumBrainTest(unittest.TestCase):
             _ignore_ = ["BAZ"]
             BAZ = 42
         MyEnum.__members__
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         members_names = [const_node.value for const_node, name_obj in inferred.items]
         assert members_names == ["FOO", "BAR", "BAZ"]
@@ -595,8 +545,7 @@ class EnumBrainTest(unittest.TestCase):
     def test_enum_sunder_names(self) -> None:
         """Test that both `_name_` and `_value_` sunder names exist"""
 
-        sunder_name, sunder_value = builder.extract_node(
-            """
+        sunder_name, sunder_value = builder.extract_node("""
         import enum
 
 
@@ -604,8 +553,7 @@ class EnumBrainTest(unittest.TestCase):
             APPLE = 42
         MyEnum.APPLE._name_ #@
         MyEnum.APPLE._value_ #@
-        """
-        )
+        """)
         inferred_name = next(sunder_name.infer())
         assert inferred_name.value == "APPLE"
 

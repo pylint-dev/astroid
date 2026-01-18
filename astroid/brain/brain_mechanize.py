@@ -9,8 +9,7 @@ from astroid.manager import AstroidManager
 
 
 def mechanize_transform() -> nodes.Module:
-    return AstroidBuilder(AstroidManager()).string_build(
-        """class Browser(object):
+    return AstroidBuilder(AstroidManager()).string_build("""class Browser(object):
     def __getattr__(self, name):
         return None
 
@@ -117,8 +116,7 @@ def mechanize_transform() -> nodes.Module:
 
     def visit_response(self, response, request=None):
         return None
-"""
-    )
+""")
 
 
 def register(manager: AstroidManager) -> None:

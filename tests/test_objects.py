@@ -13,11 +13,9 @@ from astroid.objects import Super
 
 class ObjectsTest(unittest.TestCase):
     def test_frozenset(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         frozenset({1: 2, 2: 3}) #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, objects.FrozenSet)
 
@@ -39,22 +37,19 @@ class ObjectsTest(unittest.TestCase):
         rely on the ._proxied attribute of an Instance.
         """
 
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         class ClassHavingUnknownAncestors(Unknown):
             __slots__ = ["yo"]
 
             def test(self):
                 self.not_yo = 42
-        """
-        )
+        """)
         assert node.getattr("__new__")
 
 
 class SuperTests(unittest.TestCase):
     def test_inferring_super_outside_methods(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         class Module(object):
             pass
         class StaticMethod(object):
@@ -66,8 +61,7 @@ class SuperTests(unittest.TestCase):
         super(Module, Module) #@
         # no argument super is not recognised outside methods as well.
         super() #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         in_static = next(ast_nodes[0].value.infer())
         self.assertIsInstance(in_static, bases.Instance)
@@ -82,26 +76,22 @@ class SuperTests(unittest.TestCase):
         self.assertEqual(no_arguments.qname(), "builtins.super")
 
     def test_inferring_unbound_super_doesnt_work(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         class Test(object):
             def __init__(self):
                 super(Test) #@
-        """
-        )
+        """)
         unbounded = next(node.infer())
         self.assertIsInstance(unbounded, bases.Instance)
         self.assertEqual(unbounded.qname(), "builtins.super")
 
     def test_use_default_inference_on_not_inferring_args(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         class Test(object):
             def __init__(self):
                 super(Lala, self) #@
                 super(Test, lala) #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, bases.Instance)
@@ -112,8 +102,7 @@ class SuperTests(unittest.TestCase):
         self.assertEqual(second.qname(), "builtins.super")
 
     def test_no_arguments_super(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         class First(object): pass
         class Second(First):
             def test(self):
@@ -121,8 +110,7 @@ class SuperTests(unittest.TestCase):
             @classmethod
             def test_classmethod(cls):
                 super() #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, objects.Super)
@@ -139,8 +127,7 @@ class SuperTests(unittest.TestCase):
         self.assertEqual(second.mro_pointer.name, "Second")
 
     def test_super_simple_cases(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         class First(object): pass
         class Second(First): pass
         class Third(First):
@@ -155,8 +142,7 @@ class SuperTests(unittest.TestCase):
 
         class Fourth(Third):
             pass
-        """
-        )
+        """)
 
         # .type is the object which provides the mro.
         # .mro_pointer is the position in the mro from where
@@ -204,13 +190,11 @@ class SuperTests(unittest.TestCase):
         self.assertEqual(fifth.mro_pointer.name, "Fourth")
 
     def test_super_infer(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         class Super(object):
             def __init__(self):
                 super(Super, self) #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, objects.Super)
         reinferred = next(inferred.infer())
@@ -218,8 +202,7 @@ class SuperTests(unittest.TestCase):
         self.assertIs(inferred, reinferred)
 
     def test_inferring_invalid_supers(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         class Super(object):
             def __init__(self):
                 # MRO pointer is not a type
@@ -230,8 +213,7 @@ class SuperTests(unittest.TestCase):
                 super(Bupper, self) #@
         class Bupper(Super):
             pass
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, objects.Super)
@@ -247,21 +229,18 @@ class SuperTests(unittest.TestCase):
             self.assertIsInstance(cm.exception.super_.type, invalid_type)
 
     def test_proxied(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         class Super(object):
             def __init__(self):
                 super(Super, self) #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         proxied = inferred._proxied
         self.assertEqual(proxied.qname(), "builtins.super")
         self.assertIsInstance(proxied, nodes.ClassDef)
 
     def test_super_bound_model(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         class First(object):
             def method(self):
                 pass
@@ -281,8 +260,7 @@ class SuperTests(unittest.TestCase):
             def method(self):
                 super(Super_Type_Object, self).method #@
                 super(Super_Type_Object, self).class_method #@
-        """
-        )
+        """)
         # Super(type, type) is the same for both functions and classmethods.
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
@@ -316,8 +294,7 @@ class SuperTests(unittest.TestCase):
         self.assertEqual(sixth.type, "classmethod")
 
     def test_super_getattr_single_inheritance(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         class First(object):
             def test(self): pass
         class Second(First):
@@ -335,8 +312,7 @@ class SuperTests(unittest.TestCase):
                 super(Third, Third).test2 #@
                 super(Third, Third).test #@
 
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, bases.BoundMethod)
@@ -365,22 +341,19 @@ class SuperTests(unittest.TestCase):
         self.assertEqual(second_unbound.parent.name, "First")
 
     def test_super_invalid_mro(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         class A(object):
            test = 42
         class Super(A, A):
            def __init__(self):
                super(Super, self) #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         with self.assertRaises(AttributeInferenceError):
             next(inferred.getattr("test"))
 
     def test_super_complex_mro(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         class A(object):
             def spam(self): return "A"
             def foo(self): return "A"
@@ -398,8 +371,7 @@ class SuperTests(unittest.TestCase):
                 super(E, self).spam #@
                 super(E, self).foo #@
                 super(E, self).static #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, bases.BoundMethod)
@@ -417,16 +389,14 @@ class SuperTests(unittest.TestCase):
         self.assertEqual(static.parent.scope().name, "A")
 
     def test_super_data_model(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         class X(object): pass
         class A(X):
             def __init__(self):
                 super(A, self) #@
                 super(A, A) #@
                 super(X, A) #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         thisclass = first.getattr("__thisclass__")[0]
@@ -458,8 +428,7 @@ class SuperTests(unittest.TestCase):
         self.assertEqual([member.name for member in klass.super_mro()], expected_mro)
 
     def test_super_mro(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         class A(object): pass
         class B(A): pass
         class C(A): pass
@@ -471,8 +440,7 @@ class SuperTests(unittest.TestCase):
 
                 super(B, 1) #@
                 super(1, B) #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertEqualMro(first, ["C", "B", "A", "object"])
@@ -489,15 +457,13 @@ class SuperTests(unittest.TestCase):
             fifth.super_mro()
 
     def test_super_yes_objects(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         from collections import Missing
         class A(object):
             def __init__(self):
                 super(Missing, self) #@
                 super(A, Missing) #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, bases.Instance)
@@ -509,8 +475,7 @@ class SuperTests(unittest.TestCase):
 
         Regression test for: https://github.com/pylint-dev/astroid/issues/457
         """
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         class Parent:
             def method(self) -> "Parent":
                 return self
@@ -523,8 +488,7 @@ class SuperTests(unittest.TestCase):
                 return self
 
         Child().method().extra() #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         # Should infer Child instance, not Parent
         self.assertIsInstance(inferred, bases.Instance)
@@ -535,8 +499,7 @@ class SuperTests(unittest.TestCase):
 
         Regression test for: https://github.com/pylint-dev/astroid/issues/457
         """
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         class Parent:
             @classmethod
             def create(cls) -> "Parent":
@@ -551,22 +514,19 @@ class SuperTests(unittest.TestCase):
                 return self
 
         Child.create().extra() #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         # Should infer Child instance, not Parent
         self.assertIsInstance(inferred, bases.Instance)
         self.assertEqual(inferred._proxied.name, "Child")
 
     def test_super_invalid_types(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         import collections
         class A(object):
             def __init__(self):
                 super(A, collections) #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         with self.assertRaises(SuperError):
             inferred.super_mro()
@@ -574,8 +534,7 @@ class SuperTests(unittest.TestCase):
             inferred.super_mro()
 
     def test_super_properties(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         class Foo(object):
             @property
             def dict(self):
@@ -587,8 +546,7 @@ class SuperTests(unittest.TestCase):
                 return super(Bar, self).dict
 
         Bar().dict
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
@@ -608,15 +566,13 @@ class SuperTests(unittest.TestCase):
 
     def test_super_new_call(self) -> None:
         """Test that __new__ returns an object or node and not a (Un)BoundMethod."""
-        new_call_result: nodes.Name = builder.extract_node(
-            """
+        new_call_result: nodes.Name = builder.extract_node("""
         import enum
         class ChoicesMeta(enum.EnumMeta):
             def __new__(metacls, classname, bases, classdict, **kwds):
                 cls = super().__new__(metacls, "str", (enum.Enum,), enum._EnumDict(), **kwargs)
                 cls #@
-        """
-        )
+        """)
         inferred = list(new_call_result.infer())
         assert all(
             isinstance(i, (nodes.NodeNG, type(util.Uninferable))) for i in inferred
@@ -624,8 +580,7 @@ class SuperTests(unittest.TestCase):
 
     def test_super_init_call(self) -> None:
         """Test that __init__ is still callable."""
-        init_node: nodes.Attribute = builder.extract_node(
-            """
+        init_node: nodes.Attribute = builder.extract_node("""
         class SuperUsingClass:
             @staticmethod
             def test():
@@ -635,8 +590,7 @@ class SuperTests(unittest.TestCase):
             pass
         A().__new__ #@
         A().__init__ #@
-        """
-        )
+        """)
         assert isinstance(next(init_node[0].infer()), bases.BoundMethod)
         assert isinstance(next(init_node[1].infer()), bases.BoundMethod)
         assert isinstance(next(init_node[2].infer()), bases.BoundMethod)

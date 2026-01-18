@@ -53,15 +53,13 @@ class ProtocolTests(unittest.TestCase):
             self.assertEqual(expected_name, node.name)
 
     def test_assigned_stmts_simple_for(self) -> None:
-        assign_stmts = extract_node(
-            """
+        assign_stmts = extract_node("""
         for a in (1, 2, 3):  #@
           pass
 
         for b in range(3): #@
           pass
-        """
-        )
+        """)
 
         for1_assnode = next(assign_stmts[0].nodes_of_class(nodes.AssignName))
         assigned = list(for1_assnode.assigned_stmts())
@@ -71,12 +69,10 @@ class ProtocolTests(unittest.TestCase):
         self.assertRaises(InferenceError, list, for2_assnode.assigned_stmts())
 
     def test_assigned_stmts_nested_for_tuple(self) -> None:
-        assign_stmts = extract_node(
-            """
+        assign_stmts = extract_node("""
         for a, (b, c) in [(1, (2, 3))]:  #@
           pass
-        """
-        )
+        """)
 
         assign_nodes = assign_stmts.nodes_of_class(nodes.AssignName)
 
@@ -89,12 +85,10 @@ class ProtocolTests(unittest.TestCase):
         self.assertConstNodesEqual([2], assigned2)
 
     def test_assigned_stmts_nested_for_dict(self) -> None:
-        assign_stmts = extract_node(
-            """
+        assign_stmts = extract_node("""
         for a, (b, c) in {1: ("a", str), 2: ("b", bytes)}.items():  #@
             pass
-        """
-        )
+        """)
         assign_nodes = assign_stmts.nodes_of_class(nodes.AssignName)
 
         # assigned: [1, 2]
@@ -113,12 +107,10 @@ class ProtocolTests(unittest.TestCase):
         self.assertNameNodesEqual(["str", "bytes"], assigned3)
 
     def test_assigned_stmts_starred_for(self) -> None:
-        assign_stmts = extract_node(
-            """
+        assign_stmts = extract_node("""
         for *a, b in ((1, 2, 3), (4, 5, 6, 7)): #@
             pass
-        """
-        )
+        """)
 
         for1_starred = next(assign_stmts.nodes_of_class(nodes.Starred))
         assigned = next(for1_starred.assigned_stmts())
@@ -191,13 +183,11 @@ class ProtocolTests(unittest.TestCase):
         )
 
     def test_assigned_stmts_assignments(self) -> None:
-        assign_stmts = extract_node(
-            """
+        assign_stmts = extract_node("""
         c = a #@
 
         d, e = b, c #@
-        """
-        )
+        """)
 
         simple_assnode = next(assign_stmts[0].nodes_of_class(nodes.AssignName))
         assigned = list(simple_assnode.assigned_stmts())
@@ -212,12 +202,10 @@ class ProtocolTests(unittest.TestCase):
         self.assertNameNodesEqual(["c"], assigned)
 
     def test_assigned_stmts_annassignments(self) -> None:
-        annassign_stmts = extract_node(
-            """
+        annassign_stmts = extract_node("""
         a: str = "abc"  #@
         b: str  #@
-        """
-        )
+        """)
         simple_annassign_node = next(
             annassign_stmts[0].nodes_of_class(nodes.AssignName)
         )
@@ -237,11 +225,9 @@ class ProtocolTests(unittest.TestCase):
 
         manager = astroid.MANAGER
         with _add_transform(manager, nodes.Assign, transform):
-            module = astroid.parse(
-                """
+            module = astroid.parse("""
             __all__ = ['a']
-            """
-            )
+            """)
             module.wildcard_import_names()
 
     def test_not_passing_uninferable_in_seq_inference(self) -> None:
@@ -261,12 +247,10 @@ class ProtocolTests(unittest.TestCase):
                 for _ in node.infer():
                     pass
 
-        parsed = extract_node(
-            """
+        parsed = extract_node("""
         a = []
         x = [a*2, a]*2*2
-        """
-        )
+        """)
         parsed.accept(Visitor())
 
     @staticmethod
@@ -371,14 +355,12 @@ class TestPatternMatching:
 
         Test the result is 'Uninferable' and no exception is raised.
         """
-        assign_stmts = extract_node(
-            """
+        assign_stmts = extract_node("""
         var = {1: "Hello", 2: "World"}
         match var:
             case {**rest}:  #@
                 pass
-        """
-        )
+        """)
         match_mapping: nodes.MatchMapping = assign_stmts.pattern  # type: ignore[union-attr]
         assert match_mapping.rest
         assigned = next(match_mapping.rest.assigned_stmts())
@@ -390,14 +372,12 @@ class TestPatternMatching:
 
         Test the result is 'Uninferable' and no exception is raised.
         """
-        assign_stmts = extract_node(
-            """
+        assign_stmts = extract_node("""
         var = (0, 1, 2)
         match var:
             case (0, 1, *rest):  #@
                 pass
-        """
-        )
+        """)
         match_sequence: nodes.MatchSequence = assign_stmts.pattern  # type: ignore[union-attr]
         match_star = match_sequence.patterns[2]
         assert isinstance(match_star, nodes.MatchStar) and match_star.name
@@ -407,8 +387,7 @@ class TestPatternMatching:
     @staticmethod
     def test_assigned_stmts_match_as():
         """Assigned_stmts for MatchAs only implemented for the most basic case (y)."""
-        assign_stmts = extract_node(
-            """
+        assign_stmts = extract_node("""
         var = 42
         match var:  #@
             case 2 | x:  #@
@@ -417,8 +396,7 @@ class TestPatternMatching:
                 pass
             case z:  #@
                 pass
-        """
-        )
+        """)
         subject: nodes.Const = assign_stmts[0].subject  # type: ignore[index,union-attr]
         match_or: nodes.MatchOr = assign_stmts[1].pattern  # type: ignore[index,union-attr]
         match_as_with_pattern: nodes.MatchAs = assign_stmts[2].pattern  # type: ignore[index,union-attr]

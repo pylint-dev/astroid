@@ -19,11 +19,9 @@ except ImportError:
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
     def test_parser(self):
-        module = builder.parse(
-            """
+        module = builder.parse("""
         from dateutil.parser import parse
         d = parse('2000-01-01')
-        """
-        )
+        """)
         d_type = next(module["d"].infer())
         self.assertIn(d_type.qname(), {"_pydatetime.datetime", "datetime.datetime"})

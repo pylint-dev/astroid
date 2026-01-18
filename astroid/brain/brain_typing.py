@@ -423,8 +423,7 @@ def infer_typing_cast(
 
 
 def _typing_transform():
-    code = textwrap.dedent(
-        """
+    code = textwrap.dedent("""
     class Generic:
         @classmethod
         def __class_getitem__(cls, item):  return cls
@@ -457,17 +456,14 @@ def _typing_transform():
     class Match:
         @classmethod
         def __class_getitem__(cls, item):  return cls
-    """
-    )
+    """)
     if PY314_PLUS:
-        code += textwrap.dedent(
-            """
+        code += textwrap.dedent("""
     from annotationlib import ForwardRef
     class Union:
         @classmethod
         def __class_getitem__(cls, item): return cls
-    """
-        )
+    """)
     return AstroidBuilder(AstroidManager()).string_build(code)
 
 

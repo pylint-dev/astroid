@@ -24,7 +24,6 @@ Sigmasks IntEnums are just dummy integer values, and do not correspond to the
 actual standard signal numbers - which may vary depending on the system.
 """
 
-
 import sys
 
 from astroid.brain.helpers import register_module_extender

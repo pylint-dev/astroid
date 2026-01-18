@@ -17,15 +17,11 @@ from astroid.context import InferenceContext
 
 @pytest.mark.skipif(not PY311_PLUS, reason="Exception group introduced in Python 3.11")
 def test_group_exceptions_exceptions() -> None:
-    node = extract_node(
-        textwrap.dedent(
-            """
+    node = extract_node(textwrap.dedent("""
         try:
             raise ExceptionGroup('', [TypeError(), TypeError()])
         except ExceptionGroup as eg:
-            eg.exceptions #@"""
-        )
-    )
+            eg.exceptions #@"""))
 
     inferred = node.inferred()[0]
     assert isinstance(inferred, nodes.Tuple)
@@ -33,9 +29,7 @@ def test_group_exceptions_exceptions() -> None:
 
 @pytest.mark.skipif(not PY311_PLUS, reason="Requires Python 3.11 or higher")
 def test_group_exceptions() -> None:
-    node = extract_node(
-        textwrap.dedent(
-            """
+    node = extract_node(textwrap.dedent("""
         try:
             raise ExceptionGroup("group", [ValueError(654)])
         except ExceptionGroup as eg:
@@ -43,9 +37,7 @@ def test_group_exceptions() -> None:
                 if isinstance(err, ValueError):
                     print("Handling ValueError")
                 elif isinstance(err, TypeError):
-                    print("Handling TypeError")"""
-        )
-    )
+                    print("Handling TypeError")"""))
     assert isinstance(node, nodes.Try)
     handler = node.handlers[0]
     assert node.block_range(lineno=1) == (1, 9)
@@ -64,8 +56,7 @@ def test_group_exceptions() -> None:
 
 @pytest.mark.skipif(not PY311_PLUS, reason="Requires Python 3.11 or higher")
 def test_star_exceptions() -> None:
-    code = textwrap.dedent(
-        """
+    code = textwrap.dedent("""
     try:
         raise ExceptionGroup("group", [ValueError(654)])
     except* ValueError:
@@ -75,8 +66,7 @@ def test_star_exceptions() -> None:
     else:
         sys.exit(127)
     finally:
-        sys.exit(0)"""
-    )
+        sys.exit(0)""")
     node = extract_node(code)
     assert isinstance(node, nodes.TryStar)
     assert node.as_string() == code.replace('"', "'").strip()
@@ -106,13 +96,11 @@ def test_star_exceptions() -> None:
 
 @pytest.mark.skipif(not PY311_PLUS, reason="Requires Python 3.11 or higher")
 def test_star_exceptions_infer_name() -> None:
-    trystar = extract_node(
-        """
+    trystar = extract_node("""
 try:
     1/0
 except* ValueError:
-    pass"""
-    )
+    pass""")
     name = "arbitraryName"
     context = InferenceContext()
     context.lookupname = name
@@ -123,8 +111,7 @@ except* ValueError:
 
 @pytest.mark.skipif(not PY311_PLUS, reason="Requires Python 3.11 or higher")
 def test_star_exceptions_infer_exceptions() -> None:
-    code = textwrap.dedent(
-        """
+    code = textwrap.dedent("""
     try:
         raise ExceptionGroup("group", [ValueError(654), TypeError(10)])
     except* ValueError as ve:
@@ -134,8 +121,7 @@ def test_star_exceptions_infer_exceptions() -> None:
     else:
         sys.exit(127)
     finally:
-        sys.exit(0)"""
-    )
+        sys.exit(0)""")
     node = extract_node(code)
     assert isinstance(node, nodes.TryStar)
     inferred_ve = next(node.handlers[0].statement().name.infer())

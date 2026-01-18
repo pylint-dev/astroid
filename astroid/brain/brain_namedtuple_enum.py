@@ -226,8 +226,7 @@ def infer_named_tuple(
         field_def.format(name=name, index=index)
         for index, name in enumerate(attributes)
     )
-    fake = AstroidBuilder(AstroidManager()).string_build(
-        f"""
+    fake = AstroidBuilder(AstroidManager()).string_build(f"""
 class {name}(tuple):
     __slots__ = ()
     _fields = {attributes!r}
@@ -241,8 +240,7 @@ class {name}(tuple):
     def __getnewargs__(self):
         return tuple(self)
 {field_defs}
-    """
-    )
+    """)
     class_node.locals["_asdict"] = fake.body[0].locals["_asdict"]
     class_node.locals["_make"] = fake.body[0].locals["_make"]
     class_node.locals["_replace"] = fake.body[0].locals["_replace"]
@@ -322,8 +320,7 @@ def infer_enum(
     ):
         raise UseInferenceDefault
 
-    enum_meta = _extract_single_node(
-        """
+    enum_meta = _extract_single_node("""
     class EnumMeta(object):
         'docstring'
         def __call__(self, node):
@@ -354,8 +351,7 @@ def infer_enum(
 
             return Value()
         __members__ = ['']
-    """
-    )
+    """)
 
     # FIXME arguably, the base here shouldn't be the EnumMeta class definition
     # itself, but a reference (Name) to it. Otherwise, the invariant that all
@@ -517,8 +513,7 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
         # For "value", we have no idea what that should be, but for "name", we at least
         # know that it should be a string, so infer that as a guess.
         if "name" not in target_names:
-            code = dedent(
-                '''
+            code = dedent('''
                 @property
                 def name(self):
                     """The name of the Enum member.
@@ -527,8 +522,7 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                     know 'name' should be a string, so this is astroid's best guess.
                     """
                     return ''
-                '''
-            )
+                ''')
             name_dynamicclassattr = AstroidBuilder(AstroidManager()).string_build(code)[
                 "name"
             ]
@@ -545,12 +539,10 @@ def infer_typing_namedtuple_class(class_node, context: InferenceContext | None =
         for annassign in class_node.body
         if isinstance(annassign, nodes.AnnAssign)
     ]
-    code = dedent(
-        """
+    code = dedent("""
     from collections import namedtuple
     namedtuple({typename!r}, {fields!r})
-    """
-    ).format(typename=class_node.name, fields=",".join(annassigns_fields))
+    """).format(typename=class_node.name, fields=",".join(annassigns_fields))
     node = extract_node(code)
     try:
         generated_class_node = next(infer_named_tuple(node, context))
@@ -576,12 +568,10 @@ def infer_typing_namedtuple_function(node, context: InferenceContext | None = No
     The class NamedTuple is build dynamically through a call to `type` during
     initialization of the `_NamedTuple` variable.
     """
-    klass = extract_node(
-        """
+    klass = extract_node("""
         from typing import _NamedTuple
         _NamedTuple
-        """
-    )
+        """)
     return klass.infer(context)
 
 

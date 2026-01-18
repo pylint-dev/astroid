@@ -64,38 +64,32 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(build("1, 2, 3").as_string(), "(1, 2, 3)")
 
     def test_func_signature_issue_185(self) -> None:
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         def test(a, b, c=42, *, x=42, **kwargs):
             print(a, b, c, args)
-        """
-        )
+        """)
         node = parse(code)
         self.assertEqual(node.as_string().strip(), code.strip())
 
     def test_as_string_for_list_containing_uninferable(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         def foo():
             bar = [arg] * 1
-        """
-        )
+        """)
         binop = node.body[0].value
         inferred = next(binop.infer())
         self.assertEqual(inferred.as_string(), "[Uninferable]")
         self.assertEqual(binop.as_string(), "[arg] * 1")
 
     def test_frozenset_as_string(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         frozenset((1, 2, 3)) #@
         frozenset({1, 2, 3}) #@
         frozenset([1, 2, 3,]) #@
 
         frozenset(None) #@
         frozenset(1) #@
-        """
-        )
+        """)
         ast_nodes = [next(node.infer()) for node in ast_nodes]
         assert isinstance(ast_nodes, list)
         self.assertEqual(ast_nodes[0].as_string(), "frozenset((1, 2, 3))")
@@ -710,11 +704,9 @@ class ConstNodeTest(unittest.TestCase):
         self._test("a")
 
     def test_str_kind(self):
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
             const = u"foo"
-        """
-        )
+        """)
         assert isinstance(node.value, nodes.Const)
         assert node.value.value == "foo"
         assert node.value.kind, "u"
@@ -746,8 +738,7 @@ class TestNamedExprNode:
         """Test if the frame of NamedExpr is correctly set for certain types
         of parent nodes.
         """
-        module = builder.parse(
-            """
+        module = builder.parse("""
             def func(var_1):
                 pass
 
@@ -770,8 +761,7 @@ class TestNamedExprNode:
                 pass
 
             COMPREHENSION = [y for i in (1, 2) if (y := i ** 2)]
-        """
-        )
+        """)
         function = module.body[0]
         assert function.args.frame() == function
         assert function.args.frame() == function
@@ -809,8 +799,7 @@ class TestNamedExprNode:
         """Test if the scope of NamedExpr is correctly set for certain types
         of parent nodes.
         """
-        module = builder.parse(
-            """
+        module = builder.parse("""
             def func(var_1):
                 pass
 
@@ -833,8 +822,7 @@ class TestNamedExprNode:
                 pass
 
             COMPREHENSION = [y for i in (1, 2) if (y := i ** 2)]
-        """
-        )
+        """)
         function = module.body[0]
         assert function.args.scope() == function
 
@@ -860,11 +848,9 @@ class TestNamedExprNode:
 
 class AnnAssignNodeTest(unittest.TestCase):
     def test_primitive(self) -> None:
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
             test: int = 5
-        """
-        )
+        """)
         assign = builder.extract_node(code)
         self.assertIsInstance(assign, nodes.AnnAssign)
         self.assertEqual(assign.target.name, "test")
@@ -873,11 +859,9 @@ class AnnAssignNodeTest(unittest.TestCase):
         self.assertEqual(assign.simple, 1)
 
     def test_primitive_without_initial_value(self) -> None:
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
             test: str
-        """
-        )
+        """)
         assign = builder.extract_node(code)
         self.assertIsInstance(assign, nodes.AnnAssign)
         self.assertEqual(assign.target.name, "test")
@@ -885,11 +869,9 @@ class AnnAssignNodeTest(unittest.TestCase):
         self.assertEqual(assign.value, None)
 
     def test_complex(self) -> None:
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
             test: Dict[List[str]] = {}
-        """
-        )
+        """)
         assign = builder.extract_node(code)
         self.assertIsInstance(assign, nodes.AnnAssign)
         self.assertEqual(assign.target.name, "test")
@@ -897,27 +879,23 @@ class AnnAssignNodeTest(unittest.TestCase):
         self.assertIsInstance(assign.value, nodes.Dict)
 
     def test_as_string(self) -> None:
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
             print()
             test: int = 5
             test2: str
             test3: List[Dict[str, str]] = []
-        """
-        )
+        """)
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string().strip(), code.strip())
 
 
 class ArgumentsNodeTC(unittest.TestCase):
     def test_linenumbering(self) -> None:
-        ast = builder.parse(
-            """
+        ast = builder.parse("""
             def func(a,
                 b): pass
             x = lambda x: None
-        """
-        )
+        """)
         self.assertEqual(ast["func"].args.fromlineno, 2)
         self.assertFalse(ast["func"].args.is_statement)
         xlambda = next(ast["x"].infer())
@@ -926,23 +904,19 @@ class ArgumentsNodeTC(unittest.TestCase):
         self.assertFalse(xlambda.args.is_statement)
 
     def test_kwoargs(self) -> None:
-        ast = builder.parse(
-            """
+        ast = builder.parse("""
             def func(*, x):
                 pass
-        """
-        )
+        """)
         args = ast["func"].args
         assert isinstance(args, nodes.Arguments)
         assert args.is_argument("x")
         assert args.kw_defaults == [None]
 
-        ast = builder.parse(
-            """
+        ast = builder.parse("""
             def func(*, x = "default"):
                 pass
-        """
-        )
+        """)
         args = ast["func"].args
         assert isinstance(args, nodes.Arguments)
         assert args.is_argument("x")
@@ -951,12 +925,10 @@ class ArgumentsNodeTC(unittest.TestCase):
         assert args.kw_defaults[0].value == "default"
 
     def test_positional_only(self):
-        ast = builder.parse(
-            """
+        ast = builder.parse("""
             def func(x, /, y):
                 pass
-        """
-        )
+        """)
         args = ast["func"].args
         self.assertTrue(args.is_argument("x"))
         self.assertTrue(args.is_argument("y"))
@@ -971,14 +943,12 @@ class UnboundMethodNodeTest(unittest.TestCase):
         # https://bitbucket.org/logilab/astroid/issue/91, which tests
         # that UnboundMethod doesn't call super when doing .getattr.
 
-        ast = builder.parse(
-            """
+        ast = builder.parse("""
         class A(object):
             def test(self):
                 pass
         meth = A.test
-        """
-        )
+        """)
         node = next(ast["meth"].infer())
         with self.assertRaises(AttributeInferenceError):
             node.getattr("__missssing__")
@@ -996,8 +966,7 @@ class BoundMethodNodeTest(unittest.TestCase):
     def test_is_standard_property(self) -> None:
         # Test to make sure the Python-provided property decorators
         # are properly interpreted as properties
-        ast = builder.parse(
-            """
+        ast = builder.parse("""
         import abc
         import functools
 
@@ -1020,8 +989,7 @@ class BoundMethodNodeTest(unittest.TestCase):
         abc_p = cls.abc_property
         abstractmethod_p = cls.abstractmethod_property
         functools_p = cls.functools_property
-        """
-        )
+        """)
         for prop in (
             "builtin_p",
             "abc_p",
@@ -1034,8 +1002,7 @@ class BoundMethodNodeTest(unittest.TestCase):
     def test_is_standard_property_py311(self) -> None:
         # Test to make sure the Python-provided property decorators
         # are properly interpreted as properties
-        ast = builder.parse(
-            """
+        ast = builder.parse("""
         import enum
 
         class A(object):
@@ -1044,15 +1011,13 @@ class BoundMethodNodeTest(unittest.TestCase):
 
         cls = A()
         enum_p = cls.enum_property
-        """
-        )
+        """)
         self._is_property(ast, "enum_p")
 
     def test_is_possible_property(self) -> None:
         # Test to make sure that decorators with POSSIBLE_PROPERTIES names
         # are properly interpreted as properties
-        ast = builder.parse(
-            """
+        ast = builder.parse("""
         # Not real decorators, but we don't care
         def cachedproperty(): pass
         def cached_property(): pass
@@ -1107,8 +1072,7 @@ class BoundMethodNodeTest(unittest.TestCase):
         lazy_a = cls.lazy_attribute
         LazyP = cls.LazyProperty
         DynamicClassA = cls.DynamicClassAttribute
-        """
-        )
+        """)
         for prop in (
             "cachedp",
             "cached_p",
@@ -1126,8 +1090,7 @@ class BoundMethodNodeTest(unittest.TestCase):
     def test_is_standard_property_subclass(self) -> None:
         # Test to make sure that subclasses of the Python-provided property decorators
         # are properly interpreted as properties
-        ast = builder.parse(
-            """
+        ast = builder.parse("""
         import abc
         import functools
         from typing import Generic, TypeVar
@@ -1156,8 +1119,7 @@ class BoundMethodNodeTest(unittest.TestCase):
         user_abc_p = cls.user_abc_property
         user_functools_p = cls.user_functools_property
         annotated_user_functools_p = cls.annotated_user_functools_property
-        """
-        )
+        """)
         for prop in (
             "user_p",
             "user_abc_p",
@@ -1170,8 +1132,7 @@ class BoundMethodNodeTest(unittest.TestCase):
     def test_is_standard_property_subclass_py311(self) -> None:
         # Test to make sure that subclasses of the Python-provided property decorators
         # are properly interpreted as properties
-        ast = builder.parse(
-            """
+        ast = builder.parse("""
         import enum
 
         class user_enum_property(enum.property): pass
@@ -1182,14 +1143,12 @@ class BoundMethodNodeTest(unittest.TestCase):
 
         cls = A()
         user_enum_p = cls.user_enum_property
-        """
-        )
+        """)
         self._is_property(ast, "user_enum_p")
 
     @pytest.mark.skipif(not PY312_PLUS, reason="Uses 3.12 generic typing syntax")
     def test_is_standard_property_subclass_py312(self) -> None:
-        ast = builder.parse(
-            """
+        ast = builder.parse("""
         from functools import cached_property
 
         class annotated_user_cached_property[T](cached_property[T]):
@@ -1201,13 +1160,11 @@ class BoundMethodNodeTest(unittest.TestCase):
 
         cls = A()
         annotated_user_cached_p = cls.annotated_user_cached_property
-        """
-        )
+        """)
         self._is_property(ast, "annotated_user_cached_p")
 
     def test_is_not_property(self) -> None:
-        ast = builder.parse(
-            """
+        ast = builder.parse("""
         from collections.abc import Iterator
 
         class cached_property: pass
@@ -1244,8 +1201,7 @@ class BoundMethodNodeTest(unittest.TestCase):
         bad_superclass2 = cls.wrong_superclass_type2
         bad_superclass3 = cls.wrong_superclass_type3
         bad_superclass4 = cls.wrong_superclass_type4
-        """
-        )
+        """)
         for prop in (
             "no_decorator",
             "not_prop",
@@ -1412,46 +1368,38 @@ class Python35AsyncTest(unittest.TestCase):
         self.assertEqual(ast_node.as_string().strip(), code.strip())
 
     def test_await_as_string(self) -> None:
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         async def function():
             await 42
             await x[0]
             (await x)[0]
             await (x + y)[0]
-        """
-        )
+        """)
         self._test_await_async_as_string(code)
 
     def test_asyncwith_as_string(self) -> None:
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         async def function():
             async with 42:
                 pass
-        """
-        )
+        """)
         self._test_await_async_as_string(code)
 
     def test_asyncfor_as_string(self) -> None:
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         async def function():
             async for i in range(10):
                 await 42
-        """
-        )
+        """)
         self._test_await_async_as_string(code)
 
     def test_decorated_async_def_as_string(self) -> None:
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         @decorator
         async def function():
             async for i in range(10):
                 await 42
-        """
-        )
+        """)
         self._test_await_async_as_string(code)
 
 
@@ -1508,14 +1456,12 @@ def test_unknown() -> None:
 
 
 def test_type_comments_with() -> None:
-    module = builder.parse(
-        """
+    module = builder.parse("""
     with a as b: # type: int
         pass
     with a as b: # type: ignore[name-defined]
         pass
-    """
-    )
+    """)
     node = module.body[0]
     ignored_node = module.body[1]
     assert isinstance(node.type_annotation, nodes.Name)
@@ -1524,14 +1470,12 @@ def test_type_comments_with() -> None:
 
 
 def test_type_comments_for() -> None:
-    module = builder.parse(
-        """
+    module = builder.parse("""
     for a, b in [1, 2, 3]: # type: List[int]
         pass
     for a, b in [1, 2, 3]: # type: ignore[name-defined]
         pass
-    """
-    )
+    """)
     node = module.body[0]
     ignored_node = module.body[1]
     assert isinstance(node.type_annotation, nodes.Subscript)
@@ -1541,12 +1485,10 @@ def test_type_comments_for() -> None:
 
 
 def test_type_coments_assign() -> None:
-    module = builder.parse(
-        """
+    module = builder.parse("""
     a, b = [1, 2, 3] # type: List[int]
     a, b = [1, 2, 3] # type: ignore[name-defined]
-    """
-    )
+    """)
     node = module.body[0]
     ignored_node = module.body[1]
     assert isinstance(node.type_annotation, nodes.Subscript)
@@ -1556,20 +1498,17 @@ def test_type_coments_assign() -> None:
 
 
 def test_type_comments_invalid_expression() -> None:
-    module = builder.parse(
-        """
+    module = builder.parse("""
     a, b = [1, 2, 3] # type: something completely invalid
     a, b = [1, 2, 3] # typeee: 2*+4
     a, b = [1, 2, 3] # type: List[int
-    """
-    )
+    """)
     for node in module.body:
         assert node.type_annotation is None
 
 
 def test_type_comments_invalid_function_comments() -> None:
-    module = builder.parse(
-        """
+    module = builder.parse("""
     def func(
         # type: () -> int # inside parentheses
     ):
@@ -1583,16 +1522,14 @@ def test_type_comments_invalid_function_comments() -> None:
     def func2():
         # type: List[int
         pass
-    """
-    )
+    """)
     for node in module.body:
         assert node.type_comment_returns is None
         assert node.type_comment_args is None
 
 
 def test_type_comments_function() -> None:
-    module = builder.parse(
-        """
+    module = builder.parse("""
     def func():
         # type: (int) -> str
         pass
@@ -1602,8 +1539,7 @@ def test_type_comments_function() -> None:
     def func2():
         # type: (int, int, str, List[int]) -> List[int]
         pass
-    """
-    )
+    """)
     expected_annotations = [
         (["int"], nodes.Name, "str"),
         (["int", "int", "int"], nodes.Tuple, "(str, str)"),
@@ -1621,8 +1557,7 @@ def test_type_comments_function() -> None:
 
 
 def test_type_comments_arguments() -> None:
-    module = builder.parse(
-        """
+    module = builder.parse("""
     def func(
         a,  # type: int
     ):
@@ -1643,8 +1578,7 @@ def test_type_comments_arguments() -> None:
     ):
         # type: (...) -> List[int]
         pass
-    """
-    )
+    """)
     expected_annotations = [
         ["int"],
         ["int", "int", "int"],
@@ -1660,8 +1594,7 @@ def test_type_comments_arguments() -> None:
 
 
 def test_type_comments_posonly_arguments() -> None:
-    module = builder.parse(
-        """
+    module = builder.parse("""
     def f_arg_comment(
         a,  # type: int
         b,  # type: int
@@ -1674,8 +1607,7 @@ def test_type_comments_posonly_arguments() -> None:
     ):
         # type: (...) -> None
         pass
-    """
-    )
+    """)
     expected_annotations = [
         [["int", "int"], ["Optional[int]", "Optional[int]"], ["float", "float"]]
     ]
@@ -1707,8 +1639,7 @@ def test_correct_function_type_comment_parent() -> None:
 
 
 def test_is_generator_for_yield_assignments() -> None:
-    node = astroid.extract_node(
-        """
+    node = astroid.extract_node("""
     class A:
         def test(self):
             a = yield
@@ -1717,8 +1648,7 @@ def test_is_generator_for_yield_assignments() -> None:
                 yield a
     a = A()
     a.test
-    """
-    )
+    """)
     inferred = next(node.infer())
     assert isinstance(inferred, astroid.BoundMethod)
     assert bool(inferred.is_generator())
@@ -1726,15 +1656,13 @@ def test_is_generator_for_yield_assignments() -> None:
 
 class AsyncGeneratorTest(unittest.TestCase):
     def test_async_generator(self):
-        node = astroid.extract_node(
-            """
+        node = astroid.extract_node("""
         async def a_iter(n):
             for i in range(1, n + 1):
                 yield i
                 await asyncio.sleep(1)
         a_iter(2) #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         assert isinstance(inferred, bases.AsyncGenerator)
         assert inferred.getattr("__aiter__")
@@ -1745,14 +1673,12 @@ class AsyncGeneratorTest(unittest.TestCase):
 
 def test_f_string_correct_line_numbering() -> None:
     """Test that we generate correct line numbers for f-strings."""
-    node = astroid.extract_node(
-        """
+    node = astroid.extract_node("""
     def func_foo(arg_bar, arg_foo):
         dict_foo = {}
 
         f'{arg_bar.attr_bar}' #@
-    """
-    )
+    """)
     assert node.lineno == 5
     assert node.last_child().lineno == 5
     assert node.last_child().last_child().lineno == 5
@@ -1855,13 +1781,11 @@ def test_assignment_expression_in_functiondef() -> None:
 
 
 def test_get_doc() -> None:
-    code = textwrap.dedent(
-        """\
+    code = textwrap.dedent("""\
     def func():
         "Docstring"
         return 1
-    """
-    )
+    """)
     node: nodes.FunctionDef = astroid.extract_node(code)  # type: ignore[assignment]
     assert isinstance(node.doc_node, nodes.Const)
     assert node.doc_node.value == "Docstring"
@@ -1870,13 +1794,11 @@ def test_get_doc() -> None:
     assert node.doc_node.end_lineno == 2
     assert node.doc_node.end_col_offset == 15
 
-    code = textwrap.dedent(
-        """\
+    code = textwrap.dedent("""\
     def func():
         ...
         return 1
-    """
-    )
+    """)
     node = astroid.extract_node(code)
     assert node.doc_node is None
 
@@ -1955,8 +1877,7 @@ def test_is_generator_for_yield_in_aug_assign() -> None:
 class TestPatternMatching:
     @staticmethod
     def test_match_simple():
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         match status:
             case 200:
                 pass
@@ -1966,8 +1887,7 @@ class TestPatternMatching:
                 pass
             case _:
                 pass
-        """
-        ).strip()
+        """).strip()
         node = builder.extract_node(code)
         assert node.as_string() == code
         assert isinstance(node, nodes.Match)
@@ -2010,13 +1930,11 @@ class TestPatternMatching:
 
     @staticmethod
     def test_match_sequence():
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         match status:
             case [x, 2, _, *rest] as y if x > 2:
                 pass
-        """
-        ).strip()
+        """).strip()
         node = builder.extract_node(code)
         assert node.as_string() == code
         assert isinstance(node, nodes.Match)
@@ -2064,15 +1982,13 @@ class TestPatternMatching:
 
     @staticmethod
     def test_match_mapping():
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         match status:
             case {0: x, 1: _}:
                 pass
             case {**rest}:
                 pass
-        """
-        ).strip()
+        """).strip()
         node = builder.extract_node(code)
         assert node.as_string() == code
         assert isinstance(node, nodes.Match)
@@ -2114,15 +2030,13 @@ class TestPatternMatching:
 
     @staticmethod
     def test_match_class():
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         match x:
             case Point2D(0, a):
                 pass
             case Point3D(x=0, y=1, z=b):
                 pass
-        """
-        ).strip()
+        """).strip()
         node = builder.extract_node(code)
         assert node.as_string() == code
         assert isinstance(node, nodes.Match)
@@ -2190,8 +2104,7 @@ class TestPatternMatching:
 
     @staticmethod
     def test_return_from_match():
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         def return_from_match(x):
             match x:
                 case 10:
@@ -2200,8 +2113,7 @@ class TestPatternMatching:
                     return -1
 
         return_from_match(10)  #@
-        """
-        ).strip()
+        """).strip()
         node = builder.extract_node(code)
         inferred = node.inferred()
         assert len(inferred) == 2
@@ -2212,13 +2124,11 @@ class TestPatternMatching:
 class TestTemplateString:
     @staticmethod
     def test_template_string_simple() -> None:
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         name = "Foo"
         place = 3
         t"{name} finished {place!r:ordinal}"  #@
-        """
-        ).strip()
+        """).strip()
         node = builder.extract_node(code)
         assert node.as_string() == "t'{name} finished {place!r:ordinal}'"
         assert isinstance(node, nodes.TemplateStr)

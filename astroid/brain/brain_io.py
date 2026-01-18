@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid brain hints for some of the _io C objects."""
+
 from astroid.manager import AstroidManager
 from astroid.nodes import ClassDef
 

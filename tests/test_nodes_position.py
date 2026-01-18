@@ -19,8 +19,7 @@ class TestNodePosition:
         >>> class A(Parent):
         >>> ^^^^^^^
         """
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         class A:  #@
             ...
 
@@ -40,8 +39,7 @@ class TestNodePosition:
         @decorator
         class F:  #@
             ...
-        """
-        ).strip()
+        """).strip()
         ast_nodes: list[nodes.NodeNG] = builder.extract_node(code)  # type: ignore[assignment]
 
         a = ast_nodes[0]
@@ -75,8 +73,7 @@ class TestNodePosition:
         >>> def func(var: int = 42):
         >>> ^^^^^^^^
         """
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         def a():  #@
             ...
 
@@ -92,8 +89,7 @@ class TestNodePosition:
         @decorator
         def e():  #@
             ...
-        """
-        ).strip()
+        """).strip()
         ast_nodes: list[nodes.NodeNG] = builder.extract_node(code)  # type: ignore[assignment]
 
         a = ast_nodes[0]
@@ -123,8 +119,7 @@ class TestNodePosition:
         >>> async def func(var: int = 42):
         >>> ^^^^^^^^^^^^^^
         """
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         async def a():  #@
             ...
 
@@ -140,8 +135,7 @@ class TestNodePosition:
         @decorator
         async def e():  #@
             ...
-        """
-        ).strip()
+        """).strip()
         ast_nodes: list[nodes.NodeNG] = builder.extract_node(code)  # type: ignore[assignment]
 
         a = ast_nodes[0]

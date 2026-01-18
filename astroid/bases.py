@@ -5,6 +5,7 @@
 """This module contains base classes and functions for the nodes and some
 inference utils.
 """
+
 from __future__ import annotations
 
 import collections

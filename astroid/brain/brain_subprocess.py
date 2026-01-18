@@ -59,8 +59,7 @@ def _subprocess_transform() -> nodes.Module:
     ):
     """.strip()
 
-    code = textwrap.dedent(
-        f"""
+    code = textwrap.dedent(f"""
     def {check_output_signature}
         if universal_newlines:
             return ""
@@ -87,8 +86,7 @@ def _subprocess_transform() -> nodes.Module:
         @classmethod
         def __class_getitem__(cls, item):
             pass
-        """
-    )
+        """)
 
     init_lines = textwrap.dedent(init).splitlines()
     indented_init = "\n".join(" " * 4 + line for line in init_lines)

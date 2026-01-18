@@ -13,12 +13,10 @@ class TestSys:
 
     def test_sys_builtin_module_names(self) -> None:
         """Test that we can gather the elements of a living tuple object."""
-        node = _extract_single_node(
-            """
+        node = _extract_single_node("""
         import sys
         sys.builtin_module_names
-        """
-        )
+        """)
         inferred = list(node.infer())
         assert len(inferred) == 1
         assert isinstance(inferred[0], nodes.Tuple)
@@ -26,12 +24,10 @@ class TestSys:
 
     def test_sys_modules(self) -> None:
         """Test that we can gather the items of a living dict object."""
-        node = _extract_single_node(
-            """
+        node = _extract_single_node("""
         import sys
         sys.modules
-        """
-        )
+        """)
         inferred = list(node.infer())
         assert len(inferred) == 1
         assert isinstance(inferred[0], nodes.Dict)

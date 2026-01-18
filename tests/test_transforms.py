@@ -49,12 +49,10 @@ class TestTransforms(unittest.TestCase):
 
         self.transformer.register_transform(nodes.Call, transform_call)
 
-        module = self.parse_transform(
-            """
+        module = self.parse_transform("""
         def test(): return 42
         test() #@
-        """
-        )
+        """)
 
         self.assertIsInstance(module.body[1], nodes.Expr)
         self.assertIsInstance(module.body[1].value, nodes.Const)
@@ -77,13 +75,11 @@ class TestTransforms(unittest.TestCase):
         self.transformer.register_transform(nodes.Compare, transform_compare)
         self.transformer.register_transform(nodes.Name, transform_name)
 
-        module = self.parse_transform(
-            """
+        module = self.parse_transform("""
         a = 42
         b = 24
         a < b
-        """
-        )
+        """)
 
         self.assertIsInstance(module.body[2], nodes.Expr)
         self.assertIsInstance(module.body[2].value, nodes.Const)
@@ -112,12 +108,10 @@ class TestTransforms(unittest.TestCase):
 
         self.transformer.register_transform(nodes.FunctionDef, transform_function)
 
-        module = self.parse_transform(
-            """
+        module = self.parse_transform("""
         def test():
             pass
-        """
-        )
+        """)
 
         func = module.body[0]
         self.assertEqual(len(func.body), 2)
@@ -134,8 +128,7 @@ class TestTransforms(unittest.TestCase):
 
         self.transformer.register_transform(nodes.Call, transform_call, should_inline)
 
-        module = self.parse_transform(
-            """
+        module = self.parse_transform("""
         def inlineme_1():
             return 24
         def dont_inline_me():
@@ -145,8 +138,7 @@ class TestTransforms(unittest.TestCase):
         inlineme_1()
         dont_inline_me()
         inlineme_2()
-        """
-        )
+        """)
         values = module.body[-3:]
         self.assertIsInstance(values[0], nodes.Expr)
         self.assertIsInstance(values[0].value, nodes.Const)
@@ -173,8 +165,7 @@ class TestTransforms(unittest.TestCase):
 
         manager = MANAGER
         with add_transform(manager, nodes.FunctionDef, transform_function):
-            module = builder.parse(
-                """
+            module = builder.parse("""
             import abc
             from abc import abstractmethod
 
@@ -186,8 +177,7 @@ class TestTransforms(unittest.TestCase):
                 @abstractmethod
                 def bala(self):
                     return 42
-            """
-            )
+            """)
 
         cls = module["A"]
         ala = cls.body[0]
@@ -250,8 +240,7 @@ class TestTransforms(unittest.TestCase):
 
         self.transformer.register_transform(nodes.ClassDef, transform_class)
 
-        self.parse_transform(
-            """
+        self.parse_transform("""
             # Change environ to automatically call putenv() if it exists
             import os
             putenv = os.putenv
@@ -262,8 +251,7 @@ class TestTransforms(unittest.TestCase):
                 pass
             else:
                 import UserDict
-        """
-        )
+        """)
 
     @pytest.mark.skipif(
         IS_PYPY, reason="Could not find a useful recursion limit on all versions"

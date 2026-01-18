@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Unit tests for module modutils (module manipulation utilities)."""
+
 import email
 import logging
 import os

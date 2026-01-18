@@ -10,14 +10,12 @@ from astroid.util import Uninferable
 
 def test_no_return() -> None:
     """Test function with no return statements."""
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     def f():
         pass
 
     f()  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -26,14 +24,12 @@ def test_no_return() -> None:
 
 def test_one_return() -> None:
     """Test function with a single return that always executes."""
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     def f():
         return 1
 
     f()  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -46,15 +42,13 @@ def test_one_return_possible() -> None:
 
     Note: currently, inference doesn't handle this type of control flow
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     def f(x):
         if x:
             return 1
 
     f(1)  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -64,8 +58,7 @@ def test_one_return_possible() -> None:
 
 def test_multiple_returns() -> None:
     """Test function with multiple returns."""
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     def f(x):
         if x > 10:
             return 1
@@ -75,8 +68,7 @@ def test_multiple_returns() -> None:
             return 3
 
     f(100)  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 3
@@ -86,14 +78,12 @@ def test_multiple_returns() -> None:
 
 def test_argument() -> None:
     """Test function whose return value uses its arguments."""
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     def f(x, y):
         return x + y
 
     f(1, 2)  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -103,8 +93,7 @@ def test_argument() -> None:
 
 def test_inner_call() -> None:
     """Test function where return value is the result of a separate function call."""
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     def f():
         return g()
 
@@ -112,8 +101,7 @@ def test_inner_call() -> None:
         return 1
 
     f()  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -125,8 +113,7 @@ def test_inner_call_with_const_argument() -> None:
     """Test function where return value is the result of a separate function call,
     with a constant value passed to the inner function.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     def f():
         return g(1)
 
@@ -134,8 +121,7 @@ def test_inner_call_with_const_argument() -> None:
         return y + 2
 
     f()  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -149,8 +135,7 @@ def test_inner_call_with_dynamic_argument() -> None:
 
     Currently, this is Uninferable.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     def f(x):
         return g(x)
 
@@ -158,8 +143,7 @@ def test_inner_call_with_dynamic_argument() -> None:
         return y + 2
 
     f(1)  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -170,8 +154,7 @@ def test_method_const_instance_attr() -> None:
     """Test method where the return value is based on an instance attribute with a
     constant value.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A:
         def __init__(self):
             self.x = 1
@@ -180,8 +163,7 @@ def test_method_const_instance_attr() -> None:
             return self.x
 
     A().get_x()  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -193,8 +175,7 @@ def test_method_const_instance_attr_multiple() -> None:
     """Test method where the return value is based on an instance attribute with
     multiple possible constant values, across different methods.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A:
         def __init__(self, x):
             if x:
@@ -209,8 +190,7 @@ def test_method_const_instance_attr_multiple() -> None:
             return self.x
 
     A().get_x()  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 3
@@ -226,8 +206,7 @@ def test_method_const_instance_attr_same_method() -> None:
     is guaranteed to override any previous assignments, all possible constant values
     are returned.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A:
         def __init__(self, x):
             if x:
@@ -243,8 +222,7 @@ def test_method_const_instance_attr_same_method() -> None:
             return self.x
 
     A().get_x()  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 4
@@ -258,8 +236,7 @@ def test_method_dynamic_instance_attr_1() -> None:
 
     In this case, the return value is Uninferable.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A:
         def __init__(self, x):
             self.x = x
@@ -268,8 +245,7 @@ def test_method_dynamic_instance_attr_1() -> None:
             return self.x
 
     A(1).get_x()  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -280,8 +256,7 @@ def test_method_dynamic_instance_attr_2() -> None:
     """Test method where the return value is based on an instance attribute with
     a dynamically-set value in the same method.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A:
         # Note: no initializer, so the only assignment happens in get_x
 
@@ -290,8 +265,7 @@ def test_method_dynamic_instance_attr_2() -> None:
             return self.x
 
     A().get_x(1)  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -305,8 +279,7 @@ def test_method_dynamic_instance_attr_3() -> None:
 
     This is currently Uninferable.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A:
         def get_x(self, x):  # x is unused
             return self.x
@@ -315,8 +288,7 @@ def test_method_dynamic_instance_attr_3() -> None:
             self.x = x
 
     A().get_x(10)  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -329,8 +301,7 @@ def test_method_dynamic_instance_attr_4() -> None:
 
     This is currently Uninferable.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A:
         # Note: no initializer, so the only assignment happens in get_x
 
@@ -342,8 +313,7 @@ def test_method_dynamic_instance_attr_4() -> None:
             self.x = x
 
     A().get_x()  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -360,8 +330,7 @@ def test_method_dynamic_instance_attr_5() -> None:
 
     This is currently Uninferable.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A:
         # Note: no initializer, so the only assignment happens in get_x
 
@@ -373,8 +342,7 @@ def test_method_dynamic_instance_attr_5() -> None:
             self.x = x
 
     A().get_x(1)  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -387,8 +355,7 @@ def test_method_dynamic_instance_attr_6() -> None:
 
     This is currently Uninferable.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A:
         # Note: no initializer, so the only assignment happens in get_x
 
@@ -400,8 +367,7 @@ def test_method_dynamic_instance_attr_6() -> None:
             self.x = x
 
     A().get_x(1)  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -414,8 +380,7 @@ def test_dunder_getitem() -> None:
     This is currently Uninferable, until we can infer instance attribute values through
     constructor calls.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A:
         def __init__(self, x):
             self.x = x
@@ -424,8 +389,7 @@ def test_dunder_getitem() -> None:
             return self.x + i
 
     A(1)[2]  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -434,8 +398,7 @@ def test_dunder_getitem() -> None:
 
 def test_instance_method() -> None:
     """Tests for instance method, both bound and unbound."""
-    nodes_ = builder.extract_node(
-        """
+    nodes_ = builder.extract_node("""
     class A:
         def method(self, x):
             return x
@@ -444,8 +407,7 @@ def test_instance_method() -> None:
 
     # In this case, the 1 argument is bound to self, which is ignored in the method
     A.method(1, 42)  #@
-    """
-    )
+    """)
 
     for node in nodes_:
         assert isinstance(node, nodes.NodeNG)
@@ -457,8 +419,7 @@ def test_instance_method() -> None:
 
 def test_class_method() -> None:
     """Tests for class method calls, both instance and with the class."""
-    nodes_ = builder.extract_node(
-        """
+    nodes_ = builder.extract_node("""
     class A:
         @classmethod
         def method(cls, x):
@@ -467,8 +428,7 @@ def test_class_method() -> None:
     A.method(42)  #@
     A().method(42)  #@
 
-    """
-    )
+    """)
 
     for node in nodes_:
         assert isinstance(node, nodes.NodeNG)
@@ -480,8 +440,7 @@ def test_class_method() -> None:
 
 def test_static_method() -> None:
     """Tests for static method calls, both instance and with the class."""
-    nodes_ = builder.extract_node(
-        """
+    nodes_ = builder.extract_node("""
     class A:
         @staticmethod
         def method(x):
@@ -489,8 +448,7 @@ def test_static_method() -> None:
 
     A.method(42)  #@
     A().method(42)  #@
-    """
-    )
+    """)
 
     for node in nodes_:
         assert isinstance(node, nodes.NodeNG)
@@ -505,8 +463,7 @@ def test_instance_method_inherited() -> None:
 
     Based on https://github.com/pylint-dev/astroid/issues/1008.
     """
-    nodes_ = builder.extract_node(
-        """
+    nodes_ = builder.extract_node("""
     class A:
         def method(self):
             return self
@@ -520,8 +477,7 @@ def test_instance_method_inherited() -> None:
     B().method()  #@
     B.method(B())  #@
     A.method(B())  #@
-    """
-    )
+    """)
     expected_names = ["A", "A", "B", "B", "B"]
     for node, expected in zip(nodes_, expected_names):
         assert isinstance(node, nodes.NodeNG)
@@ -536,8 +492,7 @@ def test_class_method_inherited() -> None:
 
     Based on https://github.com/pylint-dev/astroid/issues/1008.
     """
-    nodes_ = builder.extract_node(
-        """
+    nodes_ = builder.extract_node("""
     class A:
         @classmethod
         def method(cls):
@@ -551,8 +506,7 @@ def test_class_method_inherited() -> None:
 
     B().method()  #@
     B.method()  #@
-    """
-    )
+    """)
     expected_names = ["A", "A", "B", "B"]
     for node, expected in zip(nodes_, expected_names):
         assert isinstance(node, nodes.NodeNG)
@@ -567,8 +521,7 @@ def test_chained_attribute_inherited() -> None:
 
     Based on https://github.com/pylint-dev/pylint/issues/4220.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A:
         def f(self):
             return 42
@@ -584,8 +537,7 @@ def test_chained_attribute_inherited() -> None:
 
 
     B().a.f()  #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1

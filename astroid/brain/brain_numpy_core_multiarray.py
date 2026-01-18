@@ -20,16 +20,14 @@ from astroid.manager import AstroidManager
 
 
 def numpy_core_multiarray_transform() -> nodes.Module:
-    return parse(
-        """
+    return parse("""
     # different functions defined in multiarray.py
     def inner(a, b):
         return numpy.ndarray([0, 0])
 
     def vdot(a, b):
         return numpy.ndarray([0, 0])
-        """
-    )
+        """)
 
 
 METHODS_TO_BE_INFERRED = {

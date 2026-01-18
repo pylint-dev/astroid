@@ -148,13 +148,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     ast = parse(CODE, __name__)
 
     def test_arg_keyword_no_default_value(self):
-        node = extract_node(
-            """
+        node = extract_node("""
         class Sensor:
             def __init__(self, *, description): #@
                 self._id = description.key
-        """
-        )
+        """)
         with self.assertRaises(NoDefault):
             node.args.default_value("description")
 
@@ -163,8 +161,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             node.args.default_value("name")
 
     def test_infer_abstract_property_return_values(self) -> None:
-        module = parse(
-            """
+        module = parse("""
         import abc
 
         class A(object):
@@ -174,8 +171,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
         a = A()
         x = a.test
-        """
-        )
+        """)
         inferred = next(module["x"].infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
@@ -721,8 +717,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertEqual(inferred.value, expected_value)
 
     def test_invalid_subscripts(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class NoGetitem(object):
             pass
         class InvalidGetitem(object):
@@ -734,8 +729,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         InvalidGetitem2()[10] #@
         [1, 2, 3][None] #@
         'lala'['bala'] #@
-        """
-        )
+        """)
         for node in ast_nodes:
             self.assertRaises(InferenceError, next, node.infer())
 
@@ -780,13 +774,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(list(sorted(values)), [2, 3])
 
     def test_simple_tuple(self) -> None:
-        module = parse(
-            """
+        module = parse("""
         a = (1,)
         b = (22,)
         some = a + b #@
-        """
-        )
+        """)
         ast = next(module["some"].infer())
         self.assertIsInstance(ast, nodes.Tuple)
         self.assertEqual(len(ast.elts), 2)
@@ -990,14 +982,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         reason="pathlib.Path cannot be inferred on Python 3.8",
     )
     def test_factory_methods_inside_binary_operation(self):
-        node = extract_node(
-            """
+        node = extract_node("""
         from pathlib import Path
         h = Path("/home")
         u = h / "user"
         u #@
-        """
-        )
+        """)
         assert next(node.infer()).qname() == "pathlib.Path"
 
     def test_import_as(self) -> None:
@@ -1054,29 +1044,25 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self._test_const_inferred(ast["b"], True)
 
     def test_unary_op_numbers(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         +1 #@
         -1 #@
         ~1 #@
         +2.0 #@
         -2.0 #@
-        """
-        )
+        """)
         expected = [1, -1, -2, 2.0, -2.0]
         for node, expected_value in zip(ast_nodes, expected):
             inferred = next(node.infer())
             self.assertEqual(inferred.value, expected_value)
 
     def test_matmul(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class Array:
             def __matmul__(self, other):
                 return 42
         Array() @ Array() #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
@@ -1118,15 +1104,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self._test_const_inferred(ast["a"], 23 << 1)
 
     def test_binary_op_other_type(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class A:
             def __add__(self, other):
                 return other + 42
         A() + 1 #@
         1 + A() #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.Const)
@@ -1136,15 +1120,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(second, util.Uninferable)
 
     def test_binary_op_other_type_using_reflected_operands(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class A(object):
             def __radd__(self, other):
                 return other + 42
         A() + 1 #@
         1 + A() #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertEqual(first, util.Uninferable)
@@ -1154,14 +1136,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(second.value, 43)
 
     def test_binary_op_reflected_and_not_implemented_is_type_error(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __radd__(self, other): return NotImplemented
 
         1 + A() #@
-        """
-        )
+        """)
         first = next(ast_node.infer())
         self.assertEqual(first, util.Uninferable)
 
@@ -1672,12 +1652,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1, inferred)
 
     def test__new__bound_methods(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class cls(object): pass
         cls().__new__(cls) #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred._proxied, node.root()["cls"])
@@ -1881,8 +1859,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         reason="Persistent recursion error that we ignore and never fix",
     )
     def test_no_infinite_ancestor_loop(self) -> None:
-        klass = extract_node(
-            """
+        klass = extract_node("""
             import datetime
 
             def method(self):
@@ -1890,8 +1867,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
             class something(datetime.datetime):  #@
                 pass
-        """
-        )
+        """)
         ancestors = [base.name for base in klass.ancestors()]
         expected_subset = ["datetime", "date"]
         self.assertEqual(expected_subset, ancestors[:2])
@@ -2022,8 +1998,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         )
 
     def test_starred_in_mapping_literal_no_inference_possible(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         from unknown import unknown
 
         def test(a):
@@ -2034,8 +2009,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             return {0: 1, **a}
 
         test(**func())
-        """
-        )
+        """)
         self.assertEqual(next(node.infer()), util.Uninferable)
 
     def test_starred_in_mapping_inference_issues(self) -> None:
@@ -2154,15 +2128,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertEqual(inferred.qname(), "builtins.list")
 
     def test_conversion_of_dict_methods(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         list({1:2, 2:3}.values()) #@
         list({1:2, 2:3}.keys()) #@
         tuple({1:2, 2:3}.values()) #@
         tuple({1:2, 3:4}.keys()) #@
         set({1:2, 2:4}.keys()) #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         self.assertInferList(ast_nodes[0], [2, 3])
         self.assertInferList(ast_nodes[1], [1, 2])
@@ -2374,8 +2346,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.qname(), "collections.Counter")
 
     def test_inferring_with_statement_failures(self) -> None:
-        module = parse(
-            """
+        module = parse("""
         class NoEnter(object):
             pass
         class NoMethod(object):
@@ -2390,15 +2361,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
         with NoElts() as (no_elts, no_elts1):
             pass
-        """
-        )
+        """)
         self.assertRaises(InferenceError, next, module["no_enter"].infer())
         self.assertRaises(InferenceError, next, module["no_method"].infer())
         self.assertRaises(InferenceError, next, module["no_elts"].infer())
 
     def test_inferring_with_statement(self) -> None:
-        module = parse(
-            """
+        module = parse("""
         class SelfContext(object):
             def __enter__(self):
                 return self
@@ -2423,8 +2392,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
         with MultipleReturns2() as (stdout, (stderr, stdin)):
             pass
-        """
-        )
+        """)
         self_context = module["self_context"]
         inferred = next(self_context.infer())
         self.assertIsInstance(inferred, Instance)
@@ -2450,8 +2418,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.value, 2)
 
     def test_inferring_with_contextlib_contextmanager(self) -> None:
-        module = parse(
-            """
+        module = parse("""
         import contextlib
         from contextlib import contextmanager
 
@@ -2482,8 +2449,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
         with manager_multiple() as (first, second):
             pass
-        """
-        )
+        """)
         none = module["none"]
         inferred = next(none.infer())
         self.assertIsInstance(inferred, nodes.Const)
@@ -2510,21 +2476,18 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         # indices. This is the case of contextlib.nested, where the
         # result is a list, which is mutated later on, so it's
         # undetected by astroid.
-        module = parse(
-            """
+        module = parse("""
         class Manager(object):
             def __enter__(self):
                 return []
         with Manager() as (a, b, c):
             pass
-        """
-        )
+        """)
         self.assertRaises(InferenceError, next, module["a"].infer())
 
     def test_inferring_context_manager_unpacking_inference_error(self) -> None:
         # https://github.com/pylint-dev/pylint/issues/1463
-        module = parse(
-            """
+        module = parse("""
         import contextlib
 
         @contextlib.contextmanager
@@ -2535,13 +2498,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         result = _select_source()
         with result as (a, b, c):
             pass
-        """
-        )
+        """)
         self.assertRaises(InferenceError, next, module["a"].infer())
 
     def test_inferring_with_contextlib_contextmanager_failures(self) -> None:
-        module = parse(
-            """
+        module = parse("""
         from contextlib import contextmanager
 
         def no_decorators_mgr():
@@ -2559,8 +2520,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
         with no_yield_mgr() as no_yield:
             pass
-        """
-        )
+        """)
         self.assertRaises(InferenceError, next, module["no_decorators"].infer())
         self.assertRaises(InferenceError, next, module["other_decorators"].infer())
         self.assertRaises(InferenceError, next, module["no_yield"].infer())
@@ -2600,8 +2560,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(util.Uninferable, next(node.infer()))
 
     def test_unary_operands(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         import os
         def func(): pass
         from missing import missing
@@ -2654,8 +2613,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ~os #@
         -func #@
         +BadInstance #@
-        """
-        )
+        """)
         expected = [42, 1, 42, -1, 24, 25, 42, 1, 43]
         for node, value in zip(ast_nodes[:9], expected):
             inferred = next(node.infer())
@@ -2667,18 +2625,15 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertEqual(inferred, util.Uninferable)
 
     def test_unary_op_instance_method_not_callable(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A:
             __pos__ = (i for i in range(10))
         +A() #@
-        """
-        )
+        """)
         self.assertRaises(InferenceError, next, ast_node.infer())
 
     def test_binary_op_type_errors(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         import collections
         1 + "a" #@
         1 - [] #@
@@ -2720,8 +2675,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         f+=A() #@
         x = 1
         x+=[] #@
-        """
-        )
+        """)
         msg = "unsupported operand type(s) for {op}: {lhs!r} and {rhs!r}"
         expected = [
             msg.format(op="+", lhs="int", rhs="str"),
@@ -2762,8 +2716,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(errors, [])
 
     def test_unary_type_errors(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         import collections
         ~[] #@
         ~() #@
@@ -2780,8 +2733,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ~A() #@
         ~collections #@
         ~2.0 #@
-        """
-        )
+        """)
         msg = "bad operand type for unary {op}: {type}"
         expected = [
             msg.format(op="~", type="list"),
@@ -2807,12 +2759,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_unary_empty_type_errors(self) -> None:
         # These aren't supported right now
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         ~(2 and []) #@
         -(0 or {}) #@
-        """
-        )
+        """)
         expected = [
             "bad operand type for unary ~: list",
             "bad operand type for unary -: dict",
@@ -2858,19 +2808,16 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertTrue(node.bool_value())
 
     def test_name_bool_value(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         x = 42
         y = x
         y
-        """
-        )
+        """)
         self.assertIs(node.bool_value(), util.Uninferable)
 
     def test_bool_value(self) -> None:
         # Verify the truth value of nodes.
-        module = parse(
-            """
+        module = parse("""
         import collections
         collections_module = collections
         def function(): pass
@@ -2895,8 +2842,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         compare = 2 < 3
         const_str_true = 'testconst'
         const_str_false = ''
-        """
-        )
+        """)
         collections_module = next(module["collections_module"].infer())
         self.assertTrue(collections_module.bool_value())
         function = module["function"]
@@ -2929,8 +2875,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(compare.bool_value(), util.Uninferable)
 
     def test_bool_value_instances(self) -> None:
-        instances = extract_node(
-            """
+        instances = extract_node("""
         class FalseBoolInstance(object):
             def __bool__(self):
                 return False
@@ -2959,16 +2904,14 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         TrueLenInstance() #@
         AlwaysTrueInstance() #@
         ErrorInstance() #@
-        """
-        )
+        """)
         expected = (False, True, False, True, True, util.Uninferable, util.Uninferable)
         for node, expected_value in zip(instances, expected):
             inferred = next(node.infer())
             self.assertEqual(inferred.bool_value(), expected_value)
 
     def test_bool_value_variable(self) -> None:
-        instance = extract_node(
-            """
+        instance = extract_node("""
         class VariableBoolInstance(object):
             def __init__(self, value):
                 self.value = value
@@ -2976,8 +2919,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 return self.value
 
         not VariableBoolInstance(True)
-        """
-        )
+        """)
         inferred = next(instance.infer())
         self.assertIs(inferred.bool_value(), util.Uninferable)
 
@@ -2990,8 +2932,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertIs(inferred.bool_value(), True)
 
     def test_infer_coercion_rules_for_floats_complex(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         1 + 1.0 #@
         1 * 1.0 #@
         2 - 1.0 #@
@@ -3000,20 +2941,17 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         2 * 1j #@
         2 - 1j #@
         3 / 1j #@
-        """
-        )
+        """)
         expected_values = [2.0, 1.0, 1.0, 1.0, 1 + 1j, 2j, 2 - 1j, -3j]
         for node, expected in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
             self.assertEqual(inferred.value, expected)
 
     def test_binop_list_with_elts(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         x = [A] * 1
         [1] + x
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.List)
         self.assertEqual(len(inferred.elts), 2)
@@ -3021,8 +2959,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred.elts[1], nodes.Unknown)
 
     def test_binop_same_types(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class A(object):
             def __add__(self, other):
                 return 42
@@ -3030,8 +2967,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         1 - 1 #@
         "a" + "b" #@
         A() + A() #@
-        """
-        )
+        """)
         expected_values = [2, 0, "ab", 42]
         for node, expected in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
@@ -3039,23 +2975,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertEqual(inferred.value, expected)
 
     def test_binop_different_types_reflected_only(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class A(object):
             pass
         class B(object):
             def __radd__(self, other):
                 return other
         A() + B() #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "A")
 
     def test_binop_different_types_unknown_bases(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         from foo import bar
 
         class A(bar):
@@ -3064,14 +2997,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def __radd__(self, other):
                 return other
         A() + B() #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIs(inferred, util.Uninferable)
 
     def test_binop_different_types_normal_not_implemented_and_reflected(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class A(object):
             def __add__(self, other):
                 return NotImplemented
@@ -3079,94 +3010,80 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def __radd__(self, other):
                 return other
         A() + B() #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "A")
 
     def test_binop_different_types_no_method_implemented(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class A(object):
             pass
         class B(object): pass
         A() + B() #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertEqual(inferred, util.Uninferable)
 
     def test_binop_different_types_reflected_and_normal_not_implemented(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class A(object):
             def __add__(self, other): return NotImplemented
         class B(object):
             def __radd__(self, other): return NotImplemented
         A() + B() #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertEqual(inferred, util.Uninferable)
 
     def test_binop_subtype(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class A(object): pass
         class B(A):
             def __add__(self, other): return other
         B() + A() #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "A")
 
     def test_binop_subtype_implemented_in_parent(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class A(object):
             def __add__(self, other): return other
         class B(A): pass
         B() + A() #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "A")
 
     def test_binop_subtype_not_implemented(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class A(object):
             pass
         class B(A):
             def __add__(self, other): return NotImplemented
         B() + A() #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertEqual(inferred, util.Uninferable)
 
     def test_binop_supertype(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class A(object):
             pass
         class B(A):
             def __radd__(self, other):
                  return other
         A() + B() #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "A")
 
     def test_binop_supertype_rop_not_implemented(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class A(object):
             def __add__(self, other):
                 return other
@@ -3174,29 +3091,25 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def __radd__(self, other):
                  return NotImplemented
         A() + B() #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "B")
 
     def test_binop_supertype_both_not_implemented(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class A(object):
             def __add__(self): return NotImplemented
         class B(A):
             def __radd__(self, other):
                  return NotImplemented
         A() + B() #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertEqual(inferred, util.Uninferable)
 
     def test_binop_inference_errors(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         from unknown import Unknown
         class A(object):
            def __add__(self, other): return NotImplemented
@@ -3206,14 +3119,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         Unknown + A() #@
         B() + A() #@
         A() + B() #@
-        """
-        )
+        """)
         for node in ast_nodes:
             self.assertEqual(next(node.infer()), util.Uninferable)
 
     def test_binop_ambiguity(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class A(object):
            def __add__(self, other):
                if isinstance(other, B):
@@ -3231,8 +3142,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         B() + A() #@
         A() + C() #@
         C() + A() #@
-        """
-        )
+        """)
         for node in ast_nodes:
             self.assertEqual(next(node.infer()), util.Uninferable)
 
@@ -3241,8 +3151,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
         Reported in https://github.com/pylint-dev/pylint/issues/4826.
         """
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class A:
             def __init__(self):
                 for a in [self] + []:
@@ -3252,8 +3161,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def __init__(self):
                 for b in [] + [self]:
                     print(b) #@
-        """
-        )
+        """)
         inferred_a = list(ast_nodes[0].args[0].infer())
         self.assertEqual(len(inferred_a), 1)
         self.assertIsInstance(inferred_a[0], Instance)
@@ -3265,8 +3173,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred_b[0]._proxied.name, "B")
 
     def test_metaclass__getitem__(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class Meta(type):
             def __getitem__(cls, arg):
                 return 24
@@ -3274,16 +3181,14 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
 
         A['Awesome'] #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 24)
 
     @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_with_metaclass__getitem__(self):
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class Meta(type):
             def __getitem__(cls, arg):
                 return 24
@@ -3292,15 +3197,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
 
         A['Awesome'] #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 24)
 
     def test_bin_op_classes(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class Meta(type):
             def __or__(self, other):
                 return 24
@@ -3308,16 +3211,14 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
 
         A | A
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 24)
 
     @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_bin_op_classes_with_metaclass(self):
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class Meta(type):
             def __or__(self, other):
                 return 24
@@ -3326,15 +3227,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
 
         A | A
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 24)
 
     def test_bin_op_supertype_more_complicated_example(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __init__(self):
                 self.foo = 42
@@ -3348,53 +3247,45 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             return NotImplemented
 
         A() + B() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(int(inferred.value), 45)
 
     def test_aug_op_same_type_not_implemented(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __iadd__(self, other): return NotImplemented
             def __add__(self, other): return NotImplemented
         A() + A() #@
-        """
-        )
+        """)
         self.assertEqual(next(ast_node.infer()), util.Uninferable)
 
     def test_aug_op_same_type_aug_implemented(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __iadd__(self, other): return other
         f = A()
         f += A() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "A")
 
     def test_aug_op_same_type_aug_not_implemented_normal_implemented(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __iadd__(self, other): return NotImplemented
             def __add__(self, other): return 42
         f = A()
         f += A() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
 
     def test_aug_op_subtype_both_not_implemented(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __iadd__(self, other): return NotImplemented
             def __add__(self, other): return NotImplemented
@@ -3402,83 +3293,71 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
         b = B()
         b+=A() #@
-        """
-        )
+        """)
         self.assertEqual(next(ast_node.infer()), util.Uninferable)
 
     def test_aug_op_subtype_aug_op_is_implemented(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __iadd__(self, other): return 42
         class B(A):
             pass
         b = B()
         b+=A() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
 
     def test_aug_op_subtype_normal_op_is_implemented(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __add__(self, other): return 42
         class B(A):
             pass
         b = B()
         b+=A() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
 
     def test_aug_different_types_no_method_implemented(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object): pass
         class B(object): pass
         f = A()
         f += B() #@
-        """
-        )
+        """)
         self.assertEqual(next(ast_node.infer()), util.Uninferable)
 
     def test_aug_different_types_augop_implemented(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __iadd__(self, other): return other
         class B(object): pass
         f = A()
         f += B() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "B")
 
     def test_aug_different_types_aug_not_implemented(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __iadd__(self, other): return NotImplemented
             def __add__(self, other): return other
         class B(object): pass
         f = A()
         f += B() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "B")
 
     def test_aug_different_types_aug_not_implemented_rop_fallback(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __iadd__(self, other): return NotImplemented
             def __add__(self, other): return NotImplemented
@@ -3486,26 +3365,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def __radd__(self, other): return other
         f = A()
         f += B() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "A")
 
     def test_augop_supertypes_none_implemented(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object): pass
         class B(object): pass
         a = A()
         a += B() #@
-        """
-        )
+        """)
         self.assertEqual(next(ast_node.infer()), util.Uninferable)
 
     def test_augop_supertypes_not_implemented_returned_for_all(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __iadd__(self, other): return NotImplemented
             def __add__(self, other): return NotImplemented
@@ -3513,42 +3388,36 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def __add__(self, other): return NotImplemented
         a = A()
         a += B() #@
-        """
-        )
+        """)
         self.assertEqual(next(ast_node.infer()), util.Uninferable)
 
     def test_augop_supertypes_augop_implemented(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __iadd__(self, other): return other
         class B(A): pass
         a = A()
         a += B() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "B")
 
     def test_augop_supertypes_reflected_binop_implemented(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __iadd__(self, other): return NotImplemented
         class B(A):
             def __radd__(self, other): return other
         a = A()
         a += B() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "A")
 
     def test_augop_supertypes_normal_binop_implemented(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __iadd__(self, other): return NotImplemented
             def __add__(self, other): return other
@@ -3557,8 +3426,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
         a = A()
         a += B() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "B")
@@ -3573,12 +3441,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(errors, [])
 
     def test_string_interpolation(self):
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         "a%d%d" % (1, 2) #@
         "a%(x)s" % {"x": 42} #@
-        """
-        )
+        """)
         expected = ["a12", "a42"]
         for node, expected_value in zip(ast_nodes, expected):
             inferred = next(node.infer())
@@ -3586,8 +3452,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertEqual(inferred.value, expected_value)
 
     def test_mul_list_supports__index__(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class Index(object):
             def __index__(self): return 2
         class NotIndex(object): pass
@@ -3597,8 +3462,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         a * Index() #@
         a * NotIndex() #@
         a * NotIndex2() #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.List)
@@ -3608,8 +3472,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertEqual(inferred, util.Uninferable)
 
     def test_subscript_supports__index__(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class Index(object):
             def __index__(self): return 2
         class LambdaIndex(object):
@@ -3622,8 +3485,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         a[Index()] #@
         a[LambdaIndex()] #@
         a[NonIndex()] #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.Const)
@@ -3634,8 +3496,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertRaises(InferenceError, next, ast_nodes[2].infer())
 
     def test_special_method_masquerading_as_another(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class Info(object):
             def __add__(self, other):
                 return "lala"
@@ -3643,46 +3504,40 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
         f = Info()
         f | Info() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, "lala")
 
     def test_unary_op_assignment(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object): pass
         def pos(self):
             return 42
         A.__pos__ = pos
         f = A()
         +f #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
 
     def test_unary_op_classes(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class Meta(type):
             def __invert__(self):
                 return 42
         class A(object, metaclass=Meta):
             pass
         ~A
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
 
     @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_unary_op_classes_with_metaclass(self):
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         import six
         class Meta(type):
             def __invert__(self):
@@ -3690,8 +3545,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         class A(six.with_metaclass(Meta)):
             pass
         ~A
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
@@ -3787,16 +3641,14 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertRaises(InferenceError, next, node.infer())
 
     def test_instance_slicing(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class A(object):
             def __getitem__(self, index):
                 return [1, 2, 3, 4, 5][index]
         A()[1:] #@
         A()[:2] #@
         A()[1:4] #@
-        """
-        )
+        """)
         expected_values = [[2, 3, 4, 5], [1, 2], [2, 3, 4]]
         for expected, node in zip(expected_values, ast_nodes):
             inferred = next(node.infer())
@@ -3804,42 +3656,36 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertEqual([elt.value for elt in inferred.elts], expected)
 
     def test_instance_slicing_slices(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             def __getitem__(self, index):
                 return index
         A()[1:] #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Slice)
         self.assertEqual(inferred.lower.value, 1)
         self.assertIsNone(inferred.upper)
 
     def test_instance_slicing_fails(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class A(object):
             def __getitem__(self, index):
                 return 1[index]
         A()[4:5] #@
         A()[2:] #@
-        """
-        )
+        """)
         for node in ast_nodes:
             self.assertEqual(next(node.infer()), util.Uninferable)
 
     def test_type__new__with_metaclass(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class Metaclass(type):
             pass
         class Entity(object):
              pass
         type.__new__(Metaclass, 'NewClass', (Entity,), {'a': 1}) #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
 
         self.assertIsInstance(inferred, nodes.ClassDef)
@@ -3855,90 +3701,76 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(attributes[0].value, 1)
 
     def test_type__new__not_enough_arguments(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         type.__new__(type, 'foo') #@
         type.__new__(type, 'foo', ()) #@
         type.__new__(type, 'foo', (), {}, ()) #@
-        """
-        )
+        """)
         for node in ast_nodes:
             with pytest.raises(InferenceError):
                 next(node.infer())
 
     def test_type__new__invalid_mcs_argument(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class Class(object): pass
         type.__new__(1, 2, 3, 4) #@
         type.__new__(Class, 2, 3, 4) #@
-        """
-        )
+        """)
         for node in ast_nodes:
             with pytest.raises(InferenceError):
                 next(node.infer())
 
     def test_type__new__invalid_name(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class Class(type): pass
         type.__new__(Class, object, 1, 2) #@
         type.__new__(Class, 1, 1, 2) #@
         type.__new__(Class, [], 1, 2) #@
-        """
-        )
+        """)
         for node in ast_nodes:
             with pytest.raises(InferenceError):
                 next(node.infer())
 
     def test_type__new__invalid_bases(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         type.__new__(type, 'a', 1, 2) #@
         type.__new__(type, 'a', [], 2) #@
         type.__new__(type, 'a', {}, 2) #@
         type.__new__(type, 'a', (1, ), 2) #@
         type.__new__(type, 'a', (object, 1), 2) #@
-        """
-        )
+        """)
         for node in ast_nodes:
             with pytest.raises(InferenceError):
                 next(node.infer())
 
     def test_type__new__invalid_attrs(self) -> None:
-        type_error_nodes = extract_node(
-            """
+        type_error_nodes = extract_node("""
         type.__new__(type, 'a', (), ()) #@
         type.__new__(type, 'a', (), object) #@
         type.__new__(type, 'a', (), 1) #@
-        """
-        )
+        """)
         for node in type_error_nodes:
             with pytest.raises(InferenceError):
                 next(node.infer())
 
         # Ignore invalid keys
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
             type.__new__(type, 'a', (), {object: 1}) #@
             type.__new__(type, 'a', (), {1:2, "a":5}) #@
-        """
-        )
+        """)
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef)
 
     def test_type__new__metaclass_lookup(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class Metaclass(type):
             def test(cls): pass
             @classmethod
             def test1(cls): pass
             attr = 42
         type.__new__(Metaclass, 'A', (), {}) #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         test = inferred.getattr("test")
@@ -3957,15 +3789,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(attr[0].value, 42)
 
     def test_type__new__metaclass_and_ancestors_lookup(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class Book(object):
              title = 'Ubik'
         class MetaBook(type):
              title = 'Grimus'
         type.__new__(MetaBook, 'book', (Book, ), {'title':'Catch 22'}) #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         titles = [
@@ -3988,12 +3818,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         assert not isinstance(inferred2, nodes.Const)
         assert inferred2._proxied is inferred._proxied
 
-        ast_node3 = extract_node(
-            """
+        ast_node3 = extract_node("""
         x = 43
         int.__new__(int, x)  #@
-        """
-        )
+        """)
         inferred3 = next(ast_node3.infer())
         assert isinstance(inferred3, nodes.Const)
         assert inferred3.value == 43
@@ -4002,17 +3830,14 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         with pytest.raises(InferenceError):
             next(ast_node4.infer())
 
-        ast_node5 = extract_node(
-            """
+        ast_node5 = extract_node("""
         class A:  pass
         A.__new__(A())  #@
-        """
-        )
+        """)
         with pytest.raises(InferenceError):
             next(ast_node5.infer())
 
-        ast_nodes6 = extract_node(
-            """
+        ast_nodes6 = extract_node("""
         class A:  pass
         class B(A):  pass
         class C: pass
@@ -4021,8 +3846,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         B.__new__(A)  #@
         B.__new__(B)  #@
         C.__new__(A)  #@
-        """
-        )
+        """)
         instance_A1 = next(ast_nodes6[0].infer())
         assert instance_A1._proxied.name == "A"
         instance_B1 = next(ast_nodes6[1].infer())
@@ -4034,8 +3858,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         instance_A3 = next(ast_nodes6[4].infer())
         assert instance_A3._proxied.name == "A"
 
-        ast_nodes7 = extract_node(
-            """
+        ast_nodes7 = extract_node("""
         import enum
         class A(enum.EnumMeta): pass
         class B(enum.EnumMeta):
@@ -4046,8 +3869,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 return super().__new__(A, "str", (enum.Enum,), enum._EnumDict(), **kwargs)
         B("")  #@
         C()  #@
-        """
-        )
+        """)
         instance_B = next(ast_nodes7[0].infer())
         assert instance_B._proxied.name == "B"
         instance_C = next(ast_nodes7[1].infer())
@@ -4059,8 +3881,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     def test_function_metaclasses(self):
         # These are not supported right now, although
         # they will be in the future.
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class BookMeta(type):
             author = 'Rushdie'
 
@@ -4070,8 +3891,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         class Book(object, metaclass=metaclass_function):
             pass
         Book #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         metaclass = inferred.metaclass()
         self.assertIsInstance(metaclass, nodes.ClassDef)
@@ -4082,8 +3902,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_subscript_inference_error(self) -> None:
         # Used to raise StopIteration
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class AttributeDict(dict):
             def __getitem__(self, name):
                 return self
@@ -4091,13 +3910,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         flow['app'] = AttributeDict()
         flow['app']['config'] = AttributeDict()
         flow['app']['config']['doffing'] = AttributeDict() #@
-        """
-        )
+        """)
         self.assertIsInstance(util.safe_infer(ast_node.targets[0]), Instance)
 
     def test_classmethod_inferred_by_context(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class Super(object):
            def instance(cls):
               return cls()
@@ -4110,15 +3927,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         # should see the Sub.instance() is returning a Sub
         # instance, not a Super instance
         Sub.instance().method() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "Sub")
 
     def test_infer_call_result_invalid_dunder_call_on_instance(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class A:
             __call__ = 42
         class B:
@@ -4128,20 +3943,17 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         A() #@
         B() #@
         C() #@
-        """
-        )
+        """)
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertRaises(InferenceError, next, inferred.infer_call_result(node))
 
     def test_infer_call_result_same_proxied_class(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class A:
             __call__ = A()
         A() #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         fully_evaluated_inference_results = list(inferred.infer_call_result(node))
         assert fully_evaluated_inference_results[0].name == "A"
@@ -4152,8 +3964,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
 
     def test_context_call_for_context_managers(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class A:
             def __enter__(self):
                 return self
@@ -4170,8 +3981,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             b #@
         with C() as c:
             c #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first_a = next(ast_nodes[0].infer())
         self.assertIsInstance(first_a, Instance)
@@ -4184,8 +3994,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(third_c.name, "A")
 
     def test_metaclass_subclasses_arguments_are_classes_not_instances(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(type):
             def test(cls):
                 return cls
@@ -4193,16 +4002,14 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
 
         B.test() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "B")
 
     @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_with_metaclass_subclasses_arguments_are_classes_not_instances(self):
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(type):
             def test(cls):
                 return cls
@@ -4211,16 +4018,14 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
 
         B.test() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "B")
 
     @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_with_metaclass_with_partial_imported_name(self):
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(type):
             def test(cls):
                 return cls
@@ -4229,23 +4034,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
 
         B.test() #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "B")
 
     def test_infer_cls_in_class_methods(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class A(type):
             def __call__(cls):
                 cls #@
         class B(object):
             def __call__(cls):
                 cls #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.ClassDef)
@@ -4254,29 +4056,25 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     @pytest.mark.xfail(reason="Metaclass arguments not inferred as classes")
     def test_metaclass_arguments_are_classes_not_instances(self):
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(type):
             def test(cls): return cls
         A.test() #@
-        """
-        )
+        """)
         # This is not supported yet
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "A")
 
     def test_metaclass_with_keyword_args(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class TestMetaKlass(type):
             def __new__(mcs, name, bases, ns, kwo_arg):
                 return super().__new__(mcs, name, bases, ns)
 
         class TestKlass(metaclass=TestMetaKlass, kwo_arg=42): #@
             pass
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
 
@@ -4286,9 +4084,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
         See https://github.com/pylint-dev/pylint/issues/2159
         """
-        val = (
-            extract_node(
-                """
+        val = extract_node("""
         class _Meta(type):
             def __call__(cls):
                 return 1
@@ -4297,45 +4093,36 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 return 5.5
 
         Clazz() #@
-        """
-            )
-            .inferred()[0]
-            .value
-        )
+        """).inferred()[0].value
         assert val == 1
 
     def test_metaclass_custom_dunder_call_boundnode(self) -> None:
         """The boundnode should be the calling class."""
-        cls = extract_node(
-            """
+        cls = extract_node("""
         class _Meta(type):
             def __call__(cls):
                 return cls
         class Clazz(metaclass=_Meta):
             pass
         Clazz() #@
-        """
-        ).inferred()[0]
+        """).inferred()[0]
         assert isinstance(cls, Instance) and cls.name == "Clazz"
 
     def test_infer_subclass_attr_outer_class(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class Outer:
             data = 123
 
         class Test(Outer):
             pass
         Test.data
-        """
-        )
+        """)
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == 123
 
     def test_infer_subclass_attr_inner_class_works_indirectly(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class Outer:
             class Inner:
                 data = 123
@@ -4344,15 +4131,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         class Test(Inner):
             pass
         Test.data
-        """
-        )
+        """)
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == 123
 
     def test_infer_subclass_attr_inner_class(self) -> None:
-        clsdef_node, attr_node = extract_node(
-            """
+        clsdef_node, attr_node = extract_node("""
         class Outer:
             class Inner:
                 data = 123
@@ -4361,8 +4146,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
         Test  #@
         Test.data  #@
-            """
-        )
+            """)
         clsdef = next(clsdef_node.infer())
         assert isinstance(clsdef, nodes.ClassDef)
         inferred = next(clsdef.igetattr("data"))
@@ -4379,22 +4163,19 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_infer_method_empty_body(self) -> None:
         # https://github.com/PyCQA/astroid/issues/1015
-        node = extract_node(
-            """
+        node = extract_node("""
             class A:
                 def foo(self): ...
 
             A().foo()  #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value is None
 
     def test_infer_method_overload(self) -> None:
         # https://github.com/PyCQA/astroid/issues/1015
-        node = extract_node(
-            """
+        node = extract_node("""
             class A:
                 def foo(self): ...
 
@@ -4402,15 +4183,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                     yield
 
             A().foo()  #@
-        """
-        )
+        """)
         inferred = list(node.infer())
         assert len(inferred) == 1
         assert isinstance(inferred[0], Generator)
 
     def test_infer_function_under_if(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         if 1 in [1]:
             def func():
                 return 42
@@ -4419,14 +4198,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 return False
 
         func()  #@
-        """
-        )
+        """)
         inferred = list(node.inferred())
         assert [const.value for const in inferred] == [42, False]
 
     def test_infer_property_setter(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class PropertyWithSetter:
             @property
             def host(self):
@@ -4437,43 +4214,37 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 self._host = value
 
         PropertyWithSetter().host #@
-        """
-        )
+        """)
         assert not isinstance(next(node.infer()), Instance)
 
     def test_delayed_attributes_without_slots(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class A(object):
             __slots__ = ('a', )
         a = A()
         a.teta = 24
         a.a = 24
         a #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         with self.assertRaises(NotFoundError):
             inferred.getattr("teta")
         inferred.getattr("a")
 
     def test_lambda_as_methods(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class X:
            m = lambda self, arg: self.z + arg
            z = 24
 
         X().m(4) #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 28)
 
     def test_inner_value_redefined_by_subclass(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class X(object):
             M = lambda self, arg: "a"
             x = 24
@@ -4485,15 +4256,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             M = lambda self, arg: arg + 1
             def blurb(self):
                 self.m #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 25)
 
     def test_inner_value_redefined_by_subclass_with_mro(self) -> None:
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         class X(object):
             M = lambda self, arg: arg + 1
             x = 24
@@ -4508,8 +4277,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             M = lambda self, arg: arg + 1
             def blurb(self):
                 self.m #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == 26
@@ -4517,80 +4285,67 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     def test_getitem_of_class_raised_type_error(self) -> None:
         # Test that we wrap an AttributeInferenceError
         # and reraise it as a TypeError in Class.getitem
-        node = extract_node(
-            """
+        node = extract_node("""
         def test(): ...
         test()
-        """
-        )
+        """)
         inferred = next(node.infer())
         with self.assertRaises(AstroidTypeError):
             inferred.getitem(nodes.Const("4"))
 
     def test_infer_arg_called_type_is_uninferable(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         def func(type):
             type #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         assert inferred is util.Uninferable
 
     def test_infer_arg_called_object_when_used_as_index_is_uninferable(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         def func(object):
             ['list'][
                 object #@
             ]
-        """
-        )
+        """)
         inferred = next(node.infer())
         assert inferred is util.Uninferable
 
     def test_infer_arg_called_type_when_used_as_index_is_uninferable(self):
         # https://github.com/pylint-dev/astroid/pull/958
-        node = extract_node(
-            """
+        node = extract_node("""
         def func(type):
             ['list'][
                 type #@
             ]
-        """
-        )
+        """)
         inferred = next(node.infer())
         assert not isinstance(inferred, nodes.ClassDef)  # was inferred as builtins.type
         assert inferred is util.Uninferable
 
     def test_infer_arg_called_type_when_used_as_subscript_is_uninferable(self):
         # https://github.com/pylint-dev/astroid/pull/958
-        node = extract_node(
-            """
+        node = extract_node("""
         def func(type):
             type[0] #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         assert not isinstance(inferred, nodes.ClassDef)  # was inferred as builtins.type
         assert inferred is util.Uninferable
 
     def test_infer_arg_called_type_defined_in_outer_scope_is_uninferable(self):
         # https://github.com/pylint-dev/astroid/pull/958
-        node = extract_node(
-            """
+        node = extract_node("""
         def outer(type):
             def inner():
                 type[0] #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         assert not isinstance(inferred, nodes.ClassDef)  # was inferred as builtins.type
         assert inferred is util.Uninferable
 
     def test_infer_subclass_attr_instance_attr_indirect(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class Parent:
             def __init__(self):
                 self.data = 123
@@ -4599,8 +4354,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
         t = Test()
         t
-        """
-        )
+        """)
         inferred = next(node.infer())
         assert isinstance(inferred, Instance)
         const = next(inferred.igetattr("data"))
@@ -4608,8 +4362,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         assert const.value == 123
 
     def test_infer_subclass_attr_instance_attr(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class Parent:
             def __init__(self):
                 self.data = 123
@@ -4618,8 +4371,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             pass
         t = Test()
         t.data
-        """
-        )
+        """)
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == 123
@@ -4632,8 +4384,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
 class GetattrTest(unittest.TestCase):
     def test_yes_when_unknown(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         from missing import Missing
         getattr(1, Unknown) #@
         getattr(Unknown, 'a') #@
@@ -4644,8 +4395,7 @@ class GetattrTest(unittest.TestCase):
         getattr(Missing, Missing) #@
         getattr('a', Missing) #@
         getattr('a', Missing, Missing) #@
-        """
-        )
+        """)
         for node in ast_nodes[:4]:
             self.assertRaises(InferenceError, next, node.infer())
 
@@ -4654,36 +4404,30 @@ class GetattrTest(unittest.TestCase):
             self.assertEqual(inferred, util.Uninferable, node)
 
     def test_attrname_not_string(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         getattr(1, 1) #@
         c = int
         getattr(1, c) #@
-        """
-        )
+        """)
         for node in ast_nodes:
             self.assertRaises(InferenceError, next, node.infer())
 
     def test_attribute_missing(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         getattr(1, 'ala') #@
         getattr(int, 'ala') #@
         getattr(float, 'bala') #@
         getattr({}, 'portocala') #@
-        """
-        )
+        """)
         for node in ast_nodes:
             self.assertRaises(InferenceError, next, node.infer())
 
     def test_default(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         getattr(1, 'ala', None) #@
         getattr(int, 'bala', int) #@
         getattr(int, 'bala', getattr(int, 'portocala', None)) #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.Const)
@@ -4698,8 +4442,7 @@ class GetattrTest(unittest.TestCase):
         self.assertIsNone(third.value)
 
     def test_lookup(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class A(object):
             def test(self): pass
         class B(A):
@@ -4716,8 +4459,7 @@ class GetattrTest(unittest.TestCase):
         class X(object):
             def test(self):
                 getattr(self, 'test') #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, BoundMethod)
@@ -4744,48 +4486,41 @@ class GetattrTest(unittest.TestCase):
         self.assertEqual(fifth.bound.name, "X")
 
     def test_lambda(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         getattr(lambda x: x, 'f') #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertEqual(inferred, util.Uninferable)
 
 
 class HasattrTest(unittest.TestCase):
     def test_inference_errors(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         from missing import Missing
 
         hasattr(Unknown, 'ala') #@
 
         hasattr(Missing, 'bala') #@
         hasattr('portocala', Missing) #@
-        """
-        )
+        """)
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertEqual(inferred, util.Uninferable)
 
     def test_attribute_is_missing(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class A: pass
         hasattr(int, 'ala') #@
         hasattr({}, 'bala') #@
         hasattr(A(), 'portocala') #@
-        """
-        )
+        """)
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.Const)
             self.assertFalse(inferred.value)
 
     def test_attribute_is_not_missing(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class A(object):
             def test(self): pass
         class B(A):
@@ -4802,19 +4537,16 @@ class HasattrTest(unittest.TestCase):
         class X(object):
             def test(self):
                 hasattr(self, 'test') #@
-        """
-        )
+        """)
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.Const)
             self.assertTrue(inferred.value)
 
     def test_lambda(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         hasattr(lambda x: x, 'f') #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertIs(inferred.value, False)
@@ -4845,26 +4577,22 @@ class BoolOpTest(unittest.TestCase):
             self.assertEqual(inferred.value, expected_value)
 
     def test_yes_when_unknown(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         from unknown import unknown, any, not_any
         0 and unknown #@
         unknown or 0 #@
         any or not_any and unknown #@
-        """
-        )
+        """)
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertEqual(inferred, util.Uninferable)
 
     def test_other_nodes(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         def test(): pass
         test and 0 #@
         1 and test #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         first = next(ast_nodes[0].infer())
         self.assertEqual(first.value, 0)
@@ -4902,8 +4630,7 @@ class TestCallable(unittest.TestCase):
             self.assertEqual(inferred.value, expected_value)
 
     def test_callable_methods(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class C:
             def test(self): pass
             @staticmethod
@@ -4929,34 +4656,29 @@ class TestCallable(unittest.TestCase):
         property #@
         D #@
         D() #@
-        """
-        )
+        """)
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertTrue(inferred)
 
     def test_inference_errors(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         from unknown import unknown
         callable(unknown) #@
         def test():
             return unknown
         callable(test()) #@
-        """
-        )
+        """)
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertEqual(inferred, util.Uninferable)
 
     def test_not_callable(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         callable("") #@
         callable(1) #@
         callable(True) #@
-        """
-        )
+        """)
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertFalse(inferred.value)
@@ -4985,8 +4707,7 @@ class TestBool(unittest.TestCase):
                 self.assertEqual(inferred.value, expected)
 
     def test_bool_bool_special_method(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class FalseClass:
            def __bool__(self):
                return False
@@ -5013,38 +4734,33 @@ class TestBool(unittest.TestCase):
         bool(B()) #@
         bool(LambdaBoolFalse()) #@
         bool(FalseBoolLen()) #@
-        """
-        )
+        """)
         expected = [True, True, False, True, False, False, False]
         for node, expected_value in zip(ast_nodes, expected):
             inferred = next(node.infer())
             self.assertEqual(inferred.value, expected_value)
 
     def test_bool_instance_not_callable(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         class BoolInvalid(object):
            __bool__ = 42
         class LenInvalid(object):
            __len__ = "a"
         bool(BoolInvalid()) #@
         bool(LenInvalid()) #@
-        """
-        )
+        """)
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertEqual(inferred, util.Uninferable)
 
     def test_class_subscript(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class Foo:
             def __class_getitem__(cls, *args, **kwargs):
                 return cls
 
         Foo[int]
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "Foo")
@@ -5119,8 +4835,7 @@ class ArgumentsTest(unittest.TestCase):
             (3,),
             (42,),
         ]
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         def func(*args):
             return args
         func() #@
@@ -5146,8 +4861,7 @@ class ArgumentsTest(unittest.TestCase):
         func(1, 2) #@
         func(1, 2, 3) #@
         func(1, 2, *(42, )) #@
-        """
-        )
+        """)
         for node, expected_value in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.Tuple)
@@ -5155,14 +4869,12 @@ class ArgumentsTest(unittest.TestCase):
 
     def test_multiple_starred_args(self) -> None:
         expected_values = [(1, 2, 3), (1, 4, 2, 3, 5, 6, 7)]
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         def func(a, b, *args):
             return args
         func(1, 2, *(1, ), *(2, 3)) #@
         func(1, 2, *(1, ), 4, *(2, 3), 5, *(6, 7)) #@
-        """
-        )
+        """)
         for node, expected_value in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.Tuple)
@@ -5170,16 +4882,14 @@ class ArgumentsTest(unittest.TestCase):
 
     def test_defaults(self) -> None:
         expected_values = [42, 3, 41, 42]
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         def func(a, b, c=42, *args):
             return c
         func(1, 2) #@
         func(1, 2, 3) #@
         func(1, 2, c=41) #@
         func(1, 2, 42, 41) #@
-        """
-        )
+        """)
         for node, expected_value in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.Const)
@@ -5187,8 +4897,7 @@ class ArgumentsTest(unittest.TestCase):
 
     def test_kwonly_args(self) -> None:
         expected_values = [24, 24, 42, 23, 24, 24, 54]
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         def test(*, f, b): return f
         test(f=24, b=33) #@
         def test(a, *, f): return f
@@ -5201,8 +4910,7 @@ class ArgumentsTest(unittest.TestCase):
         test(1, 2, 3) #@
         test(1, 2, 3, 4) #@
         test(1, 2, 3, 4, 5, f=54) #@
-        """
-        )
+        """)
         for node, expected_value in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.Const)
@@ -5210,15 +4918,13 @@ class ArgumentsTest(unittest.TestCase):
 
     def test_kwargs(self) -> None:
         expected = [[("a", 1), ("b", 2), ("c", 3)], [("a", 1)], [("a", "b")]]
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         def test(**kwargs):
              return kwargs
         test(a=1, b=2, c=3) #@
         test(a=1) #@
         test(**{'a': 'b'}) #@
-        """
-        )
+        """)
         for node, expected_value in zip(ast_nodes, expected):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.Dict)
@@ -5226,16 +4932,14 @@ class ArgumentsTest(unittest.TestCase):
             self.assertEqual(value, expected_value)
 
     def test_kwargs_and_other_named_parameters(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         def test(a=42, b=24, **kwargs):
             return kwargs
         test(42, 24, c=3, d=4) #@
         test(49, b=24, d=4) #@
         test(a=42, b=33, c=3, d=42) #@
         test(a=42, **{'c':42}) #@
-        """
-        )
+        """)
         expected_values = [
             [("c", 3), ("d", 4)],
             [("d", 4)],
@@ -5250,8 +4954,7 @@ class ArgumentsTest(unittest.TestCase):
 
     def test_kwargs_access_by_name(self) -> None:
         expected_values = [42, 42, 42, 24]
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         def test(**kwargs):
             return kwargs['f']
         test(f=42) #@
@@ -5260,8 +4963,7 @@ class ArgumentsTest(unittest.TestCase):
         def test(f=42, **kwargs):
             return kwargs['l']
         test(l=24) #@
-        """
-        )
+        """)
         for ast_node, value in zip(ast_nodes, expected_values):
             inferred = next(ast_node.infer())
             self.assertIsInstance(inferred, nodes.Const, inferred)
@@ -5269,36 +4971,31 @@ class ArgumentsTest(unittest.TestCase):
 
     def test_multiple_kwargs(self) -> None:
         expected_value = [("a", 1), ("b", 2), ("c", 3), ("d", 4), ("f", 42)]
-        ast_node = extract_node(
-            """
+        ast_node = extract_node("""
         def test(**kwargs):
              return kwargs
         test(a=1, b=2, **{'c': 3}, **{'d': 4}, f=42) #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Dict)
         value = self._get_dict_value(inferred)
         self.assertEqual(value, expected_value)
 
     def test_kwargs_are_overridden(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         def test(f):
              return f
         test(f=23, **{'f': 34}) #@
         def test(f=None):
              return f
         test(f=23, **{'f':23}) #@
-        """
-        )
+        """)
         for ast_node in ast_nodes:
             inferred = next(ast_node.infer())
             self.assertEqual(inferred, util.Uninferable)
 
     def test_fail_to_infer_args(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         def test(a, **kwargs): return a
         test(*missing) #@
         test(*object) #@
@@ -5322,16 +5019,14 @@ class ArgumentsTest(unittest.TestCase):
         test(*unknown) #@
         def test(*args): return args
         test(*unknown) #@
-        """
-        )
+        """)
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertEqual(inferred, util.Uninferable)
 
     def test_args_overwritten(self) -> None:
         # https://github.com/pylint-dev/astroid/issues/180
-        node = extract_node(
-            """
+        node = extract_node("""
         next = 42
         def wrapper(next=next):
              next = 24
@@ -5339,8 +5034,7 @@ class ArgumentsTest(unittest.TestCase):
                  return next
              return test
         wrapper()() #@
-        """
-        )
+        """)
         assert isinstance(node, nodes.NodeNG)
         inferred = node.inferred()
         self.assertEqual(len(inferred), 1)
@@ -5366,8 +5060,7 @@ class SliceTest(unittest.TestCase):
             self.assertEqual([elt.value for elt in inferred.elts], expected_value)
 
     def test_slice_inference_error(self) -> None:
-        ast_nodes = extract_node(
-            """
+        ast_nodes = extract_node("""
         from unknown import unknown
         [1, 2, 3][slice(None, unknown, unknown)] #@
         [1, 2, 3][slice(None, missing, missing)] #@
@@ -5377,8 +5070,7 @@ class SliceTest(unittest.TestCase):
         [1, 2, 3][slice(1, 2.0, 3.0)] #@
         [1, 2, 3][slice()] #@
         [1, 2, 3][slice(1, 2, 3, 4)] #@
-        """
-        )
+        """)
         for node in ast_nodes:
             self.assertRaises(InferenceError, next, node.infer())
 
@@ -5516,13 +5208,11 @@ class CallSiteTest(unittest.TestCase):
 
 class ObjectDunderNewTest(unittest.TestCase):
     def test_object_dunder_new_is_inferred_if_decorator(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         @object.__new__
         class instance(object):
             pass
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, Instance)
 
@@ -5591,8 +5281,7 @@ def test_augassign_recursion() -> None:
 
 
 def test_infer_custom_inherit_from_property() -> None:
-    node = extract_node(
-        """
+    node = extract_node("""
     class custom_property(property):
         pass
 
@@ -5602,20 +5291,17 @@ def test_infer_custom_inherit_from_property() -> None:
             return 1
 
     MyClass().my_prop
-    """
-    )
+    """)
     inferred = next(node.infer())
     assert isinstance(inferred, nodes.Const)
     assert inferred.value == 1
 
 
 def test_cannot_infer_call_result_for_builtin_methods() -> None:
-    node = extract_node(
-        """
+    node = extract_node("""
     a = "fast"
     a
-    """
-    )
+    """)
     inferred = next(node.infer())
     lenmeth = next(inferred.igetattr("__len__"))
     # Builtin dunder methods now return Uninferable instead of raising InferenceError
@@ -5624,13 +5310,11 @@ def test_cannot_infer_call_result_for_builtin_methods() -> None:
 
 
 def test_unpack_dicts_in_assignment() -> None:
-    ast_nodes = extract_node(
-        """
+    ast_nodes = extract_node("""
     a, b = {1:2, 2:3}
     a #@
     b #@
-    """
-    )
+    """)
     assert isinstance(ast_nodes, list)
     first_inferred = next(ast_nodes[0].infer())
     second_inferred = next(ast_nodes[1].infer())
@@ -5641,40 +5325,33 @@ def test_unpack_dicts_in_assignment() -> None:
 
 
 def test_slice_inference_in_for_loops() -> None:
-    node = extract_node(
-        """
+    node = extract_node("""
     for a, (c, *b) in [(1, (2, 3, 4)), (4, (5, 6))]:
        b #@
-    """
-    )
+    """)
     inferred = next(node.infer())
     assert isinstance(inferred, nodes.List)
     assert inferred.as_string() == "[3, 4]"
 
-    node = extract_node(
-        """
+    node = extract_node("""
     for a, *b in [(1, 2, 3, 4)]:
        b #@
-    """
-    )
+    """)
     inferred = next(node.infer())
     assert isinstance(inferred, nodes.List)
     assert inferred.as_string() == "[2, 3, 4]"
 
-    node = extract_node(
-        """
+    node = extract_node("""
     for a, *b in [(1,)]:
        b #@
-    """
-    )
+    """)
     inferred = next(node.infer())
     assert isinstance(inferred, nodes.List)
     assert inferred.as_string() == "[]"
 
 
 def test_slice_inference_in_for_loops_not_working() -> None:
-    ast_nodes = extract_node(
-        """
+    ast_nodes = extract_node("""
     from unknown import Unknown
     for a, *b in something:
         b #@
@@ -5682,8 +5359,7 @@ def test_slice_inference_in_for_loops_not_working() -> None:
         b #@
     for a, *b in (1):
         b #@
-    """
-    )
+    """)
     for node in ast_nodes:
         inferred = next(node.infer())
         assert inferred == util.Uninferable
@@ -5700,34 +5376,28 @@ def test_slice_zero_step_on_str_does_not_raise_ValueError() -> None:
 
 
 def test_unpacking_starred_and_dicts_in_assignment() -> None:
-    node = extract_node(
-        """
+    node = extract_node("""
     a, *b = {1:2, 2:3, 3:4}
     b
-    """
-    )
+    """)
     inferred = next(node.infer())
     assert isinstance(inferred, nodes.List)
     assert inferred.as_string() == "[2, 3]"
 
-    node = extract_node(
-        """
+    node = extract_node("""
     a, *b = {1:2}
     b
-    """
-    )
+    """)
     inferred = next(node.infer())
     assert isinstance(inferred, nodes.List)
     assert inferred.as_string() == "[]"
 
 
 def test_unpacking_starred_empty_list_in_assignment() -> None:
-    node = extract_node(
-        """
+    node = extract_node("""
     a, *b, c = [1, 2]
     b #@
-    """
-    )
+    """)
     inferred = next(node.infer())
     assert isinstance(inferred, nodes.List)
     assert inferred.as_string() == "[]"
@@ -5778,8 +5448,7 @@ def test_call_on_instance_with_inherited_dunder_call_method() -> None:
 
     See https://github.com/pylint-dev/pylint/issues/2199
     """
-    node = extract_node(
-        """
+    node = extract_node("""
     class Base:
         def __call__(self):
             return self
@@ -5789,8 +5458,7 @@ def test_call_on_instance_with_inherited_dunder_call_method() -> None:
     obj = Sub()
     val = obj()
     val #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     [val] = node.inferred()
     assert isinstance(val, Instance)
@@ -5804,8 +5472,7 @@ class TestInferencePropagation:
 
     @pytest.mark.xfail(reason="Relying on path copy")
     def test_call_context_propagation(self):
-        n = extract_node(
-            """
+        n = extract_node("""
         def chest(a):
             return a * a
         def best(a, b):
@@ -5813,8 +5480,7 @@ class TestInferencePropagation:
         def test(a, b, c):
             return best(a, b)
         test(4, 5, 6) #@
-        """
-        )
+        """)
         assert next(n.infer()).as_string() == "16"
 
     def test_call_starargs_propagation(self) -> None:
@@ -6138,8 +5804,7 @@ def test_attribute_inference_should_not_access_base_classes() -> None:
 
 def test_attribute_mro_object_inference() -> None:
     """Inference should only infer results from the first available method."""
-    inferred = extract_node(
-        """
+    inferred = extract_node("""
     class A:
         def foo(self):
             return 1
@@ -6147,30 +5812,24 @@ def test_attribute_mro_object_inference() -> None:
         def foo(self):
             return 2
     B().foo() #@
-    """
-    ).inferred()
+    """).inferred()
     assert len(inferred) == 1
     assert inferred[0].value == 2
 
 
 def test_inferred_sequence_unpacking_works() -> None:
-    inferred = next(
-        extract_node(
-            """
+    inferred = next(extract_node("""
     def test(*args):
         return (1, *args)
     test(2) #@
-    """
-        ).infer()
-    )
+    """).infer())
     assert isinstance(inferred, nodes.Tuple)
     assert len(inferred.elts) == 2
     assert [value.value for value in inferred.elts] == [1, 2]
 
 
 def test_recursion_error_inferring_slice() -> None:
-    node = extract_node(
-        """
+    node = extract_node("""
     class MyClass:
         def __init__(self):
             self._slice = slice(0, 10)
@@ -6180,15 +5839,13 @@ def test_recursion_error_inferring_slice() -> None:
 
         def test(self):
             self._slice #@
-    """
-    )
+    """)
     inferred = next(node.infer())
     assert isinstance(inferred, nodes.Slice)
 
 
 def test_exception_lookup_last_except_handler_wins() -> None:
-    node = extract_node(
-        """
+    node = extract_node("""
     try:
         1/0
     except ValueError as exc:
@@ -6197,8 +5854,7 @@ def test_exception_lookup_last_except_handler_wins() -> None:
         1/0
     except OSError as exc:
         exc #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -6207,16 +5863,14 @@ def test_exception_lookup_last_except_handler_wins() -> None:
     assert inferred_exc.name == "OSError"
 
     # Two except handlers on the same Try work the same as separate
-    node = extract_node(
-        """
+    node = extract_node("""
     try:
         1/0
     except ZeroDivisionError as exc:
         pass
     except ValueError as exc:
         exc #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -6226,8 +5880,7 @@ def test_exception_lookup_last_except_handler_wins() -> None:
 
 
 def test_exception_lookup_name_bound_in_except_handler() -> None:
-    node = extract_node(
-        """
+    node = extract_node("""
     try:
         1/0
     except ValueError:
@@ -6237,8 +5890,7 @@ def test_exception_lookup_name_bound_in_except_handler() -> None:
     except OSError:
         name = 2
         name #@
-    """
-    )
+    """)
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -6248,11 +5900,9 @@ def test_exception_lookup_name_bound_in_except_handler() -> None:
 
 
 def test_builtin_inference_list_of_exceptions() -> None:
-    node = extract_node(
-        """
+    node = extract_node("""
     tuple([ValueError, TypeError])
-    """
-    )
+    """)
     inferred = next(node.infer())
     assert isinstance(inferred, nodes.Tuple)
     assert len(inferred.elts) == 2
@@ -6278,23 +5928,19 @@ def test_builtin_inference_list_of_exceptions() -> None:
 
 
 def test_cannot_getattr_ann_assigns() -> None:
-    node = extract_node(
-        """
+    node = extract_node("""
     class Cls:
         ann: int
-    """
-    )
+    """)
     inferred = next(node.infer())
     with pytest.raises(AttributeInferenceError):
         inferred.getattr("ann")
 
     # But if it had a value, then it would be okay.
-    node = extract_node(
-        """
+    node = extract_node("""
     class Cls:
         ann: int = 0
-    """
-    )
+    """)
     inferred = next(node.infer())
     values = inferred.getattr("ann")
     assert len(values) == 1
@@ -6742,13 +6388,11 @@ def test_property_as_string() -> None:
     node = extract_node(code)
     inferred = next(node.infer())
     assert isinstance(inferred, objects.Property)
-    property_body = textwrap.dedent(
-        """
+    property_body = textwrap.dedent("""
     @property
     def test(self):
         return 42
-    """
-    )
+    """)
     assert inferred.as_string().strip() == property_body.strip()
 
 
@@ -6795,16 +6439,14 @@ def test_property_docstring() -> None:
 
 
 def test_recursion_error_inferring_builtin_containers() -> None:
-    node = extract_node(
-        """
+    node = extract_node("""
     class Foo:
         a = "foo"
     inst = Foo()
 
     b = tuple([inst.a]) #@
     inst.a = b
-    """
-    )
+    """)
     util.safe_infer(node.targets[0])
 
 
@@ -7244,12 +6886,10 @@ def test_imported_module_var_inferable() -> None:
     operators.
     """
     mod1 = parse(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
     from top1.mod import v as z
     w = [1] + z
-    """
-        ),
+    """),
         module_name="top1",
     )
     parse("v = [2]", module_name="top1.mod")
@@ -7262,12 +6902,10 @@ def test_imported_module_var_inferable() -> None:
 def test_imported_module_var_inferable2() -> None:
     """Version list of strings."""
     mod2 = parse(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
     from top2.mod import v as z
     w = ['1'] + z
-    """
-        ),
+    """),
         module_name="top2",
     )
     parse("v = ['2']", module_name="top2.mod")
@@ -7280,12 +6918,10 @@ def test_imported_module_var_inferable2() -> None:
 def test_imported_module_var_inferable3() -> None:
     """Version list of strings with a __dunder__ name."""
     mod3 = parse(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
     from top3.mod import __dunder_var__ as v
     __dunder_var__ = ['w'] + v
-    """
-        ),
+    """),
         module_name="top",
     )
     parse("__dunder_var__ = ['v']", module_name="top3.mod")
@@ -7465,14 +7101,10 @@ class TestOldStyleStringFormatting:
 
 def test_sys_argv_uninferable() -> None:
     """Regression test for https://github.com/pylint-dev/pylint/issues/7710."""
-    a: nodes.List = extract_node(
-        textwrap.dedent(
-            """
+    a: nodes.List = extract_node(textwrap.dedent("""
     import sys
 
-    sys.argv"""
-        )
-    )
+    sys.argv"""))
     sys_argv_value = list(a._infer())
     assert len(sys_argv_value) == 1
     assert sys_argv_value[0] is Uninferable
