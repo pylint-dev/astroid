@@ -21,13 +21,11 @@ class BrainNumpyCoreFromNumericTest(unittest.TestCase):
     numpy_functions = (("sum", "[1, 2]"),)
 
     def _inferred_numpy_func_call(self, func_name, *func_args):
-        node = builder.extract_node(
-            f"""
+        node = builder.extract_node(f"""
         import numpy as np
         func = np.{func_name:s}
         func({','.join(func_args):s})
-        """
-        )
+        """)
         return node.infer()
 
     def test_numpy_function_calls_inferred_as_ndarray(self):

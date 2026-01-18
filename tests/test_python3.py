@@ -26,12 +26,10 @@ class Python3TC(unittest.TestCase):
         self.assertTrue(isinstance(node.assign_type(), nodes.Assign))
 
     def test_yield_from(self) -> None:
-        body = dedent(
-            """
+        body = dedent("""
         def func():
             yield from iter([1, 2])
-        """
-        )
+        """)
         astroid = self.builder.string_build(body)
         func = astroid.body[0]
         self.assertIsInstance(func, nodes.FunctionDef)
@@ -42,25 +40,21 @@ class Python3TC(unittest.TestCase):
         self.assertEqual(yieldfrom_stmt.as_string(), "yield from iter([1, 2])")
 
     def test_yield_from_is_generator(self) -> None:
-        body = dedent(
-            """
+        body = dedent("""
         def func():
             yield from iter([1, 2])
-        """
-        )
+        """)
         astroid = self.builder.string_build(body)
         func = astroid.body[0]
         self.assertIsInstance(func, nodes.FunctionDef)
         self.assertTrue(func.is_generator())
 
     def test_yield_from_as_string(self) -> None:
-        body = dedent(
-            """
+        body = dedent("""
         def func():
             yield from iter([1, 2])
             value = yield from other()
-        """
-        )
+        """)
         astroid = self.builder.string_build(body)
         func = astroid.body[0]
         self.assertEqual(func.as_string().strip(), body.strip())
@@ -81,13 +75,9 @@ class Python3TC(unittest.TestCase):
         self.assertFalse(klass.metaclass())
 
     def test_metaclass_imported(self) -> None:
-        astroid = self.builder.string_build(
-            dedent(
-                """
+        astroid = self.builder.string_build(dedent("""
         from abc import ABCMeta
-        class Test(metaclass=ABCMeta): pass"""
-            )
-        )
+        class Test(metaclass=ABCMeta): pass"""))
         klass = astroid.body[1]
 
         metaclass = klass.metaclass()
@@ -105,11 +95,9 @@ class Python3TC(unittest.TestCase):
         self.assertEqual(metaclass.name, "type")
 
     def test_as_string(self) -> None:
-        body = dedent(
-            """
+        body = dedent("""
         from abc import ABCMeta
-        class Test(metaclass=ABCMeta): pass"""
-        )
+        class Test(metaclass=ABCMeta): pass""")
         astroid = self.builder.string_build(body)
         klass = astroid.body[1]
 
@@ -118,52 +106,38 @@ class Python3TC(unittest.TestCase):
         )
 
     def test_old_syntax_works(self) -> None:
-        astroid = self.builder.string_build(
-            dedent(
-                """
+        astroid = self.builder.string_build(dedent("""
         class Test:
             __metaclass__ = type
         class SubTest(Test): pass
-        """
-            )
-        )
+        """))
         klass = astroid["SubTest"]
         metaclass = klass.metaclass()
         self.assertIsNone(metaclass)
 
     def test_metaclass_yes_leak(self) -> None:
-        astroid = self.builder.string_build(
-            dedent(
-                """
+        astroid = self.builder.string_build(dedent("""
         # notice `ab` instead of `abc`
         from ab import ABCMeta
 
         class Meta(metaclass=ABCMeta): pass
-        """
-            )
-        )
+        """))
         klass = astroid["Meta"]
         self.assertIsNone(klass.metaclass())
 
     def test_parent_metaclass(self) -> None:
-        astroid = self.builder.string_build(
-            dedent(
-                """
+        astroid = self.builder.string_build(dedent("""
         from abc import ABCMeta
         class Test(metaclass=ABCMeta): pass
         class SubTest(Test): pass
-        """
-            )
-        )
+        """))
         klass = astroid["SubTest"]
         metaclass = klass.metaclass()
         self.assertIsInstance(metaclass, nodes.ClassDef)
         self.assertEqual(metaclass.name, "ABCMeta")
 
     def test_metaclass_ancestors(self) -> None:
-        astroid = self.builder.string_build(
-            dedent(
-                """
+        astroid = self.builder.string_build(dedent("""
         from abc import ABCMeta
 
         class FirstMeta(metaclass=ABCMeta): pass
@@ -177,9 +151,7 @@ class Python3TC(unittest.TestCase):
         class SecondImpl(FirstImpl): pass
         class ThirdImpl(Simple, SecondMeta):
             pass
-        """
-            )
-        )
+        """))
         classes = {"ABCMeta": ("FirstImpl", "SecondImpl"), "type": ("ThirdImpl",)}
         for metaclass, names in classes.items():
             for name in names:
@@ -189,15 +161,11 @@ class Python3TC(unittest.TestCase):
                 self.assertEqual(meta.name, metaclass)
 
     def test_annotation_support(self) -> None:
-        astroid = self.builder.string_build(
-            dedent(
-                """
+        astroid = self.builder.string_build(dedent("""
         def test(a: int, b: str, c: None, d, e,
                  *args: float, **kwargs: int)->int:
             pass
-        """
-            )
-        )
+        """))
         func = astroid["test"]
         self.assertIsInstance(func.args.varargannotation, nodes.Name)
         self.assertEqual(func.args.varargannotation.name, "float")
@@ -215,14 +183,10 @@ class Python3TC(unittest.TestCase):
         self.assertIsNone(arguments.annotations[3])
         self.assertIsNone(arguments.annotations[4])
 
-        astroid = self.builder.string_build(
-            dedent(
-                """
+        astroid = self.builder.string_build(dedent("""
         def test(a: int=1, b: str=2):
             pass
-        """
-            )
-        )
+        """))
         func = astroid["test"]
         self.assertIsInstance(func.args.annotations[0], nodes.Name)
         self.assertEqual(func.args.annotations[0].name, "int")
@@ -231,14 +195,10 @@ class Python3TC(unittest.TestCase):
         self.assertIsNone(func.returns)
 
     def test_kwonlyargs_annotations_supper(self) -> None:
-        node = self.builder.string_build(
-            dedent(
-                """
+        node = self.builder.string_build(dedent("""
         def test(*, a: int, b: str, c: None, d, e):
             pass
-        """
-            )
-        )
+        """))
         func = node["test"]
         arguments = func.args
         self.assertIsInstance(arguments.kwonlyargs_annotations[0], nodes.Name)
@@ -251,16 +211,12 @@ class Python3TC(unittest.TestCase):
         self.assertIsNone(arguments.kwonlyargs_annotations[4])
 
     def test_annotation_as_string(self) -> None:
-        code1 = dedent(
-            """
+        code1 = dedent("""
         def test(a, b: int = 4, c=2, f: 'lala' = 4) -> 2:
-            pass"""
-        )
-        code2 = dedent(
-            """
+            pass""")
+        code2 = dedent("""
         def test(a: typing.Generic[T], c: typing.Any = 24) -> typing.Iterable:
-            pass"""
-        )
+            pass""")
         for code in (code1, code2):
             func = extract_node(code)
             self.assertEqual(func.as_string(), code)
@@ -288,12 +244,10 @@ class Python3TC(unittest.TestCase):
 
     @staticmethod
     def test_unpacking_in_dict_getitem_with_ref() -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         a = {1: 2}
         {**a, 2: 3}  #@
-        """
-        )
+        """)
         assert isinstance(node, nodes.Dict)
 
         for key, expected in ((1, 2), (2, 3)):
@@ -390,10 +344,8 @@ class Python3TC(unittest.TestCase):
             "return {fun: await fun() async for fun in funcs if await smth}",
         ]
         for func_body in func_bodies:
-            code = dedent(
-                f"""
+            code = dedent(f"""
             async def f():
-                {func_body}"""
-            )
+                {func_body}""")
             func = extract_node(code)
             self.assertEqual(func.as_string().strip(), code.strip())

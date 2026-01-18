@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for inference involving constraints."""
+
 from __future__ import annotations
 
 from unittest.mock import patch
@@ -33,8 +34,7 @@ def test_if_single_statement(
     condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test constraint for a variable that is used in the first statement of an if body."""
-    node1, node2 = builder.extract_node(
-        f"""
+    node1, node2 = builder.extract_node(f"""
     def f1(x = {fail_val}):
         if {condition}:  # Filters out default value
             return (
@@ -46,8 +46,7 @@ def test_if_single_statement(
             return (
                 x  #@
             )
-    """
-    )
+    """)
 
     inferred = node1.inferred()
     assert len(inferred) == 1
@@ -68,8 +67,7 @@ def test_if_multiple_statements(
     """Test constraint for a variable that is used in an if body with multiple
     statements.
     """
-    node1, node2 = builder.extract_node(
-        f"""
+    node1, node2 = builder.extract_node(f"""
     def f1(x = {fail_val}):
         if {condition}:  # Filters out default value
             print(x)
@@ -83,8 +81,7 @@ def test_if_multiple_statements(
             return (
                 x  #@
             )
-    """
-    )
+    """)
 
     inferred = node1.inferred()
     assert len(inferred) == 1
@@ -103,8 +100,7 @@ def test_if_irrelevant_condition(
     condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint for a different variable doesn't apply."""
-    nodes_ = builder.extract_node(
-        f"""
+    nodes_ = builder.extract_node(f"""
     def f1(x, y = {fail_val}):
         if {condition}:  # Does not filter out fail_val
             return (
@@ -116,8 +112,7 @@ def test_if_irrelevant_condition(
             return (
                 y  #@
             )
-    """
-    )
+    """)
     for node, val in zip(nodes_, (fail_val, satisfy_val)):
         inferred = node.inferred()
         assert len(inferred) == 2
@@ -132,8 +127,7 @@ def test_outside_if(
     condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if condition doesn't apply outside of the if."""
-    nodes_ = builder.extract_node(
-        f"""
+    nodes_ = builder.extract_node(f"""
     def f1(x = {fail_val}):
         if {condition}:
             pass
@@ -148,8 +142,7 @@ def test_outside_if(
         return (
             x  #@
         )
-    """
-    )
+    """)
     for node, val in zip(nodes_, (fail_val, satisfy_val)):
         inferred = node.inferred()
         assert len(inferred) == 2
@@ -164,8 +157,7 @@ def test_nested_if(
     condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if condition applies within inner if statements."""
-    node1, node2 = builder.extract_node(
-        f"""
+    node1, node2 = builder.extract_node(f"""
     def f1(y, x = {fail_val}):
         if {condition}:
             if y is not None:
@@ -179,8 +171,7 @@ def test_nested_if(
                 return (
                     x  #@
                 )
-    """
-    )
+    """)
     inferred = node1.inferred()
     assert len(inferred) == 1
     assert inferred[0] is Uninferable
@@ -197,8 +188,7 @@ def test_if_uninferable() -> None:
     """Test that when no inferred values satisfy all constraints, Uninferable is
     inferred.
     """
-    node1, node2 = builder.extract_node(
-        """
+    node1, node2 = builder.extract_node("""
     def f1():
         x = None
         if x is not None:
@@ -210,8 +200,7 @@ def test_if_uninferable() -> None:
             pass
         else:
             x  #@
-    """
-    )
+    """)
     inferred = node1.inferred()
     assert len(inferred) == 1
     assert inferred[0] is Uninferable
@@ -228,8 +217,7 @@ def test_if_reassignment_in_body(
     """Test that constraint in an if condition doesn't apply when the variable
     is assigned to a failing value inside the if body.
     """
-    node = builder.extract_node(
-        f"""
+    node = builder.extract_node(f"""
     def f(x, y):
         if {condition}:
             if y:
@@ -237,8 +225,7 @@ def test_if_reassignment_in_body(
             return (
                 x  #@
             )
-    """
-    )
+    """)
     inferred = node.inferred()
     assert len(inferred) == 2
     assert inferred[0] is Uninferable
@@ -254,8 +241,7 @@ def test_if_elif_else_negates(
     """Test that constraint in an if condition is negated when the variable
     is used in the elif and else branches.
     """
-    node1, node2, node3, node4 = builder.extract_node(
-        f"""
+    node1, node2, node3, node4 = builder.extract_node(f"""
     def f1(y, x = {fail_val}):
         if {condition}:
             pass
@@ -279,8 +265,7 @@ def test_if_elif_else_negates(
             return (
                 x  #@
             )
-    """
-    )
+    """)
     for node in (node1, node2):
         inferred = node.inferred()
         assert len(inferred) == 2
@@ -302,8 +287,7 @@ def test_if_reassignment_in_else(
     """Test that constraint in an if condition doesn't apply when the variable
     is assigned to a failing value inside the else branch.
     """
-    node = builder.extract_node(
-        f"""
+    node = builder.extract_node(f"""
     def f(x, y):
         if {condition}:
             return x
@@ -313,8 +297,7 @@ def test_if_reassignment_in_else(
             return (
                 x  #@
             )
-    """
-    )
+    """)
     inferred = node.inferred()
     assert len(inferred) == 2
     assert inferred[0] is Uninferable
@@ -330,16 +313,14 @@ def test_if_comprehension_shadow(
     """Test that constraint in an if condition doesn't apply when the variable
     is shadowed by an inner comprehension scope.
     """
-    node = builder.extract_node(
-        f"""
+    node = builder.extract_node(f"""
     def f(x):
         if {condition}:
             return [
                 x  #@
                 for x in [{satisfy_val}, {fail_val}]
             ]
-    """
-    )
+    """)
     inferred = node.inferred()
     assert len(inferred) == 2
 
@@ -355,16 +336,14 @@ def test_if_function_shadow(
     """Test that constraint in an if condition doesn't apply when the variable
     is shadowed by an inner function scope.
     """
-    node = builder.extract_node(
-        f"""
+    node = builder.extract_node(f"""
     x = {satisfy_val}
     if {condition}:
         def f(x = {fail_val}):
             return (
                 x  #@
             )
-    """
-    )
+    """)
     inferred = node.inferred()
     assert len(inferred) == 2
     assert isinstance(inferred[0], nodes.Const)
@@ -380,16 +359,14 @@ def test_if_function_call(
     """Test that constraint in an if condition doesn't apply for a parameter
     a different function call, but with the same name.
     """
-    node = builder.extract_node(
-        f"""
+    node = builder.extract_node(f"""
     def f(x = {satisfy_val}):
         if {condition}:
             g({fail_val})  #@
 
     def g(x):
         return x
-    """
-    )
+    """)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)
@@ -401,8 +378,7 @@ def test_if_instance_attr(
     condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test constraint for an instance attribute in an if statement."""
-    node1, node2 = builder.extract_node(
-        f"""
+    node1, node2 = builder.extract_node(f"""
     class A1:
         def __init__(self, x = {fail_val}):
             self.x = x
@@ -418,8 +394,7 @@ def test_if_instance_attr(
         def method(self):
             if {condition}:
                 self.x  #@
-    """
-    )
+    """)
 
     inferred = node1.inferred()
     assert len(inferred) == 1
@@ -440,8 +415,7 @@ def test_if_instance_attr_reassignment_in_body(
     """Test that constraint in an if condition doesn't apply to an instance attribute
     when it is assigned inside the if body.
     """
-    node1, node2 = builder.extract_node(
-        f"""
+    node1, node2 = builder.extract_node(f"""
     class A1:
         def __init__(self, x):
             self.x = x
@@ -455,8 +429,7 @@ def test_if_instance_attr_reassignment_in_body(
             if {condition}:
                 self.x = {fail_val}
                 self.x  #@
-    """
-    )
+    """)
 
     inferred = node1.inferred()
     assert len(inferred) == 2
@@ -483,8 +456,7 @@ def test_if_instance_attr_varname_collision1(
     """Test that constraint in an if condition doesn't apply to an instance attribute
     when the constraint refers to a variable with the same name.
     """
-    node1, node2 = builder.extract_node(
-        f"""
+    node1, node2 = builder.extract_node(f"""
     class A1:
         def __init__(self, x = {fail_val}):
             self.x = x
@@ -493,8 +465,7 @@ def test_if_instance_attr_varname_collision1(
             if {condition}:
                 x  #@
                 self.x  #@
-    """
-    )
+    """)
 
     inferred = node1.inferred()
     assert len(inferred) == 1
@@ -515,8 +486,7 @@ def test_if_instance_attr_varname_collision2(
     """Test that constraint in an if condition doesn't apply to a variable with the same
     name.
     """
-    node1, node2 = builder.extract_node(
-        f"""
+    node1, node2 = builder.extract_node(f"""
     class A1:
         def __init__(self, x = {fail_val}):
             self.x = x
@@ -525,8 +495,7 @@ def test_if_instance_attr_varname_collision2(
             if {condition}:
                 x  #@
                 self.x  #@
-    """
-    )
+    """)
 
     inferred = node1.inferred()
     assert len(inferred) == 2
@@ -547,8 +516,7 @@ def test_if_instance_attr_varname_collision3(
     """Test that constraint in an if condition doesn't apply to an instance attribute
     for an object of a different class.
     """
-    node = builder.extract_node(
-        f"""
+    node = builder.extract_node(f"""
     class A1:
         def __init__(self, x = {fail_val}):
             self.x = x
@@ -561,8 +529,7 @@ def test_if_instance_attr_varname_collision3(
     class A2:
         def __init__(self):
             self.x = {fail_val}
-    """
-    )
+    """)
 
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -577,8 +544,7 @@ def test_if_instance_attr_varname_collision4(
     """Test that constraint in an if condition doesn't apply to a variable of the same name,
     when that variable is used to infer the value of the instance attribute.
     """
-    node = builder.extract_node(
-        f"""
+    node = builder.extract_node(f"""
     class A1:
         def __init__(self, x):
             self.x = x
@@ -588,8 +554,7 @@ def test_if_instance_attr_varname_collision4(
             if {condition}:
                 self.x = x
                 self.x  #@
-    """
-    )
+    """)
 
     inferred = node.inferred()
     assert len(inferred) == 2
@@ -604,8 +569,7 @@ def test_if_exp_body(
     condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test constraint for a variable that is used in an if exp body."""
-    node1, node2 = builder.extract_node(
-        f"""
+    node1, node2 = builder.extract_node(f"""
     def f1(x = {fail_val}):
         return (
             x if {condition} else None  #@
@@ -615,8 +579,7 @@ def test_if_exp_body(
         return (
             x if {condition} else None  #@
         )
-    """
-    )
+    """)
 
     inferred = node1.body.inferred()
     assert len(inferred) == 1
@@ -634,8 +597,7 @@ def test_if_exp_else(
     condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test constraint for a variable that is used in an if exp else block."""
-    node1, node2 = builder.extract_node(
-        f"""
+    node1, node2 = builder.extract_node(f"""
     def f1(x = {satisfy_val}):
         return (
             None if {condition} else x  #@
@@ -645,8 +607,7 @@ def test_if_exp_else(
         return (
             None if {condition} else x  #@
         )
-    """
-    )
+    """)
 
     inferred = node1.orelse.inferred()
     assert len(inferred) == 1
@@ -664,8 +625,7 @@ def test_outside_if_exp(
     condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if exp condition doesn't apply outside of the if exp."""
-    nodes_ = builder.extract_node(
-        f"""
+    nodes_ = builder.extract_node(f"""
     def f1(x = {fail_val}):
         x if {condition} else None
         return (
@@ -677,8 +637,7 @@ def test_outside_if_exp(
         return (
             x  #@
         )
-    """
-    )
+    """)
     for node, val in zip(nodes_, (fail_val, satisfy_val)):
         inferred = node.inferred()
         assert len(inferred) == 2
@@ -692,8 +651,7 @@ def test_nested_if_exp(
     condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if exp condition applies within inner if exp."""
-    node1, node2 = builder.extract_node(
-        f"""
+    node1, node2 = builder.extract_node(f"""
     def f1(y, x = {fail_val}):
         return (
             (x if y else None) if {condition} else None  #@
@@ -703,8 +661,7 @@ def test_nested_if_exp(
         return (
             (x if y else None) if {condition} else None  #@
         )
-    """
-    )
+    """)
 
     inferred = node1.body.body.inferred()
     assert len(inferred) == 1
@@ -722,8 +679,7 @@ def test_if_exp_instance_attr(
     condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test constraint for an instance attribute in an if exp."""
-    node1, node2 = builder.extract_node(
-        f"""
+    node1, node2 = builder.extract_node(f"""
     class A1:
         def __init__(self, x = {fail_val}):
             self.x = x
@@ -741,8 +697,7 @@ def test_if_exp_instance_attr(
             return (
                 self.x if {condition} else None  #@
             )
-    """
-    )
+    """)
 
     inferred = node1.body.inferred()
     assert len(inferred) == 1
@@ -760,8 +715,7 @@ def test_if_exp_instance_attr_varname_collision(
     condition: str, satisfy_val: int | None, fail_val: int | None
 ) -> None:
     """Test that constraint in an if exp condition doesn't apply to a variable with the same name."""
-    node = builder.extract_node(
-        f"""
+    node = builder.extract_node(f"""
     class A:
         def __init__(self, x = {fail_val}):
             self.x = x
@@ -770,8 +724,7 @@ def test_if_exp_instance_attr_varname_collision(
             return (
                 x if {condition} else None  #@
             )
-    """
-    )
+    """)
 
     inferred = node.body.inferred()
     assert len(inferred) == 2
@@ -782,8 +735,7 @@ def test_if_exp_instance_attr_varname_collision(
 
 def test_isinstance_equal_types() -> None:
     """Test constraint for an object whose type is equal to the checked type."""
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A:
         pass
 
@@ -791,8 +743,7 @@ def test_isinstance_equal_types() -> None:
 
     if isinstance(x, A):
         x  #@
-    """
-    )
+    """)
 
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -803,8 +754,7 @@ def test_isinstance_equal_types() -> None:
 
 def test_isinstance_subtype() -> None:
     """Test constraint for an object whose type is a strict subtype of the checked type."""
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A:
         pass
 
@@ -815,8 +765,7 @@ def test_isinstance_subtype() -> None:
 
     if isinstance(x, A):
         x  #@
-    """
-    )
+    """)
 
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -827,8 +776,7 @@ def test_isinstance_subtype() -> None:
 
 def test_isinstance_unrelated_types():
     """Test constraint for an object whose type is not related to the checked type."""
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A:
         pass
 
@@ -839,8 +787,7 @@ def test_isinstance_unrelated_types():
 
     if isinstance(x, B):
         x  #@
-    """
-    )
+    """)
 
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -849,8 +796,7 @@ def test_isinstance_unrelated_types():
 
 def test_isinstance_supertype():
     """Test constraint for an object whose type is a strict supertype of the checked type."""
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A:
         pass
 
@@ -861,8 +807,7 @@ def test_isinstance_supertype():
 
     if isinstance(x, B):
         x  #@
-    """
-    )
+    """)
 
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -871,8 +816,7 @@ def test_isinstance_supertype():
 
 def test_isinstance_multiple_inheritance():
     """Test constraint for an object that inherits from more than one parent class."""
-    n1, n2, n3 = builder.extract_node(
-        """
+    n1, n2, n3 = builder.extract_node("""
     class A:
         pass
 
@@ -892,8 +836,7 @@ def test_isinstance_multiple_inheritance():
 
     if isinstance(x, B):
         x  #@
-    """
-    )
+    """)
 
     for node in (n1, n2, n3):
         inferred = node.inferred()
@@ -907,8 +850,7 @@ def test_isinstance_diamond_inheritance():
     """Test constraint for an object that inherits from parent classes
     in diamond inheritance.
     """
-    n1, n2, n3, n4 = builder.extract_node(
-        """
+    n1, n2, n3, n4 = builder.extract_node("""
     class A():
         pass
 
@@ -934,8 +876,7 @@ def test_isinstance_diamond_inheritance():
 
     if isinstance(x, A):
         x  #@
-    """
-    )
+    """)
 
     for node in (n1, n2, n3, n4):
         inferred = node.inferred()
@@ -949,8 +890,7 @@ def test_isinstance_keyword_arguments():
     """Test that constraint does not apply when `isinstance` is called
     with keyword arguments.
     """
-    n1, n2 = builder.extract_node(
-        """
+    n1, n2 = builder.extract_node("""
     x = 3
 
     if isinstance(object=x, classinfo=str):
@@ -958,8 +898,7 @@ def test_isinstance_keyword_arguments():
 
     if isinstance(x, str, object=x, classinfo=str):
         x  #@
-    """
-    )
+    """)
 
     for node in (n1, n2):
         inferred = node.inferred()
@@ -972,14 +911,12 @@ def test_isinstance_extra_argument():
     """Test that constraint does not apply when `isinstance` is called
     with more than two positional arguments.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     x = 3
 
     if isinstance(x, str, bool):
         x  #@
-    """
-    )
+    """)
 
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -991,14 +928,12 @@ def test_isinstance_classinfo_inference_error():
     """Test that constraint is satisfied when `isinstance` is called with
     classinfo that raises an inference error.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     x = 3
 
     if isinstance(x, undefined_type):
         x  #@
-    """
-    )
+    """)
 
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -1010,15 +945,13 @@ def test_isinstance_uninferable_classinfo():
     """Test that constraint is satisfied when `isinstance` is called with
     uninferable classinfo.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     def f(classinfo):
         x = 3
 
         if isinstance(x, classinfo):
             x  #@
-    """
-    )
+    """)
 
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -1030,8 +963,7 @@ def test_isinstance_mro_error():
     """Test that constraint is satisfied when computing the object's
     method resolution order raises an MRO error.
     """
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     class A():
         pass
 
@@ -1042,8 +974,7 @@ def test_isinstance_mro_error():
 
     if isinstance(x, A):
         x  #@
-    """
-    )
+    """)
 
     inferred = node.inferred()
     assert len(inferred) == 1
@@ -1054,14 +985,12 @@ def test_isinstance_mro_error():
 
 def test_isinstance_uninferable():
     """Test that constraint is satisfied when `isinstance` inference returns Uninferable."""
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     x = 3
 
     if isinstance(x, str):
         x  #@
-    """
-    )
+    """)
 
     with patch(
         "astroid.constraint.helpers.object_isinstance", return_value=Uninferable

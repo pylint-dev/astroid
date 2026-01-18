@@ -20,8 +20,7 @@ except ImportError:
 @unittest.skipUnless(HAS_ATTR, "These tests require the attr library")
 class AttrsTest(unittest.TestCase):
     def test_attr_transform(self) -> None:
-        module = astroid.parse(
-            """
+        module = astroid.parse("""
         import attr
         from attr import attrs, attrib, field
 
@@ -80,8 +79,7 @@ class AttrsTest(unittest.TestCase):
             d: int = attr.Factory(lambda: 3)
 
         m = Eggs(d=1)
-        """
-        )
+        """)
 
         for name in ("f", "g", "h", "i", "j", "k", "l", "m"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
@@ -93,8 +91,7 @@ class AttrsTest(unittest.TestCase):
         Package added support for 'attrs' alongside 'attr' in v21.3.0.
         See: https://github.com/python-attrs/attrs/releases/tag/21.3.0
         """
-        module = astroid.parse(
-            """
+        module = astroid.parse("""
         import attrs
         from attrs import field, mutable, frozen, define
         from attrs import mutable as my_mutable
@@ -153,8 +150,7 @@ class AttrsTest(unittest.TestCase):
         @frozen
         class Legs:
             d = attrs.field(default=attrs.Factory(dict))
-        """
-        )
+        """)
 
         for name in ("f", "g", "h", "i", "j", "k", "l"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]

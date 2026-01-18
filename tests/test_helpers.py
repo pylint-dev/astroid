@@ -55,8 +55,7 @@ class TestHelpers(unittest.TestCase):
             self.assert_classes_equal(objtype, expected)
 
     def test_object_type_classes_and_functions(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         def generator():
             yield
 
@@ -76,8 +75,7 @@ class TestHelpers(unittest.TestCase):
         A.static_method #@
         A().static_method #@
         generator() #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         from_self = helpers.object_type(ast_nodes[0])
         cls = next(ast_nodes[1].infer())
@@ -105,14 +103,12 @@ class TestHelpers(unittest.TestCase):
             self.assert_classes_equal(node_type, expected_type)
 
     def test_object_type_metaclasses(self) -> None:
-        module = builder.parse(
-            """
+        module = builder.parse("""
         import abc
         class Meta(metaclass=abc.ABCMeta):
             pass
         meta_instance = Meta()
-        """
-        )
+        """)
         meta_type = helpers.object_type(module["Meta"])
         self.assert_classes_equal(meta_type, module["Meta"].metaclass())
 
@@ -121,8 +117,7 @@ class TestHelpers(unittest.TestCase):
         self.assert_classes_equal(instance_type, module["Meta"])
 
     def test_object_type_most_derived(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         class A(type):
             def __new__(*args, **kwargs):
                  return type.__new__(*args, **kwargs)
@@ -132,8 +127,7 @@ class TestHelpers(unittest.TestCase):
         # The most derived metaclass of D is A rather than type.
         class D(B , C): #@
             pass
-        """
-        )
+        """)
         assert isinstance(node, nodes.NodeNG)
         metaclass = node.metaclass()
         self.assertEqual(metaclass.name, "A")
@@ -141,12 +135,10 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(metaclass, obj_type)
 
     def test_inference_errors(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         from unknown import Unknown
         u = Unknown #@
-        """
-        )
+        """)
         self.assertEqual(helpers.object_type(node), util.Uninferable)
 
     @pytest.mark.skipif(IS_PYPY, reason="__code__ will not be Unknown on PyPy")
@@ -155,8 +147,7 @@ class TestHelpers(unittest.TestCase):
         self.assertIs(helpers.object_type(node), util.Uninferable)
 
     def test_object_type_too_many_types(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         from unknown import Unknown
         def test(x):
             if x:
@@ -164,21 +155,18 @@ class TestHelpers(unittest.TestCase):
             else:
                 return 1
         test(Unknown) #@
-        """
-        )
+        """)
         self.assertEqual(helpers.object_type(node), util.Uninferable)
 
     def test_is_subtype(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         class int_subclass(int):
             pass
         class A(object): pass #@
         class B(A): pass #@
         class C(A): pass #@
         int_subclass() #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         cls_a = ast_nodes[0]
         cls_b = ast_nodes[1]
@@ -197,16 +185,14 @@ class TestHelpers(unittest.TestCase):
         self.assertFalse(helpers.is_subtype(cls_a, cls_b))
 
     def test_is_subtype_supertype_mro_error(self) -> None:
-        cls_e, cls_f = builder.extract_node(
-            """
+        cls_e, cls_f = builder.extract_node("""
         class A(object): pass
         class B(A): pass
         class C(A): pass
         class D(B, C): pass
         class E(C, B): pass #@
         class F(D, E): pass #@
-        """
-        )
+        """)
         self.assertFalse(helpers.is_subtype(cls_e, cls_f))
 
         self.assertFalse(helpers.is_subtype(cls_e, cls_f))
@@ -215,48 +201,40 @@ class TestHelpers(unittest.TestCase):
         self.assertFalse(helpers.is_supertype(cls_f, cls_e))
 
     def test_is_subtype_supertype_unknown_bases(self) -> None:
-        cls_a, cls_b = builder.extract_node(
-            """
+        cls_a, cls_b = builder.extract_node("""
         from unknown import Unknown
         class A(Unknown): pass #@
         class B(A): pass #@
-        """
-        )
+        """)
         with self.assertRaises(_NonDeducibleTypeHierarchy):
             helpers.is_subtype(cls_a, cls_b)
         with self.assertRaises(_NonDeducibleTypeHierarchy):
             helpers.is_supertype(cls_a, cls_b)
 
     def test_is_subtype_supertype_unrelated_classes(self) -> None:
-        cls_a, cls_b = builder.extract_node(
-            """
+        cls_a, cls_b = builder.extract_node("""
         class A(object): pass #@
         class B(object): pass #@
-        """
-        )
+        """)
         self.assertFalse(helpers.is_subtype(cls_a, cls_b))
         self.assertFalse(helpers.is_subtype(cls_b, cls_a))
         self.assertFalse(helpers.is_supertype(cls_a, cls_b))
         self.assertFalse(helpers.is_supertype(cls_b, cls_a))
 
     def test_is_subtype_supertype_classes_no_type_ancestor(self) -> None:
-        cls_a = builder.extract_node(
-            """
+        cls_a = builder.extract_node("""
         class A(object): #@
             pass
-        """
-        )
+        """)
         builtin_type = self._extract("type")
         self.assertFalse(helpers.is_supertype(builtin_type, cls_a))
         self.assertFalse(helpers.is_subtype(cls_a, builtin_type))
 
     def test_is_subtype_supertype_classes_metaclasses(self) -> None:
-        cls_a = builder.extract_node(
-            """
+        cls_a = builder.extract_node("""
         class A(type): #@
             pass
-        """
-        )
+        """)
         builtin_type = self._extract("type")
         self.assertTrue(helpers.is_supertype(builtin_type, cls_a))
         self.assertTrue(helpers.is_subtype(cls_a, builtin_type))
@@ -302,12 +280,10 @@ def test_tuple_to_container() -> None:
 
 
 def test_class_to_container_uninferable() -> None:
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     def f(x):
         isinstance(3, x)  #@
-    """
-    )
+    """)
 
     container = helpers.class_or_tuple_to_container(node.args[1])
 
@@ -316,12 +292,10 @@ def test_class_to_container_uninferable() -> None:
 
 
 def test_tuple_to_container_uninferable() -> None:
-    node = builder.extract_node(
-        """
+    node = builder.extract_node("""
     def f(x, y):
         isinstance(3, (x, y))  #@
-    """
-    )
+    """)
 
     container = helpers.class_or_tuple_to_container(node.args[1])
 

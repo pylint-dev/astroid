@@ -15,14 +15,12 @@ class UnittestTest(unittest.TestCase):
         Tests that the IsolatedAsyncioTestCase class is statically imported
         thanks to the brain_unittest module.
         """
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         from unittest import IsolatedAsyncioTestCase
 
         class TestClass(IsolatedAsyncioTestCase):
             pass
-        """
-        )
+        """)
         assert [n.qname() for n in node.ancestors()] == [
             "unittest.async_case.IsolatedAsyncioTestCase",
             "unittest.case.TestCase",

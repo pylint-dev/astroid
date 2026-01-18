@@ -11,23 +11,19 @@ from astroid.nodes.scoped_nodes import FunctionDef
 
 
 def _multiprocessing_transform():
-    module = parse(
-        """
+    module = parse("""
     from multiprocessing.managers import SyncManager
     def Manager():
         return SyncManager()
-    """
-    )
+    """)
     # Multiprocessing uses a getattr lookup inside contexts,
     # in order to get the attributes they need. Since it's extremely
     # dynamic, we use this approach to fake it.
-    node = parse(
-        """
+    node = parse("""
     from multiprocessing.context import DefaultContext, BaseContext
     default = DefaultContext()
     base = BaseContext()
-    """
-    )
+    """)
     try:
         context = next(node["default"].infer())
         base = next(node["base"].infer())
@@ -49,8 +45,7 @@ def _multiprocessing_transform():
 
 
 def _multiprocessing_managers_transform():
-    return parse(
-        """
+    return parse("""
     import array
     import threading
     import multiprocessing.pool as pool
@@ -95,8 +90,7 @@ def _multiprocessing_managers_transform():
             pass
         def shutdown(self):
             pass
-    """
-    )
+    """)
 
 
 def register(manager: AstroidManager) -> None:

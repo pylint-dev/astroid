@@ -10,6 +10,7 @@ the C coded module _ctypes.
 Thus astroid doesn't know that the value member is a builtin type
 among float, int, bytes or str.
 """
+
 import sys
 
 from astroid import nodes
@@ -56,26 +57,22 @@ def enrich_ctypes_redefined_types() -> nodes.Module:
         ("c_wchar", "str", "u"),
     )
 
-    src = [
-        """
+    src = ["""
 from _ctypes import _SimpleCData
 
 class c_bool(_SimpleCData):
     def __init__(self, value):
         self.value = True
         self._type_ = '?'
-    """
-    ]
+    """]
 
     for c_type, builtin_type, type_code in c_class_to_type:
-        src.append(
-            f"""
+        src.append(f"""
 class {c_type}(_SimpleCData):
     def __init__(self, value):
         self.value = {builtin_type}(value)
         self._type_ = '{type_code}'
-        """
-        )
+        """)
 
     return parse("\n".join(src))
 

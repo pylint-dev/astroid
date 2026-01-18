@@ -111,12 +111,10 @@ multiply([1, 2], [3, 4])
         PY312_PLUS -- This test will likely become unnecessary when Python 3.12 is
         numpy's minimum version. (numpy.distutils will be removed then.)
         """
-        node = extract_node(
-            """
+        node = extract_node("""
 from numpy.distutils.misc_util import is_sequence
 is_sequence("ABC") #@
-"""
-        )
+""")
         inferred = node.inferred()
         self.assertIsInstance(inferred[0], nodes.Const)
 
@@ -216,9 +214,7 @@ def test(val):
         assert result[2].lineno == 12
 
     def test_ancestors_patching_class_recursion(self) -> None:
-        node = AstroidBuilder(AstroidManager()).string_build(
-            textwrap.dedent(
-                """
+        node = AstroidBuilder(AstroidManager()).string_build(textwrap.dedent("""
         import string
         Template = string.Template
 
@@ -233,9 +229,7 @@ def test(val):
                 string.Template = A
             else:
                 string.Template = B
-        """
-            )
-        )
+        """))
         klass = node["A"]
         ancestors = list(klass.ancestors())
         self.assertEqual(ancestors[0].qname(), "string.Template")
@@ -244,8 +238,7 @@ def test(val):
         # Test for issue https://bitbucket.org/logilab/astroid/issue/84
         # This used to crash astroid with a TypeError, because an Uninferable
         # node was present in the bases
-        node = extract_node(
-            """
+        node = extract_node("""
         def with_metaclass(meta, *bases):
             class metaclass(meta):
                 def __new__(cls, name, this_bases, d):
@@ -256,21 +249,18 @@ def test(val):
 
         class A(with_metaclass(object, lala.lala)): #@
             pass
-        """
-        )
+        """)
         ancestors = list(node.ancestors())
         self.assertEqual(len(ancestors), 1)
         self.assertEqual(ancestors[0].qname(), "builtins.object")
 
     def test_ancestors_missing_from_function(self) -> None:
         # Test for https://www.logilab.org/ticket/122793
-        node = extract_node(
-            """
+        node = extract_node("""
         def gen(): yield
         GEN = gen()
         next(GEN)
-        """
-        )
+        """)
         self.assertRaises(InferenceError, next, node.infer())
 
     def test_unicode_in_docstring(self) -> None:
@@ -278,8 +268,7 @@ def test(val):
         # Test for https://bitbucket.org/logilab/astroid/issues/273/
 
         # In a regular file, "coding: utf-8" would have been used.
-        node = extract_node(
-            f"""
+        node = extract_node(f"""
         from __future__ import unicode_literals
 
         class MyClass(object):
@@ -287,30 +276,26 @@ def test(val):
                 "With unicode : {'’'} "
 
         instance = MyClass()
-        """
-        )
+        """)
 
         next(node.value.infer()).as_string()
 
     def test_binop_generates_nodes_with_parents(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         def no_op(*args):
             pass
         def foo(*args):
             def inner(*more_args):
                 args + more_args #@
             return inner
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Tuple)
         self.assertIsNotNone(inferred.parent)
         self.assertIsInstance(inferred.parent, nodes.BinOp)
 
     def test_decorator_names_inference_error_leaking(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class Parent(object):
             @property
             def foo(self):
@@ -320,30 +305,25 @@ def test(val):
             @Parent.foo.getter
             def foo(self): #@
                 return super(Child, self).foo + ['oink']
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertEqual(inferred.decoratornames(), {".Parent.foo.getter"})
 
     def test_recursive_property_method(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         class APropert():
             @property
             def property(self):
                 return self
         APropert().property
-        """
-        )
+        """)
         next(node.infer())
 
     def test_uninferable_string_argument_of_namedtuple(self) -> None:
-        node = extract_node(
-            """
+        node = extract_node("""
         import collections
         collections.namedtuple('{}'.format("a"), '')()
-        """
-        )
+        """)
         next(node.infer())
 
     def test_regression_inference_of_self_in_lambda(self) -> None:
@@ -471,21 +451,17 @@ def test_max_inferred_for_complicated_class_hierarchy() -> None:
 )
 def test_recursion_during_inference(mocked) -> None:
     """Check that we don't crash if we hit the recursion limit during inference."""
-    node: nodes.Call = _extract_single_node(
-        """
+    node: nodes.Call = _extract_single_node("""
     from module import something
     something()
-    """
-    )
+    """)
     with pytest.raises(InferenceError) as error:
         next(node.infer())
     assert error.value.message.startswith("RecursionError raised")
 
 
 def test_regression_missing_callcontext() -> None:
-    node: nodes.Attribute = _extract_single_node(
-        textwrap.dedent(
-            """
+    node: nodes.Attribute = _extract_single_node(textwrap.dedent("""
         import functools
 
         class MockClass:
@@ -495,24 +471,18 @@ def test_regression_missing_callcontext() -> None:
             enabled = property(functools.partial(_get_option, option='myopt'))
 
         MockClass().enabled
-        """
-        )
-    )
+        """))
     assert node.inferred()[0].value == "mystr"
 
 
 def test_regression_root_is_not_a_module() -> None:
     """Regression test for #2672."""
-    node: nodes.ClassDef = _extract_single_node(
-        textwrap.dedent(
-            """
+    node: nodes.ClassDef = _extract_single_node(textwrap.dedent("""
         a=eval.__get__(1).__gt__
 
         @a
         class c: ...
-        """
-        )
-    )
+        """))
     assert node.name == "c"
 
 
@@ -532,16 +502,12 @@ def test_regression_no_crash_during_build() -> None:
 
 def test_regression_no_crash_on_called_slice() -> None:
     """Regression test for issue #2721."""
-    node: nodes.Attribute = extract_node(
-        textwrap.dedent(
-            """
+    node: nodes.Attribute = extract_node(textwrap.dedent("""
         s = slice(-2)
         @s()
         @six.add_metaclass()
         class a: ...
-        """
-        )
-    )
+        """))
     assert isinstance(node, nodes.ClassDef)
     assert node.name == "a"
 

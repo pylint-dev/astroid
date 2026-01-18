@@ -12,6 +12,7 @@ http://lucumr.pocoo.org/2014/8/16/the-python-i-would-like-to-see/)
 As such, the lookup for the special methods is actually simpler than
 the dot attribute access.
 """
+
 from __future__ import annotations
 
 import itertools

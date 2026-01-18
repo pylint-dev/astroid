@@ -31,14 +31,12 @@ class InferenceUtil(unittest.TestCase):
         self.assertEqual(nodes.are_exclusive(xass1, xnames[2]), False)
 
     def test_not_exclusive_walrus_operator(self) -> None:
-        node_if, node_body, node_or_else = extract_node(
-            """
+        node_if, node_body, node_or_else = extract_node("""
         if val := True:  #@
             print(val)  #@
         else:
             print(val)  #@
-        """
-        )
+        """)
         node_if: nodes.If
         node_walrus = next(node_if.nodes_of_class(nodes.NamedExpr))
 
@@ -51,16 +49,14 @@ class InferenceUtil(unittest.TestCase):
         assert nodes.are_exclusive(node_body, node_or_else) is True
 
     def test_not_exclusive_walrus_multiple(self) -> None:
-        node_if, body_1, body_2, or_else_1, or_else_2 = extract_node(
-            """
+        node_if, body_1, body_2, or_else_1, or_else_2 = extract_node("""
         if (val := True) or (val_2 := True):  #@
             print(val)  #@
             print(val_2)  #@
         else:
             print(val)  #@
             print(val_2)  #@
-        """
-        )
+        """)
         node_if: nodes.If
         walruses = list(node_if.nodes_of_class(nodes.NamedExpr))
 
@@ -80,14 +76,12 @@ class InferenceUtil(unittest.TestCase):
         assert nodes.are_exclusive(walruses[1], or_else_2) is False
 
     def test_not_exclusive_walrus_operator_nested(self) -> None:
-        node_if, node_body, node_or_else = extract_node(
-            """
+        node_if, node_body, node_or_else = extract_node("""
         if all((last_val := i) % 2 == 0 for i in range(10)): #@
             print(last_val)  #@
         else:
             print(last_val)  #@
-        """
-        )
+        """)
         node_if: nodes.If
         node_walrus = next(node_if.nodes_of_class(nodes.NamedExpr))
 
@@ -100,8 +94,7 @@ class InferenceUtil(unittest.TestCase):
         assert nodes.are_exclusive(node_body, node_or_else) is True
 
     def test_if(self) -> None:
-        module = builder.parse(
-            """
+        module = builder.parse("""
         if 1:
             a = 1
             a = 2
@@ -111,8 +104,7 @@ class InferenceUtil(unittest.TestCase):
         else:
             a = 3
             a = 4
-        """
-        )
+        """)
         a1 = module.locals["a"][0]
         a2 = module.locals["a"][1]
         a3 = module.locals["a"][2]
@@ -127,8 +119,7 @@ class InferenceUtil(unittest.TestCase):
         self.assertEqual(nodes.are_exclusive(a5, a6), False)
 
     def test_try_except(self) -> None:
-        module = builder.parse(
-            """
+        module = builder.parse("""
         try:
             def exclusive_func2():
                 "docstring"
@@ -141,8 +132,7 @@ class InferenceUtil(unittest.TestCase):
         else:
             def exclusive_func2():
                 "this one redefine the one defined line 42"
-        """
-        )
+        """)
         f1 = module.locals["exclusive_func2"][0]
         f2 = module.locals["exclusive_func2"][1]
         f3 = module.locals["exclusive_func2"][2]
@@ -159,24 +149,20 @@ class InferenceUtil(unittest.TestCase):
         self.assertEqual(nodes.are_exclusive(f4, f2), True)
 
     def test_unpack_infer_uninferable_nodes(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         x = [A] * 1
         f = [x, [A] * 2]
         f
-        """
-        )
+        """)
         inferred = next(node.infer())
         unpacked = list(nodes.unpack_infer(inferred))
         self.assertEqual(len(unpacked), 3)
         self.assertTrue(all(elt is Uninferable for elt in unpacked))
 
     def test_unpack_infer_empty_tuple(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         ()
-        """
-        )
+        """)
         inferred = next(node.infer())
         with self.assertRaises(InferenceError):
             list(nodes.unpack_infer(inferred))

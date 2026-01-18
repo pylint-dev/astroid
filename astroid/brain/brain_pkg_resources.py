@@ -9,8 +9,7 @@ from astroid.manager import AstroidManager
 
 
 def pkg_resources_transform() -> nodes.Module:
-    return parse(
-        """
+    return parse("""
 def require(*requirements):
     return pkg_resources.working_set.require(*requirements)
 
@@ -64,8 +63,7 @@ def get_distribution(dist):
     return Distribution(dist)
 
 _namespace_packages = {}
-"""
-    )
+""")
 
 
 def register(manager: AstroidManager) -> None:

@@ -29,13 +29,11 @@ class TestTypingExtensions:
         reason="Need typing_extensions>=4.4.0 to test TypeVar",
     )
     def test_typing_extensions_types() -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         from typing_extensions import TypeVar
         TypeVar('MyTypeVar', int, float, complex) #@
         TypeVar('AnyStr', str, bytes) #@
-        """
-        )
+        """)
         for node in ast_nodes:
             inferred = next(node.infer())
             assert isinstance(inferred, nodes.ClassDef)

@@ -19,15 +19,13 @@ class GiBrainClassificationTest(unittest.TestCase):
     """Test that gi functions are correctly classified."""
 
     def _inferred_gi_symbol(self, namespace, version, symbol):
-        node = builder.extract_node(
-            f"""
+        node = builder.extract_node(f"""
         import gi
 
         gi.require_version("{namespace}", "{version}")
         from gi.repository import {namespace}
         {namespace}.{symbol}
-        """
-        )
+        """)
         return node.inferred()
 
     def test_gi_function_classification(self):

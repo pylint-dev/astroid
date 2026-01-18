@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid hooks for numpy ndarray class."""
+
 from __future__ import annotations
 
 from astroid import nodes

@@ -14,14 +14,12 @@ from astroid.builder import _extract_single_node, extract_node
 
 class BuiltinsTest(unittest.TestCase):
     def test_infer_property(self):
-        property_assign = _extract_single_node(
-            """
+        property_assign = _extract_single_node("""
         class Something:
             def getter():
                 return 5
             asd = property(getter) #@
-        """
-        )
+        """)
         inferred_property = next(iter(property_assign.value.infer()))
         self.assertTrue(isinstance(inferred_property, objects.Property))
         class_parent = property_assign.scope()
@@ -139,8 +137,7 @@ class TestStringNodes:
 
     def test_string_format_in_dataclass_pylint8109(self) -> None:
         """https://github.com/pylint-dev/pylint/issues/8109"""
-        function_def = extract_node(
-            """
+        function_def = extract_node("""
 from dataclasses import dataclass
 
 @dataclass
@@ -151,7 +148,6 @@ class Number:
     def __str__(self): #@
         number_format = "{:,.%sf}" % self.round
         return number_format.format(self.amount).rstrip("0").rstrip(".")
-"""
-        )
+""")
         inferit = function_def.infer_call_result(function_def, context=None)
         assert [a.name for a in inferit] == [util.Uninferable]

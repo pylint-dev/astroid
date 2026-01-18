@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Tests for the astroid variable lookup capabilities."""
+
 import functools
 import unittest
 
@@ -155,12 +156,10 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_list_comp_target(self) -> None:
         """Test the list comprehension target."""
-        astroid = builder.parse(
-            """
+        astroid = builder.parse("""
             ten = [ var for var in range(10) ]
             var
-        """
-        )
+        """)
         var = astroid.body[1].value
         self.assertRaises(NameInferenceError, var.inferred)
 
@@ -199,12 +198,10 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(xnames[1].lookup("i")[1][0].lineno, 3)
 
     def test_set_comp_closure(self) -> None:
-        astroid = builder.parse(
-            """
+        astroid = builder.parse("""
             ten = { var for var in range(10) }
             var
-        """
-        )
+        """)
         var = astroid.body[1].value
         self.assertRaises(NameInferenceError, var.inferred)
 
@@ -249,34 +246,29 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(xnames[0].lookup("i")[1][0].lineno, 3)
 
     def test_lambda_nested(self) -> None:
-        astroid = builder.parse(
-            """
+        astroid = builder.parse("""
             f = lambda x: (
                     lambda y: x + y)
-        """
-        )
+        """)
         xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "x"]
         self.assertEqual(len(xnames[0].lookup("x")[1]), 1)
         self.assertEqual(xnames[0].lookup("x")[1][0].lineno, 2)
 
     def test_function_nested(self) -> None:
-        astroid = builder.parse(
-            """
+        astroid = builder.parse("""
             def f1(x):
                 def f2(y):
                     return x + y
 
                 return f2
-        """
-        )
+        """)
         xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "x"]
         self.assertEqual(len(xnames[0].lookup("x")[1]), 1)
         self.assertEqual(xnames[0].lookup("x")[1][0].lineno, 2)
 
     def test_class_variables(self) -> None:
         # Class variables are NOT available within nested scopes.
-        astroid = builder.parse(
-            """
+        astroid = builder.parse("""
             class A:
                 a = 10
 
@@ -289,8 +281,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
 
                 class _Inner:
                     inner_a = a + 1
-            """
-        )
+            """)
         names = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "a"]
         self.assertEqual(len(names), 4)
         for name in names:
@@ -298,8 +289,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_class_in_function(self) -> None:
         # Function variables are available within classes, including methods
-        astroid = builder.parse(
-            """
+        astroid = builder.parse("""
             def f():
                 x = 10
                 class A:
@@ -314,8 +304,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
 
                     class _Inner:
                         inner_a = x + 1
-        """
-        )
+        """)
         names = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == "x"]
         self.assertEqual(len(names), 5)
         for name in names:

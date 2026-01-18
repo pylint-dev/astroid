@@ -30,23 +30,19 @@ class MultiprocessingBrainTest(unittest.TestCase):
         # Test that module attributes are working,
         # especially on Python 3.4+, where they are obtained
         # from a context.
-        module = builder.extract_node(
-            """
+        module = builder.extract_node("""
         import multiprocessing
-        """
-        )
+        """)
         assert isinstance(module, nodes.Import)
         module = module.do_import_module("multiprocessing")
         cpu_count = next(module.igetattr("cpu_count"))
         self.assertIsInstance(cpu_count, astroid.BoundMethod)
 
     def test_module_name(self) -> None:
-        module = builder.extract_node(
-            """
+        module = builder.extract_node("""
         import multiprocessing
         multiprocessing.SyncManager()
-        """
-        )
+        """)
         inferred_sync_mgr = next(module.infer())
         module = inferred_sync_mgr.root()
         self.assertEqual(module.name, "multiprocessing.managers")
@@ -54,8 +50,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
     def test_multiprocessing_manager(self) -> None:
         # Test that we have the proper attributes
         # for a multiprocessing.managers.SyncManager
-        module = builder.parse(
-            """
+        module = builder.parse("""
         import multiprocessing
         manager = multiprocessing.Manager()
         queue = manager.Queue()
@@ -72,8 +67,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
         value = manager.Value()
         array = manager.Array()
         namespace = manager.Namespace()
-        """
-        )
+        """)
         ast_queue = next(module["queue"].infer())
         self.assertEqual(ast_queue.qname(), f"{queue.__name__}.Queue")
 

@@ -8,12 +8,10 @@ from astroid import builder
 
 
 def test_pytest() -> None:
-    ast_node = builder.extract_node(
-        """
+    ast_node = builder.extract_node("""
     import pytest
     pytest #@
-    """
-    )
+    """)
     module = next(ast_node.infer())
     attrs = [
         "deprecated_call",

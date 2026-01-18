@@ -36,12 +36,10 @@ class LruWrappedModel(objectmodel.FunctionModel):
 
     @property
     def attr_cache_info(self):
-        cache_info = extract_node(
-            """
+        cache_info = extract_node("""
         from functools import _CacheInfo
         _CacheInfo(0, 0, 0, 0)
-        """
-        )
+        """)
 
         class CacheInfoBoundMethod(BoundMethod):
             def infer_call_result(

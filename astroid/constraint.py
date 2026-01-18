@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Classes representing different types of constraints on inference values."""
+
 from __future__ import annotations
 
 import sys

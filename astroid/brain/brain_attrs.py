@@ -8,6 +8,7 @@ Astroid hook for the attrs library
 Without this hook pylint reports unsupported-assignment-operation
 for attrs classes
 """
+
 from astroid import nodes
 from astroid.brain.helpers import is_class_var
 from astroid.manager import AstroidManager

@@ -17,16 +17,14 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_container() -> None:
         """Container nodes: List, Tuple, Set."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         [1, 2, 3]  #@
         [  #@
             1, 2, 3
         ]
         (1, 2, 3)  #@
         {1, 2, 3}  #@
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 4
 
@@ -53,8 +51,7 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_name() -> None:
         """Name, Assign, AssignName, Delete, DelName."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         var = 42  #@
         var  #@
         del var  #@
@@ -62,8 +59,7 @@ class TestLinenoColOffset:
         var2 = (  #@
             1, 2, 3
         )
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 4
 
@@ -101,16 +97,14 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_attribute() -> None:
         """Attribute, AssignAttr, DelAttr."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         class X:
             var = 42
 
         X.var2 = 2  #@
         X.var2  #@
         del X.var2  #@
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 3
 
@@ -142,11 +136,9 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_call() -> None:
         """Call, Keyword."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         func(arg1, arg2=value)  #@
-        """
-        ).strip()
+        """).strip()
         c1 = builder.extract_node(code)
         assert isinstance(c1, nodes.Call)
         assert isinstance(c1.func, nodes.Name)
@@ -172,13 +164,11 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_assignment() -> None:
         """Assign, AnnAssign, AugAssign."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         var = 2  #@
         var2: int = 2  #@
         var3 += 2  #@
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 3
 
@@ -221,8 +211,7 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_mix_stmts() -> None:
         """Assert, Break, Continue, Global, Nonlocal, Pass, Raise, Return, Expr."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         assert True, "Some message"  #@
         break  #@
         continue  #@
@@ -232,8 +221,7 @@ class TestLinenoColOffset:
         raise Exception from ex  #@
         return 42  #@
         var  #@
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 9
 
@@ -303,14 +291,12 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_mix_nodes() -> None:
         """Await, Starred, Yield, YieldFrom."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         await func  #@
         *args  #@
         yield 42  #@
         yield from (1, 2)  #@
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 4
 
@@ -349,14 +335,12 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_ops() -> None:
         """BinOp, BoolOp, UnaryOp, Compare."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         x + y  #@
         a and b  #@
         -var  #@
         a < b  #@
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 4
 
@@ -404,8 +388,7 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_if() -> None:
         """If, IfExp, NamedExpr."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         if (  #@
             var := 2  #@
         ):
@@ -414,8 +397,7 @@ class TestLinenoColOffset:
             pass
 
         2 if True else 1  #@
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 3
 
@@ -461,8 +443,7 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_for() -> None:
         """For, AsyncFor."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         for i in lst:  #@
             pass
         else:
@@ -470,8 +451,7 @@ class TestLinenoColOffset:
 
         async for i in lst:  #@
             pass
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 2
 
@@ -509,16 +489,14 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_const() -> None:
         """Const (int, str, bool, None, bytes, ellipsis)."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         2  #@
         "Hello"  #@
         True  #@
         None  #@
         b"01"  #@
         ...  #@
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 6
 
@@ -556,8 +534,7 @@ class TestLinenoColOffset:
     def test_end_lineno_function() -> None:
         """FunctionDef, AsyncFunctionDef, Decorators, Lambda, Arguments."""
         # pylint: disable = too-many-statements
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         def func(  #@
             a: int = 0, /,
             var: int = 1, *args: Any,
@@ -571,8 +548,7 @@ class TestLinenoColOffset:
             pass
 
         lambda x: 2  #@
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 3
 
@@ -669,14 +645,12 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_dict() -> None:
         """Dict, DictUnpack."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         {  #@
             1: "Hello",
             **{2: "World"}  #@
         }
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 2
 
@@ -699,8 +673,7 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_try() -> None:
         """Try, ExceptHandler."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         try:  #@
             pass
         except KeyError as ex:
@@ -718,8 +691,7 @@ class TestLinenoColOffset:
             pass
         finally:
             pass
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 2
 
@@ -762,13 +734,11 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_subscript() -> None:
         """Subscript, Slice, (ExtSlice, Index)."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         var[0]  #@
         var[1:2:1]  #@
         var[1:2, 2]  #@
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 3
 
@@ -809,14 +779,12 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_import() -> None:
         """Import, ImportFrom."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         import a.b  #@
         import a as x  #@
         from . import x  #@
         from .a import y as y  #@
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 4
 
@@ -843,16 +811,14 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_with() -> None:
         """With, AsyncWith."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         with open(file) as fp, \\
                 open(file2) as fp2:  #@
             pass
 
         async with open(file) as fp:  #@
             pass
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 2
 
@@ -893,14 +859,12 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_while() -> None:
         """While."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         while 2:
             pass
         else:
             pass
-        """
-        ).strip()
+        """).strip()
         w1 = builder.extract_node(code)
         assert isinstance(w1, nodes.While)
         assert isinstance(w1.test, nodes.Const)
@@ -918,12 +882,10 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_string() -> None:
         """FormattedValue, JoinedStr."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         f"Hello World: {42.1234:02d}"  #@
         f"Hello: {name=}"  #@
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 2
 
@@ -992,8 +954,7 @@ class TestLinenoColOffset:
         MatchClass, MatchStar, MatchOr, MatchAs.
         """
         # pylint: disable = too-many-statements
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         match x:  #@
             case 200 if True:  #@
                 pass
@@ -1009,8 +970,7 @@ class TestLinenoColOffset:
                 pass
             case 200 as c:  #@
                 pass
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 8
 
@@ -1115,14 +1075,12 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_comprehension() -> None:
         """ListComp, SetComp, DictComp, GeneratorExpr."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         [x for x in var]  #@
         {x for x in var}  #@
         {x: y for x, y in var}  #@
         (x for x in var)  #@
-        """
-        ).strip()
+        """).strip()
         ast_nodes = builder.extract_node(code)
         assert isinstance(ast_nodes, list) and len(ast_nodes) == 4
 
@@ -1168,14 +1126,12 @@ class TestLinenoColOffset:
     @staticmethod
     def test_end_lineno_class() -> None:
         """ClassDef, Keyword."""
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         @decorator1
         @decorator2
         class X(Parent, var=42):
             pass
-        """
-        ).strip()
+        """).strip()
         c1 = builder.extract_node(code)
         assert isinstance(c1, nodes.ClassDef)
         assert isinstance(c1.decorators, nodes.Decorators)
