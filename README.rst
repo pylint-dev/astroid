@@ -1,7 +1,7 @@
 Astroid
 =======
 
-.. image:: https://codecov.io/gh/pylint-dev/astroid/branch/main/graph/badge.svg?token=Buxy4WptLb
+.. image:: https://codecov.io/gh/pylint-dev/astroid/branch/main/graph/badge.svg
     :target: https://codecov.io/gh/pylint-dev/astroid
     :alt: Coverage badge from codecov
 
