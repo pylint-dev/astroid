@@ -7154,3 +7154,21 @@ def test_joined_str_returns_string(source, expected) -> None:
         inferred[0].value.startswith(expected)
     else:
         assert inferred[0] is Uninferable
+
+
+def test_joined_str_uninferable() -> None:
+    """`thing` is not known, therefore the joinedstring should be
+    Uninferable
+    """
+    code = """
+        def hey(thing):
+            return thing
+
+        f"Hello {hey()}"
+    """
+    joined_str = extract_node(code)
+    constant_value, formatted_value = joined_str.values
+    assert constant_value.value == "Hello "
+    assert formatted_value.value.as_string() == "hey()"
+    inferred = next(joined_str.infer())
+    assert inferred is util.Uninferable
