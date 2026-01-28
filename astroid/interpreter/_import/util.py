@@ -95,7 +95,10 @@ def is_namespace(modname: str) -> bool:
             # But immediately return False if we can detect we are in stdlib
             # or external lib (e.g site-packages)
             if any(
-                any(location.startswith(lib_dir) for lib_dir in STD_AND_EXT_LIB_DIRS)
+                any(
+                    str(location).startswith(lib_dir)
+                    for lib_dir in STD_AND_EXT_LIB_DIRS
+                )
                 for location in found_spec.submodule_search_locations
             ):
                 return False
