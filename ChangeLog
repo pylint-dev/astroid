@@ -7,6 +7,13 @@ What's New in astroid 4.1.0?
 ============================
 Release date: TBA
 
+* Ensure ``ast.JoinedStr`` nodes are ``Uninferable`` when the ``ast.FormattedValue`` is
+  ``Uninferable``. This prevents ``unexpected-keyword-arg`` messages in Pylint
+  where the ``Uninferable`` string appeared in function arguments that were
+  constructed dynamically.
+
+  Closes pylint-dev/pylint#10822
+
 * Add support for type constraints (`isinstance(x, y)`) in inference.
 
   Closes pylint-dev/pylint#1162

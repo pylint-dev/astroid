@@ -4740,6 +4740,9 @@ class FormattedValue(NodeNG):
                     uninferable_already_generated = True
                 continue
             for value in self.value.infer(context, **kwargs):
+                if value is util.Uninferable:
+                    yield util.Uninferable
+                    return
                 value_to_format = value
                 if isinstance(value, Const):
                     value_to_format = value.value
