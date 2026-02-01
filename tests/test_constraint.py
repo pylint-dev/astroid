@@ -1108,3 +1108,30 @@ def test_equality_ambiguous_operand():
         assert len(inferred) == 1
         assert isinstance(inferred[0], nodes.Const)
         assert inferred[0].value == 3
+
+
+def test_equality_fractions():
+    """Test that equality constraint is satisfied when both operands are fractions."""
+    node1, node2, node3, node4 = builder.extract_node(
+        """
+    from fractions import Fraction
+
+    x = Fraction(1, 3)
+    y = Fraction(1, 3)
+
+    if x == y:
+        x  #@
+        y  #@
+
+    if x != y:
+        x  #@
+        y  #@
+    """
+    )
+
+    for node in (node1, node2, node3, node4):
+        inferred = node.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Instance)
+        assert isinstance(inferred[0]._proxied, nodes.ClassDef)
+        assert inferred[0]._proxied.name == "Fraction"
