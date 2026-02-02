@@ -81,6 +81,6 @@ repos:
       - id: prettier
         args: [--prose-wrap=always, --print-width=88]
   - repo: https://github.com/tox-dev/pyproject-fmt
-    rev: "v2.11.1"
+    rev: "v2.12.1"
     hooks:
       - id: pyproject-fmt
