@@ -8,7 +8,7 @@ name = "astroid"
 description = "An abstract syntax tree for Python with inference support."
 readme = "README.rst"
 keywords = [ "abstract syntax tree", "python", "static code analysis" ]
-license = "LGPL-2.1-or-later"
+license = "LGPL-2.1-OR-later"
 license-files = [ "LICENSE", "CONTRIBUTORS.txt" ]
 
 requires-python = ">=3.10.0"
@@ -40,14 +40,14 @@ urls."Discord server" = "https://discord.gg/Egy6P8AMB5"
 urls."Docs" = "https://pylint.readthedocs.io/projects/astroid/en/latest/"
 urls."Source Code" = "https://github.com/pylint-dev/astroid"
 
+[tool.setuptools.dynamic]
+version = { attr = "astroid.__pkginfo__.__version__" }
+
 [tool.setuptools.package-dir]
 "" = "."
 
 [tool.setuptools.packages.find]
 include = [ "astroid*" ]
-
-[tool.setuptools.dynamic]
-version = { attr = "astroid.__pkginfo__.__version__" }
 
 [tool.ruff]
 target-version = "py310"
