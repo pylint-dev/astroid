@@ -1016,8 +1016,7 @@ def test_isinstance_uninferable():
 
 def test_equality_callable():
     """Test constraint for equality of callables."""
-    node1, node2, node3, node4, node5, node6 = builder.extract_node(
-        """
+    node1, node2, node3, node4, node5, node6 = builder.extract_node("""
     class Foo:
         pass
 
@@ -1042,8 +1041,7 @@ def test_equality_callable():
         z  #@
     if z != baz:
         z  #@
-    """
-    )
+    """)
 
     inferred = node1.inferred()
     assert len(inferred) == 1
@@ -1068,8 +1066,7 @@ def test_equality_callable():
 
 def test_equality_uninferable_operand():
     """Test that equality constraint is satisfied when either operand is uninferable."""
-    node1, node2, node3, node4 = builder.extract_node(
-        """
+    node1, node2, node3, node4 = builder.extract_node("""
     def f1(x):
         if x == 3:
             x  #@
@@ -1084,8 +1081,7 @@ def test_equality_uninferable_operand():
 
         if x != y:
             x  #@
-    """
-    )
+    """)
 
     for node in (node1, node2):
         msg = node_info(node)
@@ -1103,8 +1099,7 @@ def test_equality_uninferable_operand():
 
 def test_equality_ambiguous_operand():
     """Test that equality constraint is satisfied when the compared operand has multiple inferred values."""
-    node1, node2 = builder.extract_node(
-        """
+    node1, node2 = builder.extract_node("""
     def f(y = 1):
         x = 3
         if x == y:
@@ -1112,8 +1107,7 @@ def test_equality_ambiguous_operand():
 
         if x != y:
             x  #@
-    """
-    )
+    """)
 
     for node in (node1, node2):
         msg = node_info(node)
@@ -1125,8 +1119,7 @@ def test_equality_ambiguous_operand():
 
 def test_equality_fractions():
     """Test that equality constraint is satisfied when both operands are fractions."""
-    node1, node2, node3, node4 = builder.extract_node(
-        """
+    node1, node2, node3, node4 = builder.extract_node("""
     from fractions import Fraction
 
     x = Fraction(1, 3)
@@ -1139,8 +1132,7 @@ def test_equality_fractions():
     if x != y:
         x  #@
         y  #@
-    """
-    )
+    """)
 
     for node in (node1, node2, node3, node4):
         msg = node_info(node)
