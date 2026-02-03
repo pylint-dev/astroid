@@ -15,6 +15,10 @@ from astroid.bases import Instance
 from astroid.util import Uninferable
 
 
+def node_info(node: nodes.NodeNG) -> str:
+    return f"Inference of {node.as_string()!r} at line {node.lineno}"
+
+
 def common_params(node: str) -> pytest.MarkDecorator:
     return pytest.mark.parametrize(
         ("condition", "satisfy_val", "fail_val"),
@@ -271,17 +275,19 @@ def test_if_elif_else_negates(
             )
     """)
     for node in (node1, node2):
+        msg = node_info(node)
         inferred = node.inferred()
-        assert len(inferred) == 2
-        assert isinstance(inferred[0], nodes.Const)
-        assert inferred[0].value == fail_val
+        assert len(inferred) == 2, msg
+        assert isinstance(inferred[0], nodes.Const), msg
+        assert inferred[0].value == fail_val, msg
 
-        assert inferred[1] is Uninferable
+        assert inferred[1] is Uninferable, msg
 
     for node in (node3, node4):
+        msg = node_info(node)
         inferred = node.inferred()
-        assert len(inferred) == 1
-        assert inferred[0] is Uninferable
+        assert len(inferred) == 1, msg
+        assert inferred[0] is Uninferable, msg
 
 
 @common_params(node="x")
@@ -843,11 +849,12 @@ def test_isinstance_multiple_inheritance():
     """)
 
     for node in (n1, n2, n3):
+        msg = node_info(node)
         inferred = node.inferred()
-        assert len(inferred) == 1
-        assert isinstance(inferred[0], Instance)
-        assert isinstance(inferred[0]._proxied, nodes.ClassDef)
-        assert inferred[0].name == "C"
+        assert len(inferred) == 1, msg
+        assert isinstance(inferred[0], Instance), msg
+        assert isinstance(inferred[0]._proxied, nodes.ClassDef), msg
+        assert inferred[0].name == "C", msg
 
 
 def test_isinstance_diamond_inheritance():
@@ -883,11 +890,12 @@ def test_isinstance_diamond_inheritance():
     """)
 
     for node in (n1, n2, n3, n4):
+        msg = node_info(node)
         inferred = node.inferred()
-        assert len(inferred) == 1
-        assert isinstance(inferred[0], Instance)
-        assert isinstance(inferred[0]._proxied, nodes.ClassDef)
-        assert inferred[0].name == "D"
+        assert len(inferred) == 1, msg
+        assert isinstance(inferred[0], Instance), msg
+        assert isinstance(inferred[0]._proxied, nodes.ClassDef), msg
+        assert inferred[0].name == "D", msg
 
 
 def test_isinstance_keyword_arguments():
@@ -905,10 +913,11 @@ def test_isinstance_keyword_arguments():
     """)
 
     for node in (n1, n2):
+        msg = node_info(node)
         inferred = node.inferred()
-        assert len(inferred) == 1
-        assert isinstance(inferred[0], nodes.Const)
-        assert inferred[0].value == 3
+        assert len(inferred) == 1, msg
+        assert isinstance(inferred[0], nodes.Const), msg
+        assert inferred[0].value == 3, msg
 
 
 def test_isinstance_extra_argument():
@@ -1051,9 +1060,10 @@ def test_equality_callable():
     assert isinstance(inferred[0], nodes.Lambda)
 
     for node in (node2, node4, node6):
+        msg = node_info(node)
         inferred = node.inferred()
-        assert len(inferred) == 1
-        assert inferred[0] is Uninferable
+        assert len(inferred) == 1, msg
+        assert inferred[0] is Uninferable, msg
 
 
 def test_equality_uninferable_operand():
@@ -1078,15 +1088,17 @@ def test_equality_uninferable_operand():
     )
 
     for node in (node1, node2):
+        msg = node_info(node)
         inferred = node.inferred()
-        assert len(inferred) == 1
-        assert inferred[0] is Uninferable
+        assert len(inferred) == 1, msg
+        assert inferred[0] is Uninferable, msg
 
     for node in (node3, node4):
+        msg = node_info(node)
         inferred = node.inferred()
-        assert len(inferred) == 1
-        assert isinstance(inferred[0], nodes.Const)
-        assert inferred[0].value == 3
+        assert len(inferred) == 1, msg
+        assert isinstance(inferred[0], nodes.Const), msg
+        assert inferred[0].value == 3, msg
 
 
 def test_equality_ambiguous_operand():
@@ -1104,10 +1116,11 @@ def test_equality_ambiguous_operand():
     )
 
     for node in (node1, node2):
+        msg = node_info(node)
         inferred = node.inferred()
-        assert len(inferred) == 1
-        assert isinstance(inferred[0], nodes.Const)
-        assert inferred[0].value == 3
+        assert len(inferred) == 1, msg
+        assert isinstance(inferred[0], nodes.Const), msg
+        assert inferred[0].value == 3, msg
 
 
 def test_equality_fractions():
@@ -1130,8 +1143,9 @@ def test_equality_fractions():
     )
 
     for node in (node1, node2, node3, node4):
+        msg = node_info(node)
         inferred = node.inferred()
-        assert len(inferred) == 1
-        assert isinstance(inferred[0], Instance)
-        assert isinstance(inferred[0]._proxied, nodes.ClassDef)
-        assert inferred[0]._proxied.name == "Fraction"
+        assert len(inferred) == 1, msg
+        assert isinstance(inferred[0], Instance), msg
+        assert isinstance(inferred[0]._proxied, nodes.ClassDef), msg
+        assert inferred[0]._proxied.name == "Fraction", msg
