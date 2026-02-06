@@ -174,6 +174,62 @@ class TypeConstraint(Constraint):
             return True
 
 
+class EqualityConstraint(Constraint):
+    """Represents a "==" or "!=" constraint."""
+
+    def __init__(self, node: nodes.NodeNG, operand: nodes.NodeNG, negate: bool) -> None:
+        super().__init__(node=node, negate=negate)
+        self.operand = operand
+
+    @classmethod
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
+        """Return a new constraint for node if expr matches one of these patterns:
+
+        - "node == operand" or "operand == node": use given negate value
+        - "node != operand" or "operand != node": flip negate value
+
+        Return None if no pattern matches.
+        """
+        if isinstance(expr, nodes.Compare) and len(expr.ops) == 1:
+            left = expr.left
+            op, right = expr.ops[0]
+            matches_left = _matches(left, node)
+
+            if op in {"==", "!="} and (matches_left or _matches(right, node)):
+                operand = right if matches_left else left
+                negate = (op == "==" and negate) or (op == "!=" and not negate)
+                return cls(node=node, operand=operand, negate=negate)
+
+        return None
+
+    def satisfied_by(self, inferred: InferenceResult) -> bool:
+        """Return True for uninferable/ambiguous results, or depending on negate flag:
+
+        - negate=False: satisfied when both operands are equal.
+        - negate=True: satisfied when both operands are not equal.
+
+        Only comparisons between constants and callables are supported.
+        """
+        if inferred is util.Uninferable:
+            return True
+
+        operand_inferred = util.safe_infer(self.operand)
+        if operand_inferred is util.Uninferable or operand_inferred is None:
+            return True
+
+        if isinstance(inferred, nodes.Const) and isinstance(
+            operand_inferred, nodes.Const
+        ):
+            return self.negate ^ (inferred.value == operand_inferred.value)
+
+        if inferred.callable() and operand_inferred.callable():
+            return self.negate ^ (inferred is operand_inferred)
+
+        return True
+
+
 def get_constraints(
     expr: _NameNodes, frame: nodes.LocalsDictNodeNG
 ) -> dict[nodes.If | nodes.IfExp, set[Constraint]]:
@@ -209,6 +265,7 @@ ALL_CONSTRAINT_CLASSES = frozenset(
         NoneConstraint,
         BooleanConstraint,
         TypeConstraint,
+        EqualityConstraint,
     )
 )
 """All supported constraint types."""

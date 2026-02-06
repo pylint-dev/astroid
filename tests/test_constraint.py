@@ -15,6 +15,10 @@ from astroid.bases import Instance
 from astroid.util import Uninferable
 
 
+def node_info(node: nodes.NodeNG) -> str:
+    return f"Inference of {node.as_string()!r} at line {node.lineno}"
+
+
 def common_params(node: str) -> pytest.MarkDecorator:
     return pytest.mark.parametrize(
         ("condition", "satisfy_val", "fail_val"),
@@ -25,6 +29,10 @@ def common_params(node: str) -> pytest.MarkDecorator:
             (f"not {node}", None, 3),
             (f"isinstance({node}, int)", 3, None),
             (f"isinstance({node}, (int, str))", 3, None),
+            (f"{node} == 3", 3, None),
+            (f"{node} != 3", None, 3),
+            (f"3 == {node}", 3, None),
+            (f"3 != {node}", None, 3),
         ),
     )
 
@@ -267,17 +275,19 @@ def test_if_elif_else_negates(
             )
     """)
     for node in (node1, node2):
+        msg = node_info(node)
         inferred = node.inferred()
-        assert len(inferred) == 2
-        assert isinstance(inferred[0], nodes.Const)
-        assert inferred[0].value == fail_val
+        assert len(inferred) == 2, msg
+        assert isinstance(inferred[0], nodes.Const), msg
+        assert inferred[0].value == fail_val, msg
 
-        assert inferred[1] is Uninferable
+        assert inferred[1] is Uninferable, msg
 
     for node in (node3, node4):
+        msg = node_info(node)
         inferred = node.inferred()
-        assert len(inferred) == 1
-        assert inferred[0] is Uninferable
+        assert len(inferred) == 1, msg
+        assert inferred[0] is Uninferable, msg
 
 
 @common_params(node="x")
@@ -839,11 +849,12 @@ def test_isinstance_multiple_inheritance():
     """)
 
     for node in (n1, n2, n3):
+        msg = node_info(node)
         inferred = node.inferred()
-        assert len(inferred) == 1
-        assert isinstance(inferred[0], Instance)
-        assert isinstance(inferred[0]._proxied, nodes.ClassDef)
-        assert inferred[0].name == "C"
+        assert len(inferred) == 1, msg
+        assert isinstance(inferred[0], Instance), msg
+        assert isinstance(inferred[0]._proxied, nodes.ClassDef), msg
+        assert inferred[0].name == "C", msg
 
 
 def test_isinstance_diamond_inheritance():
@@ -879,11 +890,12 @@ def test_isinstance_diamond_inheritance():
     """)
 
     for node in (n1, n2, n3, n4):
+        msg = node_info(node)
         inferred = node.inferred()
-        assert len(inferred) == 1
-        assert isinstance(inferred[0], Instance)
-        assert isinstance(inferred[0]._proxied, nodes.ClassDef)
-        assert inferred[0].name == "D"
+        assert len(inferred) == 1, msg
+        assert isinstance(inferred[0], Instance), msg
+        assert isinstance(inferred[0]._proxied, nodes.ClassDef), msg
+        assert inferred[0].name == "D", msg
 
 
 def test_isinstance_keyword_arguments():
@@ -901,10 +913,11 @@ def test_isinstance_keyword_arguments():
     """)
 
     for node in (n1, n2):
+        msg = node_info(node)
         inferred = node.inferred()
-        assert len(inferred) == 1
-        assert isinstance(inferred[0], nodes.Const)
-        assert inferred[0].value == 3
+        assert len(inferred) == 1, msg
+        assert isinstance(inferred[0], nodes.Const), msg
+        assert inferred[0].value == 3, msg
 
 
 def test_isinstance_extra_argument():
@@ -999,3 +1012,132 @@ def test_isinstance_uninferable():
         assert len(inferred) == 1
         assert isinstance(inferred[0], nodes.Const)
         assert inferred[0].value == 3
+
+
+def test_equality_callable():
+    """Test constraint for equality of callables."""
+    node1, node2, node3, node4, node5, node6 = builder.extract_node("""
+    class Foo:
+        pass
+
+    def bar():
+        pass
+
+    baz = lambda i : i
+
+    x, y, z = Foo, bar, baz
+
+    if x == Foo:
+        x  #@
+    if x != Foo:
+        x  #@
+
+    if y == bar:
+        y  #@
+    if y != bar:
+        y  #@
+
+    if z == baz:
+        z  #@
+    if z != baz:
+        z  #@
+    """)
+
+    inferred = node1.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.ClassDef)
+    assert inferred[0].name == "Foo"
+
+    inferred = node3.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.FunctionDef)
+    assert inferred[0].name == "bar"
+
+    inferred = node5.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Lambda)
+
+    for node in (node2, node4, node6):
+        msg = node_info(node)
+        inferred = node.inferred()
+        assert len(inferred) == 1, msg
+        assert inferred[0] is Uninferable, msg
+
+
+def test_equality_uninferable_operand():
+    """Test that equality constraint is satisfied when either operand is uninferable."""
+    node1, node2, node3, node4 = builder.extract_node("""
+    def f1(x):
+        if x == 3:
+            x  #@
+
+        if x != 3:
+            x  #@
+
+    def f2(y):
+        x = 3
+        if x == y:
+            x  #@
+
+        if x != y:
+            x  #@
+    """)
+
+    for node in (node1, node2):
+        msg = node_info(node)
+        inferred = node.inferred()
+        assert len(inferred) == 1, msg
+        assert inferred[0] is Uninferable, msg
+
+    for node in (node3, node4):
+        msg = node_info(node)
+        inferred = node.inferred()
+        assert len(inferred) == 1, msg
+        assert isinstance(inferred[0], nodes.Const), msg
+        assert inferred[0].value == 3, msg
+
+
+def test_equality_ambiguous_operand():
+    """Test that equality constraint is satisfied when the compared operand has multiple inferred values."""
+    node1, node2 = builder.extract_node("""
+    def f(y = 1):
+        x = 3
+        if x == y:
+            x  #@
+
+        if x != y:
+            x  #@
+    """)
+
+    for node in (node1, node2):
+        msg = node_info(node)
+        inferred = node.inferred()
+        assert len(inferred) == 1, msg
+        assert isinstance(inferred[0], nodes.Const), msg
+        assert inferred[0].value == 3, msg
+
+
+def test_equality_fractions():
+    """Test that equality constraint is satisfied when both operands are fractions."""
+    node1, node2, node3, node4 = builder.extract_node("""
+    from fractions import Fraction
+
+    x = Fraction(1, 3)
+    y = Fraction(1, 3)
+
+    if x == y:
+        x  #@
+        y  #@
+
+    if x != y:
+        x  #@
+        y  #@
+    """)
+
+    for node in (node1, node2, node3, node4):
+        msg = node_info(node)
+        inferred = node.inferred()
+        assert len(inferred) == 1, msg
+        assert isinstance(inferred[0], Instance), msg
+        assert isinstance(inferred[0]._proxied, nodes.ClassDef), msg
+        assert inferred[0]._proxied.name == "Fraction", msg
