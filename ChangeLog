@@ -59,7 +59,7 @@ Release date: TBA
 
 
 
-What's New in astroid 4.0.4?
+What's New in astroid 4.0.5?
 ============================
 Release date: TBA
 
@@ -74,6 +74,14 @@ Release date: TBA
 * Fix ``random.sample`` crash when cloning ``ClassDef`` or ``FunctionDef`` nodes.
 
   Closes #2923
+
+* Fix ``is_namespace()`` crash when search locations contain ``pathlib.Path`` objects.
+
+  Closes #2942
+
+What's New in astroid 4.0.4?
+============================
+Release date: 2026-02-07
 
 * Fix ``is_namespace()`` crash when search locations contain ``pathlib.Path`` objects.
 
