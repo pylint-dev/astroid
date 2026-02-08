@@ -14,8 +14,8 @@ Ex-maintainers
 Maintainers
 -----------
 - Pierre Sassoulas <pierre.sassoulas@gmail.com>
-- Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 - Jacob Walls <jacobtylerwalls@gmail.com>
+- Daniël van Noord <13665637+DanielNoord@users.noreply.github.com>
 - Marc Mueller <30130371+cdce8p@users.noreply.github.com>
 - Hippo91 <guillaume.peillex@gmail.com>
 - Bryce Guinta <bryce.paul.guinta@gmail.com>
@@ -39,7 +39,9 @@ Contributors
 - David Liu <david@cs.toronto.edu>
 - Alexandre Fayolle <alexandre.fayolle@logilab.fr>
 - Eevee (Alex Munroe) <amunroe@yelp.com>
+- Emmanuel Ferdman <emmanuelferdman@gmail.com>
 - David Gilman <davidgilman1@gmail.com>
+- Zen Lee <53538590+zenlyj@users.noreply.github.com>
 - Tushar Sadhwani <tushar.sadhwani000@gmail.com>
 - Matus Valo <matusvalo@users.noreply.github.com>
 - Julien Jehannet <julien.jehannet@logilab.fr>
@@ -47,7 +49,6 @@ Contributors
 - Calen Pennington <calen.pennington@gmail.com>
 - Antonio <antonio@zoftko.com>
 - Akhil Kamat <akhil.kamat@gmail.com>
-- Zen Lee <53538590+zenlyj@users.noreply.github.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Phil Schaf <flying-sheep@web.de>
 - Alex Hall <alex.mojaki@gmail.com>
@@ -97,11 +98,11 @@ Contributors
 - Keichi Takahashi <keichi.t@me.com>
 - Kavins Singh <kavinsingh@hotmail.com>
 - Karthikeyan Singaravelan <tir.karthi@gmail.com>
+- Kai Mueller <15907922+kasium@users.noreply.github.com>
 - Joshua Cannon <joshdcannon@gmail.com>
 - John Vandenberg <jayvdb@gmail.com>
 - Jacob Bogdanov <jacob@bogdanov.dev>
 - Google, Inc. <no-reply@google.com>
-- Emmanuel Ferdman <emmanuelferdman@gmail.com>
 - David Euresti <github@euresti.com>
 - David Douard <david.douard@logilab.fr>
 - David Cain <davidjosephcain@gmail.com>
@@ -119,12 +120,14 @@ Contributors
 - nathannaveen <42319948+nathannaveen@users.noreply.github.com>
 - mathieui <mathieui@users.noreply.github.com>
 - markmcclain <markmcclain@users.noreply.github.com>
+- jkmnt <git@firewood.fastmail.com>
 - ioanatia <ioanatia@users.noreply.github.com>
 - alm <alonme@users.noreply.github.com>
 - adam-grant-hendry <59346180+adam-grant-hendry@users.noreply.github.com>
 - aatle <168398276+aatle@users.noreply.github.com>
 - Zbigniew Jędrzejewski-Szmek <zbyszek@in.waw.pl>
 - Zac Hatfield-Dodds <Zac-HD@users.noreply.github.com>
+- Youngwook Kim <youngwook.kim@gmail.com>
 - Vilnis Termanis <vilnis.termanis@iotics.com>
 - Valentin Valls <valentin.valls@esrf.fr>
 - Uilian Ries <uilianries@gmail.com>
@@ -143,6 +146,7 @@ Contributors
 - Peter de Blanc <peter@standard.ai>
 - Peter Talley <peterctalley@gmail.com>
 - Ovidiu Sabou <ovidiu@sabou.org>
+- Oliver Reiche <oliver.reiche@gmail.com>
 - Oleh Prypin <oleh@pryp.in>
 - Nicolas Noirbent <nicolas@noirbent.fr>
 - Neil Girdhar <mistersheik@gmail.com>
@@ -151,16 +155,17 @@ Contributors
 - Mateusz Bysiek <mb@mbdev.pl>
 - Matej Aleksandrov <matej.aleksandrov@gmail.com>
 - Marcelo Trylesinski <marcelotryle@gmail.com>
+- Low, Zhi Hao <lowzhao@gmail.com>
 - Leandro T. C. Melo <ltcmelo@gmail.com>
 - Konrad Weihmann <kweihmann@outlook.com>
 - Kian Meng, Ang <kianmeng.ang@gmail.com>
-- Kai Mueller <15907922+kasium@users.noreply.github.com>
 - Jörg Thalheim <Mic92@users.noreply.github.com>
 - Jérome Perrin <perrinjerome@gmail.com>
 - JulianJvn <128477611+JulianJvn@users.noreply.github.com>
 - Josef Kemetmüller <josef.kemetmueller@gmail.com>
 - Jonathan Striebel <jstriebel@users.noreply.github.com>
 - John Belmonte <john@neggie.net>
+- Joao Faria <joaovitorfaria.dev@gmail.com>
 - Jeff Widman <jeff@jeffwidman.com>
 - Jeff Quast <contact@jeffquast.com>
 - Jarrad Hope <me@jarradhope.com>
@@ -185,6 +190,7 @@ Contributors
 - Denis Laxalde <denis.laxalde@logilab.fr>
 - Deepyaman Datta <deepyaman.datta@utexas.edu>
 - David Poirier <david-poirier-csn@users.noreply.github.com>
+- David Foster <david@dafoster.net>
 - Dave Hirschfeld <dave.hirschfeld@gmail.com>
 - Dave Baum <dbaum@google.com>
 - Daniel Martin <daniel.martin@crowdstrike.com>
