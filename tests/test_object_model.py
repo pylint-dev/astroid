@@ -101,6 +101,7 @@ class UnboundMethodModelTest(unittest.TestCase):
         t.im_class #@
         t.im_func #@
         t.im_self #@
+        t.__doc__ #@
         """)
         assert isinstance(ast_nodes, list)
         cls = next(ast_nodes[0].infer())
@@ -120,6 +121,10 @@ class UnboundMethodModelTest(unittest.TestCase):
         self.assertEqual(cls.name, next(ast_nodes[3].infer()).name)
         self.assertEqual(func, next(ast_nodes[4].infer()))
         self.assertIsNone(next(ast_nodes[5].infer()).value)
+
+        doc = next(ast_nodes[6].infer())
+        self.assertIsInstance(doc, nodes.Const)
+        self.assertIsNone(doc.value)
 
 
 class ClassModelTest(unittest.TestCase):
