@@ -7,7 +7,8 @@ numpy>=1.17.0,<2; python_version<"3.12"
 python-dateutil
 PyQt6
 regex
-setuptools; python_version>="3.12"
+# Pinned as 82.0.0 removes `pkg_resources` which we require for a test.
+setuptools<82; python_version>="3.12"
 six
 urllib3>1,<2
 typing_extensions>=4.4.0

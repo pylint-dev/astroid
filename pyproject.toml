@@ -1,6 +1,5 @@
 [build-system]
 build-backend = "setuptools.build_meta"
-
 requires = [ "setuptools>=77" ]
 
 [project]
@@ -10,7 +9,6 @@ readme = "README.rst"
 keywords = [ "abstract syntax tree", "python", "static code analysis" ]
 license = "LGPL-2.1-OR-later"
 license-files = [ "LICENSE", "CONTRIBUTORS.txt" ]
-
 requires-python = ">=3.10.0"
 classifiers = [
   "Development Status :: 6 - Mature",
@@ -31,7 +29,6 @@ classifiers = [
   "Topic :: Software Development :: Testing",
 ]
 dynamic = [ "version" ]
-
 dependencies = [
   "typing-extensions>=4; python_version<'3.11'",
 ]
@@ -40,24 +37,17 @@ urls."Discord server" = "https://discord.gg/Egy6P8AMB5"
 urls."Docs" = "https://pylint.readthedocs.io/projects/astroid/en/latest/"
 urls."Source Code" = "https://github.com/pylint-dev/astroid"
 
-[tool.setuptools.dynamic]
-version = { attr = "astroid.__pkginfo__.__version__" }
-
-[tool.setuptools.package-dir]
-"" = "."
-
-[tool.setuptools.packages.find]
-include = [ "astroid*" ]
+[tool.setuptools]
+dynamic.version = { attr = "astroid.__pkginfo__.__version__" }
+package-dir."" = "."
+packages.find.include = [ "astroid*" ]
 
 [tool.ruff]
 target-version = "py310"
-
 # ruff is less lenient than pylint and does not make any exceptions
 # (for docstrings, strings and comments in particular).
 line-length = 110
-
 extend-exclude = [ "tests/testdata/" ]
-
 lint.select = [
   "B",   # bugbear
   "E",   # pycodestyle
@@ -86,11 +76,11 @@ lint.unfixable = [ "RUF001" ]
 [tool.pyproject-fmt]
 max_supported_python = "3.14"
 
-[tool.pytest.ini_options]
-addopts = '-m "not acceptance"'
-python_files = [ "*test_*.py" ]
-testpaths = [ "tests" ]
-filterwarnings = "error"
+[tool.pytest]
+ini_options.addopts = '-m "not acceptance"'
+ini_options.python_files = [ "*test_*.py" ]
+ini_options.testpaths = [ "tests" ]
+ini_options.filterwarnings = "error"
 
 [tool.mypy]
 python_version = "3.10"
