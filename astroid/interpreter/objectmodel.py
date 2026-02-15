@@ -413,7 +413,7 @@ class FunctionModel(ObjectModel):
                     )
 
                 # The `func` can already be a Unbound or BoundMethod. If the former, make sure to
-                # wrap as a BoundMethod like we do below whe constructing the function from scratch.
+                # wrap as a BoundMethod like we do below when constructing the function from scratch.
                 if isinstance(func, bases.UnboundMethod):
                     yield bases.BoundMethod(proxy=func, bound=cls)
                     return
