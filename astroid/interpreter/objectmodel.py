@@ -412,8 +412,12 @@ class FunctionModel(ObjectModel):
                         "Invalid class inferred", target=self, context=context
                     )
 
-                # For some reason func is a Node that the below
-                # code is not expecting
+                # The `func` can already be a Unbound or BoundMethod. If the former, make sure to
+                # wrap as a BoundMethod like we do below when constructing the function from scratch.
+                if isinstance(func, bases.UnboundMethod):
+                    yield bases.BoundMethod(proxy=func, bound=cls)
+                    return
+
                 if isinstance(func, bases.BoundMethod):
                     yield func
                     return
@@ -629,7 +633,7 @@ class SuperModel(ObjectModel):
         return self._instance._proxied
 
 
-class UnboundMethodModel(ObjectModel):
+class UnboundMethodModel(FunctionModel):
     @property
     def attr___class__(self):
         # pylint: disable=import-outside-toplevel; circular import
