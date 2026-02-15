@@ -462,14 +462,18 @@ class UnboundMethod(Proxy):
 
     def getattr(self, name: str, context: InferenceContext | None = None):
         if name in self.special_attributes:
-            return [self.special_attributes.lookup(name)]
+            special_attr = self.special_attributes.lookup(name)
+            if not isinstance(special_attr, nodes.Unknown):
+                return [special_attr]
         return self._proxied.getattr(name, context)
 
     def igetattr(
         self, name: str, context: InferenceContext | None = None
     ) -> Iterator[InferenceResult]:
         if name in self.special_attributes:
-            return iter((self.special_attributes.lookup(name),))
+            special_attr = self.special_attributes.lookup(name)
+            if not isinstance(special_attr, nodes.Unknown):
+                return iter((special_attr,))
         return self._proxied.igetattr(name, context)
 
     def infer_call_result(
