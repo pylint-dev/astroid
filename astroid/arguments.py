@@ -70,8 +70,8 @@ class CallSite:
 
         This can mean multiple things. For instance, if an unpacking
         of an invalid object was passed, then this method will return True.
-        Other cases can be when the arguments can't be inferred by astroid,
-        for example, by passing objects which aren't known statically.
+        Other cases where this might return True if
+        objects which can't be inferred were passed.
         """
         return len(self.positional_arguments) != len(self._unpacked_args)
 
