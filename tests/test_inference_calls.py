@@ -547,10 +547,10 @@ def test_chained_attribute_inherited() -> None:
 
 def test_decorated_function() -> None:
     """Test that a call to a function, which has a decorator,
-       returns the function itself.
+    returns the function itself.
 
-       Currently we do not consider the result of a function after it's
-       decorator is applied to it.
+    Currently we do not consider the result of a function after it's
+    decorator is applied to it.
     """
     node = builder.extract_node("""
     from typing import Callable
