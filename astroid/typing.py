@@ -104,16 +104,17 @@ class ParamSpec(Protocol):
     __covariant__: bool
     __contravariant__: bool
 
-    def __getitem__(self, item: Any) -> 'ParamSpec': ...  # pragma: no cover
+    def __getitem__(self, item: Any) -> ParamSpec: ...  # pragma: no cover
 
 
 # Example usage of ParamSpec
-T = TypeVar('T')
-P = ParamSpec('P')
+T = TypeVar("T")
+P = ParamSpec("P")
+
 
 def foo(x: P[T]) -> None:
     pass
 
+
 # Update the type annotations to include ParamSpec
-class CallableWithParams(Callable[P, Any]):
-    ...
+class CallableWithParams(Callable[P, Any]): ...
