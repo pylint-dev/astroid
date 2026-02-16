@@ -1771,7 +1771,7 @@ class Call(NodeNG):
             callcontext.extra_context = self._populate_context_lookup(context.clone())
 
         for callee in self.func.infer(context):
-            if isinstance(callee, util.UninferableBase):
+            if isinstance(callee, util.UninferableBase) or callee.decorators:
                 yield callee
                 continue
             try:

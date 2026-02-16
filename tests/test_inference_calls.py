@@ -543,3 +543,32 @@ def test_chained_attribute_inherited() -> None:
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)
     assert inferred[0].value == 42
+
+
+def test_decorated_function() -> None:
+    """Test that a call to a function, which has a decorator,
+    returns the function itself.
+
+    Currently we do not consider the result of a function after it's
+    decorator is applied to it.
+    """
+    node = builder.extract_node("""
+    from typing import Callable
+
+    def type_changing_decorator(func: Callable[[int], int]) -> Callable[[int], str]:
+        def wrapper(val: int) -> str:
+            res = func(val)
+            return f"the result is {res:d}"
+        return wrapper
+
+    @type_changing_decorator
+    def add1(val: int) -> int:
+        return val+1
+
+    add1(5)  #@
+    """)
+    assert isinstance(node, nodes.NodeNG)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.FunctionDef)
+    assert inferred[0].name == "add1"
