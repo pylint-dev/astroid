@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from astroid import nodes
+from astroid import nodes, util
 from astroid.bases import Instance
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import InferenceError, NoDefault

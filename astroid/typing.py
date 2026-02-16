@@ -96,3 +96,24 @@ class TransformFn(Protocol, Generic[_SuccessfulInferenceResultT]):
         node: _SuccessfulInferenceResultT,
         infer_function: InferFn[_SuccessfulInferenceResultT] = ...,
     ) -> _SuccessfulInferenceResultT | None: ...  # pragma: no cover
+
+
+# Add support for PEP 612: Parameter Specification Variables
+class ParamSpec(Protocol):
+    __bound__: Any
+    __covariant__: bool
+    __contravariant__: bool
+
+    def __getitem__(self, item: Any) -> 'ParamSpec': ...  # pragma: no cover
+
+
+# Example usage of ParamSpec
+T = TypeVar('T')
+P = ParamSpec('P')
+
+def foo(x: P[T]) -> None:
+    pass
+
+# Update the type annotations to include ParamSpec
+class CallableWithParams(Callable[P, Any]):
+    ...
