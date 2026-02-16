@@ -16,6 +16,14 @@ Release date: TBA
 * Let `UnboundMethodModel` inherit from `FunctionModel` to improve inference of
   dunder methods for unbound methods.
 
+* Return the ``FunctionDef`` node when a call is made to a decorated function
+  instead of returning the inferred ``FunctionDef`` node.
+  This prevents ``no-member`` messages in Pylint when a decorated function is
+  called and then is missing expected attributes; Pylint recognizes when a
+  ``FunctionDef`` node has any decorators and suppresses the message.
+
+  Closes pylint-dev/pylint#10848
+
 What's New in astroid 4.1.0?
 ============================
 Release date: 2026-02-08
