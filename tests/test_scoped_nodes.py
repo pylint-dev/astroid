@@ -1893,6 +1893,30 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         with self.assertRaises(DuplicateBasesError):
             cls.mro()
 
+    def test_mro_circular_inheritance(self):
+        """Test that circular MRO through name rebinding raises InconsistentMroError.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/2967
+        and https://github.com/pylint-dev/pylint/issues/10821.
+        """
+        module = parse("""
+        from pdb import Pdb as StdlibPdb
+
+        class Pdb(StdlibPdb):
+            pass
+
+        class PatchedPdb(Pdb):
+            pass
+
+        if __name__ == '__main__':
+            import pdb
+            pdb.Pdb = PatchedPdb
+        """)
+        patched_pdb = module.body[2]
+        assert isinstance(patched_pdb, nodes.ClassDef)
+        with self.assertRaises(InconsistentMroError):
+            patched_pdb.mro()
+
     def test_mro_typing_extensions(self):
         """Regression test for mro() inference on typing_extensions.
 
