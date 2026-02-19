@@ -1013,6 +1013,37 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
         self.assertEqual(inferred[0].name, "exists")
 
+    def test_import_as_infer_cache_with_different_asname(self) -> None:
+        """Test that inference cache distinguishes asname=True from asname=False.
+
+        Regression test: the cache key did not include kwargs like 'asname',
+        so inferring an aliased import with asname=True would poison the cache
+        for subsequent calls with asname=False on the same node.
+
+        See: https://github.com/pylint-dev/pylint/issues/10193
+        """
+        code = "import os.path as osp"
+        ast = parse(code, __name__)
+        import_node = ast.body[0]
+
+        # First inference with asname=True: should resolve alias to os.path
+        context1 = InferenceContext()
+        context1.lookupname = "osp"
+        result1 = list(import_node.infer(context1, asname=True))
+        self.assertEqual(len(result1), 1)
+        self.assertEqual(result1[0].name, "os.path")
+
+        # Second inference with asname=False: should use raw name "osp"
+        # which is not a real module, so it should fail or return a different result.
+        # Before the fix, this would return the cached os.path from the first call.
+        context2 = InferenceContext()
+        context2.lookupname = "osp"
+        # With asname=False, it tries do_import_module("osp") which doesn't exist
+        from astroid.exceptions import InferenceError as IE
+
+        with self.assertRaises(IE):
+            list(import_node.infer(context2, asname=False))
+
     def test_do_import_module_performance(self) -> None:
         import_node = extract_node("import importlib")
         import_node.modname = ""
