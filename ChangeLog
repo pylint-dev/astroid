@@ -7,7 +7,12 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Fix ``RecursionError`` in ``_compute_mro()`` when circular class hierarchies
+  are created through name rebinding or conditional module patching.
+  ``InconsistentMroError`` is now raised instead.
 
+  Closes #2967
+  Closes pylint-dev/pylint#10821
 
 What's New in astroid 4.1.1?
 ============================

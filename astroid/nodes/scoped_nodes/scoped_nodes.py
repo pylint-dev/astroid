@@ -2846,18 +2846,38 @@ class ClassDef(
             else:
                 yield from baseobj.bases
 
-    def _compute_mro(self, context: InferenceContext | None = None):
+    def _compute_mro(
+        self,
+        context: InferenceContext | None = None,
+        _chain: set[ClassDef] | None = None,
+    ):
         if self.qname() == "builtins.object":
             return [self]
 
-        inferred_bases = list(self._inferred_bases(context=context))
-        bases_mro = []
-        for base in inferred_bases:
-            if base is self:
-                continue
+        if _chain is None:
+            _chain = set()
 
-            mro = base._compute_mro(context=context)
-            bases_mro.append(mro)
+        _chain.add(self)
+        try:
+            inferred_bases = list(self._inferred_bases(context=context))
+            bases_mro = []
+            for base in inferred_bases:
+                if base is self:
+                    continue
+
+                if base in _chain:
+                    raise InconsistentMroError(
+                        message="Cannot create a consistent method resolution order "
+                        "for MROs {mros} of class {cls!r}.",
+                        mros=[[self]],
+                        cls=self,
+                        context=context,
+                    )
+
+                mro = base._compute_mro(context=context, _chain=_chain)
+                bases_mro.append(mro)
+        finally:
+            _chain.discard(self)
 
         unmerged_mro: list[list[ClassDef]] = [[self], *bases_mro, inferred_bases]
         unmerged_mro = clean_duplicates_mro(unmerged_mro, self, context)
