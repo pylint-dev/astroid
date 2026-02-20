@@ -154,11 +154,16 @@ class InferenceContext:
         )
 
     def __str__(self) -> str:
-        state = (
-            f"{field}={pprint.pformat(getattr(self, field), width=80 - len(field))}"
-            for field in self.__slots__
-        )
-        return "{}({})".format(type(self).__name__, ",\n    ".join(state))
+        parts = []
+        for field in self.__slots__:
+            try:
+                value_str = pprint.pformat(
+                    getattr(self, field), width=max(80 - len(field), 1)
+                )
+            except ValueError:
+                value_str = f"<{type(getattr(self, field)).__name__}>"
+            parts.append(f"{field}={value_str}")
+        return "{}({})".format(type(self).__name__, ",\n    ".join(parts))
 
 
 class CallContext:
