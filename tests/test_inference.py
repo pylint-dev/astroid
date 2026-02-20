@@ -5262,6 +5262,21 @@ def test_formatted_fstring_inference(code, result) -> None:
         assert value_node.value == result
 
 
+def test_fstring_large_width_no_memory_error() -> None:
+    """MemoryError should not crash inference for f-strings with huge width.
+
+    Regression test for https://github.com/pylint-dev/astroid/issues/2762
+    """
+    node = extract_node(
+        """
+        f'{0:11111111111}'  #@
+        """
+    )
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is util.Uninferable
+
+
 def test_augassign_recursion() -> None:
     """Make sure inference doesn't throw a RecursionError.
 
