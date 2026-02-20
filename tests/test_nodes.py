@@ -2253,3 +2253,27 @@ def test_deprecated_nodes_import_from_toplevel():
     # This should not raise a DeprecationWarning
     # pylint: disable-next=unused-import
     from astroid import builtin_lookup
+
+
+def test_str_long_name_no_crash() -> None:
+    """str() should not crash with ValueError on nodes with long names.
+
+    Regression test for https://github.com/pylint-dev/astroid/issues/2764
+    """
+    long_name = "a" * 200
+    code = f"class {long_name}:\n    pass"
+    module = parse(code)
+    # This should not raise ValueError('width must be != 0')
+    str(module.body[0])
+
+
+def test_str_large_int_no_crash() -> None:
+    """str() should not crash with ValueError on nodes with large integer values.
+
+    Regression test for https://github.com/pylint-dev/astroid/issues/2785
+    """
+    code = "a, = 7 ** 10000\na.B"
+    module = parse(code)
+    # This should not raise ValueError about integer string conversion limit
+    for node in module.body:
+        str(node)
