@@ -21,7 +21,12 @@ from astroid import bases, context, nodes
 from astroid.brain.helpers import is_class_var
 from astroid.builder import parse
 from astroid.const import PY313_PLUS
-from astroid.exceptions import AstroidSyntaxError, InferenceError, UseInferenceDefault
+from astroid.exceptions import (
+    AstroidSyntaxError,
+    InferenceError,
+    MroError,
+    UseInferenceDefault,
+)
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 from astroid.typing import InferenceResult
@@ -174,7 +179,12 @@ def _find_arguments_from_base_classes(
     # See TODO down below
     # all_have_defaults = True
 
-    for base in reversed(node.mro()):
+    try:
+        mro = node.mro()
+    except MroError:
+        return pos_only_store, kw_only_store
+
+    for base in reversed(mro):
         if not base.is_dataclass:
             continue
         try:
@@ -224,7 +234,12 @@ def _parse_arguments_into_strings(
 
 def _get_previous_field_default(node: nodes.ClassDef, name: str) -> nodes.NodeNG | None:
     """Get the default value of a previously defined field."""
-    for base in reversed(node.mro()):
+    try:
+        mro = node.mro()
+    except MroError:
+        return None
+
+    for base in reversed(mro):
         if not base.is_dataclass:
             continue
         if name in base.locals:
