@@ -5267,11 +5267,9 @@ def test_fstring_large_width_no_memory_error() -> None:
 
     Regression test for https://github.com/pylint-dev/astroid/issues/2762
     """
-    node = extract_node(
-        """
+    node = extract_node("""
         f'{0:11111111111}'  #@
-        """
-    )
+        """)
     inferred = node.inferred()
     assert len(inferred) == 1
     assert inferred[0] is util.Uninferable
