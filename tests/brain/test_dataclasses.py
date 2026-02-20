@@ -1237,3 +1237,35 @@ def test_dataclass_with_properties() -> None:
     fourth_init: bases.UnboundMethod = next(fourth.infer())
     assert [a.name for a in fourth_init.args.args] == ["self", "other_attr", "attr"]
     assert [a.name for a in fourth_init.args.defaults] == ["Uninferable"]
+
+
+def test_dataclass_with_duplicate_bases_no_crash():
+    """Regression test for https://github.com/pylint-dev/astroid/issues/2628.
+
+    A dataclass inheriting from a class with duplicate bases in MRO
+    (e.g., Protocol appearing both directly and indirectly) should not
+    crash with DuplicateBasesError during AST transformation.
+    """
+    code = """
+    import dataclasses
+    from typing import TypeVar, Protocol
+
+    BaseT = TypeVar("BaseT")
+    T = TypeVar("T", bound=BaseT)
+
+    class ConfigBase(Protocol[BaseT]):
+        ...
+
+    class Config(ConfigBase[T], Protocol[T]):
+        ...
+
+    @dataclasses.dataclass
+    class DatasetConfig(Config[T]):
+        name: str = "default"
+
+    DatasetConfig.__init__  #@
+    """
+    node = astroid.extract_node(code)
+    # Should not raise DuplicateBasesError — graceful degradation instead
+    inferred = next(node.infer())
+    assert inferred is not None
