@@ -9,15 +9,26 @@ Release date: TBA
 
 
 
-What's New in astroid 4.1.1?
+What's New in astroid 4.1.2?
 ============================
 Release date: TBA
+
+
+
+What's New in astroid 4.1.1?
+============================
+Release date: 2026-02-22
 
 * Let `UnboundMethodModel` inherit from `FunctionModel` to improve inference of
   dunder methods for unbound methods.
 
+  Refs #2741
+
 * Filter ``Unknown`` from ``UnboundMethod`` and ``Super`` special attribute
   lookup to prevent placeholder nodes from leaking during inference.
+
+  Refs #2741
+
 
 What's New in astroid 4.1.0?
 ============================
