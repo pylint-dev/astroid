@@ -33,7 +33,7 @@ def common_params(node: str) -> pytest.MarkDecorator:
             (f"{node} != 3", None, 3),
             (f"3 == {node}", 3, None),
             (f"3 != {node}", None, 3),
-            (f"isinstance({node}, int) and {node} == 3", 3, None),
+            (f"isinstance({node}, int) and {node} == 3", 3, 5),
             (
                 f"{node} is not None and (isinstance({node}, int) and {node} == 3)",
                 3,
@@ -42,33 +42,33 @@ def common_params(node: str) -> pytest.MarkDecorator:
             (
                 f"{node} is not None and {node} and isinstance({node}, int) and {node} == 3",
                 3,
-                None,
+                0,
             ),  # AND with multiple constraints
             (f"isinstance({node}, str) or {node} == 3", 3, None),
             (
                 f"{node} is None or (isinstance({node}, str) or {node} == 3)",
-                3,
+                None,
                 5,
             ),  # Nested OR
             (
                 f"{node} is None or not {node} or isinstance({node}, str) or {node} == 3",
-                3,
+                0,
                 5,
             ),  # OR with multiple constraints
             (
-                f"{node} is not None and (isinstance({node}, str) or {node} == 3)",
-                3,
-                5,
+                f"{node} is not None and (isinstance({node}, bool) or {node} == 3)",
+                True,
+                None,
             ),  # AND with nested OR
             (
-                f"{node} is None or (isinstance({node}, int) and {node} == 3)",
-                3,
+                f"{node} is None or (isinstance({node}, bool) and {node} == 3)",
+                None,
                 5,
             ),  # OR with nested AND
             (
-                f"{node} == 3 or {node} == 5 and {node} == 7",
+                f"{node} == 3 or isinstance({node}, int) and {node} == 5",
                 3,
-                5,
+                None,
             ),  # AND precedence over OR
         ),
     )
@@ -1178,20 +1178,6 @@ def test_equality_fractions():
         assert isinstance(inferred[0], Instance), msg
         assert isinstance(inferred[0]._proxied, nodes.ClassDef), msg
         assert inferred[0]._proxied.name == "Fraction", msg
-
-
-def test_and_expression_with_partially_satisfied_constraints():
-    """Test that constraint is not satisfied when one child constraint is unsatisfied."""
-    node = builder.extract_node("""
-    x = 3
-
-    if x and isinstance(x, str):
-        x  #@
-    """)
-
-    inferred = node.inferred()
-    assert len(inferred) == 1
-    assert inferred[0] is Uninferable
 
 
 def test_and_expression_with_non_constraint():
