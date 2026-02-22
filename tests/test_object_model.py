@@ -948,3 +948,53 @@ def test_hash_none_for_unhashable_builtins() -> None:
         hash_attr = cls.getattr("__hash__")[0]
         assert isinstance(hash_attr, nodes.Const)
         assert hash_attr.value is None
+
+
+def test_unbound_method_object_dunders_return_uninferable() -> None:
+    """Test that ObjectModel-only dunders on unbound methods return Uninferable."""
+    node = builder.extract_node("""
+    class A:
+        def test(self): pass
+    A.test  #@
+    """)
+    unbound = next(node.infer())
+    assert isinstance(unbound, bases.UnboundMethod)
+
+    for dunder in (
+        "__eq__",
+        "__ne__",
+        "__lt__",
+        "__le__",
+        "__gt__",
+        "__ge__",
+        "__repr__",
+        "__str__",
+        "__hash__",
+    ):
+        inferred = next(unbound.igetattr(dunder))
+        assert inferred is util.Uninferable, f"{dunder} should be Uninferable"
+
+        attrs = unbound.getattr(dunder)
+        assert attrs, f"{dunder} getattr should return results"
+
+
+def test_super_special_attributes_fallback() -> None:
+    """Test that super() special attributes use the fallback path correctly."""
+    doc_node = builder.extract_node("""
+    class Base:
+        def method(self):
+            return super().__doc__
+    Base().method()  #@
+    """)
+    doc_inferred = next(doc_node.infer())
+    assert doc_inferred is util.Uninferable
+
+    thisclass_node = builder.extract_node("""
+    class Base:
+        def method(self):
+            return super().__thisclass__
+    Base().method()  #@
+    """)
+    thisclass_inferred = next(thisclass_node.infer())
+    assert isinstance(thisclass_inferred, nodes.ClassDef)
+    assert thisclass_inferred.name == "Base"
