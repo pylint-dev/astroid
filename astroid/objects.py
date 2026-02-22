@@ -222,8 +222,10 @@ class Super(node_classes.NodeNG):
         # Only if we haven't found any explicit overwrites for the
         # attribute we look it up in the special attributes
         if not found and name in self.special_attributes:
-            yield self.special_attributes.lookup(name)
-            return
+            special_attr = self.special_attributes.lookup(name)
+            if not isinstance(special_attr, node_classes.Unknown):
+                yield special_attr
+                return
 
         if not found:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
