@@ -7,6 +7,10 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Enrich any ``RecursionError`` emitted during file parsing with advice on
+  raising the system recursion limit.
+
+  Closes #2974
 
 
 What's New in astroid 4.1.1?

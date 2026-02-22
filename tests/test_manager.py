@@ -553,3 +553,14 @@ class ClearCacheTest(unittest.TestCase):
         isinstance_call = astroid.extract_node("isinstance(1, int)")
         inferred = next(isinstance_call.infer())
         self.assertIs(inferred.value, True)
+
+
+class FileParseFailureTest(unittest.TestCase):
+    @unittest.mock.patch(
+        "astroid.manager.AstroidBuilder.file_build", side_effect=RecursionError
+    )
+    def test_recursion_error(self, _mock) -> None:
+        filepath = unittest.__file__
+        with self.assertRaises(RecursionError) as cm:
+            astroid.MANAGER.ast_from_file(filepath)
+        self.assertIn("sys.setrecursionlimit", cm.exception.__notes__[0])
