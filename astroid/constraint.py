@@ -271,7 +271,7 @@ class AndConstraint(Constraint):
         """
         if isinstance(inferred, util.UninferableBase):
             return True
-        
+
         return self.negate ^ all(
             constraint.satisfied_by(inferred) for constraint in self.children
         )

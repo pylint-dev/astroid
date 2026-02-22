@@ -34,14 +34,42 @@ def common_params(node: str) -> pytest.MarkDecorator:
             (f"3 == {node}", 3, None),
             (f"3 != {node}", None, 3),
             (f"isinstance({node}, int) and {node} == 3", 3, None),
-            (f"{node} is not None and (isinstance({node}, int) and {node} == 3)", 3, None),  # Nested AND
-            (f"{node} is not None and {node} and isinstance({node}, int) and {node} == 3", 3, None),  # AND with multiple constraints
+            (
+                f"{node} is not None and (isinstance({node}, int) and {node} == 3)",
+                3,
+                None,
+            ),  # Nested AND
+            (
+                f"{node} is not None and {node} and isinstance({node}, int) and {node} == 3",
+                3,
+                None,
+            ),  # AND with multiple constraints
             (f"isinstance({node}, str) or {node} == 3", 3, None),
-            (f"{node} is None or (isinstance({node}, str) or {node} == 3)", 3, 5),  # Nested OR
-            (f"{node} is None or not {node} or isinstance({node}, str) or {node} == 3", 3, 5),  # OR with multiple constraints
-            (f"{node} is not None and (isinstance({node}, str) or {node} == 3)", 3, 5),  # AND with nested OR
-            (f"{node} is None or (isinstance({node}, int) and {node} == 3)", 3, 5),  # OR with nested AND
-            (f"{node} == 3 or {node} == 5 and {node} == 7", 3, 5)  # AND precedence over OR
+            (
+                f"{node} is None or (isinstance({node}, str) or {node} == 3)",
+                3,
+                5,
+            ),  # Nested OR
+            (
+                f"{node} is None or not {node} or isinstance({node}, str) or {node} == 3",
+                3,
+                5,
+            ),  # OR with multiple constraints
+            (
+                f"{node} is not None and (isinstance({node}, str) or {node} == 3)",
+                3,
+                5,
+            ),  # AND with nested OR
+            (
+                f"{node} is None or (isinstance({node}, int) and {node} == 3)",
+                3,
+                5,
+            ),  # OR with nested AND
+            (
+                f"{node} == 3 or {node} == 5 and {node} == 7",
+                3,
+                5,
+            ),  # AND precedence over OR
         ),
     )
 
