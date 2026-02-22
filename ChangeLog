@@ -19,6 +19,12 @@ Release date: TBA
 * Filter ``Unknown`` from ``UnboundMethod`` and ``Super`` special attribute
   lookup to prevent placeholder nodes from leaking during inference.
 
+* Fix ``ValueError`` in ``__str__``/``repr`` and error messages when nodes have
+  extreme values (very long identifiers or large integers). Clamp pprint width
+  to a minimum of 1 and truncate oversized values in error messages.
+
+  Closes #2764
+
 What's New in astroid 4.1.0?
 ============================
 Release date: 2026-02-08
