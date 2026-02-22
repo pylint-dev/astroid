@@ -2264,7 +2264,8 @@ def test_str_long_name_no_crash() -> None:
     code = f"class {long_name}:\n    pass"
     module = parse(code)
     # This should not raise ValueError('width must be != 0')
-    str(module.body[0])
+    result = str(module.body[0])
+    assert long_name in result
 
 
 def test_str_large_int_no_crash() -> None:
@@ -2272,8 +2273,48 @@ def test_str_large_int_no_crash() -> None:
 
     Regression test for https://github.com/pylint-dev/astroid/issues/2785
     """
-    code = "a, = 7 ** 10000\na.B"
+    code = "x = 123"
     module = parse(code)
+    const_node = module.body[0].value
+    # Replace with a huge int that exceeds sys.get_int_max_str_digits()
+    const_node.value = 10**5000
     # This should not raise ValueError about integer string conversion limit
-    for node in module.body:
-        str(node)
+    result = str(const_node)
+    assert "int" in result
+
+
+def test_str_large_int_getitem_no_crash() -> None:
+    """getitem error message should not crash with large integer values."""
+    from astroid import exceptions as astroid_exceptions
+
+    code = "x = 123"
+    module = parse(code)
+    const_node = module.body[0].value
+    const_node.value = 10**5000
+    # Trigger the error path that formats the value
+    try:
+        const_node.getitem(nodes.Const(0))
+    except astroid_exceptions.AstroidTypeError as e:
+        error_msg = str(e)
+        assert "too large to display" in error_msg or "int" in error_msg
+
+
+def test_inference_context_str() -> None:
+    """InferenceContext.__str__ should not crash."""
+    from astroid.context import InferenceContext
+
+    ctx = InferenceContext()
+    result = str(ctx)
+    assert "InferenceContext" in result
+
+
+def test_inference_context_str_with_large_value() -> None:
+    """InferenceContext.__str__ should handle unprintable values gracefully."""
+    from astroid.context import InferenceContext
+
+    ctx = InferenceContext()
+    # Set a slot to a value that triggers ValueError in pprint.pformat
+    ctx.lookupname = 10**5000
+    result = str(ctx)
+    assert "InferenceContext" in result
+    assert "int" in result
