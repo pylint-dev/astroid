@@ -1269,3 +1269,41 @@ def test_dataclass_with_duplicate_bases_no_crash():
     # Should not raise DuplicateBasesError — graceful degradation instead
     inferred = next(node.infer())
     assert inferred is not None
+
+
+def test_dataclass_with_duplicate_bases_field_default():
+    """Regression test for _get_previous_field_default with broken MRO.
+
+    When a parent dataclass defines a field and a child (with duplicate bases
+    in its MRO) overrides that field with init=False, _get_previous_field_default
+    should not crash with DuplicateBasesError.
+
+    See https://github.com/pylint-dev/astroid/issues/2628.
+    """
+    code = """
+    import dataclasses
+    from typing import TypeVar, Protocol
+
+    BaseT = TypeVar("BaseT")
+    T = TypeVar("T", bound=BaseT)
+
+    class ConfigBase(Protocol[BaseT]):
+        ...
+
+    class Config(ConfigBase[T], Protocol[T]):
+        ...
+
+    @dataclasses.dataclass
+    class BaseConfig(Config[T]):
+        name: str = "default"
+
+    @dataclasses.dataclass
+    class ChildConfig(BaseConfig[T]):
+        name: str = dataclasses.field(default="child", init=False)
+
+    ChildConfig.__init__  #@
+    """
+    node = astroid.extract_node(code)
+    # Should not raise DuplicateBasesError in _get_previous_field_default
+    inferred = next(node.infer())
+    assert inferred is not None
