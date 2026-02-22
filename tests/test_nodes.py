@@ -41,6 +41,7 @@ from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
+    AstroidTypeError,
     AttributeInferenceError,
     StatementMissing,
 )
@@ -2285,8 +2286,6 @@ def test_str_large_int_no_crash() -> None:
 
 def test_str_large_int_getitem_no_crash() -> None:
     """getitem error message should not crash with large integer values."""
-    from astroid import exceptions as astroid_exceptions
-
     code = "x = 10 ** 5000"
     module = parse(code)
     inferred = next(module.body[0].value.infer())
@@ -2294,15 +2293,13 @@ def test_str_large_int_getitem_no_crash() -> None:
     # Trigger the error path that formats the value
     try:
         inferred.getitem(nodes.Const(0))
-    except astroid_exceptions.AstroidTypeError as e:
+    except AstroidTypeError as e:
         error_msg = str(e)
         assert "too large to display" in error_msg or "int" in error_msg
 
 
 def test_inference_context_str() -> None:
     """InferenceContext.__str__ should not crash."""
-    from astroid.context import InferenceContext
-
     ctx = InferenceContext()
     result = str(ctx)
     assert "InferenceContext" in result
@@ -2310,8 +2307,6 @@ def test_inference_context_str() -> None:
 
 def test_inference_context_str_with_large_value() -> None:
     """InferenceContext.__str__ should handle unprintable values gracefully."""
-    from astroid.context import InferenceContext
-
     ctx = InferenceContext()
     # Set a slot to a value that triggers ValueError in pprint.pformat
     ctx.lookupname = 10**5000
