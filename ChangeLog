@@ -7,6 +7,7 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Add support for ``and`` and ``or`` boolean constraints in inference.
 
 
 What's New in astroid 4.1.1?
