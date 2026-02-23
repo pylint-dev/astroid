@@ -1039,9 +1039,32 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         context2 = InferenceContext()
         context2.lookupname = "osp"
         # With asname=False, it tries do_import_module("osp") which doesn't exist
-        from astroid.exceptions import InferenceError as IE
+        with self.assertRaises(InferenceError):
+            list(import_node.infer(context2, asname=False))
 
-        with self.assertRaises(IE):
+    def test_from_import_as_infer_cache_with_different_asname(self) -> None:
+        """Test cache key includes asname for ImportFrom nodes too.
+
+        Same bug as test_import_as_infer_cache_with_different_asname
+        but for 'from X import Y as Z' syntax.
+
+        See: https://github.com/pylint-dev/pylint/issues/10193
+        """
+        code = "from os.path import join as pjoin"
+        ast = parse(code, __name__)
+        import_node = ast.body[0]
+
+        # With asname=True: resolve alias "pjoin" -> real name "join"
+        context1 = InferenceContext()
+        context1.lookupname = "pjoin"
+        result1 = list(import_node.infer(context1, asname=True))
+        self.assertEqual(len(result1), 1)
+        self.assertEqual(result1[0].name, "join")
+
+        # With asname=False: use raw name "pjoin" which doesn't exist in os.path
+        context2 = InferenceContext()
+        context2.lookupname = "pjoin"
+        with self.assertRaises(InferenceError):
             list(import_node.infer(context2, asname=False))
 
     def test_do_import_module_performance(self) -> None:
