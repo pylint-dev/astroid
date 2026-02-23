@@ -1274,9 +1274,9 @@ def test_dataclass_with_duplicate_bases_no_crash():
 def test_dataclass_with_duplicate_bases_field_default():
     """Regression test for _get_previous_field_default with broken MRO.
 
-    When a parent dataclass defines a field and a child (with duplicate bases
-    in its MRO) overrides that field with init=False, _get_previous_field_default
-    should not crash with DuplicateBasesError.
+    When a parent dataclass defines a field with a default and a child (with
+    duplicate bases in its MRO) re-annotates that field without a value,
+    _get_previous_field_default should not crash with DuplicateBasesError.
 
     See https://github.com/pylint-dev/astroid/issues/2628.
     """
@@ -1299,7 +1299,7 @@ def test_dataclass_with_duplicate_bases_field_default():
 
     @dataclasses.dataclass
     class ChildConfig(BaseConfig[T]):
-        name: str = dataclasses.field(default="child", init=False)
+        name: str
 
     ChildConfig.__init__  #@
     """
