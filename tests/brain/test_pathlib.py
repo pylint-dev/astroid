@@ -24,7 +24,7 @@ def test_inference_parents() -> None:
     if PY313:
         assert inferred[0].qname() == "builtins.tuple"
     else:
-        assert inferred[0].qname() == "pathlib._PathParents"
+        assert inferred[0].qname().lstrip(".").endswith("_PathParents")
 
 
 def test_inference_parents_subscript_index() -> None:
@@ -37,6 +37,27 @@ def test_inference_parents_subscript_index() -> None:
     """)
 
     inferred = path.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    if PY313:
+        assert inferred[0].qname() == "pathlib._local.Path"
+    else:
+        assert inferred[0].qname() == "pathlib.Path"
+
+
+def test_inference_parents_assigned_to_variable() -> None:
+    """Test inference of ``pathlib.Path.parents`` when assigned to a variable."""
+    name_node = astroid.extract_node(
+        """
+    from pathlib import Path
+
+    cwd = Path.cwd()
+    parents = cwd.parents
+    parents[0]  #@
+    """
+    )
+
+    inferred = name_node.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
     if PY313:

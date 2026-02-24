@@ -21,7 +21,8 @@ Path
 
 def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
     if not (
-        isinstance(node.value, nodes.Attribute) and node.value.attrname == "parents"
+        (isinstance(node.value, nodes.Attribute) and node.value.attrname == "parents")
+        or isinstance(node.value, nodes.Name)
     ):
         return False
 
