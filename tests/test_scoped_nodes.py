@@ -1696,6 +1696,31 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(cm.exception, MroError)
         self.assertIsInstance(cm.exception, ResolveError)
 
+    def test_mro_circular_name_rebinding(self) -> None:
+        """MRO computation should handle circular name rebinding.
+
+        When a module-level name is rebound to a subclass of itself,
+        _infer_last follows the rebinding and returns the subclass.
+        The MRO computation should resolve the cycle by falling back
+        to the original class.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/2967
+        """
+        astroid = builder.parse(
+            """
+        import pdb
+
+        class CustomPdb(pdb.Pdb):
+            pass
+
+        pdb.Pdb = CustomPdb
+        """
+        )
+        self.assertEqualMro(
+            astroid["CustomPdb"],
+            ["CustomPdb", "Pdb", "Bdb", "Cmd", "object"],
+        )
+
     def test_mro_with_factories(self) -> None:
         cls = builder.extract_node("""
         def MixinFactory(cls):
