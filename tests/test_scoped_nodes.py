@@ -1706,16 +1706,14 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
         Regression test for https://github.com/pylint-dev/astroid/issues/2967
         """
-        astroid = builder.parse(
-            """
+        astroid = builder.parse("""
         import pdb
 
         class CustomPdb(pdb.Pdb):
             pass
 
         pdb.Pdb = CustomPdb
-        """
-        )
+        """)
         self.assertEqualMro(
             astroid["CustomPdb"],
             ["CustomPdb", "Pdb", "Bdb", "Cmd", "object"],
