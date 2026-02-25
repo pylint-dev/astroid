@@ -9,21 +9,43 @@ Release date: TBA
 
 
 
-What's New in astroid 4.1.1?
+What's New in astroid 4.1.2?
 ============================
 Release date: TBA
 
-* Let `UnboundMethodModel` inherit from `FunctionModel` to improve inference of
-  dunder methods for unbound methods.
+* Fix ``DuplicateBasesError`` crash in dataclass transform when a class has
+  duplicate bases in its MRO (e.g., ``Protocol`` appearing both directly and
+  indirectly). Catch ``MroError`` at ``.mro()`` call sites in
+  ``brain_dataclasses.py``, consistent with the existing pattern elsewhere.
 
-* Filter ``Unknown`` from ``UnboundMethod`` and ``Super`` special attribute
-  lookup to prevent placeholder nodes from leaking during inference.
+  Closes #2628
+
+* Catch ``MemoryError`` when inferring f-strings with extremely large format
+  widths (e.g. ``f'{0:11111111111}'``) so that inference yields ``Uninferable``
+  instead of crashing.
+
+  Closes #2762
 
 * Fix ``ValueError`` in ``__str__``/``repr`` and error messages when nodes have
   extreme values (very long identifiers or large integers). Clamp pprint width
   to a minimum of 1 and truncate oversized values in error messages.
 
   Closes #2764
+
+
+What's New in astroid 4.1.1?
+============================
+Release date: 2026-02-22
+
+* Let `UnboundMethodModel` inherit from `FunctionModel` to improve inference of
+  dunder methods for unbound methods.
+
+  Refs #2741
+
+* Filter ``Unknown`` from ``UnboundMethod`` and ``Super`` special attribute
+  lookup to prevent placeholder nodes from leaking during inference.
+
+  Refs #2741
 
 What's New in astroid 4.1.0?
 ============================
