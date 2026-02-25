@@ -722,6 +722,8 @@ def starred_assigned_stmts(  # noqa: C901
         for index, element in enumerate(itered):
             if (
                 isinstance(element, nodes.Starred)
+                and hasattr(element.value, "name")
+                and hasattr(starred.value, "name")
                 and element.value.name == starred.value.name
             ):
                 lookups.append((index, len(itered)))

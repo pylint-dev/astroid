@@ -5425,6 +5425,29 @@ def test_unpacking_starred_empty_list_in_assignment() -> None:
     assert inferred.as_string() == "[]"
 
 
+def test_starred_assignattr_no_crash() -> None:
+    """Starred AssignAttr in for-loop target should not crash.
+
+    See https://github.com/pylint-dev/astroid/issues/2646
+    """
+    module = parse(
+        """
+    class c:
+        a[t]
+
+    for *o.attr, (*t,) in ():
+        pass
+    """
+    )
+    for node in module.nodes_of_class(nodes.Name):
+        if node.name == "t" and node.lineno == 3:
+            inferred = list(node.infer())
+            assert all(isinstance(v, util.UninferableBase) for v in inferred)
+            break
+    else:
+        pytest.fail("Could not find Name node 't' at line 3")
+
+
 def test_regression_infinite_loop_decorator() -> None:
     """Make sure decorators with the same names
     as a decorated method do not cause an infinite loop.

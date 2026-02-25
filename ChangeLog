@@ -26,6 +26,11 @@ Release date: TBA
 
   Closes #2762
 
+* Fix ``AttributeError`` crash with starred ``AssignAttr`` in for-loop targets
+  (e.g., ``for *o.attr, ... in ...``).
+
+  Closes #2646
+
 
 What's New in astroid 4.1.1?
 ============================
