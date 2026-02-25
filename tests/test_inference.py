@@ -5430,15 +5430,13 @@ def test_starred_assignattr_no_crash() -> None:
 
     See https://github.com/pylint-dev/astroid/issues/2646
     """
-    module = parse(
-        """
+    module = parse("""
     class c:
         a[t]
 
     for *o.attr, (*t,) in ():
         pass
-    """
-    )
+    """)
     for node in module.nodes_of_class(nodes.Name):
         if node.name == "t" and node.lineno == 3:
             inferred = list(node.infer())
