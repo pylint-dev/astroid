@@ -13,6 +13,11 @@ What's New in astroid 4.1.2?
 ============================
 Release date: TBA
 
+* Catch ``MemoryError`` when inferring f-strings with extremely large format
+  widths (e.g. ``f'{0:11111111111}'``) so that inference yields ``Uninferable``
+  instead of crashing.
+
+  Closes #2762
 
 
 What's New in astroid 4.1.1?
