@@ -5262,6 +5262,28 @@ def test_formatted_fstring_inference(code, result) -> None:
         assert value_node.value == result
 
 
+def test_fstring_large_width_no_memory_error() -> None:
+    """MemoryError should not crash inference for f-strings with huge width.
+
+    Regression test for https://github.com/pylint-dev/astroid/issues/2762
+    """
+
+    class OOMInt(int):
+        """An int whose __format__ raises MemoryError, simulating f'{0:>11111111111}'."""
+
+        def __format__(self, spec: str) -> str:
+            raise MemoryError
+
+    node = extract_node("f'{0:>9}'")
+    # Replace the Const value with our OOMInt so format() raises MemoryError
+    # without actually allocating a huge string.
+    fmt_value = node.values[0]
+    fmt_value.value.value = OOMInt(0)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is util.Uninferable
+
+
 def test_augassign_recursion() -> None:
     """Make sure inference doesn't throw a RecursionError.
 
