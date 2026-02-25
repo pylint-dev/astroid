@@ -7,17 +7,17 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+
+What's New in astroid 4.1.2?
+============================
+Release date: TBA
+
 * Fix ``RecursionError`` in ``_compute_mro()`` when circular class hierarchies
   are created through runtime name rebinding. Circular bases are now resolved
   to the original class instead of recursing.
 
   Closes #2967
   Closes pylint-dev/pylint#10821
-
-
-What's New in astroid 4.1.2?
-============================
-Release date: TBA
 
 * Fix ``DuplicateBasesError`` crash in dataclass transform when a class has
   duplicate bases in its MRO (e.g., ``Protocol`` appearing both directly and
