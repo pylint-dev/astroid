@@ -26,6 +26,12 @@ Release date: TBA
 
   Closes #2762
 
+* Fix ``ValueError`` in ``__str__``/``repr`` and error messages when nodes have
+  extreme values (very long identifiers or large integers). Clamp pprint width
+  to a minimum of 1 and truncate oversized values in error messages.
+
+  Closes #2764
+
 
 What's New in astroid 4.1.1?
 ============================
@@ -40,7 +46,6 @@ Release date: 2026-02-22
   lookup to prevent placeholder nodes from leaking during inference.
 
   Refs #2741
-
 
 What's New in astroid 4.1.0?
 ============================

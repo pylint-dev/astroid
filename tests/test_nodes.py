@@ -41,6 +41,7 @@ from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
     AstroidSyntaxError,
+    AstroidTypeError,
     AttributeInferenceError,
     StatementMissing,
 )
@@ -2253,3 +2254,42 @@ def test_deprecated_nodes_import_from_toplevel():
     # This should not raise a DeprecationWarning
     # pylint: disable-next=unused-import
     from astroid import builtin_lookup
+
+
+def test_str_long_name_no_crash() -> None:
+    """str() should not crash with ValueError on nodes with long names.
+
+    Regression test for https://github.com/pylint-dev/astroid/issues/2764
+    """
+    long_name = "a" * 200
+    code = f"class {long_name}:\n    pass"
+    module = parse(code)
+    # This should not raise ValueError('width must be != 0')
+    result = str(module.body[0])
+    assert long_name in result
+
+
+def test_str_large_int_no_crash() -> None:
+    """str() should not crash with ValueError on nodes with large integer values.
+
+    Regression test for https://github.com/pylint-dev/astroid/issues/2785
+    """
+    code = "x = 10 ** 5000"
+    module = parse(code)
+    # Infer the BinOp to get a Const with a huge int value
+    inferred = next(module.body[0].value.infer())
+    assert isinstance(inferred.value, int)
+    # This should not raise ValueError about integer string conversion limit
+    result = str(inferred)
+    assert "int" in result
+
+
+def test_str_large_int_getitem_no_crash() -> None:
+    """getitem error message should not crash with large integer values."""
+    code = "x = 10 ** 5000"
+    module = parse(code)
+    inferred = next(module.body[0].value.infer())
+    assert isinstance(inferred.value, int)
+    # Trigger the error path that formats the value
+    with pytest.raises(AstroidTypeError, match="too large to display|int"):
+        inferred.getitem(nodes.Const(0))
