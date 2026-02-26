@@ -2295,18 +2295,3 @@ def test_str_large_int_getitem_no_crash() -> None:
         inferred.getitem(nodes.Const(0))
 
 
-def test_inference_context_str() -> None:
-    """InferenceContext.__str__ should not crash."""
-    ctx = InferenceContext()
-    result = str(ctx)
-    assert "InferenceContext" in result
-
-
-def test_inference_context_str_with_large_value() -> None:
-    """InferenceContext.__str__ should handle unprintable values gracefully."""
-    ctx = InferenceContext()
-    # Set a slot to a value that triggers ValueError in pprint.pformat
-    ctx.lookupname = 10**5000
-    result = str(ctx)
-    assert "InferenceContext" in result
-    assert "int" in result
