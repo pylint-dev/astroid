@@ -153,7 +153,14 @@ class NodeNG:
             except UseInferenceDefault:
                 pass
 
-        key = (self, context.lookupname, context.callcontext, context.boundnode)
+        kwargs_key = tuple(sorted(kwargs.items())) if kwargs else ()
+        key = (
+            self,
+            context.lookupname,
+            context.callcontext,
+            context.boundnode,
+            kwargs_key,
+        )
         if key in context.inferred:
             yield from context.inferred[key]
             return

@@ -26,6 +26,12 @@ Release date: TBA
 
   Closes #2762
 
+* Fix inference cache ignoring kwargs like ``asname``, causing incorrect
+  results when the same ``Import`` or ``ImportFrom`` node was inferred with
+  different ``asname`` values within the same context.
+
+  Closes pylint-dev/pylint#10193
+
 
 What's New in astroid 4.1.1?
 ============================

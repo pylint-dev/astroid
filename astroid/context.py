@@ -17,7 +17,14 @@ if TYPE_CHECKING:
     from astroid import constraint, nodes
 
 _InferenceCache = dict[
-    tuple["nodes.NodeNG", str | None, str | None, str | None], Sequence["nodes.NodeNG"]
+    tuple[
+        "nodes.NodeNG",
+        str | None,
+        str | None,
+        str | None,
+        tuple[tuple[str, object], ...],
+    ],
+    Sequence["nodes.NodeNG"],
 ]
 
 _INFERENCE_CACHE: _InferenceCache = {}
