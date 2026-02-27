@@ -486,9 +486,8 @@ def test_regression_root_is_not_a_module() -> None:
     assert node.name == "c"
 
 
-@pytest.mark.xfail(reason="Not fixed yet")
 def test_regression_eval_get_of_arg() -> None:
-    """Regression test for #2743"""
+    """Regression test for #2743."""
     node = _extract_single_node("eval.__get__(1)")
     with pytest.raises(InferenceError):
         next(node.infer())
