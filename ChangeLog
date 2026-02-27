@@ -7,6 +7,9 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Fix ``FunctionModel`` returning descriptor attributes for builtin functions.
+
+  Closes #2743
 
 
 What's New in astroid 4.1.2?
