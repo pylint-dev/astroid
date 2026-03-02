@@ -2841,10 +2841,40 @@ class ClassDef(
                 baseobj = baseobj._proxied
             if not isinstance(baseobj, ClassDef):
                 continue
+            if baseobj is self:
+                # Circular base due to name rebinding (e.g. pdb.Pdb = CustomPdb
+                # where CustomPdb inherits from pdb.Pdb). Fall back to the
+                # first non-circular inferred value from the base expression.
+                baseobj = self._resolve_circular_base(stmt, context)
+                if baseobj is None:
+                    continue
             if not baseobj.hide:
                 yield baseobj
             else:
                 yield from baseobj.bases
+
+    def _resolve_circular_base(
+        self,
+        stmt: nodes.NodeNG,
+        context: InferenceContext | None,
+    ) -> ClassDef | None:
+        """Resolve a circular base reference by finding the original class.
+
+        When a name is rebound to a subclass (e.g. ``pdb.Pdb = CustomPdb``),
+        ``_infer_last`` follows the rebinding and returns the subclass itself.
+        This method iterates through all inferred values to find the first
+        non-circular ClassDef.
+        """
+        inf_context = copy_context(context)
+        try:
+            for inferred in stmt.infer(context=inf_context):
+                if isinstance(inferred, bases.Instance):
+                    inferred = inferred._proxied
+                if isinstance(inferred, ClassDef) and inferred is not self:
+                    return inferred
+        except InferenceError:
+            pass
+        return None
 
     def _compute_mro(self, context: InferenceContext | None = None):
         if self.qname() == "builtins.object":
