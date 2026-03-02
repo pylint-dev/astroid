@@ -2291,5 +2291,5 @@ def test_str_large_int_getitem_no_crash() -> None:
     inferred = next(module.body[0].value.infer())
     assert isinstance(inferred.value, int)
     # Trigger the error path that formats the value
-    with pytest.raises(AstroidTypeError, match="too large to display|int"):
+    with pytest.raises(AstroidTypeError, match=r"too large to display|int"):
         inferred.getitem(nodes.Const(0))
