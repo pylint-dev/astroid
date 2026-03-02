@@ -9,8 +9,7 @@ from astroid.manager import AstroidManager
 
 
 def _session_transform() -> nodes.Module:
-    return parse(
-        """
+    return parse("""
     from sqlalchemy.orm.session import Session
 
     class sessionmaker:
@@ -33,8 +32,7 @@ def _session_transform() -> nodes.Module:
             return
 
         return Session()
-    """
-    )
+    """)
 
 
 def register(manager: AstroidManager) -> None:

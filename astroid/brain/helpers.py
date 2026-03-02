@@ -5,9 +5,14 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
+from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import Module
+
+if TYPE_CHECKING:
+    from astroid.nodes.node_ng import NodeNG
 
 
 def register_module_extender(
@@ -47,7 +52,6 @@ def register_all_brains(manager: AstroidManager) -> None:
         brain_mechanize,
         brain_multiprocessing,
         brain_namedtuple_enum,
-        brain_nose,
         brain_numpy_core_einsumfunc,
         brain_numpy_core_fromnumeric,
         brain_numpy_core_function_base,
@@ -71,6 +75,7 @@ def register_all_brains(manager: AstroidManager) -> None:
         brain_six,
         brain_sqlalchemy,
         brain_ssl,
+        brain_statistics,
         brain_subprocess,
         brain_threading,
         brain_type,
@@ -99,7 +104,6 @@ def register_all_brains(manager: AstroidManager) -> None:
     brain_mechanize.register(manager)
     brain_multiprocessing.register(manager)
     brain_namedtuple_enum.register(manager)
-    brain_nose.register(manager)
     brain_numpy_core_einsumfunc.register(manager)
     brain_numpy_core_fromnumeric.register(manager)
     brain_numpy_core_function_base.register(manager)
@@ -123,9 +127,20 @@ def register_all_brains(manager: AstroidManager) -> None:
     brain_six.register(manager)
     brain_sqlalchemy.register(manager)
     brain_ssl.register(manager)
+    brain_statistics.register(manager)
     brain_subprocess.register(manager)
     brain_threading.register(manager)
     brain_type.register(manager)
     brain_typing.register(manager)
     brain_unittest.register(manager)
     brain_uuid.register(manager)
+
+
+def is_class_var(node: NodeNG) -> bool:
+    """Return True if node is a ClassVar, with or without subscripting."""
+    try:
+        inferred = next(node.infer())
+    except (InferenceError, StopIteration):
+        return False
+
+    return getattr(inferred, "name", "") == "ClassVar"

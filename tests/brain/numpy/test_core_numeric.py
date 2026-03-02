@@ -30,13 +30,11 @@ class BrainNumpyCoreNumericTest(unittest.TestCase):
     )
 
     def _inferred_numpy_func_call(self, func_name, *func_args):
-        node = builder.extract_node(
-            f"""
+        node = builder.extract_node(f"""
         import numpy as np
         func = np.{func_name:s}
         func({','.join(func_args):s})
-        """
-        )
+        """)
         return node.infer()
 
     def test_numpy_function_calls_inferred_as_ndarray(self):
@@ -68,11 +66,9 @@ class BrainNumpyCoreNumericTest(unittest.TestCase):
     ],
 )
 def test_function_parameters(method: str, expected_args: list[str]) -> None:
-    instance = builder.extract_node(
-        f"""
+    instance = builder.extract_node(f"""
     import numpy
     numpy.{method} #@
-    """
-    )
+    """)
     actual_args = instance.inferred()[0].args.args
     assert [arg.name for arg in actual_args] == expected_args

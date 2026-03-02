@@ -15,25 +15,20 @@ from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
-from astroid.nodes.node_classes import Attribute
 
 
 def numpy_core_numeric_transform() -> nodes.Module:
-    return parse(
-        """
+    return parse("""
     # different functions defined in numeric.py
     import numpy
     def zeros_like(a, dtype=None, order='K', subok=True, shape=None): return numpy.ndarray((0, 0))
     def ones_like(a, dtype=None, order='K', subok=True, shape=None): return numpy.ndarray((0, 0))
     def full_like(a, fill_value, dtype=None, order='K', subok=True, shape=None): return numpy.ndarray((0, 0))
-        """
-    )
+        """)
 
 
-METHODS_TO_BE_INFERRED = {
-    "ones": """def ones(shape, dtype=None, order='C'):
-            return numpy.ndarray([0, 0])"""
-}
+METHODS_TO_BE_INFERRED = {"ones": """def ones(shape, dtype=None, order='C'):
+            return numpy.ndarray([0, 0])"""}
 
 
 def register(manager: AstroidManager) -> None:
@@ -42,7 +37,7 @@ def register(manager: AstroidManager) -> None:
     )
 
     manager.register_transform(
-        Attribute,
+        nodes.Attribute,
         inference_tip(functools.partial(infer_numpy_attribute, METHODS_TO_BE_INFERRED)),
         functools.partial(
             attribute_name_looks_like_numpy_member,

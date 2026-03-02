@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Astroid hooks for unittest module."""
+
 from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
@@ -20,11 +21,9 @@ def IsolatedAsyncioTestCaseImport() -> nodes.Module:
 
     (see https://github.com/pylint-dev/pylint/issues/4060)
     """
-    return parse(
-        """
+    return parse("""
     from .async_case import IsolatedAsyncioTestCase
-    """
-    )
+    """)
 
 
 def register(manager: AstroidManager) -> None:

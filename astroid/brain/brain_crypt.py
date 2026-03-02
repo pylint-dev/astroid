@@ -9,8 +9,7 @@ from astroid.manager import AstroidManager
 
 
 def _re_transform() -> nodes.Module:
-    return parse(
-        """
+    return parse("""
     from collections import namedtuple
     _Method = namedtuple('_Method', 'name ident salt_chars total_size')
 
@@ -19,8 +18,7 @@ def _re_transform() -> nodes.Module:
     METHOD_BLOWFISH = _Method('BLOWFISH', 2, 'b', 22)
     METHOD_MD5 = _Method('MD5', '1', 8, 34)
     METHOD_CRYPT = _Method('CRYPT', None, 2, 13)
-    """
-    )
+    """)
 
 
 def register(manager: AstroidManager) -> None:

@@ -8,13 +8,11 @@ from astroid import bases, extract_node, nodes
 class TestBrainArgparse:
     @staticmethod
     def test_infer_namespace() -> None:
-        func = extract_node(
-            """
+        func = extract_node("""
         import argparse
         def make_namespace():  #@
             return argparse.Namespace(debug=True)
-        """
-        )
+        """)
         assert isinstance(func, nodes.FunctionDef)
         inferred = next(func.infer_call_result(func))
         assert isinstance(inferred, bases.Instance)

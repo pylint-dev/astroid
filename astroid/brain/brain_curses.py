@@ -9,8 +9,7 @@ from astroid.manager import AstroidManager
 
 
 def _curses_transform() -> nodes.Module:
-    return parse(
-        """
+    return parse("""
     A_ALTCHARSET = 1
     A_BLINK = 1
     A_BOLD = 1
@@ -177,8 +176,7 @@ def _curses_transform() -> nodes.Module:
     COLOR_RED = 1
     COLOR_WHITE = 1
     COLOR_YELLOW = 1
-        """
-    )
+        """)
 
 
 def register(manager: AstroidManager) -> None:

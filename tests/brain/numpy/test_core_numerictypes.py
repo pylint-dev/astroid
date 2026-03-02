@@ -80,11 +80,9 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
     ]
 
     def _inferred_numpy_attribute(self, attrib):
-        node = builder.extract_node(
-            f"""
+        node = builder.extract_node(f"""
         import numpy.core.numerictypes as tested_module
-        missing_type = tested_module.{attrib:s}"""
-        )
+        missing_type = tested_module.{attrib:s}""")
         return next(node.value.infer())
 
     def test_numpy_core_types(self):
@@ -311,14 +309,12 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
 
         pylint-dev/pylint#3332
         """
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         import numpy as np
         import datetime
         test_array = np.datetime64(1, 'us')
         test_array.astype(datetime.datetime)
-        """
-        )
+        """)
         licit_array_types = ".ndarray"
         inferred_values = list(node.infer())
         self.assertTrue(

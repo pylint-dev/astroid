@@ -83,7 +83,6 @@ def is_namespace(modname: str) -> bool:
 
             # Repair last_submodule_search_locations
             if last_submodule_search_locations:
-                # pylint: disable=unsubscriptable-object
                 last_item = last_submodule_search_locations[-1]
                 # e.g. for failure example above, add 'a/b' and keep going
                 # so that find_spec('a.b.c', path=['a', 'a/b']) succeeds
@@ -96,7 +95,10 @@ def is_namespace(modname: str) -> bool:
             # But immediately return False if we can detect we are in stdlib
             # or external lib (e.g site-packages)
             if any(
-                any(location.startswith(lib_dir) for lib_dir in STD_AND_EXT_LIB_DIRS)
+                any(
+                    str(location).startswith(lib_dir)
+                    for lib_dir in STD_AND_EXT_LIB_DIRS
+                )
                 for location in found_spec.submodule_search_locations
             ):
                 return False

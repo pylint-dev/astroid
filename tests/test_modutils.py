@@ -3,6 +3,7 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """Unit tests for module modutils (module manipulation utilities)."""
+
 import email
 import logging
 import os
@@ -20,7 +21,6 @@ from pytest import CaptureFixture, LogCaptureFixture
 
 import astroid
 from astroid import modutils
-from astroid.const import PY310_PLUS
 from astroid.interpreter._import import spec
 
 from . import resources
@@ -152,6 +152,31 @@ class GetModulePartTest(unittest.TestCase):
         self.assertEqual(modutils.get_module_part(".", modutils.__file__), ".")
 
 
+class IsSubpathTest(unittest.TestCase):
+    """Tests for modutils._is_subpath,
+    which is used internally by modutils.modpath_from_file."""
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows-specific path test")
+    def test_is_subpath_with_trailing_separator_unc_path(self) -> None:
+        self.assertTrue(
+            modutils._is_subpath(
+                "\\\\Mac\\Code\\tests\\test_resources.py",
+                # UNC path with trailing separator
+                "\\\\mac\\code\\",
+            )
+        )
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows-specific path test")
+    def test_is_subpath_without_trailing_separator_unc_path(self) -> None:
+        self.assertTrue(
+            modutils._is_subpath(
+                "\\\\Mac\\Code\\tests\\test_resources.py",
+                # UNC path without trailing separator
+                "\\\\mac\\code",
+            )
+        )
+
+
 class ModPathFromFileTest(unittest.TestCase):
     """Given an absolute file path return the python module's path as a list."""
 
@@ -162,7 +187,7 @@ class ModPathFromFileTest(unittest.TestCase):
         )
 
     def test_raise_modpath_from_file_exception(self) -> None:
-        self.assertRaises(Exception, modutils.modpath_from_file, "/turlututu")
+        self.assertRaises(ImportError, modutils.modpath_from_file, "/turlututu")
 
     def test_import_symlink_with_source_outside_of_path(self) -> None:
         with tempfile.NamedTemporaryFile() as tmpfile:
@@ -335,6 +360,22 @@ class GetSourceFileTest(unittest.TestCase):
             os.path.normpath(module) + "i",
         )
 
+    def test_nonstandard_extension(self) -> None:
+        package = resources.find("pyi_data/find_test")
+        modules = [
+            os.path.join(package, "__init__.weird_ext"),
+            os.path.join(package, "standalone_file.weird_ext"),
+        ]
+        for module in modules:
+            self.assertEqual(
+                modutils.get_source_file(module, prefer_stubs=True),
+                module,
+            )
+            self.assertEqual(
+                modutils.get_source_file(module),
+                module,
+            )
+
 
 class IsStandardModuleTest(resources.SysPathSetup, unittest.TestCase):
     """
@@ -484,18 +525,6 @@ class ModuleInPathTest(resources.SysPathSetup, unittest.TestCase):
         datadir = resources.find("")
         assert not modutils.module_in_path("etree", datadir)
         assert not modutils.module_in_path("astroid", datadir)
-
-
-class BackportStdlibNamesTest(resources.SysPathSetup, unittest.TestCase):
-    """
-    Verify backport raises exception on newer versions
-    """
-
-    @pytest.mark.skipif(not PY310_PLUS, reason="Backport valid on <=3.9")
-    def test_import_error(self) -> None:
-        with pytest.raises(AssertionError):
-            # pylint: disable-next=import-outside-toplevel, unused-import
-            from astroid import _backport_stdlib_names  # noqa
 
 
 class IsRelativeTest(unittest.TestCase):

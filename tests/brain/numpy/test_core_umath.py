@@ -101,12 +101,10 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
     constants = ("e", "euler_gamma")
 
     def _inferred_numpy_attribute(self, func_name):
-        node = builder.extract_node(
-            f"""
+        node = builder.extract_node(f"""
         import numpy.core.umath as tested_module
         func = tested_module.{func_name:s}
-        func"""
-        )
+        func""")
         return next(node.infer())
 
     def test_numpy_core_umath_constants(self):
@@ -183,13 +181,11 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
                 self.assertEqual(default_args_values, exact_kwargs_default_values)
 
     def _inferred_numpy_func_call(self, func_name, *func_args):
-        node = builder.extract_node(
-            f"""
+        node = builder.extract_node(f"""
         import numpy as np
         func = np.{func_name:s}
         func()
-        """
-        )
+        """)
         return node.infer()
 
     def test_numpy_core_umath_functions_return_type(self):

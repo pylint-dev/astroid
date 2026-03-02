@@ -6,7 +6,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar, overload
+import sys
+from typing import TYPE_CHECKING, overload
 
 from astroid.exceptions import ParentMissingError
 from astroid.filter_statements import _filter_stmts
@@ -14,10 +15,12 @@ from astroid.nodes import _base_nodes, scoped_nodes
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 if TYPE_CHECKING:
     from astroid import nodes
-
-_T = TypeVar("_T")
 
 
 class LocalsDictNodeNG(_base_nodes.LookupMixIn):
@@ -46,7 +49,7 @@ class LocalsDictNodeNG(_base_nodes.LookupMixIn):
         except ParentMissingError:
             return self.name
 
-    def scope(self: _T) -> _T:
+    def scope(self) -> Self:
         """The first parent node defining a new scope.
 
         :returns: The first parent scope node.

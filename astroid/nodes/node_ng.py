@@ -14,7 +14,6 @@ from typing import (
     Any,
     ClassVar,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -43,12 +42,14 @@ else:
 if TYPE_CHECKING:
     from astroid.nodes import _base_nodes
 
+    FrameType = nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda
+
 
 # Types for 'NodeNG.nodes_of_class()'
 _NodesT = TypeVar("_NodesT", bound="NodeNG")
 _NodesT2 = TypeVar("_NodesT2", bound="NodeNG")
 _NodesT3 = TypeVar("_NodesT3", bound="NodeNG")
-SkipKlassT = Union[None, type["NodeNG"], tuple[type["NodeNG"], ...]]
+SkipKlassT = None | type["NodeNG"] | tuple[type["NodeNG"], ...]
 
 
 class NodeNG:
@@ -197,8 +198,11 @@ class NodeNG:
         result = []
         for field in self._other_fields + self._astroid_fields:
             value = getattr(self, field, "Unknown")
-            width = 80 - len(field) - alignment
-            lines = pprint.pformat(value, indent=2, width=width).splitlines(True)
+            width = max(80 - len(field) - alignment, 1)
+            try:
+                lines = pprint.pformat(value, indent=2, width=width).splitlines(True)
+            except ValueError:
+                lines = [f"<{type(value).__name__}>"]
 
             inner = [lines[0]]
             for line in lines[1:]:
@@ -285,7 +289,7 @@ class NodeNG:
             raise StatementMissing(target=self)
         return self.parent.statement()
 
-    def frame(self) -> nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda:
+    def frame(self) -> FrameType:
         """The first parent frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,

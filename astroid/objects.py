@@ -13,9 +13,10 @@ leads to an inferred FrozenSet:
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Generator, Iterator
 from functools import cached_property
-from typing import Any, Literal, NoReturn, TypeVar
+from typing import Any, Literal, NoReturn
 
 from astroid import bases, util
 from astroid.context import InferenceContext
@@ -30,7 +31,10 @@ from astroid.manager import AstroidManager
 from astroid.nodes import node_classes, scoped_nodes
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
-_T = TypeVar("_T")
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 
 class FrozenSet(node_classes.BaseContainer):
@@ -190,7 +194,8 @@ class Super(node_classes.NodeNG):
                 # We can obtain different descriptors from a super depending
                 # on what we are accessing and where the super call is.
                 if inferred.type == "classmethod":
-                    yield bases.BoundMethod(inferred, cls)
+                    # Pass original caller for classmethod too
+                    yield bases.BoundMethod(inferred, cls, original_caller=self.type)
                 elif self._scope.type == "classmethod" and inferred.type == "method":
                     yield inferred
                 elif self._class_based or inferred.type == "staticmethod":
@@ -210,13 +215,17 @@ class Super(node_classes.NodeNG):
                     except InferenceError:
                         yield util.Uninferable
                 else:
-                    yield bases.BoundMethod(inferred, cls)
+                    # Pass original caller (self.type) so infer_call_result can
+                    # correctly resolve Self return types to the actual caller type
+                    yield bases.BoundMethod(inferred, cls, original_caller=self.type)
 
         # Only if we haven't found any explicit overwrites for the
         # attribute we look it up in the special attributes
         if not found and name in self.special_attributes:
-            yield self.special_attributes.lookup(name)
-            return
+            special_attr = self.special_attributes.lookup(name)
+            if not isinstance(special_attr, node_classes.Unknown):
+                yield special_attr
+                return
 
         if not found:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
@@ -274,18 +283,15 @@ class PartialFunction(scoped_nodes.FunctionDef):
     """A class representing partial function obtained via functools.partial."""
 
     def __init__(self, call, name=None, lineno=None, col_offset=None, parent=None):
-        # TODO: Pass end_lineno, end_col_offset and parent as well
+        # TODO: Pass end_lineno, end_col_offset as well
         super().__init__(
             name,
             lineno=lineno,
             col_offset=col_offset,
-            parent=scoped_nodes.SYNTHETIC_ROOT,
             end_col_offset=0,
             end_lineno=0,
+            parent=parent,
         )
-        # A typical FunctionDef automatically adds its name to the parent scope,
-        # but a partial should not, so defer setting parent until after init
-        self.parent = parent
         self.filled_args = call.positional_arguments[1:]
         self.filled_keywords = call.keyword_arguments
 
@@ -358,6 +364,6 @@ class Property(scoped_nodes.FunctionDef):
         raise InferenceError("Properties are not callable")
 
     def _infer(
-        self: _T, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[_T]:
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[Self]:
         yield self

@@ -3,6 +3,7 @@ relative_files = true
 
 [report]
 omit =
+    */astroid/__main__.py
     */tests/*
     */tmp*/*
 exclude_lines =

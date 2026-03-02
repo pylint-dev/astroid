@@ -3,9 +3,208 @@ astroid's ChangeLog
 ===================
 
 
-What's New in astroid 4.0.0?
+What's New in astroid 4.2.0?
 ============================
 Release date: TBA
+
+
+What's New in astroid 4.1.2?
+============================
+Release date: TBA
+
+* Fix ``RecursionError`` in ``_compute_mro()`` when circular class hierarchies
+  are created through runtime name rebinding. Circular bases are now resolved
+  to the original class instead of recursing.
+
+  Closes #2967
+  Closes pylint-dev/pylint#10821
+
+* Fix ``DuplicateBasesError`` crash in dataclass transform when a class has
+  duplicate bases in its MRO (e.g., ``Protocol`` appearing both directly and
+  indirectly). Catch ``MroError`` at ``.mro()`` call sites in
+  ``brain_dataclasses.py``, consistent with the existing pattern elsewhere.
+
+  Closes #2628
+
+* Fix ``FunctionModel`` returning descriptor attributes for builtin functions.
+
+  Closes #2743
+
+* Catch ``MemoryError`` when inferring f-strings with extremely large format
+  widths (e.g. ``f'{0:11111111111}'``) so that inference yields ``Uninferable``
+  instead of crashing.
+
+  Closes #2762
+
+* Fix ``ValueError`` in ``__str__``/``repr`` and error messages when nodes have
+  extreme values (very long identifiers or large integers). Clamp pprint width
+  to a minimum of 1 and truncate oversized values in error messages.
+
+  Closes #2764
+
+
+What's New in astroid 4.1.1?
+============================
+Release date: 2026-02-22
+
+* Let `UnboundMethodModel` inherit from `FunctionModel` to improve inference of
+  dunder methods for unbound methods.
+
+  Refs #2741
+
+* Filter ``Unknown`` from ``UnboundMethod`` and ``Super`` special attribute
+  lookup to prevent placeholder nodes from leaking during inference.
+
+  Refs #2741
+
+
+What's New in astroid 4.1.0?
+============================
+Release date: 2026-02-08
+
+* Add support for equality constraints (``==``, ``!=``) in inference.
+  Closes pylint-dev/pylint#3632
+  Closes pylint-dev/pylint#3633
+
+* Ensure ``ast.JoinedStr`` nodes are ``Uninferable`` when the ``ast.FormattedValue`` is
+  ``Uninferable``. This prevents ``unexpected-keyword-arg`` messages in Pylint
+  where the ``Uninferable`` string appeared in function arguments that were
+  constructed dynamically.
+
+  Closes pylint-dev/pylint#10822
+
+* Add support for type constraints (`isinstance(x, y)`) in inference.
+
+  Closes pylint-dev/pylint#1162
+  Closes pylint-dev/pylint#4635
+  Closes pylint-dev/pylint#10469
+
+* Make `type.__new__()` raise clear errors instead of returning `None`
+
+* Move object dunder methods from ``FunctionModel`` to ``ObjectModel`` to make them
+  available on all object types, not just functions.
+
+  Closes #2742
+  Closes #2741
+  Closes pylint-dev/pylint#6094
+
+* ``lineno`` and ``end_lineno`` are now available on ``Arguments``.
+
+* Add helper to iterate over all annotations nodes of function arguments,
+  ``Arguments.get_annotations()``.
+
+  Refs #2860
+
+* Skip direct parent when determining the ``Decorator`` frame.
+
+  Refs pylint-dev/pylint#8425
+
+* Add simple command line interface for astroid to output generated AST.
+  Use with ``python -m astroid``.
+
+* Fix incorrect type inference for ``super().method()`` calls that return ``Self``.
+  Previously, astroid would infer the parent class type instead of the child class type,
+  causing pylint E1101 false positives in method chaining scenarios.
+
+  Closes #457
+
+* Add missing ``dtype`` and ``casting`` parameters to ``numpy.concatenate`` brain.
+
+  Closes #2870
+
+* Fix ability to detect .py modules inside PATH directories on Windows
+  described by a UNC path with a trailing backslash (`\`)
+    - Example: modutils.modpath_from_file(filename=r"\\Mac\Code\tests\test_resources.py", path=["\\mac\code\"]) == ['tests', 'test_resources']
+
+* Fix ``random.sample`` inference crash when sequence contains uninferable elements.
+
+  Closes #2518
+
+* Fix ``random.sample`` crash when cloning ``ClassDef`` or ``FunctionDef`` nodes.
+
+  Closes #2923
+
+
+What's New in astroid 4.0.4?
+============================
+Release date: 2026-02-07
+
+* Fix ``is_namespace()`` crash when search locations contain ``pathlib.Path`` objects.
+
+  Closes #2942
+
+What's New in astroid 4.0.3?
+============================
+Release date: 2026-01-03
+
+* Fix inference of ``IfExp`` (ternary expression) nodes to avoid prematurely narrowing
+  results in the face of inference ambiguity.
+
+  Closes #2899
+
+* Fix base class inference for dataclasses using the PEP 695 typing syntax.
+
+  Refs pylint-dev/pylint#10788
+
+
+What's New in astroid 4.0.2?
+============================
+Release date: 2025-11-09
+
+* Handle FunctionDef blockstart_tolineno edge cases correctly.
+
+  Refs #2880
+
+* Add ``HTTPMethod`` enum support to brain module for Python 3.11+.
+
+  Refs pylint-dev/pylint#10624
+  Closes #2877
+
+What's New in astroid 4.0.1?
+============================
+Release date: 2025-10-11
+
+* Suppress ``SyntaxWarning`` for invalid escape sequences and return in finally on
+  Python 3.14 when parsing modules.
+
+* Assign ``Import`` and ``ImportFrom`` nodes to module locals if used with ``global``.
+
+  Closes pylint-dev/pylint#10632
+
+
+What's New in astroid 4.0.0?
+============================
+Release date: 2025-10-05
+
+* Support constraints from ternary expressions in inference.
+
+  Closes pylint-dev/pylint#9729
+
+* Handle deprecated `bool(NotImplemented)` cast in const nodes.
+
+* Add support for boolean truthiness constraints (`x`, `not x`) in inference.
+
+  Closes pylint-dev/pylint#9515
+
+* Fix false positive `invalid-name` on `attrs` classes with `ClassVar` annotated variables.
+
+  Closes pylint-dev/pylint#10525
+
+* Prevent crash when parsing deeply nested parentheses causing MemoryError in python's built-in ast.
+
+  Closes #2643
+
+* Fix crash when inferring namedtuple with invalid field name looking like f-string formatting.
+
+  Closes #2519
+
+* Fix false positive no-member in except * handler.
+
+  Closes pylint-dev/pylint#9056
+
+* Fix crash when comparing invalid dict literal
+
+  Closes #2522
 
 * Removed internal functions ``infer_numpy_member``, ``name_looks_like_numpy_member``, and
   ``attribute_looks_like_numpy_member`` from ``astroid.brain.brain_numpy_utils``.
@@ -32,14 +231,70 @@ Release date: TBA
 
   Closes #2513
 
+* Remove support for Python 3.9 (and constant `PY310_PLUS`).
+
+* Include subclasses of standard property classes as `property` decorators
+
+  Closes #10377
+
+* Modify ``astroid.bases`` and ``tests.test_nodes`` to reflect that `enum.property` was added in Python 3.11, not 3.10
+
+* Fix incorrect result in `_get_relative_base_path` when the target directory name starts with the base path
+
+  Closes #2608
+
+* The brain for nose was dropped. nose has been deprecated for 10 years and the brain required some maintenance.
+
+  Refs #2765
+
+* Fix a crash when the root of a node is not a module but is unknown.
+
+  Closes #2672
+
+* Add basic support for ``ast.TemplateStr`` and ``ast.Interpolation`` added in Python 3.14.
+
+  Refs #2789
+
+* Add support for type parameter defaults added in Python 3.13.
+
+* Improve ``as_string()`` representation for ``TypeVar``, ``ParamSpec`` and ``TypeVarTuple`` nodes, as well as
+  type parameter in ``ClassDef``, ``FuncDef`` and ``TypeAlias`` nodes (PEP 695).
+
+* Astroid now correctly supports the ``exceptions`` attribute of ``ExceptionGroup``.
+
+  Closes pylint-dev/pylint#8985
+  Closes pylint-dev/pylint#10558
+
+* Deprecate importing node classes from ``astroid`` directly. This will be removed in v5.
+  It's recommended to import them from ``astroid.nodes`` instead.
+
+  Refs #2837
+
+
+What's New in astroid 3.3.11?
+=============================
+Release date: 2025-07-13
+
+* Fix a crash when parsing an empty arbitrary expression with ``extract_node`` (``extract_node("__()")``).
+
+  Closes #2734
+
+* Fix a crash when parsing a slice called in a decorator on a function that is also decorated with
+  a known ``six`` decorator.
+
+  Closes #2721
 
 What's New in astroid 3.3.10?
 =============================
-Release date: TBA
+Release date: 2025-05-10
 
 * Avoid importing submodules sharing names with standard library modules.
 
   Closes #2684
+
+* Fix bug where ``pylint code.custom_extension`` would analyze ``code.py`` or ``code.pyi`` instead if they existed.
+
+	Closes pylint-dev/pylint#3631
 
 
 What's New in astroid 3.3.9?
@@ -533,11 +788,6 @@ Release date: 2023-09-26
 What's New in astroid 2.15.8?
 =============================
 Release date: 2023-09-26
-
-* Fix a regression in 2.15.7 for ``unsubscriptable-object``.
-
-  Closes #2305
-  Closes pylint-dev/pylint#9069
 
 * Fix a regression in 2.15.7 for ``unsubscriptable-object``.
 

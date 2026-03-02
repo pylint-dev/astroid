@@ -6,7 +6,6 @@ import pytest
 
 import astroid
 from astroid import bases, nodes
-from astroid.const import PY310_PLUS
 from astroid.exceptions import InferenceError
 from astroid.util import Uninferable
 
@@ -21,8 +20,7 @@ def test_inference_attribute_no_default(module: str):
 
     Note that the argument to the constructor is ignored by the inference.
     """
-    klass, instance = astroid.extract_node(
-        f"""
+    klass, instance = astroid.extract_node(f"""
     from {module} import dataclass
 
     @dataclass
@@ -31,8 +29,7 @@ def test_inference_attribute_no_default(module: str):
 
     A.name  #@
     A('hi').name  #@
-    """
-    )
+    """)
     with pytest.raises(InferenceError):
         klass.inferred()
 
@@ -45,8 +42,7 @@ def test_inference_attribute_no_default(module: str):
 @parametrize_module
 def test_inference_non_field_default(module: str):
     """Test inference of dataclass attribute with a non-field default."""
-    klass, instance = astroid.extract_node(
-        f"""
+    klass, instance = astroid.extract_node(f"""
     from {module} import dataclass
 
     @dataclass
@@ -55,8 +51,7 @@ def test_inference_non_field_default(module: str):
 
     A.name  #@
     A().name  #@
-    """
-    )
+    """)
     inferred = klass.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)
@@ -76,8 +71,7 @@ def test_inference_field_default(module: str):
     """Test inference of dataclass attribute with a field call default
     (default keyword argument given).
     """
-    klass, instance = astroid.extract_node(
-        f"""
+    klass, instance = astroid.extract_node(f"""
     from {module} import dataclass
     from dataclasses import field
 
@@ -87,8 +81,7 @@ def test_inference_field_default(module: str):
 
     A.name  #@
     A().name  #@
-    """
-    )
+    """)
     inferred = klass.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)
@@ -108,8 +101,7 @@ def test_inference_field_default_factory(module: str):
     """Test inference of dataclass attribute with a field call default
     (default_factory keyword argument given).
     """
-    klass, instance = astroid.extract_node(
-        f"""
+    klass, instance = astroid.extract_node(f"""
     from {module} import dataclass
     from dataclasses import field
 
@@ -119,8 +111,7 @@ def test_inference_field_default_factory(module: str):
 
     A.name  #@
     A().name  #@
-    """
-    )
+    """)
     inferred = klass.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.List)
@@ -142,8 +133,7 @@ def test_inference_method(module: str):
 
     Based on https://github.com/pylint-dev/pylint/issues/2600
     """
-    node = astroid.extract_node(
-        f"""
+    node = astroid.extract_node(f"""
     from typing import Dict
     from {module} import dataclass
     from dataclasses import field
@@ -159,8 +149,7 @@ def test_inference_method(module: str):
             for key, value in f():
                 print(key)
                 print(value)
-    """
-    )
+    """)
     inferred = next(node.value.infer())
     assert isinstance(inferred, bases.BoundMethod)
 
@@ -170,8 +159,7 @@ def test_inference_no_annotation(module: str):
     """Test that class variables without type annotations are not
     turned into instance attributes.
     """
-    class_def, klass, instance = astroid.extract_node(
-        f"""
+    class_def, klass, instance = astroid.extract_node(f"""
     from {module} import dataclass
 
     @dataclass
@@ -181,8 +169,7 @@ def test_inference_no_annotation(module: str):
     A  #@
     A.name  #@
     A().name #@
-    """
-    )
+    """)
     inferred = next(class_def.infer())
     assert isinstance(inferred, nodes.ClassDef)
     assert inferred.instance_attrs == {}
@@ -202,8 +189,7 @@ def test_inference_class_var(module: str):
     """Test that class variables with a ClassVar type annotations are not
     turned into instance attributes.
     """
-    class_def, klass, instance = astroid.extract_node(
-        f"""
+    class_def, klass, instance = astroid.extract_node(f"""
     from {module} import dataclass
     from typing import ClassVar
 
@@ -214,8 +200,7 @@ def test_inference_class_var(module: str):
     A #@
     A.name  #@
     A().name #@
-    """
-    )
+    """)
     inferred = next(class_def.infer())
     assert isinstance(inferred, nodes.ClassDef)
     assert inferred.instance_attrs == {}
@@ -235,8 +220,7 @@ def test_inference_init_var(module: str):
     """Test that class variables with InitVar type annotations are not
     turned into instance attributes.
     """
-    class_def, klass, instance = astroid.extract_node(
-        f"""
+    class_def, klass, instance = astroid.extract_node(f"""
     from {module} import dataclass
     from dataclasses import InitVar
 
@@ -247,8 +231,7 @@ def test_inference_init_var(module: str):
     A  #@
     A.name  #@
     A().name #@
-    """
-    )
+    """)
     inferred = next(class_def.infer())
     assert isinstance(inferred, nodes.ClassDef)
     assert inferred.instance_attrs == {}
@@ -268,8 +251,7 @@ def test_inference_generic_collection_attribute(module: str):
     """Test that an attribute with a generic collection type from the
     typing module is inferred correctly.
     """
-    attr_nodes = astroid.extract_node(
-        f"""
+    attr_nodes = astroid.extract_node(f"""
     from {module} import dataclass
     from dataclasses import field
     import typing
@@ -288,8 +270,7 @@ def test_inference_generic_collection_attribute(module: str):
     a.list_prop       #@
     a.set_prop        #@
     a.tuple_prop      #@
-    """
-    )
+    """)
     names = (
         "Dict",
         "FrozenSet",
@@ -318,8 +299,7 @@ def test_inference_callable_attribute(module: str, typing_module: str):
 
     See issue #1129 and pylint-dev/pylint#4895
     """
-    instance = astroid.extract_node(
-        f"""
+    instance = astroid.extract_node(f"""
     from {module} import dataclass
     from {typing_module} import Any, Callable
 
@@ -328,8 +308,7 @@ def test_inference_callable_attribute(module: str, typing_module: str):
         enabled: Callable[[Any], bool]
 
     A(lambda x: x == 42).enabled  #@
-    """
-    )
+    """)
     inferred = next(instance.infer())
     assert inferred is Uninferable
 
@@ -337,8 +316,7 @@ def test_inference_callable_attribute(module: str, typing_module: str):
 @parametrize_module
 def test_inference_inherited(module: str):
     """Test that an attribute is inherited from a superclass dataclass."""
-    klass1, instance1, klass2, instance2 = astroid.extract_node(
-        f"""
+    klass1, instance1, klass2, instance2 = astroid.extract_node(f"""
     from {module} import dataclass
 
     @dataclass
@@ -354,8 +332,7 @@ def test_inference_inherited(module: str):
     B(1).value  #@
     B.name  #@
     B(1).name  #@
-    """
-    )
+    """)
     with pytest.raises(InferenceError):  # B.value is not defined
         klass1.inferred()
 
@@ -378,8 +355,7 @@ def test_inference_inherited(module: str):
 
 def test_dataclass_order_of_inherited_attributes():
     """Test that an attribute in a child does not get put at the end of the init."""
-    child, normal, keyword_only = astroid.extract_node(
-        """
+    child, normal, keyword_only = astroid.extract_node("""
     from dataclass import dataclass
 
 
@@ -416,25 +392,17 @@ def test_dataclass_order_of_inherited_attributes():
     Child.__init__  #@
     NormalChild.__init__  #@
     KeywordOnlyChild.__init__  #@
-    """
-    )
+    """)
     child_init: bases.UnboundMethod = next(child.infer())
     assert [a.name for a in child_init.args.args] == ["self", "a", "b", "c"]
 
     normal_init: bases.UnboundMethod = next(normal.infer())
-    if PY310_PLUS:
-        assert [a.name for a in normal_init.args.args] == ["self", "a", "c"]
-        assert [a.name for a in normal_init.args.kwonlyargs] == ["b"]
-    else:
-        assert [a.name for a in normal_init.args.args] == ["self", "a", "b", "c"]
-        assert [a.name for a in normal_init.args.kwonlyargs] == []
+    assert [a.name for a in normal_init.args.args] == ["self", "a", "c"]
+    assert [a.name for a in normal_init.args.kwonlyargs] == ["b"]
 
     keyword_only_init: bases.UnboundMethod = next(keyword_only.infer())
-    if PY310_PLUS:
-        assert [a.name for a in keyword_only_init.args.args] == ["self"]
-        assert [a.name for a in keyword_only_init.args.kwonlyargs] == ["a", "b", "c"]
-    else:
-        assert [a.name for a in keyword_only_init.args.args] == ["self", "a", "b", "c"]
+    assert [a.name for a in keyword_only_init.args.args] == ["self"]
+    assert [a.name for a in keyword_only_init.args.kwonlyargs] == ["a", "b", "c"]
 
 
 def test_pydantic_field() -> None:
@@ -442,8 +410,7 @@ def test_pydantic_field() -> None:
 
     (Eventually, we can extend the brain to support pydantic.Field)
     """
-    klass, instance = astroid.extract_node(
-        """
+    klass, instance = astroid.extract_node("""
     from pydantic import Field
     from pydantic.dataclasses import dataclass
 
@@ -453,8 +420,7 @@ def test_pydantic_field() -> None:
 
     A.name  #@
     A().name #@
-    """
-    )
+    """)
 
     inferred = klass.inferred()
     assert len(inferred) == 1
@@ -470,8 +436,7 @@ def test_pydantic_field() -> None:
 @parametrize_module
 def test_init_empty(module: str):
     """Test init for a dataclass with no attributes."""
-    node = astroid.extract_node(
-        f"""
+    node = astroid.extract_node(f"""
     from {module} import dataclass
 
     @dataclass
@@ -479,8 +444,7 @@ def test_init_empty(module: str):
         pass
 
     A.__init__  #@
-    """
-    )
+    """)
     init = next(node.infer())
     assert [a.name for a in init.args.args] == ["self"]
 
@@ -488,8 +452,7 @@ def test_init_empty(module: str):
 @parametrize_module
 def test_init_no_defaults(module: str):
     """Test init for a dataclass with attributes and no defaults."""
-    node = astroid.extract_node(
-        f"""
+    node = astroid.extract_node(f"""
     from {module} import dataclass
     from typing import List
 
@@ -500,8 +463,7 @@ def test_init_no_defaults(module: str):
         z: List[bool]
 
     A.__init__  #@
-    """
-    )
+    """)
     init = next(node.infer())
     assert [a.name for a in init.args.args] == ["self", "x", "y", "z"]
     assert [a.as_string() if a else None for a in init.args.annotations] == [
@@ -515,8 +477,7 @@ def test_init_no_defaults(module: str):
 @parametrize_module
 def test_init_defaults(module: str):
     """Test init for a dataclass with attributes and some defaults."""
-    node = astroid.extract_node(
-        f"""
+    node = astroid.extract_node(f"""
     from {module} import dataclass
     from dataclasses import field
     from typing import List
@@ -529,8 +490,7 @@ def test_init_defaults(module: str):
         z: List[bool] = field(default_factory=list)
 
     A.__init__  #@
-    """
-    )
+    """)
     init = next(node.infer())
     assert [a.name for a in init.args.args] == ["self", "w", "x", "y", "z"]
     assert [a.as_string() if a else None for a in init.args.annotations] == [
@@ -550,8 +510,7 @@ def test_init_defaults(module: str):
 @parametrize_module
 def test_init_initvar(module: str):
     """Test init for a dataclass with attributes and an InitVar."""
-    node = astroid.extract_node(
-        f"""
+    node = astroid.extract_node(f"""
     from {module} import dataclass
     from dataclasses import InitVar
     from typing import List
@@ -564,8 +523,7 @@ def test_init_initvar(module: str):
         z: List[bool]
 
     A.__init__  #@
-    """
-    )
+    """)
     init = next(node.infer())
     assert [a.name for a in init.args.args] == ["self", "x", "y", "init_var", "z"]
     assert [a.as_string() if a else None for a in init.args.annotations] == [
@@ -582,8 +540,7 @@ def test_init_decorator_init_false(module: str):
     """Test that no init is generated when init=False is passed to
     dataclass decorator.
     """
-    node = astroid.extract_node(
-        f"""
+    node = astroid.extract_node(f"""
     from {module} import dataclass
     from typing import List
 
@@ -594,8 +551,7 @@ def test_init_decorator_init_false(module: str):
         z: List[bool]
 
     A.__init__ #@
-    """
-    )
+    """)
     init = next(node.infer())
     assert init._proxied.parent.name == "object"
 
@@ -605,8 +561,7 @@ def test_init_field_init_false(module: str):
     """Test init for a dataclass with attributes with a field value where init=False
     (these attributes should not be included in the initializer).
     """
-    node = astroid.extract_node(
-        f"""
+    node = astroid.extract_node(f"""
     from {module} import dataclass
     from dataclasses import field
     from typing import List
@@ -618,8 +573,7 @@ def test_init_field_init_false(module: str):
         z: List[bool] = field(init=False)
 
     A.__init__  #@
-    """
-    )
+    """)
     init = next(node.infer())
     assert [a.name for a in init.args.args] == ["self", "x", "y"]
     assert [a.as_string() if a else None for a in init.args.annotations] == [
@@ -635,8 +589,7 @@ def test_init_override(module: str):
 
     Based on https://github.com/pylint-dev/pylint/issues/3201
     """
-    node = astroid.extract_node(
-        f"""
+    node = astroid.extract_node(f"""
     from {module} import dataclass
     from typing import List
 
@@ -652,8 +605,7 @@ def test_init_override(module: str):
         arg2: str = None
 
     B.__init__  #@
-    """
-    )
+    """)
     init = next(node.infer())
     assert [a.name for a in init.args.args] == ["self", "arg1", "arg2"]
     assert [a.as_string() if a else None for a in init.args.annotations] == [
@@ -670,8 +622,7 @@ def test_init_attributes_from_superclasses(module: str):
 
     Based on https://github.com/pylint-dev/pylint/issues/3201
     """
-    node = astroid.extract_node(
-        f"""
+    node = astroid.extract_node(f"""
     from {module} import dataclass
     from typing import List
 
@@ -686,8 +637,7 @@ def test_init_attributes_from_superclasses(module: str):
         arg2: list  # Overrides arg2 from A
 
     B.__init__  #@
-    """
-    )
+    """)
     init = next(node.infer())
     assert [a.name for a in init.args.args] == ["self", "arg0", "arg2", "arg1"]
     assert [a.as_string() if a else None for a in init.args.annotations] == [
@@ -703,8 +653,7 @@ def test_invalid_init(module: str):
     """Test that astroid doesn't generate an initializer when attribute order is
     invalid.
     """
-    node = astroid.extract_node(
-        f"""
+    node = astroid.extract_node(f"""
     from {module} import dataclass
 
     @dataclass
@@ -713,8 +662,7 @@ def test_invalid_init(module: str):
         arg2: str
 
     A.__init__  #@
-    """
-    )
+    """)
     init = next(node.infer())
     assert init._proxied.parent.name == "object"
 
@@ -724,16 +672,14 @@ def test_annotated_enclosed_field_call(module: str):
     """Test inference of dataclass attribute with a field call in another function
     call.
     """
-    node = astroid.extract_node(
-        f"""
+    node = astroid.extract_node(f"""
     from {module} import dataclass, field
     from typing import cast
 
     @dataclass
     class A:
         attribute: int = cast(int, field(default_factory=dict))
-    """
-    )
+    """)
     inferred = node.inferred()
     assert len(inferred) == 1 and isinstance(inferred[0], nodes.ClassDef)
     assert "attribute" in inferred[0].instance_attrs
@@ -743,15 +689,13 @@ def test_annotated_enclosed_field_call(module: str):
 @parametrize_module
 def test_invalid_field_call(module: str) -> None:
     """Test inference of invalid field call doesn't crash."""
-    code = astroid.extract_node(
-        f"""
+    code = astroid.extract_node(f"""
     from {module} import dataclass, field
 
     @dataclass
     class A:
         val: field()
-    """
-    )
+    """)
     inferred = code.inferred()
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.ClassDef)
@@ -760,8 +704,7 @@ def test_invalid_field_call(module: str) -> None:
 
 def test_non_dataclass_is_not_dataclass() -> None:
     """Test that something that isn't a dataclass has the correct attribute."""
-    module = astroid.parse(
-        """
+    module = astroid.parse("""
     class A:
         val: field()
 
@@ -771,8 +714,7 @@ def test_non_dataclass_is_not_dataclass() -> None:
     @dataclass
     class B:
         val: field()
-    """
-    )
+    """)
     class_a = module.body[0].inferred()
     assert len(class_a) == 1
     assert isinstance(class_a[0], nodes.ClassDef)
@@ -786,8 +728,7 @@ def test_non_dataclass_is_not_dataclass() -> None:
 
 def test_kw_only_sentinel() -> None:
     """Test that the KW_ONLY sentinel doesn't get added to the fields."""
-    node_one, node_two = astroid.extract_node(
-        """
+    node_one, node_two = astroid.extract_node("""
     from dataclasses import dataclass, KW_ONLY
     from dataclasses import KW_ONLY as keyword_only
 
@@ -804,12 +745,8 @@ def test_kw_only_sentinel() -> None:
         y: str
 
     B.__init__  #@
-    """
-    )
-    if PY310_PLUS:
-        expected = ["self", "y"]
-    else:
-        expected = ["self", "_", "y"]
+    """)
+    expected = ["self", "y"]
     init = next(node_one.infer())
     assert [a.name for a in init.args.args] == expected
 
@@ -818,12 +755,8 @@ def test_kw_only_sentinel() -> None:
 
 
 def test_kw_only_decorator() -> None:
-    """Test that we update the signature correctly based on the keyword.
-
-    kw_only was introduced in PY310.
-    """
-    foodef, bardef, cee, dee = astroid.extract_node(
-        """
+    """Test that we update the signature correctly based on the keyword."""
+    foodef, bardef, cee, dee = astroid.extract_node("""
     from dataclasses import dataclass
 
     @dataclass(kw_only=True)
@@ -851,54 +784,29 @@ def test_kw_only_decorator() -> None:
     Bar.__init__  #@
     Cee.__init__  #@
     Dee.__init__  #@
-    """
-    )
+    """)
 
     foo_init: bases.UnboundMethod = next(foodef.infer())
-    if PY310_PLUS:
-        assert [a.name for a in foo_init.args.args] == ["self"]
-        assert [a.name for a in foo_init.args.kwonlyargs] == ["a", "e"]
-    else:
-        assert [a.name for a in foo_init.args.args] == ["self", "a", "e"]
-        assert [a.name for a in foo_init.args.kwonlyargs] == []
+    assert [a.name for a in foo_init.args.args] == ["self"]
+    assert [a.name for a in foo_init.args.kwonlyargs] == ["a", "e"]
 
     bar_init: bases.UnboundMethod = next(bardef.infer())
-    if PY310_PLUS:
-        assert [a.name for a in bar_init.args.args] == ["self", "c"]
-        assert [a.name for a in bar_init.args.kwonlyargs] == ["a", "e"]
-    else:
-        assert [a.name for a in bar_init.args.args] == ["self", "a", "e", "c"]
-        assert [a.name for a in bar_init.args.kwonlyargs] == []
+    assert [a.name for a in bar_init.args.args] == ["self", "c"]
+    assert [a.name for a in bar_init.args.kwonlyargs] == ["a", "e"]
 
     cee_init: bases.UnboundMethod = next(cee.infer())
-    if PY310_PLUS:
-        assert [a.name for a in cee_init.args.args] == ["self", "c", "d"]
-        assert [a.name for a in cee_init.args.kwonlyargs] == ["a", "e"]
-    else:
-        assert [a.name for a in cee_init.args.args] == ["self", "a", "e", "c", "d"]
-        assert [a.name for a in cee_init.args.kwonlyargs] == []
+    assert [a.name for a in cee_init.args.args] == ["self", "c", "d"]
+    assert [a.name for a in cee_init.args.kwonlyargs] == ["a", "e"]
 
     dee_init: bases.UnboundMethod = next(dee.infer())
-    if PY310_PLUS:
-        assert [a.name for a in dee_init.args.args] == ["self", "c", "d"]
-        assert [a.name for a in dee_init.args.kwonlyargs] == ["a", "e", "ee"]
-    else:
-        assert [a.name for a in dee_init.args.args] == [
-            "self",
-            "a",
-            "e",
-            "c",
-            "d",
-            "ee",
-        ]
-        assert [a.name for a in dee_init.args.kwonlyargs] == []
+    assert [a.name for a in dee_init.args.args] == ["self", "c", "d"]
+    assert [a.name for a in dee_init.args.kwonlyargs] == ["a", "e", "ee"]
 
 
 def test_kw_only_in_field_call() -> None:
     """Test that keyword only fields get correctly put at the end of the __init__."""
 
-    first, second, third = astroid.extract_node(
-        """
+    first, second, third = astroid.extract_node("""
     from dataclasses import dataclass, field
 
     @dataclass
@@ -917,8 +825,7 @@ def test_kw_only_in_field_call() -> None:
     Parent.__init__  #@
     Child.__init__ #@
     GrandChild.__init__ #@
-    """
-    )
+    """)
 
     first_init: bases.UnboundMethod = next(first.infer())
     assert [a.name for a in first_init.args.args] == ["self"]
@@ -942,8 +849,7 @@ def test_dataclass_with_unknown_base() -> None:
 
     Reported in https://github.com/pylint-dev/pylint/issues/7418
     """
-    node = astroid.extract_node(
-        """
+    node = astroid.extract_node("""
     import dataclasses
 
     from unknown import Unknown
@@ -954,8 +860,7 @@ def test_dataclass_with_unknown_base() -> None:
         pass
 
     MyDataclass()
-    """
-    )
+    """)
 
     assert next(node.infer())
 
@@ -965,8 +870,7 @@ def test_dataclass_with_unknown_typing() -> None:
 
     Reported in https://github.com/pylint-dev/pylint/issues/7422
     """
-    node = astroid.extract_node(
-        """
+    node = astroid.extract_node("""
     from dataclasses import dataclass, InitVar
 
 
@@ -977,8 +881,7 @@ def test_dataclass_with_unknown_typing() -> None:
         config: InitVar = None
 
     TestClass.__init__  #@
-    """
-    )
+    """)
 
     init_def: bases.UnboundMethod = next(node.infer())
     assert [a.name for a in init_def.args.args] == ["self", "config"]
@@ -989,8 +892,7 @@ def test_dataclass_with_default_factory() -> None:
 
     Reported in https://github.com/pylint-dev/pylint/issues/7425
     """
-    bad_node, good_node = astroid.extract_node(
-        """
+    bad_node, good_node = astroid.extract_node("""
     from dataclasses import dataclass
     from typing import Union
 
@@ -1013,8 +915,7 @@ def test_dataclass_with_default_factory() -> None:
         xyz: str = ""
 
     GoodExampleClass.__init__  #@
-    """
-    )
+    """)
 
     bad_init: bases.UnboundMethod = next(bad_node.infer())
     assert bad_init.args.defaults
@@ -1031,8 +932,7 @@ def test_dataclass_with_multiple_inheritance() -> None:
     Reported in https://github.com/pylint-dev/pylint/issues/7427
     Reported in https://github.com/pylint-dev/pylint/issues/7434
     """
-    first, second, overwritten, overwriting, mixed = astroid.extract_node(
-        """
+    first, second, overwritten, overwriting, mixed = astroid.extract_node("""
     from dataclasses import dataclass
 
     @dataclass
@@ -1080,8 +980,7 @@ def test_dataclass_with_multiple_inheritance() -> None:
     OverwrittenChild.__init__  #@
     OverwritingChild.__init__  #@
     ChildWithMixedParents.__init__  #@
-    """
-    )
+    """)
 
     first_init: bases.UnboundMethod = next(first.infer())
     assert [a.name for a in first_init.args.args] == ["self", "ef", "_abc", "ghi"]
@@ -1103,8 +1002,7 @@ def test_dataclass_with_multiple_inheritance() -> None:
     assert [a.name for a in mixed_init.args.args] == ["self", "_abc", "ghi"]
     assert [a.value for a in mixed_init.args.defaults] == [1, 3]
 
-    first = astroid.extract_node(
-        """
+    first = astroid.extract_node("""
     from dataclasses import dataclass
 
     @dataclass
@@ -1124,8 +1022,7 @@ def test_dataclass_with_multiple_inheritance() -> None:
         ...
 
     GrandChild.__init__  #@
-    """
-    )
+    """)
 
     first_init: bases.UnboundMethod = next(first.infer())
     assert [a.name for a in first_init.args.args] == ["self", "required", "optional"]
@@ -1142,8 +1039,7 @@ def test_dataclass_non_default_argument_after_default() -> None:
     Eventually it can be merged into test_dataclass_with_multiple_inheritance.
     """
 
-    impossible = astroid.extract_node(
-        """
+    impossible = astroid.extract_node("""
     from dataclasses import dataclass
 
     @dataclass
@@ -1167,16 +1063,14 @@ def test_dataclass_non_default_argument_after_default() -> None:
         ...
 
     ImpossibleGrandChild() #@
-    """
-    )
+    """)
 
     assert next(impossible.infer()) is Uninferable
 
 
 def test_dataclass_with_field_init_is_false() -> None:
     """When init=False it shouldn't end up in the __init__."""
-    first, second, second_child, third_child, third = astroid.extract_node(
-        """
+    first, second, second_child, third_child, third = astroid.extract_node("""
     from dataclasses import dataclass, field
 
 
@@ -1205,8 +1099,7 @@ def test_dataclass_with_field_init_is_false() -> None:
     SecondChild.__init__  #@
     ThirdChild.__init__  #@
     Third.__init__  #@
-    """
-    )
+    """)
 
     first_init: bases.UnboundMethod = next(first.infer())
     assert [a.name for a in first_init.args.args] == ["self", "a"]
@@ -1234,8 +1127,7 @@ def test_dataclass_inits_of_non_dataclasses() -> None:
 
     Regression test against changes tested in test_dataclass_with_multiple_inheritance
     """
-    first, second, third = astroid.extract_node(
-        """
+    first, second, third = astroid.extract_node("""
     from dataclasses import dataclass
 
     @dataclass
@@ -1267,8 +1159,7 @@ def test_dataclass_inits_of_non_dataclasses() -> None:
     FirstChild.__init__  #@
     SecondChild.__init__  #@
     ThirdChild.__init__  #@
-    """
-    )
+    """)
 
     first_init: bases.UnboundMethod = next(first.infer())
     assert [a.name for a in first_init.args.args] == ["self", "_abc"]
@@ -1285,8 +1176,7 @@ def test_dataclass_inits_of_non_dataclasses() -> None:
 
 def test_dataclass_with_properties() -> None:
     """Tests for __init__ creation for dataclasses that use properties."""
-    first, second, third = astroid.extract_node(
-        """
+    first, second, third = astroid.extract_node("""
     from dataclasses import dataclass
 
     @dataclass
@@ -1311,8 +1201,7 @@ def test_dataclass_with_properties() -> None:
     Dataclass.__init__  #@
     ParentOne.__init__  #@
     ParentTwo.__init__  #@
-    """
-    )
+    """)
 
     first_init: bases.UnboundMethod = next(first.infer())
     assert [a.name for a in first_init.args.args] == ["self", "attr"]
@@ -1326,8 +1215,7 @@ def test_dataclass_with_properties() -> None:
     assert [a.name for a in third_init.args.args] == ["self", "attr"]
     assert [a.value for a in third_init.args.defaults] == [1]
 
-    fourth = astroid.extract_node(
-        """
+    fourth = astroid.extract_node("""
     from dataclasses import dataclass
 
     @dataclass
@@ -1344,9 +1232,78 @@ def test_dataclass_with_properties() -> None:
             pass
 
     Dataclass.__init__  #@
-    """
-    )
+    """)
 
     fourth_init: bases.UnboundMethod = next(fourth.infer())
     assert [a.name for a in fourth_init.args.args] == ["self", "other_attr", "attr"]
     assert [a.name for a in fourth_init.args.defaults] == ["Uninferable"]
+
+
+def test_dataclass_with_duplicate_bases_no_crash():
+    """Regression test for https://github.com/pylint-dev/astroid/issues/2628.
+
+    A dataclass inheriting from a class with duplicate bases in MRO
+    (e.g., Protocol appearing both directly and indirectly) should not
+    crash with DuplicateBasesError during AST transformation.
+    """
+    code = """
+    import dataclasses
+    from typing import TypeVar, Protocol
+
+    BaseT = TypeVar("BaseT")
+    T = TypeVar("T", bound=BaseT)
+
+    class ConfigBase(Protocol[BaseT]):
+        ...
+
+    class Config(ConfigBase[T], Protocol[T]):
+        ...
+
+    @dataclasses.dataclass
+    class DatasetConfig(Config[T]):
+        name: str = "default"
+
+    DatasetConfig.__init__  #@
+    """
+    node = astroid.extract_node(code)
+    # Should not raise DuplicateBasesError — graceful degradation instead
+    inferred = next(node.infer())
+    assert inferred is not None
+
+
+def test_dataclass_with_duplicate_bases_field_default():
+    """Regression test for _get_previous_field_default with broken MRO.
+
+    When a parent dataclass defines a field with a default and a child (with
+    duplicate bases in its MRO) re-annotates that field without a value,
+    _get_previous_field_default should not crash with DuplicateBasesError.
+
+    See https://github.com/pylint-dev/astroid/issues/2628.
+    """
+    code = """
+    import dataclasses
+    from typing import TypeVar, Protocol
+
+    BaseT = TypeVar("BaseT")
+    T = TypeVar("T", bound=BaseT)
+
+    class ConfigBase(Protocol[BaseT]):
+        ...
+
+    class Config(ConfigBase[T], Protocol[T]):
+        ...
+
+    @dataclasses.dataclass
+    class BaseConfig(Config[T]):
+        name: str = "default"
+
+    @dataclasses.dataclass
+    class ChildConfig(BaseConfig[T]):
+        name: str
+
+    ChildConfig.__init__  #@
+    """
+    node = astroid.extract_node(code)
+    # Should not raise DuplicateBasesError in _get_previous_field_default
+    inferred = next(node.infer())
+    assert inferred is not None

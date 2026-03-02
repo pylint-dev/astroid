@@ -13,15 +13,11 @@ from astroid.manager import AstroidManager
 
 
 def dateutil_transform() -> nodes.Module:
-    return AstroidBuilder(AstroidManager()).string_build(
-        textwrap.dedent(
-            """
+    return AstroidBuilder(AstroidManager()).string_build(textwrap.dedent("""
     import datetime
     def parse(timestr, parserinfo=None, **kwargs):
         return datetime.datetime()
-    """
-        )
-    )
+    """))
 
 
 def register(manager: AstroidManager) -> None:

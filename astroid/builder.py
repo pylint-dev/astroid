@@ -16,14 +16,14 @@ import re
 import textwrap
 import types
 import warnings
-from collections.abc import Iterator, Sequence
+from collections.abc import Collection, Iterator, Sequence
 from io import TextIOWrapper
 from tokenize import detect_encoding
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import ParserModule, get_parser_module
-from astroid.const import PY312_PLUS
+from astroid.const import PY312_PLUS, PY314_PLUS
 from astroid.exceptions import AstroidBuildingError, AstroidSyntaxError, InferenceError
 
 if TYPE_CHECKING:
@@ -39,7 +39,11 @@ _TRANSIENT_FUNCTION = "__"
 _STATEMENT_SELECTOR = "#@"
 
 if PY312_PLUS:
-    warnings.filterwarnings("ignore", "invalid escape sequence", SyntaxWarning)
+    warnings.filterwarnings("ignore", ".*invalid escape sequence", SyntaxWarning)
+if PY314_PLUS:
+    warnings.filterwarnings(
+        "ignore", "'(return|continue|break)' in a 'finally'", SyntaxWarning
+    )
 
 
 def open_source_file(filename: str) -> tuple[TextIOWrapper, str, str]:
@@ -159,11 +163,11 @@ class AstroidBuilder(raw_building.InspectBuilder):
         module.file_encoding = encoding
         self._manager.cache_module(module)
         # post tree building steps after we stored the module in the cache:
-        for from_node in builder._import_from_nodes:
+        for from_node, global_names in builder._import_from_nodes:
             if from_node.modname == "__future__":
                 for symbol, _ in from_node.names:
                     module.future_imports.add(symbol)
-            self.add_from_names_to_locals(from_node)
+            self.add_from_names_to_locals(from_node, global_names)
         # handle delayed assattr nodes
         for delayed in builder._delayed_assattr:
             self.delayed_assattr(delayed)
@@ -181,7 +185,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             node, parser_module = _parse_string(
                 data, type_comments=True, modname=modname
             )
-        except (TypeError, ValueError, SyntaxError) as exc:
+        except (TypeError, ValueError, SyntaxError, MemoryError) as exc:
             raise AstroidSyntaxError(
                 "Parsing Python code failed:\n{error}",
                 source=data,
@@ -206,19 +210,23 @@ class AstroidBuilder(raw_building.InspectBuilder):
         module = builder.visit_module(node, modname, node_file, package)
         return module, builder
 
-    def add_from_names_to_locals(self, node: nodes.ImportFrom) -> None:
+    def add_from_names_to_locals(
+        self, node: nodes.ImportFrom, global_name: Collection[str]
+    ) -> None:
         """Store imported names to the locals.
 
         Resort the locals if coming from a delayed node
         """
 
-        def _key_func(node: nodes.NodeNG) -> int:
-            return node.fromlineno or 0
-
-        def sort_locals(my_list: list[nodes.NodeNG]) -> None:
-            my_list.sort(key=_key_func)
+        def add_local(parent_or_root: nodes.NodeNG, name: str) -> None:
+            parent_or_root.set_local(name, node)
+            my_list = parent_or_root.scope().locals[name]
+            if TYPE_CHECKING:
+                my_list = cast(list[nodes.NodeNG], my_list)
+            my_list.sort(key=lambda n: n.fromlineno or 0)
 
         assert node.parent  # It should always default to the module
+        module = node.root()
         for name, asname in node.names:
             if name == "*":
                 try:
@@ -226,11 +234,16 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 except AstroidBuildingError:
                     continue
                 for name in imported.public_names():
-                    node.parent.set_local(name, node)
-                    sort_locals(node.parent.scope().locals[name])  # type: ignore[arg-type]
+                    if name in global_name:
+                        add_local(module, name)
+                    else:
+                        add_local(node.parent, name)
             else:
-                node.parent.set_local(asname or name, node)
-                sort_locals(node.parent.scope().locals[asname or name])  # type: ignore[arg-type]
+                name = asname or name
+                if name in global_name:
+                    add_local(module, name)
+                else:
+                    add_local(node.parent, name)
 
     def delayed_assattr(self, node: nodes.AssignAttr) -> None:
         """Visit an AssignAttr node.
@@ -317,6 +330,7 @@ def _extract_expressions(node: nodes.NodeNG) -> Iterator[nodes.NodeNG]:
         isinstance(node, nodes.Call)
         and isinstance(node.func, nodes.Name)
         and node.func.name == _TRANSIENT_FUNCTION
+        and node.args
     ):
         real_expr = node.args[0]
         assert node.parent

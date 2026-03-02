@@ -107,13 +107,11 @@ import urllib.error as urllib_error
 
 
 def six_moves_transform():
-    code = dedent(
-        """
+    code = dedent("""
     class Moves(object):
     {}
     moves = Moves()
-    """
-    ).format(_indent(_IMPORTS, "    "))
+    """).format(_indent(_IMPORTS, "    "))
     module = AstroidBuilder(AstroidManager()).string_build(code)
     module.name = "six.moves"
     return module
@@ -182,7 +180,11 @@ def transform_six_add_metaclass(node):  # pylint: disable=inconsistent-return-st
             func = next(decorator.func.infer())
         except (InferenceError, StopIteration):
             continue
-        if func.qname() == SIX_ADD_METACLASS and decorator.args:
+        if (
+            isinstance(func, (nodes.FunctionDef, nodes.ClassDef))
+            and func.qname() == SIX_ADD_METACLASS
+            and decorator.args
+        ):
             metaclass = decorator.args[0]
             node._metaclass = metaclass
             return node

@@ -104,7 +104,7 @@ def object_type(
         types = set(_object_type(node, context))
     except InferenceError:
         return util.Uninferable
-    if len(types) > 1 or not types:
+    if len(types) != 1:
         return util.Uninferable
     return next(iter(types))
 
@@ -129,7 +129,9 @@ def _object_type_is_subclass(
     # issubclass(object, (1, type)) raises TypeError
     for klass in class_seq:
         if isinstance(klass, util.UninferableBase):
-            raise AstroidTypeError("arg 2 must be a type or tuple of types")
+            raise AstroidTypeError(
+                f"arg 2 must be a type or tuple of types, not {type(klass)!r}"
+            )
 
         for obj_subclass in obj_type.mro():
             if obj_subclass == klass:
@@ -164,8 +166,32 @@ def object_issubclass(
         or its type's mro doesn't work
     """
     if not isinstance(node, nodes.ClassDef):
-        raise TypeError(f"{node} needs to be a ClassDef node")
+        raise TypeError(f"{node} needs to be a ClassDef node, not {type(node)!r}")
     return _object_type_is_subclass(node, class_or_seq, context=context)
+
+
+def class_or_tuple_to_container(
+    node: InferenceResult, context: InferenceContext | None = None
+) -> list[InferenceResult]:
+    # Move inferences results into container
+    # to simplify later logic
+    # raises InferenceError if any of the inferences fall through
+    try:
+        node_infer = next(node.infer(context=context))
+    except StopIteration as e:  # pragma: no cover
+        raise InferenceError(node=node, context=context) from e
+    # arg2 MUST be a type or a TUPLE of types
+    # for isinstance
+    if isinstance(node_infer, nodes.Tuple):
+        try:
+            class_container = [
+                next(node.infer(context=context)) for node in node_infer.elts
+            ]
+        except StopIteration as e:  # pragma: no cover
+            raise InferenceError(node=node, context=context) from e
+    else:
+        class_container = [node_infer]
+    return class_container
 
 
 def has_known_bases(klass, context: InferenceContext | None = None) -> bool:

@@ -10,6 +10,7 @@ It might need to be manually updated from the public methods of
 
 See: https://github.com/getsentry/responses/blob/master/responses.py
 """
+
 from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
@@ -17,8 +18,7 @@ from astroid.manager import AstroidManager
 
 
 def responses_funcs() -> nodes.Module:
-    return parse(
-        """
+    return parse("""
         DELETE = "DELETE"
         GET = "GET"
         HEAD = "HEAD"
@@ -72,8 +72,7 @@ def responses_funcs() -> nodes.Module:
 
         def stop(allow_assert=True):
             return
-        """
-    )
+        """)
 
 
 def register(manager: AstroidManager) -> None:

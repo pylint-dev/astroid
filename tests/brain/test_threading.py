@@ -13,12 +13,10 @@ from astroid.bases import Instance
 
 class ThreadingBrainTest(unittest.TestCase):
     def test_lock(self) -> None:
-        lock_instance = builder.extract_node(
-            """
+        lock_instance = builder.extract_node("""
         import threading
         threading.Lock()
-        """
-        )
+        """)
         inferred = next(lock_instance.infer())
         self.assert_is_valid_lock(inferred)
 
@@ -38,12 +36,10 @@ class ThreadingBrainTest(unittest.TestCase):
         self._test_lock_object("BoundedSemaphore")
 
     def _test_lock_object(self, object_name: str) -> None:
-        lock_instance = builder.extract_node(
-            f"""
+        lock_instance = builder.extract_node(f"""
         import threading
         threading.{object_name}()
-        """
-        )
+        """)
         inferred = next(lock_instance.infer())
         self.assert_is_valid_lock(inferred)
 

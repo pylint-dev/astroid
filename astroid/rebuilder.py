@@ -9,16 +9,17 @@ order to get a single Astroid representation.
 from __future__ import annotations
 
 import ast
+import itertools
 import sys
 import token
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Collection, Generator
 from io import StringIO
 from tokenize import TokenInfo, generate_tokens
-from typing import TYPE_CHECKING, Final, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Final, TypeVar, cast, overload
 
 from astroid import nodes
 from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
-from astroid.const import PY312_PLUS, Context
+from astroid.const import PY312_PLUS, PY313_PLUS, Context
 from astroid.nodes.utils import Position
 from astroid.typing import InferenceResult
 
@@ -27,14 +28,14 @@ if TYPE_CHECKING:
 
     T_Doc = TypeVar(
         "T_Doc",
-        "ast.Module",
-        "ast.ClassDef",
-        Union["ast.FunctionDef", "ast.AsyncFunctionDef"],
+        ast.Module,
+        ast.ClassDef,
+        ast.FunctionDef | ast.AsyncFunctionDef,
     )
     _FunctionT = TypeVar("_FunctionT", nodes.FunctionDef, nodes.AsyncFunctionDef)
     _ForT = TypeVar("_ForT", nodes.For, nodes.AsyncFor)
     _WithT = TypeVar("_WithT", nodes.With, nodes.AsyncWith)
-    NodesWithDocsType = Union[nodes.Module, nodes.ClassDef, nodes.FunctionDef]
+    NodesWithDocsType = nodes.Module | nodes.ClassDef | nodes.FunctionDef
 
 
 REDIRECT: Final[dict[str, str]] = {
@@ -61,7 +62,7 @@ class TreeRebuilder:
         self._manager = manager
         self._data = data.split("\n") if data else None
         self._global_names: list[dict[str, list[nodes.Global]]] = []
-        self._import_from_nodes: list[nodes.ImportFrom] = []
+        self._import_from_nodes: list[tuple[nodes.ImportFrom, Collection[str]]] = []
         self._delayed_assattr: list[nodes.AssignAttr] = []
         self._visit_meths: dict[
             type[ast.AST], Callable[[ast.AST, nodes.NodeNG], nodes.NodeNG]
@@ -72,7 +73,7 @@ class TreeRebuilder:
         else:
             self._parser_module = parser_module
 
-    def _get_doc(self, node: T_Doc) -> tuple[T_Doc, ast.Constant | ast.Str | None]:
+    def _get_doc(self, node: T_Doc) -> tuple[T_Doc, ast.Constant | None]:
         """Return the doc ast node."""
         try:
             if node.body and isinstance(node.body[0], ast.Expr):
@@ -413,60 +414,64 @@ class TreeRebuilder:
             self, node: ast.YieldFrom, parent: nodes.NodeNG
         ) -> nodes.YieldFrom: ...
 
-        if sys.version_info >= (3, 10):
+        @overload
+        def visit(self, node: ast.Match, parent: nodes.NodeNG) -> nodes.Match: ...
 
-            @overload
-            def visit(self, node: ast.Match, parent: nodes.NodeNG) -> nodes.Match: ...
+        @overload
+        def visit(
+            self, node: ast.match_case, parent: nodes.NodeNG
+        ) -> nodes.MatchCase: ...
+
+        @overload
+        def visit(
+            self, node: ast.MatchValue, parent: nodes.NodeNG
+        ) -> nodes.MatchValue: ...
+
+        @overload
+        def visit(
+            self, node: ast.MatchSingleton, parent: nodes.NodeNG
+        ) -> nodes.MatchSingleton: ...
+
+        @overload
+        def visit(
+            self, node: ast.MatchSequence, parent: nodes.NodeNG
+        ) -> nodes.MatchSequence: ...
+
+        @overload
+        def visit(
+            self, node: ast.MatchMapping, parent: nodes.NodeNG
+        ) -> nodes.MatchMapping: ...
+
+        @overload
+        def visit(
+            self, node: ast.MatchClass, parent: nodes.NodeNG
+        ) -> nodes.MatchClass: ...
+
+        @overload
+        def visit(
+            self, node: ast.MatchStar, parent: nodes.NodeNG
+        ) -> nodes.MatchStar: ...
+
+        @overload
+        def visit(self, node: ast.MatchAs, parent: nodes.NodeNG) -> nodes.MatchAs: ...
+
+        @overload
+        def visit(self, node: ast.MatchOr, parent: nodes.NodeNG) -> nodes.MatchOr: ...
+
+        @overload
+        def visit(self, node: ast.pattern, parent: nodes.NodeNG) -> nodes.Pattern: ...
+
+        if sys.version_info >= (3, 14):
 
             @overload
             def visit(
-                self, node: ast.match_case, parent: nodes.NodeNG
-            ) -> nodes.MatchCase: ...
+                self, node: ast.TemplateStr, parent: nodes.NodeNG
+            ) -> nodes.TemplateStr: ...
 
             @overload
             def visit(
-                self, node: ast.MatchValue, parent: nodes.NodeNG
-            ) -> nodes.MatchValue: ...
-
-            @overload
-            def visit(
-                self, node: ast.MatchSingleton, parent: nodes.NodeNG
-            ) -> nodes.MatchSingleton: ...
-
-            @overload
-            def visit(
-                self, node: ast.MatchSequence, parent: nodes.NodeNG
-            ) -> nodes.MatchSequence: ...
-
-            @overload
-            def visit(
-                self, node: ast.MatchMapping, parent: nodes.NodeNG
-            ) -> nodes.MatchMapping: ...
-
-            @overload
-            def visit(
-                self, node: ast.MatchClass, parent: nodes.NodeNG
-            ) -> nodes.MatchClass: ...
-
-            @overload
-            def visit(
-                self, node: ast.MatchStar, parent: nodes.NodeNG
-            ) -> nodes.MatchStar: ...
-
-            @overload
-            def visit(
-                self, node: ast.MatchAs, parent: nodes.NodeNG
-            ) -> nodes.MatchAs: ...
-
-            @overload
-            def visit(
-                self, node: ast.MatchOr, parent: nodes.NodeNG
-            ) -> nodes.MatchOr: ...
-
-            @overload
-            def visit(
-                self, node: ast.pattern, parent: nodes.NodeNG
-            ) -> nodes.Pattern: ...
+                self, node: ast.Interpolation, parent: nodes.NodeNG
+            ) -> nodes.Interpolation: ...
 
         @overload
         def visit(self, node: ast.AST, parent: nodes.NodeNG) -> nodes.NodeNG: ...
@@ -585,6 +590,16 @@ class TreeRebuilder:
             type_comment_kwonlyargs=type_comment_kwonlyargs,
             type_comment_posonlyargs=type_comment_posonlyargs,
         )
+        if start_end_lineno_pairs := [
+            (arg.lineno, arg.end_lineno)
+            for arg in itertools.chain(
+                node.args, node.posonlyargs, node.kwonlyargs, [node.vararg, node.kwarg]
+            )
+            if arg
+        ]:
+            newnode.lineno = min(startend[0] for startend in start_end_lineno_pairs)
+            newnode.end_lineno = max(startend[1] for startend in start_end_lineno_pairs)
+
         # save argument names in locals:
         assert newnode.parent
         if vararg:
@@ -1095,7 +1110,9 @@ class TreeRebuilder:
             parent=parent,
         )
         # store From names to add them to locals after building
-        self._import_from_nodes.append(newnode)
+        self._import_from_nodes.append(
+            (newnode, self._global_names[-1].keys() if self._global_names else ())
+        )
         return newnode
 
     @overload
@@ -1296,8 +1313,11 @@ class TreeRebuilder:
         )
         # save import names in parent's locals:
         for name, asname in newnode.names:
-            name = asname or name
-            parent.set_local(name.split(".")[0], newnode)
+            name = (asname or name).split(".")[0]
+            if self._global_names and name in self._global_names[-1]:
+                parent.root().set_local(name, newnode)
+            else:
+                parent.set_local(name, newnode)
         return newnode
 
     def visit_joinedstr(
@@ -1437,7 +1457,7 @@ class TreeRebuilder:
             )
         # XXX REMOVE me :
         if context in (Context.Del, Context.Store):  # 'Aug' ??
-            newnode = cast(Union[nodes.AssignName, nodes.DelName], newnode)
+            newnode = cast((nodes.AssignName | nodes.DelName), newnode)
             self._save_assignment(newnode)
         return newnode
 
@@ -1479,7 +1499,12 @@ class TreeRebuilder:
         )
         # Add AssignName node for 'node.name'
         # https://bugs.python.org/issue43994
-        newnode.postinit(name=self.visit_assignname(node, newnode, node.name))
+        newnode.postinit(
+            name=self.visit_assignname(node, newnode, node.name),
+            default_value=(
+                self.visit(node.default_value, newnode) if PY313_PLUS else None
+            ),
+        )
         return newnode
 
     def visit_pass(self, node: ast.Pass, parent: nodes.NodeNG) -> nodes.Pass:
@@ -1675,6 +1700,9 @@ class TreeRebuilder:
         newnode.postinit(
             name=self.visit_assignname(node, newnode, node.name),
             bound=self.visit(node.bound, newnode),
+            default_value=(
+                self.visit(node.default_value, newnode) if PY313_PLUS else None
+            ),
         )
         return newnode
 
@@ -1691,7 +1719,12 @@ class TreeRebuilder:
         )
         # Add AssignName node for 'node.name'
         # https://bugs.python.org/issue43994
-        newnode.postinit(name=self.visit_assignname(node, newnode, node.name))
+        newnode.postinit(
+            name=self.visit_assignname(node, newnode, node.name),
+            default_value=(
+                self.visit(node.default_value, newnode) if PY313_PLUS else None
+            ),
+        )
         return newnode
 
     def visit_unaryop(self, node: ast.UnaryOp, parent: nodes.NodeNG) -> nodes.UnaryOp:
@@ -1790,10 +1823,160 @@ class TreeRebuilder:
         newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
-    if sys.version_info >= (3, 10):
+    def visit_match(self, node: ast.Match, parent: nodes.NodeNG) -> nodes.Match:
+        newnode = nodes.Match(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+            parent=parent,
+        )
+        newnode.postinit(
+            subject=self.visit(node.subject, newnode),
+            cases=[self.visit(case, newnode) for case in node.cases],
+        )
+        return newnode
 
-        def visit_match(self, node: ast.Match, parent: nodes.NodeNG) -> nodes.Match:
-            newnode = nodes.Match(
+    def visit_matchcase(
+        self, node: ast.match_case, parent: nodes.NodeNG
+    ) -> nodes.MatchCase:
+        newnode = nodes.MatchCase(parent=parent)
+        newnode.postinit(
+            pattern=self.visit(node.pattern, newnode),
+            guard=self.visit(node.guard, newnode),
+            body=[self.visit(child, newnode) for child in node.body],
+        )
+        return newnode
+
+    def visit_matchvalue(
+        self, node: ast.MatchValue, parent: nodes.NodeNG
+    ) -> nodes.MatchValue:
+        newnode = nodes.MatchValue(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+            parent=parent,
+        )
+        newnode.postinit(value=self.visit(node.value, newnode))
+        return newnode
+
+    def visit_matchsingleton(
+        self, node: ast.MatchSingleton, parent: nodes.NodeNG
+    ) -> nodes.MatchSingleton:
+        return nodes.MatchSingleton(
+            value=node.value,
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+            parent=parent,
+        )
+
+    def visit_matchsequence(
+        self, node: ast.MatchSequence, parent: nodes.NodeNG
+    ) -> nodes.MatchSequence:
+        newnode = nodes.MatchSequence(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+            parent=parent,
+        )
+        newnode.postinit(
+            patterns=[self.visit(pattern, newnode) for pattern in node.patterns]
+        )
+        return newnode
+
+    def visit_matchmapping(
+        self, node: ast.MatchMapping, parent: nodes.NodeNG
+    ) -> nodes.MatchMapping:
+        newnode = nodes.MatchMapping(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+            parent=parent,
+        )
+        # Add AssignName node for 'node.name'
+        # https://bugs.python.org/issue43994
+        newnode.postinit(
+            keys=[self.visit(child, newnode) for child in node.keys],
+            patterns=[self.visit(pattern, newnode) for pattern in node.patterns],
+            rest=self.visit_assignname(node, newnode, node.rest),
+        )
+        return newnode
+
+    def visit_matchclass(
+        self, node: ast.MatchClass, parent: nodes.NodeNG
+    ) -> nodes.MatchClass:
+        newnode = nodes.MatchClass(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+            parent=parent,
+        )
+        newnode.postinit(
+            cls=self.visit(node.cls, newnode),
+            patterns=[self.visit(pattern, newnode) for pattern in node.patterns],
+            kwd_attrs=node.kwd_attrs,
+            kwd_patterns=[
+                self.visit(pattern, newnode) for pattern in node.kwd_patterns
+            ],
+        )
+        return newnode
+
+    def visit_matchstar(
+        self, node: ast.MatchStar, parent: nodes.NodeNG
+    ) -> nodes.MatchStar:
+        newnode = nodes.MatchStar(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+            parent=parent,
+        )
+        # Add AssignName node for 'node.name'
+        # https://bugs.python.org/issue43994
+        newnode.postinit(name=self.visit_assignname(node, newnode, node.name))
+        return newnode
+
+    def visit_matchas(self, node: ast.MatchAs, parent: nodes.NodeNG) -> nodes.MatchAs:
+        newnode = nodes.MatchAs(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+            parent=parent,
+        )
+        # Add AssignName node for 'node.name'
+        # https://bugs.python.org/issue43994
+        newnode.postinit(
+            pattern=self.visit(node.pattern, newnode),
+            name=self.visit_assignname(node, newnode, node.name),
+        )
+        return newnode
+
+    def visit_matchor(self, node: ast.MatchOr, parent: nodes.NodeNG) -> nodes.MatchOr:
+        newnode = nodes.MatchOr(
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
+            parent=parent,
+        )
+        newnode.postinit(
+            patterns=[self.visit(pattern, newnode) for pattern in node.patterns]
+        )
+        return newnode
+
+    if sys.version_info >= (3, 14):
+
+        def visit_templatestr(
+            self, node: ast.TemplateStr, parent: nodes.NodeNG
+        ) -> nodes.TemplateStr:
+            newnode = nodes.TemplateStr(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
                 end_lineno=node.end_lineno,
@@ -1801,51 +1984,14 @@ class TreeRebuilder:
                 parent=parent,
             )
             newnode.postinit(
-                subject=self.visit(node.subject, newnode),
-                cases=[self.visit(case, newnode) for case in node.cases],
+                values=[self.visit(value, newnode) for value in node.values]
             )
             return newnode
 
-        def visit_matchcase(
-            self, node: ast.match_case, parent: nodes.NodeNG
-        ) -> nodes.MatchCase:
-            newnode = nodes.MatchCase(parent=parent)
-            newnode.postinit(
-                pattern=self.visit(node.pattern, newnode),
-                guard=self.visit(node.guard, newnode),
-                body=[self.visit(child, newnode) for child in node.body],
-            )
-            return newnode
-
-        def visit_matchvalue(
-            self, node: ast.MatchValue, parent: nodes.NodeNG
-        ) -> nodes.MatchValue:
-            newnode = nodes.MatchValue(
-                lineno=node.lineno,
-                col_offset=node.col_offset,
-                end_lineno=node.end_lineno,
-                end_col_offset=node.end_col_offset,
-                parent=parent,
-            )
-            newnode.postinit(value=self.visit(node.value, newnode))
-            return newnode
-
-        def visit_matchsingleton(
-            self, node: ast.MatchSingleton, parent: nodes.NodeNG
-        ) -> nodes.MatchSingleton:
-            return nodes.MatchSingleton(
-                value=node.value,
-                lineno=node.lineno,
-                col_offset=node.col_offset,
-                end_lineno=node.end_lineno,
-                end_col_offset=node.end_col_offset,
-                parent=parent,
-            )
-
-        def visit_matchsequence(
-            self, node: ast.MatchSequence, parent: nodes.NodeNG
-        ) -> nodes.MatchSequence:
-            newnode = nodes.MatchSequence(
+        def visit_interpolation(
+            self, node: ast.Interpolation, parent: nodes.NodeNG
+        ) -> nodes.Interpolation:
+            newnode = nodes.Interpolation(
                 lineno=node.lineno,
                 col_offset=node.col_offset,
                 end_lineno=node.end_lineno,
@@ -1853,93 +1999,9 @@ class TreeRebuilder:
                 parent=parent,
             )
             newnode.postinit(
-                patterns=[self.visit(pattern, newnode) for pattern in node.patterns]
-            )
-            return newnode
-
-        def visit_matchmapping(
-            self, node: ast.MatchMapping, parent: nodes.NodeNG
-        ) -> nodes.MatchMapping:
-            newnode = nodes.MatchMapping(
-                lineno=node.lineno,
-                col_offset=node.col_offset,
-                end_lineno=node.end_lineno,
-                end_col_offset=node.end_col_offset,
-                parent=parent,
-            )
-            # Add AssignName node for 'node.name'
-            # https://bugs.python.org/issue43994
-            newnode.postinit(
-                keys=[self.visit(child, newnode) for child in node.keys],
-                patterns=[self.visit(pattern, newnode) for pattern in node.patterns],
-                rest=self.visit_assignname(node, newnode, node.rest),
-            )
-            return newnode
-
-        def visit_matchclass(
-            self, node: ast.MatchClass, parent: nodes.NodeNG
-        ) -> nodes.MatchClass:
-            newnode = nodes.MatchClass(
-                lineno=node.lineno,
-                col_offset=node.col_offset,
-                end_lineno=node.end_lineno,
-                end_col_offset=node.end_col_offset,
-                parent=parent,
-            )
-            newnode.postinit(
-                cls=self.visit(node.cls, newnode),
-                patterns=[self.visit(pattern, newnode) for pattern in node.patterns],
-                kwd_attrs=node.kwd_attrs,
-                kwd_patterns=[
-                    self.visit(pattern, newnode) for pattern in node.kwd_patterns
-                ],
-            )
-            return newnode
-
-        def visit_matchstar(
-            self, node: ast.MatchStar, parent: nodes.NodeNG
-        ) -> nodes.MatchStar:
-            newnode = nodes.MatchStar(
-                lineno=node.lineno,
-                col_offset=node.col_offset,
-                end_lineno=node.end_lineno,
-                end_col_offset=node.end_col_offset,
-                parent=parent,
-            )
-            # Add AssignName node for 'node.name'
-            # https://bugs.python.org/issue43994
-            newnode.postinit(name=self.visit_assignname(node, newnode, node.name))
-            return newnode
-
-        def visit_matchas(
-            self, node: ast.MatchAs, parent: nodes.NodeNG
-        ) -> nodes.MatchAs:
-            newnode = nodes.MatchAs(
-                lineno=node.lineno,
-                col_offset=node.col_offset,
-                end_lineno=node.end_lineno,
-                end_col_offset=node.end_col_offset,
-                parent=parent,
-            )
-            # Add AssignName node for 'node.name'
-            # https://bugs.python.org/issue43994
-            newnode.postinit(
-                pattern=self.visit(node.pattern, newnode),
-                name=self.visit_assignname(node, newnode, node.name),
-            )
-            return newnode
-
-        def visit_matchor(
-            self, node: ast.MatchOr, parent: nodes.NodeNG
-        ) -> nodes.MatchOr:
-            newnode = nodes.MatchOr(
-                lineno=node.lineno,
-                col_offset=node.col_offset,
-                end_lineno=node.end_lineno,
-                end_col_offset=node.end_col_offset,
-                parent=parent,
-            )
-            newnode.postinit(
-                patterns=[self.visit(pattern, newnode) for pattern in node.patterns]
+                value=self.visit(node.value, parent),
+                str=node.str,
+                conversion=node.conversion,
+                format_spec=self.visit(node.format_spec, parent),
             )
             return newnode

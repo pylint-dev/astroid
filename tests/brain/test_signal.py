@@ -4,7 +4,6 @@
 
 """Unit Tests for the signal brain module."""
 
-
 import sys
 
 import pytest
@@ -21,12 +20,10 @@ if sys.platform == "win32":
 def test_enum(enum_name):
     """Tests that the signal module enums are handled by the brain."""
     # Extract node for signal module enum from code
-    node = builder.extract_node(
-        f"""
+    node = builder.extract_node(f"""
         import signal
         signal.{enum_name}
-        """
-    )
+        """)
 
     # Check the extracted node
     assert isinstance(node, nodes.NodeNG)

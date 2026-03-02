@@ -15,18 +15,11 @@ import typing
 import warnings
 from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
 from functools import cached_property
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Literal,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Union
 
 from astroid import decorators, protocols, util
 from astroid.bases import Instance, _infer_stmts
-from astroid.const import _EMPTY_OBJECT_MARKER, Context
+from astroid.const import _EMPTY_OBJECT_MARKER, PY314_PLUS, Context
 from astroid.context import CallContext, InferenceContext, copy_context
 from astroid.exceptions import (
     AstroidBuildingError,
@@ -62,6 +55,7 @@ else:
 if TYPE_CHECKING:
     from astroid import nodes
     from astroid.nodes import LocalsDictNodeNG
+    from astroid.nodes.node_ng import FrameType
 
 
 def _is_const(value) -> bool:
@@ -71,23 +65,24 @@ def _is_const(value) -> bool:
 _NodesT = typing.TypeVar("_NodesT", bound=NodeNG)
 _BadOpMessageT = typing.TypeVar("_BadOpMessageT", bound=util.BadOperationMessage)
 
+# pylint: disable-next=consider-alternative-union-syntax
 AssignedStmtsPossibleNode = Union["List", "Tuple", "AssignName", "AssignAttr", None]
 AssignedStmtsCall = Callable[
     [
         _NodesT,
         AssignedStmtsPossibleNode,
-        Optional[InferenceContext],
-        Optional[list[int]],
+        InferenceContext | None,
+        list[int] | None,
     ],
     Any,
 ]
 InferBinaryOperation = Callable[
-    [_NodesT, Optional[InferenceContext]],
-    Generator[Union[InferenceResult, _BadOpMessageT]],
+    [_NodesT, InferenceContext | None],
+    Generator[InferenceResult | _BadOpMessageT],
 ]
 InferLHS = Callable[
-    [_NodesT, Optional[InferenceContext]],
-    Generator[InferenceResult, None, Optional[InferenceErrorInfo]],
+    [_NodesT, InferenceContext | None],
+    Generator[InferenceResult, None, InferenceErrorInfo | None],
 ]
 InferUnaryOp = Callable[[_NodesT, str], ConstFactoryResult]
 
@@ -1026,9 +1021,26 @@ class Arguments(
             if elt is not None:
                 yield elt
 
+    def get_annotations(self) -> Iterator[nodes.NodeNG]:
+        """Iterate over all annotations nodes."""
+        for elt in self.posonlyargs_annotations:
+            if elt is not None:
+                yield elt
+        for elt in self.annotations:
+            if elt is not None:
+                yield elt
+        if self.varargannotation is not None:
+            yield self.varargannotation
+
+        for elt in self.kwonlyargs_annotations:
+            if elt is not None:
+                yield elt
+        if self.kwargannotation is not None:
+            yield self.kwargannotation
+
     @decorators.raise_if_nothing_inferred
     def _infer(
-        self: nodes.Arguments, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult]:
         # pylint: disable-next=import-outside-toplevel
         from astroid.protocols import _arguments_infer_argname
@@ -1447,7 +1459,7 @@ class AugAssign(
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self: nodes.AugAssign, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult]:
         return self._filter_operation_errors(
             self._infer_augassign, context, util.BadBinaryOperationMessage
@@ -1562,7 +1574,7 @@ class BinOp(_base_nodes.OperatorNode):
     @decorators.yes_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self: nodes.BinOp, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult]:
         return self._filter_operation_errors(
             self._infer_binop, context, util.BadBinaryOperationMessage
@@ -1639,7 +1651,7 @@ class BoolOp(NodeNG):
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self: nodes.BoolOp, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """Infer a boolean operation (and / or / not).
 
@@ -1857,7 +1869,7 @@ class Compare(NodeNG):
     # TODO: move to util?
     @staticmethod
     def _to_literal(node: SuccessfulInferenceResult) -> Any:
-        # Can raise SyntaxError or ValueError from ast.literal_eval
+        # Can raise SyntaxError, ValueError, or TypeError from ast.literal_eval
         # Can raise AttributeError from node.as_string() as not all nodes have a visitor
         # Is this the stupidest idea or the simplest idea?
         return ast.literal_eval(node.as_string())
@@ -1893,7 +1905,7 @@ class Compare(NodeNG):
 
             try:
                 left, right = self._to_literal(left), self._to_literal(right)
-            except (SyntaxError, ValueError, AttributeError):
+            except (SyntaxError, ValueError, AttributeError, TypeError):
                 return util.Uninferable
 
             try:
@@ -2139,7 +2151,11 @@ class Const(_base_nodes.NoChildrenNode, Instance):
                 message="Type error {error!r}", node=self, index=index, context=context
             ) from exc
 
-        raise AstroidTypeError(f"{self!r} (value={self.value})")
+        try:
+            value_str = str(self.value)
+        except ValueError:
+            value_str = f"<{type(self.value).__name__} (too large to display)>"
+        raise AstroidTypeError(f"{self!r} (value={value_str})")
 
     def has_dynamic_getattr(self) -> bool:
         """Check if the node has a custom __getattr__ or __getattribute__.
@@ -2172,8 +2188,12 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
-        :rtype: bool
+        :rtype: bool or Uninferable
         """
+        # bool(NotImplemented) is deprecated; it raises TypeError starting from Python 3.14
+        # and returns True for versions under 3.14
+        if self.value is NotImplemented:
+            return util.Uninferable if PY314_PLUS else True
         return bool(self.value)
 
     def _infer(
@@ -2224,12 +2244,21 @@ class Decorators(NodeNG):
 
         :returns: The first parent scope node.
         """
-        # skip the function node to go directly to the upper level scope
+        # skip the function or class node to go directly to the upper level scope
         if not self.parent:
             raise ParentMissingError(target=self)
         if not self.parent.parent:
             raise ParentMissingError(target=self.parent)
         return self.parent.parent.scope()
+
+    def frame(self) -> FrameType:
+        """The first parent node defining a new frame."""
+        # skip the function or class node to go directly to the upper level frame
+        if not self.parent:
+            raise ParentMissingError(target=self)
+        if not self.parent.parent:
+            raise ParentMissingError(target=self.parent)
+        return self.parent.parent.frame()
 
     def get_children(self):
         yield from self.nodes
@@ -3110,28 +3139,37 @@ class IfExp(NodeNG):
         to inferring both branches. Otherwise, we infer either branch
         depending on the condition.
         """
-        both_branches = False
+
         # We use two separate contexts for evaluating lhs and rhs because
         # evaluating lhs may leave some undesired entries in context.path
         # which may not let us infer right value of rhs.
-
         context = context or InferenceContext()
         lhs_context = copy_context(context)
         rhs_context = copy_context(context)
+
+        # Infer bool condition. Stop inferring if in doubt and fallback to
+        # evaluating both branches.
+        condition: bool | None = None
         try:
-            test = next(self.test.infer(context=context.clone()))
-        except (InferenceError, StopIteration):
-            both_branches = True
-        else:
-            if not isinstance(test, util.UninferableBase):
-                if test.bool_value():
-                    yield from self.body.infer(context=lhs_context)
-                else:
-                    yield from self.orelse.infer(context=rhs_context)
-            else:
-                both_branches = True
-        if both_branches:
+            for test in self.test.infer(context=context.clone()):
+                if isinstance(test, util.UninferableBase):
+                    condition = None
+                    break
+                test_bool_value = test.bool_value()
+                if isinstance(test_bool_value, util.UninferableBase):
+                    condition = None
+                    break
+                if condition is None:
+                    condition = test_bool_value
+                elif test_bool_value != condition:
+                    condition = None
+                    break
+        except InferenceError:
+            condition = None
+
+        if condition is True or condition is None:
             yield from self.body.infer(context=lhs_context)
+        if condition is False or condition is None:
             yield from self.orelse.infer(context=rhs_context)
 
 
@@ -3389,9 +3427,9 @@ class ParamSpec(_base_nodes.AssignTypeNode):
     <ParamSpec l.1 at 0x7f23b2e4e198>
     """
 
-    _astroid_fields = ("name",)
-
+    _astroid_fields = ("name", "default_value")
     name: AssignName
+    default_value: NodeNG | None
 
     def __init__(
         self,
@@ -3410,8 +3448,9 @@ class ParamSpec(_base_nodes.AssignTypeNode):
             parent=parent,
         )
 
-    def postinit(self, *, name: AssignName) -> None:
+    def postinit(self, *, name: AssignName, default_value: NodeNG | None) -> None:
         self.name = name
+        self.default_value = default_value
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
@@ -4147,10 +4186,10 @@ class TypeVar(_base_nodes.AssignTypeNode):
     <TypeVar l.1 at 0x7f23b2e4e198>
     """
 
-    _astroid_fields = ("name", "bound")
-
+    _astroid_fields = ("name", "bound", "default_value")
     name: AssignName
     bound: NodeNG | None
+    default_value: NodeNG | None
 
     def __init__(
         self,
@@ -4169,9 +4208,16 @@ class TypeVar(_base_nodes.AssignTypeNode):
             parent=parent,
         )
 
-    def postinit(self, *, name: AssignName, bound: NodeNG | None) -> None:
+    def postinit(
+        self,
+        *,
+        name: AssignName,
+        bound: NodeNG | None,
+        default_value: NodeNG | None = None,
+    ) -> None:
         self.name = name
         self.bound = bound
+        self.default_value = default_value
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
@@ -4193,9 +4239,9 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
     <TypeVarTuple l.1 at 0x7f23b2e4e198>
     """
 
-    _astroid_fields = ("name",)
-
+    _astroid_fields = ("name", "default_value")
     name: AssignName
+    default_value: NodeNG | None
 
     def __init__(
         self,
@@ -4214,8 +4260,11 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
             parent=parent,
         )
 
-    def postinit(self, *, name: AssignName) -> None:
+    def postinit(
+        self, *, name: AssignName, default_value: NodeNG | None = None
+    ) -> None:
         self.name = name
+        self.default_value = default_value
 
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
@@ -4306,7 +4355,7 @@ class UnaryOp(_base_nodes.OperatorNode):
         return super().op_precedence()
 
     def _infer_unaryop(
-        self: nodes.UnaryOp, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[
         InferenceResult | util.BadUnaryOperationMessage, None, InferenceErrorInfo
     ]:
@@ -4372,7 +4421,7 @@ class UnaryOp(_base_nodes.OperatorNode):
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self: nodes.UnaryOp, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
         """Infer what an UnaryOp should return when evaluated."""
         yield from self._filter_operation_errors(
@@ -4695,6 +4744,9 @@ class FormattedValue(NodeNG):
                     uninferable_already_generated = True
                 continue
             for value in self.value.infer(context, **kwargs):
+                if value is util.Uninferable:
+                    yield util.Uninferable
+                    return
                 value_to_format = value
                 if isinstance(value, Const):
                     value_to_format = value.value
@@ -4708,8 +4760,9 @@ class FormattedValue(NodeNG):
                         end_col_offset=self.end_col_offset,
                     )
                     continue
-                except (ValueError, TypeError):
-                    # happens when format_spec.value is invalid
+                except (ValueError, TypeError, MemoryError):
+                    # ValueError/TypeError: invalid format spec
+                    # MemoryError: format spec with huge width (e.g. f'{0:11111111111}')
                     yield util.Uninferable
                     uninferable_already_generated = True
                 continue
@@ -4898,7 +4951,7 @@ class NamedExpr(_base_nodes.AssignTypeNode):
     See astroid/protocols.py for actual implementation.
     """
 
-    def frame(self) -> nodes.FunctionDef | nodes.Module | nodes.ClassDef | nodes.Lambda:
+    def frame(self) -> FrameType:
         """The first parent frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -4954,18 +5007,19 @@ class NamedExpr(_base_nodes.AssignTypeNode):
 
 class Unknown(_base_nodes.AssignTypeNode):
     """This node represents a node in a constructed AST where
-    introspection is not possible.  At the moment, it's only used in
-    the args attribute of FunctionDef nodes where function signature
-    introspection failed.
+    introspection is not possible.
+
+    Used in the args attribute of FunctionDef nodes where function signature
+    introspection failed, and as a placeholder in ObjectModel.
     """
 
     name = "Unknown"
 
     def __init__(
         self,
+        parent: NodeNG,
         lineno: None = None,
         col_offset: None = None,
-        parent: None = None,
         *,
         end_lineno: None = None,
         end_col_offset: None = None,
@@ -4984,6 +5038,9 @@ class Unknown(_base_nodes.AssignTypeNode):
     def _infer(self, context: InferenceContext | None = None, **kwargs):
         """Inference on an Unknown node immediately terminates."""
         yield util.Uninferable
+
+
+UNATTACHED_UNKNOWN = Unknown(parent=SYNTHETIC_ROOT)
 
 
 class EvaluatedObject(NodeNG):
@@ -5485,6 +5542,114 @@ class MatchOr(Pattern):
 
     def postinit(self, *, patterns: list[Pattern]) -> None:
         self.patterns = patterns
+
+
+class TemplateStr(NodeNG):
+    """Class representing an :class:`ast.TemplateStr` node.
+
+    >>> import astroid
+    >>> node = astroid.extract_node('t"{name} finished {place!s}"')
+    >>> node
+    <TemplateStr l.1 at 0x103b7aa50>
+    """
+
+    _astroid_fields = ("values",)
+
+    def __init__(
+        self,
+        lineno: int | None = None,
+        col_offset: int | None = None,
+        parent: NodeNG | None = None,
+        *,
+        end_lineno: int | None = None,
+        end_col_offset: int | None = None,
+    ) -> None:
+        self.values: list[NodeNG]
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
+    def postinit(self, *, values: list[NodeNG]) -> None:
+        self.values = values
+
+    def get_children(self) -> Iterator[NodeNG]:
+        yield from self.values
+
+
+class Interpolation(NodeNG):
+    """Class representing an :class:`ast.Interpolation` node.
+
+    >>> import astroid
+    >>> node = astroid.extract_node('t"{name} finished {place!s}"')
+    >>> node
+    <TemplateStr l.1 at 0x103b7aa50>
+    >>> node.values[0]
+    <Interpolation l.1 at 0x103b7acf0>
+    >>> node.values[2]
+    <Interpolation l.1 at 0x10411e5d0>
+    """
+
+    _astroid_fields = ("value", "format_spec")
+    _other_fields = ("str", "conversion")
+
+    def __init__(
+        self,
+        lineno: int | None = None,
+        col_offset: int | None = None,
+        parent: NodeNG | None = None,
+        *,
+        end_lineno: int | None = None,
+        end_col_offset: int | None = None,
+    ) -> None:
+        self.value: NodeNG
+        """Any expression node."""
+
+        self.str: str
+        """Text of the interpolation expression."""
+
+        self.conversion: int
+        """The type of formatting to be applied to the value.
+
+        .. seealso::
+            :class:`ast.Interpolation`
+        """
+
+        self.format_spec: JoinedStr | None = None
+        """The formatting to be applied to the value.
+
+        .. seealso::
+            :class:`ast.Interpolation`
+        """
+
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
+    def postinit(
+        self,
+        *,
+        value: NodeNG,
+        str: str,  # pylint: disable=redefined-builtin
+        conversion: int = -1,
+        format_spec: JoinedStr | None = None,
+    ) -> None:
+        self.value = value
+        self.str = str
+        self.conversion = conversion
+        self.format_spec = format_spec
+
+    def get_children(self) -> Iterator[NodeNG]:
+        yield self.value
+        if self.format_spec:
+            yield self.format_spec
 
 
 # constants ##############################################################

@@ -6,9 +6,9 @@
 
 from __future__ import annotations
 
+from astroid import nodes
 from astroid.builder import extract_node
 from astroid.context import InferenceContext
-from astroid.nodes.node_classes import Attribute, Import, Name
 
 # Class subscript is available in numpy starting with version 1.20.0
 NUMPY_VERSION_TYPE_HINTS_SUPPORT = ("1", "20", "0")
@@ -35,20 +35,22 @@ def _get_numpy_version() -> tuple[str, str, str]:
 
 
 def infer_numpy_name(
-    sources: dict[str, str], node: Name, context: InferenceContext | None = None
+    sources: dict[str, str], node: nodes.Name, context: InferenceContext | None = None
 ):
     extracted_node = extract_node(sources[node.name])
     return extracted_node.infer(context=context)
 
 
 def infer_numpy_attribute(
-    sources: dict[str, str], node: Attribute, context: InferenceContext | None = None
+    sources: dict[str, str],
+    node: nodes.Attribute,
+    context: InferenceContext | None = None,
 ):
     extracted_node = extract_node(sources[node.attrname])
     return extracted_node.infer(context=context)
 
 
-def _is_a_numpy_module(node: Name) -> bool:
+def _is_a_numpy_module(node: nodes.Name) -> bool:
     """
     Returns True if the node is a representation of a numpy module.
 
@@ -62,7 +64,7 @@ def _is_a_numpy_module(node: Name) -> bool:
     """
     module_nickname = node.name
     potential_import_target = [
-        x for x in node.lookup(module_nickname)[1] if isinstance(x, Import)
+        x for x in node.lookup(module_nickname)[1] if isinstance(x, nodes.Import)
     ]
     return any(
         ("numpy", module_nickname) in target.names or ("numpy", None) in target.names
@@ -71,7 +73,7 @@ def _is_a_numpy_module(node: Name) -> bool:
 
 
 def member_name_looks_like_numpy_member(
-    member_names: frozenset[str], node: Name
+    member_names: frozenset[str], node: nodes.Name
 ) -> bool:
     """
     Returns True if the Name node's name matches a member name from numpy
@@ -80,13 +82,13 @@ def member_name_looks_like_numpy_member(
 
 
 def attribute_name_looks_like_numpy_member(
-    member_names: frozenset[str], node: Attribute
+    member_names: frozenset[str], node: nodes.Attribute
 ) -> bool:
     """
     Returns True if the Attribute node's name matches a member name from numpy
     """
     return (
         node.attrname in member_names
-        and isinstance(node.expr, Name)
+        and isinstance(node.expr, nodes.Name)
         and _is_a_numpy_module(node.expr)
     )

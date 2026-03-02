@@ -22,8 +22,7 @@ except ImportError:
 @unittest.skipUnless(HAS_SIX, "These tests require the six library")
 class SixBrainTest(unittest.TestCase):
     def test_attribute_access(self) -> None:
-        ast_nodes = builder.extract_node(
-            """
+        ast_nodes = builder.extract_node("""
         import six
         six.moves.http_client #@
         six.moves.urllib_parse #@
@@ -31,8 +30,7 @@ class SixBrainTest(unittest.TestCase):
         six.moves.urllib.request #@
         from six.moves import StringIO
         StringIO #@
-        """
-        )
+        """)
         assert isinstance(ast_nodes, list)
         http_client = next(ast_nodes[0].infer())
         self.assertIsInstance(http_client, nodes.Module)
@@ -79,12 +77,10 @@ class SixBrainTest(unittest.TestCase):
         self.test_attribute_access()
 
     def test_from_imports(self) -> None:
-        ast_node = builder.extract_node(
-            """
+        ast_node = builder.extract_node("""
         from six.moves import http_client
         http_client.HTTPSConnection #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         qname = "http.client.HTTPSConnection"
@@ -95,18 +91,15 @@ class SixBrainTest(unittest.TestCase):
 
         See pylint-dev/pylint#1640 for relevant issue
         """
-        ast_node = builder.extract_node(
-            """
+        ast_node = builder.extract_node("""
         from six.moves.urllib.parse import urlparse
         urlparse #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.FunctionDef)
 
     def test_with_metaclass_subclasses_inheritance(self) -> None:
-        ast_node = builder.extract_node(
-            """
+        ast_node = builder.extract_node("""
         class A(type):
             def test(cls):
                 return cls
@@ -119,8 +112,7 @@ class SixBrainTest(unittest.TestCase):
             pass
 
         B #@
-        """
-        )
+        """)
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "B")
@@ -154,15 +146,13 @@ class SixBrainTest(unittest.TestCase):
 
         MANAGER.register_transform(nodes.ClassDef, transform_class)
         try:
-            ast_node = builder.extract_node(
-                """
+            ast_node = builder.extract_node("""
                 import six
                 class A(six.with_metaclass(type, object)):
                     pass
 
                 A #@
-            """
-            )
+            """)
             inferred = next(ast_node.infer())
             assert getattr(inferred, "_test_transform", None) == 314
         finally:

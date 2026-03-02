@@ -5,6 +5,7 @@
 """This module contains base classes and functions for the nodes and some
 inference utils.
 """
+
 from __future__ import annotations
 
 import collections
@@ -13,7 +14,7 @@ from collections.abc import Iterable, Iterator
 from typing import TYPE_CHECKING, Any, Literal
 
 from astroid import decorators, nodes
-from astroid.const import PY310_PLUS
+from astroid.const import PY311_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -38,8 +39,9 @@ if TYPE_CHECKING:
     from astroid.constraint import Constraint
 
 
-PROPERTIES = {"builtins.property", "abc.abstractproperty"}
-if PY310_PLUS:
+PROPERTIES = {"builtins.property", "abc.abstractproperty", "functools.cached_property"}
+# enum.property was added in Python 3.11
+if PY311_PLUS:
     PROPERTIES.add("enum.property")
 
 # List of possible property names. We use this list in order
@@ -79,24 +81,30 @@ def _is_property(
     if any(name in stripped for name in POSSIBLE_PROPERTIES):
         return True
 
-    # Lookup for subclasses of *property*
     if not meth.decorators:
         return False
+    # Lookup for subclasses of *property*
     for decorator in meth.decorators.nodes or ():
         inferred = safe_infer(decorator, context=context)
         if inferred is None or isinstance(inferred, UninferableBase):
             continue
         if isinstance(inferred, nodes.ClassDef):
+            # Check for a class which inherits from a standard property type
+            if any(inferred.is_subtype_of(pclass) for pclass in PROPERTIES):
+                return True
             for base_class in inferred.bases:
-                if not isinstance(base_class, nodes.Name):
+                # Check for a class which inherits from functools.cached_property
+                # and includes a subscripted type annotation
+                if isinstance(base_class, nodes.Subscript):
+                    value = safe_infer(base_class.value, context=context)
+                    if not isinstance(value, nodes.ClassDef):
+                        continue
+                    if value.name != "cached_property":
+                        continue
+                    module, _ = value.lookup(value.name)
+                    if isinstance(module, nodes.Module) and module.name == "functools":
+                        return True
                     continue
-                module, _ = base_class.lookup(base_class.name)
-                if (
-                    isinstance(module, nodes.Module)
-                    and module.name == "builtins"
-                    and base_class.name == "property"
-                ):
-                    return True
 
     return False
 
@@ -243,7 +251,9 @@ class BaseInstance(Proxy):
             values = self._proxied.instance_attr(name, context)
         except AttributeInferenceError as exc:
             if self.special_attributes and name in self.special_attributes:
-                return [self.special_attributes.lookup(name)]
+                special_attr = self.special_attributes.lookup(name)
+                if not isinstance(special_attr, nodes.Unknown):
+                    return [special_attr]
 
             if lookupclass:
                 # Class attributes not available through the instance
@@ -452,14 +462,18 @@ class UnboundMethod(Proxy):
 
     def getattr(self, name: str, context: InferenceContext | None = None):
         if name in self.special_attributes:
-            return [self.special_attributes.lookup(name)]
+            special_attr = self.special_attributes.lookup(name)
+            if not isinstance(special_attr, nodes.Unknown):
+                return [special_attr]
         return self._proxied.getattr(name, context)
 
     def igetattr(
         self, name: str, context: InferenceContext | None = None
     ) -> Iterator[InferenceResult]:
         if name in self.special_attributes:
-            return iter((self.special_attributes.lookup(name),))
+            special_attr = self.special_attributes.lookup(name)
+            if not isinstance(special_attr, nodes.Unknown):
+                return iter((special_attr,))
         return self._proxied.igetattr(name, context)
 
     def infer_call_result(
@@ -532,9 +546,13 @@ class BoundMethod(UnboundMethod):
         self,
         proxy: nodes.FunctionDef | nodes.Lambda | UnboundMethod,
         bound: SuccessfulInferenceResult,
+        original_caller: SuccessfulInferenceResult | None = None,
     ) -> None:
         super().__init__(proxy)
         self.bound = bound
+        # For super() calls: the actual instance/class that called super()
+        # Used to correctly infer return type of methods returning Self
+        self.original_caller = original_caller
 
     def implicit_parameters(self) -> Literal[0, 1]:
         if self.name == "__new__":
@@ -564,10 +582,14 @@ class BoundMethod(UnboundMethod):
             raise InferenceError(context=context) from e
         if not isinstance(mcs, nodes.ClassDef):
             # Not a valid first argument.
-            return None
+            raise InferenceError(
+                "type.__new__() requires a class for metaclass", context=context
+            )
         if not mcs.is_subtype_of("builtins.type"):
             # Not a valid metaclass.
-            return None
+            raise InferenceError(
+                "type.__new__() metaclass must be a subclass of type", context=context
+            )
 
         # Verify the name
         try:
@@ -576,10 +598,14 @@ class BoundMethod(UnboundMethod):
             raise InferenceError(context=context) from e
         if not isinstance(name, nodes.Const):
             # Not a valid name, needs to be a const.
-            return None
+            raise InferenceError(
+                "type.__new__() requires a constant for name", context=context
+            )
         if not isinstance(name.value, str):
             # Needs to be a string.
-            return None
+            raise InferenceError(
+                "type.__new__() requires a string for name", context=context
+            )
 
         # Verify the bases
         try:
@@ -588,14 +614,18 @@ class BoundMethod(UnboundMethod):
             raise InferenceError(context=context) from e
         if not isinstance(bases, nodes.Tuple):
             # Needs to be a tuple.
-            return None
+            raise InferenceError(
+                "type.__new__() requires a tuple for bases", context=context
+            )
         try:
             inferred_bases = [next(elt.infer(context=context)) for elt in bases.elts]
         except StopIteration as e:
             raise InferenceError(context=context) from e
         if any(not isinstance(base, nodes.ClassDef) for base in inferred_bases):
             # All the bases needs to be Classes
-            return None
+            raise InferenceError(
+                "type.__new__() requires classes for bases", context=context
+            )
 
         # Verify the attributes.
         try:
@@ -604,7 +634,9 @@ class BoundMethod(UnboundMethod):
             raise InferenceError(context=context) from e
         if not isinstance(attrs, nodes.Dict):
             # Needs to be a dictionary.
-            return None
+            raise InferenceError(
+                "type.__new__() requires a dict for attrs", context=context
+            )
         cls_locals: dict[str, list[InferenceResult]] = collections.defaultdict(list)
         for key, value in attrs.items:
             try:
@@ -651,15 +683,21 @@ class BoundMethod(UnboundMethod):
         caller: SuccessfulInferenceResult | None,
         context: InferenceContext | None = None,
     ) -> Iterator[InferenceResult]:
-        context = bind_context_to_node(context, self.bound)
+        # For super() calls, use original_caller to correctly infer Self return type
+        bound_node = self.original_caller if self.original_caller else self.bound
+        context = bind_context_to_node(context, bound_node)
         if (
             isinstance(self.bound, nodes.ClassDef)
             and self.bound.name == "type"
             and self.name == "__new__"
             and isinstance(caller, nodes.Call)
-            and len(caller.args) == 4
         ):
             # Check if we have a ``type.__new__(mcs, name, bases, attrs)`` call.
+            if len(caller.args) != 4:
+                raise InferenceError(
+                    f"type.__new__() requires 4 arguments, got {len(caller.args)}",
+                    context=context,
+                )
             new_cls = self._infer_type_new_call(caller, context)
             if new_cls:
                 return iter((new_cls,))

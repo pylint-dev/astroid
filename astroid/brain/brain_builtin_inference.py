@@ -9,7 +9,7 @@ from __future__ import annotations
 import itertools
 from collections.abc import Callable, Iterable, Iterator
 from functools import partial
-from typing import TYPE_CHECKING, Any, NoReturn, Union, cast
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 from astroid import arguments, helpers, nodes, objects, util
 from astroid.builder import AstroidBuilder
@@ -33,26 +33,13 @@ from astroid.typing import (
 if TYPE_CHECKING:
     from astroid.bases import Instance
 
-ContainerObjects = Union[
-    objects.FrozenSet,
-    objects.DictItems,
-    objects.DictKeys,
-    objects.DictValues,
-]
+ContainerObjects = (
+    objects.FrozenSet | objects.DictItems | objects.DictKeys | objects.DictValues
+)
 
-BuiltContainers = Union[
-    type[tuple],
-    type[list],
-    type[set],
-    type[frozenset],
-]
+BuiltContainers = type[tuple] | type[list] | type[set] | type[frozenset]
 
-CopyResult = Union[
-    nodes.Dict,
-    nodes.List,
-    nodes.Set,
-    objects.FrozenSet,
-]
+CopyResult = nodes.Dict | nodes.List | nodes.Set | objects.FrozenSet
 
 OBJECT_DUNDER_NEW = "object.__new__"
 
@@ -282,7 +269,7 @@ def _container_generic_transform(
     if isinstance(arg, klass):
         return arg
     if isinstance(arg, iterables):
-        arg = cast(Union[nodes.BaseContainer, ContainerObjects], arg)
+        arg = cast((nodes.BaseContainer | ContainerObjects), arg)
         if all(isinstance(elt, nodes.Const) for elt in arg.elts):
             elts = [cast(nodes.Const, elt).value for elt in arg.elts]
         else:
@@ -769,12 +756,14 @@ def infer_issubclass(callnode, context: InferenceContext | None = None):
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
     if not isinstance(obj_type, nodes.ClassDef):
-        raise UseInferenceDefault("TypeError: arg 1 must be class")
+        raise UseInferenceDefault(
+            f"TypeError: arg 1 must be class, not {type(obj_type)!r}"
+        )
 
     # The right hand argument is the class(es) that the given
     # object is to be checked against.
     try:
-        class_container = _class_or_tuple_to_container(
+        class_container = helpers.class_or_tuple_to_container(
             class_or_tuple_node, context=context
         )
     except InferenceError as exc:
@@ -809,7 +798,7 @@ def infer_isinstance(
     # The right hand argument is the class(es) that the given
     # obj is to be check is an instance of
     try:
-        class_container = _class_or_tuple_to_container(
+        class_container = helpers.class_or_tuple_to_container(
             class_or_tuple_node, context=context
         )
     except InferenceError as exc:
@@ -823,30 +812,6 @@ def infer_isinstance(
     if isinstance(isinstance_bool, util.UninferableBase):
         raise UseInferenceDefault
     return nodes.Const(isinstance_bool)
-
-
-def _class_or_tuple_to_container(
-    node: InferenceResult, context: InferenceContext | None = None
-) -> list[InferenceResult]:
-    # Move inferences results into container
-    # to simplify later logic
-    # raises InferenceError if any of the inferences fall through
-    try:
-        node_infer = next(node.infer(context=context))
-    except StopIteration as e:
-        raise InferenceError(node=node, context=context) from e
-    # arg2 MUST be a type or a TUPLE of types
-    # for isinstance
-    if isinstance(node_infer, nodes.Tuple):
-        try:
-            class_container = [
-                next(node.infer(context=context)) for node in node_infer.elts
-            ]
-        except StopIteration as e:
-            raise InferenceError(node=node, context=context) from e
-    else:
-        class_container = [node_infer]
-    return class_container
 
 
 def infer_len(node, context: InferenceContext | None = None) -> nodes.Const:
@@ -1009,7 +974,7 @@ def _infer_copy_method(
 
 def _is_str_format_call(node: nodes.Call) -> bool:
     """Catch calls to str.format()."""
-    if not isinstance(node.func, nodes.Attribute) or not node.func.attrname == "format":
+    if not (isinstance(node.func, nodes.Attribute) and node.func.attrname == "format"):
         return False
 
     if isinstance(node.func.expr, nodes.Name):
@@ -1029,8 +994,9 @@ def _infer_str_format_call(
 
     value: nodes.Const
     if isinstance(node.func.expr, nodes.Name):
-        if not (inferred := util.safe_infer(node.func.expr)) or not isinstance(
-            inferred, nodes.Const
+        if not (
+            (inferred := util.safe_infer(node.func.expr))
+            and isinstance(inferred, nodes.Const)
         ):
             return iter([util.Uninferable])
         value = inferred

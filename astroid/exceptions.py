@@ -64,7 +64,10 @@ class AstroidError(Exception):
             setattr(self, key, value)
 
     def __str__(self) -> str:
-        return self.message.format(**vars(self))
+        try:
+            return self.message.format(**vars(self))
+        except ValueError:
+            return self.message  # Return raw message if formatting fails
 
 
 class AstroidBuildingError(AstroidError):

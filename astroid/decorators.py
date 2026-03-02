@@ -11,17 +11,12 @@ import inspect
 import sys
 import warnings
 from collections.abc import Callable, Generator
-from typing import TypeVar
+from typing import ParamSpec, TypeVar
 
 from astroid import util
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
 from astroid.typing import InferenceResult
-
-if sys.version_info >= (3, 10):
-    from typing import ParamSpec
-else:
-    from typing_extensions import ParamSpec
 
 _R = TypeVar("_R")
 _P = ParamSpec("_P")

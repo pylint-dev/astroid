@@ -20,8 +20,7 @@ def _re_transform() -> nodes.Module:
         import_compiler = "import re._compiler as _compiler"
     else:
         import_compiler = "import sre_compile as _compiler"
-    return parse(
-        f"""
+    return parse(f"""
     {import_compiler}
     NOFLAG = 0
     ASCII = _compiler.SRE_FLAG_ASCII
@@ -41,8 +40,7 @@ def _re_transform() -> nodes.Module:
     S = DOTALL
     X = VERBOSE
     T = TEMPLATE
-    """
-    )
+    """)
 
 
 CLASS_GETITEM_TEMPLATE = """

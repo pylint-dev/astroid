@@ -123,8 +123,7 @@ class FromToLineNoTest(unittest.TestCase):
 
     @staticmethod
     def test_decorated_class_lineno() -> None:
-        code = textwrap.dedent(
-            """
+        code = textwrap.dedent("""
         class A:  # L2
             ...
 
@@ -138,8 +137,7 @@ class FromToLineNoTest(unittest.TestCase):
         )
         class C:  # L13
             ...
-        """
-        )
+        """)
 
         ast_module: nodes.Module = builder.parse(code)  # type: ignore[assignment]
 
@@ -161,8 +159,7 @@ class FromToLineNoTest(unittest.TestCase):
     @staticmethod
     def test_class_with_docstring() -> None:
         """Test class nodes which only have docstrings."""
-        code = textwrap.dedent(
-            '''\
+        code = textwrap.dedent('''\
         class A:
             """My docstring"""
             var = 1
@@ -181,8 +178,7 @@ class FromToLineNoTest(unittest.TestCase):
 
         class E:
             ...
-        '''
-        )
+        ''')
 
         ast_module = builder.parse(code)
 
@@ -214,8 +210,7 @@ class FromToLineNoTest(unittest.TestCase):
     @staticmethod
     def test_function_with_docstring() -> None:
         """Test function defintions with only docstrings."""
-        code = textwrap.dedent(
-            '''\
+        code = textwrap.dedent('''\
         def a():
             """My docstring"""
             var = 1
@@ -236,8 +231,7 @@ class FromToLineNoTest(unittest.TestCase):
             """My docstring
             is long.
             """
-        '''
-        )
+        ''')
 
         ast_module = builder.parse(code)
 
@@ -572,12 +566,10 @@ class BuilderTest(unittest.TestCase):
         self.assertEqual({"print_function"}, mod.future_imports)
 
     def test_two_future_imports(self) -> None:
-        mod = builder.parse(
-            """
+        mod = builder.parse("""
             from __future__ import print_function
             from __future__ import absolute_import
-            """
-        )
+            """)
         self.assertEqual({"print_function", "absolute_import"}, mod.future_imports)
 
     def test_inferred_build(self) -> None:
@@ -597,15 +589,13 @@ class BuilderTest(unittest.TestCase):
         self.assertIn("type", lclass.locals)
 
     def test_infer_can_assign_regular_object(self) -> None:
-        mod = builder.parse(
-            """
+        mod = builder.parse("""
             class A:
                 pass
             a = A()
             a.value = "is set"
             a.other = "is set"
-        """
-        )
+        """)
         obj = list(mod.igetattr("a"))
         self.assertEqual(len(obj), 1)
         obj = obj[0]
@@ -614,15 +604,13 @@ class BuilderTest(unittest.TestCase):
         self.assertIn("other", obj.instance_attrs)
 
     def test_infer_can_assign_has_slots(self) -> None:
-        mod = builder.parse(
-            """
+        mod = builder.parse("""
             class A:
                 __slots__ = ('value',)
             a = A()
             a.value = "is set"
             a.other = "not set"
-        """
-        )
+        """)
         obj = list(mod.igetattr("a"))
         self.assertEqual(len(obj), 1)
         obj = obj[0]
@@ -631,12 +619,10 @@ class BuilderTest(unittest.TestCase):
         self.assertNotIn("other", obj.instance_attrs)
 
     def test_infer_can_assign_no_classdict(self) -> None:
-        mod = builder.parse(
-            """
+        mod = builder.parse("""
             a = object()
             a.value = "not set"
-        """
-        )
+        """)
         obj = list(mod.igetattr("a"))
         self.assertEqual(len(obj), 1)
         obj = obj[0]
@@ -700,21 +686,17 @@ class BuilderTest(unittest.TestCase):
         self.assertEqual(chain.value, "None")
 
     def test_not_implemented(self) -> None:
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         NotImplemented #@
-        """
-        )
+        """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, NotImplemented)
 
     def test_type_comments_without_content(self) -> None:
-        node = builder.parse(
-            """
+        node = builder.parse("""
             a = 1 # type: # any comment
-        """
-        )
+        """)
         assert node
 
 
@@ -781,9 +763,7 @@ class FileBuildTest(unittest.TestCase):
     def test_function_locals(self) -> None:
         """Test the 'locals' dictionary of an astroid function."""
         _locals = self.module["global_access"].locals
-        self.assertEqual(len(_locals), 4)
-        keys = sorted(_locals.keys())
-        self.assertEqual(keys, ["i", "key", "local", "val"])
+        self.assertEqual(sorted(_locals.keys()), ["i", "key", "local", "val"])
 
     def test_class_base_props(self) -> None:
         """Test base properties and method of an astroid class."""
@@ -804,14 +784,8 @@ class FileBuildTest(unittest.TestCase):
     def test_class_locals(self) -> None:
         """Test the 'locals' dictionary of an astroid class."""
         module = self.module
-        klass1 = module["YO"]
-        locals1 = klass1.locals
-        keys = sorted(locals1.keys())
         assert_keys = ["__annotations__", "__init__", "__module__", "__qualname__", "a"]
-        self.assertEqual(keys, assert_keys)
-        klass2 = module["YOUPI"]
-        locals2 = klass2.locals
-        keys = locals2.keys()
+        self.assertEqual(sorted(module["YO"].locals.keys()), assert_keys)
         assert_keys = [
             "__annotations__",
             "__init__",
@@ -822,50 +796,43 @@ class FileBuildTest(unittest.TestCase):
             "method",
             "static_method",
         ]
-        self.assertEqual(sorted(keys), assert_keys)
+        self.assertEqual(sorted(module["YOUPI"].locals.keys()), assert_keys)
 
     def test_class_instance_attrs(self) -> None:
         module = self.module
-        klass1 = module["YO"]
-        klass2 = module["YOUPI"]
-        self.assertEqual(list(klass1.instance_attrs.keys()), ["yo"])
-        self.assertEqual(list(klass2.instance_attrs.keys()), ["member"])
+        self.assertEqual(list(module["YO"].instance_attrs.keys()), ["yo"])
+        self.assertEqual(list(module["YOUPI"].instance_attrs.keys()), ["member"])
 
     def test_class_basenames(self) -> None:
         module = self.module
-        klass1 = module["YO"]
-        klass2 = module["YOUPI"]
-        self.assertEqual(klass1.basenames, [])
-        self.assertEqual(klass2.basenames, ["YO"])
+        self.assertEqual(module["YO"].basenames, [])
+        self.assertEqual(module["YOUPI"].basenames, ["YO"])
 
     def test_method_base_props(self) -> None:
         """Test base properties and method of an astroid method."""
-        klass2 = self.module["YOUPI"]
-        # "normal" method
-        method = klass2["method"]
+        method = self.module["YOUPI"]["method"]
         self.assertEqual(method.name, "method")
         self.assertEqual([n.name for n in method.args.args], ["self"])
         assert isinstance(method.doc_node, nodes.Const)
         self.assertEqual(method.doc_node.value, "method\n        test")
         self.assertEqual(method.fromlineno, 48)
         self.assertEqual(method.type, "method")
-        # class method
-        method = klass2["class_method"]
+
+    def test_class_method_base_props(self) -> None:
+        method = self.module["YOUPI"]["class_method"]
         self.assertEqual([n.name for n in method.args.args], ["cls"])
         self.assertEqual(method.type, "classmethod")
-        # static method
-        method = klass2["static_method"]
+
+    def test_static_method_base_props(self) -> None:
+        method = self.module["YOUPI"]["static_method"]
         self.assertEqual(method.args.args, [])
         self.assertEqual(method.type, "staticmethod")
 
     def test_method_locals(self) -> None:
         """Test the 'locals' dictionary of an astroid method."""
         method = self.module["YOUPI"]["method"]
-        _locals = method.locals
-        keys = sorted(_locals)
         # ListComp variables are not accessible outside
-        self.assertEqual(len(_locals), 3)
-        self.assertEqual(keys, ["autre", "local", "self"])
+        self.assertEqual(sorted(method.locals), ["a", "autre", "local", "self"])
 
     def test_unknown_encoding(self) -> None:
         with self.assertRaises(AstroidSyntaxError):
@@ -881,8 +848,7 @@ def test_module_build_dunder_file() -> None:
 
 
 def test_parse_module_with_invalid_type_comments_does_not_crash():
-    node = builder.parse(
-        """
+    node = builder.parse("""
     # op {
     #   name: "AssignAddVariableOp"
     #   input_arg {
@@ -900,8 +866,7 @@ def test_parse_module_with_invalid_type_comments_does_not_crash():
     #   is_stateful: true
     # }
     a, b = 2
-    """
-    )
+    """)
     assert isinstance(node, nodes.Module)
 
 

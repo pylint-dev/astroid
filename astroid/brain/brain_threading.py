@@ -9,8 +9,7 @@ from astroid.manager import AstroidManager
 
 
 def _thread_transform() -> nodes.Module:
-    return parse(
-        """
+    return parse("""
     class lock(object):
         def acquire(self, blocking=True, timeout=-1):
             return False
@@ -25,8 +24,7 @@ def _thread_transform() -> nodes.Module:
 
     def Lock(*args, **kwargs):
         return lock()
-    """
-    )
+    """)
 
 
 def register(manager: AstroidManager) -> None:

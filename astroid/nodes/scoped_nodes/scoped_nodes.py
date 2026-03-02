@@ -13,9 +13,10 @@ from __future__ import annotations
 import io
 import itertools
 import os
+import sys
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import cached_property, lru_cache
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn
 
 from astroid import bases, protocols, util
 from astroid.context import (
@@ -50,6 +51,11 @@ from astroid.typing import (
     SuccessfulInferenceResult,
 )
 
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
 if TYPE_CHECKING:
     from astroid import nodes, objects
     from astroid.nodes import Arguments, Const, NodeNG
@@ -61,8 +67,6 @@ EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
 BUILTIN_DESCRIPTORS = frozenset(
     {"classmethod", "staticmethod", "builtins.classmethod", "builtins.staticmethod"}
 )
-
-_T = TypeVar("_T")
 
 
 def _c3_merge(sequences, cls, context):
@@ -587,7 +591,7 @@ class Module(LocalsDictNodeNG):
     def get_children(self):
         yield from self.body
 
-    def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
+    def frame(self, *, future: Literal[None, True] = None) -> Self:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -1030,7 +1034,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         yield self.args
         yield self.body
 
-    def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
+    def frame(self, *, future: Literal[None, True] = None) -> Self:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -1223,7 +1227,7 @@ class FunctionDef(
         The property will return all the callables that are used for
         decoration.
         """
-        if not self.parent or not isinstance(frame := self.parent.frame(), ClassDef):
+        if not (self.parent and isinstance(frame := self.parent.frame(), ClassDef)):
             return []
 
         decorators: list[node_classes.Call] = []
@@ -1401,6 +1405,8 @@ class FunctionDef(
 
         :type: int
         """
+        if self.returns:
+            return self.returns.tolineno
         return self.args.tolineno
 
     def implicit_parameters(self) -> Literal[0, 1]:
@@ -1517,7 +1523,7 @@ class FunctionDef(
     ) -> Generator[objects.Property | FunctionDef, None, InferenceErrorInfo]:
         from astroid import objects  # pylint: disable=import-outside-toplevel
 
-        if not self.decorators or not bases._is_property(self):
+        if not (self.decorators and bases._is_property(self)):
             yield self
             return InferenceErrorInfo(node=self, context=context)
 
@@ -1618,6 +1624,16 @@ class FunctionDef(
                     yield node_classes.Const(None)
                 return
 
+            # Builtin dunder methods have empty bodies, return Uninferable.
+            if (
+                len(self.body) == 0
+                and self.name.startswith("__")
+                and self.name.endswith("__")
+                and self.root().qname() == "builtins"
+            ):
+                yield util.Uninferable
+                return
+
             raise InferenceError("The function does not have any return statements")
 
         for returnnode in itertools.chain((first_return,), returns):
@@ -1675,7 +1691,7 @@ class FunctionDef(
             frame = self
         return frame._scope_lookup(node, name, offset)
 
-    def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
+    def frame(self, *, future: Literal[None, True] = None) -> Self:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,
@@ -2346,8 +2362,10 @@ class ClassDef(
             values += classnode.locals.get(name, [])
 
         if name in self.special_attributes and class_context and not values:
-            result = [self.special_attributes.lookup(name)]
-            return result
+            special_attr = self.special_attributes.lookup(name)
+            if not isinstance(special_attr, node_classes.Unknown):
+                result = [special_attr]
+                return result
 
         if class_context:
             values += self._metaclass_lookup_attribute(name, context)
@@ -2725,9 +2743,10 @@ class ClassDef(
             for elt in values:
                 try:
                     for inferred in elt.infer():
-                        if not isinstance(
-                            inferred, node_classes.Const
-                        ) or not isinstance(inferred.value, str):
+                        if not (
+                            isinstance(inferred, node_classes.Const)
+                            and isinstance(inferred.value, str)
+                        ):
                             continue
                         if not inferred.value:
                             continue
@@ -2822,10 +2841,40 @@ class ClassDef(
                 baseobj = baseobj._proxied
             if not isinstance(baseobj, ClassDef):
                 continue
+            if baseobj is self:
+                # Circular base due to name rebinding (e.g. pdb.Pdb = CustomPdb
+                # where CustomPdb inherits from pdb.Pdb). Fall back to the
+                # first non-circular inferred value from the base expression.
+                baseobj = self._resolve_circular_base(stmt, context)
+                if baseobj is None:
+                    continue
             if not baseobj.hide:
                 yield baseobj
             else:
                 yield from baseobj.bases
+
+    def _resolve_circular_base(
+        self,
+        stmt: nodes.NodeNG,
+        context: InferenceContext | None,
+    ) -> ClassDef | None:
+        """Resolve a circular base reference by finding the original class.
+
+        When a name is rebound to a subclass (e.g. ``pdb.Pdb = CustomPdb``),
+        ``_infer_last`` follows the rebinding and returns the subclass itself.
+        This method iterates through all inferred values to find the first
+        non-circular ClassDef.
+        """
+        inf_context = copy_context(context)
+        try:
+            for inferred in stmt.infer(context=inf_context):
+                if isinstance(inferred, bases.Instance):
+                    inferred = inferred._proxied
+                if isinstance(inferred, ClassDef) and inferred is not self:
+                    return inferred
+        except InferenceError:
+            pass
+        return None
 
     def _compute_mro(self, context: InferenceContext | None = None):
         if self.qname() == "builtins.object":
@@ -2881,7 +2930,7 @@ class ClassDef(
         )
         return list(itertools.chain.from_iterable(children_assign_nodes))
 
-    def frame(self: _T, *, future: Literal[None, True] = None) -> _T:
+    def frame(self, *, future: Literal[None, True] = None) -> Self:
         """The node's frame node.
 
         A frame node is a :class:`Module`, :class:`FunctionDef`,

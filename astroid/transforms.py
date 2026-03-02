@@ -7,7 +7,7 @@ from __future__ import annotations
 import warnings
 from collections import defaultdict
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Optional, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, TypeVar, Union, cast, overload
 
 from astroid.context import _invalidate_cache
 from astroid.typing import SuccessfulInferenceResult, TransformFn
@@ -18,18 +18,19 @@ if TYPE_CHECKING:
     _SuccessfulInferenceResultT = TypeVar(
         "_SuccessfulInferenceResultT", bound=SuccessfulInferenceResult
     )
-    _Predicate = Optional[Callable[[_SuccessfulInferenceResultT], bool]]
+    _Predicate = Callable[[_SuccessfulInferenceResultT], bool] | None
 
+# pylint: disable-next=consider-alternative-union-syntax
 _Vistables = Union[
     "nodes.NodeNG", list["nodes.NodeNG"], tuple["nodes.NodeNG", ...], str, None
 ]
-_VisitReturns = Union[
-    SuccessfulInferenceResult,
-    list[SuccessfulInferenceResult],
-    tuple[SuccessfulInferenceResult, ...],
-    str,
-    None,
-]
+_VisitReturns = (
+    SuccessfulInferenceResult
+    | list[SuccessfulInferenceResult]
+    | tuple[SuccessfulInferenceResult, ...]
+    | str
+    | None
+)
 
 
 class TransformVisitor:

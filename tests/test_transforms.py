@@ -16,8 +16,6 @@ from astroid import MANAGER, builder, nodes, parse, transforms
 from astroid.brain.brain_dataclasses import _looks_like_dataclass_field_call
 from astroid.const import IS_PYPY
 from astroid.manager import AstroidManager
-from astroid.nodes.node_classes import Call, Compare, Const, Name
-from astroid.nodes.scoped_nodes import FunctionDef, Module
 from tests.testdata.python3.recursion_error import LONG_CHAINED_METHOD_CALL
 
 
@@ -39,24 +37,22 @@ class TestTransforms(unittest.TestCase):
     def setUp(self) -> None:
         self.transformer = transforms.TransformVisitor()
 
-    def parse_transform(self, code: str) -> Module:
+    def parse_transform(self, code: str) -> nodes.Module:
         module = parse(code, apply_transforms=False)
         return self.transformer.visit(module)
 
     def test_function_inlining_transform(self) -> None:
-        def transform_call(node: Call) -> Const:
+        def transform_call(node: nodes.Call) -> nodes.Const:
             # Let's do some function inlining
             inferred = next(node.infer())
             return inferred
 
         self.transformer.register_transform(nodes.Call, transform_call)
 
-        module = self.parse_transform(
-            """
+        module = self.parse_transform("""
         def test(): return 42
         test() #@
-        """
-        )
+        """)
 
         self.assertIsInstance(module.body[1], nodes.Expr)
         self.assertIsInstance(module.body[1].value, nodes.Const)
@@ -65,34 +61,32 @@ class TestTransforms(unittest.TestCase):
     def test_recursive_transforms_into_astroid_fields(self) -> None:
         # Test that the transformer walks properly the tree
         # by going recursively into the _astroid_fields per each node.
-        def transform_compare(node: Compare) -> Const:
+        def transform_compare(node: nodes.Compare) -> nodes.Const:
             # Let's check the values of the ops
             _, right = node.ops[0]
             # Assume they are Consts and they were transformed before
             # us.
             return nodes.const_factory(node.left.value < right.value)
 
-        def transform_name(node: Name) -> Const:
+        def transform_name(node: nodes.Name) -> nodes.Const:
             # Should be Consts
             return next(node.infer())
 
         self.transformer.register_transform(nodes.Compare, transform_compare)
         self.transformer.register_transform(nodes.Name, transform_name)
 
-        module = self.parse_transform(
-            """
+        module = self.parse_transform("""
         a = 42
         b = 24
         a < b
-        """
-        )
+        """)
 
         self.assertIsInstance(module.body[2], nodes.Expr)
         self.assertIsInstance(module.body[2].value, nodes.Const)
         self.assertFalse(module.body[2].value.value)
 
     def test_transform_patches_locals(self) -> None:
-        def transform_function(node: FunctionDef) -> None:
+        def transform_function(node: nodes.FunctionDef) -> None:
             assign = nodes.Assign(
                 parent=node,
                 lineno=node.lineno,
@@ -114,12 +108,10 @@ class TestTransforms(unittest.TestCase):
 
         self.transformer.register_transform(nodes.FunctionDef, transform_function)
 
-        module = self.parse_transform(
-            """
+        module = self.parse_transform("""
         def test():
             pass
-        """
-        )
+        """)
 
         func = module.body[0]
         self.assertEqual(len(func.body), 2)
@@ -127,17 +119,16 @@ class TestTransforms(unittest.TestCase):
         self.assertEqual(func.body[1].as_string(), "value = 42")
 
     def test_predicates(self) -> None:
-        def transform_call(node: Call) -> Const:
+        def transform_call(node: nodes.Call) -> nodes.Const:
             inferred = next(node.infer())
             return inferred
 
-        def should_inline(node: Call) -> bool:
+        def should_inline(node: nodes.Call) -> bool:
             return node.func.name.startswith("inlineme")
 
         self.transformer.register_transform(nodes.Call, transform_call, should_inline)
 
-        module = self.parse_transform(
-            """
+        module = self.parse_transform("""
         def inlineme_1():
             return 24
         def dont_inline_me():
@@ -147,8 +138,7 @@ class TestTransforms(unittest.TestCase):
         inlineme_1()
         dont_inline_me()
         inlineme_2()
-        """
-        )
+        """)
         values = module.body[-3:]
         self.assertIsInstance(values[0], nodes.Expr)
         self.assertIsInstance(values[0].value, nodes.Const)
@@ -165,7 +155,7 @@ class TestTransforms(unittest.TestCase):
         # on a partially constructed tree anymore, which was the
         # source of crashes in the past when certain inference rules
         # were used in a transform.
-        def transform_function(node: FunctionDef) -> Const:
+        def transform_function(node: nodes.FunctionDef) -> nodes.Const:
             if node.decorators:
                 for decorator in node.decorators.nodes:
                     inferred = next(decorator.infer())
@@ -175,8 +165,7 @@ class TestTransforms(unittest.TestCase):
 
         manager = MANAGER
         with add_transform(manager, nodes.FunctionDef, transform_function):
-            module = builder.parse(
-                """
+            module = builder.parse("""
             import abc
             from abc import abstractmethod
 
@@ -188,8 +177,7 @@ class TestTransforms(unittest.TestCase):
                 @abstractmethod
                 def bala(self):
                     return 42
-            """
-            )
+            """)
 
         cls = module["A"]
         ala = cls.body[0]
@@ -201,7 +189,7 @@ class TestTransforms(unittest.TestCase):
 
     def test_transforms_are_called_for_builtin_modules(self) -> None:
         # Test that transforms are called for builtin modules.
-        def transform_function(node: FunctionDef) -> FunctionDef:
+        def transform_function(node: nodes.FunctionDef) -> nodes.FunctionDef:
             name = nodes.AssignName(
                 name="value",
                 lineno=0,
@@ -215,7 +203,7 @@ class TestTransforms(unittest.TestCase):
 
         manager = MANAGER
 
-        def predicate(node: FunctionDef) -> bool:
+        def predicate(node: nodes.FunctionDef) -> bool:
             return node.root().name == "time"
 
         with add_transform(manager, nodes.FunctionDef, transform_function, predicate):
@@ -252,8 +240,7 @@ class TestTransforms(unittest.TestCase):
 
         self.transformer.register_transform(nodes.ClassDef, transform_class)
 
-        self.parse_transform(
-            """
+        self.parse_transform("""
             # Change environ to automatically call putenv() if it exists
             import os
             putenv = os.putenv
@@ -264,14 +251,13 @@ class TestTransforms(unittest.TestCase):
                 pass
             else:
                 import UserDict
-        """
-        )
+        """)
 
     @pytest.mark.skipif(
         IS_PYPY, reason="Could not find a useful recursion limit on all versions"
     )
     def test_transform_aborted_if_recursion_limited(self):
-        def transform_call(node: Call) -> Const:
+        def transform_call(node: nodes.Call) -> nodes.Const:
             return node
 
         self.transformer.register_transform(

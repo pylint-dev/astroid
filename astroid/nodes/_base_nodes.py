@@ -12,10 +12,9 @@ from __future__ import annotations
 import itertools
 from collections.abc import Callable, Generator, Iterator
 from functools import cached_property, lru_cache, partial
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Union
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from astroid import bases, nodes, util
-from astroid.const import PY310_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -35,10 +34,10 @@ if TYPE_CHECKING:
     GetFlowFactory = Callable[
         [
             InferenceResult,
-            Optional[InferenceResult],
-            Union[nodes.AugAssign, nodes.BinOp],
+            InferenceResult | None,
+            nodes.AugAssign | nodes.BinOp,
             InferenceResult,
-            Optional[InferenceResult],
+            InferenceResult | None,
             InferenceContext,
             InferenceContext,
         ],
@@ -605,8 +604,7 @@ class OperatorNode(NodeNG):
 
         # pylint: disable = too-many-boolean-expressions
         if (
-            PY310_PLUS
-            and op == "|"
+            op == "|"
             and (
                 isinstance(left, (bases.UnionType, nodes.ClassDef))
                 or (isinstance(left, nodes.Const) and left.value is None)

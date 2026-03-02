@@ -12,15 +12,13 @@ from astroid.const import PY312_PLUS
 
 def test_ssl_brain() -> None:
     """Test ssl brain transform."""
-    module = parse(
-        """
+    module = parse("""
     import ssl
     ssl.PROTOCOL_TLSv1
     ssl.VerifyMode
     ssl.TLSVersion
     ssl.VerifyMode.CERT_REQUIRED
-    """
-    )
+    """)
     inferred_protocol = next(module.body[1].value.infer())
     assert isinstance(inferred_protocol, nodes.Const)
 
@@ -49,13 +47,11 @@ def test_ssl_brain() -> None:
 @pytest.mark.skipif(not PY312_PLUS, reason="Uses new 3.12 constant")
 def test_ssl_brain_py312() -> None:
     """Test ssl brain transform."""
-    module = parse(
-        """
+    module = parse("""
     import ssl
     ssl.OP_LEGACY_SERVER_CONNECT
     ssl.Options.OP_LEGACY_SERVER_CONNECT
-    """
-    )
+    """)
 
     inferred_constant = next(module.body[1].value.infer())
     assert isinstance(inferred_constant, nodes.Const)

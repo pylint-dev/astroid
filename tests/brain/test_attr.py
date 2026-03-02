@@ -20,8 +20,7 @@ except ImportError:
 @unittest.skipUnless(HAS_ATTR, "These tests require the attr library")
 class AttrsTest(unittest.TestCase):
     def test_attr_transform(self) -> None:
-        module = astroid.parse(
-            """
+        module = astroid.parse("""
         import attr
         from attr import attrs, attrib, field
 
@@ -80,12 +79,11 @@ class AttrsTest(unittest.TestCase):
             d: int = attr.Factory(lambda: 3)
 
         m = Eggs(d=1)
-        """
-        )
+        """)
 
         for name in ("f", "g", "h", "i", "j", "k", "l", "m"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
-            self.assertIsInstance(should_be_unknown, astroid.Unknown)
+            self.assertIsInstance(should_be_unknown, nodes.Unknown)
 
     def test_attrs_transform(self) -> None:
         """Test brain for decorators of the 'attrs' package.
@@ -93,8 +91,7 @@ class AttrsTest(unittest.TestCase):
         Package added support for 'attrs' alongside 'attr' in v21.3.0.
         See: https://github.com/python-attrs/attrs/releases/tag/21.3.0
         """
-        module = astroid.parse(
-            """
+        module = astroid.parse("""
         import attrs
         from attrs import field, mutable, frozen, define
         from attrs import mutable as my_mutable
@@ -153,12 +150,11 @@ class AttrsTest(unittest.TestCase):
         @frozen
         class Legs:
             d = attrs.field(default=attrs.Factory(dict))
-        """
-        )
+        """)
 
         for name in ("f", "g", "h", "i", "j", "k", "l"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
-            self.assertIsInstance(should_be_unknown, astroid.Unknown, name)
+            self.assertIsInstance(should_be_unknown, nodes.Unknown, name)
 
     def test_special_attributes(self) -> None:
         """Make sure special attrs attributes exist"""
@@ -200,7 +196,7 @@ class AttrsTest(unittest.TestCase):
         Foo()
         """
         should_be_unknown = next(astroid.extract_node(code).infer()).getattr("bar")[0]
-        self.assertIsInstance(should_be_unknown, astroid.Unknown)
+        self.assertIsInstance(should_be_unknown, nodes.Unknown)
 
     def test_attr_with_only_annotation_fails(self) -> None:
         code = """
@@ -228,4 +224,60 @@ class AttrsTest(unittest.TestCase):
             should_be_unknown = next(astroid.extract_node(code).infer()).getattr(
                 attr_name
             )[0]
-            self.assertIsInstance(should_be_unknown, astroid.Unknown)
+            self.assertIsInstance(should_be_unknown, nodes.Unknown)
+
+    def test_attrs_with_class_var_annotation(self) -> None:
+        cases = {
+            "with-subscript": """
+                import attrs
+                from typing import ClassVar
+
+                @attrs.define
+                class Foo:
+                    bar: ClassVar[int] = 1
+                Foo()
+            """,
+            "no-subscript": """
+                import attrs
+                from typing import ClassVar
+
+                @attrs.define
+                class Foo:
+                    bar: ClassVar = 1
+                Foo()
+            """,
+        }
+
+        for name, code in cases.items():
+            with self.subTest(case=name):
+                instance = next(astroid.extract_node(code).infer())
+                self.assertIsInstance(instance.getattr("bar")[0], nodes.AssignName)
+                self.assertNotIn("bar", instance.instance_attrs)
+
+    def test_attrs_without_class_var_annotation(self) -> None:
+        cases = {
+            "wrong-name": """
+                import attrs
+                from typing import Final
+
+                @attrs.define
+                class Foo:
+                    bar: Final[int] = 1
+                Foo()
+            """,
+            "classvar-not-outermost": """
+                import attrs
+                from typing import ClassVar
+
+                @attrs.define
+                class Foo:
+                    bar: list[ClassVar[int]] = []
+                Foo()
+            """,
+        }
+
+        for name, code in cases.items():
+            with self.subTest(case=name):
+                instance = next(astroid.extract_node(code).infer())
+                self.assertIsInstance(instance.getattr("bar")[0], nodes.Unknown)
+                self.assertIn("bar", instance.instance_attrs)

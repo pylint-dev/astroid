@@ -15,12 +15,10 @@ def test_infer_typevar() -> None:
     Test that an inferred `typing.TypeVar()` call produces a `nodes.ClassDef`
     node.
     """
-    call_node = builder.extract_node(
-        """
+    call_node = builder.extract_node("""
     from typing import TypeVar
     TypeVar('My.Type')
-    """
-    )
+    """)
     with pytest.raises(InferenceError):
         call_node.inferred()
 
@@ -30,12 +28,10 @@ class TestTypingAlias:
         """
         Test that _alias() calls can be inferred.
         """
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
             from typing import _alias
             x = _alias(int, float)
-            """
-        )
+            """)
         assert isinstance(node, nodes.Assign)
         assert isinstance(node.value, nodes.Call)
         inferred = next(node.value.infer())
@@ -59,14 +55,32 @@ class TestTypingAlias:
 
         Test that _alias() calls with the incorrect number of arguments can be inferred.
         """
-        node = builder.extract_node(
-            f"""
+        node = builder.extract_node(f"""
             from typing import _alias
             x = _alias({alias_args})
-            """
-        )
+            """)
         assert isinstance(node, nodes.Assign)
         assert isinstance(node.value, nodes.Call)
         inferred = next(node.value.infer())
         assert isinstance(inferred, bases.Instance)
         assert inferred.name == "_SpecialGenericAlias"
+
+
+class TestSpecialAlias:
+    @pytest.mark.parametrize(
+        "code",
+        [
+            "_CallableType()",
+            "_TupleType()",
+        ],
+    )
+    def test_special_alias_no_crash_on_empty_args(self, code: str) -> None:
+        """
+        Regression test for: https://github.com/pylint-dev/astroid/issues/2772
+
+        Test that _CallableType() and _TupleType() calls with no arguments
+        do not cause an IndexError.
+        """
+        # Should not raise IndexError
+        module = builder.parse(code)
+        assert isinstance(module, nodes.Module)
