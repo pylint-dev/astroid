@@ -198,8 +198,11 @@ class NodeNG:
         result = []
         for field in self._other_fields + self._astroid_fields:
             value = getattr(self, field, "Unknown")
-            width = 80 - len(field) - alignment
-            lines = pprint.pformat(value, indent=2, width=width).splitlines(True)
+            width = max(80 - len(field) - alignment, 1)
+            try:
+                lines = pprint.pformat(value, indent=2, width=width).splitlines(True)
+            except ValueError:
+                lines = [f"<{type(value).__name__}>"]
 
             inner = [lines[0]]
             for line in lines[1:]:

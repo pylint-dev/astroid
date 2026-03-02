@@ -87,8 +87,11 @@ class ObjectModel:
         string = "%(cname)s(%(fields)s)"
         alignment = len(cname) + 1
         for field in sorted(self.attributes()):
-            width = 80 - len(field) - alignment
-            lines = pprint.pformat(field, indent=2, width=width).splitlines(True)
+            width = max(80 - len(field) - alignment, 1)
+            try:
+                lines = pprint.pformat(field, indent=2, width=width).splitlines(True)
+            except ValueError:
+                lines = [f"<{type(field).__name__}>"]
 
             inner = [lines[0]]
             for line in lines[1:]:
