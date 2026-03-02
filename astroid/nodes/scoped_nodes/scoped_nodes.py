@@ -16,7 +16,7 @@ import os
 import sys
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import cached_property, lru_cache
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn
+from typing import TYPE_CHECKING, ClassVar, Literal, NoReturn
 
 from astroid import bases, protocols, util
 from astroid.context import (
@@ -46,15 +46,16 @@ from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
 from astroid.typing import (
     InferBinaryOp,
+    InferKwargs,
     InferenceErrorInfo,
     InferenceResult,
     SuccessfulInferenceResult,
 )
 
 if sys.version_info >= (3, 11):
-    from typing import Self
+    from typing import Self, Unpack
 else:
-    from typing_extensions import Self
+    from typing_extensions import Self, Unpack
 
 if TYPE_CHECKING:
     from astroid import nodes, objects
@@ -602,7 +603,7 @@ class Module(LocalsDictNodeNG):
         return self
 
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]
     ) -> Generator[Module]:
         yield self
 
@@ -1060,7 +1061,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         raise AttributeInferenceError(target=self, attribute=name)
 
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]
     ) -> Generator[Lambda]:
         yield self
 
@@ -1519,7 +1520,7 @@ class FunctionDef(
         return bool(yields_without_lambdas & yields_without_functions)
 
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]
     ) -> Generator[objects.Property | FunctionDef, None, InferenceErrorInfo]:
         from astroid import objects  # pylint: disable=import-outside-toplevel
 
@@ -2941,6 +2942,6 @@ class ClassDef(
         return self
 
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]
     ) -> Generator[ClassDef]:
         yield self

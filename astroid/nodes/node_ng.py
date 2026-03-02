@@ -11,7 +11,6 @@ from functools import cached_property
 from functools import singledispatch as _singledispatch
 from typing import (
     TYPE_CHECKING,
-    Any,
     ClassVar,
     TypeVar,
     cast,
@@ -31,12 +30,18 @@ from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.utils import Position
-from astroid.typing import InferenceErrorInfo, InferenceResult, InferFn
+from astroid.typing import (
+    InferKwargs,
+    InferenceErrorInfo,
+    InferenceResult,
+    InferFn,
+    infer_kwargs_cache_key,
+)
 
 if sys.version_info >= (3, 11):
-    from typing import Self
+    from typing import Self, Unpack
 else:
-    from typing_extensions import Self
+    from typing_extensions import Self, Unpack
 
 
 if TYPE_CHECKING:
@@ -121,7 +126,7 @@ class NodeNG:
         """
 
     def infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]
     ) -> Generator[InferenceResult]:
         """Get a generator of the inferred values.
 
@@ -153,7 +158,13 @@ class NodeNG:
             except UseInferenceDefault:
                 pass
 
-        key = (self, context.lookupname, context.callcontext, context.boundnode)
+        key = (
+            self,
+            context.lookupname,
+            context.callcontext,
+            context.boundnode,
+            infer_kwargs_cache_key(kwargs),
+        )
         if key in context.inferred:
             yield from context.inferred[key]
             return
@@ -554,7 +565,7 @@ class NodeNG:
         pass
 
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """We don't know how to resolve a statement by default."""
         # this method is overridden by most concrete classes
