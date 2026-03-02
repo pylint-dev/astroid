@@ -26,6 +26,10 @@ Release date: TBA
 
   Closes #2628
 
+* Fix ``FunctionModel`` returning descriptor attributes for builtin functions.
+
+  Closes #2743
+
 * Catch ``MemoryError`` when inferring f-strings with extremely large format
   widths (e.g. ``f'{0:11111111111}'``) so that inference yields ``Uninferable``
   instead of crashing.
