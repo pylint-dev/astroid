@@ -150,6 +150,22 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
                     msg=f"Illicit type for {attr_:s} ({inferred_values[-1].pytype()})",
                 )
 
+    def test_numpy_ndarray_reshape_accepts_variadic_args(self):
+        """Test that ndarray.reshape can be called with variadic positional args."""
+        code = """
+        import numpy as np
+        x = np.zeros(12)
+        x.reshape(3, 2, 2)  #@
+        x.reshape((3, 2))  #@
+        x.reshape(3, 2, 2, order='F')  #@
+        x.reshape((3, 2, 2), order='F')  #@
+        """
+        for node in builder.extract_node(code):
+            with self.subTest(node=node.as_string()):
+                inferred_values = list(node.infer())
+                self.assertEqual(len(inferred_values), 1)
+                self.assertIn(".ndarray", inferred_values[0].pytype())
+
     @unittest.skipUnless(
         HAS_NUMPY and numpy_supports_type_hints(),
         f"This test requires the numpy library with a version above {NUMPY_VERSION_TYPE_HINTS_SUPPORT}",
