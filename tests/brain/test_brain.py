@@ -1440,7 +1440,7 @@ def test_infer_str_const() -> None:
     assert inferred[4] == "False"
     assert inferred[5] == "None"
     assert inferred[6] == "4.33"
-    assert inferred[7] == "..."
+    assert inferred[7] == "Ellipsis"
     assert inferred[8] == "4"
 
 
