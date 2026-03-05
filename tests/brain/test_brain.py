@@ -1419,6 +1419,7 @@ def test_infer_str() -> None:
     assert isinstance(inferred, astroid.Instance)
     assert inferred.qname() == "builtins.str"
 
+
 def test_infer_str_const() -> None:
     ast_nodes = astroid.extract_node("""
     str('') #@

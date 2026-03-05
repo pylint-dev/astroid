@@ -852,7 +852,7 @@ def infer_str(node, context: InferenceContext | None = None) -> nodes.Const:
     if call.positional_arguments:
         try:
             first_value = next(call.positional_arguments[0].infer(context=context))
-        except (InferenceError, StopIteration) as exc:
+        except (InferenceError, StopIteration):
             return nodes.Const("")
 
         if isinstance(first_value, nodes.Const):
