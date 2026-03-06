@@ -31,10 +31,10 @@ from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.utils import Position
 from astroid.typing import (
-    InferKwargs,
     InferenceErrorInfo,
     InferenceResult,
     InferFn,
+    InferKwargs,
     infer_kwargs_cache_key,
 )
 

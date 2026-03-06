@@ -46,9 +46,9 @@ from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.nodes.utils import Position
 from astroid.typing import (
     InferBinaryOp,
-    InferKwargs,
     InferenceErrorInfo,
     InferenceResult,
+    InferKwargs,
     SuccessfulInferenceResult,
 )
 

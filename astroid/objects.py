@@ -29,7 +29,7 @@ from astroid.exceptions import (
 from astroid.interpreter import objectmodel
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes, scoped_nodes
-from astroid.typing import InferKwargs, InferenceResult, SuccessfulInferenceResult
+from astroid.typing import InferenceResult, InferKwargs, SuccessfulInferenceResult
 
 if sys.version_info >= (3, 11):
     from typing import Self, Unpack
@@ -43,7 +43,9 @@ class FrozenSet(node_classes.BaseContainer):
     def pytype(self) -> Literal["builtins.frozenset"]:
         return "builtins.frozenset"
 
-    def _infer(self, context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]):
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]
+    ):
         yield self
 
     @cached_property
@@ -88,7 +90,9 @@ class Super(node_classes.NodeNG):
             end_col_offset=scope.end_col_offset,
         )
 
-    def _infer(self, context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]):
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]
+    ):
         yield self
 
     def super_mro(self):

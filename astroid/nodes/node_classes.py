@@ -3819,11 +3819,15 @@ class Subscript(NodeNG):
 
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
-    def _infer(self, context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]):
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]
+    ):
         return self._infer_subscript(context, **kwargs)
 
     @decorators.raise_if_nothing_inferred
-    def infer_lhs(self, context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]):
+    def infer_lhs(
+        self, context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]
+    ):
         return self._infer_subscript(context, **kwargs)
 
 
@@ -4857,7 +4861,10 @@ class JoinedStr(NodeNG):
 
     @classmethod
     def _infer_from_values(
-        cls, nodes: list[NodeNG], context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]
+        cls,
+        nodes: list[NodeNG],
+        context: InferenceContext | None = None,
+        **kwargs: Unpack[InferKwargs],
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         if not nodes:
             return
@@ -4880,7 +4887,10 @@ class JoinedStr(NodeNG):
 
     @classmethod
     def _safe_infer_from_node(
-        cls, node: NodeNG, context: InferenceContext | None = None, **kwargs: Unpack[InferKwargs]
+        cls,
+        node: NodeNG,
+        context: InferenceContext | None = None,
+        **kwargs: Unpack[InferKwargs],
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         try:
             yield from node._infer(context, **kwargs)
