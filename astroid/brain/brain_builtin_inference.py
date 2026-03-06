@@ -856,7 +856,11 @@ def infer_str(node, context: InferenceContext | None = None) -> nodes.Const:
             return nodes.Const("")
 
         if isinstance(first_value, nodes.Const):
-            return nodes.Const(str(first_value.value))
+            try:
+                stringified = str(first_value.value)
+            except ValueError:
+                return nodes.Const("")
+            return nodes.Const(stringified)
 
     return nodes.Const("")
 

@@ -1407,6 +1407,7 @@ def test_infer_str() -> None:
     str(s) #@
     str('a') #@
     str(some_object()) #@
+    str(7**10000) #@
     """)
     for node in ast_nodes:
         inferred = next(node.infer())
