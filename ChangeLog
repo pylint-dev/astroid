@@ -44,6 +44,12 @@ Release date: TBA
 
   Closes #2764
 
+* Include inference kwargs (e.g. ``asname``) in the inference cache key so that
+  different invocations of ``Import._infer()`` with different kwargs produce
+  separate cache entries.
+
+  Closes pylint-dev/pylint#10193
+
 
 What's New in astroid 4.1.1?
 ============================
