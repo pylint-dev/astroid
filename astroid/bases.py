@@ -183,7 +183,10 @@ def _infer_stmts(
                 if not constraint_stmt.parent_of(stmt):
                     stmt_constraints.update(potential_constraints)
             for inf in stmt.infer(context=context):
-                if all(constraint.satisfied_by(inf) for constraint in stmt_constraints):
+                if all(
+                    constraint.satisfied_by(inf, context)
+                    for constraint in stmt_constraints
+                ):
                     yield inf
                     inferred = True
                 else:
