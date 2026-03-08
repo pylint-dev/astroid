@@ -12,8 +12,7 @@ What's New in astroid 4.1.2?
 ============================
 Release date: TBA
 
-* Fix `AttributeError: 'AnnAssign' object has no attribute 'name'.`
-	Fix crash accessing property `fset` in generic classes with type annotations.
+* Fix crash accessing property `fset` in generic classes with type annotations.
   Closes #2996
 
 * Fix infinite recursion caused by cyclic inference in ``Constraint``.
