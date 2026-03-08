@@ -1017,6 +1017,7 @@ def test_builtin_func_no_descriptor_attrs(attr: str) -> None:
     with pytest.raises(InferenceError):
         next(node.infer())
 
+
 def test_getattr_on_property_fset_with_annassign_does_not_crash() -> None:
     """Test that getattr on property fset doesn't crash with AnnAssign."""
     node = builder.extract_node("""
