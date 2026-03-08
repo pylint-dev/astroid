@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - 2.*
+      - maintenance/**
   pull_request:
   workflow_dispatch:
 
@@ -122,7 +122,7 @@ jobs:
           . venv/bin/activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: &actions-upload-artifact actions/upload-artifact@v6.0.0
+        uses: &actions-upload-artifact actions/upload-artifact@v7.0.0
         with:
           name: coverage-linux-${{ matrix.python-version }}
           path: .coverage
@@ -226,7 +226,7 @@ jobs:
       - name: Install dependencies
         run: pip install -U -r requirements_minimal.txt
       - name: Download all coverage artifacts
-        uses: actions/download-artifact@v7.0.0
+        uses: actions/download-artifact@v8.0.0
       - name: Combine Linux coverage results
         run: |
           coverage combine coverage-linux*/.coverage

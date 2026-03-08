@@ -12,6 +12,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from astroid import helpers, nodes, util
+from astroid.context import InferenceContext
 from astroid.exceptions import AstroidTypeError, InferenceError, MroError
 from astroid.typing import InferenceResult
 
@@ -47,7 +48,9 @@ class Constraint(ABC):
         """
 
     @abstractmethod
-    def satisfied_by(self, inferred: InferenceResult) -> bool:
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
         """Return True if this constraint is satisfied by the given inferred value."""
 
 
@@ -76,7 +79,9 @@ class NoneConstraint(Constraint):
 
         return None
 
-    def satisfied_by(self, inferred: InferenceResult) -> bool:
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
         """Return True if this constraint is satisfied by the given inferred value."""
         # Assume true if uninferable
         if inferred is util.Uninferable:
@@ -112,7 +117,9 @@ class BooleanConstraint(Constraint):
 
         return None
 
-    def satisfied_by(self, inferred: InferenceResult) -> bool:
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
         """Return True for uninferable results, or depending on negate flag:
 
         - negate=False: satisfied if boolean value is True
@@ -153,7 +160,9 @@ class TypeConstraint(Constraint):
 
         return None
 
-    def satisfied_by(self, inferred: InferenceResult) -> bool:
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
         """Return True for uninferable results, or depending on negate flag:
 
         - negate=False: satisfied when inferred is an instance of the checked types.
@@ -163,8 +172,8 @@ class TypeConstraint(Constraint):
             return True
 
         try:
-            types = helpers.class_or_tuple_to_container(self.classinfo)
-            matches_checked_types = helpers.object_isinstance(inferred, types)
+            types = helpers.class_or_tuple_to_container(self.classinfo, context)
+            matches_checked_types = helpers.object_isinstance(inferred, types, context)
 
             if matches_checked_types is util.Uninferable:
                 return True
@@ -204,7 +213,9 @@ class EqualityConstraint(Constraint):
 
         return None
 
-    def satisfied_by(self, inferred: InferenceResult) -> bool:
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
         """Return True for uninferable/ambiguous results, or depending on negate flag:
 
         - negate=False: satisfied when both operands are equal.
@@ -215,7 +226,7 @@ class EqualityConstraint(Constraint):
         if inferred is util.Uninferable:
             return True
 
-        operand_inferred = util.safe_infer(self.operand)
+        operand_inferred = util.safe_infer(self.operand, context)
         if operand_inferred is util.Uninferable or operand_inferred is None:
             return True
 
