@@ -6953,6 +6953,36 @@ def test_imported_module_var_inferable3() -> None:
     assert i_w_val.as_string() == "['w', 'v']"
 
 
+def test_import_inference_cache_includes_asname() -> None:
+    """Inference cache should distinguish calls with different asname values.
+
+    When an Import node is inferred with asname=True and then asname=False,
+    the second call should not return the cached result from the first.
+
+    Regression test for https://github.com/pylint-dev/pylint/issues/10193.
+    """
+    code = textwrap.dedent("""
+    import os.path as mypath  #@
+    """)
+    import_node = _extract_single_node(code)
+    assert isinstance(import_node, nodes.Import)
+
+    ctx1 = InferenceContext()
+    ctx1.lookupname = "mypath"
+    # With asname=True (default): resolves 'mypath' -> 'os.path' -> os.path module
+    result1 = list(import_node.infer(ctx1, asname=True))
+    assert len(result1) == 1
+    assert isinstance(result1[0], nodes.Module)
+    assert result1[0].name == "os.path"
+
+    ctx2 = InferenceContext()
+    ctx2.lookupname = "mypath"
+    # With asname=False: should try to import 'mypath' literally, which fails
+    # The key test: this should NOT return the cached os.path result
+    with pytest.raises(InferenceError):
+        list(import_node.infer(ctx2, asname=False))
+
+
 @pytest.mark.skipif(
     IS_PYPY, reason="Test run with coverage on PyPy sometimes raises a RecursionError"
 )

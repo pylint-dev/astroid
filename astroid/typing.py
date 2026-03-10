@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Callable, Generator
 from typing import (
     TYPE_CHECKING,
@@ -15,12 +16,39 @@ from typing import (
     Union,
 )
 
+if sys.version_info >= (3, 11):
+    from typing import Unpack
+else:
+    from typing_extensions import Unpack
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from astroid import bases, exceptions, nodes, transforms, util
     from astroid.context import InferenceContext
     from astroid.interpreter._import import spec
+
+
+class InferKwargs(TypedDict, total=False):
+    """Keyword arguments for inference methods.
+
+    These are included in the inference cache key to ensure that different
+    invocations with different kwargs produce separate cache entries.
+
+    When adding a new field, also update :func:`infer_kwargs_cache_key` below
+    so that the new argument is reflected in the cache key.
+    """
+
+    asname: bool
+
+
+def infer_kwargs_cache_key(kwargs: InferKwargs) -> tuple[tuple[str, Any], ...]:
+    """Generate a deterministic cache key from inference kwargs.
+
+    This is kept next to :class:`InferKwargs` so that anyone adding a new
+    field is reminded to consider its impact on the cache key.
+    """
+    return tuple(sorted(kwargs.items())) if kwargs else ()
 
 
 class InferenceErrorInfo(TypedDict):
@@ -86,7 +114,7 @@ class InferFn(Protocol, Generic[_SuccessfulInferenceResultT_contra]):
         self,
         node: _SuccessfulInferenceResultT_contra,
         context: InferenceContext | None = None,
-        **kwargs: Any,
+        **kwargs: Unpack[InferKwargs],
     ) -> Iterator[InferenceResult]: ...  # pragma: no cover
 
 
