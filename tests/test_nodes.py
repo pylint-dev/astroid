@@ -496,6 +496,7 @@ class IfNodeTest(_NodeTest):
         self.assertEqual(self.astroid.body[4].block_range(32), (32, 33))
         self.assertEqual(self.astroid.body[4].block_range(33), (33, 33))
 
+
 class TryNodeTest(_NodeTest):
     CODE = """
         try:  # L2
