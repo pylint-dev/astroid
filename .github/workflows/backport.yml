@@ -33,7 +33,7 @@ jobs:
           permission-contents: write # push branch to Github
           permission-pull-requests: write # create PR / add comment for manual backport
           permission-workflows: write # modify files in .github/workflows
-      - uses: pylint-dev/backport@964024cacb774019138fb67254342bec9cef4934 # v2.1.5
+      - uses: pylint-dev/backport@e071919112ee369aaf4453465fa5037ac25cdd2d # v2.1.6
         with:
           github_token: ${{ steps.app-token.outputs.token }}
           user_name: ${{ vars.BACKPORT_USER_NAME }}
