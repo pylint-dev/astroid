@@ -34,8 +34,8 @@ dependencies = [
 ]
 urls."Bug tracker" = "https://github.com/pylint-dev/astroid/issues"
 urls."Discord server" = "https://discord.gg/Egy6P8AMB5"
-urls."Docs" = "https://pylint.readthedocs.io/projects/astroid/en/latest/"
 urls."Source Code" = "https://github.com/pylint-dev/astroid"
+urls.Docs = "https://pylint.readthedocs.io/projects/astroid/en/latest/"
 
 [tool.setuptools]
 dynamic.version = { attr = "astroid.__pkginfo__.__version__" }
@@ -75,12 +75,6 @@ lint.unfixable = [ "RUF001" ]
 
 [tool.pyproject-fmt]
 max_supported_python = "3.14"
-
-[tool.pytest]
-ini_options.addopts = '-m "not acceptance"'
-ini_options.python_files = [ "*test_*.py" ]
-ini_options.testpaths = [ "tests" ]
-ini_options.filterwarnings = "error"
 
 [tool.mypy]
 python_version = "3.10"
@@ -147,6 +141,12 @@ module = [
   "setuptools",
 ]
 ignore_missing_imports = true
+
+[tool.pytest]
+ini_options.addopts = '-m "not acceptance"'
+ini_options.python_files = [ "*test_*.py" ]
+ini_options.testpaths = [ "tests" ]
+ini_options.filterwarnings = "error"
 
 [tool.aliases]
 test = "pytest"
