@@ -441,7 +441,7 @@ class IfNodeTest(_NodeTest):
     """
 
     def test_if_elif_else_node(self) -> None:
-        """test transformation for If node"""
+        """Test transformation for If node."""
         self.assertEqual(len(self.astroid.body), 5)
         for stmt in self.astroid.body:
             self.assertIsInstance(stmt, nodes.If)
@@ -452,10 +452,11 @@ class IfNodeTest(_NodeTest):
 
     def test_block_range(self) -> None:
         """Test block_range of various scope constructs"""
-        # XXX ensure expected values
         # Module
         self.assertEqual(self.astroid.block_range(1), (0, 33))
-        self.assertEqual(self.astroid.block_range(10), (0, 33))  # XXX (10, 33) ?
+        # NOTE: Module does not consider the lineno argument. It would be more consistent to make
+        # thi return (10, 33) but without a use case it seems better to not change behaviour.
+        self.assertEqual(self.astroid.block_range(10), (0, 33))
 
         # if
         self.assertEqual(self.astroid.body[0].block_range(2), (2, 3))

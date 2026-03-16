@@ -244,8 +244,8 @@ class MultiLineWithElseBlockNode(MultiLineBlockNode):
     def _elsed_block_range(
         self, lineno: int, orelse: list[nodes.NodeNG], last: int | None = None
     ) -> tuple[int, int]:
-        """handle block line numbers range for try/finally, for, if and while
-        statements
+        """Handle block line numbers range for try/finally, for, if and while
+        statements.
         """
         # If at the end of the node, return same line
         if lineno == self.tolineno:
@@ -254,7 +254,7 @@ class MultiLineWithElseBlockNode(MultiLineBlockNode):
             # If the lineno is beyond the body of the node we check the orelse
             if lineno >= self.body[-1].tolineno + 1:
                 # If the orelse has a scope of its own we determine the block range there
-                if isinstance(orelse[0], BlockRangeMixIn):
+                if isinstance(orelse[0], MultiLineWithElseBlockNode):
                     return orelse[0]._elsed_block_range(lineno, orelse[0].orelse)
                 # Return last line of orelse
                 return lineno, orelse[-1].tolineno
