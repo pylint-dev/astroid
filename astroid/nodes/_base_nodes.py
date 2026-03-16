@@ -237,6 +237,9 @@ class MultiLineBlockNode(NodeNG):
 class MultiLineWithElseBlockNode(MultiLineBlockNode):
     """Base node for multi-line blocks that can have else statements."""
 
+    body: list[NodeNG]
+    """The contents of the block."""
+
     @cached_property
     def blockstart_tolineno(self):
         return self.lineno
