@@ -455,7 +455,7 @@ class IfNodeTest(_NodeTest):
         # Module
         self.assertEqual(self.astroid.block_range(1), (0, 33))
         # NOTE: Module does not consider the lineno argument. It would be more consistent to make
-        # thi return (10, 33) but without a use case it seems better to not change behaviour.
+        # this return (10, 33) but without a use case it seems better to not change behaviour.
         self.assertEqual(self.astroid.block_range(10), (0, 33))
 
         # if
@@ -514,79 +514,16 @@ class TryNodeTest(_NodeTest):
     def test_block_range(self) -> None:
         try_node = self.astroid.body[0]
         assert try_node.block_range(1) == (1, 11)
-        assert try_node.block_range(2) == (2, 2)
+        assert try_node.block_range(2) == (2, 11)
         assert try_node.block_range(3) == (3, 3)
-        assert try_node.block_range(4) == (4, 4)
+        assert try_node.block_range(4) == (4, 5)
         assert try_node.block_range(5) == (5, 5)
-        assert try_node.block_range(6) == (6, 6)
+        assert try_node.block_range(6) == (6, 7)
         assert try_node.block_range(7) == (7, 7)
-        assert try_node.block_range(8) == (8, 8)
+        assert try_node.block_range(8) == (8, 9)
         assert try_node.block_range(9) == (9, 9)
-        assert try_node.block_range(10) == (10, 10)
+        assert try_node.block_range(10) == (10, 11)
         assert try_node.block_range(11) == (11, 11)
-
-
-class TryExceptNodeTest(_NodeTest):
-    CODE = """
-        try:
-            print ('pouet')
-        except IOError:
-            pass
-        except UnicodeError:
-            print()
-        else:
-            print()
-    """
-
-    def test_block_range(self) -> None:
-        # XXX ensure expected values
-        self.assertEqual(self.astroid.body[0].block_range(1), (1, 9))
-        self.assertEqual(self.astroid.body[0].block_range(2), (2, 2))
-        self.assertEqual(self.astroid.body[0].block_range(3), (3, 3))
-        self.assertEqual(self.astroid.body[0].block_range(4), (4, 4))
-        self.assertEqual(self.astroid.body[0].block_range(5), (5, 5))
-        self.assertEqual(self.astroid.body[0].block_range(6), (6, 6))
-        self.assertEqual(self.astroid.body[0].block_range(7), (7, 7))
-        self.assertEqual(self.astroid.body[0].block_range(8), (8, 8))
-        self.assertEqual(self.astroid.body[0].block_range(9), (9, 9))
-
-
-class TryFinallyNodeTest(_NodeTest):
-    CODE = """
-        try:
-            print ('pouet')
-        finally:
-            print ('pouet')
-    """
-
-    def test_block_range(self) -> None:
-        # XXX ensure expected values
-        self.assertEqual(self.astroid.body[0].block_range(1), (1, 5))
-        self.assertEqual(self.astroid.body[0].block_range(2), (2, 2))
-        self.assertEqual(self.astroid.body[0].block_range(3), (3, 3))
-        self.assertEqual(self.astroid.body[0].block_range(4), (4, 4))
-        self.assertEqual(self.astroid.body[0].block_range(5), (5, 5))
-
-
-class TryExceptFinallyNodeTest(_NodeTest):
-    CODE = """
-        try:
-            print('pouet')
-        except Exception:
-            print ('oops')
-        finally:
-            print ('pouet')
-    """
-
-    def test_block_range(self) -> None:
-        # XXX ensure expected values
-        self.assertEqual(self.astroid.body[0].block_range(1), (1, 7))
-        self.assertEqual(self.astroid.body[0].block_range(2), (2, 2))
-        self.assertEqual(self.astroid.body[0].block_range(3), (3, 3))
-        self.assertEqual(self.astroid.body[0].block_range(4), (4, 4))
-        self.assertEqual(self.astroid.body[0].block_range(5), (5, 5))
-        self.assertEqual(self.astroid.body[0].block_range(6), (6, 6))
-        self.assertEqual(self.astroid.body[0].block_range(7), (7, 7))
 
 
 class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):

@@ -240,9 +240,26 @@ class MultiLineWithElseBlockNode(MultiLineBlockNode):
     body: list[NodeNG]
     """The contents of the block."""
 
+    orelse: list[NodeNG]
+    """The contents of the ``else`` block."""
+
     @cached_property
     def blockstart_tolineno(self):
         return self.lineno
+
+    def block_range(self, lineno: int) -> tuple[int, int]:
+        """Get a range from the given line number to where this node ends.
+
+        :param lineno: The line number to start the range at.
+
+        :returns: The range of line numbers that this node belongs to,
+            starting at the given line number.
+        """
+        if lineno == self.body[0].fromlineno:
+            return lineno, lineno
+        if lineno <= self.body[-1].tolineno:
+            return lineno, self.body[-1].tolineno
+        return self._elsed_block_range(lineno, self.orelse, self.body[0].fromlineno - 1)
 
     def _elsed_block_range(
         self, lineno: int, orelse: list[nodes.NodeNG], last: int | None = None
