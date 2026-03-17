@@ -513,6 +513,7 @@ class TryNodeTest(_NodeTest):
 
     def test_block_range(self) -> None:
         try_node = self.astroid.body[0]
+        assert try_node.block_range(1) == (1, 11)
         assert try_node.block_range(2) == (2, 3)
         assert try_node.block_range(3) == (3, 3)
         assert try_node.block_range(4) == (4, 5)

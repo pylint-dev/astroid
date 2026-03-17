@@ -255,6 +255,8 @@ class MultiLineWithElseBlockNode(MultiLineBlockNode):
         :returns: The range of line numbers that this node belongs to,
             starting at the given line number.
         """
+        if lineno < self.fromlineno:
+            return lineno, self.tolineno
         if lineno == self.body[0].fromlineno:
             return lineno, lineno
         if lineno <= self.body[-1].tolineno:

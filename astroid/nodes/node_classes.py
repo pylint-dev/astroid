@@ -3999,6 +3999,23 @@ class TryStar(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         yield from self.orelse
         yield from self.finalbody
 
+    def block_range(self, lineno: int) -> tuple[int, int]:
+        """Get a range from a given line number to where this node ends."""
+        for exhandler in self.handlers:
+            if exhandler.type and lineno == exhandler.type.fromlineno:
+                return lineno, exhandler.tolineno
+            if exhandler.body[0].fromlineno <= lineno <= exhandler.body[-1].tolineno:
+                return lineno, exhandler.body[-1].tolineno
+        if self.finalbody:
+            if self.finalbody[0].fromlineno - 1 == lineno:
+                return lineno, self.finalbody[0].tolineno
+            if self.finalbody[0].fromlineno <= lineno <= self.finalbody[-1].tolineno:
+                return lineno, self.finalbody[-1].tolineno
+
+        # If not within any of the ExceptHandlers or `finally` body, fall back to regular
+        # handling of block_range for nodes with a potential `else` statement.
+        return super().block_range(lineno)
+
 
 class Tuple(BaseContainer):
     """Class representing an :class:`ast.Tuple` node.
