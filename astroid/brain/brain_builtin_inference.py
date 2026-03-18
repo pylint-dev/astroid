@@ -842,15 +842,27 @@ def infer_str(node, context: InferenceContext | None = None) -> nodes.Const:
 
     :param nodes.Call node: str() call to infer
     :param context.InferenceContext: node context
-    :rtype nodes.Const: a Const containing an empty string
+    :rtype nodes.Const:
+        a Const containing a stringified value of str() call if possible, else an empty string
     """
     call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: str() must take no keyword arguments")
-    try:
-        return nodes.Const("")
-    except (AstroidTypeError, InferenceError) as exc:
-        raise UseInferenceDefault(str(exc)) from exc
+
+    if call.positional_arguments:
+        try:
+            first_value = next(call.positional_arguments[0].infer(context=context))
+        except (InferenceError, StopIteration):
+            return nodes.Const("")
+
+        if isinstance(first_value, nodes.Const):
+            try:
+                stringified = str(first_value.value)
+            except ValueError:
+                return nodes.Const("")
+            return nodes.Const(stringified)
+
+    return nodes.Const("")
 
 
 def infer_int(node, context: InferenceContext | None = None):
