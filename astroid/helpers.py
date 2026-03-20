@@ -130,7 +130,7 @@ def _object_type_is_subclass(
     for klass in class_seq:
         if isinstance(klass, util.UninferableBase):
             raise AstroidTypeError(
-                f"arg 2 must be a type or tuple of types, not {type(klass)!r}"
+                "arg 2 must be a type or tuple of types, not <class 'astroid.util.UninferableBase'>"
             )
 
         for obj_subclass in obj_type.mro():
