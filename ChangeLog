@@ -7,6 +7,11 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Changed `block_range` to consider `else` its own block, allowing `pylint` to apply
+  disables to just the block.
+
+  References pylint-dev/pylint#872
+
 
 What's New in astroid 4.1.2?
 ============================
