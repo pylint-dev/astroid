@@ -109,6 +109,7 @@ Contributors
 - Anthony Truchet <anthony.truchet@logilab.fr>
 - Anthony Sottile <asottile@umich.edu>
 - Alexander Shadchin <alexandr.shadchin@gmail.com>
+- Fridayworks <aifriday700@gmail.com>
 - wgehalo <wgehalo@gmail.com>
 - tejaschauhan36912 <59693377+tejaschauhan36912@users.noreply.github.com>
 - rr- <rr-@sakuya.pl>
@@ -219,6 +220,7 @@ Contributors
 - Alexander Scheel <alexander.m.scheel@gmail.com>
 - Alexander Presnyakov <flagist0@gmail.com>
 - Ahmed Azzaoui <ahmed.azzaoui@engie.com>
+- Casey Jones <731937+doctorcolossus@users.noreply.github.com>
 
 Co-Author
 ---------
