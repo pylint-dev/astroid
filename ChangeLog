@@ -12,45 +12,6 @@ Release date: TBA
 
   References pylint-dev/pylint#872
 
-What's New in astroid 4.1.3?
-============================
-Release date: TBA
-
-* Fix crash accessing property `fset` in generic classes with type annotations.
-  Closes #2996
-
-* Fix infinite recursion caused by cyclic inference in ``Constraint``.
-
-* Fix ``RecursionError`` in ``_compute_mro()`` when circular class hierarchies
-  are created through runtime name rebinding. Circular bases are now resolved
-  to the original class instead of recursing.
-
-  Closes #2967
-  Closes pylint-dev/pylint#10821
-
-* Fix ``DuplicateBasesError`` crash in dataclass transform when a class has
-  duplicate bases in its MRO (e.g., ``Protocol`` appearing both directly and
-  indirectly). Catch ``MroError`` at ``.mro()`` call sites in
-  ``brain_dataclasses.py``, consistent with the existing pattern elsewhere.
-
-  Closes #2628
-
-* Fix ``FunctionModel`` returning descriptor attributes for builtin functions.
-
-  Closes #2743
-
-* Catch ``MemoryError`` when inferring f-strings with extremely large format
-  widths (e.g. ``f'{0:11111111111}'``) so that inference yields ``Uninferable``
-  instead of crashing.
-
-  Closes #2762
-
-* Fix ``ValueError`` in ``__str__``/``repr`` and error messages when nodes have
-  extreme values (very long identifiers or large integers). Clamp pprint width
-  to a minimum of 1 and truncate oversized values in error messages.
-
-  Closes #2764
-
 
 What's New in astroid 4.1.2?
 ============================
