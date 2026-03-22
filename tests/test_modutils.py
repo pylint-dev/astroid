@@ -13,7 +13,6 @@ import tempfile
 import unittest
 import xml
 from pathlib import Path
-from xml import etree
 from xml.etree import ElementTree
 
 import pytest
@@ -375,81 +374,6 @@ class GetSourceFileTest(unittest.TestCase):
                 modutils.get_source_file(module),
                 module,
             )
-
-
-class IsStandardModuleTest(resources.SysPathSetup, unittest.TestCase):
-    """
-    Return true if the module may be considered as a module from the standard
-    library.
-    """
-
-    def test_datetime(self) -> None:
-        # This is an interesting example, since datetime, on pypy,
-        # is under lib_pypy, rather than the usual Lib directory.
-        with pytest.warns(DeprecationWarning):
-            assert modutils.is_standard_module("datetime")
-
-    def test_builtins(self) -> None:
-        with pytest.warns(DeprecationWarning):
-            assert not modutils.is_standard_module("__builtin__")
-        with pytest.warns(DeprecationWarning):
-            assert modutils.is_standard_module("builtins")
-
-    def test_builtin(self) -> None:
-        with pytest.warns(DeprecationWarning):
-            assert modutils.is_standard_module("sys")
-        with pytest.warns(DeprecationWarning):
-            assert modutils.is_standard_module("marshal")
-
-    def test_nonstandard(self) -> None:
-        with pytest.warns(DeprecationWarning):
-            assert not modutils.is_standard_module("astroid")
-
-    def test_unknown(self) -> None:
-        with pytest.warns(DeprecationWarning):
-            assert not modutils.is_standard_module("unknown")
-
-    def test_4(self) -> None:
-        with pytest.warns(DeprecationWarning):
-            assert modutils.is_standard_module("hashlib")
-        with pytest.warns(DeprecationWarning):
-            assert modutils.is_standard_module("pickle")
-        with pytest.warns(DeprecationWarning):
-            assert modutils.is_standard_module("email")
-        with pytest.warns(DeprecationWarning):
-            assert modutils.is_standard_module("io")
-        with pytest.warns(DeprecationWarning):
-            assert not modutils.is_standard_module("StringIO")
-        with pytest.warns(DeprecationWarning):
-            assert modutils.is_standard_module("unicodedata")
-
-    def test_custom_path(self) -> None:
-        datadir = resources.find("")
-        if any(datadir.startswith(p) for p in modutils.EXT_LIB_DIRS):
-            self.skipTest("known breakage of is_standard_module on installed package")
-
-        with pytest.warns(DeprecationWarning):
-            assert modutils.is_standard_module("data.module", (datadir,))
-        with pytest.warns(DeprecationWarning):
-            assert modutils.is_standard_module(
-                "data.module", (os.path.abspath(datadir),)
-            )
-        # "" will evaluate to cwd
-        with pytest.warns(DeprecationWarning):
-            assert modutils.is_standard_module("data.module", ("",))
-
-    def test_failing_edge_cases(self) -> None:
-        # using a subpackage/submodule path as std_path argument
-        with pytest.warns(DeprecationWarning):
-            assert not modutils.is_standard_module("xml.etree", etree.__path__)
-        # using a module + object name as modname argument
-        with pytest.warns(DeprecationWarning):
-            assert modutils.is_standard_module("sys.path")
-        # this is because only the first package/module is considered
-        with pytest.warns(DeprecationWarning):
-            assert modutils.is_standard_module("sys.whatever")
-        with pytest.warns(DeprecationWarning):
-            assert not modutils.is_standard_module("xml.whatever", etree.__path__)
 
 
 class IsStdLibModuleTest(resources.SysPathSetup, unittest.TestCase):
