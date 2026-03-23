@@ -5,5 +5,5 @@ tbump~=6.11
 # Tools used to run tests
 coverage~=7.13
 pytest
-pytest-cov~=7.0
+pytest-cov~=7.1
 mypy; platform_python_implementation!="PyPy"
