@@ -24,8 +24,8 @@
   },
   "44875844+temyurchenko@users.noreply.github.com": {
     "mails": [
-      "artemyurchenko@zoho.com",
-      "44875844+temyurchenko@users.noreply.github.com"
+      "44875844+temyurchenko@users.noreply.github.com",
+      "artemyurchenko@zoho.com"
     ],
     "name": "Artem Yurchenko"
   },
@@ -68,26 +68,26 @@
   },
   "ashley@awhetter.co.uk": {
     "mails": [
+      "AWhetter@users.noreply.github.com",
       "ashley@awhetter.co.uk",
-      "awhetter.2011@my.bristol.ac.uk",
       "asw@dneg.com",
-      "AWhetter@users.noreply.github.com"
+      "awhetter.2011@my.bristol.ac.uk"
     ],
     "name": "Ashley Whetter",
     "team": "Maintainers"
   },
   "bot@noreply.github.com": {
     "mails": [
-      "66853113+pre-commit-ci[bot]@users.noreply.github.com",
-      "49699333+dependabot[bot]@users.noreply.github.com",
-      "41898282+github-actions[bot]@users.noreply.github.com",
+      "212256041+pylint-backport-bot[bot]@users.noreply.github.com",
       "212256041+pylint-backport[bot]@users.noreply.github.com",
-      "212256041+pylint-backport-bot[bot]@users.noreply.github.com"
+      "41898282+github-actions[bot]@users.noreply.github.com",
+      "49699333+dependabot[bot]@users.noreply.github.com",
+      "66853113+pre-commit-ci[bot]@users.noreply.github.com"
     ],
     "name": "bot"
   },
   "bryce.paul.guinta@gmail.com": {
-    "mails": ["bryce.paul.guinta@gmail.com", "bryce.guinta@protonmail.com"],
+    "mails": ["bryce.guinta@protonmail.com", "bryce.paul.guinta@gmail.com"],
     "name": "Bryce Guinta",
     "team": "Maintainers"
   },
@@ -124,8 +124,8 @@
   },
   "hugovk@users.noreply.github.com": {
     "mails": [
-      "hugovk@users.noreply.github.com",
-      "1324225+hugovk@users.noreply.github.com"
+      "1324225+hugovk@users.noreply.github.com",
+      "hugovk@users.noreply.github.com"
     ],
     "name": "Hugo van Kemenade"
   },
@@ -151,7 +151,7 @@
     "name": "Keichi Takahashi"
   },
   "mariocj89@gmail.com": {
-    "mails": ["mcorcherojim@bloomberg.net", "mariocj89@gmail.com"],
+    "mails": ["mariocj89@gmail.com", "mcorcherojim@bloomberg.net"],
     "name": "Mario Corchero"
   },
   "matusvalo@users.noreply.github.com": {
@@ -173,10 +173,10 @@
   },
   "no-reply@google.com": {
     "mails": [
-      "nathaniel@google.com",
-      "mbp@google.com",
       "balparda@google.com",
-      "dlindquist@google.com"
+      "dlindquist@google.com",
+      "mbp@google.com",
+      "nathaniel@google.com"
     ],
     "name": "Google, Inc."
   },
@@ -186,12 +186,12 @@
     "team": "Ex-maintainers"
   },
   "pierre.sassoulas@gmail.com": {
-    "mails": ["pierre.sassoulas@gmail.com", "pierre.sassoulas@cea.fr"],
+    "mails": ["pierre.sassoulas@cea.fr", "pierre.sassoulas@gmail.com"],
     "name": "Pierre Sassoulas",
     "team": "Maintainers"
   },
   "raphael@makeleaps.com": {
-    "mails": ["raphael@rtpg.co", "raphael@makeleaps.com"],
+    "mails": ["raphael@makeleaps.com", "raphael@rtpg.co"],
     "name": "Raphael Gaschignard"
   },
   "rogalski.91@gmail.com": {
@@ -209,14 +209,14 @@
     "name": "Stefan Scherfke"
   },
   "thenault@gmail.com": {
-    "mails": ["thenault@gmail.com", "sylvain.thenault@logilab.fr"],
+    "mails": ["sylvain.thenault@logilab.fr", "thenault@gmail.com"],
     "name": "Sylvain Thénault",
     "team": "Ex-maintainers"
   },
   "tushar.sadhwani000@gmail.com": {
     "mails": [
-      "tushar.sadhwani000@gmail.com",
-      "86737547+tushar-deepsource@users.noreply.github.com"
+      "86737547+tushar-deepsource@users.noreply.github.com",
+      "tushar.sadhwani000@gmail.com"
     ],
     "name": "Tushar Sadhwani"
   },
