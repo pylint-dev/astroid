@@ -1432,6 +1432,9 @@ def test_infer_str_const() -> None:
     str(4.33) #@
     str(...) #@
     str(2 + 2) #@
+    str() #@
+    str(int) #@
+    str(2 if unknown() else 3) #@
     """)
 
     inferred = list(node.inferred()[0].value for node in ast_nodes)
@@ -1444,6 +1447,9 @@ def test_infer_str_const() -> None:
     assert inferred[6] == "4.33"
     assert inferred[7] == "Ellipsis"
     assert inferred[8] == "4"
+    assert inferred[9] == ""
+    assert inferred[10] == ""
+    assert inferred[11] == ""
 
 
 def test_infer_int() -> None:
