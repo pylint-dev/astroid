@@ -849,20 +849,28 @@ def infer_str(node, context: InferenceContext | None = None) -> nodes.Const:
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: str() must take no keyword arguments")
 
-    if call.positional_arguments:
-        try:
-            first_value = next(call.positional_arguments[0].infer(context=context))
-        except (InferenceError, StopIteration):
-            return nodes.Const("")
+    fallback = nodes.Const("")
 
-        if isinstance(first_value, nodes.Const):
+    if not call.positional_arguments:
+        return fallback
+
+    # Accept only if all inferred values resolve to the same string
+    candidates: set[str] = set()
+    try:
+        for inferred in call.positional_arguments[0].infer(context=context):
+            if not isinstance(inferred, nodes.Const):
+                return fallback
+
             try:
-                stringified = str(first_value.value)
+                candidates.add(str(inferred.value))
             except ValueError:
-                return nodes.Const("")
-            return nodes.Const(stringified)
+                return fallback
+    except InferenceError:
+        return fallback
 
-    return nodes.Const("")
+    if len(candidates) == 1:
+        return nodes.Const(candidates.pop())
+    return fallback
 
 
 def infer_int(node, context: InferenceContext | None = None):
