@@ -16,6 +16,10 @@ Astroid
    :target: https://results.pre-commit.ci/latest/github/pylint-dev/astroid/main
    :alt: pre-commit.ci status
 
+.. image:: https://img.shields.io/endpoint?url=https://codspeed.io/badge.json
+    :target: https://codspeed.io/pylint-dev/astroid?utm_source=badge
+    :alt: CodSpeed
+
 .. |tidelift_logo| image:: https://raw.githubusercontent.com/pylint-dev/astroid/main/doc/media/Tidelift_Logos_RGB_Tidelift_Shorthand_On-White.png
    :width: 200
    :alt: Tidelift
