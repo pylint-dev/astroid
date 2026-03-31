@@ -9,7 +9,6 @@ from __future__ import annotations
 import astroid
 from astroid import builder, manager, parse
 
-
 # -- Small expression parsing --
 
 SIMPLE_EXPRESSION = """\

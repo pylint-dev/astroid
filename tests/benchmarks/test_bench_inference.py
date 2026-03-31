@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from astroid import builder, helpers, parse
 
-
 # -- Simple attribute inference --
 
 ATTR_INFERENCE_CODE = """\
