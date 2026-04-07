@@ -2812,7 +2812,7 @@ class ClassDef(
     def slots(self):
         return self._all_slots
 
-    def _inferred_bases(self, context: InferenceContext | None = None):
+    def _inferred_bases(self, context: InferenceContext | None = None, *, _bases: frozenset[ClassDef] = frozenset()):
         # Similar with .ancestors, but the difference is when one base is inferred,
         # only the first object is wanted. That's because
         # we aren't interested in superclasses, as in the following
@@ -2841,7 +2841,7 @@ class ClassDef(
                 baseobj = baseobj._proxied
             if not isinstance(baseobj, ClassDef):
                 continue
-            if baseobj is self:
+            if baseobj is self or baseobj in _bases:
                 # Circular base due to name rebinding (e.g. pdb.Pdb = CustomPdb
                 # where CustomPdb inherits from pdb.Pdb). Fall back to the
                 # first non-circular inferred value from the base expression.
@@ -2885,7 +2885,7 @@ class ClassDef(
         if self.qname() == "builtins.object":
             return [self]
 
-        inferred_bases = list(self._inferred_bases(context=context))
+        inferred_bases = list(self._inferred_bases(context=context, _bases=_base_chain))
         bases_mro = []
         if self not in _base_chain:
             _chain = _base_chain | {self}

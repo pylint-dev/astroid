@@ -1719,6 +1719,30 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             ["CustomPdb", "Pdb", "Bdb", "Cmd", "object"],
         )
 
+    def test_mro_circular_name_rebinding_with_gap(self) -> None:
+        """MRO computation should handle circular name rebinding.
+
+        The MRO computation should resolve the cycle by falling back
+        to the original class.
+
+        Regression test for https://github.com/pylint-dev/pylint/issues/10821
+        """
+        astroid = builder.parse("""
+        import pdb
+
+        class PatchedPdb(pdb.Pdb):
+            pass
+
+        class CustomPdb(PatchedPdb):
+            pass
+
+        pdb.Pdb = CustomPdb
+        """)
+        self.assertEqualMro(
+            astroid["CustomPdb"],
+            ["CustomPdb", "PatchedPdb", "Pdb", "Bdb", "Cmd", "object"],
+        )
+
     def test_mro_with_factories(self) -> None:
         cls = builder.extract_node("""
         def MixinFactory(cls):
