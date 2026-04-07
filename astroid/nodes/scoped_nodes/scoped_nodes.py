@@ -2892,11 +2892,13 @@ class ClassDef(
 
         inferred_bases = list(self._inferred_bases(context=context, base_classes=_base_chain))
         bases_mro = []
-        if self not in _base_chain:
-            _chain = _base_chain | {self}
-            for base in inferred_bases:
-                mro = base._compute_mro(context=context, _base_chain=_chain)
-                bases_mro.append(mro)
+        _chain = _base_chain | {self}
+        for base in inferred_bases:
+            if base in _chain:
+                continue
+
+            mro = base._compute_mro(context=context, _base_chain=_chain)
+            bases_mro.append(mro)
 
         unmerged_mro: list[list[ClassDef]] = [[self], *bases_mro, inferred_bases]
         unmerged_mro = clean_duplicates_mro(unmerged_mro, self, context)
