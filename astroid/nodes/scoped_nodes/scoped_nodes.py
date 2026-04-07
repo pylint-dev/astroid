@@ -2885,21 +2885,21 @@ class ClassDef(
         self,
         context: InferenceContext,
         *,
-        _base_chain: frozenset[ClassDef] = frozenset(),
+        base_chain: frozenset[ClassDef] = frozenset(),
     ):
         if self.qname() == "builtins.object":
             return [self]
 
         inferred_bases = list(
-            self._inferred_bases(context=context, base_classes=_base_chain)
+            self._inferred_bases(context=context, base_classes=base_chain)
         )
         bases_mro = []
-        _chain = _base_chain | {self}
+        base_chain |= {self}
         for base in inferred_bases:
-            if base in _chain:
+            if base in base_chain:
                 continue
 
-            mro = base._compute_mro(context=context, _base_chain=_chain)
+            mro = base._compute_mro(context=context, base_chain=base_chain)
             bases_mro.append(mro)
 
         unmerged_mro: list[list[ClassDef]] = [[self], *bases_mro, inferred_bases]
