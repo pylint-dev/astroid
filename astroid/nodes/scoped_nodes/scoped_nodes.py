@@ -2890,7 +2890,9 @@ class ClassDef(
         if self.qname() == "builtins.object":
             return [self]
 
-        inferred_bases = list(self._inferred_bases(context=context, base_classes=_base_chain))
+        inferred_bases = list(
+            self._inferred_bases(context=context, base_classes=_base_chain)
+        )
         bases_mro = []
         _chain = _base_chain | {self}
         for base in inferred_bases:
