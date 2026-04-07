@@ -2876,18 +2876,17 @@ class ClassDef(
             pass
         return None
 
-    def _compute_mro(self, context: InferenceContext | None = None):
+    def _compute_mro(self, context: InferenceContext, *, _base_chain: frozenset[ClassDef] = frozenset()):
         if self.qname() == "builtins.object":
             return [self]
 
         inferred_bases = list(self._inferred_bases(context=context))
         bases_mro = []
-        for base in inferred_bases:
-            if base is self:
-                continue
-
-            mro = base._compute_mro(context=context)
-            bases_mro.append(mro)
+        if self not in _base_chain:
+            _chain = _base_chain | {self}
+            for base in inferred_bases:
+                mro = base._compute_mro(context=context, _base_chain=_chain)
+                bases_mro.append(mro)
 
         unmerged_mro: list[list[ClassDef]] = [[self], *bases_mro, inferred_bases]
         unmerged_mro = clean_duplicates_mro(unmerged_mro, self, context)
