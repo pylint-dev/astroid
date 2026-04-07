@@ -2812,7 +2812,12 @@ class ClassDef(
     def slots(self):
         return self._all_slots
 
-    def _inferred_bases(self, context: InferenceContext | None = None, *, _bases: frozenset[ClassDef] = frozenset()):
+    def _inferred_bases(
+        self,
+        context: InferenceContext | None = None,
+        *,
+        _bases: frozenset[ClassDef] = frozenset(),
+    ):
         # Similar with .ancestors, but the difference is when one base is inferred,
         # only the first object is wanted. That's because
         # we aren't interested in superclasses, as in the following
