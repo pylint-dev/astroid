@@ -2816,7 +2816,7 @@ class ClassDef(
         self,
         context: InferenceContext | None = None,
         *,
-        _bases: frozenset[ClassDef] = frozenset(),
+        base_classes: frozenset[ClassDef] = frozenset(),
     ):
         # Similar with .ancestors, but the difference is when one base is inferred,
         # only the first object is wanted. That's because
@@ -2846,7 +2846,7 @@ class ClassDef(
                 baseobj = baseobj._proxied
             if not isinstance(baseobj, ClassDef):
                 continue
-            if baseobj is self or baseobj in _bases:
+            if baseobj is self or baseobj in base_classes:
                 # Circular base due to name rebinding (e.g. pdb.Pdb = CustomPdb
                 # where CustomPdb inherits from pdb.Pdb). Fall back to the
                 # first non-circular inferred value from the base expression.
@@ -2890,7 +2890,7 @@ class ClassDef(
         if self.qname() == "builtins.object":
             return [self]
 
-        inferred_bases = list(self._inferred_bases(context=context, _bases=_base_chain))
+        inferred_bases = list(self._inferred_bases(context=context, base_classes=_base_chain))
         bases_mro = []
         if self not in _base_chain:
             _chain = _base_chain | {self}
