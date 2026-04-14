@@ -842,15 +842,35 @@ def infer_str(node, context: InferenceContext | None = None) -> nodes.Const:
 
     :param nodes.Call node: str() call to infer
     :param context.InferenceContext: node context
-    :rtype nodes.Const: a Const containing an empty string
+    :rtype nodes.Const:
+        a Const containing a stringified value of str() call if possible, else an empty string
     """
     call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: str() must take no keyword arguments")
+
+    fallback = nodes.Const("")
+
+    if not call.positional_arguments:
+        return fallback
+
+    # Accept only if all inferred values resolve to the same string
+    candidates: set[str] = set()
     try:
-        return nodes.Const("")
-    except (AstroidTypeError, InferenceError) as exc:
-        raise UseInferenceDefault(str(exc)) from exc
+        for inferred in call.positional_arguments[0].infer(context=context):
+            if not isinstance(inferred, nodes.Const):
+                return fallback
+
+            try:
+                candidates.add(str(inferred.value))
+            except ValueError:
+                return fallback
+    except InferenceError:
+        return fallback
+
+    if len(candidates) == 1:
+        return nodes.Const(candidates.pop())
+    return fallback
 
 
 def infer_int(node, context: InferenceContext | None = None):
