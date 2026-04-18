@@ -2685,6 +2685,28 @@ def test_ancestor_with_generic() -> None:
     ]
 
 
+@pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
+def test_ancestor_with_generic_typevartuple() -> None:
+    # https://github.com/pylint-dev/pylint/issues/10972
+    tree = builder.parse("""
+    from abc import ABC, abstractmethod
+    class Base(ABC):
+        @abstractmethod
+        def get_item(self) -> None: ...
+    class Middle[*Shape]:
+        def get_item(self) -> None:
+            raise NotImplementedError
+    class Concrete[*Shape](Middle[*Shape], Base): pass
+    """)
+    inferred_concrete = next(tree["Concrete"].infer())
+    assert [cdef.name for cdef in inferred_concrete.ancestors()] == [
+        "Middle",
+        "object",
+        "Base",
+        "ABC",
+    ]
+
+
 def test_slots_duplicate_bases_issue_1089() -> None:
     astroid = builder.parse("""
             class First(object, object): #@
