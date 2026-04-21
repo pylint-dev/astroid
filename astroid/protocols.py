@@ -455,9 +455,7 @@ def _has_annotation(
     """True if ``assign`` carries a PEP 526 annotation or a PEP 484 ``# type:`` comment."""
     if isinstance(assign, nodes.AnnAssign):
         return assign.annotation is not None
-    if isinstance(assign, nodes.Assign):
-        return assign.type_annotation is not None
-    return False
+    return isinstance(assign, nodes.Assign) and assign.type_annotation is not None
 
 
 @decorators.raise_if_nothing_inferred
