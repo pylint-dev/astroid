@@ -349,37 +349,31 @@ def test_named_expr_inference() -> None:
 
 
 def test_annassign_ellipsis_placeholder_yields_uninferable() -> None:
-    attr = extract_node(
-        """
+    attr = extract_node("""
     class Cls:
         x: int = ...
     Cls().x  #@
-    """
-    )
+    """)
     assert isinstance(attr, nodes.Attribute)
     assert list(attr.infer()) == [Uninferable]
 
 
 def test_type_comment_ellipsis_placeholder_yields_uninferable() -> None:
-    attr = extract_node(
-        """
+    attr = extract_node("""
     class Cls:
         x = ...  # type: int
     Cls().x  #@
-    """
-    )
+    """)
     assert isinstance(attr, nodes.Attribute)
     assert list(attr.infer()) == [Uninferable]
 
 
 def test_annassign_concrete_value_still_inferred() -> None:
-    attr = extract_node(
-        """
+    attr = extract_node("""
     class Cls:
         x: int = 5
     Cls().x  #@
-    """
-    )
+    """)
     assert isinstance(attr, nodes.Attribute)
     inferred = list(attr.infer())
     assert len(inferred) == 1
@@ -388,13 +382,11 @@ def test_annassign_concrete_value_still_inferred() -> None:
 
 
 def test_bare_ellipsis_without_annotation_still_inferred() -> None:
-    attr = extract_node(
-        """
+    attr = extract_node("""
     class Cls:
         x = ...
     Cls().x  #@
-    """
-    )
+    """)
     assert isinstance(attr, nodes.Attribute)
     inferred = list(attr.infer())
     assert len(inferred) == 1
