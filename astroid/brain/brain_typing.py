@@ -15,7 +15,7 @@ from typing import Final
 from astroid import context, nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
-from astroid.const import PY312_PLUS, PY313_PLUS, PY314_PLUS
+from astroid.const import PY312_PLUS, PY313_PLUS, PY314_PLUS, PY315_PLUS
 from astroid.exceptions import (
     AstroidSyntaxError,
     AttributeInferenceError,
@@ -461,6 +461,15 @@ def _typing_transform():
         code += textwrap.dedent("""
     from annotationlib import ForwardRef
     class Union:
+        @classmethod
+        def __class_getitem__(cls, item): return cls
+    """)
+    if PY315_PLUS:
+        # typing.ByteString was removed from the typing module in Python 3.15
+        # (it was deprecated since 3.12 and present at module level until 3.14).
+        # Inject a stub so code using `typing.ByteString` can still be inferred.
+        code += textwrap.dedent("""
+    class ByteString:
         @classmethod
         def __class_getitem__(cls, item): return cls
     """)

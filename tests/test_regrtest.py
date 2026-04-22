@@ -12,7 +12,7 @@ import pytest
 
 from astroid import MANAGER, Instance, bases, manager, nodes, parse, test_utils
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
-from astroid.const import PY312_PLUS
+from astroid.const import PY312_PLUS, PY315_PLUS
 from astroid.context import InferenceContext
 from astroid.exceptions import AstroidSyntaxError, InferenceError
 from astroid.manager import AstroidManager
@@ -529,6 +529,9 @@ def test_regression_infer_namedtuple_invalid_fieldname_error() -> None:
     assert inferred.value == Uninferable
 
 
+# On Python 3.15+ the parser emits a regular SyntaxError instead of a MemoryError for deeply nested
+# parentheses, so the special-case test here is no longer needed.
+@pytest.mark.skipif(PY315_PLUS, reason="No longer a MemoryError on Python 3.15+")
 def test_regression_parse_deeply_nested_parentheses() -> None:
     """Regression test for issue #2643."""
     with pytest.raises(AstroidSyntaxError, match="Parsing Python code failed:") as ctx:
