@@ -469,9 +469,7 @@ def _typing_transform():
         # (it was deprecated since 3.12 and present at module level until 3.14).
         # Inject a stub so code using `typing.ByteString` can still be inferred.
         code += textwrap.dedent("""
-    class ByteString:
-        @classmethod
-        def __class_getitem__(cls, item): return cls
+    class ByteString: ...
     """)
     return AstroidBuilder(AstroidManager()).string_build(code)
 
