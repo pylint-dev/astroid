@@ -545,7 +545,7 @@ ExceptionGroup
 """)))
         assigned = objects.ExceptionInstance(eg)
         assigned.instance_attrs["exceptions"] = [
-            nodes.List.from_elements(_generate_assigned())
+            nodes.Tuple.from_elements(_generate_assigned())
         ]
         yield assigned
     else:
