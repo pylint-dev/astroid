@@ -2,5 +2,5 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
-__version__ = "4.2.0b1"
+__version__ = "4.2.0b2"
 version = __version__
