@@ -222,6 +222,7 @@ Contributors
 - Ahmed Azzaoui <ahmed.azzaoui@engie.com>
 - Casey Jones <731937+doctorcolossus@users.noreply.github.com>
 - sergiochan <yuheng9211@qq.com>
+- Joshix-1 <57299889+Joshix-1@users.noreply.github.com>
 
 Co-Author
 ---------
