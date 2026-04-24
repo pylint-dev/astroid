@@ -72,10 +72,10 @@ def is_namespace(modname: str) -> bool:
                 # Workaround for "py" module
                 # https://github.com/pytest-dev/apipkg/issues/13
                 return False
-        except KeyError:
-            # Intermediate steps might raise KeyErrors
-            # https://github.com/python/cpython/issues/93334
-            # TODO: update if fixed in importlib
+        # PY314: When dropping support for 3.14, replace with just
+        # except ModuleNotFoundError:
+        except (KeyError, ModuleNotFoundError):
+            # Intermediate steps might raise ModuleNotFoundError
             # For tree a > b > c.py
             # >>> from importlib.machinery import PathFinder
             # >>> PathFinder.find_spec('a.b', ['a'])
