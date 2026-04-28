@@ -31,13 +31,17 @@ Maintainers
 Contributors
 ------------
 - Emile Anclin <emile.anclin@logilab.fr>
+- dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+- pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
 - Nick Drozd <nicholasdrozd@gmail.com>
+- github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
 - correctmost <134317971+correctmost@users.noreply.github.com>
 - Andrew Haigh <hello@nelf.in>
 - Julien Cristau <julien.cristau@logilab.fr>
 - Artem Yurchenko <44875844+temyurchenko@users.noreply.github.com>
 - David Liu <david@cs.toronto.edu>
 - Alexandre Fayolle <alexandre.fayolle@logilab.fr>
+- pylint-backport[bot] <212256041+pylint-backport[bot]@users.noreply.github.com>
 - Eevee (Alex Munroe) <amunroe@yelp.com>
 - Emmanuel Ferdman <emmanuelferdman@gmail.com>
 - David Gilman <davidgilman1@gmail.com>
@@ -223,6 +227,8 @@ Contributors
 - Casey Jones <731937+doctorcolossus@users.noreply.github.com>
 - sergiochan <yuheng9211@qq.com>
 - Joshix-1 <57299889+Joshix-1@users.noreply.github.com>
+- pylint-backport-bot[bot] <212256041+pylint-backport-bot[bot]@users.noreply.github.com>
+- Copilot <198982749+Copilot@users.noreply.github.com>
 
 Co-Author
 ---------
