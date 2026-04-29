@@ -1,5 +1,5 @@
 # Tools used when releasing
-contributors-txt>=1.0.1
+contributors-txt>=1.0.2
 tbump~=6.11
 
 # Tools used to run tests
