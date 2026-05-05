@@ -1002,6 +1002,25 @@ class RandomSampleTest(unittest.TestCase):
         assert isinstance(inferred.elts[0], nodes.FunctionDef)
         assert inferred.elts[0].name == "len"
 
+    def test_no_crash_on_module_clone(self) -> None:
+        """Test that random.sample does not crash when cloning Module nodes.
+
+        Module.__init__ does not accept ``lineno``/``col_offset`` kwargs, so
+        cloning must filter init params to those the class actually accepts.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3043
+        """
+        node = astroid.extract_node("""
+        from random import sample
+        import gc
+        sample(list({gc}) * 2, 1)  #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.List)
+        assert len(inferred.elts) == 1
+        assert isinstance(inferred.elts[0], nodes.Module)
+        assert inferred.elts[0].name == "gc"
+
 
 class SubprocessTest(unittest.TestCase):
     """Test subprocess brain"""
