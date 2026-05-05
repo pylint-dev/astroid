@@ -23,7 +23,7 @@ def _clone_node_with_lineno(node, parent, lineno):
     cls = node.__class__
     other_fields = node._other_fields
     _astroid_fields = node._astroid_fields
-    init_params = {
+    candidate_init_params = {
         "lineno": lineno,
         "col_offset": node.col_offset,
         "parent": parent,
@@ -33,6 +33,11 @@ def _clone_node_with_lineno(node, parent, lineno):
     postinit_params = {param: getattr(node, param) for param in _astroid_fields}
 
     valid_init_params = set(inspect.signature(cls.__init__).parameters)
+    init_params = {
+        name: value
+        for name, value in candidate_init_params.items()
+        if name in valid_init_params
+    }
     for param in other_fields:
         if param in valid_init_params:
             init_params[param] = getattr(node, param)
