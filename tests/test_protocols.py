@@ -189,6 +189,18 @@ class ProtocolTests(unittest.TestCase):
         for starred in starred_nodes:
             self.assertIs(next(starred.assigned_stmts()), Uninferable)
 
+    def test_assigned_stmts_starred_subscript_target(self) -> None:
+        """Starred with a Subscript target must not crash on ``.value.name``."""
+        code = """
+        for *d[0], (*t,) in (): #@
+            pass
+        """
+        assign_stmts = extract_node(code)
+        starred_nodes = list(assign_stmts.nodes_of_class(nodes.Starred))
+        assert len(starred_nodes) == 2
+        for starred in starred_nodes:
+            self.assertIs(next(starred.assigned_stmts()), Uninferable)
+
     def test_assigned_stmts_starred_same_name_identity(self) -> None:
         """Node identity distinguishes starred nodes that share a name."""
         code = """
