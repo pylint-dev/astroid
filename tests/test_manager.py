@@ -3,7 +3,6 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 import os
-import site
 import sys
 import time
 import unittest
@@ -34,6 +33,16 @@ def _get_file_from_object(obj) -> str:
     if IS_JYTHON:
         return obj.__file__.split("$py.class")[0] + ".py"
     return obj.__file__
+
+
+def _load_namespace_package_pth(pth: str) -> None:
+    """Execute a test .pth file with a real sitedir local."""
+    sitedir = str(resources.RESOURCE_PATH)
+    with (resources.RESOURCE_PATH / pth).open(encoding="utf-8") as pth_file:
+        for line in pth_file:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                exec(line)
 
 
 class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
@@ -196,7 +205,7 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
     )
     def test_namespace_package_pth_support(self) -> None:
         pth = "foogle_fax-0.12.5-py2.7-nspkg.pth"
-        site.addpackage(resources.RESOURCE_PATH, pth, [])
+        _load_namespace_package_pth(pth)
 
         try:
             module = self.manager.ast_from_module_name("foogle.fax")
@@ -206,7 +215,8 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
             with self.assertRaises(AstroidImportError):
                 self.manager.ast_from_module_name("foogle.moogle")
         finally:
-            sys.modules.pop("foogle")
+            sys.modules.pop("foogle", None)
+            sys.modules.pop("foogle.crank", None)
 
     @pytest.mark.skipif(
         IS_PYPY,
@@ -214,23 +224,25 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
     )
     def test_nested_namespace_import(self) -> None:
         pth = "foogle_fax-0.12.5-py2.7-nspkg.pth"
-        site.addpackage(resources.RESOURCE_PATH, pth, [])
+        _load_namespace_package_pth(pth)
         try:
             self.manager.ast_from_module_name("foogle.crank")
         finally:
-            sys.modules.pop("foogle")
+            sys.modules.pop("foogle", None)
+            sys.modules.pop("foogle.crank", None)
 
     def test_namespace_and_file_mismatch(self) -> None:
         filepath = unittest.__file__
         ast = self.manager.ast_from_file(filepath)
         self.assertEqual(ast.name, "unittest")
         pth = "foogle_fax-0.12.5-py2.7-nspkg.pth"
-        site.addpackage(resources.RESOURCE_PATH, pth, [])
+        _load_namespace_package_pth(pth)
         try:
             with self.assertRaises(AstroidImportError):
                 self.manager.ast_from_module_name("unittest.foogle.fax")
         finally:
-            sys.modules.pop("foogle")
+            sys.modules.pop("foogle", None)
+            sys.modules.pop("foogle.crank", None)
 
     def _test_ast_from_zip(self, archive: str) -> None:
         sys.modules.pop("mypypa", None)
