@@ -176,18 +176,32 @@ class ProtocolTests(unittest.TestCase):
     def test_assigned_stmts_starred_assignattr(self) -> None:
         """Regression test for https://github.com/pylint-dev/astroid/issues/2646.
 
-        Starred unpacking with an AssignAttr target (e.g. ``*o.attr``)
-        crashed with ``AttributeError: 'AssignAttr' object has no attribute
-        'name'``.
+        Starred with an AssignAttr target crashed on ``.value.name``.
         """
         code = """
         for *o.attr, (*t,) in (): #@
             pass
         """
         assign_stmts = extract_node(code)
-        starred = next(assign_stmts.nodes_of_class(nodes.Starred))
-        # Should not raise AttributeError; yields Uninferable for empty iterable
-        self.assertIs(next(starred.assigned_stmts()), Uninferable)
+        # Both starred nodes must be reachable without AttributeError
+        starred_nodes = list(assign_stmts.nodes_of_class(nodes.Starred))
+        assert len(starred_nodes) == 2
+        for starred in starred_nodes:
+            self.assertIs(next(starred.assigned_stmts()), Uninferable)
+
+    def test_assigned_stmts_starred_same_name_identity(self) -> None:
+        """Node identity distinguishes starred nodes that share a name."""
+        code = """
+        for *a, (*a,) in [(1, 2, (3,))]: #@
+            pass
+        """
+        assign_stmts = extract_node(code)
+        starred_nodes = list(assign_stmts.nodes_of_class(nodes.Starred))
+        assert len(starred_nodes) == 2
+        # Each starred node should resolve independently, not match the other
+        for starred in starred_nodes:
+            result = next(starred.assigned_stmts())
+            assert not isinstance(result, Exception)
 
     def test_assign_stmts_starred_fails(self) -> None:
         # Too many starred
