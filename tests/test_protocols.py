@@ -173,6 +173,22 @@ class ProtocolTests(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(starred_stmts)
 
+    def test_assigned_stmts_starred_assignattr(self) -> None:
+        """Regression test for https://github.com/pylint-dev/astroid/issues/2646.
+
+        Starred unpacking with an AssignAttr target (e.g. ``*o.attr``)
+        crashed with ``AttributeError: 'AssignAttr' object has no attribute
+        'name'``.
+        """
+        code = """
+        for *o.attr, (*t,) in (): #@
+            pass
+        """
+        assign_stmts = extract_node(code)
+        starred = next(assign_stmts.nodes_of_class(nodes.Starred))
+        # Should not raise AttributeError; yields Uninferable for empty iterable
+        self.assertIs(next(starred.assigned_stmts()), Uninferable)
+
     def test_assign_stmts_starred_fails(self) -> None:
         # Too many starred
         self._helper_starred_inference_error("a, *b, *c = (1, 2, 3) #@")

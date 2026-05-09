@@ -7,6 +7,13 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Fix ``AttributeError`` crash in ``starred_assigned_stmts`` when a starred
+  unpacking target is an attribute (e.g. ``*o.attr``) rather than a simple
+  name. The starred-identity check now uses node identity instead of comparing
+  ``.name`` attributes that only exist on ``Name``/``AssignName`` nodes.
+
+  Closes #2646
+
 * Fix ``TypeError`` in ``brain_random`` when ``random.sample`` is called with a
   sequence containing nodes whose ``__init__`` does not accept ``lineno``
   (e.g. ``Module``). The clone helper now filters init params to those the
