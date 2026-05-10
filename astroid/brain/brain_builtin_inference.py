@@ -159,34 +159,72 @@ def on_bootstrap():
     )
 
 
-def _builtin_filter_predicate(node, builtin_name) -> bool:
+# Mapping of builtin name → inference function. Populated by
+# ``register_builtin_transform``; consumed by the single dispatcher transform
+# registered for ``nodes.Call``. This collapses what was previously one
+# transform-list entry per builtin (~19 entries each running their own
+# predicate per Call node) into a single entry that does the
+# ``isinstance``/name lookup once and dispatches via dict.
+_BUILTIN_INFERENCE_FUNCS: dict[
+    str,
+    Callable[[nodes.Call, InferenceContext | None], SuccessfulInferenceResult | None],
+] = {}
+
+
+def _builtin_dispatch_predicate(node: nodes.Call) -> bool:
     # pylint: disable = too-many-boolean-expressions
-    if (
-        builtin_name == "type"
-        and node.root().name == "re"
-        and isinstance(node.func, nodes.Name)
-        and node.func.name == "type"
-        and isinstance(node.parent, nodes.Assign)
-        and len(node.parent.targets) == 1
-        and isinstance(node.parent.targets[0], nodes.AssignName)
-        and node.parent.targets[0].name in {"Pattern", "Match"}
-    ):
-        # Handle re.Pattern and re.Match in brain_re
-        # Match these patterns from stdlib/re.py
-        # ```py
-        # Pattern = type(...)
-        # Match = type(...)
-        # ```
-        return False
-    if isinstance(node.func, nodes.Name):
-        return node.func.name == builtin_name
-    if isinstance(node.func, nodes.Attribute):
+    func = node.func
+    if isinstance(func, nodes.Name):
+        name = func.name
+        if name not in _BUILTIN_INFERENCE_FUNCS:
+            return False
+        if (
+            name == "type"
+            and node.root().name == "re"
+            and isinstance(node.parent, nodes.Assign)
+            and len(node.parent.targets) == 1
+            and isinstance(node.parent.targets[0], nodes.AssignName)
+            and node.parent.targets[0].name in {"Pattern", "Match"}
+        ):
+            # Handle re.Pattern and re.Match in brain_re — they look like
+            # ``Pattern = type(...)`` / ``Match = type(...)`` in stdlib/re.py
+            # and must not be inferred as the builtin ``type`` call.
+            return False
+        return True
+    if isinstance(func, nodes.Attribute):
         return (
-            node.func.attrname == "fromkeys"
-            and isinstance(node.func.expr, nodes.Name)
-            and node.func.expr.name == "dict"
+            func.attrname == "fromkeys"
+            and isinstance(func.expr, nodes.Name)
+            and func.expr.name == "dict"
+            and "dict.fromkeys" in _BUILTIN_INFERENCE_FUNCS
         )
     return False
+
+
+def _builtin_dispatch_transform(
+    node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
+) -> Iterator:
+    func = node.func
+    if isinstance(func, nodes.Name):
+        builtin_name = func.name
+    else:
+        builtin_name = "dict.fromkeys"
+    transform = _BUILTIN_INFERENCE_FUNCS[builtin_name]
+    result = transform(node, context=context)
+    if result:
+        if not result.parent:
+            # Let the transformation function determine
+            # the parent for its result. Otherwise,
+            # we set it to be the node we transformed from.
+            result.parent = node
+
+        if result.lineno is None:
+            result.lineno = node.lineno
+        # Can be a 'Module' see https://github.com/pylint-dev/pylint/issues/4671
+        # We don't have a regression test on this one: tread carefully
+        if hasattr(result, "col_offset") and result.col_offset is None:
+            result.col_offset = node.col_offset
+    return iter([result])
 
 
 def register_builtin_transform(
@@ -197,31 +235,8 @@ def register_builtin_transform(
     The transform function must accept two parameters, a node and
     an optional context.
     """
-
-    def _transform_wrapper(
-        node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator:
-        result = transform(node, context=context)
-        if result:
-            if not result.parent:
-                # Let the transformation function determine
-                # the parent for its result. Otherwise,
-                # we set it to be the node we transformed from.
-                result.parent = node
-
-            if result.lineno is None:
-                result.lineno = node.lineno
-            # Can be a 'Module' see https://github.com/pylint-dev/pylint/issues/4671
-            # We don't have a regression test on this one: tread carefully
-            if hasattr(result, "col_offset") and result.col_offset is None:
-                result.col_offset = node.col_offset
-        return iter([result])
-
-    manager.register_transform(
-        nodes.Call,
-        inference_tip(_transform_wrapper),
-        partial(_builtin_filter_predicate, builtin_name=builtin_name),
-    )
+    del manager  # No longer needed; dispatcher is registered once globally.
+    _BUILTIN_INFERENCE_FUNCS[builtin_name] = transform
 
 
 def _container_generic_inference(
@@ -1040,7 +1055,14 @@ def _infer_str_format_call(
 
 
 def register(manager: AstroidManager) -> None:
-    # Builtins inference
+    # Builtins inference — registered through a single dispatcher to avoid
+    # running 19 separate predicates on every Call node walked by the
+    # transform visitor (#1115).
+    manager.register_transform(
+        nodes.Call,
+        inference_tip(_builtin_dispatch_transform),
+        _builtin_dispatch_predicate,
+    )
     register_builtin_transform(manager, infer_bool, "bool")
     register_builtin_transform(manager, infer_super, "super")
     register_builtin_transform(manager, infer_callable, "callable")

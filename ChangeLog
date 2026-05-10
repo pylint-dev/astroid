@@ -35,6 +35,13 @@ Release date: TBA
 
   Refs #1115
 
+* Collapse the 19 ``register_builtin_transform`` registrations into a single
+  dispatcher transform on ``nodes.Call``. The transform visitor previously
+  ran 19 predicates per Call node, each repeating the same ``isinstance``
+  checks; the dispatcher does them once and routes by name via a dict.
+
+  Refs #1115
+
 * Fix ``TypeError`` in ``brain_random`` when ``random.sample`` is called with a
   sequence containing nodes whose ``__init__`` does not accept ``lineno``
   (e.g. ``Module``). The clone helper now filters init params to those the
