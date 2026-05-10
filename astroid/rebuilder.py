@@ -18,7 +18,12 @@ from tokenize import TokenInfo, generate_tokens
 from typing import TYPE_CHECKING, Final, TypeVar, cast, overload
 
 from astroid import nodes
-from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
+from astroid._ast import (
+    ParserModule,
+    get_parser_module,
+    is_pathological_type_comment,
+    parse_function_type_comment,
+)
 from astroid.const import PY312_PLUS, PY313_PLUS, Context
 from astroid.nodes.utils import Position
 from astroid.typing import InferenceResult
@@ -637,12 +642,15 @@ class TreeRebuilder:
         if not node.type_comment:
             return None
 
+        if is_pathological_type_comment(node.type_comment):
+            # Skip without parsing: deeply nested brackets can crash
+            # ``ast.parse`` with ``MemoryError`` (issue #2993).
+            return None
+
         try:
             type_comment_ast = self._parser_module.parse(node.type_comment)
-        except (SyntaxError, ValueError, MemoryError, RecursionError):
-            # Invalid type comment, just skip it. ``ast.parse`` may raise
-            # ``MemoryError``/``RecursionError``/``ValueError`` on pathological
-            # inputs (e.g. deeply nested braces produced by fuzzers).
+        except SyntaxError:
+            # Invalid type comment, just skip it.
             return None
 
         # For '# type: # any comment' ast.parse returns a Module node,
@@ -662,12 +670,15 @@ class TreeRebuilder:
         if not node.type_comment:
             return None
 
+        if is_pathological_type_comment(node.type_comment):
+            # Skip without parsing: deeply nested brackets can crash
+            # ``ast.parse`` with ``MemoryError`` (issue #2993).
+            return None
+
         try:
             type_comment_ast = parse_function_type_comment(node.type_comment)
-        except (SyntaxError, ValueError, MemoryError, RecursionError):
-            # Invalid type comment, just skip it. ``ast.parse`` may raise
-            # ``MemoryError``/``RecursionError``/``ValueError`` on pathological
-            # inputs (e.g. deeply nested braces produced by fuzzers).
+        except SyntaxError:
+            # Invalid type comment, just skip it.
             return None
 
         if not type_comment_ast:

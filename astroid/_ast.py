@@ -10,6 +10,37 @@ from typing import NamedTuple
 from astroid.const import Context
 
 
+# CPython's parser can raise ``MemoryError`` (instead of a clean
+# ``SyntaxError``) on type comments such as ``i{{{{...`` with deeply nested
+# unclosed brackets. A linear scan lets us reject such pathological inputs
+# before ``ast.parse`` is invoked. The threshold is well below CPython's
+# internal limit (currently 200) yet far above any realistic type expression,
+# whose nesting rarely exceeds single digits.
+TYPE_COMMENT_MAX_BRACKET_DEPTH = 100
+
+
+def _exceeds_bracket_depth(string: str, limit: int) -> bool:
+    """Return whether ``string`` nests brackets more deeply than ``limit``."""
+    depth = 0
+    for char in string:
+        if char in "([{":
+            depth += 1
+            if depth > limit:
+                return True
+        elif char in ")]}" and depth > 0:
+            depth -= 1
+    return False
+
+
+def is_pathological_type_comment(type_comment: str) -> bool:
+    """Detect type comments that would crash ``ast.parse`` with ``MemoryError``.
+
+    Used to short-circuit parsing of fuzzer-style inputs (see issue #2993)
+    before they reach CPython's parser.
+    """
+    return _exceeds_bracket_depth(type_comment, TYPE_COMMENT_MAX_BRACKET_DEPTH)
+
+
 class FunctionType(NamedTuple):
     argtypes: list[ast.expr]
     returns: ast.expr
