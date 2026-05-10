@@ -13,6 +13,15 @@ Release date: TBA
 
   Closes #2646
 
+* Catch ``MemoryError`` (and ``ValueError``) when validating type comments
+  with ``ast.parse``. Pathological type comments produced by fuzzers (e.g.
+  ``# type: i{{{{{{{...``) previously crashed parsing with a ``MemoryError``;
+  astroid now treats them as invalid type comments and skips them.
+
+  Reproduction: https://aletheia-works.github.io/vivarium/repro/astroid/2993/
+
+  Closes #2993
+
 * Fix ``TypeError`` in ``brain_random`` when ``random.sample`` is called with a
   sequence containing nodes whose ``__init__`` does not accept ``lineno``
   (e.g. ``Module``). The clone helper now filters init params to those the

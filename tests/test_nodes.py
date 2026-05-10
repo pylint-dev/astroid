@@ -1514,6 +1514,26 @@ def test_type_comments_invalid_function_comments() -> None:
         assert node.type_comment_args is None
 
 
+def test_type_comments_pathological_assign() -> None:
+    """Regression test for issue #2993.
+
+    A type comment with deeply nested braces causes ``ast.parse`` to raise
+    ``MemoryError`` (or ``ValueError`` on some interpreters). astroid should
+    treat the type comment as invalid instead of crashing.
+    """
+    code = "a = b # type:i" + "{" * 200
+    module = builder.parse(code)
+    assert module.body[0].type_annotation is None
+
+
+def test_type_comments_pathological_function() -> None:
+    """Regression test for issue #2993 covering function type comments."""
+    code = "def func():\n    # type: i" + "{" * 200 + "\n    pass\n"
+    module = builder.parse(code)
+    assert module.body[0].type_comment_returns is None
+    assert module.body[0].type_comment_args is None
+
+
 def test_type_comments_function() -> None:
     module = builder.parse("""
     def func():
