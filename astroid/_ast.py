@@ -9,7 +9,6 @@ from typing import NamedTuple
 
 from astroid.const import Context
 
-
 # CPython's parser can raise ``MemoryError`` (instead of a clean
 # ``SyntaxError``) on type comments such as ``i{{{{...`` with deeply nested
 # unclosed brackets. A linear scan lets us reject such pathological inputs
