@@ -128,7 +128,14 @@ class InferenceContext:
         so the InferenceContext will need be cloned
         """
         # XXX copy lookupname/callcontext ?
-        clone = InferenceContext(self.path.copy(), nodes_inferred=self._nodes_inferred)
+        # Bypass __init__: with __slots__ all attributes are written directly
+        # below, so the conditionals/defaults in __init__ would be wasted work
+        # on what is the hottest constructor in inference (~85k calls per
+        # pandas/frame run, see #1115).
+        clone = InferenceContext.__new__(InferenceContext)
+        clone._nodes_inferred = self._nodes_inferred
+        clone.path = self.path.copy()
+        clone.lookupname = None
         clone.callcontext = self.callcontext
         clone.boundnode = self.boundnode
         clone.extra_context = self.extra_context

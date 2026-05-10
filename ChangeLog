@@ -42,6 +42,13 @@ Release date: TBA
 
   Refs #1115
 
+* Bypass ``__init__`` in ``InferenceContext.clone()`` and write the slots
+  directly. ``clone()`` is called ~85k times per pandas/frame.py pylint run;
+  skipping the conditional defaults shaves measurable time off the hottest
+  constructor in inference.
+
+  Refs #1115
+
 * Fix ``TypeError`` in ``brain_random`` when ``random.sample`` is called with a
   sequence containing nodes whose ``__init__`` does not accept ``lineno``
   (e.g. ``Module``). The clone helper now filters init params to those the
