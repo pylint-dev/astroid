@@ -64,6 +64,8 @@ if TYPE_CHECKING:
 
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
+_SENTINEL: Any = object()
+_COMPUTING_METACLASS: Any = object()
 BUILTIN_DESCRIPTORS = frozenset(
     {"classmethod", "staticmethod", "builtins.classmethod", "builtins.staticmethod"}
 )
@@ -2727,6 +2729,18 @@ class ClassDef(
     def _find_metaclass(
         self, seen: set[ClassDef] | None = None, context: InferenceContext | None = None
     ) -> SuccessfulInferenceResult | None:
+        # Cache the no-context result on the instance. Re-entry during
+        # computation (cyclic class hierarchies) is treated as the cycle
+        # break that ``seen`` provides in the slow path.
+        cache_key = context is None
+        if cache_key:
+            cached = self.__dict__.get("_cached_find_metaclass", _SENTINEL)
+            if cached is _COMPUTING_METACLASS:
+                return None
+            if cached is not _SENTINEL:
+                return cached
+            self.__dict__["_cached_find_metaclass"] = _COMPUTING_METACLASS
+
         if seen is None:
             seen = set()
         seen.add(self)
@@ -2738,6 +2752,9 @@ class ClassDef(
                     klass = parent._find_metaclass(seen)
                     if klass is not None:
                         break
+
+        if cache_key:
+            self.__dict__["_cached_find_metaclass"] = klass
         return klass
 
     def metaclass(

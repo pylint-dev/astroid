@@ -29,6 +29,12 @@ Release date: TBA
 
   Closes #1115
 
+* Cache the result of ``ClassDef._find_metaclass()`` per node. The recursive
+  metaclass lookup walked the MRO on every call; the cache short-circuits
+  re-entry while preserving cycle protection via a sentinel.
+
+  Refs #1115
+
 * Fix ``TypeError`` in ``brain_random`` when ``random.sample`` is called with a
   sequence containing nodes whose ``__init__`` does not accept ``lineno``
   (e.g. ``Module``). The clone helper now filters init params to those the
