@@ -36,9 +36,13 @@ def _get_file_from_object(obj) -> str:
 
 
 def _load_namespace_package_pth(pth: str) -> None:
-    """Execute a test .pth file with a real sitedir local."""
-    sitedir = str(resources.RESOURCE_PATH)
-    _ = sitedir
+    """Execute a test .pth file with a `sitedir` local in scope.
+
+    The .pth fixture reads `sys._getframe(1).f_locals['sitedir']`, so the
+    name must exist as a real local in this function's frame; static
+    analyzers cannot see the use through `exec`.
+    """
+    sitedir = str(resources.RESOURCE_PATH)  # noqa: F841 # used by exec'd .pth
     with (resources.RESOURCE_PATH / pth).open(encoding="utf-8") as pth_file:
         for line in pth_file:
             line = line.strip()
