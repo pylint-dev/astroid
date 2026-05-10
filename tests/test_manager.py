@@ -115,9 +115,12 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
         self._test_ast_from_old_namespace_package_protocol("pkgutil")
 
     def test_ast_from_namespace_pkg_resources(self) -> None:
+        pytest.importorskip("pkg_resources")
         self._test_ast_from_old_namespace_package_protocol("pkg_resources")
 
     def test_identify_old_namespace_package_protocol(self) -> None:
+        pytest.importorskip("pkg_resources")
+
         # Like the above cases, this package follows the old namespace package protocol
         # astroid currently assumes such packages are in sys.modules, so import it
         with warnings.catch_warnings():
