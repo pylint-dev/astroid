@@ -37,12 +37,12 @@ def _get_file_from_object(obj) -> str:
 
 def _load_namespace_package_pth(pth: str) -> None:
     """Execute a test .pth file with a real sitedir local."""
-    sitedir = str(resources.RESOURCE_PATH)
+    sitedir = str(resources.RESOURCE_PATH)  # pylint: disable=unused-variable
     with (resources.RESOURCE_PATH / pth).open(encoding="utf-8") as pth_file:
         for line in pth_file:
             line = line.strip()
             if line and not line.startswith("#"):
-                exec(line)
+                exec(line)  # pylint: disable=exec-used
 
 
 class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
