@@ -639,10 +639,10 @@ class TreeRebuilder:
 
         try:
             type_comment_ast = self._parser_module.parse(node.type_comment)
-        except (SyntaxError, ValueError, MemoryError):
+        except (SyntaxError, ValueError, MemoryError, RecursionError):
             # Invalid type comment, just skip it. ``ast.parse`` may raise
-            # ``MemoryError``/``ValueError`` on pathological inputs (e.g.
-            # deeply nested braces produced by fuzzers).
+            # ``MemoryError``/``RecursionError``/``ValueError`` on pathological
+            # inputs (e.g. deeply nested braces produced by fuzzers).
             return None
 
         # For '# type: # any comment' ast.parse returns a Module node,
@@ -664,10 +664,10 @@ class TreeRebuilder:
 
         try:
             type_comment_ast = parse_function_type_comment(node.type_comment)
-        except (SyntaxError, ValueError, MemoryError):
+        except (SyntaxError, ValueError, MemoryError, RecursionError):
             # Invalid type comment, just skip it. ``ast.parse`` may raise
-            # ``MemoryError``/``ValueError`` on pathological inputs (e.g.
-            # deeply nested braces produced by fuzzers).
+            # ``MemoryError``/``RecursionError``/``ValueError`` on pathological
+            # inputs (e.g. deeply nested braces produced by fuzzers).
             return None
 
         if not type_comment_ast:
