@@ -2183,11 +2183,53 @@ class ClassDef(
 
         :returns: The base classes
         """
+        if recurs:
+            # The full transitive walk amplifies cost on deep MRO chains
+            # (see #1115). Cache it on the instance; ``context`` is
+            # intentionally not part of the key — the result is
+            # path-independent and the walk's own ``yielded`` set handles
+            # cycle prevention. Caching also breaks recursion when a
+            # ``_post_build`` callback walks a self-referential hierarchy
+            # (e.g. ``string.Template = A`` after ``class A(Template)``).
+            cached = self.__dict__.get("_cached_ancestors")
+            if cached is not None:
+                yield from cached
+                return
+            incomplete: list[bool] = [False]
+            result = tuple(
+                self._walk_ancestors(
+                    recurs=True,
+                    context=InferenceContext(),
+                    _incomplete=incomplete,
+                )
+            )
+            self.__dict__["_cached_ancestors"] = result
+            # Caches populated during ``_post_build`` may rest on bases
+            # whose inference tips are not yet registered. Record them so
+            # the outermost ``_post_build`` can invalidate stale entries
+            # (incomplete walks and any clean walk that traversed one).
+            # pylint: disable-next=import-outside-toplevel
+            from astroid.builder import AstroidBuilder
+
+            if AstroidBuilder._post_build_depth > 0:
+                AstroidBuilder._post_build_cached_classes.add(self)
+                if incomplete[0]:
+                    AstroidBuilder._post_build_dirty_classes.add(self)
+            yield from result
+            return
+        if context is None:
+            context = InferenceContext()
+        yield from self._walk_ancestors(recurs=False, context=context)
+
+    def _walk_ancestors(
+        self,
+        recurs: bool,
+        context: InferenceContext,
+        _incomplete: list[bool] | None = None,
+    ) -> Generator[ClassDef]:
         # FIXME: should be possible to choose the resolution order
         # FIXME: inference make infinite loops possible here
         yielded = {self}
-        if context is None:
-            context = InferenceContext()
         if not self.bases and self.qname() != "builtins.object":
             # This should always be a ClassDef (which we don't assert for)
             yield builtin_lookup("object")[1][0]  # type: ignore[misc]
@@ -2196,12 +2238,14 @@ class ClassDef(
         for stmt in self.bases:
             with context.restore_path():
                 try:
+                    saw_class = False
                     for baseobj in stmt.infer(context):
                         if not isinstance(baseobj, ClassDef):
                             if isinstance(baseobj, bases.Instance):
                                 baseobj = baseobj._proxied
                             else:
                                 continue
+                        saw_class = True
                         if not baseobj.hide:
                             if baseobj in yielded:
                                 continue
@@ -2217,7 +2261,15 @@ class ClassDef(
                                 continue
                             yielded.add(grandpa)
                             yield grandpa
+                    if not saw_class and _incomplete is not None:
+                        # A base resolved to neither a ClassDef nor an
+                        # Instance — likely an inference tip not yet
+                        # registered (e.g. ``namedtuple(...)`` Call during
+                        # module build). Signal that this walk is provisional.
+                        _incomplete[0] = True
                 except InferenceError:
+                    if _incomplete is not None:
+                        _incomplete[0] = True
                     continue
 
     def local_attr_ancestors(self, name, context: InferenceContext | None = None):

@@ -22,6 +22,13 @@ Release date: TBA
 
   Closes #2993
 
+* Cache the result of ``ClassDef.ancestors()`` per node when called with
+  ``recurs=True``. The recursive walk previously recomputed ancestors of
+  shared base classes on every call; the cache eliminates that amplification
+  on deep MRO chains.
+
+  Closes #1115
+
 * Fix ``TypeError`` in ``brain_random`` when ``random.sample`` is called with a
   sequence containing nodes whose ``__init__`` does not accept ``lineno``
   (e.g. ``Module``). The clone helper now filters init params to those the
