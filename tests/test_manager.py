@@ -42,9 +42,8 @@ def _load_namespace_package_pth(pth: str) -> None:
     name must exist as a real local in this function's frame; static
     analyzers cannot see the use through `exec`.
     """
-    sitedir = str(
-        resources.RESOURCE_PATH
-    )  # noqa: F841 # pylint: disable=unused-variable  # used by exec'd .pth
+    # `sitedir` is read by exec()'d .pth code via sys._getframe; intentional.
+    sitedir = str(resources.RESOURCE_PATH)  # pylint: disable=unused-variable  # noqa: F841
     with (resources.RESOURCE_PATH / pth).open(encoding="utf-8") as pth_file:
         for line in pth_file:
             line = line.strip()
@@ -78,9 +77,7 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIn("unittest", self.manager.astroid_cache)
 
     def test_ast_from_file_name_astro_builder_exception(self) -> None:
-        self.assertRaises(
-            AstroidBuildingError, self.manager.ast_from_file, "unhandledName"
-        )
+        self.assertRaises(AstroidBuildingError, self.manager.ast_from_file, "unhandledName")
 
     def test_ast_from_string(self) -> None:
         filepath = unittest.__file__
@@ -146,14 +143,10 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
             # pylint: disable-next=import-outside-toplevel
             import tests.testdata.python3.data.path_pkg_resources_1.package.foo as _  # noqa
 
-        self.assertTrue(
-            util.is_namespace("tests.testdata.python3.data.path_pkg_resources_1")
-        )
+        self.assertTrue(util.is_namespace("tests.testdata.python3.data.path_pkg_resources_1"))
 
     def test_submodule_homonym_with_non_module(self) -> None:
-        self.assertFalse(
-            util.is_namespace("tests.testdata.python3.data.parent_of_homonym.doc")
-        )
+        self.assertFalse(util.is_namespace("tests.testdata.python3.data.parent_of_homonym.doc"))
 
     def test_module_is_not_namespace(self) -> None:
         self.assertFalse(util.is_namespace("tests.testdata.python3.data.all"))
@@ -258,9 +251,7 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
         module = self.manager.ast_from_module_name("mypypa")
         self.assertEqual(module.name, "mypypa")
         end = os.path.join(archive, "mypypa")
-        self.assertTrue(
-            module.file.endswith(end), f"{module.file} doesn't endswith {end}"
-        )
+        self.assertTrue(module.file.endswith(end), f"{module.file} doesn't endswith {end}")
 
     @contextmanager
     def _restore_package_cache(self) -> Iterator:
@@ -278,21 +269,15 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_ast_from_module_name_egg(self) -> None:
         with self._restore_package_cache():
-            self._test_ast_from_zip(
-                os.path.sep.join(["data", os.path.normcase("MyPyPa-0.1.0-py2.5.egg")])
-            )
+            self._test_ast_from_zip(os.path.sep.join(["data", os.path.normcase("MyPyPa-0.1.0-py2.5.egg")]))
 
     def test_ast_from_module_name_zip(self) -> None:
         with self._restore_package_cache():
-            self._test_ast_from_zip(
-                os.path.sep.join(["data", os.path.normcase("MyPyPa-0.1.0-py2.5.zip")])
-            )
+            self._test_ast_from_zip(os.path.sep.join(["data", os.path.normcase("MyPyPa-0.1.0-py2.5.zip")]))
 
     def test_ast_from_module_name_pyz(self) -> None:
         try:
-            linked_file_name = os.path.join(
-                resources.RESOURCE_PATH, "MyPyPa-0.1.0-py2.5.pyz"
-            )
+            linked_file_name = os.path.join(resources.RESOURCE_PATH, "MyPyPa-0.1.0-py2.5.pyz")
             os.symlink(
                 os.path.join(resources.RESOURCE_PATH, "MyPyPa-0.1.0-py2.5.zip"),
                 linked_file_name,
@@ -310,9 +295,7 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
             module = self.manager.ast_from_module_name("xxx.test")
             self.assertEqual(module.name, "xxx.test")
             end = os.path.join(archive_path, "xxx", "test")
-            self.assertTrue(
-                module.file.endswith(end), f"{module.file} doesn't endswith {end}"
-            )
+            self.assertTrue(module.file.endswith(end), f"{module.file} doesn't endswith {end}")
 
     def test_zip_import_data(self) -> None:
         """Check if zip_import_data works."""
@@ -506,9 +489,7 @@ class ClearCacheTest(unittest.TestCase):
 
         # Did the hits or misses actually happen?
         incremented_cache_infos = [lru.cache_info() for lru in lrus]
-        for incremented_cache, baseline_cache in zip(
-            incremented_cache_infos, baseline_cache_infos
-        ):
+        for incremented_cache, baseline_cache in zip(incremented_cache_infos, baseline_cache_infos):
             with self.subTest(incremented_cache=incremented_cache):
                 self.assertGreater(
                     incremented_cache.hits + incremented_cache.misses,
@@ -521,9 +502,7 @@ class ClearCacheTest(unittest.TestCase):
 
         # The cache sizes are now as low or lower than the original baseline
         cleared_cache_infos = [lru.cache_info() for lru in lrus]
-        for cleared_cache, baseline_cache in zip(
-            cleared_cache_infos, baseline_cache_infos
-        ):
+        for cleared_cache, baseline_cache in zip(cleared_cache_infos, baseline_cache_infos):
             with self.subTest(cleared_cache=cleared_cache):
                 # less equal because the "baseline" might have had multiple calls to bootstrap()
                 self.assertLessEqual(cleared_cache.currsize, baseline_cache.currsize)
