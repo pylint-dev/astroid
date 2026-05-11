@@ -3,8 +3,10 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 import os
+import re
 import sys
 import time
+import types
 import unittest
 import warnings
 from collections.abc import Iterator
@@ -35,21 +37,49 @@ def _get_file_from_object(obj) -> str:
     return obj.__file__
 
 
-def _load_namespace_package_pth(pth: str) -> None:
-    """Execute a test .pth file with a `sitedir` local in scope.
+_NSPKG_PTH_PARTS_RE = re.compile(r"\*\(([^)]+)\)")
 
-    The .pth fixture reads `sys._getframe(1).f_locals['sitedir']`, so the
-    name must exist as a real local in this function's frame; the read
-    happens via `sys._getframe` inside `exec()`d code below.
+
+def _parse_pth_package_parts(line: str) -> tuple[str, ...]:
+    """Extract the namespace package tuple from a setuptools nspkg .pth line."""
+    match = _NSPKG_PTH_PARTS_RE.search(line)
+    if not match:
+        return ()
+    parts = []
+    for token in match.group(1).split(","):
+        token = token.strip().strip("'\"")
+        if token:
+            parts.append(token)
+    return tuple(parts)
+
+
+def _load_namespace_package_pth(pth: str) -> None:
+    """Apply a setuptools-style namespace package .pth fixture without exec().
+
+    Each non-comment line in the fixture wires up one namespace package by
+    appending a directory under `resources.RESOURCE_PATH` to that package's
+    ``__path__``. We parse the package tuple out of the line and replay the
+    same effect here.
     """
     sitedir = str(resources.RESOURCE_PATH)
     with (resources.RESOURCE_PATH / pth).open(encoding="utf-8") as pth_file:
-        for line in pth_file:
-            line = line.strip()
-            if line and not line.startswith("#"):
-                # `sitedir` is read by .pth code via sys._getframe(1).f_locals.
-                _ = sitedir  # mark as used for static analyzers
-                exec(line)  # pylint: disable=exec-used
+        for raw_line in pth_file:
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = _parse_pth_package_parts(line)
+            if not parts:
+                continue
+            package_name = ".".join(parts)
+            package_path = os.path.join(sitedir, *parts)
+            if os.path.exists(os.path.join(package_path, "__init__.py")):
+                continue
+            module = sys.modules.setdefault(
+                package_name, types.ModuleType(package_name)
+            )
+            mod_path = module.__dict__.setdefault("__path__", [])
+            if package_path not in mod_path:
+                mod_path.append(package_path)
 
 
 class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
