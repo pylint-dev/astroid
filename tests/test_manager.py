@@ -42,7 +42,9 @@ def _load_namespace_package_pth(pth: str) -> None:
     name must exist as a real local in this function's frame; static
     analyzers cannot see the use through `exec`.
     """
-    sitedir = str(resources.RESOURCE_PATH)  # noqa: F841 # pylint: disable=unused-variable  # used by exec'd .pth
+    sitedir = str(
+        resources.RESOURCE_PATH
+    )  # noqa: F841 # pylint: disable=unused-variable  # used by exec'd .pth
     with (resources.RESOURCE_PATH / pth).open(encoding="utf-8") as pth_file:
         for line in pth_file:
             line = line.strip()
