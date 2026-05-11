@@ -39,17 +39,16 @@ def _load_namespace_package_pth(pth: str) -> None:
     """Execute a test .pth file with a `sitedir` local in scope.
 
     The .pth fixture reads `sys._getframe(1).f_locals['sitedir']`, so the
-    name must exist as a real local in this function's frame; static
-    analyzers cannot see the use through `exec`.
+    name must exist as a real local in this function's frame; the read
+    happens via `sys._getframe` inside `exec()`d code below.
     """
-    # `sitedir` is read by exec()'d .pth code via sys._getframe; intentional.
-    sitedir = str(
-        resources.RESOURCE_PATH
-    )  # pylint: disable=unused-variable  # noqa: F841
+    sitedir = str(resources.RESOURCE_PATH)
     with (resources.RESOURCE_PATH / pth).open(encoding="utf-8") as pth_file:
         for line in pth_file:
             line = line.strip()
             if line and not line.startswith("#"):
+                # `sitedir` is read by .pth code via sys._getframe(1).f_locals.
+                _ = sitedir  # mark as used for static analyzers
                 exec(line)  # pylint: disable=exec-used
 
 
