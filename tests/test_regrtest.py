@@ -542,3 +542,34 @@ def test_regression_parse_deeply_nested_parentheses() -> None:
         SyntaxError if platform.python_implementation() == "PyPy" else MemoryError
     )
     assert isinstance(ctx.value.error, expected)
+
+
+def test_get_assign_nodes_does_not_recurse_on_long_if_elif() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/786.
+
+    Auto-generated code (e.g. Apache Thrift bindings) often contains long
+    ``if/elif`` chains inside a single method. The traversal in
+    ``_get_assign_nodes`` used to be recursive, hitting ``RecursionError``
+    once the chain grew past the interpreter's recursion limit. The algorithm
+    was made iterative in 1896ba71. Run the historically-failing case under a
+    tight recursion limit to guard against regression.
+    """
+    lines = [
+        "class TestClass:",
+        "    def m(self):",
+        "        if True:",
+        "            pass",
+    ]
+    for _ in range(118):
+        lines += ["        elif True:", "            pass"]
+    src = "\n".join(lines)
+
+    original_limit = sys.getrecursionlimit()
+    sys.setrecursionlimit(1000)
+    try:
+        module = parse(src)
+        method = module.body[0].body[0]
+        # Trigger the historically-recursive traversal.
+        list(method.nodes_of_class(nodes.AssignName))
+    finally:
+        sys.setrecursionlimit(original_limit)
