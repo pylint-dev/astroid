@@ -13,6 +13,13 @@ Release date: TBA
 
   Closes #2646
 
+* Wrap assignment expressions (``:=``) in parentheses when emitting
+  ``as_string`` output so the rendered code remains syntactically valid in
+  contexts such as comparisons, where Python requires the walrus expression
+  to be parenthesized.
+
+  Closes #2668
+
 * Fix ``TypeError`` in ``brain_random`` when ``random.sample`` is called with a
   sequence containing nodes whose ``__init__`` does not accept ``lineno``
   (e.g. ``Module``). The clone helper now filters init params to those the

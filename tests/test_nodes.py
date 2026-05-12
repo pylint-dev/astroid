@@ -1683,13 +1683,31 @@ def test_assignment_expression() -> None:
     assert first.target.name == "a"
     assert isinstance(first.value, nodes.Const)
     assert first.value.value == 1
-    assert first.as_string() == "a := 1"
+    assert first.as_string() == "(a := 1)"
 
     assert isinstance(second.target, nodes.AssignName)
     assert second.target.name == "b"
     assert isinstance(second.value, nodes.Name)
     assert second.value.name == "test"
-    assert second.as_string() == "b := test"
+    assert second.as_string() == "(b := test)"
+
+
+def test_assignment_expression_as_string() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/2668."""
+    code = "if attn_output.size() != (size := (1, 2, 3, 4)):\n    pass"
+    rendered = astroid.extract_node(code).as_string()
+    assert "(size := (1, 2, 3, 4))" in rendered
+    compile(rendered, "<astroid-as-string>", "exec")
+
+
+def test_assignment_expression_compare_operands_as_string() -> None:
+    """NamedExpr operands always render with their own parens."""
+    compare = astroid.parse("if (a := 10) != (a := 10):\n    pass").body[0].test
+
+    assert isinstance(compare, nodes.Compare)
+    assert compare.left.as_string() == "(a := 10)"
+    assert compare.ops[0][1].as_string() == "(a := 10)"
+    assert compare.as_string() == "(a := 10) != (a := 10)"
 
 
 def test_assignment_expression_in_functiondef() -> None:
