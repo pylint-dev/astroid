@@ -173,6 +173,48 @@ class ProtocolTests(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(starred_stmts)
 
+    def test_assigned_stmts_starred_assignattr(self) -> None:
+        """Regression test for https://github.com/pylint-dev/astroid/issues/2646.
+
+        Starred with an AssignAttr target crashed on ``.value.name``.
+        """
+        code = """
+        for *o.attr, (*t,) in (): #@
+            pass
+        """
+        assign_stmts = extract_node(code)
+        # Both starred nodes must be reachable without AttributeError
+        starred_nodes = list(assign_stmts.nodes_of_class(nodes.Starred))
+        assert len(starred_nodes) == 2
+        for starred in starred_nodes:
+            self.assertIs(next(starred.assigned_stmts()), Uninferable)
+
+    def test_assigned_stmts_starred_subscript_target(self) -> None:
+        """Starred with a Subscript target must not crash on ``.value.name``."""
+        code = """
+        for *d[0], (*t,) in (): #@
+            pass
+        """
+        assign_stmts = extract_node(code)
+        starred_nodes = list(assign_stmts.nodes_of_class(nodes.Starred))
+        assert len(starred_nodes) == 2
+        for starred in starred_nodes:
+            self.assertIs(next(starred.assigned_stmts()), Uninferable)
+
+    def test_assigned_stmts_starred_same_name_identity(self) -> None:
+        """Node identity distinguishes starred nodes that share a name."""
+        code = """
+        for *a, (*a,) in [(1, 2, (3,))]: #@
+            pass
+        """
+        assign_stmts = extract_node(code)
+        starred_nodes = list(assign_stmts.nodes_of_class(nodes.Starred))
+        assert len(starred_nodes) == 2
+        # Each starred node should resolve independently, not match the other
+        for starred in starred_nodes:
+            result = next(starred.assigned_stmts())
+            assert not isinstance(result, Exception)
+
     def test_assign_stmts_starred_fails(self) -> None:
         # Too many starred
         self._helper_starred_inference_error("a, *b, *c = (1, 2, 3) #@")
