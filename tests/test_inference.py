@@ -7647,3 +7647,65 @@ def test_augassign_list_tuple_does_not_mutate_initial_value():
     inferred = next(module.body[-1].value.infer())
     assert inferred.as_string() == "[0, 1, 1]"
     assert module.body[0].value.as_string() == "[0]"
+
+
+def test_bool_call_in_or_does_not_recurse() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/878.
+
+    Inferring ``v = bool() or 1`` used to bounce between
+    ``_infer_method_result_truth`` and ``bool_value`` until ``RecursionError``.
+    Run under a tight recursion limit to guard against regression.
+    """
+    original_limit = sys.getrecursionlimit()
+    sys.setrecursionlimit(1000)
+    try:
+        node = extract_node("v = bool() or 1  #@").value
+        inferred = list(node.infer())
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], nodes.Const)
+        assert inferred[0].value == 1
+    finally:
+        sys.setrecursionlimit(original_limit)
+
+
+def test_tuple_unpack_from_dict_return_not_str() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/1006.
+
+    astroid 2.5.7 mis-inferred the second element of
+    ``_, mylist = self.check(self.load())`` as a ``str`` (a dict key type
+    leaking through the tuple unpack), triggering a false ``E1101`` on
+    ``mylist.append(...)``. Current behavior infers ``Uninferable``, which is
+    enough to avoid the false positive.
+    """
+    code = textwrap.dedent("""
+        def S_OK(value=None):
+            return {'OK': True, 'Value': value}
+
+
+        class FooBar:
+            def __init__(self):
+                self.__initStatus = S_OK()
+
+            def check(self, result):
+                return result["Value"]
+
+            def load(self):
+                if not self.__initStatus['OK']:
+                    return self.__initStatus
+                return S_OK((None, ["Hello"]))
+
+            def connect(self):
+                _, mylist = self.check(self.load())
+                mylist  #@
+    """)
+    node = extract_node(code)
+    for item in node.inferred():
+        if isinstance(item, nodes.Const):
+            assert not isinstance(item.value, str), (
+                "mylist must not be inferred as a str — that was the historical "
+                "false-positive trigger for E1101."
+            )
+        if isinstance(item, Instance):
+            assert (
+                item.pytype() != "builtins.str"
+            ), "mylist must not be inferred as a str instance."

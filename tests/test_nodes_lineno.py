@@ -162,6 +162,20 @@ class TestLinenoColOffset:
         # fmt: on
 
     @staticmethod
+    def test_end_lineno_call_multiline() -> None:
+        """Regression test for https://github.com/pylint-dev/astroid/issues/784.
+
+        ``tolineno`` used to return 2 (the line of the closing ``]``) instead of
+        the closing ``)`` line, disagreeing with ``ast.end_lineno``.
+        """
+        code = '"".join(\n\t["", ""]\n)'
+        module = astroid.parse(code)
+        call = module.body[0].value
+        assert isinstance(call, nodes.Call)
+        assert call.tolineno == 3
+        assert call.end_lineno == 3
+
+    @staticmethod
     def test_end_lineno_assignment() -> None:
         """Assign, AnnAssign, AugAssign."""
         code = textwrap.dedent("""
