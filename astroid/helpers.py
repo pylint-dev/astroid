@@ -113,13 +113,14 @@ def _object_type_is_subclass(
     # strict compatibility with issubclass
     # issubclass(type, (object, 1)) evaluates to true
     # issubclass(object, (1, type)) raises TypeError
+    obj_mro = obj_type.mro()
     for klass in class_seq:
         if isinstance(klass, util.UninferableBase):
             raise AstroidTypeError(
                 "arg 2 must be a type or tuple of types, not <class 'astroid.util.UninferableBase'>"
             )
 
-        for obj_subclass in obj_type.mro():
+        for obj_subclass in obj_mro:
             if obj_subclass == klass:
                 return True
     return False
