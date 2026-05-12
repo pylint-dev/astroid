@@ -8,7 +8,7 @@ import unittest
 
 import pytest
 
-from astroid import nodes, objects, util
+from astroid import bases, nodes, objects, util
 from astroid.builder import _extract_single_node, extract_node
 
 
@@ -151,3 +151,16 @@ class Number:
 """)
         inferit = function_def.infer_call_result(function_def, context=None)
         assert [a.name for a in inferit] == [util.Uninferable]
+
+
+def test_slice_with_starred_args() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/186.
+
+    The builtin arg-count check used to refuse to infer when ``Call.args``
+    contained a ``Starred`` node, e.g. ``slice(*(1, 2, 3))``.
+    """
+    node = extract_node("slice(*(1, 2, 3))  #@")
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].pytype() == "builtins.slice"

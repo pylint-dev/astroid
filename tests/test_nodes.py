@@ -2278,3 +2278,32 @@ def test_str_large_int_getitem_no_crash() -> None:
     # Trigger the error path that formats the value
     with pytest.raises(AstroidTypeError, match=r"too large to display|int"):
         inferred.getitem(nodes.Const(0))
+
+
+def test_chained_attribute_parent_pointer() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/272.
+
+    The inner Attribute (``removed.tags``) in a chained call ``removed.tags.extend()``
+    used to have its ``.parent`` pointing to the wrong node instead of the
+    enclosing outer Attribute.
+    """
+    module = astroid.parse(textwrap.dedent("""
+            class Tags:
+                def extend(self): return 42
+            class Removed:
+                def __init__(self):
+                    self.tags = Tags()
+
+            removed = Removed()
+            removed.tags.extend()
+            """))
+    expr = module.body[-1]
+    callfunc = expr.value
+    assert isinstance(callfunc, nodes.Call)
+    outer_attr = callfunc.func
+    assert isinstance(outer_attr, nodes.Attribute)
+    assert outer_attr.attrname == "extend"
+    inner_attr = outer_attr.expr
+    assert isinstance(inner_attr, nodes.Attribute)
+    assert inner_attr.attrname == "tags"
+    assert inner_attr.parent is outer_attr
