@@ -38,8 +38,8 @@ Contributors
 - Artem Yurchenko <44875844+temyurchenko@users.noreply.github.com>
 - David Liu <david@cs.toronto.edu>
 - Alexandre Fayolle <alexandre.fayolle@logilab.fr>
-- Eevee (Alex Munroe) <amunroe@yelp.com>
 - Emmanuel Ferdman <emmanuelferdman@gmail.com>
+- Eevee (Alex Munroe) <amunroe@yelp.com>
 - David Gilman <davidgilman1@gmail.com>
 - Zen Lee <53538590+zenlyj@users.noreply.github.com>
 - Tushar Sadhwani <tushar.sadhwani000@gmail.com>
@@ -48,6 +48,7 @@ Contributors
 - Hugo van Kemenade <hugovk@users.noreply.github.com>
 - Calen Pennington <calen.pennington@gmail.com>
 - Antonio <antonio@zoftko.com>
+- Fridayworks <aifriday700@gmail.com>
 - Akhil Kamat <akhil.kamat@gmail.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Phil Schaf <flying-sheep@web.de>
@@ -106,12 +107,13 @@ Contributors
 - David Euresti <github@euresti.com>
 - David Douard <david.douard@logilab.fr>
 - David Cain <davidjosephcain@gmail.com>
+- Casey Jones <731937+doctorcolossus@users.noreply.github.com>
 - Anthony Truchet <anthony.truchet@logilab.fr>
 - Anthony Sottile <asottile@umich.edu>
 - Alexander Shadchin <alexandr.shadchin@gmail.com>
-- Fridayworks <aifriday700@gmail.com>
 - wgehalo <wgehalo@gmail.com>
 - tejaschauhan36912 <59693377+tejaschauhan36912@users.noreply.github.com>
+- sergiochan <yuheng9211@qq.com>
 - rr- <rr-@sakuya.pl>
 - raylu <lurayl@gmail.com>
 - plucury <plucury@gmail.com>
@@ -163,6 +165,7 @@ Contributors
 - Jörg Thalheim <Mic92@users.noreply.github.com>
 - Jérome Perrin <perrinjerome@gmail.com>
 - JulianJvn <128477611+JulianJvn@users.noreply.github.com>
+- Joshix-1 <57299889+Joshix-1@users.noreply.github.com>
 - Josef Kemetmüller <josef.kemetmueller@gmail.com>
 - Jonathan Striebel <jstriebel@users.noreply.github.com>
 - John Belmonte <john@neggie.net>
@@ -220,8 +223,6 @@ Contributors
 - Alexander Scheel <alexander.m.scheel@gmail.com>
 - Alexander Presnyakov <flagist0@gmail.com>
 - Ahmed Azzaoui <ahmed.azzaoui@engie.com>
-- Casey Jones <731937+doctorcolossus@users.noreply.github.com>
-- sergiochan <yuheng9211@qq.com>
 
 Co-Author
 ---------

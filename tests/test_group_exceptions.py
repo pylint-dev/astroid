@@ -126,12 +126,12 @@ def test_star_exceptions_infer_exceptions() -> None:
     assert isinstance(node, nodes.TryStar)
     inferred_ve = next(node.handlers[0].statement().name.infer())
     assert inferred_ve.name == "ExceptionGroup"
-    assert isinstance(inferred_ve.getattr("exceptions")[0], nodes.List)
+    assert isinstance(inferred_ve.getattr("exceptions")[0], nodes.Tuple)
     assert (
         inferred_ve.getattr("exceptions")[0].elts[0].pytype() == "builtins.ValueError"
     )
 
     inferred_te = next(node.handlers[1].statement().name.infer())
     assert inferred_te.name == "ExceptionGroup"
-    assert isinstance(inferred_te.getattr("exceptions")[0], nodes.List)
+    assert isinstance(inferred_te.getattr("exceptions")[0], nodes.Tuple)
     assert inferred_te.getattr("exceptions")[0].elts[0].pytype() == "builtins.TypeError"
