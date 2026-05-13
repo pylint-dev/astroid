@@ -444,15 +444,12 @@ def arguments_assigned_stmts(
     return _arguments_infer_argname(self, node_name, context)
 
 
-def _is_ellipsis_placeholder(value: nodes.NodeNG) -> bool:
-    """True if ``value`` is the stub placeholder ``...`` (bare ``Ellipsis``)."""
-    return isinstance(value, nodes.Const) and value.value is Ellipsis
-
-
-def _has_annotation(
+def _is_ellipsis_placeholder_assignment(
     assign: nodes.AugAssign | nodes.Assign | nodes.AnnAssign | nodes.TypeAlias,
 ) -> bool:
-    """True if ``assign`` carries a PEP 526 annotation or a PEP 484 ``# type:`` comment."""
+    """True when ``assign`` uses ``...`` as a stub placeholder for an annotated name."""
+    if not (isinstance(assign.value, nodes.Const) and assign.value.value is Ellipsis):
+        return False
     if isinstance(assign, nodes.AnnAssign):
         return assign.annotation is not None
     return isinstance(assign, nodes.Assign) and assign.type_annotation is not None
@@ -466,7 +463,7 @@ def assign_assigned_stmts(
     assign_path: list[int] | None = None,
 ) -> Any:
     if not assign_path:
-        if _is_ellipsis_placeholder(self.value) and _has_annotation(self):
+        if _is_ellipsis_placeholder_assignment(self):
             yield util.Uninferable
             return None
         yield self.value
