@@ -1705,8 +1705,8 @@ def test_assignment_expression_compare_operands_as_string() -> None:
     compare = astroid.parse("if (a := 10) != (a := 10):\n    pass").body[0].test
 
     assert isinstance(compare, nodes.Compare)
-    assert compare.left.as_string() == "(a := 10)"
-    assert compare.ops[0][1].as_string() == "(a := 10)"
+    assert compare.left.as_string() == "a := 10"
+    assert compare.ops[0][1].as_string() == "a := 10"
     assert compare.as_string() == "(a := 10) != (a := 10)"
 
 
