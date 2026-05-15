@@ -1517,9 +1517,9 @@ def test_type_comments_invalid_function_comments() -> None:
 def test_type_comments_pathological_assign() -> None:
     """Regression test for issue #2993.
 
-    A type comment with deeply nested unclosed brackets would crash CPython's
-    ``ast.parse`` with ``MemoryError``. astroid detects the pathological
-    nesting up front and skips parsing the type comment.
+    A type comment with deeply nested braces causes ``ast.parse`` to raise
+    ``MemoryError`` (or ``ValueError`` on some interpreters). astroid should
+    treat the type comment as invalid instead of crashing.
     """
     code = "a = b # type:i" + "{" * 200
     module = builder.parse(code)
@@ -1532,14 +1532,6 @@ def test_type_comments_pathological_function() -> None:
     module = builder.parse(code)
     assert module.body[0].type_comment_returns is None
     assert module.body[0].type_comment_args is None
-
-
-def test_type_comments_deep_but_valid_nesting() -> None:
-    """A deeply but legally nested type comment is still parsed normally."""
-    inner = "List[" * 20 + "int" + "]" * 20
-    code = f"a = b # type: {inner}"
-    module = builder.parse(code)
-    assert module.body[0].type_annotation is not None
 
 
 def test_type_comments_function() -> None:

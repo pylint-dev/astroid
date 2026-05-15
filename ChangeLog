@@ -13,15 +13,15 @@ Release date: TBA
 
   Closes #2646
 
-* Reject type comments with pathologically deep bracket nesting before
-  invoking ``ast.parse``. Inputs such as ``# type: i{{{{{{{...`` previously
-  crashed module parsing with ``MemoryError`` (or ``RecursionError`` on some
-  runtimes) because CPython's parser exhausts memory before it can return a
-  clean ``SyntaxError``. ``check_type_comment`` and
-  ``check_function_type_comment`` now skip any type comment whose bracket
-  depth exceeds ``TYPE_COMMENT_MAX_BRACKET_DEPTH`` (100, well above any
-  realistic type expression and well below CPython's internal limit) without
-  attempting to parse it.
+* Catch ``MemoryError``/``RecursionError`` (and ``ValueError``) when validating
+  type comments with ``ast.parse``. Pathological type comments produced by
+  fuzzers (e.g. ``# type: i{{{{{{{...``) previously crashed parsing with a
+  ``MemoryError`` or ``RecursionError`` depending on the runtime; astroid now
+  treats them as invalid type comments and skips them, mirroring the f-string
+  fix from #2762.
+
+  Reproduction: https://aletheia-works.github.io/vivarium/repro/astroid/2993/
+  (recipe: ``aletheia-works/vivarium`` ``src/layer1_wasm/astroid-2993``).
 
   Closes #2993
 
