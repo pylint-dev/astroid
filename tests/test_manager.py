@@ -602,3 +602,23 @@ class ClearCacheTest(unittest.TestCase):
         isinstance_call = astroid.extract_node("isinstance(1, int)")
         inferred = next(isinstance_call.infer())
         self.assertIs(inferred.value, True)
+
+
+class NamespacePthParserTest(unittest.TestCase):
+    """Direct coverage for the .pth parsing helpers used by namespace tests."""
+
+    def test_parse_extracts_quoted_tuple(self) -> None:
+        line = "import sys; p = os.path.join(s, *('foogle', 'crank'))"
+        self.assertEqual(_parse_pth_package_parts(line), ("foogle", "crank"))
+
+    def test_parse_handles_double_quotes_and_whitespace(self) -> None:
+        line = '*(  "foo" ,  "bar" )'
+        self.assertEqual(_parse_pth_package_parts(line), ("foo", "bar"))
+
+    def test_parse_skips_empty_tokens(self) -> None:
+        line = "*('foo', '', 'bar',)"
+        self.assertEqual(_parse_pth_package_parts(line), ("foo", "bar"))
+
+    def test_parse_returns_empty_when_no_match(self) -> None:
+        self.assertEqual(_parse_pth_package_parts("# comment only"), ())
+        self.assertEqual(_parse_pth_package_parts(""), ())

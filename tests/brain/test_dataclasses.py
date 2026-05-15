@@ -728,7 +728,8 @@ def test_non_dataclass_is_not_dataclass() -> None:
 
 def test_kw_only_sentinel() -> None:
     """Test that the KW_ONLY sentinel doesn't get added to the fields."""
-    node_one, node_two = astroid.extract_node("""
+    node_one, node_two, node_three = astroid.extract_node("""
+    import dataclasses
     from dataclasses import dataclass, KW_ONLY
     from dataclasses import KW_ONLY as keyword_only
 
@@ -745,13 +746,18 @@ def test_kw_only_sentinel() -> None:
         y: str
 
     B.__init__  #@
+
+    @dataclass
+    class C:
+        _: dataclasses.KW_ONLY
+        y: str
+
+    C.__init__  #@
     """)
     expected = ["self", "y"]
-    init = next(node_one.infer())
-    assert [a.name for a in init.args.args] == expected
-
-    init = next(node_two.infer())
-    assert [a.name for a in init.args.args] == expected
+    for node in (node_one, node_two, node_three):
+        init = next(node.infer())
+        assert [a.name for a in init.args.args] == expected
 
 
 def test_kw_only_decorator() -> None:
