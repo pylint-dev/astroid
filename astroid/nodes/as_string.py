@@ -439,10 +439,12 @@ class AsStringVisitor:
         return node.name
 
     def visit_namedexpr(self, node: nodes.NamedExpr) -> str:
-        """Return an assignment expression node as string"""
+        """Return an assignment expression node as string, always parenthesized."""
         target = node.target.accept(self)
         value = node.value.accept(self)
-        return f"{target} := {value}"
+        if isinstance(getattr(node, "parent", None), nodes.Compare):
+            return f"{target} := {value}"
+        return f"({target} := {value})"
 
     def visit_nonlocal(self, node: nodes.Nonlocal) -> str:
         """return an nodes.Nonlocal node as string"""
