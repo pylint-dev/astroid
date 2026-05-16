@@ -22,7 +22,6 @@ Release date: TBA
 
   Reproduction: https://aletheia-works.github.io/vivarium/repro/astroid/2993/
   (recipe: ``aletheia-works/vivarium`` ``src/layer1_wasm/astroid-2993``).
-
   Closes #2993
 
 * Fix ``TypeError`` in ``brain_random`` when ``random.sample`` is called with a
