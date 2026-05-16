@@ -145,8 +145,7 @@ def _gi_build_stub(parent):  # noqa: C901
 
         strval = str(val)
         if isinstance(val, str):
-            escaped = val.replace("\\", "\\\\")
-            strval = f'"{escaped}"'
+            strval = '"' + val.replace("\\", "\\\\") + '"'
         ret += f"{name} = {strval}\n"
 
     if ret:
