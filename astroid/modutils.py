@@ -79,7 +79,7 @@ if os.name == "posix":
         prefix = sys.prefix
 
     def _posix_path(path: str) -> str:
-        base_python = "python%d.%d" % sys.version_info[:2]
+        base_python = f"python{sys.version_info.major}.{sys.version_info.minor}"
         return os.path.join(prefix, path, base_python)
 
     STD_LIB_DIRS.add(_posix_path("lib"))

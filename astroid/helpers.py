@@ -274,9 +274,7 @@ def object_len(node, context: InferenceContext | None = None):
     ):
         message = (
             "Self referential __len__ function will "
-            "cause a RecursionError on line {} of {}".format(
-                node.lineno, node.root().file
-            )
+            f"cause a RecursionError on line {node.lineno} of {node.root().file}"
         )
         raise InferenceError(message)
 
