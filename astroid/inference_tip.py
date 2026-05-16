@@ -117,12 +117,8 @@ def inference_tip(
             and node._explicit_inference is not infer_function
         ):
             raise InferenceOverwriteError(
-                "Inference already set to {existing_inference}. "
-                "Trying to overwrite with {new_inference} for {node}".format(
-                    existing_inference=infer_function,
-                    new_inference=node._explicit_inference,
-                    node=node,
-                )
+                f"Inference already set to {infer_function}. "
+                f"Trying to overwrite with {node._explicit_inference} for {node}"
             )
         node._explicit_inference = _inference_tip_cached(infer_function)
         return node

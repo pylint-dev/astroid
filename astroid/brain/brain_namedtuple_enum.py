@@ -264,7 +264,7 @@ def _get_renamed_namedtuple_attributes(field_names):
             or name.startswith("_")
             or name in seen
         ):
-            names[i] = "_%d" % i
+            names[i] = f"_{i}"
         seen.add(name)
     return tuple(names)
 
