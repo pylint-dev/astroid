@@ -22,6 +22,33 @@ Release date: TBA
 
   Closes #2993
 
+* Cache the result of ``ClassDef.ancestors()`` per node when called with
+  ``recurs=True``. The recursive walk previously recomputed ancestors of
+  shared base classes on every call; the cache eliminates that amplification
+  on deep MRO chains.
+
+  Closes #1115
+
+* Cache the result of ``ClassDef._find_metaclass()`` per node. The recursive
+  metaclass lookup walked the MRO on every call; the cache short-circuits
+  re-entry while preserving cycle protection via a sentinel.
+
+  Refs #1115
+
+* Collapse the 19 ``register_builtin_transform`` registrations into a single
+  dispatcher transform on ``nodes.Call``. The transform visitor previously
+  ran 19 predicates per Call node, each repeating the same ``isinstance``
+  checks; the dispatcher does them once and routes by name via a dict.
+
+  Refs #1115
+
+* Bypass ``__init__`` in ``InferenceContext.clone()`` and write the slots
+  directly. ``clone()`` is called ~85k times per pandas/frame.py pylint run;
+  skipping the conditional defaults shaves measurable time off the hottest
+  constructor in inference.
+
+  Refs #1115
+
 * Fix ``TypeError`` in ``brain_random`` when ``random.sample`` is called with a
   sequence containing nodes whose ``__init__`` does not accept ``lineno``
   (e.g. ``Module``). The clone helper now filters init params to those the

@@ -19,7 +19,7 @@ import warnings
 from collections.abc import Collection, Iterator, Sequence
 from io import TextIOWrapper
 from tokenize import detect_encoding
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, ClassVar, cast
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
 from astroid._ast import ParserModule, get_parser_module
@@ -75,6 +75,21 @@ class AstroidBuilder(raw_building.InspectBuilder):
     by default being True.
     """
 
+    # Re-entrant counter tracking how many ``_post_build`` calls are
+    # currently on the stack. Inferences run while loading (``delayed_assattr``
+    # and transform predicates) may inspect bases whose inference tips are
+    # not yet registered, so caches populated during this window must be
+    # invalidated before the AST is exposed.
+    _post_build_depth: int = 0
+    # ``ClassDef`` nodes whose ``_cached_ancestors`` was populated with an
+    # incomplete walk while ``_post_build_depth > 0`` (a base inferred to
+    # neither a ClassDef nor an Instance). See ``ClassDef.ancestors``.
+    _post_build_dirty_classes: ClassVar[set] = set()
+    # All ``ClassDef`` nodes that populated ``_cached_ancestors`` while
+    # ``_post_build_depth > 0``. Needed for transitive invalidation:
+    # a clean walk that traversed a now-dirty descendant is itself stale.
+    _post_build_cached_classes: ClassVar[set] = set()
+
     def __init__(self, manager: AstroidManager, apply_transforms: bool = True) -> None:
         super().__init__(manager)
         self._apply_transforms = apply_transforms
@@ -106,7 +121,11 @@ class AstroidBuilder(raw_building.InspectBuilder):
             if self._apply_transforms:
                 # We have to handle transformation by ourselves since the
                 # rebuilder isn't called for builtin nodes
-                node = self._manager.visit_transforms(node)
+                AstroidBuilder._post_build_depth += 1
+                try:
+                    node = self._manager.visit_transforms(node)
+                finally:
+                    self._drain_post_build_caches()
         assert isinstance(node, nodes.Module)
         return node
 
@@ -162,20 +181,51 @@ class AstroidBuilder(raw_building.InspectBuilder):
         """Handles encoding and delayed nodes after a module has been built."""
         module.file_encoding = encoding
         self._manager.cache_module(module)
-        # post tree building steps after we stored the module in the cache:
-        for from_node, global_names in builder._import_from_nodes:
-            if from_node.modname == "__future__":
-                for symbol, _ in from_node.names:
-                    module.future_imports.add(symbol)
-            self.add_from_names_to_locals(from_node, global_names)
-        # handle delayed assattr nodes
-        for delayed in builder._delayed_assattr:
-            self.delayed_assattr(delayed)
+        AstroidBuilder._post_build_depth += 1
+        try:
+            # post tree building steps after we stored the module in the cache:
+            for from_node, global_names in builder._import_from_nodes:
+                if from_node.modname == "__future__":
+                    for symbol, _ in from_node.names:
+                        module.future_imports.add(symbol)
+                self.add_from_names_to_locals(from_node, global_names)
+            # handle delayed assattr nodes
+            for delayed in builder._delayed_assattr:
+                self.delayed_assattr(delayed)
 
-        # Visit the transforms
-        if self._apply_transforms:
-            module = self._manager.visit_transforms(module)
+            # Visit the transforms
+            if self._apply_transforms:
+                module = self._manager.visit_transforms(module)
+        finally:
+            self._drain_post_build_caches()
         return module
+
+    @classmethod
+    def _drain_post_build_caches(cls) -> None:
+        """Decrement build depth; invalidate stale ``_cached_ancestors``.
+
+        At the outermost exit, drop any ``ancestors`` results computed
+        against a partially-transformed AST. Invalidation propagates: a
+        clean walk whose cache transitively contains a dirty class is
+        itself stale, because the dirty class will yield more ancestors
+        once its inference tips are wired up.
+        """
+        cls._post_build_depth -= 1
+        if cls._post_build_depth != 0:
+            return
+        dirty = cls._post_build_dirty_classes
+        cached = cls._post_build_cached_classes
+        changed = True
+        while changed:
+            changed = False
+            for c in cached - dirty:
+                if any(anc in dirty for anc in c.__dict__.get("_cached_ancestors", ())):
+                    dirty.add(c)
+                    changed = True
+        for c in dirty:
+            c.__dict__.pop("_cached_ancestors", None)
+        dirty.clear()
+        cached.clear()
 
     def _data_build(
         self, data: str, modname: str, path: str | None
