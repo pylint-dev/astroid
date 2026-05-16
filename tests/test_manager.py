@@ -3,9 +3,10 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 import os
-import site
+import re
 import sys
 import time
+import types
 import unittest
 import warnings
 from collections.abc import Iterator
@@ -34,6 +35,51 @@ def _get_file_from_object(obj) -> str:
     if IS_JYTHON:
         return obj.__file__.split("$py.class")[0] + ".py"
     return obj.__file__
+
+
+_NSPKG_PTH_PARTS_RE = re.compile(r"\*\(([^)]+)\)")
+
+
+def _parse_pth_package_parts(line: str) -> tuple[str, ...]:
+    """Extract the namespace package tuple from a setuptools nspkg .pth line."""
+    match = _NSPKG_PTH_PARTS_RE.search(line)
+    if not match:
+        return ()
+    parts = []
+    for token in match.group(1).split(","):
+        token = token.strip().strip("'\"")
+        if token:
+            parts.append(token)
+    return tuple(parts)
+
+
+def _load_namespace_package_pth(pth: str) -> None:
+    """Apply a setuptools-style namespace package .pth fixture without exec().
+
+    Each non-comment line in the fixture wires up one namespace package by
+    appending a directory under `resources.RESOURCE_PATH` to that package's
+    ``__path__``. We parse the package tuple out of the line and replay the
+    same effect here.
+    """
+    sitedir = str(resources.RESOURCE_PATH)
+    with (resources.RESOURCE_PATH / pth).open(encoding="utf-8") as pth_file:
+        for raw_line in pth_file:
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = _parse_pth_package_parts(line)
+            if not parts:
+                continue
+            package_name = ".".join(parts)
+            package_path = os.path.join(sitedir, *parts)
+            if os.path.exists(os.path.join(package_path, "__init__.py")):
+                continue
+            module = sys.modules.setdefault(
+                package_name, types.ModuleType(package_name)
+            )
+            mod_path = module.__dict__.setdefault("__path__", [])
+            if package_path not in mod_path:
+                mod_path.append(package_path)
 
 
 class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
@@ -199,7 +245,7 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
     )
     def test_namespace_package_pth_support(self) -> None:
         pth = "foogle_fax-0.12.5-py2.7-nspkg.pth"
-        site.addpackage(resources.RESOURCE_PATH, pth, [])
+        _load_namespace_package_pth(pth)
 
         try:
             module = self.manager.ast_from_module_name("foogle.fax")
@@ -209,7 +255,8 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
             with self.assertRaises(AstroidImportError):
                 self.manager.ast_from_module_name("foogle.moogle")
         finally:
-            sys.modules.pop("foogle")
+            sys.modules.pop("foogle", None)
+            sys.modules.pop("foogle.crank", None)
 
     @pytest.mark.skipif(
         IS_PYPY,
@@ -217,23 +264,25 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
     )
     def test_nested_namespace_import(self) -> None:
         pth = "foogle_fax-0.12.5-py2.7-nspkg.pth"
-        site.addpackage(resources.RESOURCE_PATH, pth, [])
+        _load_namespace_package_pth(pth)
         try:
             self.manager.ast_from_module_name("foogle.crank")
         finally:
-            sys.modules.pop("foogle")
+            sys.modules.pop("foogle", None)
+            sys.modules.pop("foogle.crank", None)
 
     def test_namespace_and_file_mismatch(self) -> None:
         filepath = unittest.__file__
         ast = self.manager.ast_from_file(filepath)
         self.assertEqual(ast.name, "unittest")
         pth = "foogle_fax-0.12.5-py2.7-nspkg.pth"
-        site.addpackage(resources.RESOURCE_PATH, pth, [])
+        _load_namespace_package_pth(pth)
         try:
             with self.assertRaises(AstroidImportError):
                 self.manager.ast_from_module_name("unittest.foogle.fax")
         finally:
-            sys.modules.pop("foogle")
+            sys.modules.pop("foogle", None)
+            sys.modules.pop("foogle.crank", None)
 
     def _test_ast_from_zip(self, archive: str) -> None:
         sys.modules.pop("mypypa", None)
@@ -556,3 +605,23 @@ class ClearCacheTest(unittest.TestCase):
         isinstance_call = astroid.extract_node("isinstance(1, int)")
         inferred = next(isinstance_call.infer())
         self.assertIs(inferred.value, True)
+
+
+class NamespacePthParserTest(unittest.TestCase):
+    """Direct coverage for the .pth parsing helpers used by namespace tests."""
+
+    def test_parse_extracts_quoted_tuple(self) -> None:
+        line = "import sys; p = os.path.join(s, *('foogle', 'crank'))"
+        self.assertEqual(_parse_pth_package_parts(line), ("foogle", "crank"))
+
+    def test_parse_handles_double_quotes_and_whitespace(self) -> None:
+        line = '*(  "foo" ,  "bar" )'
+        self.assertEqual(_parse_pth_package_parts(line), ("foo", "bar"))
+
+    def test_parse_skips_empty_tokens(self) -> None:
+        line = "*('foo', '', 'bar',)"
+        self.assertEqual(_parse_pth_package_parts(line), ("foo", "bar"))
+
+    def test_parse_returns_empty_when_no_match(self) -> None:
+        self.assertEqual(_parse_pth_package_parts("# comment only"), ())
+        self.assertEqual(_parse_pth_package_parts(""), ())
