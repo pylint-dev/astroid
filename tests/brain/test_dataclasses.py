@@ -760,6 +760,25 @@ def test_kw_only_sentinel() -> None:
         assert [a.name for a in init.args.args] == expected
 
 
+def test_kw_only_sentinel_other_dataclasses_attr() -> None:
+    """Annotating with another ``dataclasses`` attribute (e.g. ``MISSING``)
+    that also infers to ``builtins.sentinel`` on Python 3.15+ must not be
+    treated as ``KW_ONLY``."""
+    node = astroid.extract_node("""
+    import dataclasses
+    from dataclasses import dataclass
+
+    @dataclass
+    class C:
+        _: dataclasses.MISSING
+        y: str
+
+    C.__init__  #@
+    """)
+    init = next(node.infer())
+    assert [a.name for a in init.args.args] == ["self", "_", "y"]
+
+
 def test_kw_only_decorator() -> None:
     """Test that we update the signature correctly based on the keyword."""
     foodef, bardef, cee, dee = astroid.extract_node("""
