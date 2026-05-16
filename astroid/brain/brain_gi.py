@@ -145,7 +145,7 @@ def _gi_build_stub(parent):  # noqa: C901
 
         strval = str(val)
         if isinstance(val, str):
-            strval = '"' + val.replace("\\", "\\\\") + '"'
+            strval = '"' + val.replace("\\", "\\\\") + '"'  # pragma: no cover
         ret += f"{name} = {strval}\n"
 
     if ret:
