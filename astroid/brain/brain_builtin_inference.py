@@ -480,7 +480,9 @@ def infer_super(
         # propagate through super() calls.
         effective_cls = cls
         if context is not None and context.boundnode is not None:
-            from astroid.bases import Instance  # pylint: disable=import-outside-toplevel
+            from astroid.bases import (
+                Instance,
+            )  # pylint: disable=import-outside-toplevel
 
             bound = context.boundnode
             if isinstance(bound, Instance):
