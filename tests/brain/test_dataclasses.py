@@ -1385,3 +1385,88 @@ def test_dataclass_base_with_annotated_init_no_crash():
     inferred = next(node.infer())
     assert isinstance(inferred, bases.UnboundMethod)
     assert [a.name for a in inferred.args.args] == ["self"]
+
+
+def test_replace_returns_instance_of_caller_type() -> None:
+    """dataclasses.replace(obj, ...) should infer to an instance of obj's class."""
+    node = astroid.extract_node("""
+    import dataclasses
+    from dataclasses import dataclass
+
+    @dataclass
+    class Point:
+        x: float
+        y: float
+
+    p = Point(1.0, 2.0)
+    dataclasses.replace(p, x=3.0)  #@
+    """)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].name == "Point"
+
+
+def test_replace_returns_subclass_instance() -> None:
+    """dataclasses.replace propagates the concrete subclass type, not the base."""
+    node = astroid.extract_node("""
+    import dataclasses
+    from dataclasses import dataclass
+    from typing import ClassVar, Generic, Self, TypeVar
+    from abc import ABC
+
+    _T = TypeVar("_T", covariant=True)
+
+    class Base(Generic[_T], ABC):
+        __dataclass_fields__: ClassVar
+        def rebuild(self, items) -> Self:
+            return dataclasses.replace(self, **{"items": items})
+
+    @dataclass
+    class Child(Base[_T]):
+        items: tuple = ()
+
+    c = Child()
+    c.rebuild(())  #@
+    """)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].name == "Child"
+
+
+def test_replace_pep695_generic_base() -> None:
+    """dataclasses.replace propagates the concrete subclass for PEP 695 generics."""
+    node = astroid.extract_node("""
+    import dataclasses
+    from dataclasses import dataclass
+    from typing import ClassVar, Self
+    from abc import ABC
+
+    class Base[T](ABC):
+        __dataclass_fields__: ClassVar
+        def rebuild(self, items) -> Self:
+            return dataclasses.replace(self, **{"items": items})
+
+    @dataclass
+    class Child(Base):
+        items: tuple = ()
+
+    c = Child()
+    c.rebuild(())  #@
+    """)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].name == "Child"
+
+
+def test_replace_no_args_does_not_crash() -> None:
+    """dataclasses.replace with no args should not raise an uncaught exception."""
+    node = astroid.extract_node("""
+    import dataclasses
+    dataclasses.replace()  #@
+    """)
+    # Should not raise; result may be Uninferable or an InferenceError caught upstream
+    inferred = list(node.infer())
+    assert len(inferred) >= 1
