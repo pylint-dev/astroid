@@ -1417,3 +1417,42 @@ def test_replace_no_args_does_not_crash() -> None:
     # Should not raise; result may be Uninferable or an InferenceError caught upstream
     inferred = list(node.infer())
     assert len(inferred) >= 1
+
+
+def test_replace_bare_name_form() -> None:
+    """``from dataclasses import replace; replace(obj, ...)`` is handled."""
+    node = astroid.extract_node("""
+    from dataclasses import dataclass, replace
+
+    @dataclass
+    class Point:
+        x: float
+        y: float
+
+    p = Point(1.0, 2.0)
+    replace(p, x=3.0)  #@
+    """)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].name == "Point"
+
+
+def test_replace_frozen_dataclass() -> None:
+    """dataclasses.replace on a frozen dataclass returns an instance of the same type."""
+    node = astroid.extract_node("""
+    import dataclasses
+    from dataclasses import dataclass
+
+    @dataclass(frozen=True)
+    class FrozenPoint:
+        x: float
+        y: float
+
+    p = FrozenPoint(1.0, 2.0)
+    dataclasses.replace(p, x=3.0)  #@
+    """)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].name == "FrozenPoint"
