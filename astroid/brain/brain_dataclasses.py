@@ -527,6 +527,44 @@ def _looks_like_dataclasses(node: nodes.Module) -> bool:
     return node.qname() == "dataclasses"
 
 
+def _looks_like_dataclasses_replace(node: nodes.Call) -> bool:
+    """Return True if node is a call to dataclasses.replace(obj, ...)."""
+    func = node.func
+    if not isinstance(func, nodes.Attribute):
+        return False
+    if func.attrname != "replace":
+        return False
+    try:
+        inferred = next(func.expr.infer())
+    except (InferenceError, StopIteration):
+        return False
+    return isinstance(inferred, nodes.Module) and inferred.qname() == "dataclasses"
+
+
+def infer_dataclasses_replace(
+    node: nodes.Call, ctx: context.InferenceContext | None = None
+) -> Iterator[InferenceResult]:
+    """Infer dataclasses.replace(obj, ...) by returning an instance of obj's type.
+
+    Rather than following the stdlib body of replace()/_replace() — which trips
+    over subscripted generic bases in the metaclass-resolution chain — we directly
+    infer the first argument and yield an instance of its class.
+    """
+    if not node.args:
+        raise UseInferenceDefault
+    try:
+        inferred_obj = next(node.args[0].infer(context=ctx))
+    except (InferenceError, StopIteration) as exc:
+        raise UseInferenceDefault from exc
+    if isinstance(inferred_obj, UninferableBase):
+        yield Uninferable
+        return
+    if isinstance(inferred_obj, bases.Instance):
+        yield inferred_obj._proxied.instantiate_class()
+        return
+    raise UseInferenceDefault
+
+
 def _resolve_private_replace_to_public(node: nodes.Module) -> None:
     """In python/cpython@6f3c138, a _replace() method was extracted from
     replace(), and this indirection made replace() uninferable."""
@@ -665,4 +703,10 @@ def register(manager: AstroidManager) -> None:
         nodes.Unknown,
         inference_tip(infer_dataclass_attribute, raise_on_overwrite=True),
         _looks_like_dataclass_attribute,
+    )
+
+    manager.register_transform(
+        nodes.Call,
+        inference_tip(infer_dataclasses_replace, raise_on_overwrite=True),
+        _looks_like_dataclasses_replace,
     )
