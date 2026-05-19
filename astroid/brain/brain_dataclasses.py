@@ -528,39 +528,43 @@ def _looks_like_dataclasses(node: nodes.Module) -> bool:
 
 
 def _looks_like_dataclasses_replace(node: nodes.Call) -> bool:
-    """Return True if node is a call to dataclasses.replace(obj, ...)."""
+    """Return True if ``node`` calls ``dataclasses.replace``.
+
+    Matches both ``dataclasses.replace(...)`` and the bare-name form
+    ``from dataclasses import replace; replace(...)``.
+    """
     func = node.func
-    if not isinstance(func, nodes.Attribute):
-        return False
-    if func.attrname != "replace":
-        return False
-    try:
-        inferred = next(func.expr.infer())
-    except (InferenceError, StopIteration):
-        return False
-    return isinstance(inferred, nodes.Module) and inferred.qname() == "dataclasses"
+    if isinstance(func, nodes.Attribute) and func.attrname == "replace":
+        target = safe_infer(func.expr)
+        return isinstance(target, nodes.Module) and target.qname() == "dataclasses"
+    if isinstance(func, nodes.Name) and func.name == "replace":
+        target = safe_infer(func)
+        return (
+            isinstance(target, nodes.FunctionDef)
+            and target.root().name == "dataclasses"
+        )
+    return False
 
 
 def infer_dataclasses_replace(
     node: nodes.Call, ctx: context.InferenceContext | None = None
 ) -> Iterator[InferenceResult]:
-    """Infer dataclasses.replace(obj, ...) by returning an instance of obj's type.
+    """Infer ``dataclasses.replace(obj, ...)`` as an instance of obj's type.
 
-    Rather than following the stdlib body of replace()/_replace() — which trips
-    over subscripted generic bases in the metaclass-resolution chain — we directly
-    infer the first argument and yield an instance of its class.
+    Bypasses the stdlib body of ``replace()`` / ``_replace()``, which trips
+    over subscripted generic bases in the metaclass-resolution chain.
     """
     if not node.args:
         raise UseInferenceDefault
-    try:
-        inferred_obj = next(node.args[0].infer(context=ctx))
-    except (InferenceError, StopIteration) as exc:
-        raise UseInferenceDefault from exc
-    if isinstance(inferred_obj, UninferableBase):
+    inferred_obj = safe_infer(node.args[0], context=ctx)
+    if isinstance(inferred_obj, UninferableBase) or inferred_obj is None:
         yield Uninferable
         return
     if isinstance(inferred_obj, bases.Instance):
         yield inferred_obj._proxied.instantiate_class()
+        return
+    if isinstance(inferred_obj, nodes.ClassDef):
+        yield inferred_obj.instantiate_class()
         return
     raise UseInferenceDefault
 
