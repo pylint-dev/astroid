@@ -528,21 +528,20 @@ def _looks_like_dataclasses(node: nodes.Module) -> bool:
 
 
 def _looks_like_dataclasses_replace(node: nodes.Call) -> bool:
-    """Return True if ``node`` calls ``dataclasses.replace``.
+    """Return True if node calls dataclasses.replace.
 
     Matches both ``dataclasses.replace(...)`` and the bare-name form
     ``from dataclasses import replace; replace(...)``.
     """
-    func = node.func
+    func: nodes.NodeNG = node.func
     if isinstance(func, nodes.Attribute) and func.attrname == "replace":
         target = safe_infer(func.expr)
-        return isinstance(target, nodes.Module) and target.qname() == "dataclasses"
-    if isinstance(func, nodes.Name) and func.name == "replace":
+        if isinstance(target, nodes.Module):
+            return _looks_like_dataclasses(target)
+    elif isinstance(func, nodes.Name) and func.name == "replace":
         target = safe_infer(func)
-        return (
-            isinstance(target, nodes.FunctionDef)
-            and target.root().name == "dataclasses"
-        )
+        if isinstance(target, nodes.FunctionDef):
+            return target.root().name == "dataclasses"
     return False
 
 
