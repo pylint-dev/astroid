@@ -6,6 +6,7 @@ import pytest
 
 import astroid
 from astroid import bases, nodes
+from astroid.const import PY312_PLUS
 from astroid.exceptions import InferenceError
 from astroid.util import Uninferable
 
@@ -1382,6 +1383,7 @@ def test_replace_returns_subclass_instance() -> None:
     assert inferred[0].name == "Child"
 
 
+@pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 generic syntax requires Python 3.12+")
 def test_replace_pep695_generic_base() -> None:
     """dataclasses.replace propagates the concrete subclass for PEP 695 generics."""
     node = astroid.extract_node("""
@@ -1406,6 +1408,46 @@ def test_replace_pep695_generic_base() -> None:
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
     assert inferred[0].name == "Child"
+
+
+def test_replace_uninferable_first_arg() -> None:
+    """When the first arg can't be inferred, replace yields Uninferable."""
+    node = astroid.extract_node("""
+    import dataclasses
+    dataclasses.replace(undefined_name)  #@
+    """)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+
+def test_replace_classdef_first_arg() -> None:
+    """When the first arg is a class itself, replace yields an instance of it."""
+    node = astroid.extract_node("""
+    import dataclasses
+    from dataclasses import dataclass
+
+    @dataclass
+    class Point:
+        x: float = 0.0
+
+    dataclasses.replace(Point)  #@
+    """)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].name == "Point"
+
+
+def test_replace_non_instance_non_class_falls_back() -> None:
+    """A first arg that is neither Instance nor ClassDef raises UseInferenceDefault."""
+    node = astroid.extract_node("""
+    import os
+    import dataclasses
+    dataclasses.replace(os)  #@
+    """)
+    # Should not crash; default inference takes over.
+    list(node.infer())
 
 
 def test_replace_no_args_does_not_crash() -> None:
