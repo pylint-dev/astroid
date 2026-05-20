@@ -21,7 +21,6 @@ import importlib.machinery
 import importlib.util
 import io
 import itertools
-import logging
 import os
 import sys
 import sysconfig
@@ -33,9 +32,6 @@ from sys import stdlib_module_names
 
 from astroid.const import IS_JYTHON
 from astroid.interpreter._import import spec, util
-
-logger = logging.getLogger(__name__)
-
 
 if sys.platform.startswith("win"):
     PY_SOURCE_EXTS = ("py", "pyw", "pyi")
@@ -177,15 +173,19 @@ def load_module_from_name(dotted_name: str) -> types.ModuleType:
         module = importlib.import_module(dotted_name)
 
     stderr_value = stderr.getvalue()
-    if stderr_value:
-        logger.error(
-            "Captured stderr while importing %s:\n%s", dotted_name, stderr_value
-        )
     stdout_value = stdout.getvalue()
-    if stdout_value:
-        logger.info(
-            "Captured stdout while importing %s:\n%s", dotted_name, stdout_value
-        )
+    if stderr_value or stdout_value:
+        import logging  # pylint: disable=import-outside-toplevel
+
+        logger = logging.getLogger(__name__)
+        if stderr_value:
+            logger.error(
+                "Captured stderr while importing %s:\n%s", dotted_name, stderr_value
+            )
+        if stdout_value:
+            logger.info(
+                "Captured stdout while importing %s:\n%s", dotted_name, stdout_value
+            )
 
     return module
 
