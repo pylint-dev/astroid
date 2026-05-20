@@ -41,6 +41,13 @@ Release date: TBA
 
   References pylint-dev/pylint#872
 
+* Fix ``AttributeError`` crash when looking up a special method on a class
+  whose explicit metaclass infers to a non-class node (e.g. a function). Such
+  a metaclass has no MRO, so the dunder lookup now raises
+  ``AttributeInferenceError`` instead of crashing.
+
+  Closes #3063
+
 
 What's New in astroid 4.1.2?
 ============================

@@ -4293,6 +4293,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         with self.assertRaises(AstroidTypeError):
             inferred.getitem(nodes.Const("4"))
 
+    def test_getitem_of_class_with_non_class_metaclass(self) -> None:
+        """A metaclass that infers to a non-class node has no MRO to search.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3063
+        """
+        node = extract_node("""
+        def fn():
+            pass
+        class C(metaclass=fn):  #@
+            pass
+        """)
+        with self.assertRaises(AstroidTypeError):
+            node.getitem(nodes.Const(0))
+
     def test_infer_arg_called_type_is_uninferable(self) -> None:
         node = extract_node("""
         def func(type):
