@@ -41,6 +41,13 @@ Release date: TBA
 
   References pylint-dev/pylint#872
 
+* Fix ``DuplicateBasesError`` crash in the enum brain when inferring an enum
+  class with duplicate bases (e.g. ``class C(enum.Enum, enum.Enum)``).
+  ``infer_enum_class`` now catches ``MroError`` and leaves such a malformed
+  class untransformed.
+
+  Closes #3065
+
 
 What's New in astroid 4.1.2?
 ============================
