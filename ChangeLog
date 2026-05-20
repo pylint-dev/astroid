@@ -7,13 +7,14 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
-* Resolve PEP 695 ``TypeVar`` annotations to their declared bound so member
-  lookups on type-parameter-typed expressions succeed via the bound's
-  interface. Inside ``def f[T: str](x: T)`` or ``class C[T: str]: ...``,
-  ``x.upper()`` now infers correctly. Unbounded ``TypeVar``,
-  ``TypeVarTuple``, and ``ParamSpec`` continue to use the historical
-  ``Const(None)`` placeholder. Plain non-TypeVar annotations (``x: str``)
-  still do not drive argument inference.
+* Resolve PEP 695 ``TypeVar`` declared with a bound to an ``Instance`` of
+  the bound class. ``generic_type_assigned_stmts`` previously yielded a
+  ``Const(None)`` placeholder for every type parameter; for bounded
+  ``TypeVar`` it now yields an instance of the bound, so attribute access
+  on a ``T``-typed expression resolves via the bound's interface.
+  Unbounded ``TypeVar``, ``TypeVarTuple``, and ``ParamSpec`` continue to
+  use the placeholder; unresolvable bounds (e.g. ``[T: Undefined]``)
+  also fall back to the placeholder rather than crashing.
 
 * Fix ``AttributeError`` crash in ``starred_assigned_stmts`` when a starred
   unpacking target is an attribute (e.g. ``for *o.attr, x in ...``) rather

@@ -17,8 +17,6 @@ from astroid.nodes import (
     TypeVar,
     TypeVarTuple,
 )
-from astroid.protocols import _annotation_for_argname
-
 if not PY312_PLUS:
     pytest.skip("Requires Python 3.12 or higher", allow_module_level=True)
 
@@ -139,94 +137,51 @@ def test_get_children() -> None:
     assert isinstance(class_children[0], TypeVar)
 
 
-def test_type_var_bound_resolves_to_instance() -> None:
-    """A PEP 695 TypeVar with a bound infers to an instance of the bound."""
+def test_bounded_type_var_resolves_to_instance_of_bound() -> None:
+    """A PEP 695 TypeVar declared with a bound resolves to an Instance
+    of the bound's class — so attribute access on a ``T``-typed
+    expression succeeds via the bound's interface."""
 
-    node = extract_node("""
-def f[T: str](x: T) -> T:
-    return x  #@
-""")
-    inferred = list(node.value.inferred())
+    func = extract_node("def f[T: str](x: T) -> T: ...")
+    type_param = func.type_params[0]
+    inferred = list(type_param.name.inferred())
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
     assert inferred[0]._proxied.name == "str"
 
 
-def test_type_var_without_bound_stays_uninferable() -> None:
-    """Unbounded TypeVars do not drive parameter inference."""
+def test_bounded_type_var_resolves_to_user_class_instance() -> None:
+    """The bound can be any concrete class; the TypeVar resolves to an
+    Instance of it."""
 
-    node = extract_node("""
-def f[T](x: T) -> T:
-    return x  #@
-""")
-    inferred = list(node.value.inferred())
-    assert any(value is util.Uninferable for value in inferred)
-
-
-def test_type_var_bound_member_lookup() -> None:
-    """Members of the bound type resolve on the TypeVar-typed expression."""
-
-    node = extract_node("""
-def f[T: str](x: T) -> T:
-    return x.upper()  #@
-""")
-    inferred = list(node.value.inferred())
+    func = extract_node(
+        """
+class Base: ...
+def f[T: Base](x: T) -> T: ...
+"""
+    )
+    type_param = func.type_params[0]
+    inferred = list(type_param.name.inferred())
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
-    assert inferred[0]._proxied.name == "str"
+    assert inferred[0]._proxied.name == "Base"
 
 
-def test_plain_class_annotation_does_not_drive_inference() -> None:
-    """Plain annotations (``x: str``) do NOT make ``x`` infer to ``str()`` —
-    annotation-driven inference is restricted to PEP 695 TypeVar bounds."""
+def test_unbounded_type_var_yields_const_placeholder() -> None:
+    """Without a bound, the TypeVar keeps the historical ``Const(None)``
+    placeholder so ``__class_getitem__`` evaluation does not fail."""
 
-    node = extract_node("""
-def f(x: str) -> str:
-    return x  #@
-""")
-    inferred = list(node.value.inferred())
-    assert any(value is util.Uninferable for value in inferred)
-
-
-def test_unannotated_parameter_stays_uninferable() -> None:
-    """A parameter without an annotation falls through with no annotation
-    fallback. Covers ``_annotation_for_argname`` returning ``None`` when
-    the named parameter has no annotation."""
-
-    node = extract_node("""
-def f[T: str](x: T, y) -> T:
-    return y  #@
-""")
-    inferred = list(node.value.inferred())
-    assert any(value is util.Uninferable for value in inferred)
-
-
-def test_unresolvable_bound_yields_const_placeholder() -> None:
-    """If a TypeVar's bound cannot be resolved to a class, the type
-    parameter still yields the historical ``Const(None)`` placeholder
-    instead of crashing."""
-
-    func = extract_node("""
-def f[T: Undefined](x: T) -> T: ...
-""")
+    func = extract_node("def f[T](x: T) -> T: ...")
     type_param = func.type_params[0]
     inferred = list(type_param.name.inferred())
     assert any(isinstance(value, nodes.Const) for value in inferred)
 
 
-def test_annotation_for_argname_returns_none_for_none_name() -> None:
-    """Defensive: passing ``name=None`` to the annotation lookup helper
-    returns ``None`` without scanning. Covers the guard against malformed
-    call sites that would otherwise pass through to ``param.name == None``
-    comparisons."""
+def test_unresolvable_bound_yields_const_placeholder() -> None:
+    """If the bound's name cannot be resolved (raising ``InferenceError``),
+    the TypeVar still falls back to ``Const(None)`` instead of crashing."""
 
-    func = extract_node("def f[T: str](x: T) -> T: ...")
-    assert _annotation_for_argname(func.args, None) is None
-
-
-def test_annotation_for_argname_returns_none_when_no_match() -> None:
-    """If the requested argument name does not match any parameter on
-    the ``Arguments`` node, the helper returns ``None``."""
-
-    func = extract_node("def f[T: str](x: T) -> T: ...")
-    assert _annotation_for_argname(func.args, "not_a_param") is None
+    func = extract_node("def f[T: Undefined](x: T) -> T: ...")
+    type_param = func.type_params[0]
+    inferred = list(type_param.name.inferred())
+    assert any(isinstance(value, nodes.Const) for value in inferred)

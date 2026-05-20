@@ -410,46 +410,7 @@ def _arguments_infer_argname(
         yield from self.default_value(name).infer(context)
         yield util.Uninferable
     except NoDefault:
-        # No default — fall back to the annotation when it infers to a
-        # PEP 695 TypeVar bound. ``generic_type_assigned_stmts`` yields
-        # an :class:`Instance` of the bound for bounded TypeVars; we
-        # forward that. Plain annotations like ``x: str`` infer to a
-        # :class:`ClassDef`, and unbounded TypeVars infer to a
-        # placeholder :class:`Const`; both are skipped to preserve
-        # astroid's historical "annotations don't drive argument
-        # inference" contract.
-        annotation = _annotation_for_argname(self, name)
-        if annotation is not None:
-            for inferred in annotation.infer(context=context):
-                if isinstance(inferred, bases.Instance) and not isinstance(
-                    inferred, nodes.Const
-                ):
-                    yield inferred
-                    return
         yield util.Uninferable
-
-
-def _annotation_for_argname(
-    args: nodes.Arguments, name: str | None
-) -> nodes.NodeNG | None:
-    """Return the annotation node for argument ``name`` on ``args``.
-
-    Searches positional-only, positional/keyword, and keyword-only argument
-    lists. Returns ``None`` both when no parameter matches ``name`` and
-    when the matched parameter has no annotation — the caller treats both
-    cases identically (fall through to ``Uninferable``).
-    """
-    if name is None:
-        return None
-    for params, annotation in (
-        (args.posonlyargs, args.posonlyargs_annotations),
-        (args.args, args.annotations),
-        (args.kwonlyargs, args.kwonlyargs_annotations),
-    ):
-        for index, param in enumerate(params or ()):
-            if param.name == name and index < len(annotation):
-                return annotation[index]
-    return None
 
 
 def arguments_assigned_stmts(
