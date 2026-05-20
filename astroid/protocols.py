@@ -410,7 +410,47 @@ def _arguments_infer_argname(
         yield from self.default_value(name).infer(context)
         yield util.Uninferable
     except NoDefault:
+        # No default — fall back to the annotation when it infers to a
+        # PEP 695 TypeVar bound. ``generic_type_assigned_stmts`` yields
+        # an :class:`Instance` of the bound for bounded TypeVars; we
+        # forward that. Plain annotations like ``x: str`` infer to a
+        # :class:`ClassDef`, and unbounded TypeVars infer to a
+        # placeholder :class:`Const`; both are skipped to preserve
+        # astroid's historical "annotations don't drive argument
+        # inference" contract.
+        annotation = _annotation_for_argname(self, name)
+        if annotation is not None:
+            for inferred in annotation.infer(context=context):
+                if (
+                    isinstance(inferred, bases.Instance)
+                    and not isinstance(inferred, nodes.Const)
+                ):
+                    yield inferred
+                    return
         yield util.Uninferable
+
+
+def _annotation_for_argname(
+    args: nodes.Arguments, name: str | None
+) -> nodes.NodeNG | None:
+    """Return the annotation node for argument ``name`` on ``args``.
+
+    Searches positional-only, positional/keyword, and keyword-only argument
+    lists. Returns ``None`` both when no parameter matches ``name`` and
+    when the matched parameter has no annotation — the caller treats both
+    cases identically (fall through to ``Uninferable``).
+    """
+    if name is None:
+        return None
+    for params, annotation in (
+        (args.posonlyargs, args.posonlyargs_annotations),
+        (args.args, args.annotations),
+        (args.kwonlyargs, args.kwonlyargs_annotations),
+    ):
+        for index, param in enumerate(params or ()):
+            if param.name == name and index < len(annotation):
+                return annotation[index]
+    return None
 
 
 def arguments_assigned_stmts(
@@ -943,7 +983,22 @@ def generic_type_assigned_stmts(
     context: InferenceContext | None = None,
     assign_path: None = None,
 ) -> Generator[nodes.NodeNG]:
-    """Hack. Return any Node so inference doesn't fail
-    when evaluating __class_getitem__. Revert if it's causing issues.
+    """Resolve a PEP 695 type parameter for downstream inference.
+
+    For a :class:`nodes.TypeVar` declared with a bound
+    (``[T: SomeType]``), yield an instance of the bound class so
+    attribute access on a ``T``-typed expression resolves via the bound's
+    interface. For unbounded ``TypeVar``, ``TypeVarTuple``, and
+    ``ParamSpec``, yield a placeholder ``Const(None)`` so inference does
+    not fail when evaluating ``__class_getitem__``.
     """
+    if isinstance(self, nodes.TypeVar) and self.bound is not None:
+        try:
+            inferred_bounds = list(self.bound.infer(context=context))
+        except InferenceError:
+            inferred_bounds = []
+        for inferred in inferred_bounds:
+            if isinstance(inferred, nodes.ClassDef):
+                yield inferred.instantiate_class()
+                return
     yield nodes.Const(None)
