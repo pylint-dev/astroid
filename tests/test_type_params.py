@@ -142,12 +142,10 @@ def test_get_children() -> None:
 def test_type_var_bound_resolves_to_instance() -> None:
     """A PEP 695 TypeVar with a bound infers to an instance of the bound."""
 
-    node = extract_node(
-        """
+    node = extract_node("""
 def f[T: str](x: T) -> T:
     return x  #@
-"""
-    )
+""")
     inferred = list(node.value.inferred())
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
@@ -157,12 +155,10 @@ def f[T: str](x: T) -> T:
 def test_type_var_without_bound_stays_uninferable() -> None:
     """Unbounded TypeVars do not drive parameter inference."""
 
-    node = extract_node(
-        """
+    node = extract_node("""
 def f[T](x: T) -> T:
     return x  #@
-"""
-    )
+""")
     inferred = list(node.value.inferred())
     assert any(value is util.Uninferable for value in inferred)
 
@@ -170,12 +166,10 @@ def f[T](x: T) -> T:
 def test_type_var_bound_member_lookup() -> None:
     """Members of the bound type resolve on the TypeVar-typed expression."""
 
-    node = extract_node(
-        """
+    node = extract_node("""
 def f[T: str](x: T) -> T:
     return x.upper()  #@
-"""
-    )
+""")
     inferred = list(node.value.inferred())
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
@@ -186,12 +180,10 @@ def test_plain_class_annotation_does_not_drive_inference() -> None:
     """Plain annotations (``x: str``) do NOT make ``x`` infer to ``str()`` —
     annotation-driven inference is restricted to PEP 695 TypeVar bounds."""
 
-    node = extract_node(
-        """
+    node = extract_node("""
 def f(x: str) -> str:
     return x  #@
-"""
-    )
+""")
     inferred = list(node.value.inferred())
     assert any(value is util.Uninferable for value in inferred)
 
@@ -201,12 +193,10 @@ def test_unannotated_parameter_stays_uninferable() -> None:
     fallback. Covers ``_annotation_for_argname`` returning ``None`` when
     the named parameter has no annotation."""
 
-    node = extract_node(
-        """
+    node = extract_node("""
 def f[T: str](x: T, y) -> T:
     return y  #@
-"""
-    )
+""")
     inferred = list(node.value.inferred())
     assert any(value is util.Uninferable for value in inferred)
 
@@ -216,11 +206,9 @@ def test_unresolvable_bound_yields_const_placeholder() -> None:
     parameter still yields the historical ``Const(None)`` placeholder
     instead of crashing."""
 
-    func = extract_node(
-        """
+    func = extract_node("""
 def f[T: Undefined](x: T) -> T: ...
-"""
-    )
+""")
     type_param = func.type_params[0]
     inferred = list(type_param.name.inferred())
     assert any(isinstance(value, nodes.Const) for value in inferred)

@@ -421,9 +421,8 @@ def _arguments_infer_argname(
         annotation = _annotation_for_argname(self, name)
         if annotation is not None:
             for inferred in annotation.infer(context=context):
-                if (
-                    isinstance(inferred, bases.Instance)
-                    and not isinstance(inferred, nodes.Const)
+                if isinstance(inferred, bases.Instance) and not isinstance(
+                    inferred, nodes.Const
                 ):
                     yield inferred
                     return
