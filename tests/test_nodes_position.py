@@ -174,3 +174,16 @@ class TestNodePosition:
             node = builder.extract_node("class A:  #@\n    ...")
         assert isinstance(node, nodes.ClassDef)
         assert node.position is None
+
+    @staticmethod
+    def test_position_unnormalized_name() -> None:
+        """No position info when the name token never matches ``node.name``.
+
+        ``node.name`` is the NFKC-normalized identifier while ``tokenize``
+        yields the raw source spelling (here the ``fi`` ligature), so the
+        name token is never matched and no position can be computed.
+        """
+        node = builder.extract_node("class ﬁ:  #@\n    ...")
+        assert isinstance(node, nodes.ClassDef)
+        assert node.name == "fi"
+        assert node.position is None
