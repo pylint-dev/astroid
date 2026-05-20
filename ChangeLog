@@ -41,6 +41,13 @@ Release date: TBA
 
   References pylint-dev/pylint#872
 
+* Fix uncaught ``TokenError`` when building a class or function whose source
+  slice is malformed. ``tokenize.generate_tokens`` may raise (e.g. on an
+  unterminated bracket on Python < 3.12); position computation now treats such
+  a node as having no position information instead of crashing.
+
+  Closes #2527
+
 
 What's New in astroid 4.1.2?
 ============================

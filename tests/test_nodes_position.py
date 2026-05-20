@@ -5,6 +5,8 @@
 from __future__ import annotations
 
 import textwrap
+from tokenize import TokenError
+from unittest import mock
 
 from astroid import builder, nodes
 
@@ -157,3 +159,18 @@ class TestNodePosition:
         e = ast_nodes[4]
         assert isinstance(e, nodes.FunctionDef)
         assert e.position == (14, 0, 14, 11)
+
+    @staticmethod
+    def test_position_malformed_tokenize() -> None:
+        """A ``TokenError`` from ``tokenize`` must not crash the build.
+
+        On Python < 3.12 malformed source could make ``generate_tokens``
+        raise a ``TokenError``; ``position`` is simply unavailable then.
+        """
+        with mock.patch(
+            "astroid.rebuilder.generate_tokens",
+            side_effect=TokenError("unexpected EOF in multi-line statement", (1, 0)),
+        ):
+            node = builder.extract_node("class A:  #@\n    ...")
+        assert isinstance(node, nodes.ClassDef)
+        assert node.position is None
