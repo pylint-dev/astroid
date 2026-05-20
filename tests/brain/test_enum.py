@@ -9,7 +9,7 @@ import unittest
 import pytest
 
 import astroid
-from astroid import bases, builder, nodes, objects
+from astroid import bases, builder, nodes, objects, util
 from astroid.exceptions import InferenceError
 
 
@@ -165,6 +165,18 @@ class EnumBrainTest(unittest.TestCase):
         instance = next(instance.infer())
         self.assertIsInstance(instance, nodes.Const)
         self.assertIsInstance(instance.value, str)
+
+    def test_enum_func_form_non_string_attribute_no_crash(self) -> None:
+        """A functional Enum with a non-string member name is invalid.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3068
+        """
+        node = builder.extract_node("""
+        from enum import Enum
+        Enum("e", (1,))  #@
+        """)
+        # Inference must not raise ``TypeError``; it falls back to default.
+        assert next(node.infer()) is util.Uninferable
 
     def test_infer_enum_value_as_the_right_type(self) -> None:
         string_value, int_value = builder.extract_node("""

@@ -137,6 +137,11 @@ def infer_func_form(
         attributes = [str(attr) for attr in attributes]
         # XXX this should succeed *unless* __str__/__repr__ is incorrect or throws
         # in which case we should not have inferred these values and raised earlier
+    if any(not isinstance(attr, str) for attr in attributes):
+        # Enum members must be named by strings; a non-string attribute (e.g.
+        # ``Enum("e", (1,))``) means the definition is invalid, so fall back to
+        # the default inference instead of crashing.
+        raise UseInferenceDefault
     attributes = [attr for attr in attributes if " " not in attr]
 
     # If we can't infer the name of the class, don't crash, up to this point
