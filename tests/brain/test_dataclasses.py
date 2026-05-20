@@ -1383,7 +1383,9 @@ def test_replace_returns_subclass_instance() -> None:
     assert inferred[0].name == "Child"
 
 
-@pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 generic syntax requires Python 3.12+")
+@pytest.mark.skipif(
+    not PY312_PLUS, reason="PEP 695 generic syntax requires Python 3.12+"
+)
 def test_replace_pep695_generic_base() -> None:
     """dataclasses.replace propagates the concrete subclass for PEP 695 generics."""
     node = astroid.extract_node("""
