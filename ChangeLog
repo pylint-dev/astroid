@@ -41,6 +41,12 @@ Release date: TBA
 
   References pylint-dev/pylint#872
 
+* Fix ``InferenceError`` crash in ``ClassDef.slots()`` when ``__slots__`` is
+  declared as an annotation without a value (e.g. ``__slots__: None``). Such a
+  ``__slots__`` cannot be inferred, so ``slots()`` now returns ``None``.
+
+  Closes #3067
+
 
 What's New in astroid 4.1.2?
 ============================
