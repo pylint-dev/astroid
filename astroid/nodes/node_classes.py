@@ -292,6 +292,8 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
             parent=parent,
         )
 
+        Instance.__init__(self, None)
+
     def postinit(self, elts: list[SuccessfulInferenceResult]) -> None:
         self.elts = elts
 
@@ -2372,6 +2374,7 @@ class Dict(NodeNG, Instance):
             end_col_offset=end_col_offset,
             parent=parent,
         )
+        Instance.__init__(self, self._proxied)
 
     def postinit(self, items: list[tuple[InferenceResult, InferenceResult]]) -> None:
         """Do some setup after initialisation.

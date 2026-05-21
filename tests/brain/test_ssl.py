@@ -41,7 +41,11 @@ def test_ssl_brain() -> None:
     # TLSVersion is inferred from the main module, not from the brain
     inferred_cert_required = next(module.body[4].value.infer())
     assert isinstance(inferred_cert_required, bases.Instance)
-    assert inferred_cert_required._proxied.name == "CERT_REQUIRED"
+    assert inferred_cert_required._proxied.name == "VerifyMode"
+
+    value_node = inferred_cert_required.getattr("value")[0]
+    assert isinstance(value_node, nodes.Const)
+    assert value_node.value == 2
 
 
 @pytest.mark.skipif(not PY312_PLUS, reason="Uses new 3.12 constant")

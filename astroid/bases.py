@@ -241,7 +241,17 @@ class BaseInstance(Proxy):
 
     special_attributes: objectmodel.ObjectModel
 
-    def display_type(self) -> str:
+    def __init__(self, proxied: nodes.ClassDef | None = None) -> None:
+        self._explicit_instance_attrs: dict[str, list[nodes.NodeNG]] = {}
+        """Attributes that have been explicitly set during initialization
+        of the specific instance.
+
+        This dictionary can be used to differentiate between attributes assosciated to
+        the proxy and attributes that are specific to the instantiated instance.
+        """
+        super().__init__(proxied)
+
+    def display_type(self):
         return "Instance of"
 
     def getattr(
@@ -250,6 +260,12 @@ class BaseInstance(Proxy):
         context: InferenceContext | None = None,
         lookupclass: bool = True,
     ) -> list[InferenceResult]:
+        # See if the attribute is set explicitly for this instance
+        try:
+            return self._explicit_instance_attrs[name]
+        except KeyError:
+            pass
+
         try:
             values = self._proxied.instance_attr(name, context)
         except AttributeInferenceError as exc:
