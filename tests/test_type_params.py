@@ -17,6 +17,7 @@ from astroid.nodes import (
     TypeVar,
     TypeVarTuple,
 )
+
 if not PY312_PLUS:
     pytest.skip("Requires Python 3.12 or higher", allow_module_level=True)
 
@@ -154,12 +155,10 @@ def test_bounded_type_var_resolves_to_user_class_instance() -> None:
     """The bound can be any concrete class; the TypeVar resolves to an
     Instance of it."""
 
-    func = extract_node(
-        """
+    func = extract_node("""
 class Base: ...
 def f[T: Base](x: T) -> T: ...
-"""
-    )
+""")
     type_param = func.type_params[0]
     inferred = list(type_param.name.inferred())
     assert len(inferred) == 1
