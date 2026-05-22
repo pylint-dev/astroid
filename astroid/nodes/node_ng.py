@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import pprint
 import sys
 from collections.abc import Generator, Iterator
 from functools import cached_property
@@ -187,6 +186,8 @@ class NodeNG:
         return ""
 
     def __str__(self) -> str:
+        import pprint  # pylint: disable=import-outside-toplevel
+
         rname = self.repr_name()
         cname = type(self).__name__
         if rname:
@@ -646,6 +647,7 @@ class NodeNG:
         """
 
         # pylint: disable = too-many-statements
+        import pprint  # pylint: disable=import-outside-toplevel
 
         @_singledispatch
         def _repr_tree(node, result, done, cur_indent="", depth=1):
