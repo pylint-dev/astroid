@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import itertools
 import os
-import pprint
 import types
 from collections.abc import Iterator
 from functools import lru_cache
@@ -82,6 +81,8 @@ class ObjectModel:
         self._instance = None
 
     def __repr__(self):
+        import pprint  # pylint: disable=import-outside-toplevel
+
         result = []
         cname = type(self).__name__
         string = "%(cname)s(%(fields)s)"

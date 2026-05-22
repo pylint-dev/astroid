@@ -9,11 +9,10 @@ from __future__ import annotations
 from collections.abc import Iterable, Iterator
 from typing import TYPE_CHECKING, Any
 
-from astroid.typing import InferenceResult, SuccessfulInferenceResult
-
 if TYPE_CHECKING:
     from astroid import arguments, bases, nodes, objects
     from astroid.context import InferenceContext
+    from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
 __all__ = (
     "AstroidBuildingError",
