@@ -1569,6 +1569,22 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         cls = module["B"]
         self.assertIsNone(cls.slots())
 
+    def test_slots_annotation_only_without_value(self) -> None:
+        """An annotation-only ``__slots__`` has no inferable value.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3067
+        """
+        module = builder.parse("""
+        class Klass:
+            __slots__: None
+
+            def method(self):
+                self.attr = 1
+        """)
+        # ``__slots__`` is in ``locals`` but cannot be inferred; ``slots()``
+        # must return None instead of raising ``InferenceError``.
+        self.assertIsNone(module["Klass"].slots())
+
     def test_slots_added_dynamically_still_inferred(self) -> None:
         code = """
         class NodeBase(object):

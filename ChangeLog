@@ -48,6 +48,12 @@ Release date: TBA
 
   References pylint-dev/pylint#872
 
+* Fix ``InferenceError`` crash in ``ClassDef.slots()`` when ``__slots__`` is
+  declared as an annotation without a value (e.g. ``__slots__: None``). Such a
+  ``__slots__`` cannot be inferred, so ``slots()`` now returns ``None``.
+
+  Closes #3067
+
 * Fix ``DuplicateBasesError`` crash in the enum brain when inferring an enum
   class with duplicate bases (e.g. ``class C(enum.Enum, enum.Enum)``).
   ``infer_enum_class`` now catches ``MroError`` and leaves such a malformed

@@ -2708,7 +2708,13 @@ class ClassDef(
         """Return an iterator with the inferred slots."""
         if "__slots__" not in self.locals:
             return None
-        for slots in self.igetattr("__slots__"):
+        try:
+            slots_attributes = list(self.igetattr("__slots__"))
+        except InferenceError:
+            # ``__slots__`` is present in ``locals`` but cannot be inferred,
+            # e.g. an annotation-only ``__slots__: ...`` with no assigned value.
+            return None
+        for slots in slots_attributes:
             # check if __slots__ is a valid type
             for meth in ITER_METHODS:
                 try:
