@@ -11,7 +11,6 @@ from __future__ import annotations
 import builtins
 import inspect
 import io
-import logging
 import os
 import sys
 import types
@@ -26,8 +25,6 @@ from astroid.nodes import node_classes
 
 if TYPE_CHECKING:
     from astroid.manager import AstroidManager
-
-logger = logging.getLogger(__name__)
 
 
 _FunctionTypes = (
@@ -570,21 +567,26 @@ class InspectBuilder:
                 ):
                     getattr(sys.modules[modname], name)
                     stderr_value = stderr.getvalue()
-                    if stderr_value:
-                        logger.error(
-                            "Captured stderr while getting %s from %s:\n%s",
-                            name,
-                            sys.modules[modname],
-                            stderr_value,
-                        )
                     stdout_value = stdout.getvalue()
-                    if stdout_value:
-                        logger.info(
-                            "Captured stdout while getting %s from %s:\n%s",
-                            name,
-                            sys.modules[modname],
-                            stdout_value,
-                        )
+                    if stderr_value or stdout_value:
+                        # pylint: disable=import-outside-toplevel
+                        import logging
+
+                        logger = logging.getLogger(__name__)
+                        if stderr_value:
+                            logger.error(
+                                "Captured stderr while getting %s from %s:\n%s",
+                                name,
+                                sys.modules[modname],
+                                stderr_value,
+                            )
+                        if stdout_value:
+                            logger.info(
+                                "Captured stdout while getting %s from %s:\n%s",
+                                name,
+                                sys.modules[modname],
+                                stdout_value,
+                            )
             except (KeyError, AttributeError):
                 attach_dummy_node(node, name, member)
             else:

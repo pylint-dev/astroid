@@ -6020,6 +6020,13 @@ def test_igetattr_idempotent() -> None:
     assert util.Uninferable not in instance.igetattr("item", context_to_be_used_twice)
 
 
+def test_inference_context_str() -> None:
+    """``str()`` of an ``InferenceContext`` renders each slot without crashing."""
+    rendered = str(InferenceContext())
+    assert rendered.startswith("InferenceContext(")
+    assert rendered.endswith(")")
+
+
 @patch("astroid.nodes.Call._infer")
 def test_cache_usage_without_explicit_context(mock) -> None:
     code = """

@@ -559,3 +559,18 @@ class EnumBrainTest(unittest.TestCase):
 
         inferred_value = next(sunder_value.infer())
         assert inferred_value.value == 42
+
+    def test_enum_duplicate_bases_no_crash(self) -> None:
+        """An enum class with duplicate bases has no resolvable MRO.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3065
+        """
+        node = builder.extract_node("""
+        import enum
+
+        class C(enum.Enum, enum.Enum):  #@
+            pass
+        """)
+        # Inference must not raise ``DuplicateBasesError``.
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.ClassDef)

@@ -462,33 +462,27 @@ class TestPatternMatching:
 class TestGenericTypeSyntax:
     @staticmethod
     def test_assigned_stmts_type_var():
-        """The result is 'Uninferable' and no exception is raised."""
+        """The assigned statement is the TypeVar node itself."""
         assign_stmts = extract_node("type Point[T] = tuple[float, float]")
         type_var: nodes.TypeVar = assign_stmts.type_params[0]
         assigned = next(type_var.name.assigned_stmts())
-        # Hack so inference doesn't fail when evaluating __class_getitem__
-        # Revert if it's causing issues.
-        assert isinstance(assigned, nodes.Const)
-        assert assigned.value is None
+        assert isinstance(assigned, nodes.TypeVar)
+        assert assigned is type_var
 
     @staticmethod
     def test_assigned_stmts_type_var_tuple():
-        """The result is 'Uninferable' and no exception is raised."""
+        """The assigned statement is the TypeVarTuple node itself."""
         assign_stmts = extract_node("type Alias[*Ts] = tuple[*Ts]")
         type_var_tuple: nodes.TypeVarTuple = assign_stmts.type_params[0]
         assigned = next(type_var_tuple.name.assigned_stmts())
-        # Hack so inference doesn't fail when evaluating __class_getitem__
-        # Revert if it's causing issues.
-        assert isinstance(assigned, nodes.Const)
-        assert assigned.value is None
+        assert isinstance(assigned, nodes.TypeVarTuple)
+        assert assigned is type_var_tuple
 
     @staticmethod
     def test_assigned_stmts_param_spec():
-        """The result is 'Uninferable' and no exception is raised."""
+        """The assigned statement is the ParamSpec node itself."""
         assign_stmts = extract_node("type Alias[**P] = Callable[P, int]")
         param_spec: nodes.ParamSpec = assign_stmts.type_params[0]
         assigned = next(param_spec.name.assigned_stmts())
-        # Hack so inference doesn't fail when evaluating __class_getitem__
-        # Revert if it's causing issues.
-        assert isinstance(assigned, nodes.Const)
-        assert assigned.value is None
+        assert isinstance(assigned, nodes.ParamSpec)
+        assert assigned is param_spec
