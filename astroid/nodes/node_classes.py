@@ -373,10 +373,15 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
                 starred = util.safe_infer(elt.value, context)
                 if not starred:
                     raise InferenceError(node=self, context=context)
-                if not hasattr(starred, "elts"):
+                if isinstance(starred, TypeVarTuple):
+                    # TypeVarTuple unpacking (*Ts) represents a variadic
+                    # type parameter, not an iterable to expand.
+                    values.append(elt)
+                elif not hasattr(starred, "elts"):
                     raise InferenceError(node=self, context=context)
-                # TODO: fresh context?
-                values.extend(starred._infer_sequence_helper(context))
+                else:
+                    # TODO: fresh context?
+                    values.extend(starred._infer_sequence_helper(context))
             elif isinstance(elt, NamedExpr):
                 value = util.safe_infer(elt.value, context)
                 if not value:

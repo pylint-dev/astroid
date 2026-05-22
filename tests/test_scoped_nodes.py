@@ -1569,6 +1569,22 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         cls = module["B"]
         self.assertIsNone(cls.slots())
 
+    def test_slots_annotation_only_without_value(self) -> None:
+        """An annotation-only ``__slots__`` has no inferable value.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3067
+        """
+        module = builder.parse("""
+        class Klass:
+            __slots__: None
+
+            def method(self):
+                self.attr = 1
+        """)
+        # ``__slots__`` is in ``locals`` but cannot be inferred; ``slots()``
+        # must return None instead of raising ``InferenceError``.
+        self.assertIsNone(module["Klass"].slots())
+
     def test_slots_added_dynamically_still_inferred(self) -> None:
         code = """
         class NodeBase(object):
@@ -2682,6 +2698,28 @@ def test_ancestor_with_generic() -> None:
         "A",
         "Generic",
         "object",
+    ]
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
+def test_ancestor_with_generic_typevartuple() -> None:
+    # https://github.com/pylint-dev/pylint/issues/10972
+    tree = builder.parse("""
+    from abc import ABC, abstractmethod
+    class Base(ABC):
+        @abstractmethod
+        def get_item(self) -> None: ...
+    class Middle[*Shape]:
+        def get_item(self) -> None:
+            raise NotImplementedError
+    class Concrete[*Shape](Middle[*Shape], Base): pass
+    """)
+    inferred_concrete = next(tree["Concrete"].infer())
+    assert [cdef.name for cdef in inferred_concrete.ancestors()] == [
+        "Middle",
+        "object",
+        "Base",
+        "ABC",
     ]
 
 
