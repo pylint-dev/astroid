@@ -48,11 +48,12 @@ Release date: TBA
 
   References pylint-dev/pylint#872
 
-* Fix ``InferenceError`` crash in ``ClassDef.slots()`` when ``__slots__`` is
-  declared as an annotation without a value (e.g. ``__slots__: None``). Such a
-  ``__slots__`` cannot be inferred, so ``slots()`` now returns ``None``.
+* Fix ``AttributeError`` crash when looking up a special method on a class
+  whose explicit metaclass infers to a non-class node (e.g. a function). Such
+  a metaclass has no MRO, so the dunder lookup now raises
+  ``AttributeInferenceError`` instead of crashing.
 
-  Closes #3067
+  Closes #3063
 
 * Fix ``DuplicateBasesError`` crash in the enum brain when inferring an enum
   class with duplicate bases (e.g. ``class C(enum.Enum, enum.Enum)``).
@@ -61,6 +62,11 @@ Release date: TBA
 
   Closes #3065
 
+* Fix ``InferenceError`` crash in ``ClassDef.slots()`` when ``__slots__`` is
+  declared as an annotation without a value (e.g. ``__slots__: None``). Such a
+  ``__slots__`` cannot be inferred, so ``slots()`` now returns ``None``.
+
+  Closes #3067
 
 What's New in astroid 4.1.2?
 ============================

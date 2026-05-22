@@ -62,7 +62,9 @@ def _class_lookup(
     node: nodes.ClassDef, name: str, context: InferenceContext | None = None
 ) -> list:
     metaclass = node.metaclass(context=context)
-    if metaclass is None:
+    # An explicit metaclass may infer to a non-class node (e.g. a function),
+    # which has no MRO to look the special method up in.
+    if not isinstance(metaclass, nodes.ClassDef):
         raise AttributeInferenceError(attribute=name, target=node)
 
     return _lookup_in_mro(metaclass, name)
