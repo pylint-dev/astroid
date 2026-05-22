@@ -2598,8 +2598,9 @@ class ClassDef(
             ):
                 return self
             # ``__class_getitem__`` may resolve to a non-callable node (e.g. an
-            # ``AssignName``), which has no ``infer_call_result`` method.
-            if not hasattr(method, "infer_call_result"):
+            # ``AssignName`` or an ``Import``), which has no
+            # ``infer_call_result`` method.
+            if not method.callable():
                 raise AstroidTypeError(node=self, context=context) from exc
             raise
         except InferenceError:

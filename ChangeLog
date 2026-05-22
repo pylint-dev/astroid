@@ -55,6 +55,13 @@ Release date: TBA
 
   Closes #3063
 
+* Fix ``AttributeError`` crash in ``ClassDef.getitem`` when ``__class_getitem__``
+  resolves to a non-callable node (e.g. an ``AssignName``). ``getitem`` now
+  raises ``AstroidTypeError`` in that case, consistent with its documented
+  behaviour.
+
+  Closes #3064
+
 * Fix ``DuplicateBasesError`` crash in the enum brain when inferring an enum
   class with duplicate bases (e.g. ``class C(enum.Enum, enum.Enum)``).
   ``infer_enum_class`` now catches ``MroError`` and leaves such a malformed
@@ -68,12 +75,6 @@ Release date: TBA
 
   Closes #3067
 
-* Fix ``AttributeError`` crash in ``ClassDef.getitem`` when ``__class_getitem__``
-  resolves to a non-callable node (e.g. an ``AssignName``). ``getitem`` now
-  raises ``AstroidTypeError`` in that case, consistent with its documented
-  behaviour.
-
-  Closes #3064
 
 What's New in astroid 4.1.2?
 ============================
