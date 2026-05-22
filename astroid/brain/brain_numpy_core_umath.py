@@ -15,11 +15,11 @@ from astroid.manager import AstroidManager
 
 
 def numpy_core_umath_transform() -> nodes.Module:
-    ufunc_optional_keyword_arguments = (
+    opt_args = (
         """out=None, where=True, casting='same_kind', order='K', """
         """dtype=None, subok=True"""
     )
-    return parse("""
+    return parse(f"""
     class FakeUfunc:
         def __init__(self):
             self.__doc__ = str()
@@ -144,7 +144,7 @@ def numpy_core_umath_transform() -> nodes.Module:
     right_shift = FakeUfuncTwoArgs()
     subtract = FakeUfuncTwoArgs()
     true_divide = FakeUfuncTwoArgs()
-    """.format(opt_args=ufunc_optional_keyword_arguments))
+    """)
 
 
 def register(manager: AstroidManager) -> None:

@@ -1,9 +1,9 @@
 # Tools used when releasing
-contributors-txt>=0.7.4
+contributors-txt>=1.0.2
 tbump~=6.11
 
 # Tools used to run tests
-coverage~=7.13
+coverage~=7.14
 pytest
-pytest-cov~=7.0
+pytest-cov~=7.1
 mypy; platform_python_implementation!="PyPy"

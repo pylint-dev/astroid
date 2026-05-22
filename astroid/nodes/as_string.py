@@ -180,8 +180,9 @@ class AsStringVisitor:
         args += [n.accept(self) for n in node.keywords]
         args_str = f"({', '.join(args)})" if args else ""
         docs = self._docs_dedent(node.doc_node)
-        return "\n\n{}class {}{}{}:{}\n{}\n".format(
-            decorate, node.name, type_params, args_str, docs, self._stmt_list(node.body)
+        body = self._stmt_list(node.body)
+        return (
+            f"\n\n{decorate}class {node.name}{type_params}{args_str}:{docs}\n{body}\n"
         )
 
     def visit_compare(self, node: nodes.Compare) -> str:
@@ -222,11 +223,12 @@ class AsStringVisitor:
 
     def visit_decorators(self, node: nodes.Decorators) -> str:
         """return an nodes.Decorators node as string"""
-        return "@%s\n" % "\n@".join(item.accept(self) for item in node.nodes)
+        joined = "\n@".join(item.accept(self) for item in node.nodes)
+        return f"@{joined}\n"
 
     def visit_dict(self, node: nodes.Dict) -> str:
         """return an nodes.Dict node as string"""
-        return "{%s}" % ", ".join(self._visit_dict(node))
+        return f"{{{', '.join(self._visit_dict(node))}}}"
 
     def _visit_dict(self, node: nodes.Dict) -> Iterator[str]:
         for key, value in node.items:
@@ -276,9 +278,7 @@ class AsStringVisitor:
 
     def visit_for(self, node: nodes.For) -> str:
         """return an nodes.For node as string"""
-        fors = "for {} in {}:\n{}".format(
-            node.target.accept(self), node.iter.accept(self), self._stmt_list(node.body)
-        )
+        fors = f"for {node.target.accept(self)} in {node.iter.accept(self)}:\n{self._stmt_list(node.body)}"
         if node.orelse:
             fors = f"{fors}\nelse:\n{self._stmt_list(node.orelse)}"
         return fors
@@ -325,7 +325,7 @@ class AsStringVisitor:
             # The format spec is itself a JoinedString, i.e. an f-string
             # We strip the f and quotes of the ends
             result += ":" + node.format_spec.accept(self)[2:-1]
-        return "{%s}" % result
+        return f"{{{result}}}"
 
     def handle_functiondef(self, node: nodes.FunctionDef, keyword: str) -> str:
         """return a (possibly async) function definition node as string"""
@@ -394,11 +394,10 @@ class AsStringVisitor:
 
     def visit_ifexp(self, node: nodes.IfExp) -> str:
         """return an nodes.IfExp node as string"""
-        return "{} if {} else {}".format(
-            self._precedence_parens(node, node.body, is_left=True),
-            self._precedence_parens(node, node.test, is_left=True),
-            self._precedence_parens(node, node.orelse, is_left=False),
-        )
+        body = self._precedence_parens(node, node.body, is_left=True)
+        test = self._precedence_parens(node, node.test, is_left=True)
+        orelse = self._precedence_parens(node, node.orelse, is_left=False)
+        return f"{body} if {test} else {orelse}"
 
     def visit_import(self, node: nodes.Import) -> str:
         """return an nodes.Import node as string"""
@@ -484,7 +483,7 @@ class AsStringVisitor:
 
     def visit_set(self, node: nodes.Set) -> str:
         """return an nodes.Set node as string"""
-        return "{%s}" % ", ".join(child.accept(self) for child in node.elts)
+        return f"{{{', '.join(child.accept(self) for child in node.elts)}}}"
 
     def visit_setcomp(self, node: nodes.SetComp) -> str:
         """return an nodes.SetComp node as string"""

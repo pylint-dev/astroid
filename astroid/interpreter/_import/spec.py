@@ -185,7 +185,7 @@ class ImportlibFinder(Finder):
                 and spec.loader  # type: ignore[comparison-overlap] # noqa: E501
                 is importlib.machinery.FrozenImporter
             ):
-                return ModuleSpec(
+                return ModuleSpec(  # type: ignore[unreachable]
                     name=modname,
                     location=getattr(spec.loader_state, "filename", None),
                     type=ModuleType.PY_FROZEN,

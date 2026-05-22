@@ -21,12 +21,10 @@ import importlib.machinery
 import importlib.util
 import io
 import itertools
-import logging
 import os
 import sys
 import sysconfig
 import types
-import warnings
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import redirect_stderr, redirect_stdout
 from functools import lru_cache
@@ -34,9 +32,6 @@ from sys import stdlib_module_names
 
 from astroid.const import IS_JYTHON
 from astroid.interpreter._import import spec, util
-
-logger = logging.getLogger(__name__)
-
 
 if sys.platform.startswith("win"):
     PY_SOURCE_EXTS = ("py", "pyw", "pyi")
@@ -80,7 +75,7 @@ if os.name == "posix":
         prefix = sys.prefix
 
     def _posix_path(path: str) -> str:
-        base_python = "python%d.%d" % sys.version_info[:2]
+        base_python = f"python{sys.version_info.major}.{sys.version_info.minor}"
         return os.path.join(prefix, path, base_python)
 
     STD_LIB_DIRS.add(_posix_path("lib"))
@@ -178,15 +173,19 @@ def load_module_from_name(dotted_name: str) -> types.ModuleType:
         module = importlib.import_module(dotted_name)
 
     stderr_value = stderr.getvalue()
-    if stderr_value:
-        logger.error(
-            "Captured stderr while importing %s:\n%s", dotted_name, stderr_value
-        )
     stdout_value = stdout.getvalue()
-    if stdout_value:
-        logger.info(
-            "Captured stdout while importing %s:\n%s", dotted_name, stdout_value
-        )
+    if stderr_value or stdout_value:
+        import logging  # pylint: disable=import-outside-toplevel
+
+        logger = logging.getLogger(__name__)
+        if stderr_value:
+            logger.error(
+                "Captured stderr while importing %s:\n%s", dotted_name, stderr_value
+            )
+        if stdout_value:
+            logger.info(
+                "Captured stdout while importing %s:\n%s", dotted_name, stdout_value
+            )
 
     return module
 
@@ -548,47 +547,6 @@ def module_in_path(modname: str, path: str | Iterable[str]) -> bool:
         return filename.startswith(_cache_normalize_path(path))
 
     return any(filename.startswith(_cache_normalize_path(entry)) for entry in path)
-
-
-def is_standard_module(modname: str, std_path: Iterable[str] | None = None) -> bool:
-    """Try to guess if a module is a standard python module (by default,
-    see `std_path` parameter's description).
-
-    :param modname: name of the module we are interested in
-
-    :param std_path: list of path considered has standard
-
-    :return:
-      true if the module:
-      - is located on the path listed in one of the directory in `std_path`
-      - is a built-in module
-    """
-    warnings.warn(
-        "is_standard_module() is deprecated. Use, is_stdlib_module() or module_in_path() instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    modname = modname.split(".")[0]
-    try:
-        filename = file_from_modpath([modname])
-    except ImportError:
-        # import failed, i'm probably not so wrong by supposing it's
-        # not standard...
-        return False
-    # modules which are not living in a file are considered standard
-    # (sys and __builtin__ for instance)
-    if filename is None:
-        # we assume there are no namespaces in stdlib
-        return not util.is_namespace(modname)
-    filename = _normalize_path(filename)
-    for path in EXT_LIB_DIRS:
-        if filename.startswith(_cache_normalize_path(path)):
-            return False
-    if std_path is None:
-        std_path = STD_LIB_DIRS
-
-    return any(filename.startswith(_cache_normalize_path(path)) for path in std_path)
 
 
 def is_relative(modname: str, from_file: str) -> bool:

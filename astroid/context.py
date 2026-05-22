@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 import contextlib
-import pprint
 from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING
 
@@ -154,6 +153,8 @@ class InferenceContext:
         )
 
     def __str__(self) -> str:
+        import pprint  # pylint: disable=import-outside-toplevel
+
         state = (
             f"{field}={pprint.pformat(getattr(self, field), width=80 - len(field))}"
             for field in self.__slots__

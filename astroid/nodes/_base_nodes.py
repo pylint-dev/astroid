@@ -237,9 +237,31 @@ class MultiLineBlockNode(NodeNG):
 class MultiLineWithElseBlockNode(MultiLineBlockNode):
     """Base node for multi-line blocks that can have else statements."""
 
+    body: list[NodeNG]
+    """The contents of the block."""
+
+    orelse: list[NodeNG]
+    """The contents of the ``else`` block."""
+
     @cached_property
     def blockstart_tolineno(self):
         return self.lineno
+
+    def block_range(self, lineno: int) -> tuple[int, int]:
+        """Get a range from the given line number to where this node ends.
+
+        :param lineno: The line number to start the range at.
+
+        :returns: The range of line numbers that this node belongs to,
+            starting at the given line number.
+        """
+        if lineno < self.fromlineno:
+            return lineno, self.tolineno
+        if lineno == self.body[0].fromlineno:
+            return lineno, lineno
+        if lineno <= self.body[-1].tolineno:
+            return lineno, self.body[-1].tolineno
+        return self._elsed_block_range(lineno, self.orelse, self.body[0].fromlineno - 1)
 
     def _elsed_block_range(
         self, lineno: int, orelse: list[nodes.NodeNG], last: int | None = None
@@ -247,12 +269,19 @@ class MultiLineWithElseBlockNode(MultiLineBlockNode):
         """Handle block line numbers range for try/finally, for, if and while
         statements.
         """
-        if lineno == self.fromlineno:
+        # If at the end of the node, return same line
+        if lineno == self.tolineno:
             return lineno, lineno
         if orelse:
-            if lineno >= orelse[0].fromlineno:
+            # If the lineno is beyond the body of the node we check the orelse
+            if lineno >= self.body[-1].tolineno + 1:
+                # If the orelse has a scope of its own we determine the block range there
+                if isinstance(orelse[0], MultiLineWithElseBlockNode):
+                    return orelse[0]._elsed_block_range(lineno, orelse[0].orelse)
+                # Return last line of orelse
                 return lineno, orelse[-1].tolineno
-            return lineno, orelse[0].fromlineno - 1
+            # If the lineno is within the body we take the last line of the body
+            return lineno, self.body[-1].tolineno
         return lineno, last or self.tolineno
 
 

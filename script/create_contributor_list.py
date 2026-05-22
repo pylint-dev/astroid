@@ -18,7 +18,10 @@ DEFAULT_CONTRIBUTOR_PATH = (ASTROID_BASE_DIRECTORY / "CONTRIBUTORS.txt").relativ
 
 def main():
     create_contributors_txt(
-        aliases_file=ALIASES_FILE, output=DEFAULT_CONTRIBUTOR_PATH, verbose=True
+        aliases_file=ALIASES_FILE,
+        output=DEFAULT_CONTRIBUTOR_PATH,
+        verbose=True,
+        no_bots=True,
     )
 
 

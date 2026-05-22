@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import itertools
 import os
-import pprint
 import types
 from collections.abc import Iterator
 from functools import lru_cache
@@ -82,6 +81,8 @@ class ObjectModel:
         self._instance = None
 
     def __repr__(self):
+        import pprint  # pylint: disable=import-outside-toplevel
+
         result = []
         cname = type(self).__name__
         string = "%(cname)s(%(fields)s)"
@@ -1011,12 +1012,11 @@ class PropertyModel(ObjectModel):
             :param func: property for which the setter has to be found
             :return: the setter function or None
             """
-            for target in [
-                t for t in func.parent.get_children() if t.name == func.function.name
-            ]:
-                for dec_name in target.decoratornames():
-                    if dec_name.endswith(func.function.name + ".setter"):
-                        return target
+            for node in func.parent.body:
+                if isinstance(node, (nodes.FunctionDef, nodes.AsyncFunctionDef)):
+                    for dec_name in node.decoratornames():
+                        if dec_name.endswith(func.function.name + ".setter"):
+                            return node
             return None
 
         func_setter = find_setter(func)

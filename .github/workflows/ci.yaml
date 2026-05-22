@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - 2.*
+      - maintenance/**
   pull_request:
   workflow_dispatch:
 
@@ -43,7 +43,7 @@ jobs:
       - &cache-python
         name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v5.0.3
+        uses: actions/cache@v5.0.5
         with:
           path: venv
           key: >-
@@ -63,7 +63,7 @@ jobs:
             hashFiles('.pre-commit-config.yaml') }}" >> $GITHUB_OUTPUT
       - name: Restore pre-commit environment
         id: cache-precommit
-        uses: actions/cache@v5.0.3
+        uses: actions/cache@v5.0.5
         with:
           path: ${{ env.PRE_COMMIT_CACHE }}
           key: >-
@@ -85,7 +85,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: &matrix-python-version ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version:
+          &matrix-python-version ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15-dev"]
     outputs:
       python-key: ${{ steps.generate-python-key.outputs.key }}
     steps:
@@ -122,7 +123,7 @@ jobs:
           . venv/bin/activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: &actions-upload-artifact actions/upload-artifact@v6.0.0
+        uses: &actions-upload-artifact actions/upload-artifact@v7.0.1
         with:
           name: coverage-linux-${{ matrix.python-version }}
           path: .coverage
@@ -136,7 +137,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15-dev"]
     steps:
       - name: Set temp directory
         run: echo "TEMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
@@ -226,12 +227,12 @@ jobs:
       - name: Install dependencies
         run: pip install -U -r requirements_minimal.txt
       - name: Download all coverage artifacts
-        uses: actions/download-artifact@v7.0.0
+        uses: actions/download-artifact@v8.0.1
       - name: Combine Linux coverage results
         run: |
           coverage combine coverage-linux*/.coverage
           coverage xml -o coverage-linux.xml
-      - uses: &actions-codecov codecov/codecov-action@v5
+      - uses: &actions-codecov codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true

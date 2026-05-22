@@ -2708,7 +2708,13 @@ class ClassDef(
         """Return an iterator with the inferred slots."""
         if "__slots__" not in self.locals:
             return None
-        for slots in self.igetattr("__slots__"):
+        try:
+            slots_attributes = list(self.igetattr("__slots__"))
+        except InferenceError:
+            # ``__slots__`` is present in ``locals`` but cannot be inferred,
+            # e.g. an annotation-only ``__slots__: ...`` with no assigned value.
+            return None
+        for slots in slots_attributes:
             # check if __slots__ is a valid type
             for meth in ITER_METHODS:
                 try:
@@ -2812,7 +2818,12 @@ class ClassDef(
     def slots(self):
         return self._all_slots
 
-    def _inferred_bases(self, context: InferenceContext | None = None):
+    def _inferred_bases(
+        self,
+        context: InferenceContext | None = None,
+        *,
+        base_classes: frozenset[ClassDef] = frozenset(),
+    ):
         # Similar with .ancestors, but the difference is when one base is inferred,
         # only the first object is wanted. That's because
         # we aren't interested in superclasses, as in the following
@@ -2841,7 +2852,7 @@ class ClassDef(
                 baseobj = baseobj._proxied
             if not isinstance(baseobj, ClassDef):
                 continue
-            if baseobj is self:
+            if baseobj is self or baseobj in base_classes:
                 # Circular base due to name rebinding (e.g. pdb.Pdb = CustomPdb
                 # where CustomPdb inherits from pdb.Pdb). Fall back to the
                 # first non-circular inferred value from the base expression.
@@ -2876,17 +2887,25 @@ class ClassDef(
             pass
         return None
 
-    def _compute_mro(self, context: InferenceContext | None = None):
+    def _compute_mro(
+        self,
+        context: InferenceContext,
+        *,
+        base_chain: frozenset[ClassDef] = frozenset(),
+    ):
         if self.qname() == "builtins.object":
             return [self]
 
-        inferred_bases = list(self._inferred_bases(context=context))
+        inferred_bases = list(
+            self._inferred_bases(context=context, base_classes=base_chain)
+        )
         bases_mro = []
+        base_chain |= {self}
         for base in inferred_bases:
-            if base is self:
+            if base in base_chain:
                 continue
 
-            mro = base._compute_mro(context=context)
+            mro = base._compute_mro(context=context, base_chain=base_chain)
             bases_mro.append(mro)
 
         unmerged_mro: list[list[ClassDef]] = [[self], *bases_mro, inferred_bases]

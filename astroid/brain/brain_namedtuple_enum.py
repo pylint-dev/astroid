@@ -19,6 +19,7 @@ from astroid.exceptions import (
     AstroidTypeError,
     AstroidValueError,
     InferenceError,
+    MroError,
     UseInferenceDefault,
 )
 from astroid.inference_tip import inference_tip
@@ -264,7 +265,7 @@ def _get_renamed_namedtuple_attributes(field_names):
             or name.startswith("_")
             or name in seen
         ):
-            names[i] = "_%d" % i
+            names[i] = f"_{i}"
         seen.add(name)
     return tuple(names)
 
@@ -386,7 +387,13 @@ INT_FLAG_ADDITION_METHODS = """
 
 def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
     """Specific inference for enums."""
-    for basename in (b for cls in node.mro() for b in cls.basenames):
+    try:
+        mro = node.mro()
+    except MroError:
+        # A malformed class hierarchy (e.g. duplicate bases) has no resolvable
+        # MRO; leave the node untransformed rather than crashing.
+        return node
+    for basename in (b for cls in mro for b in cls.basenames):
         if node.root().name == "enum":
             # Skip if the class is directly from enum module.
             break
