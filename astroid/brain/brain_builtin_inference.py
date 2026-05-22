@@ -869,7 +869,7 @@ def infer_str(node, context: InferenceContext | None = None) -> nodes.Const:
         return fallback
 
     if len(candidates) == 1:
-        return nodes.Const(candidates.pop())
+        return nodes.Const(next(iter(candidates)))
     return fallback
 
 
