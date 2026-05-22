@@ -1360,7 +1360,11 @@ def test_replace_returns_subclass_instance() -> None:
     node = astroid.extract_node("""
     import dataclasses
     from dataclasses import dataclass
-    from typing import ClassVar, Generic, Self, TypeVar
+    from typing import ClassVar, Generic, TypeVar
+    try:
+        from typing import Self
+    except ImportError:
+        from typing_extensions import Self
     from abc import ABC
 
     _T = TypeVar("_T", covariant=True)
