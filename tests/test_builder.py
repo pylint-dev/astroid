@@ -1044,7 +1044,7 @@ class StubBuildTest(unittest.TestCase):
     def test_standalone_pyi_discovered(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             pyi_path = os.path.join(tmp_dir, "stub_only_mod.pyi")
-            with open(pyi_path, "w") as f:
+            with open(pyi_path, "w", encoding="utf-8") as f:
                 f.write("x: int\n")
             with resources.augmented_sys_path([tmp_dir]):
                 module = AstroidManager().ast_from_module_name("stub_only_mod")
@@ -1054,9 +1054,9 @@ class StubBuildTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp_dir:
             py_path = os.path.join(tmp_dir, "dual_mod.py")
             pyi_path = os.path.join(tmp_dir, "dual_mod.pyi")
-            with open(py_path, "w") as f:
+            with open(py_path, "w", encoding="utf-8") as f:
                 f.write("x = 1\n")
-            with open(pyi_path, "w") as f:
+            with open(pyi_path, "w", encoding="utf-8") as f:
                 f.write("x: int\n")
             with resources.augmented_sys_path([tmp_dir]):
                 module = AstroidManager().ast_from_module_name("dual_mod")
