@@ -2770,12 +2770,10 @@ class StubScopedNodeTest(unittest.TestCase):
         assert len(attrs) == 1
 
     def test_nonstub_class_getattr_skips_bare_annassign(self) -> None:
-        module = builder.parse(
-            """
+        module = builder.parse("""
             class Foo:
                 x: int
-            """
-        )
+            """)
         cls = module.body[0]
         assert isinstance(cls, nodes.ClassDef)
         with self.assertRaises(AttributeInferenceError):

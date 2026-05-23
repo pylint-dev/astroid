@@ -1025,9 +1025,7 @@ class StubBuildTest(unittest.TestCase):
         assert isinstance(func.body[0], nodes.Raise)
 
     def test_stub_funcdef_default_ellipsis_preserved(self) -> None:
-        module = builder.parse(
-            "def f(x: int = ...) -> None: ...", is_stub=True
-        )
+        module = builder.parse("def f(x: int = ...) -> None: ...", is_stub=True)
         func = module.body[0]
         assert isinstance(func, nodes.FunctionDef)
         default = func.args.defaults[0]

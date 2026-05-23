@@ -500,9 +500,7 @@ def assign_annassigned_stmts(
 
 _TYPING_WRAPPERS = frozenset(("ClassVar", "Final", "Annotated"))
 
-_INFERABLE_TYPING_TYPES = frozenset(
-    ("Dict", "FrozenSet", "List", "Set", "Tuple")
-)
+_INFERABLE_TYPING_TYPES = frozenset(("Dict", "FrozenSet", "List", "Set", "Tuple"))
 
 
 def _unwrap_typing_wrapper(node: nodes.NodeNG) -> nodes.NodeNG:
