@@ -451,6 +451,17 @@ def assign_assigned_stmts(
     context: InferenceContext | None = None,
     assign_path: list[int] | None = None,
 ) -> Any:
+    # pylint: disable = too-many-boolean-expressions
+    if (
+        not assign_path
+        and isinstance(self, nodes.Assign)
+        and self.type_annotation is not None
+        and isinstance(self.value, node_classes.Const)
+        and self.value.value is None
+        and self.root().is_stub
+    ):
+        yield from infer_instance_from_annotation(self.type_annotation, ctx=context)
+        return None
     if not assign_path:
         yield self.value
         return None
@@ -472,11 +483,90 @@ def assign_annassigned_stmts(
     context: InferenceContext | None = None,
     assign_path: list[int] | None = None,
 ) -> Any:
+    if (
+        not assign_path
+        and self.value is None
+        and self.annotation is not None
+        and self.root().is_stub
+    ):
+        yield from infer_instance_from_annotation(self.annotation, ctx=context)
+        return
     for inferred in assign_assigned_stmts(self, node, context, assign_path):
         if inferred is None:
             yield util.Uninferable
         else:
             yield inferred
+
+
+_TYPING_WRAPPERS = frozenset(("ClassVar", "Final", "Annotated"))
+
+_INFERABLE_TYPING_TYPES = frozenset(
+    ("Dict", "FrozenSet", "List", "Set", "Tuple")
+)
+
+
+def _unwrap_typing_wrapper(node: nodes.NodeNG) -> nodes.NodeNG:
+    """Strip ClassVar/Final/Annotated wrappers from an annotation node."""
+    while isinstance(node, nodes.Subscript):
+        name = None
+        if isinstance(node.value, nodes.Name):
+            name = node.value.name
+        elif isinstance(node.value, nodes.Attribute):
+            name = node.value.attrname
+        if name not in _TYPING_WRAPPERS:
+            break
+        if name == "Annotated" and isinstance(node.slice, nodes.Tuple):
+            node = node.slice.elts[0]
+        else:
+            node = node.slice
+    return node
+
+
+def _resolve_forward_ref(node: nodes.Const) -> nodes.ClassDef | None:
+    """Resolve a string annotation (forward reference) to its ClassDef."""
+    name = node.value
+    try:
+        _, stmts = node.frame().lookup(name)
+    except Exception:  # pylint: disable=broad-except
+        return None
+    if stmts and isinstance(stmts[0], nodes.ClassDef):
+        return stmts[0]
+    return None
+
+
+def infer_instance_from_annotation(
+    node: nodes.NodeNG, ctx: InferenceContext | None = None
+) -> Iterator[InferenceResult]:
+    """Infer an instance corresponding to the type annotation represented by node."""
+    node = _unwrap_typing_wrapper(node)
+    klass = None
+    if isinstance(node, nodes.Const) and isinstance(node.value, str):
+        klass = _resolve_forward_ref(node)
+        if klass is None:
+            yield util.Uninferable
+            return
+    else:
+        try:
+            klass = next(node.infer(context=ctx))
+        except (InferenceError, StopIteration):
+            yield util.Uninferable
+            return
+    if isinstance(klass, nodes.Const) and klass.value is None:
+        yield klass
+        return
+    if not isinstance(klass, nodes.ClassDef):
+        yield util.Uninferable
+    elif klass.root().name in {
+        "typing",
+        "_collections_abc",
+        "",
+    }:  # "" because of synthetic nodes in brain_typing.py
+        if klass.name in _INFERABLE_TYPING_TYPES:
+            yield klass.instantiate_class()
+        else:
+            yield util.Uninferable
+    else:
+        yield klass.instantiate_class()
 
 
 def _resolve_assignment_parts(parts, assign_path, context):
