@@ -782,7 +782,11 @@ class TreeRebuilder:
             simple=node.simple,
             value=self.visit(node.value, newnode),
         )
-        if self._is_stub and isinstance(newnode.value, nodes.Const) and newnode.value.value is ...:
+        if (
+            self._is_stub
+            and isinstance(newnode.value, nodes.Const)
+            and newnode.value.value is ...
+        ):
             newnode.value = None
         return newnode
 
