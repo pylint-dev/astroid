@@ -14,7 +14,7 @@ import sys
 import token
 from collections.abc import Callable, Collection, Generator
 from io import StringIO
-from tokenize import TokenInfo, generate_tokens
+from tokenize import TokenError, TokenInfo, generate_tokens
 from typing import TYPE_CHECKING, Final, TypeVar, cast, overload
 
 from astroid import nodes
@@ -131,21 +131,26 @@ class TreeRebuilder:
         else:
             search_token = "class"
 
-        for t in generate_tokens(StringIO(data).readline):
-            if (
-                start_token is not None
-                and t.type == token.NAME
-                and t.string == node.name
-            ):
-                break
-            if t.type in keyword_tokens:
-                if t.string == search_token:
-                    start_token = t
-                    continue
-                if t.string in {"def"}:
-                    continue
-            start_token = None
-        else:
+        try:
+            for t in generate_tokens(StringIO(data).readline):
+                if (
+                    start_token is not None
+                    and t.type == token.NAME
+                    and t.string == node.name
+                ):
+                    break
+                if t.type in keyword_tokens:
+                    if t.string == search_token:
+                        start_token = t
+                        continue
+                    if t.string in {"def"}:
+                        continue
+                start_token = None
+            else:
+                return None
+        except TokenError:
+            # Malformed source can make ``generate_tokens`` raise (e.g. an
+            # unterminated bracket on Python < 3.12); no position info then.
             return None
 
         return Position(
@@ -639,8 +644,10 @@ class TreeRebuilder:
 
         try:
             type_comment_ast = self._parser_module.parse(node.type_comment)
-        except SyntaxError:
-            # Invalid type comment, just skip it.
+        except (SyntaxError, ValueError, MemoryError, RecursionError):
+            # Invalid type comment, just skip it. ``ast.parse`` may raise
+            # ``MemoryError``/``RecursionError``/``ValueError`` on pathological
+            # inputs (e.g. deeply nested braces produced by fuzzers).
             return None
 
         # For '# type: # any comment' ast.parse returns a Module node,
@@ -662,8 +669,10 @@ class TreeRebuilder:
 
         try:
             type_comment_ast = parse_function_type_comment(node.type_comment)
-        except SyntaxError:
-            # Invalid type comment, just skip it.
+        except (SyntaxError, ValueError, MemoryError, RecursionError):
+            # Invalid type comment, just skip it. ``ast.parse`` may raise
+            # ``MemoryError``/``RecursionError``/``ValueError`` on pathological
+            # inputs (e.g. deeply nested braces produced by fuzzers).
             return None
 
         if not type_comment_ast:

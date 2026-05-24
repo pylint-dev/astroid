@@ -371,9 +371,7 @@ class Instance(BaseInstance):
         return method.infer_call_result(self, context)
 
     def __repr__(self) -> str:
-        return "<Instance of {}.{} at 0x{}>".format(
-            self._proxied.root().name, self._proxied.name, id(self)
-        )
+        return f"<Instance of {self._proxied.root().name}.{self._proxied.name} at 0x{id(self)}>"
 
     def __str__(self) -> str:
         return f"Instance of {self._proxied.root().name}.{self._proxied.name}"
@@ -453,9 +451,7 @@ class UnboundMethod(Proxy):
     def __repr__(self) -> str:
         assert self._proxied.parent, "Expected a parent node"
         frame = self._proxied.parent.frame()
-        return "<{} {} of {} at 0x{}".format(
-            self.__class__.__name__, self._proxied.name, frame.qname(), id(self)
-        )
+        return f"<{self.__class__.__name__} {self._proxied.name} of {frame.qname()} at 0x{id(self)}"
 
     def implicit_parameters(self) -> Literal[0, 1]:
         return 0

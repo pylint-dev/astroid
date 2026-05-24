@@ -571,10 +571,27 @@ def _get_field_default(field_call: nodes.Call) -> _FieldDefaultReturn:
 def _is_keyword_only_sentinel(node: nodes.NodeNG) -> bool:
     """Return True if node is the KW_ONLY sentinel."""
     inferred = safe_infer(node)
-    return (
-        isinstance(inferred, bases.Instance)
-        and inferred.qname() == "dataclasses._KW_ONLY_TYPE"
-    )
+    if not isinstance(inferred, bases.Instance):
+        return False
+    if inferred.qname() == "dataclasses._KW_ONLY_TYPE":
+        return True
+    if inferred.qname() != "builtins.sentinel":
+        return False
+    if isinstance(node, nodes.Name):
+        _, assignments = node.lookup(node.name)
+        return any(
+            isinstance(assignment, nodes.ImportFrom)
+            and assignment.modname == "dataclasses"
+            and any(imported == "KW_ONLY" for imported, _ in assignment.names)
+            for assignment in assignments
+        )
+    if isinstance(node, nodes.Attribute) and node.attrname == "KW_ONLY":
+        inferred_expr = safe_infer(node.expr)
+        return (
+            isinstance(inferred_expr, nodes.Module)
+            and inferred_expr.qname() == "dataclasses"
+        )
+    return False
 
 
 def _is_init_var(node: nodes.NodeNG) -> bool:

@@ -104,8 +104,10 @@ class BadBinaryOperationMessage(BadOperationMessage):
         self.op = op
 
     def __str__(self) -> str:
-        msg = "unsupported operand type(s) for {}: {!r} and {!r}"
-        return msg.format(self.op, self.left_type.name, self.right_type.name)
+        return (
+            f"unsupported operand type(s) for {self.op}: {self.left_type.name!r} "
+            f"and {self.right_type.name!r}"
+        )
 
 
 def check_warnings_filter() -> bool:
