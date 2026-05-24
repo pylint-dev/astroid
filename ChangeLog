@@ -55,6 +55,13 @@ Release date: TBA
 
   Closes #2527
 
+* ``str()`` of a constant argument now infers the actual string value instead
+  of always inferring ``""``. When every inference path of the argument
+  resolves to ``Const`` values that stringify to the same string, ``infer_str``
+  returns that string; otherwise it keeps falling back to ``Const("")``.
+
+  Closes #2994
+
 * Fix ``AttributeError`` crash when looking up a special method on a class
   whose explicit metaclass infers to a non-class node (e.g. a function). Such
   a metaclass has no MRO, so the dunder lookup now raises

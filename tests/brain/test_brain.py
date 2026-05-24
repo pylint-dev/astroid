@@ -1429,6 +1429,7 @@ def test_infer_str() -> None:
     str(s) #@
     str('a') #@
     str(some_object()) #@
+    str(7**10000) #@
     """)
     for node in ast_nodes:
         inferred = next(node.infer())
@@ -1440,6 +1441,54 @@ def test_infer_str() -> None:
     inferred = next(node.infer())
     assert isinstance(inferred, astroid.Instance)
     assert inferred.qname() == "builtins.str"
+
+
+def test_infer_str_const() -> None:
+    ast_nodes = astroid.extract_node("""
+    str('') #@
+    str('a') #@
+    str(1) #@
+    str(True) #@
+    str(False) #@
+    str(None) #@
+    str(4.33) #@
+    str(...) #@
+    str(2 + 2) #@
+    str() #@
+    str(int) #@
+    str(2 if unknown() else 3) #@
+    """)
+
+    inferred = list(node.inferred()[0].value for node in ast_nodes)
+    assert inferred[0] == ""
+    assert inferred[1] == "a"
+    assert inferred[2] == "1"
+    assert inferred[3] == "True"
+    assert inferred[4] == "False"
+    assert inferred[5] == "None"
+    assert inferred[6] == "4.33"
+    assert inferred[7] == "Ellipsis"
+    assert inferred[8] == "4"
+    assert inferred[9] == ""
+    assert inferred[10] == ""
+    assert inferred[11] == ""
+
+
+def test_infer_str_does_not_run_user_str() -> None:
+    """A user-defined __str__ must never be executed during inference."""
+    node = astroid.extract_node("""
+    class StrWillFail:
+        def __str__(self):
+            raise RuntimeError
+
+    str(StrWillFail()) #@
+    """)
+    # The argument infers to an Instance, not a nodes.Const, so infer_str
+    # returns the empty-string fallback without ever calling __str__.
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == ""
 
 
 def test_infer_int() -> None:
