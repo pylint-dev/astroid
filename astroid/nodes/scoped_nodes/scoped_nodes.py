@@ -2586,7 +2586,7 @@ class ClassDef(
 
         try:
             return next(method.infer_call_result(self, new_context), util.Uninferable)
-        except AttributeError:
+        except AttributeError as exc:
             # Starting with python3.9, builtin types list, dict etc...
             # are subscriptable thanks to __class_getitem___ classmethod.
             # However in such case the method is bound to an EmptyNode and
@@ -2597,6 +2597,11 @@ class ClassDef(
                 and self.pytype() == "builtins.type"
             ):
                 return self
+            # ``__class_getitem__`` may resolve to a non-callable node (e.g. an
+            # ``AssignName`` or an ``Import``), which has no
+            # ``infer_call_result`` method.
+            if not method.callable():
+                raise AstroidTypeError(node=self, context=context) from exc
             raise
         except InferenceError:
             return util.Uninferable

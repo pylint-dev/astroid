@@ -48,12 +48,33 @@ Release date: TBA
 
   References pylint-dev/pylint#872
 
+* Fix uncaught ``TokenError`` when building a class or function whose source
+  slice is malformed. ``tokenize.generate_tokens`` may raise (e.g. on an
+  unterminated bracket on Python < 3.12); position computation now treats such
+  a node as having no position information instead of crashing.
+
+  Closes #2527
+
+* ``str()`` of a constant argument now infers the actual string value instead
+  of always inferring ``""``. When every inference path of the argument
+  resolves to ``Const`` values that stringify to the same string, ``infer_str``
+  returns that string; otherwise it keeps falling back to ``Const("")``.
+
+  Closes #2994
+
 * Fix ``AttributeError`` crash when looking up a special method on a class
   whose explicit metaclass infers to a non-class node (e.g. a function). Such
   a metaclass has no MRO, so the dunder lookup now raises
   ``AttributeInferenceError`` instead of crashing.
 
   Closes #3063
+
+* Fix ``AttributeError`` crash in ``ClassDef.getitem`` when ``__class_getitem__``
+  resolves to a non-callable node (e.g. an ``AssignName``). ``getitem`` now
+  raises ``AstroidTypeError`` in that case, consistent with its documented
+  behaviour.
+
+  Closes #3064
 
 * Fix ``DuplicateBasesError`` crash in the enum brain when inferring an enum
   class with duplicate bases (e.g. ``class C(enum.Enum, enum.Enum)``).
@@ -68,12 +89,6 @@ Release date: TBA
 
   Closes #3067
 
-* ``str()`` of a constant argument now infers the actual string value instead
-  of always inferring ``""``. When every inference path of the argument
-  resolves to ``Const`` values that stringify to the same string, ``infer_str``
-  returns that string; otherwise it keeps falling back to ``Const("")``.
-
-  Closes #2994
 
 What's New in astroid 4.1.2?
 ============================
