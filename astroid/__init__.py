@@ -30,6 +30,22 @@ Main modules are:
 * builder contains the class responsible to build astroid trees
 """
 
+# DELIBERATE STARTUP REGRESSION FOR CODSPEED COMPARISON — DO NOT MERGE.
+# Eagerly imports a pile of heavyweight stdlib modules at `import astroid`
+# time so the cold-lint benchmark (which shells out `python -m pylint`
+# per iteration and re-pays import cost every run) shows a clear delta
+# vs the baseline (#3079). See PR #3080 for the experiment description.
+# pylint: disable=unused-import,wrong-import-order,wrong-import-position
+import concurrent.futures  # noqa: F401
+import email.mime.multipart  # noqa: F401
+import http.server  # noqa: F401
+import multiprocessing  # noqa: F401
+import pydoc  # noqa: F401
+import unittest.mock  # noqa: F401
+import wsgiref.simple_server  # noqa: F401
+import xml.dom.minidom  # noqa: F401
+import xmlrpc.server  # noqa: F401
+
 # isort: off
 # We have an isort: off on 'astroid.nodes' because of a circular import.
 from astroid.nodes import node_classes, scoped_nodes
