@@ -9,7 +9,7 @@ import pytest
 
 from astroid import builder, helpers, manager, nodes, raw_building, util
 from astroid.builder import AstroidBuilder
-from astroid.const import IS_PYPY
+from astroid.const import IS_PYPY, PY312_PLUS
 from astroid.exceptions import InferenceError, _NonDeducibleTypeHierarchy
 
 
@@ -305,3 +305,28 @@ def test_tuple_to_container_inference_error() -> None:
 
     with pytest.raises(InferenceError):
         helpers.class_or_tuple_to_container(node.args[1])
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
+def test_object_type_pep695_type_params() -> None:
+    """PEP 695 type parameters have no concrete type at static-analysis time.
+
+    Regression test for the AssertionError introduced when
+    ``generic_type_assigned_stmts`` started yielding the TypeVar/TypeVarTuple/
+    ParamSpec node itself: ``object_type`` previously crashed instead of
+    returning ``Uninferable``.
+    """
+    binop = builder.extract_node("""
+    def func[_T](var: _T) -> _T:
+        value: _T | None = None  #@
+        return var
+    """).annotation
+    assert helpers.object_type(binop) is util.Uninferable
+
+    for code in (
+        "type Alias[*Ts] = tuple[*Ts]",
+        "type Alias[**P] = Callable[P, int]",
+    ):
+        assign = builder.extract_node(code)
+        type_param_name = assign.type_params[0].name
+        assert helpers.object_type(type_param_name) is util.Uninferable
