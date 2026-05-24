@@ -1,0 +1,60 @@
+name: CodSpeed (walltime)
+
+# Cold-start benchmarks (currently just test_bench_endtoend_cold_lint)
+# shell out to a fresh Python subprocess. mode: simulation only measures
+# Python-side instructions and would report the subprocess as ~300 µs of
+# subprocess.run overhead. mode: walltime measures the wall-clock end to
+# end including the subprocess, which is what we want.
+#
+# Walltime on a shared GitHub runner is noisier than CodSpeed's dedicated
+# macro runners. If cold_lint starts producing false-positive regressions,
+# raise its per-benchmark threshold on the CodSpeed dashboard (Actions
+# menu on the benchmark page).
+
+on:
+  push:
+    branches:
+      - main
+      - maintenance/**
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  benchmarks:
+    name: Run cold-start benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v6.0.2
+
+      - name: Set up Python 3.13
+        id: python
+        uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.13"
+          check-latest: true
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip
+          # Install pylint first (it pulls in a published astroid as a
+          # dependency); the editable install below then replaces that
+          # astroid with the version under test. pylint is invoked as a
+          # subprocess by the cold-start benchmark.
+          pip install pylint pytest-codspeed
+          pip install -e .
+
+      - name: Run cold-start benchmarks
+        uses: CodSpeedHQ/action@v4.13.0
+        with:
+          mode: walltime
+          run: pytest tests/benchmarks/ --codspeed -k "cold_lint"
