@@ -4307,6 +4307,24 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         with self.assertRaises(AstroidTypeError):
             node.getitem(nodes.Const(0))
 
+    def test_getitem_with_non_callable_class_getitem(self) -> None:
+        """``__class_getitem__`` may resolve to a non-callable node (e.g. an
+        ``AssignName`` or an ``Import``), which has no ``infer_call_result``.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3064
+        """
+        for body in (
+            "__class_getitem__ = classmethod(tuple)",
+            "import os as __class_getitem__",
+            "from os import getcwd as __class_getitem__",
+        ):
+            node = extract_node(f"""
+            class C:  #@
+                {body}
+            """)
+            with self.assertRaises(AstroidTypeError):
+                node.getitem(nodes.Const(0))
+
     def test_infer_arg_called_type_is_uninferable(self) -> None:
         node = extract_node("""
         def func(type):
