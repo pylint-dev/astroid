@@ -12,9 +12,7 @@ not have it. Without this guard pytest would error out with
 is set in ``pyproject.toml``, even a warning would abort collection).
 """
 
-from __future__ import annotations
-
-import importlib.util
-
-if importlib.util.find_spec("pytest_codspeed") is None:
+try:
+    import pytest_codspeed  # noqa: F401  # pylint: disable=unused-import
+except ImportError:
     collect_ignore_glob = ["test_bench_*.py"]

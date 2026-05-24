@@ -25,33 +25,35 @@ concurrency:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   benchmarks:
     name: Run cold-start benchmarks
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v6.0.2
 
-      - name: Set up Python 3.13
+      - name: Set up Python 3.14
         id: python
         uses: actions/setup-python@v6.2.0
         with:
-          python-version: "3.13"
+          python-version: "3.14"
           check-latest: true
 
       - name: Install dependencies
         run: |
           python -m pip install -U pip
           # Install pylint first (it pulls in a published astroid as a
-          # dependency); the editable install below then replaces that
-          # astroid with the version under test. pylint is invoked as a
+          # dependency); the install below then replaces that astroid
+          # with the version under test. pylint is invoked as a
           # subprocess by the cold-start benchmark.
           pip install pylint pytest-codspeed
-          pip install -e .
+          pip install .
 
       - name: Run cold-start benchmarks
         uses: CodSpeedHQ/action@v4.13.0

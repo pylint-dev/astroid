@@ -18,6 +18,16 @@ real project and calling ``safe_infer`` on the nodes that matter
   optimizations like deferring brain-plugin registration are invisible
   to those benches.
 
+  Scope note: this bench exists to *protect* targeted lazy imports of
+  modules that are not on the general code path — brain plugins for
+  libraries a given project does not use, and debug-only stdlib
+  modules like ``pprint`` / ``logging`` deferred in #3062. Such
+  function-local / ``TYPE_CHECKING`` imports work on all supported
+  Python versions; they do not depend on PEP 810 lazy imports landing
+  in 3.15. It is **not** an argument for lazifying modules astroid
+  imports unconditionally — those just trade one fixed cost for
+  another and bloat the import graph for marginal wins.
+
   Cold-lint runs in a dedicated **walltime** CodSpeed workflow
   (``.github/workflows/codspeed-walltime.yaml``) because the
   ``simulation`` mode used by the in-process suite
