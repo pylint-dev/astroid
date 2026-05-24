@@ -7,6 +7,15 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Fix astroid bootstrap crash on PyPy 7.3.22 (``TypeError: expected str, got
+  getset_descriptor object``) by also catching ``TypeError`` from
+  ``getattr(obj, alias)`` in ``InspectBuilder.object_build``. PyPy 7.3.22
+  raises ``TypeError`` instead of ``AttributeError`` for unset getset
+  descriptors like ``types.FunctionType.__text_signature__``, which made
+  ``_astroid_bootstrapping()`` blow up on any call into astroid.
+
+  Refs pylint-dev/pylint#10999
+
 * Shorten ``import astroid`` by deferring imports only needed on cold paths.
   ``logging`` (used by ``modutils`` and ``raw_building`` solely to report
   stderr/stdout captured while importing a module) and ``pprint`` (used only
