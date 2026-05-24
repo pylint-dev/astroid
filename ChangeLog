@@ -26,6 +26,7 @@ Release date: TBA
   to be parenthesized.
 
   Closes #2668
+
 * Catch ``MemoryError``/``RecursionError`` (and ``ValueError``) when validating
   type comments with ``ast.parse``. Pathological type comments produced by
   fuzzers (e.g. ``# type: i{{{{{{{...``) previously crashed parsing with a
