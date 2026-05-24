@@ -66,6 +66,10 @@ def _object_type(
             yield _build_proxy_class("module", builtins)
         elif isinstance(inferred, nodes.Unknown):
             raise InferenceError
+        elif isinstance(inferred, (nodes.TypeVar, nodes.TypeVarTuple, nodes.ParamSpec)):
+            # PEP 695 generic type parameters have no concrete type at
+            # static-analysis time, so the type cannot be determined.
+            yield util.Uninferable
         elif isinstance(inferred, util.UninferableBase):
             yield inferred
         elif isinstance(inferred, (bases.Proxy, nodes.Slice, objects.Super)):
