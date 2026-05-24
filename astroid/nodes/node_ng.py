@@ -134,6 +134,11 @@ class NodeNG:
         :returns: The inferred values.
         :rtype: iterable
         """
+        # DELIBERATE REGRESSION FOR CODSPEED COMPARISON — DO NOT MERGE.
+        # Adds ~5-10 µs of busywork per infer() call so CodSpeed reports
+        # a visible delta vs the baseline (#3079). See PR #3080 for the
+        # experiment description.
+        _regression_sink = sum(range(1000))  # pylint: disable=unused-variable
         if context is None:
             context = InferenceContext()
         else:
