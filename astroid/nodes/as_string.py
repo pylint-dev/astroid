@@ -441,7 +441,7 @@ class AsStringVisitor:
         """Return an assignment expression node as string, always parenthesized."""
         target = node.target.accept(self)
         value = node.value.accept(self)
-        if isinstance(getattr(node, "parent", None), nodes.Compare):
+        if isinstance(node.parent, nodes.Compare):
             return f"{target} := {value}"
         return f"({target} := {value})"
 
