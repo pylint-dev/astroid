@@ -7295,3 +7295,76 @@ def test_tuple_unpack_from_dict_return_not_str() -> None:
             assert (
                 item.pytype() != "builtins.str"
             ), "mylist must not be inferred as a str instance."
+
+
+def test_re_compile_not_inferred_as_str() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/520.
+
+    ``re.compile(r"f")`` used to infer to ``[Uninferable, Const.str]``, and the
+    spurious ``str`` member triggered a ``no-member`` false positive on
+    subsequent ``.match()`` calls. The current behavior is ``[Uninferable]``;
+    in particular, no inferred value may be a string.
+    """
+    node = extract_node("""
+        import re
+        _ENCODING_RGX = re.compile(r"f")
+        _ENCODING_RGX  #@
+    """)
+    for value in node.inferred():
+        if isinstance(value, nodes.Const):
+            assert not isinstance(value.value, str)
+        if isinstance(value, Instance):
+            assert value.pytype() != "builtins.str"
+
+
+def test_dict_returning_method_through_inheritance() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/1017.
+
+    A method that returns a dict literal, called on an instance of a class
+    that inherits from a base whose same-named method returns ``None``, used
+    to infer as the base class's instance (the schema object). The override
+    must win, so the call result is a ``Dict``.
+    """
+    node = extract_node("""
+        class SchemaNode:
+            def deserialize(self, value): pass
+
+
+        class ExtendedSchemaNode(SchemaNode):
+            pass
+
+
+        class GetJobsQueries(ExtendedSchemaNode):
+            def deserialize(self, value):
+                return {"detail": True}
+
+
+        obj = GetJobsQueries()
+        filters = obj.deserialize({"data": 1})
+        filters  #@
+    """)
+    inferred = node.inferred()
+    assert any(isinstance(item, nodes.Dict) for item in inferred)
+
+
+def test_redefined_method_uses_last_definition() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/1683.
+
+    When a method is redefined in the same class body, calling it on an
+    instance must infer to the *last* definition. The bug caused inference to
+    pick the first (no-return) definition, triggering false
+    ``assignment-from-no-return`` in pylint.
+    """
+    node = extract_node("""
+        class Test:
+            def test(self):
+                pass
+
+            def test(self):
+                return True
+
+        Test().test()  #@
+    """)
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value is True
