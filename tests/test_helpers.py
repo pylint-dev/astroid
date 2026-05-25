@@ -9,9 +9,8 @@ import pytest
 
 from astroid import builder, helpers, manager, nodes, raw_building, util
 from astroid.builder import AstroidBuilder
-from astroid.const import IS_PYPY
+from astroid.const import IS_PYPY, PY312_PLUS
 from astroid.exceptions import InferenceError, _NonDeducibleTypeHierarchy
-from astroid.nodes.node_classes import UNATTACHED_UNKNOWN
 
 
 class TestHelpers(unittest.TestCase):
@@ -245,16 +244,6 @@ def test_uninferable_for_safe_infer() -> None:
     assert util.safe_infer(util.Uninferable) == uninfer
 
 
-def test_safe_infer_shim() -> None:
-    with pytest.warns(DeprecationWarning) as records:
-        helpers.safe_infer(UNATTACHED_UNKNOWN)
-
-    assert (
-        "Import safe_infer from astroid.util; this shim in astroid.helpers will be removed."
-        in records[0].message.args[0]
-    )
-
-
 def test_class_to_container() -> None:
     node = builder.extract_node("""isinstance(3, int)""")
 
@@ -316,3 +305,28 @@ def test_tuple_to_container_inference_error() -> None:
 
     with pytest.raises(InferenceError):
         helpers.class_or_tuple_to_container(node.args[1])
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
+def test_object_type_pep695_type_params() -> None:
+    """PEP 695 type parameters have no concrete type at static-analysis time.
+
+    Regression test for the AssertionError introduced when
+    ``generic_type_assigned_stmts`` started yielding the TypeVar/TypeVarTuple/
+    ParamSpec node itself: ``object_type`` previously crashed instead of
+    returning ``Uninferable``.
+    """
+    binop = builder.extract_node("""
+    def func[_T](var: _T) -> _T:
+        value: _T | None = None  #@
+        return var
+    """).annotation
+    assert helpers.object_type(binop) is util.Uninferable
+
+    for code in (
+        "type Alias[*Ts] = tuple[*Ts]",
+        "type Alias[**P] = Callable[P, int]",
+    ):
+        assign = builder.extract_node(code)
+        type_param_name = assign.type_params[0].name
+        assert helpers.object_type(type_param_name) is util.Uninferable

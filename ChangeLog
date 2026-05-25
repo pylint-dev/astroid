@@ -12,16 +12,149 @@ Release date: TBA
 
   Closes #2974
 
+* Shorten ``import astroid`` by deferring imports only needed on cold paths.
+  ``logging`` (used by ``modutils`` and ``raw_building`` solely to report
+  stderr/stdout captured while importing a module) and ``pprint`` (used only
+  to format debug ``__repr__`` / ``repr_tree`` output) are now imported
+  lazily, and ``astroid.exceptions`` imports ``astroid.typing`` under
+  ``TYPE_CHECKING``.
+
+* Fix ``AttributeError`` crash in ``starred_assigned_stmts`` when a starred
+  unpacking target is an attribute (e.g. ``for *o.attr, x in ...``) rather
+  than a simple name.
+
+  Closes #2646
+
+* Wrap assignment expressions (``:=``) in parentheses when emitting
+  ``as_string`` output so the rendered code remains syntactically valid in
+  contexts such as comparisons, where Python requires the walrus expression
+  to be parenthesized.
+
+  Closes #2668
+
+* Catch ``MemoryError``/``RecursionError`` (and ``ValueError``) when validating
+  type comments with ``ast.parse``. Pathological type comments produced by
+  fuzzers (e.g. ``# type: i{{{{{{{...``) previously crashed parsing with a
+  ``MemoryError`` or ``RecursionError`` depending on the runtime; astroid now
+  treats them as invalid type comments and skips them, mirroring the f-string
+  fix from #2762.
+
+  Closes #2993
+
+* Fix ``TypeError`` in ``brain_random`` when ``random.sample`` is called with a
+  sequence containing nodes whose ``__init__`` does not accept ``lineno``
+  (e.g. ``Module``). The clone helper now filters init params to those the
+  class actually accepts.
+
+  Closes #3043
+
+* Fix ``RecursionError`` in ``_compute_mro()`` when circular class hierarchies
+  are created through runtime name rebinding. Circular bases are now resolved
+  to the original class instead of recursing.
+
+  Closes #3023
+  Closes pylint-dev/pylint#10821
+
+* Changed `block_range` to consider `else` its own block, allowing `pylint` to apply
+  disables to just the block.
+
+  References pylint-dev/pylint#872
+
+* Fix uncaught ``TokenError`` when building a class or function whose source
+  slice is malformed. ``tokenize.generate_tokens`` may raise (e.g. on an
+  unterminated bracket on Python < 3.12); position computation now treats such
+  a node as having no position information instead of crashing.
+
+  Closes #2527
+
+* ``str()`` of a constant argument now infers the actual string value instead
+  of always inferring ``""``. When every inference path of the argument
+  resolves to ``Const`` values that stringify to the same string, ``infer_str``
+  returns that string; otherwise it keeps falling back to ``Const("")``.
+
+  Closes #2994
+
+* Fix ``AttributeError`` crash when looking up a special method on a class
+  whose explicit metaclass infers to a non-class node (e.g. a function). Such
+  a metaclass has no MRO, so the dunder lookup now raises
+  ``AttributeInferenceError`` instead of crashing.
+
+  Closes #3063
+
+* Fix ``AttributeError`` crash in ``ClassDef.getitem`` when ``__class_getitem__``
+  resolves to a non-callable node (e.g. an ``AssignName``). ``getitem`` now
+  raises ``AstroidTypeError`` in that case, consistent with its documented
+  behaviour.
+
+  Closes #3064
+
+* Fix ``DuplicateBasesError`` crash in the enum brain when inferring an enum
+  class with duplicate bases (e.g. ``class C(enum.Enum, enum.Enum)``).
+  ``infer_enum_class`` now catches ``MroError`` and leaves such a malformed
+  class untransformed.
+
+  Closes #3065
+
+* Fix ``InferenceError`` crash in ``ClassDef.slots()`` when ``__slots__`` is
+  declared as an annotation without a value (e.g. ``__slots__: None``). Such a
+  ``__slots__`` cannot be inferred, so ``slots()`` now returns ``None``.
+
+  Closes #3067
+
+
+What's New in astroid 4.1.2?
+Release date: 2026-03-22
+
+* Fix crash accessing property `fset` in generic classes with type annotations.
+  Closes #2996
+
+* Fix infinite recursion caused by cyclic inference in ``Constraint``.
+
+* Fix ``RecursionError`` in ``_compute_mro()`` when circular class hierarchies
+  are created through runtime name rebinding. Circular bases are now resolved
+  to the original class instead of recursing.
+
+  Closes #2967
+  Closes pylint-dev/pylint#10821
+
+* Fix ``DuplicateBasesError`` crash in dataclass transform when a class has
+  duplicate bases in its MRO (e.g., ``Protocol`` appearing both directly and
+  indirectly). Catch ``MroError`` at ``.mro()`` call sites in
+  ``brain_dataclasses.py``, consistent with the existing pattern elsewhere.
+
+  Closes #2628
+
+* Fix ``FunctionModel`` returning descriptor attributes for builtin functions.
+
+  Closes #2743
+
+* Catch ``MemoryError`` when inferring f-strings with extremely large format
+  widths (e.g. ``f'{0:11111111111}'``) so that inference yields ``Uninferable``
+  instead of crashing.
+
+  Closes #2762
+
+* Fix ``ValueError`` in ``__str__``/``repr`` and error messages when nodes have
+  extreme values (very long identifiers or large integers). Clamp pprint width
+  to a minimum of 1 and truncate oversized values in error messages.
+
+  Closes #2764
+
 
 What's New in astroid 4.1.1?
 ============================
-Release date: TBA
+Release date: 2026-02-22
 
 * Let `UnboundMethodModel` inherit from `FunctionModel` to improve inference of
   dunder methods for unbound methods.
 
+  Refs #2741
+
 * Filter ``Unknown`` from ``UnboundMethod`` and ``Super`` special attribute
   lookup to prevent placeholder nodes from leaking during inference.
+
+  Refs #2741
+
 
 What's New in astroid 4.1.0?
 ============================

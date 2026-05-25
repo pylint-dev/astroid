@@ -545,7 +545,7 @@ ExceptionGroup
 """)))
         assigned = objects.ExceptionInstance(eg)
         assigned.instance_attrs["exceptions"] = [
-            nodes.List.from_elements(_generate_assigned())
+            nodes.Tuple.from_elements(_generate_assigned())
         ]
         yield assigned
     else:
@@ -720,10 +720,7 @@ def starred_assigned_stmts(  # noqa: C901
         # Determine the lookups for the rhs of the iteration
         itered = target.itered()
         for index, element in enumerate(itered):
-            if (
-                isinstance(element, nodes.Starred)
-                and element.value.name == starred.value.name
-            ):
+            if isinstance(element, nodes.Starred) and element is starred:
                 lookups.append((index, len(itered)))
                 break
             if isinstance(element, nodes.Tuple):
@@ -946,7 +943,8 @@ def generic_type_assigned_stmts(
     context: InferenceContext | None = None,
     assign_path: None = None,
 ) -> Generator[nodes.NodeNG]:
-    """Hack. Return any Node so inference doesn't fail
-    when evaluating __class_getitem__. Revert if it's causing issues.
+    """Return the type parameter node itself so inference doesn't fail
+    when evaluating __class_getitem__ and so that the node's type is
+    preserved for downstream checks (e.g. TypeVarTuple starred handling).
     """
-    yield nodes.Const(None)
+    yield self

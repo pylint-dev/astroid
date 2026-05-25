@@ -1569,6 +1569,22 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         cls = module["B"]
         self.assertIsNone(cls.slots())
 
+    def test_slots_annotation_only_without_value(self) -> None:
+        """An annotation-only ``__slots__`` has no inferable value.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3067
+        """
+        module = builder.parse("""
+        class Klass:
+            __slots__: None
+
+            def method(self):
+                self.attr = 1
+        """)
+        # ``__slots__`` is in ``locals`` but cannot be inferred; ``slots()``
+        # must return None instead of raising ``InferenceError``.
+        self.assertIsNone(module["Klass"].slots())
+
     def test_slots_added_dynamically_still_inferred(self) -> None:
         code = """
         class NodeBase(object):
@@ -1695,6 +1711,53 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(cm.exception.cls, Duplicates)
         self.assertIsInstance(cm.exception, MroError)
         self.assertIsInstance(cm.exception, ResolveError)
+
+    def test_mro_circular_name_rebinding(self) -> None:
+        """MRO computation should handle circular name rebinding.
+
+        When a module-level name is rebound to a subclass of itself,
+        _infer_last follows the rebinding and returns the subclass.
+        The MRO computation should resolve the cycle by falling back
+        to the original class.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/2967
+        """
+        astroid = builder.parse("""
+        import pdb
+
+        class CustomPdb(pdb.Pdb):
+            pass
+
+        pdb.Pdb = CustomPdb
+        """)
+        self.assertEqualMro(
+            astroid["CustomPdb"],
+            ["CustomPdb", "Pdb", "Bdb", "Cmd", "object"],
+        )
+
+    def test_mro_circular_name_rebinding_with_gap(self) -> None:
+        """MRO computation should handle circular name rebinding.
+
+        The MRO computation should resolve the cycle by falling back
+        to the original class.
+
+        Regression test for https://github.com/pylint-dev/pylint/issues/10821
+        """
+        astroid = builder.parse("""
+        import pdb
+
+        class PatchedPdb(pdb.Pdb):
+            pass
+
+        class CustomPdb(PatchedPdb):
+            pass
+
+        pdb.Pdb = CustomPdb
+        """)
+        self.assertEqualMro(
+            astroid["CustomPdb"],
+            ["CustomPdb", "PatchedPdb", "Pdb", "Bdb", "Cmd", "object"],
+        )
 
     def test_mro_with_factories(self) -> None:
         cls = builder.extract_node("""
@@ -2635,6 +2698,28 @@ def test_ancestor_with_generic() -> None:
         "A",
         "Generic",
         "object",
+    ]
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
+def test_ancestor_with_generic_typevartuple() -> None:
+    # https://github.com/pylint-dev/pylint/issues/10972
+    tree = builder.parse("""
+    from abc import ABC, abstractmethod
+    class Base(ABC):
+        @abstractmethod
+        def get_item(self) -> None: ...
+    class Middle[*Shape]:
+        def get_item(self) -> None:
+            raise NotImplementedError
+    class Concrete[*Shape](Middle[*Shape], Base): pass
+    """)
+    inferred_concrete = next(tree["Concrete"].infer())
+    assert [cdef.name for cdef in inferred_concrete.ancestors()] == [
+        "Middle",
+        "object",
+        "Base",
+        "ABC",
     ]
 
 

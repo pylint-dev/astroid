@@ -4293,6 +4293,38 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         with self.assertRaises(AstroidTypeError):
             inferred.getitem(nodes.Const("4"))
 
+    def test_getitem_of_class_with_non_class_metaclass(self) -> None:
+        """A metaclass that infers to a non-class node has no MRO to search.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3063
+        """
+        node = extract_node("""
+        def fn():
+            pass
+        class C(metaclass=fn):  #@
+            pass
+        """)
+        with self.assertRaises(AstroidTypeError):
+            node.getitem(nodes.Const(0))
+
+    def test_getitem_with_non_callable_class_getitem(self) -> None:
+        """``__class_getitem__`` may resolve to a non-callable node (e.g. an
+        ``AssignName`` or an ``Import``), which has no ``infer_call_result``.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3064
+        """
+        for body in (
+            "__class_getitem__ = classmethod(tuple)",
+            "import os as __class_getitem__",
+            "from os import getcwd as __class_getitem__",
+        ):
+            node = extract_node(f"""
+            class C:  #@
+                {body}
+            """)
+            with self.assertRaises(AstroidTypeError):
+                node.getitem(nodes.Const(0))
+
     def test_infer_arg_called_type_is_uninferable(self) -> None:
         node = extract_node("""
         def func(type):
@@ -5262,6 +5294,28 @@ def test_formatted_fstring_inference(code, result) -> None:
         assert value_node.value == result
 
 
+def test_fstring_large_width_no_memory_error() -> None:
+    """MemoryError should not crash inference for f-strings with huge width.
+
+    Regression test for https://github.com/pylint-dev/astroid/issues/2762
+    """
+
+    class OOMInt(int):
+        """An int whose __format__ raises MemoryError, simulating f'{0:>11111111111}'."""
+
+        def __format__(self, spec: str) -> str:
+            raise MemoryError
+
+    node = extract_node("f'{0:>9}'")
+    # Replace the Const value with our OOMInt so format() raises MemoryError
+    # without actually allocating a huge string.
+    fmt_value = node.values[0]
+    fmt_value.value.value = OOMInt(0)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is util.Uninferable
+
+
 def test_augassign_recursion() -> None:
     """Make sure inference doesn't throw a RecursionError.
 
@@ -5982,6 +6036,13 @@ def test_igetattr_idempotent() -> None:
     context_to_be_used_twice = InferenceContext()
     assert util.Uninferable not in instance.igetattr("item", context_to_be_used_twice)
     assert util.Uninferable not in instance.igetattr("item", context_to_be_used_twice)
+
+
+def test_inference_context_str() -> None:
+    """``str()`` of an ``InferenceContext`` renders each slot without crashing."""
+    rendered = str(InferenceContext())
+    assert rendered.startswith("InferenceContext(")
+    assert rendered.endswith(")")
 
 
 @patch("astroid.nodes.Call._infer")

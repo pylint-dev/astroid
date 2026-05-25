@@ -41,7 +41,7 @@ def test_group_exceptions() -> None:
     assert isinstance(node, nodes.Try)
     handler = node.handlers[0]
     assert node.block_range(lineno=1) == (1, 9)
-    assert node.block_range(lineno=2) == (2, 2)
+    assert node.block_range(lineno=2) == (2, 3)
     assert node.block_range(lineno=5) == (5, 9)
     assert isinstance(handler, nodes.ExceptHandler)
     assert handler.type.name == "ExceptionGroup"
@@ -72,15 +72,15 @@ def test_star_exceptions() -> None:
     assert node.as_string() == code.replace('"', "'").strip()
     assert isinstance(node.body[0], nodes.Raise)
     assert node.block_range(1) == (1, 11)
-    assert node.block_range(2) == (2, 2)
+    assert node.block_range(2) == (2, 3)
     assert node.block_range(3) == (3, 3)
-    assert node.block_range(4) == (4, 4)
+    assert node.block_range(4) == (4, 5)
     assert node.block_range(5) == (5, 5)
-    assert node.block_range(6) == (6, 6)
+    assert node.block_range(6) == (6, 7)
     assert node.block_range(7) == (7, 7)
-    assert node.block_range(8) == (8, 8)
+    assert node.block_range(8) == (8, 9)
     assert node.block_range(9) == (9, 9)
-    assert node.block_range(10) == (10, 10)
+    assert node.block_range(10) == (10, 11)
     assert node.block_range(11) == (11, 11)
     assert node.handlers
     handler = node.handlers[0]
@@ -126,12 +126,12 @@ def test_star_exceptions_infer_exceptions() -> None:
     assert isinstance(node, nodes.TryStar)
     inferred_ve = next(node.handlers[0].statement().name.infer())
     assert inferred_ve.name == "ExceptionGroup"
-    assert isinstance(inferred_ve.getattr("exceptions")[0], nodes.List)
+    assert isinstance(inferred_ve.getattr("exceptions")[0], nodes.Tuple)
     assert (
         inferred_ve.getattr("exceptions")[0].elts[0].pytype() == "builtins.ValueError"
     )
 
     inferred_te = next(node.handlers[1].statement().name.infer())
     assert inferred_te.name == "ExceptionGroup"
-    assert isinstance(inferred_te.getattr("exceptions")[0], nodes.List)
+    assert isinstance(inferred_te.getattr("exceptions")[0], nodes.Tuple)
     assert inferred_te.getattr("exceptions")[0].elts[0].pytype() == "builtins.TypeError"

@@ -11,6 +11,7 @@ OP_PRECEDENCE = {
             ["or"],
             ["and"],
             ["not"],
+            ["NamedExpr"],  # (x := 1)
             ["Compare"],  # in, not in, is, is not, <, <=, >, >=, !=, ==
             ["|"],
             ["^"],

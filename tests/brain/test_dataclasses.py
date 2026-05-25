@@ -728,7 +728,8 @@ def test_non_dataclass_is_not_dataclass() -> None:
 
 def test_kw_only_sentinel() -> None:
     """Test that the KW_ONLY sentinel doesn't get added to the fields."""
-    node_one, node_two = astroid.extract_node("""
+    node_one, node_two, node_three = astroid.extract_node("""
+    import dataclasses
     from dataclasses import dataclass, KW_ONLY
     from dataclasses import KW_ONLY as keyword_only
 
@@ -745,13 +746,37 @@ def test_kw_only_sentinel() -> None:
         y: str
 
     B.__init__  #@
+
+    @dataclass
+    class C:
+        _: dataclasses.KW_ONLY
+        y: str
+
+    C.__init__  #@
     """)
     expected = ["self", "y"]
-    init = next(node_one.infer())
-    assert [a.name for a in init.args.args] == expected
+    for node in (node_one, node_two, node_three):
+        init = next(node.infer())
+        assert [a.name for a in init.args.args] == expected
 
-    init = next(node_two.infer())
-    assert [a.name for a in init.args.args] == expected
+
+def test_kw_only_sentinel_other_dataclasses_attr() -> None:
+    """Annotating with another ``dataclasses`` attribute (e.g. ``MISSING``)
+    that also infers to ``builtins.sentinel`` on Python 3.15+ must not be
+    treated as ``KW_ONLY``."""
+    node = astroid.extract_node("""
+    import dataclasses
+    from dataclasses import dataclass
+
+    @dataclass
+    class C:
+        _: dataclasses.MISSING
+        y: str
+
+    C.__init__  #@
+    """)
+    init = next(node.infer())
+    assert [a.name for a in init.args.args] == ["self", "_", "y"]
 
 
 def test_kw_only_decorator() -> None:
@@ -1237,3 +1262,73 @@ def test_dataclass_with_properties() -> None:
     fourth_init: bases.UnboundMethod = next(fourth.infer())
     assert [a.name for a in fourth_init.args.args] == ["self", "other_attr", "attr"]
     assert [a.name for a in fourth_init.args.defaults] == ["Uninferable"]
+
+
+def test_dataclass_with_duplicate_bases_no_crash():
+    """Regression test for https://github.com/pylint-dev/astroid/issues/2628.
+
+    A dataclass inheriting from a class with duplicate bases in MRO
+    (e.g., Protocol appearing both directly and indirectly) should not
+    crash with DuplicateBasesError during AST transformation.
+    """
+    code = """
+    import dataclasses
+    from typing import TypeVar, Protocol
+
+    BaseT = TypeVar("BaseT")
+    T = TypeVar("T", bound=BaseT)
+
+    class ConfigBase(Protocol[BaseT]):
+        ...
+
+    class Config(ConfigBase[T], Protocol[T]):
+        ...
+
+    @dataclasses.dataclass
+    class DatasetConfig(Config[T]):
+        name: str = "default"
+
+    DatasetConfig.__init__  #@
+    """
+    node = astroid.extract_node(code)
+    # Should not raise DuplicateBasesError — graceful degradation instead
+    inferred = next(node.infer())
+    assert inferred is not None
+
+
+def test_dataclass_with_duplicate_bases_field_default():
+    """Regression test for _get_previous_field_default with broken MRO.
+
+    When a parent dataclass defines a field with a default and a child (with
+    duplicate bases in its MRO) re-annotates that field without a value,
+    _get_previous_field_default should not crash with DuplicateBasesError.
+
+    See https://github.com/pylint-dev/astroid/issues/2628.
+    """
+    code = """
+    import dataclasses
+    from typing import TypeVar, Protocol
+
+    BaseT = TypeVar("BaseT")
+    T = TypeVar("T", bound=BaseT)
+
+    class ConfigBase(Protocol[BaseT]):
+        ...
+
+    class Config(ConfigBase[T], Protocol[T]):
+        ...
+
+    @dataclasses.dataclass
+    class BaseConfig(Config[T]):
+        name: str = "default"
+
+    @dataclasses.dataclass
+    class ChildConfig(BaseConfig[T]):
+        name: str
+
+    ChildConfig.__init__  #@
+    """
+    node = astroid.extract_node(code)
+    # Should not raise DuplicateBasesError in _get_previous_field_default
+    inferred = next(node.infer())
+    assert inferred is not None

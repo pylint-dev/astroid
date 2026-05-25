@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import itertools
 import os
-import pprint
 import types
 from collections.abc import Iterator
 from functools import lru_cache
@@ -82,13 +81,18 @@ class ObjectModel:
         self._instance = None
 
     def __repr__(self):
+        import pprint  # pylint: disable=import-outside-toplevel
+
         result = []
         cname = type(self).__name__
         string = "%(cname)s(%(fields)s)"
         alignment = len(cname) + 1
         for field in sorted(self.attributes()):
-            width = 80 - len(field) - alignment
-            lines = pprint.pformat(field, indent=2, width=width).splitlines(True)
+            width = max(80 - len(field) - alignment, 1)
+            try:
+                lines = pprint.pformat(field, indent=2, width=width).splitlines(True)
+            except ValueError:
+                lines = [f"<{type(field).__name__}>"]
 
             inner = [lines[0]]
             for line in lines[1:]:
@@ -269,6 +273,10 @@ class ModuleModel(ObjectModel):
 
 
 class FunctionModel(ObjectModel):
+    def _is_builtin_func(self) -> bool:
+        func = self._instance
+        return isinstance(func.parent, nodes.Module) and not func.root().pure_python
+
     @property
     def attr___name__(self):
         return node_classes.Const(value=self._instance.name, parent=self._instance)
@@ -287,6 +295,8 @@ class FunctionModel(ObjectModel):
     @property
     def attr___defaults__(self):
         func = self._instance
+        if self._is_builtin_func():
+            raise AttributeInferenceError(target=func, attribute="__defaults__")
         if not func.args.defaults:
             return node_classes.Const(value=None, parent=func)
 
@@ -296,6 +306,10 @@ class FunctionModel(ObjectModel):
 
     @property
     def attr___annotations__(self):
+        if self._is_builtin_func():
+            raise AttributeInferenceError(
+                target=self._instance, attribute="__annotations__"
+            )
         obj = node_classes.Dict(
             parent=self._instance,
             lineno=self._instance.lineno,
@@ -336,6 +350,8 @@ class FunctionModel(ObjectModel):
 
     @property
     def attr___dict__(self):
+        if self._is_builtin_func():
+            raise AttributeInferenceError(target=self._instance, attribute="__dict__")
         return node_classes.Dict(
             parent=self._instance,
             lineno=self._instance.lineno,
@@ -344,10 +360,27 @@ class FunctionModel(ObjectModel):
             end_col_offset=self._instance.end_col_offset,
         )
 
-    attr___globals__ = attr___dict__
+    @property
+    def attr___globals__(self):
+        if self._is_builtin_func():
+            raise AttributeInferenceError(
+                target=self._instance, attribute="__globals__"
+            )
+        return node_classes.Dict(
+            parent=self._instance,
+            lineno=self._instance.lineno,
+            col_offset=self._instance.col_offset,
+            end_lineno=self._instance.end_lineno,
+            end_col_offset=self._instance.end_col_offset,
+        )
 
     @property
     def attr___kwdefaults__(self):
+        if self._is_builtin_func():
+            raise AttributeInferenceError(
+                target=self._instance, attribute="__kwdefaults__"
+            )
+
         def _default_args(args, parent):
             for arg in args.kwonlyargs:
                 try:
@@ -378,6 +411,9 @@ class FunctionModel(ObjectModel):
     @property
     def attr___get__(self):
         func = self._instance
+
+        if self._is_builtin_func():
+            raise AttributeInferenceError(target=func, attribute="__get__")
 
         class DescriptorBoundMethod(bases.BoundMethod):
             """Bound method which knows how to understand calling descriptor
@@ -976,12 +1012,11 @@ class PropertyModel(ObjectModel):
             :param func: property for which the setter has to be found
             :return: the setter function or None
             """
-            for target in [
-                t for t in func.parent.get_children() if t.name == func.function.name
-            ]:
-                for dec_name in target.decoratornames():
-                    if dec_name.endswith(func.function.name + ".setter"):
-                        return target
+            for node in func.parent.body:
+                if isinstance(node, (nodes.FunctionDef, nodes.AsyncFunctionDef)):
+                    for dec_name in node.decoratornames():
+                        if dec_name.endswith(func.function.name + ".setter"):
+                            return node
             return None
 
         func_setter = find_setter(func)

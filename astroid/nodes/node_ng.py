@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import pprint
 import sys
 from collections.abc import Generator, Iterator
 from functools import cached_property
@@ -187,6 +186,8 @@ class NodeNG:
         return ""
 
     def __str__(self) -> str:
+        import pprint  # pylint: disable=import-outside-toplevel
+
         rname = self.repr_name()
         cname = type(self).__name__
         if rname:
@@ -198,8 +199,11 @@ class NodeNG:
         result = []
         for field in self._other_fields + self._astroid_fields:
             value = getattr(self, field, "Unknown")
-            width = 80 - len(field) - alignment
-            lines = pprint.pformat(value, indent=2, width=width).splitlines(True)
+            width = max(80 - len(field) - alignment, 1)
+            try:
+                lines = pprint.pformat(value, indent=2, width=width).splitlines(True)
+            except ValueError:
+                lines = [f"<{type(value).__name__}>"]
 
             inner = [lines[0]]
             for line in lines[1:]:
@@ -643,6 +647,7 @@ class NodeNG:
         """
 
         # pylint: disable = too-many-statements
+        import pprint  # pylint: disable=import-outside-toplevel
 
         @_singledispatch
         def _repr_tree(node, result, done, cur_indent="", depth=1):

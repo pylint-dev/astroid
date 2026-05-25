@@ -998,3 +998,49 @@ def test_super_special_attributes_fallback() -> None:
     thisclass_inferred = next(thisclass_node.infer())
     assert isinstance(thisclass_inferred, nodes.ClassDef)
     assert thisclass_inferred.name == "Base"
+
+
+@pytest.mark.parametrize(
+    "attr",
+    [
+        "__get__",
+        "__defaults__",
+        "__annotations__",
+        "__dict__",
+        "__globals__",
+        "__kwdefaults__",
+    ],
+)
+def test_builtin_func_no_descriptor_attrs(attr: str) -> None:
+    """Test builtin functions lack descriptor protocol attributes."""
+    node = builder.extract_node(f"eval.{attr}")
+    with pytest.raises(InferenceError):
+        next(node.infer())
+
+
+def test_getattr_on_property_fset_with_annassign_does_not_crash() -> None:
+    """Test that getattr on property fset doesn't crash with AnnAssign."""
+    node = builder.extract_node("""
+    from typing import TypeVar, Generic
+
+    T = TypeVar('T')
+
+    class Base:
+        _x: object
+        @property
+        def x(self):
+            return self._x
+        @x.setter
+        def x(self, val):
+            self._x = val
+
+    class Child(Base, Generic[T]):
+        _x: T
+        @property
+        def x(self) -> T:
+            return self._x
+        @x.setter
+        def x(self, val):
+            getattr(Base.x, "fset", None)  #@
+    """)
+    next(node.infer())

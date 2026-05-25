@@ -878,6 +878,10 @@ class TestLinenoColOffset:
         assert (w1.body[0].end_lineno, w1.body[0].end_col_offset) == (2, 8)
         assert (w1.orelse[0].lineno, w1.orelse[0].col_offset) == (4, 4)
         assert (w1.orelse[0].end_lineno, w1.orelse[0].end_col_offset) == (4, 8)
+        assert w1.block_range(1) == (1, 2)
+        assert w1.block_range(2) == (2, 2)
+        assert w1.block_range(3) == (3, 4)
+        assert w1.block_range(4) == (4, 4)
 
     @staticmethod
     def test_end_lineno_string() -> None:
