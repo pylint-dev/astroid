@@ -10,7 +10,7 @@ regex
 # ``tests/testdata/python3/data/path_pkg_resources_1`` declares its
 # namespace via ``pkg_resources``; pin setuptools to versions that still
 # ship it (removed in 82.0.0). Applies on every supported Python.
-setuptools<82
+setuptools<83
 six
 urllib3>1,<2
 typing_extensions>=4.4.0
