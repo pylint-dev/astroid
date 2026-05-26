@@ -604,6 +604,17 @@ class ClearCacheTest(unittest.TestCase):
         self.assertIs(inferred.value, True)
 
 
+class FileParseFailureTest(unittest.TestCase):
+    @unittest.mock.patch(
+        "astroid.manager.AstroidBuilder.file_build", side_effect=RecursionError
+    )
+    def test_recursion_error(self, _mock) -> None:
+        filepath = unittest.__file__
+        with self.assertRaises(RecursionError) as cm:
+            astroid.MANAGER.ast_from_file(filepath)
+        self.assertIn("sys.setrecursionlimit", cm.exception.__notes__[0])
+
+
 class NamespacePthParserTest(unittest.TestCase):
     """Direct coverage for the .pth parsing helpers used by namespace tests."""
 
