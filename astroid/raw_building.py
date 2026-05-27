@@ -481,8 +481,15 @@ class InspectBuilder:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
                     member = getattr(obj, alias)
-            except AttributeError:
-                # damned ExtensionClass.Base, I know you're there !
+            except (AttributeError, TypeError):
+                # AttributeError: damned ExtensionClass.Base, I know you're
+                # there!
+                # TypeError: PyPy 7.3.22 raises TypeError ("expected str, got
+                # getset_descriptor object") instead of AttributeError for
+                # unset getset descriptors like
+                # ``types.FunctionType.__text_signature__`` when accessed on
+                # the type. Treat that the same as a missing attribute so
+                # ``_astroid_bootstrapping()`` doesn't crash on import.
                 attach_dummy_node(node, alias)
                 continue
             if inspect.ismethod(member) and not pypy__class_getitem__:

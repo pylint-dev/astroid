@@ -138,6 +138,30 @@ class RawBuildingTC(unittest.TestCase):
         # This should not raise an exception
         AstroidBuilder(AstroidManager()).inspect_build(fm_collection, "test")
 
+    def test_module_object_with_getattr_typeerror(self) -> None:
+        # Regression test for the PyPy 7.3.22 bootstrap crash: PyPy 7.3.22
+        # raises ``TypeError("expected str, got getset_descriptor object")``
+        # instead of ``AttributeError`` for unset getset descriptors like
+        # ``types.FunctionType.__text_signature__`` when accessed on the
+        # type. ``InspectBuilder.object_build`` must treat that the same as a
+        # missing attribute, otherwise ``_astroid_bootstrapping()`` blows up
+        # on import. Refs pylint-dev/pylint#10999.
+        class _TypeErrorOnGetattr(types.ModuleType):
+            def __getattr__(self, name: str) -> Any:
+                if name == "pypy_text_signature_like":
+                    raise TypeError("expected str, got getset_descriptor object")
+                raise AttributeError(name)
+
+            def __dir__(self) -> list[str]:
+                return [*super().__dir__(), "pypy_text_signature_like"]
+
+        m = _TypeErrorOnGetattr("test_typeerror_on_getattr")
+
+        # This should not raise: the alias is skipped via attach_dummy_node,
+        # the same path used for AttributeError.
+        node = AstroidBuilder(AstroidManager()).inspect_build(m, "test")
+        self.assertIn("pypy_text_signature_like", node.locals)
+
 
 @pytest.mark.skipif(
     "posix" not in sys.builtin_module_names, reason="Platform doesn't support posix"
