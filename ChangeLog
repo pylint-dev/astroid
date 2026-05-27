@@ -105,6 +105,12 @@ Release date: TBA
 
   Closes #3067
 
+* Fix ``TypeError`` crash in the enum brain when a functional ``Enum`` call
+  has a non-string member name (e.g. ``Enum("e", (1,))``). Such a definition
+  is invalid, so inference now falls back to the default instead of crashing.
+
+  Closes #3068
+
 
 What's New in astroid 4.1.2?
 ============================
