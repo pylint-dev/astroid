@@ -2863,12 +2863,11 @@ class ImportFrom(_base_nodes.ImportNode):
         and the alias that the name is assigned to (if any).
         """
 
-        # TODO When is 'level' None?
         self.level: int | None = level  # can be None
         """The level of relative import.
 
         Essentially this is the number of dots in the import.
-        This is always 0 for absolute imports.
+        This is ``None`` for absolute imports.
         """
 
         super().__init__(
