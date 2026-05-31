@@ -452,6 +452,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         assert isinstance(method2, nodes.FunctionDef)
         assert not method2.is_abstract(pass_is_abstract=False)
 
+    @pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
     def test_is_abstract_typevar_decorator(self) -> None:
         method = builder.extract_node("""
             class C[T]:
