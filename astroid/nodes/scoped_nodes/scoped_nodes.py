@@ -1489,7 +1489,7 @@ class FunctionDef(
                     inferred = next(node.infer())
                 except (InferenceError, StopIteration):
                     continue
-                if inferred and inferred.qname() in {
+                if inferred and getattr(inferred, "qname", None) and inferred.qname() in {
                     "abc.abstractproperty",
                     "abc.abstractmethod",
                 }:

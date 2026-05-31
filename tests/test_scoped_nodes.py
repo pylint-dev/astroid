@@ -452,6 +452,16 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         assert isinstance(method2, nodes.FunctionDef)
         assert not method2.is_abstract(pass_is_abstract=False)
 
+    def test_is_abstract_typevar_decorator(self) -> None:
+        method = builder.extract_node("""
+            class C[T]:
+                @T
+                def m():  #@
+                    pass
+        """)
+        assert isinstance(method, nodes.FunctionDef)
+        assert not method.is_abstract(pass_is_abstract=False)
+
     # def test_raises(self):
     #     method = self.module2["AbstractClass"]["to_override"]
     #     self.assertEqual(
