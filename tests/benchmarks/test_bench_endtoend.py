@@ -2,55 +2,12 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
-"""End-to-end benchmarks: cold import + parse + walk + infer real projects.
+"""End-to-end benchmarks running astroid over real projects the way pylint
+does: parse, walk every node, and ``safe_infer`` the ones that matter
+(``Call``, ``Attribute``, ``Name``), plus a cold-start subprocess lint to
+catch import-time regressions the in-process benches cannot see.
 
-These exercise astroid the way pylint does: walking every node of a
-real project and calling ``safe_infer`` on the nodes that matter
-(``Call``, ``Attribute``, ``Name``).
-
-- ``test_bench_endtoend_cold_lint`` — shells out
-  ``python -m pylint <minimal module>`` per iteration. ~98 % of wall
-  time is startup (Python import, pylint init, ``import astroid``,
-  brain-plugin registration); only ~2 % is actual linting work on the
-  one-line target. This captures cold-start cost that the in-process
-  benches below miss: within a single pytest session ``astroid`` is
-  imported once at module load and stays in ``sys.modules``, so
-  optimizations like deferring brain-plugin registration are invisible
-  to those benches.
-
-  Scope note: this bench exists to *protect* targeted lazy imports of
-  modules that are not on the general code path — brain plugins for
-  libraries a given project does not use, and debug-only stdlib
-  modules like ``pprint`` / ``logging`` deferred in #3062. Such
-  function-local / ``TYPE_CHECKING`` imports work on all supported
-  Python versions; they do not depend on PEP 810 lazy imports landing
-  in 3.15. It is **not** an argument for lazifying modules astroid
-  imports unconditionally — those just trade one fixed cost for
-  another and bloat the import graph for marginal wins.
-
-  Cold-lint runs in a dedicated **walltime** CodSpeed workflow
-  (``.github/workflows/codspeed-walltime.yaml``) because the
-  ``simulation`` mode used by the in-process suite
-  (``.github/workflows/codspeed.yaml``) only measures Python-side
-  instructions and cannot see into the subprocess.
-- Two projects pinned to the SHAs used by pylint's primer corpus so the
-  workload composition is stable and directly comparable with what
-  pylint sees nightly:
-
-  * **Flask** (~50 ``.py`` files under ``src/flask``) — small,
-    well-typed. Parse-only (isolates the rebuilder hot path) and
-    full pylint-shaped traversal.
-  * **Black** (``src/black``, ``src/blackd``, ``src/blib2to3``,
-    ~250 files) — medium, classic AST handling with deep class
-    hierarchies.
-
-We deliberately do *not* ship pure-Python microbenchmarks: at
-microsecond scale CodSpeed CI shows >40 % StdDev, which is too noisy
-for regression detection. End-to-end benches each take milliseconds
-to tens of seconds per iteration, so per-run noise becomes a small
-fraction of the measurement.
-
-Source of truth for URL + SHA:
+Projects and their pinned SHAs mirror pylint's primer corpus:
 https://github.com/pylint-dev/pylint/blob/main/tests/primer/packages_to_prime.json
 """
 
@@ -62,11 +19,14 @@ from __future__ import annotations
 import subprocess
 import sys
 from pathlib import Path
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 import pytest
 
 from astroid import helpers, manager, nodes
+
+if TYPE_CHECKING:
+    from pytest_codspeed import BenchmarkFixture
 
 
 class _Project(NamedTuple):
@@ -171,9 +131,6 @@ def _walk_and_infer(files: list[Path], mgr: manager.AstroidManager) -> int:
     return count
 
 
-# -- Cold start: pylint a tiny module in a fresh subprocess. --
-
-
 _MINIMAL_LINT_TARGET = '''\
 """Minimal module for the cold-start benchmark.
 
@@ -215,29 +172,31 @@ def _pylint_one_file(target: Path) -> None:
     )
 
 
-def test_bench_endtoend_cold_lint(benchmark, minimal_module: Path) -> None:
+def test_bench_endtoend_cold_lint(
+    benchmark: BenchmarkFixture, minimal_module: Path
+) -> None:
     benchmark(_pylint_one_file, minimal_module)
 
 
-# -- Flask: small, parse + walk_infer (parse isolates rebuilder cost). --
-
-
-def test_bench_endtoend_parse_flask(benchmark, flask_files: list[Path]) -> None:
+def test_bench_endtoend_parse_flask(
+    benchmark: BenchmarkFixture, flask_files: list[Path]
+) -> None:
     assert flask_files, "Expected at least one .py file in flask"
     mgr = manager.AstroidManager()
     benchmark(_parse_all, flask_files, mgr)
 
 
-def test_bench_endtoend_walk_infer_flask(benchmark, flask_files: list[Path]) -> None:
+def test_bench_endtoend_walk_infer_flask(
+    benchmark: BenchmarkFixture, flask_files: list[Path]
+) -> None:
     assert flask_files, "Expected at least one .py file in flask"
     mgr = manager.AstroidManager()
     benchmark(_walk_and_infer, flask_files, mgr)
 
 
-# -- Black: medium, walk_infer only. --
-
-
-def test_bench_endtoend_walk_infer_black(benchmark, black_files: list[Path]) -> None:
+def test_bench_endtoend_walk_infer_black(
+    benchmark: BenchmarkFixture, black_files: list[Path]
+) -> None:
     assert black_files, "Expected at least one .py file in black"
     mgr = manager.AstroidManager()
     benchmark(_walk_and_infer, black_files, mgr)
