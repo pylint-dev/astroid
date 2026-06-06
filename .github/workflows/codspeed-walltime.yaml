@@ -31,9 +31,6 @@ jobs:
     name: Run cold-start benchmarks
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    permissions:
-      contents: read
-      id-token: write
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v6.0.2

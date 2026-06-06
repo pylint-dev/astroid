@@ -25,9 +25,6 @@ jobs:
   benchmarks:
     name: Run benchmarks
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     # mode: simulation captures a callgraph per benchmark for per-function
     # attribution on the dashboard. That instrumentation is ~10-50x slower
     # than wall-clock, so end-to-end benches over real codebases need
