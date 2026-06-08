@@ -232,7 +232,7 @@ jobs:
         run: |
           coverage combine coverage-linux*/.coverage
           coverage xml -o coverage-linux.xml
-      - uses: &actions-codecov codecov/codecov-action@v6
+      - uses: &actions-codecov codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
