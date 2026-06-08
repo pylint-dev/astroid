@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v6.0.3
 
       - name: Set up Python 3.14
         id: python
