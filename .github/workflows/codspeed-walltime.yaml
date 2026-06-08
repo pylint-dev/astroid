@@ -53,7 +53,7 @@ jobs:
           pip install .
 
       - name: Run cold-start benchmarks
-        uses: CodSpeedHQ/action@v4.13.0
+        uses: CodSpeedHQ/action@v4.17.0
         with:
           mode: walltime
           run: pytest tests/benchmarks/ --codspeed -k "cold_lint"
