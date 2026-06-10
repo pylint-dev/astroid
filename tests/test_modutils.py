@@ -375,6 +375,45 @@ class GetSourceFileTest(unittest.TestCase):
                 module,
             )
 
+    def test_compiled_prefers_stub(self) -> None:
+        """A compiled module handed in directly should resolve to its stub
+        rather than being returned as-is.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3087:
+        a ``.pyc`` (or binary extension) sitting next to a ``.pyi`` must not be
+        returned as source.
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            base = os.path.join(directory, "mod")
+            stub = base + ".pyi"
+            with open(stub, "w", encoding="utf-8"):
+                pass
+            for compiled_ext in ("pyc", "pyo", *modutils.PY_COMPILED_EXTS):
+                compiled = f"{base}.{compiled_ext}"
+                with open(compiled, "wb"):
+                    pass
+                self.assertEqual(
+                    modutils.get_source_file(compiled),
+                    os.path.normpath(stub),
+                )
+                self.assertEqual(
+                    modutils.get_source_file(compiled, prefer_stubs=True),
+                    os.path.normpath(stub),
+                )
+                os.remove(compiled)
+
+    def test_compiled_without_stub_raises(self) -> None:
+        """A compiled module with no source/stub alongside it has no source
+        file and must raise, not return the compiled file itself.
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            compiled = os.path.join(directory, "mod.pyc")
+            with open(compiled, "wb"):
+                pass
+            self.assertRaises(
+                modutils.NoSourceFile, modutils.get_source_file, compiled
+            )
+
 
 class IsStdLibModuleTest(resources.SysPathSetup, unittest.TestCase):
     """
