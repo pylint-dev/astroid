@@ -7,6 +7,13 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Fix ``.pyi`` stub files no longer being picked up when a compiled module
+  (``.pyc``/``.pyo`` or a binary extension such as ``.so``/``.pyd``) sits next
+  to them. Compiled and bytecode extensions now fall through to the regular
+  stub/source lookup.
+
+  Closes #3087
+
 * Fix astroid bootstrap crash on PyPy 7.3.22 (``TypeError: expected str, got
   getset_descriptor object``) by also catching ``TypeError`` from
   ``getattr(obj, alias)`` in ``InspectBuilder.object_build``. PyPy 7.3.22
