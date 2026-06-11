@@ -410,9 +410,7 @@ class GetSourceFileTest(unittest.TestCase):
             compiled = os.path.join(directory, "mod.pyc")
             with open(compiled, "wb"):
                 pass
-            self.assertRaises(
-                modutils.NoSourceFile, modutils.get_source_file, compiled
-            )
+            self.assertRaises(modutils.NoSourceFile, modutils.get_source_file, compiled)
 
 
 class IsStdLibModuleTest(resources.SysPathSetup, unittest.TestCase):

@@ -9,7 +9,7 @@ Release date: TBA
 
 * Fix ``.pyi`` stub files no longer being picked up when a compiled module
   (``.pyc``/``.pyo`` or a binary extension such as ``.so``/``.pyd``) sits next
-  to them. Compiled and bytecode extensions now fall through to the regular 
+  to them. Compiled and bytecode extensions now fall through to the regular
   stub/source lookup.
 
   Closes #3087
