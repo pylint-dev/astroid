@@ -7,6 +7,14 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Fix uncaught ``IndentationError`` when parsing code whose lines end in
+  ``\r``: the slice of source tokenized to compute a class or function
+  ``position`` is split on ``\n`` only and could be misaligned with the AST
+  line numbers. Such nodes now simply have no position information, as
+  already done when ``tokenize`` raises ``TokenError``.
+
+  Closes #3091
+
 * Fix astroid bootstrap crash on PyPy 7.3.22 (``TypeError: expected str, got
   getset_descriptor object``) by also catching ``TypeError`` from
   ``getattr(obj, alias)`` in ``InspectBuilder.object_build``. PyPy 7.3.22
