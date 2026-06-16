@@ -463,6 +463,17 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         assert isinstance(method, nodes.FunctionDef)
         assert not method.is_abstract(pass_is_abstract=False)
 
+    @pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
+    def test_decoratornames_typevar_decorator(self) -> None:
+        method = builder.extract_node("""
+            class C[T]:
+                @T
+                def m():  #@
+                    pass
+        """)
+        assert isinstance(method, nodes.FunctionDef)
+        assert method.decoratornames() == set()
+
     # def test_raises(self):
     #     method = self.module2["AbstractClass"]["to_override"]
     #     self.assertEqual(
