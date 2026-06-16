@@ -243,27 +243,44 @@ class EqualityConstraint(Constraint):
 
 def get_constraints(
     expr: _NameNodes, frame: nodes.LocalsDictNodeNG
-) -> dict[nodes.If | nodes.IfExp, set[Constraint]]:
+) -> dict[nodes.If | nodes.IfExp | nodes.BoolOp, set[Constraint]]:
     """Returns the constraints for the given expression.
 
     The returned dictionary maps the node where the constraint was generated to the
     corresponding constraint(s).
 
     Constraints are computed statically by analysing the code surrounding expr.
-    Currently this only supports constraints generated from if conditions.
+    Currently this only supports constraints generated from if conditions and
+    preceding operands in boolean operations.
     """
     current_node: nodes.NodeNG | None = expr
-    constraints_mapping: dict[nodes.If | nodes.IfExp, set[Constraint]] = {}
+    constraints_mapping: dict[
+        nodes.If | nodes.IfExp | nodes.BoolOp, set[Constraint]
+    ] = {}
     while current_node is not None and current_node is not frame:
         parent = current_node.parent
+        constraints: set[Constraint] | None = None
+
         if isinstance(parent, (nodes.If, nodes.IfExp)):
             branch, _ = parent.locate_child(current_node)
-            constraints: set[Constraint] | None = None
             if branch == "body":
                 constraints = set(_match_constraint(expr, parent.test))
             elif branch == "orelse":
                 constraints = set(_match_constraint(expr, parent.test, invert=True))
+            if constraints:
+                constraints_mapping[parent] = constraints
 
+        elif isinstance(parent, nodes.BoolOp):
+            for index, value in enumerate(parent.values):
+                if value is current_node:
+                    constraints = set()
+                    for previous_value in parent.values[:index]:
+                        constraints.update(
+                            _match_constraint(
+                                expr, previous_value, invert=parent.op == "or"
+                            )
+                        )
+                    break
             if constraints:
                 constraints_mapping[parent] = constraints
         current_node = parent
