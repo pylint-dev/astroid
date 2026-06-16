@@ -7,6 +7,13 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Fix classmethod first-argument inference so an unrelated outer bound
+  instance does not leak into the classmethod body. This avoids inferring
+  ``cls`` as the caller's class when indexing a tuple returned by a
+  classmethod such as ``A.c()[0]``.
+
+  Closes pylint-dev/pylint#11101
+
 * The documentation build now fails on any Sphinx warning, so a cross-reference
   that does not resolve is caught by CI instead of quietly rendering as plain
   text. ``Uninferable``, ``Position`` and the ``BadOperationMessage`` classes
