@@ -118,6 +118,30 @@ def const_infer_binary_op(
         ):
             yield not_implemented
             return
+        # Repeating a str/bytes by a large count ("x" * n or n * "x") would
+        # eagerly build the whole object, the same way list/tuple repetition
+        # is bounded in _multiply_seq_by_int. Don't materialize it.
+        if operator == "*":
+            sequence, count = self.value, other.value
+            if isinstance(sequence, int) and isinstance(count, (str, bytes)):
+                sequence, count = count, sequence
+            if (
+                isinstance(sequence, (str, bytes))
+                and isinstance(count, int)
+                and len(sequence) * count > 1e8
+            ):
+                yield util.Uninferable
+                return
+        # Left-shifting by a large amount builds an enormous int, the integer
+        # analog of the ** guard above.
+        if (
+            operator == "<<"
+            and isinstance(self.value, int)
+            and isinstance(other.value, int)
+            and other.value > 1e8
+        ):
+            yield util.Uninferable
+            return
         try:
             impl = BIN_OP_IMPL[operator]
             try:
