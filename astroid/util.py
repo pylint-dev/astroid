@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import re
 import warnings
 from typing import TYPE_CHECKING, Any, Final, Literal
 
@@ -49,6 +50,30 @@ class UninferableBase:
 
 
 Uninferable: Final = UninferableBase()
+
+# Width/precision in a format spec drive how large a formatted string gets.
+# Match the leading width and the optional ``.precision`` from the start of a
+# format spec (PEP 3101 / format mini-language).
+_FORMAT_SPEC_SIZE = re.compile(
+    r"(?:.?[<>=^])?[-+ ]?z?#?0?(?P<width>\d+)?(?:[,_])?(?:\.(?P<precision>\d+))?"
+)
+# Mirrors the sequence/repetition caps in astroid.protocols.
+MAX_FORMATTED_SIZE = 10**8
+
+
+def format_spec_too_large(format_spec: str) -> bool:
+    """Whether a format spec asks for an oversized width or precision.
+
+    Used to avoid materializing a multi-gigabyte string while inferring a tiny
+    literal such as ``"{:>2000000000}".format("x")`` or ``f"{1.5:.2e9f}"``.
+    """
+    match = _FORMAT_SPEC_SIZE.match(format_spec)
+    if match is None:  # pragma: no cover
+        return False
+    return any(
+        size is not None and int(size) > MAX_FORMATTED_SIZE
+        for size in match.group("width", "precision")
+    )
 
 
 class BadOperationMessage:
