@@ -306,20 +306,20 @@ class PartialFunction(scoped_nodes.FunctionDef):
         if call is None:
             self.filled_args = list(filled_args or [])
             self.filled_keywords = dict(filled_keywords or {})
-            self.filled_positionals = len(self.filled_args)
-            return
+        else:
+            self.filled_args = call.positional_arguments[1:]
+            self.filled_keywords = call.keyword_arguments
 
-        self.filled_args = call.positional_arguments[1:]
-        self.filled_keywords = call.keyword_arguments
-
-        wrapped_function = call.positional_arguments[0]
-        inferred_wrapped_function = next(wrapped_function.infer())
-        if isinstance(inferred_wrapped_function, PartialFunction):
-            self.filled_args = inferred_wrapped_function.filled_args + self.filled_args
-            self.filled_keywords = {
-                **inferred_wrapped_function.filled_keywords,
-                **self.filled_keywords,
-            }
+            wrapped_function = call.positional_arguments[0]
+            inferred_wrapped_function = next(wrapped_function.infer())
+            if isinstance(inferred_wrapped_function, PartialFunction):
+                self.filled_args = (
+                    inferred_wrapped_function.filled_args + self.filled_args
+                )
+                self.filled_keywords = {
+                    **inferred_wrapped_function.filled_keywords,
+                    **self.filled_keywords,
+                }
 
         self.filled_positionals = len(self.filled_args)
 
