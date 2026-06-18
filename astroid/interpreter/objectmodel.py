@@ -468,7 +468,7 @@ class FunctionModel(ObjectModel):
                     "end_lineno": func.end_lineno,
                     "end_col_offset": func.end_col_offset,
                 }
-                if hasattr(func, "filled_args") and hasattr(func, "filled_keywords"):
+                if isinstance(func, astroid.objects.PartialFunction):
                     new_func_kwargs["filled_args"] = func.filled_args
                     new_func_kwargs["filled_keywords"] = func.filled_keywords
 
