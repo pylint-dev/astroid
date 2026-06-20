@@ -350,7 +350,7 @@ def assend_assigned_stmts(
 
 
 def _arguments_infer_argname(
-    self, name: str | None, context: InferenceContext
+    self, name: str | None, context: InferenceContext | None
 ) -> Generator[InferenceResult]:
     # arguments information may be missing, in which case we can't do anything
     # more
@@ -372,7 +372,11 @@ def _arguments_infer_argname(
         is_metaclass = isinstance(cls, nodes.ClassDef) and cls.type == "metaclass"
         # If this is a metaclass, then the first argument will always
         # be the class, not an instance.
-        if context.boundnode and isinstance(context.boundnode, bases.Instance):
+        if (
+            context
+            and context.boundnode
+            and isinstance(context.boundnode, bases.Instance)
+        ):
             cls = context.boundnode._proxied
         if is_metaclass or functype == "classmethod":
             yield cls

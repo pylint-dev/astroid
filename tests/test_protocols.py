@@ -68,6 +68,19 @@ class ProtocolTests(unittest.TestCase):
         for2_assnode = next(assign_stmts[1].nodes_of_class(nodes.AssignName))
         self.assertRaises(InferenceError, list, for2_assnode.assigned_stmts())
 
+    def test_assigned_stmts_arguments_without_context(self) -> None:
+        # Regression: the Arguments assigned_stmts protocol may be called
+        # without an inference context (the public ``assigned_stmts`` API
+        # defaults it to None). Resolving a function's first parameter that way
+        # used to crash with ``AttributeError: 'NoneType' object has no
+        # attribute 'boundnode'``; it should degrade to Uninferable instead.
+        args = extract_node("""
+        def f(x, y):  #@
+            return x
+        """).args
+        assigned = list(args.assigned_stmts(node=args.args[0]))
+        self.assertEqual(assigned, [Uninferable])
+
     def test_assigned_stmts_nested_for_tuple(self) -> None:
         assign_stmts = extract_node("""
         for a, (b, c) in [(1, (2, 3))]:  #@

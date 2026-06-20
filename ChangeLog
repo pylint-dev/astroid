@@ -37,6 +37,13 @@ Release date: TBA
 
   Closes #2646
 
+* Fix ``AttributeError`` crash in the ``Arguments`` ``assigned_stmts``
+  protocol when called without an inference context (the public
+  ``assigned_stmts`` API defaults ``context`` to ``None``). Resolving a
+  function's first parameter dereferenced ``context.boundnode`` while the
+  matching ``context and ...`` guard a few lines below was missing; it now
+  degrades to Uninferable.
+
 * Wrap assignment expressions (``:=``) in parentheses when emitting
   ``as_string`` output so the rendered code remains syntactically valid in
   contexts such as comparisons, where Python requires the walrus expression
