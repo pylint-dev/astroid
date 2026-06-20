@@ -53,6 +53,12 @@ Refs #3107
   matching ``context and ...`` guard a few lines below was missing; it now
   degrades to Uninferable.
 
+* Fix ``AttributeError`` crash in ``ClassDef.infer_call_result`` when called
+  through the public API without a context (it defaults to ``None``) for a
+  class whose metaclass defines ``__call__``: the callee was assigned to
+  ``context.callcontext.callee`` without checking that a call context exists.
+  It is now guarded, matching the surrounding code.
+
 * Wrap assignment expressions (``:=``) in parentheses when emitting
   ``as_string`` output so the rendered code remains syntactically valid in
   contexts such as comparisons, where Python requires the walrus expression

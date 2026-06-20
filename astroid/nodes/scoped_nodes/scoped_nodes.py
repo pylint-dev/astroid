@@ -2106,7 +2106,11 @@ class ClassDef(
             # Call type.__call__ if not set metaclass
             # (since type is the default metaclass)
             context = bind_context_to_node(context, self)
-            context.callcontext.callee = dunder_call
+            # ``infer_call_result`` may be called through the public API without
+            # a call context (it defaults to None); only annotate the callee
+            # when there is a call context to annotate.
+            if context.callcontext:
+                context.callcontext.callee = dunder_call
             yield from dunder_call.infer_call_result(caller, context)
         else:
             yield self.instantiate_class()
