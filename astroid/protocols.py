@@ -373,7 +373,11 @@ def _arguments_infer_argname(
         # If this is a metaclass, then the first argument will always
         # be the class, not an instance.
         if context.boundnode and isinstance(context.boundnode, bases.Instance):
-            cls = context.boundnode._proxied
+            bound_cls = context.boundnode._proxied
+            if not isinstance(cls, nodes.ClassDef) or bound_cls.is_subtype_of(
+                cls.qname()
+            ):
+                cls = bound_cls
         if is_metaclass or functype == "classmethod":
             yield cls
             return

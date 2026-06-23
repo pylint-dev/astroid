@@ -520,6 +520,29 @@ class SuperTests(unittest.TestCase):
         self.assertIsInstance(inferred, bases.Instance)
         self.assertEqual(inferred._proxied.name, "Child")
 
+    def test_classmethod_returned_tuple_subscript_ignores_unrelated_boundnode(
+        self,
+    ) -> None:
+        node = builder.extract_node("""
+        class A:
+            def b(self):
+                return 0
+
+            @classmethod
+            def c(cls):
+                return cls(), 0
+
+        class D:
+            def e(self):
+                self.f = A.c()[0]
+                self.f #@
+        """)
+
+        inferred = next(node.infer())
+
+        self.assertIsInstance(inferred, bases.Instance)
+        self.assertEqual(inferred._proxied.name, "A")
+
     def test_super_invalid_types(self) -> None:
         node = builder.extract_node("""
         import collections
