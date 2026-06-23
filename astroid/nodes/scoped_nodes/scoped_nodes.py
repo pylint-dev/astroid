@@ -64,6 +64,9 @@ if TYPE_CHECKING:
 
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
+_SENTINEL: Any = object()
+_COMPUTING_METACLASS: Any = object()
+_COMPUTING_ANCESTORS: Any = object()
 BUILTIN_DESCRIPTORS = frozenset(
     {"classmethod", "staticmethod", "builtins.classmethod", "builtins.staticmethod"}
 )
@@ -2183,11 +2186,61 @@ class ClassDef(
 
         :returns: The base classes
         """
+        if recurs:
+            # The full transitive walk amplifies cost on deep MRO chains
+            # (see #1115). Cache the materialized tuple on the instance;
+            # ``context`` is intentionally not part of the key — the
+            # result is path-independent and the walk's own ``yielded``
+            # set handles cycle prevention within a single walk.
+            cached = self.__dict__.get("_cached_ancestors")
+            if cached is _COMPUTING_ANCESTORS:
+                # Re-entry through a cyclic class hierarchy (e.g.
+                # ``string.Template = A`` after ``class A(Template)``).
+                # Yield nothing so the outer walk can finish; the caller
+                # detects the sentinel and marks its own walk provisional.
+                return
+            if cached is not None:
+                yield from cached
+                return
+            # Park a sentinel so any recursive re-entry through this
+            # ClassDef short-circuits instead of blowing the stack
+            # (PyPy 3.10's recursion limit, in particular).
+            self.__dict__["_cached_ancestors"] = _COMPUTING_ANCESTORS
+            incomplete: list[bool] = [False]
+            try:
+                result = tuple(
+                    self._walk_ancestors(
+                        recurs=True,
+                        context=InferenceContext(),
+                        _incomplete=incomplete,
+                    )
+                )
+            except BaseException:
+                self.__dict__.pop("_cached_ancestors", None)
+                raise
+            if incomplete[0]:
+                # The walk hit an Uninferable base (likely an inference
+                # tip not yet registered, e.g. ``namedtuple(...)`` during
+                # module build) or short-circuited through the sentinel.
+                # Drop the partial cache so the next call recomputes.
+                del self.__dict__["_cached_ancestors"]
+            else:
+                self.__dict__["_cached_ancestors"] = result
+            yield from result
+            return
+        if context is None:
+            context = InferenceContext()
+        yield from self._walk_ancestors(recurs=False, context=context)
+
+    def _walk_ancestors(
+        self,
+        recurs: bool,
+        context: InferenceContext,
+        _incomplete: list[bool] | None = None,
+    ) -> Generator[ClassDef]:
         # FIXME: should be possible to choose the resolution order
         # FIXME: inference make infinite loops possible here
         yielded = {self}
-        if context is None:
-            context = InferenceContext()
         if not self.bases and self.qname() != "builtins.object":
             # This should always be a ClassDef (which we don't assert for)
             yield builtin_lookup("object")[1][0]  # type: ignore[misc]
@@ -2196,12 +2249,14 @@ class ClassDef(
         for stmt in self.bases:
             with context.restore_path():
                 try:
+                    saw_class = False
                     for baseobj in stmt.infer(context):
                         if not isinstance(baseobj, ClassDef):
                             if isinstance(baseobj, bases.Instance):
                                 baseobj = baseobj._proxied
                             else:
                                 continue
+                        saw_class = True
                         if not baseobj.hide:
                             if baseobj in yielded:
                                 continue
@@ -2217,7 +2272,24 @@ class ClassDef(
                                 continue
                             yielded.add(grandpa)
                             yield grandpa
+                        # If ``baseobj`` is still parked on the sentinel
+                        # we just unwound a cyclic re-entry; the result
+                        # is missing baseobj's transitive ancestors.
+                        if (
+                            _incomplete is not None
+                            and baseobj.__dict__.get("_cached_ancestors")
+                            is _COMPUTING_ANCESTORS
+                        ):
+                            _incomplete[0] = True
+                    if not saw_class and _incomplete is not None:
+                        # A base resolved to neither a ClassDef nor an
+                        # Instance — likely an inference tip not yet
+                        # registered (e.g. ``namedtuple(...)`` Call during
+                        # module build). Signal that this walk is provisional.
+                        _incomplete[0] = True
                 except InferenceError:
+                    if _incomplete is not None:
+                        _incomplete[0] = True
                     continue
 
     def local_attr_ancestors(self, name, context: InferenceContext | None = None):
@@ -2680,6 +2752,18 @@ class ClassDef(
     def _find_metaclass(
         self, seen: set[ClassDef] | None = None, context: InferenceContext | None = None
     ) -> SuccessfulInferenceResult | None:
+        # Cache the no-context result on the instance. Re-entry during
+        # computation (cyclic class hierarchies) is treated as the cycle
+        # break that ``seen`` provides in the slow path.
+        cache_key = context is None
+        if cache_key:
+            cached = self.__dict__.get("_cached_find_metaclass", _SENTINEL)
+            if cached is _COMPUTING_METACLASS:
+                return None
+            if cached is not _SENTINEL:
+                return cached
+            self.__dict__["_cached_find_metaclass"] = _COMPUTING_METACLASS
+
         if seen is None:
             seen = set()
         seen.add(self)
@@ -2691,6 +2775,9 @@ class ClassDef(
                     klass = parent._find_metaclass(seen)
                     if klass is not None:
                         break
+
+        if cache_key:
+            self.__dict__["_cached_find_metaclass"] = klass
         return klass
 
     def metaclass(
