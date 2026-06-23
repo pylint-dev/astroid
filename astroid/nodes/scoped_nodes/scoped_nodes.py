@@ -1460,7 +1460,8 @@ class FunctionDef(
         for decnode in decoratornodes:
             try:
                 for infnode in decnode.infer(context=context):
-                    result.add(infnode.qname())
+                    if getattr(infnode, "qname", None):
+                        result.add(infnode.qname())
             except InferenceError:
                 continue
         return result
@@ -1489,10 +1490,15 @@ class FunctionDef(
                     inferred = next(node.infer())
                 except (InferenceError, StopIteration):
                     continue
-                if inferred and inferred.qname() in {
-                    "abc.abstractproperty",
-                    "abc.abstractmethod",
-                }:
+                if (
+                    inferred
+                    and getattr(inferred, "qname", None)
+                    and inferred.qname()
+                    in {
+                        "abc.abstractproperty",
+                        "abc.abstractmethod",
+                    }
+                ):
                     return True
 
         for child_node in self.body:
