@@ -542,3 +542,83 @@ def test_regression_parse_deeply_nested_parentheses() -> None:
         SyntaxError if platform.python_implementation() == "PyPy" else MemoryError
     )
     assert isinstance(ctx.value.error, expected)
+
+
+def test_get_assign_nodes_does_not_recurse_on_long_if_elif() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/786.
+
+    Auto-generated code (e.g. Apache Thrift bindings) often contains long
+    ``if/elif`` chains inside a single method. The traversal in
+    ``_get_assign_nodes`` used to be recursive, hitting ``RecursionError``
+    once the chain grew past the interpreter's recursion limit. The algorithm
+    was made iterative in 1896ba71. Run the historically-failing case under a
+    tight recursion limit to guard against regression.
+    """
+    lines = [
+        "class TestClass:",
+        "    def m(self):",
+        "        if True:",
+        "            pass",
+    ]
+    for _ in range(118):
+        lines += ["        elif True:", "            pass"]
+    src = "\n".join(lines)
+
+    original_limit = sys.getrecursionlimit()
+    sys.setrecursionlimit(1000)
+    try:
+        module = parse(src)
+        method = module.body[0].body[0]
+        # Trigger the historically-recursive traversal.
+        list(method.nodes_of_class(nodes.AssignName))
+    finally:
+        sys.setrecursionlimit(original_limit)
+
+
+def test_name_lookup_no_recursion_in_dict_kwargs() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/264.
+
+    Name resolution inside ``(k for k in dict(**k))`` used to bounce between
+    the comprehension's ``k`` and the outer ``k`` until ``RecursionError``.
+    The current behavior infers the generator's source as a dict instance
+    without crashing.
+    """
+    node = extract_node("""
+        def test(k):
+            (k for k in __(dict(**k)))
+    """)
+    inferred = next(node.infer())
+    assert isinstance(inferred, Instance)
+    assert inferred.pytype() == "builtins.dict"
+
+
+def test_relative_import_call_infers_to_target(tmp_path) -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/850.
+
+    A call to a name pulled in via ``from .lib import setup`` from a package
+    submodule used to infer as ``Uninferable``. The call must now resolve to
+    the originating ``FunctionDef``.
+    """
+    pkg = tmp_path / "pkg850"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text("")
+    (pkg / "lib.py").write_text("def setup():\n    pass\n")
+    (pkg / "app.py").write_text(textwrap.dedent("""\
+            from .lib import setup
+
+            def f():
+                setup()
+        """))
+    sys.path.insert(0, str(tmp_path))
+    try:
+        module = MANAGER.ast_from_file(str(pkg / "app.py"), source=True)
+        call_node = module.body[1].body[0].value
+        inferred = list(call_node.func.infer())
+        assert Uninferable not in inferred
+        assert any(
+            isinstance(node, nodes.FunctionDef) and node.name == "setup"
+            for node in inferred
+        )
+    finally:
+        sys.path.remove(str(tmp_path))
+        MANAGER.clear_cache()
