@@ -31,6 +31,12 @@ Release date: TBA
   lazily, and ``astroid.exceptions`` imports ``astroid.typing`` under
   ``TYPE_CHECKING``.
 
+* Load brain plugins lazily. Previously all optional brain modules (~49 of
+  them) were imported and registered during ``import astroid``; now only the
+  two brains targeting builtins are registered up front, and the rest are
+  loaded the first time astroid encounters their target module being
+  imported or resolved. This noticeably shortens ``import astroid``.
+
 * Fix ``AttributeError`` crash in ``starred_assigned_stmts`` when a starred
   unpacking target is an attribute (e.g. ``for *o.attr, x in ...``) rather
   than a simple name.
