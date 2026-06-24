@@ -78,7 +78,7 @@ class InferenceContext:
         """Context that needs to be passed down through call stacks for call arguments."""
 
         self.constraints: dict[
-            str, dict[nodes.If | nodes.IfExp, set[constraint.Constraint]]
+            str, dict[nodes.If | nodes.IfExp | nodes.BoolOp, set[constraint.Constraint]]
         ] = {}
         """The constraints on nodes."""
 
