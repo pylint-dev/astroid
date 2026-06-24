@@ -8,6 +8,7 @@ from astroid.builder import parse
 from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
 from astroid.nodes.scoped_nodes import FunctionDef
+from astroid.util import UninferableBase
 
 
 def _multiprocessing_transform():
@@ -28,6 +29,9 @@ def _multiprocessing_transform():
         context = next(node["default"].infer())
         base = next(node["base"].infer())
     except (InferenceError, StopIteration):
+        return module
+
+    if isinstance(context, UninferableBase) or isinstance(base, UninferableBase):
         return module
 
     for node in (context, base):
