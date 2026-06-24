@@ -520,6 +520,62 @@ class SuperTests(unittest.TestCase):
         self.assertIsInstance(inferred, bases.Instance)
         self.assertEqual(inferred._proxied.name, "Child")
 
+    def test_super_method_three_level_chain_return_type(self) -> None:
+        """Test that super().method() infers the leaf type in a 3-level chain.
+
+        Regression test for:
+        https://github.com/pylint-dev/pylint/issues/10807
+        https://github.com/pylint-dev/astroid/issues/2852
+        """
+        node = builder.extract_node("""
+        import typing
+
+        class A:
+            def method(self) -> typing.Self:
+                return self
+
+        class B(A):
+            def method(self) -> typing.Self:
+                return super().method()
+
+        class C(B):
+            clsattr = 1
+
+        C().method() #@
+        """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, bases.Instance)
+        self.assertEqual(inferred._proxied.name, "C")
+
+    def test_super_classmethod_three_level_chain_return_type(self) -> None:
+        """Test that super().classmethod() infers the leaf type in a 3-level chain.
+
+        Regression test for:
+        https://github.com/pylint-dev/pylint/issues/9159
+        https://github.com/pylint-dev/astroid/issues/2852
+        """
+        node = builder.extract_node("""
+        import typing
+
+        class C:
+            @classmethod
+            def from_nothing(cls) -> typing.Self:
+                return cls()
+
+        class D(C):
+            @classmethod
+            def from_nothing(cls) -> typing.Self:
+                return super().from_nothing()
+
+        class E(D):
+            clsattr = 1
+
+        E.from_nothing() #@
+        """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, bases.Instance)
+        self.assertEqual(inferred._proxied.name, "E")
+
     def test_super_invalid_types(self) -> None:
         node = builder.extract_node("""
         import collections
