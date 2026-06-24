@@ -7,6 +7,23 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Remove the ``asname`` keyword argument from ``Import._infer`` and
+  ``ImportFrom._infer``. The alias-to-real-name translation that
+  ``asname=True`` performed is now hoisted into ``ImportNode._infer_name``,
+  which runs in ``_infer_stmts`` before ``_infer`` is dispatched. Direct
+  callers of ``Import.infer`` / ``ImportFrom.infer`` (previously the
+  ``asname=False`` path) now consistently resolve the lookup name as-is.
+
+  The two flows used to collapse into a single inference cache entry
+  because the ``asname`` kwarg was not part of the cache key, so the
+  second call returned the cached result of the first regardless of
+  which one ran. With the translation hoisted upstream, the two flows
+  set different ``lookupname`` values and therefore land on distinct
+  cache keys, eliminating the collision.
+
+  Refs pylint-dev/pylint#10193
+  Closes #3007
+
 * Fix uncaught ``IndentationError`` when parsing code whose lines end in
   ``\r``: the slice of source tokenized to compute a class or function
   ``position`` is split on ``\n`` only and could be misaligned with the AST

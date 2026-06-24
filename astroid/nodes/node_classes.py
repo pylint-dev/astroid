@@ -2883,7 +2883,6 @@ class ImportFrom(_base_nodes.ImportNode):
     def _infer(
         self,
         context: InferenceContext | None = None,
-        asname: bool = True,
         **kwargs: Any,
     ) -> Generator[InferenceResult]:
         """Infer a ImportFrom node: return the imported module/object."""
@@ -2891,12 +2890,6 @@ class ImportFrom(_base_nodes.ImportNode):
         name = context.lookupname
         if name is None:
             raise InferenceError(node=self, context=context)
-        if asname:
-            try:
-                name = self.real_name(name)
-            except AttributeInferenceError as exc:
-                # See https://github.com/pylint-dev/pylint/issues/4692
-                raise InferenceError(node=self, context=context) from exc
         try:
             module = self.do_import_module()
         except AstroidBuildingError as exc:
@@ -3209,7 +3202,6 @@ class Import(_base_nodes.ImportNode):
     def _infer(
         self,
         context: InferenceContext | None = None,
-        asname: bool = True,
         **kwargs: Any,
     ) -> Generator[nodes.Module]:
         """Infer an Import node: return the imported module/object."""
@@ -3219,10 +3211,7 @@ class Import(_base_nodes.ImportNode):
             raise InferenceError(node=self, context=context)
 
         try:
-            if asname:
-                yield self.do_import_module(self.real_name(name))
-            else:
-                yield self.do_import_module(name)
+            yield self.do_import_module(name)
         except AstroidBuildingError as exc:
             raise InferenceError(node=self, context=context) from exc
 
