@@ -9,6 +9,7 @@ Helps with understanding everything imported from 'gi.repository'
 
 # pylint:disable=import-error,import-outside-toplevel
 
+import enum
 import inspect
 import itertools
 import re
@@ -130,6 +131,14 @@ def _gi_build_stub(parent):  # noqa: C901
         else:
             # Assume everything else is some manner of constant
             constants[name] = 0
+    # iterating enum.IntFlag doesn't include the zero value
+    if inspect.isclass(parent) and issubclass(parent, enum.IntFlag):
+        try:
+            zero_name = parent(0).name
+            if zero_name:
+                constants[zero_name] = 0
+        except TypeError:
+            pass
 
     ret = ""
 
