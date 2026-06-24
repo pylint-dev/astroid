@@ -938,3 +938,126 @@ class HermeticInterpreterTest(unittest.TestCase):
                 my_builder.module_build(
                     self.imported_module, modname=self.imported_module_path.stem
                 )
+
+
+class StubBuildTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.manager = test_utils.brainless_manager()
+        self.builder = builder.AstroidBuilder(self.manager)
+
+    def test_is_stub_false_for_py(self) -> None:
+        module = self.builder.string_build("x = 1")
+        assert module.is_stub is False
+
+    def test_is_stub_detected_from_path(self) -> None:
+        module = self.builder.string_build("x: int", path="foo.pyi")
+        assert module.is_stub is True
+
+    def test_is_stub_not_detected_from_py_path(self) -> None:
+        module = self.builder.string_build("x: int", path="foo.py")
+        assert module.is_stub is False
+
+    def test_is_stub_explicit_override(self) -> None:
+        module = self.builder.string_build("x: int", is_stub=True)
+        assert module.is_stub is True
+
+    def test_is_stub_explicit_false_overrides_path(self) -> None:
+        module = self.builder.string_build("x: int", path="foo.pyi", is_stub=False)
+        assert module.is_stub is False
+
+    def test_parse_is_stub(self) -> None:
+        module = builder.parse("x: int", is_stub=True)
+        assert module.is_stub is True
+
+    def test_stub_annassign_ellipsis_stripped(self) -> None:
+        module = builder.parse("x: int = ...", is_stub=True)
+        ann = module.body[0]
+        assert isinstance(ann, nodes.AnnAssign)
+        assert ann.value is None
+
+    def test_nonstub_annassign_ellipsis_preserved(self) -> None:
+        module = builder.parse("x: int = ...")
+        ann = module.body[0]
+        assert isinstance(ann, nodes.AnnAssign)
+        assert isinstance(ann.value, nodes.Const)
+        assert ann.value.value is ...
+
+    def test_stub_annassign_nonellipsis_preserved(self) -> None:
+        module = builder.parse("x: int = 0", is_stub=True)
+        ann = module.body[0]
+        assert isinstance(ann, nodes.AnnAssign)
+        assert isinstance(ann.value, nodes.Const)
+        assert ann.value.value == 0
+
+    def test_stub_assign_ellipsis_replaced(self) -> None:
+        module = builder.parse("MULTILINE = ...", is_stub=True)
+        assign = module.body[0]
+        assert isinstance(assign, nodes.Assign)
+        assert isinstance(assign.value, nodes.Const)
+        assert assign.value.value is None
+
+    def test_nonstub_assign_ellipsis_preserved(self) -> None:
+        module = builder.parse("MULTILINE = ...")
+        assign = module.body[0]
+        assert isinstance(assign, nodes.Assign)
+        assert isinstance(assign.value, nodes.Const)
+        assert assign.value.value is ...
+
+    def test_stub_funcdef_ellipsis_body_cleared(self) -> None:
+        module = builder.parse("def f() -> int: ...", is_stub=True)
+        func = module.body[0]
+        assert isinstance(func, nodes.FunctionDef)
+        assert func.body == []
+
+    def test_stub_funcdef_pass_body_cleared(self) -> None:
+        module = builder.parse("def f() -> int: pass", is_stub=True)
+        func = module.body[0]
+        assert isinstance(func, nodes.FunctionDef)
+        assert func.body == []
+
+    def test_stub_funcdef_raise_body_preserved(self) -> None:
+        module = builder.parse(
+            "def f() -> int: raise NotImplementedError", is_stub=True
+        )
+        func = module.body[0]
+        assert isinstance(func, nodes.FunctionDef)
+        assert len(func.body) == 1
+        assert isinstance(func.body[0], nodes.Raise)
+
+    def test_stub_funcdef_default_ellipsis_preserved(self) -> None:
+        module = builder.parse("def f(x: int = ...) -> None: ...", is_stub=True)
+        func = module.body[0]
+        assert isinstance(func, nodes.FunctionDef)
+        default = func.args.defaults[0]
+        assert isinstance(default, nodes.Const)
+        assert default.value is ...
+
+    def test_nonstub_funcdef_ellipsis_body_preserved(self) -> None:
+        module = builder.parse("def f() -> int: ...")
+        func = module.body[0]
+        assert isinstance(func, nodes.FunctionDef)
+        assert len(func.body) == 1
+        assert isinstance(func.body[0], nodes.Expr)
+        assert isinstance(func.body[0].value, nodes.Const)
+        assert func.body[0].value.value is ...
+
+    def test_standalone_pyi_discovered(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            pyi_path = os.path.join(tmp_dir, "stub_only_mod.pyi")
+            with open(pyi_path, "w", encoding="utf-8") as f:
+                f.write("x: int\n")
+            with resources.augmented_sys_path([tmp_dir]):
+                module = AstroidManager().ast_from_module_name("stub_only_mod")
+                assert module.is_stub is True
+
+    def test_py_preferred_over_pyi(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            py_path = os.path.join(tmp_dir, "dual_mod.py")
+            pyi_path = os.path.join(tmp_dir, "dual_mod.pyi")
+            with open(py_path, "w", encoding="utf-8") as f:
+                f.write("x = 1\n")
+            with open(pyi_path, "w", encoding="utf-8") as f:
+                f.write("x: int\n")
+            with resources.augmented_sys_path([tmp_dir]):
+                module = AstroidManager().ast_from_module_name("dual_mod")
+                assert module.is_stub is False

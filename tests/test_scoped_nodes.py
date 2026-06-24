@@ -2755,6 +2755,90 @@ def test_import_with_global() -> None:
     assert "Path" in code.locals
 
 
+class StubScopedNodeTest(unittest.TestCase):
+    def test_stub_class_getattr_annassign(self) -> None:
+        module = builder.parse(
+            """
+            class Foo:
+                x: int
+            """,
+            is_stub=True,
+        )
+        cls = module.body[0]
+        assert isinstance(cls, nodes.ClassDef)
+        attrs = cls.getattr("x")
+        assert len(attrs) == 1
+
+    def test_nonstub_class_getattr_skips_bare_annassign(self) -> None:
+        module = builder.parse("""
+            class Foo:
+                x: int
+            """)
+        cls = module.body[0]
+        assert isinstance(cls, nodes.ClassDef)
+        with self.assertRaises(AttributeInferenceError):
+            cls.getattr("x")
+
+    def test_stub_funcdef_infer_call_result_int(self) -> None:
+        module = builder.parse("def f() -> int: ...", is_stub=True)
+        func = module.body[0]
+        results = list(func.infer_call_result(None))
+        assert len(results) == 1
+        assert isinstance(results[0], Instance)
+        assert results[0].name == "int"
+
+    def test_stub_funcdef_infer_call_result_none(self) -> None:
+        module = builder.parse("def f() -> None: ...", is_stub=True)
+        func = module.body[0]
+        results = list(func.infer_call_result(None))
+        assert len(results) == 1
+        assert isinstance(results[0], nodes.Const)
+        assert results[0].value is None
+
+    def test_stub_funcdef_no_return_annotation(self) -> None:
+        module = builder.parse("def f(): ...", is_stub=True)
+        func = module.body[0]
+        results = list(func.infer_call_result(None))
+        assert len(results) == 1
+        assert results[0] is util.Uninferable
+
+    def test_stub_funcdef_forward_ref_return(self) -> None:
+        module = builder.parse(
+            """
+            class Parser:
+                @classmethod
+                def create(cls) -> "Parser": ...
+            """,
+            module_name="stub_mod",
+            is_stub=True,
+        )
+        cls = module.body[0]
+        method = cls.body[0]
+        results = list(method.infer_call_result(None))
+        assert len(results) == 1
+        assert isinstance(results[0], Instance)
+        assert results[0].name == "Parser"
+
+    def test_stub_funcdef_unresolvable_forward_ref(self) -> None:
+        module = builder.parse(
+            'def f() -> "DoesNotExist": ...',
+            module_name="stub_mod",
+            is_stub=True,
+        )
+        func = module.body[0]
+        results = list(func.infer_call_result(None))
+        assert len(results) == 1
+        assert results[0] is util.Uninferable
+
+    def test_nonstub_funcdef_ellipsis_infer_unchanged(self) -> None:
+        module = builder.parse("def f() -> int: ...")
+        func = module.body[0]
+        results = list(func.infer_call_result(None))
+        assert len(results) == 1
+        assert isinstance(results[0], nodes.Const)
+        assert results[0].value is None
+
+
 class TestFrameNodes:
     @staticmethod
     def test_frame_node():

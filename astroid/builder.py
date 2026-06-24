@@ -149,10 +149,14 @@ class AstroidBuilder(raw_building.InspectBuilder):
             return self._post_build(module, builder, encoding)
 
     def string_build(
-        self, data: str, modname: str = "", path: str | None = None
+        self,
+        data: str,
+        modname: str = "",
+        path: str | None = None,
+        is_stub: bool | None = None,
     ) -> nodes.Module:
         """Build astroid from source code string."""
-        module, builder = self._data_build(data, modname, path)
+        module, builder = self._data_build(data, modname, path, is_stub=is_stub)
         module.file_bytes = data.encode("utf-8")
         return self._post_build(module, builder, "utf-8")
 
@@ -178,7 +182,11 @@ class AstroidBuilder(raw_building.InspectBuilder):
         return module
 
     def _data_build(
-        self, data: str, modname: str, path: str | None
+        self,
+        data: str,
+        modname: str,
+        path: str | None,
+        is_stub: bool | None = None,
     ) -> tuple[nodes.Module, rebuilder.TreeRebuilder]:
         """Build tree node from data and add some informations."""
         try:
@@ -206,7 +214,11 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 path is not None
                 and os.path.splitext(os.path.basename(path))[0] == "__init__"
             )
-        builder = rebuilder.TreeRebuilder(self._manager, parser_module, data)
+        if is_stub is None:
+            is_stub = path is not None and path.endswith(".pyi")
+        builder = rebuilder.TreeRebuilder(
+            self._manager, parser_module, data, is_stub=is_stub
+        )
         module = builder.visit_module(node, modname, node_file, package)
         return module, builder
 
@@ -295,6 +307,7 @@ def parse(
     module_name: str = "",
     path: str | None = None,
     apply_transforms: bool = True,
+    is_stub: bool | None = None,
 ) -> nodes.Module:
     """Parses a source string in order to obtain an astroid AST from it.
 
@@ -304,13 +317,15 @@ def parse(
     :param bool apply_transforms:
         Apply the transforms for the give code. Use it if you
         don't want the default transforms to be applied.
+    :param bool is_stub: Whether to treat the code as a ``.pyi`` stub.
+        When ``None``, auto-detected from *path*.
     """
     # pylint: disable-next=import-outside-toplevel
     from astroid.manager import AstroidManager
 
     code = textwrap.dedent(code)
     builder = AstroidBuilder(AstroidManager(), apply_transforms=apply_transforms)
-    return builder.string_build(code, modname=module_name, path=path)
+    return builder.string_build(code, modname=module_name, path=path, is_stub=is_stub)
 
 
 def _extract_expressions(node: nodes.NodeNG) -> Iterator[nodes.NodeNG]:
