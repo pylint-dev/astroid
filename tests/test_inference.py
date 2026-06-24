@@ -29,7 +29,14 @@ from astroid import (
 )
 from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
-from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod, UnionType
+from astroid.bases import (
+    BoundMethod,
+    Generator,
+    Instance,
+    UnboundMethod,
+    UnionType,
+    _infer_stmts,
+)
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
 from astroid.const import IS_PYPY, PY312_PLUS, PY314_PLUS
 from astroid.context import CallContext, InferenceContext
@@ -1039,8 +1046,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ``ImportNode._infer_name``, the two flows use distinct lookup
         names and therefore distinct cache keys.
         """
-        from astroid.bases import _infer_stmts
-
         import_node = extract_node("import os.path as os")
 
         # _infer_stmts is the path used when resolving a Name reference. It
