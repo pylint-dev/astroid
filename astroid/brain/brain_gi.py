@@ -163,7 +163,17 @@ def _gi_build_stub(parent):  # noqa: C901
     if methods:
         ret += f"# {parent.__name__} methods\n\n"
     for name in sorted(methods):
-        ret += f"def {name}(self, *args, **kwargs):\n"
+        static = False
+        try:
+            if not methods[name].is_method():
+                static = True
+        except AttributeError:
+            pass
+        if static:
+            ret += "@staticmethod\n"
+            ret += f"def {name}(*args, **kwargs):\n"
+        else:
+            ret += f"def {name}(self, *args, **kwargs):\n"
         ret += "    pass\n"
 
     if ret:
