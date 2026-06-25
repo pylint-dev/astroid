@@ -9,6 +9,7 @@ import pytest
 
 from astroid import exceptions, nodes
 from astroid.builder import AstroidBuilder, extract_node
+from astroid.const import PY315_PLUS
 from astroid.manager import AstroidManager
 
 
@@ -234,6 +235,58 @@ class Python3TC(unittest.TestCase):
         code = "{'x': 1, **{'y': 2, **{'z': 3}}}"
         node = extract_node(code)
         self.assertEqual(node.as_string(), code)
+
+    @pytest.mark.skipif(
+        not PY315_PLUS, reason="PEP 798 unpacking in comprehensions, new in 3.15"
+    )
+    def test_unpacking_in_comprehensions(self) -> None:
+        list_comp = extract_node("[*L for L in lists]")
+        self.assertIsInstance(list_comp, nodes.ListComp)
+        self.assertIsInstance(list_comp.elt, nodes.Starred)
+
+        set_comp = extract_node("{*L for L in lists}")
+        self.assertIsInstance(set_comp, nodes.SetComp)
+        self.assertIsInstance(set_comp.elt, nodes.Starred)
+
+        gen_exp = extract_node("(*L for L in lists)")
+        self.assertIsInstance(gen_exp, nodes.GeneratorExp)
+        self.assertIsInstance(gen_exp.elt, nodes.Starred)
+
+    @pytest.mark.skipif(
+        not PY315_PLUS, reason="PEP 798 unpacking in comprehensions, new in 3.15"
+    )
+    def test_dict_unpacking_in_comprehension(self) -> None:
+        # CPython stores the unpacked mapping in ``DictComp.key`` and leaves
+        # ``value`` as ``None``; astroid mirrors the ``{**d}`` representation
+        # with a ``DictUnpack`` key and the real value.
+        node = extract_node("{**d for d in dicts}")
+        self.assertIsInstance(node, nodes.DictComp)
+        self.assertIsInstance(node.key, nodes.DictUnpack)
+        self.assertIsInstance(node.value, nodes.Name)
+        self.assertEqual(node.value.name, "d")
+
+    @pytest.mark.skipif(
+        not PY315_PLUS, reason="PEP 798 unpacking in comprehensions, new in 3.15"
+    )
+    def test_unpacking_in_comprehensions_as_string(self) -> None:
+        for code in (
+            "[*L for L in lists]",
+            "{*L for L in lists}",
+            "(*L for L in lists)",
+            "{**d for d in dicts}",
+        ):
+            self.assertEqual(extract_node(code).as_string(), code)
+
+    @pytest.mark.skipif(
+        not PY315_PLUS, reason="PEP 798 unpacking in comprehensions, new in 3.15"
+    )
+    def test_comprehension_target_resolves_inside_starred_elt(self) -> None:
+        # The comprehension target is in scope inside the starred element and
+        # infers to the iterated items.
+        node = extract_node("[*L for L in [[1, 2], [3, 4]]]")
+        self.assertIsInstance(node.elt, nodes.Starred)
+        inferred = [elt.as_string() for elt in node.elt.value.inferred()]
+        self.assertEqual(inferred, ["[1, 2]", "[3, 4]"])
 
     def test_unpacking_in_dict_getitem(self) -> None:
         node = extract_node("{1:2, **{2:3, 3:4}, **{5: 6}}")
