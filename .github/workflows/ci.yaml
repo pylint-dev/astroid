@@ -26,7 +26,7 @@ jobs:
     steps:
       - &checkout
         name: Check out code from GitHub
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.0
       - &setup-python-default
         name: Set up Python ${{ env.DEFAULT_PYTHON }}
         id: python
@@ -232,7 +232,7 @@ jobs:
         run: |
           coverage combine coverage-linux*/.coverage
           coverage xml -o coverage-linux.xml
-      - uses: &actions-codecov codecov/codecov-action@v6
+      - uses: &actions-codecov codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true

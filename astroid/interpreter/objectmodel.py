@@ -460,14 +460,19 @@ class FunctionModel(ObjectModel):
 
                 # Rebuild the original value, but with the parent set as the
                 # class where it will be bound.
-                new_func = func.__class__(
-                    name=func.name,
-                    lineno=func.lineno,
-                    col_offset=func.col_offset,
-                    parent=func.parent,
-                    end_lineno=func.end_lineno,
-                    end_col_offset=func.end_col_offset,
-                )
+                new_func_kwargs = {
+                    "name": func.name,
+                    "lineno": func.lineno,
+                    "col_offset": func.col_offset,
+                    "parent": func.parent,
+                    "end_lineno": func.end_lineno,
+                    "end_col_offset": func.end_col_offset,
+                }
+                if isinstance(func, astroid.objects.PartialFunction):
+                    new_func_kwargs["filled_args"] = func.filled_args
+                    new_func_kwargs["filled_keywords"] = func.filled_keywords
+
+                new_func = func.__class__(**new_func_kwargs)
                 # pylint: disable=no-member
                 new_func.postinit(
                     func.args,

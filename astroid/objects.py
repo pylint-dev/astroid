@@ -282,27 +282,44 @@ class DictValues(bases.Proxy):
 class PartialFunction(scoped_nodes.FunctionDef):
     """A class representing partial function obtained via functools.partial."""
 
-    def __init__(self, call, name=None, lineno=None, col_offset=None, parent=None):
-        # TODO: Pass end_lineno, end_col_offset as well
+    def __init__(
+        self,
+        call=None,
+        name=None,
+        lineno=None,
+        col_offset=None,
+        parent=None,
+        *,
+        end_lineno=None,
+        end_col_offset=None,
+        filled_args=None,
+        filled_keywords=None,
+    ):
         super().__init__(
             name,
             lineno=lineno,
             col_offset=col_offset,
-            end_col_offset=0,
-            end_lineno=0,
+            end_col_offset=end_col_offset,
+            end_lineno=end_lineno,
             parent=parent,
         )
-        self.filled_args = call.positional_arguments[1:]
-        self.filled_keywords = call.keyword_arguments
+        if call is None:
+            self.filled_args = list(filled_args or [])
+            self.filled_keywords = dict(filled_keywords or {})
+        else:
+            self.filled_args = call.positional_arguments[1:]
+            self.filled_keywords = call.keyword_arguments
 
-        wrapped_function = call.positional_arguments[0]
-        inferred_wrapped_function = next(wrapped_function.infer())
-        if isinstance(inferred_wrapped_function, PartialFunction):
-            self.filled_args = inferred_wrapped_function.filled_args + self.filled_args
-            self.filled_keywords = {
-                **inferred_wrapped_function.filled_keywords,
-                **self.filled_keywords,
-            }
+            wrapped_function = call.positional_arguments[0]
+            inferred_wrapped_function = next(wrapped_function.infer())
+            if isinstance(inferred_wrapped_function, PartialFunction):
+                self.filled_args = (
+                    inferred_wrapped_function.filled_args + self.filled_args
+                )
+                self.filled_keywords = {
+                    **inferred_wrapped_function.filled_keywords,
+                    **self.filled_keywords,
+                }
 
         self.filled_positionals = len(self.filled_args)
 

@@ -18,6 +18,14 @@ Release date: TBA
   stores the unpacked mapping in ``DictComp.key`` and leaves ``value`` as
   ``None``; astroid now mirrors the ``{**d}`` ``Dict`` representation with a
   ``DictUnpack`` key, and ``as_string`` round-trips the construct.
+  
+* Fix uncaught ``IndentationError`` when parsing code whose lines end in
+  ``\r``: the slice of source tokenized to compute a class or function
+  ``position`` is split on ``\n`` only and could be misaligned with the AST
+  line numbers. Such nodes now simply have no position information, as
+  already done when ``tokenize`` raises ``TokenError``.
+
+  Closes #3091
 
 * Fix astroid bootstrap crash on PyPy 7.3.22 (``TypeError: expected str, got
   getset_descriptor object``) by also catching ``TypeError`` from
@@ -40,6 +48,13 @@ Release date: TBA
   than a simple name.
 
   Closes #2646
+
+* Fix ``AttributeError`` crash in the ``Arguments`` ``assigned_stmts``
+  protocol when called without an inference context (the public
+  ``assigned_stmts`` API defaults ``context`` to ``None``). Resolving a
+  function's first parameter dereferenced ``context.boundnode`` while the
+  matching ``context and ...`` guard a few lines below was missing; it now
+  degrades to Uninferable.
 
 * Wrap assignment expressions (``:=``) in parentheses when emitting
   ``as_string`` output so the rendered code remains syntactically valid in
