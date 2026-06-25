@@ -18,7 +18,7 @@ Release date: TBA
   stores the unpacked mapping in ``DictComp.key`` and leaves ``value`` as
   ``None``; astroid now mirrors the ``{**d}`` ``Dict`` representation with a
   ``DictUnpack`` key, and ``as_string`` round-trips the construct.
-  
+
 * Fix uncaught ``IndentationError`` when parsing code whose lines end in
   ``\r``: the slice of source tokenized to compute a class or function
   ``position`` is split on ``\n`` only and could be misaligned with the AST
