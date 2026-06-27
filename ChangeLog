@@ -14,6 +14,8 @@ Release date: TBA
   eagerly; these operations now infer as ``Uninferable`` when the result
   would be oversized.
 
+Refs #3107 
+
 * Fix uncaught ``IndentationError`` when parsing code whose lines end in
   ``\r``: the slice of source tokenized to compute a class or function
   ``position`` is split on ``\n`` only and could be misaligned with the AST
