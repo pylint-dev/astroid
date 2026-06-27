@@ -14,6 +14,17 @@ Release date: TBA
 
   Closes pylint-dev/pylint#10014
 
+* PEP 695 type parameters now live in their own scope (a new
+  :class:`nodes.TypeParamScope`), matching CPython's annotation scope. Type
+  parameter bounds and defaults are resolved lazily, so they may
+  forward-reference names defined later in an enclosing scope (e.g.
+  ``class Container[T: Item]`` where ``Item`` is defined afterwards) and may
+  reference sibling type parameters. Type parameter names no longer leak into
+  the owner's namespace (``ClassDef.getattr`` no longer returns them), and
+  class type parameters are now visible in method bodies.
+
+  Closes pylint-dev/pylint#11115
+
 * Bound string/bytes multiplication (``"x" * n``) and integer left shifts
   (``1 << n``) in ``const_infer_binary_op`` the same way list/tuple
   multiplication and ``**`` already are. Inferring a constant such as
