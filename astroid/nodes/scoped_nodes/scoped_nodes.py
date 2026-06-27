@@ -1460,7 +1460,9 @@ class FunctionDef(
         for decnode in decoratornodes:
             try:
                 for infnode in decnode.infer(context=context):
-                    result.add(infnode.qname())
+                    qname = getattr(infnode, "qname", None)
+                    if callable(qname):
+                        result.add(qname())
             except InferenceError:
                 continue
         return result
