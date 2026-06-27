@@ -118,6 +118,30 @@ def const_infer_binary_op(
         ):
             yield not_implemented
             return
+        # Repeating a str/bytes by a large count ("x" * n or n * "x") would
+        # eagerly build the whole object, the same way list/tuple repetition
+        # is bounded in _multiply_seq_by_int. Don't materialize it.
+        if operator == "*":
+            sequence, count = self.value, other.value
+            if isinstance(sequence, int) and isinstance(count, (str, bytes)):
+                sequence, count = count, sequence
+            if (
+                isinstance(sequence, (str, bytes))
+                and isinstance(count, int)
+                and len(sequence) * count > 1e8
+            ):
+                yield util.Uninferable
+                return
+        # Left-shifting by a large amount builds an enormous int, the integer
+        # analog of the ** guard above.
+        if (
+            operator == "<<"
+            and isinstance(self.value, int)
+            and isinstance(other.value, int)
+            and other.value > 1e8
+        ):
+            yield util.Uninferable
+            return
         try:
             impl = BIN_OP_IMPL[operator]
             try:
@@ -350,7 +374,7 @@ def assend_assigned_stmts(
 
 
 def _arguments_infer_argname(
-    self, name: str | None, context: InferenceContext
+    self, name: str | None, context: InferenceContext | None
 ) -> Generator[InferenceResult]:
     # arguments information may be missing, in which case we can't do anything
     # more
@@ -372,7 +396,11 @@ def _arguments_infer_argname(
         is_metaclass = isinstance(cls, nodes.ClassDef) and cls.type == "metaclass"
         # If this is a metaclass, then the first argument will always
         # be the class, not an instance.
-        if context.boundnode and isinstance(context.boundnode, bases.Instance):
+        if (
+            context
+            and context.boundnode
+            and isinstance(context.boundnode, bases.Instance)
+        ):
             cls = context.boundnode._proxied
         if is_metaclass or functype == "classmethod":
             yield cls

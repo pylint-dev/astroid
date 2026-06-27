@@ -7,11 +7,22 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Bound string/bytes multiplication (``"x" * n``) and integer left shifts
+  (``1 << n``) in ``const_infer_binary_op`` the same way list/tuple
+  multiplication and ``**`` already are. Inferring a constant such as
+  ``"A" * 10 ** 10`` previously materialized the multi-gigabyte result
+  eagerly; these operations now infer as ``Uninferable`` when the result
+  would be oversized.
+
+Refs #3107
+
 * Avoid materializing a multi-gigabyte string while inferring a small literal
   such as ``"{:>2000000000}".format("x")`` or ``f"{1.5:.2000000000f}"``.
   ``_infer_str_format_call`` and ``FormattedValue._infer`` now yield
   ``Uninferable`` when a format spec asks for a width or precision over 1e8,
   mirroring the sequence/repetition caps in ``astroid.protocols``.
+
+Refs #3108
 
 * Fix uncaught ``IndentationError`` when parsing code whose lines end in
   ``\r``: the slice of source tokenized to compute a class or function
@@ -42,6 +53,13 @@ Release date: TBA
   than a simple name.
 
   Closes #2646
+
+* Fix ``AttributeError`` crash in the ``Arguments`` ``assigned_stmts``
+  protocol when called without an inference context (the public
+  ``assigned_stmts`` API defaults ``context`` to ``None``). Resolving a
+  function's first parameter dereferenced ``context.boundnode`` while the
+  matching ``context and ...`` guard a few lines below was missing; it now
+  degrades to Uninferable.
 
 * Wrap assignment expressions (``:=``) in parentheses when emitting
   ``as_string`` output so the rendered code remains syntactically valid in

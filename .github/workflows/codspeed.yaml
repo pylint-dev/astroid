@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.0
 
       - name: Set up Python 3.14
         id: python
@@ -49,7 +49,7 @@ jobs:
           pip install .
 
       - name: Run in-process benchmarks
-        uses: CodSpeedHQ/action@v4.17.5
+        uses: CodSpeedHQ/action@v4.17.6
         with:
           mode: simulation
           # Skip cold_lint here — it shells out to a subprocess that
