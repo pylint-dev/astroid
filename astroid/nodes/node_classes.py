@@ -5501,6 +5501,39 @@ class MatchOr(Pattern):
         self.patterns = patterns
 
 
+def _infer_templatelib_instance(
+    node: TemplateStr | Interpolation,
+    classname: str,
+    context: InferenceContext | None,
+) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+    """Infer an instance of a ``string.templatelib`` class (3.14+).
+
+    The standard library defines ``Template`` / ``Interpolation`` via
+    ``type(t"...")``, which is not statically inferable on its own; a brain
+    plugin rebuilds the real classes from the live objects so this resolves.
+    The returned instance carries *node* so that its members (e.g.
+    ``Template.strings`` or ``Interpolation.value``) can be inferred from the
+    actual template contents.
+    """
+    from astroid import objects  # pylint: disable=import-outside-toplevel
+    from astroid.nodes import ClassDef  # pylint: disable=import-outside-toplevel
+
+    try:
+        template_module = AstroidManager().ast_from_module_name("string.templatelib")
+        class_node = template_module[classname]
+    except (AstroidError, KeyError):
+        yield util.Uninferable
+        return
+    inferred_cls = util.safe_infer(class_node, context)
+    if not isinstance(inferred_cls, ClassDef):
+        yield util.Uninferable
+        return
+    if isinstance(node, TemplateStr):
+        yield objects.TemplateStrInstance(inferred_cls, node)
+    else:
+        yield objects.InterpolationInstance(inferred_cls, node)
+
+
 class TemplateStr(NodeNG):
     """Class representing an :class:`ast.TemplateStr` node.
 
@@ -5535,6 +5568,13 @@ class TemplateStr(NodeNG):
 
     def get_children(self) -> Iterator[NodeNG]:
         yield from self.values
+
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        # A t-string evaluates to a ``string.templatelib.Template`` instance
+        # at runtime, not to a ``str`` (unlike an f-string / JoinedStr).
+        yield from _infer_templatelib_instance(self, "Template", context)
 
 
 class Interpolation(NodeNG):
@@ -5607,6 +5647,13 @@ class Interpolation(NodeNG):
         yield self.value
         if self.format_spec:
             yield self.format_spec
+
+    def _infer(
+        self, context: InferenceContext | None = None, **kwargs: Any
+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
+        # An interpolation field evaluates to a
+        # ``string.templatelib.Interpolation`` instance at runtime.
+        yield from _infer_templatelib_instance(self, "Interpolation", context)
 
 
 # constants ##############################################################
