@@ -347,6 +347,33 @@ class ProtocolTests(unittest.TestCase):
         parsed = extract_node("[0] * -9223372036854775809")
         assert parsed.inferred()[0].elts == []
 
+    @staticmethod
+    def test_uninferable_string_multiplication() -> None:
+        """Building the repeated string would be prohibitively expensive."""
+        parsed = extract_node('"abc" * 123456789')
+        assert parsed.inferred() == [Uninferable]
+
+        # The reflected form (int * str) must be bounded too.
+        parsed = extract_node('123456789 * "abc"')
+        assert parsed.inferred() == [Uninferable]
+
+    @staticmethod
+    def test_uninferable_bytes_multiplication() -> None:
+        """Building the repeated bytes would be prohibitively expensive."""
+        parsed = extract_node('b"abc" * 123456789')
+        assert parsed.inferred() == [Uninferable]
+
+    @staticmethod
+    def test_string_multiplication_with_zero_multiplier() -> None:
+        parsed = extract_node('"abc" * 0')
+        assert parsed.inferred()[0].value == ""
+
+    @staticmethod
+    def test_uninferable_left_shift() -> None:
+        """The shifted integer would be prohibitively expensive to build."""
+        parsed = extract_node("1 << 123456789")
+        assert parsed.inferred() == [Uninferable]
+
 
 def test_named_expr_inference() -> None:
     code = """
